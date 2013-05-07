@@ -277,6 +277,13 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  // Make sure we have spherical coordinates, i.e. theta has to be within [0..180]
+  if (m_Y[0] < 0 || m_Y.back() > 180) {
+    mout<<"In the function defined by: "<<FileName<<endl;
+    mout<<"The theta axis values are not all within [0...180]"<<endl;
+    return false;    
+  }
+  
   cout<<"Done reading 3D Spherical function (body)!"<<endl;
 
   // Determine interapolation type:

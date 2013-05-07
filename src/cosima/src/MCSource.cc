@@ -995,8 +995,20 @@ bool MCSource::SetPosition(double PositionParam1,
       return false;
     }
   } else if (m_BeamType == c_NearFieldDisk) {
-    if (m_PositionParam6 <= 0 || m_PositionParam7 <= 0 || m_PositionParam8 <= 0) {
-      mout<<m_Name<<": Inner radius, outer radius, and height must be larger than zero"<<endl;
+    if (m_PositionParam7 < 0) {
+      mout<<m_Name<<": Inner radius must must not be negative"<<endl;
+      return false;
+    }
+    if (m_PositionParam8 <= 0) {
+      mout<<m_Name<<": Outer radius must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam9 <= 0) {
+      mout<<m_Name<<": Height must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 >= m_PositionParam8) {
+      mout<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam) {

@@ -418,7 +418,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"Inelastic scattering didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<endl;
+        merr<<"Inelastic scattering didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -457,7 +457,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"HadronCapture/nCapture didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<show;
+        merr<<"HadronCapture/nCapture didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -496,7 +496,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       // There always has to be a generated secondary, since something decays into something else
       // "19" doesn't generate secondaries in Geant4... 
       if (GeneratedSecondaries == 0 && GetParticleId(Track->GetDefinition()) != 19) {
-        merr<<"Decay didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<endl;
+        merr<<"Decay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -680,7 +680,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           
           // There always has to be a generated secondary, since we generate a new nucleus
           //if (GeneratedSecondaries == 0) {
-          //  merr<<"RadioactiveDecay didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<show;
+          //  merr<<"RadioactiveDecay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
           //}
           
           for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 

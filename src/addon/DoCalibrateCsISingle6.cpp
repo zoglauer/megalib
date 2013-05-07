@@ -559,7 +559,7 @@ Bool_t DoCalibrateCsISingle(MString DetectorName,
       TH1D *crystal;    // Histogram containing data for fitting
 			// Errors:
       Bool_t BadCounts;     // not enough counts in spectrum
-      Bool_t BadEFit;       // >= 1 bad energy fit occured
+      Bool_t BadEFit;       // >= 1 bad energy fit occurred
 
       Double_t GuessedLowerEnergy = -1; // shrink fitrange for second ff. lines
       Double_t GuessedUpperEnergy = -1;

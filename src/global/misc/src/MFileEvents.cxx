@@ -225,7 +225,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
 
 //     // Uncomment the MEGAlib stuff some time in the future (now = 2008-09-15)
 //     if (FoundVersion == false || FoundType == false || FoundGeometry == false /*|| FoundMEGAlibVersion == false*/) { 
-//       mout<<"A problem occured while opening file "<<m_FileName<<": "<<endl;
+//       mout<<"A problem occurred while opening file "<<m_FileName<<": "<<endl;
 //       mout<<"The following information is not found within the first "<<MaxLines<<" lines:"<<endl;
 //       if (FoundVersion == false) {
 //         mout<<"Version information not found!"<<endl;

@@ -1,6 +1,10 @@
 # Template Run for Step 1 of activation simulation: 
 # Simulate primary protons & store all generated particles
 
+# You can run this first instance of cosima vis mcosima, e.g.
+# mcosima ActivationStep1.source
+# This will produce a set of Isotopes.p1.inc1.dat, Isotopes.p1.inc2.dat, etc.
+# You have to modify ActivationStep2.source to read those files.
 
 # Global parameters:
 Version                            1
@@ -28,10 +32,11 @@ DefaultRangeCut     0.1
 Run Step1
 Step1.FileName                         ActivationStep1
 Step1.Time                             100.0
-Step1.IsotopeProductionFile            Isotopes.dat
+Step1.IsotopeProductionFile            Isotopes
 
 Step1.Source Step1_ProtonSource
 Step1_ProtonSource.ParticleType        4
 Step1_ProtonSource.Beam                FarFieldAreaSource 0.0 180.0 0.0 360.0
 Step1_ProtonSource.Spectrum            File CosmicProtonsInterplanetarySpace.dat
 Step1_ProtonSource.Flux                3.73
+

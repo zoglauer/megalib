@@ -164,6 +164,7 @@ void MImage::Init()
   m_IA = 0;
   m_Canvas = 0;
   m_Histogram = 0;
+  m_NEntries = 0;
 
   // ID of this image:
   if (m_IDCounter == numeric_limits<int>::max()) {
