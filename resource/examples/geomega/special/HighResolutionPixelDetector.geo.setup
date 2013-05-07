@@ -1,0 +1,68 @@
+# A high resolution thick CZT detector
+# The position resolution is far better than any existing detectors
+# Its goal is to allow debugging beam profiles.
+
+Name HighResolutionPixelDetector
+Version 1.0
+
+SurroundingSphere 150  0.0  0.0  0.0  150.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume information:
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+Volume CZTWafer
+CZTWafer.Material CZT
+CZTWafer.Visibility 1
+CZTWafer.Color 6
+CZTWafer.Shape BRIK 100.0 100.0 0.2
+CZTWafer.Position 0.0 0.0 0.0
+CZTWafer.Mother WorldVolume
+
+
+
+#------------------------------------------------------------
+# Detector information:
+
+
+MDStrip2D                  CZTDetector
+
+CZTDetector.DetectorVolume      CZTWafer
+CZTDetector.SensitiveVolume     CZTWafer
+
+CZTDetector.StructuralPitch      0.0   0.0    0.0
+CZTDetector.StructuralOffset     0.0   0.0    0.0
+
+CZTDetector.Offset              0.0   0.0
+CZTDetector.StripNumber         100000   100000
+
+CZTDetector.NoiseThreshold          0
+CZTDetector.TriggerThreshold        0
+
+CZTDetector.EnergyResolutionAt   1         0.001    
+CZTDetector.EnergyResolutionAt   100       0.001    
+
+CZTDetector.FailureRate 0.0
+
+
+Trigger T1
+T1.Veto false
+T1.TriggerByChannel true
+T1.Detector CZTDetector 1

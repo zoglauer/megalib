@@ -1,0 +1,33 @@
+#! /bin/bash
+
+# Helper script for the Makefile:
+# Return all linked shared libs in a usable from
+
+help() {
+    echo ""
+    echo "alllibs script for MEGAlib";
+    echo "(C) by Andreas Zoglauer"
+    echo "";
+    echo "Usage: alllibs <library path> <suffix>";
+    echo "";
+}
+
+if [ $# -ne 2 ] ; then
+    help;
+    exit 0;
+fi;
+
+LB=$1
+DLL=$2
+
+cd $LB; 
+RESULT='';
+for file in `find . -maxdepth 1 -type f -iname "*.${DLL}" ! -iname "*cosima*" -print`; do 
+    R=${file#./lib}; 
+    R=${R%.${DLL}}; 
+    RESULT=$RESULT' -l'$R; 
+done; 
+
+echo $RESULT
+
+exit

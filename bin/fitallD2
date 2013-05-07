@@ -1,0 +1,18 @@
+#! /bin/sh
+
+# Filenamen dürfen keine ':' enthalten!!!
+
+
+cd $MEGALYZE2
+
+detectors="circe thetis antigone aetna medusa ariadne penelope europa diane pallas fortuna hydra helena venus persephone minerva"
+calibfiles="-c data/20021015_1712_Cs137_allD2_side2.calib 662 -c data/20021021_1025_Na22_D2.calib 511 -c data/20021021_1025_Na22_D2.calib 1274"
+correction=" -s Fits.D2.20030121_183646.csv 754"
+prefix="-p 20030117_Corrected_"
+
+for d in $detectors; do
+		echo DoCalibrateCsISingle6 -d $d $calibfiles $correction $prefix
+		DoCalibrateCsISingle6 -d $d $calibfiles $correction $prefix
+done
+
+exit 0;

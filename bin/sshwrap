@@ -1,0 +1,19 @@
+#!/usr/bin/expect
+
+if {$argc==0} {
+  send_user "Usage: sshwrap <user@>host passwd cmd\n"
+  exit
+}
+
+log_user 0
+set host [lindex $argv 0]
+set pw   [lindex $argv 1]
+set cmd  [lindex $argv 2]
+
+spawn ssh -T -e none $host $cmd
+expect "password: "
+send "$pw\r"
+expect {
+denied {send_user "no_acc\r"; exit 1}
+login interact
+}

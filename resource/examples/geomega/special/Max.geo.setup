@@ -1,0 +1,143 @@
+#---------------------------------------------------------
+# Very simple Germanium ACT - similar to NCT 
+
+
+Name Max
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+
+Constant DetectorHalfWidth  4.0
+Constant DetectorHalfHeight 0.75
+
+Constant CryoThickness  0.1
+Constant CryoOffset     0.5
+
+Constant CryoTotalHeight { 2*(DetectorHalfHeight + CryoOffset + CryoThickness ) } 
+
+Volume GeStripDetector           
+GeStripDetector.Material Aluminium
+GeStripDetector.Visibility 1
+GeStripDetector.Color 2
+GeStripDetector.Shape BRIK  { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { DetectorHalfHeight + CryoOffset  + CryoThickness } 
+
+Volume CryoInnerHull 
+CryoInnerHull.Material Vacuum 
+CryoInnerHull.Visibility 1
+CryoInnerHull.Shape BRIK  { DetectorHalfWidth + CryoOffset }  { DetectorHalfWidth + CryoOffset }  { DetectorHalfHeight + CryoOffset } 
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 6
+GeWafer.Shape BRIK  DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+GeWafer.Copy GeWaferN01
+GeWaferN01.Position  0.0 0.0 0.0
+GeWaferN01.Mother CryoInnerHull
+
+CryoInnerHull.Copy Cryo
+Cryo.Position 0.0 0.0 0.0
+Cryo.Mother GeStripDetector
+
+
+
+// Line-Up some Ge-Detector 
+GeStripDetector.Copy GeE1N001
+GeE1N001.Position  0.0  0.0  {  1.5*CryoTotalHeight } 
+GeE1N001.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N002
+GeE1N002.Position  0.0  0.0  {  0.5*CryoTotalHeight } 
+GeE1N002.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N003
+GeE1N003.Position  0.0  0.0  { -0.5*CryoTotalHeight } 
+GeE1N003.Mother WorldVolume
+
+GeStripDetector.Copy GeE1N004
+GeE1N004.Position  0.0  0.0  { -1.5*CryoTotalHeight } 
+GeE1N004.Mother WorldVolume
+
+
+
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+MDStrip3D                  GStrip
+
+GStrip.DetectorVolume      GeWafer
+GStrip.SensitiveVolume     GeWafer
+
+GStrip.StructuralPitch      0.0   0.0    0.0
+GStrip.StructuralOffset     0.0   0.0    CryoTotalHeight
+
+GStrip.Offset              0.0   0.0
+GStrip.StripNumber         40    40
+
+GStrip.NoiseThreshold      15
+GStrip.TriggerThreshold    30
+
+GStrip.DepthResolution     100  0.2
+
+GStrip.EnergyResolutionAt   10        0.417   
+GStrip.EnergyResolutionAt   20        0.425           
+GStrip.EnergyResolutionAt   50        0.4375    
+GStrip.EnergyResolutionAt   100       0.454     
+GStrip.EnergyResolutionAt   200       0.492     
+GStrip.EnergyResolutionAt   500       0.5875      
+GStrip.EnergyResolutionAt   1000      0.7217       
+GStrip.EnergyResolutionAt   2000      0.9317      
+GStrip.EnergyResolutionAt   5000      1.3819       
+GStrip.EnergyResolutionAt   10000     1.9094                     
+GStrip.EnergyResolutionAt   100000    5.907         
+
+GStrip.FailureRate 0.0
+
+GStrip.NamedDetector  0.0  0.0  {  1.5*CryoTotalHeight }  D1
+GStrip.NamedDetector  0.0  0.0  {  0.5*CryoTotalHeight }  D2
+GStrip.NamedDetector  0.0  0.0  { -0.5*CryoTotalHeight }  D3
+GStrip.NamedDetector  0.0  0.0  { -1.5*CryoTotalHeight }  D4
+
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger T1
+T1.Veto false
+T1.TriggerByChannel true
+T1.Detector GStrip 1

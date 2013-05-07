@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+FOLDER=${MEGALIB}
+REPONAME="MEGAlib"
+
+
+echo ""
+echo ""
+echo "${REPONAME} diagnostics"
+echo "*******************"
+echo ""
+echo ""
+echo "*** Basics:"
+echo ""
+echo "* OS version:"
+uname -a
+echo ""
+echo "* gcc version: "
+gcc --version
+echo ""
+echo "* Path (must contain path to ROOT and $FOLDER/bin):"
+echo $PATH
+echo ""
+echo "* LD_LIBRARY_PATH (must contain paths to ROOT, Geant4, and ${REPONAME} *.so- (or *.a-) libraries):"
+echo $LD_LIBRARY_PATH
+echo ""
+echo ""
+echo "* DYLD_LIBRARY_PATH (Mac only: must contain paths to ROOT, Geant4, and ${REPONAME} *.dylib-libraries):"
+echo $DYLD_LIBRARY_PATH
+
+
+echo ""
+echo ""
+echo "*** ROOT:"
+echo ""
+echo "* Location of executable:"
+which root
+echo ""
+echo "* ROOTSYS: "
+echo $ROOTSYS
+echo ""
+echo "* Location of libraries (here: libCore):"
+locate libCore
+echo ""
+echo "* ROOT version: "
+root-config --version
+
+
+echo ""
+echo ""
+echo "*** Geant4:"
+echo ""
+echo "* G4INSTALL:"
+echo $G4INSTALL
+echo ""
+echo "* G4SYSTEM:"
+echo $G4SYSTEM
+echo ""
+echo "* G4LEDATA:"
+echo $G4LEDATA
+echo ""
+echo "* G4RADIOACTIVEDATA:"
+echo $G4RADIOACTIVEDATA
+echo ""
+echo "* G4LEVELGAMMADATA:"
+echo $G4LEVELGAMMADATA
+echo ""
+echo "* G4NEUTRONHPDATA:"
+echo $G4NEUTRONHPDATA
+echo ""
+echo "* G4ABLADATA:"
+echo $G4ABLADATA
+echo ""
+echo "* G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION:"
+echo $G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION
+echo ""
+echo "* Location of libraries (here: libG4event):"
+locate libG4event
+
+echo ""
+echo ""
+echo "*** CLHEP:"
+echo ""
+echo "* CLHEP_BASE_DIR:"
+echo $CLHEP_BASE_DIR
+echo ""
+echo "* CLHEP_INCLUDE_DIR:"
+echo $CLHEP_INCLUDE_DIR
+echo ""
+echo "* Location of libraries (here: libCLHEP):"
+locate libCLHEP
+
+echo ""
+echo ""
+echo "*** ${REPONAME}:"
+echo ""
+echo "* ${REPONAME} variable:"
+echo $FOLDER
+echo ""
+echo "* Location of libraries (here: libGeomega):"
+locate libGeomega
+echo ""
+echo ""
+echo "Done!"
+

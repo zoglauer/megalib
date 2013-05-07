@@ -1,0 +1,38 @@
+
+// Properties of the double-side calorimeter
+MDCalorimeter              DCal8
+DCal8.SensitiveVolume      CsICrystal8
+DCal8.DetectorVolume       Calorimeter8
+
+DCal8.StructuralPitch      0.07  0.07  0.0
+DCal8.StructuralOffset     0.235  0.235  0.4
+
+DCal8.NoiseThreshold         97     93
+DCal8.TriggerThreshold      256    106 
+DCal8.Overflow             11408  2573
+
+DCal8.DepthResolution    300      3
+
+DCal8.EnergyResolution  Gauss   1      1      39.1432
+DCal8.EnergyResolution  Gauss   2      2      39.1433
+DCal8.EnergyResolution  Gauss   5      5      39.1436
+DCal8.EnergyResolution  Gauss   10     10     39.144
+DCal8.EnergyResolution  Gauss   20     20     39.1449
+DCal8.EnergyResolution  Gauss   50     50     39.1475
+DCal8.EnergyResolution  Gauss   100    100    39.1518
+DCal8.EnergyResolution  Gauss   200    200    39.1604
+DCal8.EnergyResolution  Gauss   500    500    39.1862
+DCal8.EnergyResolution  Gauss   1000   1000   39.2292
+DCal8.EnergyResolution  Gauss   2000   2000   39.3151
+DCal8.EnergyResolution  Gauss   5000   5000   39.5716
+DCal8.EnergyResolution  Gauss   10000  10000  39.9955
+DCal8.EnergyResolution  Gauss   20000  20000  40.83
+DCal8.EnergyResolution  Gauss   50000  50000  43.2371
+DCal8.EnergyResolution  Gauss   100000 100000 46.9756
+
+
+DCal8.PulseShape 2.78652e-03 1.11233e-04 1.13468e-07 -3.63642e-11 4.80242e-15 -3.56580e-19 1.60263e-23 -4.33004e-28 6.47700e-33 -4.12352e-38 0 30000
+
+DCal8.FailureRate 0.119
+
+

@@ -1,0 +1,35 @@
+#!/usr/bin/expect
+
+if {$argc==0} {
+    send_user "Usage: pipeline_prodrate <*.volumes_list> <sim time s> <number of files> <file list>\n"
+    exit 1
+}
+
+set timeout -1
+
+set volumes     [lindex $argv 0]
+set time        [lindex $argv 1]
+set files       [lindex $argv 2]
+
+send_user "$volumes $files $time\n"
+
+spawn prodrate
+expect "Input the name of the volume list file:"
+exp_send "$volumes\r"
+expect "Input number of *.counts input files:"
+exp_send "$files\n"
+set i 1
+while {$i <= $files} {
+    set j [expr {$i+2}]
+    set file [lindex $argv $j]
+    expect "*.counts file:"
+    exp_send "$file\n"
+    incr i 1
+}
+expect "*sec*:"
+exp_send "$time\n"
+
+expect "prodrate is done..."
+
+exit 0
+

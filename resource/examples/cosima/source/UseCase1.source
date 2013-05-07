@@ -1,0 +1,29 @@
+# An example run for Cosima
+
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/detailedprototype/DetectorHead.geo.setup
+PhysicsListEM   Livermore
+
+StoreCalibrate                 true
+StoreSimulationInfo            true
+StoreOnlyEventsWithEnergyLoss  true  // Only relevant if no trigger criteria is given!
+DiscretizeHits                 true
+
+Run UseCase
+UseCase.FileName              UseCase1
+UseCase.NTriggers             20000
+
+
+UseCase.Source Pos
+Pos.ParticleType        1
+Pos.Beam                RestrictedPointSource   3 0 41
+Pos.Spectrum            Mono  1000
+Pos.Flux                1000.0
+
+UseCase.Source Neg
+Neg.ParticleType        1
+Neg.Beam                RestrictedPointSource   -3 0 41
+Neg.Spectrum            Mono  1000
+Neg.Flux                1000.0
+

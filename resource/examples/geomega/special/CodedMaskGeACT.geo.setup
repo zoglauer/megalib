@@ -1,0 +1,193 @@
+//------------------------------------------------------------
+// Very simple Germanium ACT - similar to Steve Boggs' idea 
+
+
+Name CodedMaskGeACT
+Version 1.0
+
+DoSanityChecks false
+IgnoreShortNames true
+ShowVolumes false
+
+SurroundingSphere 110  0.0  0.0  0.0  110.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 110.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.TriggerByChannel true
+TN03.DetectorType Strip3D 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+Include CodedMask.geo
+Mask.Position 0 0 87
+Mask.Mother WorldVolume
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+Volume GeStripDetector 
+GeStripDetector.Material Aluminium
+GeStripDetector.Visibility 0
+GeStripDetector.Color 1
+GeStripDetector.Shape BRIK 4.0  4.0  1.25
+
+Volume KryoInnerHull 
+KryoInnerHull.Material Vacuum 
+KryoInnerHull.Visibility 0
+KryoInnerHull.Shape BRIK   3.92  3.92  1.21
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 1
+GeWafer.Shape BRIK 3.8 3.8 0.75
+
+GeWafer.Copy GeWaferN01
+GeWaferN01.Position  0.0 0.0 0.0
+GeWaferN01.Mother KryoInnerHull
+
+KryoInnerHull.Copy Kryo
+Kryo.Position 0.0 0.0 0.0
+Kryo.Mother GeStripDetector
+
+
+
+
+
+//------------------------------------------------------------
+// The germanium auxillary volumes:
+
+Volume GeLine
+GeLine.Material Vacuum
+GeLine.Visibility 0
+GeLine.Shape BRIK 20.0  4.0  1.25
+
+Volume GeLayer
+GeLayer.Material Vacuum
+GeLayer.Visibility 0
+GeLayer.Shape BRIK 20.0  20.0  1.25
+
+
+// Line-Up some Ge-Detector 
+GeStripDetector.Copy GeE1N001
+GeE1N001.Position  16.0  0.0  0.0
+GeE1N001.Mother GeLine
+
+GeStripDetector.Copy GeE1N002
+GeE1N002.Position  8.0  0.0  0.0
+GeE1N002.Mother GeLine
+
+GeStripDetector.Copy GeE1N003
+GeE1N003.Position  0.0  0.0  0.0
+GeE1N003.Mother GeLine
+
+GeStripDetector.Copy GeE1N004
+GeE1N004.Position  -8.0  0.0  0.0
+GeE1N004.Mother GeLine
+
+GeStripDetector.Copy GeE1N005
+GeE1N005.Position  -16.0  0.0  0.0
+GeE1N005.Mother GeLine
+
+
+// Line-up the Ge-Detector-Lines
+GeLine.Copy GeLineN01
+GeLineN01.Position  0.0  16.0 0.0
+GeLineN01.Mother GeLayer
+
+GeLine.Copy GeLineN02
+GeLineN02.Position  0.0  8.0 0.0
+GeLineN02.Mother GeLayer
+
+GeLine.Copy GeLineN03
+GeLineN03.Position  0.0  0.0 0.0
+GeLineN03.Mother GeLayer
+
+GeLine.Copy GeLineN04
+GeLineN04.Position  0.0  -8.0 0.0
+GeLineN04.Mother GeLayer
+
+GeLine.Copy GeLineN05
+GeLineN05.Position  0.0  -16.0 0.0
+GeLineN05.Mother GeLayer
+
+
+//------------------------------------------------------------
+// Stack-up the lined-up Ge-Detector-Lines - the final ACT
+
+GeLayer.Copy GeLayerN01
+GeLayerN01.Position  0.0  0.0  20.0
+GeLayerN01.Mother WorldVolume
+
+GeLayer.Copy GeLayerN02
+GeLayerN02.Position  0.0  0.0  10.0
+GeLayerN02.Mother WorldVolume
+
+GeLayer.Copy GeLayerN03
+GeLayerN03.Position  0.0  0.0  0.0
+GeLayerN03.Mother WorldVolume
+
+GeLayer.Copy GeLayerN04
+GeLayerN04.Position  0.0  0.0  -10.0
+GeLayerN04.Mother WorldVolume
+
+GeLayer.Copy GeLayerN05
+GeLayerN05.Position  0.0  0.0  -20.0
+GeLayerN05.Mother WorldVolume
+
+
+
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+MDStrip3D                  GStrip
+
+GStrip.DetectorVolume      GeStripDetector
+GStrip.SensitiveVolume     GeWafer
+
+GStrip.StructuralPitch      0.0   0.0    0.0
+GStrip.StructuralOffset     0.2   0.2    0.5
+
+GStrip.Offset              0.0   0.0
+GStrip.StripNumber          39    39
+
+GStrip.NoiseThreshold            10
+GStrip.TriggerThreshold          10
+
+GStrip.DepthResolution            100  0.2
+
+GStrip.EnergyResolutionAt   10        0.417   
+GStrip.EnergyResolutionAt   20        0.425           
+GStrip.EnergyResolutionAt   50        0.4375    
+GStrip.EnergyResolutionAt   100       0.454     
+GStrip.EnergyResolutionAt   200       0.492     
+GStrip.EnergyResolutionAt   500       0.5875      
+GStrip.EnergyResolutionAt   1000      0.7217       
+GStrip.EnergyResolutionAt   2000      0.9317      
+GStrip.EnergyResolutionAt   5000      1.3819       
+GStrip.EnergyResolutionAt   10000     1.9094                     
+GStrip.EnergyResolutionAt   100000    5.907         
+
+GStrip.FailureRate 0.0

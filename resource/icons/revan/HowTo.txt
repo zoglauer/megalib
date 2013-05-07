@@ -1,0 +1,10 @@
+How to create these images:
+
+1. Use Gimp
+2. Create a Black&White image of your icon where the image is large enough to keep a duplicate of itself
+3. Duplicate it
+4. Use the gaussian smoother with a with of 3 pixels
+5. Overlay the original on the new image (use "Nachbelichten") and merge the two images
+6. Use the Bumpmap feature of Gimp (linear, invert) and move the bump-map to the empty space in your image
+7. Cut out the bump map
+8. That's it! 

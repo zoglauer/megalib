@@ -1,0 +1,92 @@
+#! /bin/sh
+
+confhelp() {
+    echo ""
+    echo "Usage: $0 [Program] <arguments>";
+                echo ""
+    echo "Program (mandatory):";
+    echo "   eview"
+    echo "   mimrec"
+    echo "   revan"
+    echo "   sivan"
+    echo "   geomega"
+    echo "   megalyze"
+    echo "   cosima"
+}
+
+# Test if help is requested:
+case $1 in
+-h|--help) 
+                confhelp; 
+                exit 0;;
+esac
+
+echo "*** Debugging $1... please stand by..."
+
+# Test if an architecture is provided
+if [ $# -lt 1 ] ; then
+    echo "";
+    echo "*** Error: You must specify a program!";
+                echo "*** See $0 --help for a list of options";
+                echo "";
+    exit 1;
+fi
+
+# A. Retrieve all arguments
+megadir=$MEGALIB;
+currdir=`pwd`;
+
+program=$1;
+shift
+args="r "; 
+
+while [ $# -gt 0 ] ; do
+    args=$args" "$1
+    shift
+done
+
+argfile="/tmp/gdbargs.tmp";
+rm -f $argfile;
+echo "$args" >> $argfile;
+
+
+# B. Check for recompilation:
+echo "*** Checking for recompilation..."
+cd $megadir
+
+# switch into architectural dependent configurations
+case $program in
+geomega)
+                make -f $MEGALIB/Makefile geo;;
+revan)
+                make -f $MEGALIB/Makefile rev;;
+sivan)
+                make -f $MEGALIB/Makefile siv;;
+eview)
+                make -f $MEGALIB/Makefile evi;;
+mimrec)
+                make -f $MEGALIB/Makefile mim;;
+megalyze)
+                make -f $MEGALIB/Makefile meg;;
+cosima)
+                make -f $MEGALIB/Makefile cos;;
+*) 
+                make -f $MEGALIB/Makefile all;;
+esac
+
+
+# Check if the last executed program (make) was successful:
+if [ "$?" -ne 0 ]; then
+    echo "*** Compilation failed. Aborting."
+    exit 1;
+fi
+
+     
+# C. Lauch the program
+cd $currdir
+echo "*** Starting gdb...";
+gdb $MEGALIB/bin/$program -x $argfile
+
+rm -f $argfile;
+
+exit 0;

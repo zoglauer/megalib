@@ -1,0 +1,524 @@
+Name GermaniumNCT
+Version 1.0
+ 
+SurroundingSphere 40  0.0  0.0  0.0  40.0
+ 
+// Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+Include ../materials/Materials.geo
+
+// rotations: rotate around x axis, then around y axis, then around z axis
+// one rotation is thus defined by 3 numbers.
+
+
+  
+ 
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.TriggerByChannel true
+TN03.DetectorType Strip3D 1
+ 
+ 
+Volume WorldVolume
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+ 
+ 
+
+Volume InstrumentVolume
+InstrumentVolume.Material Vacuum
+InstrumentVolume.Shape BRIK  14.0  10.0  10.0
+InstrumentVolume.Visibility 0
+InstrumentVolume.Mother WorldVolume
+//InstrumentVolume.Position  0.0  5.0  8.0 
+InstrumentVolume.Position  0.0  0.0  0.0 
+
+
+
+!********************************************
+!              THE COLDFINGER
+!********************************************
+
+Volume Coldfinger
+Coldfinger.Material Copper
+Coldfinger.Visibility 1
+Coldfinger.Color 7
+Coldfinger.Shape BRIK 	9.096  0.6825 2.0425
+Coldfinger.Mother InstrumentVolume
+Coldfinger.Position  0.0  0.0  0.0
+Coldfinger.Rotation  0.0  0.0 90.0
+
+
+ 
+!********************************************
+!    MOTHER for DETECTORS and SUPPORT
+!********************************************
+
+Volume Support
+Support.Material Vacuum
+Support.Visibility 0
+//Support.Shape BRIK  6.42  5.562  1.27
+//Support.Shape BRIK  5.841  5.562  1.27
+//Support.Shape BRIK  5.441  5.562  1.27
+//Support.Shape BRIK  5.7665  5.562  1.27
+Support.Shape BRIK  5.9315  5.562  1.27
+
+Support.Copy Supp1
+Support.Copy Supp2
+Support.Copy Supp3
+Support.Copy Supp4
+Support.Copy Supp5
+Support.Copy Supp6
+Support.Copy Supp7
+Support.Copy Supp8
+Support.Copy Supp9
+Support.Copy Supp10
+Support.Copy Supp11
+Support.Copy Supp12
+
+Supp1.Mother  InstrumentVolume
+Supp2.Mother  InstrumentVolume
+Supp3.Mother  InstrumentVolume
+Supp4.Mother  InstrumentVolume
+Supp5.Mother  InstrumentVolume
+Supp6.Mother  InstrumentVolume
+Supp7.Mother  InstrumentVolume
+Supp8.Mother  InstrumentVolume
+Supp9.Mother  InstrumentVolume
+Supp10.Mother InstrumentVolume
+Supp11.Mother InstrumentVolume
+Supp12.Mother InstrumentVolume
+
+//Supp1.Position  -6.4495  -7.826  3.2035  
+Supp1.Position  -6.6145  -7.826  3.2035
+Supp1.Rotation 90.0  180.0  0.0
+Supp2.Position  -6.6145  -5.286  3.2035  
+Supp2.Rotation 90.0  180.0  0.0 
+Supp3.Position  -6.6145  -2.746  3.2035 
+Supp3.Rotation 90.0  180.0  0.0
+Supp4.Position  -6.6145  -0.206  3.2035
+Supp4.Rotation 90.0  180.0  0.0
+Supp5.Position  -6.6145   2.334  3.2035 
+Supp5.Rotation 90.0  180.0  0.0
+Supp6.Position  -6.6145   4.874  3.2035 
+Supp6.Rotation 90.0  180.0  0.0
+
+Supp7.Position   6.6145  -7.826  3.2035   
+Supp7.Rotation -90.0 0.0  0.0
+Supp8.Position   6.6145  -5.286  3.2035   
+Supp8.Rotation -90.0 0.0  0.0
+Supp9.Position   6.6145  -2.746  3.2035  
+Supp9.Rotation -90.0 0.0  0.0
+Supp10.Position  6.6145  -0.206  3.2035  
+Supp10.Rotation -90.0 0.0  0.0
+Supp11.Position  6.6145   2.334  3.2035  
+Supp11.Rotation -90.0 0.0  0.0
+Supp12.Position  6.6145   4.874  3.2035  
+Supp12.Rotation -90.0 0.0  0.0
+
+
+!********************************************
+!   GERMANIUM VOLUMES (ACTIVE/INACTIVE) 
+!********************************************
+
+// volume is called ACTV in Jason's model
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 4
+GeWafer.Shape BRIK 4.02 4.02 0.75
+
+GeWafer.Mother Support
+//GeWafer.Position 0.0 0.0 0.0
+//GeWafer.Position -0.3255 0.0 0.0
+GeWafer.Position -0.6555 0.0 0.0
+GeWafer.Rotation 0.0 0.0 0.0
+
+// Ge 'plates' extending to underneath the 'handles'
+// INA1 in Jason's model
+Volume GeDead1
+GeDead1.Material GePassive
+GeDead1.Visibility 1
+GeDead1.Color 6
+GeDead1.Shape TRD1 1.21 2.88 0.076 0.39
+
+GeDead1.Copy GeDead1_01
+GeDead1.Copy GeDead1_02
+GeDead1.Copy GeDead1_03
+
+GeDead1_01.Mother Support
+//GeDead1_01.Position  4.41  0.0  -0.674
+//GeDead1_01.Position  4.0845  0.0  -0.674
+GeDead1_01.Position  3.755  0.0  -0.674
+GeDead1_01.Rotation 90.0  0.0 -90.0
+
+GeDead1_02.Mother Support
+//GeDead1_02.Position -4.41  0.0  -0.674
+//GeDead1_02.Position -4.7355  0.0  -0.674
+GeDead1_02.Position -5.065  0.0  -0.674
+GeDead1_02.Rotation 90.0  0.0  90.0
+
+GeDead1_03.Mother Support
+//GeDead1_03.Position  0.0   4.41  -0.674
+//GeDead1_03.Position  -0.3255   4.41  -0.674
+GeDead1_03.Position  -0.655   4.41  -0.674
+GeDead1_03.Rotation 90.0  0.0  0.0
+
+// The Ge 'handles' the mechanics attaches to
+// INA2 in Jason's model
+Volume GeDead2
+GeDead2.Material GePassive
+GeDead2.Visibility 1
+GeDead2.Color 6
+GeDead2.Shape TRD1 1.21 2.54 0.30 0.287
+
+GeDead2.Copy GeDead2_01
+GeDead2.Copy GeDead2_02
+GeDead2.Copy GeDead2_03
+
+GeDead2_01.Mother Support
+//GeDead2_01.Position  4.513  0.0  -0.298
+//GeDead2_01.Position  4.1875  0.0  -0.298
+GeDead2_01.Position  3.858  0.0  -0.298
+GeDead2_01.Rotation 90.0  0.0 -90.0
+
+GeDead2_02.Mother Support
+//GeDead2_02.Position -4.513  0.0  -0.298
+//GeDead2_02.Position -4.8385  0.0  -0.298
+GeDead2_02.Position -5.168  0.0  -0.298
+GeDead2_02.Rotation 90.0  0.0  90.0
+
+GeDead2_03.Mother Support
+//GeDead2_03.Position  0.0   4.513  -0.298
+//GeDead2_03.Position  -0.3255   4.513  -0.298
+GeDead2_03.Position  -0.655   4.513  -0.298
+GeDead2_03.Rotation 90.0  0.0  0.0
+
+
+// cutting off the 4 Ge corners with vacuum
+// SHEA in Jason's model
+Volume Cutting
+Cutting.Material Vacuum
+Cutting.Visibility 1
+Cutting.Color 8
+//Cutting.Shape TRD1 0.75 0.0 0.805 0.403
+Cutting.Shape TRD1 0.0  0.805  0.75  0.403 
+
+Cutting.Copy Cutting01
+Cutting.Copy Cutting02
+Cutting.Copy Cutting03
+Cutting.Copy Cutting04
+
+Cutting01.Mother GeWafer
+Cutting01.Position  3.73   3.73   0.0
+Cutting01.Rotation  90.0   0.0  -45.0
+
+Cutting02.Mother GeWafer
+Cutting02.Position -3.73   3.73   0.0
+Cutting02.Rotation  90.0   0.0   45.0
+
+Cutting03.Mother GeWafer
+Cutting03.Position -3.73  -3.73   0.0
+Cutting03.Rotation  90.0   0.0  135.0
+
+Cutting04.Mother GeWafer
+Cutting04.Position  3.73  -3.73   0.0
+Cutting04.Rotation  90.0   0.0 -135.0
+
+
+// Strips on Ge detectors are Al 400nm thick - represented by
+//       thin al sheets. strip gap 0.2mm, strip pitch 2.0mm
+//       thus 90% of the Ge are covered with 400nm Al (actually
+//       a bit more due to the guard rings ...)
+//    for volume calculation see ACT lab book page 53
+Volume stripsAl
+stripsAl.Material Aluminium
+stripsAl.Visibility 1
+stripsAl.Color 7
+stripsAl.Shape BRIK 3.438 3.438 0.00025
+
+stripsAl.Copy stripsAl1
+stripsAl.Copy stripsAl2
+
+stripsAl1.Mother Support
+//stripsAl1.Position -0.3255 0.0 0.75025
+stripsAl1.Position -0.4905 0.0 0.75025
+stripsAl1.Rotation 0.0 0.0 0.0
+
+stripsAl2.Mother Support
+//stripsAl2.Position -0.3255 0.0 -0.75025
+stripsAl2.Position -0.4905 0.0 -0.75025
+stripsAl2.Rotation 0.0 0.0 0.0
+
+
+
+
+
+!********************************************
+!     Alu6061 pieces around the detector
+!********************************************
+
+// where cryptic 4-letter descriptions are used, they are those used
+// by Jason Bowen for his MGEANT mass model
+
+// This is the piece attaching to the Cold finger
+Volume PEC1
+PEC1.Material Alu6061
+PEC1.Visibility 1
+PEC1.Color 7
+PEC1.Shape BRIK  0.252 1.746 1.27
+PEC1.Mother Support
+//PEC1.Position -5.01 3.50 0.0
+//PEC1.Position -5.589 3.50 0.0
+//PEC1.Position -5.189 3.50 0.0
+//PEC1.Position -5.5145 3.50 0.0
+PEC1.Position -5.6795 3.50 0.0
+PEC1.Rotation  0.0   0.0   0.0
+
+/////////////////////////////////////////////////////////
+// the mass of the following 3 al6061 pieces is adjusted
+// to yield a total Al6061 mass per Support volume of
+// 47.54 g (got this from Jason Bowen as the design mass)
+
+// one of 3 simple Al6061 pieces around the Ge wafer
+// bottom part - this connects to the PEC1 part at 
+//               the cold finger
+Volume AlSide1
+AlSide1.Material Alu6061
+AlSide1.Visibility 1
+AlSide1.Color 7
+AlSide1.Shape BRIK  4.8815 0.300  0.40845 
+AlSide1.Mother Support 
+//AlSide1.Position  -0.0555 4.526 0.425 
+//AlSide1.Position  -0.381 4.526 0.425 
+AlSide1.Position  -0.546  4.526  0.425 
+AlSide1.Rotation  0.0  0.0  0.0
+
+// one of 3 simple Al6061 pieces around the Ge wafer
+// side away from the cold finger
+Volume AlSide2
+AlSide2.Material Alu6061
+AlSide2.Visibility 1
+AlSide2.Color 7
+AlSide2.Mother Support 
+AlSide2.Shape BRIK  0.300 4.410 0.40845 
+//AlSide2.Position  4.526 -0.184 0.425 
+//AlSide2.Position  4.2005 -0.184 0.425 
+AlSide2.Position  4.0355  -0.184  0.425 
+AlSide2.Rotation  0.0  0.0  0.0
+
+// one of 3 simple Al6061 pieces around the Ge wafer
+// side facing the cold finger
+Volume AlSide3
+AlSide3.Material Alu6061
+AlSide3.Visibility 1
+AlSide3.Color 7
+// readjusted with for total correct Al6061 mass ... 040722
+//AlSide3.Shape BRIK  0.300 4.123  0.40845 
+AlSide3.Shape BRIK  0.300 4.123  0.41683
+AlSide3.Mother Support 
+//AlSide3.Position  -4.526 0.103 0.425 
+//AlSide3.Position  -4.8515 0.103 0.425 
+AlSide3.Position  -5.0165  0.103  0.425 
+AlSide3.Rotation  0.0  0.0  0.0
+
+
+
+
+!--------------------------------------------
+!******* BOARDS *******
+!--------------------------------------------
+ 
+!!!!! LOW VOLTAGE BOARDS !!!!!
+
+Volume LVL1 // modified to account for 
+            // mass removed by LVL3 and LVL4
+LVL1.Material ro4003
+LVL1.Visibility 1
+LVL1.Color 2
+//LVL1.Shape BRIK 4.6665 1.555 0.075
+LVL1.Shape BRIK 4.532 1.555 0.075
+LVL1.Mother Support
+//LVL1.Position 0.226 -3.691 1.32
+//LVL1.Position 0.226 -3.691 0.967
+//LVL1.Position -0.0995 -3.691 0.967
+LVL1.Position -0.2645 -3.691 0.967
+LVL1.Rotation 0.0 0.0 0.0
+
+Volume LVL2
+LVL2.Material Vacuum
+LVL2.Mother LVL1
+LVL2.Visibility 1
+LVL2.Color 8
+LVL2.Shape TRD1 3.715 2.8725 0.075 0.425
+LVL2.Position 0.0985 1.13 0.0
+LVL2.Rotation 90.0 0.0 0.0
+
+//Volume LVL3   // removed in exchange for smaller LVL1
+//LVL3.Material Vacuum
+//LVL3.Mother LVL1
+//LVL3.Visibility 1
+//LVL3.Color 8
+//LVL3.Shape BRIK 0.159 0.383 0.075
+//LVL3.Position -4.5075 1.172 0.0
+
+//Volume LVL4   // removed in exchange for smaller LVL1
+//LVL4.Material Vacuum
+//LVL4.Mother LVL1
+//LVL4.Visibility 1
+//LVL4.Color 2
+//LVL4.Shape BRIK 0.28 0.53 0.075
+//LVL4.Position 4.3865 1.025 0.0
+
+Volume LVL5
+LVL5.Material      roTMM3
+LVL5.Mother        Support
+LVL5.Shape         BRIK  4.66 0.158 0.978
+LVL5.Visibility    1
+LVL5.Color         3
+//LVL5.Position      -0.0995 -5.404 0.064
+LVL5.Position      -0.2645 -5.404 0.064
+LVL5.Rotation      0.0  0.0  0.0
+
+
+
+//!!!!! HIGH VOLTAGE BOARDS !!!!!
+
+Volume HVL1 // modified to account for 
+            // mass removed by HVL3 and HVL4
+HVL1.Material ro4003
+HVL1.Visibility 1
+HVL1.Color 2
+//HVL1.Shape BRIK 1.563 4.4845 0.075
+HVL1.Shape BRIK 1.563 4.267 0.075
+HVL1.Mother Support
+//HVL1.Position 4.2035 0.1455 -0.967
+HVL1.Position 4.0385 0.1455 -0.967
+HVL1.Rotation 0.0 0.0 0.0
+
+Volume HVL2
+HVL2.Material Vacuum
+HVL2.Mother HVL1
+HVL2.Visibility 1
+HVL2.Color 8
+HVL2.Shape TRD1 3.710 2.8665 0.075 0.428
+HVL2.Position -1.135 0.0935 0.0
+HVL2.Rotation 90.0 0.0 90.0
+
+//Volume HVL3   // removed in exchange for smaller HVL1
+//HVL3.Material Vacuum
+//HVL3.Mother HVL1
+//HVL3.Visibility 1
+//HVL3.Color 8
+//HVL3.Shape BRIK 0.978 0.1765 0.075
+//HVL3.Position -0.585 4.308 0.0
+
+//Volume HVL4   // removed in exchange for smaller HVL1
+//HVL4.Material Vacuum
+//HVL4.Mother HVL1
+//HVL4.Visibility 1
+//HVL4.Color 2
+//HVL4.Shape BRIK 0.6195 0.27 0.075
+//HVL4.Position -0.9435 -4.2145 0.0
+
+Volume HVL5
+HVL5.Material   roTMM3
+HVL5.Mother     Support
+HVL5.Visibility 1
+HVL5.Color      3
+HVL5.Shape      BRIK  0.164  4.55  0.98
+//HVL5.Position   5.9305  0.1455  -0.062
+HVL5.Position   5.7655  0.1455  -0.062
+HVL5.Rotation   0.0  0.0  0.0
+
+
+// ************************************************
+//     Indium - approx of thermal joints
+// ************************************************
+
+
+// Indium at thermal joints - 0.1mm at cold finger
+Volume In_ColdFinger
+In_ColdFinger.Material Indium
+In_ColdFinger.Visibility 1
+In_ColdFinger.Color 8
+In_ColdFinger.Shape BRIK 0.005 1.746 1.27   
+In_ColdFinger.Mother PEC1
+In_ColdFinger.Position -0.247 0.0 0.0
+
+// Indium at thermal joints - 0.2mm at part of pass ge
+// instead of 0.1mm at each of the passive ge surfaces
+Volume In_PassGe
+In_PassGe.Material Indium
+In_PassGe.Visibility 1
+In_PassGe.Color 8
+In_PassGe.Mother GeDead2
+In_PassGe.Shape  TRD1 1.21 2.54 0.01 0.287
+In_PassGe.Position   0.0 0.29 0.0
+
+
+// ************************************************
+//  Steel - VERY rough approx of screws
+// ************************************************
+
+// each NCT Ge detector has ~10 screws that Paul Turin
+//  says are out of 18-8 stainless steel (Steel_18-8)
+// one screw has a head 2 mm thick, 7mm diameter and
+//  a shaft 3mm thick and 1cm long (roughly), thus
+//  a volume of 148mm3. 10 screws have a volume of 1500 mm3
+//  or 1.5 cm3. 
+
+Volume ScrewDummy
+ScrewDummy.Material Steel_18_8
+ScrewDummy.Visibility 1
+ScrewDummy.Color 5
+ScrewDummy.Shape BRIK 0.5 0.5 0.375
+
+ScrewDummy.Copy ScrewDummy1
+ScrewDummy.Copy ScrewDummy2
+
+ScrewDummy1.Mother Support
+ScrewDummy1.Position  4.5  -4.6  -0.45
+
+ScrewDummy2.Mother Support
+ScrewDummy2.Position  4.5  4.0  -0.45
+
+
+
+// ************************************************
+//  Detector information
+// ************************************************
+
+
+Strip3D                  GStrip
+
+GStrip.DetectorVolume      GeWafer
+GStrip.SensitiveVolume     GeWafer
+
+GStrip.StructuralPitch      0.0   0.0    0.0
+GStrip.StructuralOffset     0.0   0.0    0.0
+
+GStrip.Offset              0.0   0.0
+GStrip.StripNumber        40    40
+
+GStrip.NoiseThreshold          20
+GStrip.TriggerThreshold        20
+
+GStrip.DepthResolution      100  0.2
+
+GStrip.EnergyResolutionAt   10        0.417   
+GStrip.EnergyResolutionAt   20        0.425           
+GStrip.EnergyResolutionAt   50        0.4375    
+GStrip.EnergyResolutionAt   100       0.454     
+GStrip.EnergyResolutionAt   200       0.492     
+GStrip.EnergyResolutionAt   500       0.5875      
+GStrip.EnergyResolutionAt   1000      0.7217       
+GStrip.EnergyResolutionAt   2000      0.9317      
+GStrip.EnergyResolutionAt   5000      1.3819       
+GStrip.EnergyResolutionAt   10000     1.9094                     
+GStrip.EnergyResolutionAt   100000    5.907         
+
+GStrip.FailureRate 0.0

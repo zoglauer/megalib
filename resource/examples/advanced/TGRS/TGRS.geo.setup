@@ -1,0 +1,2738 @@
+Name TGRS
+Version 1.0
+
+
+# You have to correct this surounding sphere:
+SurroundingSphere 170  0.0  0.0  10.0  170.0
+#Volume SS
+#SS.Material vacuum
+#SS.Mother VAC0
+#SS.Shape SPHE 0 170 0 180 0 360
+#SS.Position 0 0 10
+
+
+Constant GenVis 1
+
+AbsorptionFileDirectory absorptions
+Include $(MEGALIB)/resource/geometries/materials/MGeantDefaultMaterials.geo
+
+# Material definitions: 
+Material germanium
+germanium.Density 5.323
+germanium.ComponentByMass 72.64 32 1
+
+germanium.Copy ge_active
+
+Material isot_cu
+isot_cu.Density 8.933
+isot_cu.ComponentByMass 63.546 29 1
+
+Material isot_pb
+isot_pb.Density 11.342
+isot_pb.ComponentByMass 207.2 82 1
+
+Material molybdenum
+molybdenum.Density 10.2
+molybdenum.RadiationLength 0.961
+molybdenum.ComponentByAtoms 95.94 42 1
+
+Material al6061
+al6061.Density 2.6989
+al6061.ComponentByMass 28.0855 14 0.006
+al6061.ComponentByMass 55.845 26 0.0035
+al6061.ComponentByMass 63.546 29 0.0028
+al6061.ComponentByMass 54.938 25 0.0008
+al6061.ComponentByMass 24.305 12 0.01
+al6061.ComponentByMass 51.996 24 0.002
+al6061.ComponentByMass 65.39 30 0.0013
+al6061.ComponentByMass 47.867 22 0.0008
+al6061.ComponentByMass 26.9815 13 0.9728
+
+Material teflon
+teflon.Density 2.2
+teflon.ComponentByAtoms 18.9984 9 4
+teflon.ComponentByAtoms 12.0107 6 2
+
+Material yb71
+yb71.Density 2.5
+yb71.ComponentByMass 15.9994 8 0.2828
+yb71.ComponentByMass 28.0855 14 0.0395
+yb71.ComponentByMass 39.0983 19 0.0322
+yb71.ComponentByMass 47.88 22 0.1727
+yb71.ComponentByMass 65.39 30 0.4728
+
+yb71.Copy paint
+
+Material mg_az31b
+mg_az31b.Density 1.77
+mg_az31b.ComponentByMass 26.9815 13 0.03
+mg_az31b.ComponentByMass 55.845 26 3e-05
+mg_az31b.ComponentByMass 58.6933 28 3e-05
+mg_az31b.ComponentByMass 65.39 30 0.01
+mg_az31b.ComponentByMass 40.078 20 0.0002
+mg_az31b.ComponentByMass 24.305 12 0.95699
+mg_az31b.ComponentByMass 63.546 29 0.00025
+mg_az31b.ComponentByMass 54.938 25 0.002
+mg_az31b.ComponentByMass 28.0855 14 0.0005
+
+Material steel_302
+steel_302.Density 7.86
+steel_302.ComponentByMass 12.0107 6 0.0015
+steel_302.ComponentByMass 55.845 26 0.69775
+steel_302.ComponentByMass 58.6933 28 0.09
+steel_302.ComponentByMass 32.065 16 0.0003
+steel_302.ComponentByMass 51.996 24 0.18
+steel_302.ComponentByMass 54.938 25 0.02
+steel_302.ComponentByMass 30.9738 15 0.00045
+steel_302.ComponentByMass 28.0855 14 0.01
+
+Material steel_a286
+steel_a286.Density 7.92
+steel_a286.ComponentByMass 26.9815 13 0.0018
+steel_a286.ComponentByMass 10.811 5 6e-05
+steel_a286.ComponentByMass 12.0107 6 0.0004
+steel_a286.ComponentByMass 51.996 24 0.148
+steel_a286.ComponentByMass 55.845 26 0.54209
+steel_a286.ComponentByMass 54.938 25 0.01
+steel_a286.ComponentByMass 95.94 42 0.013
+steel_a286.ComponentByMass 58.6933 28 0.255
+steel_a286.ComponentByMass 30.9738 15 0.0002
+steel_a286.ComponentByMass 32.065 16 0.00015
+steel_a286.ComponentByMass 28.0855 14 0.005
+steel_a286.ComponentByMass 47.867 22 0.0213
+steel_a286.ComponentByMass 50.9415 23 0.003
+
+Material becu
+becu.Density 8.25
+becu.ComponentByMass 9.01218 4 0.0184
+becu.ComponentByMass 58.9332 27 0.0022
+becu.ComponentByMass 58.6933 28 0.0011
+becu.ComponentByMass 55.845 26 0.0008
+becu.ComponentByMass 28.0855 14 0.001
+becu.ComponentByMass 26.9815 13 0.0005
+becu.ComponentByMass 118.71 50 5e-05
+becu.ComponentByMass 65.39 30 0.01
+becu.ComponentByMass 51.996 24 6e-05
+becu.ComponentByMass 207.2 82 3e-05
+becu.ComponentByMass 63.546 29 0.96586
+
+Material mli
+mli.Density 1.404
+mli.ComponentByMass 1.00797 1 0.0364
+mli.ComponentByMass 12.0112 6 0.6553
+mli.ComponentByMass 14.0067 7 0.0327
+mli.ComponentByMass 15.9994 8 0.2756
+
+Material mylar
+mylar.Density 1.998
+mylar.ComponentByAtoms 12.0112 6 10
+mylar.ComponentByAtoms 1.008 1 8
+mylar.ComponentByAtoms 15.9994 8 4
+
+Material nit_fil
+nit_fil.Density 0.001197
+nit_fil.ComponentByMass 14.0067 7 1
+
+Material hard_lead
+hard_lead.Density 11.04
+hard_lead.ComponentByMass 207.2 82 0.96
+hard_lead.ComponentByMass 121.76 51 0.04
+
+Material cal_src
+cal_src.Density 2.662
+cal_src.ComponentByAtoms 39.102 19 2
+cal_src.ComponentByAtoms 32.064 16 1
+cal_src.ComponentByAtoms 15.9994 8 4
+
+Material ti_5
+ti_5.Density 4.48
+ti_5.ComponentByMass 26.9815 13 0.05
+ti_5.ComponentByMass 15.994 8 0.002
+ti_5.ComponentByMass 47.867 22 0.918
+ti_5.ComponentByMass 55.845 26 0.005
+ti_5.ComponentByMass 118.71 50 0.025
+
+Material ti_6
+ti_6.Density 4.43
+ti_6.ComponentByMass 26.9815 13 0.06
+ti_6.ComponentByMass 55.845 26 0.0025
+ti_6.ComponentByMass 15.994 8 0.002
+ti_6.ComponentByMass 50.9415 23 0.04
+ti_6.ComponentByMass 47.867 22 0.8955
+
+Material prop_mixt
+prop_mixt.Density 0.5665
+prop_mixt.ComponentByMass 1.00794 1 0.12538
+prop_mixt.ComponentByMass 4.0026 2 0.00341
+prop_mixt.ComponentByMass 14.0067 7 0.87121
+
+Material al5056
+al5056.Density 2.64
+al5056.ComponentByMass 26.9815 13 0.9379
+al5056.ComponentByMass 63.546 29 0.001
+al5056.ComponentByMass 24.305 12 0.0505
+al5056.ComponentByMass 28.0855 14 0.003
+al5056.ComponentByMass 51.996 24 0.0013
+al5056.ComponentByMass 55.845 26 0.004
+al5056.ComponentByMass 54.938 25 0.0013
+al5056.ComponentByMass 65.39 30 0.001
+
+Material al_honey_sa
+al_honey_sa.Density 0.1823
+al_honey_sa.ComponentByMass 24.305 12 0.03275
+al_honey_sa.ComponentByMass 26.9815 13 0.9292
+al_honey_sa.ComponentByMass 28.0855 14 0.004
+al_honey_sa.ComponentByMass 47.867 22 0.00075
+al_honey_sa.ComponentByMass 51.996 24 0.00115
+al_honey_sa.ComponentByMass 54.938 25 0.00365
+al_honey_sa.ComponentByMass 55.845 26 0.0045
+al_honey_sa.ComponentByMass 63.546 29 0.02225
+al_honey_sa.ComponentByMass 65.39 30 0.00175
+
+Material al5056_75
+al5056_75.Density 0.0605
+al5056_75.ComponentByMass 26.9815 13 0.9379
+al5056_75.ComponentByMass 63.546 29 0.001
+al5056_75.ComponentByMass 24.305 12 0.0505
+al5056_75.ComponentByMass 28.0855 14 0.003
+al5056_75.ComponentByMass 51.996 24 0.0013
+al5056_75.ComponentByMass 55.845 26 0.004
+al5056_75.ComponentByMass 54.938 25 0.0013
+al5056_75.ComponentByMass 65.39 30 0.001
+
+Material al_honey_tc
+al_honey_tc.Density 0.1781
+al_honey_tc.ComponentByMass 24.305 12 0.03275
+al_honey_tc.ComponentByMass 26.9815 13 0.9292
+al_honey_tc.ComponentByMass 28.0855 14 0.004
+al_honey_tc.ComponentByMass 47.867 22 0.00075
+al_honey_tc.ComponentByMass 51.996 24 0.00115
+al_honey_tc.ComponentByMass 54.938 25 0.00365
+al_honey_tc.ComponentByMass 55.845 26 0.0045
+al_honey_tc.ComponentByMass 63.546 29 0.02225
+al_honey_tc.ComponentByMass 65.39 30 0.00175
+
+Material al_honey_bc
+al_honey_bc.Density 0.0983
+al_honey_bc.ComponentByMass 24.305 12 0.03275
+al_honey_bc.ComponentByMass 26.9815 13 0.9292
+al_honey_bc.ComponentByMass 28.0855 14 0.004
+al_honey_bc.ComponentByMass 47.867 22 0.00075
+al_honey_bc.ComponentByMass 51.996 24 0.00115
+al_honey_bc.ComponentByMass 54.938 25 0.00365
+al_honey_bc.ComponentByMass 55.845 26 0.0045
+al_honey_bc.ComponentByMass 63.546 29 0.02225
+al_honey_bc.ComponentByMass 65.39 30 0.00175
+
+Material al_honey_rb
+al_honey_rb.Density 0.3675
+al_honey_rb.ComponentByMass 24.305 12 0.03275
+al_honey_rb.ComponentByMass 26.9815 13 0.9292
+al_honey_rb.ComponentByMass 28.0855 14 0.004
+al_honey_rb.ComponentByMass 47.867 22 0.00075
+al_honey_rb.ComponentByMass 51.996 24 0.00115
+al_honey_rb.ComponentByMass 54.938 25 0.00365
+al_honey_rb.ComponentByMass 55.845 26 0.0045
+al_honey_rb.ComponentByMass 63.546 29 0.02225
+al_honey_rb.ComponentByMass 65.39 30 0.00175
+
+Material al_honey_ue
+al_honey_ue.Density 0.1667
+al_honey_ue.ComponentByMass 24.305 12 0.03275
+al_honey_ue.ComponentByMass 26.9815 13 0.9292
+al_honey_ue.ComponentByMass 28.0855 14 0.004
+al_honey_ue.ComponentByMass 47.867 22 0.00075
+al_honey_ue.ComponentByMass 51.996 24 0.00115
+al_honey_ue.ComponentByMass 54.938 25 0.00365
+al_honey_ue.ComponentByMass 55.845 26 0.0045
+al_honey_ue.ComponentByMass 63.546 29 0.02225
+al_honey_ue.ComponentByMass 65.39 30 0.00175
+
+Material al_honey_le
+al_honey_le.Density 0.1761
+al_honey_le.ComponentByMass 24.305 12 0.03275
+al_honey_le.ComponentByMass 26.9815 13 0.9292
+al_honey_le.ComponentByMass 28.0855 14 0.004
+al_honey_le.ComponentByMass 47.867 22 0.00075
+al_honey_le.ComponentByMass 51.996 24 0.00115
+al_honey_le.ComponentByMass 54.938 25 0.00365
+al_honey_le.ComponentByMass 55.845 26 0.0045
+al_honey_le.ComponentByMass 63.546 29 0.02225
+al_honey_le.ComponentByMass 65.39 30 0.00175
+
+Material solary
+solary.Density 2.953
+solary.ComponentByMass 28.086 14 0.5468
+solary.ComponentByMass 15.9994 8 0.4532
+
+Material nicd_cells
+nicd_cells.Density 3
+nicd_cells.ComponentByMass 1.0079 1 0.015
+nicd_cells.ComponentByMass 12.0107 6 0.011
+nicd_cells.ComponentByMass 14.0067 7 0.002
+nicd_cells.ComponentByMass 15.994 8 0.153
+nicd_cells.ComponentByMass 39.0983 19 0.021
+nicd_cells.ComponentByMass 55.845 26 0.317
+nicd_cells.ComponentByMass 58.9332 27 0.004
+nicd_cells.ComponentByMass 58.6933 28 0.331
+nicd_cells.ComponentByMass 112.41 48 0.146
+
+Material electr
+electr.Density 3
+electr.ComponentByMass 1.0079 1 0.0124
+electr.ComponentByMass 12.0107 6 0.1969
+electr.ComponentByMass 14.0067 7 0.018
+electr.ComponentByMass 15.994 8 0.1349
+electr.ComponentByMass 24.305 12 0.005
+electr.ComponentByMass 26.9815 13 0.2578
+electr.ComponentByMass 28.0855 14 0.005
+electr.ComponentByMass 40.078 20 0.0056
+electr.ComponentByMass 47.867 22 0.0135
+electr.ComponentByMass 51.996 24 0.0003
+electr.ComponentByMass 55.845 26 0.0693
+electr.ComponentByMass 58.6933 28 0.0364
+electr.ComponentByMass 63.546 29 0.1245
+electr.ComponentByMass 65.39 30 0.0406
+electr.ComponentByMass 118.71 50 0.0032
+electr.ComponentByMass 180.948 73 0.0766
+
+Material fbrglss
+fbrglss.Density 1.989
+fbrglss.ComponentByMass 15.994 8 0.4638
+fbrglss.ComponentByMass 28.0855 14 0.2402
+fbrglss.ComponentByMass 12.0107 6 0.1177
+fbrglss.ComponentByMass 26.9815 13 0.1051
+fbrglss.ComponentByMass 24.305 12 0.0495
+fbrglss.ComponentByMass 1.0079 1 0.0197
+fbrglss.ComponentByMass 137.237 56 0.0014
+fbrglss.ComponentByMass 55.845 26 0.0013
+fbrglss.ComponentByMass 22.9898 11 0.0013
+
+Material molsv
+molsv.Density 1
+molsv.ComponentByMass 15.994 8 0.493
+molsv.ComponentByMass 28.0855 14 0.234
+molsv.ComponentByMass 26.9815 13 0.185
+molsv.ComponentByMass 22.9898 11 0.088
+
+Material hget
+hget.Density 8.7
+hget.ComponentByMass 15.9994 8 0.131
+hget.ComponentByMass 106.4 46 0.869
+
+Material inor
+inor.Density 7.31
+inor.ComponentByMass 114.82 49 1
+
+Material gold
+gold.Density 19.3
+gold.ComponentByMass 196.967 79 1
+
+Material k_nai
+k_nai.Density 2.667
+k_nai.ComponentByAtoms 22.9898 11 1
+k_nai.ComponentByAtoms 126.904 53 1
+
+Material k_pbglass
+k_pbglass.Density 5.2
+k_pbglass.ComponentByMass 28.0855 14 0.3308
+k_pbglass.ComponentByMass 15.994 8 0.3769
+k_pbglass.ComponentByMass 207.2 82 0.2923
+
+Material k_pmt
+k_pmt.Density 1.34
+k_pmt.ComponentByMass 1.0079 1 0.0045
+k_pmt.ComponentByMass 9.01218 4 0.0083
+k_pmt.ComponentByMass 12.0107 6 0.0544
+k_pmt.ComponentByMass 14.0067 7 0.0076
+k_pmt.ComponentByMass 15.994 8 0.1161
+k_pmt.ComponentByMass 26.9815 13 0.3107
+k_pmt.ComponentByMass 28.0855 14 0.0944
+k_pmt.ComponentByMass 35.435 17 0.0452
+k_pmt.ComponentByMass 39.0983 19 0.0041
+k_pmt.ComponentByMass 51.996 24 0.0031
+k_pmt.ComponentByMass 55.845 26 0.038
+k_pmt.ComponentByMass 58.6933 28 0.1138
+k_pmt.ComponentByMass 63.546 29 0.1443
+k_pmt.ComponentByMass 65.39 30 0.0137
+k_pmt.ComponentByMass 118.71 50 0.0209
+k_pmt.ComponentByMass 207.2 82 0.0209
+
+
+
+# Volume definitions:
+Volume VAC0
+VAC0.Visibility GenVis
+VAC0.Material vacuum
+VAC0.Shape TUBS 0 450 400 0 360 
+
+Volume WIND
+WIND.Visibility GenVis
+WIND.Material vacuum
+WIND.Shape PCON 0 360 4 0 0 48.26 12.405 0 48.26 12.405 0 120.1 193.675 0 120.1 
+WIND.Virtual true
+
+Volume BDYC
+BDYC.Visibility GenVis
+BDYC.Material al_honey_tc
+BDYC.Shape PCON 138 324 2 0 24.369 118.73 1.905 24.13 118.73 
+
+Volume BCCH
+BCCH.Visibility GenVis
+BCCH.Color 2
+BCCH.Material vacuum
+BCCH.Shape TUBS 0 24.9 0.9525 0 360 
+BCCH.Virtual true
+
+Volume BCTH
+BCTH.Visibility GenVis
+BCTH.Color 3
+BCTH.Material vacuum
+BCTH.Shape TRD1 12 44.57 0.9525 32.57
+
+Volume BDYS
+BDYS.Visibility GenVis
+BDYS.Material al_honey_sa
+BDYS.Shape TUBS 118.73 120 90 0 360 
+
+Volume UEP
+UEP.Visibility GenVis
+UEP.Material al_honey_ue
+UEP.Shape PCON 0 360 2 0 28.382 118.73 3.175 27.985 118.73 
+
+Volume LEP
+LEP.Visibility GenVis
+LEP.Material al_honey_le
+LEP.Shape PCON 0 360 2 0 36.081 118.73 3.175 35.684 118.73 
+
+Volume BDYB
+BDYB.Visibility GenVis
+BDYB.Material al_honey_bc
+BDYB.Shape PCON 0 360 2 0 46.631 118.73 1.905 46.392 118.73 
+
+Volume TBTC
+TBTC.Visibility GenVis
+TBTC.Color 3
+TBTC.Material mli
+TBTC.Shape TUBS 0 120.1 0.008255 138 462
+
+Volume TBBC
+TBBC.Visibility GenVis
+TBBC.Color 3
+TBBC.Material mli
+TBBC.Shape PCON 0 360 2 0 46.631 120.1 0.01651 46.64 120.1 
+
+Volume SOAR
+SOAR.Visibility GenVis
+SOAR.Material solary
+SOAR.Shape TUBS 120.004 120.1 90 0 360 
+
+Volume SOAH
+SOAH.Visibility GenVis
+SOAH.Material isot_cu
+SOAH.Shape TUBS 120 120.004 90 0 360 
+
+Volume CTCN
+CTCN.Visibility GenVis
+CTCN.Material mg_az31b
+CTCN.Shape CONE 96.52 48.0187 48.26 23.8887 24.13
+
+Volume CCR1
+CCR1.Visibility GenVis
+CCR1.Material al5056
+CCR1.Shape TUBS 20 23.5 0.829 0 360 
+
+Volume CCR2
+CCR2.Visibility GenVis
+CCR2.Material al5056
+CCR2.Shape TUBS 24 27.5 0.829 0 360 
+
+Volume CCR3
+CCR3.Visibility GenVis
+CCR3.Material al5056
+CCR3.Shape TUBS 31.5 35 0.829 0 360 
+
+Volume CCR4
+CCR4.Visibility GenVis
+CCR4.Material al5056
+CCR4.Shape TUBS 37 40.5 0.829 0 360 
+
+Volume CCR5
+CCR5.Visibility GenVis
+CCR5.Material al5056
+CCR5.Shape TUBS 42.5 46 0.829 0 360 
+
+Volume HYTK
+HYTK.Visibility GenVis
+HYTK.Material vacuum
+HYTK.Shape SPHE 0 28 0 180 0 360
+HYTK.Virtual true
+
+Volume TKWL
+TKWL.Visibility GenVis
+TKWL.Material ti_6
+TKWL.Shape SPHE 27.8746 28 0 180 0 360
+
+Volume PROP
+PROP.Visibility GenVis
+PROP.Material prop_mixt
+PROP.Shape SPHE 0 27.8746 0 180 0 360
+
+Volume BKHD
+BKHD.Visibility GenVis
+BKHD.Material al_honey_rb
+BKHD.Shape TRAP 0.9525 0 0 29.21 40.8 44.45 3.575 29.21 40.8 44.45 3.575
+
+Volume BIM
+BIM.Visibility GenVis
+BIM.Material isot_pb
+BIM.Shape BRIK 3.123 3.123 3.123
+
+Volume DPU
+DPU.Visibility GenVis
+DPU.Material al6061
+DPU.Shape BRIK 11 15 5.5
+
+Volume DPUI
+DPUI.Visibility GenVis
+DPUI.Material vacuum
+DPUI.Shape BRIK 10.8 14.8 5.3
+DPUI.Virtual true
+
+Volume DPUE
+DPUE.Visibility GenVis
+DPUE.Material electr
+DPUE.Shape BRIK 3.593 7.186 3.593
+
+Volume KNS
+KNS.Visibility GenVis
+KNS.Material vacuum
+KNS.Shape PCON 0 360 4 0 0 8.215 22.63 0 8.215 22.63 0 6.665 30.38 0 6.665 
+KNS.Virtual true
+
+Volume KBEW
+KBEW.Visibility GenVis
+KBEW.Material beryllium
+KBEW.Shape TUBS 0 6.35 0.2325 0 360 
+
+Volume KNAI
+KNAI.Visibility GenVis
+KNAI.Material k_nai
+KNAI.Shape TUBS 0 6.35 3.81 0 360 
+
+Volume KSLD
+KSLD.Visibility GenVis
+KSLD.Material al5056
+KSLD.Shape TUBS 6.35 6.665 4.0425 0 360 
+
+Volume KPBG
+KPBG.Visibility GenVis
+KPBG.Material k_pbglass
+KPBG.Shape TUBS 0 6.35 1 0 360 
+
+Volume KPMT
+KPMT.Visibility GenVis
+KPMT.Material k_pmt
+KPMT.Shape TUBS 0 3 5 0 360 
+
+Volume KALH
+KALH.Visibility GenVis
+KALH.Material al5056_75
+KALH.Shape PCON 0 360 8 0 0 8.215 1.905 0 8.215 1.905 6.31 8.215 20.295 6.31 8.215 20.295 6.35 8.215 22.295 6.35 8.215 22.295 6.665 8.215 22.63 6.665 8.215 
+
+Volume KEL1
+KEL1.Visibility GenVis
+KEL1.Material electr
+KEL1.Shape TUBS 0 5.5 2.631 0 360 
+
+Volume KEL2
+KEL2.Visibility GenVis
+KEL2.Material electr
+KEL2.Shape TUBS 3.5 5.5 3.623 0 360 
+
+Volume TKMB
+TKMB.Visibility GenVis
+TKMB.Material al5056
+TKMB.Shape TUBS 7.6982 8.215 9.38335 0 360 
+
+Volume BKMB
+BKMB.Visibility GenVis
+BKMB.Material al5056
+BKMB.Shape TUBS 0 8.215 2.796 0 360 
+
+Volume KEB
+KEB.Visibility GenVis
+KEB.Material vacuum
+KEB.Shape BRIK 13.2 10.8 10.8
+
+Volume KEBA
+KEBA.Visibility GenVis
+KEBA.Material al6061
+KEBA.Shape BRIK 13.2 10.8 0.6227
+
+Volume KEBE
+KEBE.Visibility GenVis
+KEBE.Material electr
+KEBE.Shape BRIK 13.2 10.8 1.644
+
+Volume LEMT
+LEMT.Visibility GenVis
+LEMT.Material vacuum
+LEMT.Shape BRIK 16.5 10 8
+
+Volume LEMA
+LEMA.Visibility GenVis
+LEMA.Material al6061
+LEMA.Shape BRIK 16.5 10 1.025
+
+Volume LEME
+LEME.Visibility GenVis
+LEME.Material electr
+LEME.Shape BRIK 16.5 10 2.765
+
+Volume ELT
+ELT.Visibility GenVis
+ELT.Material vacuum
+ELT.Shape BRIK 5.5 10 15
+
+Volume ELTA
+ELTA.Visibility GenVis
+ELTA.Material al6061
+ELTA.Shape BRIK 5.5 10 2.676
+
+Volume ELTE
+ELTE.Visibility GenVis
+ELTE.Material electr
+ELTE.Shape BRIK 5.5 10 7.216
+
+Volume STP
+STP.Visibility GenVis
+STP.Material vacuum
+STP.Shape BRIK 10 15 7.5
+
+Volume STPA
+STPA.Visibility GenVis
+STPA.Material al6061
+STPA.Shape BRIK 10 15 0.239
+
+Volume STPE
+STPE.Visibility GenVis
+STPE.Material electr
+STPE.Shape BRIK 10 15 0.646
+
+Volume SMW
+SMW.Visibility GenVis
+SMW.Material al6061
+SMW.Shape BRIK 20.75 21.6 14.4
+
+Volume SMWI
+SMWI.Visibility GenVis
+SMWI.Material vacuum
+SMWI.Shape BRIK 20.55 21.4 14.2653
+
+Volume SMWE
+SMWE.Visibility GenVis
+SMWE.Material electr
+SMWE.Shape BRIK 5.48 5.48 2.74
+
+Volume SMDP
+SMDP.Visibility GenVis
+SMDP.Material al6061
+SMDP.Shape BRIK 10 9.6 9.5
+
+Volume SMDI
+SMDI.Visibility GenVis
+SMDI.Material vacuum
+SMDI.Shape BRIK 9.8 9.4 9.3
+
+Volume SMDE
+SMDE.Visibility GenVis
+SMDE.Material electr
+SMDE.Shape BRIK 5.534 5.534 5.534
+
+Volume SMC
+SMC.Visibility GenVis
+SMC.Material al6061
+SMC.Shape BRIK 21.75 14.5 17.95
+
+Volume SMCI
+SMCI.Visibility GenVis
+SMCI.Material vacuum
+SMCI.Shape BRIK 21.55 14.3 17.75
+
+Volume SMCE
+SMCE.Visibility GenVis
+SMCE.Material electr
+SMCE.Shape BRIK 7.646 5.097 5.097
+
+Volume SMAE
+SMAE.Visibility GenVis
+SMAE.Material al6061
+SMAE.Shape BRIK 11.45 8.25 6.6
+
+Volume SMAI
+SMAI.Visibility GenVis
+SMAI.Material vacuum
+SMAI.Shape BRIK 11.25 8.05 6.4
+
+Volume SMEE
+SMEE.Visibility GenVis
+SMEE.Material electr
+SMEE.Shape BRIK 8.824 4.412 4.412
+
+Volume SMMS
+SMMS.Visibility GenVis
+SMMS.Material al6061
+SMMS.Shape BRIK 22.6 18.1 12.95
+
+Volume SMMI
+SMMI.Visibility GenVis
+SMMI.Material vacuum
+SMMI.Shape BRIK 22.4 17.9 12.75
+
+Volume SMME
+SMME.Visibility GenVis
+SMME.Material electr
+SMME.Shape BRIK 7.098 4.732 2.366
+
+Volume PLEL
+PLEL.Visibility GenVis
+PLEL.Material vacuum
+PLEL.Shape BRIK 10 10 13
+
+Volume PLPB
+PLPB.Visibility GenVis
+PLPB.Material vacuum
+PLPB.Shape TUBS 0 2.625 31.5 0 360 
+
+Volume PLPS
+PLPS.Visibility GenVis
+PLPS.Material steel_302
+PLPS.Shape TUBS 0 2.625 13.81 0 360 
+
+Volume PLPA
+PLPA.Visibility GenVis
+PLPA.Material al5056
+PLPA.Shape TUBS 2.105 2.625 17.69 0 360 
+
+Volume PLEB
+PLEB.Visibility GenVis
+PLEB.Material vacuum
+PLEB.Shape TUBS 0 2.625 21 0 360 
+
+Volume PLES
+PLES.Visibility GenVis
+PLES.Material steel_302
+PLES.Shape TUBS 0 2.625 13.81 0 360 
+
+Volume PLEA
+PLEA.Visibility GenVis
+PLEA.Material al5056
+PLEA.Shape TUBS 2 2.625 7.19 0 360 
+
+Volume PPS
+PPS.Visibility GenVis
+PPS.Material vacuum
+PPS.Shape BRIK 15.5 17.5 12.5
+
+Volume PES
+PES.Visibility GenVis
+PES.Material vacuum
+PES.Shape BRIK 16.5 13.5 12.5
+
+Volume FCP
+FCP.Visibility GenVis
+FCP.Material vacuum
+FCP.Shape BRIK 11.35 10.75 10.75
+
+Volume FCPA
+FCPA.Visibility GenVis
+FCPA.Material al6061
+FCPA.Shape BRIK 11.35 10.75 0.261
+
+Volume FCPE
+FCPE.Visibility GenVis
+FCPE.Material electr
+FCPE.Shape BRIK 11.35 10.75 0.705
+
+Volume VS
+VS.Visibility GenVis
+VS.Material vacuum
+VS.Shape BRIK 10.1 10.75 10.75
+
+Volume VSA
+VSA.Visibility GenVis
+VSA.Material al6061
+VSA.Shape BRIK 10.1 10.75 0.38
+
+Volume VSE
+VSE.Visibility GenVis
+VSE.Material electr
+VSE.Shape BRIK 10.1 10.75 1.025
+
+Volume STR
+STR.Visibility GenVis
+STR.Material vacuum
+STR.Shape BRIK 6.3 7.6 6.3
+
+Volume STRA
+STRA.Visibility GenVis
+STRA.Material al6061
+STRA.Shape BRIK 6.3 7.6 0.412
+
+Volume STRE
+STRE.Visibility GenVis
+STRE.Material electr
+STRE.Shape BRIK 6.3 7.6 1.11
+
+Volume SDP
+SDP.Visibility GenVis
+SDP.Material vacuum
+SDP.Shape BRIK 9.45 7.6 5
+
+Volume SDPA
+SDPA.Visibility GenVis
+SDPA.Material al6061
+SDPA.Shape BRIK 9.45 7.6 0.409
+
+Volume SDPE
+SDPE.Visibility GenVis
+SDPE.Material electr
+SDPE.Shape BRIK 9.45 7.6 1.103
+
+Volume WV1
+WV1.Visibility GenVis
+WV1.Material al6061
+WV1.Shape BRIK 11.1 8.95 10.05
+
+Volume WV1I
+WV1I.Visibility GenVis
+WV1I.Material vacuum
+WV1I.Shape BRIK 10.9 8.75 9.85
+
+Volume WV1E
+WV1E.Visibility GenVis
+WV1E.Material electr
+WV1E.Shape BRIK 5.735 5.735 5.735
+
+Volume WV2
+WV2.Visibility GenVis
+WV2.Material al6061
+WV2.Shape BRIK 11.1 11.7 15.95
+
+Volume WV2I
+WV2I.Visibility GenVis
+WV2I.Material vacuum
+WV2I.Shape BRIK 10.9 11.5 15.75
+
+Volume WV2E
+WV2E.Visibility GenVis
+WV2E.Material electr
+WV2E.Shape BRIK 6.504 6.504 6.504
+
+Volume WWBM
+WWBM.Visibility GenVis
+WWBM.Material vacuum
+WWBM.Shape BRIK 9.5 9.15 21.5
+
+Volume WWBI
+WWBI.Visibility GenVis
+WWBI.Material al5056
+WWBI.Shape BRIK 4.318 4.318 8.635
+
+Volume WABM
+WABM.Visibility GenVis
+WABM.Material vacuum
+WABM.Shape BRIK 11.1 8.6 25.45
+
+Volume WABI
+WABI.Visibility GenVis
+WABI.Material al5056
+WABI.Shape BRIK 5.359 5.359 10.717
+
+Volume WAMP
+WAMP.Visibility GenVis
+WAMP.Material al6061
+WAMP.Shape BRIK 5.6 3.85 1.8
+
+Volume WAMI
+WAMI.Visibility GenVis
+WAMI.Material vacuum
+WAMI.Shape BRIK 5.5 3.75 1.7
+
+Volume WAME
+WAME.Visibility GenVis
+WAME.Material electr
+WAME.Shape BRIK 2.817 1.878 0.939
+
+Volume MFE
+MFE.Visibility GenVis
+MFE.Material vacuum
+MFE.Shape BRIK 10.2 8.4 8.4
+
+Volume MFEA
+MFEA.Visibility GenVis
+MFEA.Material al6061
+MFEA.Shape BRIK 10.2 8.4 0.284
+
+Volume MFEE
+MFEE.Visibility GenVis
+MFEE.Material electr
+MFEE.Shape BRIK 10.2 8.4 0.766
+
+Volume LYBC
+LYBC.Visibility GenVis
+LYBC.Material vacuum
+LYBC.Shape BRIK 19.2 19.8 19.8
+
+Volume LYBI
+LYBI.Visibility GenVis
+LYBI.Material al5056
+LYBI.Shape BRIK 6.991 6.991 6.991
+
+Volume LYB
+LYB.Visibility GenVis
+LYB.Material vacuum
+LYB.Shape TUBS 0 5 25 0 360 
+
+Volume LYBH
+LYBH.Visibility GenVis
+LYBH.Material isot_cu
+LYBH.Shape TUBS 0 2 25 0 360 
+
+Volume LYBB
+LYBB.Visibility GenVis
+LYBB.Material fbrglss
+LYBB.Shape TUBS 2 5 25 0 360 
+
+Volume BATT
+BATT.Visibility GenVis
+BATT.Material vacuum
+BATT.Shape BRIK 14 11.5 11.5
+
+Volume BATS
+BATS.Visibility GenVis
+BATS.Material al6061
+BATS.Shape BRIK 14 11.5 1.295
+
+Volume BATB
+BATB.Visibility GenVis
+BATB.Material nicd_cells
+BATB.Shape BRIK 14 11.5 4.519
+
+Volume BATE
+BATE.Visibility GenVis
+BATE.Material electr
+BATE.Shape BRIK 14 11.5 0.176
+
+Volume GTM
+GTM.Visibility GenVis
+GTM.Material vacuum
+GTM.Shape BRIK 8.5 20 8.5
+
+Volume GTMA
+GTMA.Visibility GenVis
+GTMA.Material al6061
+GTMA.Shape BRIK 8.5 20 0.738
+
+Volume GTME
+GTME.Visibility GenVis
+GTME.Material electr
+GTME.Shape BRIK 8.5 20 1.99
+
+Volume DTR
+DTR.Visibility GenVis
+DTR.Material vacuum
+DTR.Shape BRIK 14.5 8.5 8.5
+
+Volume DTRA
+DTRA.Visibility GenVis
+DTRA.Material al6061
+DTRA.Shape BRIK 14.5 8.5 0.96
+
+Volume DTRE
+DTRE.Visibility GenVis
+DTRE.Material electr
+DTRE.Shape BRIK 14.5 8.5 2.589
+
+Volume RFA
+RFA.Visibility GenVis
+RFA.Material vacuum
+RFA.Shape BRIK 9 9 9
+
+Volume RFAA
+RFAA.Visibility GenVis
+RFAA.Material al6061
+RFAA.Shape BRIK 9 9 0.079
+
+Volume RFAE
+RFAE.Visibility GenVis
+RFAE.Material electr
+RFAE.Shape BRIK 9 9 0.212
+
+Volume TRSP
+TRSP.Visibility GenVis
+TRSP.Material vacuum
+TRSP.Shape BRIK 10 6 6
+
+Volume TRSA
+TRSA.Visibility GenVis
+TRSA.Material al6061
+TRSA.Shape BRIK 10 6 0.711
+
+Volume TRSE
+TRSE.Visibility GenVis
+TRSE.Material electr
+TRSE.Shape BRIK 10 6 1.917
+
+Volume CDU
+CDU.Visibility GenVis
+CDU.Material al6061
+CDU.Shape BRIK 8.5 20.5 8.5
+
+Volume CDUI
+CDUI.Visibility GenVis
+CDUI.Material vacuum
+CDUI.Shape BRIK 8.5 20.5 0.713
+
+Volume CDUE
+CDUE.Visibility GenVis
+CDUE.Material electr
+CDUE.Shape BRIK 8.5 20.5 1.923
+
+Volume PRA
+PRA.Visibility GenVis
+PRA.Material vacuum
+PRA.Shape BRIK 3.5 12 3.5
+
+Volume PRAA
+PRAA.Visibility GenVis
+PRAA.Material al6061
+PRAA.Shape BRIK 3.5 12 0.232
+
+Volume PRAE
+PRAE.Visibility GenVis
+PRAE.Material electr
+PRAE.Shape BRIK 3.5 12 0.625
+
+Volume CAP
+CAP.Visibility GenVis
+CAP.Material vacuum
+CAP.Shape BRIK 19 7 7
+
+Volume CAPA
+CAPA.Visibility GenVis
+CAPA.Material al6061
+CAPA.Shape BRIK 19 7 0.812
+
+Volume CAPE
+CAPE.Visibility GenVis
+CAPE.Material electr
+CAPE.Shape BRIK 19 7 2.19
+
+Volume PSE
+PSE.Visibility GenVis
+PSE.Material vacuum
+PSE.Shape BRIK 20 31 10
+
+Volume PSEA
+PSEA.Visibility GenVis
+PSEA.Material al6061
+PSEA.Shape BRIK 20 31 0.3
+
+Volume PSEE
+PSEE.Visibility GenVis
+PSEE.Material electr
+PSEE.Shape BRIK 20 31 0.809
+
+Volume BCA
+BCA.Visibility GenVis
+BCA.Material al6061
+BCA.Shape BRIK 26.5 15 5.5
+
+Volume BCAI
+BCAI.Visibility GenVis
+BCAI.Material vacuum
+BCAI.Shape BRIK 26.3 14.8 5.3
+
+Volume BCAE
+BCAE.Visibility GenVis
+BCAE.Material electr
+BCAE.Shape BRIK 14.478 8.687 2.896
+
+Volume RXO
+RXO.Visibility GenVis
+RXO.Material vacuum
+RXO.Shape BRIK 6 6 6
+
+Volume RXOA
+RXOA.Visibility GenVis
+RXOA.Material al6061
+RXOA.Shape BRIK 6 6 0.3
+
+Volume RXOE
+RXOE.Visibility GenVis
+RXOE.Material electr
+RXOE.Shape BRIK 6 6 0.808
+
+Volume HRS
+HRS.Visibility GenVis
+HRS.Material vacuum
+HRS.Shape BRIK 10.5 10.5 5
+
+Volume HRSA
+HRSA.Visibility GenVis
+HRSA.Material al6061
+HRSA.Shape BRIK 10.5 10.5 0.168
+
+Volume HRSE
+HRSE.Visibility GenVis
+HRSE.Material electr
+HRSE.Shape BRIK 10.5 10.5 0.454
+
+Volume SSE
+SSE.Visibility GenVis
+SSE.Material vacuum
+SSE.Shape BRIK 3.5 3.5 3.5
+
+Volume SSEA
+SSEA.Visibility GenVis
+SSEA.Material al6061
+SSEA.Shape BRIK 3.5 3.5 0.842
+
+Volume SSEE
+SSEE.Visibility GenVis
+SSEE.Material electr
+SSEE.Shape BRIK 3.5 3.5 2.271
+
+Volume SSC
+SSC.Visibility GenVis
+SSC.Material vacuum
+SSC.Shape BRIK 14.4 9.6 9.6
+
+Volume SSCA
+SSCA.Visibility GenVis
+SSCA.Material al6061
+SSCA.Shape BRIK 14.4 9.6 0.465
+
+Volume SSCE
+SSCE.Visibility GenVis
+SSCE.Material electr
+SSCE.Shape BRIK 14.4 9.6 1.25
+
+Volume TPH
+TPH.Visibility GenVis
+TPH.Material isot_cu
+TPH.Shape TUBS 21.5 27 2.559 0 360 
+
+Volume BPH
+BPH.Visibility GenVis
+BPH.Material isot_cu
+BPH.Shape TUBS 33 35.5 1.488 0 360 
+
+Volume TAT
+TAT.Visibility GenVis
+TAT.Material vacuum
+TAT.Shape TUBS 0 26.5303 34.6667 0 360 
+TAT.Virtual true
+
+Volume TOWR
+TOWR.Visibility GenVis
+TOWR.Color 2
+TOWR.Material vacuum
+TOWR.Shape PCON 0 360 6 0 0 25.8953 30.8356 0 25.8953 30.8356 0 26.5303 50.3706 0 26.5303 50.3706 21.4503 26.5303 56.8706 21.4503 26.5303 
+
+Volume TALS
+TALS.Visibility GenVis
+TALS.Material al5056
+TALS.Shape PCON 0 360 4 0 25.7125 25.8953 56.0377 25.7125 25.8953 56.0377 21.4503 25.8953 56.2356 21.4503 25.8953 
+
+Volume TTHB
+TTHB.Visibility GenVis
+TTHB.Material mli
+TTHB.Shape PCON 0 360 4 30.8356 25.8953 25.9118 56.2356 25.8953 25.9118 56.2356 21.4503 25.9118 56.2521 21.4503 25.9118 
+
+Volume APU
+APU.Visibility GenVis
+APU.Material al6061
+APU.Shape BRIK 5.65 7.5 12.5
+
+Volume APUI
+APUI.Visibility GenVis
+APUI.Material vacuum
+APUI.Shape BRIK 5.45 7.3 12.3
+
+Volume APUE
+APUE.Visibility GenVis
+APUE.Material electr
+APUE.Shape BRIK 3.616 3.616 7.232
+
+Volume CBL2
+CBL2.Visibility GenVis
+CBL2.Material isot_cu
+CBL2.Shape TUBS 0 0.54 4.8764 0 360 
+
+Volume CBL3
+CBL3.Visibility GenVis
+CBL3.Material isot_cu
+CBL3.Shape TUBS 25.5 25.7125 0.131 0 360 
+
+Volume TGRS
+TGRS.Visibility GenVis
+TGRS.Material vacuum
+TGRS.Shape PCON 0 360 4 0 0 21.4503 6.5 0 21.4503 6.5 0 25.9182 18.9682 0 25.9182 
+#TGRS.Virtual true
+
+Volume OCCU
+OCCU.Visibility GenVis
+OCCU.Material vacuum
+OCCU.Shape TUBS 24.0461 25.9182 6.12013 0 90
+
+Volume OCMO
+OCMO.Visibility GenVis
+OCMO.Material molybdenum
+OCMO.Shape TUBS 24.5669 24.7193 3.81889 0 90
+
+Volume OCPB
+OCPB.Visibility GenVis
+OCPB.Material hard_lead
+OCPB.Shape TUBS 24.7193 25.9182 3.81889 0 90
+
+Volume OCSU
+OCSU.Visibility GenVis
+OCSU.Material al6061
+OCSU.Shape CONS 6.12013 24.0461 24.5669 24.3129 24.5669 0 90
+
+Volume SUNS
+SUNS.Visibility GenVis
+SUNS.Material vacuum
+SUNS.Shape CONE 5.93054 16.1963 16.2872 23.899 23.9898
+
+Volume SUNL
+SUNL.Visibility GenVis
+SUNL.Material becu
+SUNL.Shape CONE 4.73975 16.1963 16.2872 22.3524 22.4432
+
+Volume SUNU
+SUNU.Visibility GenVis
+SUNU.Material becu
+SUNU.Shape CONS 1.1908 22.3524 22.4432 23.899 23.9898 0 90
+
+Volume MTRG
+MTRG.Visibility GenVis
+MTRG.Material mg_az31b
+MTRG.Shape TUBS 12.2301 16.1963 0.74 0 360 
+
+Volume TSMR
+TSMR.Visibility GenVis
+TSMR.Material ti_5
+TSMR.Shape TUBS 16.1963 16.4 0.1 0 360 
+
+Volume PAMP
+PAMP.Visibility GenVis
+PAMP.Material al6061
+PAMP.Shape BRIK 4.75 1.3 3.25
+
+Volume PAMI
+PAMI.Visibility GenVis
+PAMI.Material vacuum
+PAMI.Shape BRIK 3.8248 1.15 3.1
+
+Volume PAME
+PAME.Visibility GenVis
+PAME.Material electr
+PAME.Shape BRIK 2.5116 0.8372 1.6744
+
+Volume CBL1
+CBL1.Visibility GenVis
+CBL1.Material isot_cu
+CBL1.Shape TUBS 12.2301 12.8 0.1 0 360 
+
+Volume DMOD
+DMOD.Visibility GenVis
+DMOD.Material vacuum
+DMOD.Shape TUBS 0 5.3975 5.60452 0 360 
+DMOD.Virtual true
+
+Volume ENCC
+ENCC.Visibility GenVis
+ENCC.Color 4
+ENCC.Material al6061
+ENCC.Shape PCON 0 360 4 0 0.298681 4.4 0.813 0.298681 4.92511 0.813 0.298681 5.3975 1.778 0.298681 5.3975 
+
+Volume HINL
+HINL.Visibility GenVis
+HINL.Material isot_cu
+HINL.Shape TUBS 4.5 4.5261 0.4825 0 360 
+
+Volume CALS
+CALS.Visibility GenVis
+CALS.Material cal_src
+CALS.Shape TUBS 1.5 2.5 0.0398 0 360 
+
+Volume MLSV
+MLSV.Visibility GenVis
+MLSV.Material molsv
+MLSV.Shape TUBS 2.5 3.201 0.0398 0 360 
+
+Volume HGEV
+HGEV.Visibility GenVis
+HGEV.Material hget
+HGEV.Shape TUBS 3.201 3.499 0.0398 0 360 
+
+Volume DENC
+DENC.Visibility GenVis
+DENC.Color 5
+DENC.Material al6061
+DENC.Shape PCON 0 360 13 0.01153 3.55092 5.3975 0.9652 3.55092 5.3975 0.9652 3.55092 3.59156 5.91058 3.55092 3.59156 5.91058 3.55092 5.08 6.54558 3.55092 5.08 6.54558 3.55092 3.75412 7.4092 3.55092 3.75412 7.4092 0 3.75412 7.46 0 3.75412 7.46 2.33172 3.75412 7.50318 2.86512 3.75412 7.6124 3.01752 3.75412 
+
+Volume INOV
+INOV.Visibility GenVis
+INOV.Material inor
+INOV.Shape TUBS 3.55092 5.3975 0.005755 0 360 
+
+Volume HINU
+HINU.Visibility GenVis
+HINU.Material isot_cu
+HINU.Shape TUBS 4.5 4.50186 0.3175 0 360 
+
+Volume SSLC
+SSLC.Visibility GenVis
+SSLC.Material steel_302
+SSLC.Shape TUBS 0.298681 2.54 0.025428 0 360 
+
+Volume TEFL
+TEFL.Visibility GenVis
+TEFL.Material teflon
+TEFL.Shape TUBS 0 3.75412 0.00762 0 360 
+
+Volume SWAL
+SWAL.Visibility GenVis
+SWAL.Material steel_302
+SWAL.Shape TUBS 4.5261 4.62518 0.107065 0 360 
+
+Volume SWAU
+SWAU.Visibility 1
+SWAU.Color 5
+SWAU.Material steel_302
+SWAU.Shape TUBS 4.50186 4.56226 0.0665 0 360 
+
+Volume TSCL
+TSCL.Visibility GenVis
+TSCL.Material ti_5
+TSCL.Shape TUBS 4.5261 4.62518 0.9651 0 360 
+
+Volume TSCU
+TSCU.Visibility GenVis
+TSCU.Color 3
+TSCU.Material ti_5
+TSCU.Shape TUBS 4.50186 4.56226 0.59944 0 360 
+
+Volume HVGF
+HVGF.Visibility 1
+HVGF.Color 3
+HVGF.Material steel_302
+#HVGF.Shape TUBS 0 0.298681 2.1082 0 360 
+HVGF.Shape TUBS 0 0.298681 1.78 0 360 
+
+Volume NIFI
+NIFI.Visibility 1
+NIFI.Color 6
+NIFI.Material nit_fil
+NIFI.Shape TUBS 0 3.55092 3.7046 0 360 
+
+Volume CONL
+CONL.Visibility GenVis
+CONL.Material al6061
+CONL.Shape CONE 0.37 2.7921 3.55092 3.53885 3.55092
+
+Volume CRGC
+CRGC.Visibility GenVis
+CRGC.Material gold
+CRGC.Shape CONE 0.37 2.79203 2.7921 3.5383 3.53885
+
+Volume CONU
+CONU.Visibility GenVis
+CONU.Material al6061
+CONU.Shape CONE 0.37 3.53885 3.55092 2.7921 3.55092
+
+Volume BOSP
+BOSP.Visibility GenVis
+BOSP.Material ti_5
+BOSP.Shape TUBS 2.7 3.55092 0.1125 0 360 
+
+Volume SHIM
+SHIM.Visibility GenVis
+SHIM.Material ti_5
+SHIM.Shape TUBS 2.7 3.55092 0.0375 0 360 
+
+Volume PODR
+PODR.Visibility GenVis
+PODR.Material ti_5
+PODR.Shape TUBS 0.962025 2.7 0.023 0 360 
+
+Volume WAVS
+WAVS.Visibility GenVis
+WAVS.Material steel_a286
+WAVS.Shape TUBS 2.7 3.55092 0.055 0 360 
+
+Volume BCAS
+BCAS.Visibility GenVis
+BCAS.Material steel_302
+BCAS.Shape TUBS 0 0.156518 1.651 0 360 
+
+Volume DETE
+DETE.Visibility GenVis
+DETE.Material germanium
+DETE.Shape PCON 0 360 6 0 0.50546 2.96076 0.466973 0.50546 3.42773 5.08 0.50546 3.42773 5.08 0 3.42773 5.62395 0 3.42773 6.09092 0 2.96076 
+
+Volume ADET
+ADET.Visibility GenVis
+ADET.Material ge_active
+ADET.Shape PCON 0 360 6 0 0.55546 2.96075 0.466973 0.55546 3.42772 5.13 0.55546 3.42772 5.13 0 3.42772 5.62395 0 3.42772 6.09091 0 2.96078 
+
+Volume COOL
+COOL.Visibility GenVis
+COOL.Material vacuum
+COOL.Shape PCON 0 360 4 0 0 20 9.16495 0 20 9.16495 0 22.86 18.3299 0 22.86 
+COOL.Virtual true
+
+Volume OSTG
+OSTG.Visibility GenVis
+OSTG.Material vacuum
+OSTG.Shape TUBS 0 22.86 2.18947 0 360 
+OSTG.Virtual true
+
+Volume OST1
+OST1.Visibility GenVis
+OST1.Material beryllium
+#OST1.Shape PCON 0 360 10 0 16.5367 16.6599 0.7112 16.5367 16.6599 0.7112 16.5367 17.3444 0.8636 16.5367 17.3444 0.8636 16.5367 16.7036 4.14274 16.8236 16.9905 4.14274 16.8239 22.86 4.16775 16.8239 22.86 4.16775 16.8409 17.272 4.37895 16.8409 17.272 
+OST1.Shape PCON 0 360 10 0 16.5367 16.6599 0.7112 16.5367 16.6599 0.7112 16.5367 17.3444 0.8636 16.5367 17.3444 0.8636 16.5367 16.7036 4.14274 16.8236 16.9905 4.14274 16.8239 22.86 4.16775 16.8239 22.86 4.16775 16.8409 17.272 4.32 16.8409 17.272
+
+Volume OST2
+OST2.Visibility GenVis
+OST2.Material beryllium
+OST2.Shape TUBS 22.7025 22.86 0.31877 0 360 
+
+Volume OPNT
+OPNT.Visibility GenVis
+OPNT.Material paint
+OPNT.Shape TUBS 17.272 22.86 0.00508 0 360 
+
+Volume OSUP
+OSUP.Visibility GenVis
+OSUP.Material vacuum
+OSUP.Shape TUBS 0 17.3595 7.2517 0 360 
+OSUP.Virtual true
+
+Volume OSU1
+OSU1.Visibility GenVis
+OSU1.Material mg_az31b
+OSU1.Shape PCON 0 360 12 0 5.08 6.0325 0.31496 5.08 6.0325 0.31496 5.08 5.26685 2.37998 5.08 5.26685 2.37998 4.28625 5.26685 2.99974 4.28625 5.26685 2.99974 5.08 5.26685 5.93852 9.2075 9.40014 5.93852 9.2075 12.2301 6.096 9.2075 12.2301 6.096 9.2075 9.89918 8.1407 9.2075 9.89918 
+
+Volume OSM1
+OSM1.Visibility GenVis
+OSM1.Material mylar
+OSM1.Shape PCON 0 360 2 2.99974 5.26685 5.27574 5.93852 9.40014 9.40903 
+
+Volume OSM2
+OSM2.Visibility GenVis
+OSM2.Material mylar
+OSM2.Shape PCON 0 360 2 2.99974 5.07555 5.08 5.93852 9.20306 9.2075 
+
+Volume OSU2
+OSU2.Visibility GenVis
+OSU2.Material mg_az31b
+OSU2.Shape PCON 0 360 11 8.1407 9.2075 12.2301 8.50646 9.2075 12.2301 8.50646 10.1029 10.9868 8.91032 10.6796 10.9868 12.3419 15.5804 15.8772 13.0302 16.5367 16.8588 13.7287 16.5367 16.8562 13.7287 16.6719 16.8562 14.351 16.6719 16.8605 14.351 16.6719 17.3462 14.5034 16.6719 17.3595 
+
+Volume OSM3
+OSM3.Visibility GenVis
+OSM3.Material mylar
+OSM3.Shape PCON 0 360 4 8.50646 10.1002 10.1029 8.91032 10.677 10.6796 12.3419 15.5777 15.5804 13.0302 16.534 16.5367 
+
+Volume ISTG
+ISTG.Visibility GenVis
+ISTG.Material vacuum
+ISTG.Shape TUBS 0 16.51 1.00457 0 360 
+ISTG.Virtual true
+
+Volume ISTA
+ISTA.Visibility 1
+ISTA.Color 2
+ISTA.Material beryllium
+ISTA.Shape PCON 0 360 8 0 5.08508 5.55498 0.635 5.08508 6.81764 0.635 3.81 6.81764 0.87884 3.81 7.3025 1.19888 3.81 9.90902 1.19888 5.08508 9.90902 1.8923 14.8391 16.51 2.00914 16.51 16.5101 
+
+Volume ISP1
+ISP1.Visibility 1
+ISP1.Color 3
+ISP1.Material paint
+ISP1.Shape TUBS 3.81 4.93943 0.00508 0 360 
+
+Volume ISP2
+ISP2.Visibility GenVis
+ISP2.Material paint
+ISP2.Shape CONE 0.40513 4.93944 5.08508 16.3644 16.51
+
+Volume ISUP
+ISUP.Visibility GenVis
+ISUP.Material vacuum
+ISUP.Shape TUBS 0 8.8011 2.6747 0 360 
+ISUP.Virtual true
+
+Volume ISU1
+ISU1.Visibility GenVis
+ISU1.Material mg_az31b
+ISU1.Shape PCON 0 360 8 0 5.02158 5.26923 2.40033 5.02158 5.26923 2.5781 5.02158 8.8011 2.89917 5.02158 8.8011 2.89917 5.02158 6.43001 2.921 5.02158 6.43001 2.921 5.40067 6.43001 4.8514 5.40067 6.43001 
+
+Volume ISU2
+ISU2.Visibility GenVis
+ISU2.Material mg_az31b
+ISU2.Shape TUBS 8.5471 8.8011 0.976117 0 360 
+
+Volume DGRG
+DGRG.Visibility GenVis
+DGRG.Material al6061
+DGRG.Shape TUBS 5 6.43001 0.213 0 360 
+
+Volume TSDR
+TSDR.Visibility GenVis
+TSDR.Material ti_5
+TSDR.Shape TUBS 5 6.43001 0.036 0 360 
+
+Volume HSKC
+HSKC.Visibility GenVis
+HSKC.Material vacuum
+HSKC.Shape PCON 0 360 4 0 0 5.08 0.747 0 5.08 0.747 0 4.28625 1.328 0 4.28625 
+HSKC.Virtual true
+
+Volume HSKB
+HSKB.Visibility GenVis
+HSKB.Material mg_az31b
+HSKB.Shape PCON 0 360 4 0 0 5.08 0.5 0 5.08 0.5 0 4.28625 1.081 0 4.28625 
+
+Volume HSKE
+HSKE.Visibility GenVis
+HSKE.Material electr
+HSKE.Shape TUBS 0 5.08 0.1235 0 360 
+
+Volume TSHS
+TSHS.Visibility GenVis
+TSHS.Material ti_5
+TSHS.Shape TUBS 4.6 4.9 0.115 0 360 
+
+Volume HSBK
+HSBK.Visibility GenVis
+HSBK.Material mg_az31b
+HSBK.Shape PCON 0 360 4 0 0 6.0325 0.15875 0 6.0325 0.15875 0 5.08 0.3175 0 5.08 
+
+Volume TSBK
+TSBK.Visibility GenVis
+TSBK.Material ti_5
+TSBK.Shape TUBS 5.4 5.6 0.0535 0 360 
+
+
+WIND.Copy WIND_Copy1
+WIND_Copy1.Position 0 0 -111.871
+WIND_Copy1.Mother VAC0
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+WIND.Many true
+WIND.Visibility 0
+
+BDYC.Copy BDYC_Copy1
+BDYC_Copy1.Position 0 0 191.135
+BDYC_Copy1.Mother WIND
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+BDYC.Many true
+
+BCCH.Copy BCCH_Copy1
+BCCH_Copy1.Position -39.43 -80.57 0.9525
+BCCH_Copy1.Mother BDYC
+
+BCTH.Copy BCTH_Copy1
+BCTH_Copy1.Position 66 0 0.9525
+BCTH_Copy1.Rotation 90 270 180 0 90 0
+BCTH_Copy1.Mother BDYC
+
+BCTH.Copy BCTH_Copy2
+BCTH_Copy2.Position 33 57.16 0.9525
+BCTH_Copy2.Rotation 90 330 180 0 90 60
+BCTH_Copy2.Mother BDYC
+
+BCTH.Copy BCTH_Copy3
+BCTH_Copy3.Position -66 0 0.9525
+BCTH_Copy3.Rotation 90 90 180 0 90 180
+BCTH_Copy3.Mother BDYC
+
+BCTH.Copy BCTH_Copy4
+BCTH_Copy4.Position 33 -57.16 0.9525
+BCTH_Copy4.Rotation 90 210 180 0 90 300
+BCTH_Copy4.Mother BDYC
+
+BDYS.Copy BDYS_Copy1
+BDYS_Copy1.Position 0 0 103.04
+BDYS_Copy1.Mother WIND
+
+UEP.Copy UEP_Copy1
+UEP_Copy1.Position 0 0 159.029
+UEP_Copy1.Mother WIND
+
+LEP.Copy LEP_Copy1
+LEP_Copy1.Position 0 0 97.4344
+LEP_Copy1.Mother WIND
+
+BDYB.Copy BDYB_Copy1
+BDYB_Copy1.Position 0 0 13.04
+BDYB_Copy1.Mother WIND
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+BDYB.Many true
+
+TBTC.Copy TBTC_Copy1
+TBTC_Copy1.Position 0 0 193.049
+#TBTC_Copy1.Position 0 0 193.048
+TBTC_Copy1.Mother WIND
+TBTC_Copy1.Color 1
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+TBTC.Many true
+
+TBBC.Copy TBBC_Copy1
+TBBC_Copy1.Position 0 0 13.022
+#TBBC_Copy1.Position 0 0 13.0235
+TBBC_Copy1.Mother WIND
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+TBBC.Many true
+
+SOAR.Copy SOAR_Copy1
+SOAR_Copy1.Position 0 0 103.04
+SOAR_Copy1.Mother WIND
+
+SOAH.Copy SOAH_Copy1
+SOAH_Copy1.Position 0 0 103.04
+SOAH_Copy1.Mother WIND
+
+CTCN.Copy CTCN_Copy1
+CTCN_Copy1.Position 0 0 96.52
+CTCN_Copy1.Mother WIND
+
+CCR1.Copy CCR1_Copy1
+CCR1_Copy1.Position 0 0 191.964
+CCR1_Copy1.Mother WIND
+
+CCR2.Copy CCR2_Copy1
+CCR2_Copy1.Position 0 0 159.858
+CCR2_Copy1.Mother WIND
+
+CCR3.Copy CCR3_Copy1
+CCR3_Copy1.Position 0 0 98.2634
+CCR3_Copy1.Mother WIND
+
+CCR4.Copy CCR4_Copy1
+CCR4_Copy1.Position 0 0 56.0662
+CCR4_Copy1.Mother WIND
+
+CCR5.Copy CCR5_Copy1
+CCR5_Copy1.Position 0 0 13.869
+CCR5_Copy1.Mother WIND
+
+TKWL.Copy TKWL_Copy1
+TKWL_Copy1.Position 0 0 0
+TKWL_Copy1.Mother HYTK
+
+PROP.Copy PROP_Copy1
+PROP_Copy1.Position 0 0 0
+PROP_Copy1.Mother HYTK
+
+HYTK.Copy HYTK_Copy1
+HYTK_Copy1.Position 62.75 0 129.819
+HYTK_Copy1.Mother WIND
+
+HYTK.Copy HYTK_Copy2
+HYTK_Copy2.Position 31.375 54.3431 129.819
+HYTK_Copy2.Mother WIND
+
+HYTK.Copy HYTK_Copy3
+HYTK_Copy3.Position -31.375 54.3431 129.819
+HYTK_Copy3.Mother WIND
+
+HYTK.Copy HYTK_Copy4
+HYTK_Copy4.Position -62.75 0 129.819
+HYTK_Copy4.Mother WIND
+
+HYTK.Copy HYTK_Copy5
+HYTK_Copy5.Position -31.375 -54.3431 129.819
+HYTK_Copy5.Mother WIND
+
+HYTK.Copy HYTK_Copy6
+HYTK_Copy6.Position 31.375 -54.3431 129.819
+HYTK_Copy6.Mother WIND
+
+BKHD.Copy BKHD_Copy1
+BKHD_Copy1.Position 0 75.2 129.819
+BKHD_Copy1.Rotation 90 270 0 0 90 180
+BKHD_Copy1.Mother WIND
+
+BKHD.Copy BKHD_Copy2
+BKHD_Copy2.Position -65.1251 37.6 129.819
+BKHD_Copy2.Rotation 90 330 0 0 90 240
+BKHD_Copy2.Mother WIND
+
+BKHD.Copy BKHD_Copy3
+BKHD_Copy3.Position -65.1251 -37.6 129.819
+BKHD_Copy3.Rotation 90 30 0 0 90 300
+BKHD_Copy3.Mother WIND
+
+BKHD.Copy BKHD_Copy4
+BKHD_Copy4.Position 0 -75.2 129.819
+BKHD_Copy4.Rotation 90 90 0 0 90 0
+BKHD_Copy4.Mother WIND
+
+BKHD.Copy BKHD_Copy5
+BKHD_Copy5.Position 65.1251 -37.6 129.819
+BKHD_Copy5.Rotation 90 150 0 0 90 60
+BKHD_Copy5.Mother WIND
+
+BKHD.Copy BKHD_Copy6
+BKHD_Copy6.Position 65.1251 37.6 129.819
+BKHD_Copy6.Rotation 90 210 0 0 90 120
+BKHD_Copy6.Mother WIND
+
+BIM.Copy BIM_Copy1
+BIM_Copy1.Position 114.5 0 103.732
+BIM_Copy1.Mother WIND
+
+BIM.Copy BIM_Copy2
+BIM_Copy2.Position 114.5 0 155.906
+BIM_Copy2.Mother WIND
+
+BIM.Copy BIM_Copy3
+BIM_Copy3.Position -5 113.5 103.732
+BIM_Copy3.Mother WIND
+
+BIM.Copy BIM_Copy4
+BIM_Copy4.Position -5 113.5 155.906
+BIM_Copy4.Mother WIND
+
+BIM.Copy BIM_Copy5
+BIM_Copy5.Position 96.5 58 188.012
+BIM_Copy5.Mother WIND
+
+BIM.Copy BIM_Copy6
+BIM_Copy6.Position 86.7 -72.6 188.012
+BIM_Copy6.Mother WIND
+
+BIM.Copy BIM_Copy7
+BIM_Copy7.Position -86.7 72.6 188.012
+BIM_Copy7.Mother WIND
+
+BIM.Copy BIM_Copy8
+BIM_Copy8.Position -86.7 -72.6 188.012
+BIM_Copy8.Mother WIND
+
+BIM.Copy BIM_Copy9
+BIM_Copy9.Position 86.7 72.6 18.068
+BIM_Copy9.Mother WIND
+
+BIM.Copy BIM_Copy10
+BIM_Copy10.Position 86.7 -72.6 18.068
+BIM_Copy10.Mother WIND
+
+BIM.Copy BIM_Copy11
+BIM_Copy11.Position -86.7 72.6 18.068
+BIM_Copy11.Mother WIND
+
+BIM.Copy BIM_Copy12
+BIM_Copy12.Position -86.7 -72.6 18.068
+BIM_Copy12.Mother WIND
+
+DPU.Copy DPU_Copy1
+DPU_Copy1.Position -78 53 167.704
+DPU_Copy1.Rotation 90 40 90 130 0 0
+DPU_Copy1.Mother WIND
+
+DPUI.Copy DPUI_Copy1
+DPUI_Copy1.Position 0 0 0
+DPUI_Copy1.Mother DPU
+
+DPUE.Copy DPUE_Copy1
+DPUE_Copy1.Position 0 0 0
+DPUE_Copy1.Mother DPUI
+
+KBEW.Copy KBEW_Copy1
+KBEW_Copy1.Position 0 0 30.1475
+KBEW_Copy1.Mother KNS
+
+KNAI.Copy KNAI_Copy1
+KNAI_Copy1.Position 0 0 26.105
+KNAI_Copy1.Mother KNS
+
+KSLD.Copy KSLD_Copy1
+KSLD_Copy1.Position 0 0 26.3375
+KSLD_Copy1.Mother KNS
+
+KPBG.Copy KPBG_Copy1
+KPBG_Copy1.Position 0 0 21.295
+KPBG_Copy1.Mother KNS
+
+KPMT.Copy KPMT_Copy1
+KPMT_Copy1.Position 0 0 15.295
+KPMT_Copy1.Mother KNS
+
+KALH.Copy KALH_Copy1
+KALH_Copy1.Position 0 0 0
+KALH_Copy1.Mother KNS
+
+KEL1.Copy KEL1_Copy1
+KEL1_Copy1.Position 0 0 6
+KEL1_Copy1.Mother KNS
+
+KEL2.Copy KEL2_Copy1
+KEL2_Copy1.Position 0 0 15
+KEL2_Copy1.Mother KNS
+
+KNS.Copy KNS_Copy1
+#KNS_Copy1.Position -40.3 -40.3 69.1
+KNS_Copy1.Position -40.3 -40.3 82
+KNS_Copy1.Mother VAC0
+
+TKMB.Copy TKMB_Copy1
+TKMB_Copy1.Position -40.3 -40.3 59.7166
+TKMB_Copy1.Mother VAC0
+
+KNS.Copy KNS_Copy2
+#KNS_Copy2.Position -68.4 38.7 -86.1
+KNS_Copy2.Position -68.4 38.7 -99
+KNS_Copy2.Rotation 90 180 90 90 180 0
+KNS_Copy2.Mother VAC0
+
+BKMB.Copy BKMB_Copy1
+BKMB_Copy1.Position -68.4 38.7 -83.304
+BKMB_Copy1.Mother VAC0
+
+KEB.Copy KEB_Copy1
+KEB_Copy1.Position -5 72 86.6344
+KEB_Copy1.Mother WIND
+
+KEBA.Copy KEBA_Copy1
+KEBA_Copy1.Position 0 0 -10.1773
+KEBA_Copy1.Mother KEB
+
+KEBE.Copy KEBE_Copy1
+KEBE_Copy1.Position 0 0 9.156
+KEBE_Copy1.Mother KEB
+
+LEMT.Copy LEMT_Copy1
+LEMT_Copy1.Position -54.59 -90.86 89.4344
+LEMT_Copy1.Rotation 90 329 90 59 0 0
+LEMT_Copy1.Mother WIND
+
+LEMA.Copy LEMA_Copy1
+LEMA_Copy1.Position 0 0 -6.975
+LEMA_Copy1.Mother LEMT
+
+LEME.Copy LEME_Copy1
+LEME_Copy1.Position 0 0 5.235
+LEME_Copy1.Mother LEMT
+
+ELT.Copy ELT_Copy1
+ELT_Copy1.Position 49.8 -93.6 82.4344
+ELT_Copy1.Rotation 90 28 90 118 0 0
+ELT_Copy1.Mother WIND
+
+ELTA.Copy ELTA_Copy1
+ELTA_Copy1.Position 0 0 -12.324
+ELTA_Copy1.Mother ELT
+
+ELTE.Copy ELTE_Copy1
+ELTE_Copy1.Position 0 0 7.784
+ELTE_Copy1.Mother ELT
+
+STP.Copy STP_Copy1
+#STP_Copy1.Position 33.21 -96.44 108.109
+STP_Copy1.Position 33.21 -96.44 108.12
+STP_Copy1.Rotation 90 19 90 109 0 0
+STP_Copy1.Mother WIND
+
+STPA.Copy STPA_Copy1
+STPA_Copy1.Position 0 0 -7.261
+STPA_Copy1.Mother STP
+
+STPE.Copy STPE_Copy1
+STPE_Copy1.Position 0 0 6.854
+STPE_Copy1.Mother STP
+
+SMW.Copy SMW_Copy1
+#SMW_Copy1.Position 67.18 67.18 176.704
+SMW_Copy1.Position 67.18 67.18 176.65
+SMW_Copy1.Rotation 90 45 90 135 0 0
+SMW_Copy1.Mother WIND
+
+SMWI.Copy SMWI_Copy1
+SMWI_Copy1.Position 0 0 0
+SMWI_Copy1.Mother SMW
+
+SMWE.Copy SMWE_Copy1
+SMWE_Copy1.Position 0 0 0
+SMWE_Copy1.Mother SMWI
+
+SMDP.Copy SMDP_Copy1
+SMDP_Copy1.Position 39 39 171.704
+SMDP_Copy1.Rotation 90 45 90 135 0 0
+SMDP_Copy1.Mother WIND
+
+SMDI.Copy SMDI_Copy1
+SMDI_Copy1.Position 0 0 0
+SMDI_Copy1.Mother SMDP
+
+SMDE.Copy SMDE_Copy1
+SMDE_Copy1.Position 0 0 0
+SMDE_Copy1.Mother SMDI
+
+SMC.Copy SMC_Copy1
+SMC_Copy1.Position 36 87.5 79.4844
+SMC_Copy1.Mother WIND
+
+SMCI.Copy SMCI_Copy1
+SMCI_Copy1.Position 0 0 0
+SMCI_Copy1.Mother SMC
+
+SMCE.Copy SMCE_Copy1
+SMCE_Copy1.Position 0 0 0
+SMCE_Copy1.Mother SMCI
+
+SMAE.Copy SMAE_Copy1
+SMAE_Copy1.Position 0 98.4 90.8344
+SMAE_Copy1.Mother WIND
+
+SMAI.Copy SMAI_Copy1
+SMAI_Copy1.Position 0 0 0
+SMAI_Copy1.Mother SMAE
+
+SMEE.Copy SMEE_Copy1
+SMEE_Copy1.Position 0 0 0
+SMEE_Copy1.Mother SMAI
+
+SMMS.Copy SMMS_Copy1
+SMMS_Copy1.Position 63 54 84.4844
+SMMS_Copy1.Mother WIND
+
+SMMI.Copy SMMI_Copy1
+SMMI_Copy1.Position 0 0 0
+SMMI_Copy1.Mother SMMS
+
+SMME.Copy SMME_Copy1
+SMME_Copy1.Position 0 0 0
+SMME_Copy1.Mother SMMI
+
+PLEL.Copy PLEL_Copy1
+PLEL_Copy1.Position -8.0 94.8 175.204
+PLEL_Copy1.Mother WIND
+
+PLPB.Copy PLPB_Copy1
+PLPB_Copy1.Position 0 151.6 48.7458
+PLPB_Copy1.Rotation 90 180 0 0 90 90
+PLPB_Copy1.Mother VAC0
+
+PLPS.Copy PLPS_Copy1
+PLPS_Copy1.Position 0 0 -17.69
+PLPS_Copy1.Mother PLPB
+
+PLPA.Copy PLPA_Copy1
+PLPA_Copy1.Position 0 0 13.81
+PLPA_Copy1.Mother PLPB
+
+PLEB.Copy PLEB_Copy1
+PLEB_Copy1.Position 0 -141.1 48.7458
+PLEB_Copy1.Rotation 90 180 0 0 90 90
+PLEB_Copy1.Mother VAC0
+
+PLES.Copy PLES_Copy1
+PLES_Copy1.Position 0 0 7.19
+PLES_Copy1.Mother PLEB
+
+PLEA.Copy PLEA_Copy1
+PLEA_Copy1.Position 0 0 -13.81
+PLEA_Copy1.Mother PLEB
+
+PPS.Copy PPS_Copy1
+PPS_Copy1.Position 0 171.2 63.8708
+PPS_Copy1.Mother VAC0
+
+PES.Copy PES_Copy1
+PES_Copy1.Position 0 -164.3 63.8708
+PES_Copy1.Mother VAC0
+
+FCPA.Copy FCPA_Copy1
+FCPA_Copy1.Position 0 0 -10.489
+FCPA_Copy1.Mother FCP
+
+FCPE.Copy FCPE_Copy1
+FCPE_Copy1.Position 0 0 10.0455
+FCPE_Copy1.Mother FCP
+
+FCP.Copy FCP_Copy1
+FCP_Copy1.Position -52.5 90.93 86.6844
+FCP_Copy1.Rotation 90 120 90 210 0 0
+FCP_Copy1.Mother WIND
+
+FCP.Copy FCP_Copy2
+FCP_Copy2.Position 52.5 -90.93 172.954
+FCP_Copy2.Rotation 90 300 90 30 0 0
+FCP_Copy2.Mother WIND
+
+VSA.Copy VSA_Copy1
+VSA_Copy1.Position 0 0 -10.37
+VSA_Copy1.Mother VS
+
+VSE.Copy VSE_Copy1
+VSE_Copy1.Position 0 0 9.725
+VSE_Copy1.Mother VS
+
+VS.Copy VS_Copy1
+VS_Copy1.Position -74.95 74.95 86.6844
+VS_Copy1.Rotation 90 135 90 225 0 0
+VS_Copy1.Mother WIND
+
+VS.Copy VS_Copy2
+VS_Copy2.Position 74.95 -74.95 172.954
+VS_Copy2.Rotation 90 315 90 45 0 0
+VS_Copy2.Mother WIND
+
+STR.Copy STR_Copy1
+STR_Copy1.Position -101.26 42.98 91.1344
+STR_Copy1.Rotation 90 157 90 247 0 0
+STR_Copy1.Mother WIND
+
+STRA.Copy STRA_Copy1
+STRA_Copy1.Position 0 0 -5.888
+STRA_Copy1.Mother STR
+
+STRE.Copy STRE_Copy1
+STRE_Copy1.Position 0 0 5.19
+STRE_Copy1.Mother STR
+
+SDP.Copy SDP_Copy1
+SDP_Copy1.Position -31 103.2 154.029
+SDP_Copy1.Mother WIND
+
+SDPA.Copy SDPA_Copy1
+SDPA_Copy1.Position 0 0 -4.591
+SDPA_Copy1.Mother SDP
+
+SDPE.Copy SDPE_Copy1
+SDPE_Copy1.Position 0 0 3.897
+SDPE_Copy1.Mother SDP
+
+WV1.Copy WV1_Copy1
+WV1_Copy1.Position -60 18 87.3844
+WV1_Copy1.Mother WIND
+
+WV1I.Copy WV1I_Copy1
+WV1I_Copy1.Position 0 0 0
+WV1I_Copy1.Mother WV1
+
+WV1E.Copy WV1E_Copy1
+WV1E_Copy1.Position 0 0 0
+WV1E_Copy1.Mother WV1I
+
+WV2.Copy WV2_Copy1
+WV2_Copy1.Position -60 40.8 81.4844
+WV2_Copy1.Mother WIND
+
+WV2I.Copy WV2I_Copy1
+WV2I_Copy1.Position 0 0 0
+WV2I_Copy1.Mother WV2
+
+WV2E.Copy WV2E_Copy1
+WV2E_Copy1.Position 0 0 0
+WV2E_Copy1.Mother WV2I
+
+WWBI.Copy WWBI_Copy1
+WWBI_Copy1.Position 0 0 0
+WWBI_Copy1.Mother WWBM
+
+WWBM.Copy WWBM_Copy1
+WWBM_Copy1.Position 76 76 122.109
+WWBM_Copy1.Rotation 90 45 90 135 0 0
+WWBM_Copy1.Mother WIND
+
+WWBM.Copy WWBM_Copy2
+WWBM_Copy2.Position -76 -76 122.109
+WWBM_Copy2.Rotation 90 45 90 135 0 0
+WWBM_Copy2.Mother WIND
+
+WWBM.Copy WWBM_Copy3
+WWBM_Copy3.Position -76 76 122.109
+WWBM_Copy3.Rotation 90 135 90 225 0 0
+WWBM_Copy3.Mother WIND
+
+WWBM.Copy WWBM_Copy4
+WWBM_Copy4.Position 76 -76 122.109
+WWBM_Copy4.Rotation 90 135 90 225 0 0
+WWBM_Copy4.Mother WIND
+
+WABI.Copy WABI_Copy1
+WABI_Copy1.Position 0 0 0
+WABI_Copy1.Mother WABM
+
+WABM.Copy WABM_Copy1
+WABM_Copy1.Position 0 0 167.58
+WABM_Copy1.Mother WIND
+
+WABM.Copy WABM_Copy2
+WABM_Copy2.Position 0 0 38.49
+WABM_Copy2.Mother WIND
+
+WAMI.Copy WAMI_Copy1
+WAMI_Copy1.Position 0 0 0
+WAMI_Copy1.Mother WAMP
+
+WAME.Copy WAME_Copy1
+WAME_Copy1.Position 0 0 0
+WAME_Copy1.Mother WAMI
+
+WAMP.Copy WAMP_Copy1
+WAMP_Copy1.Position 88.89 88.89 17.9483
+WAMP_Copy1.Rotation 90 45 90 135 0 0
+WAMP_Copy1.Mother VAC0
+
+WAMP.Copy WAMP_Copy2
+WAMP_Copy2.Position -88.89 -88.89 17.9483
+WAMP_Copy2.Rotation 90 45 90 135 0 0
+WAMP_Copy2.Mother VAC0
+
+WAMP.Copy WAMP_Copy3
+WAMP_Copy3.Position -88.89 88.89 17.9483
+WAMP_Copy3.Rotation 90 135 90 225 0 0
+WAMP_Copy3.Mother VAC0
+
+WAMP.Copy WAMP_Copy4
+WAMP_Copy4.Position 88.89 -88.89 17.9483
+WAMP_Copy4.Rotation 90 135 90 225 0 0
+WAMP_Copy4.Mother VAC0
+
+WAMP.Copy WAMP_Copy5
+WAMP_Copy5.Position 0 0 86.79
+#WAMP_Copy5.Position 0 0 86.7689
+WAMP_Copy5.Rotation 0 0 90 180 90 270
+WAMP_Copy5.Mother VAC0
+WAMP_Copy5.Visibility GenVis
+
+WAMP.Copy WAMP_Copy6
+WAMP_Copy6.Position 0 0 -104.431
+WAMP_Copy6.Rotation 0 0 90 180 90 270
+WAMP_Copy6.Mother VAC0
+
+MFE.Copy MFE_Copy1
+MFE_Copy1.Position 97.2 33.6 89.0344
+MFE_Copy1.Mother WIND
+
+MFEA.Copy MFEA_Copy1
+MFEA_Copy1.Position 0 0 -8.116
+MFEA_Copy1.Mother MFE
+
+MFEE.Copy MFEE_Copy1
+MFEE_Copy1.Position 0 0 7.634
+MFEE_Copy1.Mother MFE
+
+LYBI.Copy LYBI_Copy1
+LYBI_Copy1.Position 0 0 0
+LYBI_Copy1.Mother LYBC
+
+LYBC.Copy LYBC_Copy1
+LYBC_Copy1.Position 96 0 77.6344
+LYBC_Copy1.Mother WIND
+
+LYBC.Copy LYBC_Copy2
+LYBC_Copy2.Position -96 0 77.6344
+LYBC_Copy2.Mother WIND
+
+LYBH.Copy LYBH_Copy1
+LYBH_Copy1.Position 0 0 0
+LYBH_Copy1.Mother LYB
+
+LYBB.Copy LYBB_Copy1
+LYBB_Copy1.Position 0 0 0
+LYBB_Copy1.Mother LYB
+
+LYB.Copy LYB_Copy1
+LYB_Copy1.Position 145.1 0 -34.2367
+LYB_Copy1.Rotation 90 90 0 0 90 0
+LYB_Copy1.Mother VAC0
+
+LYB.Copy LYB_Copy2
+LYB_Copy2.Position -145.1 0 -34.2367
+LYB_Copy2.Rotation 90 90 0 0 90 0
+LYB_Copy2.Mother VAC0
+
+BATS.Copy BATS_Copy1
+BATS_Copy1.Position 0 0 -10.205
+BATS_Copy1.Mother BATT
+
+BATB.Copy BATB_Copy1
+BATB_Copy1.Position 0 0 0
+BATB_Copy1.Mother BATT
+
+BATE.Copy BATE_Copy1
+BATE_Copy1.Position 0 0 11.324
+BATE_Copy1.Mother BATT
+
+BATT.Copy BATT_Copy1
+BATT_Copy1.Position 16 100 147.529
+BATT_Copy1.Mother WIND
+
+BATT.Copy BATT_Copy2
+BATT_Copy2.Position 16 -100 147.529
+BATT_Copy2.Mother WIND
+
+BATT.Copy BATT_Copy3
+BATT_Copy3.Position -16 -100 147.529
+BATT_Copy3.Mother WIND
+
+GTM.Copy GTM_Copy1
+GTM_Copy1.Position 101 0 150.529
+GTM_Copy1.Mother WIND
+
+GTMA.Copy GTMA_Copy1
+GTMA_Copy1.Position 0 0 -7.762
+GTMA_Copy1.Mother GTM
+
+GTME.Copy GTME_Copy1
+GTME_Copy1.Position 0 0 6.51
+GTME_Copy1.Mother GTM
+
+DTRA.Copy DTRA_Copy1
+DTRA_Copy1.Position 0 0 -7.54
+DTRA_Copy1.Mother DTR
+
+DTRE.Copy DTRE_Copy1
+DTRE_Copy1.Position 0 0 5.911
+DTRE_Copy1.Mother DTR
+
+DTR.Copy DTR_Copy1
+DTR_Copy1.Position 91 31 150.529
+DTR_Copy1.Mother WIND
+
+DTR.Copy DTR_Copy2
+DTR_Copy2.Position 91 -31 150.529
+DTR_Copy2.Mother WIND
+
+RFAA.Copy RFAA_Copy1
+RFAA_Copy1.Position 0 0 -8.921
+RFAA_Copy1.Mother RFA
+
+RFAE.Copy RFAE_Copy1
+RFAE_Copy1.Position 0 0 8.788
+RFAE_Copy1.Mother RFA
+
+RFA.Copy RFA_Copy1
+RFA_Copy1.Position 94 14 171.204
+RFA_Copy1.Mother WIND
+
+RFA.Copy RFA_Copy2
+RFA_Copy2.Position 94 -14 171.204
+RFA_Copy2.Mother WIND
+
+TRSA.Copy TRSA_Copy1
+TRSA_Copy1.Position 0 0 -5.289
+TRSA_Copy1.Mother TRSP
+
+TRSE.Copy TRSE_Copy1
+TRSE_Copy1.Position 0 0 4.083
+TRSE_Copy1.Mother TRSP
+
+TRSP.Copy TRSP_Copy1
+TRSP_Copy1.Position 89 34 168.204
+TRSP_Copy1.Mother WIND
+
+TRSP.Copy TRSP_Copy2
+TRSP_Copy2.Position 89 -34 168.204
+TRSP_Copy2.Mother WIND
+
+CDU.Copy CDU_Copy1
+CDU_Copy1.Position 0 53 170.704
+CDU_Copy1.Mother WIND
+
+CDUI.Copy CDUI_Copy1
+CDUI_Copy1.Position 0 0 -7.787
+CDUI_Copy1.Mother CDU
+
+CDUE.Copy CDUE_Copy1
+CDUE_Copy1.Position 0 0 6.577
+CDUE_Copy1.Mother CDU
+
+PRA.Copy PRA_Copy1
+PRA_Copy1.Position -48 36 165.704
+PRA_Copy1.Mother WIND
+
+PRAA.Copy PRAA_Copy1
+PRAA_Copy1.Position 0 0 -3.268
+PRAA_Copy1.Mother PRA
+
+PRAE.Copy PRAE_Copy1
+PRAE_Copy1.Position 0 0 2.875
+PRAE_Copy1.Mother PRA
+
+CAPA.Copy CAPA_Copy1
+CAPA_Copy1.Position 0 0 -6.188
+CAPA_Copy1.Mother CAP
+
+CAPE.Copy CAPE_Copy1
+CAPE_Copy1.Position 0 0 4.81
+CAPE_Copy1.Mother CAP
+
+CAP.Copy CAP_Copy1
+CAP_Copy1.Position -48 11 169.204
+CAP_Copy1.Mother WIND
+
+CAP.Copy CAP_Copy2
+CAP_Copy2.Position -48 -11 169.204
+CAP_Copy2.Mother WIND
+
+PSE.Copy PSE_Copy1
+PSE_Copy1.Position -90 0 172.204
+PSE_Copy1.Mother WIND
+
+PSEA.Copy PSEA_Copy1
+PSEA_Copy1.Position 0 0 -9.7
+PSEA_Copy1.Mother PSE
+
+PSEE.Copy PSEE_Copy1
+PSEE_Copy1.Position 0 0 9.191
+PSEE_Copy1.Mother PSE
+
+BCA.Copy BCA_Copy1
+BCA_Copy1.Position -53 -70 167.704
+BCA_Copy1.Mother WIND
+
+BCAI.Copy BCAI_Copy1
+BCAI_Copy1.Position 0 0 0
+BCAI_Copy1.Mother BCA
+
+BCAE.Copy BCAE_Copy1
+BCAE_Copy1.Position 0 0 0
+BCAE_Copy1.Mother BCAI
+
+RXO.Copy RXO_Copy1
+RXO_Copy1.Position -14 -48 168.204
+RXO_Copy1.Mother WIND
+
+RXOA.Copy RXOA_Copy1
+RXOA_Copy1.Position 0 0 -5.7
+RXOA_Copy1.Mother RXO
+
+RXOE.Copy RXOE_Copy1
+RXOE_Copy1.Position 0 0 5.192
+RXOE_Copy1.Mother RXO
+
+HRS.Copy HRS_Copy1
+HRS_Copy1.Position 29 100 105.609
+HRS_Copy1.Mother WIND
+
+HRSA.Copy HRSA_Copy1
+HRSA_Copy1.Position 0 0 -4.832
+HRSA_Copy1.Mother HRS
+
+HRSE.Copy HRSE_Copy1
+HRSE_Copy1.Position 0 0 4.546
+HRSE_Copy1.Mother HRS
+
+SSEA.Copy SSEA_Copy1
+SSEA_Copy1.Position 0 0 -2.658
+SSEA_Copy1.Mother SSE
+
+SSEE.Copy SSEE_Copy1
+SSEE_Copy1.Position 0 0 1.229
+SSEE_Copy1.Mother SSE
+
+SSE.Copy SSE_Copy1
+SSE_Copy1.Position 45 88 104.109
+SSE_Copy1.Mother WIND
+
+SSE.Copy SSE_Copy2
+SSE_Copy2.Position 54 88 104.109
+SSE_Copy2.Mother WIND
+
+SSC.Copy SSC_Copy1
+SSC_Copy1.Position 44.4 0 171.804
+SSC_Copy1.Mother WIND
+
+SSCA.Copy SSCA_Copy1
+SSCA_Copy1.Position 0 0 -9.135
+SSCA_Copy1.Mother SSC
+
+SSCE.Copy SSCE_Copy1
+SSCE_Copy1.Position 0 0 8.35
+SSCE_Copy1.Mother SSC
+
+TPH.Copy TPH_Copy1
+TPH_Copy1.Position 0 0 164.763
+TPH_Copy1.Mother WIND
+
+BPH.Copy BPH_Copy1
+BPH_Copy1.Position 0 0 95.9464
+BPH_Copy1.Mother WIND
+
+TAT.Copy TAT_Copy1
+TAT_Copy1.Position -45 77.9423 85
+TAT_Copy1.Mother VAC0
+
+TOWR.Copy TOWR_Copy1
+TOWR_Copy1.Position 0 0 -34.6667
+TOWR_Copy1.Mother TAT
+
+TALS.Copy TALS_Copy1
+TALS_Copy1.Position 0 0 0
+TALS_Copy1.Mother TOWR
+
+TTHB.Copy TTHB_Copy1
+TTHB_Copy1.Position 0 0 0
+TTHB_Copy1.Mother TOWR
+
+APU.Copy APU_Copy1
+APU_Copy1.Position -15 0 28.1178
+APU_Copy1.Mother TOWR
+
+APUI.Copy APUI_Copy1
+APUI_Copy1.Position 0 0 0
+APUI_Copy1.Mother APU
+
+APUE.Copy APUE_Copy1
+APUE_Copy1.Position 0 0 0
+APUE_Copy1.Mother APUI
+
+CBL2.Copy CBL2_Copy1
+CBL2_Copy1.Position -15 0 45.4942
+CBL2_Copy1.Mother TOWR
+
+CBL3.Copy CBL3_Copy1
+CBL3_Copy1.Position 0 0 0.131
+CBL3_Copy1.Mother TOWR
+
+TGRS.Copy TGRS_Copy1
+TGRS_Copy1.Position 0 0 15.7039
+TGRS_Copy1.Rotation 90 255 90 345 0 0
+TGRS_Copy1.Mother TAT
+TGRS.Visibility 0
+
+OCCU.Copy OCCU_Copy1
+OCCU_Copy1.Position 0 0 12.6201
+OCCU_Copy1.Mother TGRS
+OCCU.Visibility 0
+
+OCMO.Copy OCMO_Copy1
+OCMO_Copy1.Position 0 0 1.98882
+OCMO_Copy1.Mother OCCU
+
+OCPB.Copy OCPB_Copy1
+OCPB_Copy1.Position 0 0 1.98882
+OCPB_Copy1.Mother OCCU
+
+OCSU.Copy OCSU_Copy1
+OCSU_Copy1.Position 0 0 0
+OCSU_Copy1.Mother OCCU
+
+SUNS.Copy SUNS_Copy1
+SUNS_Copy1.Position 0 0 12.4305
+SUNS_Copy1.Mother TGRS
+SUNS.Visibility 0
+
+SUNL.Copy SUNL_Copy1
+SUNL_Copy1.Position 0 0 -1.1908
+SUNL_Copy1.Mother SUNS
+
+SUNU.Copy SUNU_Copy1
+SUNU_Copy1.Position 0 0 4.73975
+SUNU_Copy1.Mother SUNS
+
+MTRG.Copy MTRG_Copy1
+MTRG_Copy1.Position 0 0 7.24
+MTRG_Copy1.Mother TGRS
+
+TSMR.Copy TSMR_Copy1
+TSMR_Copy1.Position 0 0 7.24
+TSMR_Copy1.Mother TGRS
+
+PAMP.Copy PAMP_Copy1
+PAMP_Copy1.Position 0 -14.1 3.25
+PAMP_Copy1.Mother TGRS
+
+PAMI.Copy PAMI_Copy1
+PAMI_Copy1.Position 0 0 0
+PAMI_Copy1.Mother PAMP
+
+PAME.Copy PAME_Copy1
+PAME_Copy1.Position 0 0 0
+PAME_Copy1.Mother PAMI
+
+CBL1.Copy CBL1_Copy1
+CBL1_Copy1.Position 0 0 6.4
+CBL1_Copy1.Mother TGRS
+
+DMOD.Copy DMOD_Copy1
+DMOD_Copy1.Position 0 0 10.1181
+DMOD_Copy1.Mother TGRS
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+DMOD.Many true
+DMOD.Visibility 0
+
+ENCC.Copy ENCC_Copy1
+ENCC_Copy1.Position 0 0 -3.80112
+ENCC_Copy1.Mother DMOD
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+ENCC.Many true
+
+HINL.Copy HINL_Copy1
+HINL_Copy1.Position 0 0 1.2955
+HINL_Copy1.Mother ENCC
+
+CALS.Copy CALS_Copy1
+CALS_Copy1.Position 0 0 0.889
+CALS_Copy1.Mother ENCC
+
+MLSV.Copy MLSV_Copy1
+MLSV_Copy1.Position 0 0 0.889
+MLSV_Copy1.Mother ENCC
+
+HGEV.Copy HGEV_Copy1
+HGEV_Copy1.Position 0 0 0.889
+HGEV_Copy1.Mother ENCC
+
+DENC.Copy DENC_Copy1
+DENC_Copy1.Position 0 0 -2.02312
+DENC_Copy1.Mother DMOD
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+DENC.Many true
+
+INOV.Copy INOV_Copy1
+INOV_Copy1.Position 0 0 -2.01735
+INOV_Copy1.Mother DMOD
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+INOV.Many true
+
+HINU.Copy HINU_Copy1
+HINU_Copy1.Position 0 0 6.22808
+HINU_Copy1.Mother DENC
+
+SSLC.Copy SSLC_Copy1
+SSLC_Copy1.Position 0 0 -3.82655
+SSLC_Copy1.Mother DMOD
+
+TEFL.Copy TEFL_Copy1
+TEFL_Copy1.Position 0 0 5.5969
+TEFL_Copy1.Mother DMOD
+
+SWAL.Copy SWAL_Copy1
+SWAL_Copy1.Position 0 0 -0.950855
+SWAL_Copy1.Mother DMOD
+
+SWAU.Copy SWAU_Copy1
+SWAU_Copy1.Position 0 0 5.15284
+SWAU_Copy1.Mother DMOD
+
+#TSCL.Copy TSCL_Copy1
+TSCL_Copy1.Position 0 0 -2.02302
+TSCL_Copy1.Mother DMOD
+
+#TSCU.Copy TSCU_Copy1
+TSCU_Copy1.Position 0 0 4.4869
+TSCU_Copy1.Mother DMOD
+
+HVGF.Copy HVGF_Copy1
+#HVGF_Copy1.Position 0 0 -3.49632
+HVGF_Copy1.Position 0 0 -3.82132
+HVGF_Copy1.Mother DMOD
+
+NIFI.Copy NIFI_Copy1
+NIFI_Copy1.Position 0 0 1.68148
+NIFI_Copy1.Mother DMOD
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+NIFI.Many true
+
+CONL.Copy CONL_Copy1
+CONL_Copy1.Position 0 0 -2.9246
+CONL_Copy1.Mother NIFI
+
+CRGC.Copy CRGC_Copy1
+CRGC_Copy1.Position 0 0 -2.9246
+CRGC_Copy1.Mother NIFI
+
+CONU.Copy CONU_Copy1
+CONU_Copy1.Position 0 0 3.3346
+CONU_Copy1.Mother NIFI
+
+BOSP.Copy BOSP_Copy1
+BOSP_Copy1.Position 0 0 -3.5921
+BOSP_Copy1.Mother NIFI
+
+SHIM.Copy SHIM_Copy1
+SHIM_Copy1.Position 0 0 -3.4421
+SHIM_Copy1.Mother NIFI
+
+PODR.Copy PODR_Copy1
+PODR_Copy1.Position 0 0 -3.6816
+PODR_Copy1.Mother NIFI
+
+WAVS.Copy WAVS_Copy1
+WAVS_Copy1.Position 0 0 -3.3496
+WAVS_Copy1.Mother NIFI
+
+BCAS.Copy BCAS_Copy1
+BCAS_Copy1.Position 0 0 -1.4186
+BCAS_Copy1.Mother NIFI
+
+DETE.Copy DETE_Copy1
+DETE_Copy1.Position 0 0 -2.73931
+DETE_Copy1.Mother NIFI
+
+ADET.Copy ADET_Copy1
+ADET_Copy1.Position 0 0 0
+ADET_Copy1.Mother DETE
+
+COOL.Copy COOL_Copy1
+COOL_Copy1.Position 0 0 0.6383
+COOL_Copy1.Mother TGRS
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+COOL.Many true
+COOL.Visibility 0
+
+OSTG.Copy OSTG_Copy1
+OSTG_Copy1.Position 0 0 16.1404
+OSTG_Copy1.Mother COOL
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+OSTG.Many true
+OSTG.Visibility 0
+
+OST1.Copy OST1_Copy1
+OST1_Copy1.Position 0 0 -2.18947
+OST1_Copy1.Mother OSTG
+
+OST2.Copy OST2_Copy1
+OST2_Copy1.Position 0 0 1.6345
+OST2_Copy1.Mother OSTG
+
+#OPNT.Copy OPNT_Copy1
+OPNT_Copy1.Position 0 0 1.98226
+OPNT_Copy1.Mother OSTG
+
+OSUP.Copy OSUP_Copy1
+OSUP_Copy1.Position 0 0 7.41045
+OSUP_Copy1.Mother COOL
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+OSUP.Many true
+OSUP.Visibility 0
+
+OSU1.Copy OSU1_Copy1
+OSU1_Copy1.Position 0 0 -7.2517
+OSU1_Copy1.Mother OSUP
+
+OSM1.Copy OSM1_Copy1
+OSM1_Copy1.Position 0 0 -7.2517
+OSM1_Copy1.Mother OSUP
+
+OSM2.Copy OSM2_Copy1
+OSM2_Copy1.Position 0 0 -7.2517
+OSM2_Copy1.Mother OSUP
+
+OSU2.Copy OSU2_Copy1
+OSU2_Copy1.Position 0 0 -7.2517
+OSU2_Copy1.Mother OSUP
+
+OSM3.Copy OSM3_Copy1
+OSM3_Copy1.Position 0 0 -7.2517
+OSM3_Copy1.Mother OSUP
+
+ISTG.Copy ISTG_Copy1
+ISTG_Copy1.Position 0 0 14.3773
+ISTG_Copy1.Mother COOL
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+ISTG.Many true
+ISTG.Visibility 0
+
+ISTA.Copy ISTA_Copy1
+ISTA_Copy1.Position 0 0 -1.00457
+ISTA_Copy1.Mother ISTG
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+ISTA.Many true
+
+ISP1.Copy ISP1_Copy1
+ISP1_Copy1.Position 0 0 0.19939
+ISP1_Copy1.Mother ISTG
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+ISP1.Many true
+
+ISP2.Copy ISP2_Copy1
+ISP2_Copy1.Position 0 0 0.59944
+ISP2_Copy1.Mother ISTG
+
+ISUP.Copy ISUP_Copy1
+ISUP_Copy1.Position 0 0 6.25081
+ISUP_Copy1.Mother COOL
+# Warning: Many is only supported in Geant3/MGGPOD, NOT in Root, MEGAlib, Geant4!!
+ISUP.Many true
+ISUP.Visibility 0
+
+ISU1.Copy ISU1_Copy1
+ISU1_Copy1.Position 0 0 -2.6747
+ISU1_Copy1.Mother ISUP
+
+ISU2.Copy ISU2_Copy1
+ISU2_Copy1.Position 0 0 1.20058
+ISU2_Copy1.Mother ISUP
+
+DGRG.Copy DGRG_Copy1
+DGRG_Copy1.Position 0 0 2.3897
+DGRG_Copy1.Mother ISUP
+
+TSDR.Copy TSDR_Copy1
+TSDR_Copy1.Position 0 0 2.6387
+TSDR_Copy1.Mother ISUP
+
+HSKC.Copy HSKC_Copy1
+HSKC_Copy1.Position 0 0 -5.61872
+HSKC_Copy1.Mother OSUP
+HSKC.Visibility 0
+
+HSKB.Copy HSKB_Copy1
+HSKB_Copy1.Position 0 0 0.247
+HSKB_Copy1.Mother HSKC
+
+HSKE.Copy HSKE_Copy1
+HSKE_Copy1.Position 0 0 0.1235
+HSKE_Copy1.Mother HSKC
+
+TSHS.Copy TSHS_Copy1
+TSHS_Copy1.Position 0 0 -5.73372
+TSHS_Copy1.Mother OSUP
+
+HSBK.Copy HSBK_Copy1
+HSBK_Copy1.Position 0 0 0
+HSBK_Copy1.Mother COOL
+
+TSBK.Copy TSBK_Copy1
+TSBK_Copy1.Position 0 0 -6.88324
+TSBK_Copy1.Mother OSUP
+
+VAC0.Mother 0
+
+
+
+# Detector definitions:
+Scintillator TGRS_Detector
+TGRS_Detector.SensitiveVolume      ADET
+TGRS_Detector.DetectorVolume       ADET
+
+TGRS_Detector.NoiseThreshold       14
+TGRS_Detector.TriggerThreshold     28
+
+TGRS_Detector.EnergyResolution Gauss    0     0     2.5
+TGRS_Detector.EnergyResolution Gauss  100   100     5.0
+TGRS_Detector.EnergyResolution Gauss 1000  1000    10.0
+
+
+Trigger TSi
+TSi.Veto false
+TSi.TriggerByDetector true
+TSi.Detector TGRS_Detector 1
+
+
+
+# Add here your detector definitions!!

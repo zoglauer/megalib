@@ -1,0 +1,6 @@
+/geometry/test/tolerance 0.01 mm
+/geometry/test/grid_test true
+/geometry/test/cylinder_test true
+/geometry/test/line_test true
+
+

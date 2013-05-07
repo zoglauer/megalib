@@ -1,0 +1,30 @@
+# This example shows how to use the FlatMap source distribution
+
+
+# Global parameters:
+Version               1
+Geometry              $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/Satellite.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+
+# Run 1: A homogeneous beam
+
+Run My2DProfileBeam
+My2DProfileBeam.FileName                      FlatMapTest
+My2DProfileBeam.Time                          100000.0
+
+My2DProfileBeam.Source My2DProfileBeamSource
+My2DProfileBeamSource.ParticleType            1
+My2DProfileBeamSource.Beam                    FlatMap  0 0 5  0.0  0 0 -1  FlatMap.dat
+My2DProfileBeamSource.Spectrum                Mono 1809.0
+My2DProfileBeamSource.Flux                    1000.0

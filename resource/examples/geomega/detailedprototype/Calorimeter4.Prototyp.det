@@ -1,0 +1,30 @@
+
+// Properties of the single-sided calorimeter
+MDCalorimeter              DCal4
+DCal4.SensitiveVolume      4cm_CsICrystal
+#DCal4.DetectorVolume       4cm_CsICore
+
+#DCal4.StructuralSize       0.25  0.25  2.0
+#DCal4.StructuralPitch      0.04  0.04   -1.0
+#DCal4.StructuralOffset     0.02  0.02  0.18
+
+DCal4.StructuralPitch      0.07  0.07  0.0
+DCal4.StructuralOffset     0.07  0.07  0.0
+
+
+# Duke Calibration data:
+DCal4.NoiseThreshold       181   50
+DCal4.TriggerThreshold     352   150
+DCal4.Overflow             5541  1700
+DCal4.FailureRate 0.096
+
+DCal4.EnergyResolutionType Lorentz
+DCal4.EnergyResolutionAt 0      38 6
+DCal4.EnergyResolutionAt 511    38 6
+DCal4.EnergyResolutionAt 662    38 7
+DCal4.EnergyResolutionAt 1275   38 8
+DCal4.EnergyResolutionAt 10000  38 8
+
+
+#DCal4.PulseShape 2.78652e-03 1.11233e-04 1.13468e-07 -3.63642e-11 4.80242e-15 -3.56580e-19 1.60263e-23 -4.33004e-28 6.47700e-33 -4.12352e-38 0 30000
+

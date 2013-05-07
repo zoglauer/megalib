@@ -1,0 +1,142 @@
+/*
+ * MHitEvent.cxx                                   v0.1  01/01/2001
+ *
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MHitEvent
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MHitEvent.h"
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MHitData.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CINT___
+ClassImp(MHitEvent)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHitEvent::MHitEvent()
+{
+  // default constructor
+
+  m_ID = 98;
+
+  m_Hits = 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHitEvent::~MHitEvent()
+{
+  //
+
+  if (m_Hits != 0) m_Hits->Delete();
+  delete m_Hits;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MHitEvent::AddHit(MHitData* Hit)
+{
+  //
+
+  if (m_Hits == 0) {
+    m_Hits = new TObjArray();
+  }
+  m_Hits->AddLast(Hit);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+Int_t MHitEvent::GetNHits()
+{
+  //
+  if (m_Hits == 0) {
+    return 0;
+  }
+  return m_Hits->GetLast() + 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MHitData* MHitEvent::GetHitAt(Int_t i)
+{
+  //
+
+  if (i >= 0 && i < GetNHits()) {
+    return (MHitData* ) m_Hits->At(i);
+  } else {
+    Fatal("MHitData* MHitEvent::GetHitAt(Int_t i)",
+          "Index out of bounds: this = %d, min = 0, max = %d", i, GetNHits());
+    return 0;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+void MHitEvent::SetID(UInt_t ID)
+{
+  //
+
+  m_ID = ID;
+}
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+UInt_t MHitEvent::GetID()
+{
+  //
+
+  return m_ID;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+// MHitEvent.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

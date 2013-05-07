@@ -1,0 +1,58 @@
+MEGAlib software license
+
+
+1. Definitions
+"Software" means the source code of MEGAlib or any part of it, all executables and 
+scripts, and the documentation.
+"Copyright Holders" means the developers of the Software, who are named in the individual 
+source code files.
+"Result" means any information obtained, gathered, modified, etc. with MEGAlib (e.g. 
+images, spectra, effective areas, sensitivity numbers, etc.) 
+
+
+2. Usage and modification
+The Copyright Holders hereby grant you the right to use and/or modify the Software for 
+non-commercial scientific, medical, or threat detection purposes as long as the 
+original copyright notices and this license remain in the Software. All other uses 
+require prior written permission.
+
+
+3. Distribution
+You are allowed to distribute the Software as long as all files, especially the copyright 
+notices and this license, remain in the distribution, everybody is allowed free and 
+unlimited access to your distribution, and you do not receive any monetary gain from the 
+distribution.
+
+
+4. Publications
+If you publish any Results which are completely or partly obtained through the use of 
+this Software or any modifications to this Software (even if you use only parts of the 
+source code in your own program), you have to correctly cite this Software. The standard 
+reference is:
+
+A. Zoglauer et al., "MEGAlib - The Medium Energy Gamma-ray Astronomy Library", 
+New Astronomy Reviews, Volume 50, Issue 7-8, pp 629-632, Oct. 2006
+
+If you use a special algorithm to obtain Results for your publications, for example one 
+of the event reconstruction algorithms, or create images via list-image reconstruction, 
+you also have to reference publications explaining those algorithms in your publications. 
+If those references exist, they can be found in the "About" section of the GUI of the 
+individual program.  
+
+
+5. Warranty disclaimer
+THE SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTY OF ANY KIND, EITHER 
+EXPRESSED OR IMPLIED, INCLUDING, WITHOUT LIMITATION, WARRANTIES THAT THE SOFTWARE IS 
+FREE OF DEFECTS, MERCHANTABLE, FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE 
+RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH YOU. SHOULD THE SOFTWARE 
+PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT DEVELOPERS) ASSUME THE COST OF ANY NECESSARY 
+SERVICING, REPAIR OR CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL 
+PART OF THIS LICENSE. NO USE OF THE SOFTWARE IS AUTHORIZED HEREUNDER EXCEPT UNDER THIS 
+DISCLAIMER.
+
+
+6. Termination
+This license terminates immediately and without notice if you fail to comply with any of 
+the terms of this license, or if you institute litigation against any Copyright Holder 
+with regard to this Software.
+

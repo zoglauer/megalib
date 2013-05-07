@@ -1,0 +1,32 @@
+
+// Properties of the double-side calorimeter
+MDCalorimeter              DCal8
+DCal8.SensitiveVolume      CsICrystal8
+DCal8.DetectorVolume       Calorimeter8
+
+#DCal8.StructuralSize       0.25  0.25  4.0
+DCal8.StructuralPitch      0.04  0.04  0.0
+DCal8.StructuralOffset     0.15  0.15  0.33
+
+// Values in consensus with opinions of Robert, Gottfried and Andreas 
+DCal8.NoiseThreshold       40
+DCal8.TriggerThreshold     100
+
+// Energy resolutions (C) by Florian Schopper
+DCal8.DepthResolutionAt    500       0.2
+
+DCal8.EnergyResolution  Gauss       0       0       6
+DCal8.EnergyResolution  Gauss     100     100       6
+DCal8.EnergyResolution  Gauss     350     350      12
+DCal8.EnergyResolution  Gauss     511     511      13
+DCal8.EnergyResolution  Gauss     662     662      14
+DCal8.EnergyResolution  Gauss    1000    1000      15
+DCal8.EnergyResolution  Gauss    5000    5000      64
+DCal8.EnergyResolution  Gauss  100000  100000    3000
+
+
+// Shapes according to Robert Andritschke
+DCal8.PulseShape   -3.90222e-04  5.15230e-05  2.06156e-07  -6.84616e-11 9.53033e-15 -7.07057e-19 2.79339e-23 -4.51628e-28  -3.13232e-33  1.41473e-37  0   21000  
+  
+
+DCal8.FailureRate 0.0

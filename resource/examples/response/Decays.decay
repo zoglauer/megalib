@@ -1,0 +1,47 @@
+# Decay file
+#
+# Format:
+# DE  Line  EnergyWindow
+ 
+Type Decay
+Version 1
+ 
+DE    511.0    1.0         // e+ annihilation
+ 
+// following added by Trixi Aug 2, 2004
+// DE    211.03   1.0         // 77Ge(beta-)77As  (31%)
+// DE    215.51   1.0         // 77Ge(beta-)77As  (29%)
+// DE    264.44   1.0         // 77Ge(beta-)77As  (54%)
+// DE    475.43   1.0         // 77Ge(beta-)77As - not very likely
+ 
+// DE    297.32   1.0         // 73Ga(beta-)73Ge  (80%)
+// DE    325.70   1.0         // 73Ga(beta-)73Ge (11%)
+// DE    739.42   1.0         // 73Ga(beta-)73Ge (4%)
+ 
+// DE    634.78   1.0         // 74As(beta-)74Ge (34%beta-,66%EC, this line from b-)
+// DE    595.847  1.0         // 74As(EC)74Ge (34%beta-,66%EC, this line from EC)
+ 
+ 
+// not sure if the following will deposit charge
+// in addition to the photon's energy ?
+// DE    174.949  1.0         // 70Ge(n,gamma)71Ge
+// DE    499.876  1.0         // 70Ge(n,gamma)71Ge
+// DE   6116.9    1.0         // 70Ge(n,gamma)71Ge
+// DE   6206.0    1.0         // 72Ge(n,gamma)73Ge - single escape
+// DE    596.847  1.0         // 73Ge(n,gamma)74Ge
+// DE    961.1    1.0         // 73Ge(n,gamma)74Ge
+// DE   1204.2    1.0         // 73Ge(n,gamma)74Ge
+// DE   5994.1    1.0         // 74Ge(n,gamma)75Ge - single escape
+// DE    562.93   1.0         // 76Ge(n,n')76Ge
+// DE    596.847  1.0         // 74Ge(n,n')74Ge
+// DE    689.6    1.0         // 72Ge(n,n')72Ge
+// DE   1039.20   1.0         // 70Ge(n,n')70Ge
+ 
+// DE   6365.4    1.0         // 74Ge(n,gamma)75mGe - (S_n - 139.69 keV)
+???
+ 
+// not finished going through the A&A 411 paper  ;-) 
+ 
+# end
+
+

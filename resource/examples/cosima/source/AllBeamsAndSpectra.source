@@ -1,0 +1,183 @@
+# Example run for Cosima
+# This example contains all beams and spectra:
+
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
+
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+Run SpaceSim
+SpaceSim.FileName         Everything
+SpaceSim.Time             1000.0
+
+SpaceSim.Source FarFieldPointSource
+FarFieldPointSource.ParticleType        1
+FarFieldPointSource.Beam                FarFieldPointSource 0 0
+FarFieldPointSource.Spectrum            Mono 511
+FarFieldPointSource.Flux                5.6588424E-5
+
+SpaceSim.Source FarFieldAreaSource
+FarFieldAreaSource.ParticleType        1
+FarFieldAreaSource.Beam                FarFieldAreaSource 0 180.0 0.0 360.0
+FarFieldAreaSource.Spectrum            Mono 511
+FarFieldAreaSource.Flux                5.6588424E-5
+
+SpaceSim.Source FarFieldFileZenithDependent
+FarFieldFileZenithDependent.ParticleType        1
+FarFieldFileZenithDependent.Beam                FarFieldFileZenithDependent AlbedoPhotonBeam.dat
+FarFieldFileZenithDependent.Spectrum            Mono 511
+FarFieldFileZenithDependent.Flux                5.6588424E-5
+
+SpaceSim.Source FarFieldNormalizedEnergyBeamFluxFunction
+FarFieldNormalizedEnergyBeamFluxFunction.ParticleType        1
+FarFieldNormalizedEnergyBeamFluxFunction.Beam                FarFieldNormalizedEnergyBeamFluxFunction  3DSpherical.dat
+FarFieldNormalizedEnergyBeamFluxFunction.Spectrum            NormalizedEnergyBeamFluxFunction
+
+
+SpaceSim.Source PointSource
+PointSource.ParticleType        1
+PointSource.Beam                PointSource 0 0 0
+PointSource.Spectrum            Mono 511
+PointSource.Flux                1.0
+
+SpaceSim.Source RestrictedPointSource
+RestrictedPointSource.ParticleType        1
+RestrictedPointSource.Beam                RestrictedPointSource 0 0 0
+RestrictedPointSource.Spectrum            Mono 511
+RestrictedPointSource.Flux                1.0
+
+SpaceSim.Source LineSource
+LineSource.ParticleType        1
+LineSource.Beam                LineSource 0 0 0 1.0 1.0 1.0
+LineSource.Spectrum            Mono 511
+LineSource.Flux                1.0
+
+SpaceSim.Source BoxSource
+BoxSource.ParticleType        1
+BoxSource.Beam                BoxSource 0 0 0 1.0 1.0 1.0
+BoxSource.Spectrum            Mono 511
+BoxSource.Flux                1.0
+
+SpaceSim.Source SphereSource
+SphereSource.ParticleType        1
+SphereSource.Beam                SphereSource 0 0 0 1.0 1.0 1.0
+SphereSource.Spectrum            Mono 511
+SphereSource.Flux                1.0
+
+
+SpaceSim.Source HomogeneousBeam
+HomogeneousBeam.ParticleType        1
+HomogeneousBeam.Beam                HomogeneousBeam 0 0 0  0 0 1  1.0
+HomogeneousBeam.Spectrum            Mono 511
+HomogeneousBeam.Flux                1.0
+
+SpaceSim.Source RadialProfileBeam
+RadialProfileBeam.ParticleType        1
+RadialProfileBeam.Beam                RadialProfileBeam 0 0 0  0 0 1  BeamProfile1D.dat
+RadialProfileBeam.Spectrum            Mono 511
+RadialProfileBeam.Flux                1.0
+
+SpaceSim.Source MapProfileBeam
+MapProfileBeam.ParticleType        1
+MapProfileBeam.Beam                MapProfileBeam 0 0 0  0 0 1  BeamProfile2D.dat
+MapProfileBeam.Spectrum            Mono 511
+MapProfileBeam.Flux                1.0
+
+SpaceSim.Source ConeBeam
+ConeBeam.ParticleType        1
+ConeBeam.Beam                ConeBeam 0 0 0  0 0 1  5.0
+ConeBeam.Spectrum            Mono 511
+ConeBeam.Flux                1.0
+
+SpaceSim.Source GaussianConeBeam
+GaussianConeBeam.ParticleType        1
+GaussianConeBeam.Beam                GaussianConeBeam 0 0 0  0 0 1  5.0 2.0
+GaussianConeBeam.Spectrum            Mono 511
+GaussianConeBeam.Flux                1.0
+
+
+SpaceSim.Source IlluminatedDisk
+IlluminatedDisk.ParticleType        1
+IlluminatedDisk.Beam                IlluminatedDisk 0 0 0  10.0  10.0 15.0  10.0 195.0
+IlluminatedDisk.Spectrum            Mono 511
+IlluminatedDisk.Flux                1.0
+
+SpaceSim.Source IlluminatedBox
+IlluminatedBox.ParticleType        1
+IlluminatedBox.Beam                IlluminatedBox 0 0 0  10.0  10.0 15.0  10.0 195.0
+IlluminatedBox.Spectrum            Mono 511
+IlluminatedBox.Flux                1.0
+
+SpaceSim.Source Volume
+Volume.ParticleType        1
+Volume.Beam                Volume BigSphere
+Volume.Spectrum            Mono 511
+Volume.Flux                1.0
+
+
+
+
+
+
+SpaceSim.Source Mono
+Mono.ParticleType        1
+Mono.Beam                PointSource 0 0 0
+Mono.Spectrum            Mono 511
+Mono.Flux                1.0
+
+SpaceSim.Source Linear
+Linear.ParticleType        1
+Linear.Beam                PointSource 0 0 0
+Linear.Spectrum            Linear 100.0 1000.0
+Linear.Flux                1.0
+
+SpaceSim.Source PowerLaw
+PowerLaw.ParticleType        1
+PowerLaw.Beam                PointSource 0 0 0
+PowerLaw.Spectrum            PowerLaw 100.0 1000.0 2.0
+PowerLaw.Flux                1.0
+
+SpaceSim.Source BrokenPowerLaw
+BrokenPowerLaw.ParticleType        1
+BrokenPowerLaw.Beam                PointSource 0 0 0
+BrokenPowerLaw.Spectrum            BrokenPowerLaw 100.0 1000.0 300.0 1.5 2.5
+BrokenPowerLaw.Flux                1.0
+
+SpaceSim.Source Gaussian
+Gaussian.ParticleType        1
+Gaussian.Beam                PointSource 0 0 0
+Gaussian.Spectrum            Gaussian 511 10.0 4.0
+Gaussian.Flux                1.0
+
+SpaceSim.Source ThermalBremsstrahlung
+ThermalBremsstrahlung.ParticleType        1
+ThermalBremsstrahlung.Beam                PointSource 0 0 0
+ThermalBremsstrahlung.Spectrum            ThermalBremsstrahlung 100.0 1000.0 200.0
+ThermalBremsstrahlung.Flux                1.0
+
+SpaceSim.Source BlackBody
+BlackBody.ParticleType        1
+BlackBody.Beam                PointSource 0 0 0
+BlackBody.Spectrum            BlackBody 100.0 1000.0 200.0
+BlackBody.Flux                1.0
+
+SpaceSim.Source File
+File.ParticleType        1
+File.Beam                PointSource 0 0 0
+File.Spectrum            File AlbedoPhotonSpectrum.dat
+File.Flux                1.0
+
+
+
+

@@ -1,0 +1,900 @@
+#!/bin/bash
+
+export LC_ALL="POSIX"
+
+
+Usage() {
+    jecho ""
+    jecho "Usage: `basename $0` options"
+    jecho ""
+    jecho "   Options:"
+    jecho "      -n <name>       Job name"
+    jecho "      -u <dir>        Directory, where to run the analysis"
+    jecho "      -d <name>       Name of source directory"
+    jecho "      -F <name>       Name of cosima source file in the source directory"
+    jecho "      -b              If run in a different directory, copy the data back to the start directory"
+    jecho "      -i <int>        Id of job - Max Id"
+    jecho "      -s <int>        Do MGGGPOD simulations (1: ggod1, 2: tbd)"     
+    jecho "      -t <int>        Number of triggers"
+    jecho "      -c              Run ConvertMGGPOD"
+    jecho "      -f <name>       Use this Revan configuration file"
+    jecho "      -x <name>       Use this Mimrec configuration file"
+    jecho "      -r              Run Revan"
+    jecho "      -g <name>       Geometry file name"
+    jecho "      -a <int>        concatenate sim and tra files at the end"
+    jecho "      -z              gzip output files"
+    jecho "      -p <char>       Generate response in mode <char>={t, c, il, ib, r}"
+    jecho "      -o              no regular output to stdout only to stderr"
+    jecho "      -N <int>        Nice level of all jobs (default: 5)"
+    jecho "      -D              Delete low-level files after high-level files have been generated"
+    jecho "      -S <int>        Run NuSTAR compactor with <int> as background type ID"
+    jecho "      -v <dir>        temporary directory"
+}
+
+jecho() {
+    text="$1"
+    echo "${text}"
+    if [ $issubmitted -gt 0 ]; then
+        echo "${text}" 1>&2
+    fi
+    if [ `test ! -d $logfile` ]; then
+        echo "${text}" >> ${logfile}
+    fi
+}
+
+jexit() {
+    rm -f /tmp/${name}.${id}.jobruns
+    exit $1;
+}
+
+
+GoInDir() {
+    suf="$1"
+    
+    if [ ${temporary} -gt 0 ]; then
+        cd ${tempjobdir}
+        rsync -ax ${jobdir}/* .
+        intempdir=1
+    else 
+        cd ${jobdir}
+        intempdir=0
+    fi 
+    
+    Compressor
+    ${nice} gunzip -f *.${suf}.gz
+    if (`test ! -f ${name}.${suf}` && `test ! -f ${name}.prompt.${suf}` && `test ! -f ${name}.activation.${suf}`); then
+        jecho "ERROR (GoInDir): ${name}.${suf} or ${name}.${suf}.gz does not exits"
+        jexit 1;
+    fi
+}
+
+GoOutDir() {
+    suf="$1"
+    if [ $intempdir -gt 0 ]; then
+        # We always zip for remote transfer...
+        ${nice} rsync -ax * $jobdir 
+    fi
+    cd $jobdir
+    intempdir=0
+}
+
+
+
+# Only start a gzip process if not more than X are already running on the current machine
+Compressor() {
+    maxrunningzips=4
+    runningzips=10
+    while [ $runningzips -gt $maxrunningzips ]; do
+        runningzips=`ps -ef | grep gzip | wc -l`
+        if [ $runningzips -gt $maxrunningzips ]; then
+            echo "Waiting for free gzip slot: ${runningzips} vs. ${maxrunningzips}"
+            sleep 5;
+        fi
+    done
+}
+
+
+
+NO_ARGS=0 
+E_OPTERROR=65
+
+if [ $# -eq "$NO_ARGS" ]  # Script invoked with no command-line args?
+then
+    Usage;
+    jexit 1;
+fi  
+
+# General flags:
+simversion=21 # Make sure it is identical in pipeline script itself!
+conversionsteps=1000
+
+# Flags, which can be set via command line
+directory="none"
+cosimasourcefile="none"
+name="none"
+id=-1
+maxid=-1
+sim=-1
+triggers=0
+convert=0
+revan=0
+revancfg="none"
+mimreccfg="none"
+geometry="none"
+rundir="."
+zip=0
+concat=0
+responsegenerator=0
+responseoption="-"
+noout=0
+out=" "
+
+nustar=0
+nustarbackgroundid=0
+
+temporary=0
+temporarydir=""
+intempdir=0
+
+nicelevel=19
+deletelowlevel=0
+
+issubmitted=0
+
+while getopts  "hd:F:i:n:s:t:c:r:g:u:b:r:z:a:p:o:v:f:x:N:S:D:q" flag
+do
+case $flag in
+d)
+    directory=$OPTARG;
+    jecho "   * Using source directory \"$directory\"";;
+F)
+    cosimasourcefile=$OPTARG;
+    jecho "   * Using Cosima source file \"${cosimasourcefile}\"";;
+u)
+    rundir=$OPTARG;
+    jecho "   * Running job in directory \"$rundir"\";;
+n)
+    name=$OPTARG;
+    jecho "   * Using job name \"$name\"";;
+b)
+    copyback=$OPTARG;
+    jecho "   * Copying data back to start directory";;
+i)
+    id=$OPTARG;
+    jecho "   * Using id \"$id\"";;
+a)
+    concat=$OPTARG;
+    jecho "   * Concatenting sim and tra files";;
+s)
+    sim=$OPTARG;
+    jecho "   * Doing simulation with option $sim";;
+t)
+    triggers=$OPTARG;
+    jecho "   * Using number of triggers \"$triggers\"";;
+g)
+    geometry=$OPTARG;
+    jecho "   * Using geometry \"$geometry\"";;
+c)
+    convert=$OPTARG;
+    jecho "   * Running ConvertMGGPOD";;
+r)
+    revan=$OPTARG;
+    jecho "   * Running revan";;
+f)
+    revancfg=$OPTARG;
+    jecho "   * Using the following $revancfg file";;
+x)
+    mimreccfg=$OPTARG;
+    jecho "   * Using the following $mimreccfg file";;
+z)
+    zip=$OPTARG;
+    jecho "   * Gzip'ing output files";;
+S)
+    nustar=1;
+    nustarbackgroundid=$OPTARG;
+    echo "   * Running NuSTAR analysis";;
+p)
+    responsegenerator=1
+    responseoption=$OPTARG;
+    jecho "   * Running response generator";;
+v)
+    temporarydir=$OPTARG;
+    if [ $temporarydir != "acz" ]; then
+        temporary=1
+        jecho "   * Analyzing data in temporary directory"
+    fi
+    ;;
+N)
+    nicelevel=$OPTARG;
+    jecho "   * Using nicelevel ${nicelvel}";;
+D)
+    deletelowlevel=$OPTARG;
+    jecho "   * Deleting low-level files";;
+q)
+    issubmitted=1;
+    jecho "   * Job has been submitted";;
+o)
+    noout=$OPTARG;
+    if [ $noout -gt 0 ]; then
+        out=" > /dev/null"
+    fi
+    jecho "   * Dumping only stderr output";;
+esac
+done
+
+
+#########################################################
+# Pre processing
+#########################################################
+
+
+#### Create special log-option
+
+echo "Started" > /tmp/${name}.${id}.jobruns
+
+
+#### Upgrades of input information:
+
+# next id
+nextid=`expr $id + 1`
+
+
+# nicelevel
+nice=" nice -${nicelevel} "
+
+
+# Determine the analysis level
+level1=0
+level2=0
+level3=0
+if ([ ${sim} -gt 0 ]); then level1=1; fi
+if ([ ${convert} -gt 0 ]); then level2=1; fi
+if ([ ${nustar} -gt 0 ] || [ ${revan} -gt 0 ] || [ ${responsegenerator} -gt 0 ]); then level3=1; fi
+
+
+#### Some verification of the input
+#### The main verification has been done via "pipeline"!!
+
+here=`pwd`
+case "$rundir" in
+    /*)
+    ;;
+    *) # relative path name
+    rundir="$here/$rundir";;
+esac
+case "$temporarydir" in
+    /*)
+    ;;
+    *) # relative path name
+    temporarydir="$here/$temporarydir";;
+esac
+jobdir=${rundir}/${name}/${name}_${id}
+date=`date +'%y%m%d%H%M%S'`
+tempjobdir=${temporarydir}/${name}_${id}_${date}
+
+
+# Test temporary directory
+if [ $temporary -gt 0 ]; then
+    if (`test ! -d $temporarydir` || `test ! -w $temporarydir`); then
+        jecho "ERROR: The temporary directory \"$temporarydir\" does not exist"
+        Usage;
+        jexit 1;
+    fi
+    if (`test ! -d $tempjobdir`); then
+        mkdir $tempjobdir
+    fi
+fi
+
+# Name of the job directory:
+if (([ $sim -gt -1 ] && [ $sim -lt 2 ]) || [ $sim -eq 3 ] ); then
+    if (`test -d $jobdir`); then
+        jecho "ERROR: Directory \"$jobdir\" already exists, but needs to be created by the simulation";
+        jexit 1;
+    else
+        mkdir $jobdir
+    fi
+else 
+    if (`test ! -d $jobdir`); then
+        jecho "ERROR: Directory \"$jobdir\" does not exist, but is needed for the analysis";
+        jexit 1;
+    fi
+fi
+
+logfile=${jobdir}/Job.log
+echo "Start logging at `date`" >> $logfile
+jecho "Starting pipeline job on ${HOSTNAME}:"
+
+
+#########################################################
+# Level 1 processing
+#########################################################
+
+
+#########################################################
+# Simulation
+if ([ $sim -eq 1 ]); then
+
+    jecho "MGGPOD simulation (ggod1) start (job: ${id})"
+
+    # Copy the data
+    if [ $temporary -gt 0 ]; then
+        ${nice} cp -r -L $directory/* $tempjobdir
+        cd $tempjobdir
+        intempdir=1
+    else
+        ${nice} cp -r -L $directory/* $jobdir
+        cd $jobdir
+        intempdir=0
+    fi
+
+    # If we already have *any* file, delete it since we will regenerate it
+    rm -rf *.sim*
+
+
+    # Adjust the input file:
+    cp input.dat input.dat.bak
+
+    #jecho "sed END"
+    end=`grep "^END" input.dat`
+    if [ "$end" != "" ]; then 
+        mv input.dat input.dat~
+        sed "s/$end/C END/g"  input.dat~  > input.dat
+    fi
+
+    #jecho "sed STOP"
+    stop=`grep "^STOP" input.dat`
+    if [ "$stop" != "" ]; then 
+        mv input.dat input.dat~
+        sed "s/$stop/C STOP/g"  input.dat~  > input.dat
+    fi
+
+    if [ "$triggers" != "0" ]; then
+        #jecho "sed TRIG/OTIM"
+        useotim=`echo $triggers | awk ' { if ($0 < 0.0) { printf("useotim"); } } ' `
+        trig=`grep "^TRIG" input.dat`
+        otim=`grep "^OTIM" input.dat`
+        if [ "$useotim" == "useotim" ]; then
+            triggers=`echo $triggers | awk ' { printf("%6.6e\n", -1.0*$0); } ' `
+            if [ "$otim" == "" ]; then 
+                echo "OTIM $triggers" >> input.dat;
+            else 
+                mv input.dat input.dat~
+                sed "s/$otim/OTIM $triggers/g"  input.dat~  > input.dat
+            fi
+            if [ "$trig" != "" ]; then 
+                mv input.dat input.dat~
+                sed "s/$trig/C $trig/g"  input.dat~  > input.dat
+            fi
+        else
+            if [ "$trig" == "" ]; then 
+                echo "TRIG $triggers" >> input.dat;
+            else 
+                mv input.dat input.dat~
+                sed "s/$trig/TRIG $triggers/g"  input.dat~  > input.dat
+            fi
+            if [ "$otim" != "" ]; then 
+                mv input.dat input.dat~
+                sed "s/$otim/C $otim/g"  input.dat~  > input.dat
+            fi
+        fi
+    fi
+
+    #jecho "sed OFIL"
+    ofil=`grep "^OFIL" input.dat`
+    if [ "$ofil" == "" ]; then 
+        echo "OFIL '$name'" >> input.dat;
+    else 
+        mv input.dat input.dat~
+        sed "s/$ofil/OFIL '$name'/g"  input.dat~  > input.dat
+    fi
+
+    #jecho "sed RNDM"
+    r1=0
+    let "r1=$RANDOM*32767+$RANDOM"
+    r2=0
+    let "r2=$RANDOM*32767+$RANDOM"
+    rndm=`grep "^RNDM" input.dat`
+    if [ "$rndm" == "" ]; then 
+        echo "RNDM $r1 $r2" >> input.dat;
+    else 
+        mv input.dat input.dat~
+        sed "s/$rndm/RNDM $r1 $r2/g"  input.dat~  > input.dat
+    fi
+
+    echo "STOP" >> input.dat;
+    echo "END" >> input.dat;
+
+
+    # Copy pipeline options to file
+    echo "Directory: $directory" >> $name.pipline.options
+    echo "Rundir: $rundir" >> $name.pipline.options
+    echo "Name: $name" >> $name.pipline.options
+    echo "Copyback: $copyback" >> $name.pipline.options
+    echo "ID: $id" >> $name.pipline.options
+    echo "Triggers: $triggers" >> $name.pipline.options
+    echo "Geometry: $geometry" >> $name.pipline.options
+    echo "ConvertMGGPOD: $convert" >> $name.pipline.options
+    echo "Revan: $revan" >> $name.pipline.options
+    echo "RevanCfg: $revancfg" >> $name.pipline.options
+    echo "MimrecCfg: $mimreccfg" >> $name.pipline.options
+    echo "Zip: $zip" >> $name.pipline.options
+
+    # Simulation:
+    if [ $sim -eq 0 ]; then
+        if (`test ! -f mggpod_ggod0`); then
+            jecho "ERROR: mggpod_ggod0 executable does not exist does not exist"
+            jexit 1;
+        fi
+        ${nice} ./mggpod_ggod0 > $name.mggpod_ggod0.log
+        rm -f mggpod_ggod0
+    elif [ $sim -eq 1 ]; then
+        if (`test ! -f mggpod_ggod1`); then
+            jecho "ERROR: mggpod_ggod1 executable does not exist does not exist"
+            jexit 1;
+        fi
+        ${nice} ./mggpod_ggod1 > $name.mggpod_ggod1.log
+        rm -f mggpod_ggod1
+    fi
+    
+    #mv input.dat.bak input.dat
+
+    # For protection, rename Makefile:
+    mv GNUmakefile Protection_GNUmakefile
+
+    if ([ $zip -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        Compressor
+        ${nice} gzip -f *.fits
+        for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+        ${nice} gzip -f *.log
+    fi
+
+    # Copy the data back...
+    if ([ $intempdir -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        ${nice} cp -r $tempjobdir/* $jobdir
+        cd $jobdir
+        intempdir=0
+    fi
+
+    jecho "MGGPOD simulation (ggod1) end (job: ${id})"
+
+elif ([ $sim -eq 2 ]); then
+
+    jecho "MGGPOD simulation (ggod2) start (job: ${id})"
+
+    # Copy the data
+    if [ $temporary -gt 0 ]; then
+        ${nice} cp -r -L $jobdir/* $tempjobdir
+        cd $tempjobdir
+        intempdir=1
+    else
+        cd $jobdir
+        intempdir=0
+    fi
+
+    # Determine the simulation time
+    # gunzip -f ${name}.mggpod_ggod1.log.gz
+    # time=`grep --text "uglast" ${name}.mggpod_ggod1.log | awk -F ' ' '{ print $5 }'`;
+
+    # Do the simulation
+    cd FILES_GGOD2
+    rm -f *.log
+
+    # Adjust the input file:
+    cp input.dat_template input.dat_template.bak
+       
+    #jecho "sed END"
+    end=`grep "^END" input.dat_template`
+    if [ "$end" != "" ]; then 
+        mv input.dat_template input.dat_template~
+        sed "s/$end/C END/g"  input.dat_template~  > input.dat_template
+    fi
+
+    #jecho "sed STOP"
+    stop=`grep "^STOP" input.dat_template`
+    if [ "$stop" != "" ]; then 
+        mv input.dat_template input.dat_template~
+        sed "s/$stop/C STOP/g"  input.dat_template~  > input.dat_template
+    fi
+
+    #jecho "sed RNDM"
+    r1=0
+    let "r1=$RANDOM*32767+$RANDOM"
+    r2=0
+    let "r2=$RANDOM*32767+$RANDOM"
+    rndm=`grep "^RNDM" input.dat_template`
+    if [ "$rndm" == "" ]; then 
+        echo "RNDM $r1 $r2" >> input.dat_template;
+    else 
+        mv input.dat_template input.dat_template~
+        sed "s/$rndm/RNDM $r1 $r2/g"  input.dat_template~  > input.dat_template
+    fi
+
+    echo "STOP" >> input.dat_template;
+    echo "END" >> input.dat_template;
+
+    jexec="${nice} run_ggod2_mult ../${name}.volumes_list ${triggers} > ${name}.run_ggod2_mult.log"
+    jecho "Starting ${jexec}"
+    /bin/bash -c "${jexec}"
+
+
+    mv input.dat_template.bak input.dat_template
+
+	  # Switch back to the main directory:
+    for i in `find . -maxdepth 1 \( -name "*.sim" -o -name "*.fits" -o -name "*.log" \) -printf "%f "`; do mv $i ..; done
+
+	  cd ..
+
+    # Concatenate the sim files if they exist:
+    foundsims=0
+    for i in `cat ${name}.volumes_list`; do
+        if (`test -f ${i}.sim.gz` || `test -f ${i}.sim`); then
+            foundsims=1
+        fi
+    done
+
+    if [ $foundsims -gt 0 ]; then
+
+	      # Generate the prompt sim files - if sim files exist at this stage due to MMGGPOD sims
+        
+	      # (a) Delete the old prompt sim and tra file and rename 
+        if (`/usr/bin/test -f ${name}.sim.gz`); then
+            rm -f ${tempjobdir}/${name}.prompt.sim* ${jobdir}/${name}.prompt.sim*
+            mv ${tempjobdir}/${name}.sim.gz ${tempjobdir}/${name}.prompt.sim.gz
+            mv ${jobdir}/${name}.sim.gz ${jobdir}/${name}.prompt.sim.gz
+        elif (`/usr/bin/test -f ${name}.sim`); then
+            rm -f ${tempjobdir}/${name}.prompt.sim* ${jobdir}/${name}.prompt.sim*
+            mv ${tempjobdir}/${name}.sim ${tempjobdir}/${name}.prompt.sim
+            mv ${jobdir}/${name}.sim ${jobdir}/${name}.prompt.sim
+        fi
+        if (`/usr/bin/test -f ${name}.tra.gz`); then
+            rm -f ${tempjobdir}/${name}.prompt.tra* ${jobdir}/${name}.prompt.tra*
+            mv ${tempjobdir}/${name}.tra.gz ${tempjobdir}/${name}.prompt.tra.gz
+            mv ${jobdir}/${name}.tra.gz ${jobdir}/${name}.prompt.tra.gz
+        elif (`/usr/bin/test -f ${name}.tra`); then
+            rm -f ${tempjobdir}/${name}.prompt.tra* ${jobdir}/${name}.prompt.tra*
+            mv ${tempjobdir}/${name}.tra ${tempjobdir}/${name}.prompt.tra
+            mv ${jobdir}/${name}.tra ${jobdir}/${name}.prompt.tra
+        fi
+
+        simfile=${name}".activation.sim"
+        rm -rf ${simfile}.gz
+        rm -rf ${simfile}
+        echo "# Dummy sim file for concatenation of activation" >> ${simfile}
+        echo "Type SIM" >> ${simfile}
+        echo "Version ${simversion}" >> ${simfile}
+        echo "Geometry ${geometry}" >> ${simfile}
+        echo " " >> ${simfile}
+        for i in `cat ${name}.volumes_list`; do
+            if (`test -f ${i}.sim.gz` || `test -f ${i}.sim`); then
+                echo "IN ${i}.sim" >> ${simfile}
+            fi
+        done
+        echo "EN" >> ${simfile}
+    fi
+
+    if ([ $zip -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        if [ $sim -gt -1 ]; then
+            Compressor
+            ${nice} gzip -f *.fits
+            for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+            ${nice} gzip -f *.log
+        fi
+    fi
+
+    # Copy the data back...
+    if ([ $intempdir -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        ${nice} cp -r *.fits* $jobdir
+        ${nice} cp -r *.sim* $jobdir
+        ${nice} cp -r *.log* $jobdir
+        #mv *.fits* ..
+        #mv *.sim* ..
+        cd $jobdir
+        intempdir=0
+    else
+        #mv *.fits* ..
+        #mv *.sim* ..
+        cd ..
+    fi
+
+    jecho "MGGPOD simulation (ggod2) end (job: ${id})"
+
+elif ([ $sim -eq 3 ]); then
+
+    jecho "Cosima simulation start (job: ${id})"
+
+    # Copy the data
+    if [ $temporary -gt 0 ]; then
+        ${nice} cp -r -L $directory/* $tempjobdir
+        cd $tempjobdir
+        intempdir=1
+    else
+        ${nice} cp -r -L $directory/* $jobdir
+        cd $jobdir
+        intempdir=0
+    fi
+
+    # If we already have *any* file, delete it since we will regenerate it
+    rm -rf *.sim*
+
+    # Copy pipeline options to file
+    echo "Directory: $directory" >> $name.pipline.options
+    echo "Rundir: $rundir" >> $name.pipline.options
+    echo "Name: $name" >> $name.pipline.options
+    echo "Copyback: $copyback" >> $name.pipline.options
+    echo "ID: $id" >> $name.pipline.options
+    echo "Triggers: $triggers" >> $name.pipline.options
+    echo "Geometry: $geometry" >> $name.pipline.options
+    echo "ConvertMGGPOD: $convert" >> $name.pipline.options
+    echo "Revan: $revan" >> $name.pipline.options
+    echo "RevanCfg: $revancfg" >> $name.pipline.options
+    echo "MimrecCfg: $mimreccfg" >> $name.pipline.options
+    echo "Zip: $zip" >> $name.pipline.options
+
+    # Simulation:
+    if (`test ! -f ${MEGALIB}/bin/cosima`); then
+        jecho "ERROR: Cosima executable does not exist does not exist"
+        jexit 1;
+    fi
+
+
+    # Replace the geometry file name (mainly to find it)
+    #jecho "sed Geometry"
+    geo=`grep "^Geometry" ${cosimasourcefile}`
+    if [ "$geo" != "" ]; then 
+        mv ${cosimasourcefile} ${cosimasourcefile}~
+        sed "s:${geo}:Geometry ${geometry}:g" ${cosimasourcefile}~ > ${cosimasourcefile}
+    fi
+
+    # We honour the file name given in the sim file, however we have to make a link 
+    # to the standard file name so that level3 programs in the script will find it
+    simname=`grep "\.FileName" ${cosimasourcefile}`
+    simnamearray=(${simname}); 
+    ln -s "${simnamearray[${#simnamearray[@]}-1]}.inc1.id1.sim" "${name}.sim"
+
+
+    ${nice} cosima ${cosimasourcefile} > $name.cosima.log
+    
+    if ([ $zip -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        Compressor
+        # We do not force the compression - otherwise the link is overwritten
+        for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+        ${nice} gzip -f *.log
+    fi
+
+    # Copy the data back...
+    if ([ $intempdir -gt 0 ] && ( [ $level2 -eq 0 ] && [ $level3 -eq 0 ]) ); then
+        ${nice} cp -r $tempjobdir/* $jobdir
+        cd $jobdir
+        intempdir=0
+    fi
+
+    jecho "Cosima simulation end (job: ${id})"
+fi
+
+
+#########################################################
+# Level 2 processing
+#########################################################
+
+
+#########################################################
+# Conversion
+if [ $convert -gt 0 ]; then
+    jecho "Conversion start (job: ${id})"
+    GoInDir fits
+
+    # In case we did our simulations with GGOD2 we now have a long file list...
+    list=""
+    ggod2=0
+    for i in `cat ${name}.volumes_list`; do
+        jecho "${i}.fits"
+        if (`test -f ${i}.fits`); then
+            list="${list} -f ${i}.fits" 
+            ggod2=1
+        fi
+    done
+
+    if [ $noout -eq 0 ]; then
+        out=" > ${name}.convert.log"
+    fi
+
+    # Prompt part:
+    jexec="${nice} ConvertMGGPOD -f ${name}.fits -m ${conversionsteps} -s ${simversion} -g ${geometry} ${out}"
+    jecho "Starting ${jexec}"
+    /bin/bash -c "${jexec}"
+
+    # Activation part:
+    if [ $ggod2 -gt 0 ]; then
+        mv ${name}.sim ${name}.prompt.sim
+        jexec="${nice} ConvertMGGPOD -o ${name}.activation.sim ${list} -m ${conversionsteps} -s ${simversion} -g ${geometry} ${out}"
+        jecho "Starting ${jexec}"
+        /bin/bash -c "${jexec}"
+
+        simfile=${name}".sim"
+        rm -rf ${simfile}
+        echo "# Dummy sim file for concatenation" >> ${simfile}
+        echo "Type SIM" >> ${simfile}
+        echo "Version ${simversion}" >> ${simfile}
+        echo "Geometry ${geometry}" >> ${simfile}
+        echo " " >> ${simfile}
+        echo "IN ${name}.prompt.sim" >> ${simfile}
+        echo "IN ${name}.activation.sim" >> ${simfile}
+    fi
+
+    GoOutDir sim
+
+    if [ $deletelowlevel -gt 0 ]; then
+        for i in `cat ${name}.volumes_list`; do
+            if (`test -f ${i}.fits`); then
+                rm -f ${i}.fits*
+            fi
+        done
+        rm -f ${name}.fits*
+    fi
+
+    jecho "Conversion end (job: ${id})"
+fi
+
+
+#########################################################
+# Level 3 processing
+#########################################################
+
+
+#########################################################
+# Revan
+if [ $revan -gt 0 ]; then
+    jecho "Revan start (job: ${id})"
+    GoInDir sim
+
+    # In case we did our simulations with GGOD2 we now have a prompt.sim and activation.sim file...
+    ggod2=0
+    if (`test -f ${name}.prompt.sim`); then
+        ggod2=1
+    fi
+
+    if [ $noout -eq 0 ]; then
+        out=" > ${name}.revan.log"
+    fi
+
+    if [ $ggod2 -gt 0 ]; then
+        jexec="${nice} revan -n -f ${name}.prompt.sim -g ${geometry} -c ${revancfg} -a ${out}"
+        jecho "Starting ${jexec}"
+        /bin/bash -c "${jexec}"
+
+        jexec="${nice} revan -n -f ${name}.activation.sim -g ${geometry} -c ${revancfg} -a ${out}"
+        jecho "Starting ${jexec}"
+        /bin/bash -c "${jexec}"
+
+        trafile="${name}.tra"
+        ${nice} rm -rf ${trafile}
+        echo "# Dummy tra file for concatenation" >> ${trafile}
+        echo "Type TRA" >> ${trafile}
+        echo " "  >> ${trafile}
+        echo "IN ${name}.prompt.tra" >> ${trafile}
+        echo "IN ${name}.activation.tra" >> ${trafile}
+    else
+        jexec="${nice} revan -n -f ${name}.sim -g ${geometry} -c ${revancfg} -a ${out}"
+        jecho "Starting ${jexec}"
+        /bin/bash -c "${jexec}"
+    fi
+    
+    cp -f $revancfg ./$name.`basename $revancfg`
+
+    if [ $zip -gt 0 ]; then
+        Compressor
+        for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+        ${nice} gzip -f *.tra
+        ${nice} gzip -f *.log
+    fi
+
+    GoOutDir tra
+
+    if [ $deletelowlevel -gt 0 ]; then
+        rm -f *.sim*
+    fi
+
+    jecho "Revan end (job: ${id})"
+fi
+
+
+#########################################################
+# NuSTAR
+if [ $nustar -gt 0 ]; then
+    jecho "NuSTAR start (job: ${id})"
+    GoInDir sim
+
+
+    if [ $noout -eq 0 ]; then
+        out=" > ${name}.nustar.log"
+    fi
+
+    if (`test -f ${name}.activation.sim` || `test -f ${name}.prompt.sim`); then
+        if (`test -f ${name}.prompt.sim`); then
+            jexec="${nice} NuSTARSimCompactor -f ${name}.prompt.sim -g ${geometry} -i ${nustarbackgroundid} ${out}"
+            jecho "Starting ${jexec}"
+            /bin/bash -c "${jexec}"
+        fi
+        
+        if (`test -f ${name}.activation.sim`); then 
+            nustarbackgroundid=`expr $nustarbackgroundid + 1`
+            jexec="${nice} NuSTARSimCompactor -f ${name}.activation.sim -g ${geometry} -i ${nustarbackgroundid} ${out}"
+            jecho "Starting ${jexec}"
+            /bin/bash -c "${jexec}"
+        fi
+    else
+        jexec="${nice} NuSTARSimCompactor -f ${name}.sim -g ${geometry} -i ${nustarbackgroundid} ${out}"
+        jecho "Starting ${jexec}"
+        /bin/bash -c "${jexec}"
+    fi
+
+    if [ $zip -gt 0 ]; then
+        Compressor
+        for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+        ${nice} gzip -f *.tra
+        ${nice} gzip -f *.log
+    fi
+
+    GoOutDir tra
+
+    if [ $deletelowlevel -gt 0 ]; then
+        rm -f *.sim*
+    fi
+
+    jecho "NuSTAR end (job: ${id})"
+fi
+
+
+#########################################################
+# ResponseGenerator
+if [ $responsegenerator -gt 0 ]; then
+    jecho "responsecreator start (job: ${id})"
+    GoInDir sim
+
+    if [ $noout -eq 0 ]; then
+        out=" > ${name}.response.log"
+    fi
+
+    jexec="${nice} responsecreator -m ${responseoption} -f ${name}.sim -g ${geometry} -r ${name}.rsp -c ${revancfg} -b ${mimreccfg} -s 100000 ${out}"
+    jecho "Starting ${jexec}"
+    /bin/bash -c "${jexec}"
+    cp -f $revancfg ./$name.`basename $revancfg`
+
+    GoOutDir rsp
+
+    if [ $deletelowlevel -gt 0 ]; then
+        rm -f *.sim*
+    fi
+
+    jecho "responsecreator end (job: ${id})"
+fi
+
+
+#########################################################
+# Postprocessing 
+#########################################################
+
+
+# Compress if not yet done...
+if [ $zip -gt 0 ]; then
+    Compressor
+    if [ $sim -gt -1 ]; then
+        ${nice} gzip -f *.fits
+        ${nice} gzip -f *.log
+    fi
+    if ([ $convert -gt 0 ] || [ $revan -gt 0 ] || [ $responsegenerator -gt 0 ]); then
+        for f in `find . -name "*.sim"`; do if test ! -L $f; then ${nice} gzip -f $f; fi; done
+    fi
+    if [ $revan -gt 0 ]; then
+        ${nice} gzip -f *.tra
+    fi
+fi
+
+# Remove temporary dir
+if [ $temporary -gt 0 ]; then
+    #echo "NOT REMOVING!"
+    ${nice} rm -r $tempjobdir
+fi
+
+jexit 0;
+

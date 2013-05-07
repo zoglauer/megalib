@@ -1,0 +1,209 @@
+// VERY SIMPLE Prototype in the Duke/ballon flight configuration
+
+Name SimplifiedPrototype
+Version 2.06
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+Include SiStripDetector.geo
+Include SiStripDetector.det
+
+Include Calorimeter8.geo
+Include Calorimeter8.det
+
+Include Calorimeter4.geo
+Include Calorimeter4.det
+
+Include Calorimeter2.geo
+Include Calorimeter2.det
+
+
+SurroundingSphere 25  0.0  0.0  15.0  25.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 25.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 15.0
+#Sphere.Mother WorldVolume
+
+
+
+// Trigger: at least one hit D1 and D2
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByDetector true
+TN01.DetectorType Strip2D 1
+TN01.DetectorType Calorimeter 1
+
+
+
+Volume WorldVolume             
+WorldVolume.Material Air
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 500. 500. 500.
+WorldVolume.Mother 0
+
+
+
+// Add wafer:
+
+SiStripDetector.Copy hermes
+hermes.Position  -2.05  -2.05 25.725
+hermes.Mother WorldVolume
+
+SiStripDetector.Copy bachus
+bachus.Position  -2.05  -2.05 24.75
+bachus.Mother WorldVolume
+
+SiStripDetector.Copy neptun
+neptun.Position  -2.05  -2.05 23.75
+neptun.Mother WorldVolume
+
+SiStripDetector.Copy poseidon
+poseidon.Position  -2.05  -2.05 22.75
+poseidon.Mother WorldVolume
+
+SiStripDetector.Copy achilles
+achilles.Position  -2.05  -2.05 21.75
+achilles.Mother WorldVolume
+
+SiStripDetector.Copy merkur
+merkur.Position  -2.05  -2.05 20.75
+merkur.Mother WorldVolume
+
+SiStripDetector.Copy odysseus
+odysseus.Position  -2.05  -2.05 19.75
+odysseus.Mother WorldVolume
+
+SiStripDetector.Copy apoll
+apoll.Position  -2.05  -2.05 18.75
+apoll.Mother WorldVolume
+
+SiStripDetector.Copy ikarus
+ikarus.Position  -2.05  -2.05 17.75
+ikarus.Mother WorldVolume
+
+SiStripDetector.Copy sisyphus
+sisyphus.Position  -2.05  -2.05 16.75
+sisyphus.Mother WorldVolume
+
+SiStripDetector.Copy vulkan
+vulkan.Position  -2.05  -2.05 15.75
+vulkan.Mother WorldVolume
+
+
+// Add 8cm-calorimeter
+
+
+Calorimeter8.Copy   athene                        
+athene.Position 5.1 -4.65 6.3
+athene.Mother WorldVolume
+athene.Rotation 0.0 0.0 180.0 
+
+Calorimeter8.Copy   daphne
+daphne.Position -5.1  -4.65  6.3
+daphne.Mother WorldVolume
+daphne.Rotation 0.0 0.0 180.0 
+
+Calorimeter8.Copy   xantippe
+xantippe.Position -5.1 4.65 6.3
+xantippe.Mother WorldVolume
+xantippe.Rotation 0.0 0.0 0.0 
+
+Calorimeter8.Copy   aphrodite
+aphrodite.Position 5.1  4.65  6.3
+aphrodite.Mother WorldVolume
+aphrodite.Rotation 0.0 0.0 0.0
+
+
+
+
+
+// Add 4cm-calorimeter
+
+Calorimeter4.Copy medusa
+medusa.Position -17.6 -6.7 9.575
+medusa.Mother WorldVolume
+medusa.Rotation 0.0 60.0 0 
+
+Calorimeter4.Copy fortuna
+fortuna.Position 17.6 -6.7  9.575
+fortuna.Mother WorldVolume
+fortuna.Rotation 0.0 -60.0 0
+
+Calorimeter4.Copy penelope
+penelope.Position  6.7 -17.6 9.575
+penelope.Mother WorldVolume
+penelope.Rotation 0.0 60.0 90
+
+Calorimeter4.Copy venus
+venus.Position 6.7  17.6  9.575
+venus.Mother WorldVolume
+venus.Rotation 0.0 -60.0 90.0 
+
+Calorimeter4.Copy hydra
+hydra.Position 17.6 6.7 9.575
+hydra.Mother WorldVolume
+hydra.Rotation 0.0 60.0 180
+
+Calorimeter4.Copy aetna
+aetna.Position -17.6  6.7  9.575
+aetna.Mother WorldVolume
+aetna.Rotation 0.0 -60.0  180.0 
+
+Calorimeter4.Copy ariadne
+ariadne.Position -6.7 17.6 9.575
+ariadne.Mother WorldVolume
+ariadne.Rotation 0.0 60.0 270.0 
+
+Calorimeter4.Copy helena
+helena.Position -6.7  -17.6  9.575
+helena.Mother WorldVolume
+helena.Rotation 0.0  -60.0  270.0 
+
+
+
+
+// Add 2cm-calorimeter 
+
+Calorimeter2.Copy antigone
+antigone.Position -17.6 -6.7 18.56
+antigone.Mother WorldVolume
+antigone.Rotation 0.0 90.0 0.0 
+
+Calorimeter2.Copy diane
+diane.Position 17.6 -6.7  18.56
+diane.Mother WorldVolume
+diane.Rotation 0.0 -90.0 0.0 
+
+Calorimeter2.Copy persephone
+persephone.Position 6.7  -17.6  18.56
+persephone.Mother WorldVolume
+persephone.Rotation  0.0 90.0 90.0 
+
+Calorimeter2.Copy minerva
+minerva.Position  6.7  17.6  18.56
+minerva.Mother WorldVolume
+minerva.Rotation 0.0 -90 90.0
+
+Calorimeter2.Copy pallas
+pallas.Position  17.6 6.7 18.56
+pallas.Mother WorldVolume
+pallas.Rotation 0.0 90 180
+
+Calorimeter2.Copy thetis
+thetis.Position -17.6 6.7 18.56
+thetis.Mother WorldVolume
+thetis.Rotation 0.0 -90.0 180.0 
+
+Calorimeter2.Copy circe
+circe.Position -6.7 17.6  18.56
+circe.Mother WorldVolume
+circe.Rotation 0.0 90.0 270.0 
+
+Calorimeter2.Copy europa
+europa.Position -6.7 -17.6 18.56
+europa.Mother WorldVolume
+europa.Rotation 0.0 -90.0 270.0 
+

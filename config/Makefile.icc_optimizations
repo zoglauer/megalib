@@ -1,0 +1,18 @@
+# For improved execution performance with the Intel compiler (icc version 11.0 or higher) 
+# you might want to test one of the following flags:
+# If one of the options is not supported, you might have to upgrade to a newer compiler version
+#
+# On an Intel Pentium M or an Intel Pentium 4/Xeon:
+# OPT += -xSSE3 -O3 -ipo  
+# Remark: Remove the "-ipo" if the compiler crashes with an out-of-memory warning or is too slow 
+# 
+# On an Intel Core 2 Duo:
+# OPT += -xSSSE3 -O3 -ipo -parallel  
+# Remark: Remove the "-ipo" if the compiler crashes with an out-of-memory warning or is too slow 
+#
+# On an Intel Atom (requires 11.0 or higher):
+# OPT += -xSSE3_ATOM -O2 -ipo
+# Remark: Remove the "-ipo" if the compiler crashes with an out-of-memory warning or is too slow 
+#
+# Remember also to compile Geant4/ROOT with those options, otherwise you only 
+# speed up the MEGAlib elements but not the libraries which ROOT uses

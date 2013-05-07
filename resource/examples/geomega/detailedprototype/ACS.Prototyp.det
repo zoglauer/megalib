@@ -1,0 +1,64 @@
+#MDACS                       ACSTop1
+
+ACSTop1.SensitiveVolume     UpperACS1
+ACSTop1.DetectorVolume      UpperACS1
+ACSTop1.SensitiveVolume     UpperACSRoof1
+ACSTop1.DetectorVolume      UpperACSRoof1
+
+ACSTop1.TriggerThreshold    50
+ACSTop1.EnergyResolutionAt  0     10
+ACSTop1.FailureRate         0.0001
+
+
+#MDACS                       ACSTop2
+
+ACSTop2.SensitiveVolume     UpperACS1
+ACSTop2.DetectorVolume      UpperACS1
+ACSTop2.SensitiveVolume     UpperACSRoof1
+ACSTop2.DetectorVolume      UpperACSRoof1
+
+ACSTop2.TriggerThreshold    50
+ACSTop2.EnergyResolutionAt  0     10
+ACSTop2.FailureRate         0.0001
+
+
+#MDACS                       ACSTop3
+
+ACSTop3.SensitiveVolume     UpperACS1
+ACSTop3.DetectorVolume      UpperACS1
+ACSTop3.SensitiveVolume     UpperACSRoof1
+ACSTop3.DetectorVolume      UpperACSRoof1
+
+ACSTop3.TriggerThreshold    50
+ACSTop3.EnergyResolutionAt  0     10
+ACSTop3.FailureRate         0.0001
+
+
+#MDACS                       ACSTop4
+
+ACSTop4.SensitiveVolume     UpperACS1
+ACSTop4.DetectorVolume      UpperACS1
+ACSTop4.SensitiveVolume     UpperACSRoof1
+ACSTop4.DetectorVolume      UpperACSRoof1
+
+ACSTop4.TriggerThreshold    50
+ACSTop4.EnergyResolutionAt  0     10
+ACSTop4.FailureRate         0.0001
+
+
+
+
+#MDACS                         ACSBottom
+
+ACSBottom.SensitiveVolume     LowerACS1
+ACSBottom.DetectorVolume      LowerACS1
+ACSBottom.SensitiveVolume     LowerACS2
+ACSBottom.DetectorVolume      LowerACS2
+ACSBottom.SensitiveVolume     LowerACS3
+ACSBottom.DetectorVolume      LowerACS3
+
+ACSBottom.TriggerThreshold    50
+ACSBottom.EnergyResolutionAt  0     10
+ACSTop.FailureRate            0.0001
+
+

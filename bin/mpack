@@ -1,0 +1,56 @@
+#! /bin/sh
+
+nothing() {
+    `test 1 -eq 1`;
+}
+
+current=`pwd`
+
+# Test if we are in the Megalyze directory:
+if  (`test -d calibfiles` & `test -d setupfiles` & `test -d macros`) ; then
+    nothing;
+else
+    echo "Error: The current path in not a valid Megalyze2 directory!";
+    exit 1;
+fi
+
+
+# A. Pack the sources:
+
+# Switch to the real bin directory
+path=`find bin -type l -print`;
+if [ $path == "bin" ]; then
+		path=`find bin -type l -printf "%l\n"`;
+fi
+if [ $path == "bin" ]; then
+    echo "Error: The current path does not contain the correct link!";
+    exit 1;
+fi
+cd $path
+cd ..
+dir=`pwd`
+base=`basename $dir`
+
+# Create the new file-name
+date=`date +'.%d%m%y.%H%M'`
+name=$base$date".tar"
+
+
+# Create the tar/zip file
+cd ..
+tar cvf $name --exclude=$base/lib/* --exclude=$base/include/* --exclude=$base/bin/Megalyze --exclude=*~ --exclude=\#* --exclude=.* --exclude=*SunWS_cache* $base
+gzip -f $name
+mv -f $name.gz $base$date".tgz"
+
+if [ $# -gt 0 ]; then
+    if [ $1 = "all" ]; then
+        echo "Packing all..."
+        cd $current
+        base=`basename $current`
+        name=$base$date".tgz"
+        cd ..
+        tar cvfz $name --exclude=*evta --exclude=CommandLog.txt --exclude=gmon.out --exclude=*~ --exclude=\#* --exclude=.* $base --exclude=*gz --exclude=*.house  --exclude=*.ps   --exclude=*.calib
+    fi
+fi
+
+exit 0

@@ -1,0 +1,20 @@
+
+# Global parameters:
+
+Version                            1
+Geometry                           TGRS.geo.setup
+
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+PhysicsListEMActivateFluorescence  false
+
+StoreCalibrated                    true
+StoreSimulationInfo                true
+DiscretizeHits                     true
+
+
+Activator A
+A.IsotopeProductionFile   IsotopesLarge.dat
+A.ActivationFile          ActivationLarge.dat
+A.ActivationTime          10368000
+

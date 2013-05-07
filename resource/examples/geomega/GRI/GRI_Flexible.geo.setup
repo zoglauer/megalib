@@ -1,0 +1,14 @@
+
+Include GRI_Flexible.Intro.geo
+
+
+Include GRI_Flexible.Telescope.geo
+
+Telescope.Position 0.0 0.0 { 185.0 + Telescope_ZDim }
+Telescope.Mother VAC0
+
+
+Include GRI_Flexible.Spacecraft.geo
+
+Include GRI_Flexible.Detectordescription.geo
+

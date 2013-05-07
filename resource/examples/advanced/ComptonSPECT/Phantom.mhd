@@ -1,0 +1,6 @@
+NDims = 3
+DimSize = 128 128 60
+ElementType = MET_SHORT
+ElementSpacing = 4.0 4.0 4.0
+ElementByteOrderMSB = True
+ElementDataFile = Phantom.raw

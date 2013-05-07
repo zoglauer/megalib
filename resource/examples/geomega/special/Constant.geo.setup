@@ -1,0 +1,107 @@
+//----------------
+// Constant test
+
+Name ConstantTest
+Version 1.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.DetectorType Strip3D 1
+TN03.TriggerByDetector true
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+Constant xyHGeWafer 4.2
+Constant zHGeWafer  0.8
+Constant DistToCryoHull 0.2
+Constant ThicknessCryoHull 0.1
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+Volume GeStripDetector           
+GeStripDetector.Material Aluminium
+GeStripDetector.Visibility 1
+GeStripDetector.Color 2
+GeStripDetector.Shape BRIK {xyHGeWafer+DistToCryoHull+ThicknessCryoHull} {xyHGeWafer+DistToCryoHull+ThicknessCryoHull} {zHGeWafer+DistToCryoHull+ThicknessCryoHull} 
+
+GeStripDetector.Mother WorldVolume
+GeStripDetector.Position 0 0 0
+
+
+Volume KryoInnerHull 
+KryoInnerHull.Material Vacuum 
+KryoInnerHull.Visibility 0
+KryoInnerHull.Shape BRIK  {xyHGeWafer+DistToCryoHull} {xyHGeWafer+DistToCryoHull} {zHGeWafer+DistToCryoHull} 
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 6
+GeWafer.Shape BOX xyHGeWafer xyHGeWafer zHGeWafer
+
+GeWafer.Copy GeWaferN01
+GeWaferN01.Position  0.0 0.0 0.0
+GeWaferN01.Mother KryoInnerHull
+
+KryoInnerHull.Copy Kryo
+Kryo.Position 0.0 0.0 0.0
+Kryo.Mother GeStripDetector
+
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+MDStrip3D                  GStrip
+
+GStrip.DetectorVolume      GeStripDetector
+GStrip.SensitiveVolume     GeWafer
+
+GStrip.StructuralPitch      0.0   0.0    0.0
+GStrip.StructuralOffset     0.0   0.0    2.5
+
+GStrip.Offset              0.0   0.0
+GStrip.StripNumber              80   80
+
+GStrip.NoiseThreshold          20
+GStrip.TriggerThreshold        20
+
+GStrip.DepthResolution      50  0.2
+
+GStrip.EnergyResolutionAt   10        0.417   
+GStrip.EnergyResolutionAt   20        0.425           
+GStrip.EnergyResolutionAt   50        0.4375    
+GStrip.EnergyResolutionAt   100       0.454     
+GStrip.EnergyResolutionAt   200       0.492     
+GStrip.EnergyResolutionAt   500       0.5875      
+GStrip.EnergyResolutionAt   1000      0.7217       
+GStrip.EnergyResolutionAt   2000      0.9317      
+GStrip.EnergyResolutionAt   5000      1.3819       
+GStrip.EnergyResolutionAt   10000     1.9094                     
+GStrip.EnergyResolutionAt   100000    5.907         
+
+GStrip.FailureRate 0.0

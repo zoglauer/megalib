@@ -1,0 +1,11 @@
+# Cosima universal isotope store
+# VN is followed by the volume name in which the isotope was produced
+# RP is followed by the isotope ID (1000*Z+A), the excitation in keV, and a value (e.g. the number of produced isotopes, activation in Bq)
+
+TT 0
+
+VN SourceNa22
+RP 11022       0.00   100000
+
+EN
+

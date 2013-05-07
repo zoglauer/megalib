@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+
+# Uncomment the following line, if you don't want update checks
+# exit 0;
+
+
+FOLDER=${MEGALIB}
+REPONAME="MEGAlib"
+
+# Testing ...
+#FOLDER=~/tmp/MEGAlib
+
+# Only continue if we have write access to the $MEGALIB/config folder
+if ( `test ! -w  ${MEGALIB}/config` ); then
+  #echo "No write access"
+  exit 0;
+fi
+
+# Only continue if the last update was at least "UpdateInterval" days ago 
+UpdateInterval=7
+if ( `test -f ${FOLDER}/config/UpdateCheck.txt` ); then
+  if [ "$(uname -s)" == "Darwin" ]; then
+    DateFile=`stat -f "%Dm" ${FOLDER}/config/UpdateCheck.txt`
+  else # Linux
+    DateFile=`stat -c %y ${FOLDER}/config/UpdateCheck.txt`
+    DateFile=`date --date="${DateFile}" +'%s'`
+  fi
+  DateRef=$((`date +'%s'` - ${UpdateInterval}*24*60*60))
+
+  if [ ${DateFile} -gt ${DateRef} ]; then 
+    #echo "Last update was not more than ${UpdateInterval} days ago..."
+    exit 0;
+  fi
+fi
+ 
+#echo "Downloading version info..."
+
+# Start with determining if we have a cvs or svn repository:
+
+
+if ( `test -d ${FOLDER}/.svn` ); then
+
+  cd ${FOLDER}/config
+
+  #echo "In svn"
+  URL=`svn info | grep "URL" | awk -F": " '{ print $2 }'`
+  HOST=`svn info | grep "URL" | awk -F"svn://" '{ print $2 }' | awk -F"/" '{ print $1 }'`
+  
+  ping -c 1 "${HOST}" > /dev/null
+  if [ "$?" -ne 0 ] ; then 
+    # Host is down -- stop here
+    exit 0; 
+  fi
+  
+  if [[ ${URL} == */trunk ]] ; then
+    #echo "In trunk"
+    Dummy=0;
+  elif [[ ${URL} == */${REPONAME}/branches/Version_* ]] ; then
+    #echo "In branch"
+    SubURL=`echo ${URL} | awk -F"/Version" '{ print $1 }'`
+    Branches=`svn list $SubURL | grep "Version" | sed 's/\///g' | sort -R | sort -r -n`
+    Branches=`echo ${Branches} | awk -F" " '{ print $1 }'`
+    #echo ${Branches}
+    URL="${SubURL}/${Branches}/config"
+  fi
+  
+  TEMP=`mktemp -d UpdateCheck.XXXXXXXXXXXXXXXX` 
+  cd $TEMP
+  svn export -q $URL/Version.txt --non-interactive 2> /dev/null
+  cd ..
+  if [ -f $TEMP/Version.txt ]; then
+    cp $TEMP/Version.txt UpdateCheck.txt
+  else
+    if ( `test -f UpdateCheck.txt` ); then
+      touch UpdateCheck.txt
+    else 
+      cp Version.txt UpdateCheck.txt
+      touch UpdateCheck.txt
+    fi
+  fi
+  rm -r $TEMP
+  
+elif ( `test -d ${FOLDER}/CVS` ); then
+
+  cd ${FOLDER}
+  
+  SERVER=`cat CVS/Root`
+  # The MPE cvs server is not pingable...
+  
+  #echo "In cvs"
+  Sticky=`cvs status -v src/global/misc/src/MGlobal.cxx | grep "Sticky Tag" | grep "branch"`
+
+  Branch=""
+  if [[ ${Sticky} == *${REPONAME}* ]] ; then
+    #echo "In branch"
+
+    if ( `test -f src/global/misc/src/MGlobal.cxx` ); then
+      Branches1=`cvs status -v src/global/misc/src/MGlobal.cxx | grep ${REPONAME}_  | awk -F" " '{ print $1 }'`
+    fi
+    if ( `test -f config/Version.txt` ); then
+      Branches2=`cvs status -v config/Version.txt | grep ${REPONAME}_  | awk -F" " '{ print $1 }'`
+    fi
+    AllBranches="${Branches1} ${Branches2}"
+    AllBranches=`echo ${AllBranches} | tr sort -R | sort -r -n`
+    for b in ${AllBranches}; do
+      if [[ ${b} == ${REPONAME}* ]] ; then
+        Branches="${Branches} ${b}"
+      fi
+    done
+    Branch=`echo ${Branches} | awk -F" " '{ print $1 }'`
+    Branch="-r ${Branch}"
+  else
+    #echo "In trunk"
+    Dummy=0;
+  fi
+  
+  cd ${FOLDER}/config
+  TEMP=`mktemp -d UpdateCheck.XXXXXXXXXXXXXXXX` 
+  cd $TEMP
+  cvs -d ${SERVER} -Q co -P ${Branch} ${REPONAME}/config/Version.txt > /dev/null
+  cd ..
+  if [ -f $TEMP/${REPONAME}/config/Version.txt ]; then
+    cp $TEMP/${REPONAME}/config/Version.txt UpdateCheck.txt
+  fi
+  rm -r $TEMP
+fi
+
+exit 0;

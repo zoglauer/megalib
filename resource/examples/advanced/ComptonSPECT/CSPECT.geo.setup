@@ -1,0 +1,171 @@
+#-----------------------------------------------------------------
+# A (NCT-like) Germanium detector for Compton SPECT applictaions
+
+
+Name C-SPECT
+Version 1.0
+
+IgnoreShortNames true
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 500. 500. 500.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+
+Constant DetectorHalfWidth  5.0
+Constant DetectorHalfHeight 0.75
+
+Constant CryoThickness  0.1
+Constant CryoOffset     0.5
+
+Constant CryoTotalHeight { 2*(DetectorHalfHeight + CryoOffset + CryoThickness ) } 
+
+Volume GeElement           
+GeElement.Material Aluminium
+GeElement.Visibility 1
+GeElement.Color 2
+GeElement.Shape BRIK  { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { DetectorHalfHeight + CryoOffset  + CryoThickness } 
+
+Volume CryoInnerHull 
+CryoInnerHull.Material Vacuum 
+CryoInnerHull.Visibility 1
+CryoInnerHull.Shape BRIK  { DetectorHalfWidth + CryoOffset }  { DetectorHalfWidth + CryoOffset }  { DetectorHalfHeight + CryoOffset } 
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 6
+GeWafer.Shape BRIK  DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+GeWafer.Copy GeWaferN01
+GeWaferN01.Position  0.0 0.0 0.0
+GeWaferN01.Mother CryoInnerHull
+
+CryoInnerHull.Copy Cryo
+Cryo.Position 0.0 0.0 0.0
+Cryo.Mother GeElement
+
+
+Constant ArrayElements 4
+
+Volume GeArray
+GeArray.Material Vacuum 
+GeArray.Visibility 1
+GeArray.Shape BRIK   { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { ArrayElements*(DetectorHalfHeight + CryoOffset  + CryoThickness) } 
+
+
+// Line-Up some Ge-Detectors into an array
+
+For I ArrayElements { -1.5*CryoTotalHeight } CryoTotalHeight
+  GeElement.Copy GeElement_%I
+  GeElement_%I.Position  0.0  0.0  $I
+  GeElement_%I.Mother GeArray
+Done
+
+
+// Line-Up some arrays to a cicular Compton SPECT detector
+
+// Attention: Make sure the hole phantom, including the surrounding volume fits in!
+Constant Arrays 21
+Constant ArrayDistance { (DetectorHalfWidth + CryoOffset + CryoThickness) / tan(TMath::Pi()/Arrays) + (ArrayElements*(DetectorHalfHeight + CryoOffset  + CryoThickness)) }
+
+For I Arrays 0 { 2*TMath::Pi()/Arrays }
+  GeArray.Copy GeArray_%I
+  GeArray_%I.Position 0.0  { ArrayDistance*cos($I) }  { ArrayDistance*sin($I) }
+  GeArray_%I.Rotation { 90.0 + 180/TMath::Pi() * $I }  0.0  0.0
+  GeArray_%I.Mother WorldVolume
+Done
+
+
+# Add PMMA sphere
+BeginComment
+Material PMMA
+PMMA.Density 1.18
+PMMA.Component 16  8  2
+PMMA.Component 12  6  5
+PMMA.Component  1  1  8
+
+Volume Bowl
+Bowl.Shape SPHE 0.0 7.5 0.0 180.0 0.0 360.0
+Bowl.Material PMMA
+Bowl.Visibility 1
+Bowl.Position 0.0 0.0 0.0
+Bowl.Mother WorldVolume
+EndComment
+
+
+Include Phantom.geo
+Phantom.Position 0.0 0.0 0.0
+Phantom.Rotation 0.0 90.0 0.0
+Phantom.Mother WorldVolume
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+Strip3D                             GeStripDetector
+
+GeStripDetector.DetectorVolume      GeWafer
+GeStripDetector.SensitiveVolume     GeWafer
+
+GeStripDetector.StructuralPitch     0.0   0.0    0.0
+GeStripDetector.StructuralOffset    0.0   0.0    CryoTotalHeight
+
+GeStripDetector.Offset              0.0   0.0
+GeStripDetector.StripNumber         { 20*DetectorHalfWidth }  { 20*DetectorHalfWidth }
+
+GeStripDetector.NoiseThreshold      15
+GeStripDetector.TriggerThreshold    30
+
+GeStripDetector.DepthResolution     100  0.02
+
+GeStripDetector.EnergyResolution  Gauss   10      10        0.417   
+GeStripDetector.EnergyResolution  Gauss   20      20        0.425           
+GeStripDetector.EnergyResolution  Gauss   50      50        0.4375    
+GeStripDetector.EnergyResolution  Gauss   100     100       0.454     
+GeStripDetector.EnergyResolution  Gauss   200     200       0.492     
+GeStripDetector.EnergyResolution  Gauss   500     500       0.5875      
+GeStripDetector.EnergyResolution  Gauss   1000    1000      0.7217       
+GeStripDetector.EnergyResolution  Gauss   2000    2000      0.9317      
+GeStripDetector.EnergyResolution  Gauss   5000    5000      1.3819       
+GeStripDetector.EnergyResolution  Gauss   10000   10000     1.9094                     
+GeStripDetector.EnergyResolution  Gauss   100000  100000    5.907         
+
+GeStripDetector.FailureRate 0.0
+
+ 
+Trigger OneHit
+OneHit.Veto false
+OneHit.TriggerByChannel true
+OneHit.Detector GeStripDetector 1
+
+
+

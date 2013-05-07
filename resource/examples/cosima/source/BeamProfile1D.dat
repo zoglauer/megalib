@@ -1,0 +1,11 @@
+# 1D Beam profile
+
+IP LIN
+
+DP 0.0  1.0
+DP 0.5  1.0
+DP 1.0  1.0
+DP 1.5  0.5
+DP 2.0  0.0
+
+EN

@@ -1,0 +1,29 @@
+
+// Properties of the single-sided calorimeter
+MDCalorimeter              DCal4
+DCal4.SensitiveVolume      CsICrystal4
+DCal4.DetectorVolume       Calorimeter4
+
+DCal4.StructuralPitch      0.04   0.04   0.0
+DCal4.StructuralOffset     0.15   0.15   0.415
+
+// Values in consensus with opinions of Robert, Gottfried and Andreas 
+DCal4.NoiseThreshold       25
+DCal4.TriggerThreshold     100
+
+// Energy resolutions (C) by Florian Schopper
+DCal4.EnergyResolution  Gauss        0      0     4
+DCal4.EnergyResolution  Gauss      100    100     4
+DCal4.EnergyResolution  Gauss      350    350    10.5
+DCal4.EnergyResolution  Gauss      511    511    13
+DCal4.EnergyResolution  Gauss      662    662    14
+DCal4.EnergyResolution  Gauss     1000   1000    15
+DCal4.EnergyResolution  Gauss     5000   5000    64
+DCal4.EnergyResolution  Gauss   100000 100000  3000
+
+
+// Shapes according to Robert Andritschke
+DCal4.PulseShape   -3.90222e-04  5.15230e-05  2.06156e-07  -6.84616e-11 9.53033e-15 -7.07057e-19 2.79339e-23 -4.51628e-28  -3.13232e-33  1.41473e-37  0   21000  
+
+DCal4.FailureRate 0.0
+

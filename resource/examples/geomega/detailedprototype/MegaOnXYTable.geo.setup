@@ -1,0 +1,639 @@
+// Setup file for the MEGA prototype in the Duke configuration
+
+Name MEGAPrototype_Duke_v3.0
+Version 3.0
+
+SurroundingSphere 200  0.0  0.0  20.0  200.0
+
+
+
+// Include section
+
+// NEEDS THIS LINE TO VIEW ALONE:
+Include ../materials/Materials.geo
+
+
+
+Include Whole_MEGA.geo
+
+
+// The Mother Volume of the Detector Configuration:
+Volume XYTable_Volume
+XYTable_Volume.Material Air
+XYTable_Volume.Visibility 0
+XYTable_Volume.Shape BRIK 1000. 1000. 1000.
+// NEEDS THIS LINE TO VIEW ALONE:
+XYTable_Volume.Mother 0
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+
+// The MEGA Detector:
+
+MEGA_Volume.Position 0. 0. 0.
+MEGA_Volume.Rotation 90. 0. 0.
+MEGA_Volume.Mother XYTable_Volume
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Volume XYT_Plate_under_MEGA_1
+XYT_Plate_under_MEGA_1.Material Aluminium
+XYT_Plate_under_MEGA_1.Shape BRIK 23.95 0.5 23.95
+XYT_Plate_under_MEGA_1.Position 0. 20.25 0.
+XYT_Plate_under_MEGA_1.Visibility 1
+XYT_Plate_under_MEGA_1.Color 1
+XYT_Plate_under_MEGA_1.Mother XYTable_Volume
+
+
+
+Volume XYT_Plate_2
+XYT_Plate_2.Material Aluminium
+XYT_Plate_2.Shape BRIK 15. 0.8 26.25
+XYT_Plate_2.Position 0. 21.55 0.
+XYT_Plate_2.Visibility 1
+XYT_Plate_2.Color 1
+XYT_Plate_2.Mother XYTable_Volume
+
+Volume XYT_Plate_3
+XYT_Plate_3.Material Aluminium
+XYT_Plate_3.Shape BRIK 15. 0.4 11.2
+XYT_Plate_3.Position 0. 22.75 15.05
+XYT_Plate_3.Visibility 1
+XYT_Plate_3.Color 1
+XYT_Plate_3.Mother XYTable_Volume
+
+Volume XYT_Plate_4
+XYT_Plate_4.Material Aluminium
+XYT_Plate_4.Shape BRIK 15. 0.4 11.2
+XYT_Plate_4.Position 0. 22.75 -15.05
+XYT_Plate_4.Visibility 1
+XYT_Plate_4.Color 1
+XYT_Plate_4.Mother XYTable_Volume
+
+
+// Y-Axis:
+
+Volume XYT_Y_Axis_5
+XYT_Y_Axis_5.Material Aluminium
+XYT_Y_Axis_5.Shape BRIK 11.25. 3.75 41.75
+XYT_Y_Axis_5.Position 0. 27.2 0.
+XYT_Y_Axis_5.Visibility 1
+XYT_Y_Axis_5.Color 1
+XYT_Y_Axis_5.Mother XYTable_Volume
+
+Volume XYT_Y_Axis_6
+XYT_Y_Axis_6.Material Air
+XYT_Y_Axis_6.Shape BRIK 10.25. 2.75 40.75
+XYT_Y_Axis_6.Position 0. 0. 0.
+XYT_Y_Axis_6.Visibility 1
+XYT_Y_Axis_6.Color 1
+XYT_Y_Axis_6.Mother XYT_Y_Axis_5
+
+
+// Things on top of Y-Axis:
+
+Volume XYT_BlackBox_7
+XYT_BlackBox_7.Material Aluminium
+XYT_BlackBox_7.Shape BRIK 6.0 4.5 4.0
+XYT_BlackBox_7.Position 9.15 26.25 45.75
+XYT_BlackBox_7.Visibility 1
+XYT_BlackBox_7.Color 1
+XYT_BlackBox_7.Mother XYTable_Volume
+
+Volume XYT_BlackBox_8
+XYT_BlackBox_8.Material Air
+XYT_BlackBox_8.Shape BRIK 5.5 4.0 3.5
+XYT_BlackBox_8.Position 0. 0. 0.
+XYT_BlackBox_8.Visibility 1
+XYT_BlackBox_8.Color 1
+XYT_BlackBox_8.Mother XYT_BlackBox_7
+
+
+Volume XYT_BlackCylinder_9
+XYT_BlackCylinder_9.Material Aluminium
+XYT_BlackCylinder_9.Shape TUBS 3.75 4.25 4.25 0. 360.
+XYT_BlackCylinder_9.Position 7.9 26.25 54.5
+XYT_BlackCylinder_9.Visibility 1
+XYT_BlackCylinder_9.Color 1
+XYT_BlackCylinder_9.Mother XYTable_Volume
+
+Volume XYT_BlackCylinder_10
+XYT_BlackCylinder_10.Material Aluminium
+XYT_BlackCylinder_10.Shape TUBS 0.0 4.25 0.25 0. 360.
+XYT_BlackCylinder_10.Position 7.9 26.25 50.0
+XYT_BlackCylinder_10.Visibility 1
+XYT_BlackCylinder_10.Color 1
+XYT_BlackCylinder_10.Mother XYTable_Volume
+
+Volume XYT_BlackCylinder_11
+XYT_BlackCylinder_11.Material Aluminium
+XYT_BlackCylinder_11.Shape TUBS 0.0 4.25 0.25 0. 360.
+XYT_BlackCylinder_11.Position 7.9 26.25 59.0
+XYT_BlackCylinder_11.Visibility 1
+XYT_BlackCylinder_11.Color 1
+XYT_BlackCylinder_11.Mother XYTable_Volume
+
+
+
+Volume XYT_Part_12
+XYT_Part_12.Material Aluminium
+XYT_Part_12.Shape BRIK 15. 0.25 4.0
+XYT_Part_12.Position 0. 31.2 35.95
+XYT_Part_12.Visibility 1
+XYT_Part_12.Color 1
+XYT_Part_12.Mother XYTable_Volume
+
+Volume XYT_Part_13
+XYT_Part_13.Material Aluminium
+XYT_Part_13.Shape BRIK 15. 3.4 0.25
+XYT_Part_13.Position 0. 34.85 39.7
+XYT_Part_13.Visibility 1
+XYT_Part_13.Color 1
+XYT_Part_13.Mother XYTable_Volume
+
+
+
+Volume XYT_Plate_14
+XYT_Plate_14.Material Aluminium
+XYT_Plate_14.Shape BRIK 11.0 0.4 12.65
+XYT_Plate_14.Position 0.0 31.35 -20.1
+XYT_Plate_14.Visibility 1
+XYT_Plate_14.Color 1
+XYT_Plate_14.Mother XYTable_Volume
+
+
+
+Volume XYT_X_Axis_15
+XYT_X_Axis_15.Material Aluminium
+XYT_X_Axis_15.Shape BRIK 34.5 3.75 11.25
+XYT_X_Axis_15.Position 0. 35.8 -20.3
+XYT_X_Axis_15.Visibility 1
+XYT_X_Axis_15.Color 1
+XYT_X_Axis_15.Mother XYTable_Volume
+
+Volume XYT_X_Axis_16
+XYT_X_Axis_16.Material Aluminium
+XYT_X_Axis_16.Shape BRIK 33.5 2.75 10.25
+XYT_X_Axis_16.Position 0. 0. 0.
+XYT_X_Axis_16.Visibility 1
+XYT_X_Axis_16.Color 1
+XYT_X_Axis_16.Mother XYT_X_Axis_15
+
+
+
+Volume XYT_Part_17
+XYT_Part_17.Material Aluminium
+XYT_Part_17.Shape BRIK 30. 1.6 1.25
+XYT_Part_17.Position 0. 33.75 41.2
+XYT_Part_17.Visibility 1
+XYT_Part_17.Color 1
+XYT_Part_17.Mother XYTable_Volume
+
+Volume XYT_Part_18
+XYT_Part_18.Material Aluminium
+XYT_Part_18.Shape BRIK 30. 4.0 0.3
+XYT_Part_18.Position 0. 35.75 42.75
+XYT_Part_18.Visibility 1
+XYT_Part_18.Color 1
+XYT_Part_18.Mother XYTable_Volume
+
+Volume XYT_Part_19
+XYT_Part_19.Material Aluminium
+XYT_Part_19.Shape BRIK 30. 0.3 3.7
+XYT_Part_19.Position 0. 39.45 38.75
+XYT_Part_19.Visibility 1
+XYT_Part_19.Color 1
+XYT_Part_19.Mother XYTable_Volume
+
+
+
+Volume XYT_BackPlate_20
+XYT_BackPlate_20.Material Aluminium
+XYT_BackPlate_20.Shape BRIK 49.0 0.25 44.0
+XYT_BackPlate_20.Position 0.0 40.0  8.05
+XYT_BackPlate_20.Visibility 1
+XYT_BackPlate_20.Color 1
+XYT_BackPlate_20.Mother XYTable_Volume
+
+
+Volume XYT_LeftPillar_21
+XYT_LeftPillar_21.Material Aluminium
+XYT_LeftPillar_21.Shape BRIK 2.5 2.5 68.25
+XYT_LeftPillar_21.Position -46.5 42.75 -7.75
+XYT_LeftPillar_21.Visibility 1
+XYT_LeftPillar_21.Color 1
+XYT_LeftPillar_21.Mother XYTable_Volume
+
+Volume XYT_LeftPillar_21a
+XYT_LeftPillar_21a.Material Aluminium
+XYT_LeftPillar_21a.Shape BRIK 2.1 2.1 68.25
+XYT_LeftPillar_21a.Position 0.0 0.0 0.0
+XYT_LeftPillar_21a.Visibility 1
+XYT_LeftPillar_21a.Color 1
+XYT_LeftPillar_21a.Mother XYT_LeftPillar_21
+
+
+Volume XYT_RightPillar_22
+XYT_RightPillar_22.Material Aluminium
+XYT_RightPillar_22.Shape BRIK 2.5 2.5 68.25
+XYT_RightPillar_22.Position 46.5 42.75 -7.75
+XYT_RightPillar_22.Visibility 1
+XYT_RightPillar_22.Color 1
+XYT_RightPillar_22.Mother XYTable_Volume
+
+Volume XYT_RightPillar_22a
+XYT_RightPillar_22a.Material Aluminium
+XYT_RightPillar_22a.Shape BRIK 2.1 2.1 68.25
+XYT_RightPillar_22a.Position 0.0 0.0 0.0
+XYT_RightPillar_22a.Visibility 1
+XYT_RightPillar_22a.Color 1
+XYT_RightPillar_22a.Mother XYT_RightPillar_22
+
+
+Volume XYT_TriangleP_23
+XYT_TriangleP_23.Material Air
+XYT_TriangleP_23.Shape BRIK 100. 100. 100.
+XYT_TriangleP_23.Visibility 0
+XYT_TriangleP_23.Virtual true
+
+Volume XYT_Triangle_24
+XYT_Triangle_24.Material Aluminium
+XYT_Triangle_24.Shape BRIK 3.75 0.15 43.25
+XYT_Triangle_24.Position 3.75 -0.15 43.25
+XYT_Triangle_24.Visibility 1
+XYT_Triangle_24.Color 1
+XYT_Triangle_24.Mother XYT_TriangleP_23
+
+Volume XYT_Triangle_25
+XYT_Triangle_25.Material Aluminium
+XYT_Triangle_25.Shape BRIK 39.5 0.15 3.75
+XYT_Triangle_25.Position 47.0 -0.15 3.75
+XYT_Triangle_25.Visibility 1
+XYT_Triangle_25.Color 1
+XYT_Triangle_25.Mother XYT_TriangleP_23
+
+Volume XYT_Triangle_26
+XYT_Triangle_26.Material Aluminium
+XYT_Triangle_26.Shape TRD1 55.8614357137 0. 0.15 27.9307178569
+XYT_Triangle_26.Position 27.25 -0.15 27.25
+XYT_Triangle_26.Rotation 0. -135. 0.
+XYT_Triangle_26.Visibility 1
+XYT_Triangle_26.Color 1
+XYT_Triangle_26.Mother XYT_TriangleP_23
+
+
+
+XYT_TriangleP_23.Copy XYT_LeftTriangle_27
+XYT_LeftTriangle_27.Position -49.0 45.25 -76.0
+XYT_LeftTriangle_27.Rotation 0. 0. -90.
+XYT_LeftTriangle_27.Mother XYTable_Volume
+
+XYT_TriangleP_23.Copy XYT_RightTriangle_28
+XYT_RightTriangle_28.Position 49.3 45.25 -76.0
+XYT_RightTriangle_28.Rotation 0. 0. -90.
+XYT_RightTriangle_28.Mother XYTable_Volume
+
+Volume XYT_LeftTriangle_29
+XYT_LeftTriangle_29.Material Aluminium
+XYT_LeftTriangle_29.Shape BRIK 1.25 0.15 55.0
+XYT_LeftTriangle_29.Position -47.75 -1.5 -28.96
+XYT_LeftTriangle_29.Rotation -45. 0. 0.
+XYT_LeftTriangle_29.Visibility 1
+XYT_LeftTriangle_29.Color 1
+XYT_LeftTriangle_29.Mother XYTable_Volume
+
+Volume XYT_RightTriangle_30
+XYT_RightTriangle_30.Material Aluminium
+XYT_RightTriangle_30.Shape BRIK 1.25 0.15 55.0
+XYT_RightTriangle_30.Position 47.75 -1.5 -28.96
+XYT_RightTriangle_30.Rotation -45. 0. 0.
+XYT_RightTriangle_30.Visibility 1
+XYT_RightTriangle_30.Color 1
+XYT_RightTriangle_30.Mother XYTable_Volume
+
+
+
+Volume XYT_Part_31
+XYT_Part_31.Material Aluminium
+XYT_Part_31.Shape BRIK 2.5 40.75 2.5
+XYT_Part_31.Position -46.5 -0.5 -73.5
+XYT_Part_31.Visibility 1
+XYT_Part_31.Color 1
+XYT_Part_31.Mother XYTable_Volume
+
+Volume XYT_Part_31a
+XYT_Part_31a.Material Aluminium
+XYT_Part_31a.Shape BRIK 2.1 40.75 2.1
+XYT_Part_31a.Position 0. 0. 0.
+XYT_Part_31a.Visibility 1
+XYT_Part_31a.Color 1
+XYT_Part_31a.Mother XYT_Part_31
+
+
+Volume XYT_Part_32
+XYT_Part_32.Material Aluminium
+XYT_Part_32.Shape BRIK 2.5 40.75 2.5
+XYT_Part_32.Position 46.5 -0.5 -73.5
+XYT_Part_32.Visibility 1
+XYT_Part_32.Color 1
+XYT_Part_32.Mother XYTable_Volume
+
+Volume XYT_Part_32a
+XYT_Part_32a.Material Aluminium
+XYT_Part_32a.Shape BRIK 2.1 40.75 2.1
+XYT_Part_32a.Position 0. 0. 0.
+XYT_Part_32a.Visibility 1
+XYT_Part_32a.Color 1
+XYT_Part_32a.Mother XYT_Part_31
+
+
+
+Volume XYT_Part_33
+XYT_Part_33.Material Aluminium
+XYT_Part_33.Shape BRIK 52.5 0.25 4.0
+XYT_Part_33.Position 0. 45.5 -72.5
+XYT_Part_33.Visibility 1
+XYT_Part_33.Color 1
+XYT_Part_33.Mother XYTable_Volume
+
+Volume XYT_Part_34
+XYT_Part_34.Material Aluminium
+XYT_Part_34.Shape BRIK 52.5 3.75 0.25
+XYT_Part_34.Position 0. 41.5 -76.25
+XYT_Part_34.Visibility 1
+XYT_Part_34.Color 1
+XYT_Part_34.Mother XYTable_Volume
+
+
+Volume XYT_Part_35
+XYT_Part_35.Material Aluminium
+XYT_Part_35.Shape BRIK 52.5 0.25 4.0
+XYT_Part_35.Position 0. -41.5 -72.5
+XYT_Part_35.Visibility 1
+XYT_Part_35.Color 1
+XYT_Part_35.Mother XYTable_Volume
+
+Volume XYT_Part_36
+XYT_Part_36.Material Aluminium
+XYT_Part_36.Shape BRIK 52.5 3.75 0.25
+XYT_Part_36.Position 0. -37.5 -76.25
+XYT_Part_36.Visibility 1
+XYT_Part_36.Color 1
+XYT_Part_36.Mother XYTable_Volume
+
+
+
+Volume XYT_WoodPlate_37
+XYT_WoodPlate_37.Material Plywood
+XYT_WoodPlate_37.Shape BRIK 43.75 43.25 0.95
+XYT_WoodPlate_37.Position 0. 2.0 -75.05
+XYT_WoodPlate_37.Visibility 1
+XYT_WoodPlate_37.Color 1
+XYT_WoodPlate_37.Mother XYTable_Volume
+
+Volume XYT_WoodPlate_38
+XYT_WoodPlate_38.Material Air
+XYT_WoodPlate_38.Shape BRIK 2.65 6.3 0.95
+XYT_WoodPlate_38.Position 0.0 -5.95 0.0
+XYT_WoodPlate_38.Visibility 1
+XYT_WoodPlate_38.Color 1
+XYT_WoodPlate_38.Mother XYT_WoodPlate_37
+
+Volume XYT_WoodPlate_39
+XYT_WoodPlate_39.Material Air
+XYT_WoodPlate_39.Shape BRIK 1.25 2.25 0.95
+XYT_WoodPlate_39.Position 0.0 -41.0 0.0
+XYT_WoodPlate_39.Visibility 1
+XYT_WoodPlate_39.Color 1
+XYT_WoodPlate_39.Mother XYT_WoodPlate_37
+
+
+
+Volume XYT_BaseTriangle_40
+XYT_BaseTriangle_40.Material Aluminium
+XYT_BaseTriangle_40.Shape TRD1 59.0 0.0 2.0 44.0312389106
+XYT_BaseTriangle_40.Position 0. 1.2 -82.5
+XYT_BaseTriangle_40.Rotation 90. 0. 0.
+XYT_BaseTriangle_40.Visibility 1
+XYT_BaseTriangle_40.Color 1
+XYT_BaseTriangle_40.Mother XYTable_Volume
+
+Volume XYT_BaseTriangle_41
+XYT_BaseTriangle_41.Material Aluminium
+XYT_BaseTriangle_41.Shape TRD1 47.77785 0.0 2.0 35.64141
+XYT_BaseTriangle_41.Position 0.0 0.0 -2.35
+XYT_BaseTriangle_41.Visibility 1
+XYT_BaseTriangle_41.Color 1
+XYT_BaseTriangle_41.Mother XYT_BaseTriangle_40
+
+Volume XYT_BaseTriangle_42
+XYT_BaseTriangle_42.Material Aluminium
+XYT_BaseTriangle_42.Shape BRIK 2.0 2.0 34.1
+XYT_BaseTriangle_42.Position 0.0 0.0 -3.88
+XYT_BaseTriangle_42.Visibility 1
+XYT_BaseTriangle_42.Color 1
+XYT_BaseTriangle_42.Mother XYT_BaseTriangle_40
+
+
+
+
+Volume XYT_HandleBar_43
+XYT_HandleBar_43.Material Aluminium
+XYT_HandleBar_43.Shape TUBS 0.0 0.75 2.0 0. 360.
+XYT_HandleBar_43.Position 23.2 17.75 8.25
+XYT_HandleBar_43.Rotation 90. 0. 0.
+XYT_HandleBar_43.Visibility 1
+XYT_HandleBar_43.Color 1
+XYT_HandleBar_43.Mother XYTable_Volume
+
+Volume XYT_HandleBar_44
+XYT_HandleBar_44.Material Aluminium
+XYT_HandleBar_44.Shape TUBS 0.0 0.75 2.0 0. 360.
+XYT_HandleBar_44.Position 23.2 17.75 -8.25
+XYT_HandleBar_44.Rotation 90. 0. 0.
+XYT_HandleBar_44.Visibility 1
+XYT_HandleBar_44.Color 1
+XYT_HandleBar_44.Mother XYTable_Volume
+
+Volume XYT_HandleBar_45
+XYT_HandleBar_45.Material Aluminium
+XYT_HandleBar_45.Shape TUBS 0.0 1.0 8.25 0. 360.
+XYT_HandleBar_45.Position 23.2 14.75 0.0
+XYT_HandleBar_45.Visibility 1
+XYT_HandleBar_45.Color 1
+XYT_HandleBar_45.Mother XYTable_Volume
+
+
+Volume XYT_HandleBar_46
+XYT_HandleBar_46.Material Aluminium
+XYT_HandleBar_46.Shape TUBS 0.0 0.75 2.0 0. 360.
+XYT_HandleBar_46.Position -23.2 17.75 8.25
+XYT_HandleBar_46.Rotation 90. 0. 0.
+XYT_HandleBar_46.Visibility 1
+XYT_HandleBar_46.Color 1
+XYT_HandleBar_46.Mother XYTable_Volume
+
+Volume XYT_HandleBar_47
+XYT_HandleBar_47.Material Aluminium
+XYT_HandleBar_47.Shape TUBS 0.0 0.75 2.0 0. 360.
+XYT_HandleBar_47.Position -23.2 17.75 -8.25
+XYT_HandleBar_47.Rotation 90. 0. 0.
+XYT_HandleBar_47.Visibility 1
+XYT_HandleBar_47.Color 1
+XYT_HandleBar_47.Mother XYTable_Volume
+
+Volume XYT_HandleBar_48
+XYT_HandleBar_48.Material Aluminium
+XYT_HandleBar_48.Shape TUBS 0.0 1.0 8.25 0. 360.
+XYT_HandleBar_48.Position -23.2 14.75 0.0
+XYT_HandleBar_48.Visibility 1
+XYT_HandleBar_48.Color 1
+XYT_HandleBar_48.Mother XYTable_Volume
+
+
+// These ones are only approximately positioned:
+
+Volume XYT_Part_49
+XYT_Part_49.Material Steel
+XYT_Part_49.Shape TUBS 0. 2.5 1.0 0. 360.
+XYT_Part_49.Position 51.0 41.0 -79.5
+XYT_Part_49.Visibility 1
+XYT_Part_49.Color 1
+XYT_Part_49.Mother XYTable_Volume
+
+Volume XYT_Part_49a
+XYT_Part_49a.Material Aluminium
+XYT_Part_49a.Shape TUBS 0. 0.3 1.0 0. 360.
+XYT_Part_49a.Position 51.0 41.0 -77.5
+XYT_Part_49a.Visibility 1
+XYT_Part_49a.Color 1
+XYT_Part_49a.Mother XYTable_Volume
+
+Volume XYT_Part_49b
+XYT_Part_49b.Material Steel
+XYT_Part_49b.Shape TUBS 0. 0.3 0.25 0. 360.
+XYT_Part_49b.Position 51.0 -0.5 0.0
+XYT_Part_49b.Visibility 1
+XYT_Part_49b.Color 1
+XYT_Part_49b.Mother XYT_Part_34
+
+Volume XYT_Part_49c
+XYT_Part_49c.Material Steel
+XYT_Part_49c.Shape TUBS 0. 0.3 4.75 0. 360.
+XYT_Part_49c.Position 51.0 41.0 -71.25
+XYT_Part_49c.Visibility 1
+XYT_Part_49c.Color 1
+XYT_Part_49c.Mother XYTable_Volume
+
+Volume XYT_Part_49d
+XYT_Part_49d.Material Steel
+XYT_Part_49d.Shape TUBS 0. 2.25 0.75 0. 360.
+XYT_Part_49d.Position 51.0 41.0 -65.75
+XYT_Part_49d.Visibility 1
+XYT_Part_49d.Color 1
+XYT_Part_49d.Mother XYTable_Volume
+
+
+
+Volume XYT_Part_50
+XYT_Part_50.Material Aluminium
+XYT_Part_50.Shape TUBS 0. 2.5 1.0 0. 360.
+XYT_Part_50.Position -51.0 41.0 -79.5
+XYT_Part_50.Visibility 1
+XYT_Part_50.Color 1
+XYT_Part_50.Mother XYTable_Volume
+
+Volume XYT_Part_50a
+XYT_Part_50a.Material Steel
+XYT_Part_50a.Shape TUBS 0. 0.3 1.0 0. 360.
+XYT_Part_50a.Position -51.0 41.0 -77.5
+XYT_Part_50a.Visibility 1
+XYT_Part_50a.Color 1
+XYT_Part_50a.Mother XYTable_Volume
+
+Volume XYT_Part_50b
+XYT_Part_50b.Material Steel
+XYT_Part_50b.Shape TUBS 0. 0.3 0.25 0. 360.
+XYT_Part_50b.Position -51.0 -0.5 0.0
+XYT_Part_50b.Visibility 1
+XYT_Part_50b.Color 1
+XYT_Part_50b.Mother XYT_Part_34
+
+Volume XYT_Part_50c
+XYT_Part_50c.Material Steel
+XYT_Part_50c.Shape TUBS 0. 0.3 4.75 0. 360.
+XYT_Part_50c.Position -51.0 41.0 -71.25
+XYT_Part_50c.Visibility 1
+XYT_Part_50c.Color 1
+XYT_Part_50c.Mother XYTable_Volume
+
+Volume XYT_Part_50d
+XYT_Part_50d.Material Steel
+XYT_Part_50d.Shape TUBS 0. 2.25 0.75 0. 360.
+XYT_Part_50d.Position -51.0 41.0 -65.75
+XYT_Part_50d.Visibility 1
+XYT_Part_50d.Color 1
+XYT_Part_50d.Mother XYTable_Volume
+
+
+
+
+Volume XYT_Part_51
+XYT_Part_51.Material Aluminium
+XYT_Part_51.Shape TUBS 0. 2.5 1.0 0. 360.
+XYT_Part_51.Position 0.0 -38.0 -79.5
+XYT_Part_51.Visibility 1
+XYT_Part_51.Color 1
+XYT_Part_51.Mother XYTable_Volume
+
+Volume XYT_Part_51a
+XYT_Part_51a.Material Steel
+XYT_Part_51a.Shape TUBS 0. 0.3 1.0 0. 360.
+XYT_Part_51a.Position 0.0 -38.0 -77.5
+XYT_Part_51a.Visibility 1
+XYT_Part_51a.Color 1
+XYT_Part_51a.Mother XYTable_Volume
+
+Volume XYT_Part_51b
+XYT_Part_51b.Material Steel
+XYT_Part_51b.Shape TUBS 0. 0.3 0.25 0. 360.
+XYT_Part_51b.Position 0.0 -0.5 0.0
+XYT_Part_51b.Visibility 1
+XYT_Part_51b.Color 1
+XYT_Part_51b.Mother XYT_Part_36
+
+Volume XYT_Part_51c
+XYT_Part_51c.Material Steel
+XYT_Part_51c.Shape TUBS 0. 0.3 0.95 0. 360.
+XYT_Part_51c.Position 0.0 1.0 0.0
+XYT_Part_51c.Visibility 1
+XYT_Part_51c.Color 1
+XYT_Part_51c.Mother XYT_WoodPlate_39
+
+Volume XYT_Part_51d
+XYT_Part_51d.Material Steel
+XYT_Part_51d.Shape TUBS 0. 0.3 4.3 0. 360.
+XYT_Part_51d.Position 0.0 -38.0 -69.8
+XYT_Part_51d.Visibility 1
+XYT_Part_51d.Color 1
+XYT_Part_51d.Mother XYTable_Volume
+
+Volume XYT_Part_51e
+XYT_Part_51e.Material Steel
+XYT_Part_51e.Shape TUBS 0. 2.25 0.75 0. 360.
+XYT_Part_51e.Position 0.0 -38.0 -64.75
+XYT_Part_51e.Visibility 1
+XYT_Part_51e.Color 1
+XYT_Part_51e.Mother XYTable_Volume
+
+
+
+
+
+

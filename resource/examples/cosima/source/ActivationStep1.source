@@ -1,0 +1,37 @@
+# Template Run for Step 1 of activation simulation: 
+# Simulate primary protons & store all generated particles
+
+
+# Global parameters:
+Version                            1
+Geometry                           $(MEGALIB)/resource/examples/geomega/special/ActivationSphere.geo.setup
+DetectorTimeConstant               0.000005
+
+
+# Physics parameters
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+DecayMode                          ActivationBuildup
+
+
+# Storage parameters
+StoreCalibrated                    true
+StoreSimulationInfo                true
+DiscretizeHits                     true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+
+
+# Simulate the primary protons and all secondaries
+Run Step1
+Step1.FileName                         ActivationStep1
+Step1.Time                             100.0
+Step1.IsotopeProductionFile            Isotopes.dat
+
+Step1.Source Step1_ProtonSource
+Step1_ProtonSource.ParticleType        4
+Step1_ProtonSource.Beam                FarFieldAreaSource 0.0 180.0 0.0 360.0
+Step1_ProtonSource.Spectrum            File CosmicProtonsInterplanetarySpace.dat
+Step1_ProtonSource.Flux                3.73

@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+
+Convert=`type -P convert`
+Expect=`type -P expect`
+Doxygen=`type -P doxygen`
+
+ReturnCode=0
+
+if ([ "${Doxygen}" != "" ]); then
+    echo "Found doxygen: ${Doxygen}"
+else
+    echo "Not found: \"doxygen\""
+    echo "   -> You will not be able to create MEGAlib source code documentation"
+    ReturnCode=1
+fi;
+
+if ([ "${Convert}" != "" ]); then
+    echo "Found convert: ${Convert}"
+else
+    echo "Not found: \"convert\""
+    echo "   -> You will not be able to create animations with Mimrec"
+    ReturnCode=1
+fi;
+
+if ([ "${Expect}" != "" ]); then
+    echo "Found expect: ${Expect}"
+else
+    echo "Not found: \"expect\""
+    echo "   -> You will not be able to use all options of the pipeline script"
+    ReturnCode=1
+fi;
+
+exit ${ReturnCode}

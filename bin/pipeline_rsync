@@ -1,0 +1,27 @@
+#!/usr/bin/expect
+
+send_user "\nPlease enclose the password in '...' if it contains some special characters such as $, etc.\n\n"
+
+if {$argc==0} {
+    send_user "Usage: rsync_tunnel here there password excludes\n"
+    exit 1
+}
+
+set timeout -1
+
+set here         [lindex $argv 0]
+set there        [lindex $argv 1]
+set password     [lindex $argv 2]
+set exclude      [lindex $argv 3]
+set include      [lindex $argv 4]
+
+send_user "$here $there $password $exclude\n"
+
+spawn rsync --include-from=${include}  --exclude-from=${exclude} -ave ssh ${here} ${there}
+if {$password != ""} {
+expect -re "Password:"
+send "${password}\n"
+}
+expect eof
+
+exit 0

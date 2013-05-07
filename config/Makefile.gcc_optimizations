@@ -1,0 +1,17 @@
+# For improved execution performance with the GNU gcc compiler (4.3 or higher) 
+# you might also test one of the following flags.
+#
+# On an Intel Pentium M:
+# OPT += -march=native
+# 
+# On an Intel Pentium 4/Xeon:
+# OPT += -march=native
+# 
+# On an Intel Core 2 Duo:
+# OPT += -march=native
+#
+# On an Intel Atom (requires 11.0 or higher):
+# OPT += -O1 -msse3 -march=core2 -mfpmath=sse
+#
+# Remember also to compile Geant4/ROOT with those options, otherwise you only 
+# speed up the MEGAlib elements but not the libraries which ROOT uses

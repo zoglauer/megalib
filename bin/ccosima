@@ -1,0 +1,248 @@
+#!/bin/bash
+
+# This is an example submission script for multiple cosima runs via a condor pool
+# This example is taylored to the SSL condor cluster
+# You have to adapt it to your own condor cluster
+
+
+help() {
+    echo ""
+    echo "ccosima - launch multiple instances of cosima on a condor cluster";
+    echo "(C) by Andreas Zoglauer"
+    echo "";
+    echo "Usage:";
+    echo "    ccosima <cosima source file>";
+    echo "";
+    echo "Options:";
+    echo "    -j <jobs>: The number of jobs as an integer"
+    echo "";
+    echo "Example:";
+    echo "    ccosima -j 24 Run.source";
+    echo "";
+    echo "This script launches multiple instances of cosima with the same source file";
+    echo "and generates a concatenation file using a condor cluster"
+    echo "";
+}
+
+
+# Initializations
+# ===============
+
+# Default number of jobs
+NJobs=1;
+
+# The source file name
+SourceDummyName="!@#$%!@#$%!@#$%";
+Source=${SourceDummyName};
+
+# The directory where all additional programs are installed (the same on all computers):
+CONDORSYS=/condor/system/lucid-x86-64
+CONDORSYSENV=${CONDORSYS}/env_init.sh
+
+# Set all MEGALib related environment variables
+source ${CONDORSYSENV}
+
+
+
+# Grab the command line input
+# ===========================
+
+
+# Verify that there is input:
+if [ $# -eq 0 ] ; then
+    echo " "
+    echo "Error: You need to give at least a source file";
+    echo "       For details see ccosima --help"
+    echo " "
+    exit 0;
+fi;
+
+# Get the input
+while [ $# -gt 0 ] ; do
+    Found=0;
+    case $1 in
+    -h|--help) 
+        help; 
+        exit 0;;
+    -j|--jobs)
+        shift;
+        if [ $# -eq 0 ]; then
+            echo " "
+            echo "Error: Option -j need an argument"
+            echo "       For details see ccosima --help"
+            echo " "
+            exit 0;
+        fi
+        Found=1;
+        NJobs=$1;
+		echo "Number of jobs: ${NJobs}";;
+    esac
+    if [ "${Found}" == "0" ]; then
+        if [ "${Source}" == "${SourceDummyName}" ]; then
+            Source=$1;
+			echo "Source file name: ${Source}"
+        else
+            echo " "
+            echo "Error: Only one source file allowed"
+            echo "       For details see ccosima --help"
+            echo " "
+            help; 
+            exit 1;
+        fi    
+    fi
+
+    shift
+done
+
+# Verify the input
+if [ "${Source}" == "${SourceDummyName}" ]; then
+    echo " "
+    echo "Error: You need to give a source file";
+    echo "       For details see mcosima -- help"
+    echo " "
+    exit 1;
+fi
+
+if (`test ! -f ${Source}`); then
+    echo " "
+    echo "ERROR: The source file does not exist."
+    echo " "
+    exit 1;
+fi
+
+# Check if n jobs >= 1
+
+
+# Sanity checks
+# =============
+
+# Check if cosima exists
+if (`test ! -f ${MEGALIB}/bin/cosima`); then
+    echo " "
+    echo "ERROR: The cosima executable does not exist. Try to (re-)compile MEGAlib."
+	echo "       Search path: ${MEGALIB}/bin"
+    echo " "
+    exit 1;
+fi
+
+# Make sure there is only one Run per file...
+
+# Make sure condor is running
+
+
+# Prepare for starting the run
+# ============================
+
+
+# Search for the next unused sim file with ".pX.*sim" in it in the current directory
+ThreadsID=0
+while true; do
+    ThreadsID=`expr ${ThreadsID} + 1`
+    N=$(find . -name "*.p${ThreadsID}.*sim" | wc -l)
+    N=`echo "${N}" | sed 's/ //g'`
+    if [ "${N}" == "0" ]; then
+        break;
+    fi
+done
+
+echo "ID of job cluster: ${ThreadsID}"
+
+
+# Extract the base file names from the source file
+Base=`grep ".FileName" ${Source} | while read line; do echo ${line} | awk -F".FileName " '{ print $2 }'; done`
+
+echo "Base name: ${Base}"
+echo " "
+
+    
+umask 007
+
+# Start the sims
+Pids=" "
+for (( i=1; i <= ${NJobs}; i+=1 )); do
+
+	# Create the launch script:
+	Launch="${Base}.p${ThreadsID}.${i}.launch"
+	rm -rf ${Launch}
+	echo "#!/bin/bash" >> ${Launch}
+	echo " " >> ${Launch}
+	echo "# This might help a little bit in case the files are all started at once..." >> ${Launch}
+	echo "sleep `echo "$((RANDOM%10000)) /  1000" | bc -l`" >> ${Launch}
+	echo " " >> ${Launch}
+	echo "source ${CONDORSYSENV}" >> ${Launch}
+	echo "cosima -v 0 -s $((RANDOM*10000 + RANDOM)) -p ${ThreadsID} ${Source}" >> ${Launch}
+	echo " " >> ${Launch}
+	echo "exit;" >> ${Launch}
+	chmod ug+x ${Launch}
+
+	# Create the submit script:
+	Submit="${Base}.p${ThreadsID}.${i}.submit"
+	rm -rf ${Submit}
+	echo "universe = vanilla" >> ${Submit}
+	echo "executable = ./${Launch}" >> ${Submit}
+	echo "log = ${Base}.p${ThreadsID}.${i}.log" >> ${Submit}
+	echo "output = ${Base}.p${ThreadsID}.${i}.out" >> ${Submit}
+	echo "error = ${Base}.p${ThreadsID}.${i}.err" >> ${Submit}
+	echo " " >> ${Submit}
+	echo "queue" >> ${Submit}
+
+    echo "Launching number ${i}/${NJobs}"
+    condor_submit ${Submit}
+    Pids="$Pids $! "
+    if ( [ ${NJobs} -gt 1 ] && [ $i -ne ${NJobs} ] ); then
+        echo "Sleeping a bit to make sure we generate different output file IDs..."
+        sleep 2
+    fi
+done
+
+
+# Create the concatenation file
+grep ".FileName" ${Source} | while read line; do
+    Base=`echo $line | awk -F".FileName" '{ print $2 }'`; 
+    echo "Creating concatenation file for: ${Base}"
+    ConcatFileName="${Base}.p${ThreadsID}.sim" 
+
+    # Wait until the first such file is created
+    while ( test ! -f ${Base}.p${ThreadsID}.inc1.id1.sim ); do
+        sleep 5
+        echo "Waiting for files to appear..."
+    done
+
+    # Wait until the header is written
+    while [ `stat -c%s ${Base}.p${ThreadsID}.inc1.id1.sim` -le 100 ]; do
+        sleep 1;
+        echo "Waiting for header to be written..."
+        ls ${Base}.p${ThreadsID}.inc1.id1.sim
+    done
+
+    # Extract the version information
+    head -n 100 ${Base}.p${ThreadsID}.inc1.id1.sim > /tmp/mcosima.head
+    Version=`grep "Version" /tmp/mcosima.head`
+    Geometry=`grep "Geometry" /tmp/mcosima.head`
+    rm /tmp/mcosima.head
+    
+    # Create a concatenation file
+    echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+    echo "Type SIM" >> ${ConcatFileName}
+    echo "${Version}" >> ${ConcatFileName}
+    echo "${Geometry}" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+    
+    for (( i=1; i <= ${NJobs}; i+=1 )); do
+        echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+    done
+    
+    echo "EN" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+
+    echo "Created concatenation file ${ConcatFileName}"
+done
+
+echo "Finished launching..."
+
+condor_status
+condor_q
+
+exit;
+

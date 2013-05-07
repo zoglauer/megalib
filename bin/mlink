@@ -1,0 +1,118 @@
+#! /bin/sh
+
+confhelp() {
+    echo "Usage: mlink [options] path";
+    echo "  Path (mandatory):";
+    echo "    Example: mlink ../MEGAlib";
+    echo "  Options:";
+    echo "    -h: Display this help message";
+}
+
+nothing() { 
+    `test 1 -eq 1` 
+}
+
+# Test if help is requested
+case $1 in
+-h|--help) 
+		confhelp; 
+		exit 0;;
+esac
+
+
+# Test if a path is given
+if [ $# -lt 1 ] ; then
+    echo "Error: You must specify a path. Aborting";
+    echo ""
+    confhelp;
+    echo ""
+    exit 1;
+fi
+
+
+# Test if we are in the Megalyze directory:
+if (`test -d calibfiles` & `test -d setupfiles` & `test -d macros`) ; then
+    nothing;
+else
+    echo "Error: The current path in not a valid Megalyze2 directory!";
+    exit 1;
+fi
+
+
+# Test if path exists
+if  `test -d $1` ; then
+    if  (`test ! -d $1/bin` || 
+        `test ! -d $1/src` ||
+        `test ! -d $1/include` ||
+        `test ! -d $1/lib` ||
+        `test ! -d $1/config` ||
+        `test ! -w $1/configure` ||
+        `test ! -w $1/Makefile`) ; then
+        echo "Error: Path $1 is not a valid path to the Megalyze2 source code. Aborting!";
+        exit 1;
+    fi
+else
+    echo "Error: Path $1 is not a valid path. Aborting!";
+    exit 1;
+fi
+
+
+# Generate links:
+if (`test -L bin`) ; then 
+    rm -r bin;
+fi
+echo "Linking \"bin\" -> \"$1/bin\""
+ln -s $1/bin bin;
+
+
+if (`test -L src`) ; then 
+    rm -r src;
+fi
+echo "Linking \"src\" -> \"$1/src\""
+ln -s $1/src src;
+
+
+if (`test -L lib`) ; then 
+    rm -r lib;
+fi
+echo "Linking \"lib\" -> \"$1/lib\""
+ln -s $1/lib lib;
+
+
+if (`test -L include`) ; then 
+    rm -r include;
+fi
+echo "Linking \"include\" -> \"$1/include\""
+ln -s $1/include include;
+
+
+if (`test -L config`) ; then 
+    rm -r config;
+fi
+echo "Linking \"config\" -> \"$1/config\""
+ln -s $1/config config;
+
+
+if (`test -L Makefile`) ; then 
+    rm -r Makefile;
+fi
+echo "Linking \"Makefile\" -> \"$1/Makefile\""
+ln -s $1/Makefile Makefile;
+
+if (`test -L configure`) ; then 
+    rm -r configure;
+fi
+echo "Linking \"configure\" -> \"$1/configure\""
+ln -s $1/configure configure;
+
+if (`test -L History.txt`) ; then 
+    rm -r History.txt;
+fi
+echo "Linking \"History.txt\" -> \"$1/History.txt\""
+ln -s $1/History.txt History.txt;
+
+
+# Copy this script into the resource directory
+cp -f $1/bin/mlink resource/;
+
+exit 0;

@@ -1,0 +1,459 @@
+//-----------------------------------------------------------------------------
+//
+// Geometry setup file 
+// for simulations and MIWorks
+//
+// (C) by Andreas Zoglauer
+// All rights reserved
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+//
+// Global Parameters
+//
+//-----------------------------------------------------------------------------
+
+
+Name MEGA.BaseLine.36Stack.ACS
+Version 1.0
+
+
+//-----------------------------------------------------------------------------
+//
+// Included materials, geometries and detector descriptions
+//
+//-----------------------------------------------------------------------------
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+Include SiStripDetector.geo
+Include Calorimeter8.geo
+Include Calorimeter4.geo
+
+Include SiStripDetector.det
+Include Calorimeter8.det
+Include Calorimeter4.det
+Include ACS.det
+
+
+SurroundingSphere 80  0.0  0.0  -40.0  80.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 80.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 -40.0
+#Sphere.Mother WorldVolume
+
+//-----------------------------------------------------------------------------
+//
+// Triggers
+//
+//-----------------------------------------------------------------------------
+
+
+// Trigger: at least one hit D1 and D2
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByChannel true
+TN01.DetectorType Strip2D 1
+TN01.DetectorType Calorimeter 1
+
+Trigger VT01
+VT01.Veto true
+VT01.TriggerByDetector true
+VT01.Detector ACU 1
+
+Trigger VT02
+VT02.Veto true
+VT02.TriggerByDetector true
+VT02.Detector ACC 1
+
+Trigger VT03
+VT03.Veto true
+VT03.TriggerByDetector true
+VT03.Detector ACL 1
+
+
+//-----------------------------------------------------------------------------
+//
+// Geometry arrangements:
+//
+//-----------------------------------------------------------------------------
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+//-----------------------------------------------------------------------------
+// The silicon auxillary volume
+
+Volume Tracker
+Tracker.Material Vacuum
+Tracker.Visibility 1
+Tracker.Shape BRIK 23.2  23.2  15.6
+Tracker.Position 0.0 0.0 -15.5
+Tracker.Mother WorldVolume
+
+SiStripDetector.Copy SiStripN01
+SiStripN01.Position  0.0  0.0  15.5
+SiStripN01.Mother Tracker
+
+SiStripDetector.Copy SiStripN02
+SiStripN02.Position  0.0  0.0  14.5
+SiStripN02.Mother Tracker
+
+SiStripDetector.Copy SiStripN03
+SiStripN03.Position  0.0  0.0  13.5
+SiStripN03.Mother Tracker
+
+SiStripDetector.Copy SiStripN04
+SiStripN04.Position  0.0  0.0  12.5
+SiStripN04.Mother Tracker
+
+SiStripDetector.Copy SiStripN05
+SiStripN05.Position  0.0  0.0  11.5
+SiStripN05.Mother Tracker
+
+SiStripDetector.Copy SiStripN06
+SiStripN06.Position  0.0  0.0  10.5
+SiStripN06.Mother Tracker
+
+SiStripDetector.Copy SiStripN07
+SiStripN07.Position  0.0  0.0  9.5
+SiStripN07.Mother Tracker
+
+SiStripDetector.Copy SiStripN08
+SiStripN08.Position  0.0  0.0  8.5
+SiStripN08.Mother Tracker
+
+SiStripDetector.Copy SiStripN09
+SiStripN09.Position  0.0  0.0  7.5
+SiStripN09.Mother Tracker
+
+SiStripDetector.Copy SiStripN10
+SiStripN10.Position  0.0  0.0  6.5
+SiStripN10.Mother Tracker
+
+SiStripDetector.Copy SiStripN11
+SiStripN11.Position  0.0  0.0  5.5
+SiStripN11.Mother Tracker
+
+SiStripDetector.Copy SiStripN12
+SiStripN12.Position  0.0  0.0  4.5
+SiStripN12.Mother Tracker
+
+SiStripDetector.Copy SiStripN13
+SiStripN13.Position  0.0  0.0  3.5
+SiStripN13.Mother Tracker
+
+SiStripDetector.Copy SiStripN14
+SiStripN14.Position  0.0  0.0  2.5
+SiStripN14.Mother Tracker
+
+SiStripDetector.Copy SiStripN15
+SiStripN15.Position  0.0  0.0  1.5
+SiStripN15.Mother Tracker
+
+SiStripDetector.Copy SiStripN16
+SiStripN16.Position  0.0  0.0  0.5
+SiStripN16.Mother Tracker
+
+
+SiStripDetector.Copy SiStripN21
+SiStripN21.Position  0.0  0.0  -15.5
+SiStripN21.Mother Tracker
+
+SiStripDetector.Copy SiStripN22
+SiStripN22.Position  0.0  0.0  -14.5
+SiStripN22.Mother Tracker
+
+SiStripDetector.Copy SiStripN23
+SiStripN23.Position  0.0  0.0  -13.5
+SiStripN23.Mother Tracker
+
+SiStripDetector.Copy SiStripN24
+SiStripN24.Position  0.0  0.0  -12.5
+SiStripN24.Mother Tracker
+
+SiStripDetector.Copy SiStripN25
+SiStripN25.Position  0.0  0.0  -11.5
+SiStripN25.Mother Tracker
+
+SiStripDetector.Copy SiStripN26
+SiStripN26.Position  0.0  0.0  -10.5
+SiStripN26.Mother Tracker
+
+SiStripDetector.Copy SiStripN27
+SiStripN27.Position  0.0  0.0  -9.5
+SiStripN27.Mother Tracker
+
+SiStripDetector.Copy SiStripN28
+SiStripN28.Position  0.0  0.0  -8.5
+SiStripN28.Mother Tracker
+
+SiStripDetector.Copy SiStripN29
+SiStripN29.Position  0.0  0.0  -7.5
+SiStripN29.Mother Tracker
+
+SiStripDetector.Copy SiStripN30
+SiStripN30.Position  0.0  0.0  -6.5
+SiStripN30.Mother Tracker
+
+SiStripDetector.Copy SiStripN31
+SiStripN31.Position  0.0  0.0  -5.5
+SiStripN31.Mother Tracker
+
+SiStripDetector.Copy SiStripN32
+SiStripN32.Position  0.0  0.0  -4.5
+SiStripN32.Mother Tracker
+
+SiStripDetector.Copy SiStripN33
+SiStripN33.Position  0.0  0.0  -3.5
+SiStripN33.Mother Tracker
+
+SiStripDetector.Copy SiStripN34
+SiStripN34.Position  0.0  0.0  -2.5
+SiStripN34.Mother Tracker
+
+SiStripDetector.Copy SiStripN35
+SiStripN35.Position  0.0  0.0  -1.5
+SiStripN35.Mother Tracker
+
+SiStripDetector.Copy SiStripN36
+SiStripN36.Position  0.0  0.0  -0.5
+SiStripN36.Mother Tracker
+
+
+//-----------------------------------------------------------------------------
+// Calorimeters at the bottom
+
+Volume CsI8Line
+CsI8Line.Material Vacuum
+CsI8Line.Visibility 1
+CsI8Line.Shape BRIK 27.9  3.1  4.33
+
+
+Calorimeter8.Copy C8N01
+C8N01.Position 24.8  0.0 0.0
+C8N01.Mother CsI8Line
+
+Calorimeter8.Copy C8N02
+C8N02.Position 18.6  0.0 0.0
+C8N02.Mother CsI8Line
+
+Calorimeter8.Copy C8N03
+C8N03.Position 12.4  0.0 0.0
+C8N03.Mother CsI8Line
+
+Calorimeter8.Copy C8N04
+C8N04.Position 6.2  0.0 0.0
+C8N04.Mother CsI8Line
+
+Calorimeter8.Copy C8N05
+C8N05.Position 0.0  0.0 0.0
+C8N05.Mother CsI8Line
+
+Calorimeter8.Copy C8N06
+C8N06.Position -6.2  0.0 0.0
+C8N06.Mother CsI8Line
+
+Calorimeter8.Copy C8N07
+C8N07.Position -12.4  0.0 0.0
+C8N07.Mother CsI8Line
+
+Calorimeter8.Copy C8N08
+C8N08.Position -18.6  0.0 0.0
+C8N08.Mother CsI8Line
+
+Calorimeter8.Copy C8N09
+C8N09.Position -24.8  0.0 0.0
+C8N09.Mother CsI8Line
+
+
+CsI8Line.Copy CsI8LineN01 
+CsI8LineN01.Position 0.0  24.8  -42.3
+CsI8LineN01.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN02
+CsI8LineN02.Position 0.0  18.6  -42.3
+CsI8LineN02.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN03 
+CsI8LineN03.Position 0.0  12.4  -42.3
+CsI8LineN03.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN04 
+CsI8LineN04.Position 0.0  6.2  -42.3
+CsI8LineN04.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN05 
+CsI8LineN05.Position 0.0  0.0  -42.3
+CsI8LineN05.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN06 
+CsI8LineN06.Position 0.0  -6.2  -42.3
+CsI8LineN06.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN07 
+CsI8LineN07.Position 0.0  -12.4  -42.3
+CsI8LineN07.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN08
+CsI8LineN08.Position 0.0  -18.6  -42.3
+CsI8LineN08.Mother WorldVolume
+
+CsI8Line.Copy CsI8LineN09 
+CsI8LineN09.Position 0.0  -24.8  -42.3
+CsI8LineN09.Mother WorldVolume
+
+
+
+//-----------------------------------------------------------------------------
+// Calorimeters at the side
+
+Volume CsI4Line
+CsI4Line.Material Vacuum
+CsI4Line.Visibility 0
+CsI4Line.Shape BRIK 18.6  3.1  2.3
+
+
+Calorimeter4.Copy C4N01
+C4N01.Position 15.5  0.0 0.0
+C4N01.Mother CsI4Line
+
+Calorimeter4.Copy C4N02
+C4N02.Position 9.3  0.0 0.0
+C4N02.Mother CsI4Line
+
+Calorimeter4.Copy C4N03
+C4N03.Position 3.1  0.0 0.0
+C4N03.Mother CsI4Line
+
+Calorimeter4.Copy C4N04
+C4N04.Position -3.1  0.0 0.0
+C4N04.Mother CsI4Line
+
+Calorimeter4.Copy C4N05
+C4N05.Position -9.3  0.0 0.0
+C4N05.Mother CsI4Line
+
+Calorimeter4.Copy C4N06
+C4N06.Position -15.5  0.0 0.0
+C4N06.Mother CsI4Line
+
+
+
+Volume CsI4Layer
+CsI4Layer.Material Vacuum
+CsI4Layer.Visibility 0
+CsI4Layer.Shape BRIK 18.6  24.8  2.3
+
+
+CsI4Line.Copy CsI4LineN01 
+CsI4LineN01.Position 0.0  21.7  0.0
+CsI4LineN01.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN02
+CsI4LineN02.Position 0.0  15.5  0.0
+CsI4LineN02.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN03 
+CsI4LineN03.Position 0.0  9.3  0.0
+CsI4LineN03.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN04 
+CsI4LineN04.Position 0.0  3.1  0.0
+CsI4LineN04.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN05
+CsI4LineN05.Position 0.0  -3.1  0.0
+CsI4LineN05.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN06 
+CsI4LineN06.Position 0.0  -9.3  0.0
+CsI4LineN06.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN07 
+CsI4LineN07.Position 0.0  -15.5  0.0
+CsI4LineN07.Mother CsI4Layer
+
+CsI4Line.Copy CsI4LineN08 
+CsI4LineN08.Position 0.0  -21.7  0.0
+CsI4LineN08.Mother CsI4Layer
+
+
+
+CsI4Layer.Copy CsI4LayerN01
+CsI4LayerN01.Position -1.6 -26.0 -18.6
+CsI4LayerN01.Rotation 90.0 90.0 180.0
+CsI4LayerN01.Mother WorldVolume
+
+CsI4Layer.Copy CsI4LayerN02
+CsI4LayerN02.Position -26.0 +1.6 -18.6
+CsI4LayerN02.Rotation 90.0 90.0 90.0
+CsI4LayerN02.Mother WorldVolume
+
+CsI4Layer.Copy CsI4LayerN03
+CsI4LayerN03.Position 1.6 26.0 -18.6
+CsI4LayerN03.Rotation 90.0 90.0 0.0
+CsI4LayerN03.Mother WorldVolume
+
+CsI4Layer.Copy CsI4LayerN04
+CsI4LayerN04.Position 26.0 -1.6 -18.6
+CsI4LayerN04.Rotation 90.0 90.0 270
+CsI4LayerN04.Mother WorldVolume
+
+
+
+
+//-----------------------------------------------------------------------------
+// ACS volume - not sensitive so far!
+
+Volume UpperACS
+UpperACS.Material NE110
+UpperACS.Shape SPHE 44.0 45.0 0.0 90.0 0.0 360.0
+UpperACS.Position 0.0 0.0 -15.0
+UpperACS.Mother WorldVolume
+
+Volume CentralACS
+CentralACS.Material NE110
+CentralACS.Shape TUBS 44.0 45.0 18.0 0.0 360.0
+CentralACS.Position 0.0 0.0 -33.0
+CentralACS.Mother WorldVolume
+
+Volume LowerACS
+LowerACS.Material NE110
+LowerACS.Shape TUBS 0.0 45.0 0.5 0.0 360.0
+LowerACS.Position 0.0 0.0 -51.5
+LowerACS.Mother WorldVolume
+
+
+Volume Sat
+Sat.Shape TUBS 0.0 45.0 15 0.0 360.0
+Sat.Position 0.0 0.0 -74.0
+Sat.Material Aluminium
+Sat.Mother WorldVolume
+
+
+
+
+
+
+//-----------------------------------------------------------------------------
+//
+// End of file. Have a nice day, Andreas!
+//
+//-----------------------------------------------------------------------------
+
+
+
+
+

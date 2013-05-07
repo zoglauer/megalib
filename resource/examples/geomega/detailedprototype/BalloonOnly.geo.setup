@@ -1,0 +1,1141 @@
+// Setup file for the MEGA prototype in the Duke configuration
+
+Name MEGAPrototype_Duke_v3.0
+Version 3.0
+
+SurroundingSphere 200  0.0  0.0  20.0  200.0
+
+DefaultColor 1
+
+// Include section
+
+// NEEDS THIS LINE TO VIEW ALONE:
+Include ../materials/Materials.geo
+
+
+
+//Include Dom2.geo
+
+
+// The Mother Volume of the Detector Configuration:
+Volume Flight_Volume
+Flight_Volume.Material Air
+Flight_Volume.Visibility 0
+Flight_Volume.Shape BRIK 1000. 1000. 1000.
+// NEEDS THIS LINE TO VIEW ALONE:
+Flight_Volume.Mother 0
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+
+// The Dome:
+
+//Dom_Volume.Position 0. 0. 14.		// The vertical position of the dome within the egg is still to be determined!!!
+//Dom_Volume.Rotation 0. 0. 45.
+//Dom_Volume.Mother Flight_Volume
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+// THE EGG:
+
+
+// The Basic Egg Volume:
+
+// Upper Half-Sphere:
+Volume FV_HalfSphere_1
+FV_HalfSphere_1.Material Aluminium
+FV_HalfSphere_1.Shape SPHE 50.0 50.2 0. 90. 0. 360.		// change the thickness here if necessary
+FV_HalfSphere_1.Position 0. 0. 21.25
+FV_HalfSphere_1.Visibility 1
+FV_HalfSphere_1.Color 1
+FV_HalfSphere_1.Mother Flight_Volume
+
+// Cylinder in the middle part:
+Volume FV_Cylinder_2
+FV_Cylinder_2.Material Aluminium
+FV_Cylinder_2.Shape TUBS 50.0 50.3 21.25 0. 360.		// change the thickness here if necessary
+FV_Cylinder_2.Position 0. 0. 0.
+FV_Cylinder_2.Visibility 1
+FV_Cylinder_2.Color 1
+FV_Cylinder_2.Mother Flight_Volume
+
+// Lower Half-Sphere:
+Volume FV_HalfSphere_3
+FV_HalfSphere_3.Material Aluminium
+FV_HalfSphere_3.Shape SPHE 50.0 50.3 90. 180. 0. 360.		// change the thickness here if necessary
+FV_HalfSphere_3.Position 0. 0. -21.25
+FV_HalfSphere_3.Visibility 1
+FV_HalfSphere_3.Color 1
+FV_HalfSphere_3.Mother Flight_Volume
+
+
+// two rings surrounding the egg:
+
+// upper ring:
+Volume FV_Ring_4
+FV_Ring_4.Material Aluminium
+FV_Ring_4.Shape TUBS 50.3 52.7 1.925 0. 360.		// make corrcetions here if thickness of cylinder part was changed
+FV_Ring_4.Position 0. 0. 19.325
+FV_Ring_4.Visibility 1
+FV_Ring_4.Color 1
+FV_Ring_4.Mother Flight_Volume
+
+// lower ring:
+Volume FV_Ring_5
+FV_Ring_5.Material Aluminium
+FV_Ring_5.Shape TUBS 50.3 52.7 1.925 0. 360.		// make corrcetions here if thickness of cylinder part was changed
+FV_Ring_5.Position 0. 0. -19.325
+FV_Ring_5.Visibility 1
+FV_Ring_5.Color 1
+FV_Ring_5.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// The corner pillars:
+
+// Prototype:
+
+Volume FV_CPP_6
+FV_CPP_6.Material Aluminium
+FV_CPP_6.Shape BRIK 4.0 4.0 50.0
+FV_CPP_6.Visibility 0
+FV_CPP_6.Virtual true
+
+Volume FV_CPP_7
+FV_CPP_7.Material Aluminium
+FV_CPP_7.Shape BRIK 4.0 0.3 50.0
+FV_CPP_7.Position 0.0 -3.7 0.0
+FV_CPP_7.Visibility 1
+FV_CPP_7.Color 1
+FV_CPP_7.Mother FV_CPP_6
+
+Volume FV_CPP_8
+FV_CPP_8.Material Aluminium
+FV_CPP_8.Shape BRIK 0.3 3.7 50.0
+FV_CPP_8.Position -3.7 0.3 0.
+FV_CPP_8.Visibility 1
+FV_CPP_8.Color 1
+FV_CPP_8.Mother FV_CPP_6
+
+
+// Positioning:
+
+FV_CPP_6.Copy FV_CP_9
+FV_CP_9.Position -60.0 -60.0 -21.5
+FV_CP_9.Mother Flight_Volume
+
+FV_CPP_6.Copy FV_CP_10
+FV_CP_10.Position 60.0 -60.0 -21.5
+FV_CP_10.Rotation 0. 0. 90.
+FV_CP_10.Mother Flight_Volume
+
+FV_CPP_6.Copy FV_CP_11
+FV_CP_11.Position 60.0 60.0 -21.5
+FV_CP_11.Rotation 0. 0. 180.
+FV_CP_11.Mother Flight_Volume
+
+FV_CPP_6.Copy FV_CP_12
+FV_CP_12.Position -60.0 60.0 -21.5
+FV_CP_12.Rotation 0. 0. 270.
+FV_CP_12.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Cylinder rods on top end of the corner pillars:
+
+// Prototypes:
+
+Volume FV_CRP_13
+FV_CRP_13.Material Aluminium
+FV_CRP_13.Shape TUBS 1.475 1.625 60. 0. 360.
+FV_CRP_13.Visibility 1
+FV_CRP_13.Color 1
+
+Volume FV_CRP_13a
+FV_CRP_13a.Material Aluminium
+FV_CRP_13a.Shape TUBS 1.475 1.625 6. 0. 360.
+FV_CRP_13a.Visibility 1
+FV_CRP_13a.Color 1
+
+
+// Positioning:
+
+FV_CRP_13.Copy FV_CR_14
+FV_CR_14.Position 0.0 -66. 21.5
+FV_CR_14.Rotation 0. 90. 0.
+FV_CR_14.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_14a
+FV_CR_14a.Position 69.0 -66. 21.5
+FV_CR_14a.Rotation 0. 90. 0.
+FV_CR_14a.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_14b
+FV_CR_14b.Position -69.0 -66. 21.5
+FV_CR_14b.Rotation 0. 90. 0.
+FV_CR_14b.Mother Flight_Volume
+
+
+FV_CRP_13.Copy FV_CR_15
+FV_CR_15.Position 0.0 66. 21.5
+FV_CR_15.Rotation 0. 90. 0.
+FV_CR_15.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_15a
+FV_CR_15a.Position 69.0 66. 21.5
+FV_CR_15a.Rotation 0. 90. 0.
+FV_CR_15a.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_15b
+FV_CR_15b.Position -69.0 66. 21.5
+FV_CR_15b.Rotation 0. 90. 0.
+FV_CR_15b.Mother Flight_Volume
+
+
+FV_CRP_13.Copy FV_CR_16
+FV_CR_16.Position 66. 0.0 24.75
+FV_CR_16.Rotation 90. 0. 0.
+FV_CR_16.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_16a
+FV_CR_16a.Position 66. 69.0 24.75
+FV_CR_16a.Rotation 90. 0. 0.
+FV_CR_16a.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_16b
+FV_CR_16b.Position 66. -69.0 24.75
+FV_CR_16b.Rotation 90. 0. 0.
+FV_CR_16b.Mother Flight_Volume
+
+
+FV_CRP_13.Copy FV_CR_17
+FV_CR_17.Position -66. 0.0 24.75
+FV_CR_17.Rotation 90. 0. 0.
+FV_CR_17.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_17a
+FV_CR_17a.Position -66. 69.0 24.75
+FV_CR_17a.Rotation 90. 0. 0.
+FV_CR_17a.Mother Flight_Volume
+
+FV_CRP_13a.Copy FV_CR_17b
+FV_CR_17b.Position -66. -69.0 24.75
+FV_CR_17b.Rotation 90. 0. 0.
+FV_CR_17b.Mother Flight_Volume
+
+
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// First Square of squaretubes at about middle height of the egg:
+
+// Prototypes:
+// for front and back side:
+// at the moment I don't know if there is an (hidden) aluminium wall between front/back and left/right rod,
+// this might well be, if there were welded together. I decided to temporary assume the walls,
+// but it must be changed if I'm wrong.
+Volume FV_SRP_18
+FV_SRP_18.Material Aluminium
+FV_SRP_18.Shape BRIK 63.4 3.0 3.0
+FV_SRP_18.Color 1
+FV_SRP_18.Visibility 1
+
+Volume FV_SRP_19
+FV_SRP_19.Material Air
+FV_SRP_19.Shape BRIK 63.1 2.7 2.7	// change here y- and z- coordinate, if thickness of aluminium is not right!
+FV_SRP_19.Position 0. 0. 0.
+FV_SRP_19.Color 1
+FV_SRP_19.Visibility 1
+FV_SRP_19.Mother FV_SRP_18
+
+// for left and right side:
+Volume FV_SRP_20
+FV_SRP_20.Material Aluminium
+FV_SRP_20.Shape BRIK 3.0 57.4 3.0
+FV_SRP_20.Color 1
+FV_SRP_20.Visibility 1
+
+Volume FV_SRP_21
+FV_SRP_21.Material Air
+FV_SRP_21.Shape BRIK 2.7 57.4 2.7	// change here x- and z- coordinate, if thickness of aluminium is not right!
+FV_SRP_21.Position 0. 0. 0.			// but make sure it is coherent with the Dimensions in FV_SRP_19 !!!
+FV_SRP_21.Color 1
+FV_SRP_21.Visibility 1
+FV_SRP_21.Mother FV_SRP_20
+
+
+// Positioning:
+
+// front:
+FV_SRP_18.Copy FV_SR_22
+FV_SR_22.Position 0.0 -60.4 -12.0
+FV_SR_22.Mother Flight_Volume
+
+// back:
+FV_SRP_18.Copy FV_SR_23
+FV_SR_23.Position 0.0 60.4 -12.0
+FV_SR_23.Mother Flight_Volume
+
+// left:
+FV_SRP_20.Copy FV_SR_24
+FV_SR_24.Position -60.4 0.0 -12.0
+FV_SR_24.Mother Flight_Volume
+
+// right:
+FV_SRP_20.Copy FV_SR_25
+FV_SR_25.Position 60.4 0.0 -12.0
+FV_SR_25.Mother Flight_Volume
+
+
+// Because of the uncertainty about the hidden aluminium walls described above, I leave here an gap in the numeration, for eventual
+// necessary changes, and therefore caused introduction of new parts.
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// The rods that are about 45° rotated
+
+// Prototyp:
+Volume FV_RodP_40
+FV_RodP_40.Material Aluminium
+FV_RodP_40.Shape TUBS 1.475 1.625 35.0 0.0 360.0
+FV_RodP_40.Visibility 1
+FV_RodP_40.Color 1
+
+
+// Positioning:
+FV_RodP_40.Copy FV_Rod_41
+FV_Rod_41.Position 30.0 59.0 -39.0
+FV_Rod_41.Rotation 4.0 -50.0 0.0
+FV_Rod_41.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_42
+FV_Rod_42.Position 30.0 -59.0 -39.0
+FV_Rod_42.Rotation -4.0 -50.0 0.0
+FV_Rod_42.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_43
+FV_Rod_43.Position -30.0 59.0 -39.0
+FV_Rod_43.Rotation 4.0 50.0 0.0
+FV_Rod_43.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_44
+FV_Rod_44.Position -30.0 -59.0 -39.0
+FV_Rod_44.Rotation -4.0 50.0 0.0
+FV_Rod_44.Mother Flight_Volume
+
+
+FV_RodP_40.Copy FV_Rod_45
+FV_Rod_45.Position 59.0 30.0 -39.0
+FV_Rod_45.Rotation 50.0 -4.0 0.0
+FV_Rod_45.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_46
+FV_Rod_46.Position 59.0 -30.0 -39.0
+FV_Rod_46.Rotation -50.0 -4.0 0.0
+FV_Rod_46.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_47
+FV_Rod_47.Position -59.0 30.0 -39.0
+FV_Rod_47.Rotation 50.0 4.0 0.0
+FV_Rod_47.Mother Flight_Volume
+
+FV_RodP_40.Copy FV_Rod_48
+FV_Rod_48.Position -59.0 -30.0 -39.0
+FV_Rod_48.Rotation -50.0 4.0 0.0
+FV_Rod_48.Mother Flight_Volume
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Squaretube extention of the corner pillars to the bottom:
+
+// Prototype:
+Volume FV_ExtP_49
+FV_ExtP_49.Material Aluminium
+FV_ExtP_49.Shape BRIK 3. 3. 44.75
+FV_ExtP_49.Visibility 1
+FV_ExtP_49.Color 1
+
+Volume FV_ExtP_50
+FV_ExtP_50.Material Air
+FV_ExtP_50.Shape BRIK 2.8 2.8 44.73
+FV_ExtP_50.Position 0. 0. -0.2
+FV_ExtP_50.Visibility 1
+FV_ExtP_50.Color 1
+FV_ExtP_50.Mother FV_ExtP_49
+
+// Positioning
+FV_ExtP_49.Copy FV_Ext_51
+FV_Ext_51.Position 60.4 60.4 -110.25
+FV_Ext_51.Mother Flight_Volume
+
+FV_ExtP_49.Copy FV_Ext_52
+FV_Ext_52.Position 60.4 -60.4 -110.25
+FV_Ext_52.Mother Flight_Volume
+
+FV_ExtP_49.Copy FV_Ext_53
+FV_Ext_53.Position -60.4 60.4 -110.25
+FV_Ext_53.Mother Flight_Volume
+
+FV_ExtP_49.Copy FV_Ext_54
+FV_Ext_54.Position -60.4 -60.4 -110.25
+FV_Ext_54.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Second Sqare of squaretubes, placed around th bottom of the egg:
+
+// Prototype:
+
+Volume FV_SQP_55
+FV_SQP_55.Material Aluminium
+FV_SQP_55.Shape BRIK 57.4 3.0 3.0
+FV_SQP_55.Visibility 1
+FV_SQP_55.Color 1
+
+Volume FV_SQP_56
+FV_SQP_56.Material Air
+FV_SQP_56.Shape BRIK 57.4 2.8 2.8
+FV_SQP_56.Visibility 1
+FV_SQP_56.Color 1
+FV_SQP_56.Mother FV_SQP_55
+
+FV_SQP_55.Copy FV_SQ_57
+FV_SQ_57.Position 0.0 60.4 -74.5
+FV_SQ_57.Mother Flight_Volume
+
+FV_SQP_55.Copy FV_SQ_58
+FV_SQ_58.Position 0.0 -60.4 -74.5
+FV_SQ_58.Mother Flight_Volume
+
+FV_SQP_55.Copy FV_SQ_59
+FV_SQ_59.Position 60.4 0.0 -74.5
+FV_SQ_59.Rotation 0. 0. 90.
+FV_SQ_59.Mother Flight_Volume
+
+FV_SQP_55.Copy FV_SQ_60
+FV_SQ_60.Position -60.4 0.0 -74.5
+FV_SQ_60.Rotation 0. 0. 90.
+FV_SQ_60.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Triangles:
+// Their shape was changed in approximation.
+
+// Prototype:
+Volume FV_TriangleP_61
+FV_TriangleP_61.Material Aluminium
+FV_TriangleP_61.Shape TRD1 13.583077707 0. 0.15 6.791538853
+FV_TriangleP_61.Visibility 1
+FV_TriangleP_61.Color 1
+
+
+// Positioning:
+
+// Upside fisrt Square:
+
+FV_TriangleP_61.Copy FV_Triangle_62
+FV_Triangle_62.Position 58.59765682 58.59765682 -8.85
+FV_Triangle_62.Rotation -90. 0. -45.
+FV_Triangle_62.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_63
+FV_Triangle_63.Position -58.59765682 58.59765682 -8.85
+FV_Triangle_63.Rotation -90. 0. 45.
+FV_Triangle_63.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_64
+FV_Triangle_64.Position -58.59765682 -58.59765682 -8.85
+FV_Triangle_64.Rotation -90. 0. 135.
+FV_Triangle_64.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_65
+FV_Triangle_65.Position 58.59765682 -58.59765682 -8.85
+FV_Triangle_65.Rotation -90. 0. 225.
+FV_Triangle_65.Mother Flight_Volume
+
+// Downside first Square:
+
+FV_TriangleP_61.Copy FV_Triangle_66
+FV_Triangle_66.Position 58.59765682 58.59765682 -15.15
+FV_Triangle_66.Rotation -90. 0. -45.
+FV_Triangle_66.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_67
+FV_Triangle_67.Position -58.59765682 58.59765682 -15.15
+FV_Triangle_67.Rotation -90. 0. 45.
+FV_Triangle_67.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_68
+FV_Triangle_68.Position -58.59765682 -58.59765682 -15.15
+FV_Triangle_68.Rotation -90. 0. 135.
+FV_Triangle_68.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_69
+FV_Triangle_69.Position 58.59765682 -58.59765682 -15.15
+FV_Triangle_69.Rotation -90. 0. 225.
+FV_Triangle_69.Mother Flight_Volume
+
+
+// Outside second Square:
+
+FV_TriangleP_61.Copy FV_Triangle_69a
+FV_Triangle_69a.Position 58.59765682 63.55 -76.302343177
+FV_Triangle_69a.Rotation 0. 45. 0.
+FV_Triangle_69a.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_70
+FV_Triangle_70.Position -58.59765682 63.55 -76.302343177
+FV_Triangle_70.Rotation 0. -45. 0.
+FV_Triangle_70.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_71
+FV_Triangle_71.Position -58.59765682 -63.55 -76.302343177
+FV_Triangle_71.Rotation 0. -45. 0.
+FV_Triangle_71.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_72
+FV_Triangle_72.Position 58.59765682 -63.55 -76.302343177
+FV_Triangle_72.Rotation 0. 45. 0.
+FV_Triangle_72.Mother Flight_Volume
+
+
+FV_TriangleP_61.Copy FV_Triangle_73
+FV_Triangle_73.Position 63.55 58.59765682 -76.302343177
+FV_Triangle_73.Rotation 0. 45. 90.
+FV_Triangle_73.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_74
+FV_Triangle_74.Position 63.55 -58.59765682 -76.302343177
+FV_Triangle_74.Rotation 0. -45. 90.
+FV_Triangle_74.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_75
+FV_Triangle_75.Position -63.55 58.59765682 -76.302343177
+FV_Triangle_75.Rotation 0. -45. -90.
+FV_Triangle_75.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_76
+FV_Triangle_76.Position -63.55 -58.59765682 -76.302343177
+FV_Triangle_76.Rotation 0. -45. 90.
+FV_Triangle_76.Mother Flight_Volume
+
+
+
+// Outside second Square:
+
+FV_TriangleP_61.Copy FV_Triangle_77
+FV_Triangle_77.Position 58.59765682 63.55 -143.94765682
+FV_Triangle_77.Rotation 0. 135. 0.
+FV_Triangle_77.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_78
+FV_Triangle_78.Position -58.59765682 63.55 -143.94765682
+FV_Triangle_78.Rotation 0. -135. 0.
+FV_Triangle_78.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_79
+FV_Triangle_79.Position -58.59765682 -63.55 -143.94765682
+FV_Triangle_79.Rotation 0. -135. 0.
+FV_Triangle_79.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_80
+FV_Triangle_80.Position 58.59765682 -63.55 -143.94765682
+FV_Triangle_80.Rotation 0. 135. 0.
+FV_Triangle_80.Mother Flight_Volume
+
+
+FV_TriangleP_61.Copy FV_Triangle_81
+FV_Triangle_81.Position 63.55 58.59765682 -143.94765682
+FV_Triangle_81.Rotation 0. 135. 90.
+FV_Triangle_81.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_82
+FV_Triangle_82.Position 63.55 -58.59765682 -143.94765682
+FV_Triangle_82.Rotation 0. -135. 90.
+FV_Triangle_82.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_83
+FV_Triangle_83.Position -63.55 58.59765682 -143.94765682
+FV_Triangle_83.Rotation 0. -135. -90.
+FV_Triangle_83.Mother Flight_Volume
+
+FV_TriangleP_61.Copy FV_Triangle_84
+FV_Triangle_84.Position -63.55 -58.59765682 -143.94765682
+FV_Triangle_84.Rotation 0. -135. 90.
+FV_Triangle_84.Mother Flight_Volume
+
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Wooden plate on the bottom:
+
+Volume FV_WoodenPlate_AluTop_85
+FV_WoodenPlate_AluTop_85.Material Aluminium
+FV_WoodenPlate_AluTop_85.Shape BRIK 57.4 63.4 0.05
+FV_WoodenPlate_AluTop_85.Position 0. 0. -140.8
+FV_WoodenPlate_AluTop_85.Visibility 1
+FV_WoodenPlate_AluTop_85.Color 1
+FV_WoodenPlate_AluTop_85.Mother Flight_Volume
+
+Volume FV_WoodenPlate_AluBottom_86
+FV_WoodenPlate_AluBottom_86.Material Aluminium
+FV_WoodenPlate_AluBottom_86.Shape BRIK 57.4 63.4 0.05
+FV_WoodenPlate_AluBottom_86.Position 0. 0. -142.7
+FV_WoodenPlate_AluBottom_86.Visibility 1
+FV_WoodenPlate_AluBottom_86.Color 1
+FV_WoodenPlate_AluBottom_86.Mother Flight_Volume
+
+Volume FV_WoodenPlate_AluTop_87
+FV_WoodenPlate_AluTop_87.Material Aluminium
+FV_WoodenPlate_AluTop_87.Shape BRIK 3.0 57.4 0.05
+FV_WoodenPlate_AluTop_87.Position 60.4 0.0 -140.8
+FV_WoodenPlate_AluTop_87.Visibility 1
+FV_WoodenPlate_AluTop_87.Color 1
+FV_WoodenPlate_AluTop_87.Mother Flight_Volume
+
+Volume FV_WoodenPlate_AluBottom_88
+FV_WoodenPlate_AluBottom_88.Material Aluminium
+FV_WoodenPlate_AluBottom_88.Shape BRIK 3.0 57.4 0.05
+FV_WoodenPlate_AluBottom_88.Position 60.4 0.0 -142.7
+FV_WoodenPlate_AluBottom_88.Visibility 1
+FV_WoodenPlate_AluBottom_88.Color 1
+FV_WoodenPlate_AluBottom_88.Mother Flight_Volume
+
+Volume FV_WoodenPlate_AluTop_89
+FV_WoodenPlate_AluTop_89.Material Aluminium
+FV_WoodenPlate_AluTop_89.Shape BRIK 3.0 57.4 0.05
+FV_WoodenPlate_AluTop_89.Position -60.4 0.0 -140.8
+FV_WoodenPlate_AluTop_89.Visibility 1
+FV_WoodenPlate_AluTop_89.Color 1
+FV_WoodenPlate_AluTop_89.Mother Flight_Volume
+
+Volume FV_WoodenPlate_AluBottom_90
+FV_WoodenPlate_AluBottom_90.Material Aluminium
+FV_WoodenPlate_AluBottom_90.Shape BRIK 3.0 57.4 0.05
+FV_WoodenPlate_AluBottom_90.Position -60.4 0.0 -142.7
+FV_WoodenPlate_AluBottom_90.Visibility 1
+FV_WoodenPlate_AluBottom_90.Color 1
+FV_WoodenPlate_AluBottom_90.Mother Flight_Volume
+
+
+Volume FV_WoodenPlate_Wood_91
+FV_WoodenPlate_Wood_91.Material Aluminium
+FV_WoodenPlate_Wood_91.Shape BRIK 57.4 63.4 0.9
+FV_WoodenPlate_Wood_91.Position 0. 0. -141.75
+FV_WoodenPlate_Wood_91.Visibility 1
+FV_WoodenPlate_Wood_91.Color 8
+FV_WoodenPlate_Wood_91.Mother Flight_Volume
+
+Volume FV_WoodenPlate_Wood_92
+FV_WoodenPlate_Wood_92.Material Aluminium
+FV_WoodenPlate_Wood_92.Shape BRIK 3.0 57.4 0.9
+FV_WoodenPlate_Wood_92.Position 60.4 0.0 -141.75
+FV_WoodenPlate_Wood_92.Visibility 1
+FV_WoodenPlate_Wood_92.Color 8
+FV_WoodenPlate_Wood_92.Mother Flight_Volume
+
+Volume FV_WoodenPlate_Wood_93
+FV_WoodenPlate_Wood_93.Material Aluminium
+FV_WoodenPlate_Wood_93.Shape BRIK 3.0 57.4 0.9
+FV_WoodenPlate_Wood_93.Position -60.4 0.0 -141.75
+FV_WoodenPlate_Wood_93.Visibility 1
+FV_WoodenPlate_Wood_93.Color 8
+FV_WoodenPlate_Wood_93.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Rod holders on top of the construction:
+
+// Prototype:
+Volume FV_RHP_94
+FV_RHP_94.Material Aluminium
+FV_RHP_94.Shape BRIK 1.9 1.5 5.25 
+FV_RHP_94.Visibility 1
+FV_RHP_94.Color 1
+
+// Positioning:
+FV_RHP_94.Copy FV_RH_95
+FV_RH_95.Position 61.5 65.9 23.25
+FV_RH_95.Rotation 0. 0. 90.
+FV_RH_95.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_96
+FV_RH_96.Position 61.5 -65.9 23.25
+FV_RH_96.Rotation 0. 0. 90.
+FV_RH_96.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_97
+FV_RH_97.Position -61.5 -65.9 23.25
+FV_RH_97.Rotation 0. 0. 90.
+FV_RH_97.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_98
+FV_RH_98.Position -61.5 65.9 23.25
+FV_RH_98.Rotation 0. 0. 90.
+FV_RH_98.Mother Flight_Volume
+
+
+FV_RHP_94.Copy FV_RH_95a
+FV_RH_95a.Position 65.9 61.5 23.25
+FV_RH_95a.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_96a
+FV_RH_96a.Position  -65.9 61.5 23.25
+FV_RH_96a.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_97a
+FV_RH_97a.Position -65.9 -61.5 23.25
+FV_RH_97a.Mother Flight_Volume
+
+FV_RHP_94.Copy FV_RH_98a
+FV_RH_98a.Position 65.9 -61.5 23.25
+FV_RH_98a.Mother Flight_Volume
+
+
+
+
+
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Third and bottom Square of squaretubes at about middle height of the egg:
+
+// Prototypes:
+// for front and back side:
+// at the moment I don't know if there is an (hidden) aluminium wall between front/back and left/right rod,
+// this might well be, if there were welded together. I decided to temporary assume the walls,
+// but it must be changed if I'm wrong.
+Volume FV_SRP_100
+FV_SRP_100.Material Aluminium
+FV_SRP_100.Shape BRIK 63.4 3.0 3.0
+FV_SRP_100.Color 1
+FV_SRP_100.Visibility 1
+
+Volume FV_SRP_101
+FV_SRP_101.Material Air
+FV_SRP_101.Shape BRIK 63.1 2.7 2.7	// change here y- and z- coordinate, if thickness of aluminium is not right!
+FV_SRP_101.Position 0. 0. 0.
+FV_SRP_101.Color 1
+FV_SRP_101.Visibility 1
+FV_SRP_101.Mother FV_SRP_100
+
+// for left and right side:
+Volume FV_SRP_102
+FV_SRP_102.Material Aluminium
+FV_SRP_102.Shape BRIK 3.0 57.4 3.0
+FV_SRP_102.Color 1
+FV_SRP_102.Visibility 1
+
+Volume FV_SRP_103
+FV_SRP_103.Material Air
+FV_SRP_103.Shape BRIK 2.7 57.4 2.7	// change here x- and z- coordinate, if thickness of aluminium is not right!
+FV_SRP_103.Position 0. 0. 0.			// but make sure it is coherent with the Dimensions in FV_SRP_101 !!!
+FV_SRP_103.Color 1
+FV_SRP_103.Visibility 1
+FV_SRP_103.Mother FV_SRP_102
+
+
+// Positioning:
+
+// front:
+FV_SRP_100.Copy FV_SR_104
+FV_SR_104.Position 0.0 -60.4 -145.75
+FV_SR_104.Mother Flight_Volume
+
+// back:
+FV_SRP_100.Copy FV_SR_105
+FV_SR_105.Position 0.0 60.4 -145.75
+FV_SR_105.Mother Flight_Volume
+
+// left:
+FV_SRP_102.Copy FV_SR_106
+FV_SR_106.Position -60.4 0.0 -145.75
+FV_SR_106.Mother Flight_Volume
+
+// right:
+FV_SRP_102.Copy FV_SR_107
+FV_SR_107.Position 60.4 0.0 -145.75
+FV_SR_107.Mother Flight_Volume
+
+
+// Because of the uncertainty about the hidden aluminium walls described above, I leave here an gap in the numeration, for eventual
+// necessary changes, and therefore caused introduction of new parts.
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Cylindrical connections from Egg to framework
+
+// Much about these connections is approximated!!
+
+// Also there is a safe distance from the connections to the egg wall, for I don't know if in the simulation a circle is 
+// approximated by a polygon (and if so, how good?) or really is a circle. In the Viewer first is the case.
+
+
+Volume FV_CC_108
+FV_CC_108.Material Aluminium
+FV_CC_108.Shape TUBS 0. 3.5 3. 0. 360.
+FV_CC_108.Position 53.85 0. -12.
+FV_CC_108.Rotation 0. 90. 0.
+FV_CC_108.Visibility 1
+FV_CC_108.Color 2
+FV_CC_108.Mother Flight_Volume
+
+Volume FV_CC_109
+FV_CC_109.Material Aluminium
+FV_CC_109.Shape TUBS 0. 3.5 3. 0. 360.
+FV_CC_109.Position -53.85 0. -12.
+FV_CC_109.Rotation 0. 90. 0.
+FV_CC_109.Visibility 1
+FV_CC_109.Color 2
+FV_CC_109.Mother Flight_Volume
+
+Volume FV_CC_110
+FV_CC_110.Material Aluminium
+FV_CC_110.Shape TUBS 0. 3.5 3. 0. 360.
+FV_CC_110.Position 0. 53.85 -12.
+FV_CC_110.Rotation 0. 90. 90.
+FV_CC_110.Visibility 1
+FV_CC_110.Color 2
+FV_CC_110.Mother Flight_Volume
+
+Volume FV_CC_111
+FV_CC_111.Material Aluminium
+FV_CC_111.Shape TUBS 0. 3.5 3. 0. 360.
+FV_CC_111.Position 0. -53.85 -12.
+FV_CC_111.Rotation 0. 90. 90.
+FV_CC_111.Visibility 1
+FV_CC_111.Color 2
+FV_CC_111.Mother Flight_Volume
+
+
+// portholes:
+
+
+Volume FV_CC_112
+FV_CC_112.Material Aluminium
+FV_CC_112.Shape TUBS 3.9 4.2 0.9 0. 360.
+FV_CC_112.Position 36.5 36.5 -12.
+FV_CC_112.Rotation 0. 90. 45.
+FV_CC_112.Visibility 1
+FV_CC_112.Color 1
+FV_CC_112.Mother Flight_Volume
+
+Volume FV_CC_113
+FV_CC_113.Material Aluminium
+FV_CC_113.Shape TUBS 3.9 4.2 0.9 0. 360.
+FV_CC_113.Position -36.5 -36.5 -12.
+FV_CC_113.Rotation 0. 90. 45.
+FV_CC_113.Visibility 1
+FV_CC_113.Color 1
+FV_CC_113.Mother Flight_Volume
+
+Volume FV_CC_114
+FV_CC_114.Material Aluminium
+FV_CC_114.Shape TUBS 3.9 4.2 0.9 0. 360.
+FV_CC_114.Position 36.5 -36.5 -12.
+FV_CC_114.Rotation 0. 90. 135.
+FV_CC_114.Visibility 1
+FV_CC_114.Color 1
+FV_CC_114.Mother Flight_Volume
+
+Volume FV_CC_115
+FV_CC_115.Material Aluminium
+FV_CC_115.Shape TUBS 3.9 4.2 0.9 0. 360.
+FV_CC_115.Position -36.5 36.5 -12.
+FV_CC_115.Rotation 0. 90. 135.
+FV_CC_115.Visibility 1
+FV_CC_115.Color 1
+FV_CC_115.Mother Flight_Volume
+
+
+Volume FV_CC_116
+FV_CC_116.Material Aluminium
+FV_CC_116.Shape TUBS 3.9 5.3 0.4 0. 360.
+FV_CC_116.Position 37.5 37.5 -12.
+FV_CC_116.Rotation 0. 90. 45.
+FV_CC_116.Visibility 1
+FV_CC_116.Color 1
+FV_CC_116.Mother Flight_Volume
+
+Volume FV_CC_117
+FV_CC_117.Material Aluminium
+FV_CC_117.Shape TUBS 3.9 5.3 0.4 0. 360.
+FV_CC_117.Position -37.5 37.5 -12.
+FV_CC_117.Rotation 0. 90. 135.
+FV_CC_117.Visibility 1
+FV_CC_117.Color 1
+FV_CC_117.Mother Flight_Volume
+
+Volume FV_CC_118
+FV_CC_118.Material Aluminium
+FV_CC_118.Shape TUBS 3.9 5.3 0.4 0. 360.
+FV_CC_118.Position 37.5 -37.5 -12.
+FV_CC_118.Rotation 0. 90. 135.
+FV_CC_118.Visibility 1
+FV_CC_118.Color 1
+FV_CC_118.Mother Flight_Volume
+
+Volume FV_CC_119
+FV_CC_119.Material Aluminium
+FV_CC_119.Shape TUBS 3.9 5.3 0.4 0. 360.
+FV_CC_119.Position -37.5 -37.5 -12.
+FV_CC_119.Rotation 0. 90. 45.
+FV_CC_119.Visibility 1
+FV_CC_119.Color 1
+FV_CC_119.Mother Flight_Volume
+
+
+Volume FV_CC_120
+FV_CC_120.Material Aluminium
+FV_CC_120.Shape TUBS 0.0 5.3 0.1 0. 360.
+FV_CC_120.Position 37.9 37.9 -12.
+FV_CC_120.Rotation 0. 90. 45.
+FV_CC_120.Visibility 1
+FV_CC_120.Color 1
+FV_CC_120.Mother Flight_Volume
+
+Volume FV_CC_121
+FV_CC_121.Material Aluminium
+FV_CC_121.Shape TUBS 0.0 5.3 0.1 0. 360.
+FV_CC_121.Position 37.9 -37.9 -12.
+FV_CC_121.Rotation 0. 90. 135.
+FV_CC_121.Visibility 1
+FV_CC_121.Color 1
+FV_CC_121.Mother Flight_Volume
+
+Volume FV_CC_122
+FV_CC_122.Material Aluminium
+FV_CC_122.Shape TUBS 0.0 5.3 0.1 0. 360.
+FV_CC_122.Position -37.9 37.9 -12.
+FV_CC_122.Rotation 0. 90. 135.
+FV_CC_122.Visibility 1
+FV_CC_122.Color 1
+FV_CC_122.Mother Flight_Volume
+
+Volume FV_CC_123
+FV_CC_123.Material Aluminium
+FV_CC_123.Shape TUBS 0.0 5.3 0.1 0. 360.
+FV_CC_123.Position -37.9 -37.9 -12.
+FV_CC_123.Rotation 0. 90. 45.
+FV_CC_123.Visibility 1
+FV_CC_123.Color 1
+FV_CC_123.Mother Flight_Volume
+
+
+
+Volume FV_CC_124
+FV_CC_124.Material Aluminium
+FV_CC_124.Shape TUBS 3.9 4.2 1.0 0. 360.
+FV_CC_124.Position 33.5 33.5 -12.
+FV_CC_124.Rotation 0. 90. 45.
+FV_CC_124.Visibility 1
+FV_CC_124.Color 1
+FV_CC_124.Mother Flight_Volume
+
+Volume FV_CC_125
+FV_CC_125.Material Aluminium
+FV_CC_125.Shape TUBS 3.9 4.2 1.0 0. 360.
+FV_CC_125.Position -33.5 33.5 -12.
+FV_CC_125.Rotation 0. 90. 135.
+FV_CC_125.Visibility 1
+FV_CC_125.Color 1
+FV_CC_125.Mother Flight_Volume
+
+Volume FV_CC_126
+FV_CC_126.Material Aluminium
+FV_CC_126.Shape TUBS 3.9 4.2 1.0 0. 360.
+FV_CC_126.Position 33.5 -33.5 -12.
+FV_CC_126.Rotation 0. 90. 135.
+FV_CC_126.Visibility 1
+FV_CC_126.Color 1
+FV_CC_126.Mother Flight_Volume
+
+Volume FV_CC_127
+FV_CC_127.Material Aluminium
+FV_CC_127.Shape TUBS 3.9 4.2 1.0 0. 360.
+FV_CC_127.Position -33.5 -33.5 -12.
+FV_CC_127.Rotation 0. 90. 45.
+FV_CC_127.Visibility 1
+FV_CC_127.Color 1
+FV_CC_127.Mother Flight_Volume
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// Some Aluminium blocks to simulate the mass of some instruments below the egg:
+
+// VME-Case
+
+Volume FV_VMECase_150
+FV_VMECase_150.Material Aluminium
+FV_VMECase_150.Shape TUBS 37. 40. 25.5 0. 360.
+FV_VMECase_150.Position -17.4 17.4 -115.
+FV_VMECase_150.Visibility 1
+FV_VMECase_150.Color 8
+FV_VMECase_150.Mother Flight_Volume
+
+Volume FV_VME_151
+FV_VME_151.Material Aluminium
+FV_VME_151.Shape BRIK 25. 25. 14.815
+FV_VME_151.Position -17.4 17.4 -115.
+FV_VME_151.Visibility 1
+FV_VME_151.Color 9
+FV_VME_151.Mother Flight_Volume
+
+Volume FV_Amplifier_152
+FV_Amplifier_152.Material Aluminium
+FV_Amplifier_152.Shape BRIK 12.5 8. 1.204
+FV_Amplifier_152.Position -14. -36.75  -109.5
+FV_Amplifier_152.Visibility 1
+FV_Amplifier_152.Color 9
+FV_Amplifier_152.Mother Flight_Volume
+
+Volume FV_GPSBox_153
+FV_GPSBox_153.Material Aluminium
+FV_GPSBox_153.Shape BRIK 25. 15. 0.864
+FV_GPSBox_153.Position -26.5 -38. -134.5
+FV_GPSBox_153.Visibility 1
+FV_GPSBox_153.Color 9
+FV_GPSBox_153.Mother Flight_Volume
+
+Volume FV_Telecommand_154
+FV_Telecommand_154.Material Aluminium
+FV_Telecommand_154.Shape BRIK 16. 12. 1.447
+FV_Telecommand_154.Position 35 -39.5 -110
+FV_Telecommand_154.Visibility 1
+FV_Telecommand_154.Color 2
+FV_Telecommand_154.Mother Flight_Volume
+
+Volume FV_Telemetrie_155
+FV_Telemetrie_155.Material Aluminium
+FV_Telemetrie_155.Shape BRIK 13. 12. 1.326
+FV_Telemetrie_155.Position 38.5 -39.5 -135
+FV_Telemetrie_155.Visibility 1
+FV_Telemetrie_155.Color 2
+FV_Telemetrie_155.Mother Flight_Volume
+
+Volume FV_Battery_156
+FV_Battery_156.Material Aluminium
+FV_Battery_156.Shape BRIK 12.5 16. 11.574		// z not right
+FV_Battery_156.Position 39.0 0.0 -125
+FV_Battery_156.Visibility 1
+FV_Battery_156.Color 2
+FV_Battery_156.Mother Flight_Volume
+
+Volume FV_GPSBattery_157
+FV_GPSBattery_157.Material Aluminium
+FV_GPSBattery_157.Shape BRIK 12.5 10. 1.373
+FV_GPSBattery_157.Position 39.0 41.5 -135
+FV_GPSBattery_157.Visibility 1
+FV_GPSBattery_157.Color 2
+FV_GPSBattery_157.Mother Flight_Volume
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+//
+//// 10 kg Alu Cylinder and Nylon-Connections on top :
+//
+//Volume FV_AluTop_160
+//FV_AluTop_160.Material Aluminium
+//FV_AluTop_160.Shape TUBS 0. 10. 5.894627522 0. 360.
+//FV_AluTop_160.Position 0. 0. 428.8
+//FV_AluTop_160.Visibility 1
+//FV_AluTop_160.Color 1
+//FV_AluTop_160.Mother Flight_Volume
+//
+//
+//Volume FV_NylonP_161
+//FV_NylonP_161.Material Nylon
+//FV_NylonP_161.Shape BRIK 4. 0.7102272727 200.
+//FV_NylonP_161.Visibility 1
+//FV_NylonP_161.Color 1
+//
+//
+//
+//FV_NylonP_161.Copy FV_Nylon_162
+//FV_Nylon_162.Position 32. 32. 226.
+//FV_Nylon_162.Rotation 8. -8. 0.
+//FV_Nylon_162.Mother Flight_Volume
+//
+//FV_NylonP_161.Copy FV_Nylon_163
+//FV_Nylon_163.Position -32. 32. 226.
+//FV_Nylon_163.Rotation 8. 8. 0.
+//FV_Nylon_163.Mother Flight_Volume
+//
+//FV_NylonP_161.Copy FV_Nylon_164
+//FV_Nylon_164.Position 32. -32. 226.
+//FV_Nylon_164.Rotation -8. -8. 0.
+//FV_Nylon_164.Mother Flight_Volume
+//
+//FV_NylonP_161.Copy FV_Nylon_165
+//FV_Nylon_165.Position -32. -32. 226.
+//FV_Nylon_165.Rotation -8. 8. 0.
+//FV_Nylon_165.Mother Flight_Volume
+//
+//
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+// 250 kg Lead on bottom and steel connections :
+
+Volume FV_LeadBottom_170
+FV_LeadBottom_170.Material Pb
+FV_LeadBottom_170.Shape TUBS 0. 30. 3.89512831845 0. 360.
+FV_LeadBottom_170.Position 0. 0. -183.
+FV_LeadBottom_170.Visibility 1
+FV_LeadBottom_170.Color 1
+FV_LeadBottom_170.Mother Flight_Volume
+
+
+Volume FV_SteelCordP_171
+FV_SteelCordP_171.Material Steel
+FV_SteelCordP_171.Shape TUBS 0.0 0.5 30.0 0. 360.
+FV_SteelCordP_171.Visibility 1
+FV_SteelCordP_171.Color 1
+
+
+FV_SteelCordP_171.Copy FV_SteelCord_172
+FV_SteelCord_172.Position 41. 41. -167.5
+FV_SteelCord_172.Rotation -51.2 51.2 -10.
+FV_SteelCord_172.Mother Flight_Volume
+
+FV_SteelCordP_171.Copy FV_SteelCord_173
+FV_SteelCord_173.Position -41. 41. -167.5
+FV_SteelCord_173.Rotation -51.2 -51.2 10.
+FV_SteelCord_173.Mother Flight_Volume
+
+FV_SteelCordP_171.Copy FV_SteelCord_174
+FV_SteelCord_174.Position -41. -41. -167.5
+FV_SteelCord_174.Rotation 51.2 -51.2 -10.
+FV_SteelCord_174.Mother Flight_Volume
+
+FV_SteelCordP_171.Copy FV_SteelCord_175
+FV_SteelCord_175.Position 41. -41. -167.5
+FV_SteelCord_175.Rotation 51.2 51.2 10.
+FV_SteelCord_175.Mother Flight_Volume
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+
+

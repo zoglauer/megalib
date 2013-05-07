@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+help() {
+  echo ""
+  echo "MEGAlib program/library existance check script"
+  echo "Usage: $0 [\"lib\" or \"exe\"] [program or library name]";
+  echo "Return: 1 in case of success, 0 otherwise"
+  echo ""
+}
+
+# Test if all options are given:
+if [ $# -lt 2 ] ; then
+  echo ""
+  echo "Error: You must specify the type of object (\"lib\" or \"exe\") and the program/library name";
+  help; 
+  exit 0;
+fi
+
+FileType=$1
+Program=$2
+Folders=""
+if [ "${FileType}" == "exe" ]; then
+  Folders=(`echo $PATH | tr ':' ' '`)
+elif [ "${FileType}" == "lib" ]; then
+  Folders=(`echo $LD_LIBRARY_PATH $DYLD_LIBRARY_PATH | tr ':' ' '`)
+else 
+  echo ""
+  echo "Error: You must specify the type of object as \"lib\" or \"exe\"";
+  help; 
+  exit 0;
+fi
+
+Found=0
+for folder in ${Folders[@]}; do
+  if (`test ! -d ${folder}`); then continue; fi
+  cd ${folder}
+  for file in `ls`; do
+    if [ "${FileType}" == "exe" ]; then 
+      if [ "${file}" == "${Program}" ]; then
+        if ( `test -x ${file}` ); then      
+          #echo "Found: ${file} == ${Program} in ${folder}"
+          Found=1;
+          break;
+        fi
+      fi
+    fi
+    if [ "${FileType}" == "lib" ]; then 
+      if ( [ "${file}" == "${Program}.a" ] || [ "${file}" == "${Program}.so" ] || [ "${file}" == "${Program}.dylib" ] ); then
+         #echo "Found: ${file} == ${Program} in ${folder}"
+         if ( `test -r ${file}` ); then      
+          #echo "Found: ${file} == ${Program} in ${folder} with read access"
+          Found=1;
+          break;
+        fi
+      fi
+    fi
+  done
+  if [ ${Found} -eq 1 ]; then
+    break;
+  fi
+done
+
+exit ${Found};
+

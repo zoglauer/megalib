@@ -1,0 +1,542 @@
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/particles/management/src/G4IonTable.cc geant4.9.2.b01-patched/source/particles/management/src/G4IonTable.cc
+--- geant4.9.2.b01-original/source/particles/management/src/G4IonTable.cc	2008-06-08 05:55:45.000000000 -0700
++++ geant4.9.2.b01-patched/source/particles/management/src/G4IonTable.cc	2008-10-08 14:38:53.000000000 -0700
+@@ -174,7 +174,9 @@ G4ParticleDefinition* G4IonTable::Create
+   // Add process manager to the ion
+   AddProcessManager(name);
+       
+-  if (fProperty !=0) delete fProperty;
++  // --> acz: 2008-10-08: We cannot delete this property here since it is still part of the (Radioactive) IonTable!!!!
++  // if (fProperty !=0) delete fProperty;
++  // <--
+   return ion;
+ }
+ 
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/evaporation/src/G4EvaporationFactory.cc geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/evaporation/src/G4EvaporationFactory.cc
+--- geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/evaporation/src/G4EvaporationFactory.cc	2006-06-29 13:10:29.000000000 -0700
++++ geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/evaporation/src/G4EvaporationFactory.cc	2008-11-10 10:51:02.000000000 -0800
+@@ -82,7 +82,9 @@ G4EvaporationFactory::CreateChannel()
+   theChannel->push_back( new G4AlphaEvaporationChannel() );    // Alpha
+ 
+   theChannel->push_back( new G4CompetitiveFission() );         // Fission Channel
+-  theChannel->push_back( new G4PhotonEvaporation() );          // Photon Channel
++  // --> acz: We are not doing evaporations here
++  //theChannel->push_back( new G4PhotonEvaporation() );          // Photon Channel
++  // <--
+ 
+   return theChannel;
+ 
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/handler/src/G4ExcitationHandler.cc geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/handler/src/G4ExcitationHandler.cc
+--- geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/handler/src/G4ExcitationHandler.cc	2008-06-13 03:09:35.000000000 -0700
++++ geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/handler/src/G4ExcitationHandler.cc	2008-10-13 17:25:52.000000000 -0700
+@@ -200,129 +200,134 @@ G4ReactionProductVector * G4ExcitationHa
+       theResult->push_back(new G4Fragment(theInitialState));
+     }
+ 
+-  // Now we try to deexcite by means of PhotonEvaporation those fragments
+-  // which are excited.
+   
+-  theTempResult = 0;
+-  std::list<G4Fragment*> theFinalResultList;
+-  //AHtest  std::list<G4Fragment*> theFinalPhotonResultList;
+-  std::list<G4Fragment*> theResultList;
+-  std::list<G4Fragment*>::iterator j;
+-  G4FragmentVector::iterator i;
+-  for (i = theResult->begin(); i != theResult->end();i++) 
+-    {
+-      theResultList.push_back(*i);
+-      //      G4cout << " Before loop list energy in MeV: " << ((*i)->GetExcitationEnergy())/MeV << G4endl;
+-    }
+-  theResult->clear();
+-
+-  for (j = theResultList.begin(); j != theResultList.end(); j++) {
+-    //    G4cout << " Test loop list: " << (*j)->GetExcitationEnergy() << " size: " << theResultList.size() << G4endl;
+-  }
+-
+-  //  for (j = theResultList.begin(); j != theResultList.end(); j++) 
+-  j = theResultList.begin();  //AH
+-  while (j != theResultList.end()) //AH
+-    {
+-      if ((*j)->GetA() > 1 && (*j)->GetExcitationEnergy() > 0.1*eV) 
+-        {
+-          theExcitedNucleus = *(*j);
+-          theTempResult = thePhotonEvaporation->BreakItUp(theExcitedNucleus);
+-          // If Gamma Evaporation has succeed then
+-          if (theTempResult->size() > 1) 
+-            {
+-              // Remove excited fragment from the result 
+-	      //	      delete (*j);
+-	      //              theResultList.erase(j--);
+-	      //	      theResultList.erase(j); don't delete as there's no push back...
+-              // and add theTempResult elements to theResult
+-	      for (G4FragmentVector::reverse_iterator ri = theTempResult->rbegin();
+-		   ri != theTempResult->rend(); ++ri)
+-                {
+-#ifdef PRECOMPOUND_TEST
+-                  if ((*ri)->GetA() == 0)
+-                    (*ri)->SetCreatorModel(G4String("G4PhotonEvaporation"));
+-                  else
+-                    (*ri)->SetCreatorModel(G4String("ResidualNucleus"));
+-#endif
+-		  theResultList.push_back(*ri);
+-		  //AHtest		  theFinalPhotonResultList.push_back(*ri);
+-		  //		  theFinalResultList.push_back(*ri); don't add to final result as they'll go through the loop
+-                }
+-	      delete *j;
+-              delete theTempResult;
+-            }
+-          // In other case, just clean theTempResult and continue
+-          else 
+-            {
+-              std::for_each(theTempResult->begin(), theTempResult->end(), DeleteFragment());
+-              delete theTempResult;
+-#ifdef debugphoton
+-              G4cout << "G4ExcitationHandler: Gamma Evaporation could not deexcite the nucleus: \n"
+-                     << "-----------------------------------------------------------------------\n"
+-                     << theExcitedNucleus << '\n'
+-                     << "-----------------------------------------------------------------------\n";
+-#endif
+-              G4double GammaEnergy = (*j)->GetExcitationEnergy();
+-              G4double cosTheta = 1. - 2. * G4UniformRand();
+-              G4double sinTheta = std::sqrt(1. - cosTheta * cosTheta);
+-              G4double phi = twopi * G4UniformRand();
+-              G4ThreeVector GammaP(GammaEnergy * sinTheta * std::cos(phi),
+-                                   GammaEnergy * sinTheta * std::sin(phi),
+-                                   GammaEnergy * cosTheta );
+-              G4LorentzVector Gamma4P(GammaP,GammaEnergy);
+-              G4Fragment * theHandlerPhoton = new G4Fragment(Gamma4P,G4Gamma::GammaDefinition());
+-              
+-              
+-              
+-              G4double Mass = (*j)->GetGroundStateMass();
+-              G4ThreeVector ResidualP((*j)->GetMomentum().vect() - GammaP);
+-              G4double ResidualE = std::sqrt(ResidualP*ResidualP + Mass*Mass);
+-              G4LorentzVector Residual4P(ResidualP,ResidualE);
+-              (*j)->SetMomentum(Residual4P);
+-              
+-              
+-	
+-#ifdef PRECOMPOUND_TEST
+-              theHandlerPhoton->SetCreatorModel("G4ExcitationHandler");
+-#endif
+-//	      theFinalPhotonResultList.push_back( theHandlerPhoton );
+-//	      G4cout << " adding photon fragment " << G4endl;
+-	      theResultList.push_back( theHandlerPhoton );
+-	      //	      theFinalResultList.push_back( theHandlerPhoton );
+-	      theFinalResultList.push_back(*j);
+-#ifdef debugphoton
+-              G4cout << "Emmited photon:\n"
+-                     << theResultList.back() << '\n'
+-                     << "Residual nucleus after photon emission:\n"
+-                     << *(*j) << '\n'
+-                     << "-----------------------------------------------------------------------\n";
+-#endif
+-	      //test	      j++; // AH only increment if not erased:
+-            }	
+-        } else {
+-	  //test	  j++; // AH increment iterator if a proton or excitation energy small
+-	  theFinalResultList.push_back(*j);
+-	}
+-//      G4cout << " Inside loop list: " << (*j)->GetExcitationEnergy() << " size: " << theFinalResultList.size() << G4endl;
+-      j++;
+-    }
+-  //  for (j = theResultList.begin(); j != theResultList.end(); j++)
+-  for (j = theFinalResultList.begin(); j != theFinalResultList.end(); j++)
+-    {
+-      theResult->push_back(*j);
+-    }
++  // --> acz: Photon evaporation is to be handled via the radioactive decay module to allow meta-stable states
+ 
+-//AHtest   for (j = theFinalPhotonResultList.begin(); j != theFinalPhotonResultList.end(); j++)
+-//AHtest     {
+-//AHtest       theResult->push_back(*j);
+-//AHtest       number_results++;
+-//AHtest     }
++//   // Now we try to deexcite by means of PhotonEvaporation those fragments
++//   // which are excited.
+ 
++//   theTempResult = 0;
++//   std::list<G4Fragment*> theFinalResultList;
++//   //AHtest  std::list<G4Fragment*> theFinalPhotonResultList;
++//   std::list<G4Fragment*> theResultList;
++//   std::list<G4Fragment*>::iterator j;
++//   G4FragmentVector::iterator i;
++//   for (i = theResult->begin(); i != theResult->end();i++) 
++//     {
++//       theResultList.push_back(*i);
++//       //      G4cout << " Before loop list energy in MeV: " << ((*i)->GetExcitationEnergy())/MeV << G4endl;
++//     }
++//   theResult->clear();
++
++//   for (j = theResultList.begin(); j != theResultList.end(); j++) {
++//     //    G4cout << " Test loop list: " << (*j)->GetExcitationEnergy() << " size: " << theResultList.size() << G4endl;
++//   }
++
++//   //  for (j = theResultList.begin(); j != theResultList.end(); j++) 
++//   j = theResultList.begin();  //AH
++//   while (j != theResultList.end()) //AH
++//     {
++//       if ((*j)->GetA() > 1 && (*j)->GetExcitationEnergy() > 0.1*eV) 
++//         {
++//           theExcitedNucleus = *(*j);
++//           theTempResult = thePhotonEvaporation->BreakItUp(theExcitedNucleus);
++//           // If Gamma Evaporation has succeed then
++//           if (theTempResult->size() > 1) 
++//             {
++//               // Remove excited fragment from the result 
++// 	      //	      delete (*j);
++// 	      //              theResultList.erase(j--);
++// 	      //	      theResultList.erase(j); don't delete as there's no push back...
++//               // and add theTempResult elements to theResult
++// 	      for (G4FragmentVector::reverse_iterator ri = theTempResult->rbegin();
++// 		   ri != theTempResult->rend(); ++ri)
++//                 {
++// #ifdef PRECOMPOUND_TEST
++//                   if ((*ri)->GetA() == 0)
++//                     (*ri)->SetCreatorModel(G4String("G4PhotonEvaporation"));
++//                   else
++//                     (*ri)->SetCreatorModel(G4String("ResidualNucleus"));
++// #endif
++// 		  theResultList.push_back(*ri);
++// 		  //AHtest		  theFinalPhotonResultList.push_back(*ri);
++// 		  //		  theFinalResultList.push_back(*ri); don't add to final result as they'll go through the loop
++//                 }
++// 	      delete *j;
++//               delete theTempResult;
++//             }
++//           // In other case, just clean theTempResult and continue
++//           else 
++//             {
++//               std::for_each(theTempResult->begin(), theTempResult->end(), DeleteFragment());
++//               delete theTempResult;
++// #ifdef debugphoton
++//               G4cout << "G4ExcitationHandler: Gamma Evaporation could not deexcite the nucleus: \n"
++//                      << "-----------------------------------------------------------------------\n"
++//                      << theExcitedNucleus << '\n'
++//                      << "-----------------------------------------------------------------------\n";
++// #endif
++//               G4double GammaEnergy = (*j)->GetExcitationEnergy();
++//               G4double cosTheta = 1. - 2. * G4UniformRand();
++//               G4double sinTheta = std::sqrt(1. - cosTheta * cosTheta);
++//               G4double phi = twopi * G4UniformRand();
++//               G4ThreeVector GammaP(GammaEnergy * sinTheta * std::cos(phi),
++//                                    GammaEnergy * sinTheta * std::sin(phi),
++//                                    GammaEnergy * cosTheta );
++//               G4LorentzVector Gamma4P(GammaP,GammaEnergy);
++//               G4Fragment * theHandlerPhoton = new G4Fragment(Gamma4P,G4Gamma::GammaDefinition());
++              
++              
++              
++//               G4double Mass = (*j)->GetGroundStateMass();
++//               G4ThreeVector ResidualP((*j)->GetMomentum().vect() - GammaP);
++//               G4double ResidualE = std::sqrt(ResidualP*ResidualP + Mass*Mass);
++//               G4LorentzVector Residual4P(ResidualP,ResidualE);
++//               (*j)->SetMomentum(Residual4P);
++              
++              
++	
++// #ifdef PRECOMPOUND_TEST
++//               theHandlerPhoton->SetCreatorModel("G4ExcitationHandler");
++// #endif
++// //	      theFinalPhotonResultList.push_back( theHandlerPhoton );
++// //	      G4cout << " adding photon fragment " << G4endl;
++// 	      theResultList.push_back( theHandlerPhoton );
++// 	      //	      theFinalResultList.push_back( theHandlerPhoton );
++// 	      theFinalResultList.push_back(*j);
++// #ifdef debugphoton
++//               G4cout << "Emmited photon:\n"
++//                      << theResultList.back() << '\n'
++//                      << "Residual nucleus after photon emission:\n"
++//                      << *(*j) << '\n'
++//                      << "-----------------------------------------------------------------------\n";
++// #endif
++// 	      //test	      j++; // AH only increment if not erased:
++//             }	
++//         } else {
++// 	  //test	  j++; // AH increment iterator if a proton or excitation energy small
++// 	  theFinalResultList.push_back(*j);
++// 	}
++// //      G4cout << " Inside loop list: " << (*j)->GetExcitationEnergy() << " size: " << theFinalResultList.size() << G4endl;
++//       j++;
++//     }
++//   //  for (j = theResultList.begin(); j != theResultList.end(); j++)
++//   for (j = theFinalResultList.begin(); j != theFinalResultList.end(); j++)
++//     {
++//       theResult->push_back(*j);
++//     }
++
++// //AHtest   for (j = theFinalPhotonResultList.begin(); j != theFinalPhotonResultList.end(); j++)
++// //AHtest     {
++// //AHtest       theResult->push_back(*j);
++// //AHtest       number_results++;
++// //AHtest     }
++
++
++//   theResultList.clear();
++//   theFinalResultList.clear();
++//   //AHtest  theFinalPhotonResultList.clear();
+ 
+-  theResultList.clear();
+-  theFinalResultList.clear();
+-  //AHtest  theFinalPhotonResultList.clear();
++  // --> 
+   
+   
+ #ifdef debug
+@@ -349,6 +354,9 @@ G4ExcitationHandler::Transform(G4Fragmen
+   theNeutron->SetVerboseLevel(2);
+   G4ReactionProductVector * theReactionProductVector = new G4ReactionProductVector;
+   G4int theFragmentA, theFragmentZ;
++  // --> acz
++  G4double theExcitationEnergy;
++  // <-- acz
+   G4LorentzVector theFragmentMomentum;
+ 
+   G4FragmentVector::iterator i;
+@@ -357,6 +365,9 @@ G4ExcitationHandler::Transform(G4Fragmen
+     theFragmentA = static_cast<G4int>((*i)->GetA());
+     theFragmentZ = static_cast<G4int>((*i)->GetZ());
+     theFragmentMomentum = (*i)->GetMomentum();
++    // --> acz
++    theExcitationEnergy = (*i)->GetExcitationEnergy();
++    // <-- acz
+     theKindOfFragment = 0;
+     if (theFragmentA == 0 && theFragmentZ == 0) {       // photon
+       theKindOfFragment = theGamma;      
+@@ -373,7 +384,9 @@ G4ExcitationHandler::Transform(G4Fragmen
+     } else if (theFragmentA == 4 && theFragmentZ == 2) { // alpha
+       theKindOfFragment = theAlpha;
+     } else {
+-      theKindOfFragment = theTableOfParticles->FindIon(theFragmentZ,theFragmentA,0,theFragmentZ);
++      // --> acz
++      theKindOfFragment = theTableOfParticles->GetIon(theFragmentZ,theFragmentA,theExcitationEnergy);
++      // <-- acz
+     }
+     if (theKindOfFragment != 0) 
+       {
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc
+--- geant4.9.2.b01-original/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc	2007-11-15 08:48:05.000000000 -0800
++++ geant4.9.2.b01-patched/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc	2008-10-01 11:14:18.000000000 -0700
+@@ -105,13 +106,22 @@ G4FragmentVector* G4VGammaDeexcitation::
+   Initialize();
+   G4FragmentVector* products = new G4FragmentVector;
+ 
+-  while (CanDoTransition())
++  // --> acz 200808-27: Store the number of occured transitions, to limit the number of transitions to one per step
++  // Reasons: we can only have one vaccant shell position and we want to give the user access at each transision
++  G4int transitionNumber = 0;
++
++  while (transitionNumber == 0 && CanDoTransition())
++  // <--
+     {
+       if (_verbose > 5) G4cout << "G4VGammaDeexcitation::DoChain -  Looping" << G4endl;
+ 
+       G4Fragment* gamma = GenerateGamma();
+       if (gamma != 0) 
+ 	{
++	  // --> acz 200808-27
++	  transitionNumber++;
++	  // <--
++
+ 	  products->push_back(gamma);
+ 	  UpdateNucleus(gamma);
+ 	  UpdateElectrons ();
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/processes/hadronic/models/radioactive_decay/src/G4NuclearDecayChannel.cc geant4.9.2.b01-patched/source/processes/hadronic/models/radioactive_decay/src/G4NuclearDecayChannel.cc
+--- geant4.9.2.b01-original/source/processes/hadronic/models/radioactive_decay/src/G4NuclearDecayChannel.cc	2008-05-01 07:39:53.000000000 -0700
++++ geant4.9.2.b01-patched/source/processes/hadronic/models/radioactive_decay/src/G4NuclearDecayChannel.cc	2008-09-30 15:27:36.000000000 -0700
+@@ -292,7 +292,12 @@ G4DecayProducts *G4NuclearDecayChannel::
+   // needed to hold the shell idex after ICM
+   G4int shellIndex = -1;
+   //
+-  if (daughterExcitation > 0.0)
++  // --> acz 2008-08-27: 
++  // This hack was necessary, since we are only want to do one transition at a time 
++  // Thus we are only de-exiting the nucleus if the parent is identical as the daughter
++  // if (daughterExcitation > 0.0)
++  if (daughterExcitation > 0.0 && parent->GetParticleName() == daughters[0]->GetParticleName())
++    // <--
+     {
+       //
+       // Pop the daughter nucleus off the product vector - we need to retain
+@@ -314,7 +319,9 @@ G4DecayProducts *G4NuclearDecayChannel::
+       // set the maximum life-time for a level that will be treated. Level with life-time longer than this
+       // will be outputed as meta-stable isotope
+       //
+-      deexcitation->SetMaxHalfLife(1e-6*second);
++      // --> acz 2008-08-27
++      deexcitation->SetMaxHalfLife(1e-9*second);
++      // <-- 
+       // but in IT mode, we need to force the transition 
+       if (decayMode == 0) {
+ 	deexcitation->RDMForced(true);
+@@ -368,6 +375,19 @@ G4DecayProducts *G4NuclearDecayChannel::
+       //    gammas->clearAndDestroy();
+       delete gammas;
+       delete deexcitation;
++
++      // --> acz 2008-09-29:
++      // Some protection against infinite loops: If the daughter is still the same as the parent, then we are are stuck in an infinite loop
++      if (products->entries() == 1) {
++	dynamicDaughter = products->PopProducts();
++	if (parent->GetParticleName() == dynamicDaughter->GetDefinition()->GetParticleName()) {
++	  delete dynamicDaughter;
++	  return products;
++	} else {
++	  products->PushProducts (dynamicDaughter); 
++	}
++      }
++      // <--
+     }
+   //
+   // now we have to take care of the EC product which have to go through the ARM
+@@ -401,7 +421,6 @@ G4DecayProducts *G4NuclearDecayChannel::
+       }
+   }
+   // now deal with the IT case where ICM may have been applied
+-  //
+   if (decayMode == 0) {
+     eShell = shellIndex;
+   }
+diff -urpNEbwB --exclude='*~' geant4.9.2.b01-original/source/processes/hadronic/models/radioactive_decay/src/G4RadioactiveDecay.cc geant4.9.2.b01-patched/source/processes/hadronic/models/radioactive_decay/src/G4RadioactiveDecay.cc
+--- geant4.9.2.b01-original/source/processes/hadronic/models/radioactive_decay/src/G4RadioactiveDecay.cc	2007-06-21 02:36:31.000000000 -0700
++++ geant4.9.2.b01-patched/source/processes/hadronic/models/radioactive_decay/src/G4RadioactiveDecay.cc	2008-10-13 17:43:05.000000000 -0700
+@@ -1344,9 +1344,20 @@ G4VParticleChange* G4RadioactiveDecay::D
+       return &fParticleChangeForRadDecay;
+     }
+    
++  // --> acz: 2008-09-25
++  // Some problems are related to bad handling of excited states in the current data
++  // This determine a flag here, where or not we have an excited nucleus
++  bool ExcitedNucleus = false;
++  if (theParticleDef->GetParticleType() == "nucleus") {
++    if (dynamic_cast<G4Ions*>(theParticleDef)->GetExcitationEnergy() > 0.0) {
++      ExcitedNucleus = true;
++    }
++  }
++  // <--
++
+   // now check is the particle is valid for RDM
+   //
+-  if (!(IsApplicable(*theParticleDef)))
++  if (!(IsApplicable(*theParticleDef)) && ExcitedNucleus == false)
+     { 
+       //
+       // The particle is not a Ion or outside the nucleuslimits for decay
+@@ -1376,7 +1387,10 @@ G4VParticleChange* G4RadioactiveDecay::D
+     }
+   G4DecayTable *theDecayTable = theParticleDef->GetDecayTable();
+   
+-  if  (theDecayTable == 0 || theDecayTable->entries() == 0 )
++  // --> acz: The decay table might be empty for some excited states
++  // if  ((theDecayTable == 0 || theDecayTable->entries() == 0))
++  if  ((theDecayTable == 0 || theDecayTable->entries() == 0) &&  ExcitedNucleus == false)
++    // <--
+     {
+       //
+       //
+@@ -1424,6 +1438,18 @@ G4VParticleChange* G4RadioactiveDecay::D
+ #endif
+ 	//
+ 	G4DecayProducts *products = DoDecay(*theParticleDef);
++
++	// --> acz: Prevent infinite loop 
++	// If there are no secondaries, kill the track:
++	if (products == 0 || products->entries() == 0) {
++	  fParticleChangeForRadDecay.SetNumberOfSecondaries(0);
++	  fParticleChangeForRadDecay.ProposeTrackStatus( fStopAndKill ) ;
++	  fParticleChangeForRadDecay.ProposeLocalEnergyDeposit(0.0);
++	  ClearNumberOfInteractionLengthLeft();
++	  return &fParticleChangeForRadDecay;
++	}
++	// <--
++
+ 	//
+ 	//
+ 	// Get parent particle information and boost the decay products to the
+@@ -1442,7 +1468,24 @@ G4VParticleChange* G4RadioactiveDecay::D
+ 	    // time lapsed between the particle come to rest and the actual decay. This time 
+ 	    // is simply sampled with the mean-life of the particle.
+ 	    //
++	    // --> acz 2008-09-17: Bug: PDGLifeTime can be zero for some excited states!
++	    if (theParticleDef->GetPDGLifeTime() <= 0.0 && ExcitedNucleus == true) {
++	      if (dynamic_cast<G4Ions*>(theParticleDef)->GetExcitationEnergy() > 0.0) {
++		G4NuclearLevelManager* M = 
++		  G4NuclearLevelStore::GetInstance()->GetManager(dynamic_cast<G4Ions*>(theParticleDef)->GetAtomicNumber(), 
++								 dynamic_cast<G4Ions*>(theParticleDef)->GetAtomicMass());
++		if (M->IsValid() == true) {
++		  const G4NuclearLevel* Level = M->NearestLevel(dynamic_cast<G4Ions*>(theParticleDef)->GetExcitationEnergy());
++		  if (Level != 0) {
++		    theParticleDef->SetPDGLifeTime(Level->HalfLife()/log(2));
++		  }  
++		}
++	      }
++	    }
++	    if (theParticleDef->GetPDGLifeTime() > 0.0) {
+ 	    finalGlobalTime += -std::log( G4UniformRand()) * theParticleDef->GetPDGLifeTime() ;
++	    } 
++	    // <-- acz
+ 	    energyDeposit += theParticle->GetKineticEnergy();
+ 	  }
+ 	else
+@@ -1731,14 +1774,40 @@ G4DecayProducts* G4RadioactiveDecay::DoD
+       G4cout <<"Selecte a channel..."<<G4endl;
+     }
+ #endif
++
++  // --> acz 2008-09-26: Some bug somewhere: No decay table for some excited states, thus we have to fake one here
++  if (theDecayTable == 0) { // 
++    bool ExcitedNucleus = false;
++    if (theParticleDef.GetParticleType() == "nucleus") {
++      if (dynamic_cast<G4Ions*>(&theParticleDef)->GetExcitationEnergy() > 0.0) {
++	ExcitedNucleus = true;
++      }
++    }
++
++    if (ExcitedNucleus == true) {
++      G4NuclearDecayChannel* Channel = new G4NuclearDecayChannel(IT,
++								 GetVerboseLevel(),
++								 &theParticleDef,
++								 1.0,
++								 0.0,
++								 theParticleDef.GetAtomicMass(),
++								 theParticleDef.GetAtomicNumber(),
++								 dynamic_cast<G4Ions*>(&theParticleDef)->GetExcitationEnergy());
++      
++	G4double tempmass = theParticleDef.GetPDGMass();
++      	products = Channel->DecayIt(tempmass);
++
++      delete Channel;
++    }
++
++  } else {
+   G4VDecayChannel *theDecayChannel = theDecayTable->SelectADecayChannel();
+   if (theDecayChannel == 0)
+     {
+       // Decay channel not found.
+       //
+-      G4cerr <<"G4RadioactiveDecay::DoIt : can not determine decay channel";
++	G4cerr <<"G4RadioactiveDecay::DoIt : can not determine decay channel for "<<theParticleDef.GetParticleName();
+       G4cerr <<G4endl;
+-      theDecayTable ->DumpInfo();
+     }
+       else
+     {
+@@ -1754,15 +1823,14 @@ G4DecayProducts* G4RadioactiveDecay::DoD
+ #endif
+       
+       G4double tempmass = theParticleDef.GetPDGMass();
+-      //
+-      
+       products = theDecayChannel->DecayIt(tempmass);
+       
+     }
+-  return products;
+-
+ }
++  // <--
+ 
++  return products;
++}
+ 
+ 
+ 

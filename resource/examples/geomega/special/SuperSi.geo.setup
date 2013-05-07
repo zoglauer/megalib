@@ -1,0 +1,203 @@
+//------------------------------------------------------------
+// Very simple Germanium ACT - similar to Steve Boggs' idea 
+
+
+Name TrackerOnly
+Version 1.0
+
+ComplexER false
+
+SurroundingSphere 175  0.0  0.0  0.0  175.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 175.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+#more Sphere.Material Vacuum
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.TriggerByChannel true
+TN03.DetectorType Strip2D 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Silicon strip detector:
+
+// One layer of the tracker
+Volume SiSD 
+SiSD.Material Silicon
+SiSD.Visibility 1
+SiSD.Color 2
+SiSD.Shape BRIK 94.0  94.0  0.025
+
+
+// One layer of the tracker
+Volume SiSDB 
+SiSDB.Material Vacuum
+SiSDB.Visibility 0
+SiSDB.Color 1
+SiSDB.Shape BRIK 94.0  94.0  5.0
+
+SiSD.Copy S000
+S000.Position  0 0 4.5
+S000.Mother SiSDB
+
+SiSD.Copy S001
+S001.Position  0 0 3.5
+S001.Mother SiSDB
+
+SiSD.Copy S002
+S002.Position  0 0 2.5
+S002.Mother SiSDB
+
+SiSD.Copy S003
+S003.Position  0 0 1.5
+S003.Mother SiSDB
+
+SiSD.Copy S004
+S004.Position  0 0 0.5
+S004.Mother SiSDB
+
+SiSD.Copy S005
+S005.Position  0 0 -0.5
+S005.Mother SiSDB
+
+SiSD.Copy S006
+S006.Position  0 0 -1.5
+S006.Mother SiSDB
+
+SiSD.Copy S007
+S007.Position  0 0 -2.5
+S007.Mother SiSDB
+
+SiSD.Copy S008
+S008.Position  0 0 -3.5
+S008.Mother SiSDB
+
+SiSD.Copy S009
+S009.Position  0 0 -4.5
+S009.Mother SiSDB
+
+
+
+
+SiSDB.Copy SiSDB000
+SiSDB000.Position 0 0 000
+SiSDB000.Mother WorldVolume
+
+SiSDB.Copy SiSDB001
+SiSDB001.Position 0 0 010
+SiSDB001.Mother WorldVolume
+
+SiSDB.Copy SiSDB002
+SiSDB002.Position 0 0 020
+SiSDB002.Mother WorldVolume
+
+SiSDB.Copy SiSDB003
+SiSDB003.Position 0 0 030
+SiSDB003.Mother WorldVolume
+
+SiSDB.Copy SiSDB004
+SiSDB004.Position 0 0 040
+SiSDB004.Mother WorldVolume
+
+SiSDB.Copy SiSDB005
+SiSDB005.Position 0 0 050
+SiSDB005.Mother WorldVolume
+
+SiSDB.Copy SiSDB006
+SiSDB006.Position 0 0 060
+SiSDB006.Mother WorldVolume
+
+SiSDB.Copy SiSDB007
+SiSDB007.Position 0 0 070
+SiSDB007.Mother WorldVolume
+
+SiSDB.Copy SiSDB008
+SiSDB008.Position 0 0 080
+SiSDB008.Mother WorldVolume
+
+SiSDB.Copy SiSDB009
+SiSDB009.Position 0 0 090
+SiSDB009.Mother WorldVolume
+
+
+SiSDB.Copy SiSDB011
+SiSDB011.Position 0 0 -010
+SiSDB011.Mother WorldVolume
+
+SiSDB.Copy SiSDB012
+SiSDB012.Position 0 0 -020
+SiSDB012.Mother WorldVolume
+
+SiSDB.Copy SiSDB013
+SiSDB013.Position 0 0 -030
+SiSDB013.Mother WorldVolume
+
+SiSDB.Copy SiSDB014
+SiSDB014.Position 0 0 -040
+SiSDB014.Mother WorldVolume
+
+SiSDB.Copy SiSDB015
+SiSDB015.Position 0 0 -050
+SiSDB015.Mother WorldVolume
+
+SiSDB.Copy SiSDB016
+SiSDB016.Position 0 0 -060
+SiSDB016.Mother WorldVolume
+
+SiSDB.Copy SiSDB017
+SiSDB017.Position 0 0 -070
+SiSDB017.Mother WorldVolume
+
+SiSDB.Copy SiSDB018
+SiSDB018.Position 0 0 -080
+SiSDB018.Mother WorldVolume
+
+SiSDB.Copy SiSDB019
+SiSDB019.Position 0 0 -090
+SiSDB019.Mother WorldVolume
+
+SiSDB.Copy SiSDB010
+SiSDB010.Position 0 0 -100
+SiSDB010.Mother WorldVolume
+
+
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+MDStrip2D                  SiSDDet
+
+SiSDDet.DetectorVolume       SiSD
+SiSDDet.SensitiveVolume     	SiSD
+
+SiSDDet.StructuralPitch      0.0   0.0    1.0
+SiSDDet.StructuralOffset     0.0   0.0    0.0
+
+SiSDDet.Offset              0.0   0.0
+SiSDDet.StripNumber         4000  4000
+
+SiSDDet.NoiseThreshold         30
+SiSDDet.TriggerThreshold       30
+
+SiSDDet.EnergyResolutionAt    0  4
+SiSDDet.EnergyResolutionAt  100  4
+
+SiSDDet.FailureRate          0.1

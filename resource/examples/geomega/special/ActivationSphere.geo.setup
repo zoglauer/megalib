@@ -1,0 +1,54 @@
+// A spheric geometry for test simulations
+
+Name ActivationSphere
+Version 1.0
+
+SurroundingSphere 5.1  0.0  0.0  0.0  5.1
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 5.1 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByChannel true
+TN01.Detector GScinti 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 100. 100. 100.
+WorldVolume.Mother 0
+
+
+Volume BigSphere
+BigSphere.Material Germanium
+BigSphere.Visibility 1
+BigSphere.Color 6
+BigSphere.Shape SPHE 0.0 5.0 0.0 180.0 0.0 360.0
+BigSphere.Position 0.0 0.0 0.0
+BigSphere.Mother WorldVolume
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+Scintillator                  GScinti
+
+GScinti.DetectorVolume      BigSphere
+GScinti.SensitiveVolume     BigSphere
+
+GScinti.NoiseThreshold          0.000001
+GScinti.TriggerThreshold        0.000001
+
+GScinti.EnergyResolution  Ideal
+
+GScinti.FailureRate 0.0

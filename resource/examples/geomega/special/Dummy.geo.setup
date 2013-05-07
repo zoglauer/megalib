@@ -1,0 +1,61 @@
+// A trivial dummy geometry
+
+Name DummyGeometry
+Version 2.0
+
+SurroundingSphere 7000  0.0  0.0  0.0  7000.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 7000.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+//------------------------------------------------------------
+// Material information:
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+//------------------------------------------------------------
+// Volume information:
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 10000. 10000. 10000.
+WorldVolume.Mother 0
+
+Volume DummyVolume
+DummyVolume.Material Germanium
+DummyVolume.Visibility 1
+DummyVolume.Color 6
+DummyVolume.Shape BRIK 4000.0 4000.0 4000.0
+DummyVolume.Position 0.0 0.0 0.0
+DummyVolume.Mother WorldVolume
+
+
+//------------------------------------------------------------
+// Detector information:
+
+Scintillator                      DummyDetector
+
+DummyDetector.DetectorVolume      DummyVolume
+DummyDetector.SensitiveVolume     DummyVolume
+
+DummyDetector.NoiseThreshold      1
+DummyDetector.TriggerThreshold    1
+
+DummyDetector.EnergyResolution    ideal
+
+DummyDetector.FailureRate         0.0
+
+
+//------------------------------------------------------------
+// Trigger information:
+
+Trigger DummyTrigger
+DummyTrigger.Veto                 false
+DummyTrigger.TriggerByChannel     true
+DummyTrigger.Detector             DummyDetector  1

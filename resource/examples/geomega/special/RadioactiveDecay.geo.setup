@@ -1,0 +1,68 @@
+// A spheric geometry for testing simulations
+// Don't change anything because it used for several cosima examples!!
+
+Name RadioactiveDecayExample
+Version 1.0
+
+SurroundingSphere 10.0  0.0  0.0  0.0  10.0
+
+
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+Material Na
+Na.Density 0.968
+Na.Component 23.0 11.0 1.0
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 100. 100. 100.
+WorldVolume.Mother 0
+
+Volume SourceNa22
+SourceNa22.Material Na
+SourceNa22.Visibility 1
+SourceNa22.Color 5
+SourceNa22.Shape SPHE 0.0 0.1 0.0 180.0 0.0 360.0
+SourceNa22.Position 0.0 0.0 5.0
+SourceNa22.Mother WorldVolume
+
+
+Volume GeDetector
+GeDetector.Material Germanium
+GeDetector.Visibility 1
+GeDetector.Color 6
+GeDetector.Shape TUBS 0.0 2.5 4.0 0.0 360.0
+GeDetector.Position 0.0 0.0 0.0
+GeDetector.Mother WorldVolume
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+Scintillator                  Detector
+
+Detector.DetectorVolume      GeDetector
+Detector.SensitiveVolume     GeDetector
+
+Detector.NoiseThreshold          0.000001
+Detector.TriggerThreshold        0.000001
+
+Detector.EnergyResolution  ideal
+
+Detector.FailureRate 0.0
+
+
+
+
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByChannel true
+TN01.Detector Detector 1
+
+
+

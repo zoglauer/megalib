@@ -1,0 +1,246 @@
+// VERY SIMPLE Prototype in the Duke/ballon flight configuration
+
+Name SimplifiedPrototype
+Version 2.06
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+Include SiStripDetector.geo
+Include SiStripDetector.det
+
+Include Calorimeter8.geo
+Include Calorimeter8.det
+
+Include Calorimeter4.geo
+Include Calorimeter4.det
+
+Include Calorimeter2.geo
+Include Calorimeter2.det
+
+
+SurroundingSphere 100  0.0  0.0  100.0  100.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 25.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 15.0
+#Sphere.Mother WorldVolume
+
+
+
+// Trigger: at least one hit D1 and D2
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByDetector true
+TN01.DetectorType Strip2D 1
+TN01.DetectorType Calorimeter 1
+
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 500. 500. 500.
+WorldVolume.Mother 0
+
+
+
+Volume MegaVolume             
+MegaVolume.Material Vacuum
+MegaVolume.Shape BRIK 22. 22. 22.
+
+
+// Add wafer:
+
+SiStripDetector.Copy hermes
+hermes.Position  -2.05  -2.05 20.7
+hermes.Mother MegaVolume
+
+SiStripDetector.Copy bachus
+bachus.Position  -2.05  -2.05 19.7
+bachus.Mother MegaVolume
+
+SiStripDetector.Copy neptun
+neptun.Position  -2.05  -2.05 18.7
+neptun.Mother MegaVolume
+
+SiStripDetector.Copy poseidon
+poseidon.Position  -2.05  -2.05 17.7
+poseidon.Mother MegaVolume
+
+SiStripDetector.Copy achilles
+achilles.Position  -2.05  -2.05 16.7
+achilles.Mother MegaVolume
+
+SiStripDetector.Copy merkur
+merkur.Position  -2.05  -2.05 15.7
+merkur.Mother MegaVolume
+
+SiStripDetector.Copy odysseus
+odysseus.Position  -2.05  -2.05 14.7
+odysseus.Mother MegaVolume
+
+SiStripDetector.Copy apoll
+apoll.Position  -2.05  -2.05 13.7
+apoll.Mother MegaVolume
+
+SiStripDetector.Copy ikarus
+ikarus.Position  -2.05  -2.05 12.7
+ikarus.Mother MegaVolume
+
+SiStripDetector.Copy sisyphus
+sisyphus.Position  -2.05  -2.05 11.7
+sisyphus.Mother MegaVolume
+
+SiStripDetector.Copy vulkan
+vulkan.Position  -2.05  -2.05  10.7
+vulkan.Mother MegaVolume
+
+
+// Add 8cm-calorimeter
+
+
+Calorimeter8.Copy   athene                        
+athene.Position 5.1 -4.65 2.25
+athene.Mother MegaVolume
+athene.Rotation 0.0 0.0 180.0 
+
+Calorimeter8.Copy   daphne
+daphne.Position -5.1  -4.65  2.25
+daphne.Mother MegaVolume
+daphne.Rotation 0.0 0.0 180.0 
+
+Calorimeter8.Copy   xantippe
+xantippe.Position -5.1 4.65 2.25
+xantippe.Mother MegaVolume
+xantippe.Rotation 0.0 0.0 0.0 
+
+Calorimeter8.Copy   aphrodite
+aphrodite.Position 5.1  4.65  2.25
+aphrodite.Mother MegaVolume
+aphrodite.Rotation 0.0 0.0 0.0
+
+
+
+
+
+// Add 4cm-calorimeter
+
+Calorimeter4.Copy medusa
+medusa.Position -17.4698 -6.7 5.495
+medusa.Mother MegaVolume
+medusa.Rotation 0.0 60.0 0 
+
+Calorimeter4.Copy fortuna
+fortuna.Position 17.4698 -6.7  5.495
+fortuna.Mother MegaVolume
+fortuna.Rotation 0.0 -60.0 0
+
+Calorimeter4.Copy penelope
+penelope.Position  6.7 -17.47 5.495
+penelope.Mother MegaVolume
+penelope.Rotation 0.0 60.0 90
+
+Calorimeter4.Copy venus
+venus.Position 6.7  17.4698  5.495
+venus.Mother MegaVolume
+venus.Rotation 0.0 -60.0 90.0 
+
+Calorimeter4.Copy hydra
+hydra.Position 17.4698 6.7 5.495
+hydra.Mother MegaVolume
+hydra.Rotation 0.0 60.0 180
+
+Calorimeter4.Copy aetna
+aetna.Position -17.4698  6.7  5.495
+aetna.Mother MegaVolume
+aetna.Rotation 0.0 -60.0  180.0 
+
+Calorimeter4.Copy ariadne
+ariadne.Position -6.7 17.47 5.495
+ariadne.Mother MegaVolume
+ariadne.Rotation 0.0 60.0 270.0 
+
+Calorimeter4.Copy helena
+helena.Position -6.7  -17.4698  5.495
+helena.Mother MegaVolume
+helena.Rotation 0.0  -60.0  270.0 
+
+
+
+
+// Add 2cm-calorimeter 
+
+Calorimeter2.Copy antigone
+antigone.Position -17.75 -6.7 16.82
+antigone.Mother MegaVolume
+antigone.Rotation 0.0 90.0 0.0 
+
+Calorimeter2.Copy diane
+diane.Position 17.75 -6.7  16.82
+diane.Mother MegaVolume
+diane.Rotation 0.0 -90.0 0.0 
+
+Calorimeter2.Copy persephone
+persephone.Position 6.7  -17.75  16.82
+persephone.Mother MegaVolume
+persephone.Rotation  0.0 90.0 90.0 
+
+Calorimeter2.Copy minerva
+minerva.Position  6.7  17.75  16.82
+minerva.Mother MegaVolume
+minerva.Rotation 0.0 -90 90.0
+
+Calorimeter2.Copy pallas
+pallas.Position  17.75 6.7 16.82
+pallas.Mother MegaVolume
+pallas.Rotation 0.0 90 180
+
+Calorimeter2.Copy thetis
+thetis.Position -17.75 6.7 16.82
+thetis.Mother MegaVolume
+thetis.Rotation 0.0 -90.0 180.0 
+
+Calorimeter2.Copy circe
+circe.Position -6.7 17.75  16.82
+circe.Mother MegaVolume
+circe.Rotation 0.0 90.0 270.0 
+
+Calorimeter2.Copy europa
+europa.Position -6.7 -17.75 16.82
+europa.Mother MegaVolume
+europa.Rotation 0.0 -90.0 270.0 
+
+
+
+// Place the MEGAs
+
+MegaVolume.Copy MEGA1
+MEGA1.Mother WorldVolume
+MEGA1.Position 0 0 -44
+MEGA1.Rotation 0 0 0
+
+MegaVolume.Copy MEGA2
+MEGA2.Mother WorldVolume
+MEGA2.Position 0 0 44
+MEGA2.Rotation 0 180 0
+
+MegaVolume.Copy MEGA3
+MEGA3.Mother WorldVolume
+MEGA3.Position 44 0 0
+MEGA3.Rotation 0 270 0
+
+MegaVolume.Copy MEGA4
+MEGA4.Mother WorldVolume
+MEGA4.Position -44 0 0
+MEGA4.Rotation 0 90 0
+
+
+
+// Add a water volume representing a brain:
+#Volume Brain
+#Brain.Mother WorldVolume
+#Brain.Material Water
+#Brain.Position 0 0 0
+#Brain.Shape SPHE 0.0  10.0  0.0  180.0  -180.0  180.0

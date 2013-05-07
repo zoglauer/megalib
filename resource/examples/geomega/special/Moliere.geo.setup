@@ -1,0 +1,84 @@
+//------------------------------------------------------------
+// Very simple Germanium ACT - similar to Steve Boggs' idea 
+
+
+Name TrackerOnly
+Version 1.0
+
+ComplexER false
+
+SurroundingSphere 175  0.0  0.0  0.0  175.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 175.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+#more Sphere.Material Vacuum
+
+Material Silicon
+Silicon.Density                 2.33
+Silicon.RadiationLength         9.35
+Silicon.Component               28.08 14.0 1
+Silicon.Sensitivity             1   
+
+Material Vacuum                          
+Vacuum.Density                  1E-16        
+Vacuum.RadiationLength          1E+16          
+Vacuum.Component                1E-16 1E-16 1 
+Vacuum.Sensitivity              1
+
+
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.TriggerByChannel true
+TN03.DetectorType Strip2D 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Silicon strip detector:
+
+// One layer of the tracker
+Volume SiSD 
+SiSD.Material Silicon
+SiSD.Visibility 1
+SiSD.Color 2
+SiSD.Shape BRIK 100.0  100.0  0.025
+SiSD.Position 0 0 10
+SiSD.Mother WorldVolume
+
+
+
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+MDStrip2D                  SiSDDet
+
+SiSDDet.DetectorVolume       SiSD
+SiSDDet.SensitiveVolume     	SiSD
+
+SiSDDet.StructuralPitch      0.0   0.0    1.0
+SiSDDet.StructuralOffset     0.0   0.0    0.0
+
+SiSDDet.Offset              0.0   0.0
+SiSDDet.StripNumber         1  1
+
+SiSDDet.NoiseThreshold         0
+SiSDDet.TriggerThreshold       0
+
+SiSDDet.EnergyResolutionAt   0    0.000001     
+SiSDDet.EnergyResolutionAt   122  0.000001     
+
+SiSDDet.FailureRate          0.0

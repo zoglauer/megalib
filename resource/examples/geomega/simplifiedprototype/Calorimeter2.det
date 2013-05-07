@@ -1,0 +1,34 @@
+
+// Properties of the single-sided calorimeter
+MDCalorimeter              DCal2
+DCal2.SensitiveVolume      CsICrystal2
+DCal2.DetectorVolume       Calorimeter2
+
+DCal2.StructuralPitch      0.07  0.07  0.0
+DCal2.StructuralOffset     0.235 0.235 0.415
+
+DCal2.NoiseThreshold       150   50
+DCal2.TriggerThreshold     233   60
+DCal2.Overflow             5300  1700
+
+DCal2.EnergyResolution  Gauss   1       1 36.9077
+DCal2.EnergyResolution  Gauss   2       2 36.9084
+DCal2.EnergyResolution  Gauss   5       5 36.9102
+DCal2.EnergyResolution  Gauss   10      10 36.9133
+DCal2.EnergyResolution  Gauss   20      20 36.9195
+DCal2.EnergyResolution  Gauss   50      50 36.9381
+DCal2.EnergyResolution  Gauss   100     100 36.9691
+DCal2.EnergyResolution  Gauss   200     200 37.031
+DCal2.EnergyResolution  Gauss   500     500 37.216
+DCal2.EnergyResolution  Gauss   1000    1000 37.5224
+DCal2.EnergyResolution  Gauss   2000    2000 38.1277
+DCal2.EnergyResolution  Gauss   5000    5000 39.8886
+DCal2.EnergyResolution  Gauss   10000   10000 42.6623
+DCal2.EnergyResolution  Gauss   20000   20000 47.7284
+DCal2.EnergyResolution  Gauss   50000   50000 60.4301
+DCal2.EnergyResolution  Gauss   100000  100000 77.0809
+
+
+DCal2.PulseShape 2.78652e-03 1.11233e-04 1.13468e-07 -3.63642e-11 4.80242e-15 -3.56580e-19 1.60263e-23 -4.33004e-28 6.47700e-33 -4.12352e-38 0 30000
+
+DCal2.FailureRate 0.096

@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+# Allowed versions
+RootVersionMin=530
+RootVersionMax=532
+
+
+FOLDER=${MEGALIB}
+REPONAME="MEGAlib"
+
+
+ShowSuccess=1;
+
+case $1 in
+-s) 
+    ShowSuccess=0;;
+esac
+
+# Check if root-config is there
+bash ${FOLDER}/config/configure_checkpath exe root-config
+Found=$?;
+if [ $Found -eq 0 ]; then
+  echo ""
+  echo "root-config script not found in your PATH variable!"
+  echo "Please make sure your path variable contains a folder which includes root-config"
+  echo ""
+  exit 1;
+fi
+
+
+# Check for version of ROOT
+rv=`root-config --version`
+version=`echo $rv | awk -F. '{ print $1 }'`;
+release=`echo $rv | awk -F/ '{ print $1 }' | awk -F. '{ print $2 }'`;
+patch=`echo $rv | awk -F/ '{ print $2 }'`;
+RootVersion=$((100*${version} + ${release}))
+
+RootVersionMinString="${RootVersionMin:(-3):1}.${RootVersionMin:(-2):2}"
+RootVersionMaxString="${RootVersionMax:(-3):1}.${RootVersionMax:(-2):2}"
+
+if ([ ${RootVersion} -ge ${RootVersionMin} ] && [ ${RootVersion} -le ${RootVersionMax} ]);
+then
+    if [ $ShowSuccess -eq 0 ]; then
+        echo "Found ROOT version: ${rv} (minimum: ${RootVersionMinString}, maximum: ${RootVersionMaxString})"
+    fi
+else
+    echo ""
+    echo "No acceptable ROOT version found!"
+    echo "-> For this version of ${REPONAME} you require ROOT version ${RootVersionMinString} up to version ${RootVersionMaxString} and not ${rv}!"
+    echo ""
+    if ([ ${RootVersion} -gt ${RootVersionMax} ]);
+    then
+        echo "You seem to use a ROOT version which is more current than the ones tested with ${REPONAME}."
+        echo "This ROOT version might or might not work."
+        echo "If you are adventurous open the file ${FOLDER}/config/configure_rootversiontest,"
+        echo "and set RootVersionMax to ${RootVersion}. Then retry configuring ${REPONAME}."
+    fi
+
+    exit 1;
+fi       
+
+exit 0

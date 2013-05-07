@@ -1,0 +1,30 @@
+# An example run for Cosima
+# It refers to the example on how to determine energy, angular resolution, effectiove area and efficiency in th Mimrec manual;
+
+
+# Global parameters:
+Version               1
+Geometry              $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/Satellite.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+# Run parameters:
+Run EffectiveArea
+EffectiveArea.FileName                      EffectiveArea_2MeV
+EffectiveArea.NTriggers                     100000
+
+EffectiveArea.Source EffectiveArea_FirstSource
+EffectiveArea_FirstSource.ParticleType      1
+EffectiveArea_FirstSource.Beam              FarFieldPointSource 0 0  
+EffectiveArea_FirstSource.Spectrum          Mono  2000.0
+EffectiveArea_FirstSource.Flux              1000.0
+

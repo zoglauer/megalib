@@ -1,0 +1,33 @@
+# An example run for Cosima
+
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/simplifiedprototype/TomographySimple.geo.setup
+PhysicsListEM   Livermore
+
+
+Run Patient
+Patient.FileName              Tomography
+Patient.NTriggers             1000000
+
+
+Patient.Source Cancer1
+Cancer1.ParticleType        1
+Cancer1.Beam                PointSource  0 0 5
+Cancer1.Spectrum            Mono 511
+# Near-field means flux in ph/sec
+Cancer1.Flux                1000.0
+
+Patient.Source Cancer2
+Cancer2.ParticleType        1
+Cancer2.Beam                PointSource  0 0 -5
+Cancer2.Spectrum            Mono 511
+Cancer2.Intensity           1250.0
+
+Patient.Source Cancer3
+Cancer3.ParticleType        1
+Cancer3.Beam                PointSource   5 0 0
+Cancer3.Spectrum            Mono 511
+Cancer3.Intensity           750.0
+
+

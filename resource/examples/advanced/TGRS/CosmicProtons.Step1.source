@@ -1,0 +1,36 @@
+
+# Global parameters:
+
+Version                            1
+Geometry                           TGRS.geo.setup
+
+# Physics parameters: Attention they are common for all runs, especially also decay mode!
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+DecayMode                          ActivationBuildUp
+
+# Storage parameters
+StoreCalibrated                    true
+StoreSimulationInfo                false
+DiscretizeHits                     true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+#Region Sensitive
+#Sensitive.RangeCut  0.001   
+#Sensitive.Volume    BigSphere
+
+
+# The run:
+Run Level1
+Level1.FileName               ActivationStep1
+Level1.Time                   1000.0
+Level1.IsotopeProductionFile  IsotopesLarge.dat
+
+Level1.Source Level1_ProtonSource
+Level1_ProtonSource.ParticleType        4
+Level1_ProtonSource.Beam                FarFieldAreaSource 0.0 180.0 0.0 360.0
+Level1_ProtonSource.Spectrum            File CosmicProtons.dat
+Level1_ProtonSource.Flux                3.73
+

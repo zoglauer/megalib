@@ -1,0 +1,347 @@
+******************************************************************************
+****** CHANGE LOG ****** CHANGE LOG ****** CHANGE LOG ****** CHANGE LOG ******
+******************************************************************************
+
+
+Version 2.23/2.24
+=================
+
+*** Important:
+
++ If no depth resolution was present, the depth resolution in the calorimeters
+  was ideal instead of centered in the voxel
+  This bug was there for a long time...
+
+
+*** Significant new features & improvements:
+
+General:
++ Changes throughout MEGAlib to enable multi-threading
++ Replacement of TString with new thread-safe MString class
++ Redesign of GuiData/Setting-classes to allow reuse in different projects
++ There are a set of advanced examples in resource/examples/advanced
++ Improved support for Windows
+
+Cosima:
++ Updates for Geant4 9.4 (this is now the requirement) 
++ New beam: FarFieldNormalizedEnergyBeamFlux combination
+
+Sivan:
++ New plot: Incidence vs measured energy
++ New plot: Energy loss by material
+
+Revan:
++ Significant improvements in the interface to use Revan as a library
+
+Mimrec:
++ Significant improvements in the interface to use Mimrec as a library
++ Absorptions are working correctly again in combination with Comption
+  mode to allow Compton+coded imaging
+
+Realta:
++ Complete reimplementation:
+  Allow real time analysis of Compton events
+
+Spectralizer:
++ Initial version of a spectral analysis package by Michelle!
+
+... plus many, many smaller things I already forgot about :)
+
+
+*** Important bug fixes:
+
++ If no depth resolution was present, the depth resolution in the calorimeters
+  was ideal instead of centered in the voxel
+  This bug was there a long time...
+
+
+
+******************************************************************************
+
+
+
+Version 2.21/2.22
+=================
+
+*** Important:
+
++ From now on uneven minor releases are development versions, even ones are 
+  releases (similar to ROOT)
++ Mark Kippen dropped his G4LECS support, thus Geant4 9.2 is required
++ There was a problem when you have copies of scintillator detectors with 
+  multiple sensitive volumes resulting in hits not always being put into the same
+  detector. This resulted in a complex fix with several restrictions when you
+  can use multiple sensitive volumes in one scintillator detector.
++ Mimrec has been partly rewritten - perform tests if everything still works
++ Partial Windows support means changes in many classes
++ Cosima now uses the trigger criteria from Geomega - check if your triggers
+  are still OK
+
+
+*** New features & improvements:
+
+General:
++ Partial support for Windows
++ Changes in MGUIMain
++ New configuration option --optimizehard
++ Configuration: Check for additional programs: doxygen, expect, convert
++ Update check implemented
++ make update now (1) updates (2) reconfigures (3) compiles
+
+Geomega:
++ Added new system object with the characteristic to noise the event time.
++ Under certain circumstances the IsDetector characteristics was wrong and 
+  thus the volume sequence (but this always resulted in error messages)
+
+Cosima:
++ Mark Kippen dropped his G4LECS supported, thus Geant4 9.2 is required and
+  the G4LECS part of Cosima is removed
++ Prevent against negative energies during application of energy loss map
++ Cosima now uses the trigger criteria from Geomega
++ Added a black absorber
+
+Sivan:
++ None
+
+Revan:
++ Added option for coincidence search
++ Added option for exporting the spectrum as ASCII
++ Experimental new version of CSR with ToF and energy recovery from 
+  Vincent Tatischeff and Clarisse Hamadache
++ Significant change in the interfaces to allow processing in external pipeline
+
+Mimrec:
++ Improved GUI
++ Speed improvements (switch between Fast & accurate maths, slow and fast 
+  tra file parsing)
++ Code clean up - several antique classes have been removed
++ Improved options for image display
++ HX & HZ keywords for detector orientation in horizon coordiante system:
+  This coordinate system is used for Earth horizon cuts
++ Source selection works now also in galactic coordinates
++ Possibility to record animations of the ietartion/backprojection 
+  process as animated gif's
++ Significant change in the interfaces to allow processing in external pipeline
+
+
+*** Important bug fixes:
+
++ There was a problem when you have copies of scintillator detectors with 
+  multiple sensitive volumes resulting in hits not always being put into the same
+  detector. This resulted in a complex fix with several restrictions when you
+  can use multiple sensitive volumes in one scintillator detector
++ TI was not correctly read in if format differed from MEGAlib sim format
++ Cosima: DECA was in nanosec instead of sec 
++ Previoulsy, if you had galactic coordinates then the rotation is also 
+  applied in spherical and Certesian coordinates, now it is distinguished
+  between detector rotation and galactic pointing - you can have both
++ The polarization angle reported in Mimrec's polarization analysis was off 
+  by 90-(pi/2) degrees...
+
+
+******************************************************************************
+
+
+Version 2.20
+============
+
+*** Important:
+
++ Known bug (fixed only in 2.21):
+  If you have galactic coordinates then the rotation is also applied in 
+  spherical coordinates
++ Backport fix:
+  There was a problem when you have copies of scintillator detectors with 
+  multiple sensitive volumes resulting in hits not always being put into the same
+  detector. This resulted in a complex fix with several restrictions when you
+  can use multiple sensitive volumes in one scintillator detector.
++ Due to problems with case-invariance of MacOSX only "cosima" is availble 
+  and no longer "Cosima" to start Cosima
++ The energy resolution interface bhas been updated. Verify is your spectra 
+  are still identical.
+
+
+*** New features & improvements:
+
+Geomega:
++ Append lines with "\\" keyword as last keyword
++ If-clauses
++ ForVector loop & (Position/Value-) Vector-class
++ EnergyLoss, EnergyResolution, EnergyCalibration update
+
+Cosima:
++ Included TS "total started events" and SA "start area" into file
++ Possibility to restrict to one run in the source file
++ DiffractionPointSource
++ StoreOneHitPerEvent
++ Launch mutliple instances of cosima with mcosima
+
+Sivan:
++ Parse observation time and simulated events in MFileSimEvents
+
+Mimrec:
++ SIMPLE coded-mask imaging 
+
+
+*** Important bug fixes:
+
++ TT was not correctly handled if files were concatenated via NF
++ Configuration problems on Mac OSX
++ In Function2D was a copy paste error always using the x axis and not the 
+  y-axis, which lead to a wrong symmetry assumption
++ There was a problem when you have copies of scintillator detectors with 
+  multiple sensitive volumes resulting in hits not always being put into the same
+  detector. This resulted in a complex fix with several restrictions when you
+  can use multiple sensitive volumes in one scintillator detector
++ TI was not read in correctly if format differed from sim format
+
+
+******************************************************************************
+
+
+Version 2.19
+============
+
+*** Important:
+
++ If you update from a previous version, you need to reconfigure MEGAlib!
++ This version integrates many of the response related changes intended for 
+  3.0 into the 2.x branch. Thus test this version thoroughly.
++ The sim event storing routines have been rewritten. If there are problems
+  reading older files, let me know.
++ The IA & SimEvent interfaces have been renamed. The old ones are still 
+  available but should give a depreciated warning. Please update your 
+  interfaces!
++ Partial rewrite of MFile & MFileEvents classes and all files based on it.
+  This is another big change thus check if all files can be opened correctly.
++ In Cosima replaced the keywords SpectralType, Energy, Position with the 
+  keyword based Spectrum and Energy, i.e. you now don't give numbers such as 
+  "1 1" any mode but say FarFieldPointSource!
++ Don't use the Penelope code for Compton detector event reconstruction 
+  responses and always turn of fluorescence, since the code is not ready to 
+  handle more than one generated particle during Compton scattering
+
+
+*** New features & improvements:
+
+General:
++ SensitivityOptimizer capable of calculating sensitivity per steradian
++ Partial rewrite of MFile & MFileEvents 
++ MParser, MTokenizer interface remodelling
+
+Response:
++ Completed switch to new response classes  
+
+Cosima:
++ Radioactive build-up simulation (e.g. via proton irradiation) including 
+  examples and documentation is now much closer to usability
++ Improved integration of Geant4 visualization features
++ New beams: Conic beam with homogenous or gaussian distribution (from Georg)
+  and RadialProfileBeam
++ Replaced the keywords SpectralType, Energy, Position with the keyword based 
+  Spectrum and Energy, i.e. you now don't give numbers such as "1 1" any mode 
+  but say FarFieldPointSource
++ New examples
++ More input sanity checks
++ Spectums loaded by file now allow for lin-lin, lin-log, log-lin, log-log 
+  interpolation
+
+Sivan:
++ The sim event storing routines have been rewritten (only latest sim format 
+  is written, new write routines allowing scientific notation. If there are 
+  problems reading older files, let me know.
++ The IA & SimEvent interfaces have been renamed. The old ones are still 
+  available but should give a depreciated warning. Please update your 
+  interfaces
++ Eliminated ECs (are IAs since a long time now)
++ New option: Show secondary generation pattern (=locations)
+
+Revan:
++ New option: Show spatial energy distribution (not only hit distribution)
+
+Mimrec:
++ OS-EM is available again
+
+
+*** Bug fixes:
+
+Revan:
++ The TI was not always read in correctly leading to jumps in the time sequence
++ The NF keyword was not honoured
+
+Mimrec:
++ The excluded detectors were not read in correctly in the new Xml format
+
+Cosima:
++ The x-y-axes of the ProfiledBeam/MapProfileBeam beam were not scaled to cm, 
+  thus the beam was a factor of 10 too narrow
+
+General:
++ Increased stability of multi-threading
+
+Many minor ones, segfaults and other crashes
+
+
+
+
+******************************************************************************
+
+
+
+Version 2.18
+============
+
+*** Important:
+
++ If you update from a previous version, you need to reconfigure MEGAlib!
++ Due to a switch to XML in the configuration files, you have to check if they
+  are still consistent 
++ In old configuration files the standard maximum amount for RAM for the 
+  response slices ("back projections") was 1 GB. You should check if you do not
+  want a larger value (mimrec -> imaging -> memory management)!
++ The new automatic calculation of cross section files invalidates all old 
+  cross section files since they do not have a hash value linked to the 
+  materials
+
+
+*** New features & improvements:
+
+General:
++ Integrated Cosima into MEGAlib
++ Improved configuration script
++ Mimrec/Revan/Sivan/Geomega configuration files are now XML based
+
+Geomega:
++ Added Geant4 based overlap search
++ Added automatic cross-section generation based on Geant4
++ New detector type Voxel3D
+
+Mimrec:
++ Galactic coordinates
++ List-mode response calculation is now multi threaded
++ Out-of-memory handling for 32-bit systems
++ Imaging can be stopped after a certain amount of RAM is consumed
+
+Cosima:
++ Allow to store entries and exists of particles in certain volumes
+
+Plus many, many minor improvements
+
+
+*** Bug fixes:
+
+Revan (back ported to the latest version):
++ The TI was not always read in correctly leading to jumps in the time sequence
++ The NF keyword was not honoured
+
+Mimrec (back ported to the latest version):
++ The excluded detectors were not read in correctly in the new Xml format
+
+Many minor ones, segfaults and other crashes
+
+
+
+
+******************************************************************************
+
+

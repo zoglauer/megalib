@@ -1,0 +1,162 @@
+/*
+ * MDStrip3D.h
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MDStrip3D__
+#define __MDStrip3D__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MGlobal.h"
+#include "MDStrip2D.h"
+#include "MStreams.h"
+#include "MString.h"
+
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+class MDStrip3D : public MDStrip2D
+{
+  // public interface:
+ public:
+  MDStrip3D(MString Name = "");
+  MDStrip3D(const MDStrip3D& S);
+  virtual ~MDStrip3D();
+
+  virtual MDDetector* Clone();
+
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
+  virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
+                                         const double& Energy, 
+                                         const double& Time, 
+                                         MDVolume* Volume) const;
+  //! Return the Grid point of this position
+  virtual MDGridPoint GetGridPoint(const MVector& Pos) const;
+  //! Return a position in detector volume coordinates
+  virtual MVector GetPositionInDetectorVolume(const unsigned int xGrid, 
+                                              const unsigned int yGrid,
+                                              const unsigned int zGrid,
+                                              const MVector PositionInGrid,
+                                              const unsigned int Type,
+                                              MDVolume* Volume);
+  virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
+
+  virtual void SetNoiseAxis(const int Axis) { m_NoiseAxis = Axis; }
+  virtual int GetNoiseAxis() const { return m_NoiseAxis; }
+  virtual bool SetDepthResolution(const double DepthResolution);
+  //! Set a threshold in the depth resolution: Below this value, no depth resolution exists
+  virtual bool SetDepthResolutionThreshold(const double DepthResolutionThreshold);
+  //! Set the depth resolution for a certain energy
+  virtual bool SetDepthResolutionAt(const double Energy, const double Resolution, const double Sigma);
+
+  //! Add an depth correction factor to the energy resolution
+  virtual bool SetEnergyResolutionDepthCorrection(const double InputDepth, 
+                                                  const double PeakEnergy1, 
+                                                  const double Width1, 
+                                                  const double PeakEnergy2 = g_DoubleNotDefined, 
+                                                  const double Width2 = g_DoubleNotDefined, 
+                                                  const double Ratio = g_DoubleNotDefined);
+  //! Return the depth correction factor to the energy resolution
+  //double GetEnergyResolutionDepthCorrection(const double Depth) const;
+  //! Return true if this detector has a depth dependent energy resolution:
+  bool HasEnergyResolutionDepthCorrection() const;
+  //! Return the energy resolution at an certain energy, including potential depth corrections
+  virtual double GetEnergyResolution(const double Energy, const MVector& Position) const;
+
+  virtual double GetEnergyResolutionPeak1(const double Energy, const MVector& PositionInDetector = c_NullVector) const;
+  virtual double GetEnergyResolutionWidth1(const double Energy, const MVector& PositionInDetector = c_NullVector) const;
+  virtual double GetEnergyResolutionPeak2(const double Energy, const MVector& PositionInDetector = c_NullVector) const;
+  virtual double GetEnergyResolutionWidth2(const double Energy, const MVector& PositionInDetector = c_NullVector) const;
+  virtual double GetEnergyResolutionRatio(const double Energy, const MVector& PositionInDetector = c_NullVector) const;
+
+  //! Add an depth correction factor to the trigger threshold
+  bool SetTriggerThresholdDepthCorrection(const double Depth, const double Correction);
+  //! Return the depth correction factor to the trigger threshold
+  double GetTriggerThresholdDepthCorrection(const double Depth) const;
+  //! Return true if this detector has a depth dependent trigger threshold:
+  bool HasTriggerThresholdDepthCorrection() const;
+  //! Return the trigger threshold including potential depth corrections
+  virtual double GetTriggerThreshold(const MVector& Position) const;
+  //! In ANY case the real trigger threshold is below this value...
+  virtual double GetSecureUpperLimitTriggerThreshold() const;
+
+  //! Add an depth correction factor to the noise threshold
+  bool SetNoiseThresholdDepthCorrection(const double Depth, const double Correction);
+  //! Return the depth correction factor to the noise threshold
+  double GetNoiseThresholdDepthCorrection(const double Depth) const;
+  //! Return true if this detector has a depth dependent noise threshold:
+  bool HasNoiseThresholdDepthCorrection() const;
+  //! Return the noise threshold at an certain energy, including potential depth corrections
+  virtual double GetNoiseThreshold(const MVector& Position) const;
+
+
+  virtual MString GetGeomega() const;
+  virtual MString GetGeant3() const;
+  virtual MString GetMGeant() const;
+  virtual MString ToString() const;
+
+  //! Check if all input is reasonable
+  virtual bool Validate();
+
+
+  // protected methods:
+ protected:
+
+
+  // private methods:
+ private:
+
+
+
+  // protected members:
+ protected:
+  int m_NoiseAxis;
+  MSpline* m_DepthResolution; 
+  MSpline* m_DepthResolutionSigma; 
+  double m_DepthResolutionThreshold;
+
+  //! Some strip detectors, such as CZT have a depth dependent energy resolution
+  //! This additional factor is encoded here
+  MFunction m_EnergyResolutionDepthCorrectionPeak1; 
+  MFunction m_EnergyResolutionDepthCorrectionWidth1; 
+  MFunction m_EnergyResolutionDepthCorrectionPeak2; 
+  MFunction m_EnergyResolutionDepthCorrectionWidth2; 
+  MFunction m_EnergyResolutionDepthCorrectionRatio; 
+
+
+  //! Some strip detectors, such as CZT have a depth dependent trigger threshold
+  MSpline* m_TriggerThresholdDepthCorrection; 
+  //! Some strip detectors, such as CZT have a depth dependent noise threshold
+  MSpline* m_NoiseThresholdDepthCorrection; 
+
+  // private members:
+ private:
+
+
+
+#ifdef ___CINT___
+ public:
+  ClassDef(MDStrip3D, 0) // no description
+#endif
+
+};
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////

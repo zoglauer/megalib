@@ -1,0 +1,33 @@
+# Template Run for Step 2 of activation simulation: 
+# Calculate the activation
+
+
+# Global parameters:
+Version                            1
+Geometry                           $(MEGALIB)/resource/examples/geomega/special/ActivationSphere.geo.setup
+DetectorTimeConstant               0.000005
+
+
+# Physics parameters
+PhysicsListEM                      Livermore
+PhysicsListHD                      qgsp-bic-hp
+DecayMode                          ActivationDelayedDecay
+
+
+# Storage parameters
+StoreCalibrated                    true
+StoreSimulationInfo                true
+DiscretizeHits                     true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+
+
+
+Run ActivationStep3
+ActivationStep3.FileName                         ActivationStep3
+ActivationStep3.Time                             10000.0
+
+ActivationStep3.ActivationSources                Activation.dat
+

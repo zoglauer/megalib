@@ -1,0 +1,672 @@
+//------------------------------------------------------------
+// SPI like coded mask telescope
+
+
+Name SPILike
+Version 1.0
+
+SurroundingSphere 110  0.0  0.0  80.0  110.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 110.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 80.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Trigger: at least three hits in D3
+Trigger TN03
+TN03.Veto false
+TN03.TriggerByChannel true
+TN03.DetectorType Scintillator 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+Volume ACSRing
+ACSRing.Material BGO
+ACSRing.Visibility 1
+ACSRing.Color 4
+ACSRing.Shape TUBS 38 43 88.5 0 360
+ACSRing.Position 0 0 81
+ACSRing.Mother WorldVolume
+
+Volume ACSDisk
+ACSDisk.Material BGO
+ACSDisk.Visibility 1
+ACSDisk.Color 4
+ACSDisk.Shape TUBS 0 43 2.5 0 360
+ACSDisk.Position 0 0 -10
+ACSDisk.Mother WorldVolume
+
+
+
+
+
+
+Volume GeDetector
+GeDetector.Material Germanium
+GeDetector.Visibility 1
+GeDetector.Color 2
+GeDetector.Shape PGON 90.0 360.0 6  2  0 0 2.8  3.5 0 2.8 
+
+BeginComment
+
+Volume GeCentral
+GeCentral.Material Germanium
+GeCentral.Visibility 1
+GeCentral.Color 2
+GeCentral.Shape BRIK 3 1.73205080757 3.5
+GeCentral.Position 0 0 0
+GeCentral.Mother GeDetector
+
+Volume GeLeft
+GeLeft.Material Germanium
+GeLeft.Visibility 1
+GeLeft.Color 2
+GeLeft.Shape TRAP 3.5 0 0  0.86602540378 3 0.0000000000001 0  0.86602540378 3 0.0000000000001 0
+GeLeft.Position 0 2.59807621135 0
+GeLeft.Mother GeDetector
+
+Volume GeRight
+GeRight.Material Germanium
+GeRight.Visibility 1
+GeRight.Color 2
+GeRight.Shape TRAP 3.5 0 0  0.86602540378 3 0.0000000000001 0  0.86602540378 3 0.0000000000001 0
+GeRight.Rotation 0 0 180
+GeRight.Position 0 -2.59807621135 0
+GeRight.Mother GeDetector
+
+EndComment
+
+GeDetector.Copy Ge1
+Ge1.Position 0 0 0
+Ge1.Mother WorldVolume
+
+GeDetector.Copy Ge2
+Ge2.Position 6 0 0
+Ge2.Mother WorldVolume
+
+GeDetector.Copy Ge3
+Ge3.Position 12 0 0
+Ge3.Mother WorldVolume
+
+GeDetector.Copy Ge4
+Ge4.Position -6 0 0
+Ge4.Mother WorldVolume
+
+GeDetector.Copy Ge5
+Ge5.Position -12 0 0
+Ge5.Mother WorldVolume
+
+GeDetector.Copy Ge6
+Ge6.Position -9 5.19615242271 0
+Ge6.Mother WorldVolume
+
+GeDetector.Copy Ge7
+Ge7.Position -3 5.19615242271 0
+Ge7.Mother WorldVolume
+
+GeDetector.Copy Ge8
+Ge8.Position 3 5.19615242271 0
+Ge8.Mother WorldVolume
+
+GeDetector.Copy Ge9
+Ge9.Position 9 5.19615242271 0
+Ge9.Mother WorldVolume
+
+GeDetector.Copy Ge10
+Ge10.Position -9 -5.19615242271 0
+Ge10.Mother WorldVolume
+
+GeDetector.Copy Ge11
+Ge11.Position -3 -5.19615242271 0
+Ge11.Mother WorldVolume
+
+GeDetector.Copy Ge12
+Ge12.Position 3 -5.19615242271 0
+Ge12.Mother WorldVolume
+
+GeDetector.Copy Ge13
+Ge13.Position 9 -5.19615242271 0
+Ge13.Mother WorldVolume
+
+GeDetector.Copy Ge14
+Ge14.Position 6 10.3923048454 0
+Ge14.Mother WorldVolume
+
+GeDetector.Copy Ge15
+Ge15.Position 0 10.3923048454 0
+Ge15.Mother WorldVolume
+
+GeDetector.Copy Ge16
+Ge16.Position -6 10.3923048454 0
+Ge16.Mother WorldVolume
+
+GeDetector.Copy Ge17
+Ge17.Position 6 -10.3923048454 0
+Ge17.Mother WorldVolume
+
+GeDetector.Copy Ge18
+Ge18.Position 0 -10.3923048454 0
+Ge18.Mother WorldVolume
+
+GeDetector.Copy Ge19
+Ge19.Position -6 -10.3923048454 0
+Ge19.Mother WorldVolume
+
+
+
+
+
+Volume MaskElement
+MaskElement.Virtual true
+MaskElement.Material Vacuum
+MaskElement.Visibility 0
+MaskElement.Shape BRIK 10 10 1.5
+
+Volume MaskCentral
+MaskCentral.Material Germanium
+MaskCentral.Visibility 1
+MaskCentral.Color 3
+MaskCentral.Shape BRIK 3 1.73205080757 1.5
+MaskCentral.Position 0 0 0
+MaskCentral.Mother MaskElement
+
+Volume MaskLeft
+MaskLeft.Material Germanium
+MaskLeft.Visibility 1
+MaskLeft.Color 3
+MaskLeft.Shape TRAP 1.5 0 0  0.86602540378 3 0.00000000000010 0  0.86602540378 3 0.00000000000010 0
+MaskLeft.Position 0 2.59807621135 0
+MaskLeft.Mother MaskElement
+
+Volume MaskRight
+MaskRight.Material Germanium
+MaskRight.Visibility 1
+MaskRight.Color 3
+MaskRight.Shape TRAP 1.5 0 0  0.86602540378 3 0.00000000000010 0  0.86602540378 3 0.00000000000010 0
+MaskRight.Rotation 0 0 180
+MaskRight.Position 0 -2.59807621135 0
+MaskRight.Mother MaskElement
+
+Volume Mask
+Mask.Material Vacuum
+Mask.Visibility 0
+Mask.Shape TUBS 0 40 1.5 0 360
+Mask.Position 0 0 171
+Mask.Mother WorldVolume
+
+
+MaskElement.Copy Mask1
+Mask1.Position 18 0 0
+Mask1.Mother Mask
+
+MaskElement.Copy Mask2
+Mask2.Position 30 0 0
+Mask2.Mother Mask
+
+MaskElement.Copy Mask3
+Mask3.Position 36 0 0
+Mask3.Mother Mask
+
+MaskElement.Copy Mask4
+Mask4.Position -6 0 0
+Mask4.Mother Mask
+
+MaskElement.Copy Mask5
+Mask5.Position -12 0 0
+Mask5.Mother Mask
+
+MaskElement.Copy Mask6
+Mask6.Position -24 0 0
+Mask6.Mother Mask
+
+
+MaskElement.Copy Mask11
+Mask11.Position 3 5.19615242271 0
+Mask11.Mother Mask
+
+MaskElement.Copy Mask12
+Mask12.Position 9 5.19615242271 0
+Mask12.Mother Mask
+
+MaskElement.Copy Mask13
+Mask13.Position 15 5.19615242271 0
+Mask13.Mother Mask
+
+MaskElement.Copy Mask14
+Mask14.Position 21 5.19615242271 0
+Mask14.Mother Mask
+
+MaskElement.Copy Mask15
+Mask15.Position 27 5.19615242271 0
+Mask15.Mother Mask
+
+MaskElement.Copy Mask16
+Mask16.Position -9 5.19615242271 0
+Mask16.Mother Mask
+
+MaskElement.Copy Mask17
+Mask17.Position -15 5.19615242271 0
+Mask17.Mother Mask
+
+MaskElement.Copy Mask18
+Mask18.Position -33 5.19615242271 0
+Mask18.Mother Mask
+
+
+MaskElement.Copy Mask21
+Mask21.Position 3 -5.19615242271 0
+Mask21.Mother Mask
+
+MaskElement.Copy Mask22
+Mask22.Position 21 -5.19615242271 0
+Mask22.Mother Mask
+
+MaskElement.Copy Mask23
+Mask23.Position 27 -5.19615242271 0
+Mask23.Mother Mask
+
+MaskElement.Copy Mask24
+Mask24.Position -33 -5.19615242271 0
+Mask24.Mother Mask
+
+
+
+MaskElement.Copy Mask31
+Mask31.Position 6 10.3923048454 0
+Mask31.Mother Mask
+
+MaskElement.Copy Mask32
+Mask32.Position 12 10.3923048454 0
+Mask32.Mother Mask
+
+MaskElement.Copy Mask33
+Mask33.Position 18 10.3923048454 0
+Mask33.Mother Mask
+
+MaskElement.Copy Mask34
+Mask34.Position 24 10.3923048454 0
+Mask34.Mother Mask
+
+MaskElement.Copy Mask35
+Mask35.Position 30 10.3923048454 0
+Mask35.Mother Mask
+
+MaskElement.Copy Mask36
+Mask36.Position -12 10.3923048454 0
+Mask36.Mother Mask
+
+MaskElement.Copy Mask37
+Mask37.Position -18 10.3923048454 0
+Mask37.Mother Mask
+
+MaskElement.Copy Mask38
+Mask38.Position -30 10.3923048454 0
+Mask38.Mother Mask
+
+
+
+
+MaskElement.Copy Mask41
+Mask41.Position 0 -10.3923048454 0
+Mask41.Mother Mask
+
+MaskElement.Copy Mask42
+Mask42.Position 6 -10.3923048454 0
+Mask42.Mother Mask
+
+MaskElement.Copy Mask43
+Mask43.Position 24 -10.3923048454 0
+Mask43.Mother Mask
+
+
+
+MaskElement.Copy Mask51
+Mask51.Position -3 15.5884572681 0
+Mask51.Mother Mask
+
+MaskElement.Copy Mask52
+Mask52.Position -9 15.5884572681 0
+Mask52.Mother Mask
+
+MaskElement.Copy Mask53
+Mask53.Position -15 15.5884572681 0
+Mask53.Mother Mask
+
+
+
+MaskElement.Copy Mask61
+Mask61.Position 27 -15.5884572681 0
+Mask61.Mother Mask
+
+MaskElement.Copy Mask62
+Mask62.Position 3 -15.5884572681 0
+Mask62.Mother Mask
+
+MaskElement.Copy Mask63
+Mask63.Position -3 -15.5884572681 0
+Mask63.Mother Mask
+
+MaskElement.Copy Mask64
+Mask64.Position -9 -15.5884572681 0
+Mask64.Mother Mask
+
+MaskElement.Copy Mask65
+Mask65.Position -15 -15.5884572681 0
+Mask65.Mother Mask
+
+MaskElement.Copy Mask66
+Mask66.Position -21 -15.5884572681 0
+Mask66.Mother Mask
+
+MaskElement.Copy Mask67
+Mask67.Position -27 -15.5884572681 0
+Mask67.Mother Mask
+
+
+
+MaskElement.Copy Mask71
+Mask71.Position 12 20.7846096908 0
+Mask71.Mother Mask
+
+MaskElement.Copy Mask72
+Mask72.Position 24 20.7846096908 0
+Mask72.Mother Mask
+
+MaskElement.Copy Mask73
+Mask73.Position -6 20.7846096908 0
+Mask73.Mother Mask
+
+MaskElement.Copy Mask74
+Mask74.Position -18 20.7846096908 0
+Mask74.Mother Mask
+
+MaskElement.Copy Mask75
+Mask75.Position -24 20.7846096908 0
+Mask75.Mother Mask
+
+
+
+MaskElement.Copy Mask81
+Mask81.Position 12 -20.7846096908 0
+Mask81.Mother Mask
+
+MaskElement.Copy Mask82
+Mask82.Position 0 -20.7846096908 0
+Mask82.Mother Mask
+
+MaskElement.Copy Mask83
+Mask83.Position -6 -20.7846096908 0
+Mask83.Mother Mask
+
+MaskElement.Copy Mask84
+Mask84.Position -18 -20.7846096908 0
+Mask84.Mother Mask
+
+
+
+
+MaskElement.Copy Mask91
+Mask91.Position 21 25.9807621135 0
+Mask91.Mother Mask
+
+MaskElement.Copy Mask92
+Mask92.Position -3 25.9807621135 0
+Mask92.Mother Mask
+
+MaskElement.Copy Mask93
+Mask93.Position -9 25.9807621135 0
+Mask93.Mother Mask
+
+MaskElement.Copy Mask94
+Mask94.Position -15 25.9807621135 0
+Mask94.Mother Mask
+
+
+MaskElement.Copy Mask95
+Mask95.Position 0 31.17691453632 0
+Mask95.Mother Mask
+
+MaskElement.Copy Mask96
+Mask96.Position 12 31.17691453632 0
+Mask96.Mother Mask
+
+MaskElement.Copy Mask97
+Mask97.Position -18 31.17691453632 0
+Mask97.Mother Mask
+
+
+MaskElement.Copy Mask101
+Mask101.Position 21 -25.9807621135 0
+Mask101.Mother Mask
+
+MaskElement.Copy Mask102
+Mask102.Position -3 -25.9807621135 0
+Mask102.Mother Mask
+
+MaskElement.Copy Mask103
+Mask103.Position -9 -25.9807621135 0
+Mask103.Mother Mask
+
+MaskElement.Copy Mask104
+Mask104.Position -15 -25.9807621135 0
+Mask104.Mother Mask
+
+
+MaskElement.Copy Mask105
+Mask105.Position 12 -31.17691453632 0
+Mask105.Mother Mask
+
+MaskElement.Copy Mask106
+Mask106.Position 6 -31.17691453632 0
+Mask106.Mother Mask
+
+MaskElement.Copy Mask107
+Mask107.Position -6 -31.17691453632 0
+Mask107.Mother Mask
+
+MaskElement.Copy Mask108
+Mask108.Position -18 -31.17691453632 0
+Mask108.Mother Mask
+
+
+// Add an additional ring...
+
+MaskElement.Copy Mask201
+Mask201.Position 21 -36.373066959 0
+Mask201.Mother Mask
+
+MaskElement.Copy Mask202
+Mask202.Position 15 -36.373066959 0
+Mask202.Mother Mask
+
+MaskElement.Copy Mask203
+Mask203.Position 9 -36.373066959 0
+Mask203.Mother Mask
+
+MaskElement.Copy Mask204
+Mask204.Position 3 -36.373066959 0
+Mask204.Mother Mask
+
+MaskElement.Copy Mask205
+Mask205.Position -3 -36.373066959 0
+Mask205.Mother Mask
+
+MaskElement.Copy Mask206
+Mask206.Position -9 -36.373066959 0
+Mask206.Mother Mask
+
+MaskElement.Copy Mask207
+Mask207.Position -15 -36.373066959 0
+Mask207.Mother Mask
+
+MaskElement.Copy Mask208
+Mask208.Position -21 -36.373066959 0
+Mask208.Mother Mask
+
+
+
+MaskElement.Copy Mask301
+Mask301.Position 21 36.373066959 0
+Mask301.Mother Mask
+
+MaskElement.Copy Mask302
+Mask302.Position 15 36.373066959 0
+Mask302.Mother Mask
+
+MaskElement.Copy Mask303
+Mask303.Position 9 36.373066959 0
+Mask303.Mother Mask
+
+MaskElement.Copy Mask304
+Mask304.Position 3 36.373066959 0
+Mask304.Mother Mask
+
+MaskElement.Copy Mask305
+Mask305.Position -3 36.373066959 0
+Mask305.Mother Mask
+
+MaskElement.Copy Mask306
+Mask306.Position -9 36.373066959 0
+Mask306.Mother Mask
+
+MaskElement.Copy Mask307
+Mask307.Position -15 36.373066959 0
+Mask307.Mother Mask
+
+MaskElement.Copy Mask308
+Mask308.Position -21 36.373066959 0
+Mask308.Mother Mask
+
+
+MaskElement.Copy Mask211
+Mask211.Position -24 -31.17691453632 0
+Mask211.Mother Mask
+
+MaskElement.Copy Mask212
+Mask212.Position 24 -31.17691453632 0
+Mask212.Mother Mask
+
+MaskElement.Copy Mask213
+Mask213.Position -24 31.17691453632 0
+Mask213.Mother Mask
+
+MaskElement.Copy Mask214
+Mask214.Position 24 31.17691453632 0
+Mask214.Mother Mask
+
+
+MaskElement.Copy Mask221
+Mask221.Position 27 -25.9807621135 0
+Mask221.Mother Mask
+
+MaskElement.Copy Mask222
+Mask222.Position -27 -25.9807621135 0
+Mask222.Mother Mask
+
+MaskElement.Copy Mask223
+Mask223.Position 27 25.9807621135 0
+Mask223.Mother Mask
+
+MaskElement.Copy Mask224
+Mask224.Position -27 25.9807621135 0
+Mask224.Mother Mask
+
+
+MaskElement.Copy Mask231
+Mask231.Position 30 -20.7846096908 0
+Mask231.Mother Mask
+
+MaskElement.Copy Mask232
+Mask232.Position -30 -20.7846096908 0
+Mask232.Mother Mask
+
+MaskElement.Copy Mask233
+Mask233.Position 30 20.7846096908 0
+Mask233.Mother Mask
+
+MaskElement.Copy Mask234
+Mask234.Position -30 20.7846096908 0
+Mask234.Mother Mask
+
+
+MaskElement.Copy Mask241
+Mask241.Position -33 -15.5884572681 0
+Mask241.Mother Mask
+
+MaskElement.Copy Mask242
+Mask242.Position 33 -15.5884572681 0
+Mask242.Mother Mask
+
+MaskElement.Copy Mask243
+Mask243.Position 33 15.5884572681 0
+Mask243.Mother Mask
+
+MaskElement.Copy Mask244
+Mask244.Position -33 15.5884572681 0
+Mask244.Mother Mask
+
+
+MaskElement.Copy Mask251
+Mask251.Position -36 -10.3923048454 0
+Mask251.Mother Mask
+
+MaskElement.Copy Mask252
+Mask252.Position 36 -10.3923048454 0
+Mask252.Mother Mask
+
+MaskElement.Copy Mask253
+Mask253.Position -36 10.3923048454 0
+Mask253.Mother Mask
+
+MaskElement.Copy Mask254
+Mask254.Position 36 10.3923048454 0
+Mask254.Mother Mask
+
+
+MaskElement.Copy Mask261
+Mask261.Position -39 -5.19615242271 0
+Mask261.Mother Mask
+
+MaskElement.Copy Mask262
+Mask262.Position 39 -5.19615242271 0
+Mask262.Mother Mask
+
+MaskElement.Copy Mask263
+Mask263.Position -39 5.19615242271 0
+Mask263.Mother Mask
+
+MaskElement.Copy Mask264
+Mask264.Position 39 5.19615242271 0
+Mask264.Mother Mask
+
+MaskElement.Copy Mask271
+Mask271.Position -42 0 0
+Mask271.Mother Mask
+
+MaskElement.Copy Mask272
+Mask272.Position 42 0 0
+Mask272.Mother Mask
+
+
+
+
+
+MDACS                     GeDet
+
+GeDet.SensitiveVolume     GeDetector
+GeDet.DetectorVolume     GeDetector
+
+GeDet.TriggerThreshold    10
+GeDet.EnergyResolutionAt  0     2
+GeDet.EnergyResolutionAt  1000  2
+GeDet.FailureRate         0

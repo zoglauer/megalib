@@ -1,0 +1,27 @@
+# Put a single 18-F source (511 keV line) into the phantom 
+
+Version         1
+Geometry        CSPECT.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+Run CSPECTImaging
+CSPECTImaging.FileName         CSPECT
+CSPECTImaging.Time             60.0
+
+
+CSPECTImaging.Source 18F_1
+18F_1.ParticleType           2
+18F_1.Beam                   PointSource -1 -3 2
+18F_1.Spectrum               Mono 250
+18F_1.Flux                   10000
+

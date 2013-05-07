@@ -1,0 +1,106 @@
+//------------------------------------------------------------
+// Very simple Xenon ACT 
+
+
+Name Xenon
+Version 1.0
+
+SurroundingSphere 35  0.0  0.0  0.0  35.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+// Trigger: at least three hits in D3
+Trigger TN05
+TN05.Veto false
+TN05.TriggerByChannel true
+TN05.DetectorType DriftChamber 1
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 100. 100. 100.
+WorldVolume.Mother 0
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// XeDriftChamber is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+Volume XeDriftChamber           
+XeDriftChamber.Material     XenonLXeGRIT
+XeDriftChamber.Visibility   1
+XeDriftChamber.Color        2
+XeDriftChamber.Shape BRIK   20  20  10
+
+XeDriftChamber.Copy Top
+Top.Position     0.0  0.0  10.0
+Top.Mother       WorldVolume
+
+XeDriftChamber.Copy Bottom
+Bottom.Position     0.0  0.0  -10.0
+Bottom.Mother       WorldVolume
+Bottom.Rotation     180.0 0.0 0.0
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+DriftChamber             Chamber
+        
+Chamber.DetectorVolume      XeDriftChamber
+Chamber.SensitiveVolume     XeDriftChamber
+
+Chamber.StructuralPitch      0.0     0.0     0.0
+Chamber.StructuralOffset     0.0     0.0     0.0
+
+Chamber.Offset              0.0     0.0
+Chamber.StripNumber        4000     4000
+
+Chamber.NoiseThreshold       20
+Chamber.TriggerThreshold     20
+
+//Chamber.NoiseAxis            3
+Chamber.DepthResolutionAt    100       0.5
+
+Chamber.EnergyResolutionAt   10         0.2   
+Chamber.EnergyResolutionAt   100        2   
+Chamber.EnergyResolutionAt   1000       20   
+Chamber.EnergyResolutionAt   10000      200   
+
+Chamber.TimeResolutionAt     1000      0.00000000001  // s 
+
+Chamber.FailureRate 0.0
+
+// Drift chamber specific parameters
+
+// Lightspeed of the scintillation light in the drfit chamber 
+Chamber.LightSpeed             18E+9   // cm/s
+// Which side of the drift chamber is ligt sensitive?
+Chamber.LightDetectorPosition  3      // 0: none; 1: +x; -1:-x; 2: +y; -2 -y; 3: +z; -3:-z
+// 1sigma of the opening cone of the drift in the E-field
+// If this is zero, a projection is used
+Chamber.DriftConstant          0.0     // cm
+// Energy of one drifting electron 
+Chamber.EnergyPerElectron      0.022   // keV/electron
+
+// 1sigma energy resolution of the detected light:
+Chamber.LightEnergyResolutionAt   10        0.1  
+Chamber.LightEnergyResolutionAt   100       1     
+Chamber.LightEnergyResolutionAt   1000      10       
+Chamber.LightEnergyResolutionAt   10000     100                     
+Chamber.LightEnergyResolutionAt   100000    1000         
+
+// 

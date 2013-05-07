@@ -1,0 +1,73 @@
+// Setup file for the MEGA prototype in the Duke configuration
+
+Name MEGAPrototype_Duke_v3.0
+Version 3.0
+
+// Comments:
+// Center of calorimeter: 6.38
+// Center of lower layer: 15.855
+
+
+
+SurroundingSphere 37.0  0.0  0.0  5.0  37.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 37.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 5.0
+#Sphere.Material Vacuum
+#Sphere.Mother MEGAOnly_Volume
+
+#DefaultColor 1
+#ShowVolumes false
+
+// Include section 
+Include Calorimeter2.Prototyp.det
+Include Calorimeter4.Prototyp.det
+Include Calorimeter8.Prototyp.det
+Include SiStripDetector.Prototyp.det
+
+SStrip.SensitiveVolume     Basic_Silicon_Wafer
+SStrip.DetectorVolume      Basic_Silicon_Wafer
+DCal8.DetectorVolume       8cm_CsICore
+DCal4.DetectorVolume       4cm_CsICore
+DCal2.DetectorVolume       2cm_CsICore
+
+// NEEDS THIS LINE TO VIEW ALONE:
+Include ../materials/Materials.geo
+Include Whole_MEGA.geo
+
+// Trigger: at least one hit D1 and D2
+Trigger TN01
+TN01.TriggerByDetector true
+TN01.DetectorType Strip2D 1
+TN01.DetectorType Calorimeter 1
+
+
+// The Mother Volume of the Detector Configuration:
+Volume MEGAOnly_Volume
+MEGAOnly_Volume.Material Air
+MEGAOnly_Volume.Visibility 0
+MEGAOnly_Volume.Virtual true
+MEGAOnly_Volume.Shape BRIK 300. 300. 300.
+// NEEDS THIS LINE TO VIEW ALONE:
+MEGAOnly_Volume.Mother 0
+
+
+
+
+MEGA_Volume.Position 0. 0. 19.75
+MEGA_Volume.Mother MEGAOnly_Volume
+
+
+
+// Ground Plate:
+
+
+Volume GroundPlate
+GroundPlate.Material Aluminium
+GroundPlate.Shape BRIK 23.95 23.95 0.5
+GroundPlate.Position 0. 0. -0.5
+GroundPlate.Visibility 1
+GroundPlate.Color 1
+GroundPlate.Mother MEGAOnly_Volume

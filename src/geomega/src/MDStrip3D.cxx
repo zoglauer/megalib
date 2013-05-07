@@ -1,0 +1,831 @@
+/*
+ * MDStrip3D.cxx
+ *
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MDStrip3D
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MDStrip3D.h"
+
+// Standard libs:
+#include <limits>
+#include <sstream>
+using namespace std;
+
+// ROOT libs:
+
+// MEGAlib libs:
+#include "MAssert.h"
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CINT___
+ClassImp(MDStrip3D)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDStrip3D::MDStrip3D(MString Name) : MDStrip2D(Name)
+{
+  // Construct an instance of MDStrip3D
+
+  m_Type = c_Strip3D;
+  m_Description = c_Strip3DName;
+  m_NoiseAxis = 3;
+  m_DepthResolution = new MSpline(MSpline::Interpolation);
+  m_DepthResolutionThreshold = -1.0;
+  m_DepthResolutionSigma = new MSpline(MSpline::Interpolation);
+  
+  m_TriggerThresholdDepthCorrection = new MSpline(MSpline::Interpolation); 
+  m_NoiseThresholdDepthCorrection = new MSpline(MSpline::Interpolation); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDStrip3D::MDStrip3D(const MDStrip3D& S)
+{
+  m_NoiseAxis = S.m_NoiseAxis;
+  m_DepthResolution = new MSpline(*(S.m_DepthResolution)); 
+  m_DepthResolutionThreshold = S.m_DepthResolutionThreshold; 
+  m_DepthResolutionSigma = new MSpline(*(S.m_DepthResolutionSigma)); 
+  
+  m_EnergyResolutionDepthCorrectionPeak1 = S.m_EnergyResolutionDepthCorrectionPeak1; 
+  m_EnergyResolutionDepthCorrectionWidth1 = S.m_EnergyResolutionDepthCorrectionWidth1; 
+  m_EnergyResolutionDepthCorrectionPeak2 = S.m_EnergyResolutionDepthCorrectionPeak2; 
+  m_EnergyResolutionDepthCorrectionWidth2 = S.m_EnergyResolutionDepthCorrectionWidth2; 
+  m_EnergyResolutionDepthCorrectionRatio = S.m_EnergyResolutionDepthCorrectionRatio;
+
+  m_TriggerThresholdDepthCorrection = new MSpline(*(S.m_TriggerThresholdDepthCorrection)); 
+  m_NoiseThresholdDepthCorrection = new MSpline(*(S.m_NoiseThresholdDepthCorrection)); 
+}
+
+ 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDDetector* MDStrip3D::Clone()
+{
+  // Duplicate this detector
+
+  massert(this != 0);
+  return new MDStrip3D(*this);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDStrip3D::~MDStrip3D()
+{
+  // Delete this instance of MDStrip3D
+
+  delete m_DepthResolution;
+  delete m_DepthResolutionSigma;
+  delete m_TriggerThresholdDepthCorrection;
+  delete m_NoiseThresholdDepthCorrection;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetEnergyResolutionDepthCorrection(const double InputDepth, 
+                                                   const double Peak1, 
+                                                   const double Width1, 
+                                                   const double Peak2, 
+                                                   const double Width2, 
+                                                   const double Ratio)
+{
+  // Add an depth correction factor to the energy resolution
+
+  if (Peak1 <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy peak correction for energy resolution needs to be positive!"<<endl;
+    return false; 
+  }
+  if (Width1 < 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy peak correction width for energy resolution needs to be non-negative!"<<endl;
+    return false; 
+  }
+  if (Peak2 <= 0 && Peak2 != g_DoubleNotDefined) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy peak 2 correction for energy resolution needs to be positive!"<<endl;
+    return false; 
+  }
+  if (Width2 < 0 && Width2 != g_DoubleNotDefined) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy peak 2 correction width for energy resolution needs to be non-negative!"<<endl;
+    return false; 
+  }
+  if ((Ratio < 0 || Ratio > 1) && Ratio != g_DoubleNotDefined) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Ratio correction for energy resolution needs to be between [0..1]!"<<endl;
+    return false; 
+  }
+
+  m_EnergyResolutionDepthCorrectionPeak1.Add(InputDepth, Peak1);
+  m_EnergyResolutionDepthCorrectionWidth1.Add(InputDepth, Width1);
+  if (Peak2 != g_DoubleNotDefined) {
+    m_EnergyResolutionDepthCorrectionPeak2.Add(InputDepth, Peak2);
+  }
+  if (Width2 != g_DoubleNotDefined) {
+    m_EnergyResolutionDepthCorrectionWidth2.Add(InputDepth, Width2);
+  }
+  if (Ratio != g_DoubleNotDefined) { 
+    m_EnergyResolutionDepthCorrectionRatio.Add(InputDepth, Ratio);
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolutionWidth1(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    return m_EnergyResolutionWidth1.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth1.Eval(Position[2]);
+  }
+
+  return MDDetector::GetEnergyResolutionWidth1(Energy, Position);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolutionWidth2(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    return m_EnergyResolutionWidth2.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth2.Eval(Position[2]);
+  }
+  
+  return MDDetector::GetEnergyResolutionWidth2(Energy, Position);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolutionPeak1(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    return m_EnergyResolutionPeak1.Eval(Energy)*m_EnergyResolutionDepthCorrectionPeak1.Eval(Position[2]);
+  }
+
+  return MDDetector::GetEnergyResolutionPeak1(Energy, Position);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolutionPeak2(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    return m_EnergyResolutionPeak2.Eval(Energy)*m_EnergyResolutionDepthCorrectionPeak2.Eval(Position[2]);
+  }
+
+  return MDDetector::GetEnergyResolutionPeak2(Energy, Position);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolutionRatio(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    return m_EnergyResolutionRatio.Eval(Energy)*m_EnergyResolutionDepthCorrectionRatio.Eval(Position[2]);
+  }
+
+  return MDDetector::GetEnergyResolutionRatio(Energy, Position);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetEnergyResolution(const double Energy, const MVector& Position) const
+{
+  // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
+  // but not the default energy resolution handler here:
+
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    if (m_EnergyResolutionType == c_EnergyResolutionTypeGauss) {
+      return m_EnergyResolutionWidth1.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth1.Eval(Position[2]);
+    } else if (m_EnergyResolutionType == c_EnergyResolutionTypeLorentz) {
+      return m_EnergyResolutionWidth1.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth1.Eval(Position[2]);
+    } else if (m_EnergyResolutionType == c_EnergyResolutionTypeGaussLandau) {
+      return sqrt(m_EnergyResolutionRatio.Eval(Energy)*m_EnergyResolutionWidth1.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth1.Eval(Position[2])*
+                  m_EnergyResolutionRatio.Eval(Energy)*m_EnergyResolutionWidth1.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth1.Eval(Position[2]) +
+                  (1-m_EnergyResolutionRatio.Eval(Energy))*m_EnergyResolutionWidth2.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth2.Eval(Position[2])*
+                  (1-m_EnergyResolutionRatio.Eval(Energy))*m_EnergyResolutionWidth2.Eval(Energy)*m_EnergyResolutionDepthCorrectionWidth2.Eval(Position[2]));
+    }
+  } else {
+    return MDDetector::GetEnergyResolution(Energy, Position);
+  }
+
+  return 0.0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::HasEnergyResolutionDepthCorrection() const
+{
+  //! Return true if this detector has a depth dependent energy resolution:
+
+  if (m_EnergyResolutionDepthCorrectionPeak1.GetNDataPoints() > 0) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetDepthResolution(const double DepthResolution)
+{
+  // Set a fixed depth resolution
+
+  if (DepthResolution <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Depth resolution needs to be positive!"<<endl;
+    return false; 
+  }
+
+  m_DepthResolution->AddDataPoint(10000000, DepthResolution);
+  m_DepthResolutionSigma->AddDataPoint(10000000, 1E-6);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetDepthResolutionThreshold(const double DepthResolutionThreshold)
+{
+  // Set a threshold in the depth resolution: Below this value, no depth resolution exists
+  
+  m_DepthResolutionThreshold = DepthResolutionThreshold;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetDepthResolutionAt(const double Energy, 
+                                     const double Resolution, 
+                                     const double Sigma)
+{
+  // Set a variable depth resolution
+
+  if (Energy < 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Energy for depth resolution needs to be non-negative!"<<endl;
+    return false; 
+  }
+  if (Resolution <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Depth resolution needs to be positive!"<<endl;
+    return false; 
+  }
+  if (Sigma < 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Sigma of depth resolution needs to be non-negative!"<<endl;
+    return false; 
+  }
+
+  m_DepthResolution->AddDataPoint(Energy, Resolution);
+  m_DepthResolutionSigma->AddDataPoint(Energy, Sigma);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetTriggerThresholdDepthCorrection(const double Depth, const double Correction)
+{
+  // Add an depth correction factor to the trigger threshold
+
+  if (Correction <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Depth correction factor for depth dependent trigger threshold needs to be larger than zero!"<<endl;
+    return false; 
+  }
+
+  m_TriggerThresholdDepthCorrection->AddDataPoint(Depth, Correction);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetTriggerThresholdDepthCorrection(const double Depth) const
+{
+  //! Return the depth correction factor to the trigger threshold
+
+  return m_TriggerThresholdDepthCorrection->Get(Depth);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::HasTriggerThresholdDepthCorrection() const
+{
+  //! Return true if this detector has a depth dependent trigger threshold:
+
+  if (m_TriggerThresholdDepthCorrection->GetNDataPoints() > 0) {
+    return true;
+  }
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetTriggerThreshold(const MVector& Position) const
+{
+  //! Return the trigger threshold at an certain energy, including potential depth corrections (depth: 1.0 (top) ... 0.0 (bottom))
+
+  if (m_TriggerThresholdDepthCorrection->GetNDataPoints() > 0) {
+    return MDDetector::GetTriggerThreshold()*m_TriggerThresholdDepthCorrection->Get(Position.Z());
+  } else {
+    return MDDetector::GetTriggerThreshold();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetSecureUpperLimitTriggerThreshold() const
+{
+  // In ANY case the real trigger threshold is below this value:
+  // We cannot guarantee any limit here, so:
+  // (and make sure fortran can read it...)
+
+  if (m_TriggerThresholdDepthCorrection->GetNDataPoints() > 0) {
+    return c_LargestEnergy;
+  } else {
+    return MDDetector::GetSecureUpperLimitTriggerThreshold();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::SetNoiseThresholdDepthCorrection(const double Depth, const double Correction)
+{
+  // Add an depth correction factor to the noise threshold
+
+  if (Correction <= 0) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Depth correction factor for depth dependent noise threshold needs to be larger than zero!"<<endl;
+    return false; 
+  }
+
+  m_NoiseThresholdDepthCorrection->AddDataPoint(Depth, Correction);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetNoiseThresholdDepthCorrection(const double Depth) const
+{
+  //! Return the depth correction factor to the noise threshold
+
+  return m_NoiseThresholdDepthCorrection->Get(Depth);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip3D::HasNoiseThresholdDepthCorrection() const
+{
+  //! Return true if this detector has a depth dependent noise threshold:
+
+  if (m_NoiseThresholdDepthCorrection->GetNDataPoints() > 0) {
+    return true;
+  }
+
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDStrip3D::GetNoiseThreshold(const MVector& Position) const
+{
+  //! Return the noise threshold at an certain energy, including potential depth corrections (depth: 1.0 (top) ... 0.0 (bottom))
+
+  if (m_NoiseThresholdDepthCorrection->GetNDataPoints() > 0) {
+    return MDDetector::GetNoiseThreshold()*m_NoiseThresholdDepthCorrection->Get(Position.Z());
+  } else {
+    return MDDetector::GetNoiseThreshold();
+  }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+{
+  // Noise Position and energy of this hit:
+
+  if (m_NoiseActive == false) return;
+
+	bool IsOverflow = false;
+
+	// Test for failure:
+	if (gRandom->Rndm() < m_FailureRate) {
+		Energy = 0;
+		return;
+	}
+
+  // Noise:
+  ApplyEnergyResolution(Energy, Pos);
+
+	// Overflow:
+  IsOverflow = ApplyOverflow(Energy);
+
+	// Noise threshold:
+  if (ApplyNoiseThreshold(Energy, Pos) == true) {
+    Pos[m_NoiseAxis-1] = 0.0;	
+    return;
+  } 
+	
+  // Noise depth:
+	if (IsOverflow == true || m_DepthResolution->GetNDataPoints() == 0 || Energy < m_DepthResolutionThreshold) {
+		Pos[m_NoiseAxis-1] = 0.0;			
+	} else {
+    // Step 1: Determine the resolution:
+    int Trials = 5;
+    double Sigma;
+    do {
+      Sigma = gRandom->Gaus(m_DepthResolution->Get(Energy), 
+                            m_DepthResolutionSigma->Get(Energy));
+      Trials--;
+    } while (Sigma < 0 && Trials >= 0);
+    if (Trials <= 0) {
+      Sigma = m_DepthResolution->Get(Energy);
+    }
+
+    // Step 2: Determine the position
+		double z = numeric_limits<double>::max();
+		while (z < -m_StructuralSize[m_NoiseAxis-1] || z > m_StructuralSize[m_NoiseAxis-1]) {
+			z = gRandom->Gaus(Pos[m_NoiseAxis-1], Sigma);
+		}
+		Pos[m_NoiseAxis-1] = z;
+	}
+
+  // Noise the time:
+  ApplyTimeResolution(Time, Energy);
+
+  // Now calibrate
+  ApplyEnergyCalibration(Energy);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MDGridPoint> MDStrip3D::Discretize(const MVector& PosInDetector, 
+                                          const double& Energy, 
+                                          const double& Time, 
+                                          MDVolume* DetectorVolume) const
+{
+  // Discretize Pos to a voxel of this volume
+
+  vector<MDGridPoint> Points = 
+    MDStrip2D::Discretize(PosInDetector, Energy, Time, DetectorVolume);
+
+  mimp<<"We currently assume that the wafers' z-position is centered in the Detector volume!"<<show; 
+
+  for (unsigned int p = 0; p < Points.size(); ++p) {
+    MVector Position(Points[p].GetPosition());
+    Position.SetZ(PosInDetector.Z());
+    Points[p].SetPosition(Position);
+  }
+
+  return Points;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDGridPoint MDStrip3D::GetGridPoint(const MVector& PosInDetector) const
+{
+  // Discretize Pos to a voxel of this volume
+
+  MDGridPoint P = MDStrip2D::GetGridPoint(PosInDetector);
+  MVector PositionWithCorrectDepth = P.GetPosition();
+  PositionWithCorrectDepth.SetZ(PosInDetector.Z());
+  P.SetPosition(PositionWithCorrectDepth);
+
+  return P;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MDStrip3D::GetPositionInDetectorVolume(const unsigned int xGrid, 
+                                               const unsigned int yGrid,
+                                               const unsigned int zGrid,
+                                               const MVector PositionInGrid,
+                                               const unsigned int Type,
+                                               MDVolume* Volume)
+{
+  // Return the position in the detector volume
+
+  int xWafer = int(xGrid/m_NStripsX);
+  int yWafer = int(yGrid/m_NStripsY);
+
+  MVector Position;
+
+  // Position in Wafer relative to its center:
+  Position.SetX(-m_WidthX/2 + m_OffsetX + (xGrid - xWafer*m_NStripsX + 0.5)*m_PitchX);
+  Position.SetY(-m_WidthY/2 + m_OffsetY + (yGrid - yWafer*m_NStripsY + 0.5)*m_PitchY);
+  Position.SetZ(PositionInGrid.Z());
+
+  // Position in Wafer realitive to its negative edge:
+  Position += m_StructuralSize;
+
+  // Position in Detector relative to lower edge of detector at (-x, -y, -z)
+  Position.SetX(Position.X() + xWafer*(2*m_StructuralSize.X()+m_StructuralPitch.X()));  
+  Position.SetY(Position.Y() + yWafer*(2*m_StructuralSize.Y()+m_StructuralPitch.Y()));  
+
+  // Position in Detector realitive to its negative edge: 
+  Position += m_StructuralOffset;
+
+  // Position in detector relaitive to its center:
+  Position -= m_StructuralDimension;
+
+  // The depth always was in detector coordinates!
+  Position.SetZ(PositionInGrid.Z());
+
+  return Position;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDStrip3D::GetGeant3() const
+{
+  ostringstream out;
+
+  out.setf(ios::fixed, ios::floatfield);
+  out.precision(4);
+  
+  for (unsigned int i = 0; i < m_SVs.size(); i++) {
+    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
+    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
+  }
+
+  out<<"      DETNR("<<m_ID<<") = 3"<<endl;
+  out<<"      DETTYP("<<m_ID<<") = 4"<<endl;
+  out<<"      WIDTH("<<m_ID<<",1) = "<<m_WidthX<<endl;
+  out<<"      WIDTH("<<m_ID<<",2) = "<<m_WidthY<<endl;
+  out<<"      OFFSET("<<m_ID<<",1) = "<<m_OffsetX<<endl;
+  out<<"      OFFSET("<<m_ID<<",2) = "<<m_OffsetY<<endl;
+  out<<"      SPITCH("<<m_ID<<",1) = "<<m_PitchX<<endl;
+  out<<"      SPITCH("<<m_ID<<",2) = "<<m_PitchX<<endl;
+  out<<"      SLENGTH("<<m_ID<<",1) = "<<m_StripLengthX<<endl;
+  out<<"      SLENGTH("<<m_ID<<",2) = "<<m_StripLengthY<<endl;
+  out<<"      NSTRIP("<<m_ID<<",1) = "<<m_NStripsX<<endl;
+  out<<"      NSTRIP("<<m_ID<<",2) = "<<m_NStripsX<<endl;
+  out<<endl;
+
+
+  return out.str().c_str();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDStrip3D::GetMGeant() const
+{
+  ostringstream out;
+
+  out.setf(ios::fixed, ios::floatfield);
+  out.precision(4);
+  
+  for (unsigned int i = 0; i < m_SVs.size(); i++) {
+    MString Name = m_SVs[i]->GetShortName();
+    Name.ToUpper();
+    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
+    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
+  }
+
+  out<<"DTNR "<<m_ID<<" 3"<<endl;
+  out<<"DTTP "<<m_ID<<" 4"<<endl;
+  out<<"WIDT "<<m_ID<<" 1 "<<m_WidthX<<endl;
+  out<<"WIDT "<<m_ID<<" 2 "<<m_WidthY<<endl;
+  out<<"OFFS "<<m_ID<<" 1 "<<m_OffsetX<<endl;
+  out<<"OFFS "<<m_ID<<" 2 "<<m_OffsetY<<endl;
+  out<<"SPIT "<<m_ID<<" 1 "<<m_PitchX<<endl;
+  out<<"SPIT "<<m_ID<<" 2 "<<m_PitchX<<endl;
+  out<<"SLEN "<<m_ID<<" 1 "<<m_StripLengthX<<endl;
+  out<<"SLEN "<<m_ID<<" 2 "<<m_StripLengthY<<endl;
+  out<<"NSTP "<<m_ID<<" 1 "<<m_NStripsX<<endl;
+  out<<"NSTP "<<m_ID<<" 2 "<<m_NStripsX<<endl;
+  out<<"GRUP "<<m_ID<<" "<<0.5*(-m_WidthX+m_OffsetX)<<" "
+     <<0.5*(-m_WidthY+m_OffsetY)<<" "<<0.0<<endl;
+  out<<endl;
+
+
+  return out.str().c_str();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDStrip3D::GetGeomega() const
+{
+  // Return all detector characteristics in Geomega-Format
+
+  ostringstream out;
+
+  MString Strip2D = MDStrip2D::GetGeomega();
+  Strip2D.ReplaceAll("Strip2D", "Strip3D");
+
+  out<<Strip2D;
+  for (int d = 0; d < m_DepthResolution->GetNDataPoints(); ++d) {
+    out<<m_Name<<".DepthResolution "<<
+      m_DepthResolution->GetDataPointXValueAt(d)<<" "<<
+      m_DepthResolution->GetDataPointYValueAt(d)<<" "<<
+      m_DepthResolutionSigma->GetDataPointYValueAt(d)<<endl;
+  }
+  out<<m_Name<<".DepthResolutionThreshold "<<m_DepthResolutionThreshold<<endl;
+  if (HasEnergyResolutionDepthCorrection() == true) {
+    for (unsigned int d = 0; d < m_EnergyResolutionDepthCorrectionPeak1.GetNDataPoints(); ++d) {
+      out<<m_Name<<".EnergyResolutionDepthCorrection ";
+      if (m_EnergyResolutionType == c_EnergyResolutionTypeGauss) {
+        out<<"Gauss "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointX(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionWidth1.GetDataPointY(d)<<endl;
+      } else if (m_EnergyResolutionType == c_EnergyResolutionTypeLorentz) {
+        out<<"Lorentz "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointX(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionWidth1.GetDataPointY(d)<<endl;
+      } else if (m_EnergyResolutionType == c_EnergyResolutionTypeGaussLandau) {
+        out<<"GaussLandau "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointX(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionPeak1.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionWidth1.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionPeak2.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionWidth2.GetDataPointY(d)<<" "<<
+          m_EnergyResolutionDepthCorrectionRatio.GetDataPointY(d)<<endl;
+      }
+    }
+  }
+  if (HasTriggerThresholdDepthCorrection() == true) {
+    for (int d = 0; d < m_TriggerThresholdDepthCorrection->GetNDataPoints(); ++d) {
+      out<<m_Name<<".TriggerThresholdDepthCorrection "<<
+        m_TriggerThresholdDepthCorrection->GetDataPointXValueAt(d)<<" "<<
+        m_TriggerThresholdDepthCorrection->GetDataPointYValueAt(d)<<endl;
+    }    
+  }
+  if (HasNoiseThresholdDepthCorrection() == true) {
+    for (int d = 0; d < m_NoiseThresholdDepthCorrection->GetNDataPoints(); ++d) {
+      out<<m_Name<<".NoiseThresholdDepthCorrection "<<
+        m_NoiseThresholdDepthCorrection->GetDataPointXValueAt(d)<<" "<<
+        m_NoiseThresholdDepthCorrection->GetDataPointYValueAt(d)<<endl;
+    }    
+  }
+
+  return out.str().c_str();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDStrip3D::ToString() const
+{
+  //
+
+  ostringstream out;
+
+  out<<"Detector "<<m_Name<<" - 3D-Strip"<<endl;
+  out<<"   with sensitive volumes: ";  
+  for (unsigned int i = 0; i < m_SVs.size(); i++) {
+    out<<m_SVs[i]->GetName()<<" ";
+  }
+  out<<endl<<"   width: "<<m_WidthX<<", "<<m_WidthY<<endl;
+  out<<"   offset: "<<m_OffsetX<<", "<<m_OffsetY<<endl;
+  out<<"   pitch: "<<m_PitchX<<", "<<m_PitchY<<endl;
+  out<<"   striplength: "<<m_StripLengthX<<", "<<m_StripLengthY<<endl;
+  out<<"   stripnumber: "<<m_NStripsX<<", "<<m_NStripsY<<endl;
+
+  return out.str().c_str();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MDStrip3D::GetPositionResolution(const MVector& Pos, const double Energy) const
+{
+  // Return the position resolution at position Pos
+
+  if (m_DepthResolution->GetNDataPoints() != 0) {
+    return MVector(m_PitchX/sqrt(12.0), m_PitchY/sqrt(12.0), m_DepthResolution->Get(Energy));
+  } else {
+    return MDStrip2D::GetPositionResolution(Pos, Energy);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Check if all input is reasonable
+bool MDStrip3D::Validate()
+{
+  if (MDStrip2D::Validate() == false) {
+    return false;
+  }
+
+  if (m_DepthResolution->GetNDataPoints() == 0) {
+    mout<<"   ***  Info  ***  in detector "<<m_Name<<endl;
+    mout<<"You have not defined a depth resolution, so I assume we don't have one..."<<endl;
+  }
+
+  return true;
+}
+
+
+// MDStrip3D.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

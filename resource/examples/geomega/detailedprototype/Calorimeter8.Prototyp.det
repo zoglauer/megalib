@@ -1,0 +1,129 @@
+
+// Properties of the double-side calorimeter
+MDCalorimeter              DCal8
+DCal8.SensitiveVolume      8cm_CsICrystal
+#DCal8.DetectorVolume       8cm_CsICore
+
+#DCal8.StructuralSize       0.25  0.25  4.0
+#DCal8.StructuralPitch      0.04  0.04   -1.0
+#DCal8.StructuralOffset     0.02  0.02  0.18
+
+DCal8.StructuralPitch      0.07  0.07  0.0
+DCal8.StructuralOffset     0.07  0.07  0.0
+
+# Duke calibration
+DCal8.NoiseThreshold        225    30
+DCal8.TriggerThreshold      473    150 
+DCal8.Overflow             10950  1573
+DCal8.FailureRate          0.119
+
+DCal8.EnergyResolutionType Lorentz
+DCal8.EnergyResolutionAt 0      38 6     0
+DCal8.EnergyResolutionAt 511    38 6     0
+DCal8.EnergyResolutionAt 662    38 7     0
+DCal8.EnergyResolutionAt 1275   38 8     0
+DCal8.EnergyResolutionAt 10000  38 8   0
+
+DCal8.DepthResolutionAt  50 100 10
+DCal8.DepthResolutionAt  150 12.9333 3.23332
+DCal8.DepthResolutionAt  250 11.2182 2.80455
+DCal8.DepthResolutionAt  350 8.97975 2.24494
+DCal8.DepthResolutionAt  450 7.74773 1.93693
+DCal8.DepthResolutionAt  550 5.48762 1.3719
+DCal8.DepthResolutionAt  650 4.07128 1.01782
+DCal8.DepthResolutionAt  750 3.205 0.80125
+DCal8.DepthResolutionAt  850 2.60759 0.651898
+DCal8.DepthResolutionAt  950 2.21748 0.55437
+DCal8.DepthResolutionAt  1050 1.93936 0.48484
+DCal8.DepthResolutionAt  1150 1.72958 0.432395
+DCal8.DepthResolutionAt  1250 1.58203 0.395508
+DCal8.DepthResolutionAt  1350 1.46328 0.36582
+DCal8.DepthResolutionAt  1450 1.3623 0.340575
+DCal8.DepthResolutionAt  1550 1.27549 0.318873
+DCal8.DepthResolutionAt  1650 1.20006 0.300015
+DCal8.DepthResolutionAt  1750 1.13402 0.283505
+DCal8.DepthResolutionAt  1850 1.07577 0.268942
+DCal8.DepthResolutionAt  1950 1.02403 0.256007
+DCal8.DepthResolutionAt  2050 0.977852 0.244463
+DCal8.DepthResolutionAt  2150 0.936404 0.234101
+DCal8.DepthResolutionAt  2250 0.899056 0.224764
+DCal8.DepthResolutionAt  2350 0.865244 0.216311
+DCal8.DepthResolutionAt  2450 0.834535 0.208634
+DCal8.DepthResolutionAt  2550 0.806541 0.201635
+DCal8.DepthResolutionAt  2650 0.780947 0.195237
+DCal8.DepthResolutionAt  2750 0.757476 0.189369
+DCal8.DepthResolutionAt  2850 0.735901 0.183975
+DCal8.DepthResolutionAt  2950 0.716033 0.179008
+DCal8.DepthResolutionAt  3050 0.697675 0.174419
+DCal8.DepthResolutionAt  3150 0.680688 0.170172
+DCal8.DepthResolutionAt  3250 0.664936 0.166234
+DCal8.DepthResolutionAt  3350 0.650314 0.162578
+DCal8.DepthResolutionAt  3450 0.636697 0.159174
+DCal8.DepthResolutionAt  3550 0.624016 0.156004
+DCal8.DepthResolutionAt  3650 0.61218 0.153045
+DCal8.DepthResolutionAt  3750 0.601113 0.150278
+DCal8.DepthResolutionAt  3850 0.590763 0.147691
+DCal8.DepthResolutionAt  3950 0.581056 0.145264
+DCal8.DepthResolutionAt  4050 0.571951 0.142988
+DCal8.DepthResolutionAt  4150 0.5634 0.14085
+DCal8.DepthResolutionAt  4250 0.555356 0.138839
+DCal8.DepthResolutionAt  4350 0.547786 0.136946
+DCal8.DepthResolutionAt  4450 0.540658 0.135164
+DCal8.DepthResolutionAt  4550 0.533935 0.133484
+DCal8.DepthResolutionAt  4650 0.527584 0.131896
+DCal8.DepthResolutionAt  4750 0.521584 0.130396
+DCal8.DepthResolutionAt  4850 0.515911 0.128978
+DCal8.DepthResolutionAt  4950 0.510542 0.127636
+DCal8.DepthResolutionAt  5050 0.505457 0.126364
+DCal8.DepthResolutionAt  5150 0.500634 0.125159
+DCal8.DepthResolutionAt  5250 0.49606 0.124015
+DCal8.DepthResolutionAt  5350 0.49172 0.12293
+DCal8.DepthResolutionAt  5450 0.487595 0.121899
+DCal8.DepthResolutionAt  5550 0.483675 0.120919
+DCal8.DepthResolutionAt  5650 0.479947 0.119987
+DCal8.DepthResolutionAt  5750 0.476396 0.119099
+DCal8.DepthResolutionAt  5850 0.473016 0.118254
+DCal8.DepthResolutionAt  5950 0.469794 0.117448
+DCal8.DepthResolutionAt  6050 0.466722 0.116681
+DCal8.DepthResolutionAt  6150 0.463792 0.115948
+DCal8.DepthResolutionAt  6250 0.460995 0.115249
+DCal8.DepthResolutionAt  6350 0.458323 0.114581
+DCal8.DepthResolutionAt  6450 0.455771 0.113943
+DCal8.DepthResolutionAt  6550 0.453331 0.113333
+DCal8.DepthResolutionAt  6650 0.450997 0.112749
+DCal8.DepthResolutionAt  6750 0.448763 0.112191
+DCal8.DepthResolutionAt  6850 0.446625 0.111656
+DCal8.DepthResolutionAt  6950 0.444577 0.111144
+DCal8.DepthResolutionAt  7050 0.442614 0.110654
+DCal8.DepthResolutionAt  7150 0.440733 0.110183
+DCal8.DepthResolutionAt  7250 0.438928 0.109732
+DCal8.DepthResolutionAt  7350 0.437197 0.109299
+DCal8.DepthResolutionAt  7450 0.435535 0.108884
+DCal8.DepthResolutionAt  7550 0.433939 0.108485
+DCal8.DepthResolutionAt  7650 0.432405 0.108101
+DCal8.DepthResolutionAt  7750 0.430931 0.107733
+DCal8.DepthResolutionAt  7850 0.429514 0.107379
+DCal8.DepthResolutionAt  7950 0.428152 0.107038
+DCal8.DepthResolutionAt  8050 0.426842 0.10671
+DCal8.DepthResolutionAt  8150 0.425581 0.106395
+DCal8.DepthResolutionAt  8250 0.424367 0.106092
+DCal8.DepthResolutionAt  8350 0.423198 0.1058
+DCal8.DepthResolutionAt  8450 0.422071 0.105518
+DCal8.DepthResolutionAt  8550 0.420985 0.105246
+DCal8.DepthResolutionAt  8650 0.419939 0.104985
+DCal8.DepthResolutionAt  8750 0.418931 0.104733
+DCal8.DepthResolutionAt  8850 0.417958 0.104489
+DCal8.DepthResolutionAt  8950 0.41702 0.104255
+DCal8.DepthResolutionAt  9050 0.416114 0.104028
+DCal8.DepthResolutionAt  9150 0.415239 0.10381
+DCal8.DepthResolutionAt  9250 0.414395 0.103599
+DCal8.DepthResolutionAt  9350 0.413579 0.103395
+DCal8.DepthResolutionAt  9450 0.412791 0.103198
+DCal8.DepthResolutionAt  9550 0.41203 0.103008
+DCal8.DepthResolutionAt  9650 0.411294 0.102823
+DCal8.DepthResolutionAt  9750 0.410582 0.102646
+DCal8.DepthResolutionAt  9850 0.409894 0.102473
+DCal8.DepthResolutionAt  9950 0.409228 0.102307
+
+
+#DCal8.PulseShape 2.78652e-03 1.11233e-04 1.13468e-07 -3.63642e-11 4.80242e-15 -3.56580e-19 1.60263e-23 -4.33004e-28 6.47700e-33 -4.12352e-38 0 30000

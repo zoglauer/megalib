@@ -1,0 +1,60 @@
+# This example shows how to use some of the beams
+# The detector is a high resolution 2D pixel detector, to enable debugging the beam profile
+# Check your beam profile with revans spatial hit distribution
+
+
+# Global parameters:
+Version               1
+Geometry              $(MEGALIB)/resource/examples/geomega/special/HighResolutionPixelDetector.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+
+# Run 1: A homogeneous beam
+
+Run MyHomogeneousBeam
+MyHomogeneousBeam.FileName                      HomogeneousTestBeam
+MyHomogeneousBeam.Time                          100.0
+
+MyHomogeneousBeam.Source MyHomogeneousBeamSource
+MyHomogeneousBeamSource.ParticleType            1
+MyHomogeneousBeamSource.Beam                    HomogeneousBeam  0 0 20  0 0 -1  1.0
+MyHomogeneousBeamSource.Spectrum                Mono 10.0
+MyHomogeneousBeamSource.Flux                    1000.0
+
+
+
+# Run 2: A 1D profile beam
+
+Run My1DProfileBeam
+My1DProfileBeam.FileName                      1DTestBeam
+My1DProfileBeam.Time                          100.0
+
+My1DProfileBeam.Source My1DProfileBeamSource
+My1DProfileBeamSource.ParticleType            1
+My1DProfileBeamSource.Beam                    RadialProfileBeam  0 0 20  0 0 -1  BeamProfile1D.dat
+My1DProfileBeamSource.Spectrum                Mono 10.0
+My1DProfileBeamSource.Flux                    1000.0
+
+
+
+# Run 3: A 2D profile beam
+
+Run My2DProfileBeam
+My2DProfileBeam.FileName                      2DTestBeam
+My2DProfileBeam.Time                          100.0
+
+My2DProfileBeam.Source My2DProfileBeamSource
+My2DProfileBeamSource.ParticleType            1
+My2DProfileBeamSource.Beam                    MapProfileBeam  0 0 20  0 0 -1  BeamProfile2D.dat
+My2DProfileBeamSource.Spectrum                Mono 10.0
+My2DProfileBeamSource.Flux                    1000.0

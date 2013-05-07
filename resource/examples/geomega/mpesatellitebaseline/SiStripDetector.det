@@ -1,0 +1,30 @@
+MDStrip2D                  SStrip
+SStrip.SensitiveVolume     Wafer
+SStrip.DetectorVolume      Wafer
+
+#SStrip.StructuralSize       3.15  3.15  0.025
+#SStrip.StructuralPitch      0.1   0.1   1.0
+#SStrip.StructuralOffset     4.2   4.2   0.0
+SStrip.StructuralPitch      0.0   0.0   1.0
+SStrip.StructuralOffset     0.0   0.0   0.0
+
+#SStrip.Width               6.3    6.3 
+SStrip.Offset              0.142  0.142
+SStrip.StripNumber          128   128
+#SStrip.StripLength         6.0    6.0
+#SStrip.Pitch               0.047  0.047
+#SStrip.Orientation         2
+
+// Energy resolutions (C) by Florian Schopper
+SStrip.EnergyResolution  Gauss    0    0   4
+SStrip.EnergyResolution  Gauss  100  100   4
+
+// Values in consesus with opinions of Robert, Gottfried and Andreas 
+SStrip.NoiseThreshold      15
+SStrip.TriggerThreshold    50
+
+// Shapes according to Robert Andritschke
+SStrip.PulseShape   -4.12977e-03  2.54552e-04  1.59189e-06  -1.57735e-09  6.28529e-13  -1.28898e-16   1.29693e-20 -2.87654e-25  -5.16200e-29  3.15215e-33 0  7000
+
+SStrip.FailureRate 0.0
+

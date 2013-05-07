@@ -1,0 +1,122 @@
+# This example shows how to use some of the beams
+# The detector is a high resolution 2D pixel detector, to enable debugging the beam profile
+# Check your beam profile with revans spatial hit distribution
+
+
+# Global parameters:
+Version               1
+Geometry              $(MEGALIB)/resource/examples/geomega/special/EnergyResolutionTester.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+
+# Run 1: A beam on first detector
+
+Run OnDetectorGauss
+OnDetectorGauss.FileName                      DetectorGauss
+OnDetectorGauss.Time                          250.0
+
+OnDetectorGauss.Source OnDetectorGaussSource1
+OnDetectorGaussSource1.ParticleType            1
+OnDetectorGaussSource1.Beam                    HomogeneousBeam  -15 0 10  0 0 -1  2.0
+OnDetectorGaussSource1.Spectrum                Mono 150.0
+OnDetectorGaussSource1.Flux                    500.0
+
+OnDetectorGauss.Source OnDetectorGaussSource2
+OnDetectorGaussSource2.ParticleType            1
+OnDetectorGaussSource2.Beam                    HomogeneousBeam  -15 0 10  0 0 -1  2.0
+OnDetectorGaussSource2.Spectrum                Mono 750.0
+OnDetectorGaussSource2.Flux                    1000.0
+
+
+
+# Run 1: A beam on first detector
+
+Run OnDetectorGaussDepth
+OnDetectorGaussDepth.FileName                      DetectorGaussDepth
+OnDetectorGaussDepth.Time                          250.0
+
+OnDetectorGaussDepth.Source OnDetectorGaussDepthSource1
+OnDetectorGaussDepthSource1.ParticleType            1
+OnDetectorGaussDepthSource1.Beam                    HomogeneousBeam  -5 0 10  0 0 -1  2.0
+OnDetectorGaussDepthSource1.Spectrum                Mono 150.0
+OnDetectorGaussDepthSource1.Flux                    500.0
+
+OnDetectorGaussDepth.Source OnDetectorGaussDepthSource2
+OnDetectorGaussDepthSource2.ParticleType            1
+OnDetectorGaussDepthSource2.Beam                    HomogeneousBeam  -5 0 10  0 0 -1  2.0
+OnDetectorGaussDepthSource2.Spectrum                Mono 750.0
+OnDetectorGaussDepthSource2.Flux                    1000.0
+
+
+
+
+# Run 1: A beam on first detector
+
+Run OnDetectorLorentz
+OnDetectorLorentz.FileName                      DetectorLorentz
+OnDetectorLorentz.Time                          250.0
+
+OnDetectorLorentz.Source OnDetectorLorentzSource1
+OnDetectorLorentzSource1.ParticleType            1
+OnDetectorLorentzSource1.Beam                    HomogeneousBeam  5 0 10  0 0 -1  2.0
+OnDetectorLorentzSource1.Spectrum                Mono 150.0
+OnDetectorLorentzSource1.Flux                    500.0
+
+OnDetectorLorentz.Source OnDetectorLorentzSource2
+OnDetectorLorentzSource2.ParticleType            1
+OnDetectorLorentzSource2.Beam                    HomogeneousBeam  5 0 10  0 0 -1  2.0
+OnDetectorLorentzSource2.Spectrum                Mono 750.0
+OnDetectorLorentzSource2.Flux                    1000.0
+
+
+
+
+
+# Run 1: A beam on first detector
+
+Run OnDetectorGaussLandau
+OnDetectorGaussLandau.FileName                      DetectorGaussLandau
+OnDetectorGaussLandau.Time                          250.0
+
+OnDetectorGaussLandau.Source OnDetectorGaussLandauSource1
+OnDetectorGaussLandauSource1.ParticleType            1
+OnDetectorGaussLandauSource1.Beam                    HomogeneousBeam  15 0 10  0 0 -1  2.0
+OnDetectorGaussLandauSource1.Spectrum                Mono 150.0
+OnDetectorGaussLandauSource1.Flux                    500.0
+
+OnDetectorGaussLandau.Source OnDetectorGaussLandauSource2
+OnDetectorGaussLandauSource2.ParticleType            1
+OnDetectorGaussLandauSource2.Beam                    HomogeneousBeam  15 0 10  0 0 -1  2.0
+OnDetectorGaussLandauSource2.Spectrum                Mono 750.0
+OnDetectorGaussLandauSource2.Flux                    1000.0
+
+
+
+
+# Run 1: A beam on first detector
+
+Run OnDetectorGaussLoss
+OnDetectorGaussLoss.FileName                      DetectorGaussLoss
+OnDetectorGaussLoss.Time                          250.0
+
+OnDetectorGaussLoss.Source OnDetectorGaussLossSource1
+OnDetectorGaussLossSource1.ParticleType            1
+OnDetectorGaussLossSource1.Beam                    HomogeneousBeam  25 0 10  0 0 -1  2.0
+OnDetectorGaussLossSource1.Spectrum                Mono 150.0
+OnDetectorGaussLossSource1.Flux                    500.0
+
+OnDetectorGaussLoss.Source OnDetectorGaussLossSource2
+OnDetectorGaussLossSource2.ParticleType            1
+OnDetectorGaussLossSource2.Beam                    HomogeneousBeam  25 0 10  0 0 -1  2.0
+OnDetectorGaussLossSource2.Spectrum                Mono 750.0
+OnDetectorGaussLossSource2.Flux                    1000.0

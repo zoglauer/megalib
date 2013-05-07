@@ -1,0 +1,135 @@
+#!/bin/bash
+
+export LC_ALL="POSIX"
+
+
+# used options: abcdefghijkmnopqrstuvxyz
+# free: 
+
+Usage() {
+    echo ""
+    echo "Usage: `basename $0` options"
+    echo ""
+    echo "   Options:"
+    echo "        -n <name>     Job name = main directory name"
+}
+
+
+NO_ARGS=0 
+E_OPTERROR=65
+
+if [ $# -eq "$NO_ARGS" ]  # Script invoked with no command-line args?
+then
+  Usage;
+  exit 1;
+fi  
+
+name="none"
+
+echo "Selected pipeline options:"
+while getopts "hn:" flag
+do
+case $flag in
+h)
+    Usage;
+    exit 0;;
+n)
+    name=$OPTARG;
+    echo "   * Using job name \"$name\"";;
+esac
+done
+
+
+
+#### Input verification:
+
+# The name is not allowed to end with a /
+name=${name%/*}
+
+cd ${name}
+
+# Check how many jobs we have:
+jobs=0
+for file in `find . -type d -name "${name}_*"`; do
+    jobs=`expr ${jobs} + 1`
+done
+if ([ ${jobs} -le 1 ]); then
+  echo "Not enough jobs... aborting"
+  exit 1
+fi
+echo "Number of jobs: ${jobs}"
+
+# Make a list of all fits files
+fitsfiles="${name}"
+cd ${name}_1
+for i in `cat ${name}.volumes_list`; do
+  fitsfiles="${fitsfiles} ${i}"
+done
+echo "List of fits files: ${fitsfiles}"
+cd ..
+
+#### Do the combining...
+
+# Loop over all fits files
+for fits in ${fitsfiles}; do
+  # Loop over all jobs starting from 1
+  for job1 in `seq 1 ${jobs}`; do
+    cd ${name}_${job1}
+    # Check if an init file exists:
+    if (`test -f ${fits}.fits.init`); then
+      echo "Found init: ${fits}.fits.init in ${name}_${job1}"
+      for job2 in `seq ${jobs} -1 ${job1}`; do
+        if ([ ${job1} -eq ${job2} ]); then
+            break;
+        fi
+        if (`test ! -f ../${name}_${job2}/${fits}.fits.init`); then
+          echo "Moving files out of ../${name}_${job2}"
+          moveable=" "
+          if (`test -f ../${name}_${job2}/${fits}.fits.gz`); then
+            moveable="${moveable} ${fits}.fits.gz"
+          fi
+          if (`test -f ../${name}_${job2}/${fits}.fits`); then
+            moveable="${moveable} ${fits}.fits"
+          fi
+          if (`test -f ../${name}_${job2}/${fits}.sim.gz`); then
+            moveable="${moveable} ${fits}.sim.gz"
+          fi
+          if (`test -f ../${name}_${job2}/${fits}.sim`); then
+            moveable="${moveable} ${fits}.sim"
+          fi
+          if (`test -f ../${name}_${job2}/${fits}.log.gz`); then
+            moveable="${moveable} ${fits}.log.gz"
+          fi
+          if (`test -f ../${name}_${job2}/${fits}.log`); then
+            moveable="${moveable} ${fits}.log"
+          fi
+          for m in ${moveable}; do
+            echo mv ../${name}_${job2}/${m} ${m}.2
+            echo mv ${m} ../${name}_${job2}/
+            echo mv ${m}.2 ${m}
+            mv ../${name}_${job2}/${m} ${m}.2
+            mv ${m} ../${name}_${job2}/
+            mv ${m}.2 ${m}
+          done
+          # Finally move the init file itself:
+          mv ${fits}.fits.init ../${name}_${job2}
+          break
+        fi
+      done  
+    fi
+    cd ..
+  done
+done
+
+
+# Finally rename all crashed jobs
+for job1 in `seq 1 $jobs`; do
+  if ([ `ls ${name}_${job1}/*.init | wc -l` -gt 0 ]); then
+    mv ${name}_${job1} ${name}_CRASHED_${job1}
+    echo mv ${name}_${job1} ${name}_CRASHED_${job1}
+  fi
+done
+ 
+
+
+

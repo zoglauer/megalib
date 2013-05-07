@@ -1,0 +1,22 @@
+MDStrip2D                  SStrip
+
+SStrip.StructuralPitch      0.0   0.0   1.0
+SStrip.StructuralOffset     0.0   0.0   0.0
+ 
+SStrip.Offset              0.142  0.142
+SStrip.StripNumber          128   128
+
+Orig:
+SStrip.NoiseThreshold       46   8
+SStrip.TriggerThreshold     59   4
+SStrip.Overflow             500 50
+SStrip.FailureRate 0.19
+
+SStrip.EnergyResolutionType Lorentz
+SStrip.EnergyResolutionAt    60  9.7 2 0 
+SStrip.EnergyResolutionAt   122  9.7 2 0 
+SStrip.EnergyResolutionAt   250  14  3 0
+
+
+#SStrip.PulseShape 2.27970e-02 -2.27121e-04 7.62027e-07 -3.62385e-10 8.14934e-14 -1.05289e-17 8.23769e-22 -3.85672e-26 9.94586e-31 -1.08689e-35 0 12000
+

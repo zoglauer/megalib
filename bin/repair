@@ -1,0 +1,81 @@
+#!/bin/bash
+
+
+# This is a bash script. If it is started with sh restart as bash...
+MYSHELL=`ps --no-heading -p $$ | gawk -F" " '{ print $4}'`
+if [ "${MYSHELL}" = "sh" ]; then
+  CMD=""
+  while [ $# -gt 0 ]; do
+    CMD="${CMD} $1"
+    shift
+  done
+  bash ${MEGALIB}/bin/repair ${CMD}
+  exit 0
+fi
+
+
+help() {
+    echo ""
+    echo "Repair cvs - script for MEGAlib";
+    echo "Copyright by Andreas Zoglauer"
+    echo "";
+    echo "Usage: repair 'current dir with newest files' 'old from cvs'";
+    echo "";
+    echo "Remark: this program copies all files from the current directory,";
+    echo "        which do not reside in a CVS-directory, to the checked out";
+    echo "        repository";
+    echo "Strategy:"
+    echo "1. Restore cvs repository from your backup"
+    echo "2. Rename the cvs dir on your machine"
+    echo "3. Checkout the cvs dir"
+    echo "4. Backup the new cvs dir!!!!!"
+    echo "5. Use repair, i.e. copy all files from the old to the new dir, except the stuff in the CVS-dirs"
+    echo "6. Commit"
+    echo "7. On other machines: Extract the backuped cvs dir (do NOT checkout!) and repeat 5. and 6."
+    echo "";
+}
+
+if [ $# -ne 2 ] ; then
+    help; 
+    exit 0;
+fi;
+
+
+start=$1;
+stop=$2;
+
+current=`pwd`;
+
+cd $start;
+
+for dir in `find . -type d`; do
+    if ([ "${dir:(-3)}" == "lib" ] || [ "${dir:(-4)}" == "html" ]); then continue; fi
+    rcvs=`echo $dir | awk '{printf("%i\n",index($0,"CVS"))}'`;
+    rsvn=`echo $dir | awk '{printf("%i\n",index($0,".svn"))}'`;
+    if ([ $rcvs == 0 ] && [ $rsvn == 0 ]); then
+        echo "Investigating '$dir' ...";
+        a=" "$current"/"$start"/"$dir
+        b=" "$current"/"$stop"/"$dir
+        if (`test ! -d ${b}`); then mkdir ${b}; fi
+        for ii in `find ${a} -maxdepth 1 -type f`; do
+            i=`basename ${ii}`
+            if ([ "${i:(-4)}" == ".sim" ] || [ "${i:(-4)}" == ".tra" ]); then continue; fi
+            if (`test ! -f ${b}/${i}`); then
+                echo "New file: ${a}/${i}"
+                cp ${a}/${i} ${b}
+            else
+                difference=`diff -q ${a}/${i} ${b}/${i}`
+                #echo "Comp: ${a}/${i} ${b}/${i}"
+                #echo "      |${difference}|"                
+                if [ "${difference}" != "" ]; then
+                    echo "Not identical: ${a}/${i}"                
+                    cp ${a}/${i} ${b}
+                #else
+                #    echo "Identical!"
+                fi
+            fi
+        done
+    fi
+done
+
+exit

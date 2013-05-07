@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+FOLDER=${MEGALIB}
+
+
+# Prepare the arrays with some names which always appear (e.g. because they are not in the copyright list)
+Authors=("Andreas Zoglauer" "Robert Andritschke" "Florian Schopper" "Georg Weidenspointner" "Colin Paul Gloster")
+Appearance=("0" "0" "0" "0" "0")
+
+
+# This script parses through all headers and creates a list of contributors
+
+# Find all source code files: 
+cd ${FOLDER}/src
+Files=`find . -name "*.cxx"`
+AllFiles="${AllFiles} ${Files}"
+Files=`find . -name "*.C"`
+AllFiles="${AllFiles} ${Files}"
+Files=`find . -name "*.cc"`
+AllFiles="${AllFiles} ${Files}"
+Files=`find . -name "*.cpp"`
+AllFiles="${AllFiles} ${Files}"
+Files=`find . -name "*.c"`
+AllFiles="${AllFiles} ${Files}"
+
+# Extract the authors:
+for sourcefile in ${AllFiles}; do
+  #echo " "
+  #echo "Source: ${sourcefile}"
+  singleline=""
+  singleline=`head -n 20 ${sourcefile} | grep " \* Copyright" `
+  if [ "${singleline}" != "" ]; then
+    singleline=`echo "${singleline}" | awk -F"by " '{ print $2 }'`;
+    singleline=`echo "${singleline}" | awk -F"." '{ print $1 }'`;
+
+    # Now parse the authos line into the array
+    while read line; do
+        #echo " Found author: $line"
+        Found=1
+        Index=0 
+        #for i in `seq 0 $((${#Authors[@]}-1))`; do
+        #for i in {0..$((${#Authors[@]}-1))}; do
+	i=0
+        while [ ${i} -lt ${#Authors[@]} ]; do
+          #echo "--${line}--${Authors[${i}]}--"
+          if [ "${line}" == "${Authors[${i}]}" ]; then
+            Appearance[${i}]=$((${Appearance[${i}]}+1))
+            Found=0
+            break
+          fi
+          i=$((${i} + 1))
+          #echo ${i}
+        done
+    
+        if [ "${Found}" == "1" ]; then
+          #echo "Adding: ${line}"
+          Authors=("${Authors[@]}" "${line}")
+          Appearance=("${Appearance[@]}" "1")
+        fi
+    done << EOF
+$(echo ${singleline} | awk '{ gsub(" and ","\n"); gsub(" & ", "\n"); gsub(", ", "\n"); print }')
+EOF
+
+  fi
+done
+
+
+
+# Now (bubble) sort the arrays 
+N=$((${#Authors[@]}-1))
+for (( i=0; i <= ${N}; i++ )) ; do
+  for (( j=${N}; j > i; j-- )) ; do
+    if [ ${Appearance[$((${j}-1))]} -lt ${Appearance[${j}]} ]; then 
+      Temp=${Appearance[$((${j}-1))]}
+      Appearance[$((${j}-1))]=${Appearance[${j}]}
+      Appearance[${j}]=${Temp}
+      
+      Temp=${Authors[$((${j}-1))]}
+      Authors[$((${j}-1))]=${Authors[${j}]}
+      Authors[${j}]=${Temp}
+    fi
+  done
+done
+
+
+# Now dump it into the doc directory
+Out="${FOLDER}/doc/Peoples.txt"
+rm -rf ${Out}
+echo "# This is an automatically generated developer/contributor list using the names behind the \"Copyright\" lines in the source code." >> ${Out}
+echo "# If you do not appear here, but you think you should, write me an email: zog@ssl.berkeley.edu" >> ${Out}
+echo " " >> ${Out}
+i=0
+while [ ${i} -lt ${#Authors[@]} ]; do
+  echo "NM ${Authors[${i}]}" >> ${Out}
+  i=$((${i} + 1))
+done
+echo " " >> ${Out}
+
+exit 0;
+

@@ -1,0 +1,29 @@
+# Example run for Cosima
+# This shows the usage of watched volumes - take a look at the sim file to see the ENTR & EXIT entries
+
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
+PhysicsListEM   Livermore
+
+# Physics list
+PhysicsListEM                        Livermore
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       true
+
+BlackAbsorber                        BigSphere
+
+Run MySim
+MySim.FileName         BlackAbsorber
+MySim.Time             100.0
+
+MySim.Source FarFieldPointSource
+FarFieldPointSource.ParticleType        1
+FarFieldPointSource.Beam                FarFieldPointSource 0 0
+FarFieldPointSource.Spectrum            Mono 100000
+FarFieldPointSource.Flux                5.6588424E-5

@@ -1,0 +1,24 @@
+MDStrip2D                  SStrip
+SStrip.SensitiveVolume     Wafer
+SStrip.DetectorVolume      SiStripDetector
+
+SStrip.StructuralPitch      0.1   0.1   1.0
+SStrip.StructuralOffset     4.2   4.2   0.0
+
+SStrip.Offset              0.142  0.142
+SStrip.StripNumber          128   128
+
+SStrip.NoiseThreshold       49   12
+SStrip.TriggerThreshold     59   4
+SStrip.Overflow             460  104
+
+
+
+SStrip.EnergyResolution Gauss    0    0     9.69
+SStrip.EnergyResolution Gauss  100  100     9.69
+
+SStrip.PulseShape 2.27970e-02 -2.27121e-04 7.62027e-07 -3.62385e-10 8.14934e-14 -1.05289e-17 8.23769e-22 -3.85672e-26 9.94586e-31 -1.08689e-35 0 12000
+
+SStrip.FailureRate 0.19
+
+

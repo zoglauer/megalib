@@ -1,0 +1,14 @@
+#! /bin/bash
+
+rm -rf /tmp/doxygen
+mkdir -p /tmp/doxygen
+
+find src -follow -name '*.cxx' -exec cp {} /tmp/doxygen/ ';' 2> /dev/null
+find src -follow -name '*.cpp' -exec cp {} /tmp/doxygen/ ';' 2> /dev/null
+find src -follow -name '*.h' -exec cp {} /tmp/doxygen/ ';' 2> /dev/null
+find src -follow -name '*.cc' -exec cp {} /tmp/doxygen/ ';' 2> /dev/null
+find src -follow -name '*.hh' -exec cp {} /tmp/doxygen/ ';' 2> /dev/null
+
+exit 0;
+
+#! end

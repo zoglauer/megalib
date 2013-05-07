@@ -1,0 +1,30 @@
+# An unpolarized beam incident on the Silicon scatter sphere
+
+Version         1
+Geometry        Polarimeter.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore-Pol
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+Run UnpolarizedBeam
+UnpolarizedBeam.FileName         UnpolarizedBeamPolSim
+UnpolarizedBeam.NTriggers        10000
+
+UnpolarizedBeam.Trigger T1
+T1.AddPositiveDetectorType  4
+T1.AddPositiveDetectorType  8
+
+UnpolarizedBeam.Source TheBeam
+TheBeam.ParticleType   1
+TheBeam.Beam           HomogeneousBeam -20.0 0.0 20.0  1.0 0.0 0.0   0.2
+TheBeam.Spectrum       Mono 662.0
+TheBeam.Flux           50
+

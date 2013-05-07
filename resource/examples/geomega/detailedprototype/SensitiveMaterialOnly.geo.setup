@@ -1,0 +1,220 @@
+// Setup file for the MEGA prototype in the Duke configuration
+
+Name MEGAPrototype_Duke_v3.0
+Version 3.0
+
+SurroundingSphere 200  0.0  0.0  20.0  200.0
+
+// Trigger: at least one hit D1 and D2
+Trigger TN01
+TN01.TriggerByDetector true
+TN01.DetectorType Strip2D 1
+TN01.DetectorType Calorimeter 1
+
+// Include section
+
+// NEEDS THIS LINE TO VIEW ALONE:
+Include ../materials/Materials.geo
+
+Include Duke.v2.00.8cm.geo
+Include Duke.v2.00.4cm.geo
+Include Duke.v2.00.2cm.geo 
+Include Silicon-Layer.geo
+
+// Include section 
+Include Calorimeter2.Prototyp.det
+Include Calorimeter4.Prototyp.det
+Include Calorimeter8.Prototyp.det
+Include SiStripDetector.Prototyp.det
+
+DCal2.DetectorVolume    2cm_CsICore
+DCal4.DetectorVolume    4cm_CsICore
+DCal8.DetectorVolume    8cm_CsICore
+SStrip.SensitiveVolume   SL_Basic_Silicon_Wafer
+SStrip.DetectorVolume   SL_Basic_Silicon_Wafer
+
+
+// The Mother Volume of the Detector Configuration:
+Volume MEGA
+MEGA.Material Air
+MEGA.Visibility 0
+// MEGA.Virtual true
+MEGA.Shape BRIK 200. 200. 200.
+// NEEDS THIS LINE TO VIEW ALONE:
+MEGA.Mother 0
+
+
+
+
+// -----------------------------------------------------------------------------------------------------------------------------------
+
+// Positioning of the Si-Wafer Layers:
+
+SL_WaferLayer_Volume.Copy ODM_Layer_1
+ODM_Layer_1.Position 0. 0. 25.33
+ODM_Layer_1.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_2
+ODM_Layer_2.Position 0. 0. 24.33
+ODM_Layer_2.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_3
+ODM_Layer_3.Position 0. 0. 23.33
+ODM_Layer_3.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_4
+ODM_Layer_4.Position 0. 0. 22.33
+ODM_Layer_4.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_5
+ODM_Layer_5.Position 0. 0. 21.33
+ODM_Layer_5.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_6
+ODM_Layer_6.Position 0. 0. 20.33
+ODM_Layer_6.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_7
+ODM_Layer_7.Position 0. 0. 19.33
+ODM_Layer_7.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_8
+ODM_Layer_8.Position 0. 0. 18.33
+ODM_Layer_8.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_9
+ODM_Layer_9.Position 0. 0. 17.33
+ODM_Layer_9.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_10
+ODM_Layer_10.Position 0. 0. 16.33
+ODM_Layer_10.Mother MEGA
+
+SL_WaferLayer_Volume.Copy ODM_Layer_11
+ODM_Layer_11.Position 0. 0. 15.33
+ODM_Layer_11.Mother MEGA
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// 2 cm Calorimeters:
+
+2cm_CsICore.Copy ODM_2cm_1
+ODM_2cm_1.Position 17.75 6.7 18.555
+ODM_2cm_1.Rotation 0. 90. 0.
+ODM_2cm_1.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_2
+ODM_2cm_2.Position 17.75 -6.7 18.555
+ODM_2cm_2.Rotation 0. 90. 0.
+ODM_2cm_2.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_3
+ODM_2cm_3.Position -17.75 6.7 18.555
+ODM_2cm_3.Rotation 0. -90. 0.
+ODM_2cm_3.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_4
+ODM_2cm_4.Position -17.75 -6.7 18.555
+ODM_2cm_4.Rotation 0. -90. 0.
+ODM_2cm_4.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_5
+ODM_2cm_5.Position 6.7 17.75 18.555
+ODM_2cm_5.Rotation 90. -90. 180.
+ODM_2cm_5.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_6
+ODM_2cm_6.Position 6.7 -17.75 18.555
+ODM_2cm_6.Rotation -90. -90. 180.
+ODM_2cm_6.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_7
+ODM_2cm_7.Position -6.7 17.75 18.555
+ODM_2cm_7.Rotation 90. -90. 180.
+ODM_2cm_7.Mother MEGA
+
+2cm_CsICore.Copy ODM_2cm_8
+ODM_2cm_8.Position -6.7 -17.75 18.555
+ODM_2cm_8.Rotation -90. -90. 180.
+ODM_2cm_8.Mother MEGA
+
+
+
+// --------------------------------------------------------------------------------------------------------------------------
+
+// 4 cm Calorimters:
+
+
+4cm_CsICore.Copy ODM_4cm_1
+ODM_4cm_1.Position 17.4698 6.7 9.63255
+ODM_4cm_1.Rotation 0. 119.8 0.
+ODM_4cm_1.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_2
+ODM_4cm_2.Position 17.4698 -6.7 9.63255
+ODM_4cm_2.Rotation 0. 119.8 0.
+ODM_4cm_2.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_3
+ODM_4cm_3.Position -17.4698 6.7 9.63255
+ODM_4cm_3.Rotation 0. -119.8 0.
+ODM_4cm_3.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_4
+ODM_4cm_4.Position -17.4698 -6.7 9.63255
+ODM_4cm_4.Rotation 0. -119.8 0.
+ODM_4cm_4.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_5
+ODM_4cm_5.Position 6.7 17.4698 9.63255
+ODM_4cm_5.Rotation 0. 119.8 90.
+ODM_4cm_5.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_6
+ODM_4cm_6.Position 6.7 -17.4698 9.63255
+ODM_4cm_6.Rotation 0. -119.8 90.
+ODM_4cm_6.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_7
+ODM_4cm_7.Position -6.7 17.4698 9.63255
+ODM_4cm_7.Rotation 0. 119.8 90.
+ODM_4cm_7.Mother MEGA
+
+4cm_CsICore.Copy ODM_4cm_8
+ODM_4cm_8.Position -6.7 -17.4698 9.63255
+ODM_4cm_8.Rotation 0. -119.8 90.
+ODM_4cm_8.Mother MEGA
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------------
+
+// 8 cm Calorimeter:
+
+8cm_CsICore.Copy ODM_8cm_1
+ODM_8cm_1.Position 5.1 4.65 6.38
+ODM_8cm_1.Mother MEGA
+
+8cm_CsICore.Copy ODM_8cm_2
+ODM_8cm_2.Position 5.1 -4.65 6.38
+ODM_8cm_2.Mother MEGA
+
+8cm_CsICore.Copy ODM_8cm_3
+ODM_8cm_3.Position -5.1 4.65 6.38
+ODM_8cm_3.Mother MEGA
+
+8cm_CsICore.Copy ODM_8cm_4
+ODM_8cm_4.Position -5.1 -4.65 6.38
+ODM_8cm_4.Mother MEGA
+
+
+// ----------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
