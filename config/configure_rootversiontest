@@ -8,8 +8,10 @@
 
 # Allowed versions
 RootVersionMin=530
-RootVersionMax=532
+RootVersionMax=534
 
+RootVersionMinString="${RootVersionMin:(-3):1}.${RootVersionMin:(-2):2}"
+RootVersionMaxString="${RootVersionMax:(-3):1}.${RootVersionMax:(-2):2}"
 
 FOLDER=${MEGALIB}
 REPONAME="MEGAlib"
@@ -20,6 +22,9 @@ ShowSuccess=1;
 case $1 in
 -s) 
     ShowSuccess=0;;
+-t) 
+    echo "You need a ROOT version from ${RootVersionMinString} to ${RootVersionMaxString} for this version of MEGAlib.";
+    exit 0;;
 esac
 
 # Check if root-config is there
@@ -29,6 +34,7 @@ if [ $Found -eq 0 ]; then
   echo ""
   echo "root-config script not found in your PATH variable!"
   echo "Please make sure your path variable contains a folder which includes root-config"
+  echo "If ROOT is not installed, then install a ROOT version from ${RootVersionMinString} up to version ${RootVersionMaxString}"
   echo ""
   exit 1;
 fi
@@ -40,9 +46,6 @@ version=`echo $rv | awk -F. '{ print $1 }'`;
 release=`echo $rv | awk -F/ '{ print $1 }' | awk -F. '{ print $2 }'`;
 patch=`echo $rv | awk -F/ '{ print $2 }'`;
 RootVersion=$((100*${version} + ${release}))
-
-RootVersionMinString="${RootVersionMin:(-3):1}.${RootVersionMin:(-2):2}"
-RootVersionMaxString="${RootVersionMax:(-3):1}.${RootVersionMax:(-2):2}"
 
 if ([ ${RootVersion} -ge ${RootVersionMin} ] && [ ${RootVersion} -le ${RootVersionMax} ]);
 then

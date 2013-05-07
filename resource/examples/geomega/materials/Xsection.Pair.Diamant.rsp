@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Diamant
 CE false
-HA 2754278145
+HA 4146150854
 
 R1         1.000000 1.740570e-301
 R1         1.047129 1.740570e-301
@@ -404,7 +404,7 @@ R1  63095734.448019 6.317997e-02
 R1  66069344.800760 6.318420e-02
 R1  69183097.091894 6.318843e-02
 R1  72443596.007499 6.319266e-02
-R1  75857757.502918 6.319689e-02
+R1  75857757.502919 6.319689e-02
 R1  79432823.472428 6.320112e-02
 R1  83176377.110267 6.320577e-02
 R1  87096358.995608 6.321050e-02

@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Xenon
 CE false
-HA 3020545931
+HA 944505474
 
 R1         1.000000 3.307837e+04
 R1         1.047129 3.016970e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 3.199630e-01
 R1  66069344.800760 3.199885e-01
 R1  69183097.091894 3.200139e-01
 R1  72443596.007499 3.200394e-01
-R1  75857757.502918 3.200649e-01
+R1  75857757.502919 3.200649e-01
 R1  79432823.472428 3.200905e-01
 R1  83176377.110267 3.200944e-01
 R1  87096358.995608 3.200943e-01

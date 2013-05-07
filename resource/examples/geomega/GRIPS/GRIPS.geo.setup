@@ -1129,6 +1129,7 @@ ACDetectorTop.DetectorVolume 	ACSTop
 ACDetectorTop.EnergyResolution Gauss   0    0  10.0
 ACDetectorTop.EnergyResolution Gauss 100  100  10.0
 ACDetectorTop.TriggerThreshold 	50.0
+ACDetectorTop.NoiseThresholdEqualsTriggerThreshold true
 ACDetectorTop.FailureRate 	0.0
 
 
@@ -1139,6 +1140,7 @@ ACDetectorBottom.DetectorVolume 	ACSBottom
 ACDetectorBottom.EnergyResolution  Gauss    0    0  10.0
 ACDetectorBottom.EnergyResolution  Gauss  100  100  10.0
 ACDetectorBottom.TriggerThreshold 	50.0
+ACDetectorBottom.NoiseThresholdEqualsTriggerThreshold true
 ACDetectorBottom.FailureRate 	0.0
 
 

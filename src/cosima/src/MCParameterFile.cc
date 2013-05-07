@@ -554,8 +554,8 @@ bool MCParameterFile::Parse()
             }
           } else {
             Typo(i, "Can not parse token IsotopeProductionFile correctly:"
-                 " File does not exist");
-            return false;             
+                 " File does not exist - since multiple can be defined and missing one is a non-issue, I will ignore this for the time being...");
+            //return false;             
           }
         } else {
           Typo(i, "Can not parse token IsotopeProductionFile correctly:"
@@ -2582,7 +2582,7 @@ MCSource* MCParameterFile::GetSource(MString Name)
 {
   for (unsigned int i = 0; i < m_RunList.size(); ++i) {
     for (unsigned int s = 0; s < m_RunList[i].GetSourceList().size(); ++s) {
-      if (m_RunList[i].GetSourceList()[s]->GetName() == Name) {
+      if (Name.AreIdentical(m_RunList[i].GetSourceList()[s]->GetName())) {
         return m_RunList[i].GetSourceList()[s];
       }
     }

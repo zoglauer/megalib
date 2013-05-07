@@ -43,6 +43,8 @@ class MDACS : public MDDetector
   virtual ~MDACS();
 
   virtual MDDetector* Clone();
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
 
   virtual bool Validate();
 

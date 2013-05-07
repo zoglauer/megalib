@@ -33,6 +33,7 @@ const int MCSD::c_3DStrip      = MDDetector::c_Strip3D;
 const int MCSD::c_Scintillator = MDDetector::c_Scintillator;
 const int MCSD::c_DriftChamber = MDDetector::c_DriftChamber;
 const int MCSD::c_Voxel3D      = MDDetector::c_Voxel3D;
+const int MCSD::c_AngerCamera  = MDDetector::c_AngerCamera;
 
 
 /******************************************************************************

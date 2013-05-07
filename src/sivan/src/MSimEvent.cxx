@@ -671,6 +671,10 @@ void MSimEvent::DetermineEventRetrieval()
       } else {
         //It is a good one now ... I believe!
       }
+      if (GetIAAt(1)->GetProcess() == "ESCP" || GetIAAt(2)->GetProcess() == "ESCP") {
+        m_IEventRetrieval = IdealRetrievalBad;
+        //cout<<"Event Retrieval: We cannot have an escape in the first two intercations."<<endl;
+      }
     }
     
     // Real case:

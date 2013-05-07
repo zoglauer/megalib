@@ -56,9 +56,9 @@ class MDGeometryQuest : public MDGeometry
   void ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 
   void GetResolutions(MVector Pos, double Energy, double Time, 
-                      MVector& SRes, double& ERes, double& TRes);
+                      MVector& PRes, double& ERes, double& TRes);
   void GetResolutions(MVector Pos, double Energy, double Time, MDVolumeSequence& VS,
-                      MVector& SRes, double& ERes, double& TRes);
+                      MVector& PRes, double& ERes, double& TRes);
 
   MDVolume* GetEmbeddingVolume(MVector Position);
   MDDetector* GetDetector(MVector Position);

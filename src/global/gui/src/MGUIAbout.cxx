@@ -146,7 +146,7 @@ void MGUIAbout::Create()
   }
 
   ostringstream v;
-  v<<"MEGAlib version "<<g_VersionString;
+  v<<"Part of MEGAlib version "<<g_VersionString;
   MGUIEText* m_VersionText = new MGUIEText(AboutFrame, v.str().c_str(), MGUIEText::c_Centered);
   AboutFrame->AddFrame(m_VersionText, VersionLayout);
 

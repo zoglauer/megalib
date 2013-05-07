@@ -105,6 +105,7 @@ class MInterfaceMimrec : public MInterface
   void SPDElectronVsCompton();
   void ARMElectron();
   void DualARM();
+  void ARMResponseComparison();
   void AngularResolutionPairs();
   void AngularResolutionVsQualityFactorPair();
 

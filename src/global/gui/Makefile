@@ -16,8 +16,6 @@ LOBJS      = $(LB)/MGUIDialog.o \
              $(LB)/MGUIEEntry.o \
              $(LB)/MGUIEEntryList.o \
              $(LB)/MGUIEFileSelector.o \
-             $(LB)/MGUIEImage.o \
-             $(LB)/MGUIEImageContainer.o \
              $(LB)/MGUIEMinMaxEntry.o \
              $(LB)/MGUIERBList.o \
              $(LB)/MGUIECBList.o \
@@ -30,13 +28,12 @@ LOBJS      = $(LB)/MGUIDialog.o \
              $(LB)/MGUICBSelection.o \
              $(LB)/MGUIRBSelection.o \
              $(LB)/MGUIGeometry.o \
-             $(LB)/MGUIImageManager.o \
              $(LB)/MGUIMultiInput.o \
              $(LB)/MGUIProgressBar.o \
              $(LB)/MGUIAssistant.o \
              $(LB)/MGUIEText.o \
              $(LB)/MGUIETime.o \
-             $(LB)/MGUILicense.o \
+             $(LB)/MGUIPrelude.o \
              $(LB)/MGUIAbout.o \
              $(LB)/MGUIMain.o \
 

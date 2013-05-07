@@ -23,6 +23,11 @@ if ( `test ! -w  ${MEGALIB}/config` ); then
   exit 0;
 fi
 
+if ( `test ! -w  ${MEGALIB}/config/UpdateCheck.txt` ); then
+  #echo "No write access to ${MEGALIB}/config/UpdateCheck.txt means no updates"
+  exit 0;
+fi
+
 # Only continue if the last update was at least "UpdateInterval" days ago 
 UpdateInterval=7
 if ( `test -f ${FOLDER}/config/UpdateCheck.txt` ); then

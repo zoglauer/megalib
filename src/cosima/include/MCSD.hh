@@ -59,6 +59,8 @@ public:
   static const int c_DriftChamber;
   /// Id of a voxel detector
   static const int c_Voxel3D;
+  /// Id of an Anger camera
+  static const int c_AngerCamera;
 
   /// Name of the detector volume (the layer, e.g. bachus)
   void SetDetectorVolumeName(G4String DetectorVolumeName) 

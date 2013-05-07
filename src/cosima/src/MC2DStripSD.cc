@@ -148,11 +148,11 @@ G4bool MC2DStripSD::PostProcessHits(const G4Step* Step)
 
   // Apply any energy/charge/light loss
   if (m_UseEnergyLoss == true) {
-    Energy *= m_EnergyLoss.Eval(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm);
+    Energy *= m_EnergyLoss.Evaluate(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm);
   }
   
   if (Energy <= 0.0) {
-    mout<<"MC2DStripSD: Info: Energy loss map resulted in zero or negative energy: "<<m_EnergyLoss.Eval(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm)<<":"<<Position<<endl;    
+    mout<<"MC2DStripSD: Info: Energy loss map resulted in zero or negative energy: "<<m_EnergyLoss.Evaluate(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm)<<":"<<Position<<endl;    
     return false;
   }
 

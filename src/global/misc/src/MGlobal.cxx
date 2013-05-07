@@ -250,13 +250,13 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
 
   MString DevelopmentVersion;
   if (g_MajorVersion % 2 == 1) {
-    if (g_MinorVersion == 0) {
-      DevelopmentVersion = "You are using a VERY EXPERIMENTAL DEVELOPMENT version of MEGAlib";
-    } else if (g_MinorVersion < 5) {
-      DevelopmentVersion = "You are using an EARLY development version of MEGAlib";
-    } else {
+    //if (g_MinorVersion == 0) {
+    //  DevelopmentVersion = "You are using a VERY EXPERIMENTAL DEVELOPMENT version of MEGAlib";
+    //} else if (g_MinorVersion < 5) {
+    //  DevelopmentVersion = "You are using an EARLY development version of MEGAlib";
+    //} else {
       DevelopmentVersion = "You are using a development version of MEGAlib";
-    }
+    //}
     if (DevelopmentVersion.Length() > LineLength) LineLength = DevelopmentVersion.Length();
   }
 

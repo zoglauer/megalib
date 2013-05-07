@@ -40,6 +40,9 @@ class MDStrip3DDirectional : public MDStrip3D
 
   virtual MDDetector* Clone();
 
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
+
   virtual bool NoiseDirection(MVector& Direction, double Energy) const;
   virtual void SetDirectionalResolutionAt(const double Energy, const double Resolution, const double Sigma);
 
@@ -50,6 +53,10 @@ class MDStrip3DDirectional : public MDStrip3D
 
   virtual MString GetGeomega() const;
   virtual MString GetMGeant() const;
+
+  static const int c_DirectionalResolutionTypeUnknown;
+  static const int c_DirectionalResolutionTypeIdeal;
+  static const int c_DirectionalResolutionTypeGauss;
 
   // protected methods:
  protected:
@@ -62,8 +69,9 @@ class MDStrip3DDirectional : public MDStrip3D
 
   // protected members:
  protected:
-  MSpline* m_DirectionalResolution; 
-  MSpline* m_DirectionalResolutionSigma; 
+  int m_DirectionalResolutionType; 
+  MFunction m_DirectionalResolution; 
+  MFunction m_DirectionalResolutionSigma; 
 
 
   // private members:

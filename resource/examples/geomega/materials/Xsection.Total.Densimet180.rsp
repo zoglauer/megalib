@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Densimet180
 CE false
-HA 2110648798
+HA 360025971
 
 R1         1.000000 1.079212e+05
 R1         1.047129 1.035066e+05
@@ -404,7 +404,7 @@ R1  63095734.448019 1.661338e+00
 R1  66069344.800760 1.661483e+00
 R1  69183097.091894 1.661629e+00
 R1  72443596.007499 1.661774e+00
-R1  75857757.502918 1.661920e+00
+R1  75857757.502919 1.661920e+00
 R1  79432823.472428 1.662066e+00
 R1  83176377.110267 1.662102e+00
 R1  87096358.995608 1.662118e+00

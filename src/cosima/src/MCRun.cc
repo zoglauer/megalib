@@ -725,6 +725,7 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
 
   MCRunManager::GetMCRunManager()->GetTrackingAction()->SetNGeneratedParticles(NGeneratedParticles);
 
+  MCRunManager::GetMCRunManager()->GetSteppingAction()->PrepareForNextEvent();
   MCRunManager::GetMCRunManager()->GetSteppingAction()->SetInitialParticles(InitialParticleTypes);
   MCRunManager::GetMCRunManager()->GetSteppingAction()->SetParticleOriginIsBuildUpSource(IsBuildUpSource);
 

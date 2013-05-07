@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for MgS
 CE false
-HA 3919311937
+HA 3048482096
 
 R1         1.000000 1.241837e-02
 R1         1.047129 1.329284e-02
@@ -404,7 +404,7 @@ R1  63095734.448019 7.805948e-06
 R1  66069344.800760 7.480978e-06
 R1  69183097.091894 7.169536e-06
 R1  72443596.007499 6.871059e-06
-R1  75857757.502918 6.585009e-06
+R1  75857757.502919 6.585009e-06
 R1  79432823.472428 6.310867e-06
 R1  83176377.110267 6.047761e-06
 R1  87096358.995608 5.795624e-06

@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for CZT
 CE false
-HA 178204689
+HA 1250683579
 
 R1         1.000000 4.829388e+04
 R1         1.047129 4.472903e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 5.201491e-01
 R1  66069344.800760 5.201737e-01
 R1  69183097.091894 5.201984e-01
 R1  72443596.007499 5.202232e-01
-R1  75857757.502918 5.202480e-01
+R1  75857757.502919 5.202480e-01
 R1  79432823.472428 5.202729e-01
 R1  83176377.110267 5.203013e-01
 R1  87096358.995608 5.203304e-01

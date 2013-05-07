@@ -121,6 +121,7 @@ ShieldTopDetector.EnergyResolution Gauss   10   10  20.0
 ShieldTopDetector.EnergyResolution Gauss  100  100  20.0
 
 ShieldTopDetector.TriggerThreshold     200.0
+ShieldTopDetector.NoiseThresholdEqualsTriggerThreshold true
 ShieldTopDetector.FailureRate          0.0
 
 
@@ -134,6 +135,7 @@ ShieldBottomDetector.EnergyResolution Gauss   10   10  10.0
 ShieldBottomDetector.EnergyResolution Gauss  100  100  10.0
 
 ShieldBottomDetector.TriggerThreshold    70.0
+ShieldBottomDetector.NoiseThresholdEqualsTriggerThreshold true
 ShieldBottomDetector.FailureRate         0.0
 
 
@@ -146,6 +148,7 @@ ShieldSideDetector.EnergyResolution Gauss   10   10  10.0
 ShieldSideDetector.EnergyResolution Gauss  100  100  10.0
 
 ShieldSideDetector.TriggerThreshold    70.0
+ShieldSideDetector.NoiseThresholdEqualsTriggerThreshold true
 ShieldSideDetector.FailureRate         0.0
 
 

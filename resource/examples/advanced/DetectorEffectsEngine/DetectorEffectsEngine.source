@@ -1,0 +1,29 @@
+# An example run for Cosima
+
+
+# Global parameters:
+Version               1
+Geometry              DetectorEffectsEngine.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+#StoreScientific                     true  2
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+Run BigFlatBeamRun_E500
+BigFlatBeamRun_E500.FileName       BigFlatBeamRun_E500
+BigFlatBeamRun_E500.NTriggers      5000000
+
+BigFlatBeamRun_E500.Source BigFlatBeam
+BigFlatBeam.ParticleType      1
+BigFlatBeam.Beam              HomogeneousBeam   0 0 100   0 0 -1   20  
+BigFlatBeam.Spectrum          Mono  500
+BigFlatBeam.Flux              200.0
+

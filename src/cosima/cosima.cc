@@ -2,7 +2,7 @@
  *                                                                            *
  * Cosima.cc                                                                  *
  *                                                                            *
- * Copyright (C) by Andreas Zoglauer.                               *
+ * Copyright (C) by Andreas Zoglauer.                                         *
  * All rights reserved.                                                       *
  *                                                                            *
  * Please see the file Licence.txt for further copyright information.         *
@@ -69,13 +69,13 @@ int main(int argc, char** argv)
   g_Main = new MCMain();
   // Load the program
   if (g_Main->Initialize(argc, argv) == false) {
-    cout<<"An error occured during initilization"<<endl;
+    cout<<"An error occurred during initialization"<<endl;
     delete g_Main;
     return -1;
   }
 
   if (g_Main->Execute() == false) {
-    cout<<"An error occured during run/macro execution"<<endl;
+    cout<<"An error occurred during run/macro execution"<<endl;
     delete g_Main;
     return -1;
   }

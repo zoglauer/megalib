@@ -20,19 +20,19 @@ MEGALIBPATH=${NODEFAULT}
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
-  if [[ ${C} == --p*=* ]]; then
+  if [[ ${C} == *-p*=* ]]; then
     PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --r*=* ]]; then
+  elif [[ ${C} == *-r*=* ]]; then
     ROOTPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --g*3=* ]]; then
+  elif [[ ${C} == *-geant3=* ]]; then
     GEANT3PATH=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --g*4=* ]]; then
+  elif [[ ${C} == *-g*=* ]]; then
     GEANT4PATH=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --h*=* ]]; then
+  elif [[ ${C} == *-h*=* ]]; then
     HEADASPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --c*=* ]]; then
+  elif [[ ${C} == *-c*=* ]]; then
     CLHEPPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == --m*=* ]]; then
+  elif [[ ${C} == *-m*=* ]]; then
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
@@ -59,38 +59,6 @@ if [[ "${PREFIX}" != */ ]]; then
 fi
 
 
-# Set HEADAS:
-if [ "${HEADASPATH}" != "${NODEFAULT}" ]; then
-  if [[ "${HEADASPATH}" != /* ]]; then
-    HEADASPATH="${PREFIX}${HEADASPATH}"
-  fi
-
-  if (test ! -d ${HEADASPATH}); then
-    echo ""
-    echo "ERROR: HEADAS directory not found: ${HEADASPATH}"
-    echo ""
-    return
-  fi
-  
-  HEADASFOUND=false
-  for i in `ls -d ${HEADASPATH}/*86*`; do
-    if ( test -f ${i}/headas-init.sh ); then 
-      export HEADAS=${i}
-      alias heainit=". ${HEADAS}/headas-init.sh"
-      source ${HEADAS}/headas-init.sh
-      HEADASFOUND=true
-    fi
-  done
-
-  if [ ${HEADASFOUND} == false ]; then
-    echo ""
-    echo "ERROR: HEADAS software not found in HEADAS directory"
-    echo ""
-    return
-  fi
-fi
-
-
 # Set ROOT:
 if [ "${ROOTPATH}" != "${NODEFAULT}" ]; then
   if [[ "${ROOTPATH}" != /* ]]; then
@@ -103,14 +71,16 @@ if [ "${ROOTPATH}" != "${NODEFAULT}" ]; then
     echo ""
     return
   fi
+
+  if (test ! -f ${ROOTPATH}/bin/thisroot.sh); then
+    echo ""
+    echo "ERROR: Root environment script not found: ${ROOTPATH}/bin/thisroot.sh"
+    echo ""
+    return
+  fi
    
   # Has to come before HEADAS since both have a libMinuit.so
-  export ROOTSYS=${ROOTPATH}   
-  export PATH=${ROOTSYS}/bin:${PATH}    
-  export LD_LIBRARY_PATH=${ROOTSYS}/lib:${LD_LIBRARY_PATH}
-  if [[ `uname -a` == *Darwin* ]]; then
-    export DYLD_LIBRARY_PATH=${ROOTSYS}/lib:${LD_LIBRARY_PATH}
-  fi
+  source ${ROOTPATH}/bin/thisroot.sh
 fi
 
 
@@ -150,14 +120,17 @@ if [ "${GEANT4PATH}" != "${NODEFAULT}" ]; then
     echo ""
     return
   fi
-  
-  if (test -f ${GEANT4PATH}/bin/geant4.sh); then
-    source ${GEANT4PATH}/bin/geant4.sh > /dev/null  
-    source ${GEANT4PATH}/share/Geant4-`${GEANT4PATH}/bin/geant4-config --version`/geant4make/geant4make.sh
 
-    export LD_LIBRARY_PATH=${G4INSTALL}/lib/${G4SYSTEM}:${LD_LIBRARY_PATH}
+  if (test -f ${GEANT4PATH}/bin/geant4.sh); then
+    PATHTOGEANT4MAKE=${GEANT4PATH}/share/Geant4-`${GEANT4PATH}/bin/geant4-config --version`/geant4make
+    Here=`pwd`
+    cd ${PATHTOGEANT4MAKE}
+    source geant4make.sh
+    cd ${Here}
+
     if [[ `uname -a` == *Darwin* ]]; then
-      export DYLD_LIBRARY_PATH=${G4INSTALL}/lib/${G4SYSTEM}/lib:${LD_LIBRARY_PATH}
+      export LD_LIBRARY_PATH=${G4LIB}/..:${LD_LIBRARY_PATH}
+      #export DYLD_LIBRARY_PATH=${G4INSTALL}/lib/${G4SYSTEM}/lib:${DYLD_LIBRARY_PATH}
     fi
 
     export G4NEUTRONHP_USE_ONLY_PHOTONEVAPORATION=1
@@ -225,4 +198,53 @@ if [ "${MEGALIBPATH}" != "${NODEFAULT}" ]; then
 
   alias m='cd ${MEGALIB}'
 fi
+
+
+# Set HEADAS:
+if [ "${HEADASPATH}" != "${NODEFAULT}" ]; then
+  if [[ "${HEADASPATH}" != /* ]]; then
+    HEADASPATH="${PREFIX}${HEADASPATH}"
+  fi
+
+  if (test ! -d ${HEADASPATH}); then
+    echo ""
+    echo "ERROR: HEADAS directory not found: ${HEADASPATH}"
+    echo ""
+    return
+  fi
+  
+  HEADASFOUND=false
+  CFITSIOFOUND=false
+  for i in `ls -d ${HEADASPATH}/*86*`; do
+    if ( test -f ${i}/headas-init.sh ); then 
+      export HEADAS=${i}
+      alias heainit=". ${HEADAS}/headas-init.sh"
+      source ${HEADAS}/headas-init.sh
+      HEADASFOUND=true
+    fi
+    if [[ `uname -a` == *Linux* ]]; then
+      if ( test -f ${i}/lib/libcfitsio.so ); then 
+        CFITSIOFOUND=true
+      fi
+    else
+      # Too many installation options here - don't do the check...
+      CFITSIOFOUND=true
+    fi
+  done
+
+  if [ ${HEADASFOUND} == false ]; then
+    echo ""
+    echo "ERROR: HEADAS software not found in HEADAS directory"
+    echo ""
+    return
+  fi
+  if [ ${CFITSIOFOUND} == false ]; then
+    echo ""
+    echo "WARNING: libcfitsio not found in the HEADAS library directory"
+    echo "         You should make a link such as libcfitsio_3.XY.so -> libcfitsio.so"
+    echo ""
+  fi
+fi
+
+
 

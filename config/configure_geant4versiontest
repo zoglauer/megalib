@@ -6,11 +6,12 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
-
 # Allowed versions
-Geant4VersionMin=93
-Geant4VersionMax=94
+Geant4VersionMin=94
+Geant4VersionMax=95
 
+Geant4VersionMinString="${Geant4VersionMin:(-2):1}.${Geant4VersionMin:(-1):2}"
+Geant4VersionMaxString="${Geant4VersionMax:(-2):1}.${Geant4VersionMax:(-1):2}"
 
 FOLDER=${MEGALIB}
 REPONAME="MEGAlib"
@@ -21,20 +22,26 @@ ShowSuccess=1;
 case $1 in
 -s) 
     ShowSuccess=0;;
+-t) 
+    echo "You need a Geant4 version from ${Geant4VersionMinString} to ${Geant4VersionMaxString} for this version of MEGAlib.";
+    exit 0;;
 esac
 
-# If we don't have Geant4, we do not do a version check, since Geant4 is not required for ${REPONAME} to run
-if (`test ! -f ${G4INSTALL}/source/global/management/include/G4Version.hh`); then
-    exit 0;
-fi
 
 # Check for version of Geant4
-rv=`grep -r "\#define G4VERSION_NUMBER" ${G4INSTALL}/source/global/management/include/G4Version.hh`; 
-version=`echo $rv | awk -F" " '{ print $3 }'`;
-Geant4Version=`echo $((${version} / 10)) | awk -F"." '{ print $1 }'`
+GEANT4CONFIG=`type -P geant4-config`
+if (`test -f ${G4INSTALL}/source/global/management/include/G4Version.hh`); then
+  rv=`grep -r "\#define G4VERSION_NUMBER" ${G4INSTALL}/source/global/management/include/G4Version.hh`; 
+  version=`echo $rv | awk -F" " '{ print $3 }'`;
+  Geant4Version=`echo $((${version} / 10)) | awk -F"." '{ print $1 }'`
+elif ([ "${GEANT4CONFIG}" != "" ]); then
+  version=`geant4-config --version | sed 's|\.||g'`
+  Geant4Version=`echo $((${version} / 10)) | awk -F"." '{ print $1 }'`
+else
+  # If we don't have Geant4, we do not do a version check, since Geant4 is not required for ${REPONAME} to run
+  exit 0;
+fi
 
-Geant4VersionMinString="${Geant4VersionMin:(-2):1}.${Geant4VersionMin:(-1):2}"
-Geant4VersionMaxString="${Geant4VersionMax:(-2):1}.${Geant4VersionMax:(-1):2}"
 Geant4VersionString="${Geant4Version:(-2):1}.${Geant4Version:(-1):2}"
 
 if ([ ${Geant4Version} -ge ${Geant4VersionMin} ] && [ ${Geant4Version} -le ${Geant4VersionMax} ]);

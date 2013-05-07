@@ -45,6 +45,25 @@ ClassImp(MGUIGeometry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const MString& FileName)
+  : MGUIDialog(Parent, Main)
+{
+  // Construct an instance of MGUIGeometry and bring it to the screen
+
+  m_GUIData = 0;
+  m_GeometryFileName = FileName;
+  if (m_GeometryFileName == g_StringNotDefined) m_GeometryFileName = "";
+
+  // use hierarchical cleaning
+  SetCleanup(kDeepCleanup);
+
+  Create();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, 
                            MSettingsBasicFiles* Data)
   : MGUIDialog(Parent, Main)
@@ -52,7 +71,8 @@ MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main,
   // Construct an instance of MGUIGeometry and bring it to the screen
 
   m_GUIData = Data;
-  m_GeometryFileName = g_StringNotDefined;
+  m_GeometryFileName = m_GUIData->GetGeometryFileName();
+  if (m_GeometryFileName == g_StringNotDefined) m_GeometryFileName = "";
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -84,12 +104,9 @@ void MGUIGeometry::Create()
 
   // Add here ...
   
-  MString FileName = m_GUIData->GetGeometryFileName();
-  if (FileName == g_StringNotDefined) FileName = "";
-
   m_FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
   m_FileSelector = new MGUIEFileSelector(this, "Currently selected geometry file (*.geo.setup):", 
-                                         FileName);
+                                         m_GeometryFileName);
   m_FileSelector->SetFileType("Geometry setup file", "*.geo.setup");
   m_FileSelector->SetFileType("Geometry file", "*.geo");
   AddFrame(m_FileSelector, m_FileSelectorLayout);

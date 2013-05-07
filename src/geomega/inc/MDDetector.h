@@ -27,7 +27,6 @@
 #include "MDVolume.h"
 #include "MDGrid.h"
 #include "MDGridPoint.h"
-#include "MSpline.h"
 #include "MDVolumeSequence.h"
 #include "MFunction.h"
 #include "MFunction3D.h"
@@ -50,10 +49,17 @@ class MDDetector
   MDDetector(const MDDetector& D);
   virtual ~MDDetector();
 
+  //! Clone the detector and all its properties
   virtual MDDetector* Clone() = 0;
 
-  virtual MString GetName() const;
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
 
+  //! Return the name of the detector
+  virtual MString GetName() const { return m_Name; }
+  //! Set the name of the detector
+  virtual void SetName(const MString& Name) { m_Name = Name; }
+  
   //! Call this function if the detector should be split in voxels for the simulation;
   //! Voxels are only used for strip detectors!
   virtual void UseDivisions(const MString& ShortNameX, const MString& ShortNameY, const MString& ShortNameZ);
@@ -70,8 +76,6 @@ class MDDetector
   virtual int GetType() const { return m_Type; }
   //! Return the name of the type of this detector
   virtual MString GetTypeName() const { return m_Description; }
-  //! Very stupid... ??
-  virtual void SetType(const MString& Type);
 
   //! Return true if the detector type ID exists
   static bool IsValidDetectorType(int ID);
@@ -87,7 +91,7 @@ class MDDetector
 
   //! If set to true, then the noise threshold equals the trigger threshold (i.e. basically only the latter exists) and avoids
   //! that randomization is done twice!
-  virtual void SetNoiseThresholdEqualsTriggerThreshold(bool Flag = true) { m_NoiseThresholdEqualsTriggerThreshold = Flag; }
+  virtual void SetNoiseThresholdEqualsTriggerThreshold(bool Flag = true) { m_NoiseThresholdEqualsTriggerThresholdSet = true; m_NoiseThresholdEqualsTriggerThreshold = Flag; }
 
   virtual void SetNoiseThreshold(const double Threshold);
   virtual double GetNoiseThreshold(const MVector& Position = c_NullVector) const;
@@ -214,24 +218,36 @@ class MDDetector
   virtual MString GetMGeant() const = 0;
   virtual MString GetGeant3Divisions() const = 0;
   virtual MString GetMGeantDivisions() const = 0;
-  virtual MString ToString() const = 0;
+  virtual MString ToString() const;
 
   // The named detector interface -- this is usually only used in connection of calibrating real data, NOT for simulated data
 
-  //! Add a named detector
-  void AddNamedDetector(const MString& Name, const MDVolumeSequence& VS);
+  //! Return true if this is a named detector
+  bool IsNamedDetector() { return m_IsNamedDetector; }
+  
+  //! Add a named detector - returns false in case the detector cannot be added
+  bool AddNamedDetector(MDDetector* Detector);
+  //! Return true if this detector contains the given named detector
+  bool HasNamedDetectors() const { return (m_NamedDetectors.size() > 0 ? true : false);  }
   //! Return true if this detector contains the given named detector
   bool HasNamedDetector(const MString& Name) const;
   //! Use this function to convert a position within a NAMED detector (i.e. uniquely identifyable) into a position in the global coordinate system
   MVector GetGlobalPosition(const MVector& PositionInDetector, const MString& NamedDetector);
   //! Return the number of named detectors
-  unsigned int GetNNamedDetectors() const { return m_NamedDetectorNames.size(); }
+  unsigned int GetNNamedDetectors() const { return m_NamedDetectors.size(); }
   //! Return the name of the "named detector"
   MString GetNamedDetectorName(unsigned int i) const;
   //! Return the volume sequence of the "named detector"
   MDVolumeSequence GetNamedDetectorVolumeSequence(unsigned int i);
+  
+  //! Find the named detector
+  MDDetector* FindNamedDetector(const MDVolumeSequence& VS);
+  //! In case this is a named detector, return the pointer it was named after
+  MDDetector* GetNamedAfterDetector() const { return m_NamedAfter; }
 
-
+  //! Set volume sequence
+  void SetVolumeSequence(const MDVolumeSequence& VS) { m_VolumeSequence = VS; }
+  
   //! Validates the detector information and creates the Grid
   virtual bool Validate();
 
@@ -263,14 +279,30 @@ class MDDetector
   static const MString c_Voxel3DName;
 
   static const int c_EnergyResolutionTypeUnknown;
+  static const int c_EnergyResolutionTypeNone;
   static const int c_EnergyResolutionTypeIdeal;
   static const int c_EnergyResolutionTypeGauss;
   static const int c_EnergyResolutionTypeLorentz;
   static const int c_EnergyResolutionTypeGaussLandau;
 
+  static const int c_EnergyLossTypeUnknown;
   static const int c_EnergyLossTypeNone;
   static const int c_EnergyLossTypeMap;
 
+  static const int c_TimeResolutionTypeUnknown;
+  static const int c_TimeResolutionTypeNone;
+  static const int c_TimeResolutionTypeIdeal;
+  static const int c_TimeResolutionTypeGauss;
+
+  static const int c_DepthResolutionTypeUnknown;
+  static const int c_DepthResolutionTypeNone;
+  static const int c_DepthResolutionTypeIdeal;
+  static const int c_DepthResolutionTypeGauss;
+
+  static const int c_GuardringEnergyResolutionTypeUnknown;
+  static const int c_GuardringEnergyResolutionTypeNone;
+  static const int c_GuardringEnergyResolutionTypeIdeal;
+  static const int c_GuardringEnergyResolutionTypeGauss;
 
   // protected methods:
  protected:
@@ -341,8 +373,13 @@ class MDDetector
   MFunction m_EnergyResolutionWidth2;
   MFunction m_EnergyResolutionRatio;
 
-  MSpline* m_TimeResolution;
+  //! The type of time resolution we use
+  int m_TimeResolutionType; 
+  //! The time resolution
+  MFunction m_TimeResolution;
 
+  //! Flag indicating that the energy calibration has been set
+  bool m_EnergyCalibrationSet;
   //! Flag indicating that we perform an energy calibration
   bool m_UseEnergyCalibration;
   //! Function containing a 1D energy calibration
@@ -353,6 +390,9 @@ class MDDetector
 
   //! If this flag is set than noise equals trigger threshold, i.e. there is only the trigger threshold
   bool m_NoiseThresholdEqualsTriggerThreshold;
+  //! Flag indicating the m_NoiseThresholdEqualsTriggerThreshold has been set
+  bool m_NoiseThresholdEqualsTriggerThresholdSet;
+  
   double m_NoiseThreshold;
   double m_NoiseThresholdSigma;
 
@@ -380,13 +420,18 @@ class MDDetector
   //! The grid of trigger blocked channels
   MDGrid m_BlockedTriggerChannels;
 
-  //! A detector class might have several individual positioned detectors
-  //! This variable stores names of all of them
-  vector<MString> m_NamedDetectorNames;
-  //! This variable stores VolumeSequences to them
-  vector<MDVolumeSequence> m_NamedDetectorVolumeSequences;
+  
+  //! Return true if this is a named detector
+  bool m_IsNamedDetector;
+  //! If this is a named detector, the detector we where named after
+  MDDetector* m_NamedAfter;
+  //! The list of named detectors
+  vector<MDDetector*> m_NamedDetectors;
+  //! The volume sequence - filled if this is a named detector
+  MDVolumeSequence m_VolumeSequence;
 
 
+  bool m_PulseShapeSet;
   TF1* m_PulseShape;
   double m_PulseShapeMin;
   double m_PulseShapeMax;

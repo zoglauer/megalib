@@ -2971,7 +2971,7 @@ Bool_t MPulseForms::LoadFitFunctions(bool StartFromScratch)
 	if (Error == false) {
 		cout<<"Calibration successfully loaded!"<<endl;
 	} else {
-		cout<<"Errors occured during load of calibration file!"<<endl;
+		cout<<"Errors occurred during load of calibration file!"<<endl;
 		exit(1);
 	}
 

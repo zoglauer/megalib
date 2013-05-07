@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for NaI
 CE false
-HA 63351940
+HA 2036550177
 
 R1         1.000000 2.869479e+04
 R1         1.047129 2.603602e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 2.982291e-01
 R1  66069344.800760 2.982536e-01
 R1  69183097.091894 2.982782e-01
 R1  72443596.007499 2.983027e-01
-R1  75857757.502918 2.983274e-01
+R1  75857757.502919 2.983274e-01
 R1  79432823.472428 2.983520e-01
 R1  83176377.110267 2.983564e-01
 R1  87096358.995608 2.983572e-01

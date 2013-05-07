@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for BGO
 CE false
-HA 1253931319
+HA 2753531282
 
 R1         1.000000 6.443455e-302
 R1         1.047129 6.443455e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 6.793656e-01
 R1  66069344.800760 6.793950e-01
 R1  69183097.091894 6.794244e-01
 R1  72443596.007499 6.794537e-01
-R1  75857757.502918 6.794831e-01
+R1  75857757.502919 6.794831e-01
 R1  79432823.472428 6.795125e-01
 R1  83176377.110267 6.795453e-01
 R1  87096358.995608 6.795786e-01

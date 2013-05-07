@@ -84,6 +84,7 @@ void MGUIResponseSelection::Create()
   
   m_ResponseChoice = new MGUIERBList(this, "Response types:");
   m_ResponseChoice->Add("Standard one parameter linear gaussian for photo-peak events (List-mode)");
+  m_ResponseChoice->Add("Standard one parameter linear gaussian calculated by uncertainties (List-mode)");
   m_ResponseChoice->Add("Standard one parameter linear gaussian with limited energy measurement (List-mode)");
   m_ResponseChoice->Add("Precalculated response matrices (List-mode)");
   m_ResponseChoice->SetSelected(m_GUIData->GetResponseType());

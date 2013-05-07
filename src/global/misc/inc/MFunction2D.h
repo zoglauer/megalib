@@ -63,7 +63,8 @@ class MFunction2D
   void ScaleZ(double Scaler);
 
   //! Evaluate the data for a specific x value 
-  double Eval(double x, double y) const;
+  double Evaluate(double x, double y) const;
+  double Eval(double x, double y) const; // deprecated
 
   //! Return random numbers x, y distributed as the underlying function
   void GetRandom(double& x, double& y);

@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for CircuitBoard
 CE false
-HA 573446308
+HA 2260653107
 
 R1         1.000000 5.801356e+03
 R1         1.047129 5.144975e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 5.118135e-02
 R1  66069344.800760 5.118353e-02
 R1  69183097.091894 5.118574e-02
 R1  72443596.007499 5.118797e-02
-R1  75857757.502918 5.119022e-02
+R1  75857757.502919 5.119022e-02
 R1  79432823.472428 5.119250e-02
 R1  83176377.110267 5.119631e-02
 R1  87096358.995608 5.120042e-02

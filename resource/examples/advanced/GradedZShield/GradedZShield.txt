@@ -1,0 +1,31 @@
+Graded-Z shield example
+
+This example shows how to evaluate a graded-Z shield for the use with a Compton
+telescope.
+
+Medium-energy Compton telescopes start to have a reasonable efficiency and
+angular resolution above ~200 keV. However, in the space environment you have
+the majority of background events below that energy. In those cases it may be
+advantageous to block the low-energy photons with a graded-Z shield. However, an
+optimization is required, since the shield cannot only be optimized for
+blocking low energy X- and gamma rays, but also should not allow for too many
+Compton, Rayleigh and pair-interactions in the shield, and it should not
+activate due to long term exposure to the space radiation environment.
+
+The example first simulates a graded-Z shield with 0.25 mm tin, 0.5 Cu and 0.5
+mm Al.
+The evaluation program then plots the transmission curve (number of photons
+where the primary or secondary particles pass through the shield) as well as the
+number of Compton interactions in the shield, where the first plot shows all
+Compton interactions, and the second plot the number of Compton interactions in
+the shield where the scattered gamma ray or any other secondary passes through
+the shield.
+
+To run the example, do the following:
+cosima GradedZShield.source
+make -f ${MEGALIB}/ resource/standalone/Makefile.StandAlone PRG=GradedZShield only
+GradedZShield -f GradedZShield.inc1.id1.sim -g GradedZShield.geo.setup
+
+Please ignore all warnings about not present trigger criteria.
+
+

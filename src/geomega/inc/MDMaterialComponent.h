@@ -32,32 +32,38 @@ class MDMaterialComponent
 {
   // public interface:
  public:
+  MDMaterialComponent();
   MDMaterialComponent(double AtomicMass, double NProtons, double Weight, int Type);
   virtual ~MDMaterialComponent();
 
   bool Validate();
 
+  //! Set the element by name and the A by naterual composition, returns fals eif element is not found
+  bool SetElement(MString Name);
   void SetA(double A);
   void SetZ(double Z);
   void SetWeight(double Weight);
   void SetType(int Type);
 
+  //! Return true if we have natural isotope composition
+  bool HasNaturalIsotopeComposition() { return (m_A ==  c_NaturalComposition) ? true : false; }
+  
   //! Number of nucleons...
-  double GetA(); 
+  double GetA();
   //! Number of protons...
   double GetZ();
   //! Get weighting as stored 
   double GetWeight();
   //! Get the original type of the weight
   int GetType();
-  //! Get weight by atoms
-  double GetWeightByAtoms();
 
   MString ToString();
 
   static const int c_ByAtoms;
   static const int c_ByMass;
 
+  static const double c_NaturalComposition;
+  
   // protected methods:
  protected:
 

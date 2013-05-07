@@ -10,8 +10,9 @@ help() {
     echo "    mcosima <cosima source file>";
     echo "";
     echo "Options:";
-    echo "    -t <threads>: The number of threads as an integer"
-    echo "    -n <nice>:    The nice level as an integer"
+    echo "    -t <threads>:  The number of threads as an integer"
+    echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
+    echo "    -n <nice>:     The nice level as an integer"
     echo "";
     echo "Example:";
     echo "    mcosima -t 2 -n 19 Run.source";
@@ -23,11 +24,6 @@ help() {
 
 
 # Initialize
-#Cores=`grep cores /proc/cpuinfo | wc -l`
-#if [ ${Cores} -eq 0 ]; then Cores = 1; fi
-#Processors=`grep processor /proc/cpuinfo | wc -l`
-#Threads=`expr ${Cores} \* ${Processors}`;
-
 Threads=1;
 if ( `test -f /usr/sbin/sysctl` ); then
     Threads=`sysctl -n hw.logicalcpu_max`
@@ -35,6 +31,7 @@ elif ( `test -f /proc/cpuinfo` ); then
     Threads=`grep processor /proc/cpuinfo | wc -l`
 fi
 Source="!@#$";
+Max=${Threads}
 Nice=0;
 
 # Check if cosima exists
@@ -52,7 +49,7 @@ fi
 if [ $# -eq 0 ] ; then
     echo " "
     echo "Error: You need to give at least a source file";
-    echo "       For details see mcosima -- help"
+    echo "       For details see mcosima --help"
     echo " "
     exit 0;
 fi;
@@ -68,7 +65,7 @@ while [ $# -gt 0 ] ; do
         if [ $# -eq 0 ]; then
             echo " "
             echo "Error: Options -p and -t need an argument";
-            echo "       For details see mcosima -- help"
+            echo "       For details see mcosima --help"
             echo " "
             exit 0;
         fi
@@ -76,12 +73,25 @@ while [ $# -gt 0 ] ; do
         Threads=$1;
         #echo "Using ${Threads} threads";
         ;;
+    -m)
+        shift;
+        if [ $# -eq 0 ]; then
+            echo " "
+            echo "Error: Options -m needs an argument";
+            echo "       For details see mcosima --help"
+            echo " "
+            exit 0;
+        fi
+        Found=1;
+        Max=$1;
+        #echo "Using ${Threads} threads";
+        ;;
     -n)
         shift;
         if [ $# -eq 0 ]; then
             echo " "
             echo "Error: Option -n needs an argument";
-            echo "       For details see mcosima -- help"
+            echo "       For details see mcosima --help"
             echo " "
             exit 0;
         fi
@@ -98,7 +108,7 @@ while [ $# -gt 0 ] ; do
         else
             echo " "
             echo "Error: Only one source file allowed";
-            echo "       For details see mcosima -- help"
+            echo "       For details see mcosima --help"
             echo " "
             help; 
             exit 1;
@@ -111,7 +121,7 @@ done
 if [ "${Source}" == "!@#$" ]; then
     echo " "
     echo "Error: You need to give a source file";
-    echo "       For details see mcosima -- help"
+    echo "       For details see mcosima --help"
     echo " "
     exit 1;
 fi
@@ -121,8 +131,20 @@ then
     rm /tmp/aux
 else
     echo " "
-    echo "Error: The value behind parallel must be a number";
-    echo "       For details see mcosima -- help"
+    echo "Error: The value behind parallel threads must be a number";
+    echo "       For details see mcosima --help"
+    echo " "
+    rm /tmp/aux
+    exit 1;
+fi
+
+if echo ${Max} | grep "^[0-9]*$" > /tmp/aux
+then
+    rm /tmp/aux
+else
+    echo " "
+    echo "Error: The value behind max threads must be a number";
+    echo "       For details see mcosima --help"
     echo " "
     rm /tmp/aux
     exit 1;
@@ -133,6 +155,7 @@ echo " "
 echo "Launching mcosima"
 echo " "
 echo "Number of threads to use: ${Threads}" 
+echo "Maxmim number of cosima threads on machine: ${Max}" 
 echo "Source file: ${Source}" 
 
 
@@ -142,12 +165,22 @@ ThreadsID="0"
 
 BaseNames=""
 while read line; do
-    Base=`echo $line | awk -F".FileName" '{ print $2 }'`; 
-    BaseNames="${BaseNames} ${Base}"
+    Base=`echo $line | awk -F ".FileName|.filename|.Filename" '{ print $2 }'`;
+    if [ "${Base}" != "" ]; then
+      BaseNames="${BaseNames} ${Base}"
+    fi
 done << EOF
-$(grep ".FileName" ${Source})
+$(grep -i ".FileName" ${Source})
 EOF
 # The above hack is necessary because "grep ".FileName" ${Source} | while read line; do" would launch a subprocess and BaseNames would not be set...
+
+if [ "${BaseNames}" == "" ]; then
+  echo " "
+  echo "Error: ${Source} does not contain a file name!"
+  echo " "
+  exit 1
+fi
+
 
 for Base in ${BaseNames}; do
     while true; do
@@ -165,33 +198,34 @@ echo " "
 # Start the sims
 Pids=" "
 for (( i=1; i <= ${Threads}; i+=1 )); do
+    mdelay cosima ${Max}
     echo "Launching number ${i}/${Threads}"
     nohup nice -n ${Nice} cosima -v 0 -p ${ThreadsID} ${Source} > /dev/null &
     Pids="$Pids $! "
     if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
-        echo "Sleeping..."
-        sleep 10
+        echo "Sleeping for 5 seconds..."
+        sleep 5
     fi
 done
 
 # Create a concatenation file
 
 # Extract the base file names from the source file
-grep ".FileName" ${Source} | while read line; do
-    Base=`echo $line | awk -F".FileName" '{ print $2 }'`; 
-    echo "Creating concatenation file for: ${Base}"
+grep -i ".FileName" ${Source} | while read line; do
+    Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`; 
+    echo "Creating concatenation file for simulation \"${Base}\""
     ConcatFileName="${Base}.p${ThreadsID}.sim" 
 
     # Wait until the first such file is created
     while ( test ! -f ${Base}.p${ThreadsID}.inc1.id1.sim ); do
         sleep 1
-        echo "Waiting for simulation file to appear..."
+        echo "Waiting for the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" to appear ..."
     done
 
     # Wait until the header is written
     while [ `wc -l ${Base}.p${ThreadsID}.inc1.id1.sim | awk -F" " '{ print $1 }'` -le 100 ]; do
         sleep 1;
-        echo "Waiting for first 100 lines to be written into the simulation file ${Base}.p${ThreadsID}.inc1.id1.sim..."
+        echo "Waiting for first 100 lines to be written into the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" ..."
     done
 
     # Extract the version information
@@ -215,7 +249,7 @@ grep ".FileName" ${Source} | while read line; do
     echo "EN" >> ${ConcatFileName}
     echo " " >> ${ConcatFileName}
 
-    echo "Created concatenation file ${ConcatFileName}"
+    echo "Created concatenation file \"${ConcatFileName}\""
 
     KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
     rm -f ${KillFileName}

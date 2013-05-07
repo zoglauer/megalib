@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for Pb
 CE false
-HA 60222076
+HA 2800226549
 
 R1         1.000000 4.074555e-02
 R1         1.047129 4.377332e-02
@@ -404,7 +404,7 @@ R1  63095734.448019 7.053880e-05
 R1  66069344.800760 6.760241e-05
 R1  69183097.091894 6.478825e-05
 R1  72443596.007499 6.209124e-05
-R1  75857757.502918 5.950651e-05
+R1  75857757.502919 5.950651e-05
 R1  79432823.472428 5.702937e-05
 R1  83176377.110267 5.465202e-05
 R1  87096358.995608 5.237376e-05

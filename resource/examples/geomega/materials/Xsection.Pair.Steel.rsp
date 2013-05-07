@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Steel
 CE false
-HA 562393349
+HA 3225300879
 
 R1         1.000000 8.562165e-302
 R1         1.047129 8.562165e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 4.358743e-01
 R1  66069344.800760 4.359043e-01
 R1  69183097.091894 4.359343e-01
 R1  72443596.007499 4.359643e-01
-R1  75857757.502918 4.359943e-01
+R1  75857757.502919 4.359943e-01
 R1  79432823.472428 4.360243e-01
 R1  83176377.110267 4.360455e-01
 R1  87096358.995608 4.360652e-01

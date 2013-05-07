@@ -53,9 +53,9 @@ using namespace std;
 #include "MDDetector.h"
 #include "MGUIGeomegaMain.h"
 #include "MGUIMGeant.h"
-#include "MGUILicense.h"
 #include "MVector.h"
 #include "MDGridPoint.h"
+#include "MPrelude.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,6 +85,10 @@ MInterfaceGeomega::MInterfaceGeomega() : MInterface()
 MInterfaceGeomega::~MInterfaceGeomega()
 {
   // standard destructor
+  
+  // do not delete m_Geometry, because it is deleted in the base class;
+  delete m_Data;
+  // do not delete m_BasicGuiData, because it is just a pointer to m_Data!
 }
 
 
@@ -258,8 +262,10 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (ShowLicense() == false) return false;
-
+  // Show change log / license if changed:
+  MPrelude P;
+  if (P.Play() == false) return false; // license was not accepted
+  
   return true;
 }
 
@@ -316,7 +322,8 @@ void MInterfaceGeomega::ViewGeometry()
 {
   // Create a display of the geometry
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -389,7 +396,8 @@ void MInterfaceGeomega::CalculateMasses()
 {
   // Calculate the mass of the geometry
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -406,7 +414,8 @@ void MInterfaceGeomega::CreateCrossSections()
 {
   // Calculate the mass of the geometry
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -423,7 +432,8 @@ void MInterfaceGeomega::DumpInformation()
 {
   // Dump information about the geometry
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -440,7 +450,8 @@ void MInterfaceGeomega::WriteGeant3Files()
 {
   // Translate the geometry-setup-file to Geant3
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -458,7 +469,8 @@ void MInterfaceGeomega::WriteMGeantFiles()
 {
   // Translate the geometry-setup-file to MGeant (Geant3 variant) - RMK
 
-  if (m_Geometry->IsScanned() == false) {
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -483,8 +495,9 @@ void MInterfaceGeomega::WriteMGeantFiles()
 void MInterfaceGeomega::FindVolume(MVector Pos)
 {
   // Find the volume sequence for position Pos
-  
-  if (m_Geometry->IsScanned() == false) {
+
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }
@@ -516,8 +529,9 @@ void MInterfaceGeomega::FindVolume(MVector Pos)
 void MInterfaceGeomega::GetResolutions()
 {
   // Return the resolutions of all detectors:
-  
-  if (m_Geometry->IsScanned() == false) {
+
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
       return;
     }

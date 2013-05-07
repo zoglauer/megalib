@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for CircuitBoard
 CE false
-HA 573446308
+HA 2260653107
 
 R1         1.000000 8.788679e-302
 R1         1.047129 8.788679e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 5.116696e-02
 R1  66069344.800760 5.116974e-02
 R1  69183097.091894 5.117253e-02
 R1  72443596.007499 5.117531e-02
-R1  75857757.502918 5.117809e-02
+R1  75857757.502919 5.117809e-02
 R1  79432823.472428 5.118087e-02
 R1  83176377.110267 5.118517e-02
 R1  87096358.995608 5.118974e-02

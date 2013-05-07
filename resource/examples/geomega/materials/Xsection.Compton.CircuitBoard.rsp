@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for CircuitBoard
 CE false
-HA 573446308
+HA 2260653107
 
 R1         1.000000 2.168674e-02
 R1         1.047129 2.341617e-02
@@ -404,7 +404,7 @@ R1  63095734.448019 1.438252e-05
 R1  66069344.800760 1.378375e-05
 R1  69183097.091894 1.320992e-05
 R1  72443596.007499 1.265997e-05
-R1  75857757.502918 1.213291e-05
+R1  75857757.502919 1.213291e-05
 R1  79432823.472428 1.162780e-05
 R1  83176377.110267 1.114305e-05
 R1  87096358.995608 1.067851e-05

@@ -50,6 +50,16 @@ ClassImp(MDMaterialComponent)
 
 const int MDMaterialComponent::c_ByAtoms = 1;
 const int MDMaterialComponent::c_ByMass = 2;
+const double MDMaterialComponent::c_NaturalComposition = 999999999.99987654;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDMaterialComponent::MDMaterialComponent(): m_A(c_NaturalComposition), m_Z(1), m_Weight(1), m_Type(c_ByAtoms)
+{
+  // default constructor
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,6 +83,40 @@ MDMaterialComponent::MDMaterialComponent(double A, double Z,
 MDMaterialComponent::~MDMaterialComponent()
 {
   // default destructor
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDMaterialComponent::SetElement(MString Name) {
+  // Set the element by name
+  
+  const char* elem[] = {"H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg",
+      "Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr",
+      "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+      "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
+      "In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd",
+      "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
+      "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
+      "At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm",
+      "Bk","Cf","Es","Fm","Md","No","Lr"};
+ 
+  bool Found = false;
+  for (unsigned int i = 0; i < 100; ++i) {
+    MString Element(elem[i]);
+    Element.ToLower();
+    Name.ToLower();
+    if (Element == Name) {
+      m_Z = i+1;
+      Found = true;
+      break;
+    }
+  }
+  if (Found == false) return false;
+      
+  m_A = c_NaturalComposition; // we don't need this anymore!
+  
+  return true;
 }
 
 
@@ -162,21 +206,6 @@ double MDMaterialComponent::GetWeight()
   // Return the number of atoms or mass fraction
 
   return m_Weight;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MDMaterialComponent::GetWeightByAtoms()
-{
-  // Return the number of atoms or mass fraction
-
-  if (m_Type == c_ByAtoms) {
-    return m_Weight;
-  } else {
-    return m_Weight/m_A;
-  }
 }
 
 

@@ -491,7 +491,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   for (int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
     x2InRad = (0.5+x2)*m_x2IntervalLength + m_x2Min;
 
-    /* Start comment out the following section if you want to use simple mode */
+    /* Start comment out the following section if you want to use simple mode 
      
     // The following is an intelligent line skipping method:
     // Although is seems lengthy, the most part is just fast case differentiation, thus in the end saves a lot of time...
@@ -680,11 +680,11 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
        
       index = x1 + index_offset;   // Loop over all image bins:
     
-    /* End comment out if you want to use simple mode and comment in the follwoing to lines */
+     End comment out if you want to use simple mode and comment in the follwoing to lines */
 
     // Comment the following two line in if you want to use the not-optimized mode:
-    //for (int x1 = 0; x1 < m_x1NBins; ++x1) {
-    //  index = x1 + x2*m_x1NBins;
+    for (int x1 = 0; x1 < m_x1NBins; ++x1) {
+      index = x1 + x2*m_x1NBins;
       
       // Start the backprojections:
       
@@ -760,6 +760,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
       }
 
       // Comment the last lines *in the loop* out if you want to use the simple mode:
+      /*
       
       // Prepare for next bin
       ++x1;
@@ -779,6 +780,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
           BinsLeft = false;
         }
       }
+      */
     }
   }
 

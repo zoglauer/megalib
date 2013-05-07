@@ -27,6 +27,8 @@
 #include "MString.h"
 
 // Standard libs:
+#include <locale>
+using namespace std;
 
 // ROOT libs:
 
@@ -167,6 +169,37 @@ istream& MString::ReadLine(istream& in)
   getline(in, m_String);
 
   return in;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MString::Read(istream& in)
+{
+  //! Read one line into this string replace all previous content
+
+  Clear();
+  
+  string Line;
+  while (getline(in, Line)) {
+    m_String += Line;
+    m_String += "\n";
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+long MString::GetHash()
+{
+  //! Return a hash value
+
+  locale loc;
+  const collate<char>& coll = use_facet<collate<char> >(loc);
+  
+  return coll.hash(m_String.data(), m_String.data() + m_String.length());
 }
 
 

@@ -1,0 +1,21 @@
+# Template Run for Step 2 of activation simulation: 
+# Calculate the activation
+
+
+# Global parameters:
+Version                            1
+Geometry                           LaBr3Sample.geo.setup
+DetectorTimeConstant               0.000005
+
+
+# Physics parameters
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+
+
+# The activation calculation
+Activator A
+A.IsotopeProductionFile   CoolDown.Phase1.BuildUp.dat
+A.ActivationMode          ConstantIrradiationWithCoolDown  60  30
+A.IsotopeCountFile        CoolDown.Phase2.ParticlesAfter60SecIrradiationAnd30SecCoolDown.particles.dat
+

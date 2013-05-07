@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Peek
 CE false
-HA 1154959414
+HA 1690243933
 
 R1         1.000000 3.643755e+03
 R1         1.047129 3.219712e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 2.471868e-02
 R1  66069344.800760 2.471995e-02
 R1  69183097.091894 2.472123e-02
 R1  72443596.007499 2.472252e-02
-R1  75857757.502918 2.472384e-02
+R1  75857757.502919 2.472384e-02
 R1  79432823.472428 2.472517e-02
 R1  83176377.110267 2.472680e-02
 R1  87096358.995608 2.472848e-02

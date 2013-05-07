@@ -56,6 +56,10 @@ using namespace std;
 #include "G4UserLimits.hh"
 #include "G4Region.hh"
 #include "G4VisAttributes.hh"
+#include "G4GeometryManager.hh"
+#include "G4PhysicalVolumeStore.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4NistManager.hh"
 
 // MEGAlib:
 #include "MAssert.h"
@@ -128,6 +132,13 @@ G4VPhysicalVolume* MCDetectorConstruction::Construct()
  */
 bool MCDetectorConstruction::Initialize()
 {
+  // Cleanup old geometry
+
+  G4GeometryManager::GetInstance()->OpenGeometry();
+  G4PhysicalVolumeStore::GetInstance()->Clean();
+  G4LogicalVolumeStore::GetInstance()->Clean();
+  G4SolidStore::GetInstance()->Clean();
+
   m_Geometry = new MDGeometryQuest(); 
 
   // Read and initilize the geometry from MEGAlib
@@ -135,6 +146,7 @@ bool MCDetectorConstruction::Initialize()
       == false) {
     return false;
   }
+
 
   // Initialize start area for all sources, but only if it has not been set (parameter file preceeds geometry file):
   vector<MCRun>& Runs = MCRunManager::GetMCRunManager()->GetRuns();
@@ -178,6 +190,8 @@ bool MCDetectorConstruction::Initialize()
   m_Geometry->GetTriggerUnit()->IgnoreVetoes(true);
   // (b) Thresholds are at zero
   m_Geometry->GetTriggerUnit()->IgnoreThresholds(true);
+  
+  //G4cout << *(G4Material::GetMaterialTable()) << G4endl;
 
   return true;
 }
@@ -767,11 +781,14 @@ bool MCDetectorConstruction::ConstructMaterials()
 
   if (m_Geometry->IsScanned() == false) return false;
  
+  G4NistElementBuilder ElementBuilder(0);
+  
   for (unsigned int m = 0; m < m_Geometry->GetNMaterials(); ++m) {
     G4Material* Material = 
       new G4Material(m_Geometry->GetMaterialAt(m)->GetName().Data(), 
                      m_Geometry->GetMaterialAt(m)->GetDensity()*g/cm3,
                      m_Geometry->GetMaterialAt(m)->GetNComponents());
+    
     
     for (unsigned int c = 0; 
          c < m_Geometry->GetMaterialAt(m)->GetNComponents(); ++c) {
@@ -795,12 +812,18 @@ bool MCDetectorConstruction::ConstructMaterials()
         Z = 1;
       }
 
-      G4Element* Element = 
-        new G4Element(LongName.str(), 
-                      ShortName.str(), 
-                      Z, 
-                      A*g/mole);
-
+      G4Element* Element = 0;
+      if (Component->HasNaturalIsotopeComposition() == true) {
+        Element = ElementBuilder.FindOrBuildElement(Z, true);
+      } else {
+        Element =  new G4Element(LongName.str(), ShortName.str(), Z, A*g/mole);
+      }
+      
+      if (Element == 0) {
+        merr<<"Couldn't find all elements of: "<<m_Geometry->GetMaterialAt(m)->GetName()<<" Missing: Z="<<Z<<endl;
+        return false;
+      }
+      
       if (Component->GetType() == MDMaterialComponent::c_ByAtoms) {
         Material->AddElement(Element, TMath::Nint(Component->GetWeight()));
       } else {

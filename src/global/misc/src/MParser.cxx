@@ -240,7 +240,8 @@ bool MParser::TokenizeLine(MTokenizer& T)
   char c;
   MString Line;
   while (true) {
-    if (m_File.get(c) == false) {
+    m_File.get(c);
+    if (m_File.good() == false) {
       return false;
     }
     if (c != '\n' && c != '\0') {

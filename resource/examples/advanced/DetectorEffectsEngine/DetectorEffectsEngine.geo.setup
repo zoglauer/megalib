@@ -1,0 +1,596 @@
+# This example demonstrates all options of the detector effects engine
+# In parallel it is a the unit test
+
+Name DetectorEffectsEngine
+Version 1.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+Constant XYHalfWidth 2.0
+Constant ZHalfWidth  0.5
+
+Constant XYDist { 0.5 + 2*XYHalfWidth }
+
+
+
+// Energy resolution options
+
+Volume VolumeEnergyResolutionIdeal
+VolumeEnergyResolutionIdeal.Material Germanium
+VolumeEnergyResolutionIdeal.Visibility 1
+VolumeEnergyResolutionIdeal.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeEnergyResolutionIdeal.Position { -2*XYDist } { 0.*XYDist } 0.0
+VolumeEnergyResolutionIdeal.Mother WorldVolume
+
+
+Scintillator  DetectorEnergyResolutionIdeal
+DetectorEnergyResolutionIdeal.DetectorVolume      VolumeEnergyResolutionIdeal
+DetectorEnergyResolutionIdeal.SensitiveVolume     VolumeEnergyResolutionIdeal
+DetectorEnergyResolutionIdeal.NoiseThreshold      0
+DetectorEnergyResolutionIdeal.TriggerThreshold    0
+DetectorEnergyResolutionIdeal.EnergyResolution    Ideal
+DetectorEnergyResolutionIdeal.FailureRate 0.0
+
+Trigger TriggerEnergyResolutionIdeal
+TriggerEnergyResolutionIdeal.Veto false
+TriggerEnergyResolutionIdeal.TriggerByChannel true
+TriggerEnergyResolutionIdeal.Detector DetectorEnergyResolutionIdeal 1
+
+
+
+
+Volume VolumeEnergyResolutionGaussian
+VolumeEnergyResolutionGaussian.Material Germanium
+VolumeEnergyResolutionGaussian.Visibility 1
+VolumeEnergyResolutionGaussian.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeEnergyResolutionGaussian.Position { -1*XYDist } { 0.*XYDist } 0.0
+VolumeEnergyResolutionGaussian.Mother WorldVolume
+
+
+Scintillator  DetectorEnergyResolutionGaussian
+DetectorEnergyResolutionGaussian.DetectorVolume      VolumeEnergyResolutionGaussian
+DetectorEnergyResolutionGaussian.SensitiveVolume     VolumeEnergyResolutionGaussian
+DetectorEnergyResolutionGaussian.NoiseThreshold      0
+DetectorEnergyResolutionGaussian.TriggerThreshold    0
+DetectorEnergyResolutionGaussian.EnergyResolution Gauss  1     1         1.5   
+DetectorEnergyResolutionGaussian.EnergyResolution Gauss  10    10        1.5   
+DetectorEnergyResolutionGaussian.EnergyResolution Gauss  100   100       2.5   
+DetectorEnergyResolutionGaussian.EnergyResolution Gauss  1000  1000      3.5   
+DetectorEnergyResolutionGaussian.EnergyResolution Gauss  10000 10000     4.5   
+DetectorEnergyResolutionGaussian.FailureRate 0.0
+
+Trigger TriggerEnergyResolutionGaussian
+TriggerEnergyResolutionGaussian.Veto false
+TriggerEnergyResolutionGaussian.TriggerByChannel true
+TriggerEnergyResolutionGaussian.Detector DetectorEnergyResolutionGaussian 1
+
+
+
+Volume VolumeEnergyResolutionGaussLandau
+VolumeEnergyResolutionGaussLandau.Material Germanium
+VolumeEnergyResolutionGaussLandau.Visibility 1
+VolumeEnergyResolutionGaussLandau.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeEnergyResolutionGaussLandau.Position { 0*XYDist } { 0.*XYDist } 0.0
+VolumeEnergyResolutionGaussLandau.Mother WorldVolume
+
+
+Scintillator  DetectorEnergyResolutionGaussLandau
+DetectorEnergyResolutionGaussLandau.DetectorVolume      VolumeEnergyResolutionGaussLandau
+DetectorEnergyResolutionGaussLandau.SensitiveVolume     VolumeEnergyResolutionGaussLandau
+DetectorEnergyResolutionGaussLandau.NoiseThreshold      0
+DetectorEnergyResolutionGaussLandau.TriggerThreshold    0
+DetectorEnergyResolutionGaussLandau.EnergyResolution GaussLandau  1     1         1.5   1      3.0  0.5
+DetectorEnergyResolutionGaussLandau.EnergyResolution GaussLandau  10    10        1.5   10     3.0  0.5
+DetectorEnergyResolutionGaussLandau.EnergyResolution GaussLandau  100   100       2.5   100    5.0  0.5 
+DetectorEnergyResolutionGaussLandau.EnergyResolution GaussLandau  1000  1000      3.5   1000   7.0  0.5
+DetectorEnergyResolutionGaussLandau.EnergyResolution GaussLandau  10000 10000     4.5   10000  9.0  0.5
+DetectorEnergyResolutionGaussLandau.FailureRate 0.0
+
+Trigger TriggerEnergyResolutionGaussLandau
+TriggerEnergyResolutionGaussLandau.Veto false
+TriggerEnergyResolutionGaussLandau.TriggerByChannel true
+TriggerEnergyResolutionGaussLandau.Detector DetectorEnergyResolutionGaussLandau 1
+
+
+
+
+Volume VolumeEnergyResolutionLorentz
+VolumeEnergyResolutionLorentz.Material Germanium
+VolumeEnergyResolutionLorentz.Visibility 1
+VolumeEnergyResolutionLorentz.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeEnergyResolutionLorentz.Position { 1*XYDist } { 0.*XYDist } 0.0
+VolumeEnergyResolutionLorentz.Mother WorldVolume
+
+Scintillator  DetectorEnergyResolutionLorentz
+DetectorEnergyResolutionLorentz.DetectorVolume      VolumeEnergyResolutionLorentz
+DetectorEnergyResolutionLorentz.SensitiveVolume     VolumeEnergyResolutionLorentz
+DetectorEnergyResolutionLorentz.NoiseThreshold      0
+DetectorEnergyResolutionLorentz.TriggerThreshold    0
+DetectorEnergyResolutionLorentz.EnergyResolution Lorentz  1     1        3.0 
+DetectorEnergyResolutionLorentz.EnergyResolution Lorentz  10    10       3.0 
+DetectorEnergyResolutionLorentz.EnergyResolution Lorentz  100   100      5.0 
+DetectorEnergyResolutionLorentz.EnergyResolution Lorentz  1000  1000     7.0 
+DetectorEnergyResolutionLorentz.EnergyResolution Lorentz  10000 10000    9.0 
+DetectorEnergyResolutionLorentz.FailureRate 0.0
+
+Trigger TriggerEnergyResolutionLorentz
+TriggerEnergyResolutionLorentz.Veto false
+TriggerEnergyResolutionLorentz.TriggerByChannel true
+TriggerEnergyResolutionLorentz.Detector DetectorEnergyResolutionLorentz 1
+
+
+
+// Thresholds:
+
+Volume VolumeThresholdNoiseLowerTriggerSharp
+VolumeThresholdNoiseLowerTriggerSharp.Material Germanium
+VolumeThresholdNoiseLowerTriggerSharp.Visibility 1
+VolumeThresholdNoiseLowerTriggerSharp.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeThresholdNoiseLowerTriggerSharp.Position { -1*XYDist } { 1.0*XYDist } 0.0
+VolumeThresholdNoiseLowerTriggerSharp.Mother WorldVolume
+
+
+Scintillator  DetectorThresholdNoiseLowerTriggerSharp
+DetectorThresholdNoiseLowerTriggerSharp.DetectorVolume      VolumeThresholdNoiseLowerTriggerSharp
+DetectorThresholdNoiseLowerTriggerSharp.SensitiveVolume     VolumeThresholdNoiseLowerTriggerSharp
+DetectorThresholdNoiseLowerTriggerSharp.NoiseThreshold      30
+DetectorThresholdNoiseLowerTriggerSharp.TriggerThreshold    60
+DetectorThresholdNoiseLowerTriggerSharp.EnergyResolution    Gauss 1    1    5
+DetectorThresholdNoiseLowerTriggerSharp.EnergyResolution    Gauss 10   10   5
+DetectorThresholdNoiseLowerTriggerSharp.EnergyResolution    Gauss 100  100  5
+DetectorThresholdNoiseLowerTriggerSharp.EnergyResolution    Gauss 1000 1000 5
+DetectorThresholdNoiseLowerTriggerSharp.FailureRate 0.0
+
+Trigger TriggerThresholdNoiseLowerTriggerSharp
+TriggerThresholdNoiseLowerTriggerSharp.Veto false
+TriggerThresholdNoiseLowerTriggerSharp.TriggerByChannel true
+TriggerThresholdNoiseLowerTriggerSharp.Detector DetectorThresholdNoiseLowerTriggerSharp 1
+
+
+
+Volume VolumeThresholdNoiseLowerTriggerWashed
+VolumeThresholdNoiseLowerTriggerWashed.Material Germanium
+VolumeThresholdNoiseLowerTriggerWashed.Visibility 1
+VolumeThresholdNoiseLowerTriggerWashed.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeThresholdNoiseLowerTriggerWashed.Position { 0*XYDist } { 1.0*XYDist } 0.0
+VolumeThresholdNoiseLowerTriggerWashed.Mother WorldVolume
+
+
+Scintillator  DetectorThresholdNoiseLowerTriggerWashed
+DetectorThresholdNoiseLowerTriggerWashed.DetectorVolume      VolumeThresholdNoiseLowerTriggerWashed
+DetectorThresholdNoiseLowerTriggerWashed.SensitiveVolume     VolumeThresholdNoiseLowerTriggerWashed
+DetectorThresholdNoiseLowerTriggerWashed.NoiseThreshold      30 10
+DetectorThresholdNoiseLowerTriggerWashed.TriggerThreshold    60 20
+DetectorThresholdNoiseLowerTriggerWashed.EnergyResolution    Gauss 1    1    5
+DetectorThresholdNoiseLowerTriggerWashed.EnergyResolution    Gauss 10   10   5
+DetectorThresholdNoiseLowerTriggerWashed.EnergyResolution    Gauss 100  100  5
+DetectorThresholdNoiseLowerTriggerWashed.EnergyResolution    Gauss 1000 1000 5
+DetectorThresholdNoiseLowerTriggerWashed.FailureRate 0.0
+
+Trigger TriggerThresholdNoiseLowerTriggerWashed
+TriggerThresholdNoiseLowerTriggerWashed.Veto false
+TriggerThresholdNoiseLowerTriggerWashed.TriggerByChannel true
+TriggerThresholdNoiseLowerTriggerWashed.Detector DetectorThresholdNoiseLowerTriggerWashed 1
+
+
+
+
+Volume VolumeThresholdNoiseEqualsTrigger
+VolumeThresholdNoiseEqualsTrigger.Material Germanium
+VolumeThresholdNoiseEqualsTrigger.Visibility 1
+VolumeThresholdNoiseEqualsTrigger.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeThresholdNoiseEqualsTrigger.Position { 0*XYDist } { 1.0*XYDist } 0.0
+VolumeThresholdNoiseEqualsTrigger.Mother WorldVolume
+
+
+Scintillator  DetectorThresholdNoiseEqualsTrigger
+DetectorThresholdNoiseEqualsTrigger.DetectorVolume      VolumeThresholdNoiseEqualsTrigger
+DetectorThresholdNoiseEqualsTrigger.SensitiveVolume     VolumeThresholdNoiseEqualsTrigger
+DetectorThresholdNoiseEqualsTrigger.NoiseThresholdEqualsTriggerThreshold true
+DetectorThresholdNoiseEqualsTrigger.TriggerThreshold    60
+DetectorThresholdNoiseEqualsTrigger.EnergyResolution    Gauss 1    1    5
+DetectorThresholdNoiseEqualsTrigger.EnergyResolution    Gauss 10   10   5
+DetectorThresholdNoiseEqualsTrigger.EnergyResolution    Gauss 100  100  5
+DetectorThresholdNoiseEqualsTrigger.EnergyResolution    Gauss 1000 1000 5
+DetectorThresholdNoiseEqualsTrigger.FailureRate 0.0
+
+Trigger TriggerThresholdNoiseEqualsTrigger
+TriggerThresholdNoiseEqualsTrigger.Veto false
+TriggerThresholdNoiseEqualsTrigger.TriggerByChannel true
+TriggerThresholdNoiseEqualsTrigger.Detector DetectorThresholdNoiseEqualsTrigger 1
+
+
+
+// 2D strip detectors
+
+Volume VolumeStripDetectorNoGuardRing
+VolumeStripDetectorNoGuardRing.Material Germanium
+VolumeStripDetectorNoGuardRing.Visibility 1
+VolumeStripDetectorNoGuardRing.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeStripDetectorNoGuardRing.Position { -1*XYDist } { -2.0*XYDist } 0.0
+VolumeStripDetectorNoGuardRing.Mother WorldVolume
+
+Strip2D  DetectorStripDetectorNoGuardRing
+DetectorStripDetectorNoGuardRing.DetectorVolume      VolumeStripDetectorNoGuardRing
+DetectorStripDetectorNoGuardRing.SensitiveVolume     VolumeStripDetectorNoGuardRing
+DetectorStripDetectorNoGuardRing.Offset      0  0 
+DetectorStripDetectorNoGuardRing.StripNumber 17 17 
+DetectorStripDetectorNoGuardRing.NoiseThreshold      30
+DetectorStripDetectorNoGuardRing.TriggerThreshold    60
+DetectorStripDetectorNoGuardRing.EnergyResolution    Gauss 1    1    5
+DetectorStripDetectorNoGuardRing.EnergyResolution    Gauss 10   10   5
+DetectorStripDetectorNoGuardRing.EnergyResolution    Gauss 100  100  5
+DetectorStripDetectorNoGuardRing.EnergyResolution    Gauss 1000 1000 5
+DetectorStripDetectorNoGuardRing.FailureRate 0.0
+
+Trigger TriggerStripDetectorNoGuardRing
+TriggerStripDetectorNoGuardRing.Veto false
+TriggerStripDetectorNoGuardRing.TriggerByChannel true
+TriggerStripDetectorNoGuardRing.Detector DetectorStripDetectorNoGuardRing 1
+
+
+
+Volume VolumeStripDetectorGuardRingNotActive
+VolumeStripDetectorGuardRingNotActive.Material Germanium
+VolumeStripDetectorGuardRingNotActive.Visibility 1
+VolumeStripDetectorGuardRingNotActive.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeStripDetectorGuardRingNotActive.Position { 0*XYDist } { -2.0*XYDist } 0.0
+VolumeStripDetectorGuardRingNotActive.Mother WorldVolume
+
+Strip2D  DetectorStripDetectorGuardRingNotActive
+DetectorStripDetectorGuardRingNotActive.DetectorVolume      VolumeStripDetectorGuardRingNotActive
+DetectorStripDetectorGuardRingNotActive.SensitiveVolume     VolumeStripDetectorGuardRingNotActive
+DetectorStripDetectorGuardRingNotActive.Offset      0.2  0.2 
+DetectorStripDetectorGuardRingNotActive.StripNumber 19   19 
+DetectorStripDetectorGuardRingNotActive.NoiseThreshold      30
+DetectorStripDetectorGuardRingNotActive.TriggerThreshold    60
+DetectorStripDetectorGuardRingNotActive.EnergyResolution    Gauss 1    1    5
+DetectorStripDetectorGuardRingNotActive.EnergyResolution    Gauss 10   10   5
+DetectorStripDetectorGuardRingNotActive.EnergyResolution    Gauss 100  100  5
+DetectorStripDetectorGuardRingNotActive.EnergyResolution    Gauss 1000 1000 5
+DetectorStripDetectorGuardRingNotActive.FailureRate 0.0
+
+Trigger TriggerStripDetectorGuardRingNotActive
+TriggerStripDetectorGuardRingNotActive.Veto false
+TriggerStripDetectorGuardRingNotActive.TriggerByChannel true
+TriggerStripDetectorGuardRingNotActive.Detector DetectorStripDetectorGuardRingNotActive 1
+
+
+
+Volume VolumeStripDetectorGuardRingActive
+VolumeStripDetectorGuardRingActive.Material Germanium
+VolumeStripDetectorGuardRingActive.Visibility 1
+VolumeStripDetectorGuardRingActive.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeStripDetectorGuardRingActive.Position { 1*XYDist } { -2.0*XYDist } 0.0
+VolumeStripDetectorGuardRingActive.Mother WorldVolume
+
+Strip2D  DetectorStripDetectorGuardRingActive
+DetectorStripDetectorGuardRingActive.DetectorVolume      VolumeStripDetectorGuardRingActive
+DetectorStripDetectorGuardRingActive.SensitiveVolume     VolumeStripDetectorGuardRingActive
+DetectorStripDetectorGuardRingActive.Offset      0.2  0.2 
+DetectorStripDetectorGuardRingActive.StripNumber 21   21 
+DetectorStripDetectorGuardRingActive.GuardringTriggerThreshold      60
+DetectorStripDetectorGuardRingActive.GuardringEnergyResolution   100   10
+DetectorStripDetectorGuardRingActive.GuardringEnergyResolution   1000   10
+DetectorStripDetectorGuardRingActive.NoiseThreshold      30
+DetectorStripDetectorGuardRingActive.TriggerThreshold    60
+DetectorStripDetectorGuardRingActive.EnergyResolution    Gauss 1    1    5
+DetectorStripDetectorGuardRingActive.EnergyResolution    Gauss 10   10   5
+DetectorStripDetectorGuardRingActive.EnergyResolution    Gauss 100  100  5
+DetectorStripDetectorGuardRingActive.EnergyResolution    Gauss 1000 1000 5
+DetectorStripDetectorGuardRingActive.FailureRate 0.0
+
+Trigger TriggerStripDetectorGuardRingActive
+TriggerStripDetectorGuardRingActive.Veto false
+TriggerStripDetectorGuardRingActive.TriggerByChannel true
+TriggerStripDetectorGuardRingActive.Detector DetectorStripDetectorGuardRingActive 1
+
+Trigger TriggerStripDetectorGuardRingActive_GuardRingVeto
+TriggerStripDetectorGuardRingActive_GuardRingVeto.Veto true
+TriggerStripDetectorGuardRingActive_GuardRingVeto.TriggerByChannel true
+TriggerStripDetectorGuardRingActive_GuardRingVeto.GuardringDetector DetectorStripDetectorGuardRingActive 1
+
+
+
+// 3D strip detectors
+
+Volume VolumeStripThreeDEvenDepthResolution
+VolumeStripThreeDEvenDepthResolution.Material Germanium
+VolumeStripThreeDEvenDepthResolution.Visibility 1
+VolumeStripThreeDEvenDepthResolution.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeStripThreeDEvenDepthResolution.Position { -1*XYDist } { -3.0*XYDist } 0.0
+VolumeStripThreeDEvenDepthResolution.Mother WorldVolume
+
+Strip3D  DetectorStripThreeDEvenDepthResolution
+DetectorStripThreeDEvenDepthResolution.DetectorVolume      VolumeStripThreeDEvenDepthResolution
+DetectorStripThreeDEvenDepthResolution.SensitiveVolume     VolumeStripThreeDEvenDepthResolution
+DetectorStripThreeDEvenDepthResolution.Offset      0.2  0.2 
+DetectorStripThreeDEvenDepthResolution.StripNumber 19   19 
+DetectorStripThreeDEvenDepthResolution.NoiseThreshold      30
+DetectorStripThreeDEvenDepthResolution.TriggerThreshold    60
+DetectorStripThreeDEvenDepthResolution.EnergyResolution    Gauss 1    1    5
+DetectorStripThreeDEvenDepthResolution.EnergyResolution    Gauss 10   10   5
+DetectorStripThreeDEvenDepthResolution.EnergyResolution    Gauss 100  100  5
+DetectorStripThreeDEvenDepthResolution.EnergyResolution    Gauss 1000 1000 5
+DetectorStripThreeDEvenDepthResolution.DepthResolution     100 0.3
+DetectorStripThreeDEvenDepthResolution.DepthResolution     500 0.1
+DetectorStripThreeDEvenDepthResolution.FailureRate 0.0
+
+Trigger TriggerStripThreeDEvenDepthResolution
+TriggerStripThreeDEvenDepthResolution.Veto false
+TriggerStripThreeDEvenDepthResolution.TriggerByChannel true
+TriggerStripThreeDEvenDepthResolution.Detector DetectorStripThreeDEvenDepthResolution 1
+
+
+Volume VolumeStripThreeDDepthDependentDepthResolution
+VolumeStripThreeDDepthDependentDepthResolution.Material Germanium
+VolumeStripThreeDDepthDependentDepthResolution.Visibility 1
+VolumeStripThreeDDepthDependentDepthResolution.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeStripThreeDDepthDependentDepthResolution.Position { 0*XYDist } { -3.0*XYDist } 0.0
+VolumeStripThreeDDepthDependentDepthResolution.Mother WorldVolume
+
+Strip3D  DetectorStripThreeDDepthDependentDepthResolution
+DetectorStripThreeDDepthDependentDepthResolution.DetectorVolume      VolumeStripThreeDDepthDependentDepthResolution
+DetectorStripThreeDDepthDependentDepthResolution.SensitiveVolume     VolumeStripThreeDDepthDependentDepthResolution
+DetectorStripThreeDDepthDependentDepthResolution.Offset      0.2  0.2 
+DetectorStripThreeDDepthDependentDepthResolution.StripNumber 19   19 
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThreshold    60
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolution    Gauss 1    1    5
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolution    Gauss 10   10   5
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolution    Gauss 100  100  5
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolution    Gauss 1000 1000 5
+DetectorStripThreeDDepthDependentDepthResolution.DepthResolutionThreshold   80
+DetectorStripThreeDDepthDependentDepthResolution.DepthResolution     100 0.3
+DetectorStripThreeDDepthDependentDepthResolution.DepthResolution     500 0.1
+DetectorStripThreeDDepthDependentDepthResolution.FailureRate 0.0
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection -0.5   1.959
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection -0.375 1.486
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection -0.25  1.275
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection -0.125 1.156
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection  0.125 1.083
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection  0.25  1.037
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection  0.375 1.011
+DetectorStripThreeDDepthDependentDepthResolution.EnergyResolutionDepthCorrection  0.5   1.000
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection -0.5   3.989
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection -0.375 2.258
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection -0.25  1.649
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection -0.125 1.348
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection  0.125 1.178
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection  0.25  1.078
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection  0.375 1.023
+DetectorStripThreeDDepthDependentDepthResolution.TriggerThresholdDepthCorrection  0.5   1.000
+DetectorStripThreeDDepthDependentDepthResolution.NoiseThresholdEqualsTriggerThreshold true
+
+Trigger TriggerStripThreeDDepthDependentDepthResolution
+TriggerStripThreeDDepthDependentDepthResolution.Veto false
+TriggerStripThreeDDepthDependentDepthResolution.TriggerByChannel true
+TriggerStripThreeDDepthDependentDepthResolution.Detector DetectorStripThreeDDepthDependentDepthResolution 1
+
+
+// Voxel detector
+
+Volume VolumeVoxelNoGuardRing
+VolumeVoxelNoGuardRing.Material Germanium
+VolumeVoxelNoGuardRing.Visibility 1
+VolumeVoxelNoGuardRing.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeVoxelNoGuardRing.Position { -2*XYDist } { -1.0*XYDist } 0.0
+VolumeVoxelNoGuardRing.Mother WorldVolume
+
+Voxel3D  DetectorVoxelNoGuardRing
+DetectorVoxelNoGuardRing.DetectorVolume      VolumeVoxelNoGuardRing
+DetectorVoxelNoGuardRing.SensitiveVolume     VolumeVoxelNoGuardRing
+DetectorVoxelNoGuardRing.Offset      0  0  0
+DetectorVoxelNoGuardRing.VoxelNumber 19 19 9 
+DetectorVoxelNoGuardRing.NoiseThreshold      30
+DetectorVoxelNoGuardRing.TriggerThreshold    60
+DetectorVoxelNoGuardRing.EnergyResolution    Gauss 1    1    5
+DetectorVoxelNoGuardRing.EnergyResolution    Gauss 10   10   5
+DetectorVoxelNoGuardRing.EnergyResolution    Gauss 100  100  5
+DetectorVoxelNoGuardRing.EnergyResolution    Gauss 1000 1000 5
+DetectorVoxelNoGuardRing.FailureRate 0.0
+
+Trigger TriggerVoxelNoGuardRing
+TriggerVoxelNoGuardRing.Veto false
+TriggerVoxelNoGuardRing.TriggerByChannel true
+TriggerVoxelNoGuardRing.Detector DetectorVoxelNoGuardRing 1
+
+
+
+
+Volume VolumeVoxelWithGuardRing
+VolumeVoxelWithGuardRing.Material Germanium
+VolumeVoxelWithGuardRing.Visibility 1
+VolumeVoxelWithGuardRing.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeVoxelWithGuardRing.Position { -1*XYDist } { -1.0*XYDist } 0.0
+VolumeVoxelWithGuardRing.Mother WorldVolume
+
+Voxel3D  DetectorVoxelWithGuardRing
+DetectorVoxelWithGuardRing.DetectorVolume      VolumeVoxelWithGuardRing
+DetectorVoxelWithGuardRing.SensitiveVolume     VolumeVoxelWithGuardRing
+DetectorVoxelWithGuardRing.Offset      0.2  0.2  0.2
+DetectorVoxelWithGuardRing.VoxelNumber 19 19 9 
+DetectorVoxelWithGuardRing.NoiseThreshold      30
+DetectorVoxelWithGuardRing.TriggerThreshold    60
+DetectorVoxelWithGuardRing.EnergyResolution    Gauss 1    1    5
+DetectorVoxelWithGuardRing.EnergyResolution    Gauss 10   10   5
+DetectorVoxelWithGuardRing.EnergyResolution    Gauss 100  100  5
+DetectorVoxelWithGuardRing.EnergyResolution    Gauss 1000 1000 5
+DetectorVoxelWithGuardRing.FailureRate 0.0
+
+Trigger TriggerVoxelWithGuardRing
+TriggerVoxelWithGuardRing.Veto false
+TriggerVoxelWithGuardRing.TriggerByChannel true
+TriggerVoxelWithGuardRing.Detector DetectorVoxelWithGuardRing 1
+
+
+
+Volume VolumeVoxelWithGuardRingAndTime
+VolumeVoxelWithGuardRingAndTime.Material Germanium
+VolumeVoxelWithGuardRingAndTime.Visibility 1
+VolumeVoxelWithGuardRingAndTime.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeVoxelWithGuardRingAndTime.Position { 0*XYDist } { -1.0*XYDist } 0.0
+VolumeVoxelWithGuardRingAndTime.Mother WorldVolume
+
+Voxel3D  DetectorVoxelWithGuardRingAndTime
+DetectorVoxelWithGuardRingAndTime.DetectorVolume      VolumeVoxelWithGuardRingAndTime
+DetectorVoxelWithGuardRingAndTime.SensitiveVolume     VolumeVoxelWithGuardRingAndTime
+DetectorVoxelWithGuardRingAndTime.Offset      0.2 0.2 0.2 
+DetectorVoxelWithGuardRingAndTime.VoxelNumber 19 19 9 
+DetectorVoxelWithGuardRingAndTime.NoiseThreshold      30
+DetectorVoxelWithGuardRingAndTime.TriggerThreshold    60
+DetectorVoxelWithGuardRingAndTime.EnergyResolution    Gauss 1    1    5
+DetectorVoxelWithGuardRingAndTime.EnergyResolution    Gauss 10   10   5
+DetectorVoxelWithGuardRingAndTime.EnergyResolution    Gauss 100  100  5
+DetectorVoxelWithGuardRingAndTime.EnergyResolution    Gauss 1000 1000 5
+DetectorVoxelWithGuardRingAndTime.FailureRate 0.0
+DetectorVoxelWithGuardRingAndTime.TimeResolution 100  0.0000000001
+DetectorVoxelWithGuardRingAndTime.TimeResolution 1000 0.0000000001
+
+Trigger TriggerVoxelWithGuardRingAndTime
+TriggerVoxelWithGuardRingAndTime.Veto false
+TriggerVoxelWithGuardRingAndTime.TriggerByChannel true
+TriggerVoxelWithGuardRingAndTime.Detector DetectorVoxelWithGuardRingAndTime 1
+
+
+
+
+Volume VolumeVoxelWithGuardRingAndFailureRate
+VolumeVoxelWithGuardRingAndFailureRate.Material Germanium
+VolumeVoxelWithGuardRingAndFailureRate.Visibility 1
+VolumeVoxelWithGuardRingAndFailureRate.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeVoxelWithGuardRingAndFailureRate.Position { 1*XYDist } { -1.0*XYDist } 0.0
+VolumeVoxelWithGuardRingAndFailureRate.Mother WorldVolume
+
+Voxel3D  DetectorVoxelWithGuardRingAndFailureRate
+DetectorVoxelWithGuardRingAndFailureRate.DetectorVolume      VolumeVoxelWithGuardRingAndFailureRate
+DetectorVoxelWithGuardRingAndFailureRate.SensitiveVolume     VolumeVoxelWithGuardRingAndFailureRate
+DetectorVoxelWithGuardRingAndFailureRate.Offset      0.2 0.2 0.2
+DetectorVoxelWithGuardRingAndFailureRate.VoxelNumber  19 19 9 
+DetectorVoxelWithGuardRingAndFailureRate.NoiseThreshold      30
+DetectorVoxelWithGuardRingAndFailureRate.TriggerThreshold    60
+DetectorVoxelWithGuardRingAndFailureRate.EnergyResolution    Gauss 1    1    5
+DetectorVoxelWithGuardRingAndFailureRate.EnergyResolution    Gauss 10   10   5
+DetectorVoxelWithGuardRingAndFailureRate.EnergyResolution    Gauss 100  100  5
+DetectorVoxelWithGuardRingAndFailureRate.EnergyResolution    Gauss 1000 1000 5
+DetectorVoxelWithGuardRingAndFailureRate.FailureRate 0.5
+
+Trigger TriggerVoxelWithGuardRingAndFailureRate
+TriggerVoxelWithGuardRingAndFailureRate.Veto false
+TriggerVoxelWithGuardRingAndFailureRate.TriggerByChannel true
+TriggerVoxelWithGuardRingAndFailureRate.Detector DetectorVoxelWithGuardRingAndFailureRate 1
+
+
+// Calorimeter
+
+Volume VolumeCalorimeterNoDepthRes
+VolumeCalorimeterNoDepthRes.Material Germanium
+VolumeCalorimeterNoDepthRes.Visibility 1
+VolumeCalorimeterNoDepthRes.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeCalorimeterNoDepthRes.Position { -1*XYDist } { 2.*XYDist } 0.0
+VolumeCalorimeterNoDepthRes.Mother WorldVolume
+
+Volume VolumeCalorimeterNoDepthResSensVol
+VolumeCalorimeterNoDepthResSensVol.Material Germanium
+VolumeCalorimeterNoDepthResSensVol.Visibility 1
+VolumeCalorimeterNoDepthResSensVol.Shape BRIK { 0.35*XYHalfWidth } { 0.35*XYHalfWidth } ZHalfWidth
+
+For X 2 { -0.45*XYHalfWidth } { 0.9*XYHalfWidth }
+  For Y 2 { -0.45*XYHalfWidth } { 0.9*XYHalfWidth }
+    VolumeCalorimeterNoDepthResSensVol.Copy VolumeCalorimeterNoDepthResSensVol_%X_%Y
+    VolumeCalorimeterNoDepthResSensVol_%X_%Y.Position $X $Y 0.0
+    VolumeCalorimeterNoDepthResSensVol_%X_%Y.Mother VolumeCalorimeterNoDepthRes
+  Done
+Done
+
+Calorimeter  DetectorCalorimeterNoDepthRes
+DetectorCalorimeterNoDepthRes.DetectorVolume      VolumeCalorimeterNoDepthRes
+DetectorCalorimeterNoDepthRes.SensitiveVolume     VolumeCalorimeterNoDepthResSensVol
+
+DetectorCalorimeterNoDepthRes.StructuralPitch      { 0.2*XYHalfWidth } { 0.2*XYHalfWidth } 0.0
+DetectorCalorimeterNoDepthRes.StructuralOffset     { 0.2*XYHalfWidth } { 0.2*XYHalfWidth } 0.0
+
+DetectorCalorimeterNoDepthRes.NoiseThreshold      20
+DetectorCalorimeterNoDepthRes.TriggerThreshold    40
+DetectorCalorimeterNoDepthRes.EnergyResolution Gauss  1     1         1.5   
+DetectorCalorimeterNoDepthRes.EnergyResolution Gauss  10    10        1.5   
+DetectorCalorimeterNoDepthRes.EnergyResolution Gauss  100   100       2.5   
+DetectorCalorimeterNoDepthRes.EnergyResolution Gauss  1000  1000      3.5   
+DetectorCalorimeterNoDepthRes.EnergyResolution Gauss  10000 10000     4.5   
+DetectorCalorimeterNoDepthRes.FailureRate 0.0
+
+Trigger TriggerCalorimeterNoDepthRes
+TriggerCalorimeterNoDepthRes.Veto false
+TriggerCalorimeterNoDepthRes.TriggerByChannel true
+TriggerCalorimeterNoDepthRes.Detector DetectorCalorimeterNoDepthRes 1
+
+
+
+
+Volume VolumeCalorimeterWithDepthRes
+VolumeCalorimeterWithDepthRes.Material Germanium
+VolumeCalorimeterWithDepthRes.Visibility 1
+VolumeCalorimeterWithDepthRes.Shape BRIK XYHalfWidth XYHalfWidth ZHalfWidth
+VolumeCalorimeterWithDepthRes.Position { 0*XYDist } { 2.*XYDist } 0.0
+VolumeCalorimeterWithDepthRes.Mother WorldVolume
+
+Volume VolumeCalorimeterWithDepthResSensVol
+VolumeCalorimeterWithDepthResSensVol.Material Germanium
+VolumeCalorimeterWithDepthResSensVol.Visibility 2
+VolumeCalorimeterWithDepthResSensVol.Shape BRIK { 0.35*XYHalfWidth } { 0.35*XYHalfWidth } ZHalfWidth
+
+For X 2 { -0.45*XYHalfWidth } { 0.9*XYHalfWidth }
+  For Y 2 { -0.45*XYHalfWidth } { 0.9*XYHalfWidth }
+    VolumeCalorimeterWithDepthResSensVol.Copy VolumeCalorimeterWithDepthResSensVol_%X_%Y
+    VolumeCalorimeterWithDepthResSensVol_%X_%Y.Position $X $Y 0.0
+    VolumeCalorimeterWithDepthResSensVol_%X_%Y.Mother VolumeCalorimeterWithDepthRes
+  Done
+Done
+
+Calorimeter  DetectorCalorimeterWithDepthRes
+DetectorCalorimeterWithDepthRes.DetectorVolume      VolumeCalorimeterWithDepthRes
+DetectorCalorimeterWithDepthRes.SensitiveVolume     VolumeCalorimeterWithDepthResSensVol
+
+DetectorCalorimeterWithDepthRes.StructuralPitch      { 0.2*XYHalfWidth } { 0.2*XYHalfWidth } 0.0
+DetectorCalorimeterWithDepthRes.StructuralOffset     { 0.2*XYHalfWidth } { 0.2*XYHalfWidth } 0.0
+
+DetectorCalorimeterWithDepthRes.NoiseThreshold      20
+DetectorCalorimeterWithDepthRes.TriggerThreshold    40
+DetectorCalorimeterWithDepthRes.EnergyResolution Gauss  1     1         1.5   
+DetectorCalorimeterWithDepthRes.EnergyResolution Gauss  10    10        1.5   
+DetectorCalorimeterWithDepthRes.EnergyResolution Gauss  100   100       2.5   
+DetectorCalorimeterWithDepthRes.EnergyResolution Gauss  1000  1000      3.5   
+DetectorCalorimeterWithDepthRes.EnergyResolution Gauss  10000 10000     4.5   
+DetectorCalorimeterWithDepthRes.DepthResolution  100 0.3   
+DetectorCalorimeterWithDepthRes.DepthResolution  500 0.1 
+DetectorCalorimeterWithDepthRes.FailureRate 0.0
+
+Trigger TriggerCalorimeterWithDepthRes
+TriggerCalorimeterWithDepthRes.Veto false
+TriggerCalorimeterWithDepthRes.TriggerByChannel true
+TriggerCalorimeterWithDepthRes.Detector DetectorCalorimeterWithDepthRes 1
+
+
+
+

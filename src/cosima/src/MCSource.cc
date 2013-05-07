@@ -507,8 +507,8 @@ bool MCSource::UpgradeStartArea()
         t1 = m_PositionFunction.GetXMin() + i*t_diff;
         t2 = t1 + t_diff;
         ta = 0.5*(t1+t2);
-        m_StartAreaAverageArea += m_PositionFunction.Eval(ta) * 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
-        AverageArea += m_PositionFunction.Eval(ta) * 2*c_Pi*(cos(t1)-cos(t2));
+        m_StartAreaAverageArea += m_PositionFunction.Evaluate(ta) * 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
+        AverageArea += m_PositionFunction.Evaluate(ta) * 2*c_Pi*(cos(t1)-cos(t2));
       }
       m_StartAreaAverageArea /= AverageArea;
     }
@@ -553,7 +553,7 @@ bool MCSource::UpgradeStartArea()
                   EnergyMax = EnergyAxis[e] + (de+1) * EnergyDiff;
                   EnergyAvg = 0.5*(EnergyMin + EnergyMax);
                   
-                  Eval = m_NormalizedEnergyBeamFluxFunction.Eval(PhiAvg, ThetaAvg, EnergyAvg);
+                  Eval = m_NormalizedEnergyBeamFluxFunction.Evaluate(PhiAvg, ThetaAvg, EnergyAvg);
                   Area = (cos(ThetaMin*c_Rad)-cos(ThetaMax*c_Rad))*(PhiMax*c_Rad-PhiMin*c_Rad)*(EnergyMax-EnergyMin);
                   StartArea = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ThetaAvg*c_Rad) + m_StartAreaParam1*fabs(cos(ThetaAvg*c_Rad)));
                   m_StartAreaAverageArea += Eval*Area*StartArea;
@@ -995,8 +995,20 @@ bool MCSource::SetPosition(double PositionParam1,
       return false;
     }
   } else if (m_BeamType == c_NearFieldDisk) {
-    if (m_PositionParam6 <= 0 || m_PositionParam7 <= 0 || m_PositionParam8 <= 0) {
-      mout<<m_Name<<": Inner radius, outer radius, and height must be larger than zero"<<endl;
+    if (m_PositionParam7 < 0) {
+      mout<<m_Name<<": Inner radius must must not be negative"<<endl;
+      return false;
+    }
+    if (m_PositionParam8 <= 0) {
+      mout<<m_Name<<": Outer radius must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam9 <= 0) {
+      mout<<m_Name<<": Height must be larger than zero"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 >= m_PositionParam8) {
+      mout<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam) {
@@ -1449,7 +1461,7 @@ bool MCSource::UpgradeFlux()
     }
   }
 
-  if (m_Flux > 0 && !isnan(m_Flux)) {
+  if (m_Flux > 0 && !isnan(m_Flux) && !isinf(m_Flux)) {
     cout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second<<" ph/sec"<<endl;
   }
 
@@ -2184,7 +2196,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
         m_PositionParam2 = gRandom->Rndm()*(xMax - xMin) + xMin;
         Energy = gRandom->Rndm()*(zMax - zMin) + zMin;
 
-        v = m_NormalizedEnergyBeamFluxFunction.Eval(m_PositionParam2, m_PositionParam1, Energy);
+        v = m_NormalizedEnergyBeamFluxFunction.Evaluate(m_PositionParam2, m_PositionParam1, Energy);
       } while (vMax*gRandom->Rndm() > v);
     } else {
       mout<<m_Name<<": Unknown start area type for position generation"<<endl;
@@ -2280,7 +2292,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
           while (true) {
             Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
             Phi = CLHEP::RandFlat::shoot(1)*360*deg;
-            if (CLHEP::RandFlat::shoot(1) <= m_PositionFunction.Eval(Theta)/m_PositionParam3) {
+            if (CLHEP::RandFlat::shoot(1) <= m_PositionFunction.Evaluate(Theta)/m_PositionParam3) {
               break;
             }
           }    
@@ -2290,7 +2302,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
           double MaxArea = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(AngleMaxArea) + m_StartAreaParam1*fabs(cos(AngleMaxArea)));
           while (true) {
             Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
-            if (CLHEP::RandFlat::shoot(1) <= m_PositionFunction.Eval(Theta)/m_PositionParam3) {
+            if (CLHEP::RandFlat::shoot(1) <= m_PositionFunction.Evaluate(Theta)/m_PositionParam3) {
               Area = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(Theta) + m_StartAreaParam1*fabs(cos(Theta)));
               if (CLHEP::RandFlat::shoot(1) <= Area/MaxArea) {
                 Phi = CLHEP::RandFlat::shoot(1)*360*deg;
@@ -2524,7 +2536,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         // Phi = m_PositionParam10 + (m_PositionParam11-m_PositionParam10)*CLHEP::RandFlat::shoot();
         Theta = acos(1-2*CLHEP::RandFlat::shoot());
         Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
-      } while (m_PositionFunction2D.Eval(Theta, Phi) < m_PositionFunction2D.GetZMax()*CLHEP::RandFlat::shoot());
+      } while (m_PositionFunction2D.Evaluate(Theta, Phi) < m_PositionFunction2D.GetZMax()*CLHEP::RandFlat::shoot());
       
       // Add rotation
       Phi += m_PositionParam7; // Already in rad...

@@ -819,8 +819,8 @@ Bool_t CalibrateCsISingle(MString DetectorName,
 			vector <Double_t> PrelimChiSquare;
 			Double_t PrelimOffset;
 			vector <bool> BadCounts; // not enough counts in spectrum
-			vector <bool> BadEFit;   // >= 1 bad energy fit occured
-			vector <bool> BadSFit;   // >= 1 bad spectrum fit occured
+			vector <bool> BadEFit;   // >= 1 bad energy fit occurred
+			vector <bool> BadSFit;   // >= 1 bad spectrum fit occurred
 			vector <Double_t> Overflow;       // Overflow vectors
 			vector <Double_t> OverflowHeight; // OverflowHeight vector
 			vector <Double_t> BackHeight;     // Background height
@@ -917,7 +917,7 @@ Bool_t CalibrateCsISingle(MString DetectorName,
 			EnergyFitHeight.resize(size);
 			EnergyFitHeight2.resize(size);
 			BadCounts.resize(size);  // not enough counts in spectrum
-			BadEFit.resize(size);    // >= 1 bad energy fit occured
+			BadEFit.resize(size);    // >= 1 bad energy fit occurred
 			BadSFit.resize(size);
 			Overflow.resize(size);
 			OverflowHeight.resize(size);

@@ -39,6 +39,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MDVolume.h"
+#include "MDDetector.h"
 #include "MDGridPointCollection.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,12 +82,17 @@ MDVolumeSequence::MDVolumeSequence(const MDVolumeSequence& V)
 
   // This is a time critical function!
   
-  m_Volumes.resize(V.m_Volumes.size());
-  copy(V.m_Volumes.begin(), V.m_Volumes.end(), m_Volumes.begin());
-  m_Positions.resize(V.m_Positions.size());
-  copy(V.m_Positions.begin(), V.m_Positions.end(), m_Positions.begin());
+  // This is a tiny bit slower:
+  // m_Volumes.resize(V.m_Volumes.size());
+  // copy(V.m_Volumes.begin(), V.m_Volumes.end(), m_Volumes.begin());
+  // m_Positions.resize(V.m_Positions.size());
+  // copy(V.m_Positions.begin(), V.m_Positions.end(), m_Positions.begin());
 
+  m_Volumes = V.m_Volumes;   
+  m_Positions = V.m_Positions;
+  
   m_Detector = V.m_Detector;
+  m_NamedDetector = V.m_NamedDetector;
 
   m_DetectorVolume = V.m_DetectorVolume;
   m_PositionInDetector = V.m_PositionInDetector;
@@ -107,7 +113,6 @@ MDVolumeSequence::MDVolumeSequence(const MDVolumeSequence& V)
 void MDVolumeSequence::Join(MDVolumeSequence VS)
 {
   // Join two volume sequences:
-
 
   unsigned int MinSize;
   if (m_Volumes.size() > VS.GetNVolumes()) {
@@ -135,7 +140,8 @@ void MDVolumeSequence::Join(MDVolumeSequence VS)
   if (m_SensitiveVolume != 0 &&  VS.m_SensitiveVolume != 0) {
     if (m_SensitiveVolume->GetName() != VS.m_SensitiveVolume->GetName()) {
       m_Detector = 0;
-
+      m_NamedDetector = 0;
+      
       m_DetectorVolume = 0;
       m_PositionInDetector = g_VectorNotDefined;
 
@@ -146,9 +152,10 @@ void MDVolumeSequence::Join(MDVolumeSequence VS)
       m_RotMatrix(0,0) = 1;
       m_RotMatrix(1,1) = 1;
       m_RotMatrix(2,2) = 1;
-    } else if (m_Detector != 0 && VS.m_Detector!= 0) {
+    } else if (m_Detector != 0 && VS.m_Detector != 0) {
       if (m_Detector->GetName() != VS.m_Detector->GetName()) {
         m_Detector = 0;
+        m_NamedDetector = 0;
         m_PositionInDetector = g_VectorNotDefined;
 
         m_SensitiveVolume = 0;
@@ -156,6 +163,7 @@ void MDVolumeSequence::Join(MDVolumeSequence VS)
       }    
     } else {
       m_Detector = 0;
+      m_NamedDetector = 0;
     }
   } else {
     m_DetectorVolume = 0;
@@ -172,7 +180,8 @@ void MDVolumeSequence::Reset()
   // Clear the content of this volume sequence
 
   m_Detector = 0;  
-
+  m_NamedDetector = 0;
+  
   m_DetectorVolume = 0;
   m_PositionInDetector = g_VectorNotDefined;
 
@@ -219,7 +228,7 @@ void MDVolumeSequence::AddVolumeFront(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MDVolumeSequence::GetNVolumes()
+unsigned int MDVolumeSequence::GetNVolumes() const
 {
   //
 
@@ -230,7 +239,7 @@ unsigned int MDVolumeSequence::GetNVolumes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetVolumeAt(unsigned int i)
+MDVolume* MDVolumeSequence::GetVolumeAt(unsigned int i) const
 {
   // Return the clone at position i
 
@@ -247,7 +256,7 @@ MDVolume* MDVolumeSequence::GetVolumeAt(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetDeepestVolume()
+MDVolume* MDVolumeSequence::GetDeepestVolume() const
 {
   if (GetNVolumes() == 0) return 0;
 
@@ -294,7 +303,7 @@ void MDVolumeSequence::AddPositionFront(const MVector& V)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolumeSequence::GetPositionAt(unsigned int i)
+MVector MDVolumeSequence::GetPositionAt(unsigned int i) const
 {
   // Return the position at position i
 
@@ -315,18 +324,30 @@ void MDVolumeSequence::SetDetector(MDDetector* Detector)
 {
   //
 
-  massert(Detector != 0);
-  m_Detector = Detector;
+  if (Detector == 0) {
+    merr<<"Detector pointer is zero! But I will handle this gracefully..."<<endl;
+    m_Detector = 0;
+    m_NamedDetector = 0;
+  } else if (Detector->IsNamedDetector() == true) {
+    m_Detector = Detector->GetNamedAfterDetector();
+    m_NamedDetector = Detector;
+  } else {
+    m_Detector = Detector;
+    m_NamedDetector = m_Detector->FindNamedDetector(*this);
+  }
+  
+  //cout<<"Det: "<<((m_Detector != 0) ? m_Detector->GetName() : "0")<<" Named Det: "<<((m_NamedDetector != 0) ? m_NamedDetector->GetName() : "0")<<endl;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDetector* MDVolumeSequence::GetDetector()
+MDDetector* MDVolumeSequence::GetDetector() const
 {
-  // 
+  // If a named detector exists returns the named detector otherwise the standard detector
 
+  if (m_NamedDetector != 0) return m_NamedDetector;
   return m_Detector;
 }
 
@@ -345,7 +366,7 @@ void MDVolumeSequence::SetPositionInDetector(MVector Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolumeSequence::GetPositionInDetector()
+MVector MDVolumeSequence::GetPositionInDetector() const
 {
   //
   
@@ -362,7 +383,7 @@ MDGridPoint MDVolumeSequence::GetGridPoint() const
   
   massert(m_Detector != 0);
 
-  return m_Detector->GetGridPoint(m_PositionInDetector);
+  return GetDetector()->GetGridPoint(m_PositionInDetector);
 }
 
 
@@ -379,7 +400,7 @@ void MDVolumeSequence::SetDetectorVolume(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetDetectorVolume()
+MDVolume* MDVolumeSequence::GetDetectorVolume() const
 {
   return m_DetectorVolume;
 }
@@ -399,7 +420,7 @@ void MDVolumeSequence::SetPositionInSensitiveVolume(MVector Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolumeSequence::GetPositionInSensitiveVolume()
+MVector MDVolumeSequence::GetPositionInSensitiveVolume() const
 {
   //
   
@@ -420,7 +441,7 @@ void MDVolumeSequence::SetSensitiveVolume(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume* MDVolumeSequence::GetSensitiveVolume()
+MDVolume* MDVolumeSequence::GetSensitiveVolume() const
 {
   return m_SensitiveVolume;
 }
@@ -443,22 +464,48 @@ bool MDVolumeSequence::HasVolume(MString Name) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolumeSequence::HasSameDetector(MDVolumeSequence& VS)
+bool MDVolumeSequence::HasSameDetector(const MDVolumeSequence& VS) const
 {
-  return HasSameDetector(&VS);
+  if (GetDetector() == 0 || VS.GetDetector() == 0) {
+    mdebug<<"Not same detector: Zero pointer"<<endl;
+    return false;
+  }
+  if (GetDetector()->GetName() != VS.GetDetector()->GetName()) {
+    mdebug<<"Not same detector: Different names"<<endl;
+    return false;
+  }
+
+  unsigned int MinSize;
+  if (m_Volumes.size() > VS.GetNVolumes()) {
+    MinSize = VS.GetNVolumes();
+  } else {
+    MinSize = m_Volumes.size();
+  }
+  
+  for (unsigned int i = 0; i < MinSize; i++) {
+    if (m_Volumes[i]->GetName() == VS.GetVolumeAt(i)->GetName()) {
+      if (m_Volumes[i] == m_DetectorVolume) {
+        return true;
+      }
+    } else {
+      break;
+    } 
+  }
+
+  return false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolumeSequence::HasSameDetector(MDVolumeSequence* VS)
+bool MDVolumeSequence::HasSameDetector(MDVolumeSequence* VS) const
 {
-  if (m_Detector == 0 || VS->m_Detector == 0) {
+  if (GetDetector() == 0 || VS->GetDetector() == 0) {
     mdebug<<"Not same detector: Zero pointer"<<endl;
     return false;
   }
-  if (m_Detector->GetName() != VS->GetDetector()->GetName()) {
+  if (GetDetector()->GetName() != VS->GetDetector()->GetName()) {
     mdebug<<"Not same detector: Different names"<<endl;
     return false;
   }
@@ -488,7 +535,7 @@ bool MDVolumeSequence::HasSameDetector(MDVolumeSequence* VS)
 
 
 MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position, 
-                                                   MDVolume* Volume)
+                                                   MDVolume* Volume) const
 {
   // Rotate "Position" from "Volume" to the first volume in the sequence
   // which is probably the world voluem...
@@ -521,7 +568,7 @@ MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TMatrixD MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume)
+TMatrixD MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume) const
 {
   // Return the rotation of a volume in the first (the world) volume
 
@@ -557,8 +604,7 @@ TMatrixD MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position, 
-                                              MDVolume* Volume)
+MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position, MDVolume* Volume) const
 {
   // Rotate "Position" from "Volume" to the first volume in the sequence
   // which is probably the world voluem...
@@ -591,7 +637,7 @@ MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDVolumeSequence::ToString()
+MString MDVolumeSequence::ToString() const
 {
   // 
 
@@ -618,8 +664,8 @@ MString MDVolumeSequence::ToString()
     out<<"  * Last volumes type: "<<m_Volumes.back()->GetShape()->ToString();
   }
   out<<"  * Detector: ";
-  if (m_Detector != 0) {
-    out<<m_Detector->GetName()<<" "<<m_PositionInDetector<<endl;
+  if (GetDetector() != 0) {
+    out<<GetDetector()->GetName()<<" "<<m_PositionInDetector<<endl;
   } else {
     out<<"none defined!"<<endl;
   }
@@ -643,7 +689,7 @@ MString MDVolumeSequence::ToString()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDVolumeSequence::ToStringVolumes()
+MString MDVolumeSequence::ToStringVolumes() const
 {
   // Return only the real sequence of volumes as one line without return
 

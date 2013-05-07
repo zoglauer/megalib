@@ -87,7 +87,8 @@ class MFunction3D
   void ScaleV(double Scaler);
 
   //! Evaluate the data for a specific x value 
-  double Eval(double x, double y, double z) const;
+  double Evaluate(double x, double y, double z) const;
+  double Eval(double x, double y, double z) const; //deprecated
 
   //! Return random numbers x, y distributed as the underlying function
   virtual void GetRandom(double& x, double& y, double& z);

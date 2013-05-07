@@ -201,7 +201,7 @@ MVector MDVolume::GetPosition()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::IsRotated()
+bool MDVolume::IsRotated() const
 {
   // Return true if the rotation matrix is not the identity
 
@@ -345,7 +345,7 @@ bool MDVolume::IsClone() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDVolume::GetRotationID()
+int MDVolume::GetRotationID() const
 {
   // Return the ID of the rortation-matrix
 
@@ -356,7 +356,7 @@ int MDVolume::GetRotationID()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TMatrixD MDVolume::GetRotationMatrix()
+TMatrixD MDVolume::GetRotationMatrix() const
 {
   // Return the rotation as matrix
 
@@ -367,7 +367,7 @@ TMatrixD MDVolume::GetRotationMatrix()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TMatrixD MDVolume::GetInvRotationMatrix()
+TMatrixD MDVolume::GetInvRotationMatrix() const
 {
   // Return the rotation as the inverse matrix
 
@@ -570,8 +570,8 @@ void MDVolume::SetDetectorVolume(MDVolume* Volume, MDDetector* Detector)
   // If this volume represents a detector or is part a a detector,
   // "Volume" is the volume of the detector 
   
-  //cout<<"Setting det.vol. "<<Volume->GetName()<<" for "<<GetName()<<endl;
-
+  //cout<<"Setting det.vol. "<<Volume->GetName()<<" for "<<GetName()<<" with detector: "<<Detector->GetName()<<endl;
+  
   m_DetectorVolume = Volume;
   m_Detector = Detector;
 
@@ -924,7 +924,7 @@ void MDVolume::SetRotation(TMatrixD RotationMatrix, int RotID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDVolume::SetMother(MDVolume* Mother)
+bool MDVolume::SetMother(MDVolume* Mother)
 {
   // Set the mother volume:
   // This function breaks all iterators on m_Daughters
@@ -934,12 +934,32 @@ void MDVolume::SetMother(MDVolume* Mother)
     m_Mother->RemoveDaughter(this);
   }
 
+  if (Mother != 0 && Mother->HasMother(this) == true) {
+    mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
+    mout<<"The desired mother volume ("<<Mother->GetName()<<") already has this volume ("<<m_Name<<") has mother!"<<endl;    
+    return false;
+  }
   m_Mother = Mother;
   if (m_Mother != 0) {
     m_Mother->AddDaughter(this);
   }
+  
+  return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDVolume::HasMother(MDVolume* Mother)
+{
+  //! Check if any of the mothers is "Mother"
+  
+  if (m_Mother == 0) return false;
+  if (m_Mother == Mother) return true;
+  return m_Mother->HasMother(Mother);
+}
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1794,7 +1814,8 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
   }
 
   // Perhaps it's one of the daughter volumes:
-  for (unsigned int i = 0; i < GetNDaughters(); i++) {
+  unsigned int NDaughters = GetNDaughters();
+  for (unsigned int i = 0; i < NDaughters; ++i) {
     if (GetDaughterAt(i)->ContainsVolume(Name, IncludeTemplates) == true) {
       return true;
     }
@@ -1889,7 +1910,25 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
   // Ok its only inside this volume - Let's noise
   if (m_Detector != 0) {
     //cout<<"Noise in detector: "<<m_Detector->GetName()<<endl;
-    m_Detector->Noise(Pos, Energy, Time, this);
+    
+    // If we have named detectors we have to find the names detector which belongs to this volume
+    if (m_Detector->GetNNamedDetectors() > 0) {
+      //cout<<"Noise: we have named detectors"<<endl;
+      MDVolumeSequence* VS = new MDVolumeSequence();
+      GetVolumeSequenceInverse(Pos, VS);
+      MDDetector* D = m_Detector->FindNamedDetector(*VS);
+      if (D != 0) {
+        //cout<<"Named detector found"<<endl;
+        D->Noise(Pos, Energy, Time, this);
+      } else {
+        //cout<<"No named detector found"<<endl;
+        m_Detector->Noise(Pos, Energy, Time, this);
+      } 
+      delete VS;
+    } else {
+      //cout<<"Noise: we have NO named detectors"<<endl;
+      m_Detector->Noise(Pos, Energy, Time, this);
+    }
     // Rotate back:
     if (m_IsRotated == true) {
       Pos = m_InvertedRotMatrix * Pos;    // rotate
@@ -2028,6 +2067,23 @@ MVector MDVolume::GetPositionInMotherVolume(MVector Pos)
   return Pos;
 }
 
+ 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MDVolume::GetPositionInWorldVolume(MVector Pos)
+{
+  // Get a position in the world volume:
+  
+  MDVolume* Mother = this;
+  while (Mother->GetMother() != 0) {
+    Pos = Mother->GetPositionInMotherVolume(Pos);
+    Mother = Mother->GetMother();
+  }
+  
+  return Pos;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2054,7 +2110,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
     return false;
   }
 
-  //mout<<"GetVSequence: IsInside"<<endl;
+  //mout<<"GetVSequence: IsInside: "<<m_Name<<endl;
 
   // check the daughters:
   bool InsideDaughter = false;
@@ -2078,6 +2134,9 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
       Sequence->Reset();
       Sequence->SetSensitiveVolume(this);
       Sequence->SetPositionInSensitiveVolume(Pos);
+      Sequence->SetDetectorVolume(this);
+      Sequence->SetPositionInDetector(Pos);
+      //cout<<m_Name<<": Setting detector: "<<GetDetector()->GetName()<<endl;
       Sequence->SetDetector(GetDetector());
     }
   }
@@ -2089,12 +2148,54 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
     //mout<<"GetVSequence: Adding sensitive detector: "<<m_Name<<":"<<GetDetector()->GetName()<<":"<<Pos<<endl;
     Sequence->SetPositionInDetector(Pos);
     Sequence->SetDetectorVolume(this);
-    Sequence->SetDetector(GetDetector()); // new Sep 22 2010? Clusters in calormieter didn't work. Not sure if this breaks anything...
-  }
-  
+    //cout<<m_Name<<": Setting detector: "<<GetDetector()->GetName()<<endl;
+    Sequence->SetDetector(GetDetector()); // new Sep 22 2010? Clusters in calormeter didn't work. Not sure if this breaks anything...
+  }  
+
   // We are inside this volume, so store the information: 
   Sequence->AddVolumeFront(this);
   Sequence->AddPositionFront(Pos);
+  
+  // If this is the world volume, we set the detector again, to get the named detector right
+  //cout<<"Check resetting of detector: "<<endl;
+  if (Sequence->GetDetector() != 0 && Sequence->GetDetector()->HasNamedDetectors() == true) {
+    MDDetector* D = Sequence->GetDetector()->FindNamedDetector(*Sequence);
+    if (D != 0) {
+      //cout<<"New named detector: "<<D->GetName()<<endl;
+      Sequence->SetDetector(D);
+    } else {
+      //cout<<"No named detector found!"<<endl;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDVolume::GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence)
+{
+  // Fills the volume sequence pointer - inversely
+
+  // Pos is inside this volume
+  // So translate and rotate the position into the world coordinate system
+
+  if (m_Shape->IsInside(Pos, m_Tolerance) == false) {
+    merr<<"Position is outside this volume!"<<show;
+    return false;
+  }
+  
+  // Get a position in the world volume:
+  MDVolume* Mother = this;
+  while (Mother->GetMother() != 0) {
+    Pos = Mother->GetPositionInMotherVolume(Pos);
+    Mother = Mother->GetMother();
+  }
+
+  Sequence->Reset();
+  Mother->GetVolumeSequence(Pos, Sequence);
   
   return true;
 }

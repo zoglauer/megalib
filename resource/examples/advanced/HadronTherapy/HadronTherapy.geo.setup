@@ -1,0 +1,162 @@
+#---------------------------------------------------------
+# Simplified NCT-like setup for hadron therapy
+
+
+Name Max
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+
+
+//------------------------------------------------------------
+// Define Germanium strip detector:
+
+// One layer of the tracker
+// GeStripDetector is the aluminum cryostat surrounding the 
+// Ge detectors - they are called 'GeWafer' ....
+
+Constant DetectorHalfWidth  5.0
+Constant DetectorHalfHeight 0.75
+
+Constant CryoThickness  0.1
+Constant CryoOffset     0.5
+
+Constant CryoTotalHeight { 2*(DetectorHalfHeight + CryoOffset + CryoThickness ) } 
+
+Volume GeElement           
+GeElement.Material Aluminium
+GeElement.Visibility 1
+GeElement.Color 2
+GeElement.Shape BRIK  { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { DetectorHalfHeight + CryoOffset  + CryoThickness } 
+
+Volume CryoInnerHull 
+CryoInnerHull.Material Vacuum 
+CryoInnerHull.Visibility 1
+CryoInnerHull.Shape BRIK  { DetectorHalfWidth + CryoOffset }  { DetectorHalfWidth + CryoOffset }  { DetectorHalfHeight + CryoOffset } 
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Visibility 1
+GeWafer.Color 6
+GeWafer.Shape BRIK  DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+GeWafer.Copy GeWaferN01
+GeWaferN01.Position  0.0 0.0 0.0
+GeWaferN01.Mother CryoInnerHull
+
+CryoInnerHull.Copy Cryo
+Cryo.Position 0.0 0.0 0.0
+Cryo.Mother GeElement
+
+
+Constant ArrayElements 4
+
+Volume GeArray
+GeArray.Material Vacuum 
+GeArray.Visibility 1
+GeArray.Shape BRIK   { DetectorHalfWidth + CryoOffset + CryoThickness }  { DetectorHalfWidth + CryoOffset  + CryoThickness }  { ArrayElements*(DetectorHalfHeight + CryoOffset  + CryoThickness) } 
+
+
+// Line-Up some Ge-Detectors into an array
+
+For I ArrayElements { -1.5*CryoTotalHeight } CryoTotalHeight
+  GeElement.Copy GeElement_%I
+  GeElement_%I.Position  0.0  0.0  $I
+  GeElement_%I.Mother GeArray
+Done
+
+
+// Line-Up some arrays to a cicular Compton SPECT detector
+
+// Attention: Make sure the hole phantom, including the surrounding volume fits in!
+Constant Arrays 8
+Constant ArrayDistance { (DetectorHalfWidth + CryoOffset + CryoThickness) / tan(TMath::Pi()/Arrays) + (ArrayElements*(DetectorHalfHeight + CryoOffset  + CryoThickness)) }
+
+For I Arrays 0 { 2*TMath::Pi()/Arrays }
+  GeArray.Copy GeArray_%I
+  GeArray_%I.Position 0.0  { ArrayDistance*cos($I) }  { ArrayDistance*sin($I) }
+  GeArray_%I.Rotation { 90.0 + 180/TMath::Pi() * $I }  0.0  0.0
+  GeArray_%I.Mother WorldVolume
+Done
+
+
+
+# Add PMMA sphere
+Material PMMA
+PMMA.Density 1.18
+PMMA.Component 16  8  2
+PMMA.Component 12  6  5
+PMMA.Component  1  1  8
+
+Volume Head
+Head.Shape SPHE 0.0 8.0 0.0 180.0 0.0 360.0
+Head.Material PMMA
+Head.Visibility 1
+Head.Position 0.0 0.0 0.0
+Head.Mother WorldVolume
+
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+Strip3D                  GStrip
+
+GStrip.DetectorVolume      GeWafer
+GStrip.SensitiveVolume     GeWafer
+
+GStrip.StructuralPitch      0.0   0.0    0.0
+GStrip.StructuralOffset     0.0   0.0    CryoTotalHeight
+
+GStrip.Offset              0.0   0.0
+GStrip.StripNumber         80    80
+
+GStrip.DepthResolution 100 0.02
+
+GStrip.EnergyResolution      Gauss      0      0   1.02
+GStrip.EnergyResolution      Gauss    100    100   1.02
+GStrip.EnergyResolution      Gauss    300    300   1.04
+GStrip.EnergyResolution      Gauss   1000   1000   1.07
+GStrip.EnergyResolution      Gauss   3000   3000   1.15
+GStrip.EnergyResolution      Gauss  10000  10000   1.42
+
+GStrip.NoiseThreshold 15.0
+GStrip.TriggerThreshold 40.0
+
+GStrip.GuardringEnergyResolution 100 1.5
+GStrip.GuardringTriggerThreshold    40
+
+GStrip.FailureRate 0.0
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger T1
+T1.Veto false
+T1.TriggerByChannel true
+T1.Detector GStrip 1

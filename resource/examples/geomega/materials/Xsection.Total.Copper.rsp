@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Copper
 CE false
-HA 2078538703
+HA 2573692499
 
 R1         1.000000 9.453991e+04
 R1         1.047129 8.339278e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 5.354125e-01
 R1  66069344.800760 5.354519e-01
 R1  69183097.091894 5.354914e-01
 R1  72443596.007499 5.355311e-01
-R1  75857757.502918 5.355709e-01
+R1  75857757.502919 5.355709e-01
 R1  79432823.472428 5.356107e-01
 R1  83176377.110267 5.356328e-01
 R1  87096358.995608 5.356518e-01

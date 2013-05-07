@@ -34,6 +34,7 @@ class MGUIGeometry : public MGUIDialog
 {
   // Public Interface:
  public:
+  MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const MString& FileName);
   MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, MSettingsBasicFiles* Data);
   virtual ~MGUIGeometry();
 

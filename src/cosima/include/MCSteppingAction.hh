@@ -48,6 +48,9 @@ public:
   /// Actions at each step of the event tracking
   virtual void UserSteppingAction(const G4Step* Step);
 
+  /// Prepare for the nect event
+  void PrepareForNextEvent() { m_PreventLastDecayBug = ""; }
+
   /// Set the number of initial particles
   void SetInitialParticles(vector<int> InitialParticles) { m_InitialParticles = InitialParticles; m_InteractionId = m_InitialParticles.size(); }
 
@@ -105,6 +108,9 @@ private:
 
   /// The activation time constant: The time during which decays are consindered coincident
   double m_DetectorTimeConstant;
+  
+  /// Temporarily store the name of the last decay - to prevent a Geant4 bug
+  MString m_PreventLastDecayBug;
 };
 
 #endif

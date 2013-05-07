@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for CdTe
 CE false
-HA 3257043490
+HA 1847783446
 
 R1         1.000000 4.755764e+04
 R1         1.047129 4.312931e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 5.067613e-01
 R1  66069344.800760 5.067842e-01
 R1  69183097.091894 5.068071e-01
 R1  72443596.007499 5.068301e-01
-R1  75857757.502918 5.068532e-01
+R1  75857757.502919 5.068532e-01
 R1  79432823.472428 5.068763e-01
 R1  83176377.110267 5.069055e-01
 R1  87096358.995608 5.069358e-01

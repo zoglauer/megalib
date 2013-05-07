@@ -43,6 +43,8 @@ class MDAngerCamera : public MDDetector
   virtual ~MDAngerCamera();
 
   virtual MDDetector* Clone();
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
 
   virtual bool Validate();
 
@@ -70,11 +72,12 @@ class MDAngerCamera : public MDDetector
   virtual MString ToString() const;
 
   //! Set the type XY-only or XYZ-only
-  void SetPositioning(int Positioning) { m_Positioning = Positioning; }
+  void SetPositioning(int Positioning) { m_PositionResolutionType = Positioning; }
   void SetPositionResolution(const double Energy, const double Resolution);
 
-  static const int c_PositioningXY;
-  static const int c_PositioningXYZ;
+  static const int c_PositionResolutionUnknown;
+  static const int c_PositionResolutionXY;
+  static const int c_PositionResolutionXYZ;
 
 
   // protected methods:
@@ -93,9 +96,9 @@ class MDAngerCamera : public MDDetector
   // private members:
  private:
   //! Type of the positioning (XY only or XYZ)
-  int m_Positioning;
+  int m_PositionResolutionType;
   //! Position solution
-  MSpline* m_PositionResolution; 
+  MFunction m_PositionResolution; 
 
 
 #ifdef ___CINT___

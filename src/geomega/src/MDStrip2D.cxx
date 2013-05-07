@@ -72,9 +72,10 @@ MDStrip2D::MDStrip2D(MString String) : MDDetector(String)
   m_StripLengthX = g_DoubleNotDefined;
   m_StripLengthY = g_DoubleNotDefined;
 
-  m_GuardringTriggerThreshold = numeric_limits<double>::max()/10;  // Very large
+  m_GuardringTriggerThreshold = g_DoubleNotDefined;
   m_GuardringTriggerThresholdSigma = 0;
-  m_GuardringEnergyResolution = new MSpline(MSpline::Interpolation);
+  
+  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeUnknown;
 
   m_HasGuardring = true;
   m_UniqueGuardringPosition = g_VectorNotDefined;
@@ -84,7 +85,7 @@ MDStrip2D::MDStrip2D(MString String) : MDDetector(String)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDStrip2D::MDStrip2D(const MDStrip2D& S)
+MDStrip2D::MDStrip2D(const MDStrip2D& S) : MDDetector(S)
 {
   m_WidthX = S.m_WidthX;
   m_WidthY = S.m_WidthY;
@@ -103,7 +104,9 @@ MDStrip2D::MDStrip2D(const MDStrip2D& S)
 
   m_GuardringTriggerThreshold = S.m_GuardringTriggerThreshold;
   m_GuardringTriggerThresholdSigma = S.m_GuardringTriggerThresholdSigma;
-  m_GuardringEnergyResolution = new MSpline(*(S.m_GuardringEnergyResolution)); 
+  
+  m_GuardringEnergyResolutionType = S.m_GuardringEnergyResolutionType;
+  m_GuardringEnergyResolution = S.m_GuardringEnergyResolution; 
 
   m_HasGuardring = S.m_HasGuardring;
   m_UniqueGuardringPosition = S.m_UniqueGuardringPosition;
@@ -118,9 +121,63 @@ MDDetector* MDStrip2D::Clone()
   // Duplicate this detector
 
   massert(this != 0);
-  return new MDStrip2D(*this);
+  return dynamic_cast<MDDetector*>(new MDStrip2D(*this));
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDStrip2D::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+    
+  MDDetector::CopyDataToNamedDetectors();
+  
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int n = 0; n < m_NamedDetectors.size(); ++n) {
+    if (dynamic_cast<MDStrip2D*>(m_NamedDetectors[n]) == 0) {
+      mout<<"   ***  Internal error  ***  in detector "<<m_Name<<endl;
+      mout<<"We have a named detector ("<<m_NamedDetectors[n]->GetName()<<") which is not of the same type as the base detector!"<<endl;
+      return false;
+    }
+    MDStrip2D* D = dynamic_cast<MDStrip2D*>(m_NamedDetectors[n]);
+    
+    D->m_WidthX = m_WidthX;
+    D->m_WidthY = m_WidthY;
+    D->m_OffsetX = m_OffsetX;
+    D->m_OffsetY = m_OffsetY;
+    D->m_PitchX = m_PitchX;
+    D->m_PitchY = m_PitchY;
+    D->m_NStripsX = m_NStripsX;
+    D->m_NStripsY = m_NStripsY;
+    D->m_NWafersX = m_NWafersX;
+    D->m_NWafersY = m_NWafersY;
+    D->m_StripLengthX = m_StripLengthX;
+    D->m_StripLengthY = m_StripLengthY;
+  
+    D->m_Orientation = m_Orientation;
+
+    if (D->m_GuardringTriggerThreshold == g_DoubleNotDefined && 
+        m_GuardringTriggerThreshold != g_DoubleNotDefined) {
+      D->m_GuardringTriggerThreshold = m_GuardringTriggerThreshold;
+      D->m_GuardringTriggerThresholdSigma = m_GuardringTriggerThresholdSigma;
+    }
+    
+    if (D->m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown && 
+        m_GuardringEnergyResolutionType != c_GuardringEnergyResolutionTypeUnknown) {
+      D->m_GuardringEnergyResolutionType = m_GuardringEnergyResolutionType; 
+      D->m_GuardringEnergyResolution = m_GuardringEnergyResolution; 
+    }
+    
+    D->m_HasGuardring = m_HasGuardring;
+    D->m_UniqueGuardringPosition = m_UniqueGuardringPosition;        
+  }
+   
+  return true; 
+}
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -128,8 +185,6 @@ MDDetector* MDStrip2D::Clone()
 MDStrip2D::~MDStrip2D()
 {
   // default destructor
-
-  delete m_GuardringEnergyResolution;
 }
 
 
@@ -152,7 +207,8 @@ bool MDStrip2D::SetGuardringEnergyResolution(const double Energy, const double R
     return false; 
   }
 
-  m_GuardringEnergyResolution->AddDataPoint(Energy, Resolution);
+  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeGauss;
+  m_GuardringEnergyResolution.Add(Energy, Resolution);
 
   return true;
 }
@@ -165,7 +221,16 @@ double MDStrip2D::GetGuardringEnergyResolution(const double Energy) const
 {
   // Return the enrgy resolution of the guard ring for an specific energy
 
-  return m_GuardringEnergyResolution->Get(Energy);
+  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeNone) {
+    return numeric_limits<double>::max();
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeIdeal) {
+    return 0;
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeGauss) {
+    return m_GuardringEnergyResolution.Evaluate(Energy);
+  } else {
+    merr<<"Unknown guard ring energy resolution type: "<<m_GuardringEnergyResolutionType<<endl;
+    return numeric_limits<double>::max()/1000;
+  }
 }
 
 
@@ -193,11 +258,21 @@ bool MDStrip2D::IsAboveGuardringTriggerThreshold(const double& Energy) const
 
 
 bool MDStrip2D::NoiseGuardringEnergy(double& Energy) const
-{
-  Energy = gRandom->Gaus(Energy, GetGuardringEnergyResolution(Energy));
-  if (Energy < gRandom->Gaus(m_GuardringTriggerThreshold, m_GuardringTriggerThresholdSigma)) {
-    Energy = 0;
+{  
+  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeNone) {
+    Energy = 0; 
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeIdeal) {
+    // do nothing
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeGauss) {
+    Energy = gRandom->Gaus(Energy, GetGuardringEnergyResolution(Energy));
+    if (Energy < gRandom->Gaus(m_GuardringTriggerThreshold, m_GuardringTriggerThresholdSigma)) {
+      Energy = 0;
+    }
+  } else {
+    merr<<"Unknown guard ring resolution type: "<<m_GuardringEnergyResolutionType<<endl;
+    return false;
   }
+  
   return true;
 }
 
@@ -626,14 +701,14 @@ MString MDStrip2D::GetGeomega() const
   out<<m_Name<<".Offset "<<m_OffsetX<<" "<<m_OffsetY<<endl;
   out<<m_Name<<".StripNumber "<<m_NStripsX<<" "<<m_NStripsY<<endl;
 
-  if (m_GuardringEnergyResolution->GetNDataPoints() > 0) {
+  if (m_GuardringEnergyResolution.GetNDataPoints() > 0) {
     out<<m_Name<<".GuardringTriggerThreshold "
        <<m_GuardringTriggerThreshold<<" "
        <<m_GuardringTriggerThresholdSigma<<endl;
-    for (int d = 0; d < m_GuardringEnergyResolution->GetNDataPoints(); ++d) {
+    for (unsigned int d = 0; d < m_GuardringEnergyResolution.GetNDataPoints(); ++d) {
       out<<m_Name<<".GuardringEnergyResolution "<<
-        m_GuardringEnergyResolution->GetDataPointXValueAt(d)<<" "<<
-        m_GuardringEnergyResolution->GetDataPointYValueAt(d)<<endl;
+        m_GuardringEnergyResolution.GetDataPointX(d)<<" "<<
+        m_GuardringEnergyResolution.GetDataPointY(d)<<endl;
     }
   }
   
@@ -646,21 +721,16 @@ MString MDStrip2D::GetGeomega() const
 
 MString MDStrip2D::ToString() const
 {
-  //
+  // Dump some detector info 
 
   ostringstream out;
 
-  out<<"Detector "<<m_Name<<" - SiStrip"<<endl;
-  out<<"   with sensitive volumes: ";  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<m_SVs[i]->GetName()<<" ";
-  }
-  out<<endl<<"   width: "<<m_WidthX<<", "<<m_WidthY<<endl;
+  out<<MDDetector::ToString()<<endl;
+  out<<"   width: "<<m_WidthX<<", "<<m_WidthY<<endl;
   out<<"   offset: "<<m_OffsetX<<", "<<m_OffsetY<<endl;
   out<<"   pitch: "<<m_PitchX<<", "<<m_PitchY<<endl;
   out<<"   striplength: "<<m_StripLengthX<<", "<<m_StripLengthY<<endl;
   out<<"   stripnumber: "<<m_NStripsX<<", "<<m_NStripsY<<endl;
-
 
   return out.str().c_str();  
 }
@@ -904,7 +974,14 @@ bool MDStrip2D::Validate()
       m_EnergyLossMap.RescaleZ(-m_StructuralSize.Z(), m_StructuralSize.Z());
     }
   }
-
+  
+  if (m_GuardringTriggerThreshold == g_DoubleNotDefined) {
+    m_GuardringTriggerThreshold = numeric_limits<double>::max()/100;
+  }
+  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown) {
+    m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeNone;
+  }
+  
   return true;
 }
 

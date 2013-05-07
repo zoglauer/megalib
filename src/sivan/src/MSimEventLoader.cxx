@@ -1,5 +1,5 @@
 /*
- * MSimEventLoader.cxx                                   v0.1  01/01/2001
+ * MSimEventLoader.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -51,6 +51,8 @@ MSimEventLoader::MSimEventLoader()
 {
   // default constructor
 
+  cout<<"Remark: This event loader is depreciated, since it is less capable than the new one!"<<endl;
+  
   Init();
 }
 

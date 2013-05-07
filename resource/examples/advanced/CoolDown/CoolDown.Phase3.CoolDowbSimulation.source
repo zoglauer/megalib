@@ -1,0 +1,33 @@
+# Template Run for Step 2 of activation simulation: 
+# Calculate the activation
+
+
+# Global parameters:
+Version                            1
+Geometry                           LaBr3Sample.geo.setup
+DetectorTimeConstant               0.000005
+
+
+# Physics parameters
+PhysicsListEM                      Livermore
+PhysicsListHD                      qgsp-bic-hp
+DecayMode                          BuildUp
+
+
+# Storage parameters
+StoreCalibrated                    true
+StoreSimulationInfo                true
+DiscretizeHits                     true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+
+
+
+Run ActivationStep3
+ActivationStep3.FileName                  CoolDown.Phase3.TheCoolDown
+ActivationStep3.Time                      5000.0
+
+ActivationStep3.IsotopeCountSources       CoolDown.Phase2.ParticlesAfter60SecIrradiationAnd30SecCoolDown.particles.dat
+

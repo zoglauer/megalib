@@ -221,7 +221,7 @@ class MPhysicalEvent
   //! Pointing of the detector in the horizon coordinate system - Z axis
   MVector m_HorizonPointingZAxis;
 
-  //! The time this event occured
+  //! The time this event occurred
   MTime m_Time;
 
   //! The event ID

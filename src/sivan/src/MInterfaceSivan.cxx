@@ -67,6 +67,7 @@ using namespace std;
 #include "MGUISivanMain.h"
 #include "MVector.h"
 #include "MFitFunctions.h"
+#include "MPrelude.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +234,9 @@ bool MInterfaceSivan::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (ShowLicense() == false) return false;
+  // Show change log / license if changed:
+  MPrelude P;
+  if (P.Play() == false) return false; // license was not accepted
 
   return true;
 }
@@ -463,7 +466,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
          Event->GetIEventRetrieval() == MSimEvent::IdealRetrievalGood) ||
         (UseIdealEvent == false && 
          Event->GetIEventRetrieval() == MSimEvent::IdealRetrievalGood && 
-         Event->GetIEventRetrieval() == MSimEvent::RealRetrievalGood)) {
+         Event->GetREventRetrieval() == MSimEvent::RealRetrievalGood)) {
       NRetrievable++;
     } else {
       continue;
@@ -5552,7 +5555,6 @@ void MInterfaceSivan::EnergyPerNucleus()
   EMax = TMath::Ceil(EMax);
   if (EMin < 0) EMin = 1;
 
-  EMax = 100.0;
 
   mout<<endl;
   mout<<"Setting dimensions to:"<<endl;
@@ -5606,8 +5608,7 @@ void MInterfaceSivan::EnergyPerNucleus()
   }
 
   // Sort by the number of counts
-  sort(Histos.begin(), Histos.end(), EnergyPerNucleusSort);
- 
+  sort(Histos.begin(), Histos.end(), EnergyPerNucleusSort);  
 
   THStack* Stack = new THStack("Stack", "Energy spectrum for all involved nuclei");
 
@@ -5615,16 +5616,17 @@ void MInterfaceSivan::EnergyPerNucleus()
 
   unsigned int Color = Histos.size()+2;
   for (unsigned int i = 0; i < Histos.size(); ++i) {
-    //for (int b = 1; b <= Histos[i]->GetNbinsX(); ++b) {
-    //  Histos[i]->SetBinContent(b, Histos[i]->GetBinContent(b)/Histos[i]->GetBinWidth(b));
-    //}
+    // Renormalize to cts/keV:
+    for (int b = 1; b <= Histos[i]->GetNbinsX(); ++b) {
+      Histos[i]->SetBinContent(b, Histos[i]->GetBinContent(b)/Histos[i]->GetBinWidth(b));
+    }
 
     Histos[i]->SetFillColor(Color--);
     Stack->Add(Histos[i]);
   }
   int Added = 0;
   for (unsigned int i = Histos.size()-1; i < Histos.size(); --i) {
-    if (Histos.size() - i < 16) {
+    if (Histos.size() - i < 20) {
       Legend->AddEntry(Histos[i], Histos[i]->GetTitle());
       Added++;
     }

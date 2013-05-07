@@ -109,12 +109,12 @@ clean_addon:
 # Megalyze
 
 MEGALYZELIBS = \
-	-lCommonGui \
-	-lCommonMisc \
+	-lMegalyzeInterface \
 	-lMegalyzeGui \
 	-lMegalyzeDaq \
 	-lMegalyzeHardware \
-	-lMegalyzeInterface \
+	-lCommonGui \
+	-lCommonMisc \
 
 #	$(LB)/MMain.o \
 
@@ -221,7 +221,7 @@ mimrec: info mim
 mimlib: link glo geolib spelib
 	@$(MAKE) mimlib -C src
 
-mim: link glo geolib spelib
+mim: link glo geolib spelib spe
 	@$(MAKE) mim -C src
 
 clean_mimrec:

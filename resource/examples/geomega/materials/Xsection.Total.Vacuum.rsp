@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Vacuum
 CE false
-HA 1458305883
+HA 2084012780
 
 R1         1.000000 7.271419e-12
 R1         1.047129 6.292976e-12
@@ -404,7 +404,7 @@ R1  63095734.448019 1.246626e-14
 R1  66069344.800760 1.246705e-14
 R1  69183097.091894 1.246787e-14
 R1  72443596.007499 1.246871e-14
-R1  75857757.502918 1.246958e-14
+R1  75857757.502919 1.246958e-14
 R1  79432823.472428 1.247048e-14
 R1  83176377.110267 1.247164e-14
 R1  87096358.995608 1.247288e-14

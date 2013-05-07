@@ -218,7 +218,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  bool IsLog = true;
+  bool IsLog = false;
   double Min = m_Min;
   double Max = m_Max;
   int NBins = m_NBins;
@@ -574,6 +574,7 @@ bool BackgroundMixer::AnalyzeSim()
 
   // For storing the BACKGROUD hits in grids:
   vector<vector<MDGridPointCollection> > Grids(m_BackgroundFileNames.size());
+  vector<vector<TH1D*> > Hists(m_BackgroundFileNames.size());
   const unsigned int NoGrid = numeric_limits<unsigned int>::max();
 
 
@@ -633,9 +634,20 @@ bool BackgroundMixer::AnalyzeSim()
           MDGridPointCollection Grid(*(Hit->GetVolumeSequence())); 
           Grids[bf].push_back(Grid);
           CorrectGrid = Grids[bf].size()-1;
+	  // new hist:
+	  TString Name = "Bkg_";
+          Name += bf;
+          Name += "_";
+          Name += CorrectGrid;
+  	  TH1D* BackgroundH = new TH1D(Name, Name, m_NBins, m_Bins);
+          BackgroundH->SetXTitle("Energy [keV]");
+          BackgroundH->SetYTitle("cts/keV/s");
+          BackgroundH->SetLineColor(4);
+          Hists[bf].push_back(BackgroundH);
         } 
         // Add hit to Grid - Grid does correct discretization
         Grids[bf][CorrectGrid].AddUndiscretized(Hit->GetVolumeSequence()->GetPositionInDetector());
+        Hists[bf][CorrectGrid]->Fill(Hit->GetEnergy());
       }
 
       delete Event;
@@ -651,16 +663,17 @@ bool BackgroundMixer::AnalyzeSim()
 
     // Normalize histogram
     m_BackgroundHistograms[bf]->SetXTitle("Energy [keV]");
-    m_BackgroundHistograms[bf]->SetYTitle("cts/keV/s");
+    m_BackgroundHistograms[bf]->SetYTitle("cts/s");
     if (m_MaximumTime != g_DoubleNotDefined) {
       m_BackgroundHistograms[bf]->Scale(1.0/m_MaximumTime);
     } else {
       m_BackgroundHistograms[bf]->Scale(1.0/m_BackgroundTimes[bf]);
     }
+    /*
     for (int b = 1; b <= m_BackgroundHistograms[bf]->GetXaxis()->GetNbins(); ++b) {
       m_BackgroundHistograms[bf]->SetBinContent(b, m_BackgroundHistograms[bf]->GetBinContent(b)/m_BackgroundHistograms[bf]->GetBinWidth(b));
     }
-
+    */
     // Add to total histograms
     TotalTotal->Add(m_BackgroundHistograms[bf]);
     BackgroundTotal->Add(m_BackgroundHistograms[bf]);
@@ -706,7 +719,7 @@ bool BackgroundMixer::AnalyzeSim()
   }
   TotalStack->Draw();
   TotalStack->GetHistogram()->SetXTitle("Energy [keV]");
-  TotalStack->GetHistogram()->SetYTitle("cts/keV/s");
+  TotalStack->GetHistogram()->SetYTitle("cts/s");
   TotalStack->Draw();
   leg->Draw();
   TotalStackCanvas->Update();
@@ -766,14 +779,17 @@ bool BackgroundMixer::AnalyzeSim()
     for (unsigned int g = 0; g < Grids[bf].size(); ++g) {
       if (m_MaximumTime != g_DoubleNotDefined) {
         Grids[bf][g].SetWeight(1.0/m_MaximumTime);
+        Hists[bf][g]->Scale(1.0/m_MaximumTime);
       } else {
         Grids[bf][g].SetWeight(1.0/m_BackgroundTimes[bf]);
+        Hists[bf][g]->Scale(1.0/m_BackgroundTimes[bf]);
       }
     }
   }
 
   // Combined the individual GRIDs:
   vector<MDGridPointCollection> CombinedGrids;
+  vector<TH1D*> CombinedHists;
   for (unsigned int bf = 0; bf < m_BackgroundFileNames.size(); ++bf) {
     for (unsigned int g = 0; g < Grids[bf].size(); ++g) {
       // Check if we have a suitable grid:
@@ -786,11 +802,33 @@ bool BackgroundMixer::AnalyzeSim()
       }
       if (CorrectGrid == NoGrid) {
         CombinedGrids.push_back(Grids[bf][g]);
+        CombinedHists.push_back(Hists[bf][g]);
       } else {
         CombinedGrids[CorrectGrid].Add(Grids[bf][g]);
+        CombinedHists[CorrectGrid]->Add(Hists[bf][g]);
       }
     }
   }  
+
+  /*
+  for (unsigned int h = 0; h < CombinedHists.size(); ++h) { 
+    // Get the base file name of the tra file:
+    MString AsciiOut = m_Prefix + "_" + CombinedHists[h]->GetName() + ".ASCIIspectrum.dat";
+  
+    double SanityCheck = 0.0;
+
+    ofstream out(AsciiOut, ios::out);
+    out<<"# VS: "<<CombinedGrids[h].GetVolumeTree()<<endl;
+    for (int b = 1; b <= CombinedHists[h]->GetNbinsX(); ++b) {
+      out<<CombinedHists[h]->GetBinCenter(b)<<" \t";
+      out<<CombinedHists[h]->GetBinContent(b)<<endl;
+      SanityCheck += CombinedHists[h]->GetBinContent(b);
+    }
+    out.close();
+  
+    mlog<<"Wrote ASCII spectrum to "<<AsciiOut<<" with a total flux of "<<SanityCheck<<" cts/sec of volume "<<CombinedGrids[h].GetVolumeTree()<<endl;
+  }
+  */
 
   // Sort the grids by their number of hits
   // Sort by the number of counts
@@ -807,6 +845,9 @@ bool BackgroundMixer::AnalyzeSim()
     }
   }
   mlog<<"Total hits: "<<TotalHits<<endl;
+
+
+  //vector<MDGridPointCollection> CombinedGrids;
 
   return true;
 }

@@ -165,6 +165,8 @@ class MComptonEvent : public MPhysicalEvent
 
   //! Return the Compton scatter angle
   inline double Phi() const { return m_Phi; }
+  //! Return the Compton scatter angle uncertainty (not const because dPhi is only caluclated when needed)
+  double dPhi();
   //! Return the recoil electron scatter angle
   inline double Epsilon() const { return m_Epsilon; }
   //! Return the total scatter angle
@@ -191,6 +193,8 @@ class MComptonEvent : public MPhysicalEvent
   static double GetKleinNishinaNormalized(const double Ei, const double phi); // Normalized to Max = 1
   static double GetKleinNishinaNormalizedByArea(const double Ei, const double phi);
 
+  //! Return the Compton scatter angle
+  double PhiUncertainty(); // const;
 
   //bool GetZenitDistance(double& theta);
   //bool GetDistanceBetweenHits(double& ZenitDistance);

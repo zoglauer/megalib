@@ -54,7 +54,7 @@ using namespace std;
 #include "MImageGalactic.h"
 #include "MStreams.h"
 #include "MEventSelector.h"
-#include "MGUILicense.h"
+#include "MPrelude.h"
 #include "MDDetector.h"
 #include "MDVolumeSequence.h"
 #include "MFitFunctions.h"
@@ -64,6 +64,11 @@ using namespace std;
 #include "MPeak.h"
 #include "MIsotope.h"
 #include "MStandardAnalysis.h"
+#include "MResponse.h"
+#include "MResponseGaussian.h"
+#include "MResponseGaussianByUncertainties.h"
+#include "MResponsePRM.h"
+#include "MResponseEnergyLeakage.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -298,8 +303,10 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (ShowLicense() == false) return false;
-
+  // Show change log / license if changed:
+  MPrelude P;
+  if (P.Play() == false) return false; // license was not accepted
+  
   return true;
 }
 
@@ -588,10 +595,12 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
                                     m_Data->GetGauss1DCutOff(),
                                     m_Data->GetUseAbsorptions());
     } else if (m_Data->GetResponseType() == 1) {
+      m_Imager->SetResponseGaussianByUncertainties();
+    } else if (m_Data->GetResponseType() == 2) {
       m_Imager->SetResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
                                          m_Data->GetFitParameterComptonLongSphere());
       
-    } else if (m_Data->GetResponseType() == 2) {
+    } else if (m_Data->GetResponseType() == 3) {
       if (m_Imager->SetResponsePRM(m_Data->GetImagingResponseComptonTransversalFileName(),
                                    m_Data->GetImagingResponseComptonLongitudinalFileName(),
                                    m_Data->GetImagingResponsePairRadialFileName()) == false) {
@@ -1262,7 +1271,7 @@ void MInterfaceMimrec::DualARM()
   Hist->SetDirectory(0);
   Hist->SetXTitle("ARM - Compton cone [#circ]");
   Hist->SetYTitle("ARM - Electron cone [#circ]");
-  Hist->SetZTitle("counts/degree²");
+  Hist->SetZTitle("counts/degree^{2}");
   Hist->SetStats(false);
   Hist->SetFillColor(8);
   Hist->SetContour(50);
@@ -1329,7 +1338,103 @@ void MInterfaceMimrec::DualARM()
   return;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+  
+void MInterfaceMimrec::ARMResponseComparison()
+{
+  // Compare the ARM with the imaging response
+   
+  MVector TestPosition = GetTestPosition();
+  
+  double ARMMax = m_Data->GetTPDistanceTrans();
+  int ARMBins = m_Data->GetHistBinsARMGamma();
+
+  MResponse* Response = 0;
+  if (m_Data->GetResponseType() == 0) {
+    Response = new MResponseGaussian(m_Data->GetFitParameterComptonTransSphere(), 
+                                     m_Data->GetFitParameterComptonLongSphere(),
+                                     m_Data->GetFitParameterPair());
+  } else if (m_Data->GetResponseType() == 1) {
+    Response = new MResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
+                                       m_Data->GetFitParameterComptonLongSphere());
+  } else if (m_Data->GetResponseType() == 2) {
+    Response = new MResponseGaussianByUncertainties();
+  } else if (m_Data->GetResponseType() == 3) {
+    Response = new MResponsePRM();
+    if (dynamic_cast<MResponsePRM*>(Response)->LoadResponseFiles(m_Data->GetImagingResponseComptonTransversalFileName(),
+                                   m_Data->GetImagingResponseComptonLongitudinalFileName(),
+                                   m_Data->GetImagingResponsePairRadialFileName()) == false) {
+      mgui<<"Unable to load responsefiles!"<<endl;
+      delete Response;
+      return;
+    }
+  } else {
+    merr<<"Unknown response type: "<<m_Data->GetResponseType()<<show;
+    return;
+  }
+  
+  // Initalize the ARM histogram
+  TH1D* ARMHist = new TH1D("ARMHist", "ARM (coarsly binned) vs. Response (smoothly binned)", ARMBins, -ARMMax, ARMMax);
+  ARMHist->SetBit(kCanDelete);
+  ARMHist->SetDirectory(0);
+  ARMHist->SetXTitle("ARM - Compton cone [#circ]");
+  ARMHist->SetYTitle("normalized counts (I=1)");
+  ARMHist->SetStats(false);
+  ARMHist->SetContour(50);
+
+  // Initalize the Response histogram
+  TH1D* ResponseHist = new TH1D("ResponseHist", "ResponseHist", 10*ARMBins, -ARMMax, ARMMax);
+  ResponseHist->SetBit(kCanDelete);
+  ResponseHist->SetDirectory(0);
+  ResponseHist->SetXTitle("ARM - Compton cone [#circ]");
+  ResponseHist->SetYTitle("normalized counts");
+  ResponseHist->SetStats(false);
+  ResponseHist->SetContour(50);
+  
+  // Now restart the event-loader:
+  if (InitializeEventloader() == false) return;
+
+  MPhysicalEvent* Event = 0;
+  MComptonEvent* ComptonEvent = 0; 
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEvent(Event) == true) {
+      if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+        double ARM = ComptonEvent->GetARMGamma(TestPosition)*c_Deg;
+        ARMHist->Fill(ARM, 1);
+        Response->AnalyzeEvent(ComptonEvent);
+        for (int b = 1; b <= ResponseHist->GetNbinsX(); ++b) {
+          ResponseHist->SetBinContent(b, ResponseHist->GetBinContent(b) + Response->GetComptonResponse((ResponseHist->GetBinCenter(b) - ARM)*c_Rad)); 
+        }
+      } 
+    }
+
+    delete Event;
+  } 
+
+  m_EventFile->Close();
+
+  if (ARMHist->GetMaximum() == 0) {
+    Error("ARMGamma()", "No events passed the event selections or file is empty!");
+    return;
+  }
+
+  // Normalize the response to the ARM histogram:
+  ResponseHist->Scale(10.0/ResponseHist->Integral());
+  ARMHist->Scale(1.0/ARMHist->Integral());
+
+  TCanvas* Canvas = new TCanvas("ARMResponseComparison", "ARM Response Comparison", 800, 600);
+  Canvas->cd();
+  ARMHist->Draw();
+  ResponseHist->Draw("SAME");
+  Canvas->Update();
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
   
@@ -4468,7 +4573,10 @@ void MInterfaceMimrec::Polarization()
   // Initalize the image size (x-axis)
   int NBins = m_Data->GetHistBinsPolarization();
 
-  TH1D* Background = new TH1D("Background", "Not polarized source", NBins, -180, 180);
+  double Min = -180.000001;
+  double Max = +180.000001;
+  
+  TH1D* Background = new TH1D("Background", "Not polarized source", NBins, Min, Max);
   Background->SetBit(kCanDelete);
   Background->SetXTitle("[degree]");
   Background->SetYTitle("counts/degree");
@@ -4477,7 +4585,7 @@ void MInterfaceMimrec::Polarization()
   Background->SetMinimum(0.0);
   Background->SetNdivisions(-508, "X");
 
-  TH1D* Polarization = new TH1D("Polarization", "Polarized source", NBins, -180, 180);
+  TH1D* Polarization = new TH1D("Polarization", "Polarized source", NBins, Min, Max);
   Polarization->SetBit(kCanDelete);
   Polarization->SetXTitle("[degree]");
   Polarization->SetYTitle("counts/degree");
@@ -4486,7 +4594,7 @@ void MInterfaceMimrec::Polarization()
   Polarization->SetMinimum(0.0);
   Polarization->SetNdivisions(-508, "X");
 
-  TH1D* Corrected = new TH1D("Corrected", "Geometry corrected polarization signature", NBins, -180, 180);
+  TH1D* Corrected = new TH1D("Corrected", "Geometry corrected polarization signature", NBins, Min, Max);
   Corrected->SetBit(kCanDelete);
   Corrected->SetXTitle("[degree]");
   Corrected->SetYTitle("corrected counts/degree");

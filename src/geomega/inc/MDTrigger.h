@@ -59,6 +59,9 @@ class MDTrigger
   void SetDetectorType(const int Detectortype, const unsigned int Hits);
   void SetDetector(MDDetector* Detector, const unsigned int Hits);
 
+  vector<int> GetDetectorTypes() { return m_DetectorTypes; }
+  vector<MDDetector*> GetDetectors() { return m_Detectors; }
+  
   void SetGuardringDetectorType(const int Detectortype, const unsigned int Hits);
   void SetGuardringDetector(MDDetector* Detector, const unsigned int Hits);
 

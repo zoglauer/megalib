@@ -111,7 +111,7 @@ class MString
 
   // Comparison
 
-  //! Fast comparison especially in case of ignoring the caseL
+  //! Fast comparison especially in case of ignoring the case
   bool AreIdentical(const MString& S, bool IgnoreCase = false) const;
 
   // Modify
@@ -138,7 +138,7 @@ class MString
   MString& operator+=(double N) { ostringstream out; out.precision(15); out<<N; m_String += out.str(); return *this; }
 
 
-  //! Remove all charcters from Start to the End
+  //! Remove all characters from Start to the End
   MString& Remove(size_t Start) { m_String.erase(Start, Length() - Start); return *this; }
   MString& Remove(size_t Start, size_t Length) { m_String.erase(Start, Length); return *this; }
 
@@ -156,6 +156,10 @@ class MString
   
   //! Read one line into this string replace all previous content
   istream& ReadLine(istream& in);
+  //! Read one line into this string replace all previous content
+  void Read(istream& in);
+  //! Return a hash value of the string
+  long GetHash();
   
   // Analyze
   

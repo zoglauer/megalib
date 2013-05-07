@@ -179,7 +179,7 @@ bool MFileEventsRawa::HasTriggered(MString Detector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEventsRawa::OpenIncludeFile(MString Line)
+bool MFileEventsRawa::OpenIncludeFile(const MString& Line)
 {
   // Open an include file
 

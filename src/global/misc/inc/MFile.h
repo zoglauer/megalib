@@ -55,7 +55,11 @@ class MFile
   //! Return the file length
   virtual streampos GetFileLength();
 
-  MString GetFileName() const;
+
+  //! Set the file name - this does not open any file and you have to give the file name when you call Open()
+  void SetFileName(MString FileName) { m_FileName = FileName; }
+  //! Get the file name
+  MString GetFileName() const { return m_FileName; }
 
   //! Set the file version
   void SetVersion(const int Version);

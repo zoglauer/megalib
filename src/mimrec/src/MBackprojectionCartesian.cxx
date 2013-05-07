@@ -341,7 +341,7 @@ bool MBackprojectionCartesian::BackprojectionCompton(double* Image, int* Bins, i
           Content = m_Response->GetComptonResponse(AngleTrans)/ConeRadius;
         }
 
-        if (Content > 0.0) {
+        if (Content > 0.0 && InRange(InnerSum)) {
           // search the highest pixel...
           if (Content > Maximum) {
             Maximum = Content;
@@ -353,6 +353,10 @@ bool MBackprojectionCartesian::BackprojectionCompton(double* Image, int* Bins, i
           ++NUsedBins;
         } else {
           // Due to acos-rounding error protection, we might get a few here.
+          //cout<<"Content is: "<<Content<<":"<<ConeRadius<<":"<<AngleTrans*c_Deg<<":"<<acos(AngleTrans)<<":"<<m_Response->GetComptonResponse(AngleTrans)/ConeRadius<<endl;
+          //cout<<fabs(tanPhi*Acos(AngleTrans)*L)<<":"<<tanPhi<<":"<<AngleTrans<<":"<<L<<":"<<Acos(AngleTrans)<<endl;
+          //cout<<"Approx? "<<((m_ApproximatedMaths == true) ? "true" : "false")<<endl;
+          //if (NUsedBins > 0) cout<<" Last content: "<<Image[NUsedBins-1]<<endl;
           //cout<<"Event "<<m_Event->GetId()<<": I seem to still calculate image bins with no content: x="
           // <<m_xBinCenter[x]<<" y="<<m_yBinCenter[y]<<" z="<<m_yBinCenter[z]<<endl;
         }
@@ -368,7 +372,8 @@ bool MBackprojectionCartesian::BackprojectionCompton(double* Image, int* Bins, i
   if (InRange(InnerSum) == false) {
     cout<<"Event "<<m_Event->GetId()<<": Catched a NaN!"<<endl;
     cout<<m_C->ToString()<<endl;
-
+    cout<<"dPhi: "<<m_C->dPhi()*c_Deg<<endl;
+    
     NUsedBins = 0;
     Maximum = 0;
     return false;

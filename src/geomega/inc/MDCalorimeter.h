@@ -37,6 +37,8 @@ class MDCalorimeter : public MDDetector
   virtual ~MDCalorimeter();
 
   virtual MDDetector* Clone();
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
   virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
@@ -54,9 +56,8 @@ class MDCalorimeter : public MDDetector
                                               MDVolume* Volume);
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
 
-  virtual bool SetDepthResolution(const double DepthResolution);
   virtual bool SetDepthResolutionAt(const double Energy, const double Resolution, const double Sigma);
-  virtual bool HasDepthResolution() const { if (m_DepthResolution != 0 && m_DepthResolution->GetNDataPoints() > 0) return true; else return false; } 
+  virtual bool HasDepthResolution() const { if (m_DepthResolutionType != c_DepthResolutionTypeNone && m_DepthResolutionType != c_DepthResolutionTypeUnknown) return true; else return false; } 
 
   virtual bool AreNear(const MVector& Pos1, const MVector& dPos1, 
                        const MVector& Pos2, const MVector& dPos2, 
@@ -90,8 +91,9 @@ class MDCalorimeter : public MDDetector
 
   // private members:
  private:
-  MSpline* m_DepthResolution; 
-  MSpline* m_DepthResolutionSigma; 
+  int m_DepthResolutionType;
+  MFunction m_DepthResolution; 
+  MFunction m_DepthResolutionSigma; 
 
 
 #ifdef ___CINT___

@@ -23,7 +23,6 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MVector.h"
-#include "MDDetector.h"
 #include "MDGridPoint.h"
 
 // Standard libs:
@@ -32,7 +31,7 @@ using namespace std;
 
 // Forward declarations:
 class MDVolume;
-
+class MDDetector;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -53,23 +52,26 @@ class MDVolumeSequence
   //! Empty the volume sequence
   void Reset();
 
+  //! Returns true if the volume sequence is empty
+  bool IsEmpty() const { return ((m_Volumes.size() == 0) ? true : false); }
+  
   //! Add a volume sequence to the end - should always be used with AddPosition
   void AddVolume(MDVolume* Volume);
   //! Add a volume sequence to the front
   void AddVolumeFront(MDVolume* Volume);
   //! Return the number of volume sequences 
-  unsigned int GetNVolumes();
+  unsigned int GetNVolumes() const;
   //! Return a volume sequence at a specific position
-  MDVolume* GetVolumeAt(unsigned int i);
+  MDVolume* GetVolumeAt(unsigned int i) const;
   //! Return the deepest = last volume in the sequence
-  MDVolume* GetDeepestVolume();
+  MDVolume* GetDeepestVolume() const;
 
   //! Add a position to the end - should always be used with AddVolume
   void AddPosition(const MVector& V);
   //! Add a position to the front - should always be used with AddVolumeFront
   void AddPositionFront(const MVector& V);
   //! Return a position at a specific point in the vector
-  MVector GetPositionAt(unsigned int i);
+  MVector GetPositionAt(unsigned int i) const;
 
   //! Add a rotation to the end 
   //void AddRotation(TMatrixD Rot);
@@ -77,53 +79,53 @@ class MDVolumeSequence
   //! Set the detector
   void SetDetector(MDDetector* Detector);
   //! Get the detector or return zero if there is no detector
-  MDDetector* GetDetector();
+  MDDetector* GetDetector() const;
 
   //! Set the position within the detector volume
   void SetPositionInDetector(MVector Pos);
   //! Return the position within the detector volume --- before using test with GetDetectorVolume() != 0 is there is a detector!
-  MVector GetPositionInDetector();
+  MVector GetPositionInDetector() const;
   //! Return the position in the detector as grid point - this info is not stored but calculated on the fly!
   MDGridPoint GetGridPoint() const;
 
   //! Set the detector volume
   void SetDetectorVolume(MDVolume* Volume);
   //! Get the detector volume or zero if there is not detector volume
-  MDVolume* GetDetectorVolume();
+  MDVolume* GetDetectorVolume() const;
 
   //! Set the position within the sensitive volume
   void SetPositionInSensitiveVolume(MVector Pos);
   //! Return the position within the sensitive volume --- before using test with GetSensitiveVolume() != 0 is there is such a volume
-  MVector GetPositionInSensitiveVolume();
+  MVector GetPositionInSensitiveVolume() const;
 
   //! Set the senitive volume
   void SetSensitiveVolume(MDVolume* Volume);
   //! Return the sensitive volume or zero if there is no sensitive volume in the sequence
-  MDVolume* GetSensitiveVolume();
+  MDVolume* GetSensitiveVolume() const;
 
   //! Return true if a volume of the given name is in the sequence (make sure to consider the nameing conventions during removal of virtual volumes)
   bool HasVolume(MString Name) const;
   //! Return true if both volume sequences have the same detector (if multiple volumes have the same MDDetector, it is checked if the detector is at the same position)
-  bool HasSameDetector(MDVolumeSequence& VS);
+  bool HasSameDetector(const MDVolumeSequence& VS) const;
   //! Return true if both volume sequences have the same detector (if multiple volumes have the same MDDetector, it is checked if the detector is at the same position)
-  bool HasSameDetector(MDVolumeSequence* VS);
+  bool HasSameDetector(MDVolumeSequence* VS) const;
 
   //! Given a position in volume Volume,  rotate/translate in the first (the world) volume
-  MVector GetPositionInFirstVolume(const MVector& Position, MDVolume* Volume);
+  MVector GetPositionInFirstVolume(const MVector& Position, MDVolume* Volume) const;
 
   //! Return the rotation of the given volume IN the world volume
-  TMatrixD GetRotationInFirstVolume(MDVolume* Volume);
+  TMatrixD GetRotationInFirstVolume(MDVolume* Volume) const;
   //! Return the TOTAL rotation world volume -> deepest volume
   TMatrixD GetRotation();
 
   //! Given a position in the world volume, rotate/translate into volume Volume
   //! It is not mandatory if the position is really inside - only the rotations/translations are executed:
-  MVector GetPositionInVolume(const MVector& Position, MDVolume* Volume);
+  MVector GetPositionInVolume(const MVector& Position, MDVolume* Volume) const;
 
   //! Dumnp the content to string
-  MString ToString();
+  MString ToString() const;
   //! Just dump the sequence of volumes to string
-  MString ToStringVolumes();
+  MString ToStringVolumes() const;
 
 
   // protected methods:
@@ -150,6 +152,8 @@ class MDVolumeSequence
 
   //! The detector - zero if there is none
   MDDetector* m_Detector;
+  //! The named detector - zero if there is none
+  MDDetector* m_NamedDetector;
   //! The detector volume (not the sensitive volume?!)
   MDVolume* m_DetectorVolume;
   //! The position in the detector

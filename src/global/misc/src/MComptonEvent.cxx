@@ -796,6 +796,72 @@ double MComptonEvent::ComputeEeViaPhiEi(const double Phi, const double Ei)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+  
+double MComptonEvent::dPhi()
+{
+  //! Return the Compton scatter angle uncertainty
+
+  // dPhi ist not always calculated, but only when needed...
+  if (m_dPhi > 0) return m_dPhi;
+  
+  // Maple calculated dPhiE
+  // Don't look at dCosPhiE here, because one cannot do acos(dCosPhiE), because it is just an error!) 
+  double CosPhiE = 1-c_E0/m_Eg+c_E0/m_Ei;
+  double dPhiE = sqrt(pow(c_E0/m_Eg/m_Eg-c_E0/m_Ei/m_Ei, 2)/(1-pow(CosPhiE,2))*m_dEg*m_dEg + c_E0*c_E0/(m_Ei*m_Ei*m_Ei*m_Ei)/(1-pow(CosPhiE,2))*m_dEe*m_dEe);
+  
+  // dPhiA is the Gaussian error propagation of all (averaged) positions error comonents (=x,y,z) of all two positions
+  double dPhiA = 0;
+  double dPhiAp = 0;
+  double dPhiAm = 0;
+  MVector dC1 = m_C1;
+  MVector dC2 = m_C2;
+  
+  for (unsigned int i = 0; i < 3; ++i) {
+    dC1 = m_C1;
+    dC1[i] += m_dC1[i];
+    dPhiAp = (m_C1 - m_C2).Angle(dC1 - m_C2);
+    dC1 = m_C1;
+    dC1[i] -= m_dC1[i];
+    dPhiAm = (m_C1 - m_C2).Angle(dC1 - m_C2);
+    dPhiA += pow(0.5*(dPhiAp+dPhiAm), 2);
+  }
+  
+  for (unsigned int i = 0; i < 3; ++i) {
+    dC2 = m_C2;
+    dC2[i] += m_dC2[i];
+    dPhiAp = (m_C2 - m_C1).Angle(dC2 - m_C1);
+    dC2 = m_C2;
+    dC2[i] -= m_dC2[i];
+    dPhiAm = (m_C2 - m_C1).Angle(dC2 - m_C1);
+    dPhiA += pow(0.5*(dPhiAp+dPhiAm), 2);
+  }
+  dPhiA = sqrt(dPhiA);
+     
+  // Boggs' method - gives almost identical results
+  /*
+  double dx = sqrt(m_dC1[0]*m_dC1[0] + m_dC2[0]*m_dC2[0]);
+  double dy = sqrt(m_dC1[1]*m_dC1[1] + m_dC2[1]*m_dC2[1]);
+  double dz = sqrt(m_dC1[2]*m_dC1[2] + m_dC2[2]*m_dC2[2]);
+  
+  double Mag = (m_C1 - m_C2).Mag();
+  double dPhix = dx/Mag*sqrt(1-(m_C2[0]-m_C1[0])*(m_C2[0]-m_C1[0])/Mag/Mag);
+  double dPhiy = dy/Mag*sqrt(1-(m_C2[1]-m_C1[1])*(m_C2[1]-m_C1[1])/Mag/Mag);
+  double dPhiz = dz/Mag*sqrt(1-(m_C2[2]-m_C1[2])*(m_C2[2]-m_C1[2])/Mag/Mag);
+  
+  double dPhiA_Boggs = sqrt(dPhix*dPhix + dPhiy*dPhiy + dPhiz*dPhiz);
+  
+  cout<<dPhiA<<" vs. Boggs: "<<dPhiA_Boggs<<endl;
+  */
+  
+  m_dPhi = sqrt(dPhiE*dPhiE + dPhiA*dPhiA);
+
+  return m_dPhi;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+  
 bool MComptonEvent::SwitchDirection()
 {
   //! Switch direction: Reverse the Compton path
@@ -838,14 +904,14 @@ void MComptonEvent::Reset()
   m_Ee = 0.0;
   m_dEe = 0.0;
   
-  m_C1 = MVector(0.0, 0.0, 0.0);
-  m_dC1 = MVector(0.0, 0.0, 0.0);
+  m_C1.Clear();
+  m_dC1.Clear();
 
-  m_C2 = MVector(0.0, 0.0, 0.0);
-  m_dC2 = MVector(0.0, 0.0, 0.0);
+  m_C2.Clear();
+  m_dC2.Clear();
 
-  m_De = MVector(0.0, 0.0, 0.0);
-  m_dDe = MVector(0.0, 0.0, 0.0);
+  m_De.Clear();
+  m_dDe.Clear();
 
   m_ToF = 0.0;
   m_dToF = 0.0;
@@ -862,11 +928,11 @@ void MComptonEvent::Reset()
   
   m_DeltaTheta = 0.0;
 
-  m_Dg = MVector(0.0, 0.0, 0.0);
-  m_dDg = MVector(0.0, 0.0, 0.0);
+  m_Dg.Clear();
+  m_dDg.Clear();
 
-  m_Di = MVector(0.0, 0.0, 0.0);
-  m_dDi = MVector(0.0, 0.0, 0.0);
+  m_Di.Clear();
+  m_dDi.Clear();
 
   m_HasTrack = false;
 

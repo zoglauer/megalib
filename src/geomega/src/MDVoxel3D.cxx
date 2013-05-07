@@ -78,18 +78,19 @@ MDVoxel3D::MDVoxel3D(MString String) : MDDetector(String)
   m_VoxelSizeY = g_IntNotDefined;
   m_VoxelSizeZ = g_IntNotDefined;
 
-  m_GuardringTriggerThreshold = numeric_limits<double>::max()/10;  // Very large
+  m_GuardringTriggerThreshold = g_DoubleNotDefined;  // Very large
   m_GuardringTriggerThresholdSigma = 0;
-  m_GuardringEnergyResolution = new MSpline(MSpline::Interpolation);
+  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeUnknown;
 
   m_HasGuardring = true;
   m_UniqueGuardringPosition = g_VectorNotDefined;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVoxel3D::MDVoxel3D(const MDVoxel3D& S)
+MDVoxel3D::MDVoxel3D(const MDVoxel3D& S) : MDDetector(S)
 {
   m_WidthX = S.m_WidthX;
   m_WidthY = S.m_WidthY;
@@ -113,7 +114,9 @@ MDVoxel3D::MDVoxel3D(const MDVoxel3D& S)
 
   m_GuardringTriggerThreshold = S.m_GuardringTriggerThreshold;
   m_GuardringTriggerThresholdSigma = S.m_GuardringTriggerThresholdSigma;
-  m_GuardringEnergyResolution = new MSpline(*(S.m_GuardringEnergyResolution)); 
+  
+  m_GuardringEnergyResolutionType = S.m_GuardringEnergyResolutionType;
+  m_GuardringEnergyResolution = S.m_GuardringEnergyResolution; 
 
   m_UniqueGuardringPosition = S.m_UniqueGuardringPosition;
 }
@@ -134,11 +137,68 @@ MDDetector* MDVoxel3D::Clone()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDVoxel3D::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+
+  MDDetector::CopyDataToNamedDetectors();
+  
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int n = 0; n < m_NamedDetectors.size(); ++n) {
+    if (dynamic_cast<MDVoxel3D*>(m_NamedDetectors[n]) == 0) {
+      mout<<"   ***  Internal error  ***  in detector "<<m_Name<<endl;
+      mout<<"We have a named detector ("<<m_NamedDetectors[n]->GetName()<<") which is not of the same type as the base detector!"<<endl;
+      return false;
+    }
+    MDVoxel3D* D = dynamic_cast<MDVoxel3D*>(m_NamedDetectors[n]);
+    
+    D->m_WidthX = m_WidthX;
+    D->m_WidthY = m_WidthY;
+    D->m_WidthZ = m_WidthZ;
+
+    D->m_OffsetX = m_OffsetX;
+    D->m_OffsetY = m_OffsetY;
+    D->m_OffsetZ = m_OffsetZ;
+
+    D->m_NVoxelsX = m_NVoxelsX;
+    D->m_NVoxelsY = m_NVoxelsY;
+    D->m_NVoxelsZ = m_NVoxelsZ;
+
+    D->m_NBlocksX = m_NBlocksX;
+    D->m_NBlocksY = m_NBlocksY;
+    D->m_NBlocksZ = m_NBlocksZ;
+
+    D->m_VoxelSizeX = m_VoxelSizeX;
+    D->m_VoxelSizeY = m_VoxelSizeY;
+    D->m_VoxelSizeZ = m_VoxelSizeZ;
+
+    if (D->m_GuardringTriggerThreshold == g_DoubleNotDefined && 
+        m_GuardringTriggerThreshold != g_DoubleNotDefined) {
+      D->m_GuardringTriggerThreshold = m_GuardringTriggerThreshold;
+      D->m_GuardringTriggerThresholdSigma = m_GuardringTriggerThresholdSigma;
+    }
+    
+    if (D->m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown && 
+        m_GuardringEnergyResolutionType != c_GuardringEnergyResolutionTypeUnknown) {
+      D->m_GuardringEnergyResolutionType = m_GuardringEnergyResolutionType; 
+      D->m_GuardringEnergyResolution = m_GuardringEnergyResolution; 
+    }
+    
+    D->m_HasGuardring = m_HasGuardring;
+    D->m_UniqueGuardringPosition = m_UniqueGuardringPosition;        
+  }
+   
+  return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDVoxel3D::~MDVoxel3D()
 {
   // default destructor
-
-  delete m_GuardringEnergyResolution;
 }
 
 
@@ -161,7 +221,8 @@ bool MDVoxel3D::SetGuardringEnergyResolution(const double Energy, const double R
     return false; 
   }
 
-  m_GuardringEnergyResolution->AddDataPoint(Energy, Resolution);
+  m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeGauss;
+  m_GuardringEnergyResolution.Add(Energy, Resolution);
 
   return true;
 }
@@ -174,7 +235,16 @@ double MDVoxel3D::GetGuardringEnergyResolution(const double Energy) const
 {
   // Return the enrgy resolution of the guard ring for an specific energy
 
-  return m_GuardringEnergyResolution->Get(Energy);
+  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeNone) {
+    return numeric_limits<double>::max();
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeIdeal) {
+    return 0;
+  } else if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeGauss) {
+    return m_GuardringEnergyResolution.Evaluate(Energy);
+  } else {
+    merr<<"Unknown guard ring energy resolution type: "<<m_GuardringEnergyResolutionType<<endl;
+    return numeric_limits<double>::max()/1000;
+  }
 }
 
 
@@ -220,19 +290,19 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   if (m_NoiseActive == false) return;
 
-	// Test for failure:
-	if (gRandom->Rndm() < m_FailureRate) {
-		Energy = 0;
-		return;
-	}
+  // Test for failure:
+  if (gRandom->Rndm() < m_FailureRate) {
+    Energy = 0;
+    return;
+  }
 
   // Noise:
   ApplyEnergyResolution(Energy);
 
-	// Overflow:
+  // Overflow:
   ApplyOverflow(Energy);
 
-	// Noise threshold:
+  // Noise threshold:
   if (ApplyNoiseThreshold(Energy) == true) {
     return;
   }
@@ -645,14 +715,14 @@ MString MDVoxel3D::GetGeomega() const
   out<<m_Name<<".Offset "<<m_OffsetX<<" "<<m_OffsetY<<" "<<m_OffsetZ<<endl;
   out<<m_Name<<".Voxels "<<m_NVoxelsX<<" "<<m_NVoxelsY<<" "<<m_NVoxelsZ<<endl;
 
-  if (m_GuardringEnergyResolution->GetNDataPoints() > 0) {
+  if (m_GuardringEnergyResolution.GetNDataPoints() > 0) {
     out<<m_Name<<".GuardringTriggerThreshold "
        <<m_GuardringTriggerThreshold<<" "
        <<m_GuardringTriggerThresholdSigma<<endl;
-    for (int d = 0; d < m_GuardringEnergyResolution->GetNDataPoints(); ++d) {
+    for (unsigned int d = 0; d < m_GuardringEnergyResolution.GetNDataPoints(); ++d) {
       out<<m_Name<<".GuardringEnergyResolution "<<
-        m_GuardringEnergyResolution->GetDataPointXValueAt(d)<<" "<<
-        m_GuardringEnergyResolution->GetDataPointYValueAt(d)<<endl;
+        m_GuardringEnergyResolution.GetDataPointX(d)<<" "<<
+        m_GuardringEnergyResolution.GetDataPointY(d)<<endl;
     }
   }
   
@@ -669,16 +739,10 @@ MString MDVoxel3D::ToString() const
 
   ostringstream out;
 
-  out<<"Detector "<<m_Name<<" - Voxel3D"<<endl;
-  out<<"   with sensitive volumes: ";  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<m_SVs[i]->GetName()<<" ";
-  }
-  out<<endl<<"   width: "<<m_WidthX<<", "<<m_WidthY<<endl;
+  out<<MDDetector::ToString()<<endl;
   out<<"   offset: "<<m_OffsetX<<", "<<m_OffsetY<<", "<<m_OffsetZ<<endl;
   out<<"   voxels: "<<m_NVoxelsX<<", "<<m_NVoxelsY<<", "<<m_NVoxelsZ<<endl;
   out<<"   v.size: "<<m_VoxelSizeX<<", "<<m_VoxelSizeY<<", "<<m_VoxelSizeZ<<endl;
-
 
   return out.str().c_str();  
 }
@@ -826,6 +890,7 @@ bool MDVoxel3D::Validate()
                                    0.5*(-m_WidthY+m_OffsetY),
                                    0.5*(-m_WidthZ+m_OffsetZ));
 
+  
   if (m_EnergyLossType == c_EnergyLossTypeMap) {
     if (fabs(m_EnergyLossMap.GetXMin() - (-m_StructuralSize.X()+m_OffsetX)) > 10E-7 ||
         fabs(m_EnergyLossMap.GetXMax() - (+m_StructuralSize.X()-m_OffsetX)) > 10E-7 ||
@@ -850,6 +915,13 @@ bool MDVoxel3D::Validate()
       m_EnergyLossMap.RescaleY(-m_StructuralSize.Y()+m_OffsetY, m_StructuralSize.Y()-m_OffsetY);
       m_EnergyLossMap.RescaleZ(-m_StructuralSize.Z(), m_StructuralSize.Z());
     }
+  }
+  
+  if (m_GuardringTriggerThreshold == g_DoubleNotDefined) {
+    m_GuardringTriggerThreshold = numeric_limits<double>::max()/100;
+  }
+  if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeUnknown) {
+    m_GuardringEnergyResolutionType = c_GuardringEnergyResolutionTypeNone;
   }
 
   return true;

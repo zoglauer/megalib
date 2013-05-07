@@ -1,5 +1,5 @@
 # Macroscopic cross section for Photo absorption
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Photo absorption cross section for CdTe
 CE false
-HA 3257043490
+HA 1847783446
 
 R1         1.000000 4.752001e+04
 R1         1.047129 4.309084e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 8.039111e-08
 R1  66069344.800760 7.677236e-08
 R1  69183097.091894 7.331812e-08
 R1  72443596.007499 7.001930e-08
-R1  75857757.502918 6.686890e-08
+R1  75857757.502919 6.686890e-08
 R1  79432823.472428 6.386025e-08
 R1  83176377.110267 6.098697e-08
 R1  87096358.995608 5.824296e-08

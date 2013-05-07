@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for Steel
 CE false
-HA 562393349
+HA 3225300879
 
 R1         1.000000 6.952569e+04
 R1         1.047129 6.317161e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 4.359320e-01
 R1  66069344.800760 4.359596e-01
 R1  69183097.091894 4.359873e-01
 R1  72443596.007499 4.360150e-01
-R1  75857757.502918 4.360429e-01
+R1  75857757.502919 4.360429e-01
 R1  79432823.472428 4.360709e-01
 R1  83176377.110267 4.360902e-01
 R1  87096358.995608 4.361080e-01

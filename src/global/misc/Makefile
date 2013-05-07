@@ -11,8 +11,6 @@
 #----------------------------------------------------------------
 # Definitions:
 #
-MOBJS			= $(LB)/MIWorksMain.o
-
 
 OBJS      = $(LB)/MGlobal.o \
 						$(LB)/MAssert.o \
@@ -70,6 +68,9 @@ OBJS      = $(LB)/MGlobal.o \
 						$(LB)/MFunction3D.o \
 						$(LB)/MFunction3DSpherical.o \
 						$(LB)/MVector.o \
+						$(LB)/MPrelude.o \
+						$(LB)/MTime.o \
+						$(LB)/MTimer.o \
 						$(LB)/MSettingsInterface.o \
 						$(LB)/MSettings.o \
 						$(LB)/MSettingsBasicFiles.o \
@@ -77,16 +78,6 @@ OBJS      = $(LB)/MGlobal.o \
 						$(LB)/MXmlNode.o \
 						$(LB)/MXmlAttribute.o \
 						$(LB)/MXmlDocument.o \
-
-
-RCINT	    = $(LB)/Global_Cint.o
-
-ROBJS = 		$(LB)/MTimer.o \
-						$(LB)/MTime.o \
-
-RHEADER = 	$(shell pwd)/inc/MTimer.h \
-						$(shell pwd)/inc/MTime.h \
-						$(shell pwd)/inc/LinkDef.h
 
 
 SOBJ = $(LB)/libCommonMisc.$(DLL)
@@ -114,32 +105,19 @@ clean:
 # Dependencies:
 #
 
-$(SOBJ): $(OBJS) $(ROBJS) $(RCINT)
+$(SOBJ): $(OBJS) 
 	@echo "Linking $(subst $(LB)/,,$@) ..."
 ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(OBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SOBJ)
+	$(LD) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
 	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
 	   -o $(subst .$(DLL),.so,$@)
 else
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SOBJ)
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
 endif
-
-$(MOBJS): $(LB)/%.o: src/%.cxx inc/%.h
-	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
-$(ROBJS): $(LB)/%.o: src/%.cxx inc/%.h
-	@echo "Compiling $(subst src/,,$<) ..."
-	@$(CXX) $(CXXFLAGS) -D___CINT___ -c $< -o $@
-
-$(RCINT): $(RHEADER)	
-	@echo "Generating dictionary ..."
-	@rootcint -f $*.cxx -c -D___CINT___ -I$(IN) $(RHEADER) 	
-	@$(CXX) $(CXXFLAGS) -D___CINT___ -c  $*.cxx  -o $*.o
 
 #
 #----------------------------------------------------------------

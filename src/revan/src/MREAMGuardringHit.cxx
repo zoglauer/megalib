@@ -36,6 +36,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MDDetector.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 

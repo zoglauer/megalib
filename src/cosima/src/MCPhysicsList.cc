@@ -18,16 +18,19 @@
 
 // Cosima:
 #include "MCPhysicsList.hh"
-#include "MCPhysicsListEMStandard.hh"
-#include "MCPhysicsListEMPenelope.hh"
-#include "MCPhysicsListEMLivermore.hh"
-#include "MCPhysicsListEMLivermorePol.hh"
 #include "MCPhysicsListDecay.hh"
 #include "MCPhysicsListParticles.hh"
 
 // Geant4:
 #include "HadronPhysicsQGSP_BIC_HP.hh"
 #include "HadronPhysicsQGSP_BERT_HP.hh"
+#include "G4EmExtraPhysics.hh"
+#include "G4HadronElasticPhysicsHP.hh"
+#include "G4QStoppingPhysics.hh"
+#include "G4IonPhysics.hh"
+#include "G4IonBinaryCascadePhysics.hh"
+#include "G4NeutronTrackingCut.hh"
+
 #include "G4Region.hh"
 #include "G4RegionStore.hh"
 #include "G4EmLivermorePhysics.hh"
@@ -71,8 +74,7 @@ const int MCPhysicsList::c_HDMax = 2;
 /******************************************************************************
  * Default constructor: Does nothing
  */
-MCPhysicsList::MCPhysicsList(MCParameterFile& RunParameters) : 
-  G4VModularPhysicsList(),
+MCPhysicsList::MCPhysicsList(MCParameterFile& RunParameters) : G4VModularPhysicsList(),
   m_PhysicsListEM(RunParameters.GetPhysicsListEM()),
   m_PhysicsListHD(RunParameters.GetPhysicsListHD()),
   m_Regions(RunParameters.GetRegionList())
@@ -123,13 +125,25 @@ void MCPhysicsList::Register()
   if (m_PhysicsListHD == c_HDNone) {
     // None
   } else if (m_PhysicsListHD == c_HDQGSP_BIC_HP) {
-    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP("QGSP_BIC_HP"));
+    RegisterPhysics(new G4EmExtraPhysics());
+    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
+    RegisterPhysics(new G4QStoppingPhysics());
+    RegisterPhysics(new G4IonBinaryCascadePhysics());
+    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP());
   } else if (m_PhysicsListHD == c_HDQGSP_BERT_HP) {
-    RegisterPhysics(new HadronPhysicsQGSP_BERT_HP("QGSP_BERT_HP"));
+    RegisterPhysics(new G4EmExtraPhysics());
+    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
+    RegisterPhysics(new G4QStoppingPhysics());
+    RegisterPhysics(new G4IonPhysics());
+    RegisterPhysics(new HadronPhysicsQGSP_BERT_HP());
   } else {
     mout<<"Unknown HD physics list ID: "<<m_PhysicsListHD<<endl;
     mout<<"Using QGSP-BIC-HP"<<endl;
-    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP("QGSP_BIC_HP"));
+    RegisterPhysics(new G4EmExtraPhysics());
+    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
+    RegisterPhysics(new G4QStoppingPhysics());
+    RegisterPhysics(new G4IonBinaryCascadePhysics());
+    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP());
   }
 
   // We always register all sorts of decays:
@@ -173,12 +187,12 @@ void MCPhysicsList::ConstructProcess()
             cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             PhotoElectricAugerFound = true;
           } else if (Model->GetName() == "LivermorePhElectric") {
-            dynamic_cast<G4LivermorePhotoElectricModel*>(Model)->ActivateAuger(true);
-            cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
+            //dynamic_cast<G4LivermorePhotoElectricModel*>(Model)->ActivateAuger(true);
+            //cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             PhotoElectricAugerFound = true;
           } else if (Model->GetName() == "PenPhotoElec") {
-            dynamic_cast<G4PenelopePhotoElectricModel*>(Model)->ActivateAuger(true);
-            cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
+            //dynamic_cast<G4PenelopePhotoElectricModel*>(Model)->ActivateAuger(true);
+            //cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             PhotoElectricAugerFound = true;
           } else if (Model->GetName() == "phot") {
             PhotoElectricAugerFound = true; // No Auger here, so set it to true          
@@ -186,8 +200,8 @@ void MCPhysicsList::ConstructProcess()
          
           // Compton: 
           if (Model->GetName() == "PenCompton") {
-            dynamic_cast<G4PenelopeComptonModel*>(Model)->ActivateAuger(true);
-            cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
+            //dynamic_cast<G4PenelopeComptonModel*>(Model)->ActivateAuger(true);
+            //cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             ComptonAugerFound = true;
           } else if (Model->GetName() == "LivermorePolarizedCompton" || Model->GetName() == "LivermoreCompton") {
             cout<<"Model "<<Model->GetName()<<" does not provide Auger effect --- check back in future Geant4 versions..."<<endl;
@@ -205,8 +219,8 @@ void MCPhysicsList::ConstructProcess()
          
           // Ionization:
           if (Model->GetName() == "LowEnergyIoni") {
-            dynamic_cast<G4LivermoreIonisationModel*>(Model)->ActivateAuger(true);
-           cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
+            //dynamic_cast<G4LivermoreIonisationModel*>(Model)->ActivateAuger(true);
+            //cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             ElectronIonizationAugerFound = true;
           } else if (Model->GetName() == "PenelopeIoni") {
             dynamic_cast<G4PenelopeIonisationModel*>(Model)->ActivateAuger(true);

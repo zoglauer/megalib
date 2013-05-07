@@ -103,6 +103,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseSpdElectron, 
                    c_ResponseSpdElectronVsCompton, 
                    c_ResponseDualArm, 
+                   c_ResponseArmComparison, 
                    c_ResponseBackground, 
                    c_ResponseSpectrum, 
                    c_ResponseInitialEnergyDeposit, 

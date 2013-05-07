@@ -37,7 +37,6 @@ using namespace std;
 #include "MAssert.h"
 #include "MSettings.h"
 #include "MGUIMain.h"
-#include "MGUILicense.h"
 #include "MDGeometryQuest.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,38 +76,6 @@ MDGeometryQuest* MInterface::GetGeometry()
   // If there is no geometry, the pointer is zero
 
   return m_Geometry;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MInterface::ShowLicense()
-{
-  // Shows the license file if in GUI mode
-
-  massert(m_BasicGuiData != 0);
-
-  if (m_BasicGuiData->GetMEGAlibVersion()/100 < g_MajorVersion) {
-    MString LicenseFileName = g_MEGAlibPath + "/doc/License.txt";
-    MFile::ExpandFileName(LicenseFileName);
-    // Check if the license exists:
-    ifstream File(LicenseFileName);
-    if (File.is_open() == false) {
-      mlog<<"Error: Cannot find the license file! Aborting!"<<endl; 
-      return false;
-    }
-    File.close();
-    
-    MGUILicense* License = 
-      new MGUILicense(gClient->GetRoot(), gClient->GetRoot(), LicenseFileName);
-    License->Create();
-    if (License->IsAccepted() == false) return false;
-    m_BasicGuiData->SetMEGAlibVersion(g_Version);
-    delete License;
-  }
-
-  return true;
 }
 
 

@@ -48,34 +48,42 @@ ClassImp(MDDriftChamber)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+const int MDDriftChamber::c_LightEnergyResolutionTypeUnknown    = 0;
+const int MDDriftChamber::c_LightEnergyResolutionTypeIdeal      = 1;
+const int MDDriftChamber::c_LightEnergyResolutionTypeGauss      = 2;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDDriftChamber::MDDriftChamber(MString Name) : MDStrip3D(Name)
 {
   // Construct an instance of MDDriftChamber
 
   m_Type = c_DriftChamber;
   m_Description = c_DriftChamberName;
-  m_NoiseAxis = 3;
 
-  m_LightSpeed = c_SpeedOfLight;
-  m_LightDetectorPosition = 0; // No light detector
-  m_DriftConstant = 0; // No opening angle for the drift
-  m_EnergyPerElectron = 0.022; //kev: Not used if no opening angle is defined
+  m_LightSpeed = g_DoubleNotDefined;
+  m_LightDetectorPosition = g_IntNotDefined; // No light detector
+  m_DriftConstant = g_DoubleNotDefined; // No opening angle for the drift
+  m_EnergyPerElectron = g_DoubleNotDefined; //kev: Not used if no opening angle is defined
 
-  m_LightEnergyResolution = new MSpline(MSpline::Interpolation);
+  m_LightEnergyResolutionType = c_LightEnergyResolutionTypeUnknown;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDriftChamber::MDDriftChamber(const MDDriftChamber& D)
+MDDriftChamber::MDDriftChamber(const MDDriftChamber& D) : MDStrip3D(D)
 {
   m_LightSpeed = D.m_LightSpeed;
   m_LightDetectorPosition = D.m_LightDetectorPosition;
   m_DriftConstant = D.m_DriftConstant;
   m_EnergyPerElectron = D.m_EnergyPerElectron;
 
-  m_LightEnergyResolution = new MSpline(*(D.m_LightEnergyResolution)); 
+  m_LightEnergyResolutionType = D.m_LightEnergyResolutionType;
+  m_LightEnergyResolution = D.m_LightEnergyResolution; 
 }
 
  
@@ -94,11 +102,59 @@ MDDetector* MDDriftChamber::Clone()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDDriftChamber::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+  
+  MDDetector::CopyDataToNamedDetectors();
+  
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int n = 0; n < m_NamedDetectors.size(); ++n) {
+    if (dynamic_cast<MDDriftChamber*>(m_NamedDetectors[n]) == 0) {
+      mout<<"   ***  Internal error  ***  in detector "<<m_Name<<endl;
+      mout<<"We have a named detector ("<<m_NamedDetectors[n]->GetName()<<") which is not of the same type as the base detector!"<<endl;
+      return false;
+    }
+    MDDriftChamber* D = dynamic_cast<MDDriftChamber*>(m_NamedDetectors[n]);
+
+    if (D->m_LightSpeed == g_DoubleNotDefined && 
+        m_LightSpeed != g_DoubleNotDefined) {
+      D->m_LightSpeed = m_LightSpeed;
+    }
+
+    if (D->m_LightDetectorPosition == g_IntNotDefined && 
+        m_LightDetectorPosition != g_IntNotDefined) {
+      D->m_LightDetectorPosition = m_LightDetectorPosition;
+    }
+
+    if (D->m_DriftConstant == g_DoubleNotDefined && 
+        m_DriftConstant != g_DoubleNotDefined) {
+      D->m_DriftConstant = m_DriftConstant;
+    }
+
+    if (D->m_EnergyPerElectron == g_DoubleNotDefined && 
+        m_EnergyPerElectron != g_DoubleNotDefined) {
+      D->m_EnergyPerElectron = m_EnergyPerElectron;
+    }
+    
+    if (D->m_LightEnergyResolutionType == c_LightEnergyResolutionTypeUnknown && 
+        m_LightEnergyResolutionType != c_LightEnergyResolutionTypeUnknown) {
+      D->m_LightEnergyResolutionType = m_LightEnergyResolutionType; 
+      D->m_LightEnergyResolution = m_LightEnergyResolution; 
+    }
+  }
+   
+  return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDDriftChamber::~MDDriftChamber()
 {
   // Delete this instance of MDDriftChamber
-
-  delete m_LightEnergyResolution;
 }
 
 
@@ -113,7 +169,7 @@ void MDDriftChamber::SetLightEnergyResolution(const double Energy,
   massert(Energy >= 0);
   massert(Resolution >= 0);
 
-  m_LightEnergyResolution->AddDataPoint(Energy, Resolution);
+  m_LightEnergyResolution.Add(Energy, Resolution);
 }
 
 
@@ -124,7 +180,7 @@ double MDDriftChamber::GetLightEnergyResolution(const double Energy) const
 {
   // 
 
-  return m_LightEnergyResolution->Get(Energy);
+  return m_LightEnergyResolution.Evaluate(Energy);
 }
 
 
@@ -133,7 +189,16 @@ double MDDriftChamber::GetLightEnergyResolution(const double Energy) const
 
 bool MDDriftChamber::NoiseLightEnergy(double& Energy) const
 {
-  Energy = gRandom->Gaus(Energy, GetLightEnergyResolution(Energy));
+  if (m_LightEnergyResolutionType == c_LightEnergyResolutionTypeIdeal) {
+    // do nothing
+  } else if (m_LightEnergyResolutionType == c_LightEnergyResolutionTypeGauss) {
+    Energy = gRandom->Gaus(Energy, GetLightEnergyResolution(Energy));
+  } else {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"Unknown light energy resolution type: "<<m_LightEnergyResolutionType<<endl;
+    return false;    
+  }
+  
   return true;
 }
 
@@ -304,6 +369,47 @@ double MDDriftChamber::GetLightTravelTime(const MVector& Position) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDDriftChamber::Validate()
+{
+  // Check if all input is reasonable
+
+  if (MDStrip3D::Validate() == false) {
+    return false;
+  }
+
+  //m_LightSpeed = c_SpeedOfLight;
+  //m_LightDetectorPosition = 0; // No light detector
+  //m_DriftConstant = 0; // No opening angle for the drift
+  //m_EnergyPerElectron = 0.022; //kev: Not used if no opening angle is defined
+  
+  if (m_LightSpeed == g_DoubleNotDefined) {
+     m_LightSpeed = c_SpeedOfLight;
+  }
+  
+  if (m_LightDetectorPosition == g_IntNotDefined) {
+     m_LightDetectorPosition = 0; // No light detector
+  }
+  
+  if (m_DriftConstant == g_DoubleNotDefined) {
+     m_DriftConstant = 0;
+  }
+  
+  if (m_EnergyPerElectron == g_DoubleNotDefined) {
+     m_EnergyPerElectron = 0.022; //keV
+  }
+  
+  if (m_LightEnergyResolutionType == c_LightEnergyResolutionTypeUnknown) {
+    mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+    mout<<"No light energy resolution defined --- assuming ideal"<<endl; 
+    m_LightEnergyResolutionType = c_LightEnergyResolutionTypeIdeal;
+  }
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MDDriftChamber::GetGeomega() const
 {
   // Return all detector characteristics in Geomega-Format
@@ -318,10 +424,10 @@ MString MDDriftChamber::GetGeomega() const
   out<<m_Name<<".LightDetectorPosition "<<m_LightDetectorPosition<<endl;
   out<<m_Name<<".DriftConstant "<<m_DriftConstant<<endl;
   out<<m_Name<<".EnergyPerElectron "<<m_EnergyPerElectron<<endl;
-  for (int d = 0; d < m_LightEnergyResolution->GetNDataPoints(); ++d) {
+  for (unsigned int d = 0; d < m_LightEnergyResolution.GetNDataPoints(); ++d) {
     out<<m_Name<<".DepthResolution "<<
-      m_LightEnergyResolution->GetDataPointXValueAt(d)<<" "<<
-      m_LightEnergyResolution->GetDataPointYValueAt(d)<<endl;
+      m_LightEnergyResolution.GetDataPointX(d)<<" "<<
+      m_LightEnergyResolution.GetDataPointY(d)<<endl;
   }  
 
   return out.str().c_str();  
@@ -379,21 +485,10 @@ MString MDDriftChamber::GetMGeant() const
 MString MDDriftChamber::ToString() const
 {
   ostringstream out;
-
-  out<<"Detector "<<m_Name<<" - drift chamber"<<endl;
-  out<<"   with sensitive volumes: ";  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<m_SVs[i]->GetName()<<" ";
-  }
-  out<<endl<<"   width: "<<m_WidthX<<", "<<m_WidthY<<endl;
-  out<<"   offset: "<<m_OffsetX<<", "<<m_OffsetY<<endl;
-  out<<"   pitch: "<<m_PitchX<<", "<<m_PitchY<<endl;
-  out<<"   striplength: "<<m_StripLengthX<<", "<<m_StripLengthY<<endl;
-  out<<"   stripnumber: "<<m_NStripsX<<", "<<m_NStripsY<<endl;
+  out<<MDStrip3D::ToString()<<endl;
 
   return out.str().c_str();  
 }
-
 
 
 // MDDriftChamber.cxx: the end...

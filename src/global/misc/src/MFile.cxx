@@ -200,7 +200,7 @@ bool MFile::ApplyPath(MString& FileName, const MString& Path)
   ExpandFileName(NewPath);
   
   MString DirName = GetDirectoryName(NewPath); 
-
+  
   FileName = DirName + MString("/") + FileName;
 
   return true;
@@ -242,8 +242,8 @@ MString MFile::GetDirectoryName(const MString& Name)
   if (FileName.Length() >= 2 && FileName[1] == ':') {
     WindowsDir = FileName.GetSubString(0, 2); 
   }
-  WorkingDir = gSystem->DirName(FileName);
-
+  WorkingDir += gSystem->DirName(FileName);
+  
   // Some ROOT versions have a windows working dir bug:
   if (WindowsDir != "" && WorkingDir.BeginsWith(WindowsDir) == false) {
     WorkingDir = WindowsDir + WorkingDir;
@@ -327,7 +327,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
       return false;
     }
 
-    // Store infoarmation about the old and new file
+    // Store information about the old and new file
     m_WasZipped = true;
     m_ZippedFileName = m_FileName;
     m_FileName = NewFileName;
@@ -597,15 +597,6 @@ MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
   }
 
   return RelFileName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MFile::GetFileName() const
-{
-  return m_FileName;
 }
 
 

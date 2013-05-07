@@ -1,0 +1,37 @@
+# Template Run for Step 1 of activation simulation: 
+# Simulate primary protons & store all generated particles
+
+
+# Global parameters:
+Version                            1
+Geometry                           LaBr3Sample.geo.setup
+DetectorTimeConstant               0.000005
+
+
+# Physics parameters
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+DecayMode                          ActivationBuildup
+
+
+# Storage parameters
+StoreCalibrated                    true
+StoreSimulationInfo                all
+DiscretizeHits                     true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+
+
+# Simulate the primary protons and all secondaries
+Run Step1
+Step1.FileName                         CoolDown.Phase1.BuildUp
+Step1.Events                           1000000
+Step1.IsotopeProductionFile            CoolDown.Phase1.BuildUp.dat
+
+Step1.Source Step1_ProtonSource
+Step1_ProtonSource.ParticleType        4
+Step1_ProtonSource.Beam                HomogeneousBeam -50.0 0.0 0.0  1.0 0.0 0.0  0.5
+Step1_ProtonSource.Spectrum            Mono 100000
+Step1_ProtonSource.Flux                1000000.0

@@ -65,7 +65,10 @@ class MDVolume
   void SetAbsorptions(bool DoAbsorption);
   bool DoAbsorptions();
 
-  void SetMother(MDVolume* Mother);
+  //! Check if any of the mothers is "Mother"
+  bool HasMother(MDVolume* Mother);
+  //! Set the mother, if an error occurs return false and do not set the mother
+  bool SetMother(MDVolume* Mother);
   MDVolume* GetMother();
 
   void AddDaughter(MDVolume* Daughter);
@@ -90,10 +93,10 @@ class MDVolume
                    double theta2, double phi2, 
                    double theta3, double phi3);
   // TRotMatrix* GetRotation();
-  TMatrixD GetRotationMatrix();
-  TMatrixD GetInvRotationMatrix();
-  bool IsRotated();
-  int GetRotationID();
+  TMatrixD GetRotationMatrix() const;
+  TMatrixD GetInvRotationMatrix() const;
+  bool IsRotated() const;
+  int GetRotationID() const;
 
   void SetVisibility(int Visibility);
   int GetVisibility();
@@ -176,9 +179,15 @@ class MDVolume
   bool Noise(MVector& Pos, double& Energy, double& Time); 
   //! Find detector volume and apply pulse-shape correction
   bool ApplyPulseShape(double Time, MVector& Pos, double& Energy);
+  
   //! FILL the MDVolumeSequence object with the sequence of volumes of the deepest volume the given position is in
   //! The return value is for internal purposes only!
   bool GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence);
+  //! FILL the MDVolumeSequence object with the sequence of volumes of the deepest volume the given position is in
+  //! The position starts in this volume, but is translated to the world volume, and then the sequecning starts
+  //! The return value is for internal purposes only!
+  bool GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence);
+  
   //! FILL the PATH lengths in the different materials between the positions start and stop
   //! The return value is for internal purposes only (volume (cm3) of the last volume)
   double GetAbsorptionLengths(map<MDMaterial*, double>& Lengths, MVector Start, MVector Stop);
@@ -201,8 +210,10 @@ class MDVolume
   //! Optimized the arrangement of the volume true, for the search of hits in sensitive detectors
   void OptimizeVolumeTree();
 
-  //! Returns the position in the mother volume -- test if there is mother volume first
+  //! Returns the position in the mother volume - pos is in this volume - test if there is mother volume first
   MVector GetPositionInMotherVolume(MVector Pos);
+  //! Returns the position in the world volume - pos is inside this volume
+  MVector GetPositionInWorldVolume(MVector Pos);
 
   //! Returns a random position in any of the volumes defined by Volume
   MVector GetRandomPositionInVolume(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);

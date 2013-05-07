@@ -174,7 +174,6 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
       }
     }
   }
-  
   m_V.clear();
   m_V.resize(m_X.size()*m_Y.size()*m_Z.size());
 
@@ -256,17 +255,17 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
         int yPosition = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2);
         int zPosition = Parser.GetTokenizerAt(i)->GetTokenAtAsInt(3);
 
-        if (xPosition < 0 || xPosition >= (int) m_X.size()) {
+        if (xPosition < 0 || xPosition > (int) m_X.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Phi-axis out of bounds: "<<xPosition<<endl;
           return false;
         }
-        if (yPosition < 0 || yPosition >= (int) m_Y.size()) {
+        if (yPosition < 0 || yPosition > (int) m_Y.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Theta-axis out of bounds: "<<yPosition<<endl;
           return false;
         }
-        if (zPosition < 0 || zPosition >= (int) m_Z.size()) {
+        if (zPosition < 0 || zPosition > (int) m_Z.size()) {
           mout<<"In the function defined by: "<<FileName<<endl;
           mout<<"Energy-axis out of bounds: "<<zPosition<<endl;
           return false;
@@ -277,6 +276,13 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
     }
   }
 
+  // Make sure we have spherical coordinates, i.e. theta has to be within [0..180]
+  if (m_Y[0] < 0 || m_Y.back() > 180) {
+    mout<<"In the function defined by: "<<FileName<<endl;
+    mout<<"The theta axis values are not all within [0...180]"<<endl;
+    return false;    
+  }
+  
   cout<<"Done reading 3D Spherical function (body)!"<<endl;
 
   // Determine interapolation type:
@@ -305,12 +311,16 @@ bool MFunction3DSpherical::Set(const MString FileName, const MString KeyWord,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFunction3DSpherical::Save(const MString FileName, const MString Keyword)
+bool MFunction3DSpherical::Save(const MString FileName, const MString Keyword) 
 {
   // Save to a file:
   
   ofstream out;
   out.open(FileName);
+  if (out.is_open() == false) {
+    merr<<"Unable to open file: "<<FileName<<endl;
+    return false;
+  }
   
   out<<scientific;
   out<<setprecision(8);
@@ -347,11 +357,11 @@ bool MFunction3DSpherical::Save(const MString FileName, const MString Keyword)
   out<<"EN"<<endl;
   
   out.close();
-  
+
   return true;
 }
   
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -364,14 +374,14 @@ double MFunction3DSpherical::Integrate() const
 
   for (unsigned int x = 0; x < m_X.size()-1; ++x) {
     double xCenter = 0.5*(m_X[x+1] + m_X[x]);
-    double xSize = (m_X[x+1] - m_X[x])*c_Rad;
+    double xSize = fabs((m_X[x+1] - m_X[x]))*c_Rad;
     for (unsigned int y = 0; y < m_Y.size()-1; ++y) {
       double yCenter = 0.5*(m_Y[y+1] + m_Y[y]);
-      double ySize = cos(m_Y[y]*c_Rad) - cos(m_Y[y+1]*c_Rad);
+      double ySize = fabs(cos(m_Y[y]*c_Rad) - cos(m_Y[y+1]*c_Rad));
       for (unsigned int z = 0; z < m_Z.size()-1; ++z) {
         double zCenter = 0.5*(m_Z[z+1] + m_Z[z]);
-        double zSize = m_Z[z+1] - m_Z[z];
-        Integral += xSize*ySize*zSize*Eval(xCenter, yCenter, zCenter);
+        double zSize = fabs(m_Z[z+1] - m_Z[z]);
+        Integral += xSize*ySize*zSize*Evaluate(xCenter, yCenter, zCenter);
       }
     }
   }
@@ -392,13 +402,22 @@ void MFunction3DSpherical::GetRandom(double& x, double& y, double& z)
     m_Maximum = GetVMax();
   }
 
+  double x_min = GetXMin();
+  double x_diff = GetXMax() - GetXMin();
+  
+  double y_min = cos(m_Y[0]*c_Rad);
+  double y_diff = cos(m_Y[0]*c_Rad) - cos(m_Y.back()*c_Rad);
+  
+  double z_min = GetZMin();
+  double z_diff = GetZMax() - GetZMin();
+  
   double v = 0;
   do {
-    x = gRandom->Rndm()*(GetXMax() - GetXMin()) + GetXMin();
-    y = acos(cos(GetYMin()*c_Rad) - gRandom->Rndm()*(cos(GetYMin()*c_Rad) - cos(GetYMax()*c_Rad)))*c_Deg;
-    z = gRandom->Rndm()*(GetZMax() - GetZMin()) + GetZMin();
-
-    v = Eval(x, y, z);
+    x = gRandom->Rndm()*x_diff + x_min;
+    y = acos(y_min - gRandom->Rndm()*y_diff)*c_Deg;
+    z = gRandom->Rndm()*z_diff + z_min;
+    
+    v = Evaluate(x, y, z);
   } while (m_Maximum*gRandom->Rndm() > v);
 }
 
@@ -412,7 +431,7 @@ void MFunction3DSpherical::Plot(bool Random)
   
   if (m_X.size() >= 2 && m_Y.size() >= 2 && m_Z.size() >= 2) {
 
-    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical", 50, m_X.front(), m_X.back(), 50, m_Y.front(), m_Y.back(), 50, m_Z.front(), m_Z.back());
+    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical", m_X.size(), m_X.front(), m_X.back(), m_Y.size(), m_Y.front()-90, m_Y.back()-90, m_Z.size(), m_Z.front(), m_Z.back());
     Hist->SetXTitle("phi in degree");
     Hist->SetYTitle("theta in degree");
     Hist->SetZTitle("energy in keV");
@@ -437,7 +456,7 @@ void MFunction3DSpherical::Plot(bool Random)
       for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
         for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
           for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
-            Hist->SetBinContent(bx, by, bz, Eval(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
+            Hist->SetBinContent(bx, by, bz, Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
           }
        }
       }

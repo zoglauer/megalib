@@ -414,11 +414,99 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           
         }
       }
+    } else if (ProcessName.find("hadElastic") != string::npos) {
+
+      // There always has to be a generated secondary, since we generate a new nucleus
+      if (GeneratedSecondaries == 0) {
+        mout<<"Hadronic elastic scattering without secondaries!"<<endl;
+      }
+
+      // Take care of all secondary particles which are generated
+      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+
+        m_InteractionId++;
+        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
+
+        // Now write some data about the real interaction positions 
+        // in order to compare with the measured ones:
+        EventAction->AddIA("ELAS", 
+                           m_InteractionId,
+                           ((MCTrackInformation*) Track->GetUserInformation())->GetOriginId(),
+                           GetDetectorId(Step->GetPreStepPoint()),
+                           Time,
+                           Track->GetPosition(),
+                           GetParticleId(Track->GetDefinition()),
+                           Track->GetMomentumDirection(),
+                           Track->GetPolarization(),
+                           Track->GetKineticEnergy(),
+                           //TrackA->GetDefinition()->GetExcitationEnergy(),
+                           //((MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[") == true) ? dynamic_cast<G4Ions*>(TrackA->GetDefinition())->GetExcitationEnergy() : 0.0),
+                           GetParticleId(TrackA->GetDefinition()),
+                           TrackA->GetMomentumDirection(),
+                           TrackA->GetPolarization(),
+                           TrackA->GetKineticEnergy());
+      
+      }
+    } else if (ProcessName.find("nFission") != string::npos) {
+
+      // There always has to be a generated secondary, since we generate a new nuclei, etc.
+      if (GeneratedSecondaries == 0) {
+        mout<<"Fission without secondaries??? - Geant4 behaves sometimes peculiar..."<<endl;
+        EventAction->AddIA("FISS", 
+                          m_InteractionId,
+                          ((MCTrackInformation*) Track->GetUserInformation())->GetOriginId(),
+                          GetDetectorId(Step->GetPreStepPoint()),
+                          Time,
+                          Track->GetPosition(),
+                          GetParticleId(Track->GetDefinition()),
+                          Track->GetMomentumDirection(),
+                          Track->GetPolarization(),
+                          Track->GetKineticEnergy(),
+                          0,
+                          G4ThreeVector(0.0, 0.0, 0.0),
+                          G4ThreeVector(0.0, 0.0, 0.0),
+                          0.0);
+      } else {
+        // Take care of all secondary particles which are generated
+        for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+
+          m_InteractionId++;
+          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
+
+          // Now write some data about the real interaction positions 
+          // in order to compare with the measured ones:
+          EventAction->AddIA("FISS", 
+                            m_InteractionId,
+                            ((MCTrackInformation*) Track->GetUserInformation())->GetOriginId(),
+                            GetDetectorId(Step->GetPreStepPoint()),
+                            Time,
+                            Track->GetPosition(),
+                            GetParticleId(Track->GetDefinition()),
+                            Track->GetMomentumDirection(),
+                            Track->GetPolarization(),
+                            Track->GetKineticEnergy(),
+                            //TrackA->GetDefinition()->GetExcitationEnergy(),
+                            //((MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[") == true) ? dynamic_cast<G4Ions*>(TrackA->GetDefinition())->GetExcitationEnergy() : 0.0),
+                            GetParticleId(TrackA->GetDefinition()),
+                            TrackA->GetMomentumDirection(),
+                            TrackA->GetPolarization(),
+                            TrackA->GetKineticEnergy());
+      
+        }
+      }
     } else if (ProcessName.find("Inelastic") != string::npos) {
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"Inelastic scattering didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<endl;
+        merr<<"Inelastic scattering didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -457,7 +545,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"HadronCapture/nCapture didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<show;
+        merr<<"HadronCapture/nCapture didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -496,7 +584,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       // There always has to be a generated secondary, since something decays into something else
       // "19" doesn't generate secondaries in Geant4... 
       if (GeneratedSecondaries == 0 && GetParticleId(Track->GetDefinition()) != 19) {
-        merr<<"Decay didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<endl;
+        merr<<"Decay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
         merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
       }
 
@@ -539,7 +627,17 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         //if (MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[0.0]") == true) {
         //  MetaStable = false;
         //}
-
+        
+        /*
+        if (m_PreventLastDecayBug == Track->GetDefinition()->GetParticleName().c_str()) {
+          merr<<"Infinite decay loop for isotope "<<Track->GetDefinition()->GetParticleName().c_str()<<" detected. This is a Geant4 bug... Skipping track"<<endl;
+          Track->SetTrackStatus(fKillTrackAndSecondaries);
+          return;
+        } else {
+          m_PreventLastDecayBug = Track->GetDefinition()->GetParticleName().c_str();
+        }
+        */
+  
         // The decay is the first process happening
         bool IsPrimaryDecay = false;
         if (((MCTrackInformation*) Track->GetUserInformation())->GetOriginId() <= int(m_InitialParticles.size())) {
@@ -680,7 +778,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           
           // There always has to be a generated secondary, since we generate a new nucleus
           //if (GeneratedSecondaries == 0) {
-          //  merr<<"RadioactiveDecay didn't generate secondaries! Either your thresholds are insane or a simulation error occured!"<<show;
+          //  merr<<"RadioactiveDecay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
           //}
           
           for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
@@ -895,8 +993,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           ProcessName != "ionIoni" &&
           ProcessName != "CoulombScat" &&
           ProcessName != "msc") {
-        merr<<"Uncovered process: "<<ProcessName<<" - please inform the lead developers of this problem."<<endl;
-        merr<<"-> Your simulations are ok - you only might miss an IA line in the sim file."<<show;
+        merr<<"Uncovered process: "<<ProcessName<<" - please inform the lead developers of this problem."<<endl
+            <<"-> Your simulations are ok - you only might miss an IA line in the sim file."<<show;
       }
 
   

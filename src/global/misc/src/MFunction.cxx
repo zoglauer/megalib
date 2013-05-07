@@ -485,7 +485,17 @@ void MFunction::CreateSplines()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MFunction::Eval(double x) const
+double MFunction::Eval(double x) const 
+{ 
+  mdep<<"MFunction::Eval is deprecated, replace with: MFunction::Evaluate"<<show;
+  return Evaluate(x); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MFunction::Evaluate(double x) const
 {
   // Evalute the function considering the different interpolation types
 
@@ -495,7 +505,8 @@ double MFunction::Eval(double x) const
   }
 
   if (m_X.size() == 0) {
-    merr<<"No data!"<<show;
+    merr<<"This function contains no data points for evaluation!"<<show;
+    massert(false);
     return 0;
   }
 
@@ -710,14 +721,14 @@ double MFunction::Integrate(double XMin, double XMax) const
 
       if (i == BinMin) {
         x1 = XMin;
-        y1 = Eval(x1);
+        y1 = Evaluate(x1);
       } else {
         x1 = m_X[i];
         y1 = m_Y[i];
       }
       if (i == BinMax) {
         x2 = XMax;
-        y2 = Eval(x2);
+        y2 = Evaluate(x2);
       } else {
         x2 = m_X[i+1];
         y2 = m_Y[i+1];
@@ -1103,7 +1114,7 @@ void MFunction::Plot()
     
     TH1D* Hist = new TH1D("Diagnostics", "Diagnostics", 10000, m_X.front(), m_X.back());
     for (int b = 1; b <= Hist->GetXaxis()->GetNbins(); ++b) {
-      Hist->SetBinContent(b, Eval(Hist->GetBinCenter(b)));
+      Hist->SetBinContent(b, Evaluate(Hist->GetBinCenter(b)));
     }
     TCanvas* Canvas = new TCanvas("DiagnosticsCanvas", "DiagnosticsCanvas");
     Canvas->cd();

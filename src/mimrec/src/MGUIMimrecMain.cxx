@@ -168,6 +168,7 @@ void MGUIMimrecMain::Create()
   MenuARM->AddEntry("ARM of scattered gamma-ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
   MenuARM->AddEntry("SPD of recoil electron vs Compton Scatter Angel (phi)", c_ResponseSpdElectronVsCompton);
   MenuARM->AddEntry("Dual ARM", c_ResponseDualArm);
+  MenuARM->AddEntry("ARM-imaging-response comparison", c_ResponseArmComparison);
   MenuARM->Associate(this);
 
   // The sub menu quality factors:
@@ -321,7 +322,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_FitParameter:
         if (m_Data->GetResponseType() == 0) {
           new MGUIResponseParameterGauss1D(gClient->GetRoot(), this, m_Data);
-        } else {
+        } else if (m_Data->GetResponseType() == 3) {
           new MGUIResponseParameterPRM(gClient->GetRoot(), this, m_Data);
         }
         break;
@@ -407,6 +408,13 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGamma();
+        }
+        break;
+        
+      case c_ResponseArmComparison:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->ARMResponseComparison();
         }
         break;
         

@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for MgS
 CE false
-HA 3919311937
+HA 3048482096
 
 R1         1.000000 1.778157e+03
 R1         1.047129 1.576180e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 3.559475e-02
 R1  66069344.800760 3.559648e-02
 R1  69183097.091894 3.559822e-02
 R1  72443596.007499 3.559997e-02
-R1  75857757.502918 3.560174e-02
+R1  75857757.502919 3.560174e-02
 R1  79432823.472428 3.560352e-02
 R1  83176377.110267 3.560562e-02
 R1  87096358.995608 3.560780e-02

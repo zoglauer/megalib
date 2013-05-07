@@ -118,12 +118,12 @@ MString MDShape::GetType()
 
 vector<MVector> MDShape::CreateSurfacePattern(const unsigned int Detail) const
 {
-	// Create a vector of points which are on the surface of this volume
+  // Create a vector of points which are on the surface of this volume
   // and can be used to check for intersections
 
   vector<MVector> Points;
 
-	return Points;
+  return Points;
 }
 
 

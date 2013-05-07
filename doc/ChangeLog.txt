@@ -3,6 +3,76 @@
 ******************************************************************************
 
 
+Version 2.25/2.26
+=================
+
+*** Important:
+
+THIS VERSION CONTAINS SIGNIFICANT CHANGES TO ONE OF THE CORE COMPONENTS OF
+MEGALIB. AS CONSEQUENCE, THIS VERSION IS MORE EXPERIMENTAL AS USUAL!
+
++ Test if your detector effect engine still works!
+  For the introduction of named detectors a partial redesign of the detector
+  effects engine was necessary.
++ Check if you still use the Compton reponse, which you want to use, in the 
+  mimrec UI, since a new (actually an old) one was re-added.
+
+  
+*** Significant new features & improvements:
+
+General:
++ Improved configuration script: "./configure" should be all you need to do
++ Added installation scripts for ROOT, Geant4 (9.5 and higher), and HEAsoft.
+  They can be found in the config directory, e.g. build-root.sh
++ The change log and license are now displayed when one of the GUI tools.
+  This adds a new configuration file called .megalib.cfg storing hashes
+  of both files.
+
+Cosima:
++ Compatibility with 9.5, dropped compatibility with 9.3
++ Updated hadronic physics-lists 
+
+Sivan:
+
+Geomega:
++ The preferred way to define components of materials is now via
+  MyMaterial.ComponentBy[Atoms/Mass] Cs 1
+  This way Geant4 can give the correct atomic mass and isotope composition 
+  from its data bases.
+  This definition is expected for activation simulations, where cross-sections
+  per isotope are present
++ Named detectors: It is now possible to derive named detectors from normal
+  detectors, which inhert all their properties except those explictly overwritten
+  by the named detector. This allows to give detectors consisting of identical
+  volumes different detector characteristics such as energy resolution
+
+Revan:
+
+Mimrec:
++ The response which caluclated the width of the Compton cones from uncertainties
+  has been reintroduced. Check if you still use the Compton reponse, which you 
+  want to use, in the mimrec UI
+
+Realta:
+
+Spectralizer:
+
+Examples:
++ DetectorEffectEngine: Show all options of the detector effects engine and
+  serves as unit test
+
+... plus many, many smaller things I already forgot about :)
+
+
+*** Important bug fixes:
+
+
+
+
+******************************************************************************
+
+
+
 Version 2.23/2.24
 =================
 

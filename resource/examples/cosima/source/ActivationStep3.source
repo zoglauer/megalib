@@ -1,6 +1,7 @@
 # Template Run for Step 2 of activation simulation: 
 # Calculate the activation
 
+# You can run this instance via mcosima
 
 # Global parameters:
 Version                            1
@@ -27,6 +28,9 @@ DefaultRangeCut     0.1
 
 Run ActivationStep3
 ActivationStep3.FileName                         ActivationStep3
+# It is very important to use a Time here and not a number of triggers/events
+# ActivationDelayedDecay stores radioactive daughter elements to get cascades right,
+# this might blow up the memory consumption, if we don't know a time limit
 ActivationStep3.Time                             10000.0
 
 ActivationStep3.ActivationSources                Activation.dat

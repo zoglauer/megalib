@@ -1,5 +1,5 @@
 # Macroscopic cross section for Rayleigh scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Rayleigh scattering cross section for Pb
 CE false
-HA 60222076
+HA 2800226549
 
 R1         1.000000 7.482149e+01
 R1         1.047129 7.553138e+01
@@ -404,7 +404,7 @@ R1  63095734.448019 7.733122e-12
 R1  66069344.800760 7.052691e-12
 R1  69183097.091894 6.432131e-12
 R1  72443596.007499 5.866174e-12
-R1  75857757.502918 5.350015e-12
+R1  75857757.502919 5.350015e-12
 R1  79432823.472428 4.879272e-12
 R1  83176377.110267 4.449948e-12
 R1  87096358.995608 4.058400e-12

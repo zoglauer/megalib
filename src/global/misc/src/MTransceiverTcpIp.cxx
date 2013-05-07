@@ -438,7 +438,7 @@ void MTransceiverTcpIp::TransceiverLoop()
       if (Status == 0) {
         cout<<"Transceiver "<<m_Name<<": Error: Connection lost!"<<endl;
       } else if (Status == -1) {
-        cout<<"Transceiver "<<m_Name<<": Error: A connection error occured!"<<endl;
+        cout<<"Transceiver "<<m_Name<<": Error: A connection error occurred!"<<endl;
        } else {
         cout<<"Transceiver "<<m_Name<<": Error: Unknown connection problem! Status: "<<Status<<", error code:"<<Socket->GetErrorCode()<<endl;        
       }

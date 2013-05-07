@@ -1,0 +1,49 @@
+// A simple geometry with a small LaBr3 cylinder for CoolDown simulations
+
+Name LaBr3Sample
+Version 1.0
+
+SurroundingSphere 1.0  0.0  0.0  0.0  1.0
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 100. 100. 100.
+WorldVolume.Mother 0
+
+
+Volume Sample
+Sample.Material LaBr3
+Sample.Visibility 1
+Sample.Color 6
+Sample.Shape TUBS 0.0 1.5 2.0 0.0 360.0
+Sample.Position 0.0 0.0 0.0
+Sample.Rotation 0.0 90.0 0.0
+Sample.Mother WorldVolume
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+Scintillator                  LaBr3Detector
+
+LaBr3Detector.DetectorVolume      Sample
+LaBr3Detector.SensitiveVolume     Sample
+
+LaBr3Detector.NoiseThreshold          0.000001
+LaBr3Detector.TriggerThreshold        0.000001
+
+LaBr3Detector.EnergyResolution  Ideal
+
+
+Trigger TN01
+TN01.Veto false
+TN01.TriggerByChannel true
+TN01.Detector LaBr3Detector 1
+

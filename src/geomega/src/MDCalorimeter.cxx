@@ -56,18 +56,18 @@ MDCalorimeter::MDCalorimeter(MString String) : MDDetector(String)
 
   m_Type = c_Calorimeter;
   m_Description = c_CalorimeterName;
-  m_DepthResolution = new MSpline(MSpline::Interpolation);
-  m_DepthResolutionSigma = new MSpline(MSpline::Interpolation);
+  m_DepthResolutionType = c_DepthResolutionTypeUnknown;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDCalorimeter::MDCalorimeter(const MDCalorimeter& C)
+MDCalorimeter::MDCalorimeter(const MDCalorimeter& C) : MDDetector(C)
 {
-  m_DepthResolution = new MSpline(*(C.m_DepthResolution)); 
-  m_DepthResolutionSigma = new MSpline(*(C.m_DepthResolutionSigma)); 
+  m_DepthResolutionType = C.m_DepthResolutionType;
+  m_DepthResolution = C.m_DepthResolution; 
+  m_DepthResolutionSigma = C.m_DepthResolutionSigma; 
 }
 
  
@@ -86,32 +86,40 @@ MDDetector* MDCalorimeter::Clone()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDCalorimeter::~MDCalorimeter()
+bool MDCalorimeter::CopyDataToNamedDetectors()
 {
-  // default destructor
+  //! Copy data to named detectors
   
-  delete m_DepthResolution;
-  delete m_DepthResolutionSigma;
+  MDDetector::CopyDataToNamedDetectors();
+  
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int n = 0; n < m_NamedDetectors.size(); ++n) {
+    if (dynamic_cast<MDCalorimeter*>(m_NamedDetectors[n]) == 0) {
+      mout<<"   ***  Internal error  ***  in detector "<<m_Name<<endl;
+      mout<<"We have a named detector ("<<m_NamedDetectors[n]->GetName()<<") which is not of the same type as the base detector!"<<endl;
+      return false;
+    }
+    MDCalorimeter* D = dynamic_cast<MDCalorimeter*>(m_NamedDetectors[n]);
+
+    if (D->m_DepthResolutionType == c_DepthResolutionTypeUnknown && 
+        m_DepthResolutionType != c_DepthResolutionTypeUnknown) {
+      D->m_DepthResolutionType = m_DepthResolutionType; 
+      D->m_DepthResolution = m_DepthResolution; 
+      D->m_DepthResolutionSigma = m_DepthResolutionSigma; 
+    }
+  }
+   
+  return true; 
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDCalorimeter::SetDepthResolution(const double DepthResolution)
+MDCalorimeter::~MDCalorimeter()
 {
-  // Set a fixed depth resolution
-
-  if (DepthResolution <= 0) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Depth resolution needs to be positive!"<<endl;
-    return false; 
-  }
-
-  m_DepthResolution->AddDataPoint(10000000, DepthResolution);
-  m_DepthResolutionSigma->AddDataPoint(10000000, 1E-6);
-
-  return true;
+  // default destructor
 }
 
 
@@ -140,8 +148,9 @@ bool MDCalorimeter::SetDepthResolutionAt(const double Energy,
     return false; 
   }
 
-  m_DepthResolution->AddDataPoint(Energy, Resolution);
-  m_DepthResolutionSigma->AddDataPoint(Energy, Sigma);
+  m_DepthResolutionType = c_DepthResolutionTypeGauss;
+  m_DepthResolution.Add(Energy, Resolution);
+  m_DepthResolutionSigma.Add(Energy, Sigma);
 
   return true;
 }
@@ -179,7 +188,7 @@ void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
   // Noise the z-coordinate:
   if (HasDepthResolution() == true) {
     mdebug<<"Noise Cal: Pos "<<Pos[2]
-          <<" cm  -  Res: "<<m_DepthResolution->Get(Energy)<<endl;
+          <<" cm  -  Res: "<<m_DepthResolution.Evaluate(Energy)<<endl;
     MVector Size = Volume->GetSize();
     if (IsOverflow == true) { // No depth resolution!
       Pos[2] = 0.0;     
@@ -187,12 +196,12 @@ void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
       int Trials = 5;
       double Sigma;
       do {
-        Sigma = gRandom->Gaus(m_DepthResolution->Get(Energy), 
-                              m_DepthResolutionSigma->Get(Energy));
+        Sigma = gRandom->Gaus(m_DepthResolution.Evaluate(Energy), 
+                              m_DepthResolutionSigma.Evaluate(Energy));
         Trials--;
       } while (Sigma < 0 && Trials >= 0);
       if (Trials <= 0) {
-        Sigma = m_DepthResolution->Get(Energy);
+        Sigma = m_DepthResolution.Evaluate(Energy);
       }
 
       Trials = 10;
@@ -262,7 +271,7 @@ vector<MDGridPoint> MDCalorimeter::Discretize(const MVector& PosInDetectorVolume
   MDGridPoint GridPoint = GetGridPoint(PosInDetectorVolume);
 
   MVector PositionInGrid(0.0, 0.0, 0.0);
-  if (m_DepthResolution->GetNDataPoints() > 0) {
+  if (m_DepthResolution.GetNDataPoints() > 0) {
     PositionInGrid.SetZ(PosInDetectorVolume.Z() - m_StructuralSize.Z() + 
                         m_StructuralDimension.Z() - m_StructuralOffset.Z());
   }
@@ -323,8 +332,8 @@ MVector MDCalorimeter::GetPositionResolution(const MVector& Pos, const double En
   Res.SetX(2*m_StructuralSize.GetX()/sqrt(12.0));
   Res.SetY(2*m_StructuralSize.GetY()/sqrt(12.0));
 
-  if (m_DepthResolution->GetNDataPoints() > 0) {
-    Res.SetZ(m_DepthResolution->Get(Energy));
+  if (m_DepthResolution.GetSize() > 0) {
+    Res.SetZ(m_DepthResolution.Evaluate(Energy));
   } else {
     Res.SetZ(2*m_StructuralSize.GetZ()/sqrt(12.0));
   }
@@ -386,7 +395,7 @@ MString MDCalorimeter::GetGeant3() const
   }
 
   out<<"      DETNR("<<m_ID<<") = 2"<<endl;
-  if (m_DepthResolution->GetNDataPoints() == 0) {
+  if (m_DepthResolution.GetNDataPoints() == 0) {
     out<<"      DETTYP("<<m_ID<<") = 2"<<endl;
   } else {
     out<<"      DETTYP("<<m_ID<<") = 3"<<endl;
@@ -412,7 +421,7 @@ MString MDCalorimeter::GetMGeant() const
   }
 
   out<<"DTNR "<<m_ID<<" 2"<<endl;
-  if (m_DepthResolution->GetNDataPoints() == 0) {
+  if (m_DepthResolution.GetNDataPoints() == 0) {
     out<<"DTTP "<<m_ID<<" 2"<<endl;
   } else {
     out<<"DTTP "<<m_ID<<" 3"<<endl;
@@ -434,11 +443,11 @@ MString MDCalorimeter::GetGeomega() const
 
   out<<"Calorimeter "<<m_Name<<endl;
   out<<GetGeomegaCommon()<<endl;
-  for (int d = 0; d < m_DepthResolution->GetNDataPoints(); ++d) {
+  for (unsigned int d = 0; d < m_DepthResolution.GetSize(); ++d) {
     out<<m_Name<<".DepthResolution "<<
-      m_DepthResolution->GetDataPointXValueAt(d)<<" "<<
-      m_DepthResolution->GetDataPointYValueAt(d)<<" "<<
-      m_DepthResolutionSigma->GetDataPointYValueAt(d)<<endl;
+      m_DepthResolution.GetDataPointX(d)<<" "<<
+      m_DepthResolution.GetDataPointY(d)<<" "<<
+      m_DepthResolutionSigma.GetDataPointY(d)<<endl;
   }
   
   return out.str().c_str();  
@@ -481,6 +490,10 @@ bool MDCalorimeter::Validate()
 
   mdebug<<"Structural size: "<<m_StructuralSize<<endl;
 
+  if (m_DepthResolutionType == c_DepthResolutionTypeUnknown) {
+     m_DepthResolutionType = c_DepthResolutionTypeNone;
+  }
+  
   return true;
 }
 
@@ -521,18 +534,11 @@ MString MDCalorimeter::ToString() const
 {
   //
 
-  unsigned int i;
   ostringstream out;
-
-  out<<"Detector "<<m_Name<<"   - Calorimeter"<<endl;
-  out<<"   with sensitive volumes: ";  
-  for (i = 0; i < m_SVs.size(); i++) {
-    out<<m_SVs[i]->GetName()<<" ";
-  }
+  out<<MDDetector::ToString()<<endl;
 
   return out.str().c_str();  
 }
-
 
 
 // MDCalorimeter.cxx: the end...

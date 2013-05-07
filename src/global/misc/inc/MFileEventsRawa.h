@@ -60,7 +60,7 @@ class MFileEventsRawa : public MFileEvents
 
   // protected methods:
  protected:
-  bool OpenIncludeFile(MString Line);
+  bool OpenIncludeFile(const MString& Line);
 
 
   // private methods:

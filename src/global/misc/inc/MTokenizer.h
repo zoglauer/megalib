@@ -101,7 +101,7 @@ class MTokenizer
   TArrayD GetTokenAtAsDoubleArray(const int i) const;
   //! Return the token AT AND AFTER i as vector of doubles --- return empty array in case of error
   vector<double> GetTokenAtAsDoubleVector(const int i) const;
-  //! Return the token AT AND AFTER i as vector of maths --- return empty array in case of error
+  //! Return the token AT AND AFTER i as vector of floats --- return empty array in case of error
   vector<float> GetTokenAtAsFloatVector(const int i) const;
 
   //! Evaluate the math functions in the given string

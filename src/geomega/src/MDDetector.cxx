@@ -80,13 +80,31 @@ const MString MDDetector::c_AngerCameraName         = "AngerCamera";
 const MString MDDetector::c_Voxel3DName             = "Voxel3D";
 
 const int MDDetector::c_EnergyResolutionTypeUnknown     = 0;
-const int MDDetector::c_EnergyResolutionTypeIdeal       = 1;
-const int MDDetector::c_EnergyResolutionTypeGauss       = 2;
-const int MDDetector::c_EnergyResolutionTypeLorentz     = 3;
-const int MDDetector::c_EnergyResolutionTypeGaussLandau = 4;
+const int MDDetector::c_EnergyResolutionTypeNone        = 1;
+const int MDDetector::c_EnergyResolutionTypeIdeal       = 2;
+const int MDDetector::c_EnergyResolutionTypeGauss       = 3;
+const int MDDetector::c_EnergyResolutionTypeLorentz     = 4;
+const int MDDetector::c_EnergyResolutionTypeGaussLandau = 5;
 
-const int MDDetector::c_EnergyLossTypeNone          = 0;
-const int MDDetector::c_EnergyLossTypeMap           = 1;
+const int MDDetector::c_EnergyLossTypeUnknown       = 0;
+const int MDDetector::c_EnergyLossTypeNone          = 1;
+const int MDDetector::c_EnergyLossTypeMap           = 2;
+
+const int MDDetector::c_TimeResolutionTypeUnknown     = 0;
+const int MDDetector::c_TimeResolutionTypeNone        = 1;
+const int MDDetector::c_TimeResolutionTypeIdeal       = 2;
+const int MDDetector::c_TimeResolutionTypeGauss       = 3;
+
+const int MDDetector::c_DepthResolutionTypeUnknown     = 0;
+const int MDDetector::c_DepthResolutionTypeNone        = 1;
+const int MDDetector::c_DepthResolutionTypeIdeal       = 2;
+const int MDDetector::c_DepthResolutionTypeGauss       = 3;
+
+const int MDDetector::c_GuardringEnergyResolutionTypeUnknown     = 0;
+const int MDDetector::c_GuardringEnergyResolutionTypeNone        = 1;
+const int MDDetector::c_GuardringEnergyResolutionTypeIdeal       = 2;
+const int MDDetector::c_GuardringEnergyResolutionTypeGauss       = 3;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -95,42 +113,48 @@ MDDetector::MDDetector(MString Name)
 {
   // default constructor
 
-  SetType(Name);
-  m_Description = "Unknown";
-
-  m_Type = c_NoDetectorType;
-
-  m_NoiseThresholdEqualsTriggerThreshold = false;
-  m_NoiseThreshold = 0;
-  m_NoiseThresholdSigma = 0;
-  m_TriggerThreshold = 0;
-  m_TriggerThresholdSigma = 0;
-
-	m_FailureRate = 0;
-	m_Overflow = numeric_limits<double>::max();
-	m_OverflowSigma = 0;
-
-  m_DetectorVolume = 0;
-  m_CommonVolume = 0;
-
   // ID of this detector:
   if (m_IDCounter == numeric_limits<int>::max()) {
     m_IDCounter = 0;
   } else {
     m_ID = m_IDCounter++;
   }  
+  
+  m_Name = Name;
+  m_Description = "Unknown";
 
-  m_EnergyLossType = c_EnergyLossTypeNone;
+  m_Type = c_NoDetectorType;
 
-  m_EnergyResolutionType = c_EnergyResolutionTypeUnknown;
-
-  m_TimeResolution = new MSpline(MSpline::Interpolation);
-
+  m_DetectorVolume = 0;
+  m_CommonVolume = 0;
+  
   m_StructuralDimension = g_VectorNotDefined;
   m_StructuralPitch = g_VectorNotDefined;
   m_StructuralOffset = g_VectorNotDefined;
   m_StructuralSize = g_VectorNotDefined;
+  
+  m_IsNamedDetector = false;
+  m_NamedAfter = 0;
+  
+  m_NoiseThresholdEqualsTriggerThresholdSet = false;
+  m_NoiseThresholdEqualsTriggerThreshold = false;
+  
+  m_NoiseThreshold = g_DoubleNotDefined;
+  m_NoiseThresholdSigma = g_DoubleNotDefined;
+  
+  m_TriggerThreshold = g_DoubleNotDefined;
+  m_TriggerThresholdSigma = g_DoubleNotDefined;
 
+  m_FailureRate = g_DoubleNotDefined;
+  
+  m_Overflow = g_DoubleNotDefined;
+  m_OverflowSigma = g_DoubleNotDefined;
+
+  m_EnergyLossType = c_EnergyLossTypeUnknown;
+  m_EnergyResolutionType = c_EnergyResolutionTypeUnknown;
+  m_TimeResolutionType = c_TimeResolutionTypeUnknown;
+
+  m_PulseShapeSet = false;
   m_PulseShape = 0;
   m_PulseShapeMin = 0;
   m_PulseShapeMax = 0;
@@ -146,6 +170,7 @@ MDDetector::MDDetector(MString Name)
 
   m_AreBlockedTriggerChannelsUsed = false;
 
+  m_EnergyCalibrationSet = false;
   m_UseEnergyCalibration = false;
 }
 
@@ -155,7 +180,7 @@ MDDetector::MDDetector(MString Name)
 
 MDDetector::MDDetector(const MDDetector& D)
 {
-  // 
+  // Copy constructor
 
   m_Name = D.m_Name;
   
@@ -170,6 +195,9 @@ MDDetector::MDDetector(const MDDetector& D)
   m_ID = m_IDCounter++;
   m_SensID = m_SensIDCounter++;            
 
+  m_IsNamedDetector = D.m_IsNamedDetector;
+  m_NamedAfter = D.m_NamedAfter;
+  
   m_UseDivisions = D.m_UseDivisions;
   m_ShortNameDivisionX = D.m_ShortNameDivisionX;
   m_ShortNameDivisionY = D.m_ShortNameDivisionY;
@@ -184,19 +212,22 @@ MDDetector::MDDetector(const MDDetector& D)
   m_EnergyResolutionPeak2 = D.m_EnergyResolutionPeak2; 
   m_EnergyResolutionWidth2 = D.m_EnergyResolutionWidth2;
 
-  m_TimeResolution = new MSpline(*(D.m_TimeResolution));
+  m_TimeResolutionType = D.m_TimeResolutionType;
+  m_TimeResolution = D.m_TimeResolution;
 
-	m_FailureRate = D.m_FailureRate;
+  m_FailureRate = D.m_FailureRate;
 
+  m_NoiseThresholdEqualsTriggerThresholdSet = D.m_NoiseThresholdEqualsTriggerThresholdSet;
   m_NoiseThresholdEqualsTriggerThreshold = D.m_NoiseThresholdEqualsTriggerThreshold;
+  
   m_NoiseThreshold = D.m_NoiseThreshold;
   m_NoiseThresholdSigma = D.m_NoiseThresholdSigma;
 
   m_TriggerThreshold = D.m_TriggerThreshold;
   m_TriggerThresholdSigma = D.m_TriggerThresholdSigma;
 
-	m_Overflow = D.m_Overflow;
-	m_OverflowSigma = D.m_OverflowSigma;
+  m_Overflow = D.m_Overflow;
+  m_OverflowSigma = D.m_OverflowSigma;
 
 
   m_StructuralDimension = D.m_StructuralDimension;     
@@ -206,7 +237,7 @@ MDDetector::MDDetector(const MDDetector& D)
 
   m_HasGuardring = D.m_HasGuardring;
 
-  m_PulseShape = new TF1(*D.m_PulseShape);
+  if (D.m_PulseShape != 0) m_PulseShape = new TF1(*D.m_PulseShape);
   m_PulseShapeMin = D.m_PulseShapeMin;
   m_PulseShapeMax = D.m_PulseShapeMax;
 
@@ -214,17 +245,121 @@ MDDetector::MDDetector(const MDDetector& D)
 
   m_AreBlockedTriggerChannelsUsed = D.m_AreBlockedTriggerChannelsUsed;
   m_BlockedTriggerChannels = D.m_BlockedTriggerChannels;
+  
+  m_EnergyCalibrationSet = D.m_EnergyCalibrationSet;
+  m_UseEnergyCalibration = D.m_UseEnergyCalibration;
+  m_EnergyCalibration = D.m_EnergyCalibration;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDDetector::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+
+    m_NamedDetectors[d]->m_Description = m_Description;
+
+    for (unsigned int i = 0; i < m_SVs.size(); ++i) {
+      m_NamedDetectors[d]->m_SVs.push_back(m_SVs[i]);
+    }
+    m_NamedDetectors[d]->m_DetectorVolume = m_DetectorVolume;
+    
+    m_NamedDetectors[d]->m_UseDivisions = m_UseDivisions;
+    m_NamedDetectors[d]->m_ShortNameDivisionX = m_ShortNameDivisionX;
+    m_NamedDetectors[d]->m_ShortNameDivisionY = m_ShortNameDivisionY;
+    m_NamedDetectors[d]->m_ShortNameDivisionZ = m_ShortNameDivisionZ;
+
+    
+    if (m_NamedDetectors[d]->m_EnergyLossType == c_EnergyLossTypeUnknown && 
+        m_EnergyLossType != c_EnergyLossTypeUnknown) {
+      m_NamedDetectors[d]->m_EnergyLossType = m_EnergyLossType;
+      m_NamedDetectors[d]->m_EnergyLossMap = m_EnergyLossMap;
+    }
+    
+    if (m_NamedDetectors[d]->m_EnergyResolutionType == c_EnergyResolutionTypeUnknown && 
+        m_EnergyResolutionType != c_EnergyResolutionTypeUnknown) {
+      m_NamedDetectors[d]->m_EnergyResolutionType = m_EnergyResolutionType;
+      m_NamedDetectors[d]->m_EnergyResolutionPeak1 = m_EnergyResolutionPeak1; 
+      m_NamedDetectors[d]->m_EnergyResolutionWidth1 = m_EnergyResolutionWidth1;
+      m_NamedDetectors[d]->m_EnergyResolutionPeak2 = m_EnergyResolutionPeak2; 
+      m_NamedDetectors[d]->m_EnergyResolutionWidth2 = m_EnergyResolutionWidth2;
+    }
+    
+    if (m_NamedDetectors[d]->m_TimeResolutionType == c_TimeResolutionTypeUnknown && 
+        m_TimeResolutionType != c_TimeResolutionTypeUnknown) {
+      m_NamedDetectors[d]->m_TimeResolutionType = m_TimeResolutionType;
+      m_NamedDetectors[d]->m_TimeResolution = m_TimeResolution;
+    }
+    
+    if (m_NamedDetectors[d]->m_FailureRate == g_DoubleNotDefined && 
+        m_FailureRate != g_DoubleNotDefined) {
+      m_NamedDetectors[d]->m_FailureRate = m_FailureRate;
+    }
+
+    if (m_NamedDetectors[d]->m_NoiseThresholdEqualsTriggerThresholdSet == false && 
+        m_NoiseThresholdEqualsTriggerThresholdSet == true) {
+      m_NamedDetectors[d]->m_NoiseThresholdEqualsTriggerThresholdSet = m_NoiseThresholdEqualsTriggerThresholdSet;
+      m_NamedDetectors[d]->m_NoiseThresholdEqualsTriggerThreshold = m_NoiseThresholdEqualsTriggerThreshold;
+    }
+
+    if (m_NamedDetectors[d]->m_NoiseThreshold == g_DoubleNotDefined && 
+        m_NoiseThreshold != g_DoubleNotDefined) {
+      m_NamedDetectors[d]->m_NoiseThreshold = m_NoiseThreshold;
+      m_NamedDetectors[d]->m_NoiseThresholdSigma = m_NoiseThresholdSigma;
+    }
+    
+    if (m_NamedDetectors[d]->m_TriggerThreshold == g_DoubleNotDefined && 
+        m_TriggerThreshold != g_DoubleNotDefined) {
+      m_NamedDetectors[d]->m_TriggerThreshold = m_TriggerThreshold;
+      m_NamedDetectors[d]->m_TriggerThresholdSigma = m_TriggerThresholdSigma;
+    }
+
+    if (m_NamedDetectors[d]->m_Overflow == g_DoubleNotDefined && 
+        m_Overflow != g_DoubleNotDefined) {
+      m_NamedDetectors[d]->m_Overflow = m_Overflow;
+      m_NamedDetectors[d]->m_OverflowSigma = m_OverflowSigma;
+    }
+    
+    m_NamedDetectors[d]->m_StructuralDimension = m_StructuralDimension;     
+    m_NamedDetectors[d]->m_StructuralSize = m_StructuralSize;     
+    m_NamedDetectors[d]->m_StructuralOffset = m_StructuralOffset;
+    m_NamedDetectors[d]->m_StructuralPitch = m_StructuralPitch;    
+
+    m_NamedDetectors[d]->m_HasGuardring = m_HasGuardring;
+
+    if (m_PulseShape != 0) m_NamedDetectors[d]->m_PulseShape = new TF1(*m_PulseShape);
+    m_NamedDetectors[d]->m_PulseShapeMin = m_PulseShapeMin;
+    m_NamedDetectors[d]->m_PulseShapeMax = m_PulseShapeMax;
+
+    m_NamedDetectors[d]->m_NoiseActive = m_NoiseActive;
+
+    m_NamedDetectors[d]->m_AreBlockedTriggerChannelsUsed = m_AreBlockedTriggerChannelsUsed;
+    m_NamedDetectors[d]->m_BlockedTriggerChannels = m_BlockedTriggerChannels;
+
+    if (m_NamedDetectors[d]->m_EnergyCalibrationSet == false && 
+        m_EnergyCalibrationSet == true) {
+      m_NamedDetectors[d]->m_EnergyCalibrationSet = m_EnergyCalibrationSet;
+      m_NamedDetectors[d]->m_UseEnergyCalibration = m_UseEnergyCalibration;
+      m_NamedDetectors[d]->m_EnergyCalibration = m_EnergyCalibration;
+    }
+  }
+  
+  return true;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDDetector::~MDDetector()
 {
   // default destructor
-
-  delete m_TimeResolution;
 }
 
 
@@ -247,6 +382,8 @@ MString MDDetector::GetDetectorTypeName(const int Type)
     return c_DriftChamberName;
   } else if (Type == c_AngerCamera) {
     return c_AngerCameraName;
+  } else if (Type == c_Voxel3D) {
+    return c_Voxel3DName;
   } 
 
   merr<<"Unknown detector type: "<<Type<<endl;
@@ -281,28 +418,6 @@ int MDDetector::GetDetectorType(const MString& Type)
   merr<<"Unknown detector type: "<<Type<<show;
   
   return c_NoDetectorType;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDDetector::GetName() const
-{
-  // 
-
-  return m_Name;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDDetector::SetType(const MString& Name)
-{
-  //
-
-  m_Name = Name;
 }
 
 
@@ -355,6 +470,7 @@ void MDDetector::UseDivisions(const MString& ShortNameX,
   m_ShortNameDivisionY = ShortNameY;
   m_ShortNameDivisionZ = ShortNameZ;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -479,11 +595,12 @@ bool MDDetector::HasTimeResolution() const
 {
   // Return true if the detector has a time resolution
 
-  if (m_TimeResolution->GetNDataPoints() == 0) {
-    return false;
+  if (m_TimeResolutionType != c_TimeResolutionTypeNone && 
+      m_TimeResolutionType != c_TimeResolutionTypeUnknown) {
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 
@@ -508,10 +625,11 @@ double MDDetector::ApplyPulseShape(const double NanoSeconds, const double Energy
 bool MDDetector::ApplyEnergyResolution(double& Energy, const MVector& Position) const 
 {
   // Noise the energy...
-
-
-  if (m_EnergyResolutionType == c_EnergyResolutionTypeIdeal) {
-    return true;
+  
+  if (m_EnergyResolutionType == c_EnergyResolutionTypeNone) {
+    Energy = 0;
+  } else if (m_EnergyResolutionType == c_EnergyResolutionTypeIdeal) {
+    // do nothing
   } else if (m_EnergyResolutionType == c_EnergyResolutionTypeGauss) {
     Energy = GetEnergyResolutionPeak1(Energy, Position) + 
       gRandom->Gaus(0.0, GetEnergyResolutionWidth1(Energy, Position));
@@ -579,6 +697,7 @@ bool MDDetector::ApplyEnergyResolution(double& Energy, const MVector& Position) 
     
   } else {
     merr<<"Unknown energy resolution type!!!!"<<endl;
+    return false;
   }
 
   return true;
@@ -593,7 +712,7 @@ bool MDDetector::ApplyEnergyCalibration(double& Energy) const
   // Retrieve a calibrated energy
 
   if (m_UseEnergyCalibration == true) {
-    Energy = m_EnergyCalibration.Eval(Energy);
+    Energy = m_EnergyCalibration.Evaluate(Energy);
   }
 
   return true;
@@ -606,13 +725,18 @@ bool MDDetector::ApplyEnergyCalibration(double& Energy) const
 bool MDDetector::ApplyTimeResolution(double& Time, const double Energy) const 
 {
   // Noise the time...
-  
-  if (HasTimeResolution() == false) {
+
+  if (m_TimeResolutionType == c_TimeResolutionTypeNone) {
     Time = 0;
+  } else if (m_TimeResolutionType == c_TimeResolutionTypeIdeal) {
+    // do nothing
+  } else if (m_TimeResolutionType == c_TimeResolutionTypeGauss) {
+    Time = gRandom->Gaus(Time, GetTimeResolution(Energy));
+  } else {
+    merr<<"Unknown time resolution type: "<<m_TimeResolutionType<<endl;
     return false;
   }
-
-  Time = gRandom->Gaus(Time, GetTimeResolution(Energy));
+  
   return true;
 }
 
@@ -626,7 +750,6 @@ bool MDDetector::ApplyNoiseThreshold(double& Energy, const MVector& Position) co
 
   double NoiseThreshold = 0.0;
   
-
   if (m_NoiseThresholdEqualsTriggerThreshold == true) {
     // If the flag is set no own noise threshold is given...
     NoiseThreshold = gRandom->Gaus(GetTriggerThreshold(Position), m_TriggerThresholdSigma);
@@ -652,7 +775,7 @@ bool MDDetector::ApplyOverflow(double& Energy) const
 
   double Overflow = gRandom->Gaus(m_Overflow, m_OverflowSigma);
 
-	if (Energy > Overflow) {
+  if (Energy > Overflow) {
     Energy = Overflow;
     return true;
   }
@@ -698,9 +821,9 @@ bool MDDetector::IsAboveTriggerThreshold(const double& Energy, const MDGridPoint
 
 void MDDetector::SetOverflow(const double Overflow)
 {
-	// Set the overflow
+  // Set the overflow
 
-	m_Overflow = Overflow;
+  m_Overflow = Overflow;
 }
 
 
@@ -709,9 +832,9 @@ void MDDetector::SetOverflow(const double Overflow)
 
 double MDDetector::GetOverflow() const
 {
-	// Return the overflow
+  // Return the overflow
 
-	return m_Overflow;
+  return m_Overflow;
 }
 
 
@@ -720,9 +843,9 @@ double MDDetector::GetOverflow() const
 
 void MDDetector::SetOverflowSigma(const double Avg)
 {
-	// Set the sigma value for the overflow bin
+  // Set the sigma value for the overflow bin
 
-	m_OverflowSigma = Avg;
+  m_OverflowSigma = Avg;
 }
 
 
@@ -731,9 +854,9 @@ void MDDetector::SetOverflowSigma(const double Avg)
 
 double MDDetector::GetOverflowSigma() const
 {
-	// Return the sigma value for the overflow bin
+  // Return the sigma value for the overflow bin
 
-	return m_OverflowSigma;
+  return m_OverflowSigma;
 }
 
 
@@ -742,9 +865,9 @@ double MDDetector::GetOverflowSigma() const
 
 void MDDetector::SetFailureRate(const double FailureRate)
 {
-	// Set the percentage [0..1] of not connected pixels
+  // Set the percentage [0..1] of not connected pixels
 
-	m_FailureRate = FailureRate;
+  m_FailureRate = FailureRate;
 }
 
 
@@ -753,9 +876,9 @@ void MDDetector::SetFailureRate(const double FailureRate)
 
 double MDDetector::GetFailureRate() const
 {
-	// Return the percentage [0..1] of not connected pixels
+  // Return the percentage [0..1] of not connected pixels
 
-	return m_FailureRate;
+  return m_FailureRate;
 }
 
 
@@ -893,6 +1016,7 @@ bool MDDetector::SetEnergyResolutionType(const int EnergyResolutionType)
   }
 
   if (EnergyResolutionType == c_EnergyResolutionTypeIdeal ||
+      EnergyResolutionType == c_EnergyResolutionTypeNone ||
       EnergyResolutionType == c_EnergyResolutionTypeGauss ||
       EnergyResolutionType == c_EnergyResolutionTypeLorentz ||
       EnergyResolutionType == c_EnergyResolutionTypeGaussLandau) {
@@ -972,7 +1096,7 @@ double MDDetector::GetEnergyResolutionWidth1(const double Energy, const MVector&
   // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
   // but not the default energy resolution handler here:
 
-  double Value = m_EnergyResolutionWidth1.Eval(Energy);
+  double Value = m_EnergyResolutionWidth1.Evaluate(Energy);
   if (Value < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Give more energy resolution values, because the interpolation fails at E="<<Energy<<"keV"<<endl;
@@ -991,7 +1115,7 @@ double MDDetector::GetEnergyResolutionWidth2(const double Energy, const MVector&
   // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
   // but not the default energy resolution handler here:
 
-  double Value = m_EnergyResolutionWidth2.Eval(Energy);
+  double Value = m_EnergyResolutionWidth2.Evaluate(Energy);
   if (Value < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Give more energy resolution values, because the interpolation fails at E="<<Energy<<"keV"<<endl;
@@ -1010,7 +1134,7 @@ double MDDetector::GetEnergyResolutionPeak1(const double Energy, const MVector& 
   // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
   // but not the default energy resolution handler here:
 
-  double Value = m_EnergyResolutionPeak1.Eval(Energy);
+  double Value = m_EnergyResolutionPeak1.Evaluate(Energy);
   if (Value < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Give more energy resolution values, because the interpolation fails at E="<<Energy<<"keV"<<endl;
@@ -1029,7 +1153,7 @@ double MDDetector::GetEnergyResolutionPeak2(const double Energy, const MVector& 
   // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
   // but not the default energy resolution handler here:
 
-  double Value = m_EnergyResolutionPeak2.Eval(Energy);
+  double Value = m_EnergyResolutionPeak2.Evaluate(Energy);
   if (Value < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Give more energy resolution values, because the interpolation fails at E="<<Energy<<"keV"<<endl;
@@ -1048,7 +1172,7 @@ double MDDetector::GetEnergyResolutionRatio(const double Energy, const MVector& 
   // Some detectors have a depth dependend energy resolution (e.g. Strip 3D ), 
   // but not the default energy resolution handler here:
 
-  double Value = m_EnergyResolutionRatio.Eval(Energy);
+  double Value = m_EnergyResolutionRatio.Evaluate(Energy);
   if (Value < 0) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
     mout<<"Give more energy resolution values, because the interpolation fails at E="<<Energy<<"keV"<<endl;
@@ -1073,13 +1197,13 @@ double MDDetector::GetEnergyResolution(const double Energy, const MVector& Posit
   //! Returns an average energy resolution width
 
   if (m_EnergyResolutionType == c_EnergyResolutionTypeGauss) {
-    return m_EnergyResolutionWidth1.Eval(Energy);
+    return m_EnergyResolutionWidth1.Evaluate(Energy);
   } else if (m_EnergyResolutionType == c_EnergyResolutionTypeLorentz) {
-    return m_EnergyResolutionWidth1.Eval(Energy);
+    return m_EnergyResolutionWidth1.Evaluate(Energy);
   } else if (m_EnergyResolutionType == c_EnergyResolutionTypeGaussLandau) {
     mimp<<"   ***  Info  ***  in detector "<<m_Name<<endl;
     mimp<<"There is no good GetEnergyResolution-function for the Gauss-Landau distribution. Using gauss only..."<<endl;
-    return m_EnergyResolutionWidth1.Eval(Energy);
+    return m_EnergyResolutionWidth1.Evaluate(Energy);
   }
 
   return 0.0;
@@ -1093,8 +1217,13 @@ void MDDetector::SetEnergyCalibration(const MFunction& EnergyCalibration)
 {
   // Set a energy calibration function
 
-  m_UseEnergyCalibration = true;
+  m_EnergyCalibrationSet = true;
   m_EnergyCalibration = EnergyCalibration;
+  if (m_EnergyCalibration.GetSize() > 0) {
+    m_UseEnergyCalibration = true;
+  } else {
+    m_UseEnergyCalibration = false;   
+  }
 }
 
 
@@ -1105,7 +1234,8 @@ void MDDetector::SetTimeResolution(const double Energy, const double Sigma)
 {
   // 
 
-  m_TimeResolution->AddDataPoint(Energy, Sigma);
+  m_TimeResolutionType = c_TimeResolutionTypeGauss;
+  m_TimeResolution.Add(Energy, Sigma);
 }
 
 
@@ -1115,8 +1245,17 @@ void MDDetector::SetTimeResolution(const double Energy, const double Sigma)
 double MDDetector::GetTimeResolution(const double Energy) const
 {
   // 
-
-  return m_TimeResolution->Get(Energy); // * (1 + 0.0*(gRandom->Rndm()-0.5));
+  
+  if (m_TimeResolutionType == c_TimeResolutionTypeNone) {
+    return numeric_limits<double>::max()/1000;
+  } else if (m_TimeResolutionType == c_TimeResolutionTypeIdeal) {
+    return 0;
+  } else if (m_TimeResolutionType == c_TimeResolutionTypeGauss) {
+    return m_TimeResolution.Evaluate(Energy);
+  } else {
+    merr<<"Unknown time resolution type: "<<m_TimeResolutionType<<endl;
+    return numeric_limits<double>::max()/1000;
+  }
 }
 
 
@@ -1137,7 +1276,7 @@ void MDDetector::SetDetectorVolume(MDVolume* Volume)
   // Set the volume which represents this detector
 
   m_DetectorVolume = Volume;
-  Volume->SetIsDetectorVolume(this);
+  // Volume->SetIsDetectorVolume(this);
 }
 
 
@@ -1158,7 +1297,6 @@ MDVolume* MDDetector::GetDetectorVolume()
 bool MDDetector::Validate()
 {
   // Make sure everything is reasonable:
-  // Pay attention: MDACS is *not* calling this function!
 
   if (m_DetectorVolume == 0 && m_SVs.size() == 1) {
     SetDetectorVolume(m_SVs[0]);
@@ -1199,7 +1337,14 @@ bool MDDetector::Validate()
 
   // In case we have only one sensitive volume and the sensitive volume is identical with the detector volume
   // we do not necessarily need a structural pitch and a structural offset
-  if (m_DetectorVolume != m_SVs[0]) {
+  if (m_DetectorVolume == m_SVs[0] || m_SVs.size() > 1) {
+    if (m_StructuralPitch == g_VectorNotDefined) {
+      m_StructuralPitch = MVector(0, 0, 0);
+    }
+    if (m_StructuralOffset == g_VectorNotDefined) {
+      m_StructuralOffset = MVector(0, 0, 0);      
+    }
+  } else {
     if (m_StructuralPitch == g_VectorNotDefined) {
       mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
       mout<<"No spacing (keyword StructuralPitch) between the sensitive volumes defined"<<endl;
@@ -1209,13 +1354,6 @@ bool MDDetector::Validate()
       mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
       mout<<"No offset (keyword StructuralOffset)  from the detector volume to the first sensitive volumes defined"<<endl;
       return false;
-    }
-  } else {
-    if (m_StructuralPitch == g_VectorNotDefined) {
-      m_StructuralPitch = MVector(0, 0, 0);
-    }
-    if (m_StructuralOffset == g_VectorNotDefined) {
-      m_StructuralOffset = MVector(0, 0, 0);      
     }
   }
 
@@ -1230,8 +1368,14 @@ bool MDDetector::Validate()
     return false;
   }
 
-  if (m_EnergyResolutionType != c_EnergyResolutionTypeIdeal) {
-    if (m_EnergyResolutionPeak1.GetSize() < 2 && m_EnergyResolutionType != c_EnergyResolutionTypeUnknown) {
+  if (m_EnergyResolutionType == c_EnergyResolutionTypeUnknown) {
+    mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+    mout<<"No energy resolution defined --- assuming ideal"<<endl; 
+    m_EnergyResolutionType = c_EnergyResolutionTypeIdeal; 
+  }
+  
+  if (m_EnergyResolutionType != c_EnergyResolutionTypeIdeal && m_EnergyResolutionType != c_EnergyResolutionTypeNone) {
+    if (m_EnergyResolutionPeak1.GetSize() < 2) {
       mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
       mout<<"Please give at least two data points for the energy resolution or state that you don't want an energy resolution."<<endl;
       return false;        
@@ -1244,6 +1388,69 @@ bool MDDetector::Validate()
     }
   }
 
+  if (m_EnergyLossType == c_EnergyLossTypeUnknown) {
+    m_EnergyLossType = c_EnergyLossTypeNone;
+  }
+
+  if (m_EnergyCalibrationSet == false) {
+    m_UseEnergyCalibration = false; 
+  }
+  
+  if (m_TimeResolutionType == c_TimeResolutionTypeUnknown) {
+    m_TimeResolutionType = c_TimeResolutionTypeNone;
+  }
+  
+  if (m_NoiseThresholdEqualsTriggerThresholdSet == false) {
+    m_NoiseThresholdEqualsTriggerThresholdSet = true;
+    m_NoiseThresholdEqualsTriggerThreshold = false;
+  }
+  
+  if (m_NoiseThresholdEqualsTriggerThreshold == true) {
+    if (m_NoiseThreshold != g_DoubleNotDefined) {
+      mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+      mout<<"Ignoring noise threshold, because NoiseThresholdEqualsTriggerThreshold is set"<<endl; 
+      m_NoiseThreshold = 0;
+      m_NoiseThresholdSigma = 0;
+    }
+  }
+  
+  if (m_NoiseThreshold == g_DoubleNotDefined) {
+    if (m_NoiseThresholdEqualsTriggerThreshold == false) {
+      mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+      mout<<"No noise threshold defined --- setting it to zero"<<endl; 
+    }
+    m_NoiseThreshold = 0;
+    m_NoiseThresholdSigma = 0;
+  }
+  
+  if (m_NoiseThresholdSigma == g_DoubleNotDefined) {
+    m_NoiseThresholdSigma = 0;
+  }
+
+  if (m_TriggerThreshold == g_DoubleNotDefined) {
+    mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+    mout<<"No trigger threshold defined --- setting it to zero"<<endl; 
+    m_TriggerThreshold = 0;
+    m_TriggerThresholdSigma = 0;
+  }
+  
+  if (m_TriggerThresholdSigma == g_DoubleNotDefined) {
+    m_TriggerThresholdSigma = 0;
+  }
+  
+  if (m_FailureRate == g_DoubleNotDefined) {
+    // mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+    // mout<<"No failure rate defined --- setting it to zero"<<endl; 
+    m_FailureRate = 0;    
+  }
+  
+  if (m_Overflow == g_DoubleNotDefined) {
+    // mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
+    // mout<<"No overflow defined --- setting it to zero"<<endl; 
+    m_Overflow = 10E+20;    
+    m_OverflowSigma = 1;    
+  }
+  
   if (m_NoiseThresholdEqualsTriggerThreshold == true && 
       (m_NoiseThreshold != 0 || m_NoiseThresholdSigma != 0)) {
     mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
@@ -1253,6 +1460,15 @@ bool MDDetector::Validate()
 
   // The blocked trigger channel have 
 
+  
+  if (m_IsNamedDetector == true) {
+    if (m_VolumeSequence.IsEmpty() == true) {
+      mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+      mout<<"This named detector has no assigned volume/position (use Assign keyword)"<<endl;
+      return false;    
+    }
+  }
+  
   return true;
 }
 
@@ -1347,15 +1563,24 @@ bool MDDetector::IsVeto(const MVector& Pos, const double Energy) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDDetector::AddNamedDetector(const MString& Name, const MDVolumeSequence& VS)
+bool MDDetector::AddNamedDetector(MDDetector* Detector)
 {
   //! Add a named detector
 
-  m_NamedDetectorNames.push_back(Name);
-  m_NamedDetectorVolumeSequences.push_back(VS);
+  if (m_IsNamedDetector == true) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"This is already a named detector and you can not add a named detector to a named detector!"<<endl;
+    return false;
+  }
+  
+  Detector->m_IsNamedDetector = true; 
+  Detector->m_NamedAfter = this; 
+  m_NamedDetectors.push_back(Detector);
+  
+  return true;
 }
-
-
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1363,8 +1588,8 @@ bool MDDetector::HasNamedDetector(const MString& Name) const
 {
   //! Return true if this detector contains the given named detector
 
-  for (unsigned int d = 0; d < m_NamedDetectorNames.size(); ++d) {
-    if (m_NamedDetectorNames[d] == Name) {
+  for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+    if (m_NamedDetectors[d]->m_Name == Name) {
       return true;
     }
   }
@@ -1380,12 +1605,12 @@ MString MDDetector::GetNamedDetectorName(unsigned int i) const
 {
   //! Return the name of the "named detector"
 
-  if (i > m_NamedDetectorNames.size()) {
-    merr<<"Index for named detector name out of range: "<<i<<" ( you have "<<m_NamedDetectorNames.size()<<" named detectors!"<<show;
+  if (i > m_NamedDetectors.size()) {
+    merr<<"Index for named detector name out of range: "<<i<<" ( you have "<<m_NamedDetectors.size()<<" named detectors!"<<show;
     return "";
   }
 
-  return m_NamedDetectorNames[i];
+  return m_NamedDetectors[i]->GetName();
 }
 
 
@@ -1396,12 +1621,31 @@ MDVolumeSequence MDDetector::GetNamedDetectorVolumeSequence(unsigned int i)
 {
   //! Return the volume sequence of the "named detector"
 
-  if (i > m_NamedDetectorVolumeSequences.size()) {
-    merr<<"Index for named detector volume sequence out of range: "<<i<<" ( you have "<<m_NamedDetectorVolumeSequences.size()<<" named detectors!"<<show;
+  if (i > m_NamedDetectors.size()) {
+    merr<<"Index for named detector volume sequence out of range: "<<i<<" ( you have "<<m_NamedDetectors.size()<<" named detectors!"<<show;
     return MDVolumeSequence();
   }
 
-  return m_NamedDetectorVolumeSequences[i];
+  return m_NamedDetectors[i]->m_VolumeSequence;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDDetector* MDDetector::FindNamedDetector(const MDVolumeSequence& VS)
+{
+  // Find the named detector
+ 
+  for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+    //cout<<"A: "<<VS.ToString()<<endl;
+    //cout<<"B: "<<m_NamedDetectors[d]->m_VolumeSequence.ToString()<<endl;
+    if (VS.HasSameDetector(m_NamedDetectors[d]->m_VolumeSequence) == true) {
+      return m_NamedDetectors[d];
+    }
+  }
+
+  return 0;
 }
 
 
@@ -1415,9 +1659,9 @@ MVector MDDetector::GetGlobalPosition(const MVector& PositionInDetector, const M
   MVector Position = g_VectorNotDefined;
   
   bool Found = false;
-  for (unsigned int d = 0; d < m_NamedDetectorNames.size(); ++d) {
-    if (m_NamedDetectorNames[d] == NamedDetector) {
-      Position = m_NamedDetectorVolumeSequences[d].GetPositionInFirstVolume(PositionInDetector, m_NamedDetectorVolumeSequences[d].GetSensitiveVolume());
+  for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+    if (m_NamedDetectors[d]->m_Name == NamedDetector) {
+      Position = m_NamedDetectors[d]->m_VolumeSequence.GetPositionInFirstVolume(PositionInDetector, m_NamedDetectors[d]->m_VolumeSequence.GetSensitiveVolume());
       Found = true;
     }
   } 
@@ -1428,6 +1672,30 @@ MVector MDDetector::GetGlobalPosition(const MVector& PositionInDetector, const M
   }
 
    return Position;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDDetector::ToString() const
+{
+  ostringstream out;
+
+  if (m_IsNamedDetector == false) {
+    out<<"Detector \"";
+  } else {
+    out<<"Named detector (named after: "<<m_NamedAfter->m_Name<<") \"";
+  }
+  out<<m_Name<<"\" of type "<<GetDetectorTypeName(m_Type)<<endl;
+  out<<"   with sensitive volumes: ";  
+  for (unsigned int i = 0; i < m_SVs.size(); i++) {
+    out<<m_SVs[i]->GetName()<<" ";
+  }
+  out<<endl;
+  out<<"   energy resolution type: "<<m_EnergyResolutionType<<endl;
+
+  return out.str().c_str();  
 }
 
 
@@ -1495,10 +1763,10 @@ MString MDDetector::GetGeomegaCommon(bool PrintVolumes,
     }
   }
   if (PrintTimeResolution == true) {
-    for (int d = 0; d < m_TimeResolution->GetNDataPoints(); ++d) {
+    for (int d = 0; d < m_TimeResolution.GetSize(); ++d) {
       out<<m_Name<<".TimeResolution "<<
-        m_TimeResolution->GetDataPointXValueAt(d)<<" "<<
-        m_TimeResolution->GetDataPointYValueAt(d)<<endl;
+        m_TimeResolution.GetDataPointX(d)<<" "<<
+        m_TimeResolution.GetDataPointY(d)<<endl;
     }
   }
   if (PrintTriggerThreshold == true) {    out<<m_Name<<".TriggerThreshold "<<m_TriggerThreshold<<" "<<m_TriggerThresholdSigma<<endl;

@@ -6,136 +6,274 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
+# Part 1:
+# Helper functions
 
 confhelp() {
-    echo ""
-    echo "Configuration script for MEGAlib"
-    echo ""
-    echo "Usage: configure [architecture] [options]";
-    echo "";
-    echo "Architecture (mandatory):";
-    echo "  Standard:";
-    echo "    --linux          Linux operating system using g++ (gcc 3.x or higher)";
-    echo "    --linuxicc       Linux operating system using intel compiler (icc 8.x or higher)";
-    echo "    --macosx         MacOSX 10.2 (or higher) operating system (somewhat experimental)";
-    echo "    --solaris        SUN Solaris operating system (extremely experimental)";
-#    echo "  Special for MEGA prototype hardware:";
-#    echo "    --hardpcivme     Linux operating system with PCI to VMEbus adapter using g++ (gcc 3.x or higher)";
-#    echo "    --hardvmecpu     Linux operating system with VMEbus INTEL CPU using g++ (gcc 3.x or higher)";
-#    echo "    --hardvmecpuicc  Linux operating system with VMEbus INTEL CPU using with intel compiler (icc 8.x or higher)";
-#    echo "    --hardsol25      SUN Solaris 2.5 operating system with SBUS to VMEbus adapter";
-#    echo "    --hardsol28      SUN Solaris 2.8 operating system with SBUS to VMEbus adapter";
-    echo ""
-    echo "Additional options (default: no optimization and no debugging):";
-    echo "    --optimize       create optimized (-O) code";
-    echo "    --optimizehard   create optimized (-O3 --march=native for gcc 4.2 and higher only) code";
-    echo "    --debug          create debugging (-g) code";
-    echo "    --deepdebug      create debugging (-g) code and activate more debugging flags in MEGAlib";
-    echo ""
+  echo ""
+  echo "Configuration script for MEGAlib"
+  echo ""
+  echo "Usage: ./configure [options]";
+  echo ""
+  echo ""
+  echo "Options:"
+  echo "--architecture=[linux, macosx]"
+  echo "    Default is autodetected via uname -a, thus there should be no need to give this option!"
+  echo " "
+  echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
+  echo "    Default is normal."
+  echo " "
+  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "    Default is on."
+  echo " "
+  echo "--updates=[off/no, on/yes]"
+  echo "    Check periodically for updates. Default is off."
+  echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
+  echo " "
+  echo "--help or -h"
+  echo "    Show this help."
+  echo " "
+  echo ""
+  echo "Examples:"
+  echo "  ./configure --optimization=normal --debug=off"
+  echo "  It is possible to reduce the command line to the bare minimum which is still unique, e.g. "
+  echo "  ./configure -o=y -d=n"
+  echo " "
 }
 
 
 createdir() {
-    if (`test ! -f $1/Makefile`); then
-        if (`test ! -d $1`); then
-            echo "Creating directory $1"
-            mkdir $1
-        fi
-        echo "Copying Makefile to $1"
-        cp config/Makefile.EmptyDir $1/Makefile
+  if (`test ! -f $1/Makefile`); then
+    if (`test ! -d $1`); then
+      echo "Creating directory $1"
+      mkdir $1
     fi
+    echo "Copying Makefile to $1"
+    cp config/Makefile.EmptyDir $1/Makefile
+  fi
 }
 
+
+# Part 2:
+# A first sanity check
+
 if [ "$SHELL" != "/bin/bash" ]; then
-    echo " " 
-    echo "Info: This is a bash script. Thus you need to use bash for it and not: ${SHELL}"
-    echo " "
+  echo " " 
+  echo "Info: This is a bash script. Thus you need to use bash for it and not: ${SHELL}"
+  echo " "
 fi
 
+
+
+# Part 3:
+# Upgrade the input options:
+
+# Store command line
+CMD=""
+while [[ $# -gt 0 ]] ; do
+    CMD="${CMD} $1"
+    shift
+done
+
+# Check for help
+for C in ${CMD}; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    confhelp
+    exit 0
+  fi
+done
+
+
+echo ""
+echo ""
+echo ""
+echo "Configuring MEGAlib for compilation on your system"
+echo "=================================================="
+echo ""
+echo " "
+echo "(1) Verifying chosen configuration options:"
+echo " "
 
 # Remove the old configuration store and preliminarily store the new options
 rm -f config/configure_lastgoodoptions
 NewOptions="${NewOptions} $1 $2 $3 $4 $5 $6 $7"
 
+# Default options:
+OS=`uname -s`
+OPT="normal"
+DEBUG="on"
+COMP="gcc"
+UPDATES="off"
 
-# Test if help is requested:
-case $1 in
--h|--help) 
-  confhelp; 
-  exit 0;;
-esac
+# Overwrite default options with user options:
+for C in ${CMD}; do
+  if [[ ${C} == *-a*=* ]]; then
+    OS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-o*=* ]]; then
+    OPT=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-d*=* ]]; then
+    DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-u*=* ]]; then
+    UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-comp*=* ]]; then
+    COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == --linux ]]; then
+    OS="linux"
+  elif [[ ${C} == --macosx ]]; then
+    OS="darwin"
+  elif [[ ${C} == --debug ]]; then
+    DEBUG="on"
+  elif [[ ${C} == --optimize* ]]; then
+    OPT="on"
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    confhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"./configure --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Everything to lower case:
+OS=`echo ${OS} | tr '[:upper:]' '[:lower:]'`
+OPT=`echo ${OPT} | tr '[:upper:]' '[:lower:]'`
+DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
+COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
+UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
+
+
+# provide feed back and perform error checks:
+
+if [[ ${OS} == l* ]]; then
+  OS="linux"
+  echo " * Using operating system architecture Linux"
+elif ( [[ ${OS} == d* ]] || [[ ${OS} == m* ]] ); then
+  OS="darwin"
+  echo " * Using operating system architecture Darwin (Mac OS X)"
+else
+  echo " "
+  echo "ERROR: Unknown operating system architecture: ${OS}"
+  confhelp
+  exit 1
+fi
+
+
+if ( [[ ${OPT} == of* ]] || [[ ${OPT} == no ]] ); then
+  OPT="off"
+  echo " * Using no code optimization"
+elif ( [[ ${OPT} == nor* ]] || [[ ${OPT} == on ]] || [[ ${OPT} == y* ]] ); then
+  OPT="normal"
+  echo " * Using normal code optimization"
+elif ( [[ ${OPT} == s* ]] || [[ ${OPT} == h* ]] ); then
+  OPT="strong"
+  echo " * Using strong code optimization"
+else
+  echo " "
+  echo "ERROR: Unknown code optimization: ${OPT}"
+  confhelp
+  exit 1
+fi
+
+
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == n* ]] ); then
+  DEBUG="off"
+  echo " * Using no debugging code"
+elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
+  DEBUG="normal"
+  echo " * Using debugging code"
+elif ( [[ ${DEBUG} == st* ]] || [[ ${DEBUG} == h* ]] ); then
+  DEBUG="strong"
+  echo " * Using more debug flags"
+else
+  echo " "
+  echo "ERROR: Unknown debugging code selection: ${DEBUG}"
+  confhelp
+  exit 1
+fi
+
+
+if ( [[ ${UPDATES} == of* ]] || [[ ${UPDATES} == n* ]] ); then
+  UPDATES="off"
+  echo " * Don't check for updates"
+elif ( [[ ${UPDATES} == on ]] || [[ ${UPDATES} == y* ]] ); then
+  UPDATES="on"
+  echo " * Check for updates if the user has write access to the MEGAlib installation"
+else
+  echo " "
+  echo "ERROR: Unknown option for updates: ${UPDATES}"
+  confhelp
+  exit 1
+fi
+
+
+
+
+# Part 4:
+# Check if all programs are available
 
 
 # Start configuration
 echo ""
-echo "Configuring MEGAlib for compilation on your system"
-echo "=================================================="
-
-# Test if an architecture is given
-if [ $# -lt 1 ] ; then
-    echo ""
-    echo "Error: You must specify an architecture";
-    confhelp; 
-    exit 0;
-fi
-
-
 echo ""
-echo ""
-echo "Testing paths and programs..."
+echo "(2) Testing paths and programs:"
 
 
 
 # Check for path to MEGAlib
 echo ""
-echo "(1) MEGAlib"
+echo "(a) MEGAlib"
 echo ""
 if ( `test -d $MEGALIB` && [ "$MEGALIB" != "" ] ); then
-    echo "Found MEGAlib: $MEGALIB";
+  echo "Found MEGAlib: $MEGALIB";
 else
-    echo "MEGAlib installation directory not found!";
-    echo ""
-    echo "--> Please add the path to MEGAlib to your resource file (e.g. .bashrc or .tcshrc)";
-    echo "    Example for .bashrc: export MEGALIB=$HOME/MEGAlib";
-    echo "    Example for .tcshrc: setenv MEGALIB ${HOME}/MEGAlib";
-    echo "--> If you are trying to run this script with sudo, your existing environment variables might not be transferred";
-    echo "    Instead of \"sudo ./configure ...\", try \"sudo bash\" and then configure."
-    echo ""
-    exit 0;
+  echo "MEGAlib installation directory not found!";
+  echo ""
+  echo "--> Please add the path to MEGAlib to your resource file (e.g. .bashrc or .tcshrc)";
+  echo "    Example for .bashrc: export MEGALIB=$HOME/MEGAlib";
+  echo "    Example for .tcshrc: setenv MEGALIB ${HOME}/MEGAlib";
+  echo "--> If you are trying to run this script with sudo, your existing environment variables might not be transferred";
+  echo "    Instead of \"sudo ./configure ...\", try \"sudo bash\" and then configure."
+  echo ""
+  exit 1
 fi
 
 
 # Check for ROOT
 echo ""
-echo "(2) ROOT"
+echo "(b) ROOT"
 echo ""
 bash ${MEGALIB}/config/configure_checkpath exe root
 FoundROOTExe=$?;
 if [ $FoundROOTExe -eq 0 ]; then
-    echo "ROOT program not found or not executable!"
-    echo ""
-    echo "--> If ROOT is not installed, then install it first!"
-    echo "--> If ROOT is installed, make sure that your PATH variable contains a folder which contains root,"
-    echo "    that you have read access to the ROOT directory, and that ROOT is executable"
-    echo "--> If ROOT is installed, the PATH is set, and you run this script via sudo, then you have to make"
-    echo "    sure you have set the PATH globally and not just for the user as the PATH variable might not be"
-    echo "    transferred via sudo"
-    echo "    Thus instead of \"sudo -E ./configure ...\", try \"sudo bash\" and then configure."
-    echo ""
-    exit 0;
+  echo "ROOT program not found or not executable!"
+  echo ""
+  echo "--> If ROOT is not installed, then install it first!"
+  echo "--> If ROOT is installed, make sure that your PATH variable contains a folder which contains root,"
+  echo "    that you have read access to the ROOT directory, and that ROOT is executable"
+  echo "--> If ROOT is installed, the PATH is set, and you run this script via sudo, then you have to make"
+  echo "    sure you have set the PATH globally and not just for the user as the PATH variable might not be"
+  echo "    transferred via sudo"
+  echo "    Thus instead of \"sudo -E ./configure ...\", try \"sudo bash\" and then configure."
+  echo ""
+  exit 0;
 fi
 
 bash ${MEGALIB}/config/configure_checkpath lib libCore
 FoundROOTLibs=$?;
 if [ $FoundROOTLibs -eq 0 ]; then
-    echo "ROOT libraries not found or not readable/accessable (test case: the \"Core\" library)!"
-    echo ""
-    echo "--> If ROOT is not installed, then install it first!"
-    echo "--> If ROOT is installed, make sure your LD_LIBRARY_PATH variable contains a folder "
-    echo "    which contains the root libraries (on Mac it's the DYLD_LIBRARY_PATH) and"
-    echo "    that you have read access to the libraries"
-    echo ""
-    exit 0;
+  echo "ROOT libraries not found or not readable/accessable (test case: the \"Core\" library)!"
+  echo ""
+  echo "--> If ROOT is not installed, then install it first!"
+  echo "--> If ROOT is installed, make sure your LD_LIBRARY_PATH variable contains a folder "
+  echo "    which contains the root libraries (on Mac it's the DYLD_LIBRARY_PATH) and"
+  echo "    that you have read access to the libraries"
+  echo ""
+  exit 0;
 fi
 
 echo "Found ROOT: $(which root)";
@@ -143,13 +281,13 @@ echo "Found ROOT: $(which root)";
 bash ${MEGALIB}/config/configure_rootversiontest -s;
 RootVersionOK=$?;
 if [ $RootVersionOK -eq 1 ]; then
-    exit 0;
+  exit 1
 fi
 
 
 # Check for Geant4
 echo ""
-echo "(3) GEANT4"
+echo "(c) GEANT4"
 echo ""
 
 Geant4Found=1;
@@ -172,8 +310,13 @@ if [ $FoundGeant4Libs -eq 0 ]; then
   echo "    which contains the Geant4 libraries (on Mac it's the DYLD_LIBRARY_PATH) and "
   echo "    make sure you have read access to the libraries!"
   Geant4Found=1
-else 
-  echo "Found Geant4: ${G4INSTALL} on ${G4SYSTEM}";
+else
+  GEANT4CONFIG=`type -P geant4-config`
+  if ([ "${GEANT4CONFIG}" != "" ]); then
+    echo "Found Geant4: $(geant4-config --prefix)";
+  else
+    echo "Found Geant4: ${G4INSTALL} on ${G4SYSTEM}";
+  fi
   Geant4Found=0;
 
   bash ${MEGALIB}/config/configure_geant4versiontest -s;
@@ -182,31 +325,31 @@ else
     Geant4Found=1;
   fi
 
-    Geant4DawnFileFound=1;
-    Geant4OpenGLFound=1;
-    Geant4ConfigFile="${G4INSTALL}/.config/bin/${G4SYSTEM}/config.sh";
-    if ( `test -f $Geant4ConfigFile` ); then
-        found=`grep -e "g4vis_use_dawnfile='y'" $Geant4ConfigFile`; 
-        if [ "$found" != "" ]; then 
-            echo "Found Geant4 visualization: DAWNFILE";
-            Geant4DawnFileFound=0;
-        fi; 
-        found=`grep -e "g4vis_use_openglx='y'" $Geant4ConfigFile`; 
-        if [ "$found" != "" ]; then 
-            echo "Found Geant4 visualization: OPENGLX";
-            Geant4OpenGLFound=0;
-        fi; 
-    else 
-        # Some Geant4 like the one through MacPorts don't keep the config.sh...
-        echo ""
-        echo "You seem to have an unusual GEANT4 installation (e.g. via MacPorts) or GEANT4 is not correctly installed!";
-        echo "If the compilation of Cosima fails, check again if GEANT4 is correctly installed.";
-    fi
+#    Geant4DawnFileFound=1;
+#    Geant4OpenGLFound=1;
+#    Geant4ConfigFile="${G4INSTALL}/.config/bin/${G4SYSTEM}/config.sh";
+#    if ( `test -f $Geant4ConfigFile` ); then
+#        found=`grep -e "g4vis_use_dawnfile='y'" $Geant4ConfigFile`; 
+#        if [ "$found" != "" ]; then 
+#            echo "Found Geant4 visualization: DAWNFILE";
+#            Geant4DawnFileFound=0;
+#        fi; 
+#        found=`grep -e "g4vis_use_openglx='y'" $Geant4ConfigFile`; 
+#        if [ "$found" != "" ]; then 
+#            echo "Found Geant4 visualization: OPENGLX";
+#            Geant4OpenGLFound=0;
+#        fi; 
+#    else 
+#        # Some Geant4 like the one through MacPorts don't keep the config.sh...
+#        echo ""
+#        echo "You seem to have an unusual GEANT4 installation (e.g. via MacPorts) or GEANT4 is not correctly installed!";
+#        echo "If the compilation of Cosima fails, check again if GEANT4 is correctly installed.";
+#    fi
 fi
 
 # Check for path to HEAsoft
 echo ""
-echo "(4) HEAsoft (optional)"
+echo "(d) HEAsoft (optional)"
 echo ""
 
 HEAsoftFound=1
@@ -219,153 +362,126 @@ elif ( [ "$HEASOFT" != "" ] && [ -d $HEASOFT ] ); then
 fi
 
 if ( [ "$HEADir" != "" ] ); then
-    if ( [ -f $HEADir/lib/libcfitsio.* ] ); then 
-        echo "Found HEAsoft: $HEADir";
-        HEAsoftFound=0
-    else
-        echo "HEAsoft directory found, but there is no libcfitsio.[so or dylib] library in $HEADir/lib!"
-        HEAVersionedLib=`ls $HEADir/lib/libcfitsio_*.*`
-        if ( [ "$HEAVersionedLib" != "" ] ); then
-            echo "However I found a libcfitsio with a version number: $HEAVersionedLib"
-            echo "If you want to use HEAsoft please make a link, e.g., on Linux in the directory of the library do:" 
-            echo "sudo ln -s libcfitsio_X.XX.so licfitsio.so"
-        fi
-        echo ""
-        echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
-        echo "   This is very rarely the case. Thus you might just ignore that message."
-        echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
-        HEAsoftFound=1
+  if ( [ -f $HEADir/lib/libcfitsio.* ] ); then 
+    echo "Found HEAsoft: $HEADir";
+    HEAsoftFound=0
+  else
+    echo "HEAsoft directory found, but there is no libcfitsio.[so or dylib] library in $HEADir/lib!"
+    HEAVersionedLib=`ls $HEADir/lib/libcfitsio_*.*`
+    if ( [ "$HEAVersionedLib" != "" ] ); then
+      echo "However I found a libcfitsio with a version number: $HEAVersionedLib"
+      echo "If you want to use HEAsoft please make a link, e.g., on Linux in the directory of the library do:" 
+      echo "sudo ln -s libcfitsio_X.XX.so licfitsio.so"
     fi
-else 
-    echo "HEAsoft installation not found!";
     echo ""
-        echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
-        echo "   This is very rarely the case. Thus you might just ignore that message."
-        echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
+    echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
+    echo "   This is very rarely the case. Thus you might just ignore that message."
+    echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
     HEAsoftFound=1
+  fi
+else 
+  echo "HEAsoft installation not found!";
+  echo ""
+  echo "-> HEAsoft is only required if you want to do simulations with MGGPOD and convert the fits files via ConvertMGGPOD.";
+  echo "   This is very rarely the case. Thus you might just ignore that message."
+  echo "   If you reinstall HEAsoft later, please re-run configure and recompile";
+  HEAsoftFound=1
 fi
 
 
 # Check for other little helper programs
 echo ""
-echo "(5) Miscellaneous helper tools"
+echo "(e) Miscellaneous helper tools"
 echo ""
 
 bash ${MEGALIB}/config/configure_misctools -s;
 MiscTest=$?;
 
 if [ $MiscTest -eq 1 ]; then
-    echo ""
-    echo "-> The miscellaneous helper tools are not mandatory, and only required by secondary programs and functions."
-    echo "   Thus you can continue, if one is missing and install it later when you need it."
-    echo ""
+  echo ""
+  echo "-> The miscellaneous helper tools are not mandatory, and only required by secondary programs and functions."
+  echo "   Thus you can continue, if one is missing and install it later when you need it."
+  echo ""
 fi
 
 
-UseIcc=1
 
-# Copy makefile:
+
+# Part 5:
+# Setup the make environment
+
 echo ""
 echo ""
-case $1 in
--h|--help) 
-    confhelp; 
-    exit 0 ;;
--linux|-linuxgcc|-softlinux|--linux|--linuxgcc|--softlinux) 
+echo "(3) Preparing the Makefiles:"
+echo ""
+
+# Choose main Makefile
+if [[ ${OS} == linux ]]; then
+  if [[ ${COMP} == gcc ]]; then
     echo "Configuring for Linux with gcc 3.x or higher compiler..."
-    cp config/Makefile.softlinux config/Makefile.config;;
--linuxicc|-softlinuxicc|--linuxicc|--softlinuxicc) 
+    cp config/Makefile.softlinux config/Makefile.config 
+  elif [[ ${COMP} == icc ]]; then
     echo "Configuring for Linux with icc 8.x or higher compiler..."
-    UseIcc=0
-    cp config/Makefile.softlinuxicc config/Makefile.config;;
--solaris|-softsol28|--solaris|--softsol28) 
-    echo "Configuring for Solaris with CC compiler..."
-    cp config/Makefile.softsol28 config/Makefile.config;;
--macosx|-softmacosx|--macosx|--softmacosx) 
+    cp config/Makefile.softlinuxicc config/Makefile.config
+  else
+    echo " "
+    echo "ERROR: Compiler not supported for linux: ${COMP}"
+    confhelp
+    exit 1    
+  fi
+elif [[ ${OS} == darwin ]]; then
+  if [[ ${COMP} == gcc ]]; then
     echo "Configuring for MaxOSX with gcc compiler..."
-    cp config/Makefile.softmacosx config/Makefile.config;;
--hardpcivme|--hardpcivme) 
-    echo "Configuring for hardware version (PCI->VME) on linux with gcc compiler..."
-    cp config/Makefile.hardpcivme config/Makefile.config;;
--hardvmecpu|--hardvmecpu) 
-    echo "Configuring for hardware version (VME computer) on linux with gcc compiler..."
-    cp config/Makefile.hardvmecpu config/Makefile.config;;
--hardvmecpuicc|--hardvmecpuicc) 
-    echo "Configuring for hardware version (VME computer) on linux with icc compiler..."
-    cp config/Makefile.hardvmecpuicc config/Makefile.config;;
--hardsol25|--hardsol25) 
-    echo "Configuring for hardware version on Solaris 2.5 with CC compiler..."
-    cp config/Makefile.hardsol25 config/Makefile.config;;
--hardsol28|--hardsol28) 
-    echo "Configuring for hardware version on Solaris 2.8 with CC compiler..."
-    cp config/Makefile.hardsol28 config/Makefile.config;;
-*) 
+    cp config/Makefile.softmacosx config/Makefile.config
+  else
     echo " "
-    echo "ERROR: Found unknown configuration option: $1"
-    echo "       See \"./configure --help\" for a list of options"
-    echo " "
-    exit 1;;
-esac
+    echo "ERROR: Compiler not supported for linux: ${COMP}"
+    confhelp
+    exit 1    
+  fi
+else
+  echo " "
+  echo "ERROR: Unknown operating system architecture: ${OS}"
+  confhelp
+  exit 1
+fi
 
-
-ARCH=$1
-shift
 
 # Set default values for the options
-OPT=""
-G4DEBUG="G4DEBUG = 0"
-# Check for additional options
-if [ $# -gt 0 ]; then
-    while [ "$1" != "" ]; do
-        case $1 in
-            --help|-h) 
-                confhelp;   
-                exit 0;;
-            -optimized|--optimized|optimize|--optimize) 
-                OPT=${OPT}"-O -DNDEBUG ";;
-            -optimizehard|--optimizehard) 
-                if ( [ $UseIcc -eq 1 ] ); then 
-                    OPT=${OPT}"-O3 -mtune=native -fno-strict-aliasing -DNDEBUG ";
-                    #OPT=${OPT}"-O3 -mtune=native -DNDEBUG ";
-                else 
-                    OPT=${OPT}"-O2 -DNDEBUG ";                  
-                fi;;
-            -debug|--debug)
-                G4DEBUG="G4DEBUG = 1"
-                if ([ $ARCH = "-solaris" ] || [ $ARCH = "-softsol28" ] || [ $ARCH = "-hardsol28" ] || [ $ARCH = "-hardsol25" ]); then
-                    OPT=${OPT}"-g -xs ";
-                else
-                    OPT=${OPT}"-g ";
-                fi;;
-            -deepdebug|--deepdebug) 
-                G4DEBUG="G4DEBUG = 1"
-                if ([ $ARCH = "-solaris" ] || [ $ARCH = "-softsol28" ] || [ $ARCH = "-hardsol28" ] || [ $ARCH = "-hardsol25" ]); then
-                    OPT=${OPT}"-g -xs -DDEBUG1 ";
-                else
-                    OPT=${OPT}"-g -DDEBUG1 ";
-                fi;;
-            *) 
-                echo " "
-                echo "ERROR: Found unknown configuration option: $1"
-                echo "       See \"./configure --help\" for a list of options"
-                echo " "
-                exit 1;;
-        esac
-   shift
-   done
+OPTIONS=""
+
+if [[ ${OPT} == normal ]]; then
+  OPTIONS="${OPTIONS} -O -DNDEBUG"
+elif  [[ $OPT == strong ]]; then
+  if [[ ${COMP} == gcc ]]; then 
+    OPTIONS="${OPTIONS} -O3 -mtune=native -fno-strict-aliasing -DNDEBUG"
+  else 
+    OPTIONS=${OPTIONS}"-O2 -DNDEBUG"
+  fi
 fi
+
+G4DEBUG="G4DEBUG = 0"
+if [[ ${DEBUG} == normal ]]; then
+  G4DEBUG="G4DEBUG = 1"
+  OPTIONS="${OPTIONS} -g"
+elif  [[ ${DEBUG} == strong ]]; then
+  G4DEBUG="G4DEBUG = 1"
+  OPTIONS="${OPTIONS} -g -DDEBUG1"
+fi
+                
+ 
 
 
 # Dump the options
 rm -f config/Makefile.options
 
-if ([ "$OPT" != "" ]); then
-    echo ""
-    echo "Adding the following compiler optimizations: "
-    echo "OPT = $OPT"
-    if ( [ $Geant4Found -eq 0 ] ); then 
-        echo "$G4DEBUG"
-    fi
+if ([ "${OPTIONS}" != "" ]); then
+  echo ""
+  echo "Adding the following compiler optimizations: "
+  echo "OPT = ${OPTIONS}"
+  if ( [ $Geant4Found -eq 0 ] ); then 
+    echo "$G4DEBUG"
+  fi
 fi
 
 echo "# Additional platform independend Makefile options" >> config/Makefile.options
@@ -393,15 +509,15 @@ echo "# If you want to produce debug infos in your executables use: -g" >> confi
 echo "# The default optimization level is: -O" >> config/Makefile.options
 echo "# You can combine all those options: -O -g -DNDEBUG" >> config/Makefile.options
 echo "# " >> config/Makefile.options
-if ( [ $ARCH = "-linuxicc" ] || [ $ARCH = "-softlinuxicc" ] ); then
+if [[ ${COMP} = icc ]]; then
     cat config/Makefile.icc_optimizations >> config/Makefile.options
 fi
-if ( [ $ARCH = "-linux" ] ||  [ $ARCH = "-linuxgcc" ] || [ $ARCH = "-softlinux" ] ); then
+if [[ ${ARCH} == linux ]]; then
     cat config/Makefile.gcc_optimizations >> config/Makefile.options
 fi
 echo "Please see the file config/Makefile.options for more optimization options for the Intel and GNU compiler"
 echo "" >> config/Makefile.options
-echo "OPT = $OPT" >> config/Makefile.options
+echo "OPT = ${OPTIONS}" >> config/Makefile.options
 if ( [ $Geant4Found -eq 0 ] ); then 
     echo "$G4DEBUG" >> config/Makefile.options
 fi
@@ -422,14 +538,31 @@ fi
 echo "" >> config/Makefile.options
 
 
+# If the file config/Makefile.user not exists, create it
+if (`test ! -f config/Makefile.user`); then
+  echo "# Addional user options for the makefile can be set here" >> config/Makefile.user
+  echo "# This file is not overwritten during the configure process" >> config/Makefile.user
+  echo " " >> config/Makefile.user
+  echo " " >> config/Makefile.user
+fi
+
+
+# Part 6:
+# Final preparations and clean up
+
+echo ""
+echo ""
+echo "(4) Preparing for compilation:"
+
 # Check if all directories are present, if not create them
 if (`test ! -d include`); then
-    echo "Creating directory include"
-    mkdir include
+  echo ""
+  echo "Creating directory include"
+  mkdir include
 fi
 if (`test ! -d lib`); then
-    echo "Creating directory lib"
-    mkdir lib
+  echo "Creating directory lib"
+  mkdir lib
 fi
 
 createdir src/addon
@@ -451,45 +584,26 @@ createdir src/spectralyze
 
 # Generate a link in the resource directory for compatibility reasons
 if (`test ! -h resource/geometries`); then
-    cd resource
-    # If checked without "-P" option we have now an empty directory
-    rm -rf geometries 
-    ln -s examples/geomega geometries
-    cd ..
+  cd resource
+  # If checked without "-P" option we have now an empty directory
+  rm -rf geometries 
+  ln -s examples/geomega geometries
+  cd ..
 fi
 
 # Cosima paths --- we are performing some removes, thus try to make sure we don't remove anything wrong
 if ( [ $Geant4Found -eq 0 ] && [ "${G4SYSTEM}" != "" ] ); then
-    rm -rf src/cosima/bin
-    cd bin
-    if (`test -d ${G4SYSTEM}`); then
-      rm -r ${G4SYSTEM}
-    fi
-    cd ..
-    ln -s ../../bin src/cosima/bin
-    ln -s ../bin bin/${G4SYSTEM}
-fi
-if ( [ $Geant4Found -eq 0 ] && [ "${G4SYSTEM}" != "" ] ); then 
-    rm -rf src/cosima/lib
-    cd lib
-    if (`test -d ${G4SYSTEM}`); then
-      rm -r ${G4SYSTEM}
-    fi
-    cd ..
-    ln -s ../../lib src/cosima/lib
-    ln -s ../lib lib/${G4SYSTEM}
-fi
-
-# If the file config/Makefile.user not exists, create it
-if (`test ! -f config/Makefile.user`); then
-    echo "# Addional user options for the makefile can be set here" >> config/Makefile.user
-    echo "# This file is not overwritten during the configure process" >> config/Makefile.user
-    echo " " >> config/Makefile.user
-    echo " " >> config/Makefile.user
+  rm -rf src/cosima/bin
+  cd bin
+  if (`test -d ${G4SYSTEM}`); then
+    rm -r ${G4SYSTEM}
+  fi
+  cd ..
+  #ln -s ../../bin src/cosima/bin
+  #ln -s ../bin bin/${G4SYSTEM}
 fi
 
 # Create a developer list
-echo ""
 echo ""
 echo "Creating list of developers and contributors by parsing through all cpp, cxx, cc, etc. files..."
 bash ${MEGALIB}/config/configure_developers -s;
@@ -497,14 +611,27 @@ bash ${MEGALIB}/config/configure_developers -s;
 # Store the current options:
 echo "${NewOptions}" >> config/configure_lastgoodoptions
 
+# Set the updates interval:
+if [[ ${UPDATES} == off ]]; then
+  echo ""
+  echo "Making config/UpdateCheck.txt read-only to prevent periodical update checks..."
+  touch config/UpdateCheck.txt
+  chmod a-w config/UpdateCheck.txt
+else
+  echo ""
+  echo "Setting up config/UpdateCheck.txt for periodical update checks..."
+  rm -f config/UpdateCheck.txt
+  cp config/Version.txt config/UpdateCheck.txt
+fi
+
 # Remove the old build
-echo ""
 echo ""
 echo "Removing old build..."
 make clean
 
 echo ""
-echo "Type 'make' to compile and link MEGAlib"
+echo ""
+echo "Done! Now type 'make' to compile and link MEGAlib"
 echo ""
      
 

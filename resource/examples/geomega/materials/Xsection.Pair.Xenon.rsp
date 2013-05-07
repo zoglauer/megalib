@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Xenon
 CE false
-HA 3020545931
+HA 944505474
 
 R1         1.000000 1.595426e-302
 R1         1.047129 1.595426e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 3.199402e-01
 R1  66069344.800760 3.199666e-01
 R1  69183097.091894 3.199930e-01
 R1  72443596.007499 3.200193e-01
-R1  75857757.502918 3.200457e-01
+R1  75857757.502919 3.200457e-01
 R1  79432823.472428 3.200721e-01
 R1  83176377.110267 3.200767e-01
 R1  87096358.995608 3.200774e-01

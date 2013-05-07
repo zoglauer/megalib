@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Nylon
 CE false
-HA 637034389
+HA 1986568228
 
 R1         1.000000 1.124115e-301
 R1         1.047129 1.124115e-301
@@ -404,7 +404,7 @@ R1  63095734.448019 2.109743e-02
 R1  66069344.800760 2.109896e-02
 R1  69183097.091894 2.110050e-02
 R1  72443596.007499 2.110203e-02
-R1  75857757.502918 2.110357e-02
+R1  75857757.502919 2.110357e-02
 R1  79432823.472428 2.110510e-02
 R1  83176377.110267 2.110679e-02
 R1  87096358.995608 2.110850e-02

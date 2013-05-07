@@ -51,7 +51,7 @@ class MMuonEvent : public MPhysicalEvent
 
   // Basic data:
   void SetEnergy(double Energy) { m_Energy = Energy; }
-  virtual double GetEnergy() { return m_Energy; }
+  virtual double GetEnergy() const { return m_Energy; }
   
   void SetDirection(MVector Direction) { m_Direction = Direction; }
   MVector GetDirection() { return m_Direction; }

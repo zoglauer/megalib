@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for Indium
 CE false
-HA 1006285502
+HA 1467873194
 
 R1         1.000000 3.990485e-02
 R1         1.047129 4.279584e-02
@@ -404,7 +404,7 @@ R1  63095734.448019 4.903392e-05
 R1  66069344.800760 4.699210e-05
 R1  69183097.091894 4.503531e-05
 R1  72443596.007499 4.315999e-05
-R1  75857757.502918 4.136277e-05
+R1  75857757.502919 4.136277e-05
 R1  79432823.472428 3.964038e-05
 R1  83176377.110267 3.798794e-05
 R1  87096358.995608 3.640439e-05

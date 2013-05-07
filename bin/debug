@@ -1,92 +1,116 @@
-#! /bin/sh
+#! /bin/bash
 
 confhelp() {
-    echo ""
-    echo "Usage: $0 [Program] <arguments>";
-                echo ""
-    echo "Program (mandatory):";
-    echo "   eview"
-    echo "   mimrec"
-    echo "   revan"
-    echo "   sivan"
-    echo "   geomega"
-    echo "   megalyze"
-    echo "   cosima"
+  echo ""
+  echo "debug - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    debug [Program] <arguments>";
+  echo "";
+  echo "Example:";
+  echo "    debug mimrec -f MyFile.tra";
+  echo "";
+  echo "This script lauches a program with gdb (and if you have a known MEGAlib program, it recompiles first)"
+  echo "";
 }
+
+# Test if an architecture is provided
+if [ $# -lt 1 ] ; then
+  echo " ";
+  echo "Error: You must specify a program!";
+  confhelp
+  exit 1;
+fi
 
 # Test if help is requested:
 case $1 in
 -h|--help) 
-                confhelp; 
-                exit 0;;
+  confhelp; 
+  exit 0;;
 esac
 
-echo "*** Debugging $1... please stand by..."
+echo " "
+echo "Starting debug ..."
 
-# Test if an architecture is provided
-if [ $# -lt 1 ] ; then
-    echo "";
-    echo "*** Error: You must specify a program!";
-                echo "*** See $0 --help for a list of options";
-                echo "";
-    exit 1;
-fi
 
 # A. Retrieve all arguments
-megadir=$MEGALIB;
-currdir=`pwd`;
+megadir=${MEGALIB}
+currdir=`pwd`
 
-program=$1;
+program=$1
 shift
-args="r "; 
+args=""
 
 while [ $# -gt 0 ] ; do
-    args=$args" "$1
-    shift
+  args="${args} $1"
+  shift
 done
 
-argfile="/tmp/gdbargs.tmp";
-rm -f $argfile;
-echo "$args" >> $argfile;
+command -v ${program} >/dev/null 2>&1
+programnotfound=$?
+programpath=""
+if [ ${programnotfound} -eq 0 ]; then
+  programpath=`which ${program}`
+  programpath=`dirname ${programpath}`
+  echo "Program found in path: ${programpath}"
+else
+  echo "Program not found ... Assuming it is a not yet compiled MEGAlib program ..."
+fi
 
+recompile=0
+if ( [ "${programpath}" == "" ] || [ "${programpath}" == "${MEGALIB}/bin" ] ); then
+  recompile=1
+fi
+
+  
 
 # B. Check for recompilation:
-echo "*** Checking for recompilation..."
-cd $megadir
 
 # switch into architectural dependent configurations
-case $program in
-geomega)
-                make -f $MEGALIB/Makefile geo;;
-revan)
-                make -f $MEGALIB/Makefile rev;;
-sivan)
-                make -f $MEGALIB/Makefile siv;;
-eview)
-                make -f $MEGALIB/Makefile evi;;
-mimrec)
-                make -f $MEGALIB/Makefile mim;;
-megalyze)
-                make -f $MEGALIB/Makefile meg;;
-cosima)
-                make -f $MEGALIB/Makefile cos;;
-*) 
-                make -f $MEGALIB/Makefile all;;
-esac
+if [ ${recompile} -eq 1 ]; then 
+  echo "Checking for recompilation of a MEGAlib program ..."
+  cd ${megadir}
 
-
-# Check if the last executed program (make) was successful:
-if [ "$?" -ne 0 ]; then
-    echo "*** Compilation failed. Aborting."
+  case ${program} in
+  geomega)
+    make -f ${MEGALIB}/Makefile geo;;
+  revan)
+    make -f ${MEGALIB}/Makefile rev;;
+  sivan)
+    make -f ${MEGALIB}/Makefile siv;;
+  eview)
+    make -f ${MEGALIB}/Makefile evi;;
+  mimrec)
+    make -f ${MEGALIB}/Makefile mim;;
+  megalyze)
+    make -f ${MEGALIB}/Makefile meg;;
+  cosima)
+    make -f ${MEGALIB}/Makefile cos;;
+  *) 
+    make -f ${MEGALIB}/Makefile all;;
+  esac
+  
+  # Check if the last executed program (make) was successful:
+  if [ "$?" -ne 0 ]; then
+    echo "Error: Compilation failed. Aborting."
     exit 1;
+  fi
+
+  command -v ${program} >/dev/null 2>&1
+  programnotfound=$?
+  if [ ${programnotfound} -eq 1 ]; then
+    echo " "
+    echo "ERROR: Program ${program} still not found! Aborting!"
+    exit 1;
+  fi
 fi
+
 
      
 # C. Lauch the program
-cd $currdir
-echo "*** Starting gdb...";
-gdb $MEGALIB/bin/$program -x $argfile
-
-rm -f $argfile;
+echo "Starting gdb...";
+cd ${currdir}
+gdb -ex run --args ${program} ${args}
 
 exit 0;

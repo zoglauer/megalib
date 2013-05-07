@@ -658,7 +658,7 @@ Bool_t DoCalibrateCsIDouble(MString DetectorName,
 			// Errors:
 			Bool_t BadCounts;     // not enough counts in spectrum
 			Bool_t BadEta;        // eta distribution rejected
-			Bool_t BadEFit;       // >= 1 bad energy fit occured
+			Bool_t BadEFit;       // >= 1 bad energy fit occurred
 
 			Double_t GuessedLowerEnergy = -1; // shrink fitrange for second ff. lines
 			Double_t GuessedUpperEnergy = -1;

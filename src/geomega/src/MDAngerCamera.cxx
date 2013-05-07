@@ -48,8 +48,9 @@ ClassImp(MDAngerCamera)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const int MDAngerCamera::c_PositioningXY  = MDGridPoint::c_XYAnger;
-const int MDAngerCamera::c_PositioningXYZ = MDGridPoint::c_XYZAnger;
+const int MDAngerCamera::c_PositionResolutionUnknown  = MDGridPoint::c_Unknown;
+const int MDAngerCamera::c_PositionResolutionXY       = MDGridPoint::c_XYAnger;
+const int MDAngerCamera::c_PositionResolutionXYZ      = MDGridPoint::c_XYZAnger;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -61,18 +62,17 @@ MDAngerCamera::MDAngerCamera(MString String) : MDDetector(String)
 
   m_Type = c_AngerCamera;
   m_Description = c_AngerCameraName;
-  m_Positioning = c_PositioningXYZ;
-  m_PositionResolution = new MSpline(MSpline::Interpolation);
+  m_PositionResolutionType = c_PositionResolutionUnknown;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDAngerCamera::MDAngerCamera(const MDAngerCamera& A)
+MDAngerCamera::MDAngerCamera(const MDAngerCamera& A) : MDDetector(A)
 {
-  m_Positioning = A.m_Positioning;
-  m_PositionResolution = new MSpline(*(A.m_PositionResolution));
+  m_PositionResolutionType = A.m_PositionResolutionType;
+  m_PositionResolution = A.m_PositionResolution;
 }
 
  
@@ -91,11 +91,39 @@ MDDetector* MDAngerCamera::Clone()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDAngerCamera::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+
+  MDDetector::CopyDataToNamedDetectors();
+  
+  if (m_IsNamedDetector == true) return true;
+  
+  for (unsigned int n = 0; n < m_NamedDetectors.size(); ++n) {
+    if (dynamic_cast<MDAngerCamera*>(m_NamedDetectors[n]) == 0) {
+      mout<<"   ***  Internal error  ***  in detector "<<m_Name<<endl;
+      mout<<"We have a named detector ("<<m_NamedDetectors[n]->GetName()<<") which is not of the same type as the base detector!"<<endl;
+      return false;
+    }
+    MDAngerCamera* D = dynamic_cast<MDAngerCamera*>(m_NamedDetectors[n]);
+    
+    if (D->m_PositionResolutionType == c_PositionResolutionUnknown && 
+        m_PositionResolutionType != c_PositionResolutionUnknown) {
+      D->m_PositionResolutionType = m_PositionResolutionType; 
+      D->m_PositionResolution = m_PositionResolution; 
+    }
+  }
+   
+  return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDAngerCamera::~MDAngerCamera()
 {
   // default destructor
-
-  delete m_PositionResolution;
 }
 
 
@@ -118,7 +146,7 @@ void MDAngerCamera::SetPositionResolution(const double Energy,
     return; 
   }
 
-  m_PositionResolution->AddDataPoint(Energy, Resolution);
+  m_PositionResolution.Add(Energy, Resolution);
 }
 
 
@@ -159,15 +187,15 @@ void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* 
   int Trials = 100;
   MVector NewPosition;
   do {
-    if (m_Positioning == c_PositioningXY) {
+    if (m_PositionResolutionType == c_PositionResolutionXY) {
       // Randomly determine an angle:
       double Angle = 2*c_Pi*gRandom->Rndm();
       NewPosition.SetXYZ(cos(Angle), sin(Angle), 0.0);
-      NewPosition *= gRandom->Gaus(m_PositionResolution->Get(Energy));
+      NewPosition *= gRandom->Gaus(0.0, m_PositionResolution.Evaluate(Energy));
       NewPosition += Pos;
     } else {
       // Randomly determine an angle:
-      NewPosition.SetMagThetaPhi(gRandom->Gaus(m_PositionResolution->Get(Energy)),
+      NewPosition.SetMagThetaPhi(gRandom->Gaus(0.0, m_PositionResolution.Evaluate(Energy)),
                                  c_Pi*gRandom->Rndm(), 
                                  2*c_Pi*gRandom->Rndm());
       NewPosition += Pos;
@@ -199,7 +227,7 @@ vector<MDGridPoint> MDAngerCamera::Discretize(const MVector& PosInDetectorVolume
 
   vector<MDGridPoint> Points;
   
-  if (m_Positioning == c_PositioningXY) {
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
     MVector Position = PosInDetectorVolume;
     Position.SetZ(0.0);
     Points.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_XYAnger, Position, Energy, Time));
@@ -217,7 +245,7 @@ MDGridPoint MDAngerCamera::GetGridPoint(const MVector& PosInDetectorVolume) cons
 {
   // Discretize Pos to a voxel of this detector
 
-  if (m_Positioning == c_PositioningXY) {
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
     return MDGridPoint(0, 0, 0, MDGridPoint::c_XYAnger);
   } else {
     return MDGridPoint(0, 0, 0, MDGridPoint::c_XYZAnger);
@@ -254,9 +282,9 @@ MString MDAngerCamera::GetGeant3() const
   }
 
   out<<"      DETNR("<<m_ID<<") = "<<m_Type<<endl;
-  if (m_Positioning == c_PositioningXY) {
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
     out<<"      DETTYP("<<m_ID<<") = 6"<<endl;
-  } else if (m_Positioning == c_PositioningXYZ) {
+  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
     out<<"      DETTYP("<<m_ID<<") = 7"<<endl;
   }
   out<<endl;
@@ -281,9 +309,9 @@ MString MDAngerCamera::GetMGeant() const
   }
 
   out<<"DTNR "<<m_ID<<" "<<m_Type<<endl;
-  if (m_Positioning == c_PositioningXY) {
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
     out<<"DTTP "<<m_ID<<" 6"<<endl;
-  } else if (m_Positioning == c_PositioningXYZ) {
+  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
     out<<"DTTP "<<m_ID<<" 7"<<endl;
   }
   out<<endl;
@@ -303,15 +331,15 @@ MString MDAngerCamera::GetGeomega() const
 
   out<<"AngerCamera "<<m_Name<<endl;
   out<<GetGeomegaCommon()<<endl;
-  if (m_Positioning == c_PositioningXY) {
+  if (m_PositionResolutionType == c_PositionResolutionXY) {
     out<<m_Name<<".Positioning XY"<<endl;
   } else {
     out<<m_Name<<".Positioning XYZ"<<endl;
   }
-  for (int d = 0; d < m_PositionResolution->GetNDataPoints(); ++d) {
+  for (unsigned int d = 0; d < m_PositionResolution.GetNDataPoints(); ++d) {
     out<<m_Name<<".PositionResolution "<<
-      m_PositionResolution->GetDataPointXValueAt(d)<<" "<<
-      m_PositionResolution->GetDataPointYValueAt(d)<<endl;
+      m_PositionResolution.GetDataPointX(d)<<" "<<
+      m_PositionResolution.GetDataPointY(d)<<endl;
   }
   return out.str().c_str();  
 }
@@ -325,8 +353,7 @@ MString MDAngerCamera::ToString() const
   //
 
   ostringstream out;
-
-  mimp<<"Not yet implemented..."<<endl;
+  out<<MDDetector::ToString()<<endl;
 
   return out.str().c_str();  
 }
@@ -343,7 +370,12 @@ bool MDAngerCamera::Validate()
     return false;
   }
 
-  // No new checks yet...
+  if (m_PositionResolutionType == c_PositionResolutionUnknown) {
+    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+    mout<<"No position resolution given!"<<endl;
+    return false;
+    
+  }
 
   return true;
 }
@@ -356,9 +388,9 @@ MVector MDAngerCamera::GetPositionResolution(const MVector& Pos, const double En
 {
   // Return the position resolution:
   
-  return MVector(1.0/sqrt(3.0)*m_PositionResolution->Get(Energy), 
-                 1.0/sqrt(3.0)*m_PositionResolution->Get(Energy),
-                 1.0/sqrt(3.0)*m_PositionResolution->Get(Energy));
+  return MVector(1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy), 
+                 1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy),
+                 1.0/sqrt(3.0)*m_PositionResolution.Evaluate(Energy));
 }
 
 

@@ -1,5 +1,5 @@
 # Macroscopic cross section for Photo absorption
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Photo absorption cross section for Steel
 CE false
-HA 562393349
+HA 3225300879
 
 R1         1.000000 6.949199e+04
 R1         1.047129 6.313702e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 1.255101e-08
 R1  66069344.800760 1.198595e-08
 R1  69183097.091894 1.144632e-08
 R1  72443596.007499 1.093099e-08
-R1  75857757.502918 1.043886e-08
+R1  75857757.502919 1.043886e-08
 R1  79432823.472428 9.968881e-09
 R1  83176377.110267 9.520066e-09
 R1  87096358.995608 9.091456e-09

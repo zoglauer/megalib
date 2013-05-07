@@ -62,6 +62,7 @@ class MDMaterial
   double GetRadiationLength() const { return m_RadiationLength; }
 
   void SetComponent(double A, double Z, double Weigth, int Type);
+  bool SetComponent(MString Name, double Weigth, int Type);
   MDMaterialComponent* GetComponentAt(unsigned int i);
   unsigned int GetNComponents();
 

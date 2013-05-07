@@ -381,6 +381,16 @@ void MFunction2D::ScaleY(double Scaler)
 
 double MFunction2D::Eval(double x, double y) const
 {
+  mdep<<"MFunction2D::Eval is deprecated, replace with: MFunction2D::Evaluate"<<show;
+  return Evaluate(x, y); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MFunction2D::Evaluate(double x, double y) const
+{
   // Evalute the function
 
   if (m_InterpolationType == c_InterpolationUnknown) {
@@ -497,7 +507,7 @@ void MFunction2D::GetRandom(double& x, double& y)
 //     x = gRandom->Rndm()*(GetXMax() - GetXMin()) + GetXMin();
 //     y = gRandom->Rndm()*(GetYMax() - GetYMin()) + GetYMin();
 
-    z = Eval(x, y);
+    z = Evaluate(x, y);
   } while (m_Maximum*gRandom->Rndm() > z);
 
 
@@ -558,7 +568,7 @@ void MFunction2D::GetRandom(double& x, double& y)
 //     x = gRandom->Rndm()*(m_X[xBin] - m_X[xBin-1]) + m_X[xBin-1];
 //     y = gRandom->Rndm()*(m_Y[yBin] - m_Y[yBin-1]) + m_Y[yBin-1];
 
-//     z = Eval(x, y);
+//     z = Evaluate(x, y);
 //   } while (Min + (Max-Min)*gRandom->Rndm() > z);
 
   return;
@@ -666,7 +676,7 @@ void MFunction2D::Plot()
                           m_Y.size(), m_Y.front() - 0.5*(m_Y[1]-m_Y[0]), m_Y.back() + 0.5*(m_Y[1]-m_Y[0]));
     for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
       for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
-        Hist->SetBinContent(bx, by, Eval(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by)));
+        Hist->SetBinContent(bx, by, Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by)));
       }
     }
 

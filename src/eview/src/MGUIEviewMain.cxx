@@ -59,6 +59,8 @@ using namespace std;
 #include "MGUIOptionsTracking.h"
 #include "MGUIOptionsCSR.h"
 #include "MGUIOptionsGeneral.h"
+#include "MPrelude.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -235,7 +237,6 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-
   Create();
 
   m_Geometry = new MGeometryRevan();
@@ -244,7 +245,11 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
     mgui<<"Unable to load file: "<<FileName<<endl;
     return false;
   }
-  
+    
+  // Show change log / license if changed:
+  MPrelude P;
+  if (P.Play() == false) return false; // license was not accepted
+
   return true;
 }
 

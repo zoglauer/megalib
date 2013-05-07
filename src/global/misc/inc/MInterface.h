@@ -50,9 +50,6 @@ class MInterface
   //! Returns the geometry or zero if there is none
   virtual MDGeometryQuest* GetGeometry();
 
-  //! Shows the license file if in GUI mode
-  virtual bool ShowLicense();
-
   //! Sets the Gui Data
   // virtual void SetGuiData(MGUIData* BasicGuiData = 0) = 0; // tbd.
 

@@ -73,10 +73,6 @@ class MResponseGaussian : public MResponse
   // protected members:
  protected:
 
-
-  // private members:
- private:
-
   double m_LongitudinalFit;         // longitudinal sigma of the cone-arc
   double m_TransversalFit;          // transversal sigma of the cone
   double m_PairFit;               
@@ -98,6 +94,9 @@ class MResponseGaussian : public MResponse
 
   bool m_HasTrack;
 
+
+  // private members:
+ private:
 
 
 

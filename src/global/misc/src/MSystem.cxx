@@ -169,7 +169,7 @@ bool MSystem::FreeMemory(int &Free)
 bool MSystem::GetMemory()
 {
   // Fill all memory variables 
-  // Return false if an error occured
+  // Return false if an error occurred
 
   // Check if it's update time:
   //cout<<(gSystem->Now() - m_LastCheck).AsString()<<"!"<<m_CheckInterval.AsString()<<endl;

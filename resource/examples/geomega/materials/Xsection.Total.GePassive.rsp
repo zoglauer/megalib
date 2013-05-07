@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for GePassive
 CE false
-HA 666091529
+HA 543490963
 
 R1         1.000000 1.005607e+04
 R1         1.047129 9.025843e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 3.340485e-01
 R1  66069344.800760 3.340689e-01
 R1  69183097.091894 3.340894e-01
 R1  72443596.007499 3.341099e-01
-R1  75857757.502918 3.341304e-01
+R1  75857757.502919 3.341304e-01
 R1  79432823.472428 3.341511e-01
 R1  83176377.110267 3.341617e-01
 R1  87096358.995608 3.341705e-01

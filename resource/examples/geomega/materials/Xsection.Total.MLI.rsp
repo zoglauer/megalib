@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for MLI
 CE false
-HA 427517765
+HA 3255520577
 
 R1         1.000000 3.960052e+03
 R1         1.047129 3.497530e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 2.677348e-02
 R1  66069344.800760 2.677485e-02
 R1  69183097.091894 2.677624e-02
 R1  72443596.007499 2.677765e-02
-R1  75857757.502918 2.677907e-02
+R1  75857757.502919 2.677907e-02
 R1  79432823.472428 2.678052e-02
 R1  83176377.110267 2.678222e-02
 R1  87096358.995608 2.678399e-02

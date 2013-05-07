@@ -1,0 +1,40 @@
+#! /bin/bash
+
+
+help() {
+  echo ""
+  echo "mdelay - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mdelay [program name] [maximum number of instances]";
+  echo "";
+  echo "Example:";
+  echo "    mdelay cosima 4";
+  echo "";
+  echo "This script makes sure that not more than the given number of instances"
+  echo "are running on this machine."
+  echo "";
+}
+
+if [ $# -ne 2 ]; then
+    echo "Error: This script requires two input parameters"
+    exit -1;
+fi
+
+ProgramName=$1
+MaxRunningInstances=$2
+RunningInstances=65536
+
+while [ ${RunningInstances} -ge ${MaxRunningInstances} ]; do
+  RunningInstances=`ps -Ac | grep " ${ProgramName}" | wc -l | sed 's/^ *//g'`
+  if [ ${RunningInstances} -eq 0 ]; then 
+    exit 0;
+  fi
+  if [ ${RunningInstances} -ge ${MaxRunningInstances} ]; then
+    echo "Waiting for a free slot: Running ${RunningInstances} of ${MaxRunningInstances} allowed instances of ${ProgramName}"
+    sleep 5;
+  fi
+done
+
+exit 0;

@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for Copper
 CE false
-HA 2078538703
+HA 2573692499
 
 R1         1.000000 8.384835e-302
 R1         1.047129 8.384835e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 5.353482e-01
 R1  66069344.800760 5.353903e-01
 R1  69183097.091894 5.354325e-01
 R1  72443596.007499 5.354746e-01
-R1  75857757.502918 5.355167e-01
+R1  75857757.502919 5.355167e-01
 R1  79432823.472428 5.355588e-01
 R1  83176377.110267 5.355831e-01
 R1  87096358.995608 5.356041e-01

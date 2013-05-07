@@ -710,7 +710,8 @@ int MERCSRBayesian::GetMaterial(MRESE* Hit)
 {
   MDVolume* V = Hit->GetVolumeSequence()->GetDeepestVolume();
   if (V == 0) {
-    merr<<"No deepest volume. Do you use the correct geiometry?"<<endl;
+    merr<<"MERCSRBayesian: No deepest volume. Do you use the correct geometry?"<<endl;
+    merr<<"Hit postion: "<<Hit->GetPosition()<<show;
     return 0;
   }
 

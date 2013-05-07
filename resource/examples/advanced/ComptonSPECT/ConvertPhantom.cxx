@@ -159,6 +159,7 @@ bool ConvertPhantom::ParseCommandLine(int argc, char** argv)
 }
 
 
+
 /******************************************************************************
  * Convert the phantom into MEGAlib/Geomega format
  */
@@ -220,23 +221,23 @@ bool ConvertPhantom::Analyze()
   if (Raw.is_open() == true) {
     for (unsigned int i = 0; i < NBins; ++i) {
       Raw.read((char*) &Value, sizeof(Value));
+      Value = (Value>>8) | (Value<<8);
       Matrix.push_back(Value);
     }
   } else {
     cout<<"Unable to open file: "<<RawFile<<endl;
   }
   Raw.close();
-  
+
   if (Matrix.size() != NBins) {
     cout<<"Matrix size "<<Matrix.size()<<" != "<<NBins<<endl;
     return false;
   }
-  
   if (NDims == 3) {
     TH3D* Hist = new TH3D("3D Matrix", "3D Matrix", Dims[0], 0, Spacing[0]*Dims[0], Dims[1], 0, Spacing[1]*Dims[1], Dims[2], 0, Spacing[2]*Dims[2]);
-    for (int x = 0; x < Dims[0]; ++x) {
+    for (int z = 0; z < Dims[2]; ++z) {
       for (int y = 0; y < Dims[1]; ++y) {
-        for (int z = 0; z < Dims[2]; ++z) {
+        for (int x = 0; x < Dims[0]; ++x) {
           Hist->SetBinContent(x, y, z, Matrix[x + y*Dims[0] + z*Dims[0]*Dims[1]]);
         }
       }   
@@ -257,6 +258,7 @@ bool ConvertPhantom::Analyze()
   geo<<endl;
   
   vector<short> MaterialIDs;
+  string Mat_name("");
   for (int z = 0; z < Dims[2]; ++z) {
 
     bool FoundLine = false;
@@ -275,7 +277,22 @@ bool ConvertPhantom::Analyze()
             NIdentical++;
           }
           geo<<"Volume Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<endl;
-          geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Material Mat_"<<MaterialID<<endl;
+
+	  switch ( MaterialID)
+	    {
+	    case 2: Mat_name="SpineBone"; break;
+	    case 10: Mat_name="Muscle"; break;
+	    case 11: Mat_name="Muscle"; break;
+	    case 12: Mat_name="Muscle"; break;
+	    case 13: Mat_name="Air"; break;
+	    case 14: Mat_name="Muscle"; break;
+	    case 15: Mat_name="Muscle"; break;
+	    case 18: Mat_name="Muscle"; break;
+	    case 39: Mat_name="Lung"; break;
+	    default: Mat_name="Water"; break;
+	    }
+
+          geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Material "<<Mat_name<<endl;
           bool MaterialFound = false;
           for (unsigned int m = 0; m < MaterialIDs.size(); ++m) {
             if (MaterialIDs[m] == MaterialID) {
@@ -288,14 +305,15 @@ bool ConvertPhantom::Analyze()
           }
           geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Visibility 1"<<endl;
           geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Shape BOX "<<0.5*NIdentical*Spacing[0]<<" "<<0.5*Spacing[1]<<" "<<0.5*Spacing[2]<<endl;
-          geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Position "<<(-(0.5*(Dims[0]-1.0)) + x + 0.5*(NIdentical-1.0))*Spacing[0]<<" 0.0 0.0"<<endl;
+          geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Position "<<(-0.5*Dims[0]+ x + 0.5*NIdentical)*Spacing[0]<<" 0.0 0.0"<<endl;
           geo<<"Phantom_Voxel_"<<z<<"_"<<y<<"_"<<x<<".Mother Phantom_Line_"<<z<<"_"<<y<<endl;
           geo<<endl;
           
           x += (NIdentical-1);
+	  VoxelCount += NIdentical-1;
         }
       }
-      
+
       if (FoundVoxel == true) {
         FoundLine = true;
         geo<<"Volume Phantom_Line_"<<z<<"_"<<y<<endl;
@@ -321,14 +339,86 @@ bool ConvertPhantom::Analyze()
   }
   
   // Write materials
-  for (unsigned int m = 0; m < MaterialIDs.size(); ++m) {
-    geo<<"Material Mat_"<<MaterialIDs[m]<<endl;
-    geo<<"Mat_"<<MaterialIDs[m]<<".Density 1.0    // Attention: Density fixed to 1.0"<<endl;
-    geo<<"Mat_"<<MaterialIDs[m]<<".Component 16  8  2"<<endl;
-    geo<<"Mat_"<<MaterialIDs[m]<<".Component 12  6  5"<<endl;
-    geo<<"Mat_"<<MaterialIDs[m]<<".Component  1  1  8"<<endl;
-    geo<<endl;
-  }
+  geo<<"Material Water"<<endl;
+  geo<<"Water.Density 1.0    // Attention: Density fixed to 1.0"<<endl;
+  geo<<"Water.Component 16  8  1"<<endl;
+  geo<<"Water.Component  1.01  1  2"<<endl<<endl;
+
+  geo<<"Material RibBone"<<endl;
+  geo<<"RibBone"<<".Density 1.92"<<endl;
+  geo<<"RibBone.ComponentByMass 1.01  1  0.034  // H"<<endl;
+  geo<<"RibBone.ComponentByMass 12.01  6.  0.155  // C"<<endl;
+  geo<<"RibBone.ComponentByMass 14.01  7  0.042  // N"<<endl;
+  geo<<"RibBone.ComponentByMass 16.  8.  0.435  // O"<<endl;
+  geo<<"RibBone.ComponentByMass 22.99  11  0.001  // Na"<<endl;
+  geo<<"RibBone.ComponentByMass 24.305  12  0.002  // Mg"<<endl;
+  geo<<"RibBone.ComponentByMass 30.97  15  0.103  // P"<<endl;
+  geo<<"RibBone.ComponentByMass 32.066  16  0.003  // S"<<endl;
+  geo<<"RibBone.ComponentByMass 40.08  20  0.225  // Ca"<<endl<<endl;
+
+  geo<<"Material SpineBone"<<endl;
+  geo<<"SpineBone"<<".Density 1.42"<<endl;
+  geo<<"SpineBone.ComponentByMass 1.01  1  0.063  // H"<<endl;
+  geo<<"SpineBone.ComponentByMass 12.01  6.  0.261  // C"<<endl;
+  geo<<"SpineBone.ComponentByMass 14.01  7  0.039  // N"<<endl;
+  geo<<"SpineBone.ComponentByMass 16.  8.  0.436  // O"<<endl;
+  geo<<"SpineBone.ComponentByMass 22.99  11  0.001  // Na"<<endl;
+  geo<<"SpineBone.ComponentByMass 24.305  12  0.001  // Mg"<<endl;
+  geo<<"SpineBone.ComponentByMass 30.97  15  0.061  // P"<<endl;
+  geo<<"SpineBone.ComponentByMass 32.066  16  0.003  // S"<<endl;
+  geo<<"SpineBone.ComponentByMass 35.45  17  0.001  // Cl"<<endl;
+  geo<<"SpineBone.ComponentByMass 39.098  16  0.001  // K"<<endl;
+  geo<<"SpineBone.ComponentByMass 40.08  20  0.133  // Ca"<<endl<<endl;
+
+  geo<<"Material Muscle"<<endl;
+  geo<<"Muscle"<<".Density 1.05"<<endl;
+  geo<<"Muscle.ComponentByMass 1.01  1  0.102  // H"<<endl;
+  geo<<"Muscle.ComponentByMass 12.01  6.  0.143  // C"<<endl;
+  geo<<"Muscle.ComponentByMass 14.01  7  0.034  // N"<<endl;
+  geo<<"Muscle.ComponentByMass 16.  8.  0.71  // O"<<endl;
+  geo<<"Muscle.ComponentByMass 22.99  11  0.001  // Na"<<endl;
+  geo<<"Muscle.ComponentByMass 30.97  15  0.002  // P"<<endl;
+  geo<<"Muscle.ComponentByMass 32.066  16  0.003  // S"<<endl;
+  geo<<"Muscle.ComponentByMass 35.45  17  0.001  // Cl"<<endl;
+  geo<<"Muscle.ComponentByMass 39.098  16  0.004  // K"<<endl<<endl;
+
+  geo<<"Material Lung"<<endl;
+  geo<<"Lung"<<".Density 0.26"<<endl;
+  geo<<"Lung.ComponentByMass 1.01  1  0.103  // H"<<endl;
+  geo<<"Lung.ComponentByMass 12.01  6.  0.105  // C"<<endl;
+  geo<<"Lung.ComponentByMass 14.01  7  0.031  // N"<<endl;
+  geo<<"Lung.ComponentByMass 16.  8.  0.749  // O"<<endl;
+  geo<<"Lung.ComponentByMass 22.99  11  0.002  // Na"<<endl;
+  geo<<"Lung.ComponentByMass 30.97  15  0.002  // P"<<endl;
+  geo<<"Lung.ComponentByMass 32.066  16  0.003  // S"<<endl;
+  geo<<"Lung.ComponentByMass 35.45  17  0.003  // Cl"<<endl;
+  geo<<"Lung.ComponentByMass 39.098  16  0.002  // K"<<endl<<endl;
+
+  geo<<"Material Brain"<<endl;
+  geo<<"Brain"<<".Density 1.04"<<endl;
+  geo<<"Brain.ComponentByMass 1.01  1  0.107  // H"<<endl;
+  geo<<"Brain.ComponentByMass 12.01  6.  0.145  // C"<<endl;
+  geo<<"Brain.ComponentByMass 14.01  7  0.022  // N"<<endl;
+  geo<<"Brain.ComponentByMass 16.  8.  0.712  // O"<<endl;
+  geo<<"Brain.ComponentByMass 22.99  11  0.002  // Na"<<endl;
+  geo<<"Brain.ComponentByMass 30.97  15  0.004  // P"<<endl;
+  geo<<"Brain.ComponentByMass 32.066  16  0.002  // S"<<endl;
+  geo<<"Brain.ComponentByMass 35.45  17  0.003  // Cl"<<endl;
+  geo<<"Brain.ComponentByMass 39.098  16  0.003  // K"<<endl<<endl;
+
+  geo<<"Material Skull"<<endl;
+  geo<<"Skull"<<".Density 1.61"<<endl;
+  geo<<"Skull.ComponentByMass 1.01  1  0.05  // H"<<endl;
+  geo<<"Skull.ComponentByMass 12.01  6.  0.212  // C"<<endl;
+  geo<<"Skull.ComponentByMass 14.01  7  0.04  // N"<<endl;
+  geo<<"Skull.ComponentByMass 16.  8.  0.435  // O"<<endl;
+  geo<<"Skull.ComponentByMass 22.99  11  0.001  // Na"<<endl;
+  geo<<"Skull.ComponentByMass 24.305  12  0.002  // Mg"<<endl;
+  geo<<"Skull.ComponentByMass 30.97  15  0.081  // P"<<endl;
+  geo<<"Skull.ComponentByMass 32.066  16  0.003  // S"<<endl;
+  geo<<"Skull.ComponentByMass 40.08  20  0.176  // Ca"<<endl<<endl;
+
+  // geo<<endl;
   
   
   geo.close();

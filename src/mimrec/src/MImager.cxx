@@ -56,6 +56,7 @@ using namespace std;
 #include "MSystem.h"
 #include "MResponse.h"
 #include "MResponseGaussian.h"
+#include "MResponseGaussianByUncertainties.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
 #include "MSensitivity.h" 
@@ -404,6 +405,22 @@ void MImager::SetResponseGaussian(const double Transversal, const double Longitu
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MImager::SetResponseGaussianByUncertainties()
+{
+  // Set the Gaussian response parameters
+
+  for (unsigned int t= 0; t < m_NThreads; ++t) {
+    MResponseGaussianByUncertainties* Response = new MResponseGaussianByUncertainties();
+    Response->SetThreshold(2.5);
+
+    m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MImager::SetApproximatedMaths(bool ApproximatedMaths)
 {
   // Set the Gaussian response parameters
@@ -697,11 +714,11 @@ bool MImager::Analyze(bool CalculateResponse)
   } else if (m_CoordinateSystem == MProjection::c_Galactic) {
     Image = new MImageGalactic("Image - Iteration: 0", 
                                m_EM->GetInitialImage(), 
-                               "Longitude [deg]", 
+                               "Galactic Longitude [deg]", 
                                m_x1Min*c_Deg,
                                m_x1Max*c_Deg, 
                                m_x1NBins,
-                               "Latitude [deg]", 
+                               "Galactic Latitude [deg]", 
                                m_x2Min*c_Deg-90, 
                                m_x2Max*c_Deg-90, 
                                m_x2NBins, 

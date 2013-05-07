@@ -1,5 +1,5 @@
 # Macroscopic cross section for Compton scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Compton scattering cross section for Germanium
 CE false
-HA 666091529
+HA 543490963
 
 R1         1.000000 3.297218e-02
 R1         1.047129 3.545185e-02
@@ -404,7 +404,7 @@ R1  63095734.448019 3.687874e-05
 R1  66069344.800760 3.534341e-05
 R1  69183097.091894 3.387201e-05
 R1  72443596.007499 3.246186e-05
-R1  75857757.502918 3.111041e-05
+R1  75857757.502919 3.111041e-05
 R1  79432823.472428 2.981524e-05
 R1  83176377.110267 2.857224e-05
 R1  87096358.995608 2.738107e-05

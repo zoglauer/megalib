@@ -78,10 +78,10 @@ class MBackprojection : public MProjection
     if (m_ApproximatedMaths == false) return acos(x);
 
     if (x < 0.0F) {
-      if (x < -1.0F) return 3.1415926535889793F; 
+      if (x <= -1.0F) return 3.1415926535889793F; 
       return 3.1415926535889793F - sqrt(1.0F + x) * (1.5707288F - x*(-0.2121144F - x*(0.0742610F + x*0.0187293F)));
     }
-    if (x > 1.0F) return 0.0F; 
+    if (x >= 1.0F) return 0.0F; 
     return sqrt(1.0F - x) * (1.5707288F + x*(-0.2121144F + x*(0.0742610F - x*0.0187293F)));
   }
 

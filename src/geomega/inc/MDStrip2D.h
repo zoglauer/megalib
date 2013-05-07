@@ -38,6 +38,9 @@ class MDStrip2D : public MDDetector
 
   virtual MDDetector* Clone();
 
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
+
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
   virtual bool NoiseGuardringEnergy(double& Energy) const;
   virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
@@ -161,8 +164,11 @@ class MDStrip2D : public MDDetector
   double m_GuardringTriggerThreshold;
   //! Trigger threshold of the guard ring one sigma resolution
   double m_GuardringTriggerThresholdSigma;
+  
+  //! The energy resolution type of the guard ring
+  int m_GuardringEnergyResolutionType;
   //! Energy resolution of the guard ring
-  MSpline* m_GuardringEnergyResolution; 
+  MFunction m_GuardringEnergyResolution; 
 
   //! A unique position in the guardring of one wafer relative to the wafer center!!
   MVector m_UniqueGuardringPosition;

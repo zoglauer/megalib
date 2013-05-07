@@ -127,7 +127,7 @@ MDGeometry::MDGeometry()
 MDGeometry::~MDGeometry()
 {
   // default destructor
-
+  
   Reset();
   delete m_TriggerUnit;
   delete m_System;
@@ -985,6 +985,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                                  Tokenizer.GetTokenAtAsDouble(4));
       m_DistanceToSphereCenter = Tokenizer.GetTokenAtAsDouble(5);
 
+      if (m_SphereRadius != m_DistanceToSphereCenter) {
+        Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
+        return false;
+      }
+      
       continue;
     }
 
@@ -1328,7 +1333,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   //
   // Second loop:
-  // Search for copies/clones of different volumes 
+  // Search for copies/clones of different volumes and named detectors
   // 
   //
 
@@ -1366,6 +1371,27 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         AddMaterial(MCopy);
         M->AddClone(MCopy);
+      }
+    } else if (Tokenizer.IsTokenAt(1, "NamedDetector") == true || Tokenizer.IsTokenAt(1, "Named") == true) {
+      if ((D = GetDetector(Tokenizer.GetTokenAt(0))) != 0) {
+        if (D->IsNamedDetector() == true) {
+          Typo("You cannot add a named detector to a named detector!");
+          return false;         
+        }
+        if (m_DoSanityChecks == true) {
+          if (ValidName(Tokenizer.GetTokenAt(2)) == false) {
+            return false;
+          }
+          if (NameExists(Tokenizer.GetTokenAt(2)) == true) {
+            return false;
+          }
+        }
+        MDDetector* Clone = D->Clone();
+        Clone->SetName(Tokenizer.GetTokenAt(2));
+        if (D->AddNamedDetector(Clone) == false) {
+          return false;
+        }
+        AddDetector(Clone);
       }
     }
 
@@ -1416,25 +1442,47 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         M->SetRadiationLength(Tokenizer.GetTokenAtAsDouble(2));
       } else if (Tokenizer.IsTokenAt(1, "Component") == true || 
                  Tokenizer.IsTokenAt(1, "ComponentByAtoms") == true) {
-        if (Tokenizer.GetNTokens() != 5) {
+        if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0\"");
+               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0\""
+               " or three string and one double\""
+               " e.g. \"Alu.ComponentByAtoms Al 1.0\"");
           return false;
         }
-        M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
-                        Tokenizer.GetTokenAtAsDouble(3), 
-                        Tokenizer.GetTokenAtAsDouble(4),
-                        MDMaterialComponent::c_ByAtoms);
+        if (Tokenizer.GetNTokens() == 4) {
+          if (M->SetComponent(Tokenizer.GetTokenAtAsString(2), 
+                              Tokenizer.GetTokenAtAsDouble(3), 
+                              MDMaterialComponent::c_ByAtoms) == false) {
+            Typo("Element not found!");
+            return false;
+          }
+        } else {
+          M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
+                          Tokenizer.GetTokenAtAsDouble(3), 
+                          Tokenizer.GetTokenAtAsDouble(4),
+                          MDMaterialComponent::c_ByAtoms);
+        }
       } else if (Tokenizer.IsTokenAt(1, "ComponentByMass") == true) {
-        if (Tokenizer.GetNTokens() != 5) {
+       if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0\"");
+               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0\""
+               " or three string and one double\""
+               " e.g. \"Alu.ComponentByMass Al 1.0\"");
           return false;
         }
-        M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
-                        Tokenizer.GetTokenAtAsDouble(3), 
-                        Tokenizer.GetTokenAtAsDouble(4),
-                        MDMaterialComponent::c_ByMass);
+        if (Tokenizer.GetNTokens() == 4) {
+          if (M->SetComponent(Tokenizer.GetTokenAtAsString(2), 
+                              Tokenizer.GetTokenAtAsDouble(3), 
+                              MDMaterialComponent::c_ByMass) == false) {
+            Typo("Element not found!");
+            return false;
+          }
+        } else {
+          M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
+                          Tokenizer.GetTokenAtAsDouble(3), 
+                          Tokenizer.GetTokenAtAsDouble(4),
+                          MDMaterialComponent::c_ByMass);
+        }
       } else if (Tokenizer.IsTokenAt(1, "Sensitivity") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one int,"
@@ -1625,8 +1673,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         V->SetMaterial(M);
       } else if (Tokenizer.IsTokenAt(1, "Shape") == true) {
-        if (Tokenizer.IsTokenAt(2, "BRIK") == true || 
-            Tokenizer.IsTokenAt(2, "BOX") == true) {
+        if (Tokenizer.IsTokenAt(2, "BRIK", true) == true || 
+            Tokenizer.IsTokenAt(2, "BOX", true) == true) {
           if (Tokenizer.GetNTokens() != 6) {
             Typo("Line must contain three strings and 3 doubles,"
                  " e.g. \"Wafer.Shape BRIK 3.0 3.0 0.025\" (BOX == BRIK)");
@@ -1642,7 +1690,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(BRIK);
 
-        } else if (Tokenizer.IsTokenAt(2, "PCON") == true) {
+        } else if (Tokenizer.IsTokenAt(2, "PCON", true) == true) {
           if (Tokenizer.GetNTokens() < 12) {
             Typo("Line must contain at least three strings and 9 doubles,"
                  " e.g. \"Ge.Shape PCON  0.0 360.0  2    0.0  24.369  118.73    0.0  24.369  118.73\"");
@@ -1724,7 +1772,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
               return false;
             }
           }
-        } else if (Tokenizer.IsTokenAt(2, "PGON") == true) {
+        } else if (Tokenizer.IsTokenAt(2, "PGON", true) == true) {
           if (Tokenizer.GetNTokens() < 13) {
             Typo("Line must contain at least three strings and 10 doubles,"
                  " e.g. \"Ge.Shape PGON  0.0 360.0  4 2    0.0  24.369  118.73    0.0  24.369  118.73\"");
@@ -1795,7 +1843,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
         } 
         // Sphere:
-        else if (Tokenizer.IsTokenAt(2, "SPHE") == true) {
+        else if (Tokenizer.IsTokenAt(2, "SPHE", true) == true || Tokenizer.IsTokenAt(2, "SPHERE", true) == true) {
           if (Tokenizer.GetNTokens() != 9) {
             Typo("Line must contain three strings and 6 doubles: rmin, rmax, thetamin, thetamax, phimin, phimax"
                  " e.g. \"UpperVeto.Shape SPHE 40.0 42.0 0.0 90.0 0.0 360.0\"");
@@ -1816,7 +1864,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         } 
         // Cylinder:
-        else if (Tokenizer.IsTokenAt(2, "TUBS") == true || Tokenizer.IsTokenAt(2, "TUBE") == true) {
+        else if (Tokenizer.IsTokenAt(2, "TUBS", true) == true || Tokenizer.IsTokenAt(2, "TUBE", true) == true) {
           if (Tokenizer.GetNTokens() != 8) {
             Typo("Line must contain three strings and 5 doubles: rmin, rmax, half height, phi1, phi2"
                  " e.g. \"Plate.Shape TUBS 0.0 42.0 5.0 0.0 360.0\"");
@@ -1836,7 +1884,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         } 
         // Cone:
-        else if (Tokenizer.IsTokenAt(2, "CONE") == true) {
+        else if (Tokenizer.IsTokenAt(2, "CONE", true) == true) {
           if (Tokenizer.GetNTokens() != 8) {
             Typo("Line must contain three strings and 5 doubles: half height, rmin bottom, rmax bottom rmin top, rmax top"
                  " e.g. \"Plate.Shape CONE 50.0 20.0 0.0 1.0 0.0\"");
@@ -1856,7 +1904,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         } 
         // CONS:
-        else if (Tokenizer.IsTokenAt(2, "CONS") == true) {
+        else if (Tokenizer.IsTokenAt(2, "CONS", true) == true) {
           if (Tokenizer.GetNTokens() != 10) {
             Typo("Line must contain three strings and 5 doubles: half height, rmin bottom, rmax bottom rmin top, rmax top, phi min, phi max"
                  " e.g. \"MyShape.Shape CONS 50.0 20.0 0.0 1.0 0.0 90.0 180.0\"");
@@ -1878,7 +1926,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         } 
         // General trapezoid:
-        else if (Tokenizer.IsTokenAt(2, "TRAP") == true) {
+        else if (Tokenizer.IsTokenAt(2, "TRAP", true) == true) {
           if (Tokenizer.GetNTokens() != 14) {
             Typo("Line must contain three strings and 11 doubles: Dz, Theta, Phi, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2"
                  " e.g. \"House.Shape TRAP ?\"");
@@ -1904,7 +1952,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         }        
         // General twisted trapezoid:
-        else if (Tokenizer.IsTokenAt(2, "GTRA") == true) {
+        else if (Tokenizer.IsTokenAt(2, "GTRA", true) == true) {
           if (Tokenizer.GetNTokens() != 15) {
             Typo("Line must contain three strings and 15 doubles: Dz, Theta, Phi, Twist, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2"
                  " e.g. \"House.Shape GTRA ?\"");
@@ -1932,7 +1980,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         } 
         // Simple trapezoid
-        else if (Tokenizer.IsTokenAt(2, "TRD1") == true) {
+        else if (Tokenizer.IsTokenAt(2, "TRD1", true) == true) {
           if (Tokenizer.GetNTokens() != 7) {
             Typo("Line must contain three strings and 4 doubles: lower x distance, upper x distance, y distance, z distance"
                  " e.g. \"Triangle.Shape TRD1 10.0 1.0 10.0 10.0\"");
@@ -1952,7 +2000,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         }        
         // Simple trapezoid
-        else if (Tokenizer.IsTokenAt(2, "TRD2") == true) {
+        else if (Tokenizer.IsTokenAt(2, "TRD2", true) == true) {
           if (Tokenizer.GetNTokens() != 8) {
             Typo("Line must contain three strings and 5 doubles: lower x distance, upper x distance, lower y distance, upper y distance, z distance"
                  " e.g. \"Triangle.Shape TRD2 10.0 1.0 10.0 1.0 10.0\"");
@@ -2003,7 +2051,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
 
-          V->SetMother(GetVolume(Tokenizer.GetTokenAt(2)));
+          if (V->SetMother(GetVolume(Tokenizer.GetTokenAt(2))) == false) {
+            Typo("Mother could not be set (Do you have some cyclic mother-relations defined?)");
+            return false;
+          }
         }
       } else if (Tokenizer.IsTokenAt(1, "Color") == true) {
         if (Tokenizer.GetNTokens() != 3) {
@@ -2165,6 +2216,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       // Check for sensitive volume
       else if (Tokenizer.IsTokenAt(1, "SensitiveVolume") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("SensitiveVolume cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         // Test if volume exists:
         if ((V = GetVolume(Tokenizer.GetTokenAt(2))) == 0) {
           Typo("A volume of this name does not exist!");
@@ -2174,6 +2230,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       // Check for detector volume
       else if (Tokenizer.IsTokenAt(1, "DetectorVolume") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("DetectorVolume cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         // Test if volume exists:
         if ((V = GetVolume(Tokenizer.GetTokenAt(2))) == 0) {
           Typo("A volume of this name does not exist!");
@@ -2237,6 +2298,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       // Check for energy loss maps
       else if (Tokenizer.IsTokenAt(1, "EnergyLossMap") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("EnergyLossMap cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings,"
                " e.g. \"Wafer.EnergyLossMap MyEnergyLoss\"");
@@ -2289,8 +2355,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         } else {
           // New way:
           Type.ToLower();
-          if (Type == "ideal" || Type == "none" || Type == "no" || Type == "nix" || Type == "perfect") {
+          if (Type == "ideal" || Type == "perfect") {
             D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeIdeal);
+          } else if (Type == "none" || Type == "no") {
+            D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeNone);
           } else if (Type == "gauss" || Type == "gaus") {
             if (Tokenizer.GetNTokens() != 6 ) {
               Typo("EnergyResolution keyword not correct. Example:"
@@ -2429,6 +2497,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       // Check for structural offset
       else if (Tokenizer.IsTokenAt(1, "StructuralOffset") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("StructuralOffset cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         if (Tokenizer.GetNTokens() != 5) {
           Typo("Line must contain one string and 3 doubles,"
                " e.g. \"Wafer.StructuralOffset 0.142, 0.142, 0.0\"");
@@ -2440,6 +2513,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       // Check for structural pitch
       else if (Tokenizer.IsTokenAt(1, "StructuralPitch") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("StructuralPitch cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         if (Tokenizer.GetNTokens() != 5) {
           Typo("Line must contain one string and 3 doubles,"
                " e.g. \"Wafer.StructuralPitch 0.0, 0.0, 0.0\"");
@@ -2487,6 +2565,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
         //         dynamic_cast<MDStrip2D*>(D)->SetPitch(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Offset") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("Offset cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
             D->GetDetectorType() != MDDetector::c_Strip3D &&
             D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
@@ -2513,7 +2596,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           
           dynamic_cast<MDStrip2D*>(D)->SetOffset(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
         }
-      } else if (Tokenizer.IsTokenAt(1, "StripNumber") == true) {
+      } else if (Tokenizer.IsTokenAt(1, "StripNumber") == true ||
+                 Tokenizer.IsTokenAt(1, "Strip") == true ||
+                 Tokenizer.IsTokenAt(1, "Strips") == true) {
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("StripNumber cannot be used with a named detector! It's inherited from its template detector.");
+          return false;
+        }
         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
             D->GetDetectorType() != MDDetector::c_Strip3D &&
             D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
@@ -2536,7 +2626,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  Tokenizer.IsTokenAt(1, "Voxels") == true ||
                  Tokenizer.IsTokenAt(1, "Voxel") == true) {
         if (D->GetDetectorType() != MDDetector::c_Voxel3D) {
-          Typo("Option StripNumber only supported for Voxel3D");
+          Typo("Option Strip/Voxel number only supported for Voxel3D");
+          return false;
+        }
+        // Check and reject named detector
+        if (D->IsNamedDetector() == true) {
+          Typo("Pixels/voxels cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
         
@@ -2960,10 +3055,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
        
+      } else if (Tokenizer.IsTokenAt(1, "Assign") == true) {
+        // Handle this one after the volume tree is completed
       } else if (Tokenizer.IsTokenAt(1, "BlockTrigger") == true) {
         // Handle this one after validation of the detector
-      } else if (Tokenizer.IsTokenAt(1, "NamedDetector") == true) {
-        // Handle this one after the volume tree is completed
+      } else if (Tokenizer.IsTokenAt(1, "NamedDetector") == true || Tokenizer.IsTokenAt(1, "Named")) {
+        // Already handled
       } else {
         Typo("Unrecognized detector option");
         return false;
@@ -3029,6 +3126,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
+  for (unsigned int i = 0; i < GetNDetectors(); i++) {
+    if (m_DetectorList[i]->CopyDataToNamedDetectors() == false) {
+      return false;
+    }
+  }
 
   if (m_ShowVolumes == false) {
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -3089,11 +3191,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
-  // A final loop over the data checks for the detector keyword "Named" 
+  // A final loop over the data checks for the detector keyword "Assign" 
   // We need a final volume tree, thus this is really the final loop
-    // Fourth loop:
-  // Fill the detector not before everything else is done!
-
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
     if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
@@ -3108,33 +3207,71 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for global tokens
 
       // Check for simulation in voxels instead of a junk volume
-      if (Tokenizer.IsTokenAt(1, "NamedDetector") == true) {
-        if (Tokenizer.GetNTokens() != 6) {
-          Typo("Line must contain two strings and 3 doubles and one final string,"
-               " e.g. \"Wafer.NamedDetector 0.0 0.0 10.0 D1\"");
+      if (Tokenizer.IsTokenAt(1, "Assign") == true) {
+        if (D->IsNamedDetector() == false) {
+          Typo("The Assign keyword can only be used with named detectors");
           return false;
         }
-        MDVolumeSequence VS = GetVolumeSequence(MVector(Tokenizer.GetTokenAtAsDouble(2), 
-                                                        Tokenizer.GetTokenAtAsDouble(3),
-                                                        Tokenizer.GetTokenAtAsDouble(4)), true, true);
-        if (VS.GetDetector() == 0 || VS.GetDetector()->GetName() != D->GetName()) {
-          Typo("The position of keyword NamedDetector must be within a detector of the given type!");
-          return false;
-        }
-
-        // Loop over all existing detectors and verify that such a name does not yet exist:
-        for (unsigned int d = 0; d < m_DetectorList.size(); ++d) {
-          if (m_DetectorList[d]->HasNamedDetector(Tokenizer.GetTokenAt(5)) == true) {
-            Typo("The name of keyword NamedDetector must be unique!");
-            return false;            
+        MVector Pos;
+        if (Tokenizer.GetNTokens() == 3) {
+          vector<MString> VolumeNames = Tokenizer.GetTokenAtAsString(2).Tokenize(".");
+          if (VolumeNames.size() == 0) {
+            Typo("The volume sequence is empty!");
+            return false;         
           }
+          if (m_WorldVolume->GetName() != VolumeNames[0]) {
+            Typo("The volume sequence must start with the world volume!");
+            return false;                  
+          }
+          MDVolumeSequence Seq;
+          MDVolume* Start = m_WorldVolume;
+          Seq.AddVolume(Start);
+          for (unsigned int i = 1; i < VolumeNames.size(); ++i) {
+            bool Found = false;
+            for (unsigned int v = 0; v < Start->GetNDaughters(); ++v) {
+              //cout<<"Looking for "<<VolumeNames[i]<<" in "<<Start->GetDaughterAt(v)->GetName()<<endl;
+              if (Start->GetDaughterAt(v)->GetName() == VolumeNames[i]) {
+                Found = true;
+                Start = Start->GetDaughterAt(v);
+                Seq.AddVolume(Start);
+                //cout<<"Found: "<<VolumeNames[i]<<endl;
+                break;
+              }
+            }
+            if (Found == false) {
+              Typo("Cannot find all volumes in the volume sequence! Make sure you placed the right volumes!");
+              return false;                             
+            }
+          }
+          if (Start->GetDetector() == 0) {
+            Typo("The volume sequence does not point to a detector!");
+            return false;                             
+          }
+          if (Start->GetDetector() != D->GetNamedAfterDetector()) {
+            Typo("The volume sequence does not point to the right detector!");
+            return false;                             
+          }
+          Pos = Start->GetShape()->GetRandomPositionInside();
+          Pos = Seq.GetPositionInFirstVolume(Pos, Start);
+        } 
+        else if (Tokenizer.GetNTokens() == 5) {
+          Pos[0] = Tokenizer.GetTokenAtAsDouble(2);
+          Pos[1] = Tokenizer.GetTokenAtAsDouble(3);
+          Pos[2] = Tokenizer.GetTokenAtAsDouble(4);
+        }
+        else {
+          Typo("Line must contain two strings and one volume sequence (\"NamedWafer.Assign WorldVolume.Tracker.Wafer1\")"
+               " or two strings and three numbers as absolute position (\"NamedWafer.Assign 12.0 0.0 0.0\")");
+          return false;
         }
 
-        D->AddNamedDetector(Tokenizer.GetTokenAt(5), VS);
+        MDVolumeSequence* VS = new MDVolumeSequence();
+        m_WorldVolume->GetVolumeSequence(Pos, VS);
+        D->SetVolumeSequence(*VS);
+        delete VS;
       }
     }
   }
-
 
 
   // Take care of the start volume:
@@ -3350,9 +3487,43 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+  // We need a trigger criteria
   if (GetNTriggers() == 0) {
     mout<<"   ***  Warning  ***  "<<endl;
     mout<<"You have not defined any trigger criteria!!"<<endl;
+  } else {
+    // Check if each detector has a trigger criterion: 
+    vector<MDDetector*> Detectors;
+    for (unsigned int i = 0; i < GetNDetectors(); ++i) Detectors.push_back(m_DetectorList[i]);
+    
+    for (unsigned int t = 0; t < GetNTriggers(); ++t) {
+      vector<MDDetector*> TriggerDetectors = m_TriggerList[t]->GetDetectors();
+      for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
+        for (unsigned int d2 = 0; d2 < TriggerDetectors.size(); ++d2) {
+          if (Detectors[d1] == TriggerDetectors[d2]) {
+            Detectors[d1] = 0;
+            break;
+          }
+        }
+      }
+
+      vector<int> TriggerDetectorTypes = m_TriggerList[t]->GetDetectorTypes();
+      for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
+        for (unsigned int d2 = 0; d2 < TriggerDetectorTypes.size(); ++d2) {
+          if (Detectors[d1]->GetDetectorType() == TriggerDetectorTypes[d2]) {
+            Detectors[d1] = 0;
+            break;
+          }
+        }
+      } 
+    }
+    
+    for (unsigned int i = 0; i < Detectors.size(); ++i) {
+      if (Detectors[i] != 0) {
+        mout<<"   ***  Warning  ***  "<<endl;
+        mout<<"You have not defined any trigger criterion for detector: "<<Detectors[i]->GetName()<<endl;
+      }
+    }
   }
 
   if (IsValid == false) {
@@ -3425,10 +3596,10 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
   int LineLength = 10000;
   char* LineBuffer = new char[LineLength];
 
-  fstream* FileStream = new fstream();
-  FileStream->open(FileName, ios_base::in);
+  ifstream FileStream;
+  FileStream.open(FileName);
 
-  if (FileStream->is_open() == 0) {
+  if (FileStream.is_open() == 0) {
     mout<<"   ***  Error  ***  "<<endl;
     mout<<"Can't open file "<<FileName<<endl;
     delete [] LineBuffer;
@@ -3438,7 +3609,7 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
   int Comment = 0;
   MTokenizer Tokenizer;
   MDDebugInfo Info;
-  while (FileStream->getline(LineBuffer, LineLength, '\n')) {
+  while (FileStream.getline(LineBuffer, LineLength, '\n')) {
     Info = MDDebugInfo(LineBuffer, FileName, LineCounter++);
     Tokenizer.Analyse(Info.GetText(), false);
     if (Tokenizer.GetNTokens() >=1 && Tokenizer.GetTokenAt(0) == "Exit") {
@@ -3473,7 +3644,7 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
 
   delete [] LineBuffer;
 
-  FileStream->close();
+  FileStream.close();
   
   return true;
 }

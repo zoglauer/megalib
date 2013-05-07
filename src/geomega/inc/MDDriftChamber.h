@@ -39,6 +39,8 @@ class MDDriftChamber : public MDStrip3D
   virtual ~MDDriftChamber();
 
   virtual MDDetector* Clone();
+  //! Copy data to named detectors
+  virtual bool CopyDataToNamedDetectors();
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
   virtual bool NoiseLightEnergy(double& Energy) const;
@@ -65,6 +67,15 @@ class MDDriftChamber : public MDStrip3D
   virtual MString GetMGeant() const;
   virtual MString ToString() const;
 
+  //! Check if all input is reasonable
+  virtual bool Validate();
+
+  
+  static const int c_LightEnergyResolutionTypeUnknown;
+  static const int c_LightEnergyResolutionTypeIdeal;
+  static const int c_LightEnergyResolutionTypeGauss;
+
+  
   // protected methods:
  protected:
 
@@ -89,9 +100,11 @@ class MDDriftChamber : public MDStrip3D
   //! Energy per drfiting electron
   double m_EnergyPerElectron;
 
-  //! Vector golding the energy resolution as one sigma in keV of the energy
+  //! The type of the light energy resolution (unknown, ideal, gauss)
+  int m_LightEnergyResolutionType;
+  //! Vector holding the energy resolution as one sigma in keV of the energy
   //! measured by the light
-  MSpline* m_LightEnergyResolution; 
+  MFunction m_LightEnergyResolution; 
 
 #ifdef ___CINT___
  public:

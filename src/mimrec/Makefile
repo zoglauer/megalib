@@ -58,6 +58,7 @@ LOBJS     = $(LB)/MSettingsMimrec.o \
 						$(LB)/MResponse.o \
 						$(LB)/MResponseEnergyLeakage.o \
 						$(LB)/MResponseGaussian.o \
+						$(LB)/MResponseGaussianByUncertainties.o \
 						$(LB)/MResponsePRM.o \
 						$(LB)/MImageGalactic.o \
 						$(LB)/MImageSpheric.o \

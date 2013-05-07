@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for PMTPlastic
 CE false
-HA 2730894948
+HA 3146452094
 
 R1         1.000000 2.781492e+03
 R1         1.047129 2.457795e+03
@@ -404,7 +404,7 @@ R1  63095734.448019 1.886922e-02
 R1  66069344.800760 1.887019e-02
 R1  69183097.091894 1.887116e-02
 R1  72443596.007499 1.887216e-02
-R1  75857757.502918 1.887316e-02
+R1  75857757.502919 1.887316e-02
 R1  79432823.472428 1.887418e-02
 R1  83176377.110267 1.887542e-02
 R1  87096358.995608 1.887670e-02

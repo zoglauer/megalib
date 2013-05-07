@@ -180,6 +180,7 @@ bool MDTrigger::AddHit(MDVolumeSequence& VS)
 
   if (m_IsTriggerByDetector == false) {
     MDDetector* Detector = VS.GetDetector();
+    if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
         if (m_DetectorTypes[i] == Detector->GetType() &&
@@ -201,6 +202,7 @@ bool MDTrigger::AddHit(MDVolumeSequence& VS)
     }
   } else {
     MDDetector* Detector = VS.GetDetector();
+    if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
         if (m_DetectorTypes[i] == Detector->GetType() &&
@@ -268,6 +270,7 @@ bool MDTrigger::AddGuardringHit(MDVolumeSequence& VS)
 
   if (m_IsTriggerByDetector == false) {
     MDDetector* Detector = VS.GetDetector();
+    if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
         if (m_DetectorTypes[i] == Detector->GetType() &&
@@ -291,6 +294,7 @@ bool MDTrigger::AddGuardringHit(MDVolumeSequence& VS)
     }
   } else {
     MDDetector* Detector = VS.GetDetector();
+    if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
         if (m_DetectorTypes[i] == Detector->GetType() &&
@@ -399,6 +403,7 @@ bool MDTrigger::IncludesDetectorAsPositiveTrigger(MDDetector* Detector)
   //! Return true, if this detector is part of this trigger, excluding vetoes and guard rings
 
   if (m_IsVeto == true) return false;
+  if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
 
   if (m_DetectorTypes.size() != 0) {
     for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
@@ -601,6 +606,10 @@ bool MDTrigger::Validate()
     }
   }
   
+  for (unsigned int d = 0; d < m_Detectors.size(); ++d) {
+    if (m_Detectors[d]->IsNamedDetector() == true) m_Detectors[d] = m_Detectors[d]->GetNamedAfterDetector();
+  }
+    
   for (unsigned int d = 0; d < m_Detectors.size(); ++d) {
     for (unsigned int e = d+1; e < m_Detectors.size(); ++e) {
       if (m_Detectors[d]->GetName() == m_Detectors[e]->GetName()) {

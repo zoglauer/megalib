@@ -72,7 +72,7 @@ using namespace std;
 #include "MSpectralAnalyzer.h"
 #include "MPeak.h"
 #include "MIsotope.h"
-
+#include "MPrelude.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -261,7 +261,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (ShowLicense() == false) return false;
+  // Show change log / license if changed:
+  MPrelude P;
+  if (P.Play() == false) return false; // license was not accepted
 
   return true;
 }

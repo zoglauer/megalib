@@ -119,6 +119,11 @@ MDMaterial::MDMaterial(MString Name, MString ShortName, MString MGeantShortName)
 MDMaterial::~MDMaterial()
 {
   // default destructor
+
+  for (unsigned int c = 0; c < m_Components.size(); ++c) {
+    delete m_Components[c];
+  }
+  m_Components.clear();
 }
 
  
@@ -289,6 +294,27 @@ void MDMaterial::SetComponent(double A, double Z,
   // The the component data, atomic mass, number of protons number of atoms per molecule
 
   m_Components.push_back(new MDMaterialComponent(A, Z, Weight, Type));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDMaterial::SetComponent(MString Name, double Weight, int Type)
+{
+  // The the component data, atomic mass, number of protons number of atoms per molecule
+
+  MDMaterialComponent* C = new MDMaterialComponent();
+  if (C->SetElement(Name) == false) {
+    delete C;
+    return false;
+  }
+  C->SetWeight(Weight);
+  C->SetType(Type);
+  
+  m_Components.push_back(C);
+  
+  return true;
 }
 
 

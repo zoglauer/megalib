@@ -57,7 +57,7 @@ LOBJS     = $(LB)/MSettingsGeomega.o \
 						$(LB)/MDGrid.o \
 						$(LB)/MDGridPoint.o \
 						$(LB)/MDGridPointCollection.o \
-						$(LB)/MSpline.o \
+
 
 SGOBJ = $(LB)/libGeomegaGui.$(DLL)
 SLOBJ = $(LB)/libGeomega.$(DLL)

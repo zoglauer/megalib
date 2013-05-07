@@ -1,5 +1,5 @@
 # Macroscopic cross section for Rayleigh scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Rayleigh scattering cross section for Indium
 CE false
-HA 1006285502
+HA 1467873194
 
 R1         1.000000 4.852610e+01
 R1         1.047129 4.882197e+01
@@ -404,7 +404,7 @@ R1  63095734.448019 2.157376e-12
 R1  66069344.800760 1.967550e-12
 R1  69183097.091894 1.794427e-12
 R1  72443596.007499 1.636537e-12
-R1  75857757.502918 1.492539e-12
+R1  75857757.502919 1.492539e-12
 R1  79432823.472428 1.361212e-12
 R1  83176377.110267 1.241440e-12
 R1  87096358.995608 1.132207e-12

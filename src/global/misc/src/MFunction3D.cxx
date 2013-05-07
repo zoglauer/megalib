@@ -556,6 +556,16 @@ void MFunction3D::ScaleV(double Scaler)
 
 double MFunction3D::Eval(double x, double y, double z) const
 {
+  mdep<<"MFunction2D::Eval is deprecated, replace with: MFunction2D::Evaluate"<<show;
+  return Evaluate(x, y, z); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MFunction3D::Evaluate(double x, double y, double z) const
+{
   // Evalute the function
 
   if (m_InterpolationType == c_InterpolationUnknown) {
@@ -650,7 +660,7 @@ void MFunction3D::GetRandom(double& x, double& y, double& z)
     y = gRandom->Rndm()*(GetYMax() - GetYMin()) + GetYMin();
     z = gRandom->Rndm()*(GetZMax() - GetZMin()) + GetZMin();
 
-    v = Eval(x, y, z);
+    v = Evaluate(x, y, z);
   } while (GetVMax()*gRandom->Rndm() > v);
 }
 
@@ -900,7 +910,7 @@ void MFunction3D::Plot(bool Random)
     for (int bx = 1; bx <= Hist->GetXaxis()->GetNbins(); ++bx) {
       for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
         for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
-          Hist->SetBinContent(bx, by, bz, Eval(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
+          Hist->SetBinContent(bx, by, bz, Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
         }
       }
     }

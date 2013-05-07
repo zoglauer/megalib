@@ -1,5 +1,5 @@
 # Macroscopic cross section for Rayleigh scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Rayleigh scattering cross section for Alu6061
 CE false
-HA 3927967134
+HA 211631208
 
 R1         1.000000 4.873012e+00
 R1         1.047129 4.763911e+00
@@ -404,7 +404,7 @@ R1  63095734.448019 1.013827e-13
 R1  66069344.800760 9.246210e-14
 R1  69183097.091894 8.432644e-14
 R1  72443596.007499 7.690662e-14
-R1  75857757.502918 7.013967e-14
+R1  75857757.502919 7.013967e-14
 R1  79432823.472428 6.396814e-14
 R1  83176377.110267 5.833964e-14
 R1  87096358.995608 5.320638e-14

@@ -140,7 +140,7 @@ bool SimCombiner::ParseCommandLine(int argc, char** argv)
 
     // First check if each option has sufficient arguments:
     // Single argument
-    if (Option == "-f" || Option == "-o") {
+    if (Option == "-f" || Option == "-o" || Option == "-b") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
@@ -157,7 +157,7 @@ bool SimCombiner::ParseCommandLine(int argc, char** argv)
     //}
 
     // Then fulfill the options:
-    if (Option == "-f") {
+    if (Option == "-f" || Option == "-b") {
       m_FileNames.push_back(argv[++i]);
       if (MFile::Exists(m_FileNames.back()) == false) {
         cout<<"Error: The simulation file does not exist!"<<endl;

@@ -21,7 +21,7 @@
 // MRERawEvent.cxx
 //
 //
-// In zeroth order a raw event is a collection of the hits which occured in 
+// In zeroth order a raw event is a collection of the hits which occurred in 
 // the detector. This collection is stored in event tree.
 //
 // During the analysis, tracks, clusters and single hits are found. So these

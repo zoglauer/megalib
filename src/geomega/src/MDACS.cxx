@@ -61,7 +61,7 @@ MDACS::MDACS(MString String) : MDDetector(String)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDACS::MDACS(const MDACS& A)
+MDACS::MDACS(const MDACS& A) : MDDetector(A)
 {
   // Intentionally left empty
 }
@@ -77,6 +77,20 @@ MDDetector* MDACS::Clone()
   massert(this != 0);
   return new MDACS(*this);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDACS::CopyDataToNamedDetectors()
+{
+  //! Copy data to named detectors
+
+  return MDDetector::CopyDataToNamedDetectors();
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,19 +122,19 @@ void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) 
 
   if (m_NoiseActive == false) return;
 
-	// Test for failure:
-	if (gRandom->Rndm() < m_FailureRate) {
-		Energy = 0;
-		return;
-	}
+  // Test for failure:
+  if (gRandom->Rndm() < m_FailureRate) {
+    Energy = 0;
+    return;
+  }
 
   // Noise:
   ApplyEnergyResolution(Energy);
 
-	// Overflow:
+  // Overflow:
   ApplyOverflow(Energy);
   
-	// Noise threshold:
+  // Noise threshold:
   if (ApplyNoiseThreshold(Energy) == true) {
     return;
   }
@@ -251,14 +265,8 @@ MString MDACS::ToString() const
 {
   //
 
-  unsigned int i;
   ostringstream out;
-
-  out<<"Detector "<<m_Name<<" - Scintillator detector"<<endl;
-  out<<"   with sensitive volumes: ";  
-  for (i = 0; i < m_SVs.size(); i++) {
-    out<<m_SVs[i]->GetName()<<" ";
-  }
+  out<<MDDetector::ToString()<<endl;
 
   return out.str().c_str();  
 }
@@ -271,60 +279,7 @@ bool MDACS::Validate()
 {
   // Make sure everything is reasonable:
 
-
-  if (m_DetectorVolume == 0 && m_SVs.size() == 1) {
-    SetDetectorVolume(m_SVs[0]);
-  }
-  if (m_SVs.size() == 1 && m_CommonVolume == 0) {
-    m_CommonVolume = m_DetectorVolume;
-  }
-
-  if (m_DetectorVolume == 0) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Detector has no detector volume!"<<endl;
-    return false;
-  }
-  if (m_DetectorVolume->IsVirtual() == true) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Detector volume is not allowed to be virtual!"<<endl;
-    return false;
-  }
-  
-  if (m_SVs.size() == 0) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Detector has no sensitive volume!"<<endl;
-    return false;
-  }
-//   for (unsigned int i = 0; i < m_SVs.size(); ++i) {
-//     if (m_SVs[i]->IsInside(m_HitPositions[m_SVs[i]]) == false) {
-//       mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-//       mout<<"The hit position "<<m_HitPositions[m_SVs[i]]
-// 	  <<" is not in sensitive material!"<<endl;
-//       return false;
-//     }
-//   }
-
-  for (unsigned int i = 0; i < m_SVs.size(); ++i) {
-    if (m_SVs[i]->IsVirtual() == true) {
-      mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-      mout<<"The sensitive volume is not allowed to be virtual!"<<endl;
-      return false;
-    }
-  }
-
-  if (m_EnergyResolutionType != c_EnergyResolutionTypeIdeal) {
-    if (m_EnergyResolutionPeak1.GetSize() < 2 && m_EnergyResolutionType != c_EnergyResolutionTypeUnknown) {
-      mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-      mout<<"Please give at least two data points for the energy resolution or state that you don't want an energy resolution."<<endl;
-      return false;        
-    }
-    if (m_EnergyResolutionPeak1.GetSize() == 0) {
-      mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
-      mout<<"No energy resolution given. Assuming ideal."<<endl;
-      mout<<"You might add a statement like \""<<m_Name<<".EnergyResolution Ideal\" to your file."<<endl;
-      m_EnergyResolutionType = c_EnergyResolutionTypeIdeal;
-    }
-  }
+  if (MDDetector:: Validate() == false) return false;
 
   return true;
 }
@@ -370,12 +325,12 @@ bool MDACS::IsVeto(const MVector& Position, const double Energy) const
 
   // if (m_NoiseActive == false) return;
 
-	// Test for failure:
-	if (gRandom->Rndm() < m_FailureRate) {
+  // Test for failure:
+  if (gRandom->Rndm() < m_FailureRate) {
     return false;
-	}
+  }
 
-	// Ignore if we are below threshold:
+  // Ignore if we are below threshold:
   if (Energy < gRandom->Gaus(m_TriggerThreshold, m_TriggerThresholdSigma)) {
     return false;
   }

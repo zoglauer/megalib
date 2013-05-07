@@ -1,5 +1,5 @@
 # Macroscopic cross section (total)
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Total cross section for BGO
 CE false
-HA 1253931319
+HA 2753531282
 
 R1         1.000000 3.324488e+04
 R1         1.047129 3.033954e+04
@@ -404,7 +404,7 @@ R1  63095734.448019 6.794128e-01
 R1  66069344.800760 6.794403e-01
 R1  69183097.091894 6.794678e-01
 R1  72443596.007499 6.794953e-01
-R1  75857757.502918 6.795230e-01
+R1  75857757.502919 6.795230e-01
 R1  79432823.472428 6.795507e-01
 R1  83176377.110267 6.795819e-01
 R1  87096358.995608 6.796137e-01

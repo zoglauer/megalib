@@ -1,5 +1,5 @@
 # Macroscopic cross section for Rayleigh scattering
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Rayleigh scattering cross section for Nylon
 CE false
-HA 637034389
+HA 1986568228
 
 R1         1.000000 1.442165e+00
 R1         1.047129 1.428727e+00
@@ -404,7 +404,7 @@ R1  63095734.448019 1.190436e-14
 R1  66069344.800760 1.085691e-14
 R1  69183097.091894 9.901615e-15
 R1  72443596.007499 9.030379e-15
-R1  75857757.502918 8.235802e-15
+R1  75857757.502919 8.235802e-15
 R1  79432823.472428 7.511140e-15
 R1  83176377.110267 6.850240e-15
 R1  87096358.995608 6.247491e-15

@@ -1,5 +1,5 @@
 # Macroscopic cross section for pair creation
-# Derived from Geant4 version 940
+# Derived from Geant4 version 951
 # X: Energy in keV
 # Y: Macroscopic cross section in 1/cm
 
@@ -8,7 +8,7 @@ Version 1
 
 NM Pair creation cross section for CdTe
 CE false
-HA 3257043490
+HA 1847783446
 
 R1         1.000000 2.905909e-302
 R1         1.047129 2.905909e-302
@@ -404,7 +404,7 @@ R1  63095734.448019 5.067229e-01
 R1  66069344.800760 5.067473e-01
 R1  69183097.091894 5.067718e-01
 R1  72443596.007499 5.067963e-01
-R1  75857757.502918 5.068208e-01
+R1  75857757.502919 5.068208e-01
 R1  79432823.472428 5.068453e-01
 R1  83176377.110267 5.068757e-01
 R1  87096358.995608 5.069073e-01
