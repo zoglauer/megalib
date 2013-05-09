@@ -139,7 +139,7 @@ if [ "${CHECK}" == "true" ]; then
   RootVersion=$((100*${version} + ${release}))
 
   if ([ ${RootVersion} -ge ${RootVersionMin} ] && [ ${RootVersion} -le ${RootVersionMax} ]); then
-    echo "SUCCESS"
+    echo "The given ROOT version is acceptable."
     exit 0
   else
     echo ""

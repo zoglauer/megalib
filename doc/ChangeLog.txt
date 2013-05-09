@@ -21,9 +21,12 @@ MEGALIB. AS CONSEQUENCE, THIS VERSION IS MORE EXPERIMENTAL AS USUAL!
 *** Significant new features & improvements:
 
 General:
-+ Improved configuration script: "./configure" should be all you need to do
++ New website: megalibtoolkit.com
++ New public repository: https://github.com/zoglauer/megalib
++ One step setup script for MEGAlib
 + Added installation scripts for ROOT, Geant4 (9.5 and higher), and HEAsoft.
   They can be found in the config directory, e.g. build-root.sh
++ Improved configuration script: "./configure" should be all you need to do
 + The change log and license are now displayed when one of the GUI tools.
   This adds a new configuration file called .megalib.cfg storing hashes
   of both files.
@@ -60,6 +63,8 @@ Spectralizer:
 Examples:
 + DetectorEffectEngine: Show all options of the detector effects engine and
   serves as unit test
++ Hadron therapy example
++ Graded Z-example
 
 ... plus many, many smaller things I already forgot about :)
 

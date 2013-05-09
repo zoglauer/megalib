@@ -42,18 +42,6 @@ confhelp() {
 }
 
 
-createdir() {
-  if (`test ! -f $1/Makefile`); then
-    if (`test ! -d $1`); then
-      echo "Creating directory $1"
-      mkdir $1
-    fi
-    echo "Copying Makefile to $1"
-    cp config/Makefile.EmptyDir $1/Makefile
-  fi
-}
-
-
 # Part 2:
 # A first sanity check
 
@@ -563,32 +551,6 @@ fi
 if (`test ! -d lib`); then
   echo "Creating directory lib"
   mkdir lib
-fi
-
-createdir src/addon
-createdir src/global
-createdir src/geomega
-createdir src/megalyze
-createdir src/mimrec
-createdir src/sivan
-createdir src/revan
-createdir src/eview
-createdir src/herty
-createdir src/realta
-createdir src/beammonitor
-createdir src/calibration
-createdir src/miworks
-createdir src/response
-createdir src/cosima
-createdir src/spectralyze
-
-# Generate a link in the resource directory for compatibility reasons
-if (`test ! -h resource/geometries`); then
-  cd resource
-  # If checked without "-P" option we have now an empty directory
-  rm -rf geometries 
-  ln -s examples/geomega geometries
-  cd ..
 fi
 
 # Cosima paths --- we are performing some removes, thus try to make sure we don't remove anything wrong

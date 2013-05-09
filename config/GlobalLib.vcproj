@@ -221,6 +221,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\global\misc\src\MPrelude.cxx"
+				>
+			</File>
+			<File
+				RelativePath="..\src\global\gui\src\MGUIPrelude.cxx"
+				>
+			</File>
+			<File
 				RelativePath="..\src\global\gui\src\MGUIAbout.cxx"
 				>
 			</File>
@@ -334,10 +342,6 @@
 			</File>
 			<File
 				RelativePath="..\src\global\gui\src\MGUIInfo.cxx"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\src\MGUILicense.cxx"
 				>
 			</File>
 			<File
@@ -623,6 +627,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\global\misc\src\MPrelude.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\global\gui\src\MGUIPrelude.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\global\gui\inc\MGUIAbout.h"
 				>
 			</File>
@@ -736,10 +748,6 @@
 			</File>
 			<File
 				RelativePath="..\src\global\gui\inc\MGUIInfo.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\inc\MGUILicense.h"
 				>
 			</File>
 			<File

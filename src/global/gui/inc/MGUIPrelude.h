@@ -36,6 +36,9 @@ class MGUIPrelude : public MGUIDialog
   MGUIPrelude(MString Title, MString SubTitle, MString Text, MString OKButton, MString CancelButton = "");
   virtual ~MGUIPrelude();
 
+  //! Close the window
+  virtual void CloseWindow();
+
   bool IsOKed();
   void Create();
 

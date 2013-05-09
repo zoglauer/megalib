@@ -68,7 +68,7 @@ MGUIAbout::MGUIAbout(const TGWindow* Parent, const TGWindow* Main)
   m_LeadProgrammer = "";
   m_Programmers = "";
   m_AdditionalProgrammers = "";
-  m_Email = "zog@ssl.berkeley.edu";
+  m_Email = "andreas@megalibtoolkit.com";
   m_Updates = "You can find the latest version of MEGAlib at\n" + g_Homepage;
   m_Copyright = "(C) by Andreas Zoglauer and contributors\nAll rights reserved";
   m_MasterReference = "A. Zoglauer et al., \"MEGAlib - The Medium Energy Gamma-ray\nAstronomy Library\", NewAR 50 (7-8), 629-632, 2006";
@@ -284,22 +284,32 @@ void MGUIAbout::Create()
 
 
   // The bugs frame:
-
+  
   TGLabel* ProblemsLabel = new TGLabel(BugsFrame, "Troubles with MEGAlib:");
   ProblemsLabel->SetTextFont(m_EmphasizedFont);
   ProblemsLabel->SetWrapLength(TabWidth);
   TGLayoutHints* ProblemsLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
   BugsFrame->AddFrame(ProblemsLabel, ProblemsLabelLayout);
 
-  TGLabel* Problems = new TGLabel(BugsFrame, "No program or documentation is free of bugs and obscurities. Neither is MEGAlib. However, to minimize their occurances, and thus to improve the performance of the program, if you find any problem in the latest version, please report it in a reproducable form to the lead developer:");
+  TGLabel* Problems = new TGLabel(BugsFrame, "No program or documentation is free of bugs and obscurities. Neither is MEGAlib. However, to minimize their occurances, and thus to improve the performance of the program, if you find any problem in the latest version, please report it in a reproducable form at the MEGAlib issue tracker:");
   Problems->SetWrapLength(TabWidth);
   TGLayoutHints* ProblemsLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
   BugsFrame->AddFrame(Problems, ProblemsLayout);
 
-  TGLabel* EmailLabel = new TGLabel(BugsFrame, m_Email);
+  TGLabel* IssueTracker = new TGLabel(BugsFrame, "https://github.com/zoglauer/megalib/issues");
+  IssueTracker->SetWrapLength(TabWidth);
+  TGLayoutHints* IssueTrackerLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
+  BugsFrame->AddFrame(IssueTracker, IssueTrackerLayout);
+
+  TGLabel* EmailLabel = new TGLabel(BugsFrame, "Or just write me an email:");
   EmailLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* EmailLabelLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
+  TGLayoutHints* EmailLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 5, 5);
   BugsFrame->AddFrame(EmailLabel, EmailLabelLayout);
+
+  TGLabel* Email = new TGLabel(BugsFrame, m_Email);
+  Email->SetWrapLength(TabWidth);
+  TGLayoutHints* EmailLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
+  BugsFrame->AddFrame(Email, EmailLayout);
 
   TGLabel* QuestionsLabel = new TGLabel(BugsFrame, "MEGAlib is a rather complex piece of software, which requires a deep understanding of the simulated and analyzed physical processes and detectors. If you have read the given references and the documentation, and still have questions, feel free to ask me.");
   QuestionsLabel->SetWrapLength(TabWidth);

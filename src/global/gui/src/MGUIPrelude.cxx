@@ -159,6 +159,17 @@ bool MGUIPrelude::ProcessMessage(long Message, long Parameter1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MGUIPrelude::CloseWindow()
+{
+  // When the x is pressed, this function is called.
+
+  OnCancel();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MGUIPrelude::OnOK()
 {
   // The OK/Accept button has been pressed

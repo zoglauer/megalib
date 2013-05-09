@@ -144,7 +144,7 @@ if [ "${CHECK}" == "true" ]; then
   fi
 
   if ([ ${Geant4Version} -ge ${Geant4VersionMin} ] && [ ${Geant4Version} -le ${Geant4VersionMax} ]); then
-    echo "SUCCESS"
+    echo "The given Geant4 version is acceptable"
     exit 0;
   else
     echo ""

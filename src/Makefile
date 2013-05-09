@@ -122,13 +122,13 @@ clean_res:
 # Herty:
 
 her:
-	@$(MAKE) -C herty
+	@if test -d herty; then $(MAKE) -C herty; fi
 
 herlib:
-	@$(MAKE) lib -C herty
+	@if test -d herty; then $(MAKE) lib -C herty; fi
 
 clean_her:
-	@$(MAKE) clean -C herty
+	@if test -d herty; then $(MAKE) clean -C herty; fi
 
 
 #------------------------------------------------------------------------------
@@ -172,30 +172,30 @@ clean_evi:
 # Miworks:
 
 miw:
-	@$(MAKE) -C miworks
+	@if test -d miworks; then $(MAKE) -C miworks; fi
 
 clean_miw:
-	@$(MAKE) clean -C miworks
+	@if test -d miworks; then $(MAKE) clean -C miworks; fi
 
 
 #------------------------------------------------------------------------------
 # BeamMonitor:
 
 bm:
-	@$(MAKE) -C beammonitor
+	@if test -d beammonitor; then $(MAKE) -C beammonitor; fi
 
 clean_bm:
-	@$(MAKE) clean -C beammonitor
+	@if test -d beammonitor; then $(MAKE) clean -C beammonitor; fi
 
 
 #------------------------------------------------------------------------------
 # Calibration:
 
 cal:
-	@$(MAKE) -C calibration
+	@if test -d calibration; then $(MAKE) -C calibration; fi
 
 clean_cal:
-	@$(MAKE) clean -C calibration
+	@if test -d calibration; then $(MAKE) clean -C calibration; fi
 
 
 #------------------------------------------------------------------------------
@@ -212,20 +212,20 @@ clean_add:
 # All
 
 link:
-	$(MAKE) link -C global
-	$(MAKE) link -C geomega
-	$(MAKE) link -C mimrec
-	$(MAKE) link -C realta
-	$(MAKE) link -C revan
-	$(MAKE) link -C sivan
-	$(MAKE) link -C eview
-	$(MAKE) link -C miworks
-	$(MAKE) link -C megalyze
-	$(MAKE) link -C spectralyze
-	$(MAKE) link -C herty
-	$(MAKE) link -C beammonitor
-	$(MAKE) link -C calibration
-	$(MAKE) link -C response
+	@$(MAKE) link -C global
+	@$(MAKE) link -C geomega
+	@$(MAKE) link -C mimrec
+	@$(MAKE) link -C realta
+	@$(MAKE) link -C revan
+	@$(MAKE) link -C sivan
+	@$(MAKE) link -C eview
+	@$(MAKE) link -C spectralyze
+	@$(MAKE) link -C response
+	@if test -d miworks; then $(MAKE) link -C miworks; fi
+	@if test -d megalyze; then $(MAKE) link -C megalyze; fi
+	@if test -d herty; then $(MAKE) link -C herty; fi
+	@if test -d beammonitor; then $(MAKE) link -C beammonitor; fi
+	@if test -d calibration; then $(MAKE) link -C calibration; fi
 
 all:
 	@$(MAKE) -C global
@@ -235,17 +235,17 @@ all:
 	@$(MAKE) -C revan
 	@$(MAKE) -C sivan
 	@$(MAKE) -C eview
-	@$(MAKE) -C miworks
-	@$(MAKE) -C megalyze
 	@$(MAKE) -C spectralyze
-	@$(MAKE) -C herty
-	@$(MAKE) -C beammonitor
-	@$(MAKE) -C calibration
 	@$(MAKE) -C response
 	@$(MAKE) -C addon
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
 	@$(MAKE) -C cosima
 endif
+	@if test -d miworks; then $(MAKE) -C miworks; fi
+	@if test -d megalyze; then $(MAKE) -C megalyze; fi
+	@if test -d herty; then $(MAKE) -C herty; fi
+	@if test -d beammonitor; then $(MAKE) -C beammonitor; fi
+	@if test -d calibration; then $(MAKE) -C calibration; fi
 
 clean:
 	@$(MAKE) clean -C global
@@ -255,17 +255,17 @@ clean:
 	@$(MAKE) clean -C revan
 	@$(MAKE) clean -C sivan
 	@$(MAKE) clean -C eview
-	@$(MAKE) clean -C miworks
-	@$(MAKE) clean -C megalyze
 	@$(MAKE) clean -C spectralyze
-	@$(MAKE) clean -C herty
-	@$(MAKE) clean -C beammonitor
-	@$(MAKE) clean -C calibration
 	@$(MAKE) clean -C response
 	@$(MAKE) clean -C addon
 	@$(MAKE) clean -C cosima -f Makefile
 	@rm -f *~
 	@rm -f \#*
+	@if test -d miworks; then $(MAKE) clean -C miworks; fi
+	@if test -d megalyze; then $(MAKE) clean -C megalyze; fi
+	@if test -d herty; then $(MAKE) clean -C herty; fi
+	@if test -d beammonitor; then $(MAKE) clean -C beammonitor; fi
+	@if test -d calibration; then $(MAKE) clean -C calibration; fi
 
 
 

@@ -254,6 +254,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\mimrec\src\MResponseGaussianByUncertainties.cxx"
+				>
+			</File>
+			<File
 				RelativePath="..\src\mimrec\src\MResponsePRM.cxx"
 				>
 			</File>
@@ -385,6 +389,10 @@
 			</File>
 			<File
 				RelativePath="..\src\mimrec\inc\MResponseGaussian.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\mimrec\inc\MResponseGaussianByUncertainties.h"
 				>
 			</File>
 			<File

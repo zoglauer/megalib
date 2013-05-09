@@ -64,8 +64,8 @@ unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
 // Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2010"; 
-const MString g_Homepage = "http://www.mpe.mpg.de/MEGA/megalib.html"; 
+const MString g_CopyrightYear = "2013"; 
+const MString g_Homepage = "http://megalibtoolkit.com"; 
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
 const MString g_StringNotDefined = "___NotDefined___"; 
@@ -248,6 +248,12 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   MString ReferenceLine = "A. Zoglauer et al., NewAR 50 (7-8), 629-632, 2006";
   if (ReferenceLine.Length() > LineLength) LineLength = ReferenceLine.Length();
 
+  MString HomepageIntroLine = "For more information about MEGAlib please visit:";
+  if (HomepageIntroLine.Length() > LineLength) LineLength = HomepageIntroLine.Length();
+
+  MString HomepageLine = "http://megalibtoolkit.com";
+  if (HomepageLine.Length() > LineLength) LineLength = HomepageLine.Length();
+  
   MString DevelopmentVersion;
   if (g_MajorVersion % 2 == 1) {
     //if (g_MinorVersion == 0) {
@@ -270,6 +276,8 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   CenterString(CopyrightLine, LineLength);
   CenterString(ReferenceIntroLine, LineLength);
   CenterString(ReferenceLine, LineLength);
+  CenterString(HomepageIntroLine, LineLength);
+  CenterString(HomepageLine, LineLength);
   CenterString(DevelopmentVersion, LineLength, false);
   CenterString(Update, LineLength, false);
 
@@ -289,6 +297,9 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   cout<<EmptyLine<<endl;
   cout<<ReferenceIntroLine<<endl;  
   cout<<ReferenceLine<<endl;  
+  cout<<EmptyLine<<endl;
+  cout<<HomepageIntroLine<<endl;  
+  cout<<HomepageLine<<endl;  
   cout<<EmptyLine<<endl;
   cout<<ClosedLine<<endl; 
   cout<<endl;

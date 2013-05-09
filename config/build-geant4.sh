@@ -11,6 +11,14 @@ CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
+# Check if some of the frequently used software is installed:
+type cmake >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: Geant4 requires cmake to be installed"
+    exit 1
+fi 
+
+
 confhelp() {
   echo ""
   echo "Building GEANT4"
@@ -184,7 +192,7 @@ if [ -d geant4_v${VER} ]; then
     echo "       There should not be any spaces in the Geant4 version..."
     exit 1
   fi
-  rm -r "geant4_v${VER}"
+  rm -rf "geant4_v${VER}"
 fi
 
 
