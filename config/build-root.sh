@@ -117,7 +117,7 @@ else
   REQUIREDOWNLOAD="true"
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
-    LOCALSIZE=`stat -c%s ${TARBALL}`
+    LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
     SAMESIZE=`curl --head ftp://root.cern.ch/root/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
