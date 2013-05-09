@@ -169,9 +169,6 @@ for C in ${CMD}; do
   fi
 done
 
-if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
-EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
-
 
 # Everything to lower case:
 REPOSITORY=`echo ${REPOSITORY} | tr '[:upper:]' '[:lower:]'`
@@ -203,6 +200,7 @@ if [[ ${REPOSITORY} == s* ]]; then
   echo " * Using the svn repository"
   type svn >/dev/null 2>&1
   if [ $? -ne 0 ]; then
+    echo " "
     echo "ERROR: svn needs to be installed if you want to use the svn repository"
     exit 1
   fi 
@@ -211,6 +209,7 @@ elif [[ ${REPOSITORY} == g* ]]; then
   echo " * Using the git repository"
   type git >/dev/null 2>&1
   if [ $? -ne 0 ]; then
+    echo " "
     echo "ERROR: git needs to be installed if you want to use the git repository"
     exit 1
   fi 
@@ -219,6 +218,7 @@ elif [[ ${REPOSITORY} == c* ]]; then
   echo " * Using the cvs repository"
   type cvs >/dev/null 2>&1
   if [ $? -ne 0 ]; then
+    echo " "
     echo "ERROR: cvs needs to be installed if you want to use the cvs repository"
     exit 1
   fi 
@@ -504,8 +504,8 @@ else
     fi
     if [ "${RELEASE}" == "rel" ]; then
       echo "Switching to latest release version of MEGAlib from the git repository..."
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | sort -n | tail -n 1 | awk -F"refs/heads/" '{ print $2 }'`
-      if ( [ "$?" != "0" ] || [ "${Branch}" == ""] ); then
+      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      if ( [ "$?" != "0" ] || [ "${Branch}" == "" ] ); then
         echo " "
         echo "ERROR: Unable to find the latest release branch"
         exit 1
@@ -561,6 +561,11 @@ echo "MEGALIBDIR=${MEGALIBPATH}" >> ${ENVFILE}
 echo " "
 echo "(3) Downloading and building ROOT:"
 echo " "
+
+
+if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
+EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
+
 
 MEGALIBDIR=${MEGALIBPATH}
 export MEGALIB=${MEGALIBDIR}
