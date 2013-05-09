@@ -423,7 +423,7 @@ if [ -d $MEGALIBPATH ]; then
       fi
     else
       echo "Switching to latest release version of MEGAlib from the git repository..."
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | sort -n | tail -n 1 | awk -F"refs/heads/" '{ print $2 }'`
+      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       git checkout ${Branch}
       if [ "$?" != "0" ]; then
         echo " "
