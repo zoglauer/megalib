@@ -103,8 +103,8 @@ echo " "
 
 # Default options:
 MEGALIBPATH=""
-REPOSITORY="svn"
-RELEASE="dev"
+REPOSITORY="git"
+RELEASE="rel"
 EXTERNALPATH=""
 ROOTPATH=""
 GEANT4PATH=""
