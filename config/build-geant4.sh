@@ -132,7 +132,7 @@ else
   REQUIREDOWNLOAD="true"
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
-    LOCALSIZE=`stat -c%s ${TARBALL}`
+    LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
     SAMESIZE=`curl -s --head http://geant4.web.cern.ch/geant4/support/source/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
