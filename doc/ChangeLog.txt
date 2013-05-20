@@ -3,6 +3,47 @@
 ******************************************************************************
 
 
+Version 2.27/2.28
+=================
+
+*** Important:
+
+  
+*** Significant new features & improvements:
+
+General:
+
+Cosima:
++ Performance improvements: Only load materials which are really used, etc.
+  Significant (0..90%) speed up of load times, especially in hadronics case,
+  and roughly 8% overall performance improvement
+
+Sivan:
+
+Geomega:
+
+Revan:
+
+Mimrec:
+
+Realta:
+
+Spectralizer:
+
+Examples:
+
+... plus many, many smaller things I already forgot about :)
+
+
+*** Important bug fixes:
+
+
+
+
+******************************************************************************
+
+
+
 Version 2.25/2.26
 =================
 

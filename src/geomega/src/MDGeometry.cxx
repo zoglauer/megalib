@@ -263,9 +263,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
   m_CrossSectionFileDirectory += "/auxiliary";
-                                      
 
-
+  
   mdebug<<"Started scanning of geometry... This may take a while..."<<endl;
 
 
@@ -1092,7 +1091,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         m_CrossSectionFileDirectory = 
           MString(MFile::GetDirectoryName(m_FileName)) + "/" + m_CrossSectionFileDirectory;
       }
-
+      
       continue;
     }
     
@@ -3273,7 +3272,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
-
   // Take care of the start volume:
   if (m_StartVolume != "") {
     MDVolume* SV = 0;
@@ -3487,6 +3485,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+
   // We need a trigger criteria
   if (GetNTriggers() == 0) {
     mout<<"   ***  Warning  ***  "<<endl;
@@ -3509,6 +3508,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       vector<int> TriggerDetectorTypes = m_TriggerList[t]->GetDetectorTypes();
       for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
+        if (Detectors[d1] == 0) continue;
         for (unsigned int d2 = 0; d2 < TriggerDetectorTypes.size(); ++d2) {
           if (Detectors[d1]->GetDetectorType() == TriggerDetectorTypes[d2]) {
             Detectors[d1] = 0;
@@ -4606,7 +4606,7 @@ MString MDGeometry::CreateShortName(MString Name, unsigned int Length, bool Fill
     }
   }
 
-  // Keep only first "Length" charcters:
+  // Keep only first "Length" charcters:callgrind.out.16396
   Name = Name.GetSubString(0, Length);
 
   if (Length < 4) Length = 4;
@@ -5378,6 +5378,35 @@ bool MDGeometry::HasComplexER()
   return m_ComplexER;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MDMaterial*> MDGeometry::GetListOfUnusedMaterials()
+{
+  // Return a list of unused materials
+
+  // First create a list of used materials:
+  vector<MDMaterial*> Used;
+  for (unsigned int v = 0; v < m_VolumeList.size(); ++v) {
+    MDMaterial* M = m_VolumeList[v]->GetMaterial();
+    if (find(Used.begin(), Used.end(), M) == Used.end()) {
+      Used.push_back(M);
+    }
+  }
+  
+  // Now create a list of not used materials:
+  vector<MDMaterial*> Unused;
+  for (unsigned int m = 0; m < m_MaterialList.size(); ++m) {
+    if (find(Used.begin(), Used.end(), m_MaterialList[m]) == Used.end()) {
+      Unused.push_back(m_MaterialList[m]);
+    }
+  }
+  
+  return Unused;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -5679,7 +5708,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   out<<"Geometry                   "<<m_FileName<<endl;
   out<<"PhysicsListEM               Standard"<<endl;
   out<<"CreateCrossSectionFiles    "<<m_CrossSectionFileDirectory<<endl;
-
+  
   out.close();
 
 

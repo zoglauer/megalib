@@ -656,8 +656,6 @@ void MDVolume::SetIsSensitive()
 {
   // Sets this volumes sensitivity flag to true
 
-  //cout<<"Now sensitive: "<<m_Name<<endl;
-
   m_IsSensitive = true;
 }
 
@@ -1180,6 +1178,7 @@ MDVolume* MDVolume::Clone(MString Name)
     }
     if (IsSensitive() == true) {
       V->SetIsSensitive();
+      V->SetIsDetectorVolume(m_Detector);
     }
 
     for (unsigned int j = 0; j < GetNDaughters(); j++) {
@@ -1212,6 +1211,7 @@ MDVolume* MDVolume::Clone(MString Name)
     }
     if (GetCloneTemplate()->IsSensitive() == true) {
       V->SetIsSensitive();
+      V->SetIsDetectorVolume(m_Detector);
     }
     for (unsigned int j = 0; j < GetCloneTemplate()->GetNDaughters(); j++) {
       V->AddDaughter(GetCloneTemplate()->GetDaughterAt(j));
@@ -1404,6 +1404,13 @@ bool MDVolume::Validate()
     mout<<"This is fine, but depreciated... because error prone!"<<endl;
   }
 
+  // If we are sensitive, then we need a detector volume:
+  if (m_IsSensitive == true && m_Detector == 0) {
+    mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
+    mout<<"We have a sensitive volume without a detector!"<<endl;
+    return false;
+  }
+  
   // Test daughters
   for (unsigned int i = 0; i < GetNDaughters(); i++) {
     if (GetDaughterAt(i)->Validate() == false) return false;

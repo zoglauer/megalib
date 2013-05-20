@@ -783,7 +783,18 @@ bool MCDetectorConstruction::ConstructMaterials()
  
   G4NistElementBuilder ElementBuilder(0);
   
+  // List of used materials:
+  vector<MDMaterial*> UnusedMaterials = m_Geometry->GetListOfUnusedMaterials();
+  
   for (unsigned int m = 0; m < m_Geometry->GetNMaterials(); ++m) {
+    // Ignore unused materials:
+    if (m_RunParameters.CreateCrossSectionFiles() == false) {
+      if (find(UnusedMaterials.begin(), UnusedMaterials.end(), m_Geometry->GetMaterialAt(m)) != UnusedMaterials.end()) {
+        mdebug<<"Removing unused material: "<<m_Geometry->GetMaterialAt(m)->GetName()<<endl;
+        continue;
+      }
+    }
+    
     G4Material* Material = 
       new G4Material(m_Geometry->GetMaterialAt(m)->GetName().Data(), 
                      m_Geometry->GetMaterialAt(m)->GetDensity()*g/cm3,

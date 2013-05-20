@@ -142,6 +142,9 @@ class MDGeometry
   MDVolumeSequence GetVolumeSequence(MVector Pos, bool ForceDetector = false, bool ForceSensitiveVolume = false);
   MDVolumeSequence* GetVolumeSequencePointer(MVector Pos, bool ForceDetector = false, bool ForceSensitiveVolume = false);
 
+  //! Return a list of unused materials
+  vector<MDMaterial*> GetListOfUnusedMaterials();
+
   //! Use this function to convert a position within a NAMED detector (i.e. uniquely identifyable) into a position in the global coordinate system
   MVector GetGlobalPosition(const MVector& PositionInDetector, const MString& NamedDetector);
 

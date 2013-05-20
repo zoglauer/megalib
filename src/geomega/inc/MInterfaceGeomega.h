@@ -21,10 +21,10 @@
 using namespace std;
 
 // ROOT libs
-#include "MVector.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MVector.h"
 #include "MInterface.h"
 #include "MSettingsGeomega.h"
 #include "MDGeometryQuest.h"
@@ -40,7 +40,7 @@ class MInterfaceGeomega : public MInterface
   // Public Interface:
  public:
   MInterfaceGeomega();
-  ~MInterfaceGeomega();
+  virtual ~MInterfaceGeomega();
 
   //! Each interface must be able to parse a command line - 
   //! this function is called by main()

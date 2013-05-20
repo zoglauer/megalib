@@ -47,7 +47,28 @@
 
 // Standard lib:
 #include <iomanip>
+#include <algorithm>
+#include <functional>
 using namespace std;
+
+
+/******************************************************************************/
+
+const int MCSteppingAction::c_ProcessIDUncovered              = 0;
+const int MCSteppingAction::c_ProcessIDCompton                = 1;
+const int MCSteppingAction::c_ProcessIDPhoto                  = 2;
+const int MCSteppingAction::c_ProcessIDPair                   = 3;
+const int MCSteppingAction::c_ProcessIDRayleigh               = 4;
+const int MCSteppingAction::c_ProcessIDAnnihilation           = 5;
+const int MCSteppingAction::c_ProcessIDBremsstrahlung         = 6;
+const int MCSteppingAction::c_ProcessIDElasticScattering      = 7;
+const int MCSteppingAction::c_ProcessIDInelasticScattering    = 8;
+const int MCSteppingAction::c_ProcessIDFission                = 9;
+const int MCSteppingAction::c_ProcessIDCapture                = 10;
+const int MCSteppingAction::c_ProcessIDDecay                  = 11;
+const int MCSteppingAction::c_ProcessIDRadioactiveDecay       = 12;
+const int MCSteppingAction::c_ProcessIDIonization             = 13;
+const int MCSteppingAction::c_ProcessIDTransportation         = 14;
 
 
 /******************************************************************************
@@ -75,6 +96,84 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_DecayMode = RunParameters.GetDecayMode();
 
   m_DetectorTimeConstant = RunParameters.GetDetectorTimeConstant();
+  
+  
+  m_KnownProcess.push_back("polarLowEnCompt"); m_KnownProcessID.push_back(c_ProcessIDCompton);
+  m_KnownProcess.push_back("PenCompton"); m_KnownProcessID.push_back(c_ProcessIDCompton);
+  m_KnownProcess.push_back("LowEnCompton"); m_KnownProcessID.push_back(c_ProcessIDCompton);
+  m_KnownProcess.push_back("compt"); m_KnownProcessID.push_back(c_ProcessIDCompton);
+
+  m_KnownProcess.push_back("conv"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  m_KnownProcess.push_back("hPairProd"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  m_KnownProcess.push_back("PenConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  m_KnownProcess.push_back("LowEnConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  m_KnownProcess.push_back("LowEnPolarizConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
+
+  m_KnownProcess.push_back("annihil"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
+  m_KnownProcess.push_back("PenAnnih"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
+  
+  m_KnownProcess.push_back("eBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  m_KnownProcess.push_back("hBrems"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  m_KnownProcess.push_back("PenelopeBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  m_KnownProcess.push_back("LowEnBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  
+  m_KnownProcess.push_back("Rayl"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
+  m_KnownProcess.push_back("PenRayleigh"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
+  m_KnownProcess.push_back("LowEnRayleigh"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
+  
+  m_KnownProcess.push_back("LowEnPhotoElec"); m_KnownProcessID.push_back(c_ProcessIDPhoto);
+  m_KnownProcess.push_back("PenPhotoElec"); m_KnownProcessID.push_back(c_ProcessIDPhoto);
+  m_KnownProcess.push_back("phot"); m_KnownProcessID.push_back(c_ProcessIDPhoto);
+  
+  m_KnownProcess.push_back("hadElastic"); m_KnownProcessID.push_back(c_ProcessIDElasticScattering);
+  
+  m_KnownProcess.push_back("nFission"); m_KnownProcessID.push_back(c_ProcessIDFission);
+  
+  m_KnownProcess.push_back("PhotonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("NeutronInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("AntiNeutronInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("ProtonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("AntiProtonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("PionPlusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("PionMinusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("dInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("tInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("KaonZeroLInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("KaonZeroSInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("KaonPlusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("KaonMinusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("LambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("AntiLambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("SigmaMinusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("SigmaPlusInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("He3Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("alphaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("PositronNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("ElectroNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  
+  m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  
+  m_KnownProcess.push_back("Decay"); m_KnownProcessID.push_back(c_ProcessIDDecay);
+  
+  m_KnownProcess.push_back("RadioactiveDecay"); m_KnownProcessID.push_back(c_ProcessIDRadioactiveDecay);
+  
+  m_KnownProcess.push_back("LowEnergyIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("hLowEIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("ionIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("eIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("hIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("muIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("muMsc"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("msc"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("PenelopeIoni"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+  m_KnownProcess.push_back("CoulombScat"); m_KnownProcessID.push_back(c_ProcessIDIonization);
+
+  m_KnownProcess.push_back("Transportation"); m_KnownProcessID.push_back(c_ProcessIDTransportation);
+
+  for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) m_KnownProcessFrequency.push_back(0);
+  m_KnownProcessCounter = 0;
+  m_KnownProcessUpdateCounter = 1000;
 }
 
 
@@ -120,7 +219,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
   // Prepare the IA interactions:
   if (Step->GetPostStepPoint()->GetProcessDefinedStep() != 0) {
-    string ProcessName = Step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
+    G4String ProcessName = Step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
+    int ProcessID = GetProcessId(ProcessName);
 
       /*
       for (int ss = (int) fpSteppingManager->GetSecondary()->size()-1; 
@@ -136,10 +236,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     // The following is sorted by physical process
     // Although there is some ambiguity, definitely keep it this way, since changes are likely to differ for the different processes!!! 
 
-    if (ProcessName == "polarLowEnCompt" ||
-        ProcessName == "PenCompton" ||
-        ProcessName == "LowEnCompton" ||
-        ProcessName == "compt") {
+    if (ProcessID == c_ProcessIDCompton) {
 
       // Take care of secondaries below the threshold, for which no new track
       // is generated:
@@ -194,11 +291,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         }
       }
 
-    } else if (ProcessName == "conv" || 
-               ProcessName == "hPairProd" ||
-               ProcessName == "PenConversion" ||
-							 ProcessName == "LowEnConversion" ||
-							 ProcessName == "LowEnPolarizConversion") {
+    } else if (ProcessID == c_ProcessIDPair) {
 
       if (GeneratedSecondaries != 2) {
         mdebug<<"Pair creation should generate two secondaries! Most likely your thresholds are too high!"<<endl
@@ -235,8 +328,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
         
       }
-    } else if (ProcessName == "annihil" ||
-               ProcessName == "PenAnnih") {
+    } else if (ProcessID == c_ProcessIDAnnihilation) {
       // Annihilation should generate at least two particles, e.g. two 511keV photons
 
       // Take care of secondaries below the threshold, 
@@ -270,10 +362,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
  
       }     
-    } else if (ProcessName == "eBrem" || 
-               ProcessName == "hBrems" || 
-               ProcessName == "PenelopeBrem" ||
-               ProcessName == "LowEnBrem") {
+    } else if (ProcessID == c_ProcessIDBremsstrahlung) {
 
       // Take care of secondaries below the threshold, for which no new track
       // is generated:
@@ -326,10 +415,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         }
       }
 
-    } else if (ProcessName.find("G4LECSRayl") != string::npos ||
-               ProcessName == "Rayl" ||
-               ProcessName == "PenRayleigh" ||
-               ProcessName == "LowEnRayleigh") {
+    } else if (ProcessID == c_ProcessIDRayleigh) {
 
       // Noo secondary should have been generated
       if (GeneratedSecondaries != 0) {
@@ -358,9 +444,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                          G4ThreeVector(0.0, 0.0, 0.0),
                          0.0);
 
-    } else if (ProcessName == "LowEnPhotoElec" || 
-               ProcessName == "PenPhotoElec" ||
-               ProcessName == "phot") {
+    } else if (ProcessID == c_ProcessIDPhoto) {
 
       // Take care of secondaries below the threshold, for which no new track
       // is generated:
@@ -414,7 +498,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           
         }
       }
-    } else if (ProcessName.find("hadElastic") != string::npos) {
+    } else if (ProcessID == c_ProcessIDElasticScattering) {
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
@@ -451,7 +535,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
       
       }
-    } else if (ProcessName.find("nFission") != string::npos) {
+    } else if (ProcessID == c_ProcessIDFission) {
 
       // There always has to be a generated secondary, since we generate a new nuclei, etc.
       if (GeneratedSecondaries == 0) {
@@ -502,7 +586,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       
         }
       }
-    } else if (ProcessName.find("Inelastic") != string::npos) {
+    } else if (ProcessID == c_ProcessIDInelasticScattering) {
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
@@ -540,8 +624,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
       
       }
-    } else if (ProcessName == "HadronCapture" ||
-               ProcessName == "nCapture") {
+    } else if (ProcessID == c_ProcessIDCapture) {
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
@@ -579,7 +662,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
         
       }
-    } else if (ProcessName == "Decay") {
+    } else if (ProcessID == c_ProcessIDDecay) {
 
       // There always has to be a generated secondary, since something decays into something else
       // "19" doesn't generate secondaries in Geant4... 
@@ -617,7 +700,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            TrackA->GetKineticEnergy());
         
       }
-    } else if (ProcessName == "RadioactiveDecay") {
+    } else if (ProcessID == c_ProcessIDRadioactiveDecay) {
 
       if (GeneratedSecondaries == 0) {
         //cout<<"RadioactiveDecay without secondaries from particle: "<<Track->GetDefinition()->GetParticleName()<<endl;
@@ -858,14 +941,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           //cout<<"Global time: "<<Step->GetPostStepPoint()->GetGlobalTime()/second<<"sec"<<endl;
         }
       }
-    } else if ((ProcessName == "LowEnergyIoni" || 
-                ProcessName == "hLowEIoni" ||
-                ProcessName == "ionIoni" ||
-                ProcessName == "eIoni" ||
-                ProcessName == "hIoni" ||
-                ProcessName == "muIoni" ||
-                ProcessName == "msc" ||
-                ProcessName == "PenelopeIoni") && m_StoreIonization == true) {
+    } else if (ProcessID == c_ProcessIDIonization && m_StoreIonization == true) {
       
       // Since this is a continuous process, replace (!) the user information 
       // in order to make the HTsim origin information relate to this hit
@@ -922,7 +998,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              TrackA->GetKineticEnergy());
         }
       }
-    } else if (ProcessName == "Transportation" && m_StoreIonization == true) {
+    } else if (ProcessID == c_ProcessIDTransportation && m_StoreIonization == true) {
       // This is a special case:
       // If there is an ionization folled by a boundary transport,
       // the ionization keyword is overwritten with the Transportation keyword
@@ -982,17 +1058,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         }
       }
     } else {
-      if (ProcessName != "Transportation" &&
-          ProcessName != "LowEnergyIoni" &&
-          ProcessName != "PenelopeIoni" &&
-          ProcessName != "eIoni" &&
-          ProcessName != "hIoni" &&
-          ProcessName != "hLowEIoni" &&
-          ProcessName != "muIoni" &&
-          ProcessName != "muMsc" &&
-          ProcessName != "ionIoni" &&
-          ProcessName != "CoulombScat" &&
-          ProcessName != "msc") {
+      if (ProcessID == c_ProcessIDUncovered) {
         merr<<"Uncovered process: "<<ProcessName<<" - please inform the lead developers of this problem."<<endl
             <<"-> Your simulations are ok - you only might miss an IA line in the sim file."<<show;
       }
@@ -1181,6 +1247,65 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
   return;
 }
 
+
+/******************************************************************************
+ * Return the Process ID
+ */
+struct CompareDesc { 
+  vector<unsigned long long> V;
+  bool operator() (unsigned int i1, unsigned int i2) { return V[i1] > V[i2]; }
+} MyCompareDesc;
+
+int MCSteppingAction::GetProcessId(const G4String& Name)
+{
+  // Attention: In theory m_KnownProcessCounter and m_KnownProcessFrequency can overflow, but...
+  
+  if (m_KnownProcessCounter % m_KnownProcessUpdateCounter == 0) {
+    // Do some simple sorting...
+    vector<unsigned int> KnownProcessOrder;
+    for(unsigned int i = 0; i < m_KnownProcess.size(); ++i) { KnownProcessOrder.push_back(i); }
+    
+    // Sort decending...
+    /*struct CompareDesc { 
+      //CompareDesc(vector<unsigned long long> v) : V(v) {}
+      vector<unsigned long long> V;
+      bool operator() (unsigned int i1, unsigned int i2) { return V[i1] > V[i2]; }
+    } MyCompareDesc; */
+    MyCompareDesc.V = m_KnownProcessFrequency;
+    sort(KnownProcessOrder.begin(), KnownProcessOrder.end(), MyCompareDesc);
+    
+    vector<G4String> tKnownProcess = m_KnownProcess;
+    vector<int> tKnownProcessID = m_KnownProcessID;
+    vector<unsigned long long> tKnownProcessFrequency = m_KnownProcessFrequency;
+    for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) {
+      m_KnownProcess[i] = tKnownProcess[KnownProcessOrder[i]];
+      m_KnownProcessID[i] = tKnownProcessID[KnownProcessOrder[i]];
+      m_KnownProcessFrequency[i] = tKnownProcessFrequency[KnownProcessOrder[i]];
+    }
+    
+    /*
+    cout<<endl;
+    cout<<"Newly sorted process IDs for speed up:"<<endl;
+    for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) {
+      cout<<m_KnownProcess[i]<<" --> "<<m_KnownProcessFrequency[i]<<endl;
+    }
+    cout<<endl;
+    */
+    
+    m_KnownProcessUpdateCounter *= 10;
+  }
+  
+  for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) {
+    if (Name == m_KnownProcess[i]) {
+      ++m_KnownProcessCounter;
+      ++m_KnownProcessFrequency[i];
+      return m_KnownProcessID[i];
+    }
+  }
+  
+  return c_ProcessIDUncovered;
+}
+  
 
 /******************************************************************************
  * If during the step a Compton or pair process happend in the primary track,
