@@ -1,0 +1,54 @@
+# MEGAlib gitignore file
+
+# bin directory
+BackgroundMixer
+ConvertACTtools
+ConvertMGGPOD
+ConvertMGeant
+DecayAnalyzer
+ExternalDataAnalysisExample
+Linux-g++
+Mask
+Revoxelizer
+SensitivityOptimizer
+ShowHistograms
+SimAnalyzer
+SimCombiner
+SimRandomCoincidence
+SimpleComptonImaging
+cosima
+eventtransmitter
+eview
+geomega
+mimrec
+realta
+responsecreator
+responsemanipulator
+revan
+sivan
+spectralyze
+
+# config directory:
+Makefile.options
+Makefile.user
+Makefile.config
+UpdateCheck.txt
+configure_lastgoodoptions
+
+# doc directory:
+Peoples.txt
+
+# Created directories
+include
+lib
+
+# Special files
+*~
+*.so
+*.o
+*.dylib
+
+
+
+
+

@@ -68,10 +68,30 @@ public:
   /// This is definitely not the right place for this information
   static int GetParticleId(G4ParticleDefinition* Definition);
 
+  /// Process ID flags
+  static const int c_ProcessIDCompton;
+  static const int c_ProcessIDPhoto;
+  static const int c_ProcessIDPair;
+  static const int c_ProcessIDRayleigh;
+  static const int c_ProcessIDAnnihilation;
+  static const int c_ProcessIDBremsstrahlung;
+  static const int c_ProcessIDElasticScattering;
+  static const int c_ProcessIDInelasticScattering;
+  static const int c_ProcessIDFission;
+  static const int c_ProcessIDCapture;
+  static const int c_ProcessIDDecay;
+  static const int c_ProcessIDRadioactiveDecay;
+  static const int c_ProcessIDIonization;
+  static const int c_ProcessIDTransportation;
+  static const int c_ProcessIDUncovered;
+  
+  
   // protected methods:
 protected:
-  /// Return the Id of the detector, we are currently in
+  /// Return the ID of the detector, we are currently in
   int GetDetectorId(const G4StepPoint* StepPoint);
+  /// Return the Process ID
+  int GetProcessId(const G4String& Name);
 
   // protected members:
 protected:
@@ -111,6 +131,17 @@ private:
   
   /// Temporarily store the name of the last decay - to prevent a Geant4 bug
   MString m_PreventLastDecayBug;
+  
+  /// List of all know process names...
+  vector<G4String> m_KnownProcess;
+  /// Process IDs of all known process names
+  vector<int> m_KnownProcessID;
+  /// Usage frequency of all known process names
+  vector<unsigned long long> m_KnownProcessFrequency;
+  /// A global process counter
+  unsigned long long m_KnownProcessCounter;
+  /// A global process update counter
+  unsigned long long m_KnownProcessUpdateCounter;
 };
 
 #endif

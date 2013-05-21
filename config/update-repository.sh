@@ -83,7 +83,7 @@ if [ ! -d ${NEWREPO} ]; then
     exit 1
 fi
 
-EXCLUDELIST=".svn .git CVS include lib *~ *.sim *.tra *gz"
+EXCLUDELIST=".svn .git CVS lib *~ *.sim *.tra *gz"
 
 HERE=`pwd`
 cd ${GITREPO}
@@ -95,6 +95,7 @@ done
 FILES=`${FIND} -type f -name "*" -printf "%P "`
 
 for f in ${FILES}; do
+  #echo "Checking ${f}"
   if [ ! -f ${NEWREPO}/${f} ]; then
     #echo "File no longer exists: ${NEWREPO}/${f}"
     continue;
