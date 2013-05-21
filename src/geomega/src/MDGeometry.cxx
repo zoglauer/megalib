@@ -263,9 +263,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
   m_CrossSectionFileDirectory += "/auxiliary";
-                                      
 
-
+  
   mdebug<<"Started scanning of geometry... This may take a while..."<<endl;
 
 
@@ -1092,7 +1091,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         m_CrossSectionFileDirectory = 
           MString(MFile::GetDirectoryName(m_FileName)) + "/" + m_CrossSectionFileDirectory;
       }
-
+      
       continue;
     }
     
@@ -3487,6 +3486,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+
   // We need a trigger criteria
   if (GetNTriggers() == 0) {
     mout<<"   ***  Warning  ***  "<<endl;
@@ -3509,6 +3509,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       vector<int> TriggerDetectorTypes = m_TriggerList[t]->GetDetectorTypes();
       for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
+        if (Detectors[d1] == 0) continue;
         for (unsigned int d2 = 0; d2 < TriggerDetectorTypes.size(); ++d2) {
           if (Detectors[d1]->GetDetectorType() == TriggerDetectorTypes[d2]) {
             Detectors[d1] = 0;
@@ -5679,7 +5680,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   out<<"Geometry                   "<<m_FileName<<endl;
   out<<"PhysicsListEM               Standard"<<endl;
   out<<"CreateCrossSectionFiles    "<<m_CrossSectionFileDirectory<<endl;
-
+  
   out.close();
 
 
