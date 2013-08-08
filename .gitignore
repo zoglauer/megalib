@@ -34,6 +34,8 @@ Makefile.user
 Makefile.config
 UpdateCheck.txt
 configure_lastgoodoptions
+source-megalib.sh
+SetupOptions.txt
 
 # doc directory:
 Peoples.txt
@@ -41,13 +43,15 @@ Peoples.txt
 # Created directories
 include
 lib
+external
 
 # Special files
 *~
 *.so
 *.o
 *.dylib
-
+*.tgz
+*.gz
 
 
 
