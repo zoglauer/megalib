@@ -185,7 +185,7 @@ if [ -d geant4_v${VER} ]; then
     fi
   fi
     
-  echo "Old installation is most likely incompatible. Removing geant4_v${VER}"
+  echo "Old installation is either incompatible or incomplete. Removing geant4_v${VER}"
   cd ..
   if echo "geant4_v${VER}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
@@ -199,9 +199,9 @@ fi
 
 echo "Unpacking..."
 if ( [[ ${TARBALL} == *.tgz ]] || [[ ${TARBALL} == *.tar.gz ]] ); then
-    tar xvfz ${TARBALL}
+    tar xvfz ${TARBALL} > /dev/null
 elif [[ $1 == *.tar ]] ; then
-    tar xvf ${TARBALL}
+    tar xvf ${TARBALL} > /dev/null
 else
     echo "Error: File has unknown suffix: $1 (known: tgz, tar.gz, tar)"
     exit 1

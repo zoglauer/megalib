@@ -6,7 +6,7 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
-CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-explicitlink --enable-rpath --enable-soversion"
+CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
@@ -147,7 +147,7 @@ else
     echo "ERROR: Something terrible is wrong with your version string..."
     exit 1
   fi
-  echo "Version of root is: ${VER}"
+  echo "Version of ROOT is: ${VER}"
 fi
 
 
@@ -174,7 +174,7 @@ if [ -d root_v${VER} ]; then
     fi
   fi
     
-  echo "Old installation is most likely incompatible. Removing root_v${VER}"
+  echo "Old installation is either incompatible or incomplete. Removing root_v${VER}"
   cd ..
   if echo "root_v${VER}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
@@ -189,7 +189,7 @@ fi
 echo "Unpacking..."
 mkdir root_v${VER}
 cd root_v${VER}
-tar xvfz ../${TARBALL}
+tar xvfz ../${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
   exit 1
