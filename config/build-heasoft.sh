@@ -239,10 +239,10 @@ fi
 
 # Create a libcfitsio.so, etc. link
 cd ../*86*/lib
-CFITSIO=`find . -name "libcfitsio??[so|a|dylib|dll]"`
-LONGCFITSIO=`find . -name "libcfitsio_*[so|a|dylib|dll]" -printf "%f"`
+CFITSIO=`find . -name "libcfitsio.[so|a|dylib|dll]"`
+LONGCFITSIO=`find . -name "libcfitsio_*[so|a|dylib|dll]"`
 if ( [ "${CFITSIO}" == "" ] && [ "${LONGCFITSIO}" != "" ] ); then 
-    NEWCFITSIO=`echo ${LONGCFITSIO} | awk -F'[_]|[.]' '{ print $1"."$4 }'`
+    NEWCFITSIO=`echo ${LONGCFITSIO} | awk -F'[/]|[.]|[_]' '{ print $3"."$6 }'`
     ln -s ${LONGCFITSIO} ${NEWCFITSIO}
 fi
 
