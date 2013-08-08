@@ -32,7 +32,6 @@ setuphelp() {
     echo "then you can use the following lines to setup HEASoft: "
     echo " "
     
-    pwd
     HEASOFTPATH=`ls -d heasoft_v${VER}/*86*`
     if [[ ${SHELL} == *csh ]]; then
       echo "You seem to use a C shell variant so, in your \$HOME/.cshrc or \$HOME/.tcshrc do:"
