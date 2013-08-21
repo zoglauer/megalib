@@ -52,7 +52,9 @@ external
 *.dylib
 *.tgz
 *.gz
-
+*.sim
+*.tra
+callgrind.*
 
 
 
