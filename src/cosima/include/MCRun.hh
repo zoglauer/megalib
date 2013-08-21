@@ -80,7 +80,9 @@ public:
   /// Get the parallel ID of this run
   int GetParallelID() const { return m_ParallelID; }
 
-  /// Get the incarnation this run --- will obviously only give final results if ParallelID and FileName are set!
+  /// Set a FIXED incarnation ID of this run if the IncarnationID is larger than 0, otherwise it is detrmined automatically
+  void SetIncarnationID(const int IncarnationID) { m_IncarnationID = IncarnationID; if (m_IncarnationID > 0) m_IsIncarnationIDFixed = true; else m_IsIncarnationIDFixed = false; }
+  /// Get the incarnation of this run --- will obviously only give final results if ParallelID and FileName are set!
   int GetIncarnationID() { return m_IncarnationID; }
 
   /// Set the file name of this run. Returns always true
@@ -216,6 +218,8 @@ private:
   int m_ParallelID;
   /// If multiple filenames exists, this is the ID of the current incarnation
   int m_IncarnationID;
+  /// True if the incarnation ID is fixed
+  bool m_IsIncarnationIDFixed;
 
   /// The TCP/IP host name (empty if no connection is wished)
   MString m_TcpIpHostName;

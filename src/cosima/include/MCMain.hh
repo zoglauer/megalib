@@ -93,7 +93,9 @@ private:
   int m_Verbosity;
   /// Parallel ID: Additional ID assigned from outside to uniquely identify sim files from one batch of parallel started simulations 
   int m_ParallelID;
-
+  /// Assigned fixed incarbation ID of the output file(s) 
+  int m_IncarnationID;
+  
   /// Name of the parameter file
   MString m_ParameterFileName;
   /// Name of the macro file

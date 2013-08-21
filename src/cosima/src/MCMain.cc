@@ -67,7 +67,8 @@ MCMain::MCMain()
   m_Verbosity = 1;
 
   m_ParallelID = 0;
-
+  m_IncarnationID = 0;
+  
   // At least under Linux this should work...
   m_Seed = (long) time(0);
 
@@ -81,9 +82,9 @@ MCMain::MCMain()
  */
 MCMain::~MCMain()
 {
-	delete m_Session;
-	delete m_VisManager;
-	delete m_RunManager;
+  delete m_Session;
+  delete m_VisManager;
+  delete m_RunManager;
 }
 
 
@@ -97,17 +98,18 @@ bool MCMain::Initialize(int argc, char** argv)
   }
 
   // Construct the default run manager
-	m_RunManager = new MCRunManager(m_RunParameters);
+  m_RunManager = new MCRunManager(m_RunParameters);
 
   vector<MCRun>& Runs = m_RunManager->GetRuns();
   for (unsigned int r = 0; r < Runs.size(); ++r) {
-    Runs[r].SetParallelID(m_ParallelID);
+    Runs[r].SetIncarnationID(m_IncarnationID);
+    Runs[r].SetParallelID(m_ParallelID); // Incarnation ID first otherwise we will create a dummy file
   }
 
-	// set mandatory initialization classes
-	m_RunManager->SetUserInitialization(new MCPhysicsList(m_RunParameters));
+  // set mandatory initialization classes
+  m_RunManager->SetUserInitialization(new MCPhysicsList(m_RunParameters));
 
-	m_RunManager->SetUserAction(new MCEventAction(m_RunParameters, m_Zip, m_Seed));
+  m_RunManager->SetUserAction(new MCEventAction(m_RunParameters, m_Zip, m_Seed));
 
 
   // Set geometry
@@ -116,7 +118,7 @@ bool MCMain::Initialize(int argc, char** argv)
     mout<<"Unable to initalize detector"<<endl;
     return false;
   }
-	m_RunManager->SetUserInitialization(DC);
+  m_RunManager->SetUserInitialization(DC);
 
   if (m_ConvertFileName != "") {
     MCGeometryConverter* Converter = new MCGeometryConverter();
@@ -126,26 +128,26 @@ bool MCMain::Initialize(int argc, char** argv)
   }
 
   // Primaries
-	m_RunManager->SetUserAction(new MCPrimaryGeneratorAction(m_RunParameters));
+  m_RunManager->SetUserAction(new MCPrimaryGeneratorAction(m_RunParameters));
 
 #ifdef G4VIS_USE
-	// set visualization manager
-	m_VisManager = new G4VisExecutive;
-	m_VisManager->Initialize();
+  // set visualization manager
+  m_VisManager = new G4VisExecutive;
+  m_VisManager->Initialize();
 #endif
 
-	// activate interactive mode
-	m_Session = new G4UIterminal(0, false);
+  // activate interactive mode
+  m_Session = new G4UIterminal(0, false);
 
-	// Initialize G4 kernel
-	m_RunManager->Initialize();
+  // Initialize G4 kernel
+  m_RunManager->Initialize();
 
-	// set mandatory user action class
-	m_RunManager->SetUserAction(new MCSteppingAction(m_RunParameters));
-	m_RunManager->SetUserAction(new MCTrackingAction());
+  // set mandatory user action class
+  m_RunManager->SetUserAction(new MCSteppingAction(m_RunParameters));
+  m_RunManager->SetUserAction(new MCTrackingAction());
 
-	// get the pointer to the m_UI manager and set verbosities
-	m_UI = G4UImanager::GetUIpointer();
+  // get the pointer to the m_UI manager and set verbosities
+  m_UI = G4UImanager::GetUIpointer();
 
   return true;
 }
@@ -198,7 +200,7 @@ bool MCMain::Execute()
     }
     m_Session->SessionStart();
   } else {
-		m_RunManager->StartBeam();
+    m_RunManager->StartBeam();
   }
 
   return true;
@@ -235,15 +237,15 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
   for (i = 1; i < argc; ++i) {
     Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-v" || Option == "-p") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
 
     if (Option == "-h" || Option == "--help" || Option == "?" || Option == "-?") {
       cout<<Usage.str()<<endl;
@@ -272,7 +274,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (i = 1; i < argc; ++i) {
-		Option = argv[i];
+    Option = argv[i];
 
     // Check for last option:
     if (Option[0] != '-' && i+1 == argc) {
@@ -281,54 +283,57 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
       continue;
     }
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-m" || Option == "-s" || Option == "-c") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        mout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
 
 
-		// Then fulfill the options:
-		if (Option == "-h") {
+    // Then fulfill the options:
+    if (Option == "-h") {
       // Already handled
-		} else if (Option == "-c") {
-			m_ConvertFileName = argv[++i];
-		} else if (Option == "-m") {
-			m_MacroFileName = argv[++i];
-			mout<<"Accepting macro file name: "<<m_MacroFileName<<endl;
+    } else if (Option == "-c") {
+      m_ConvertFileName = argv[++i];
+    } else if (Option == "-m") {
+      m_MacroFileName = argv[++i];
+      mout<<"Accepting macro file name: "<<m_MacroFileName<<endl;
       m_Interactive = true;
       m_HasMacro = true;
-		} else if (Option == "-z") {
+    } else if (Option == "-z") {
       m_Zip = true;
-			mout<<"All simulation file are going to be gzip'ed!"<<endl;
-		} else if (Option == "-s") {
+      mout<<"All simulation file are going to be gzip'ed!"<<endl;
+    } else if (Option == "-s") {
       m_Seed = atol(argv[++i]);
       if (m_Seed <= 0) {
         mout<<"Error: The seed must be larger than zero."<<endl;
         return false;
       }
-			mout<<"Setting the seed to "<<m_Seed<<endl;
-		} else if (Option == "-r") {
+      mout<<"Setting the seed to "<<m_Seed<<endl;
+    } else if (Option == "-r") {
       RestrictedRun = atoi(argv[++i]);
-			mout<<"Restricting to run "<<RestrictedRun<<endl;
-		} else if (Option == "-p") {
+      mout<<"Restricting to run "<<RestrictedRun<<endl;
+    } else if (Option == "-p") {
       m_ParallelID = atoi(argv[++i]);
-			mout<<"Setting the ID for parallel simulations to "<<m_ParallelID<<endl;
-		} else if (Option == "-i") {
-			mout<<"Starting interactive mode!"<<endl;
+      mout<<"Setting the ID for parallel simulations to "<<m_ParallelID<<endl;
+    } else if (Option == "-f") {
+      m_IncarnationID = atoi(argv[++i]);
+      mout<<"Setting the ID of the simulation file incarnation to "<<m_IncarnationID<<endl;
+    } else if (Option == "-i") {
+      mout<<"Starting interactive mode!"<<endl;
       m_Interactive = true;
-		} else if (Option == "-v") {
+    } else if (Option == "-v") {
       ++i;
       // Already handled...
-		} else {
-			mout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      mout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   } // command line options
 
   // Error checking:

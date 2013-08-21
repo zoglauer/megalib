@@ -65,6 +65,7 @@ MCRun::MCRun()
   m_FileName = "";
   m_ParallelID = 0;  
   m_IncarnationID = 0;  
+  m_IsIncarnationIDFixed = false;
 
   m_TcpIpHostName = "";
   m_TcpIpPort = 9090;
@@ -313,58 +314,61 @@ void MCRun::AddIsotope(G4Ions* Particle, G4TouchableHistory* Hist)
  */
 void MCRun::CheckIncarnationID()
 {
-  m_IncarnationID = 0;
-  int Id = 1;
-  const int MaxCheckedId = 100;
-  bool NoFilesFound = false;
-  bool FileExists = true;
+  if (m_IsIncarnationIDFixed == false) {
+  
+    m_IncarnationID = 0;
+    int Id = 1;
+    const int MaxCheckedId = 100;
+    bool NoFilesFound = false;
+    bool FileExists = true;
 
-  mdebug<<"Incarnation check:"<<endl;
-  do {
-    // Incarnation check:
-    Id = 1;
+    mdebug<<"Incarnation check:"<<endl;
     do {
-      m_IncarnationID++;
-      ostringstream FileName;
-      if (m_ParallelID == 0) {
-        FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
-      } else {
-        FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
-      }
-      mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"(...) ...";
-      if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
-          MFile::FileExists((FileName.str() + "sim.gz").c_str()) ||
-          MFile::FileExists((FileName.str() + "sim.zip").c_str())) {
-        FileExists = true;
-        mdebug<<"file exists!"<<endl;
-      } else {
-        FileExists = false;
-        mdebug<<"file does not exist!"<<endl;
-      }    
-    } while (FileExists == true);
-    NoFilesFound = true;
+      // Incarnation check:
+      Id = 1;
+      do {
+        m_IncarnationID++;
+        ostringstream FileName;
+        if (m_ParallelID == 0) {
+          FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        } else {
+          FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        }
+        mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"(...) ...";
+        if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
+            MFile::FileExists((FileName.str() + "sim.gz").c_str()) ||
+            MFile::FileExists((FileName.str() + "sim.zip").c_str())) {
+          FileExists = true;
+          mdebug<<"file exists!"<<endl;
+        } else {
+          FileExists = false;
+          mdebug<<"file does not exist!"<<endl;
+        }    
+      } while (FileExists == true);
+      NoFilesFound = true;
 
-    // ID check:
-    for (int i = 1; i < MaxCheckedId; ++i) {
-      Id++;
-      ostringstream FileName;
-      if (m_ParallelID == 0) {
-        FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
-      } else {
-        FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
-      }
-      mdebug<<"Checking (loop 2): "<<FileName.str().c_str()<<"(...) ...";
-      if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
-          MFile::FileExists((FileName.str() + "sim.gz").c_str()) ||
-          MFile::FileExists((FileName.str() + "sim.zip").c_str())) {
-        mdebug<<"file exists!"<<endl;
-        NoFilesFound = false;
-        break;
-      } else {
-        mdebug<<"file does not exist!"<<endl;
-      }
-    } 
-  } while (NoFilesFound == false);
+      // ID check:
+      for (int i = 1; i < MaxCheckedId; ++i) {
+        Id++;
+        ostringstream FileName;
+        if (m_ParallelID == 0) {
+          FileName<<m_FileName<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        } else {
+          FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
+        }
+        mdebug<<"Checking (loop 2): "<<FileName.str().c_str()<<"(...) ...";
+        if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
+            MFile::FileExists((FileName.str() + "sim.gz").c_str()) ||
+            MFile::FileExists((FileName.str() + "sim.zip").c_str())) {
+          mdebug<<"file exists!"<<endl;
+          NoFilesFound = false;
+          break;
+        } else {
+          mdebug<<"file does not exist!"<<endl;
+        }
+      } 
+    } while (NoFilesFound == false);
+  }
 
   // Immediately create a dummy file, since it can take a long time until we create the real one:
   ostringstream Name;

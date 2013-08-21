@@ -156,6 +156,8 @@ private:
 
   /// Parallel ID: Additional ID assigned from outside to uniquely identify sim files from one batch of parallel started simulations 
   int m_ParallelID;
+  /// Assigned fixed incarbation ID of the output file(s) 
+  int m_IncarnationID;
 
   /// The temporary store of the simulated event
   MSimEvent* m_Event;
