@@ -377,9 +377,36 @@ else
 fi
 
 
+
+# Check for MPI tools
+echo ""
+echo "(e) MPI tools (optional)"
+echo ""
+
+MPIFound=0
+
+if ( [ -f /usr/include/mpi/mpi.h ] ); then 
+  echo "Found MPI header";
+  if hash mpirun 2>/dev/null; then
+    echo "Found mpirun executable"
+  else
+    echo "-> Couldn't find the MPI run executable."
+    echo "   Deactivating the compilation of the MPI parts of MEGAlib."
+    echo "   But don't worry. Everything is fine. You normally wouldn't need them anyway."
+    MPIFound=1
+  fi
+else 
+  echo "-> Couldn't find the MPI header file in /usr/include/mpi."
+  echo "   Deactivating the compilation of the MPI parts of MEGAlib."
+  echo "   But don't worry. Everything is fine. You normally wouldn't need them anyway."
+  MPIFound=1
+fi  
+
+
+
 # Check for other little helper programs
 echo ""
-echo "(e) Miscellaneous helper tools"
+echo "(f) Miscellaneous helper tools"
 echo ""
 
 bash ${MEGALIB}/config/configure_misctools -s;
@@ -485,6 +512,7 @@ echo "# Important: Don't modify this sections by yourself " >> config/Makefile.o
 echo " " >> config/Makefile.options
 echo "GEANT4INSTALLED  = ${Geant4Found}" >> config/Makefile.options
 echo "HEASOFTINSTALLED = ${HEAsoftFound}" >> config/Makefile.options
+echo "MPIINSTALLED = ${MPIFound}" >> config/Makefile.options
 echo " " >> config/Makefile.options
 
 echo "# " >> config/Makefile.options

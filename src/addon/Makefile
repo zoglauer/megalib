@@ -30,27 +30,15 @@ PRGSX = \
 	$(BN)/ShowHistograms \
 	$(BN)/Revoxelizer \
 
-NuSTARExists := $(wildcard $(SR)/addon/NuSTARSimCompactor.cxx)
-PRGSN = \
-	$(BN)/NuSTARSimCompactor \
-	$(BN)/NuSTARSimAnalyzer \
-	$(BN)/NuSTARBackground \
-	$(BN)/NuSTARProtonDose \
+FITS = $(BN)/ConvertMGGPOD
 
-#PRGSP = \
-#	$(BN)/PulseForms \
-#	$(BN)/CalibrateZ \
+MPI = $(BN)/bundler
 
-FITS = \
-	$(BN)/ConvertMGGPOD \
+
 
 MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
 
-ifneq ($(strip $(NuSTARExists)),)
-EVERYTHING = $(PRGSX) $(FITS) $(PRGSN) 
-else
-EVERYTHING = $(PRGSX) $(FITS) 
-endif
+EVERYTHING = $(PRGSX) $(FITS) $(MPI)
 
 #----------------------------------------------------------------
 # Commands:
@@ -59,12 +47,13 @@ endif
 all: $(EVERYTHING) 
 
 clean:
-		@rm -f *~
-		@rm -f \#*
-		@rm -f *.o
-		@rm -f $(PRGSX)
-		@rm -f $(PRGSN)
-		@rm -f $(FITS)
+	@rm -f *~
+	@rm -f \#*
+	@rm -f *.o
+	@rm -f $(PRGSX)
+	@rm -f $(PRGSN)
+	@rm -f $(FITS)
+	@rm -f $(MPI)
 
 
 #----------------------------------------------------------------
@@ -81,6 +70,12 @@ $(FITS): $(BN)/%: %.cxx
 ifeq "$(strip $(HEASOFTINSTALLED))" "0"
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	$(LD) $(LDFLAGS) $(CXXFLAGS) $(DEFINES) -I$(LHEASOFT)/include $< $(MLIBS) -lcfitsio -lm $(GLIBS) $(LIBS) -L$(LHEASOFT)/lib -o $@
+endif
+
+$(MPI): $(BN)/%: %.cxx
+ifeq "$(strip $(MPIINSTALLED))" "0"
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	mpic++ $(LDFLAGS) $(CXXFLAGS) $(DEFINES) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
 endif
 
 $(PRGSX): $(BN)/%: %.cxx

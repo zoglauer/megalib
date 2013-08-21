@@ -1,0 +1,213 @@
+#! /bin/bash
+
+
+help() {
+    echo ""
+    echo "mpicosima - parallel simulation script for cosima using MPI";
+    echo "(C) by Michael Quinlan, Andreas Zoglauer"
+    echo "";
+    echo "Usage:";
+    echo "    mpicosima <cosima source file>";
+    echo "";
+    echo "Options:";
+    echo "    -t <threads>: The number of mpi-threads as an integer"
+    echo "";
+    echo "Example:";
+    echo "    pmcosima -t 200 Run.source";
+    echo "";
+    echo "This script launches multiple instances of cosima with the same source file";
+    echo "and generates a concatenation file.";
+    echo "";
+    echo "The script requires the presence of the \"bundler\" MPI application in the system path."
+    echo "";
+}
+
+Source="!@#$";
+Nice=0;
+
+# Check if cosima exists
+if (`test -f ${MEGAlib}/bin/cosima`); then
+    echo " "
+    echo "ERROR: The cosima executable does not exist. Try to (re-)compile MEGAlib."
+    echo " "
+    exit 1;
+fi
+
+# Check if mpi tools exist
+if ! hash mpirun 2>/dev/null; then
+    echo " "
+    echo "ERROR: You need the MPI tools to run this script."
+    echo " "
+    exit 1;
+fi
+
+# Check if cosima exists
+if (`test -f ${MEGAlib}/bin/bundler`); then
+    echo " "
+    echo "ERROR: The bundler executable does not exist. Make sure you have the ."
+    echo " "
+    exit 1;
+fi
+
+
+# Verify the input:
+
+if [ $# -eq 0 ] ; then
+    echo " "
+    echo "Error: You need to give at least a source file";
+    echo "       For details see mcosima -- help"
+    echo " "
+    exit 0;
+fi;
+
+while [ $# -gt 0 ] ; do
+    Found=0;
+    case $1 in
+    -h|--help) 
+        help; 
+        exit 0;;
+    -p|-t)
+        shift;
+        if [ $# -eq 0 ]; then
+            echo " "
+            echo "Error: Options -p and -t need an argument";
+            echo "       For details see mcosima -- help"
+            echo " "
+            exit 0;
+        fi
+        Found=1;
+        Threads=$1;
+        #echo "Using ${Threads} threads";
+        ;;
+    *)
+        ;;
+    esac
+    if [ "${Found}" == "0" ]; then
+        if [ "${Source}" == "!@#$" ]; then
+            Source=$1;
+        else
+            echo " "
+            echo "Error: Only one source file allowed";
+            echo "       For details see mcosima -- help"
+            echo " "
+            help; 
+            exit 1;
+        fi    
+    fi
+
+    shift
+done
+
+if [ "${Source}" == "!@#$" ]; then
+    echo " "
+    echo "Error: You need to give a source file";
+    echo "       For details see mcosima -- help"
+    echo " "
+    exit 1;
+fi
+
+if echo ${Threads} | grep "^[0-9]*$" > /tmp/aux
+then
+    rm /tmp/aux
+else
+    echo " "
+    echo "Error: The value behind parallel must be a number";
+    echo "       For details see mcosima -- help"
+    echo " "
+    rm /tmp/aux
+    exit 1;
+fi
+
+
+echo " "
+echo "Launching mpicosima"
+echo " "
+echo "Number of threads to use: ${Threads}" 
+echo "Source file: ${Source}" 
+
+
+
+# Search for the next unused sim file with ".pX.*sim" in it
+ThreadsID="0"
+
+BaseNames=""
+while read line; do
+    Base=`echo $line | awk -F".FileName" '{ print $2 }'`; 
+    BaseNames="${BaseNames} ${Base}"
+done << EOF
+$(grep ".FileName" ${Source})
+EOF
+# The above hack is necessary because "grep ".FileName" ${Source} | while read line; do" would launch a subprocess and BaseNames would not be set...
+
+for Base in ${BaseNames}; do
+    while true; do
+        ThreadsID=`expr ${ThreadsID} + 1`
+        N=`find . -name "${Base}.p${ThreadsID}.*sim" | wc -l | sed 's/ //g'`
+        #echo "Found: $N of ${Base}.p${ThreadsID}.*sim"
+        if [ "${N}" == "0" ]; then
+            break;
+        fi
+    done
+done
+
+echo " "
+
+rm jobscript.txt
+rm testfile.txt
+echo "echo \`/bin/hostname\` >> testfile.txt; echo \"0\" >> testfile.txt; cosima -s 5624 -v 0 -p ${ThreadsID} ${Source} > /dev/null" >> jobscript.txt 
+for (( i=2; i <= ${Threads}; i+=1 )); do
+    Sseed=`expr 5624 + ${i}`
+    ttid=`expr ${ThreadsID} + ${i} - 1`
+    echo "echo \`/bin/hostname\` >> testfile.txt; echo \"${i}\" >> testfile.txt; cosima -s ${Sseed} -v 0 -p ${ttid} ${Source} > /dev/null" >> jobscript.txt
+done
+echo "attempting to start ${Threads} processes"
+mpirun -v -np ${Threads} bundler jobscript.txt
+
+# Create a concatenation file
+
+# Extract the base file names from the source file
+grep ".FileName" ${Source} | while read line; do
+    Base=`echo $line | awk -F".FileName" '{ print $2 }'`; 
+    echo "Creating concatenation file for: ${Base}"
+    ConcatFileName="${Base}.p${ThreadsID}.sim" 
+
+    # Wait until the first such file is created
+    while ( test ! -f ${Base}.p${ThreadsID}.inc1.id1.sim ); do
+        sleep 1
+        echo "Waiting for simulation file to appear..."
+    done
+
+    # Wait until the header is written
+    while [ `wc -l ${Base}.p${ThreadsID}.inc1.id1.sim | awk -F" " '{ print $1 }'` -le 100 ]; do
+        sleep 1;
+        echo "Waiting for first 100 lines to be written into the simulation file ${Base}.p${ThreadsID}.inc1.id1.sim..."
+    done
+
+    # Extract the version information
+    head -n 100 ${Base}.p${ThreadsID}.inc1.id1.sim > /tmp/mcosima.head
+    Version=`grep "Version" /tmp/mcosima.head`
+    Geometry=`grep "Geometry" /tmp/mcosima.head`
+    rm /tmp/mcosima.head
+    
+    # Create a concatenation file
+    echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+    echo "Type SIM" >> ${ConcatFileName}
+    echo "${Version}" >> ${ConcatFileName}
+    echo "${Geometry}" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+    
+    for (( i=1; i <= ${Threads}; i+=1 )); do
+        #echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+        ttid=`expr ${ThreadsID} + ${i} - 1` 
+        echo "IN ${Base}.p${ttid}.inc1.id1.sim" >> ${ConcatFileName}
+    done
+    
+    echo "EN" >> ${ConcatFileName}
+    echo " " >> ${ConcatFileName}
+
+    echo "Created concatenation file ${ConcatFileName}"
+    echo ${ConcatFileName} >> revoxelize_me.txt
+done
+
+exit 0;

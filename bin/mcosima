@@ -3,7 +3,7 @@
 
 help() {
     echo ""
-    echo "mcosima - script for MEGAlib";
+    echo "mcosima - parallel simulation script for cosima on the same machine";
     echo "(C) by Andreas Zoglauer"
     echo "";
     echo "Usage:";
@@ -99,7 +99,7 @@ while [ $# -gt 0 ] ; do
         Nice=$1;
         #echo "Using nice level ${Nice}";
         ;;
-      *)
+     *)
         ;;
     esac
     if [ "${Found}" == "0" ]; then
