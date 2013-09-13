@@ -335,7 +335,8 @@ MVector MDShapeTUBS::GetUniquePosition() const
 {
   // Return a unique position within this detectors volume
 
-  double R = 0.5*(m_Rmax+m_Rmin);
+  double R = 0.0;
+  if (m_Rmin > 0.0) R = 0.5*(m_Rmax+m_Rmin);
   double Angle = 0.5*(m_Phi2+m_Phi1)*c_Rad; 
 
   return MVector(R*cos(Angle), R*sin(Angle), 0.0);

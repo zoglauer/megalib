@@ -27,6 +27,7 @@ responsemanipulator
 revan
 sivan
 spectralyze
+bundler
 
 # config directory:
 Makefile.options
