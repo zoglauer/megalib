@@ -22,62 +22,62 @@ Sky.NTriggers            3000000
 Sky.Source SR_0
 SR_0.ParticleType        1
 SR_0.Beam                HomogeneousBeam   -6.4 -6.4 100   0 0 -1  0.5
-SR_0.Polarization        1  1.0 0.0 0.0  1.0
+SR_0.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_0.Spectrum            Mono 37000
 SR_0.Intensity           1
 
 Sky.Source SR_1
 SR_1.ParticleType        1
 SR_1.Beam                HomogeneousBeam   -6.4 0 100   0 0 -1  0.5
-SR_1.Polarization        1  1.0 0.0 0.0  1.0
+SR_1.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_1.Spectrum            Mono 37000
 SR_1.Intensity           1
 
 Sky.Source SR_2
 SR_2.ParticleType        1
 SR_2.Beam                HomogeneousBeam   -6.4 6.4 100   0 0 -1  0.5
-SR_2.Polarization        1  1.0 0.0 0.0  1.0
+SR_2.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_2.Spectrum            Mono 37000
 SR_2.Intensity           1
 
 Sky.Source SR_3
 SR_3.ParticleType        1
 SR_3.Beam                HomogeneousBeam   0 -6.4 100   0 0 -1  0.5
-SR_3.Polarization        1  1.0 0.0 0.0  1.0
+SR_3.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_3.Spectrum            Mono 37000
 SR_3.Intensity           1
 
 Sky.Source SR_4
 SR_4.ParticleType        1
 SR_4.Beam                HomogeneousBeam   0 0 100   0 0 -1  0.5
-SR_4.Polarization        1  1.0 0.0 0.0  1.0
+SR_4.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_4.Spectrum            Mono 37000
 SR_4.Intensity           1
 
 Sky.Source SR_5
 SR_5.ParticleType        1
 SR_5.Beam                HomogeneousBeam   0 6.4 100   0 0 -1  0.5
-SR_5.Polarization        1  1.0 0.0 0.0  1.0
+SR_5.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_5.Spectrum            Mono 37000
 SR_5.Intensity           1
 
 Sky.Source SR_6
 SR_6.ParticleType        1
 SR_6.Beam                HomogeneousBeam   6.4 -6.4 100   0 0 -1  0.5
-SR_6.Polarization        1  1.0 0.0 0.0  1.0
+SR_6.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_6.Spectrum            Mono 37000
 SR_6.Intensity           1
 
 Sky.Source SR_7
 SR_7.ParticleType        1
 SR_7.Beam                HomogeneousBeam   6.4 0 100   0 0 -1  0.5
-SR_7.Polarization        1  1.0 0.0 0.0  1.0
+SR_7.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_7.Spectrum            Mono 37000
 SR_7.Intensity           1
 
 Sky.Source SR_8
 SR_8.ParticleType        1
 SR_8.Beam                HomogeneousBeam   6.4 6.4 100   0 0 -1  0.5
-SR_8.Polarization        1  1.0 0.0 0.0  1.0
+SR_8.Polarization        absolute  1.0  1.0 0.0 0.0.0
 SR_8.Spectrum            Mono 37000
 SR_8.Intensity           1

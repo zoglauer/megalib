@@ -113,26 +113,35 @@ GStrip.StripNumber         40    40
 GStrip.NoiseThreshold      15
 GStrip.TriggerThreshold    30
 
-GStrip.DepthResolution     100  0.2
+GStrip.DepthResolution     10  0.02
+GStrip.DepthResolution     100  0.02
+GStrip.DepthResolution     1000  0.02
 
-GStrip.EnergyResolutionAt   10        0.417   
-GStrip.EnergyResolutionAt   20        0.425           
-GStrip.EnergyResolutionAt   50        0.4375    
-GStrip.EnergyResolutionAt   100       0.454     
-GStrip.EnergyResolutionAt   200       0.492     
-GStrip.EnergyResolutionAt   500       0.5875      
-GStrip.EnergyResolutionAt   1000      0.7217       
-GStrip.EnergyResolutionAt   2000      0.9317      
-GStrip.EnergyResolutionAt   5000      1.3819       
-GStrip.EnergyResolutionAt   10000     1.9094                     
-GStrip.EnergyResolutionAt   100000    5.907         
+GStrip.EnergyResolution Gaus 10      10        0.417   
+GStrip.EnergyResolution Gaus 20      20        0.425           
+GStrip.EnergyResolution Gaus 50      50        0.4375    
+GStrip.EnergyResolution Gaus 100     100       0.454     
+GStrip.EnergyResolution Gaus 200     200       0.492     
+GStrip.EnergyResolution Gaus 500     500       0.5875      
+GStrip.EnergyResolution Gaus 1000    1000      0.7217       
+GStrip.EnergyResolution Gaus 2000    2000      0.9317      
+GStrip.EnergyResolution Gaus 5000    5000      1.3819       
+GStrip.EnergyResolution Gaus 10000   10000     1.9094                     
+GStrip.EnergyResolution Gaus 100000  100000    5.907         
 
 GStrip.FailureRate 0.0
 
-GStrip.NamedDetector  0.0  0.0  {  1.5*CryoTotalHeight }  D1
-GStrip.NamedDetector  0.0  0.0  {  0.5*CryoTotalHeight }  D2
-GStrip.NamedDetector  0.0  0.0  { -0.5*CryoTotalHeight }  D3
-GStrip.NamedDetector  0.0  0.0  { -1.5*CryoTotalHeight }  D4
+GStrip.Named D1
+D1.Assign 0.0  0.0  {  1.5*CryoTotalHeight }
+
+GStrip.Named D2
+D2.Assign 0.0  0.0  {  0.5*CryoTotalHeight }
+
+GStrip.Named D3
+D3.Assign  0.0  0.0  { -0.5*CryoTotalHeight }
+
+GStrip.Named D4  
+D4.Assign 0.0  0.0  { -1.5*CryoTotalHeight }
 
 
 
@@ -141,3 +150,5 @@ Trigger T1
 T1.Veto false
 T1.TriggerByChannel true
 T1.Detector GStrip 1
+
+

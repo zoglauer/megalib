@@ -95,6 +95,14 @@ const int MCSource::c_NearFieldVolume                              = 26;
 const int MCSource::c_NearFieldFlatMap                             = 27;
 
 
+const int MCSource::c_PolarizationNone                             =  1;
+const int MCSource::c_PolarizationRandom                           =  2;
+const int MCSource::c_PolarizationAbsolute                         =  3;
+const int MCSource::c_PolarizationRelativeX                        =  4;
+const int MCSource::c_PolarizationRelativeY                        =  5;
+const int MCSource::c_PolarizationRelativeZ                        =  6;
+
+
 // Don't change this list because the ID is written to the Sim file
 const int MCSource::c_Gamma                                        = 1;
 
@@ -242,7 +250,10 @@ void MCSource::Initialize()
   m_LightCurveOffset = c_Invalid;
   m_NEventsPerLightCurveContent = c_Invalid;
 
-  m_PolarizationIsAbsolute = true;
+  m_PolarizationType = c_PolarizationNone;
+  m_PolarizationParam1 = c_Invalid;
+  m_PolarizationParam2 = c_Invalid;
+  m_PolarizationParam3 = c_Invalid;
   m_PolarizationDegree = 0.0;
   
   m_NGeneratedParticles = 0;
@@ -258,6 +269,8 @@ void MCSource::Initialize()
   m_PositionParam9 = c_Invalid;
   m_PositionParam10 = c_Invalid;
   m_PositionParam11 = c_Invalid;
+
+  m_PositionTF1 = 0;
   
   m_EnergyParam1 = c_Invalid;
   m_EnergyParam2 = c_Invalid;
@@ -265,8 +278,6 @@ void MCSource::Initialize()
   m_EnergyParam4 = c_Invalid;
   m_EnergyParam5 = c_Invalid;
   m_EnergyParam6 = c_Invalid;
-
-  m_PositionTF1 = 0;
 }
 
 
@@ -1513,19 +1524,92 @@ bool MCSource::SetLightCurve(const double& BinWidth, const double& Offset,
 }
 
 
+
 /******************************************************************************
- * Set the polarization, the first parameter indicates, if the vector is
- * in absolute coordinates (true) or relative to the flight direction (false)
+ *  Return true, if the particle type could be set correctly
  */
-bool MCSource::SetPolarization(const bool Absolute, const double x, 
-                               const double y, const double z, 
-                               const double Degree)
+bool MCSource::SetPolarizationType(const int& PolarizationType)
 {
-  m_PolarizationIsAbsolute = Absolute;
-  m_Polarization = G4ThreeVector(x, y, z);
-  m_PolarizationDegree = Degree;
+  switch (PolarizationType) {
+  case c_PolarizationNone:
+  case c_PolarizationRandom:
+  case c_PolarizationAbsolute:
+  case c_PolarizationRelativeX:
+  case c_PolarizationRelativeY:
+  case c_PolarizationRelativeZ:
+    m_PolarizationType = PolarizationType;
+    return true;
+  default:
+    return false;
+  }
 
   return true;
+}
+
+
+/******************************************************************************
+ * Return the name of the polarization (e.g. mono, etc.)
+ */
+string MCSource::GetPolarizationTypeAsString() const
+{
+  string Name = "";
+
+  switch (m_SpectralType) {
+  case c_PolarizationNone:
+    Name = "None";
+    break;
+  case c_PolarizationRandom:
+    Name = "Random";
+    break;
+  case c_PolarizationAbsolute:
+    Name = "Absolute";
+    break;
+  case c_PolarizationRelativeX:
+    Name = "RelativeX";
+    break;
+  case c_PolarizationRelativeY:
+    Name = "RelativeY";
+    break;
+  case c_PolarizationRelativeZ:
+    Name = "RelativeZ";
+    break;
+  default:
+    break;
+  }
+  
+  return Name;
+}
+
+
+/******************************************************************************
+ * Return true, if the position vector could be set correctly
+ */
+bool MCSource::SetPolarization(double PolarizationParam1, 
+                     double PolarizationParam2, 
+                     double PolarizationParam3)
+{
+  m_PolarizationParam1 = PolarizationParam1;
+  m_PolarizationParam2 = PolarizationParam2;
+  m_PolarizationParam3 = PolarizationParam3;
+  
+  return true;
+}
+
+
+/******************************************************************************
+ * Set the degree of polarization 1.0 == 100% polarized
+ */
+void MCSource::SetPolarizationDegree(const double& Degree)
+{
+  m_PolarizationDegree = Degree;
+  if (m_PolarizationDegree > 1.0) {
+    mout<<m_Name<<": The maximum polarization degree is 1.0 = 100%. Setting it to 1.0"<<endl;
+    m_PolarizationDegree = 1.0;
+  }
+  if (m_PolarizationDegree < 0.0) {
+    mout<<m_Name<<": The minimum polarization degree is 0.0 = 0%. Setting it to 0.0"<<endl;
+    m_PolarizationDegree = 0.0;
+  }
 }
 
 
@@ -2058,120 +2142,78 @@ double MCSource::GetMeanEnergy() const
 bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
 {
   double Probability = 0.0;
-  double Energy = 0.0;
+  m_Energy = 0.0;
 
-	massert(ParticleGun->GetNumberofSource() == 1);
+  massert(ParticleGun->GetNumberofSource() == 1);
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
+      m_Energy = m_EventListEnergy.front();
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-      ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(m_EventListEnergy.front());
+      ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(m_Energy);
       return true;
     } else {
       return false;
     }
   }
   
-  switch (m_SpectralType) {
-  case c_Monoenergetic:
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(m_EnergyParam1);
-    break;
-  case c_Linear:
-    // This function does definitely not behave as expected....
-    // ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Lin");
-    // ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(m_EnergyParam1);
-    // ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(m_EnergyParam2);
-
-    Energy = m_EnergyParam1 + 
-      CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_PowerLaw:
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Pow");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(m_EnergyParam1);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(m_EnergyParam2);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetAlpha(-m_EnergyParam3);
-    break;
-  case c_BrokenPowerLaw:
+  if (m_SpectralType == c_Monoenergetic) {
+    m_Energy = m_EnergyParam1;
+  } else if (m_SpectralType == c_Linear) {
+    m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+  } else if (m_SpectralType == c_PowerLaw) {
+    if (m_EnergyParam3 != 1.0) {
+      double Min = pow(m_EnergyParam1, -m_EnergyParam3 + 1);
+      double Max = pow(m_EnergyParam2, -m_EnergyParam3 + 1);
+      m_Energy = pow(Min + CLHEP::RandFlat::shoot(1) * (Max-Min), 1.0/(-m_EnergyParam3 + 1));
+    } else {
+      m_Energy = exp(log(m_EnergyParam1) + CLHEP::RandFlat::shoot(1) * (m_EnergyParam2-m_EnergyParam1));
+    }
+  } else if (m_SpectralType == c_BrokenPowerLaw) {
     // This algorithm can be very slow...
     while (true) {
-      Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
-      if (Energy > m_EnergyParam3) {
+      m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+      if (m_Energy > m_EnergyParam3) {
         Probability = 
-          m_EnergyParam6*pow(m_EnergyParam1, m_EnergyParam4)/pow(Energy, m_EnergyParam5);
+          m_EnergyParam6*pow(m_EnergyParam1, m_EnergyParam4)/pow(m_Energy, m_EnergyParam5);
       } else {
-        Probability = pow(m_EnergyParam1/Energy, m_EnergyParam4);
+        Probability = pow(m_EnergyParam1/m_Energy, m_EnergyParam4);
       }
       if (CLHEP::RandFlat::shoot(1) < Probability) break;
     }
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_Gaussian:
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(gRandom->Gaus(m_EnergyParam1, m_EnergyParam2));
-    break;
-  case c_ThermalBremsstrahlung:
+  } else if (m_SpectralType == c_Gaussian) {
+    m_Energy = gRandom->Gaus(m_EnergyParam1, m_EnergyParam2);
+  } else if (m_SpectralType == c_ThermalBremsstrahlung) {
     while (true) {
-      Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+      m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
       if (CLHEP::RandFlat::shoot(1) <= 
-          (1.0/Energy * exp(-Energy/m_EnergyParam3))/
+          (1.0/m_Energy * exp(-m_Energy/m_EnergyParam3))/
           (1.0/m_EnergyParam1 * exp(-m_EnergyParam1/m_EnergyParam3))) break;
     }    
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_BlackBody:
+  } else if (m_SpectralType == c_BlackBody) {
     while (true) {
-      Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
-      if (CLHEP::RandFlat::shoot(1) <= BlackBody(Energy, m_EnergyParam3)/m_EnergyParam4) break;
+      m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+      if (CLHEP::RandFlat::shoot(1) <= BlackBody(m_Energy, m_EnergyParam3)/m_EnergyParam4) break;
     }    
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_BandFunction:
+  } else if (m_SpectralType == c_BandFunction) {
     while (true) {
-      Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
-      double BandValue = BandFunction(Energy, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
+      m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+      double BandValue = BandFunction(m_Energy, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
       if (BandValue > m_EnergyParam6) {
         mout<<"Precalculated maximum of band function is wrong!!"<<endl;
       }
       if (CLHEP::RandFlat::shoot(1) <= BandValue/m_EnergyParam6) break;
     }    
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_FileDifferentialFlux:
+  } else if (m_SpectralType == c_FileDifferentialFlux) {
     // All functionality is in MFunction:
-    Energy = m_EnergyFunction.GetRandom();
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_NormalizedEnergyBeamFluxFunction:
+    m_Energy = m_EnergyFunction.GetRandom();
+  } else if (m_SpectralType == c_NormalizedEnergyBeamFluxFunction) {
     // Most of the functionality is in MFunction3DSpherical:
     // We temporarily store the position here in m_PositionParam1, m_PositionParam2
     if (m_StartAreaType == c_StartAreaSphere) {
-      m_NormalizedEnergyBeamFluxFunction.GetRandom(m_PositionParam2, m_PositionParam1, Energy);
+      m_NormalizedEnergyBeamFluxFunction.GetRandom(m_PositionParam2, m_PositionParam1, m_Energy);
     } else if (m_StartAreaType == c_StartAreaTube) {
       double Area = 0.0;
       double AngleMaxArea = atan(m_StartAreaParam2/m_StartAreaParam1);
@@ -2194,39 +2236,29 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
         } while (gRandom->Rndm() > Area/MaxArea);
         
         m_PositionParam2 = gRandom->Rndm()*(xMax - xMin) + xMin;
-        Energy = gRandom->Rndm()*(zMax - zMin) + zMin;
+        m_Energy = gRandom->Rndm()*(zMax - zMin) + zMin;
 
-        v = m_NormalizedEnergyBeamFluxFunction.Evaluate(m_PositionParam2, m_PositionParam1, Energy);
+        v = m_NormalizedEnergyBeamFluxFunction.Evaluate(m_PositionParam2, m_PositionParam1, m_Energy);
       } while (vMax*gRandom->Rndm() > v);
     } else {
       mout<<m_Name<<": Unknown start area type for position generation"<<endl;
     }
     
-    Energy *= keV;
+    m_Energy *= keV;
     m_PositionParam1 *= c_Rad;
     m_PositionParam2 *= c_Rad;
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    break;
-  case c_Activation:
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(0.0);
-    break;
-  default:
+  } else if (m_SpectralType == c_Activation) {
+    m_Energy = 0.0*keV;
+  } else {
     merr<<"Energy type not yet implemented: "<<m_SpectralType<<endl;
-    Energy = 2.0*MeV;
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
-    ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(Energy);
-    return false;
-    break;
+    m_Energy = 2.0*MeV;
   }
-  
+
+  ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
+  ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
+  ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
+  ParticleGun->GetCurrentSource()->GetEneDist()->SetMonoEnergy(m_Energy);
+    
   return true;
 }
 
@@ -2236,8 +2268,8 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
  */
 bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 {
-  G4ThreeVector Position;
-  G4ThreeVector Direction;
+  m_Position.set(0.0, 0.0, 0.0);
+  m_Direction.set(1.0, 0.0, 0.0);
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
@@ -2316,8 +2348,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       }
       
       // Generate start direction:
-      Direction.setRThetaPhi(1, Theta, Phi);
-      Direction = -Direction;
+      m_Direction.setRThetaPhi(1, Theta, Phi);
+      m_Direction = -m_Direction;
 
       double x = 0.0, y = 0.0, z = 0.0;
       // Determine start position on disk on sphere
@@ -2345,18 +2377,18 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       // | +cosp -sinp 0 |   | +cost 0 +sint |   | x |
       // | +sinp +cosp 0 | * |   0   1   0   | * | y | 
       // |   0     0   1 |   | -sint 0 +cost |   | z |        
-      Position[0] = (x*cos(Theta)+z*sin(Theta))*cos(Phi) - y*sin(Phi);
-      Position[1] = (x*cos(Theta)+z*sin(Theta))*sin(Phi) + y*cos(Phi);
-      Position[2] = -x*sin(Theta)+z*cos(Theta);
+      m_Position[0] = (x*cos(Theta)+z*sin(Theta))*cos(Phi) - y*sin(Phi);
+      m_Position[1] = (x*cos(Theta)+z*sin(Theta))*sin(Phi) + y*cos(Phi);
+      m_Position[2] = -x*sin(Theta)+z*cos(Theta);
       
       // Translate sphere center
-      Position += m_StartAreaPosition;
+      m_Position += m_StartAreaPosition;
       
       //cout<<"Start pos: "<<Position/cm<<":"<<x/cm<<":"<<y/cm<<":"<<z/cm<<endl;
 
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);      
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
 
     else if  (m_BeamType == c_FarFieldGaussian) {
@@ -2375,48 +2407,47 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_NearFieldDiffractionPointKSpace ||
         m_BeamType == c_NearFieldConeBeam ||
         m_BeamType == c_NearFieldConeBeamGauss) {
+      m_Position.set(m_PositionParam1, m_PositionParam2, m_PositionParam3);
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(G4ThreeVector(m_PositionParam1, 
-                                                                           m_PositionParam2, 
-                                                                           m_PositionParam3));
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     }
 
     else if  (m_BeamType == c_NearFieldLine) {
       double Random = CLHEP::RandFlat::shoot(1);
-      Position[0] = m_PositionParam1 + 
+      m_Position[0] = m_PositionParam1 + 
         Random*(m_PositionParam4 - m_PositionParam1);
-      Position[1] = m_PositionParam2 + 
+      m_Position[1] = m_PositionParam2 + 
         Random*(m_PositionParam5 - m_PositionParam2);
-      Position[2] = m_PositionParam3 + 
+      m_Position[2] = m_PositionParam3 + 
         Random*(m_PositionParam6 - m_PositionParam3);
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);      
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
     } 
 
     else if  (m_BeamType == c_NearFieldBox) {
-      Position[0] = m_PositionParam1 + 
+      m_Position[0] = m_PositionParam1 + 
         CLHEP::RandFlat::shoot(1)*(m_PositionParam4 - m_PositionParam1);
-      Position[1] = m_PositionParam2 + 
+      m_Position[1] = m_PositionParam2 + 
         CLHEP::RandFlat::shoot(1)*(m_PositionParam5 - m_PositionParam2);
-      Position[2] = m_PositionParam3 + 
+      m_Position[2] = m_PositionParam3 + 
         CLHEP::RandFlat::shoot(1)*(m_PositionParam6 - m_PositionParam3);
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);      
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
     } 
 
     else if  (m_BeamType == c_NearFieldSphere) {
       do {
-        Position[0] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam4;
-        Position[1] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam5;
-        Position[2] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam6;
-      } while (Position[0]*Position[0]/(m_PositionParam4*m_PositionParam4) + 
-               Position[1]*Position[1]/(m_PositionParam5*m_PositionParam5) + 
-               Position[2]*Position[2]/(m_PositionParam6*m_PositionParam6) > 1);
-      Position = G4ThreeVector(m_PositionParam1, 
+        m_Position[0] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam4;
+        m_Position[1] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam5;
+        m_Position[2] = (CLHEP::RandFlat::shoot(1)-0.5)*2*m_PositionParam6;
+      } while (m_Position[0]*m_Position[0]/(m_PositionParam4*m_PositionParam4) + 
+               m_Position[1]*m_Position[1]/(m_PositionParam5*m_PositionParam5) + 
+               m_Position[2]*m_Position[2]/(m_PositionParam6*m_PositionParam6) > 1);
+      m_Position = G4ThreeVector(m_PositionParam1, 
                                m_PositionParam2, 
-                               m_PositionParam3) + Position;
+                               m_PositionParam3) + m_Position;
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);      
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
     } 
 
     else if (m_BeamType == c_NearFieldBeam ||
@@ -2486,32 +2517,32 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       }
       
       // Rotate into normal direction (first around theta, then phi):
-      Direction.setX(m_PositionParam4);
-      Direction.setY(m_PositionParam5);
-      Direction.setZ(m_PositionParam6);
-      Theta = Direction.theta();
-      Phi = Direction.phi();
+      m_Direction.setX(m_PositionParam4);
+      m_Direction.setY(m_PositionParam5);
+      m_Direction.setZ(m_PositionParam6);
+      Theta = m_Direction.theta();
+      Phi = m_Direction.phi();
 
-      Position[0] = 
+      m_Position[0] = 
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
-      Position[1] = 
+      m_Position[1] = 
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
-      Position[2] = 
+      m_Position[2] = 
         -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
       
       // Translate:
-      Position[0] += m_PositionParam1;
-      Position[1] += m_PositionParam2;
-      Position[2] += m_PositionParam3;    
+      m_Position[0] += m_PositionParam1;
+      m_Position[1] += m_PositionParam2;
+      m_Position[2] += m_PositionParam3;    
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     } 
 
     else if (m_BeamType == c_NearFieldActivation ||
              m_BeamType == c_NearFieldVolume) {
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);      
+      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
     }
 
 
@@ -2525,7 +2556,10 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_NearFieldActivation ||
         m_BeamType == c_NearFieldVolume ||
         m_BeamType == c_NearFieldFlatMap) {
-      Gun->GetCurrentSource()->GetAngDist()->SetAngDistType("iso");
+      double Theta = acos(1-2*CLHEP::RandFlat::shoot());
+      double Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
+      m_Direction.setRThetaPhi(1.0, Theta, Phi);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
 
     else if (m_BeamType == c_NearFieldDiffractionPoint) {
@@ -2545,20 +2579,20 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       Temp.setRThetaPhi(1.0, Theta, Phi);
 
       // Rotate into normal direction (first around theta, then phi):
-      Direction.setX(m_PositionParam4);
-      Direction.setY(m_PositionParam5);
-      Direction.setZ(m_PositionParam6);
-      Theta = Direction.theta();
-      Phi = Direction.phi();
+      m_Direction.setX(m_PositionParam4);
+      m_Direction.setY(m_PositionParam5);
+      m_Direction.setZ(m_PositionParam6);
+      Theta = m_Direction.theta();
+      Phi = m_Direction.phi();
 
-      Direction[0] = 
+      m_Direction[0] = 
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
-      Direction[1] = 
+      m_Direction[1] = 
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
-      Direction[2] = 
+      m_Direction[2] = 
         -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
 
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
 
     }
 
@@ -2566,21 +2600,21 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 
       // To Be implemented
 
-      Direction[0] = 0;
-      Direction[1] = 0;
-      Direction[2] = 1;
+      m_Direction[0] = 0;
+      m_Direction[1] = 0;
+      m_Direction[2] = 1;
 
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
       
     else if  (m_BeamType == c_NearFieldBeam ||
               m_BeamType == c_NearFieldBeam1DProfile ||
               m_BeamType == c_NearFieldBeam2DProfile) {
-      Direction.setX(m_PositionParam4);
-      Direction.setY(m_PositionParam5);
-      Direction.setZ(m_PositionParam6);
+      m_Direction.setX(m_PositionParam4);
+      m_Direction.setY(m_PositionParam5);
+      m_Direction.setZ(m_PositionParam6);
 
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
 
     else if  (m_BeamType == c_NearFieldRestrictedPoint ||
@@ -2620,12 +2654,12 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       // | +cosp -sinp 0 |   | +cost 0 +sint |   | x |
       // | +sinp +cosp 0 | * |   0   1   0   | * | y | 
       // |   0     0   1 |   | -sint 0 +cost |   | z |
-      Direction[0] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*cos(BeamPhi) - DirectionOnAxis[1]*sin(BeamPhi);
-      Direction[1] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*sin(BeamPhi) + DirectionOnAxis[1]*cos(BeamPhi);
-      Direction[2] = -DirectionOnAxis[0]*sin(BeamTheta)+DirectionOnAxis[2]*cos(BeamTheta);
+      m_Direction[0] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*cos(BeamPhi) - DirectionOnAxis[1]*sin(BeamPhi);
+      m_Direction[1] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*sin(BeamPhi) + DirectionOnAxis[1]*cos(BeamPhi);
+      m_Direction[2] = -DirectionOnAxis[0]*sin(BeamTheta)+DirectionOnAxis[2]*cos(BeamTheta);
 
       // Give the information to the particle gun:
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
 
     else if (m_BeamType == c_NearFieldIlluminatedDisk || 
@@ -2663,18 +2697,18 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       // | +sinp +cosp 0 | * |   0   1   0   | * | y | 
       // |   0     0   1 |   | -sint 0 +cost |   | z |        
 
-      Position[0] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
-      Position[1] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
-      Position[2] = -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
+      m_Position[0] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
+      m_Position[1] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
+      m_Position[2] = -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
 
       // There shouldn't be any problem in this case with rotation ambiguities etc., 
       // since the normal vector of the disk points towards (0, 0, 1) in the beginning
 
 
       // Step 3: Translate disk center into expected disk position
-      Position[0] += m_PositionParam1;
-      Position[1] += m_PositionParam2;
-      Position[2] += m_PositionParam3;    
+      m_Position[0] += m_PositionParam1;
+      m_Position[1] += m_PositionParam2;
+      m_Position[2] += m_PositionParam3;    
 
       // Now we have a point which the beam has to intercept
 
@@ -2692,12 +2726,12 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       // D := Direction
       // P := Position
 
-      Direction.setRThetaPhi(1, m_PositionParam7, m_PositionParam8);
-      Direction = -Direction;
+      m_Direction.setRThetaPhi(1, m_PositionParam7, m_PositionParam8);
+      m_Direction = -m_Direction;
 
-      double a = Direction.dot(Direction);
-      double b = 2*Direction.dot(Position-m_StartAreaPosition);
-      double c = (Position-m_StartAreaPosition).dot(Position-m_StartAreaPosition) - m_StartAreaParam1*m_StartAreaParam1;
+      double a = m_Direction.dot(m_Direction);
+      double b = 2*m_Direction.dot(m_Position-m_StartAreaPosition);
+      double c = (m_Position-m_StartAreaPosition).dot(m_Position-m_StartAreaPosition) - m_StartAreaParam1*m_StartAreaParam1;
 
       // Solutions:
       // l1,2 = (-b+-sqrt(b*b-4*a*c))/(2*a);
@@ -2709,11 +2743,11 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       double l = (-b-sqrt(b*b-4*a*c))/(2*a);
 
       // The final solution:
-      Position += l*Direction;
+      m_Position += l*m_Direction;
 
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(Position);
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(Direction);
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
   }
 
@@ -2735,16 +2769,49 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
     }
   }
 
-  if (m_PolarizationIsAbsolute) {
+  if (m_PolarizationType == c_PolarizationNone) {
+    m_Polarization.set(0.0, 0.0, 0.0);
+  } else if (m_PolarizationType == c_PolarizationRandom) {
+    m_Polarization = m_Direction.orthogonal();
+    m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+  } else if (m_PolarizationType == c_PolarizationAbsolute || 
+             m_PolarizationType == c_PolarizationRelativeX ||
+             m_PolarizationType == c_PolarizationRelativeY ||
+             m_PolarizationType == c_PolarizationRelativeZ) {
+ 
     if (CLHEP::RandFlat::shoot(1) < m_PolarizationDegree) {
-      Gun->SetParticlePolarization(m_Polarization);
+      if (m_PolarizationType == c_PolarizationAbsolute) {
+        m_Polarization.set(m_PolarizationParam1, m_PolarizationParam2, m_PolarizationParam3);
+      } else {
+        if (m_PolarizationType == c_PolarizationRelativeX) {
+          m_Polarization = m_Direction.cross(G4ThreeVector(1.0, 0.0, 0.0));
+        } else if (m_PolarizationType == c_PolarizationRelativeY) {
+          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 1.0, 0.0));
+        } else if (m_PolarizationType == c_PolarizationRelativeZ) {
+          m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 0.0, 1.0));
+        }
+        m_Polarization.rotate(m_Direction, m_PolarizationParam1);
+      }
     } else {
-      Gun->SetParticlePolarization(G4ThreeVector(0.0, 0.0, 0.0));
+      m_Polarization = m_Direction.orthogonal();
+      m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
     }
   } else {
-    merr<<"Relative polarization not yet implemented!"<<endl;
-    return false;
+    merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<endl;
+    m_Polarization = m_Direction.orthogonal();
+    m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
   }
+  
+  if (m_PolarizationType != c_PolarizationNone) {
+    if (m_Polarization.isOrthogonal(m_Direction) == false) {
+      merr<<m_Name<<": The polarization vector is not orthogonal on the direction vector!"<<endl
+          <<"   --> Will use zero polarization!"<<endl;
+      m_Polarization.set(0.0, 0.0, 0.0);
+    }
+ 
+  }
+  
+  Gun->SetParticlePolarization(m_Polarization);
 
   return true;
 }

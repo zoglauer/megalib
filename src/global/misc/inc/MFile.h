@@ -77,7 +77,7 @@ class MFile
   virtual void ShowProgress(bool Show = true);
   //! Update the progress dialog GUI
   virtual bool UpdateProgress();
-  //! Set the titles of the progress dialog GUI
+  //! Set the titles of the progress dialog GUI -- only works after a call to ShowProgress
   void SetProgressTitle(MString Main, MString Sub);
   //! Use another progress dialog GUI instead of this one
   void SetProgress(MGUIProgressBar* ProgressBar, int Level);

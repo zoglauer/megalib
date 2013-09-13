@@ -525,7 +525,8 @@ bool MCDetectorConstruction::ConstructVolumes()
   MString MaterialName;
   MString LogName;
   G4VSolid* Solid = 0;
-
+  bool ROOTColorNotInitialize = false;
+  
   for (unsigned int v = 0; v < m_Geometry->GetNVolumes(); ++v) {
 
     if (m_Geometry->GetVolumeAt(v)->GetCloneTemplate() == 0) {
@@ -753,18 +754,20 @@ bool MCDetectorConstruction::ConstructVolumes()
       if (m_Geometry->GetVolumeAt(v)->GetVisibility() == 0) {
         Vis->SetVisibility(false);
       } else {
-         Vis->SetVisibility(true);       
+        Vis->SetVisibility(true);       
       }
       // Convert ROOT color to Geant4 color
       TColor* C = gROOT->GetColor(m_Geometry->GetVolumeAt(v)->GetColor());
       if (C != 0) {
         Vis->SetColor(G4Color(C->GetRed(), C->GetGreen(), C->GetBlue(), C->GetAlpha()));
       } else {
-        merr<<"ROOT colors not initialized..."<<endl;
+        if (ROOTColorNotInitialize == false) {
+          mout<<"ROOT colors not initialized. Using black and white..."<<endl;
+          ROOTColorNotInitialize = true;
+        }
       }
       LV->SetVisAttributes(Vis);
-      mdebug<<"Generating Log: "<<LogName.Data()<<" mat="
-            <<MaterialName.Data()<<endl;
+      mdebug<<"Generating Log: "<<LogName.Data()<<" mat="<<MaterialName.Data()<<endl;
     } // no clone 
   }
 

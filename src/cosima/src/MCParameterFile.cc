@@ -1764,26 +1764,76 @@ bool MCParameterFile::Parse()
           return false;
         }
       } else if (T->IsTokenAt(1, "Polarization", true) == true) {
-        if (T->GetNTokens() == 7) {
-          if (Source->SetPolarization(T->GetTokenAtAsBoolean(2),
-                                      T->GetTokenAtAsDouble(3),
-                                      T->GetTokenAtAsDouble(4),
+        if (T->GetNTokens() >= 3) {
+          MString Type = T->GetTokenAtAsString(2);
+          Type.ToLower();
+          if (Type == "true" || Type == "false" || Type == "1" || Type == "0") {
+            mout<<"Depreciated: Polarization"<<endl
+              <<"  You are using the old polarization format. Please update to the new format."<<endl
+              <<"  Consult the manual for further information."<<show;
+            if (Type == "true" || Type == "1") {
+              if (T->GetNTokens() == 7) {
+                Source->SetPolarizationType(MCSource::c_PolarizationAbsolute);
+                Source->SetPolarizationDegree(T->GetTokenAtAsDouble(6));
+                Source->SetPolarization(T->GetTokenAtAsDouble(3),
+                                        T->GetTokenAtAsDouble(4),
+                                        T->GetTokenAtAsDouble(5));
+              } else {
+                Typo(i, "Can not parse token \"Polarization true\" correctly: Number of tokens is too small!");
+                return false;
+              }
+            } else {
+              Typo(i, "Relative polarization is only implemented in the new format!");
+              return false;
+            }
+          } else if (Type == "no" || Type == "none") {
+            Source->SetPolarizationType(MCSource::c_PolarizationNone);
+          } else if (Type == "random") {
+            Source->SetPolarizationType(MCSource::c_PolarizationRandom);
+          } else if (Type == "absolute") {
+            if (T->GetNTokens() == 7) {
+              Source->SetPolarizationType(MCSource::c_PolarizationAbsolute);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4),
                                       T->GetTokenAtAsDouble(5),
-                                      T->GetTokenAtAsDouble(6)) == true) {
-            mdebug<<"Setting polarization ("
-                  <<Source->GetPolarization()[0]<<", "
-                  <<Source->GetPolarization()[1]<<", "
-                  <<Source->GetPolarization()[2]<<") with degree"
-                  <<Source->GetPolarizationDegree()<<") "
-                  <<" for source "<<Source->GetName()<<endl;
+                                      T->GetTokenAtAsDouble(6));
+            } else {
+              Typo(i, "Can not parse token \"Polarization absolute\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } else if (Type == "relativex") {
+            if (T->GetNTokens() == 5) {
+              Source->SetPolarizationType(MCSource::c_PolarizationRelativeX);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
+            } else {
+              Typo(i, "Can not parse token \"Polarization RelativeX\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } else if (Type == "relativey") {
+            if (T->GetNTokens() == 5) {
+              Source->SetPolarizationType(MCSource::c_PolarizationRelativeY);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
+            } else {
+              Typo(i, "Can not parse token \"Polarization RelativeY\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } else if (Type == "relativez") {
+            if (T->GetNTokens() == 5) {
+              Source->SetPolarizationType(MCSource::c_PolarizationRelativeZ);
+              Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
+              Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
+            } else {
+              Typo(i, "Can not parse token \"Polarization RelativeZ\" correctly: Number of tokens is not correct!");
+              return false;
+            }
           } else {
-            Typo(i, "Can not parse token ParticleTyp correctly:"
-                 " ?? Perhaps the value is non-positive ??");
+            Typo(i, "Unknown polarization type!");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token Polarization correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Can not parse token Polarization correctly: Number of tokens is too small!");
           return false;
         }
       } else if (T->IsTokenAt(1, "Successor", true) == true) {

@@ -1377,17 +1377,25 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("You cannot add a named detector to a named detector!");
           return false;         
         }
+        if (Tokenizer.GetNTokens() != 3) {
+         Typo("Line must contain three strings, e.g. MyStripDetector.Named Strip1. Are you using the old NamedDetector format?"); 
+         return false;
+        }
+        
         if (m_DoSanityChecks == true) {
           if (ValidName(Tokenizer.GetTokenAt(2)) == false) {
+            Typo("You don't have a valid detector name!");
             return false;
           }
           if (NameExists(Tokenizer.GetTokenAt(2)) == true) {
+            Typo("The name alreday exists!");
             return false;
           }
         }
         MDDetector* Clone = D->Clone();
         Clone->SetName(Tokenizer.GetTokenAt(2));
         if (D->AddNamedDetector(Clone) == false) {
+          Typo("Unable to add a named detector!");
           return false;
         }
         AddDetector(Clone);
@@ -3499,9 +3507,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       vector<MDDetector*> TriggerDetectors = m_TriggerList[t]->GetDetectors();
       for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
         for (unsigned int d2 = 0; d2 < TriggerDetectors.size(); ++d2) {
+          if (Detectors[d1] == 0) continue;
           if (Detectors[d1] == TriggerDetectors[d2]) {
             Detectors[d1] = 0;
             break;
+          }
+          // If we have a named detectors, in case the "named after detector" has a trigger criteria, we are fine
+          if (Detectors[d1]->IsNamedDetector() == true) {
+            if (Detectors[d1]->GetNamedAfterDetector() == TriggerDetectors[d2]) {
+              Detectors[d1] = 0;
+              break;
+            }
           }
         }
       }

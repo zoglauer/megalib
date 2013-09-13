@@ -26,7 +26,7 @@ Heaven.NTriggers                     20
 Heaven.Source Heaven_FirstSource
 Heaven_FirstSource.ParticleType      1
 Heaven_FirstSource.Beam              HomogeneousBeam   0 0 100   0 0 -1   0.5  
-Heaven_FirstSource.Polarization      1  1.0 0.0 0.0  1.0 
+Heaven_FirstSource.Polarization      Absolute  1.0  1.0 0.0 0.0
 Heaven_FirstSource.Spectrum          Mono  710
 Heaven_FirstSource.Flux              200.0
 
@@ -40,14 +40,14 @@ Sky.NTriggers                        200
 Sky.Source FirstSource
 FirstSource.ParticleType             1
 FirstSource.Beam                     HomogeneousBeam  0 0 100   0 0 -1   0.5  
-FirstSource.Polarization             1  1.0 0.0 0.0  1.0 
+FirstSource.Polarization             Absolute  1.0  1.0 0.0 0.0
 FirstSource.Spectrum                 Mono 1000
 FirstSource.Flux                     200.0
 
 Sky.Source SecondSource
 SecondSource.ParticleType            1
 SecondSource.Beam                    HomogeneousBeam  0 0 100   0 0 -1   0.5  
-SecondSource.Polarization            1  0.0 1.0 0.0  1.0 
+SecondSource.Polarization            Absolute  1.0  0.0 1.0 0.0
 SecondSource.Spectrum                Mono 2000
 SecondSource.Flux                    100.0
 SecondSource.Successor               ThirdSource
@@ -55,6 +55,6 @@ SecondSource.Successor               ThirdSource
 Sky.Source ThirdSource
 ThirdSource.ParticleType             1
 ThirdSource.Beam                     HomogeneousBeam  0 0 100   0 0 -1   0.5  
-ThirdSource.Polarization             1  0.0 1.0 0.0  1.0 
+ThirdSource.Polarization             Absolute  1.0  0.0 1.0 0.0
 ThirdSource.Spectrum                 Mono 500
 ThirdSource.IsSuccessor              true

@@ -2,13 +2,13 @@ Include Duke.5000keV.Pol.source
 
 Sky.FileName             Duke.4980keV.OnAxis.NoPol
 
-SR_0.Polarization        1  0.0 0.0 0.0  0.0 
-SR_1.Polarization        1  0.0 0.0 0.0  0.0 
-SR_2.Polarization        1  0.0 0.0 0.0  0.0 
-SR_3.Polarization        1  0.0 0.0 0.0  0.0 
-SR_4.Polarization        1  0.0 0.0 0.0  0.0 
-SR_5.Polarization        1  0.0 0.0 0.0  0.0 
-SR_6.Polarization        1  0.0 0.0 0.0  0.0 
-SR_7.Polarization        1  0.0 0.0 0.0  0.0 
-SR_8.Polarization        1  0.0 0.0 0.0  0.0 
-SR_9.Polarization        1  0.0 0.0 0.0  0.0 
+SR_0.Polarization        random 
+SR_1.Polarization        random 
+SR_2.Polarization        random 
+SR_3.Polarization        random 
+SR_4.Polarization        random 
+SR_5.Polarization        random 
+SR_6.Polarization        random 
+SR_7.Polarization        random 
+SR_8.Polarization        random 
+SR_9.Polarization        random 

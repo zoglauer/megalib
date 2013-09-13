@@ -18,10 +18,6 @@ Run UnpolarizedBeam
 UnpolarizedBeam.FileName         UnpolarizedBeamNoPolSim
 UnpolarizedBeam.NTriggers        10000
 
-UnpolarizedBeam.Trigger T1
-T1.AddPositiveDetectorType  4
-T1.AddPositiveDetectorType  8
-
 UnpolarizedBeam.Source TheBeam
 TheBeam.ParticleType   1
 TheBeam.Beam           HomogeneousBeam -20.0 0.0 20.0  1.0 0.0 0.0   0.2

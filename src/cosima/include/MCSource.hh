@@ -150,25 +150,32 @@ public:
   /// Return true, if the total energy flux (energy/cm^2) could be set correctly
   bool SetLightCurve(const double& BinWidth, const double& Offset, const vector<double> Curve);
 
-  /// Set the polarization
-  bool SetPolarization(const bool Absolute, const double x, 
-                       const double y, const double z, const double Degree);
-  /// Return the polarization
-  G4ThreeVector GetPolarization() const { return m_Polarization; }
+  
+  /// Set the polarization type
+  bool SetPolarizationType(const int& Type);
+  /// Get the polarization type
+  int GetPolarizationType() const { return m_PolarizationType; }
+  
+  /// Return true, if the position vector could be set correctly
+  bool SetPolarization(double PolarizationParam1 = c_Invalid, 
+                       double PolarizationParam2 = c_Invalid, 
+                       double PolarizationParam3 = c_Invalid);
+  /// Return the polarization vector
+  G4ThreeVector GetPolarizationVector() const { return m_Polarization; }
+
+  /// Set the degree of polarization 1.0 == 100% polarized
+  void SetPolarizationDegree(const double& Degree);
   /// Return the degree of polarization 1.0 == 100% polarized
   double GetPolarizationDegree() const { return m_PolarizationDegree; }
-  /// Is the polarization vector in absolute coordinates
-  bool IsPolarizationAbsolute() const { return m_PolarizationIsAbsolute; }
-           
+
+
   /// Return true, if the successor flag couls be set correctly
-  bool SetIsSuccessor(const bool& IsSuccessor) 
-  { m_IsSuccessor = IsSuccessor; return true; }
+  bool SetIsSuccessor(const bool& IsSuccessor) { m_IsSuccessor = IsSuccessor; return true; }
   /// Return the successor flag
   bool IsSuccessor() const { return m_IsSuccessor; }
 
   /// Set the name of a source which is the generator of the next particle
-  bool SetSuccessor(const MString& Successor) 
-  { m_Successor = Successor; return true; }
+  bool SetSuccessor(const MString& Successor) { m_Successor = Successor; return true; }
   /// Return the name of a source which is the generator of the next particle
   MString GetSuccessor() const { return m_Successor; }
 
@@ -258,6 +265,8 @@ public:
   string GetBeamTypeAsString() const;
   /// Return the name of the spectrum (e.g. mono, etc.)
   string GetSpectralTypeAsString() const;
+  /// Return the name of the polarization type
+  string GetPolarizationTypeAsString() const;
 
   /// Id of an invalid type
   static const int c_Invalid; 
@@ -351,6 +360,23 @@ public:
   static const int c_NearFieldVolume;
   /// Id of a 2D structure emitting particles in isotropically in 3D
   static const int c_NearFieldFlatMap;
+
+  
+  // --> Polarization modes
+
+  /// Id of the polarization being in absolute coordinates
+  static const int c_PolarizationNone;
+  /// Id of the polarization being in absolute coordinates
+  static const int c_PolarizationRandom;
+  /// Id of the polarization being in absolute coordinates
+  static const int c_PolarizationAbsolute;
+  /// Id of the polarization being calculated relative to particle direction and x-axis
+  static const int c_PolarizationRelativeX;
+  /// Id of the polarization being calculated relative to particle direction and y-axis
+  static const int c_PolarizationRelativeY;
+  /// Id of the polarization being calculated relative to particle direction and z-axis
+  static const int c_PolarizationRelativeZ;
+
 
   // --> Particles
 
@@ -576,6 +602,16 @@ private:
   /// Id of the particle type
   int m_ParticleType;
 
+  /// The last calculated energy
+  double m_Energy;
+  /// The last calculated position
+  G4ThreeVector m_Position;
+  /// The last calculated direction
+  G4ThreeVector m_Direction;
+  /// The last calculated polarization
+  G4ThreeVector m_Polarization;
+  
+  
   /// Excitation of the particle
   double m_ParticleExcitation;
 
@@ -613,13 +649,21 @@ private:
   /// Number of events to simulate per light curve content bin
   double m_NEventsPerLightCurveContent;
 
-  /// True if polarization is in abs. coordinates (true) or rel. to flight dir.
-  bool m_PolarizationIsAbsolute;
-  /// Polarization vector
-  G4ThreeVector m_Polarization;
+  
+  /// The polarization type
+  int m_PolarizationType;
+  
+  /// Parameter 1 of the polarization 
+  double m_PolarizationParam1;
+  /// Parameter 2 of the polarization 
+  double m_PolarizationParam2;
+  /// Parameter 3 of the polarization 
+  double m_PolarizationParam3;
+
   /// Degree of polarization
   double m_PolarizationDegree;
 
+  
   /// Number of generated particles
   long m_NGeneratedParticles;
 
