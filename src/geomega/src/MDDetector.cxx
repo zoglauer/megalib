@@ -191,7 +191,8 @@ MDDetector::MDDetector(const MDDetector& D)
     m_SVs.push_back(D.m_SVs[i]);
   }
   m_DetectorVolume = D.m_DetectorVolume;
-
+  m_CommonVolume = D.m_CommonVolume;
+  
   m_ID = m_IDCounter++;
   m_SensID = m_SensIDCounter++;            
 
