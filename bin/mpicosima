@@ -162,7 +162,7 @@ for (( i=1; i <= ${Threads}; i++ )); do
     echo "echo \`/bin/hostname\` >> ${Base}.p${ThreadsID}.hosts.txt; echo \"${i}\" >> ${Base}.p${ThreadsID}.hosts.txt; sleep 5; cosima -s ${RandomSeed} -v 0 -p ${ThreadsID} -f ${i} ${Source} > /dev/null" >> ${Base}.p${ThreadsID}.jobscript.txt
 done
 echo "Attempting to start ${Threads} processes"
-mpirun -v -np ${Threads} bundler ${Base}.p${ThreadsID}.jobscript.txt
+mpirun -v -np ${Threads} bundler ${Base}.p${ThreadsID}.jobscript.txt &
 
 # Create a concatenation file
 
@@ -199,9 +199,7 @@ grep ".FileName" ${Source} | while read line; do
     echo " " >> ${ConcatFileName}
     
     for (( i=1; i <= ${Threads}; i+=1 )); do
-        #echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
-        ttid=`expr ${ThreadsID} + ${i} - 1` 
-        echo "IN ${Base}.p${ttid}.inc1.id1.sim" >> ${ConcatFileName}
+        echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
     done
     
     echo "EN" >> ${ConcatFileName}
