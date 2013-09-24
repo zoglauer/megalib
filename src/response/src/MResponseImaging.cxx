@@ -31,6 +31,8 @@
 using namespace std;
 
 // ROOT libs:
+#include "TH2.h"
+#include "TCanvas.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
@@ -172,7 +174,7 @@ bool MResponseImaging::CreateResponse()
   }
 
   // Simple Phi_Real/Phi_Meas-Response:
-  vector<float> AxisPhiReal = CreateEquiDist(0, 50, 5);
+  vector<float> AxisPhiReal = CreateEquiDist(0, 180, 18);
   vector<float> AxisEi; // = CreateLogDist(500, 30000, 5);
   AxisEi.push_back(0);
   AxisEi.push_back(10000);
@@ -203,13 +205,33 @@ bool MResponseImaging::CreateResponse()
                       "measured energy [keV]");
 
   vector<float> AxisFirstInteractionDistance;
-  AxisFirstInteractionDistance = CreateEquiDist(-0.3, 0.3, 60);
+  AxisFirstInteractionDistance = CreateEquiDist(0, 10, 10);
 
   MResponseMatrixO2 InteractionDistance("InteractionDistance", AxisFirstInteractionDistance, AxisFirstInteractionDistance);
   InteractionDistance.SetAxisNames("distance x_{meas} - x_{real} [cm]", 
                                    "distance y_{meas} - y_{real} [cm]");
 
 
+  // efficiency corrected response
+  vector<float> AxisPhiStart = CreateEquiDist(-180, 180, 36);
+  vector<float> AxisThetaStart = CreateEquiDist(0, 180, 18);
+  
+  MResponseMatrixO2 Efficiency("EffectiveArea", AxisPhiStart, AxisThetaStart);
+  Efficiency.SetAxisNames("Phi [deg]", "Theta [deg]");
+  
+  // Make StartDirNorm TH2D containing the normalization
+  TH2D* StartDirNorm = new TH2D("Norm", "Norm", (int) AxisPhiStart.size()-1, &AxisPhiStart[0], (int) AxisThetaStart.size()-1, &AxisThetaStart[0]);
+  for (int bx = 1; bx <= StartDirNorm->GetNbinsX(); ++bx) { 
+    for (int by = 1; by <= StartDirNorm->GetNbinsY(); ++by) { 
+      double Area = (StartDirNorm->GetXaxis()->GetBinUpEdge(bx) - StartDirNorm->GetXaxis()->GetBinLowEdge(bx))*c_Rad *
+        (cos(StartDirNorm->GetYaxis()->GetBinLowEdge(by)*c_Rad) - cos(StartDirNorm->GetYaxis()->GetBinUpEdge(by)*c_Rad));
+        cout<<"Area: "<<Area<<endl;
+      StartDirNorm->SetBinContent(bx, by, 1.0/Area);  
+    }
+  }
+  
+  
+  
   double PhiMeas;
   double PhiDiff;
   double Spd;
@@ -226,7 +248,7 @@ bool MResponseImaging::CreateResponse()
     if (REList->HasOptimumEvent() == true) {
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
+        if (m_MimrecEventSelector.IsQualifiedEvent(Event, false) == true) {
           if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
@@ -250,25 +272,62 @@ bool MResponseImaging::CreateResponse()
               // Energy response:
               Energy.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Compton->Ei());
 
+              // normalized by steradian, scale according to binning??
+              Efficiency.Add(IdealOriginDir.Phi()*c_Deg,
+                                   IdealOriginDir.Theta()*c_Deg, 
+                                   StartDirNorm->GetBinContent(StartDirNorm->GetXaxis()->FindBin(IdealOriginDir.Phi()*c_Deg), StartDirNorm->GetYaxis()->FindBin(IdealOriginDir.Theta()*c_Deg)));
+              
+              /*  // Steradian per bin normalization...
+               delete [] m_AreaBin;
+               m_AreaBin = new double[m_x2NBins];
+               double TotalArea = 0.0;
+               for (int x2 = 0; x2 < m_x2NBins; x2++) { // theta
+               m_AreaBin[x2] = fabs(m_x1IntervalLength * (cos(m_x2Min + (x2+1)*m_x2IntervalLength) - cos(m_x2Min + x2*m_x2IntervalLength)));
+               TotalArea += m_AreaBin[x2];
+               m_AreaBin[x2] = m_AreaBin[x2];
+               }
+               mout<<"Image Area: "<<TotalArea*m_x1NBins<<" sr"<<endl;
+               mout<<"Average Area: "<<TotalArea/m_x2NBins<<endl;
+               */
+              
+              
               InteractionDistance.Add(Compton->C1().X() - IdealOriginDir.X(), Compton->C1().Y() - IdealOriginDir.Y());
+
+              ++Counter;
             }
           }
         }
       }    
     }
-    if (++Counter % m_SaveAfter == 0) {
+    if (Counter % m_SaveAfter == 0) {
       Phi.Write(m_ResponseName + ".phi.rsp", true);
       Epsilon.Write(m_ResponseName + ".epsilon.rsp", true);
       Energy.Write(m_ResponseName + ".energy.rsp", true);
       InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
     }
   }  
-
+  // Finally scale 
+  if (m_ReaderFinished == true) {
+    double Area = m_SiReader->GetSimulationStartAreaFarField();
+    long Events = m_SiReader->GetSimulatedEvents();
+    
+    cout<<"Area: "<<Area<<"  Events: "<<Events<<endl;
+    
+    // A_eff = Area * [(Measured events in bin)/(Area in bin)] / [(All started events)/(4pi)]
+    
+    Efficiency *= Area/Events * 4*c_Pi;
+    Efficiency.Write(m_ResponseName + ".effectivearea.rsp", true);
+  } else {
+    Efficiency.Write(m_ResponseName + ".effective_area_is_wrong_since_you_didnt_go_through_the_whole_sim_file.rsp", true); 
+  }
+  
   Phi.Write(m_ResponseName + ".phi.rsp", true);
   Epsilon.Write(m_ResponseName + ".epsilon.rsp", true);
   Energy.Write(m_ResponseName + ".energy.rsp", true);  
   InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
 
+  cout<<"We had "<<Counter<<" good events"<<endl;
+  
   return true;
 }
 

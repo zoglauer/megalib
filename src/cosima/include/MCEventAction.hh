@@ -60,6 +60,9 @@ public:
   /// Set the collection ID of the hits
   void SetCollectionName(G4String Name, int Type);
 
+  /// Set the function to which we relegate the events
+  void SetRelegator(void (Relegator)(MSimEvent*));
+
   /// Prepare for next run: Open the output file and reset
   bool NextRun();
 
@@ -150,6 +153,11 @@ private:
   int m_Port;
   /// The transceiver
   MTransceiverTcpIp m_Transceiver;
+  
+  /// True if the events should be handed over to a function
+  bool m_RelegateEvents;
+  /// The function pointer for relegation
+  void (*m_Relegator)(MSimEvent*);
   
   /// Seed of the random number generator at the beginning of the event
   long m_Seed;

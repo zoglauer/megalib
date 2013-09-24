@@ -63,9 +63,9 @@ class MFileEventsSim : public MFileEvents
   //! Attention: This information is only complete after all files have been scanned,
   //! i.e. after GetEvents has been called for all events!
   //! In addition, this is the number for the total file(s), NOT up to the just read event!!
-  int GetSimulatedEvents() const { return m_SimulatedEvents; }
+  long GetSimulatedEvents() const { return m_SimulatedEvents; }
   //! Set the simulated events
-  void SetSimulatedEvents(int SimulatedEvents) { m_SimulatedEvents = SimulatedEvents; }
+  void SetSimulatedEvents(long SimulatedEvents) { m_SimulatedEvents = SimulatedEvents; }
 
   //! Get simulation start are in far field (zero if not used)
   double GetSimulationStartAreaFarField() const { return m_SimulationStartAreaFarField; }
@@ -93,12 +93,12 @@ class MFileEventsSim : public MFileEvents
   MDGeometryQuest* m_Geo;
 
   //! ID of NEXT event
-  int m_EventId;
+  long m_EventId;
   //! True if the current event is the first event
   bool m_IsFirstEvent;
 
   //! Number of simulated events
-  int m_SimulatedEvents;
+  long m_SimulatedEvents;
 
   //! m_SimulationStartAreaFarField
   double m_SimulationStartAreaFarField;

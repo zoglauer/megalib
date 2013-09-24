@@ -154,6 +154,22 @@ bool MCMain::Initialize(int argc, char** argv)
 
 
 /******************************************************************************
+ * Set an event relegator function (i.e. your own event handler)
+ */
+void MCMain::SetEventRelegator(void (Relegator)(MSimEvent*))
+{
+  if (m_RunManager != 0) {
+    MCEventAction* Action = MCRunManager::GetMCRunManager()->GetEventAction();
+    if (Action != 0) {
+      Action->SetRelegator(Relegator);
+      return;
+    }
+  }
+  merr<<"Unable to set event relegator!"<<show;
+}
+
+
+/******************************************************************************
  * Execute the macro or parameter file
  */
 bool MCMain::Execute()

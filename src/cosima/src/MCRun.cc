@@ -314,6 +314,8 @@ void MCRun::AddIsotope(G4Ions* Particle, G4TouchableHistory* Hist)
  */
 void MCRun::CheckIncarnationID()
 {
+  if (m_FileName == "") return;
+  
   if (m_IsIncarnationIDFixed == false) {
   
     m_IncarnationID = 0;

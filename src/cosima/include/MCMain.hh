@@ -25,6 +25,7 @@
 
 // Cosima:
 #include "globals.hh"
+#include "MSimEvent.h"
 
 // Forward declarations:
 class MCRunManager;
@@ -45,6 +46,9 @@ public:
 
   /// Initialize Geant4 
   bool Initialize(int argc, char** argv);
+
+  /// Set an event relegator function (i.e. your own event handler) 
+  void SetEventRelegator(void (Relegator)(MSimEvent*));
 
   /// Execute the run or macro
   bool Execute();

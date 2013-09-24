@@ -2251,7 +2251,7 @@ MSimIA* MSimEvent::GetIAAt(unsigned int i)
   if (i < m_IAs.size()) {
     return m_IAs[i];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<i<<") out of bounds! Max: "<<GetNIAs()<<endl;
+    merr<<"Event "<<m_NEvent<<": IA index ("<<i<<") out of bounds! Max: "<<GetNIAs()<<endl;
     massert(false);
     return 0;
   }
@@ -2269,7 +2269,7 @@ MSimIA* MSimEvent::GetIAById(int Id)
   if (Id >= 0 && Id < int(m_IAs.size())) {
     return m_IAs[Id];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<Id<<") out of bounds! Max: "<<GetNIAs()<<endl;
+    merr<<"Event "<<m_NEvent<<": IA index ("<<Id<<") out of bounds! Max: "<<GetNIAs()<<endl;
     massert(false);
     return 0;
   }
@@ -2297,7 +2297,7 @@ MSimDR* MSimEvent::GetDRAt(unsigned int i)
   if (i < m_DRs.size()) {
     return m_DRs[i];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<i<<") out of bounds! Max: "<<GetNDRs()<<endl;
+    merr<<"Event "<<m_NEvent<<": DR index ("<<i<<") out of bounds! Max: "<<GetNDRs()<<endl;
     massert(false);
     return 0;
   }
@@ -2325,7 +2325,7 @@ MSimPM* MSimEvent::GetPMAt(unsigned int i)
   if (i < m_PMs.size()) {
     return m_PMs[i];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<i<<") out of bounds! Max: "<<GetNPMs()<<endl;
+    merr<<"Event "<<m_NEvent<<": PM index ("<<i<<") out of bounds! Max: "<<GetNPMs()<<endl;
     massert(false);
     return 0;
   }
@@ -2353,7 +2353,7 @@ MSimGR* MSimEvent::GetGRAt(unsigned int i)
   if (i < m_GRs.size()) {
     return m_GRs[i];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<i<<") out of bounds! Max: "<<GetNGRs()<<endl;
+    merr<<"Event "<<m_NEvent<<": GR index ("<<i<<") out of bounds! Max: "<<GetNGRs()<<endl;
     massert(false);
     return 0;
   }
@@ -2381,7 +2381,7 @@ MSimHT* MSimEvent::GetHTAt(unsigned int i)
   if (i < m_HTs.size()) {
     return m_HTs[i];
   } else {
-    merr<<"Event "<<m_NEvent<<": Index ("<<i<<") out of bounds! Max: "<<GetNHTs()<<endl;
+    merr<<"Event "<<m_NEvent<<": HT index ("<<i<<") out of bounds! Max: "<<GetNHTs()<<endl;
     massert(false);
     return 0;
   }

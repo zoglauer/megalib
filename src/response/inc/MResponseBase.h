@@ -143,6 +143,15 @@ class MResponseBase
   MRawEventAnalyzer* m_ReReader;
   MFileEventsSim* m_SiReader;
 
+  //! True if the sim file was read completely
+  bool m_ReaderFinished;
+  
+  unsigned int m_RevanEventID ;
+  unsigned int m_RevanLevel;
+  unsigned int m_SivanEventID;
+  unsigned int m_SivanLevel;
+ 
+  
   MEventSelector m_MimrecEventSelector;
 
   MGeometryRevan* m_SiGeometry;

@@ -17,6 +17,7 @@
 
 // MEGAlib classes:
 #include "MStreams.h"
+#include "MSimEvent.h"
 
 // Standard lib:
 #include <iostream>
@@ -52,6 +53,15 @@ void CatchSignal(int a)
 
 
 /******************************************************************************
+ * This function is just an example on how to use the relegation of a just simulated event
+ */
+void Relegator(MSimEvent* E)
+{
+  cout<<"Relegated event: "<<E->GetID()<<endl; 
+}
+
+
+/******************************************************************************
  * Main program
  */
 int main(int argc, char** argv)
@@ -73,7 +83,10 @@ int main(int argc, char** argv)
     delete g_Main;
     return -1;
   }
-
+  
+  // Example relegation of an event to the above relegator function
+  //g_Main->SetEventRelegator(Relegator);
+ 
   if (g_Main->Execute() == false) {
     cout<<"An error occurred during run/macro execution"<<endl;
     delete g_Main;

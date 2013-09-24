@@ -69,10 +69,16 @@ MResponseBase::MResponseBase()
 
   m_ReReader = 0;
   m_SiReader = 0;
-
+  m_ReaderFinished = false;
+  
   m_ReEvent = 0;
   m_SiEvent = 0;
-
+  
+  m_RevanEventID = 0;
+  m_RevanLevel = 0;
+  m_SivanEventID = 0;
+  m_SivanLevel =0;
+ 
   m_SiGeometry = 0;
   m_ReGeometry = 0;
 
@@ -171,18 +177,21 @@ bool MResponseBase::InitializeNextMatchingEvent()
 
   unsigned int ERReturnCode;
 
-  unsigned int RevanEventID = 0;
-  unsigned int SivanEventID = 0;
-
+ 
   bool MoreEvents = true;
   bool TryNextEvent = true;
 
-  while (RevanEventID != SivanEventID || TryNextEvent == true) {
-    if (SivanEventID > m_MaxNEvents) return false;
+  bool Restart = true;
+  while (m_RevanEventID != m_SivanEventID || TryNextEvent == true) {
+    if (m_SivanEventID > m_MaxNEvents) return false;
 
-    if (RevanEventID < SivanEventID) {
+    //cout<<"Response: Levels: "<<m_RevanLevel<<":"<<m_SivanLevel<<":"<<m_RevanEventID<<":"<<m_SivanEventID<<endl;
+    
+    
+    if (m_RevanLevel < m_SivanLevel || m_RevanEventID < m_SivanEventID || Restart == true) {
+      Restart = false;
       // Read revan
-      mout<<"Response: Searching revan event..."<<endl;
+      //mout<<"Response: Searching revan event..."<<endl;
 
       // delete m_ReEvent; // automatically deleted!
       m_ReEvent = 0;
@@ -190,7 +199,8 @@ bool MResponseBase::InitializeNextMatchingEvent()
       // Load/Analyze
       ERReturnCode = m_ReReader->AnalyzeEvent();
       if (ERReturnCode == MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile) {
-        mout<<"Response: No more events available in file!"<<endl;
+        //mout<<"Response: No more events available in file!"<<endl;
+        m_ReaderFinished = true;
         MoreEvents = false;
         break;
       }
@@ -203,16 +213,21 @@ bool MResponseBase::InitializeNextMatchingEvent()
 
       // Decide future:
       if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
-        RevanEventID = m_ReEvent->GetEventID();
+        if (m_ReEvent->GetEventID() < m_RevanEventID) {
+          m_RevanLevel++; 
+        }
+        m_RevanEventID = m_ReEvent->GetEventID();
         TryNextEvent = false;
-        mout<<"Response: ER found good solution (Id="<<m_ReEvent->GetEventID()<<")!"<<endl;
+        //mout<<"Response: ER found good solution (Id="<<m_ReEvent->GetEventID()<<")!"<<endl;
       } else {
         TryNextEvent = true;
-        mout<<"Response: Did not find good raw event!"<<endl;
+        //mout<<"Response: Did not find good raw event!"<<endl;
       }
       
-    } else {
-      mout<<"Response: Searching sivan event..."<<endl;
+    }
+    
+    if (m_SivanLevel < m_RevanLevel || m_SivanEventID < m_RevanEventID) {
+      //mout<<"Response: Searching sivan event..."<<endl;
 
       // Clean:
       delete m_SiEvent;
@@ -227,24 +242,28 @@ bool MResponseBase::InitializeNextMatchingEvent()
         if ((m_OnlyINITRequired == true && m_SiEvent->GetNIAs() == 1 && m_SiEvent->GetIAAt(0)->GetProcess() == "INIT") || 
             (m_SiEvent->GetNIAs() > 1 && m_SiEvent->GetIAAt(m_SiEvent->GetNIAs()-1)->GetProcess() != "TRNC")) {
           
-          SivanEventID = m_SiEvent->GetID();
+          if ((unsigned int) m_SiEvent->GetID() < m_SivanEventID) {
+            m_SivanLevel++; 
+          }
+          m_SivanEventID = m_SiEvent->GetID();
           TryNextEvent = false;	  
-          mout<<"Response: Sivan found good event (Id="<<m_SiEvent->GetID()<<")!"<<endl;
+          //mout<<"Response: Sivan found good event (Id="<<m_SiEvent->GetID()<<")!"<<endl;
         } else {
           // Ignore this event...
-          mout<<"Response: Sivan found NO good event (Id="<<m_SiEvent->GetID()<<") TRNC or not enough IAs!"<<endl;
+          //mout<<"Response: Sivan found NO good event (Id="<<m_SiEvent->GetID()<<") TRNC or not enough IAs!"<<endl;
           TryNextEvent = true;
         }
       } else {
         TryNextEvent = true;
         mout<<"Response: No more events!"<<endl;
+        m_ReaderFinished = true;
         MoreEvents = false;
         break;
       }
     }
 
     // Before we jump out here, we have to do some sanity checks:
-    if (!(RevanEventID != SivanEventID || TryNextEvent == true)) {
+    if (!(m_RevanEventID != m_SivanEventID || TryNextEvent == true)) {
       m_Ids.clear();
       m_OriginIds.clear();
       
@@ -254,10 +273,13 @@ bool MResponseBase::InitializeNextMatchingEvent()
         mout<<"          * You do not have interaction information (IA)"<<endl;
         mout<<"          * The step length is too long (e.g. longer than your pitch)"<<endl;
         mout<<"          * You have too high production thresholds"<<endl;
+        mout<<"          * You have coincidence search turned on"<<endl;
         mout<<"          * Something else..."<<endl;
       }
     }
   }
+  
+  // mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
   
   return MoreEvents;  
 }
@@ -391,9 +413,13 @@ vector<int> MResponseBase::GetOriginIds(MRESE* RESE)
     OriginIds.reserve(10);
 
     // Generate sim IDs:
-    for (vector<int>::iterator Iter = Ids.begin();
-         Iter != Ids.end(); ++Iter) {
-      MSimHT* HT = m_SiEvent->GetHTAt((*Iter)-IdOffset);
+    for (vector<int>::iterator Iter = Ids.begin(); Iter != Ids.end(); ++Iter) {
+      unsigned int HTID = (*Iter)-IdOffset;
+      if (HTID >= m_SiEvent->GetNHTs()) {
+        merr<<"The RESE has higher IDs "<<HTID<<" than the sim file HTs!"<<endl;
+        return OriginIds;
+      }
+      MSimHT* HT = m_SiEvent->GetHTAt(HTID);
       if (HT == 0) {
         merr<<"Hit not found. ID's don't match. Something is badly wrong..."<<endl;
         return OriginIds;

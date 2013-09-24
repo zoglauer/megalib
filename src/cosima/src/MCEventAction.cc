@@ -87,6 +87,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip,
 
   m_SaveEvents = false;
   m_TransmitEvents = false;
+  m_RelegateEvents = false;
 }
 
 
@@ -162,7 +163,7 @@ bool MCEventAction::NextRun()
 
     if (m_Transceiver.IsConnected() == true) {
       if (m_Transceiver.Disconnect(true, 60.0) == false) {
-        // Transceiver gives alreday warning message
+        // Transceiver gives already warning message
         return false;
       }
     }
@@ -262,6 +263,18 @@ void MCEventAction::SetCollectionName(G4String Name, int Type)
   } else {
     merr<<"Unknown detector type: "<<Type<<endl;
   }
+}
+
+/******************************************************************************
+ * Set the function to which we relegate the events
+ */
+void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
+{
+  m_RelegateEvents = true;
+  //m_SaveEvents = false;
+  //m_TransmitEvents = false;
+  
+  m_Relegator = Relegator;
 }
 
 
@@ -616,6 +629,10 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
         // Save and transmit know if we should do it
         SaveEventToFile(E[e]);
         TransmitEvent(E[e]);
+        if (m_RelegateEvents == true) {
+          m_Relegator(E[e]); 
+        }
+
         
         delete E[e];
       }
@@ -623,6 +640,9 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
       // Save and transmit know if we should do it
       SaveEventToFile(m_Event);
       TransmitEvent(m_Event);
+      if (m_RelegateEvents == true) {
+        m_Relegator(m_Event); 
+      }
     }
 
     // Check if we are reaching the maximum file size: 
