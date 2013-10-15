@@ -520,7 +520,7 @@ bool MGUIEviewMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_Tracking:
-        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Settings);
+        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Settings, m_Geometry);
         break;
 
       case c_Coincidence:

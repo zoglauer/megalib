@@ -108,7 +108,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
   // First thing - take everything that isn't in gas out of REdup
   // and put into REout
   for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-    if (REdup->GetRESEAt(i)->GetDetector() == MDDetector::c_DriftChamber) {
+    if (IsInTracker(REdup->GetRESEAt(i)) == true) {
       continue;
     }
     REout->AddRESE(REdup->GetRESEAt(i));
@@ -127,7 +127,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
     MVector CoG(0.0, 0.0, 0.0);
     double Weight = 0;
     for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-      if ((REdup->GetRESEAt(i)->GetDetector() != MDDetector::c_DriftChamber) 
+      if ((IsInTracker(REdup->GetRESEAt(i)) == false) 
           || (REdup->GetRESEAt(i)->GetType() == MRESE::c_Track)) {
         continue; 
       }
@@ -150,7 +150,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
     double MinDist = numeric_limits<double>::max();
     MRESE* Start = 0;
     for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-      if ((REdup->GetRESEAt(i)->GetDetector() != MDDetector::c_DriftChamber) 
+      if ((IsInTracker(REdup->GetRESEAt(i)) == false) 
           || (REdup->GetRESEAt(i)->GetType() == MRESE::c_Track)) {
         continue; 
       }
@@ -182,7 +182,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
       double MinDistance = numeric_limits<double>::max();
       MRESE* ClosestRESE = 0;
       for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-        if ((REdup->GetRESEAt(i)->GetDetector() != MDDetector::c_DriftChamber) 
+        if ((IsInTracker(REdup->GetRESEAt(i)) == false) 
             || (REdup->GetRESEAt(i)->GetType() == MRESE::c_Track)) {
           continue; 
         }
@@ -226,7 +226,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
     // Any hits or clusters within this radius of TrackCoG that are not 
     // part of the track should be thrown out
     for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-      if ((REdup->GetRESEAt(i)->GetDetector() != MDDetector::c_DriftChamber)
+      if ((IsInTracker(REdup->GetRESEAt(i)) == false)
           || (REdup->GetRESEAt(i)->GetType() == MRESE::c_Track)) {
         continue; 
       }
@@ -240,7 +240,7 @@ MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
     // Now see if any other possible tracks in the gas...
     NumLeft = 0;
     for (int i = 0; i < REdup->GetNRESEs(); ++i) {
-      if (REdup->GetRESEAt(i)->GetDetector() != MDDetector::c_DriftChamber) {
+      if (IsInTracker(REdup->GetRESEAt(i)) == false) {
         continue; 
       }
       if (REdup->GetRESEAt(i)->GetType() != MRESE::c_Track) {

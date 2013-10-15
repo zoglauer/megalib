@@ -48,12 +48,14 @@ ClassImp(MGUIOptionsTracking)
 
 MGUIOptionsTracking::MGUIOptionsTracking(const TGWindow* Parent, 
                                          const TGWindow* Main, 
-                                         MSettingsEventReconstruction* Data)
+                                         MSettingsEventReconstruction* Data,
+                                         MDGeometryQuest* Geometry)
   : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIOptionsTracking and bring it to the screen
 
   m_Data = Data;
+  m_Geometry = Geometry;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -171,6 +173,34 @@ void MGUIOptionsTracking::Create()
       AddFrame(m_FileSelector, SubOptions);      
     }
 
+    
+    TGLabel* LabelDetectors = new TGLabel(this, "Select the tracking detector(s):");
+    TGLayoutHints* LabelDetectorsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20, 20, 20, 0);
+    AddFrame(LabelDetectors, LabelDetectorsLayout);
+
+    m_DetectorList = new TGListBox(this, e_Detectors);
+    m_DetectorList->SetMultipleSelections(true);
+    TGLayoutHints* DetectorListLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 5, 0);
+    AddFrame(m_DetectorList, DetectorListLayout);
+
+    if (m_Geometry != 0) {
+      for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
+        MString Name = m_Geometry->GetDetectorAt(d)->GetName() + " (" + m_Geometry->GetDetectorAt(d)->GetTypeName() + ")";
+        m_DetectorList->AddEntry(Name, d);
+
+        // Highlight those detectors which are already in the list:
+        for (unsigned int e = 0; e < m_Data->GetNElectronTrackingDetectors(); ++e) {
+          if (m_Data->GetElectronTrackingDetector(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
+            m_DetectorList->Select(d);
+            break;
+          }
+        }
+      }
+    } else {
+      merr<<"No geometry!"<<show; 
+    }
+    m_DetectorList->Resize(200, 100);
+    
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
     // no options...
   }
@@ -212,6 +242,13 @@ bool MGUIOptionsTracking::OnApply()
     } else {
       m_Data->SetRejectPurelyAmbiguousTrackSequences(false);
     }
+    
+    m_Data->RemoveAllElectronTrackingDetectors();
+    for (int d = 0; d < m_DetectorList->GetNumberOfEntries(); ++d) {
+      if (m_DetectorList->GetSelection(d) == true) {
+        m_Data->AddElectronTrackingDetector(m_Geometry->GetDetectorAt(d)->GetName());
+      }
+    }
   } else if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoDirectional) {
     // no options...
   }
@@ -226,6 +263,8 @@ bool MGUIOptionsTracking::OnApply()
     m_Data->SetBayesianElectronFileName(m_FileSelector->GetFileName());
   }
 
+  
+  
 	return true;
 }
 

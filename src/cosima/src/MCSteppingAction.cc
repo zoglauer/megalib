@@ -196,17 +196,15 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
   G4Track* Track = Step->GetTrack();
 
   massert(Track->GetUserInformation() != 0);
-
+  
   if (Track->GetTrackID() != m_TrackId) {
     m_NSecondaries = 0;
     m_TrackId = Track->GetTrackID();
   }
-  int GeneratedSecondaries = 
-    fpSteppingManager->GetSecondary()->size() - m_NSecondaries;
+  int GeneratedSecondaries = fpSteppingManager->GetSecondary()->size() - m_NSecondaries;
   m_NSecondaries = fpSteppingManager->GetSecondary()->size();
 
-  MCEventAction* EventAction = 
-    (MCEventAction *) (G4EventManager::GetEventManager()->GetUserEventAction());
+  MCEventAction* EventAction = (MCEventAction *) (G4EventManager::GetEventManager()->GetUserEventAction());
  
   double Time = Step->GetPostStepPoint()->GetGlobalTime()/second;
 
@@ -243,6 +241,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       if (GeneratedSecondaries == 0) {
 
         m_InteractionId++;
+        // The photon may deposit a small bit of energy locally
+        // To aid the response generation, we add handle this energy as if it originated from the new electron track
         ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         EventAction->AddIA("COMP", 
@@ -266,6 +266,8 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
           
           m_InteractionId++;
+          // The photon may deposit a small bit of energy locally
+          // To aid the response generation, we add handle this energy as if it originated from the new electron track
           ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
@@ -304,7 +306,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
  
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -338,7 +340,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -369,7 +371,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       if (GeneratedSecondaries == 0) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         EventAction->AddIA("BREM", 
                            m_InteractionId,
@@ -392,7 +394,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
           
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -423,7 +425,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       }
 
       m_InteractionId++;
-      ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+      //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
       // This process only modifies the direction of the photons:
      
@@ -451,7 +453,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       if (GeneratedSecondaries == 0) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         EventAction->AddIA("PHOT", 
                            m_InteractionId,
@@ -474,7 +476,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
           
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -510,7 +512,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -560,7 +562,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
 
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -599,7 +601,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -638,7 +640,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -677,7 +679,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
 
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -869,7 +871,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                  GeneratedSecondaries; --s) {
             
             m_InteractionId++;
-            ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+            //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
             G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
             TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
@@ -945,12 +947,12 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       
       // Since this is a continuous process, replace (!) the user information 
       // in order to make the HTsim origin information relate to this hit
-      dynamic_cast<MCTrackInformation*>(Track->GetUserInformation())->SetId(m_InteractionId+1);
+      //dynamic_cast<MCTrackInformation*>(Track->GetUserInformation())->SetId(m_InteractionId+1);
       
       if (GeneratedSecondaries == 0) {
        
         m_InteractionId++;
-        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         EventAction->AddIA("IONI",
                            m_InteractionId,
@@ -973,7 +975,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
           
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
           MCTrackInformation* Info = 
@@ -1005,13 +1007,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       // (True for Geant4 version 911)
       // Thus we rename the transportation here to ionization
 
-      dynamic_cast<MCTrackInformation*>(Track->GetUserInformation())->SetId(m_InteractionId+1);
+      //dynamic_cast<MCTrackInformation*>(Track->GetUserInformation())->SetId(m_InteractionId+1);
 
       if (GeneratedSecondaries == 0) {
         if (Step->GetTotalEnergyDeposit() > 1E-9*keV) { // avoid "vacuum" deposits
 
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
           EventAction->AddIA("IONI",
                              m_InteractionId,
@@ -1034,7 +1036,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
           
           m_InteractionId++;
-          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
           
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));

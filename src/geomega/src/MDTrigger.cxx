@@ -398,6 +398,29 @@ bool MDTrigger::HasVetoed()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MDTrigger::Applies(MDDetector* Detector) const
+{
+  //! Return true if this trigger applies to the detector
+  
+  for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
+    if (m_DetectorTypes[i] == Detector->GetType() && m_Types[i] == c_Detector) {
+      return true;
+    }
+  }
+
+  for (unsigned int i = 0; i < m_Detectors.size(); ++i) {
+    if (m_Detectors[i]->GetName() == Detector->GetName() && m_Types[i] == c_Detector) {
+      return true;
+    }
+  }  
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MDTrigger::IncludesDetectorAsPositiveTrigger(MDDetector* Detector)
 {
   //! Return true, if this detector is part of this trigger, excluding vetoes and guard rings
@@ -619,6 +642,23 @@ bool MDTrigger::Validate()
       }
     }
   }
+
+  // For veto detector the noise threshold should be equal to the trigger threshold
+  /* This is currently done MDGeometry
+  if (m_IsVeto == true) {
+    for (unsigned int d = 0; d < m_Detectors.size(); ++d) {
+      if (m_Detectors[d]->GetNoiseThresholdEqualsTriggerThreshold() == false) {
+        mout<<"   ***  Serious warning  ***  in trigger "<<m_Name<<endl;
+        mout<<"A veto detector should have always set the flag \"NoiseThresholdEqualsTriggerThreshold\": "<<m_Detectors[d]->GetName()<<endl;
+        mout<<"Otherwise hits below the trigger threshold but above the noise threshold will stay in the hit list for event freconstruction!"<<endl;
+      }
+    }
+    for (unsigned int t = 0; t < m_DetectorTypes.size(); ++t) {
+      
+    }
+  }
+  */
+  
   
   bool IsGuardring = false;
   for (unsigned int j = 0; j < m_Types.size(); j++) {

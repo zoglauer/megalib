@@ -134,7 +134,8 @@ bool MERTrack::SetParameters(bool SearchMIPs,
                              unsigned int MaxLayerJump, 
                              unsigned int NSequencesToKeep, 
                              bool RejectPureAmbiguities,
-                             unsigned int NLayersForVertexSearch)
+                             unsigned int NLayersForVertexSearch,
+                             vector<MString> DetectorList)
 {
   m_SearchMIPs = SearchMIPs;
   m_SearchPairs = SearchPairs;
@@ -145,18 +146,42 @@ bool MERTrack::SetParameters(bool SearchMIPs,
   m_NLayersForVertexSearch = NLayersForVertexSearch;
  
   if (m_NLayersForVertexSearch < 4) {
-    merr<<"NLayersForVertexSearch (="<<m_NLayersForVertexSearch<<") must be >= 4. Setting it to 4."<<show;
+    merr<<"Error: Revan (tracking): NLayersForVertexSearch (="<<m_NLayersForVertexSearch<<") must be >= 4. Setting it to 4."<<show;
     m_NLayersForVertexSearch = 4;
   }
   
   if (m_ComptonMaxLayerJump < 1) {
-    merr<<"MaxLayerJump must be >= 1. Setting it to 1."<<show;   
+    merr<<"Error: Revan (tracking): MaxLayerJump must be >= 1. Setting it to 1."<<show;   
     m_ComptonMaxLayerJump = 1;
   }
 
   if (m_NSequencesToKeep < 1) {
-    merr<<"NSequencesToKeep must be >= 1. Setting it to 1."<<show;   
+    merr<<"Error: Revan (tracking): NSequencesToKeep must be >= 1. Setting it to 1."<<show;   
     m_NSequencesToKeep = 1;
+  }
+  
+  // Check if for the tracking detector names real detectors exist
+  if (DetectorList.size() == 0) {
+    merr<<"Error: Revan (tracking): You did not give *any* detectors for electron tracking."<<endl;
+    merr<<"No electron tracking will be performed!"<<show;
+  } else {
+    for (unsigned int n = 0; n < DetectorList.size(); ++n) {
+      bool Found = false;
+      for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
+        if (m_Geometry->GetDetectorAt(d)->GetName() == DetectorList[n]) {
+          m_DetectorList.push_back(m_Geometry->GetDetectorAt(d));
+          Found = true;
+        }
+      }
+      if (Found == false) {
+        merr<<"Error: Revan (tracking): Did not find detector "<<DetectorList[n]<<" in geometry."<<endl;
+        merr<<"No electron tracking will be performed in this detector!"<<show;
+      }
+    }
+    if (m_DetectorList.size() == 0) {
+      merr<<"Error: Revan (tracking): I could not find *any* detectors for electron tracking."<<endl;
+      merr<<"No electron tracking will be performed!"<<show;
+    }
   }
 
   return true;
@@ -188,23 +213,17 @@ bool MERTrack::Analyze(MRawEventList* REList)
 
   // Step A: Preparation:
 
-  // Before we do anything we check if we have at least two hits in D1 or D5:
+  // Before we do anything we check if we have at least two hits in one of the defines electron trackers
   bool StartTracking = false;
   for (int e = 0; e < m_List->GetNRawEvents(); e++) {
     RE = m_List->GetRawEventAt(e);
-    int NHitsD1 = 0;
-    int NHitsD5 = 0;
-    int NHitsD6 = 0;
+    unsigned int NHits = 0;
     for (int h = 0; h < RE->GetNRESEs(); ++h) {
-      if (RE->GetRESEAt(h)->GetDetector() == MDDetector::c_Strip2D) {
-        NHitsD1++;
-      } else if (RE->GetRESEAt(h)->GetDetector() == MDDetector::c_DriftChamber) {
-        NHitsD5++;
-      } else if (RE->GetRESEAt(h)->GetDetector() == MDDetector::c_Strip3DDirectional) {
-        NHitsD6++;
+      if (IsInTracker(RE->GetRESEAt(h)) == true) {
+        ++NHits;
       }
     }
-    if (NHitsD1 >= 2 || NHitsD5 >= 2 || NHitsD6 >= 1) {
+    if (NHits >= 2) {
       StartTracking = true;
       break;
     }
@@ -320,13 +339,16 @@ bool MERTrack::Analyze(MRawEventList* REList)
     // We now accept only events with the maximum possible number of tracks, 
     // if the flag is set
     if (m_AllowOnlyMinNumberOfRESEsD1 == true) {
-      int MinN = numeric_limits<int>::max();;
+      mdebug<<"Allowing only events with the maximum number of elements in the tracks. Starting with this amount: "<<m_List->GetNRawEvents()<<endl;
+      int MinN = numeric_limits<int>::max();
       for (int e = 0; e < m_List->GetNRawEvents(); e++) {
         int CurrentN = 0;
         RE = m_List->GetRawEventAt(e);
         for (int r = 0; r < RE->GetNRESEs(); r++) {
           RESE = RE->GetRESEAt(r);
-          if (RESE->GetDetector() == MDDetector::c_Strip2D) CurrentN++;
+          if (IsInTracker(RESE) == true) {
+            CurrentN++;
+          }
         }
         if (CurrentN < MinN) MinN = CurrentN;
       }
@@ -336,13 +358,14 @@ bool MERTrack::Analyze(MRawEventList* REList)
         RE = m_List->GetRawEventAt(e);
         for (int r = 0; r < RE->GetNRESEs(); r++) {
           RESE = RE->GetRESEAt(r);
-          if (RESE->GetDetector() == MDDetector::c_Strip2D) CurrentN++;
+          if (IsInTracker(RESE) == true) CurrentN++;
         }
         if (CurrentN > MinN) {
           m_List->DeleteRawEvent(RE);
           e--;
         }
       }
+      mdebug<<"Keeping "<<m_List->GetNRawEvents()<<" possibilities for further processing."<<endl;
     }
 
 
@@ -420,8 +443,29 @@ bool MERTrack::Analyze(MRawEventList* REList)
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
+
+bool MERTrack::IsInTracker(MRESE* R)
+{
+  //! Return true, if the RESE happened in a detector in our list
+
+  // While building tracks their volume sequence might not be correct
+  // But, if we have a track, it is in the tracker... so:
+  if (R->GetType() == MRESE::c_Track) return true;
+  
+  MDVolumeSequence* VS = R->GetVolumeSequence();
+  for (unsigned int d = 0; d < m_DetectorList.size(); ++d) {
+    if (VS->GetDetector() == m_DetectorList[d]) {
+      return true;
+    }
+  }
+  return false;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
 
 
 void MERTrack::SortByTrackQualityFactor(MRawEventList* List)
@@ -463,19 +507,19 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
   vector<MRESE*>::iterator Iterator1;
   vector<MRESE*>::iterator Iterator2;
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-    if ((*Iterator1)->GetDetector() != 1) continue;
+    if (IsInTracker(*Iterator1) == false) continue;
     mdebug<<(*Iterator1)->GetPosition().Z()<<endl;
   }
 
   // 
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-    if ((*Iterator1)->GetDetector() != 1) continue;
+    if (IsInTracker(*Iterator1) == false) continue;
 
     // If it is a single hit, and if it is the only one in its layer:
     OnlyHitInLayer = true;
     for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
       if ((*Iterator1) == (*Iterator2)) continue;
-      if ((*Iterator2)->GetDetector() != 1) continue;
+      if (IsInTracker(*Iterator2) == false) continue;
       if (m_Geometry->AreInSameLayer((*Iterator1), (*Iterator2)) == true) {
         OnlyHitInLayer = false;
         break;
@@ -491,7 +535,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     int Distance;
     for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
       if ((*Iterator1) == (*Iterator2)) continue;
-      if ((*Iterator2)->GetDetector() != 1) continue;
+      if (IsInTracker(*Iterator2) == false) continue;
 
       Distance = m_Geometry->GetLayerDistance((*Iterator1), (*Iterator2));
       if (Distance > 0 && Distance < int(m_NLayersForVertexSearch)) NAbove[Distance]++;
@@ -601,7 +645,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
       mdebug<<"Testing direction: "<<Direction<<endl;
 			NTrials++;
 			for (int r = 0; r < RE->GetNRESEs(); r++) {
-				if (RE->GetRESEAt(r)->GetDetector() != 1) continue;
+				if (IsInTracker(RE->GetRESEAt(r)) == false) continue;
 
 				if (m_Geometry->IsAbove(RE->GetVertex(), RE->GetRESEAt(r), Direction) == true) {
 					List.AddRESE(RE->GetRESEAt(r));
@@ -812,7 +856,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
 
   vector<MRESE*> D1Hits;
   for (int i = 0; i < RE->GetNRESEs(); ++i) {
-    if (RE->GetRESEAt(i)->GetDetector() == MDDetector::c_Strip2D) {
+    if (IsInTracker(RE->GetRESEAt(i)) == true) {
       D1Hits.push_back(RE->GetRESEAt(i));
     }
   }
@@ -966,7 +1010,6 @@ MRawEventList* MERTrack::TrackComptons(MRERawEvent* RE)
 {
   mdebug<<"Track Compton events..."<<endl;
 
-
   MRESE* RESE = 0;
 
   mdebug<<"Create list:"<<endl;
@@ -983,7 +1026,7 @@ MRawEventList* MERTrack::TrackComptons(MRERawEvent* RE)
     RESE = RE->GetRESEAt(i);
 
     // if it's not in D1 reject it
-    if (RESE->GetDetector() != MDDetector::c_Strip2D) {
+    if (IsInTracker(RESE) == false) {
       continue; 
     }
 
@@ -1359,9 +1402,7 @@ bool MERTrack::EvaluateTracks(MRERawEvent* RE)
   MRESE* RESE = 0;
   for (int i = 0; i < RE->GetNRESEs(); i++) {
     RESE = RE->GetRESEAt(i);
-    if (RESE->GetDetector() == MDDetector::c_Strip2D ||
-        RESE->GetDetector() == MDDetector::c_Strip3DDirectional ||
-        RESE->GetDetector() == MDDetector::c_DriftChamber) {
+    if (IsInTracker(RESE) == true) {
       //mdebug<<"Detecor"<<RESE->GetDetector()<<endl;
       if (RESE->GetType() == MRESE::c_Track) {
         NTracks++;

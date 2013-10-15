@@ -213,7 +213,8 @@ class MRawEventAnalyzer
   void SetNTrackSequencesToKeep(unsigned int Jump) { m_NTrackSequencesToKeep = Jump; }
   void SetRejectPurelyAmbiguousTrackSequences(bool Flag) { m_RejectPurelyAmbiguousTrackSequences = Flag; }
   void SetNLayersForVertexSearch(unsigned int NLayersForVertexSearch) { m_NLayersForVertexSearch = NLayersForVertexSearch; }
-
+  void SetElectronTrackingDetectorList(vector<MString> DetectorList) { m_ElectronTrackingDetectorList = DetectorList; }
+  
   // Option Compton tracking:
   void SetClassicUndecidedHandling(int Flag) { m_ClassicUndecidedHandling = Flag; }
   void SetAssumeD1First(bool Flag) { m_AssumeD1First = Flag; }
@@ -353,6 +354,8 @@ class MRawEventAnalyzer
   bool m_RejectPurelyAmbiguousTrackSequences;
   unsigned int m_NLayersForVertexSearch;
 
+  vector<MString> m_ElectronTrackingDetectorList;
+  
   // Compton tracking:
   bool m_AssumeD1First;
   bool m_UseComptelTypeEvents;

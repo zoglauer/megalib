@@ -241,7 +241,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     if (Line[0] == 'S' && Line[1] == 'E') {
       
       if (sscanf(Line.Data(), "SE %ld", &m_EventId) != 1) {
-        if (sscanf(Line.Data(), "SE %ld;%*ld;%*ld;%*ld", &m_EventId) != 1) {
+        if (sscanf(Line.Data(), "SE %ld;%*d;%*d;%*d", &m_EventId) != 1) {
           m_EventId = c_NoId;
         }
         m_EventId = c_NoId;

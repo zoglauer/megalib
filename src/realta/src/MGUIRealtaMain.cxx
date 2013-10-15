@@ -96,6 +96,12 @@ MGUIRealtaMain::MGUIRealtaMain() : TGMainFrame(gClient->GetRoot(), 800, 800)
   
   m_Settings = new MSettingsRealta();
   
+  m_Geometry = new MDGeometryQuest();
+  if (m_Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_Geometry->GetName()<<" failed!!"<<endl;
+    return;
+  }
+
   Create();
   
   m_Analyzer = new MRealTimeAnalyzer();
@@ -441,7 +447,7 @@ Bool_t MGUIRealtaMain::ProcessMessage(Long_t Message, Long_t Parameter1,
         break;
 
       case c_Tracking:
-        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Settings);
+        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Settings, m_Geometry);
         break;
 
       case c_Coincidence:
@@ -552,6 +558,12 @@ void MGUIRealtaMain::OnLoad()
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Settings->Read(Info.fFilename);
+    delete m_Geometry;
+    m_Geometry = new MDGeometryQuest();
+    if (m_Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+      cout<<"Loading of geometry "<<m_Geometry->GetName()<<" failed!!"<<endl;
+      return;
+    }
     m_Analyzer->SetSettings(m_Settings);
   } 
 }
@@ -654,6 +666,14 @@ void MGUIRealtaMain::OnGeometry()
   }
 
   m_Settings->SetGeometryFileName(Name);
+  
+  // Load a geometry for gui-handling:
+  delete m_Geometry;
+  m_Geometry = new MDGeometryQuest();
+  if (m_Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_Geometry->GetName()<<" failed!!"<<endl;
+    return;
+  }
 }
 
 

@@ -82,6 +82,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_RejectPurelyAmbiguousTrackSequences = false;
   m_NLayersForVertexSearch = 6;
 
+  m_ElectronTrackingDetectors.clear();
+  
   // Compton tracking
   m_RejectOneDetectorTypeOnlyEvents = false;
   m_GuaranteeStartD1 = false;
@@ -167,6 +169,12 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "RejectPurelyAmbiguousTrackSequences", m_RejectPurelyAmbiguousTrackSequences);
   new MXmlNode(Node, "NLayersForVertexSearch", m_NLayersForVertexSearch);
   
+  MXmlNode* aNode = new MXmlNode(Node, "ElectronTrackingDetectors");
+  for (unsigned int i = 0; i < m_ElectronTrackingDetectors.size(); ++i) {
+    new MXmlNode(aNode, "ElectronTrackingDetector",  m_ElectronTrackingDetectors[i]);
+  }
+
+  
   new MXmlNode(Node, "AssumeD1First", m_AssumeD1First);
   new MXmlNode(Node, "ClassicUndecidedHandling", m_ClassicUndecidedHandling);
   new MXmlNode(Node, "AssumeTrackTopBottom", m_AssumeTrackTopBottom);
@@ -198,6 +206,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
 bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
 {  
   MXmlNode* aNode = 0;
+  MXmlNode* bNode = 0;
 
   if ((aNode = Node->GetNode("NJobs")) != 0) {
     m_NJobs = aNode->GetValueAsUnsignedInt();
@@ -276,6 +285,14 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("NLayersForVertexSearch")) != 0) {
     m_NLayersForVertexSearch = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("ElectronTrackingDetectors")) != 0) {
+    m_ElectronTrackingDetectors.clear();
+    for (unsigned int n = 0; n < aNode->GetNNodes(); ++n) {
+      if ((bNode = aNode->GetNode(n)) != 0) {
+        m_ElectronTrackingDetectors.push_back(bNode->GetValue());
+      }
+    }
   }
   if ((aNode = Node->GetNode("AssumeD1First")) != 0) {
     m_AssumeD1First = aNode->GetValueAsBoolean();

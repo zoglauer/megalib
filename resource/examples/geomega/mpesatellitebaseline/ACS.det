@@ -6,6 +6,7 @@ ACU.DetectorVolume 	UpperACS
 ACU.EnergyResolution  Gauss  10   10	10.0
 ACU.EnergyResolution 	Gauss 100  100	10.0
 ACU.TriggerThreshold 	200.0
+ACU.NoiseThresholdEqualsTriggerThreshold true
 ACU.FailureRate 	0.0
 
 
@@ -18,6 +19,7 @@ ACC.DetectorVolume 	CentralACS
 ACC.EnergyResolution  Gauss  10   10	10.0
 ACC.EnergyResolution 	Gauss 100  100	10.0
 ACC.TriggerThreshold 	200.0
+ACC.NoiseThresholdEqualsTriggerThreshold true
 ACC.FailureRate 	0.0
 
 
@@ -30,6 +32,7 @@ ACL.DetectorVolume 	LowerACS
 ACL.EnergyResolution  Gauss  10   10	10.0
 ACL.EnergyResolution 	Gauss 100  100	10.0
 ACL.TriggerThreshold 	200.0
+ACL.NoiseThresholdEqualsTriggerThreshold true
 ACL.FailureRate 	0.0
 
 

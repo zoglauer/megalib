@@ -160,6 +160,12 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int GetNLayersForVertexSearch() { return m_NLayersForVertexSearch; }
 
 
+  void RemoveAllElectronTrackingDetectors() { m_ElectronTrackingDetectors.clear(); }
+  void AddElectronTrackingDetector(const MString& ElectronTracking) { m_ElectronTrackingDetectors.push_back(ElectronTracking); }
+  unsigned int GetNElectronTrackingDetectors() const { return m_ElectronTrackingDetectors.size(); }
+  MString GetElectronTrackingDetector(unsigned int d) const { if (d < m_ElectronTrackingDetectors.size()) return m_ElectronTrackingDetectors[d]; return ""; }
+  vector<MString> GetElectronTrackingDetectors() const { return m_ElectronTrackingDetectors; }
+
 
   void SetAssumeD1First(bool Flag) { m_AssumeD1First = Flag; }
   bool GetAssumeD1First() { return m_AssumeD1First; }
@@ -278,6 +284,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   MString m_BayesianElectronFileName;
 
+  vector<MString> m_ElectronTrackingDetectors;
   
   // Compton tracking:
   bool m_AssumeD1First;

@@ -92,6 +92,7 @@ class MDDetector
   //! If set to true, then the noise threshold equals the trigger threshold (i.e. basically only the latter exists) and avoids
   //! that randomization is done twice!
   virtual void SetNoiseThresholdEqualsTriggerThreshold(bool Flag = true) { m_NoiseThresholdEqualsTriggerThresholdSet = true; m_NoiseThresholdEqualsTriggerThreshold = Flag; }
+  virtual bool GetNoiseThresholdEqualsTriggerThreshold() const { return m_NoiseThresholdEqualsTriggerThreshold; }
 
   virtual void SetNoiseThreshold(const double Threshold);
   virtual double GetNoiseThreshold(const MVector& Position = c_NullVector) const;

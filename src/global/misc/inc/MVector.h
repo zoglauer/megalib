@@ -71,6 +71,15 @@ public:
     m_Z = r*cos(t);
   }
 
+  //! Set phi while keeping radius and theta
+  void SetPhi(double p) {
+    double r = Mag();
+    double t = Theta();
+    m_X = r*sin(t)*cos(p);
+    m_Y = r*sin(t)*sin(p);
+    m_Z = r*cos(t);
+  }
+
   //! Basic set and get components by index 0..2
   double operator[] (int i) const;
   double& operator [] (int i);
@@ -164,6 +173,9 @@ public:
   //! Checks if this vector is in the plane spanned by the other three vectors
   bool Coplanar(const MVector& A, const MVector& B, const MVector& C, double Tolerance = 1E-6);
 
+  //! Calculate the distance of a line spanned by the given vectors with this point
+  double DistanceToLine(const MVector& A, const MVector& B);
+  
   //! Return a string of the content of this class
   MString ToString();
 

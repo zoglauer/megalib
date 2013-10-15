@@ -294,6 +294,8 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetRejectPurelyAmbiguousTrackSequences(S->GetRejectPurelyAmbiguousTrackSequences());
   SetNLayersForVertexSearch(S->GetNLayersForVertexSearch());
   
+  SetElectronTrackingDetectorList(S->GetElectronTrackingDetectors());
+  
   // compton tracking:
   SetAssumeD1First(S->GetAssumeD1First());
   SetClassicUndecidedHandling(S->GetClassicUndecidedHandling());
@@ -1120,7 +1122,8 @@ bool MRawEventAnalyzer::PreAnalysis()
                                m_MaxComptonJump, 
                                m_NTrackSequencesToKeep, 
                                m_RejectPurelyAmbiguousTrackSequences, 
-                               m_NLayersForVertexSearch);
+                               m_NLayersForVertexSearch,
+                               m_ElectronTrackingDetectorList);
     }
 
     // Initialize the Decay searcher:

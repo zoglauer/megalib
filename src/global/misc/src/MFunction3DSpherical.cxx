@@ -32,6 +32,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "TH2.h"
 #include "TH3.h"
 #include "TRandom.h"
 #include "TCanvas.h"
@@ -431,10 +432,16 @@ void MFunction3DSpherical::Plot(bool Random)
   
   if (m_X.size() >= 2 && m_Y.size() >= 2 && m_Z.size() >= 2) {
 
-    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical", m_X.size(), m_X.front(), m_X.back(), m_Y.size(), m_Y.front()-90, m_Y.back()-90, m_Z.size(), m_Z.front(), m_Z.back());
+    TH3D* Hist = new TH3D("MFunction3DSpherical", "MFunction3DSpherical", m_X.size(), m_X.front(), m_X.back(), m_Y.size(), m_Y.front(), m_Y.back(), m_Z.size(), m_Z.front(), m_Z.back());
     Hist->SetXTitle("phi in degree");
     Hist->SetYTitle("theta in degree");
     Hist->SetZTitle("energy in keV");
+
+    TH2D* Projection = new TH2D("MFunction3DSpherical-P", "MFunction3DSpherical-P", 
+                          m_X.size(), m_X.front(), m_X.back(), 
+                          m_Y.size(), m_Y.front(), m_Y.back());
+    Projection->SetXTitle("phi in degree");
+    Projection->SetYTitle("theta in degree");
 
     TCanvas* Canvas = new TCanvas("DiagnosticsCanvas", "DiagnosticsCanvas");
     Canvas->cd();
@@ -457,8 +464,9 @@ void MFunction3DSpherical::Plot(bool Random)
         for (int by = 1; by <= Hist->GetYaxis()->GetNbins(); ++by) {
           for (int bz = 1; bz <= Hist->GetZaxis()->GetNbins(); ++bz) {
             Hist->SetBinContent(bx, by, bz, Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
+            Projection->SetBinContent(bx, by, Projection->GetBinContent(bx, by) + Evaluate(Hist->GetXaxis()->GetBinCenter(bx), Hist->GetYaxis()->GetBinCenter(by), Hist->GetZaxis()->GetBinCenter(bz)));
           }
-       }
+        }
       }
     }
 
@@ -466,6 +474,12 @@ void MFunction3DSpherical::Plot(bool Random)
     Hist->Draw("colz");
     Canvas->Update();
 
+    TCanvas* ProjectionCanvas = new TCanvas();
+    ProjectionCanvas->cd();
+    Projection->Draw("colz");
+    ProjectionCanvas->Update();
+    
+    
     gSystem->ProcessEvents();
 
     for (unsigned int i = 0; i < 10; ++i) {

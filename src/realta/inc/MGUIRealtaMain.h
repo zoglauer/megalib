@@ -29,6 +29,7 @@
 #include "MGlobal.h"
 #include "MSettingsRealta.h"
 #include "MRealTimeAnalyzer.h"
+#include "MDGeometryQuest.h"
 
 // Forward declarations:
 
@@ -97,6 +98,9 @@ class MGUIRealtaMain : public TGMainFrame
   //! The realta settings
   MSettingsRealta* m_Settings;
 
+  //! A local copy of the geometry
+  MDGeometryQuest* m_Geometry;
+  
   //! The connection statsu display
   TGLabel* m_ConnectionStatus;
   

@@ -441,6 +441,18 @@ bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MVector::DistanceToLine(const MVector& A, const MVector& B)
+{
+  //! Calculate the distance of a line spanned by the given vectors with this point
+
+  MVector Dir = (B - A).Unit();  
+  return ((A - *this) - ((A - *this).Dot(Dir))*Dir).Mag();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MVector::ToString()
 {
   //! Return a string of the content of this class

@@ -212,7 +212,7 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_OptionsTracking:
-        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Data);
+        new MGUIOptionsTracking(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());
         break;
 
       case c_OptionsCoincidence:

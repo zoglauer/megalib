@@ -62,6 +62,9 @@ class MDTrigger
   vector<int> GetDetectorTypes() { return m_DetectorTypes; }
   vector<MDDetector*> GetDetectors() { return m_Detectors; }
   
+  //! Return true if this trigger applies to the detector
+  bool Applies(MDDetector* D) const;
+  
   void SetGuardringDetectorType(const int Detectortype, const unsigned int Hits);
   void SetGuardringDetector(MDDetector* Detector, const unsigned int Hits);
 

@@ -45,6 +45,8 @@ class MInterfaceRevan : public MInterface
   //! Set the geometry file name and initialize the geometry
   //! Returns true if successful
   virtual bool SetGeometry(MString FileName, bool UpdateGui = true);
+  //! Returns the geometry or zero if there is none
+  virtual MDGeometryQuest* GetGeometry() { return dynamic_cast<MDGeometryQuest*>(m_Geometry); }
 
   //! Load the configuration file
   virtual bool LoadConfiguration(MString FileName);

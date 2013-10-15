@@ -7,7 +7,10 @@ Version 2.27/2.28
 =================
 
 *** Important:
-
++ If you have detectors which only do vetoes, it is now required to set the
+  "NoiseThresholdEqualsTriggerThreshold true" flag
++ If you do electron tracking it is now required to set the detectors in which 
+  the electron tracking is performed
   
 *** Significant new features & improvements:
 
@@ -21,8 +24,14 @@ Cosima:
 Sivan:
 
 Geomega:
++ Veto-only detectors require the flag "NoiseThresholdEqualsTriggerThreshold 
+  true" to be set
 
 Revan:
++ New option requires the detector in which electron tracking is perfromed to be
+  set
++ A long standing limitation not allowing "Scintillator/ACS/Simple" detectors
+  for event reconstruction has been eliminated
 
 Mimrec:
 

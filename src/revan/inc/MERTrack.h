@@ -24,6 +24,7 @@
 #include "MERConstruction.h"
 #include "MRawEventList.h"
 #include "MGeometryRevan.h"
+#include "MDDetector.h"
 
 // Forward declarations:
 class MRETrack;
@@ -49,7 +50,8 @@ class MERTrack : public MERConstruction
                              unsigned int MaxLayerJump, 
                              unsigned int NSequencesToKeep, 
                              bool RejectPureAmbiguities,
-                             unsigned int NLayersForVertexSearch);
+                             unsigned int NLayersForVertexSearch,
+                             vector<MString> DetectorList);
   virtual bool Analyze(MRawEventList* List);
 
   virtual bool PostAnalysis();
@@ -70,6 +72,8 @@ class MERTrack : public MERConstruction
 
   virtual void SortByTrackQualityFactor(MRawEventList* List);
 
+  //! Return true, if the RESE happened in a detector in our list
+  bool IsInTracker(MRESE* R);
 
   // private methods:
  private:
@@ -101,7 +105,9 @@ class MERTrack : public MERConstruction
   //! The number of layers used for vertex search
   unsigned int m_NLayersForVertexSearch;
 
-
+  //! List of detectors in which the electron tracking is performed
+  vector<MDDetector*> m_DetectorList;
+  
   double m_TimePairs;
   double m_TimeMips;
   double m_TimeComptonSequences;

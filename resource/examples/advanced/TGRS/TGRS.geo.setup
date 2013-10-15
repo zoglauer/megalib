@@ -14,7 +14,7 @@ SurroundingSphere 170  0.0  0.0  10.0  170.0
 Constant GenVis 1
 
 AbsorptionFileDirectory absorptions
-Include $(MEGALIB)/resource/geometries/materials/MGeantDefaultMaterials.geo
+Include $(MEGALIB)/resource/examples/geomega/materials/MGeantDefaultMaterials.geo
 
 # Material definitions: 
 Material germanium

@@ -108,7 +108,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     System->NoiseTime(Time);
     Event->SetEventTime(Time);
   }
-
+  
   // Step 1.1: Noise hits:
   int h_max = Event->GetNRESEs();
   for (int h = 0; h < h_max; ++h) {
@@ -191,6 +191,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     RESE = Event->GetRESEAt(h);
     if (RESE->GetType() == MRESE::c_Hit) {
       if (Trigger->AddHit(RESE->GetEnergy(), *(RESE->GetVolumeSequence())) == false) {
+        /*
         if (RESE->GetDetector() == MDDetector::c_Scintillator) {
           mimp<<"Removing scintillator hits which have not triggered..."<<show;
           RESE = Event->GetRESEAt(h);
@@ -198,6 +199,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
           mdebug<<"TG - Event: "<<Event->GetEventID()<<": Rejecting hit (trigger not added)!"<<endl;
           delete RESE;
         }
+        */
       }
     } else {
       merr<<"We shouldn't have anything else but hits at this point!"<<endl;
@@ -238,7 +240,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     Event->CompressRESEs();
     mdebug<<"TG - Event: "<<Event->GetEventID()<<" not triggered or vetoed!"<<endl;
   }
-
+  
 
   // Step c: Link the MREAMDirectional to hits:
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin();

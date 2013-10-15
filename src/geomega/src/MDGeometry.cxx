@@ -1594,6 +1594,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         T->SetDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
                            Tokenizer.GetTokenAtAsInt(3));
+  
       } else if (Tokenizer.IsTokenAt(1, "Detector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -3439,13 +3440,34 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
 
-
+  // Trigger sanity checks:
   for (unsigned int i = 0; i < GetNTriggers(); i++) {
     if (m_TriggerList[i]->Validate() == false) {
       IsValid = false;
     }
   }
+  // Make sure that all detectors which have only veto triggers have NoiseThresholdEqualsTriggerThreshold setf 
+  for (unsigned int d = 0; d < GetNDetectors(); ++d) {
+    int NVetoes = 0;
+    int NTriggers = 0;
+    for (unsigned int t = 0; t < GetNTriggers(); ++t) {
+      if (GetTriggerAt(t)->Applies(GetDetectorAt(d)) == true) {
+        if (GetTriggerAt(t)->IsVeto() == true) {
+          NVetoes++;
+        } else {
+          NTriggers++; 
+        }
+      }
+    }
+    if (NVetoes > 0 && NTriggers == 0 && GetDetectorAt(d)->GetNoiseThresholdEqualsTriggerThreshold() == false) {
+      mout<<"   ***  Error  ***  Triggers with vetoes"<<endl;
+      mout<<"A detector (here: "<<GetDetectorAt(d)->GetName()<<"), which only has veto triggers, must have the flag \"NoiseThresholdEqualsTriggerThreshold true\"!"<<endl;
+      Reset();
+      return false;
+    }
+  }
 
+  // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
     if (m_MaterialList[i]->Validate() == false) {

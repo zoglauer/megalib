@@ -2918,26 +2918,43 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
 
   ostringstream out;
   out<<"SE"<<endl;
-  out<<"ID    "<<m_NEvent<<"  "<<m_NStartedEvent<<endl;
+  out<<"ID "<<m_NEvent<<" "<<m_NStartedEvent<<endl;
   if (m_Veto == true) {
     out<<"VT"<<endl;
   } else {
-    out<<"TI    "<<m_Time.GetLongIntsString()<<endl;
+    out<<"TI "<<m_Time.GetLongIntsString()<<endl;
 
     if (WhatToStore == c_StoreSimulationInfoAll) {
-      // The ED keyword (Total energy deposit)
+      // The ED keyword (Total energy deposit in active material)
       double ED = 0.0;
       for (unsigned int i = 0; i < GetNHTs(); ++i) {
         ED += GetHTAt(i)->GetEnergy();
       }
-      out<<"ED    "<<ED<<endl;
-
+      for (unsigned int i = 0; i < GetNGRs(); ++i) {
+        ED += GetGRAt(i)->GetEnergy();
+      }
+      out<<"ED "<<ED<<endl;
+      
+      // The EC keyword (Escapes)
+      double EC = 0.0;
+      for (unsigned int i = 0; i < GetNIAs(); ++i) {
+        if (GetIAAt(i)->GetProcess() == "ESCP") {
+          EC += GetIAAt(i)->GetMotherEnergy();
+        }
+      }
+      out<<"EC "<<EC<<endl;
+      
+      // Deposits in not sensitive material - summary
       double NS = 0.0;
       for (unsigned int i = 0; i < GetNPMs(); ++i) {
         NS += GetPMAt(i)->GetEnergy();
+      }
+      out<<"NS "<<NS<<endl;
+      
+      // Deposits in not sensitive material - detailed
+      for (unsigned int i = 0; i < GetNPMs(); ++i) {
         out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version);
       }
-      out<<"NS    "<<NS<<endl;      
     }
 
     if (WhatToStore == c_StoreSimulationInfoAll ||
