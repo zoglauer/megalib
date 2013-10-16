@@ -29,6 +29,9 @@
 // Standard libs:
 #include <vector>
 #include <map>
+#include <sstream>
+#include <iostream>
+#include <fstream>
 #include <limits>
 #include <algorithm>
 using namespace std;
@@ -300,6 +303,23 @@ bool MSimEvent::AddPM(const MSimPM& PM)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimEvent::AddBD(const MString& BD)
+{
+  // Add a bad event flag - but only if it does not yet exist
+  
+  for (unsigned int b = 0; b < m_BDs.size(); ++b) {
+    if (m_BDs[b] == BD) return true; 
+  }
+
+  m_BDs.push_back(BD);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MSimEvent::SetGeometry(MDGeometryQuest* Geo)
 {
   m_Geometry = Geo;
@@ -387,6 +407,16 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
       mout<<"  "<<LineBuffer<<endl;
       Ret = false;
       delete GR;
+    }
+  }
+  // Add bad event flags
+  else if (LineBuffer[0] == 'B' && LineBuffer[1] == 'D') {
+    istringstream iss(LineBuffer.GetString());
+    string s;
+    while (getline(iss, s, ' ')) {
+      if (s != "BD" && s != " " && s != "") {
+        m_BDs.push_back(s);
+      }
     }
   }
   // Add total detector energy:
@@ -1318,7 +1348,7 @@ bool MSimEvent::HasTrack(int Layers)
   // Return true if there is some kind of track,
   // i.e. at least NLayers of the tracker must have been hit 
 
-  // --->acz---> Some thing geometry dependent:
+  // --->acz---> Something geometry dependent:
 
   unsigned int i;
   int NLayers = 0;
@@ -2309,7 +2339,7 @@ MSimDR* MSimEvent::GetDRAt(unsigned int i)
 
 unsigned int MSimEvent::GetNPMs()
 {
-  // Return the number of PM IDs in thisa event
+  // Return the number of PM IDs in this event
 
   return m_PMs.size();
 }
@@ -2328,6 +2358,34 @@ MSimPM* MSimEvent::GetPMAt(unsigned int i)
     merr<<"Event "<<m_NEvent<<": PM index ("<<i<<") out of bounds! Max: "<<GetNPMs()<<endl;
     massert(false);
     return 0;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MSimEvent::GetNBDs()
+{
+  // Return the number of BD flags in this event
+
+  return m_BDs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MSimEvent::GetBDAt(unsigned int i)
+{
+  // return PM number i
+
+  if (i < m_BDs.size()) {
+    return m_BDs[i];
+  } else {
+    merr<<"Event "<<m_NEvent<<": BD index ("<<i<<") out of bounds! Max: "<<GetNBDs()<<endl;
+    massert(false);
+    return "";
   }
 }
 
@@ -2840,6 +2898,60 @@ vector<MSimEvent*> MSimEvent::CreateSingleHitEvents()
   return Events;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MSimEvent::GetTotalEnergyDeposit()
+{
+  //! Return the total energy deposit (after noising)
+
+  double Deposit = 0;
+  for (unsigned int h = 0; h < GetNHTs(); ++h) {
+    Deposit += GetHTAt(h)->GetEnergy();
+  }
+  
+  return Deposit;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+double MSimEvent::GetTotalEnergyDepositBeforeNoising()
+{
+  //! Return the total energy deposit (before noising)
+ 
+  double Deposit = 0;
+  for (unsigned int h = 0; h < GetNHTs(); ++h) {
+    Deposit += GetHTAt(h)->GetOriginalEnergy();
+  }
+  
+  return Deposit; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimEvent::IsCompletelyAbsorbed(double AbsoluteTolerance)
+{
+  //! Return true if the event is completely absorbed 
+
+ double Start = 0;
+ for (unsigned int i = 0; i < GetNIAs(); ++i) {
+   if (GetIAAt(i)->GetProcess() == "INIT") {
+     Start += GetIAAt(i)->GetSecondaryEnergy();
+   }
+ }
+ 
+ if (fabs(Start - GetTotalEnergyDepositBeforeNoising()) < AbsoluteTolerance) {
+   return true; 
+ }
+ 
+ return false;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -2859,6 +2971,7 @@ void MSimEvent::Reset()
   m_DRs.clear();  
   m_GRs.clear();  
   m_PMs.clear();  
+  m_BDs.clear();
 
   m_TotalDetectorEnergy.clear();
 
@@ -2923,7 +3036,15 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
     out<<"VT"<<endl;
   } else {
     out<<"TI "<<m_Time.GetLongIntsString()<<endl;
-
+    
+    if (m_BDs.size() > 0) {
+      out<<"BD ";
+      for (unsigned int b = 0; b < m_BDs.size(); ++b) {
+        out<<m_BDs[b]<<" "; 
+      }
+      out<<endl;
+    }
+    
     if (WhatToStore == c_StoreSimulationInfoAll) {
       // The ED keyword (Total energy deposit in active material)
       double ED = 0.0;

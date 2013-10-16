@@ -126,7 +126,7 @@ class MSimEvent
   //! Get a guard-ring hit by its position in the storage vector
   MSimGR* GetGRAt(unsigned int i);
 
-  //! Ass a passive material summary information 
+  //! Add a passive material summary information 
   bool AddPM(const MSimPM& PM);
   //! Add a passive material summary information --- the event will delete this GR!
   void AddPM(MSimPM* PM) { if (PM != 0) m_PMs.push_back(PM); }
@@ -134,6 +134,13 @@ class MSimEvent
   unsigned int GetNPMs();
   //! Get a passive material summary information by its position in the storage vector
   MSimPM* GetPMAt(unsigned int);
+
+  //! Add a bad event flag
+  bool AddBD(const MString& Flag);
+  //! Get the number of stored passive material summary information
+  unsigned int GetNBDs();
+  //! Get a bad event flag
+  MString GetBDAt(unsigned int);
 
   // Some constants indicating what to store
 
@@ -244,7 +251,14 @@ class MSimEvent
   double GetRFirstEnergyDepositElectron();
   double GetEnergyDepositNotSensitiveMaterial();
 /*   void SetEnergyDepositNotSensitiveMaterial(double Energy); */
-/*   bool IsCompletelyAbsorbed(); */
+
+  //! Return the total energy deposit (after noising)
+  double GetTotalEnergyDeposit();
+  //! Return the total energy deposit (before noising)
+  double GetTotalEnergyDepositBeforeNoising();
+  
+  //! Return true if the event is completely absorbed (the energy deposit before noising is used!)
+  bool IsCompletelyAbsorbed(double AbsoluteTolerance = 0.1);
 
   //! Check if the IA is completely absorbed (includes descendents)
   int IsIACompletelyAbsorbed(int IA, double AbsoluteTolerance = 0.0, double RelativeTolerance = 0.0);
@@ -336,6 +350,8 @@ class MSimEvent
   vector<MSimGR*> m_GRs;   
   //! Array of passive material deposits
   vector<MSimPM*> m_PMs;   
+  //! Array of bad event flags
+  vector<MString> m_BDs;   
 
   //! Event ID
   unsigned int m_NEvent;

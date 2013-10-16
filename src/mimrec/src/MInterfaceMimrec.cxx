@@ -4118,7 +4118,7 @@ void MInterfaceMimrec::DistanceDistribution()
   FirstHist->SetFillColor(8);
   FirstHist->SetMinimum(0);
 
-  TH1D* AnyHist = new TH1D("AnyDistance", "Minium distance between any hit", NBins, 
+  TH1D* AnyHist = new TH1D("AnyDistance", "Minimum distance between any hit", NBins, 
                            m_Data->GetDistanceRangeMin(), m_Data->GetDistanceRangeMax());
   AnyHist->SetBit(kCanDelete);
   AnyHist->SetXTitle("distance [cm]");

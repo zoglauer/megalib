@@ -70,9 +70,8 @@ class MSimHT
 
   //! Return the original location of the hit - before noising
   MVector GetOriginalPosition() const { return m_OriginalPosition; }
-  //! Return the originla energy deposit - before noising
+  //! Return the original energy deposit - before noising
   double GetOriginalEnergy() const { return m_OriginalEnergy; }
-
   //! Set the time when this hit happend
   double GetTime() const { return m_Time; }
   //! Return the time when this hit happend

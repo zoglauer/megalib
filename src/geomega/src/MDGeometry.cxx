@@ -2251,7 +2251,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         D->SetDetectorVolume(V);
       }
       // Check for NoiseThresholdEqualsTriggerThreshold
-      else if (Tokenizer.IsTokenAt(1, "NoiseThresholdEqualsTriggerThreshold") == true) {
+      else if (Tokenizer.IsTokenAt(1, "NoiseThresholdEqualsTriggerThreshold") == true ||
+               Tokenizer.IsTokenAt(1, "NoiseThresholdEqualTriggerThreshold") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain one string and one bool,"
                " e.g. \"Wafer.NoiseThresholdEqualsTriggerThreshold true\"");

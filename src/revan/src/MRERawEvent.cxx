@@ -1129,7 +1129,6 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   m_Event->SetTimeWalk(m_TimeWalk);
   m_Event->SetDecay(m_Decay);
   if (m_ExternalBadEventFlag == true) {
-    mout<<"External bad flag true..."<<endl;
     m_Event->SetBad(m_ExternalBadEventFlag, m_ExternalBadEventString);
   }
 

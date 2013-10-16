@@ -47,6 +47,9 @@ public:
   // Section 1: Get and Set operations --- those are the most time critical part of MEGAlib:
   void Clear() { m_X = 0.0; m_Y = 0.0; m_Z = 0.0; }
 
+  //! Return true if this is the null vector
+  bool IsNull() const { return (m_X == 0 && m_Y ==0 && m_Z == 0) ? true : false; } 
+  
   double X() const { return m_X; }
   double Y() const { return m_Y; }
   double Z() const { return m_Z; }

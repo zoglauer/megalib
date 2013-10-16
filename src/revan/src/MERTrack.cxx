@@ -529,7 +529,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     mdebug<<"Search vertex: Only hit in layer:"<<endl;
     mdebug<<(*Iterator1)->ToString()<<endl;
 
-     vector<int> NBelow(m_NLayersForVertexSearch, 0);
+    vector<int> NBelow(m_NLayersForVertexSearch, 0);
     vector<int> NAbove(m_NLayersForVertexSearch, 0);
 
     int Distance;

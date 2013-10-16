@@ -122,32 +122,32 @@ bool MGeometryRevan::AreInSameLayer(MRESE *Orig, MRESE *Test)
 bool MGeometryRevan::AreInSameTracker(MRESE *Orig, MRESE *Test)
 {
   // That is not working for all possibilities...
-
+  
   if (Orig->GetDetector() != 1 || Test->GetDetector() != 1) {
-		mdebug<<"Not in D1"<<endl;
+    mdebug<<"Not in D1"<<endl;
     return false;
   }
 
   if (Orig->GetVolumeSequence()->GetDeepestVolume() == 0 || 
       Test->GetVolumeSequence()->GetDeepestVolume() == 0) {
-		mdebug<<"No deepest volume: "
-					<<Orig->GetVolumeSequence()->GetDeepestVolume()<<" - "
-					<<Test->GetVolumeSequence()->GetDeepestVolume()<<endl;
+    mdebug<<"No deepest volume: "
+          <<Orig->GetVolumeSequence()->GetDeepestVolume()<<" - "
+          <<Test->GetVolumeSequence()->GetDeepestVolume()<<endl;
     mdebug<<"  Orig: "<<Orig->GetVolumeSequence()->ToString();
     mdebug<<"  Test: "<<Test->GetVolumeSequence()->ToString();
     return false;
   }
 
   if (!(Orig->GetVolumeSequence()->GetRotation() == Test->GetVolumeSequence()->GetRotation())) {
-		TMatrix M =  Orig->GetVolumeSequence()->GetRotation();
-		cout<<"Orig: "<<M(0,0)<<" | "<<M(0,1)<<" | "<<M(0,2)<<endl;
-		cout<<"Orig: "<<M(1,0)<<" | "<<M(1,1)<<" | "<<M(1,2)<<endl;
-		cout<<"Orig: "<<M(2,0)<<" | "<<M(2,1)<<" | "<<M(2,2)<<endl;
-		TMatrix T =  Test->GetVolumeSequence()->GetRotation();
-		cout<<"Test: "<<T(0,0)<<" | "<<T(0,1)<<" | "<<T(0,2)<<endl;
-		cout<<"Test: "<<T(1,0)<<" | "<<T(1,1)<<" | "<<T(1,2)<<endl;
-		cout<<"Test: "<<T(2,0)<<" | "<<T(2,1)<<" | "<<T(2,2)<<endl;
-		mdebug<<"Different rotation!"<<endl;
+    //TMatrix M =  Orig->GetVolumeSequence()->GetRotation();
+    //cout<<"Orig: "<<M(0,0)<<" | "<<M(0,1)<<" | "<<M(0,2)<<endl;
+    //cout<<"Orig: "<<M(1,0)<<" | "<<M(1,1)<<" | "<<M(1,2)<<endl;
+    //cout<<"Orig: "<<M(2,0)<<" | "<<M(2,1)<<" | "<<M(2,2)<<endl;
+    //TMatrix T =  Test->GetVolumeSequence()->GetRotation();
+    //cout<<"Test: "<<T(0,0)<<" | "<<T(0,1)<<" | "<<T(0,2)<<endl;
+    //cout<<"Test: "<<T(1,0)<<" | "<<T(1,1)<<" | "<<T(1,2)<<endl;
+    //cout<<"Test: "<<T(2,0)<<" | "<<T(2,1)<<" | "<<T(2,2)<<endl;
+    mdebug<<"Different rotation!"<<endl;
     return false;
   }
 
@@ -165,10 +165,10 @@ int MGeometryRevan::GetLayerDistance(MRESE *Orig, MRESE *Test)
   double Dist = 0;
 
   if (m_ComplexER == true) {
-    if (AreInSameTracker(Orig, Test) == false) {
+    //if (AreInSameTracker(Orig, Test) == false) {
       //mdebug<<"("<<Orig->GetID()<<"+"<<Test->GetID()<<"): Not in same tracker!"<<endl;
-      return c_DifferentTracker;
-    }
+    //  return c_DifferentTracker;
+    //}
 
     if (Orig->GetVolumeSequence()->GetDetector() == 0 ||
         Test->GetVolumeSequence()->GetDetector() == 0) {

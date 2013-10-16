@@ -511,7 +511,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   
   if (IsGood == true) {
     if (EstimatedFirst < 0) {
-      merr<<"We missed some condition..."<<endl;
+      merr<<"ERROR: We missed some condition during handling of two-site events... Bug!"<<endl;
       return;
     }
 
