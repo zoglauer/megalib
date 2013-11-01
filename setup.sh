@@ -350,13 +350,19 @@ if [ -d $MEGALIBPATH ]; then
   fi
 
   echo "Making a backup of your old source code - just in case..."
-  tar cfz SourceCodeBackupDuringMEGAlibSetup.`date +'%d%m%y.%H%M%S'`.tgz src
+  BACKUP=SourceCodeBackupDuringMEGAlibSetup.`date +'%d%m%y.%H%M%S'`.tgz
+  tar cfz ${BACKUP} src
   if [ "$?" != "0" ]; then
     echo " "
     echo "ERROR: Something went wrong during backing up your source code."
     exit 1
   fi
-  
+  if [ ! -d "backup" ]; then
+    mkdir backup
+  fi
+  mv ${BACKUP} backup
+
+
   if [ "${REPOSITORY}" == "svn" ]; then
     if [ "${RELEASE}" == "dev" ]; then
       echo "Switching to latest development version of MEGAlib in the svn repository..."
@@ -414,10 +420,10 @@ if [ -d $MEGALIBPATH ]; then
   elif [ "${REPOSITORY}" == "git" ]; then
     cd ${MEGALIBPATH}
     echo "Getting all the latest changes from the repository..."
-    git pull origin
+    git fetch origin
     if [ "$?" != "0" ]; then
       echo " "
-      echo "ERROR: Unable to pull the latest version from repository"
+      echo "ERROR: Unable to fetch the latest versions from the repository"
       exit 1
     fi
     if [ "${RELEASE}" == "dev" ]; then
@@ -437,6 +443,13 @@ if [ -d $MEGALIBPATH ]; then
         echo "ERROR: Unable to update the git repository to the latest release branch"
         exit 1
       fi
+    fi
+    echo "Fast forwarding to the head"
+    git pull origin
+    if [ "$?" != "0" ]; then
+      echo " "
+      echo "ERROR: Unable to fast forward to the head"
+      exit 1
     fi
     cd ${STARTPATH}
   fi
