@@ -41,6 +41,8 @@ using namespace std;
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
+#include "TVirtualFitter.h"
+#include "TFitResult.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -1054,7 +1056,7 @@ void MInterfaceMimrec::ARMGamma()
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
-  TH1D* Hist = new TH1D("ARMComptonCone", "ARM - Compton cone", NBins, -Disk, Disk);
+  TH1D* Hist = new TH1D("ARMComptonCone", "ARM (Compton cone)", NBins, -Disk, Disk);
   Hist->SetBit(kCanDelete);
   Hist->SetDirectory(0);
   Hist->SetXTitle("ARM - Compton cone [#circ]");
@@ -1062,7 +1064,8 @@ void MInterfaceMimrec::ARMGamma()
   Hist->SetYTitle("counts");
   Hist->SetTitleOffset(1.3f, "Y");
   Hist->SetStats(false);
-  Hist->SetFillColor(8);
+  Hist->SetLineColor(kBlack);
+  //Hist->SetFillColor(8);
   Hist->SetMinimum(0);
 
   // Now restart the event-loader:
@@ -1160,7 +1163,7 @@ void MInterfaceMimrec::ARMGamma()
   Canvas->SetBorderSize(0);
   Canvas->SetBorderMode(0);
   Canvas->cd();
-  Hist->Draw(); //"HIST");
+  Hist->Draw();
   Canvas->Modified();
   Canvas->Update();
 
@@ -1169,37 +1172,37 @@ void MInterfaceMimrec::ARMGamma()
                 -Disk*0.99, Disk*0.99, 9);
   Fit->SetBit(kCanDelete);
   Fit->SetParNames("Offset", "Mean", 
-                   "Lorentz Width1", "Lorentz Height1",
-                   "Lorentz Width2", "Lorentz Height2",
+                   "Lorentz Width 1", "Lorentz Height 1",
+                   "Lorentz Width 2", "Lorentz Height 2",
                    "Gaus Height", "Gaus Sigma 1", "Gaus Sigma 2");
   Fit->SetParameters(0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
   Fit->SetParLimits(1, -Disk*0.99, Disk*0.99);
   Fit->FixParameter(0, 0);
-
-//   Fit = new TF1("ArcTanLorentzGausArm", ArcTanLorentzGausArm, -Disk*0.99, Disk*0.99, 9);
-
-//   Fit->SetParameters(1, 1, 1, 1, 1, 1, 1, 1, 1);
-
-//   Fit->SetParNames("Offset", 
-//                    "Tan height", "Tan width", 
-//                    "L height", "L Mean", "L Width",
-//                    "Sigma3", "Mean3", "Height3");
-// double ArcTanLorentzGausArm(double *x, double *par)
-// {
-//   // 0: Offset
-//   // 1: Tan height
-//   // 2: Tan width
-//   // 3: Gaus-height
-//   // 4: Gaus-mean
-//   // 5: Gaus-sigma
-//   // 6: Lorentz-height
-//   // 7: Lorentz-mean
-//   // 8: Lorentz-sigma
   
   Canvas->cd();
-  if (Fit != 0) Hist->Fit(Fit, "RQI");
+  TFitResultPtr FitResult;
+  TH1D* Confidence = 0;
+  if (Fit != 0) {
+    FitResult = Hist->Fit(Fit, "RQI SE");
+    if (FitResult->IsValid() == true) {
+      Confidence = new TH1D(*Hist);
+      Confidence->SetName("ConfidenceHistogramARM");
+      Confidence->SetTitle("Confidence Histogram ARM");
+      Confidence->SetLineColor(kBlue-9);
+      Confidence->SetFillColor(kBlue-9);
+      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence);
+      Hist->SetTitle("ARM (Compton cone) with confidence intervals");
+    }
+  }
   Hist->Draw("HIST");
-  if (Fit != 0) Fit->Draw("SAME");
+  if (Fit != 0) {
+    if (FitResult->IsValid() == true) {
+      Confidence->Draw("E5 SAME");
+    } else {
+      Fit->Draw("SAME");      
+    }
+  }
+  Hist->Draw("HIST SAME");
   Canvas->Modified();
   Canvas->Update();
   
@@ -1209,11 +1212,18 @@ void MInterfaceMimrec::ARMGamma()
   cout<<"Analyzed Compton and pair events:        "<<NEvents<<endl;
   cout<<"Compton and pair events in histogram:    "<<Inside<<" ("<<((NEvents > 0) ? 100.0*Inside/NEvents : 0.0)<<"%)"<<endl;
   cout<<endl;
-  cout<<"RMS:                                     "<<Hist->GetRMS()<<endl;
+  cout<<"RMS:                                     "<<Hist->GetRMS()<<" deg"<<endl;
   cout<<endl;
   if (Fit != 0) {
     cout<<"Total FWHM of fit:                       "<<GetFWHM(Fit, -180, 180)<<" deg"<<endl;
-    cout<<"Maximum of fit (x position):             "<<Fit->GetMaximumX(-Disk, +Disk)<<" deg with "<<Fit->GetMaximum(-Disk, +Disk)<<endl;
+    //cout<<"Maximum of fit (x position):             "<<Fit->GetMaximumX(-Disk, +Disk)<<" deg with "<<Fit->GetMaximum(-Disk, +Disk)<<endl;
+    cout<<"Maximum of fit (x position):             "<<FitResult->Parameter(1)<<" ["<<FitResult->LowerError(1)+FitResult->Parameter(1)<<"..."<<FitResult->UpperError(1)+FitResult->Parameter(1)<<"] deg with maximum "<<Fit->Eval(FitResult->Parameter(1))<<" cts"<<endl;
+
+    if (FitResult->IsValid() == false) {
+      cout<<endl;
+      cout<<"The fit to the data was not successful!"<<endl;
+      cout<<"Try again with a different window or different bin size or more statistics."<<endl;
+    }
   }
   cout<<endl;
   // delete Fit; // automatically deleted, when Canvas is deleted?

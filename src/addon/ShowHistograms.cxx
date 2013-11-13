@@ -172,17 +172,24 @@ bool ShowHistograms::Analyze()
   TIter I(F->GetListOfKeys());
   TKey *Key;
 
+  TCanvas* NewCanvas = 0;
+  bool First = true;
   while ((Key = (TKey*) I()) != 0) {
     TClass *Class = gROOT->GetClass(Key->GetClassName());
     if (Class->InheritsFrom("TH1")) {
       TH1* H = (TH1*) Key->ReadObj();
-      TCanvas* NewCanvas = new TCanvas();
+      if (NewCanvas == 0) NewCanvas = new TCanvas();
       NewCanvas->cd();
+      MString DrawOption;
       if (Class->InheritsFrom("TH2")) {
-        H->Draw("colz");       
-      } else {
-        H->Draw();
+        DrawOption += "COLZ";
       }
+      if (First == true) {
+        First = false;
+      } else {
+        DrawOption += " SAME"; 
+      }
+      H->Draw(DrawOption);
       NewCanvas->Update();
     } else if (Class->InheritsFrom("TCanvas")) {
       TCanvas* C = (TCanvas*) Key->ReadObj();
@@ -190,13 +197,18 @@ bool ShowHistograms::Analyze()
       TObject* Object;
       while ((Object = CanvasContent()) != 0) {
         if (Object->InheritsFrom("TH1")) {
-          TCanvas* NewCanvas = new TCanvas();
+          if (NewCanvas == 0) NewCanvas = new TCanvas();
           NewCanvas->cd();
+          MString DrawOption("");
           if (Object->InheritsFrom("TH2")) {
-            dynamic_cast<TH1*>(Object)->Draw("colz");
+            DrawOption += "colz";
+          } 
+          if (First == true) {
+            First = false;
           } else {
-            dynamic_cast<TH1*>(Object)->Draw();
+            DrawOption += " SAME"; 
           }
+          dynamic_cast<TH1*>(Object)->Draw(DrawOption);
           NewCanvas->Update();
         }
       }

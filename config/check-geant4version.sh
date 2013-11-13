@@ -96,7 +96,7 @@ done
 
 VERSIONS=`cat ${MEGALIB}/config/AllowedGeant4Versions.txt` 
 Geant4VersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
-Geant4VersionMax=`echo ${VERSIONS} | awk -F" " '{ print $2 }'`
+Geant4VersionMax=`echo ${VERSIONS} | awk -F" " '{ print $NF }'`
 
 Geant4VersionMinString="${Geant4VersionMin:(-2):1}.${Geant4VersionMin:(-1):2}"
 Geant4VersionMaxString="${Geant4VersionMax:(-2):1}.${Geant4VersionMax:(-1):2}"

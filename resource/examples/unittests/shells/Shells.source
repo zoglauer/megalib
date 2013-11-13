@@ -1,0 +1,27 @@
+# Source file for Shells unit test
+
+Version 1
+Geometry Shells.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+DefaultRange 0.01
+
+Run ShellsSim
+ShellsSim.FileName ShellsSim
+ShellsSim.Triggers 100000
+
+ShellsSim.Source ShellsSource
+ShellsSource.ParticleType 1
+ShellsSource.Beam PointSource 0 0 0
+ShellsSource.Spectrum Mono 1000
+ShellsSource.Flux 1.0
+

@@ -801,15 +801,15 @@ double MComptonEvent::dPhi()
 {
   //! Return the Compton scatter angle uncertainty
 
-  // dPhi ist not always calculated, but only when needed...
+  // dPhi is not always calculated, but only when not calculated before...
   if (m_dPhi > 0) return m_dPhi;
   
   // Maple calculated dPhiE
-  // Don't look at dCosPhiE here, because one cannot do acos(dCosPhiE), because it is just an error!) 
+  // Don't look at dCosPhiE here, because one cannot do acos(dCosPhiE), because it is just an error!!!
   double CosPhiE = 1-c_E0/m_Eg+c_E0/m_Ei;
   double dPhiE = sqrt(pow(c_E0/m_Eg/m_Eg-c_E0/m_Ei/m_Ei, 2)/(1-pow(CosPhiE,2))*m_dEg*m_dEg + c_E0*c_E0/(m_Ei*m_Ei*m_Ei*m_Ei)/(1-pow(CosPhiE,2))*m_dEe*m_dEe);
   
-  // dPhiA is the Gaussian error propagation of all (averaged) positions error comonents (=x,y,z) of all two positions
+  // dPhiA is the Gaussian error propagation of all (averaged) positions error components (=x,y,z) of all two positions
   double dPhiA = 0;
   double dPhiAp = 0;
   double dPhiAm = 0;

@@ -1,0 +1,151 @@
+// A spheric geometry for testing simulations
+// Don't change anything because it used for several cosima examples!!
+
+Name Spheric
+Version 1.0
+
+SurroundingSphere 200  0.0  0.0  0.0  200.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Shape SPHE 0.0 105.0 0.0 180.0 -180.0 180.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+Constant MAT Germanium
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 200. 200. 200.
+WorldVolume.Mother 0
+
+
+For X 20 0.0 0.05
+  Volume Shell_l1_%X
+  Shell_l1_%X.Material MAT
+  Shell_l1_%X.Visibility 1
+  Shell_l1_%X.Color 2
+  Shell_l1_%X.Shape SPHE $X { $X + 0.05 }  0.0 180.0 0.0 360.0
+  Shell_l1_%X.Position 0.0 0.0 0.0
+  Shell_l1_%X.Mother WorldVolume
+  
+  Scintillator Detector_l1_%X
+  Detector_l1_%X.SensitiveVolume Shell_l1_%X
+  Detector_l1_%X.EnergyResolution Ideal
+  Detector_l1_%X.TriggerThreshold 0.0001
+  Detector_l1_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 1.0 0.1
+  Volume Shell_l2_%X
+  Shell_l2_%X.Material MAT
+  Shell_l2_%X.Visibility 1
+  Shell_l2_%X.Color 3
+  Shell_l2_%X.Shape SPHE $X { $X + 0.1 }  0.0 180.0 0.0 360.0
+  Shell_l2_%X.Position 0.0 0.0 0.0
+  Shell_l2_%X.Mother WorldVolume
+  
+  Scintillator Detector_l2_%X
+  Detector_l2_%X.SensitiveVolume Shell_l2_%X
+  Detector_l2_%X.EnergyResolution Ideal
+  Detector_l2_%X.TriggerThreshold 0.0001
+  Detector_l2_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 3.0 0.2
+  Volume Shell_l3_%X
+  Shell_l3_%X.Material MAT
+  Shell_l3_%X.Visibility 1
+  Shell_l3_%X.Color 4
+  Shell_l3_%X.Shape SPHE $X { $X + 0.2 }  0.0 180.0 0.0 360.0
+  Shell_l3_%X.Position 0.0 0.0 0.0
+  Shell_l3_%X.Mother WorldVolume
+  
+  Scintillator Detector_l3_%X
+  Detector_l3_%X.SensitiveVolume Shell_l3_%X
+  Detector_l3_%X.EnergyResolution Ideal
+  Detector_l3_%X.TriggerThreshold 0.0001
+  Detector_l3_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 7.0 0.4
+  Volume Shell_l4_%X
+  Shell_l4_%X.Material MAT
+  Shell_l4_%X.Visibility 1
+  Shell_l4_%X.Color 5
+  Shell_l4_%X.Shape SPHE $X { $X + 0.4 }  0.0 180.0 0.0 360.0
+  Shell_l4_%X.Position 0.0 0.0 0.0
+  Shell_l4_%X.Mother WorldVolume
+  
+  Scintillator Detector_l4_%X
+  Detector_l4_%X.SensitiveVolume Shell_l4_%X
+  Detector_l4_%X.EnergyResolution Ideal
+  Detector_l4_%X.TriggerThreshold 0.0001
+  Detector_l4_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 15.0 0.8
+  Volume Shell_l5_%X
+  Shell_l5_%X.Material MAT
+  Shell_l5_%X.Visibility 1
+  Shell_l5_%X.Color 6
+  Shell_l5_%X.Shape SPHE $X { $X + 0.8 }  0.0 180.0 0.0 360.0
+  Shell_l5_%X.Position 0.0 0.0 0.0
+  Shell_l5_%X.Mother WorldVolume
+  
+  Scintillator Detector_l5_%X
+  Detector_l5_%X.SensitiveVolume Shell_l5_%X
+  Detector_l5_%X.EnergyResolution Ideal
+  Detector_l5_%X.TriggerThreshold 0.0001
+  Detector_l5_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 31.0 1.6
+  Volume Shell_l6_%X
+  Shell_l6_%X.Material MAT
+  Shell_l6_%X.Visibility 1
+  Shell_l6_%X.Color 7
+  Shell_l6_%X.Shape SPHE $X { $X + 1.6 }  0.0 180.0 0.0 360.0
+  Shell_l6_%X.Position 0.0 0.0 0.0
+  Shell_l6_%X.Mother WorldVolume
+  
+  Scintillator Detector_l6_%X
+  Detector_l6_%X.SensitiveVolume Shell_l6_%X
+  Detector_l6_%X.EnergyResolution Ideal
+  Detector_l6_%X.TriggerThreshold 0.0001
+  Detector_l6_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+For X 20 63.0 3.2
+  Volume Shell_l7_%X
+  Shell_l7_%X.Material MAT
+  Shell_l7_%X.Visibility 1
+  Shell_l7_%X.Color 7
+  Shell_l7_%X.Shape SPHE $X { $X + 3.2 }  0.0 180.0 0.0 360.0
+  Shell_l7_%X.Position 0.0 0.0 0.0
+  Shell_l7_%X.Mother WorldVolume
+  
+  Scintillator Detector_l7_%X
+  Detector_l7_%X.SensitiveVolume Shell_l7_%X
+  Detector_l7_%X.EnergyResolution Ideal
+  Detector_l7_%X.TriggerThreshold 0.0001
+  Detector_l7_%X.NoiseThresholdEqualTriggerThreshold true
+Done
+
+
+Trigger All
+All.Veto false
+All.TriggerByChannel true
+All.DetectorType Scintillator 1
+
+

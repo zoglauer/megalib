@@ -95,7 +95,7 @@ done
 
 VERSIONS=`cat ${MEGALIB}/config/AllowedROOTVersions.txt` 
 RootVersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
-RootVersionMax=`echo ${VERSIONS} | awk -F" " '{ print $2 }'`
+RootVersionMax=`echo ${VERSIONS} | awk -F" " '{ print $NF }'`
 
 RootVersionMinString="${RootVersionMin:(-3):1}.${RootVersionMin:(-2):2}"
 RootVersionMaxString="${RootVersionMax:(-3):1}.${RootVersionMax:(-2):2}"

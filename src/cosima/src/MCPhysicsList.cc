@@ -158,7 +158,8 @@ void MCPhysicsList::ConstructProcess()
 {
   G4VModularPhysicsList::ConstructProcess();
   
- // Do some additional modifications to the default lists:
+  /* unnecessary as of Geant4 9.6
+  // Do some additional modifications to the default lists:
   bool PhotoElectricAugerFound = false;
   bool ElectronIonizationAugerFound = false;
   bool ComptonAugerFound = false;
@@ -183,7 +184,7 @@ void MCPhysicsList::ConstructProcess()
         
           // Photo electric effect
           if (Model->GetName() == "LivermorePolarizedPhotoElectric") {
-            dynamic_cast<G4LivermorePolarizedPhotoElectricModel*>(Model)->ActivateAuger(true);
+            //dynamic_cast<G4LivermorePolarizedPhotoElectricModel*>(Model)->ActivateAuger(true);
             cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             PhotoElectricAugerFound = true;
           } else if (Model->GetName() == "LivermorePhElectric") {
@@ -223,7 +224,7 @@ void MCPhysicsList::ConstructProcess()
             //cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             ElectronIonizationAugerFound = true;
           } else if (Model->GetName() == "PenelopeIoni") {
-            dynamic_cast<G4PenelopeIonisationModel*>(Model)->ActivateAuger(true);
+            //dynamic_cast<G4PenelopeIonisationModel*>(Model)->ActivateAuger(true);
             cout<<"Activating Auger effect in "<<Model->GetName()<<endl;
             ElectronIonizationAugerFound = true;
           } else if (Model->GetName() == "eIoni") {
@@ -246,6 +247,7 @@ void MCPhysicsList::ConstructProcess()
       merr<<"Unable to activate Auger effect for Compton scattering (this probably means that the processes got renamed in a Geant4 update...)"<<endl;
     }
   }
+  */
 }
 
   

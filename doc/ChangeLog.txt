@@ -7,6 +7,8 @@ Version 2.27/2.28
 =================
 
 *** Important:
++ Compatibility with Geant4 9.6: Unit tests have revealed subtle differences
+  They are not big enough to raise concerns, but just don't mix 9.5 & 9.6 sims
 + If you have detectors which only do vetoes, it is now required to set the
   "NoiseThresholdEqualsTriggerThreshold true" flag
 + If you do electron tracking it is now required to set the detectors in which 
@@ -20,6 +22,8 @@ Cosima:
 + Performance improvements: Only load materials which are really used, etc.
   Significant (0..90%) speed up of load times, especially in hadronics case,
   and roughly 8% overall performance improvement
++ Compatibility with Geant 9.6
++ New unit test for cosima
 
 Sivan:
 

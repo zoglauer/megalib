@@ -162,7 +162,7 @@ bool MFunction::Set(const MString FileName, const MString KeyWord)
     if (Parser.GetTokenizerAt(i)->IsTokenAt(0, KeyWord) == true) {
       if (Parser.GetTokenizerAt(i)->GetNTokens() != 3) {
         mout<<"In the function defined by: "<<FileName<<endl;
-        mout<<"Wrong number of arguments!"<<endl;
+        mout<<"Wrong number of arguments: "<<Parser.GetTokenizerAt(i)->GetNTokens()<<endl;
         return false;
       }
 
