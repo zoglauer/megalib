@@ -212,6 +212,7 @@ MDDetector::MDDetector(const MDDetector& D)
   m_EnergyResolutionWidth1 = D.m_EnergyResolutionWidth1;
   m_EnergyResolutionPeak2 = D.m_EnergyResolutionPeak2; 
   m_EnergyResolutionWidth2 = D.m_EnergyResolutionWidth2;
+  m_EnergyResolutionRatio = D.m_EnergyResolutionRatio;
 
   m_TimeResolutionType = D.m_TimeResolutionType;
   m_TimeResolution = D.m_TimeResolution;
@@ -290,6 +291,7 @@ bool MDDetector::CopyDataToNamedDetectors()
       m_NamedDetectors[d]->m_EnergyResolutionWidth1 = m_EnergyResolutionWidth1;
       m_NamedDetectors[d]->m_EnergyResolutionPeak2 = m_EnergyResolutionPeak2; 
       m_NamedDetectors[d]->m_EnergyResolutionWidth2 = m_EnergyResolutionWidth2;
+      m_NamedDetectors[d]->m_EnergyResolutionRatio = m_EnergyResolutionRatio;
     }
     
     if (m_NamedDetectors[d]->m_TimeResolutionType == c_TimeResolutionTypeUnknown && 
