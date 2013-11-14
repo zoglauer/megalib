@@ -466,7 +466,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       for (int r1 = 0; r1 < RE->GetNRESEs(); ++r1) {
         for (int r2 = r1+1; r2 < RE->GetNRESEs(); ++r2) {
           if (RE->GetRESEAt(r1)->GetPosition().AreEqual(RE->GetRESEAt(r2)->GetPosition(), 0.0000001) == true) {
-            cout<<"Event "<<RE->GetEventID()<<": Coincidence search lead to two interactions in same voxel within one event: "<<endl;
+            cout<<"Event "<<RE->GetEventID()<<"(t="<<RE->GetEventTime()<<"): Coincidence search lead to two interactions in same voxel within one event: "<<endl;
             cout<<RE->GetRESEAt(r1)->ToString();
             cout<<RE->GetRESEAt(r2)->ToString();
             cout<<"Merging hits..."<<endl;
@@ -478,7 +478,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         }
       }
     }
-  } // coincidence search
+  } // no coincidence search
   else {
     RE = m_EventStore->GetRawEventAt(0);
     m_EventStore->RemoveRawEvent(RE);
