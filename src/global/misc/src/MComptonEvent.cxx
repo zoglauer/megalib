@@ -514,6 +514,8 @@ bool MComptonEvent::Assimilate(MComptonEvent* Compton)
   m_TrackQualityFactor1 = Compton->TrackQualityFactor1();
   m_TrackQualityFactor2 = Compton->TrackQualityFactor2();
 
+  m_CoincidenceWindow = Compton->CoincidenceWindow();
+  
   if (Validate() == false) return false;
   
   return true;
@@ -951,6 +953,8 @@ void MComptonEvent::Reset()
 
   m_LeverArm = 0;
 
+  m_CoincidenceWindow = 0;
+  
   return;
 }
 
@@ -1040,6 +1044,7 @@ bool MComptonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool R
     S<<m_dDe[0]<<" "<<m_dDe[1]<<" "<<m_dDe[2]<<endl;
     S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
     S<<"LA "<<m_LeverArm<<endl;
+    S<<"CW "<<m_CoincidenceWindow<<endl;
     S.flush();
   }
 
@@ -1194,6 +1199,16 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
     } else {
       if (sscanf(Line, "LA %lf", &m_LeverArm) != 1) {
         mout<<"Unable to parse LA of event "<<m_Id<<"!"<<endl;
+        Ret = 1;
+      }
+    }
+  } else if (Line[0] == 'C' && Line[1] == 'W') {
+    if (Fast == true) {
+      if (m_CoincidenceWindow.Set(Line) == false) {
+        Ret = 1;
+      }
+    } else {
+      if (m_CoincidenceWindow.Set(MString(Line)) == false) {
         Ret = 1;
       }
     }

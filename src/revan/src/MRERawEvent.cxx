@@ -226,6 +226,8 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_PairQualityFactor = RE->m_PairQualityFactor;
 
   m_GoodEvent = RE->m_GoodEvent;
+  
+  m_CoincidenceWindow = RE->m_CoincidenceWindow;
 }
 
 
@@ -312,6 +314,8 @@ void MRERawEvent::Init()
   m_Decay = false;
 
   m_Measurements.clear();
+  
+  m_CoincidenceWindow.Set(0);
 }
 
 
@@ -1065,6 +1069,8 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
         }
       }
       CE->SetLeverArm(LeverArm);
+      
+      CE->SetCoincidenceWindow(m_CoincidenceWindow);
 
       m_Event = (MPhysicalEvent*) CE;
     } else if (m_EventType == c_PairEvent) {

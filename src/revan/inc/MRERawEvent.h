@@ -94,8 +94,11 @@ class MRERawEvent : public MRESE
   unsigned int GetEventId() { mdep<<"Please use: GetEventID"<<show; return GetEventID(); }
   void SetEventId(unsigned int ID) { mdep<<"Please use: SetEventID"<<show; SetEventID(ID); }
 
-  MTime GetEventTime() { return m_EventTime; }
+  MTime GetEventTime() const { return m_EventTime; }
   void SetEventTime(MTime Time) { m_EventTime = Time; }
+
+  MTime GetCoincidenceWindow() const { return m_CoincidenceWindow; }
+  void SetCoincidenceWindow(MTime CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
 
   int GetEventType();
   void SetEventType(int Type);
@@ -335,7 +338,8 @@ class MRERawEvent : public MRESE
   //! the positron track of the pair
   MRESE* m_PositronTrack; 
 
-
+  //! The coincidence window - time between the first and the last interaction
+  MTime m_CoincidenceWindow;
 
 #ifdef ___CINT___
  public:

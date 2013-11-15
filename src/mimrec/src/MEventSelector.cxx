@@ -102,6 +102,9 @@ MEventSelector::MEventSelector()
   m_TrackQualityFactorMin = 0; 
   m_TrackQualityFactorMax = numeric_limits<double>::max();
 
+  m_CoincidenceWindowMin = 0; 
+  m_CoincidenceWindowMax = numeric_limits<double>::max();
+
   m_ThetaDeviationMax = 180;
 
   m_EventIdMin = 0; 
@@ -205,6 +208,8 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_ComptonQualityFactorMax = EventSelector.m_ComptonQualityFactorMax;              
   m_TrackQualityFactorMin = EventSelector.m_TrackQualityFactorMin;              
   m_TrackQualityFactorMax = EventSelector.m_TrackQualityFactorMax;              
+  m_CoincidenceWindowMin = EventSelector.m_CoincidenceWindowMin;              
+  m_CoincidenceWindowMax = EventSelector.m_CoincidenceWindowMax;              
   m_EventIdMin = EventSelector.m_EventIdMin;                        
   m_EventIdMax = EventSelector.m_EventIdMax;                        
   m_ThetaDeviationMax = EventSelector.m_ThetaDeviationMax;              
@@ -257,6 +262,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedClusteringQualityFactor = EventSelector.m_NRejectedClusteringQualityFactor;              
   m_NRejectedComptonQualityFactor = EventSelector.m_NRejectedComptonQualityFactor;              
   m_NRejectedTrackQualityFactor = EventSelector.m_NRejectedTrackQualityFactor;              
+  m_NRejectedCoincidenceWindow = EventSelector.m_NRejectedCoincidenceWindow;              
   m_NRejectedEarthHorizonCut = EventSelector.m_NRejectedEarthHorizonCut;              
   m_NRejectedThetaDeviationMax = EventSelector.m_NRejectedThetaDeviationMax;              
   m_NRejectedUsePhotos = EventSelector.m_NRejectedUsePhotos;                
@@ -301,6 +307,7 @@ void MEventSelector::Reset()
   m_NRejectedClusteringQualityFactor = 0;
   m_NRejectedComptonQualityFactor = 0;
   m_NRejectedTrackQualityFactor = 0;
+  m_NRejectedCoincidenceWindow = 0;
   m_NRejectedEarthHorizonCut = 0;
   m_NRejectedThetaDeviationMax = 0;
   m_NRejectedUsePhotos = 0;
@@ -398,6 +405,7 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetClusteringQualityFactor(S->GetClusteringQualityFactorRangeMin(), S->GetClusteringQualityFactorRangeMax());
   SetComptonQualityFactor(S->GetComptonQualityFactorRangeMin(), S->GetComptonQualityFactorRangeMax());
   SetTrackQualityFactor(S->GetTrackQualityFactorRangeMin(), S->GetTrackQualityFactorRangeMax());
+  SetCoincidenceWindow(S->GetCoincidenceWindowRangeMin(), S->GetCoincidenceWindowRangeMax());
   SetEventId(S->GetEventIdRangeMin(), S->GetEventIdRangeMax());
 }
 
@@ -744,6 +752,16 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       Return = false;
     }
 
+    if (C->CoincidenceWindow() < m_CoincidenceWindowMin || 
+        C->CoincidenceWindow() > m_CoincidenceWindowMax) {
+      if (DumpOutput == true) {
+        mout<<"ID "<<Event->GetId()<<": Not within coincidence window selection: "
+            <<m_CoincidenceWindowMin<<"<"<<C->CoincidenceWindow()<<"<"<<m_CoincidenceWindowMax<<endl;
+      }      
+      m_NRejectedCoincidenceWindow++;
+      Return = false;
+    }
+
     if (C->TrackLength() > 1) {
       if (fabs(C->DeltaTheta())*c_Deg > m_ThetaDeviationMax) {
         if (DumpOutput == true) {
@@ -978,6 +996,11 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     }
     if (C->TrackQualityFactor1() < m_TrackQualityFactorMin || 
         C->TrackQualityFactor1() > m_TrackQualityFactorMax) {
+      return false;
+    }
+
+    if (C->CoincidenceWindow() < m_CoincidenceWindowMin || 
+        C->CoincidenceWindow() > m_CoincidenceWindowMax) {
       return false;
     }
 
@@ -1515,6 +1538,18 @@ void MEventSelector::SetTrackQualityFactor(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MEventSelector::SetCoincidenceWindow(double Min, double Max)
+{
+  // Set the range of
+
+  m_CoincidenceWindowMin = Min;
+  m_CoincidenceWindowMax = Max;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MEventSelector::SetEventId(int Min, int Max)
 {
   // Set the range of
@@ -1620,6 +1655,8 @@ MString MEventSelector::ToString()
    <<m_NRejectedComptonQualityFactor<<endl;
   s<<"Track quality factor ...........  "
    <<m_NRejectedTrackQualityFactor<<endl;
+  s<<"Coincidence window .............  "
+   <<m_NRejectedCoincidenceWindow<<endl;
   s<<"Earth-Horizon cut ..............  "
    <<m_NRejectedEarthHorizonCut<<endl;
   s<<"Max. theta deviation ...........  "
@@ -1723,6 +1760,8 @@ ostream& operator<<(ostream& os, MEventSelector& S)
     <<S.m_ComptonQualityFactorMin<<"-"<<S.m_ComptonQualityFactorMax<<endl;
   os<<"Track quality factor:             "
     <<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
+  os<<"Coincidence window:               "
+    <<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
   os<<"Event ID:                         "
     <<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
   os<<"Earth horizon cut:                "

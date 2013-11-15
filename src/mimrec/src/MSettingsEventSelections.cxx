@@ -145,6 +145,9 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_TimeWalkRangeMin = -1000;
   m_TimeWalkRangeMax = numeric_limits<int>::max();
 
+  m_CoincidenceWindowRangeMin = 0;
+  m_CoincidenceWindowRangeMax = 1;
+
   m_OpeningAnglePairMin = 0;
   m_OpeningAnglePairMax = 180;
 
@@ -217,6 +220,7 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "AnyDistanceRange", m_DistanceRangeMin, m_DistanceRangeMax);
   new MXmlNode(aNode, "Time", m_TimeRangeMin, m_TimeRangeMax);
   new MXmlNode(aNode, "TimeWalk", m_TimeWalkRangeMin, m_TimeWalkRangeMax);
+  new MXmlNode(aNode, "CoincidenceWindow", m_CoincidenceWindowRangeMin, m_CoincidenceWindowRangeMax);
   new MXmlNode(aNode, "OpeningAnglePair", m_OpeningAnglePairMin, m_OpeningAnglePairMax);
   new MXmlNode(aNode, "InitialEnergyDepositPair", m_InitialEnergyDepositPairMin, m_InitialEnergyDepositPairMax);
   
@@ -371,6 +375,10 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("TimeWalk")) != 0) {
       m_TimeWalkRangeMin = bNode->GetMinValueAsDouble();
       m_TimeWalkRangeMax = bNode->GetMaxValueAsDouble();
+    }
+    if ((bNode = aNode->GetNode("CoincidenceWindow")) != 0) {
+      m_CoincidenceWindowRangeMin = bNode->GetMinValueAsDouble();
+      m_CoincidenceWindowRangeMax = bNode->GetMaxValueAsDouble();
     }
     if ((bNode = aNode->GetNode("OpeningAnglePair")) != 0) {
       m_OpeningAnglePairMin = bNode->GetMinValueAsDouble();

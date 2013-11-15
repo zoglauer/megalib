@@ -4436,6 +4436,94 @@ void MInterfaceMimrec::TimeDistribution()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceMimrec::CoincidenceWindowDistribution()
+{
+  // Time distribution in the data-set
+
+  int NBins = 100;
+
+  MPhysicalEvent* Event = 0;
+  if (InitializeEventloader() == false) return;
+
+  TH1D* Hist = 
+    new TH1D("CoincidenceWindow", "Coincidence window", NBins, 
+             m_Data->GetCoincidenceWindowRangeMin(), m_Data->GetCoincidenceWindowRangeMax());
+  Hist->SetBit(kCanDelete);
+  Hist->SetXTitle("time [s]");
+  Hist->SetYTitle("counts");
+  Hist->SetStats(false);
+  Hist->SetFillColor(8);
+  Hist->SetMinimum(0);
+
+  double MinTime = numeric_limits<double>::max();
+  double MaxTime = 0;
+
+  vector<double> TimeList;
+  MEventSelector NoTimeWindowSelector = *m_Selector;
+  NoTimeWindowSelector.SetTime(0, numeric_limits<double>::max());
+
+  // First check on the size of the histogram:
+  MComptonEvent* ComptonEvent;
+  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+    if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+      ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+
+      if (ComptonEvent->CoincidenceWindow().GetAsDouble() < MinTime) MinTime = ComptonEvent->CoincidenceWindow().GetAsDouble();
+      if (ComptonEvent->CoincidenceWindow().GetAsDouble() > MaxTime) MaxTime = ComptonEvent->CoincidenceWindow().GetAsDouble();
+
+      // Only accept Comptons within the selected ranges... 
+      if (m_Selector->IsQualifiedEvent(ComptonEvent) == true) {
+        Hist->Fill(ComptonEvent->CoincidenceWindow().GetAsDouble());
+      }    
+      // Only accept Comptons within the selected ranges... 
+      if (NoTimeWindowSelector.IsQualifiedEvent(ComptonEvent) == true) {
+        TimeList.push_back(ComptonEvent->CoincidenceWindow().GetAsDouble());
+      }
+    }
+    delete Event;
+  }
+  m_EventFile->Close();
+
+  mout<<"Minimum coincidence window: "<<setprecision(20)<<MinTime<<endl;
+  mout<<"Maximum coincidence window: "<<setprecision(20)<<MaxTime<<setprecision(6)<<endl;
+
+  if (Hist->GetIntegral() == 0) {
+    mgui<<"No events passed the event selections"<<info;
+    return;
+  }
+
+  TCanvas* Canvas = new TCanvas("CoincidenceWindow", "Coincidence window", 800, 600);
+  Canvas->cd();
+  Hist->Draw();
+  Canvas->Update();
+
+
+  TH1D* HistOptimized = 
+    new TH1D("OptimizedCoincidenceWindow", "Coincidence window (optimized window without the cuts in the event selector)", NBins, MinTime, MaxTime);
+  HistOptimized->SetBit(kCanDelete);
+  HistOptimized->SetXTitle("time [s]");
+  HistOptimized->SetYTitle("counts");
+  HistOptimized->SetStats(false);
+  HistOptimized->SetFillColor(8);
+  HistOptimized->SetMinimum(0);
+
+  for (unsigned int i = 0; i < TimeList.size(); ++i) {
+    HistOptimized->Fill(TimeList[i]);
+  }
+
+  TCanvas* CanvasOptimized = new TCanvas("OptimizedCoincidenceWindow", "Coincidence window (optimized)", 800, 600);
+  CanvasOptimized->cd();
+  HistOptimized->Draw();
+  CanvasOptimized->Update();
+
+
+  return; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceMimrec::LocationOfFirstIA()
 {
   // Display the location of the first compton interaction

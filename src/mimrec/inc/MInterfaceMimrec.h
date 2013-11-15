@@ -120,6 +120,7 @@ class MInterfaceMimrec : public MInterface
   void InitialEnergyDeposit();
   void EnergyDistributionD2();
   void TimeDistribution();
+  void CoincidenceWindowDistribution();
   void TimeWalkDistribution();
   void TimeWalkArmDistribution();
   void LocationOfFirstIA();

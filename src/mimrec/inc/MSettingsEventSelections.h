@@ -276,6 +276,12 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetTimeWalkRangeMax() const { return m_TimeWalkRangeMax; }
   void SetTimeWalkRangeMax(double TimeWalkRangeMax) { m_TimeWalkRangeMax = TimeWalkRangeMax; m_EventSelectionModified = true; }
 
+  double GetCoincidenceWindowRangeMin() const { return m_CoincidenceWindowRangeMin; }
+  void SetCoincidenceWindowRangeMin(double CoincidenceWindowRangeMin) { m_CoincidenceWindowRangeMin = CoincidenceWindowRangeMin; m_EventSelectionModified = true; }
+
+  double GetCoincidenceWindowRangeMax() const { return m_CoincidenceWindowRangeMax; }
+  void SetCoincidenceWindowRangeMax(double CoincidenceWindowRangeMax) { m_CoincidenceWindowRangeMax = CoincidenceWindowRangeMax; m_EventSelectionModified = true; }
+
   double GetOpeningAnglePairMin() const { return m_OpeningAnglePairMin; }
   void SetOpeningAnglePairMin(double OpeningAnglePairMin) { m_OpeningAnglePairMin = OpeningAnglePairMin; m_EventSelectionModified = true; }
 
@@ -365,6 +371,9 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double m_TimeWalkRangeMin;
   double m_TimeWalkRangeMax;
+
+  double m_CoincidenceWindowRangeMin;
+  double m_CoincidenceWindowRangeMax;
 
   double m_OpeningAnglePairMin;
   double m_OpeningAnglePairMax;

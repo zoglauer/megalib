@@ -192,6 +192,7 @@ void MGUIMimrecMain::Create()
   MenuDistributions->AddEntry("Scatter angle distributions", c_ResponsePhi);
   MenuDistributions->AddEntry("Distance distribution", c_ResponseDistance);
   MenuDistributions->AddEntry("Compton sequence and track length", c_ResponseSequenceLengths);
+  MenuDistributions->AddEntry("Coincidence window", c_ResponseCoincidenceWindow);
   MenuDistributions->AddEntry("Energy distribution Electron Photon", c_ResponseEnergyDistributionD1D2);
   MenuDistributions->AddEntry("Azimuthal Compton scatter angle distribution", c_ResponseAzimuthalComptonScatterAngle);
   MenuDistributions->AddEntry("Azimuthal Electron scatter angle distribution", c_ResponseAzimuthalElectronScatterAngle);
@@ -520,6 +521,10 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
 
       case c_ResponseTime:
         m_Interface->TimeDistribution();
+        break;
+
+      case c_ResponseCoincidenceWindow:
+        m_Interface->CoincidenceWindowDistribution();
         break;
 
       case c_ResponseTimeWalk:

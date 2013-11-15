@@ -104,6 +104,9 @@ class MComptonEvent : public MPhysicalEvent
   //! Set the quality factor of the second best (i.e. not choosen) electron track
   void SetTrackQualityFactor2(const double TrackQualityFactor2) { m_TrackQualityFactor2 = TrackQualityFactor2; }
 
+  //! Set the coincidence window
+  void SetCoincidenceWindow(const MTime& CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
+  
 
   // Elementary Compton data, i.e. the stored stuff 
   // inlined for efficiency reasons:
@@ -177,6 +180,9 @@ class MComptonEvent : public MPhysicalEvent
 
   //! Return true if this event has a track
   inline bool HasTrack() const { return m_HasTrack; }
+
+  //! Return the coincidence window
+  MTime CoincidenceWindow() const { return m_CoincidenceWindow; }
 
 
   //! Return the Angular Resolution Measure value for the gamma cone for the given test position
@@ -297,6 +303,9 @@ class MComptonEvent : public MPhysicalEvent
 
   double m_LeverArm;    // Minimum lever arm between Compton interactions
 
+  //! The coincidence window
+  MTime m_CoincidenceWindow;
+  
   // private members:
  private:
 

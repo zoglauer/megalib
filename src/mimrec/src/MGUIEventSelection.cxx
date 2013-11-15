@@ -406,6 +406,17 @@ void MGUIEventSelection::Create()
   m_TrackQualityFactor->SetEntryFieldSize(FieldSize);
   ComptonQFrame->AddFrame(m_TrackQualityFactor, MinMaxLayout);
 
+  m_CoincidenceWindow = new MGUIEMinMaxEntry(ComptonQFrame,
+                                             MString("Coincidence window:"),
+                                             false,
+                                             MString("Minimum (should be zero): "),
+                                             MString("Maximum: "),
+                                             m_GUIData->GetCoincidenceWindowRangeMin(), 
+                                             m_GUIData->GetCoincidenceWindowRangeMax(), 
+                                             true, 0.0);
+  m_CoincidenceWindow->SetEntryFieldSize(FieldSize);
+  ComptonQFrame->AddFrame(m_CoincidenceWindow, MinMaxLayout);
+
 
 
 
@@ -945,6 +956,8 @@ bool MGUIEventSelection::OnApply()
                                          0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_TrackQualityFactor->CheckRange(0.0, numeric_limits<double>::max(), 
                                        0.0, numeric_limits<double>::max(), true) == false) return false;
+  if (m_CoincidenceWindow->CheckRange(0.0, numeric_limits<double>::max(), 
+                                      0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_FirstTotalEnergy->CheckRange(0.0, numeric_limits<double>::max(), 
                                      0.0, numeric_limits<double>::max(), false) == false) return false;
   if (m_SecondTotalEnergy->CheckRange(0.0, numeric_limits<double>::max(), 
@@ -1035,6 +1048,11 @@ bool MGUIEventSelection::OnApply()
   if (m_TrackQualityFactor->IsModified() == true) {
     m_GUIData->SetTrackQualityFactorRangeMin(m_TrackQualityFactor->GetMinValue());
     m_GUIData->SetTrackQualityFactorRangeMax(m_TrackQualityFactor->GetMaxValue());
+  }
+
+  if (m_CoincidenceWindow->IsModified() == true) {
+    m_GUIData->SetCoincidenceWindowRangeMin(m_CoincidenceWindow->GetMinValue());
+    m_GUIData->SetCoincidenceWindowRangeMax(m_CoincidenceWindow->GetMaxValue());
   }
 
   if (m_FirstTotalEnergy->IsModified() == true) {

@@ -97,6 +97,7 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEMinMaxEntry* m_ClusteringQualityFactor;
   MGUIEMinMaxEntry* m_ComptonQualityFactor;
   MGUIEMinMaxEntry* m_TrackQualityFactor;
+  MGUIEMinMaxEntry* m_CoincidenceWindow;
   MGUIEMinMaxEntry* m_FirstTotalEnergy;
   MGUIEMinMaxEntry* m_SecondTotalEnergy;
   MGUIEMinMaxEntry* m_ThirdTotalEnergy;

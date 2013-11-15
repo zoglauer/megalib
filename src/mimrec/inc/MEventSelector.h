@@ -134,6 +134,8 @@ class MEventSelector
   void ApplyComptonQualityFactor(MEventSelector& E) { E.SetComptonQualityFactor(m_ComptonQualityFactorMin, m_ComptonQualityFactorMax); }
   void SetTrackQualityFactor(double Min = 0, double Max = 1);
   void ApplyTrackQualityFactor(MEventSelector& E) { E.SetTrackQualityFactor(m_TrackQualityFactorMin, m_TrackQualityFactorMax); }
+  void SetCoincidenceWindow(double Min = 0, double Max = 1);
+  void ApplyCoincidenceWindow(MEventSelector& E) { E.SetCoincidenceWindow(m_CoincidenceWindowMin, m_CoincidenceWindowMax); }
   void SetEventId(int Min = 2, int Max = 10);
   void ApplyEventId(MEventSelector& E) { E.SetEventId(m_EventIdMin, m_EventIdMax); }
 
@@ -215,6 +217,8 @@ class MEventSelector
   double m_ComptonQualityFactorMax;
   double m_TrackQualityFactorMin;
   double m_TrackQualityFactorMax;
+  double m_CoincidenceWindowMin;
+  double m_CoincidenceWindowMax;
   unsigned int m_EventIdMin;
   unsigned int m_EventIdMax;
   double m_ThetaDeviationMax;
@@ -269,6 +273,7 @@ class MEventSelector
   int m_NRejectedClusteringQualityFactor;
   int m_NRejectedComptonQualityFactor;
   int m_NRejectedTrackQualityFactor;
+  int m_NRejectedCoincidenceWindow;
   int m_NRejectedEarthHorizonCut;
   int m_NRejectedThetaDeviationMax;
   int m_NRejectedUsePhotos;

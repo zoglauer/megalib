@@ -122,14 +122,22 @@ MRERawEvent* MERCoincidence::Search(MRawEventList* List, bool Clear)
       //cout<<"Coincident: "<<Coincident<<endl;
       // In case all events are coincident we have to wait for more events unless we are in clear mode...
       if (List->GetNRawEvents() > Coincident || (List->GetNRawEvents() == Coincident && Clear == true)) {
+        MTime CoincidenceWindow(0);
         RE = List->GetRawEventAt(0);
         for (int i = 1; i < Coincident; ++i) {
-          for (int h = 0; h < List->GetRawEventAt(i)->GetNRESEs(); ++h) {
-            MRESE* RESE = List->GetRawEventAt(i)->GetRESEAt(h);
-            RE->AddRESE(RESE);
-            List->GetRawEventAt(i)->RemoveRESE(RESE);
+          if (List->GetRawEventAt(i)->GetNRESEs() > 0) {
+            if (List->GetRawEventAt(i)->GetEventTime() - Time > CoincidenceWindow) {
+              CoincidenceWindow = List->GetRawEventAt(i)->GetEventTime() - Time; 
+            }
+            for (int h = 0; h < List->GetRawEventAt(i)->GetNRESEs(); ++h) {
+              MRESE* RESE = List->GetRawEventAt(i)->GetRESEAt(h);
+              RE->AddRESE(RESE);
+              List->GetRawEventAt(i)->RemoveRESE(RESE);
+            }
           }
         }
+        RE->SetCoincidenceWindow(CoincidenceWindow);
+        
         // Remove the first
         List->RemoveRawEvent(List->GetRawEventAt(0));
         // Delete the rest
