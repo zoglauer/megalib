@@ -79,7 +79,6 @@ class MGUIProgressBar : public MGUIDialog
 
   // private members:
  private:
-  TGFrame* m_ParentWindow; 
   MString m_Title;
   MString m_SubTitle;
 

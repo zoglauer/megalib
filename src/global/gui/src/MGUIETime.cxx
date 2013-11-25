@@ -206,7 +206,7 @@ MString MGUIETime::GetAsString()
 {
   // Return the value entered in the input-field.
 
-  return "bähhh";
+  return "Not implemented";
 }
 
 

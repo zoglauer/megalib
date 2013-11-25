@@ -71,7 +71,6 @@ class MSimEventLoader : public TObject
  private:
   MString m_FileName;            // Name of the file
 
-  bool m_IsFileOpen;           // true if the file is open
   fstream *m_FileStream;         // pointer to the filestream
   int m_FileLength;
 

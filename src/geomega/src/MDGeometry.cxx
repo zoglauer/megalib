@@ -629,7 +629,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       if (Tokenizer.GetTokenAtAsDouble(2) <= 0 || isnan(Tokenizer.GetTokenAtAsDouble(2))) {
         mout<<"Loop number: "<<Tokenizer.GetTokenAtAsDouble(2)<<endl;
         Typo("Loop number in for loop must be a positive integer");
-        return false;      	
+        return false;       
       }
       unsigned int Loops = Tokenizer.GetTokenAtAsUnsignedInt(2);
       double Start = Tokenizer.GetTokenAtAsDouble(3);
@@ -2344,7 +2344,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           mout<<" *** Deprectiated *** "<<endl;
           mout<<"The \"EnergyResolution\" keyword format has changed. Please see the geomega manual."<<endl;
-	        mout<<"Using a Gaussian resolution in compatibility mode."<<endl;
+          mout<<"Using a Gaussian resolution in compatibility mode."<<endl;
           mout<<endl;
           //FoundDepreciated = true;
           D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
@@ -3941,7 +3941,7 @@ void MDGeometry::CalculateMasses()
 bool MDGeometry::WriteGeant3Files()
 {
   // Create GEANT3 files
-
+  
   if (m_GeometryScanned == false) {
     Error("bool MDGeometry::WriteGeant3Files()",
           "Geometry has to be scanned first");
@@ -4034,16 +4034,16 @@ bool MDGeometry::WriteGeant3Files()
     "      CALL GPHYSI"<<endl<<endl;
   FileStream<<WFS(Text.str().c_str());
   Text.str("");
-    
-  FileStream<<WFS(m_WorldVolume->GetGeant3())<<endl;
 
+  FileStream<<WFS(m_WorldVolume->GetGeant3())<<endl;
+  
   //FileStream.setf(ios_base::fixed, ios_base::floatfield);
   FileStream.setf(ios::fixed, ios::floatfield);
   //FileStream.precision(3);
 
   // Finally position the volumes
   MString Name, MotherName, CopyName;
-	
+
   // Scan through the tree...
   int IDCounter = 1;
   FileStream<<WFS(m_WorldVolume->GetGeant3Position(IDCounter))<<endl;
@@ -4075,7 +4075,7 @@ bool MDGeometry::WriteGeant3Files()
 
   FileStream.close();
 
-
+  
   // open the geometry-file:
   // gcc 2.95.3: FileStream.open("detinit.f", ios::out, 0664);
   FileStream.open("detinit.f", ios_base::out);
@@ -4142,7 +4142,7 @@ bool MDGeometry::WriteGeant3Files()
   Text.str("");
   
   FileStream.close();
-
+  
   // Clean up...
   m_WorldVolume->ResetCloneTemplateFlags();
 
@@ -4158,10 +4158,10 @@ MString MDGeometry::WFS(MString Text)
   // Real name: WrapFortranStrings
   // A line in a FORTRAN77 file is not allowed to be larger than 72 characters
   // This functions cuts the lines appropriately:
-
+  
   size_t CutLength = 72;
 
-  if (Text.Length() < CutLength) return Text;
+  if (Text.Length() <= CutLength) return Text;
 
   MString Cut;
   MString PreCut;
@@ -4177,7 +4177,7 @@ MString MDGeometry::WFS(MString Text)
     }
     Cut = Text.GetSubString(0, NextRet);
     Text.Remove(0, NextRet);
-    if (Cut.Length() < CutLength || Cut.BeginsWith("*") == true) {
+    if (Cut.Length() <= CutLength || Cut.BeginsWith("*") == true) {
       Formated += Cut;
     } else {
       Beyond = Cut.GetSubString(CutLength+1 , Cut.Length());
@@ -4213,7 +4213,7 @@ MString MDGeometry::WFS(MString Text)
       }
     }
   }
-
+  
   return Formated + Text;
 }
 
@@ -4422,7 +4422,7 @@ bool MDGeometry::WriteMGeantFiles(MString FilePrefix, bool StoreIAs, bool StoreV
 
   // Volume tree data
   FileStream << m_WorldVolume->GetMGeant() << endl;
-	
+  
   // Volume position data
   int IDCounter = 1;
   FileStream << m_WorldVolume->GetMGeantPosition(IDCounter) << endl;

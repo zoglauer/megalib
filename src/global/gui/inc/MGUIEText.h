@@ -66,8 +66,6 @@ class MGUIEText : public MGUIElement
   bool m_IsBold;                  // True if text is bold
   bool m_IsItalic;                // True if text is italic
 
-	TGGC* m_Graphics;               // Graphics context
-
 
 #ifdef ___CINT___
  public:

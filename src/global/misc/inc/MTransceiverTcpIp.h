@@ -137,8 +137,6 @@ class MTransceiverTcpIp
   //! The transceiving mode: 
   unsigned int m_Mode;
 
-  //! True if we should read everything multi-threaded
-  bool m_IsMultiThreaded;
   //! The thread where the receiving and transmitting happens
   TThread *m_TransceiverThread;     
   //! Unique Id for the thread...

@@ -42,16 +42,16 @@ class MERCSRChiSquare : public MERCSR
   MERCSRChiSquare();
   virtual ~MERCSRChiSquare();
 
-  virtual bool SetParameters(MGeometryRevan* Geometry, 
-                             double QualityFactorMin = 0.0, 
-                             double QualityFactorMax = 1000, 
-                             int MaxNIterations = 5,
-                             bool GuaranteeStartD1 = true,
-                             bool CreateOnlyPermutations = false,
-                             bool UseComptelEvents = true, 
-                             int UndecidedHandling = 0,
-                             bool RejectOneDetectorTypeOnlyEvents = true,
-                             MGeometryRevan* OriginObjects = 0);
+  bool SetParameters(MGeometryRevan* Geometry,
+                     double QualityFactorMin = 0.0,
+                     double QualityFactorMax = 1000,
+                     int MaxNIterations = 5,
+                     bool GuaranteeStartD1 = true,
+                     bool CreateOnlyPermutations = false,
+                     bool UseComptelEvents = true,
+                     int UndecidedHandling = 0,
+                     bool RejectOneDetectorTypeOnlyEvents = true,
+                     MGeometryRevan* OriginObjects = 0);
 
   virtual MString ToString(bool CoreOnly = false) const;
 

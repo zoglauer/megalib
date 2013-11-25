@@ -51,7 +51,9 @@ class MGUIETransceiver : public MGUIElement
 
   MTransceiverTcpIp* GetTransceiver();
   
+  using TGWindow::SetName;
   void SetName(MString Name);
+  using TGWindow::GetName;
   MString GetName();
 
   void SetHostName(MString HostName);

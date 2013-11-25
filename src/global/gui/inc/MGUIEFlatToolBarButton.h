@@ -43,7 +43,7 @@ class MGUIEFlatToolBarButton : public TGPictureButton
 	virtual void SetFlat(const bool IsFlat = true);
 	virtual bool IsFlat() const;
 
-	virtual void SetState(EButtonState state);
+	virtual void SetState(EButtonState state, bool);
 
 	virtual bool HandleCrossing(Event_t *event);
 	virtual bool HandleFocusChange(Event_t *event);

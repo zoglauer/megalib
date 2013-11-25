@@ -138,7 +138,7 @@ bool MPairEvent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPairEvent::Assimilate(MPairEvent *PairEventData)
+bool MPairEvent::Assimilate(MPairEvent* PairEventData)
 {
   if (MPhysicalEvent::Assimilate(PairEventData) == false) return false;
 
@@ -155,6 +155,19 @@ bool MPairEvent::Assimilate(MPairEvent *PairEventData)
   if (Validate() == false) return false;
   
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MPairEvent::Assimilate(MPhysicalEvent* Event)
+{
+  if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+    return Assimilate(dynamic_cast<MPairEvent*>(Event));
+  } else {
+    return false;
+  }
 }
 
 

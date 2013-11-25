@@ -69,7 +69,7 @@ MPointSourceSelector::~MPointSourceSelector()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPointSourceSelector::Open(MString FileName)
+bool MPointSourceSelector::Open(MString FileName, unsigned int)
 {
   // Open the file and do the parsing
 

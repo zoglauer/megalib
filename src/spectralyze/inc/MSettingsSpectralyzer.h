@@ -50,11 +50,11 @@ class MSettingsSpectralyzer : public MSettings, public MSettingsSpectralOptions
  private:
 
 		//  int m_SpectralHistBinsSpectralyzer;
-	int m_SpectralSignaltoNoiseRatio;
-	int m_SpectralPoissonLimit;
+	//int m_SpectralSignaltoNoiseRatio;
+	//int m_SpectralPoissonLimit;
 //	double m_SpectralDeconvolutionLimit;
   MString m_SpectralIsotopeFileName;
-  double m_SpectralEnergyRange;
+  //double m_SpectralEnergyRange;
 
  
   

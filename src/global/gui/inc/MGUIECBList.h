@@ -55,7 +55,8 @@ class MGUIECBList : public TGCanvas
   TArrayI GetSelected();
   int GetSelected(int i);
   bool IsSelected(int i);
-  MString GetName(int i);
+  using TGWindow::GetName; // since it would be hidden otherwise
+  MString GetName(int i) const;
   void SetSelectedBitEncoded(int Selected);
   void SetSelected(int i, bool Selected);
   int GetSelectedBitEncoded();

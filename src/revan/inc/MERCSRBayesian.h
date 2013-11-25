@@ -53,13 +53,13 @@ class MERCSRBayesian : public MERCSR
   MERCSRBayesian();
   virtual ~MERCSRBayesian();
 
-  virtual bool SetParameters(MString FileName, 
-                             MGeometryRevan* Geometry, 
-                             double ThresholdMin = 0.0, 
-                             double ThresholdMax = 0.5, 
-                             int MaxNHits = 5,
-                             bool GuaranteeStartD1 = true,
-                             bool CreateOnlyPermutations = false);
+  bool SetParameters(MString FileName,
+                     MGeometryRevan* Geometry,
+                     double ThresholdMin = 0.0,
+                     double ThresholdMax = 0.5,
+                     int MaxNHits = 5,
+                     bool GuaranteeStartD1 = true,
+                     bool CreateOnlyPermutations = false);
 
   // The response generator need to access the same functions...
   double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);

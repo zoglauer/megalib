@@ -217,9 +217,6 @@ class MRealTimeAnalyzer
   bool m_IsConnected;
   //! True if we should disconnect
   bool m_DoDisconnect;
-  
-  //! The transceiver
-  MTransceiverTcpIp* m_Transceiver;
     
   //! The geometry file name
   MString m_GeometryFileName;

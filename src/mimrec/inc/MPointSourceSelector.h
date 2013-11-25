@@ -40,7 +40,7 @@ class MPointSourceSelector : MParser
   virtual ~MPointSourceSelector();
 
   //! Open the file name and read the header
-  virtual bool Open(MString FileName);
+  virtual bool Open(MString FileName, unsigned int Way = 0);
 
   bool LoadList(MString FileName);
 

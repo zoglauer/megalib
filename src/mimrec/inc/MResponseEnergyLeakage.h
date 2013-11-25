@@ -73,18 +73,7 @@ class MResponseEnergyLeakage : public MResponse
 
   double m_Theta;
 
-  double m_GaussSquareSigmaLong;
-  double m_GaussSquareSigmaTrans;
-  double m_GaussFactorsLong;
-  double m_GaussFactorsTrans;
-
-  double m_TransversalMax;
-  double m_LongitudinalMax;
-
   MComptonEvent *m_Compton;
-
-  double m_LowerZero;
-  double m_UpperZero;
 
 
 #ifdef ___CINT___

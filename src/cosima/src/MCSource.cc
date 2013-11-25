@@ -2457,7 +2457,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
              m_BeamType == c_NearFieldFlatMap) {
       // Create the circular beam:
       G4ThreeVector Temp;
-      G4double Radius, Theta, Phi;
+      G4double Radius = 0, Theta = 0, Phi = 0;
 
       if (m_BeamType == c_NearFieldBeam || 
           m_BeamType == c_NearFieldBeam1DProfile) {
@@ -2632,7 +2632,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       
       // Generate a random zenith angle Theta (in [0, m_PositionParam7]) and 
       // an azimuth angle Phi (in [0, 2pi]) relative to an on-axis cone-beam direction
-      double Theta, Phi;
+      double Theta = 0, Phi = 0;
       if (m_BeamType == c_NearFieldRestrictedPoint ||
           m_BeamType == c_NearFieldConeBeam) {
         // We have a flat distribution in angle space

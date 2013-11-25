@@ -97,27 +97,6 @@ MERCSREnergyRecovery::~MERCSREnergyRecovery()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERCSREnergyRecovery::SetParameters(MGeometryRevan* Geometry, 
-                                         double QualityFactorMin, 
-                                         double QualityFactorMax, 
-                                         int MaxNInteractions,
-                                         bool GuaranteeStartD1,
-                                         bool CreateOnlyPermutations)
-{
-  if (MERCSR::SetParameters(Geometry, 
-                            QualityFactorMin, 
-                            QualityFactorMax, 
-                            MaxNInteractions,
-                            GuaranteeStartD1,
-                            CreateOnlyPermutations) == false) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MERCSREnergyRecovery::ModifyEventList()
 {
 /*

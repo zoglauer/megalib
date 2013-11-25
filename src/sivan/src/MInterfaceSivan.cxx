@@ -2064,38 +2064,45 @@ void MInterfaceSivan::EnergyPerVoxel()
   D2SplitCanvas->Update();
   D2SplitCanvas->cd();
  
-  TPaveText* Text = 0; 
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  TPaveText* Text = 0;
+  
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Photo effect");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);
   Text->Draw();
  
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Single Compton scatter");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);
   Text->Draw();
  
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Double Compton scatter");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);
   Text->Draw();
  
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Triple Compton scatter");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);
   Text->Draw();
  
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Scattered from outside in");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);
   Text->Draw();
  
-  Text = new TPaveText( 0.5*MaxEnergy+100, (ly-=dly)-0.15*dly, MaxEnergy-50, ly);
+  ly -= dly;
+  Text = new TPaveText( 0.5*MaxEnergy+100, ly-0.15*dly, MaxEnergy-50, ly);
   Text->AddText("Unaccouted");
   Text->SetTextSize(TextSize);
   Text->SetFillColor(++Color);

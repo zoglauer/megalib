@@ -64,6 +64,8 @@ class MERNoising : public MERConstruction
 
   // private methods:
  private:
+  //! Hide the base classes Analyze
+  bool Analyze(MRawEventList*) { return false; }
 
 
 

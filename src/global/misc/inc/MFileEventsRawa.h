@@ -74,9 +74,6 @@ class MFileEventsRawa : public MFileEvents
 
   // private members:
  private:
-  int m_LineLength;
-  char* m_LineBuffer;
-
   int m_EventId;
   int m_TimeWalk;
   int m_TimeTillD2Trigger;

@@ -82,27 +82,6 @@ MERCSRToF::~MERCSRToF()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERCSRToF::SetParameters(MGeometryRevan* Geometry, 
-                              double QualityFactorMin, 
-                              double QualityFactorMax, 
-                              int MaxNInteractions,
-                              bool GuaranteeStartD1, 
-                              bool CreateOnlyPermutations)
-{
-  if (MERCSR::SetParameters(Geometry, 
-                            QualityFactorMin, 
-                            QualityFactorMax, 
-                            MaxNInteractions,
-                            GuaranteeStartD1,
-                            CreateOnlyPermutations) == false) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MERCSRToF::ModifyEventList()
 {
   // Correct the energy measurement with the additionally measured light 

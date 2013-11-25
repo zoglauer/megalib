@@ -80,8 +80,6 @@ class MGUIDeconvolution : public MGUIDialog
   TGRadioButton* m_RBIncrease;
   MGUIEEntry* m_Increase;
 
-	int m_Selected;
-
 
 	enum ButtonIds { c_ClassicEM, c_OSEM, c_Iterations, c_Increase };
 

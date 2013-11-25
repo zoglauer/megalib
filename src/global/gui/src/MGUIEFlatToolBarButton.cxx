@@ -124,7 +124,7 @@ bool MGUIEFlatToolBarButton::IsFlat() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIEFlatToolBarButton::SetState(EButtonState state)
+void MGUIEFlatToolBarButton::SetState(EButtonState state, bool)
 {
 	// Set button state.
 	

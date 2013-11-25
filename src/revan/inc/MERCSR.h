@@ -43,12 +43,12 @@ class MERCSR : public MERConstruction
   virtual ~MERCSR();
 
   /// Set all parameters at once
-  virtual bool SetParameters(MGeometryRevan* Geometry, 
-                             double QualityFactorMin = 0.0, 
-                             double QualityFactorMax = 1000, 
-                             int MaxNIteractions = 5,
-                             bool GuaranteeStartD1 = false,
-                             bool CreateOnlyPermutations = false);
+  bool SetParameters(MGeometryRevan* Geometry,
+                     double QualityFactorMin = 0.0,
+                     double QualityFactorMax = 1000,
+                     int MaxNIteractions = 5,
+                     bool GuaranteeStartD1 = false,
+                     bool CreateOnlyPermutations = false);
 
   /// Entry point to the analysis the given event list
   virtual bool Analyze(MRawEventList* List);

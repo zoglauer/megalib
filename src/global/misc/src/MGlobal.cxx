@@ -112,9 +112,9 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gEnv->SetValue("Gui.BackgroundColor", "#e3dfdf");
 
   // Font smoothing:
-#ifndef ___MACOSX___
+//#ifndef ___MACOSX___
   gEnv->SetValue("X11.UseXft", "true");
-#endif
+//#endif
 
   // Set a common ROOT style for all programs:
   gStyle->SetTitleBorderSize(0);

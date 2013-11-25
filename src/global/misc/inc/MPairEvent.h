@@ -40,6 +40,7 @@ class MPairEvent : public MPhysicalEvent
   virtual void Reset();
 
   bool Assimilate(MPairEvent* PairEvent);
+  bool Assimilate(MPhysicalEvent* Event);
   bool Assimilate(char* LineBuffer);
   virtual bool Stream(fstream& Stream, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
   virtual int ParseLine(const char* Line, bool Fast = false);

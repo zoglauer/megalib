@@ -106,13 +106,13 @@ void MGUIPolarization::Create()
 	AddFrame(ButtonFrame, ButtonFrameLayout);
   
 
-  m_Theta = new MGUIEEntry(ButtonFrame, "Theta [°]:      ", false, m_Data->GetTPTheta());
+  m_Theta = new MGUIEEntry(ButtonFrame, "Theta [deg]:      ", false, m_Data->GetTPTheta());
   ButtonFrame->AddFrame(m_Theta, SingleLayout);
 
-  m_Phi = new MGUIEEntry(ButtonFrame, "Phi [°]:", false, m_Data->GetTPPhi());
+  m_Phi = new MGUIEEntry(ButtonFrame, "Phi [deg]:", false, m_Data->GetTPPhi());
   ButtonFrame->AddFrame(m_Phi, SingleLayout);
 
-  m_Cut = new MGUIEEntry(ButtonFrame, "ARM cut [°]:", false, m_Data->GetPolarizationArmCut());
+  m_Cut = new MGUIEEntry(ButtonFrame, "ARM cut [deg]:", false, m_Data->GetPolarizationArmCut());
   ButtonFrame->AddFrame(m_Cut, SingleLayout);
 
   m_Bins = new MGUIEEntry(ButtonFrame, "Bins:", false, m_Data->GetHistBinsPolarization());

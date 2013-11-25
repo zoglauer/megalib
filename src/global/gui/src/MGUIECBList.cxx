@@ -263,7 +263,7 @@ int MGUIECBList::GetSelected(int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MGUIECBList::GetName(int i)
+MString MGUIECBList::GetName(int i) const
 {
   // Return the label name at position i
 

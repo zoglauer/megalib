@@ -155,7 +155,7 @@ echo " "
 echo "Launching mcosima"
 echo " "
 echo "Number of threads to use: ${Threads}" 
-echo "Maxmim number of cosima threads on machine: ${Max}" 
+echo "Maximum number of cosima threads on machine: ${Max}" 
 echo "Source file: ${Source}" 
 
 

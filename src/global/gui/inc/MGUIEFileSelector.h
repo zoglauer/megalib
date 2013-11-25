@@ -70,7 +70,6 @@ class MGUIEFileSelector : public MGUIElement
   TGLayoutHints* m_InputFrameLayout;
 
   TGLayoutHints* m_InputLayout;
-  TGTextBuffer* m_InputBuffer;
   TGTextEntry* m_Input;
 
   TGLayoutHints* m_ButtonFolderLayout;

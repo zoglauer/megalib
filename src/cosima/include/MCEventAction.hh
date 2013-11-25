@@ -150,7 +150,7 @@ private:
   /// TCP/IP: The name of the output host
   string m_Host;
   /// TCP/IP: The port on the host
-  int m_Port;
+  //int m_Port;
   /// The transceiver
   MTransceiverTcpIp m_Transceiver;
   
@@ -164,8 +164,8 @@ private:
 
   /// Parallel ID: Additional ID assigned from outside to uniquely identify sim files from one batch of parallel started simulations 
   int m_ParallelID;
-  /// Assigned fixed incarbation ID of the output file(s) 
-  int m_IncarnationID;
+  /// Assigned fixed incarnation ID of the output file(s)
+  //int m_IncarnationID;
 
   /// The temporary store of the simulated event
   MSimEvent* m_Event;

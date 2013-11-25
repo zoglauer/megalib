@@ -65,19 +65,11 @@ class MGUIOptionsCSR : public MGUIDialog
 
   MGUIECBList* m_Options;
   MGUIERBList* m_OptionsUndecided;
-  MGUIECBList* m_CheatingOptions;
-  TGLayoutHints* m_EntryLayout;
   MGUIEMinMaxEntry* m_Threshold;
   MGUIEEntry* m_MaxNSingleHits;
 
-  TGLayoutHints* m_FileSelectorLayout;
-  MGUIEFileSelector* m_FileSelector;
-
   TGLayoutHints* m_BayesianFileSelectorLayout;
   MGUIEFileSelector* m_BayesianFileSelector;
-
-	MGUIEEntryList* m_LensCenter;
-	MGUIEEntryList* m_FocalSpotCenter;
 
 
 #ifdef ___CINT___

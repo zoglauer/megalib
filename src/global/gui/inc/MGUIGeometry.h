@@ -55,7 +55,6 @@ class MGUIGeometry : public MGUIDialog
 
   // private members:
  private:
-  TGWindow* m_Parent;
   MSettingsBasicFiles* m_GUIData;
 
   TGLayoutHints* m_FileSelectorLayout;

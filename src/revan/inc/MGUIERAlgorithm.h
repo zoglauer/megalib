@@ -61,7 +61,7 @@ class MGUIERAlgorithm : public MGUIDialog
   MGUIERBList* m_ClusteringList;
   MGUIERBList* m_TrackingList;
   MGUIERBList* m_CSRList;
-  MGUIERBList* m_DecayList;
+  //MGUIERBList* m_DecayList;
  
 
 

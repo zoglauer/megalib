@@ -1517,37 +1517,37 @@ bool MDVolume::ValidateIntersections()
       } 
     }
   }
-		
+    
   // (2) The daughters do not intersect
   for (unsigned int d = 0; d < GetNDaughters(); d++) {
     for (unsigned int e = 0; e < GetNDaughters(); e++) {
       if (d == e) continue;
-			
+      
       Surface = GetDaughterAt(e)->GetShape()->CreateSurfacePattern(5);
       if (Surface.size() == 0) {
         mdebug<<"Can't check intersections (2) for: "<<GetDaughterAt(e)->GetName()<<" - no surface points"<<endl;
         continue;
       }
 
-			
-      // 			cout<<"Shape of "<<GetDaughterAt(e)->GetName()<<endl;
-      // 			for (int p = 0; p < Surface->GetLast()+1; p++) {
-      // 				Point = *((MVector *) (Surface->At(p)));
-      // 			}
+      
+      //      cout<<"Shape of "<<GetDaughterAt(e)->GetName()<<endl;
+      //      for (int p = 0; p < Surface->GetLast()+1; p++) {
+      //        Point = *((MVector *) (Surface->At(p)));
+      //      }
 
       for (unsigned int p = 0; p < Surface.size(); ++p) {
         Point = Surface[p];
 
-        // 				if (GetName().CompareTo("Part_A_5") == 0) 
-        // 					cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(before): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
+        //        if (GetName().CompareTo("Part_A_5") == 0) 
+        //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(before): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
 
         if (GetDaughterAt(e)->IsRotated() == true) {
           Point = GetDaughterAt(e)->GetInvRotationMatrix() * Point;    // rotate
         }
         Point += GetDaughterAt(e)->GetPosition();           // translate 
 
-        // 				if (GetDaughterAt(e)->GetName().CompareTo("Part_A_5") == 0) 
-        // 					cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(after): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
+        //        if (GetDaughterAt(e)->GetName().CompareTo("Part_A_5") == 0) 
+        //          cout<<"Point of "<<GetDaughterAt(e)->GetName()<<"(after): "<<Point[0]<<"!"<<Point[1]<<"!"<<Point[2]<<endl;
 
         if (GetDaughterAt(d)->IsInside(Point) == true && 
             GetDaughterAt(d)->DistanceInsideOut(Point) > Tolerance) {
@@ -1570,7 +1570,7 @@ bool MDVolume::ValidateIntersections()
           mout<<" Distance inside out from origin: "<<GetDaughterAt(d)->DistanceInsideOut(Point)<<endl;
           //return false;
         } 
-      }			
+      }     
     }
   }
 
@@ -2855,7 +2855,7 @@ MString MDVolume::GetMGeantPosition(int& IDCounter)
   } else {
     // If it is no copy then position it only when it has a mother or is the root volume
     if (GetMother() !=  0) {
-			
+      
       //ID = IDCounter++;
       ID = 1;
 
@@ -2881,7 +2881,7 @@ MString MDVolume::GetMGeantPosition(int& IDCounter)
       out<<GetDaughterAt(i)->GetMGeantPosition(IDCounter);
     }
   }
-	       
+         
   return out.str().c_str();
 }
 
@@ -2930,12 +2930,12 @@ MString MDVolume::GetGeant3Position(int& IDCounter)
     // If it is no copy then position it only when it has a mother or is the root volume
     if (GetMother() !=  0) {
       //cout<<"   is root"<<endl;
-			
+      
       ID = IDCounter++;
 
       Name = GetShortName();
       MotherName = GetMother()->GetShortName();
-			
+      
       out<<"      CALL GSPOS('"<<Name<<"',"<<ID<<",'"<<MotherName
          <<"',"<<GetPosition().X()<<","<<GetPosition().Y()<<","
          <<GetPosition().Z()<<","<<GetRotationID();
@@ -2953,8 +2953,8 @@ MString MDVolume::GetGeant3Position(int& IDCounter)
       out<<GetDaughterAt(i)->GetGeant3Position(IDCounter);
     }
   }
-	
-	
+  
+  
 
   return out.str().c_str();
 }

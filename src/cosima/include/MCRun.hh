@@ -242,8 +242,6 @@ private:
   /// Maximum number of events
   int m_Events;
 
-  /// Type of the coordinate system
-  int m_CoordinateSystem;
   /// Type of the stop condition for this run
   int m_StopCondition;
   

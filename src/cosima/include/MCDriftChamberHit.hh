@@ -92,9 +92,6 @@ private:
 
   /// Number of ADC counts registered in the strips
   G4double m_ADCCounts;
-
-  /// True, if the strip has depth resolution
-  G4bool m_Is3D;
 };
 
 

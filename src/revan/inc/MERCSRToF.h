@@ -45,13 +45,6 @@ class MERCSRToF : public MERCSR
   MERCSRToF();
   virtual ~MERCSRToF();
 
-  virtual bool SetParameters(MGeometryRevan* Geometry, 
-                             double ThresholdMin = 0.0, 
-                             double ThresholdMax = 1.0, 
-                             int MaxNHits = 5,
-                             bool GuaranteeStartD1 = true,
-                             bool CreateOnlyPermutations = false);
-
   virtual MString ToString(bool CoreOnly = false) const;
 
   // protected methods:

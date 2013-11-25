@@ -71,6 +71,7 @@ class MGUIEviewMain : public TGMainFrame
   bool Open(MString FileName = "");
   bool LoadGeometry(MString FileName = "", MString StartVolumeName = "");
   void Save();
+  using TGFrame::Print;
   void Print();
   void Next();
   void Back();
