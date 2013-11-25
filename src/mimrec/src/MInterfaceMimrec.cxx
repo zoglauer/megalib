@@ -3761,28 +3761,27 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
       continue;
     }
     ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-    if (ComptonEvent->HasTrack() == true) {
-      FoundTrack = true;
-    }
+    FoundTrack = ComptonEvent->HasTrack();
 
     NPhi++;
     AvgPhi += ComptonEvent->Phi()*c_Deg;
     AvgSinPhi += sin(ComptonEvent->Phi());
     PhiHist->Fill(ComptonEvent->Phi()*c_Deg);
 
-    NTheta++;
-    AvgTheta += ComptonEvent->Theta()*c_Deg;
-    ThetaHist->Fill(ComptonEvent->Theta()*c_Deg);
+    if (FoundTrack == true) {
+      NTheta++;
+      AvgTheta += ComptonEvent->Theta()*c_Deg;
+      ThetaHist->Fill(ComptonEvent->Theta()*c_Deg);
 
-    AvgThetaGeo += ComptonEvent->CalculateThetaViaAngles()*c_Deg;
-    ThetaGeoHist->Fill(ComptonEvent->CalculateThetaViaAngles()*c_Deg);
+      AvgThetaGeo += ComptonEvent->CalculateThetaViaAngles()*c_Deg;
+      ThetaGeoHist->Fill(ComptonEvent->CalculateThetaViaAngles()*c_Deg);
 
-    ThetaDiffHist->Fill(ComptonEvent->Theta()*c_Deg - ComptonEvent->CalculateThetaViaAngles()*c_Deg);
+      ThetaDiffHist->Fill(ComptonEvent->Theta()*c_Deg - ComptonEvent->CalculateThetaViaAngles()*c_Deg);
 
-    NEpsilon++;
-    AvgEpsilon += ComptonEvent->Epsilon()*c_Deg;
-    EpsilonHist->Fill(ComptonEvent->Epsilon()*c_Deg);
-    
+      NEpsilon++;
+      AvgEpsilon += ComptonEvent->Epsilon()*c_Deg;
+      EpsilonHist->Fill(ComptonEvent->Epsilon()*c_Deg);
+    }
     //cout<<"Sanity check: phi="<<ComptonEvent->Phi()<<" + eps="<<ComptonEvent->Epsilon()
     //    <<" = "<<ComptonEvent->Phi()+ComptonEvent->Epsilon()<<" === "<<ComptonEvent->Theta()<<endl;
 
@@ -3803,7 +3802,7 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
     PhiCanvas->cd();
     PhiHist->Draw();
     
-    if (FoundTrack == true) {
+    if (NTheta > 0) {
       TCanvas* EpsilonCanvas = new TCanvas("CanvasEpsilon", "Canvas of electron scatter angle distribution", 800, 600);
       EpsilonHist->SetStats(false);
       EpsilonCanvas->cd();
