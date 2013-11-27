@@ -158,8 +158,8 @@ class MSimEvent
   //! Convert the content to string for the simulation file, where 
   //! WhatToStore is one of c_StoreSimulationInfoAll, c_StoreSimulationInfoDepositsOnly, c_StoreSimulationInfoInitOnly, c_StoreSimulationInfoNone
   //! Precision represents the number of digits to use, and
-  //! Version is the version of the simulation outpur file
-  MString ToSimString(const int WhatToStore, const int Precision, const int Version = 25);
+  //! Version is the version of the simulation output file
+  MString ToSimString(const int WhatToStore = c_StoreSimulationInfoAll, const int Precision = 5, const int Version = 25);
 
 
   //

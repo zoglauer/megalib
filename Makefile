@@ -458,6 +458,7 @@ endif
 
 html: man
 doxygen: man
+doc: man
 
 man:
 	@rm -rf $(HT)

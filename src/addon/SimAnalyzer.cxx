@@ -45,33 +45,26 @@ using namespace std;
 class SimAnalyzer
 {
 public:
-  /// Default constructor
+  //! Default constructor
   SimAnalyzer();
-  /// Default destructor
+  //! Default destructor
   ~SimAnalyzer();
   
-  /// Parse the command line
+  //! Parse the command line
   bool ParseCommandLine(int argc, char** argv);
-  /// Analyze whatever needs to be analyzed...
+  //! Analyze whatever needs to be analyzed...
   bool Analyze();
-  /// Analyze the event, return true if it has to be writen to file
-  bool AnalyzeEvent(MSimEvent& Event);
-  /// Interrupt the analysis
+  //! Interrupt the analysis
   void Interrupt() { m_Interrupt = true; }
 
-  /// Show spectra per detector
-  bool Spectra();
-
 private:
-  /// True, if the analysis needs to be interrupted
+  //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
 
-  /// Simulation file name
+  //! Simulation file name
   MString m_FileName;
-  /// Output file name
-  MString m_OutputFileName;
-  /// Geometry file name
-  MString m_GeoFileName;
+  //! Geometry file name
+  MString m_GeometryFileName;
 };
 
 /******************************************************************************/
@@ -147,12 +140,9 @@ bool SimAnalyzer::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
-    } else if (Option == "-o") {
-      m_OutputFileName = argv[++i];
-      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
     } else if (Option == "-g") {
-      m_GeoFileName = argv[++i];
-      cout<<"Accepting file name: "<<m_GeoFileName<<endl;
+      m_GeometryFileName = argv[++i];
+      cout<<"Accepting file name: "<<m_GeometryFileName<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -166,19 +156,13 @@ bool SimAnalyzer::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (m_GeoFileName == "") {
+  if (m_GeometryFileName == "") {
     cout<<"Error: Need a geometry file name!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
 
-  if (m_FileName.EndsWith(".sim") == true) {
-    if (m_OutputFileName == "") {
-      m_OutputFileName = m_FileName;
-      m_OutputFileName.Replace(m_FileName.Length()-4, 4, ".mod.sim");
-      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
-    }    
-  } else {
+  if (m_FileName.EndsWith(".sim") == false) {
     cout<<"Error: Need a simulation file name, not a "<<m_FileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
@@ -193,72 +177,58 @@ bool SimAnalyzer::ParseCommandLine(int argc, char** argv)
  */
 bool SimAnalyzer::Analyze()
 {
-  if (m_Interrupt == true) return false;
-
   // Load geometry:
-  MDGeometryQuest Geometry;
-
-  if (Geometry.ScanSetupFile(m_GeoFileName) == true) {
-    cout<<"Geometry "<<Geometry.GetName()<<" loaded!"<<endl;
-    Geometry.ActivateNoising(false);
-    Geometry.SetGlobalFailureRate(0.0);
+  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
+    cout<<"Geometry "<<Geometry->GetName()<<" loaded!"<<endl;
   } else {
-    cout<<"Loading of geometry "<<Geometry.GetName()<<" failed!!"<<endl;
+    cout<<"Unable to load geometry "<<Geometry->GetName()<<" - Aborting!"<<endl;
     return false;
   }  
 
-  MFileEventsSim SiReader(&Geometry);
-  if (SiReader.Open(m_FileName) == false) {
-    cout<<"Unable to open sim file!"<<endl; 
+  MFileEventsSim* Reader = new MFileEventsSim(Geometry);
+  if (Reader->Open(m_FileName) == false) {
+    cout<<"Unable to open sim file "<<m_FileName<<" - Aborting!"<<endl; 
     return false;
   }
-  cout<<"Opened file "<<SiReader.GetFileName()<<" created with MEGAlib version: "<<SiReader.GetMEGAlibVersion()<<endl;
-  SiReader.ShowProgress();
+  Reader->ShowProgress();
 
+  // Create some histograms here ...
+  TH1D* NumberOfComptonInteractionsOfPrimary = new TH1D("N", "Number of Compton interactions of primary particle in active detector", 20, 0.5, 20.5);
+  NumberOfComptonInteractionsOfPrimary->SetXTitle("Number of interactions");
+  NumberOfComptonInteractionsOfPrimary->SetYTitle("cts");
   
-  //cout<<"Triggered events: "<<SiReader.GetNEvents(false)<<" --- Observation time: "<<SiReader.GetObservationTime()<<" sec  --  simulated events: "<<SiReader.GetSimulatedEvents()<<endl;
+  MSimEvent* Event = 0;
+  while ((Event = Reader->GetNextEvent()) != 0) {
+    // Hitting Ctrl-C raises this flag
+    if (m_Interrupt == true) return false;
 
-  // Open output file:
-  MFileEventsSim SiWriter(&Geometry);
-  if (SiWriter.Open(m_OutputFileName, MFile::c_Write) == false) {
-    cout<<"Unable to open output file!"<<endl;
-    return false;
-  }
-   
-  SiWriter.SetGeometryFileName(m_GeoFileName);
-  SiWriter.SetVersion(25);
-  SiWriter.WriteHeader();
-
-  MSimEvent* SiEvent = 0;
-  while ((SiEvent = SiReader.GetNextEvent(false)) != 0) {
-    if (AnalyzeEvent(*SiEvent) == true) {
-      SiWriter.AddEvent(SiEvent);      
+    // Do you analysis:
+    unsigned int NComptons = 0;
+    for (unsigned int i = 0; i < Event->GetNIAs(); ++i) {
+      MSimIA* IA = Event->GetIAAt(i);
+      if (IA->GetProcess() == "COMP" &&                    // Compton event
+          IA->GetOrigin() == 1 &&  // Originating from the first particle
+          IA->GetDetector() != 0) {            // Detector type - 0 means passive material 
+        NComptons++;
+      }
     }
-    delete SiEvent;
+    NumberOfComptonInteractionsOfPrimary->Fill(NComptons, 1);
+    
+    // Never forget to delete the event
+    delete Event;
   }
 
-  cout<<"Observation time: "<<SiReader.GetObservationTime()<<" sec  --  simulated events: "<<SiReader.GetSimulatedEvents()<<endl;
+  // Some cleanup
+  delete Reader;
+  delete Geometry;
 
-  SiReader.Close();
+  // Show your histogram here
+  TCanvas* C = new TCanvas();
+  C->cd();
+  NumberOfComptonInteractionsOfPrimary->Draw();
+  C->Update();
   
-  SiWriter.CloseEventList();
-  SiWriter.Close();
-
-  return true;
-}
-
-
-/******************************************************************************
- * Analyze the event, return true if it has to be writen to file
- */
-bool SimAnalyzer::AnalyzeEvent(MSimEvent& Event)
-{
-  // Add your code here
-  // Return true if the event should be written to file
-
-  // Example:
-  // if (Event.GetVeto() == true) return false;
-
   return true;
 }
 
@@ -266,6 +236,7 @@ bool SimAnalyzer::AnalyzeEvent(MSimEvent& Event)
 /******************************************************************************/
 
 SimAnalyzer* g_Prg = 0;
+int g_NInterrupts = 2;
 
 /******************************************************************************/
 
@@ -276,10 +247,18 @@ SimAnalyzer* g_Prg = 0;
  */
 void CatchSignal(int a)
 {
-  cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
+  cout<<"Catched signal Ctrl-C:"<<endl;
   
-  if (g_Prg != 0) {
-    g_Prg->Interrupt();
+  --g_NInterrupts;
+  if (g_NInterrupts <= 0) {
+    cout<<"Aborting..."<<endl;
+    abort();
+  } else {
+    cout<<"Trying to cancel the analysis..."<<endl;
+    if (g_Prg != 0) {
+      g_Prg->Interrupt();
+    }
+    cout<<"If you hit "<<g_NInterrupts<<" more times, then I will abort immediately!"<<endl;
   }
 }
 
@@ -289,9 +268,8 @@ void CatchSignal(int a)
  */
 int main(int argc, char** argv)
 {
-  //void (*handler)(int);
-  //handler = CatchSignal;
-  //(void) signal(SIGINT, CatchSignal);
+  // Set a default error handler and catch some signals...
+  signal(SIGINT, CatchSignal);
 
   // Initialize global MEGAlib variables, especially mgui, etc.
   MGlobal::Initialize();
@@ -309,7 +287,7 @@ int main(int argc, char** argv)
     return -2;
   } 
 
-  //SimAnalyzerApp.Run();
+  SimAnalyzerApp.Run();
 
   cout<<"Program exited normally!"<<endl;
 

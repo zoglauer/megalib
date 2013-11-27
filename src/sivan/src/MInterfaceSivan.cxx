@@ -4076,16 +4076,27 @@ void MInterfaceSivan::InitialComptonScatterAngle()
 
   MSimEvent* Event = 0;
   while ((Event = EventFile.GetNextEvent(false)) != 0) {
-//     if (Event->GetNIAs() >= 2) {
-//       if (Event->GetIAAt(1)->GetProcess() == "COMP") {
-//         Angle->Fill(Event->GetIAAt(0)->GetSecondaryDirection().
-//                     Angle(Event->GetIAAt(1)->GetSecondaryDirection())*c_Deg);
-//       }
-//     }
-    if (Event->GetNIAs() >= 3) {
-      if (Event->GetIAAt(1)->GetProcess() == "COMP" && Event->GetIAAt(2)->GetOriginID() == 1) {
-        Angle->Fill((Event->GetIAAt(1)->GetPosition() - Event->GetIAAt(0)->GetPosition())
-                    .Angle(Event->GetIAAt(2)->GetPosition() - Event->GetIAAt(1)->GetPosition())*c_Deg);
+    MVector Start, Center, Stop;
+    bool FoundAll = false;
+    if (Event->GetNIAs() >= 1) {
+      Start = Event->GetIAAt(0)->GetPosition();
+      if (Event->GetNIAs() >= 2 && Event->GetIAAt(1)->GetOriginID() == 1 && 
+          Event->GetIAAt(1)->GetProcess() == "COMP") {
+        Center = Event->GetIAAt(1)->GetPosition();
+        for (unsigned int i = 2; i < Event->GetNIAs(); ++i) {
+          if (Event->GetIAAt(i)->GetOriginID() == 1 && Event->GetIAAt(i)->GetPosition() != Center) {
+            Stop = Event->GetIAAt(i)->GetPosition();
+            FoundAll = true;
+            break;
+          }
+        }
+      }
+    }
+    if (FoundAll == true) {
+      double A = (Center - Start).Angle(Stop - Center) * c_Deg;
+      Angle->Fill(A);
+      if (A == 0) {
+        cout<<Event->ToSimString()<<endl;
       }
     }
     delete Event;

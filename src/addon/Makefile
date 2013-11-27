@@ -21,6 +21,7 @@ PRGSX = \
 	$(BN)/ConvertMGeant \
 	$(BN)/ConvertACTtools \
 	$(BN)/SimAnalyzer \
+	$(BN)/SimRewriter \
 	$(BN)/SimCombiner \
 	$(BN)/SimRandomCoincidence \
 	$(BN)/DecayAnalyzer \
