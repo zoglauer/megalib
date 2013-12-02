@@ -122,13 +122,13 @@ bool MDStrip3D::CopyDataToNamedDetectors()
         m_DepthResolutionType != c_DepthResolutionTypeUnknown) {
       D->m_DepthResolutionType = m_DepthResolutionType;
       D->m_DepthResolution = m_DepthResolution;
+      D->m_DepthResolutionSigma = m_DepthResolutionSigma;
     }
   
   
     if (D->m_DepthResolutionThreshold == g_DoubleNotDefined && 
         m_DepthResolutionThreshold != g_DoubleNotDefined) {
       D->m_DepthResolutionThreshold = m_DepthResolutionThreshold; 
-      D->m_DepthResolutionSigma = m_DepthResolutionSigma;
     }
   
     if (D->m_EnergyResolutionDepthCorrectionSet == false && 

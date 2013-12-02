@@ -55,6 +55,7 @@ external
 *.gz
 *.sim
 *.tra
+.DS_Store
 callgrind.*
 new-source-megalib.sh
 
