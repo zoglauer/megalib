@@ -54,7 +54,8 @@ class MTime
   bool Set(double Time);
   bool Set(const MTime& Time);
   //! Set a string in MEGAlib TI format: TI 123456789.123456789
-  bool Set(const MString& String);
+  //! Starts the conversion at character I
+  bool Set(const MString& String, unsigned int I = 0);
   //! Set a string in MEGAlib TI format: TI 123456789.123456789
   //! Fast version with minimal error checks and rather unsafe...
   bool Set(const char* Line);

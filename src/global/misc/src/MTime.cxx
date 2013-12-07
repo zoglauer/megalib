@@ -420,37 +420,44 @@ bool MTime::Set(const char* Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::Set(const MString& String)
+bool MTime::Set(const MString& String, unsigned int I)
 {
-  if (String.BeginsWith("TI") == true) {
-    int Seconds = 0;
-    int NanoSeconds = 0;
-    MString NewString = String;
-    NewString.ReplaceAll("TI", "");
-    NewString.ReplaceAll("sec", "");
-    MTokenizer T('.', true);
-    T.Analyze(NewString);
-    if (T.GetNTokens() == 1) {
-      Seconds = T.GetTokenAtAsInt(0);
-    } else if (T.GetNTokens() == 2) {
-      Seconds = T.GetTokenAtAsInt(0);
-      NanoSeconds = T.GetTokenAtAsInt(1);
-      // Find digits:
-      int Digits = T.GetTokenAt(1).Length();
-      if (Digits < 9) {
-        NanoSeconds *= int(pow(10.0, 9.0 - Digits));
-      } else if (Digits > 9) {
-        NanoSeconds /= int(pow(10.0, Digits - 9.0));   
-      }
-    } else {
-      mout<<"MTime: TI not correct ("<<T.GetNTokens()<<" tokens): "<<String<<endl;
-      return false;       
-    }
-    Set(Seconds, NanoSeconds);
-  } else {
-    mout<<"MTime: String does not start with TI"<<endl;
+  // Slow but safe version of setting a time
+  
+  int Seconds = 0;
+  int NanoSeconds = 0;
+  MString NewString = String.GetSubString(I);
+  NewString.ReplaceAll("TI", "");
+  NewString.ReplaceAll("sec", "");
+  NewString.Strip(); // remove white spaces from beginning and end
+  
+  // Check if what we have now is a number
+  if (NewString.IsNumber() == false) {
+    mout<<"MTime: Cannot set time correctly via MString: String is no number: "<<String<<endl;
     return false;
   }
+  
+  // Split and 
+  MTokenizer T('.', true);
+  T.Analyze(NewString);
+  if (T.GetNTokens() == 1) {
+    Seconds = T.GetTokenAtAsInt(0);
+  } else if (T.GetNTokens() == 2) {
+    Seconds = T.GetTokenAtAsInt(0);
+    NanoSeconds = T.GetTokenAtAsInt(1);
+    // Find digits:
+    int Digits = T.GetTokenAt(1).Length();
+    if (Digits < 9) {
+      NanoSeconds *= int(pow(10.0, 9.0 - Digits));
+    } else if (Digits > 9) {
+      NanoSeconds /= int(pow(10.0, Digits - 9.0));   
+    }
+  } else {
+    mout<<"MTime: Cannot set time not correctly via MString ("<<T.GetNTokens()<<" tokens): "<<String<<endl;
+    return false;       
+  }
+  
+  Set(Seconds, NanoSeconds);
 
   return true;
 }
@@ -766,7 +773,7 @@ MString MTime::GetLongIntsString() const
   if (Precision > 0) {
     out<<"."<<setprecision(Precision)<<setw(Precision)<<setfill('0')<<abs(Nanos);
   }
-  out<<" sec";
+  //out<<" sec";
   
   return out.str().c_str(); 
 }

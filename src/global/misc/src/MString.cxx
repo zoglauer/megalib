@@ -206,6 +206,32 @@ long MString::GetHash()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MString::IsNumber() const
+{
+  //! Test if the string is a number - ignores whitespaces at beginning and end
+  
+  
+  istringstream In(m_String);
+  
+  double Number;
+  In>>skipws>>Number; // ignore white spaces at the beginning
+  
+  //! Check for whitespaces at the end
+  char c;
+  while (!In.eof() && !In.fail()) {
+    c = In.get();
+    if (In.eof()) return true;
+    if (c != ' ') return false;
+  }
+  
+  // If nothing is left and the string is still good, then we are good
+  return In.eof() && !In.fail(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 /*
 MString& MString::Format(const char* Format, ...) 
 { 

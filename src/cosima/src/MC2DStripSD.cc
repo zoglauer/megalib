@@ -278,7 +278,7 @@ G4bool MC2DStripSD::PostProcessHits(const G4Step* Step)
   }  
   Hit->AddOrigin(((MCTrackInformation*) 
                   (Step->GetTrack()->GetUserInformation()))->GetId());
-  if (m_HasTimeResolution) {
+  if (m_HasTimeResolution == true) {
     Hit->SetTime(Step->GetTrack()->GetGlobalTime());
   }
 

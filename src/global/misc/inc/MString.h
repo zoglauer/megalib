@@ -81,17 +81,20 @@ class MString
   
   //! Access to the internal c-string -- do not delete the array since it is the MString internal data 
   const char* Data() const { return m_String.c_str(); }
-  //! Return a copy of the interanl c++-string
+  //! Return a copy of the internal c++-string
   string GetString() const { return m_String; }
   //! Access to the internal c++-string -- do not delete the array since it is the MString internal data 
   string& GetStringRef() { return m_String; }
-  //! Return a substring
-  string GetSubString(unsigned int Start, unsigned int Length) const { return m_String.substr(Start, Length); }
   //! Return true if the string is empty
   bool IsEmpty() const { return m_String.empty(); }
   //! Return the length of the string
   size_t Length() const { return m_String.size(); }
   
+  //! Return a substring
+  MString GetSubString(unsigned int Start, unsigned int Length) const { return m_String.substr(Start, Length); }
+  //! Return a substring starting at start with the remaining length of the string
+  MString GetSubString(unsigned int Start) const { return m_String.substr(Start, m_String.size() - Start); }
+
   //! Get position of last character or string::npos if none is found
   size_t Last(char c) const { return m_String.find_last_of(c); }
   //! Get position of last character or string::npos if none is found
@@ -163,12 +166,20 @@ class MString
   
   // Analyze
   
+  //! Return true if the string contains the given string
   bool Contains(const MString& S) const { return (m_String.find(S.m_String) != string::npos); }
+  //! Return true if the string begins with the given string
   bool BeginsWith(const MString& S) const; 
+  //! Return true if the string end with the given string
   bool EndsWith(const MString& S) const; 
   
+  //! Split the string in substring using the delimeter
   vector<MString> Tokenize(const MString& Delimeter) const;
 
+  //! Test if the string is a number -- ignores whitespace at beginning and end
+  bool IsNumber() const;
+  
+  
   static const size_t npos;
   
   // protected methods:

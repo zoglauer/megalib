@@ -1024,17 +1024,18 @@ MString MComptonEvent::ToBasicString() const
 bool MComptonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
-
+  // Rearely used options which are zero and default to zero are not streamed!
+  
   bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
     // Write Compton specific infos:
-    S<<"PQ "<<m_ClusteringQualityFactor<<endl;
+    if (m_ClusteringQualityFactor != 0) S<<"PQ "<<m_ClusteringQualityFactor<<endl;
     S<<"SQ "<<m_SequenceLength<<endl;
     S<<"CT "<<m_ComptonQualityFactor1<<" "<<m_ComptonQualityFactor2<<endl;
     S<<"TL "<<m_TrackLength<<endl;
     S<<"TE "<<m_TrackInitialDeposit<<endl;
-    S<<"TQ "<<m_TrackQualityFactor1<<" "<<m_TrackQualityFactor2<<endl;
+    if (m_TrackQualityFactor1 != 0 || m_TrackQualityFactor2 != 0) S<<"TQ "<<m_TrackQualityFactor1<<" "<<m_TrackQualityFactor2<<endl;
     S<<"CE "<<m_Eg<<" "<<m_dEg<<"   "<<m_Ee<<" "<<m_dEe<<endl;
     S<<"CD "<<m_C1[0]<<" "<<m_C1[1]<<" "<<m_C1[2]<<"   ";
     S<<m_dC1[0]<<" "<<m_dC1[1]<<" "<<m_dC1[2]<<"   ";
@@ -1042,9 +1043,9 @@ bool MComptonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool R
     S<<m_dC2[0]<<" "<<m_dC2[1]<<" "<<m_dC2[2]<<"   ";
     S<<m_De[0]<<" "<<m_De[1]<<" "<<m_De[2]<<"   ";
     S<<m_dDe[0]<<" "<<m_dDe[1]<<" "<<m_dDe[2]<<endl;
-    S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
+    if (m_ToF != 0 || m_dToF != 0) S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
     S<<"LA "<<m_LeverArm<<endl;
-    S<<"CW "<<m_CoincidenceWindow<<endl;
+    if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
     S.flush();
   }
 
@@ -1208,7 +1209,7 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
         Ret = 1;
       }
     } else {
-      if (m_CoincidenceWindow.Set(MString(Line)) == false) {
+      if (m_CoincidenceWindow.Set(MString(Line), 3) == false) {
         Ret = 1;
       }
     }

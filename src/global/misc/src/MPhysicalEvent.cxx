@@ -446,7 +446,9 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
     }
     S<<"ID "<<m_Id<<endl;
     S<<"TI "<<m_Time.GetLongIntsString()<<endl;
-    S<<"TW "<<m_TimeWalk<<endl;
+    if (m_TimeWalk != -1) {
+      S<<"TW "<<m_TimeWalk<<endl;
+    }
     if (m_HasGalacticPointing == true) {
       double phi = m_GalacticPointingXAxis.Phi()*c_Deg;
       while (phi < 0.0) phi += 360.0;
