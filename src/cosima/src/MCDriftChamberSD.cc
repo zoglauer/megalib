@@ -266,7 +266,7 @@ G4bool MCDriftChamberSD::PostProcessHits(const G4Step* Step)
     }  
     Hit->AddOrigin(((MCTrackInformation*) 
                     (Step->GetTrack()->GetUserInformation()))->GetId());
-    if (m_HasTimeResolution == false) {
+    if (m_HasTimeResolution == true) {
       Hit->SetTime(Step->GetTrack()->GetGlobalTime());
     }
 
