@@ -572,7 +572,8 @@ echo "#/bin/bash" >> ${ENVFILE}
 echo " " >> ${ENVFILE}
 echo "# You can call this file everytime you want to work with MEGAlib via" >> ${ENVFILE}
 echo "# source source-megalib.sh" >> ${ENVFILE}
-echo "# or put the same line into your .bashrc file" >> ${ENVFILE}
+echo "# or put the following line into your .bashrc file" >> ${ENVFILE}
+echo "# . ${MEGALIBPATH}/bin/source-megalib.sh" >> ${ENVFILE}
 echo " " >> ${ENVFILE}
 echo "MEGALIBDIR=${MEGALIBPATH}" >> ${ENVFILE}
 

@@ -122,6 +122,7 @@ if [ "${MTMP_GEANT4PATH}" != "${MTMP_NODEFAULT}" ]; then
   fi
 
   if (test -f ${MTMP_GEANT4PATH}/bin/geant4.sh); then
+    source ${MTMP_GEANT4PATH}/bin/geant4.sh > /dev/null
     PATHTOGEANT4MAKE=${MTMP_GEANT4PATH}/share/Geant4-`${MTMP_GEANT4PATH}/bin/geant4-config --version`/geant4make
     MTMP_HERE=`pwd`
     cd ${PATHTOGEANT4MAKE}

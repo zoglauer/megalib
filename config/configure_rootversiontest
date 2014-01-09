@@ -9,7 +9,7 @@
 # Allowed versions
 VERSIONS=`cat ${MEGALIB}/config/AllowedROOTVersions.txt` 
 RootVersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
-RootVersionMax=`echo ${VERSIONS} | awk -F" " '{ print $2 }'`
+RootVersionMax=`echo ${VERSIONS} | awk -F" " '{ print $NF }'`
 
 RootVersionMinString="${RootVersionMin:(-3):1}.${RootVersionMin:(-2):2}"
 RootVersionMaxString="${RootVersionMax:(-3):1}.${RootVersionMax:(-2):2}"
@@ -62,8 +62,8 @@ else
     then
         echo "You seem to use a ROOT version which is more current than the ones tested with ${REPONAME}."
         echo "This ROOT version might or might not work."
-        echo "If you are adventurous open the file ${FOLDER}/config/configure_rootversiontest,"
-        echo "and set RootVersionMax to ${RootVersion}. Then retry configuring ${REPONAME}."
+        echo "If you are adventurous open the file ${FOLDER}/config/AllowedROOTVersions.txt,"
+        echo "and add ${RootVersion} to the end of the first line. Then retry configuring ${REPONAME}."
     fi
 
     exit 1;
