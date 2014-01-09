@@ -2723,9 +2723,9 @@ TGRS_Detector.DetectorVolume       ADET
 TGRS_Detector.NoiseThreshold       14
 TGRS_Detector.TriggerThreshold     28
 
-TGRS_Detector.EnergyResolution Gauss    0     0     2.5
-TGRS_Detector.EnergyResolution Gauss  100   100     5.0
-TGRS_Detector.EnergyResolution Gauss 1000  1000    10.0
+TGRS_Detector.EnergyResolution Gauss    0     0     1.0
+TGRS_Detector.EnergyResolution Gauss  100   100     1.0
+TGRS_Detector.EnergyResolution Gauss 1000  1000     1.0
 
 
 Trigger TSi

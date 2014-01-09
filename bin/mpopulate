@@ -1,0 +1,155 @@
+#!/bin/bash
+
+
+# This is a bash script. If it is started with sh restart as bash...
+MYSHELL=`ps --no-heading -p $$ | gawk -F" " '{ print $4}'`
+if [ "${MYSHELL}" != "bash" ]; then
+  echo "This is a bash script!"
+  exit 0
+fi
+
+
+commandhelp() {
+  echo ""
+  echo "mpopulate - populate a repository with changed files from another";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: ./mpopulate [options]";
+  echo ""
+  echo "Options:"
+  echo "  --new=[current repository with newest files]: Mandatory/No default"
+  echo "  --old=[outdated repository]: Mandatory/No default"
+  echo "  --mode=[all/existing]: All copies all newer files, existing only those which exist in the outdated repository"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  mpopulate --new='current repository with newest files' --old='outdated repository'";
+  echo "";
+}
+
+echo "mpopulate"
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+NEW="XYZ1234XYZ"
+OLD="XYZ1234XYZ"
+MODE="existing"
+
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-n*=* ]]; then
+    NEW=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-o*=* ]]; then
+    OLD=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-m*=* ]]; then
+    MODE=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"./mpopulate --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Everything to lower case:
+MODE=`echo ${MODE} | tr '[:upper:]' '[:lower:]'`
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+eval NEW=${NEW} 
+if ( test -d "${NEW}" ); then
+  if [[ ${NEW:0:1} != / ]]; then
+    NEW=$(cd $(dirname "${NEW}"); pwd)/$(basename "${NEW}")
+  fi
+  echo " * Using new repository ${NEW}"
+else 
+  echo "ERROR: New repository not found: ${NEW}"
+  exit 1
+fi
+
+eval OLD=${OLD} 
+if ( test -d "${OLD}" ); then
+  if [[ ${OLD:0:1} != / ]]; then
+    OLD=$(cd $(dirname "${OLD}"); pwd)/$(basename "${OLD}")
+  fi
+  echo " * Using outdated repository ${OLD}"
+else 
+  echo "ERROR: Outdated repository not found: ${OLD}"
+  exit 1
+fi
+
+if [[ ${MODE} == a* ]]; then
+  MODE="all"
+  echo " * Copying all files"
+elif [[ ${MODE} == e* ]]; then
+  MODE="existing"
+  echo " * Copying only files which exist in the outdated repository"
+else
+  echo " "
+  echo "ERROR: Unknown mode: ${MODE}"
+  commandhelp
+  exit 1
+fi
+
+echo ""
+echo "Comparing repositories..."
+
+cd "${NEW}"
+find . -type d | while read D
+do
+  if [[ ${D} == *cvs* ]] || [[ ${D} == *CVS* ]] || [[ ${D} == *svn* ]] || [[ ${D} == *git* ]] || [[ ${D} == *html* ]] || [[ ${D} == *lib* ]]; then continue; fi
+  
+  cd "${OLD}"
+  if ( test ! -d "${D}" ); then
+    continue
+  fi
+  
+  cd "${NEW}"
+  cd "${D}"
+  #echo "Processing directory ${D}"
+  
+  find . -maxdepth 1 -type f -printf "%f\n" | while read FILE
+  do
+    if [[ ${FILE} == *.sim ]] || [[ ${FILE} == *.tra ]] || [[ ${FILE} == *~ ]]; then continue; fi
+
+    if ( test -f "${OLD}/${D}/${FILE}" ); then
+      DIFFERENCE=`diff -q ${OLD}/${D}/${FILE} ${FILE}`
+      if [ "${DIFFERENCE}" != "" ]; then
+        echo "Not identical: ${FILE}"                
+        cp ${FILE} ${OLD}/${D}
+        # else
+        #echo "Identical: ${FILE}"
+      fi
+    else
+      if [ "${MODE}" == "all" ]; then
+        echo "Copying new file: ${FILE}"
+        cp ${FILE} ${OLD}/${D}
+      fi
+    fi 
+  done
+done
+
+exit 0;

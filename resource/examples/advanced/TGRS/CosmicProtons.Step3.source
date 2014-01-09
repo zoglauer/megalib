@@ -5,24 +5,20 @@
 Version                            1
 Geometry                           TGRS.geo.setup
 
-#PhysicsListHD                      qgsp-bic-hp
+PhysicsListHD                      qgsp-bic-hp
 PhysicsListEM                      Livermore
-ActivateFluorescence               false
 DecayMode                          ActivationDelayedDecay
 
 StoreCalibrated                    true
 StoreSimulationInfo                true
-StoreOnlyEventsWithEnergyLoss        false
+StoreOnlyEventsWithEnergyLoss      true
 DiscretizeHits                     true
 
 DefaultRangeCut     0.1 
 
 Run ActivationStep3
-ActivationStep3.FileName              Decays
-ActivationStep3.Time                  1000.0
-
-ActivationStep3.Trigger ActivationStep3_Trigger
-ActivationStep3_Trigger.AddPositiveDetectorType  4
+ActivationStep3.FileName              CosmicProtons.Decays
+ActivationStep3.Time                  10000.0
 
 ActivationStep3.ActivationSources     CosmicProtons.activation.dat
 

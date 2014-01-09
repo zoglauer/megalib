@@ -1,0 +1,35 @@
+#! /bin/bash
+
+help() {
+  echo ""
+  echo "mlines - line counter for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage: mlines <dir>";
+  echo "";
+  echo "Remark: if <dir> is omitted then MEGAlib is used";
+  echo "";
+}
+
+
+DIR="."
+if [ $# -ge 1 ]; then
+  DIR=$1
+fi
+
+cd ${DIR}
+
+CMD=" "
+TOTAL=0
+TYPES="cxx cc f hh h C cpp" 
+for TYPE in ${TYPES}; do
+  for FILE in `find . -name "*.${TYPE}"`; do
+    LINES=`grep -v '^\s*$' ${FILE} | grep -v '////' | wc -l`
+    TOTAL=$(( ${TOTAL} + ${LINES} ))
+    echo "Lines ${LINES} in ${FILE}"
+  done
+done
+
+echo "Total lines of code (comments are also considered code!): ${TOTAL}"
+
+exit

@@ -150,9 +150,12 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("alphaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("PositronNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("ElectroNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("ionInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   
   m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  m_KnownProcess.push_back("CHIPSNuclearCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  m_KnownProcess.push_back("muMinusCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   
   m_KnownProcess.push_back("Decay"); m_KnownProcessID.push_back(c_ProcessIDDecay);
   
@@ -503,9 +506,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     } else if (ProcessID == c_ProcessIDElasticScattering) {
 
       // There always has to be a generated secondary, since we generate a new nucleus
-      if (GeneratedSecondaries == 0) {
-        mout<<"Hadronic elastic scattering without secondaries!"<<endl;
-      }
+      //if (GeneratedSecondaries == 0) {
+      //  mout<<"Hadronic elastic scattering without secondaries!"<<endl;
+      //}
 
       // Take care of all secondary particles which are generated
       for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 

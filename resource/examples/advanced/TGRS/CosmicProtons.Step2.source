@@ -6,7 +6,6 @@ Geometry                           TGRS.geo.setup
 
 PhysicsListHD                      qgsp-bic-hp
 PhysicsListEM                      Livermore
-PhysicsListEMActivateFluorescence  false
 
 StoreCalibrated                    true
 StoreSimulationInfo                true
@@ -14,7 +13,11 @@ DiscretizeHits                     true
 
 
 Activator A
-A.IsotopeProductionFile   IsotopesLarge.dat
-A.ActivationFile          ActivationLarge.dat
-A.ActivationTime          10368000
+A.IsotopeProductionFile   IsotopesLarge.dat.p1.inc1.dat
+A.IsotopeProductionFile   IsotopesLarge.dat.p1.inc2.dat
+A.IsotopeProductionFile   IsotopesLarge.dat.p1.inc3.dat
+A.IsotopeProductionFile   IsotopesLarge.dat.p1.inc4.dat
+A.IsotopeProductionFile   IsotopesLarge.dat.p1.inc5.dat
+A.ActivationFile          CosmicProtons.activation.dat
+A.ActivationMode          ConstantIrradiation  10368000
 

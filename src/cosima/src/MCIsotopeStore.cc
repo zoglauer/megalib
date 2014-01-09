@@ -629,7 +629,7 @@ void MCIsotopeStore::RemoveStableElements()
  */  
 std::ostream& operator<<(std::ostream& os, const MCIsotopeStore& S)
 {
-  os<<"Content of the particle store: "<<endl;
+  os<<"Content of the particle store (depending on normalization either by counts OR by rate is correct, not both): "<<endl;
 
   
   for (unsigned int v = 0; v < S.GetNVolumes(); ++v) {
@@ -637,11 +637,11 @@ std::ostream& operator<<(std::ostream& os, const MCIsotopeStore& S)
     double Sum = 0.0;
     for (unsigned int i = 0; i < S.GetNIDs(v); ++i) {
       for (unsigned int e = 0; e < S.GetNExcitations(v, i); ++e) {
-        os<<"  Isotope: "<<S.GetID(v, i)<<" ("<<S.GetExcitation(v, i, e)/keV<<" keV) - Value: As counts: "<<S.GetValue(v, i, e)<<"cts or as rate: "<<S.GetValue(v, i, e)*s<<"cts/sec"<<endl;
+        os<<"  Isotope: "<<S.GetID(v, i)<<" ("<<S.GetExcitation(v, i, e)/keV<<" keV) - Value: As counts: "<<S.GetValue(v, i, e)<<" cts or as rate: "<<S.GetValue(v, i, e)*s<<" cts/sec"<<endl;
         Sum += S.GetValue(v, i, e);
       }
     }
-    os<<"  --> Sum: As counts: "<<Sum<<"cts or as rate: "<<Sum*s<<"cts/sec"<<endl;
+    os<<"  --> Sum: As counts: "<<Sum<<" cts or as rate: "<<Sum*s<<" cts/sec"<<endl;
   }
 
   return os;

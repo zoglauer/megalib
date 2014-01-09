@@ -17,15 +17,12 @@ DiscretizeHits                     true
 
 # Particle range cuts:
 DefaultRangeCut     0.1
-#Region Sensitive
-#Sensitive.RangeCut  0.001   
-#Sensitive.Volume    BigSphere
 
 
 # The run:
 Run Level1
-Level1.FileName               ActivationStep1
-Level1.Time                   1000.0
+Level1.FileName               CosmicProtonsPrompt
+Level1.Triggers               500000
 Level1.IsotopeProductionFile  IsotopesLarge.dat
 
 Level1.Source Level1_ProtonSource
