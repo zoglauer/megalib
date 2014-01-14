@@ -17,6 +17,9 @@ Version 2.27/2.28
 *** Significant new features & improvements:
 
 General:
++ New MEGAlib icon!
++ Improved automated setup and more compiler options (e.g. clang support)
++ Coincidence window passthrough from revan to mimrec
 
 Cosima:
 + Performance improvements: Only load materials which are really used, etc.
@@ -44,6 +47,7 @@ Realta:
 Spectralizer:
 
 Examples:
++ Improved TGRS example
 
 ... plus many, many smaller things I already forgot about :)
 

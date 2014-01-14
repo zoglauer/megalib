@@ -9,7 +9,7 @@
 #----------------------------------------------------------------
 
 
-CMODE         = "MacOSX, software mode, gcc"
+CMODE         = "MacOSX with gcc compiler"
 ARCH          = macosx
 DLL           = dylib
 

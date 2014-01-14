@@ -26,6 +26,9 @@ confhelp() {
   echo "--debug=[off/no, on/yes, strong/hard]"
   echo "    Default is on."
   echo " "
+  echo "--compiler=[gcc, clang, icc]"
+  echo "    This currently only works on Linux. Default is gcc. On a Mac always the default compiler is used."
+  echo " "
   echo "--updates=[off/no, on/yes]"
   echo "    Check periodically for updates. Default is off."
   echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
@@ -83,9 +86,8 @@ echo " "
 echo "(1) Verifying chosen configuration options:"
 echo " "
 
-# Remove the old configuration store and preliminarily store the new options
+# Remove the old configuration store
 rm -f config/configure_lastgoodoptions
-NewOptions="${NewOptions} $1 $2 $3 $4 $5 $6 $7"
 
 # Default options:
 OS=`uname -s`
@@ -104,7 +106,7 @@ for C in ${CMD}; do
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-u*=* ]]; then
     UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-comp*=* ]]; then
+  elif [[ ${C} == *-c*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == --linux ]]; then
     OS="linux"
@@ -185,6 +187,26 @@ else
 fi
 
 
+if ( [[ ${COMP} == g* ]] ); then
+  COMP="gcc"
+  command -v g++ >/dev/null 2>&1 || { echo " "; echo "Error: gnu gcc is not installed!"; exit 1; }
+  echo " * Using gnu compiler"
+elif ( [[ ${COMP} == c* ]] ); then
+  COMP="clang"
+  command -v clang++ >/dev/null 2>&1 || { echo " "; echo "Error: clang is not installed!"; exit 1; }
+  echo " * Using clang compiler"
+elif ( [[ ${COMP} == i* ]] ); then
+  COMP="icc"
+  command -v icc >/dev/null 2>&1 || { echo " "; echo "Error: icc is not installed!"; exit 1; }
+  echo " * Using icc compiler"
+else
+  echo " "
+  echo "ERROR: Unknown compiler option: ${COMP}"
+  confhelp
+  exit 1
+fi
+
+
 if ( [[ ${UPDATES} == of* ]] || [[ ${UPDATES} == n* ]] ); then
   UPDATES="off"
   echo " * Don't check for updates"
@@ -197,8 +219,6 @@ else
   confhelp
   exit 1
 fi
-
-
 
 
 # Part 4:
@@ -312,7 +332,7 @@ else
   if [ $Geant4VersionOK -eq 1 ]; then
     Geant4Found=1;
   fi
-
+  
 #    Geant4DawnFileFound=1;
 #    Geant4OpenGLFound=1;
 #    Geant4ConfigFile="${G4INSTALL}/.config/bin/${G4SYSTEM}/config.sh";
@@ -433,11 +453,14 @@ echo ""
 # Choose main Makefile
 if [[ ${OS} == linux ]]; then
   if [[ ${COMP} == gcc ]]; then
-    echo "Configuring for Linux with gcc 3.x or higher compiler..."
-    cp config/Makefile.softlinux config/Makefile.config 
+    echo "Configuring for Linux with gnu gcc compiler ..."
+    cp config/Makefile.linuxgcc config/Makefile.config 
   elif [[ ${COMP} == icc ]]; then
-    echo "Configuring for Linux with icc 8.x or higher compiler..."
-    cp config/Makefile.softlinuxicc config/Makefile.config
+    echo "Configuring for Linux with Intel icc compiler ..."
+    cp config/Makefile.linuxicc config/Makefile.config
+  elif [[ ${COMP} == clang ]]; then
+    echo "Configuring for Linux with clang compiler ..."
+    cp config/Makefile.linuxclang config/Makefile.config
   else
     echo " "
     echo "ERROR: Compiler not supported for linux: ${COMP}"
@@ -446,8 +469,8 @@ if [[ ${OS} == linux ]]; then
   fi
 elif [[ ${OS} == darwin ]]; then
   if [[ ${COMP} == gcc ]]; then
-    echo "Configuring for MaxOSX with gcc compiler..."
-    cp config/Makefile.softmacosx config/Makefile.config
+    echo "Configuring for MaxOSX ..."
+    cp config/Makefile.macosx config/Makefile.config
   else
     echo " "
     echo "ERROR: Compiler not supported for linux: ${COMP}"
@@ -599,7 +622,7 @@ echo "Creating list of developers and contributors by parsing through all cpp, c
 bash ${MEGALIB}/config/configure_developers -s;
 
 # Store the current options:
-echo "${NewOptions}" >> config/configure_lastgoodoptions
+echo "${CMD}" >> config/configure_lastgoodoptions
 
 # Set the updates interval:
 if [[ ${UPDATES} == off ]]; then
