@@ -28,8 +28,10 @@ revan
 sivan
 spectralyze
 bundler
+SimRewriter
+StandAlone
 
-# config directory:
+#config directory:
 Makefile.options
 Makefile.user
 Makefile.config
