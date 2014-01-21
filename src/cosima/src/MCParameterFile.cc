@@ -1247,6 +1247,34 @@ bool MCParameterFile::Parse()
               return false;
             }
           }  
+          else if (Type == "restrictedlinesource" || Type == "restrictedline" || Type == "rls") {
+            if (T->GetNTokens() == 9) {
+              Source->SetBeamType(MCSource::c_NearField,
+                                  MCSource::c_NearFieldRestrictedLine);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
+                                      T->GetTokenAtAsDouble(4)*cm,
+                                      T->GetTokenAtAsDouble(5)*cm,
+                                      T->GetTokenAtAsDouble(6)*cm,
+                                      T->GetTokenAtAsDouble(7)*cm,
+                                      T->GetTokenAtAsDouble(8)*cm) == true) {
+                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
+                      <<"/"<<T->GetTokenAtAsDouble(4)
+                      <<"/"<<T->GetTokenAtAsDouble(5)
+                      <<"/"<<T->GetTokenAtAsDouble(6)
+                      <<"/"<<T->GetTokenAtAsDouble(7)
+                      <<"/"<<T->GetTokenAtAsDouble(8)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Can not parse token \"Beam - restricted line source\" correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Can not parse token \"Beam - restricted line source\" correctly:"
+                   " Number of tokens is not correct (!= 9)!");
+              return false;
+            }
+          }  
           else if (Type == "boxsource" || Type == "box" || Type == "bs") {
             if (T->GetNTokens() == 9) {
               Source->SetBeamType(MCSource::c_NearField,

@@ -80,19 +80,20 @@ const int MCSource::c_NearFieldRestrictedPoint                     = 11;
 const int MCSource::c_NearFieldDiffractionPoint                    = 12;
 const int MCSource::c_NearFieldDiffractionPointKSpace              = 13;
 const int MCSource::c_NearFieldLine                                = 14;
-const int MCSource::c_NearFieldBox                                 = 15;
-const int MCSource::c_NearFieldDisk                                = 16;
-const int MCSource::c_NearFieldSphere                              = 17;
-const int MCSource::c_NearFieldBeam                                = 18;
-const int MCSource::c_NearFieldActivation                          = 19;
-const int MCSource::c_NearFieldBeam1DProfile                       = 20;
-const int MCSource::c_NearFieldBeam2DProfile                       = 21;
-const int MCSource::c_NearFieldConeBeam                            = 22;
-const int MCSource::c_NearFieldConeBeamGauss                       = 23;
-const int MCSource::c_NearFieldIlluminatedDisk                     = 24;
-const int MCSource::c_NearFieldIlluminatedSquare                   = 25;
-const int MCSource::c_NearFieldVolume                              = 26;
-const int MCSource::c_NearFieldFlatMap                             = 27;
+const int MCSource::c_NearFieldRestrictedLine                      = 15;
+const int MCSource::c_NearFieldBox                                 = 16;
+const int MCSource::c_NearFieldDisk                                = 17;
+const int MCSource::c_NearFieldSphere                              = 18;
+const int MCSource::c_NearFieldBeam                                = 19;
+const int MCSource::c_NearFieldActivation                          = 20;
+const int MCSource::c_NearFieldBeam1DProfile                       = 21;
+const int MCSource::c_NearFieldBeam2DProfile                       = 22;
+const int MCSource::c_NearFieldConeBeam                            = 23;
+const int MCSource::c_NearFieldConeBeamGauss                       = 24;
+const int MCSource::c_NearFieldIlluminatedDisk                     = 25;
+const int MCSource::c_NearFieldIlluminatedSquare                   = 26;
+const int MCSource::c_NearFieldVolume                              = 27;
+const int MCSource::c_NearFieldFlatMap                             = 28;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -381,7 +382,8 @@ bool MCSource::SetStartAreaType(const int& StartAreaType)
   if (StartAreaType == c_StartAreaTube) {
     if (m_BeamType == c_NearFieldIlluminatedDisk || 
         m_BeamType == c_NearFieldIlluminatedSquare || 
-        m_BeamType == c_NearFieldRestrictedPoint) {
+        m_BeamType == c_NearFieldRestrictedPoint ||
+        m_BeamType == c_NearFieldRestrictedLine) {
 
       mout<<m_Name<<": The given beam type requires a spherical start area and not a tube-like!"<<endl;
       return false;    
@@ -808,6 +810,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldBeam:
   case c_NearFieldActivation:
   case c_NearFieldRestrictedPoint:
+  case c_NearFieldRestrictedLine:
   case c_NearFieldDiffractionPoint:
   case c_NearFieldDiffractionPointKSpace:
   case c_NearFieldBeam1DProfile:
@@ -865,6 +868,9 @@ string MCSource::GetBeamTypeAsString() const
     break;
   case c_NearFieldRestrictedPoint:
     Name = "RestrictedPoint";
+    break;
+  case c_NearFieldRestrictedLine:
+    Name = "RestrictedLine";
     break;
   case c_NearFieldDiffractionPoint:
     Name = "DiffractionPointSource";
@@ -986,7 +992,7 @@ bool MCSource::SetPosition(double PositionParam1,
       mout<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
       return false;
     }
-  } else if (m_BeamType == c_NearFieldLine) {
+  } else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
     if (m_PositionParam1 == m_PositionParam4 &&
         m_PositionParam2 == m_PositionParam5 &&
         m_PositionParam3 == m_PositionParam6) {
@@ -1148,6 +1154,32 @@ bool MCSource::UpgradePosition()
     }
   }
 
+  else if (m_BeamType == c_NearFieldRestrictedLine) {
+    if (m_StartAreaType != c_StartAreaSphere && m_StartAreaType != c_StartAreaUnknown) {
+      mout<<m_Name<<": The beam type NearFieldRestrictedPoint requires a sphere as start area!"<<endl;
+      return false;
+    }
+    // Determine closest encounter between origin of sphere and line
+    G4ThreeVector A(m_PositionParam1, m_PositionParam2, m_PositionParam3);
+    G4ThreeVector B(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+    G4ThreeVector N = (B - A); N /= N.mag();
+    G4ThreeVector P = m_StartAreaPosition;
+    G4ThreeVector AmP = A - P;
+    
+    double Distance = (AmP - (AmP.dot(N))*N).mag();
+    cout<<A/cm<<":"<<B/cm<<":"<<N/cm<<":"<<P/cm<<":"<<AmP/cm<<endl;
+    cout<<"Minimum distance: "<<Distance/cm<<endl;
+    
+    if (Distance < m_StartAreaParam1) {
+      mout<<m_Name<<": The beam type NearFieldRestrictedLine requires that the line does not cross the start sphere!"<<endl;
+      mout<<m_Name<<": Switching to a normal NearFieldLine source!"<<endl;
+      m_BeamType = c_NearFieldLine;
+    } else {
+      // Determine the maximum cone opening angle:
+      m_PositionParam7 = asin(m_StartAreaParam1/Distance); // we need to use "7" so that it is the same as in restricted point and the cone beams!
+      cout<<"Cone opening angle: "<<m_PositionParam7/degree<<"deg"<<endl;
+    }
+  }
   else if (m_BeamType == c_NearFieldConeBeamGauss) {
     if (m_PositionTF1 != 0) delete m_PositionTF1;
     m_PositionTF1 = new TF1("CartesianConeBeamGauss", "exp(-(x*x)/(2.*[0]*[0])) * sin(x)", 0.0, m_PositionParam7);
@@ -1469,6 +1501,17 @@ bool MCSource::UpgradeFlux()
         double Area = 2*c_Pi*(1-cos(ConeAngle));
         m_Flux *= Area/(4*c_Pi);
       }
+    }
+    
+    else if (m_BeamType == c_NearFieldRestrictedLine) {
+      if (m_StartAreaType != c_StartAreaSphere && m_StartAreaType != c_StartAreaUnknown) {
+        mout<<m_Name<<": The beam type NearFieldRestrictedLine requires a sphere as start area!"<<endl;
+        return false;
+      }
+
+      // The flux is already upgraded last so we should alreday have all the necessary position parameters:
+      double Area = 2*c_Pi*(1-cos(m_PositionParam7));
+      m_Flux *= Area/(4*c_Pi);
     }
   }
 
@@ -2412,7 +2455,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     }
 
-    else if  (m_BeamType == c_NearFieldLine) {
+    else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
       double Random = CLHEP::RandFlat::shoot(1);
       m_Position[0] = m_PositionParam1 + 
         Random*(m_PositionParam4 - m_PositionParam1);
@@ -2618,15 +2661,21 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     } 
 
     else if  (m_BeamType == c_NearFieldRestrictedPoint ||
+              m_BeamType == c_NearFieldRestrictedLine ||
               m_BeamType == c_NearFieldConeBeam ||
               m_BeamType == c_NearFieldConeBeamGauss) {
 
       // Initial remark: During SetPosition all parameters have been set in a way that 
       // CartesianRestrictedPoint is HERE identical with CartesianConeBeam
+      // Restricted line just needs a calculation of the direction
 
       // Determine theta, and phi of the beam direction: 
       G4ThreeVector BeamDirection;
-      BeamDirection.set(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+      if (m_BeamType == c_NearFieldRestrictedLine) {
+        BeamDirection = m_StartAreaPosition - m_Position;   
+      } else {  
+        BeamDirection.set(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+      }
       double BeamTheta = BeamDirection.theta();
       double BeamPhi = BeamDirection.phi();
       
@@ -2634,6 +2683,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       // an azimuth angle Phi (in [0, 2pi]) relative to an on-axis cone-beam direction
       double Theta = 0, Phi = 0;
       if (m_BeamType == c_NearFieldRestrictedPoint ||
+          m_BeamType == c_NearFieldRestrictedLine ||
           m_BeamType == c_NearFieldConeBeam) {
         // We have a flat distribution in angle space
         Phi = 2*c_Pi * CLHEP::RandFlat::shoot(1);

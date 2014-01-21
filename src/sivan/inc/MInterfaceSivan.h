@@ -59,6 +59,7 @@ class MInterfaceSivan : public MInterface
   void IncidenceAngle();
   void IncidenceEnergy();
   void IncidenceVsMeasuredEnergy();
+  void StartLocations();
   void InitialComptonScatterAngle();
   void EnergyOfSecondaries();
   void AverageNumberOfHits();

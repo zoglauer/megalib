@@ -324,7 +324,7 @@ public:
 
   /// Id of a point like source in Cartesian coordinates
   static const int c_NearFieldPoint;
-  /// Id of a beam in Cartesian coordinates
+  /// Id of a point like source in Cartesian coordinates restricted towards the surrounding sphere
   static const int c_NearFieldRestrictedPoint;
   /// Id of a beam in Cartesian coordinates - diffraction of a point
   static const int c_NearFieldDiffractionPoint;
@@ -332,6 +332,8 @@ public:
   static const int c_NearFieldDiffractionPointKSpace;
   /// Id of a line like source in Cartesian coordinates
   static const int c_NearFieldLine;
+  /// Id of a line like source in Cartesian coordinates restricted towards the surrounding sphere
+  static const int c_NearFieldRestrictedLine;
   /// Id of a box like source in Cartesian coordinates
   static const int c_NearFieldBox;
   /// Id of a spherical like source in Cartesian coordinates

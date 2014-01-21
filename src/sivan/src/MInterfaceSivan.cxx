@@ -5533,6 +5533,209 @@ void MInterfaceSivan::InteractionsPerVoxel()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceSivan::StartLocations()
+{
+  // Show where the photos are started in 3D
+  
+  bool UseEnergy = false;
+  
+  // Open the simulation file:
+  MFileEventsSim EventFile(m_Geometry);
+  if (EventFile.Open(m_Data->GetCurrentFileName()) == false) {
+    mgui<<"Unable to open file"<<error;
+    return;
+  }
+  EventFile.ShowProgress();
+
+  double xMin = -100;
+  double xMax = +100;
+  double yMin = -100;
+  double yMax = +100;
+  double zMin = -100;
+  double zMax = +100;
+
+  int MaxNBins = 200;
+
+  unsigned int MaxNPositions = 10000000;
+  vector<MVector> Positions;
+  vector<double> Energies;
+
+
+  // Step 1: Accumulate many, many hits:
+
+  MSimEvent* Event;
+  while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    // categorize the beam into layers:
+    if (Event->GetNIAs() > 0) {
+      Positions.push_back(Event->GetIAAt(0)->GetPosition());
+      Energies.push_back(Event->GetIAAt(0)->GetSecondaryEnergy());
+    }
+    
+    delete Event;
+
+    if (Positions.size() > MaxNPositions) {
+      break;
+    }
+  }
+
+  // Step 2: Create the histograms
+
+  DetermineAxis(xMin, xMax, yMin, yMax, zMin, zMax, Positions);
+
+  MString HistName;
+  MString HistTitle;
+  MString ValueAxisTitle;
+  if (UseEnergy == true) {
+    HistName = "SpatialEnergyDistribution ";
+    HistTitle = "Spatial energy distribution ";
+    ValueAxisTitle = "Energy [keV] per bin";
+  } else {
+    HistName = "SpatialHitDistribution ";
+    HistTitle = "Spatial hit distribution ";
+    ValueAxisTitle = "Counts per bin";
+  }
+
+  TH3D* xyzHist = new TH3D(HistName + "xyz", 
+                           HistTitle + "xyz", 
+                           MaxNBins, xMin, xMax,
+                           MaxNBins, yMin, yMax, 
+                           MaxNBins, zMin, zMax);
+  xyzHist->SetBit(kCanDelete);
+  xyzHist->GetXaxis()->SetTitle("x [cm]");
+  xyzHist->GetYaxis()->SetTitle("y [cm]");
+  xyzHist->GetZaxis()->SetTitle("z [cm]");
+
+  TH2D* xyHist = new TH2D(HistName + "xy", 
+                          HistTitle + "xy", 
+                          MaxNBins, xMin, xMax,
+                          MaxNBins, yMin, yMax);
+  xyHist->SetBit(kCanDelete);
+  xyHist->GetXaxis()->SetTitle("x [cm]");
+  xyHist->GetYaxis()->SetTitle("y [cm]");
+  xyHist->GetZaxis()->SetTitle(ValueAxisTitle);
+
+  TH2D* xzHist = new TH2D(HistName + "xz", 
+                          HistTitle + "xz", 
+                          MaxNBins, xMin, xMax,
+                          MaxNBins, zMin, zMax);
+  xzHist->SetBit(kCanDelete);
+  xzHist->GetXaxis()->SetTitle("x [cm]");
+  xzHist->GetYaxis()->SetTitle("z [cm]");
+  xzHist->GetZaxis()->SetTitle(ValueAxisTitle);
+
+  TH2D* yzHist = new TH2D(HistName + "yz", 
+                          HistTitle + "yz", 
+                          MaxNBins, yMin, yMax,
+                          MaxNBins, zMin, zMax);
+  yzHist->SetBit(kCanDelete);
+  yzHist->GetXaxis()->SetTitle("y [cm]");
+  yzHist->GetYaxis()->SetTitle("z [cm]");
+  yzHist->GetZaxis()->SetTitle(ValueAxisTitle);
+
+  TH1D* xHist = new TH1D(HistName + "x", 
+                         HistTitle + "x", 
+                         MaxNBins, xMin, xMax);
+  xHist->SetBit(kCanDelete);
+  xHist->GetXaxis()->SetTitle("x [cm]");
+  xHist->GetYaxis()->SetTitle(ValueAxisTitle);
+
+  TH1D* yHist = new TH1D(HistName + "y", 
+                         HistTitle + "y", 
+                         MaxNBins, yMin, yMax);
+  yHist->SetBit(kCanDelete);
+  yHist->GetXaxis()->SetTitle("y [cm]");
+  yHist->GetYaxis()->SetTitle(ValueAxisTitle);
+
+  TH1D* zHist = new TH1D(HistName + "z", 
+                         HistTitle + "z", 
+                         MaxNBins, zMin, zMax);
+  zHist->SetBit(kCanDelete);
+  zHist->GetXaxis()->SetTitle("z [cm]");
+  zHist->GetYaxis()->SetTitle(ValueAxisTitle);
+
+
+  // Step 3: Fill the current events:
+
+  MVector Pos;
+  double Energy = 1.0;
+  for (unsigned int p = 0; p < Positions.size(); ++p) {
+    Pos = Positions[p];
+    if (UseEnergy == true) Energy = Energies[p];
+
+    xyzHist->Fill(Pos[0], Pos[1], Pos[2], Energy);
+    xyHist->Fill(Pos[0], Pos[1], Energy);
+    xzHist->Fill(Pos[0], Pos[2], Energy);
+    yzHist->Fill(Pos[1], Pos[2], Energy);
+    xHist->Fill(Pos[0], Energy);
+    yHist->Fill(Pos[1], Energy);
+    zHist->Fill(Pos[2], Energy);
+  }
+
+
+  // Step 4: Continue filling from file:
+
+  while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    // categorize the beam into layers:
+    if (Event->GetNIAs() > 0) {
+      Pos = Event->GetIAAt(0)->GetPosition();
+      if (UseEnergy == true) Energy = Event->GetIAAt(0)->GetSecondaryEnergy();
+      
+      xyzHist->Fill(Pos[0], Pos[1], Pos[2], Energy);
+      xyHist->Fill(Pos[0], Pos[1], Energy);
+      xzHist->Fill(Pos[0], Pos[2], Energy);
+      yzHist->Fill(Pos[1], Pos[2], Energy);
+      xHist->Fill(Pos[0], Energy);
+      yHist->Fill(Pos[1], Energy);
+      zHist->Fill(Pos[2], Energy);
+     }
+    
+    delete Event;
+  }
+
+
+  // Step 5: Show the histograms
+  TCanvas* xyzCanvas = new TCanvas(HistName + "xyz", HistTitle + "xyz");
+  xyzCanvas->cd();
+  xyzHist->Draw();
+  xyzCanvas->Update();
+
+  TCanvas* xyCanvas = new TCanvas(HistName + "xy", HistTitle + "xy");
+  xyCanvas->cd();
+  xyHist->Draw("colz");
+  xyCanvas->Update();
+
+  TCanvas* xzCanvas = new TCanvas(HistName + "xz", HistTitle + "xz");
+  xzCanvas->cd();
+  xzHist->Draw("colz");
+  xzCanvas->Update();
+
+  TCanvas* yzCanvas = new TCanvas(HistName + "yz", HistTitle + "yz");
+  yzCanvas->cd();
+  yzHist->Draw("colz");
+  yzCanvas->Update();
+
+  TCanvas* xCanvas = new TCanvas(HistName + "x", HistTitle + "x");
+  xCanvas->cd();
+  xHist->Draw();
+  xCanvas->Update();
+
+  TCanvas* yCanvas = new TCanvas(HistName + "y", HistTitle + "y");
+  yCanvas->cd();
+  yHist->Draw();
+  yCanvas->Update();
+
+  TCanvas* zCanvas = new TCanvas(HistName + "z", HistTitle + "z");
+  zCanvas->cd();
+  zHist->Draw();
+  zCanvas->Update();
+
+  return;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool EnergyPerNucleusSort(TH1D* H1, TH1D* H2) {
   return (H1->Integral() < H2->Integral());
 }

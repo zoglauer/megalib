@@ -88,6 +88,7 @@ void MGUISivanMain::Create()
   //m_MenuAnalysis->AddEntry("View hits", c_ViewHits);
   //m_MenuAnalysis->AddEntry("Energy loss", c_EnergyLoss);
   //m_MenuAnalysis->AddEntry("Energy per voxel", c_EnergyPerVoxel);
+  m_MenuAnalysis->AddEntry("Start locations", c_StartLocations);
   m_MenuAnalysis->AddEntry("Incidence Angle", c_IncidenceAngle);
   m_MenuAnalysis->AddEntry("Incidence Energy", c_IncidenceEnergy);
   m_MenuAnalysis->AddEntry("Incidence Vs. Measured Energy", c_IncidenceVsMeasuredEnergy);
@@ -244,6 +245,10 @@ bool MGUISivanMain::ProcessMessage(long Message, long Parameter1,
 
       case c_CompleteAbsorptionRatio:
         m_Interface->CompleteAbsorptionRatio();
+        break;
+
+      case c_StartLocations:
+        m_Interface->StartLocations();
         break;
 
       case c_IncidenceAngle:

@@ -79,6 +79,7 @@ class MGUISivanMain : public MGUIMain
                    c_EnergyPerNucleus,
                    c_EnergyPerVoxel, 
                    c_ComptonEnergyEscape, 
+                   c_StartLocations,
                    c_IncidenceAngle,
                    c_IncidenceEnergy,
                    c_IncidenceVsMeasuredEnergy,
