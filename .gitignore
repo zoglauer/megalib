@@ -30,8 +30,12 @@ spectralyze
 bundler
 SimRewriter
 StandAlone
+Clusterizer
+ConvertPhantom
+Shells
+SiStack
 
-#config directory:
+# config directory:
 Makefile.options
 Makefile.user
 Makefile.config
