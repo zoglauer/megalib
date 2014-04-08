@@ -106,7 +106,7 @@ else
   echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on ROOT website"
   
   # Now check root repository for the given version:
-  TARBALL=`curl ftp://root.cern.ch/root/ -sl | grep "root_v${WANTEDVERSION}" | grep "source.tar.gz" | sort | tail -n 1`
+  TARBALL=`curl ftp://root.cern.ch/root/ -sl | grep "^root_v${WANTEDVERSION}" | grep "source.tar.gz$" | sort | tail -n 1`
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable ROOT tar ball at the ROOT website"
     exit 1

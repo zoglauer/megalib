@@ -110,7 +110,7 @@ else
   echo "Looking for latest HEASoft version on the HEASoft website"
   
   # Now check root repository for the given version:
-  TARBALL=`curl ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "heasoft\-" | grep "src.tar.gz"`
+  TARBALL=`curl ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "src.tar.gz$"`
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable HEASoft tar ball at the HEASoft website"
     exit 1
