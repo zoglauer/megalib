@@ -58,12 +58,13 @@ fi;
 
 while [ $# -gt 0 ] ; do
   Found=0;
+  echo $1
   case $1 in
   -h|--help) 
     help; 
     exit 0;;
   -w|--wait)
-    shift;
+    Found=1;
     Wait="yes"
     ;;
   -p|-t)
