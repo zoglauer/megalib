@@ -2,44 +2,46 @@
 
 
 help() {
-    echo ""
-    echo "mcosima - parallel simulation script for cosima on the same machine";
-    echo "(C) by Andreas Zoglauer"
-    echo "";
-    echo "Usage:";
-    echo "    mcosima <cosima source file>";
-    echo "";
-    echo "Options:";
-    echo "    -t <threads>:  The number of threads as an integer"
-    echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
-    echo "    -n <nice>:     The nice level as an integer"
-    echo "";
-    echo "Example:";
-    echo "    mcosima -t 2 -n 19 Run.source";
-    echo "";
-    echo "This script launches multiple instances of cosima with the same source file";
-    echo "and generates a concatenation file"
-    echo "";
+  echo ""
+  echo "mcosima - parallel simulation script for cosima on the same machine";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mcosima <cosima source file>";
+  echo "";
+  echo "Options:";
+  echo "    -t <threads>:  The number of threads as an integer"
+  echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
+  echo "    -n <nice>:     The nice level as an integer"
+  echo "    -w:            If set, wait until all jobs have finished."
+  echo "";
+  echo "Example:";
+  echo "    mcosima -t 2 -n 19 Run.source";
+  echo "";
+  echo "This script launches multiple instances of cosima with the same source file";
+  echo "and generates a concatenation file"
+  echo "";
 }
 
 
 # Initialize
 Threads=1;
 if ( `test -f /usr/sbin/sysctl` ); then
-    Threads=`sysctl -n hw.logicalcpu_max`
+  Threads=`sysctl -n hw.logicalcpu_max`
 elif ( `test -f /proc/cpuinfo` ); then 
-    Threads=`grep processor /proc/cpuinfo | wc -l`
+  Threads=`grep processor /proc/cpuinfo | wc -l`
 fi
 Source="!@#$";
 Max=${Threads}
 Nice=0;
+Wait="no"
 
 # Check if cosima exists
 if (`test -f ${MEGAlib}/bin/cosima`); then
-    echo " "
-    echo "ERROR: The cosima executable does not exist. Try to (re-)compile MEGAlib."
-    echo " "
-    exit 1;
+  echo " "
+  echo "ERROR: The cosima executable does not exist. Try to (re-)compile MEGAlib."
+  echo " "
+  exit 1;
 fi
 
 
@@ -47,107 +49,113 @@ fi
 # Verify the input:
 
 if [ $# -eq 0 ] ; then
-    echo " "
-    echo "Error: You need to give at least a source file";
-    echo "       For details see mcosima --help"
-    echo " "
-    exit 0;
+  echo " "
+  echo "Error: You need to give at least a source file";
+  echo "       For details see mcosima --help"
+  echo " "
+  exit 0;
 fi;
 
 while [ $# -gt 0 ] ; do
-    Found=0;
-    case $1 in
-    -h|--help) 
-        help; 
-        exit 0;;
-    -p|-t)
-        shift;
-        if [ $# -eq 0 ]; then
-            echo " "
-            echo "Error: Options -p and -t need an argument";
-            echo "       For details see mcosima --help"
-            echo " "
-            exit 0;
-        fi
-        Found=1;
-        Threads=$1;
-        #echo "Using ${Threads} threads";
-        ;;
-    -m)
-        shift;
-        if [ $# -eq 0 ]; then
-            echo " "
-            echo "Error: Options -m needs an argument";
-            echo "       For details see mcosima --help"
-            echo " "
-            exit 0;
-        fi
-        Found=1;
-        Max=$1;
-        #echo "Using ${Threads} threads";
-        ;;
-    -n)
-        shift;
-        if [ $# -eq 0 ]; then
-            echo " "
-            echo "Error: Option -n needs an argument";
-            echo "       For details see mcosima --help"
-            echo " "
-            exit 0;
-        fi
-        Found=1;
-        Nice=$1;
-        #echo "Using nice level ${Nice}";
-        ;;
-     *)
-        ;;
-    esac
-    if [ "${Found}" == "0" ]; then
-        if [ "${Source}" == "!@#$" ]; then
-            Source=$1;
-        else
-            echo " "
-            echo "Error: Only one source file allowed";
-            echo "       For details see mcosima --help"
-            echo " "
-            help; 
-            exit 1;
-        fi    
+  Found=0;
+  echo $1
+  case $1 in
+  -h|--help) 
+    help; 
+    exit 0;;
+  -w|--wait)
+    Found=1;
+    Wait="yes"
+    ;;
+  -p|-t)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -p and -t need an argument";
+      echo "       For details see mcosima --help"
+      echo " "
+      exit 0;
     fi
+    Found=1;
+    Threads=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -m)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -m needs an argument";
+      echo "       For details see mcosima --help"
+      echo " "
+      exit 0;
+    fi
+    Found=1;
+    Max=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -n)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -n needs an argument";
+      echo "       For details see mcosima --help"
+      echo " "
+      exit 0;
+    fi
+    Found=1;
+    Nice=$1;
+    #echo "Using nice level ${Nice}";
+    ;;
+  *)
+    ;;
+  esac
 
-    shift
+  if [ "${Found}" == "0" ]; then
+    if [ "${Source}" == "!@#$" ]; then
+      Source=$1;
+    else
+      echo " "
+      echo "Error: Only one source file allowed";
+      echo "       For details see mcosima --help"
+      echo " "
+      help; 
+      exit 1;
+    fi    
+  fi
+
+  shift
 done
 
 if [ "${Source}" == "!@#$" ]; then
-    echo " "
-    echo "Error: You need to give a source file";
-    echo "       For details see mcosima --help"
-    echo " "
-    exit 1;
+  echo " "
+  echo "Error: You need to give a source file";
+  echo "       For details see mcosima --help"
+  echo " "
+  exit 1;
 fi
 
 if echo ${Threads} | grep "^[0-9]*$" > /tmp/aux
 then
-    rm /tmp/aux
+  rm /tmp/aux
 else
-    echo " "
-    echo "Error: The value behind parallel threads must be a number";
-    echo "       For details see mcosima --help"
-    echo " "
-    rm /tmp/aux
-    exit 1;
+  echo " "
+  echo "Error: The value behind parallel threads must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
 fi
 
 if echo ${Max} | grep "^[0-9]*$" > /tmp/aux
 then
-    rm /tmp/aux
+  rm /tmp/aux
 else
-    echo " "
-    echo "Error: The value behind max threads must be a number";
-    echo "       For details see mcosima --help"
-    echo " "
-    rm /tmp/aux
-    exit 1;
+  echo " "
+  echo "Error: The value behind max threads must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
 fi
 
 
@@ -157,6 +165,7 @@ echo " "
 echo "Number of threads to use: ${Threads}" 
 echo "Maximum number of cosima threads on machine: ${Max}" 
 echo "Source file: ${Source}" 
+echo "Waiting until all threads have finished: ${Wait}" 
 
 
 
@@ -165,10 +174,10 @@ ThreadsID="0"
 
 BaseNames=""
 while read line; do
-    Base=`echo $line | awk -F ".FileName|.filename|.Filename" '{ print $2 }'`;
-    if [ "${Base}" != "" ]; then
-      BaseNames="${BaseNames} ${Base}"
-    fi
+  Base=`echo $line | awk -F ".FileName|.filename|.Filename" '{ print $2 }'`;
+  if [ "${Base}" != "" ]; then
+    BaseNames="${BaseNames} ${Base}"
+  fi
 done << EOF
 $(grep -i ".FileName" ${Source})
 EOF
@@ -183,90 +192,118 @@ fi
 
 
 for Base in ${BaseNames}; do
-    while true; do
-        ThreadsID=`expr ${ThreadsID} + 1`
-        N=`find . -name "${Base}.p${ThreadsID}.*sim" | wc -l | sed 's/ //g'`
-        #echo "Found: $N of ${Base}.p${ThreadsID}.*sim"
-        if [ "${N}" == "0" ]; then
-            break;
-        fi
-    done
+  while true; do
+    ThreadsID=`expr ${ThreadsID} + 1`
+    N=`find . -name "${Base}.p${ThreadsID}.*sim" | wc -l | sed 's/ //g'`
+    #echo "Found: $N of ${Base}.p${ThreadsID}.*sim"
+    if [ "${N}" == "0" ]; then
+      break;
+    fi
+  done
 done
 
 echo " "
 
 # Start the sims
-Pids=" "
+Pids=( )
 for (( i=1; i <= ${Threads}; i+=1 )); do
-    mdelay cosima ${Max}
-    echo "Launching number ${i}/${Threads}"
-    nohup nice -n ${Nice} cosima -v 0 -p ${ThreadsID} ${Source} > /dev/null &
-    Pids="$Pids $! "
-    if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
-        echo "Sleeping for 5 seconds..."
-        sleep 5
-    fi
+  mdelay cosima ${Max}
+  echo "Launching number ${i}/${Threads}"
+  Random=`od -vAn -N4 -tu4 < /dev/urandom`
+  nohup nice -n ${Nice} cosima -v 0 -s ${Random} -p ${ThreadsID} ${Source} > /dev/null &
+  Pids[${#Pids[*]}]=$!
+  #Pids="$Pids $! "
+  if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
+    echo "Sleeping for 5 seconds..."
+    sleep 5
+  fi
 done
 
 # Create a concatenation file
 
 # Extract the base file names from the source file
 grep -i ".FileName" ${Source} | while read line; do
-    Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`; 
-    echo "Creating concatenation file for simulation \"${Base}\""
-    ConcatFileName="${Base}.p${ThreadsID}.sim" 
+  Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`; 
+  echo "Creating concatenation file for simulation \"${Base}\""
+  ConcatFileName="${Base}.p${ThreadsID}.sim" 
 
-    # Wait until the first such file is created
-    while ( test ! -f ${Base}.p${ThreadsID}.inc1.id1.sim ); do
-        sleep 1
-        echo "Waiting for the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" to appear ..."
-    done
+  # Wait until the first such file is created
+  while ( test ! -f ${Base}.p${ThreadsID}.inc1.id1.sim ); do
+    sleep 1
+    echo "Waiting for the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" to appear ..."
+  done
 
-    # Wait until the header is written
-    while [ `wc -l ${Base}.p${ThreadsID}.inc1.id1.sim | awk -F" " '{ print $1 }'` -le 100 ]; do
-        sleep 1;
-        echo "Waiting for first 100 lines to be written into the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" ..."
-    done
+  # Wait until the header is written
+  while [ `wc -l ${Base}.p${ThreadsID}.inc1.id1.sim | awk -F" " '{ print $1 }'` -le 100 ]; do
+    sleep 1;
+    echo "Waiting for first 100 lines to be written into the simulation file \"${Base}.p${ThreadsID}.inc1.id1.sim\" ..."
+  done
 
-    # Create a concatenation file
-    echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
+  # Create a concatenation file
+  echo "# Concatenation file generated by mcosima" >> ${ConcatFileName}
 
-    head -n 100 ${Base}.p${ThreadsID}.inc1.id1.sim > /tmp/mcosima.head
-    while read LINE
-    do
-      # Keep all information but: #, Seed, TB
-      FIRST=${LINE%% *}
-      if [ "${FIRST}" == "SE" ]; then
-        break
-      fi
-      if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
-        echo "${LINE}" >> ${ConcatFileName}
-      fi
-    done < /tmp/mcosima.head
-    rm /tmp/mcosima.head
+  head -n 100 ${Base}.p${ThreadsID}.inc1.id1.sim > /tmp/mcosima.head
+  while read LINE
+  do
+    # Keep all information but: #, Seed, TB
+    FIRST=${LINE%% *}
+    if [ "${FIRST}" == "SE" ]; then
+      break
+    fi
+    if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
+      echo "${LINE}" >> ${ConcatFileName}
+    fi
+  done < /tmp/mcosima.head
+  rm /tmp/mcosima.head
 
-    echo " " >> ${ConcatFileName}
+  echo " " >> ${ConcatFileName}
     
-    for (( i=1; i <= ${Threads}; i+=1 )); do
-        echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
-    done
+  for (( i=1; i <= ${Threads}; i+=1 )); do
+    echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+  done
     
-    echo "EN" >> ${ConcatFileName}
-    echo " " >> ${ConcatFileName}
+  echo "EN" >> ${ConcatFileName}
+  echo " " >> ${ConcatFileName}
 
-    echo "Created concatenation file \"${ConcatFileName}\""
+  echo "Created concatenation file \"${ConcatFileName}\""
 
-    KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
-    rm -f ${KillFileName}
-    echo "#! /bin/bash" >> ${KillFileName}
-    echo " " >> ${KillFileName}
-    for p in ${Pids}; do
-        echo "kill -2 ${p}" >> ${KillFileName}
-    done
-    echo " " >> ${KillFileName}
-    echo "exit" >> ${KillFileName} 
+  KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
+  rm -f ${KillFileName}
+  echo "#! /bin/bash" >> ${KillFileName}
+  echo " " >> ${KillFileName}
+  for (( p = 0; p < ${#Pids[*]}; p++ )); do
+    echo "kill -2 ${Pids[$p]}" >> ${KillFileName}
+  done
+  echo " " >> ${KillFileName}
+  echo "exit" >> ${KillFileName} 
 done
 
+
+# Check if we wait until all threads have finished
+if [ "${Wait}" = "yes" ]; then
+  echo "Waiting till all processes have finished..."
+  while true; do
+    Counter=0
+    for (( p = 0; p < ${#Pids[*]}; p++ )); do
+      if [ ${Pids[$p]} -eq 0 ]; then
+        continue
+      fi
+      FoundIt=`ps cax | grep ${Pids[$p]} | grep -o '^[ ]*[0-9]'`
+      if [ -z "${FoundIt}" ]; then
+        echo "ID ${Pids[$p]} no longer running"
+        Pids[$p]=0
+      else
+        echo "ID ${Pids[$p]} still running"
+        Counter=$(( ${Counter} + 1 ))
+      fi
+    done
+    if [ ${Counter} -eq 0 ]; then
+      break;
+    fi
+    sleep 10
+  done
+  echo "All processes have finished..."
+fi
 
 
 exit 0;
