@@ -215,22 +215,41 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
 //   }
   bool ValidStartArea = true;
   for (unsigned int s = 0; s < m_RunParameters.GetCurrentRun().GetNSources(); ++s) {
-    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetCoordinateSystem() != MCSource::c_FarField) {
+    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetCoordinateSystem() != MCSource::c_FarField ||
+        m_RunParameters.GetCurrentRun().GetSource(s)->GetBeamType() != MCSource::c_FarFieldPoint) {
       ValidStartArea = false;
     }
   }
-  if (ValidStartArea == true && m_RunParameters.GetCurrentRun().GetNSources() == 1) {
+    
+  if (ValidStartArea == true) {
     (*m_OutFile)<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
   } else {
     (*m_OutFile)<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a surrounding sphere"<<endl;
     (*m_OutFile)<<"SimulationStartAreaFarField 0.0"<<endl;
   }
-  if (m_RunParameters.GetCurrentRun().GetNSources() > 1) {
-    (*m_OutFile)<<"BeamType Multiple"<<endl;
-    (*m_OutFile)<<"SpectralType Multiple"<<endl;
-  } else {
+
+  bool SameBeamType = true;
+  bool SameSpectralType = true;
+  for (unsigned int s = 1; s < m_RunParameters.GetCurrentRun().GetNSources(); ++s) {
+    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetCoordinateSystem() != m_RunParameters.GetCurrentRun().GetSource(0)->GetCoordinateSystem() ||
+        m_RunParameters.GetCurrentRun().GetSource(s)->GetBeamType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamType()) {
+      SameBeamType = false;
+    }
+    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetSpectralType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralType()) {
+      SameSpectralType = false;
+    }
+  }
+  
+  if (SameBeamType == true) {
     (*m_OutFile)<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamTypeAsString()<<endl;
+  } else {
+    (*m_OutFile)<<"BeamType Multiple"<<endl;
+  }
+  
+  if (SameSpectralType == true) {
     (*m_OutFile)<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralTypeAsString()<<endl;
+  } else {
+    (*m_OutFile)<<"SpectralType Multiple"<<endl;
   }
   
   (*m_OutFile)<<endl;

@@ -10,6 +10,14 @@ CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --ena
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
+# Check if some of the frequently used software is installed:
+type curl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: curl must be installed"
+    exit 1
+fi 
+
+
 confhelp() {
   echo ""
   echo "Building ROOT"

@@ -278,6 +278,12 @@ grep -i ".FileName" ${Source} | while read line; do
   echo "exit" >> ${KillFileName} 
 done
 
+if [ "${Wait}" = "yes" ]; then
+  echo "Waiting till all sub-processes have finished..."
+  wait
+fi
+
+exit 0;
 
 # Check if we wait until all threads have finished
 if [ "${Wait}" = "yes" ]; then

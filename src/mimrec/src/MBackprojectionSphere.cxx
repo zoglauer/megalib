@@ -387,7 +387,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   Maximum = 0.0;
 
   int index;
-  int index_offset;
+  //int index_offset;
   
 
   double Temp;
@@ -419,13 +419,13 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   // Determine the maximum of the gauss-function on the circle:
 
   // Min and max Trans-angle above threshold:
-  double Trans_min = m_Response->GetComptonTransversalMin(); // negative!
-  double Trans_max = m_Response->GetComptonTransversalMax();
+  //double Trans_min = m_Response->GetComptonTransversalMin(); // negative!
+  //double Trans_max = m_Response->GetComptonTransversalMax();
 
-  double PhiMin = Phi + Trans_min;
-  double PhiMax = Phi + Trans_max;
-  double cosPhiMin = cos(PhiMin);
-  double cosPhiMax = cos(PhiMax);
+  //double PhiMin = Phi + Trans_min;
+  //double PhiMax = Phi + Trans_max;
+  //double cosPhiMin = cos(PhiMin);
+  //double cosPhiMax = cos(PhiMax);
 
 
   // Now determine for all Bins
@@ -451,6 +451,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
 
   //mimp<<"InvIntegral is only part of the response!"<<show;
 
+  /*
   double ValueMax = 0;
   double ValueMin = 0;
 
@@ -465,6 +466,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   double PhiInnerOut = 0;
   double PhiOuterOut = 0;
 
+ 
   int x1Start1 = 0;  
   bool x1Start1Outside = false;
   int x1End1 = 0;
@@ -477,22 +479,23 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   bool x1End2Outside = false;
   bool x1Range2Outside = false;
 
-  // Optimization and precalucaltion:
-  double x2InRad;
+  // Optimization and precalcualtion:
   double cosThetaConeCenter = cos(m_ThetaConeCenter);
   double sinThetaConeCenter = sin(m_ThetaConeCenter);
-
   
+
+  double x2InRad;
+  */
   // ---------> time critical --------->
 
 
   bool HasTrack = m_C->HasTrack();
 
   for (int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
-    x2InRad = (0.5+x2)*m_x2IntervalLength + m_x2Min;
-
     /* Start comment out the following section if you want to use simple mode 
-     
+
+    x2InRad = (0.5+x2)*m_x2IntervalLength + m_x2Min;
+ 
     // The following is an intelligent line skipping method:
     // Although is seems lengthy, the most part is just fast case differentiation, thus in the end saves a lot of time...
       
