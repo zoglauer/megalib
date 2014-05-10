@@ -51,13 +51,7 @@ clean:
 
 $(SGOBJ): $(GOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(GOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-endif
 
 $(OBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."

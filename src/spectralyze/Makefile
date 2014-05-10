@@ -60,23 +60,11 @@ clean:
 
 $(SLOBJ): $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ) 
-endif
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
 
 $(SGOBJ): $(GOBJS) $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(GOBJS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-endif
 
 $(MOBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
