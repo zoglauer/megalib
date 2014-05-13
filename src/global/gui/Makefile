@@ -11,7 +11,8 @@
 #----------------------------------------------------------------
 # Definitions:
 #
-LOBJS      = $(LB)/MGUIDialog.o \
+LOBJS      = $(LB)/MGUIDefaults.o \
+             $(LB)/MGUIDialog.o \
              $(LB)/MGUIElement.o \
              $(LB)/MGUIEEntry.o \
              $(LB)/MGUIEEntryList.o \
@@ -30,6 +31,7 @@ LOBJS      = $(LB)/MGUIDialog.o \
              $(LB)/MGUIGeometry.o \
              $(LB)/MGUIMultiInput.o \
              $(LB)/MGUIProgressBar.o \
+             $(LB)/MGUIMultiProgressBar.o \
              $(LB)/MGUIAssistant.o \
              $(LB)/MGUIEText.o \
              $(LB)/MGUIETime.o \
@@ -46,17 +48,17 @@ SOBJ = $(LB)/libCommonGui.$(DLL)
 all: $(SOBJ) 
 
 link:
-		@$(LINK) $(shell pwd)/inc/*.h $(IN)
-		@rm -f $(IN)/LinkDef.h
+	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@rm -f $(IN)/LinkDef.h
 
 clean:
-		@rm -f src/*~
-		@rm -f src/\#*
-		@rm -f inc/*~
-		@rm -f inc/\#*
-		@rm -f *~
-		@rm -f \#*
-		@rm -f $(LOBJS) $(SOBJ)
+	@rm -f src/*~
+	@rm -f src/\#*
+	@rm -f inc/*~
+	@rm -f inc/\#*
+	@rm -f *~
+	@rm -f \#*
+	@rm -f $(LOBJS) $(SOBJ)
 
 
 #----------------------------------------------------------------
@@ -65,13 +67,7 @@ clean:
 
 $(SOBJ): $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) -lCommonMisc $(LOBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
-endif
 
 $(LOBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."

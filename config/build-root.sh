@@ -6,8 +6,16 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
-CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
+CONFIGUREOPTIONS="--gminimal --disable-cocoa --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
 COMPILEROPTIONS=`gcc --version | head -n 1`
+
+
+# Check if some of the frequently used software is installed:
+type curl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: curl must be installed"
+    exit 1
+fi 
 
 
 confhelp() {

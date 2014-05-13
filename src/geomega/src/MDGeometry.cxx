@@ -368,7 +368,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       if (FileContent.size() > i+1) {
         //cout<<"Next: "<<FileContent[i+1].GetText()<<endl;
         MString Prepend = "";
-        for (int t = 0; t < Tokenizer.GetNTokens()-1; ++t) {
+        for (unsigned int t = 0; t < Tokenizer.GetNTokens()-1; ++t) {
           Prepend += Tokenizer.GetTokenAt(t);
           Prepend += " ";
         }
@@ -626,7 +626,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       MString Index = Tokenizer.GetTokenAt(1);
-      if (Tokenizer.GetTokenAtAsDouble(2) <= 0 || isnan(Tokenizer.GetTokenAtAsDouble(2))) {
+      if (Tokenizer.GetTokenAtAsDouble(2) <= 0 || std::isnan(Tokenizer.GetTokenAtAsDouble(2))) { // std:: is required
         mout<<"Loop number: "<<Tokenizer.GetTokenAtAsDouble(2)<<endl;
         Typo("Loop number in for loop must be a positive integer");
         return false;       
@@ -898,7 +898,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       
       //mout<<"   *** User Info start ***"<<endl;
       mout<<"   *** User Info: ";
-      for (int t = 1; t < Tokenizer.GetNTokens(); ++t) {
+      for (unsigned int t = 1; t < Tokenizer.GetNTokens(); ++t) {
         mout<<Tokenizer.GetTokenAt(t)<<"  ";
       }
       mout<<endl;
@@ -1705,7 +1705,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
 
-          int n = Tokenizer.GetTokenAtAsInt(5);
+          unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(5);
           if (Tokenizer.GetNTokens() != 6+3*n) {
             Typo("This PCON must contain 6+3*n elements!");
             return false;
@@ -1725,7 +1725,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           // Check for ordering:
           bool Increasing = true;
           bool Ordered = false;
-          for (int i = 0; i < n-1; ++i) {
+          for (unsigned int i = 0; i < n-1; ++i) {
             if (Tokenizer.GetTokenAtAsDouble(6+3*(i+1)) > Tokenizer.GetTokenAtAsDouble(6+3*i)) {
               if (Ordered == true) {
                 if (Increasing == false) {
@@ -1757,8 +1757,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           //             }
           //           }
 
-          int j = 0;
-          for (int i = 0; i < n; ++i) {
+          unsigned int j = 0;
+          for (unsigned int i = 0; i < n; ++i) {
             if (Increasing == false) {
               j = n-i-1;
             } else {
@@ -1787,7 +1787,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
 
-          int n = Tokenizer.GetTokenAtAsInt(6);
+          unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(6);
           if (Tokenizer.GetNTokens() != 7+3*n) {
             Typo("This PGON must contain 6+3*n elements!");
             return false;
@@ -1808,7 +1808,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           // Check for ordering:
           bool Increasing = true;
           bool Ordered = false;
-          for (int i = 0; i < n-1; ++i) {
+          for (unsigned int i = 0; i < n-1; ++i) {
             if (Tokenizer.GetTokenAtAsDouble(7+3*(i+1)) > Tokenizer.GetTokenAtAsDouble(7+3*i)) {
               if (Ordered == true) {
                 if (Increasing == false) {
@@ -1832,8 +1832,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             }
           }
 
-          int j = 0;
-          for (int i = 0; i < n; ++i) {
+          unsigned int j = 0;
+          for (unsigned int i = 0; i < n; ++i) {
             if (Increasing == false) {
               j = n-i-1;
             } else {

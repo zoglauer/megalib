@@ -25,6 +25,7 @@
 #include "MCTrackingAction.hh"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4RunManager.hh"
 
 // MEGAlib:
@@ -416,8 +417,8 @@ void MCRun::SaveIsotopeStore()
 bool MCRun::CheckStopConditions()
 {
   bool ActiveSources = false;
-  for (unsigned int s = 0; s < m_SourceList.size(); ++s) {
-    if (m_SourceList[s]->IsActive() == true) {
+  for (unsigned int so = 0; so < m_SourceList.size(); ++so) {
+    if (m_SourceList[so]->IsActive() == true) {
       ActiveSources = true;
       break;
     }
@@ -644,15 +645,15 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
       // If the event is from the DelayedEventsList, then we have to skip the next event in the real activation list
       if (NextSource->IsBuildUpEventList() == true && m_ActivationMode == MCParameterFile::c_DecayModeActivationDelayedDecay) {
         
-        unsigned int s_max = m_SourceList.size();
+        unsigned int so_max = m_SourceList.size();
         G4ParticleDefinition* NextParticle = NextSource->GetEventListNextParticle();
         MString NextVolume = NextSource->GetEventListNextVolume();
-        for (unsigned int s = 0; s < s_max; ++s) {
-          if (m_SourceList[s]->IsEventList() == true) continue;
+        for (unsigned int so = 0; so < so_max; ++so) {
+          if (m_SourceList[so]->IsEventList() == true) continue;
           
-          if (NextParticle == m_SourceList[s]->GetParticleDefinition() &&
-              NextVolume == m_SourceList[s]->GetVolume()) {
-            m_SourceList[s]->NEventsToSkip(1);
+          if (NextParticle == m_SourceList[so]->GetParticleDefinition() &&
+              NextVolume == m_SourceList[so]->GetVolume()) {
+            m_SourceList[so]->NEventsToSkip(1);
             m_NSkippedEvents++;
 
             cout<<"Skips: "<<m_NSkippedEvents<<endl;
@@ -702,9 +703,9 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
                          ParticleGun->GetParticleEnergy());
       
       if (NextSource->GetSuccessor() != "") {
-        for (unsigned int s = 0; s < m_SourceList.size(); ++s) {
-          if (m_SourceList[s]->GetName() == NextSource->GetSuccessor()) {
-            NextSource = m_SourceList[s];
+        for (unsigned int so = 0; so < m_SourceList.size(); ++so) {
+          if (m_SourceList[so]->GetName() == NextSource->GetSuccessor()) {
+            NextSource = m_SourceList[so];
             HasSuccessor = true;
             break;
           }

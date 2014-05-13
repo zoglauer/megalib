@@ -1,0 +1,185 @@
+#!/bin/bash
+
+# Part of the cosima cluster
+# Check how many sims can be run on the machine
+
+# Return:
+# Positive: number of available simulation slots
+
+
+commandhelp() {
+  echo ""
+  echo "dcosima-assemblefiles - determine all the files needed to simulate the given source file";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dcosima-assemblefiles [options]";
+  echo ""
+  echo "Options:"
+  echo "  --source=[filename]: The source file"
+  echo "  --destination=[dirname]: The destination directory"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dcosima-assemblefiles --source=CrabOnly.source";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+DESTINATION=""
+SOURCE=""
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-s*=* ]]; then
+    SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'`
+    SOURCE=`readlink -f ${SOURCE}`
+  elif [[ ${C} == *-d*=* ]]; then
+    DESTINATION=`echo ${C} | awk -F"=" '{ print $2 }'`
+    eval DESTINATION=${DESTINATION}
+    #DESTINATION=$(readlink -f ${DESTINATION})
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima-assemblefiles --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+if [ "${SOURCE}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give source file for simulations"
+  exit 1
+fi
+if [[ ! -f ${SOURCE} ]]; then 
+  echo " "
+  echo "ERROR: The source file must exist"
+  exit 1
+fi
+echo " * Source file: ${SOURCE}"
+
+if [ "${DESTINATION}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give a destination directory for your files"
+  exit 1
+fi
+if [[ ! -d ${DESTINATION} ]]; then 
+  echo " "
+  echo "ERROR: The destination directory must exist"
+  exit 1
+fi
+if [ "$(ls -A ${DESTINATION})" != "" ]; then
+  echo " "
+  echo "ERROR: The destination directory must be empty"
+  exit 1
+fi
+echo " * Destination file: ${DESTINATION}"
+
+
+FILELIST=""
+TOCHECK=( ${SOURCE} )
+
+ORIGINALS=( )
+REPLACEMENTS=( )
+
+while true; do
+  # Check if there are still file to be checked
+  FOUND="false"
+  for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
+    if [ "${TOCHECK[$m]}" != "" ]; then
+      FOUND="true";
+      break;
+    fi
+  done
+  if [ "${FOUND}" == "false" ]; then break; fi
+
+  NEWONES=""
+  for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
+    if [ "${TOCHECK[$m]}" != "" ]; then
+      eval F="${TOCHECK[$m]}"
+      #echo "Testing: ${F}"
+
+      # Check for "Geometry"
+      VERYNEWONES=""
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Include" | awk '{print $2}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Geometry" | awk  '{print $2}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep FarFieldFileZenithDependent | awk '{print $3}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep FarFieldNormalizedEnergyBeamFluxFunction | awk '{print $3}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep MapProfileBeam | awk '{print $9}'`
+      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $3}'`
+      #VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep  | awk '{print $3}'`
+      
+      #VERYNEWONES="${VERYNEWONES//$\(MEGALIB\)/$\{MEGALIB\}}"
+      #echo "Very new: ${VERYNEWONES}"
+      
+      DIR=`dirname ${F}`
+      for N in ${VERYNEWONES}; do
+        ORIG=${N}
+        N="${N//$\(MEGALIB\)/$\{MEGALIB\}}"
+        eval N=${N}
+        eval N=${N}
+        if [[ ${N} != /* ]]; then
+          N="${DIR}/${N}"
+        fi
+        
+        if [[ ${FILELIST} == *${N}* ]]; then
+          continue;
+        fi
+        
+        ORIGINALS=( ${ORIGINALS[@]} ${ORIG} ) 
+        REPLACEMENTS=( ${REPLACEMENTS[@]} `basename ${N}` )
+        
+        NEWONES="${NEWONES} ${N}"        
+      done
+    fi
+  done
+    
+  #echo "New: ${NEWONES}"
+  #echo "To check: ${TOCHECK[@]}"
+  
+  FILELIST="${FILELIST} ${TOCHECK[@]} "
+  eval TOCHECK=( ${NEWONES} )
+  
+done
+
+# Copy files to destination
+cd ${DESTINATION}
+for F in ${FILELIST}; do
+  cp ${F} .
+done
+
+# Sanitize the files
+for F in `ls`; do
+  for (( m=0; m<=$(( ${#ORIGINALS[*]} -1 )); m++ )); do
+    mv ${F} ${F}~
+    sed "s|${ORIGINALS[$m]}|${REPLACEMENTS[$m]}|g" ${F}~ > ${F}
+    rm ${F}~
+  done
+done
+
+
+exit 0;

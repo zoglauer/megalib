@@ -102,23 +102,11 @@ clean:
 
 $(SLOBJ): $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(LOBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SLOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SLOBJ)
-endif
 
 $(SGOBJ): $(GOBJS) $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(GOBJS) $(LOBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SGOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(LOBJS) $(ROBJS) $(RCINT) $(GLIBS) $(LIBS) -o $(SGOBJ)
-endif
 
 $(MOBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
@@ -131,7 +119,6 @@ $(GOBJS): $(LB)/%.o: src/%.cxx inc/%.h
 $(LOBJS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-
 
 $(PRG): $(SGOBJ) $(SLOBJ) $(MOBJS)
 	@echo "Linking $(subst $(BN)/,,$@) ..."

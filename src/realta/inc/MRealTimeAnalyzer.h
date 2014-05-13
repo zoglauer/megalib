@@ -33,7 +33,7 @@ using namespace std;
 #include "MTransceiverTcpIp.h"
 #include "MImageSpheric.h"
 #include "MImagerExternallyManaged.h"
-#include "MIsotope.h"
+#include "MQualifiedIsotope.h"
 
 // Forward declarations:
 
@@ -99,7 +99,7 @@ class MRealTimeAnalyzer
   //! Get image
   MImageSpheric* GetImage() { return m_Image; }
   //! Get a COPY of the isotope list
-  vector<MIsotope> GetIsotopes();
+  vector<MQualifiedIsotope> GetIsotopes();
   
   //! Return the connection
   bool IsConnected() { return m_IsConnected; }
@@ -241,7 +241,7 @@ class MRealTimeAnalyzer
   MImageSpheric* m_Image;
   
   //! A list of isoptopes to identify:
-  vector<MIsotope> m_Isotopes;
+  vector<MQualifiedIsotope> m_Isotopes;
   //! And a guarding mutex for the isotope retrieval
   TMutex m_IsotopeMutex;
   

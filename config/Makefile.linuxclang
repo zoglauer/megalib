@@ -19,7 +19,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Compiler & linker options:
 CXX           = clang++
-CXXFLAGS      = $(OPT) -Wall -Wno-deprecated -fno-exceptions -fPIC -Wno-overloaded-virtual -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___LINUX___
+CXXFLAGS      = $(OPT) -std=c++0x -Wall -Wno-deprecated -fPIC -Wno-overloaded-virtual -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___LINUX___
 DEFINES       = -UHARDWARE
 LD            = clang++
 LDFLAGS       = $(OPT) -D___LINUX___

@@ -60,49 +60,49 @@ class MTokenizer
   void AllowComposed(const bool Composed);
 
   //! Split the text into tokens
-  bool Analyse(MString Text, const bool AllowMaths = true);
+  bool Analyze(MString Text, const bool AllowMaths = true);
   //! Same as Analyse
-  bool Analyze(MString Text, const bool AllowMaths = true) { return Analyse(Text, AllowMaths); }
+  bool Analyse(MString Text, const bool AllowMaths = true) { return Analyze(Text, AllowMaths); }
 
-  //! Return the original text
+  //! Return a copy of the original text
   MString GetText() const;
 
   //! Return the number of tokens
-  int GetNTokens() const;
+  unsigned int GetNTokens() const;
   //! Check if the given Token is at position i
-  bool IsTokenAt(const int i, const MString& Token, const bool IgnoreCase = false) const;
+  bool IsTokenAt(const unsigned int i, const MString& Token, const bool IgnoreCase = false) const;
   //! Check if the irst token is composed i.e. something like "Sphere.Source"
   bool IsComposited() const;
 
   //! Return the token at i as string
-  MString GetTokenAt(const int i) const;
+  MString GetTokenAt(const unsigned int i) const;
 
   //! Return the token at i as string --- return "" in case of error
-  MString GetTokenAtAsString(const int i) const;
+  MString GetTokenAtAsString(const unsigned int i) const;
   //! Return all token AT AND AFTER i as string --- return "" in case of error
-  MString GetTokenAfterAsString(const int i) const;
+  MString GetTokenAfterAsString(const unsigned int i) const;
   //! Return the token at i as double --- return 0 in case of error
-  double GetTokenAtAsDouble(const int i) const;
+  double GetTokenAtAsDouble(const unsigned int i) const;
   //! Return the token at i as float --- return 0 in case of error
-  float GetTokenAtAsFloat(const int i) const;
+  float GetTokenAtAsFloat(const unsigned int i) const;
   //! Return the token at i as int --- return 0 in case of error
-  int GetTokenAtAsInt(const int i) const;
+  int GetTokenAtAsInt(const unsigned int i) const;
   //! Return the token at i as unsigned int --- return 0 in case of error
-  unsigned int GetTokenAtAsUnsignedInt(const int i) const;
+  unsigned int GetTokenAtAsUnsignedInt(const unsigned int i) const;
   //! Return the token at i as long --- return 0 in case of error
-  long GetTokenAtAsLong(const int i) const;
+  long GetTokenAtAsLong(const unsigned int i) const;
   //! Return the token at i as unsigned long --- return 0 in case of error
-  unsigned long GetTokenAtAsUnsignedLong(const int i) const;
+  unsigned long GetTokenAtAsUnsignedLong(const unsigned int i) const;
   //! Return the token at i as double --- return FALSE in case of error
-  bool GetTokenAtAsBoolean(const int i) const;
+  bool GetTokenAtAsBoolean(const unsigned int i) const;
   //! Return the token AT AND AFTER i as ROOT TArrayI --- return 0 in case of error
-  TArrayI GetTokenAtAsIntArray(const int i) const;
+  TArrayI GetTokenAtAsIntArray(const unsigned int i) const;
   //! Return the token AT AND AFTER i as ROOT TArrayD --- return 0 in case of error
-  TArrayD GetTokenAtAsDoubleArray(const int i) const;
+  TArrayD GetTokenAtAsDoubleArray(const unsigned int i) const;
   //! Return the token AT AND AFTER i as vector of doubles --- return empty array in case of error
-  vector<double> GetTokenAtAsDoubleVector(const int i) const;
+  vector<double> GetTokenAtAsDoubleVector(const unsigned int i) const;
   //! Return the token AT AND AFTER i as vector of floats --- return empty array in case of error
-  vector<float> GetTokenAtAsFloatVector(const int i) const;
+  vector<float> GetTokenAtAsFloatVector(const unsigned int i) const;
 
   //! Evaluate the math functions in the given string
   static bool EvaluateMaths(MString& Token);

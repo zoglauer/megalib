@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 // ROOT libs:
@@ -593,7 +594,7 @@ double MFunction::Evaluate(double x) const
       y = m*x+t;
     }
     
-    if (isnan(y)) {
+    if (std::isnan(y)) { // std:: is required here due to multiple definitions
       merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<show;
     }
 

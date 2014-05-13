@@ -111,6 +111,9 @@ public:
   /// Get the particle definition
   G4ParticleDefinition* GetDefinition() { return m_Definition; }
 
+  /// Get the particle definition
+  static bool IsStable(G4ParticleDefinition* P);
+
 
   // protected methods:
 protected:

@@ -45,9 +45,9 @@ class MDTrigger
 
   void Reset();
 
-  void SetVeto(const bool IsVeto) { m_IsVeto = IsVeto; }
-  void SetTriggerByDetector(const bool IsTriggerByDetector) { m_IsTriggerByDetector = IsTriggerByDetector; }
-  void SetTriggerByChannel(const bool IsTriggerByChannel) { m_IsTriggerByDetector = !IsTriggerByChannel; }
+  void SetVeto(const bool IsVetoTrigger) { m_IsVeto = IsVetoTrigger; }
+  void SetTriggerByDetector(const bool IsTriggerByDetectorFlag) { m_IsTriggerByDetector = IsTriggerByDetectorFlag; }
+  void SetTriggerByChannel(const bool IsTriggerByChannelFlag) { m_IsTriggerByDetector = !IsTriggerByChannelFlag; }
 
   bool IsVeto() const { return m_IsVeto; }
   bool IsTriggerByDetector() const { return m_IsTriggerByDetector; }

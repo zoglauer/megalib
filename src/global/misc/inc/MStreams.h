@@ -47,7 +47,7 @@ public:
   MStreams();
   virtual ~MStreams() {}
   
-  void Enable(bool Enable) { TThread::Lock(); m_Streams->Enable(Enable); TThread::UnLock(); }
+  void Enable(bool EnableFlag) { TThread::Lock(); m_Streams->Enable(EnableFlag); TThread::UnLock(); }
 
   void SetHeader(MString Header) { TThread::Lock(); m_Streams->SetHeader(Header); TThread::UnLock(); }
   void SetPrefix(MString Prefix) { TThread::Lock(); m_Streams->SetPrefix(Prefix); TThread::UnLock(); }
@@ -66,9 +66,9 @@ public:
     return Ret;
   }
 
-  void DumpToStdOut(bool Enable) { TThread::Lock(); m_Streams->DumpToStdOut(Enable); TThread::UnLock(); }
-  void DumpToStdErr(bool Enable) { TThread::Lock(); m_Streams->DumpToStdErr(Enable); TThread::UnLock(); }
-  void DumpToGui(bool Enable) { TThread::Lock(); m_Streams->DumpToGui(Enable); TThread::UnLock(); }
+  void DumpToStdOut(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToStdOut(EnableFlag); TThread::UnLock(); }
+  void DumpToStdErr(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToStdErr(EnableFlag); TThread::UnLock(); }
+  void DumpToGui(bool EnableFlag) { TThread::Lock(); m_Streams->DumpToGui(EnableFlag); TThread::UnLock(); }
 
   void ShowOnce() { TThread::Lock(); m_Streams->ShowOnce(); TThread::UnLock(); }
 

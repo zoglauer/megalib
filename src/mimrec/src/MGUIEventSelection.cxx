@@ -78,9 +78,9 @@ void MGUIEventSelection::Create()
 {
   // Create the main window
 
-  int FieldSize = 95;
-  int LeftGap = 65;
-  int RightGap = 65;
+  int FieldSize = m_FontScaler*95;
+  int LeftGap = m_FontScaler*65;
+  int RightGap = m_FontScaler*65;
 
   // We start with a name and an icon...
   SetWindowName("Event selector");  
@@ -122,7 +122,7 @@ void MGUIEventSelection::Create()
     new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
   EventTypeFrame->AddFrame(LabelEventSelection, LabelEventSelectionLayout);
 
-  m_ComptonCB = new TGCheckButton(EventTypeFrame, "Compton scattering events:", c_Compton);
+  m_ComptonCB = new TGCheckButton(EventTypeFrame, "Compton-scattering events:", c_Compton);
   TGLayoutHints* ComptonCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_ComptonCB, ComptonCBLayout);
   m_ComptonCB->Associate(this);
@@ -148,17 +148,17 @@ void MGUIEventSelection::Create()
   }
   m_UseTracked = m_GUIData->GetEventTypeComptonTracked();
 
-  m_PairCB = new TGCheckButton(EventTypeFrame, "Pair creation events", c_Pair);
+  m_PairCB = new TGCheckButton(EventTypeFrame, "Pair-creation events", c_Pair);
   TGLayoutHints* PairCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_PairCB, PairCBLayout);
   m_PairCB->SetState((m_GUIData->GetEventTypePair() == 1) ?  kButtonDown : kButtonUp);
 
-  m_PhotoCB = new TGCheckButton(EventTypeFrame, "Photo effect events", c_Photo);
+  m_PhotoCB = new TGCheckButton(EventTypeFrame, "Photo-effect/Single-site events", c_Photo);
   TGLayoutHints* PhotoCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_PhotoCB, PhotoCBLayout);
   m_PhotoCB->SetState((m_GUIData->GetEventTypePhoto() == 1) ?  kButtonDown : kButtonUp);
 
-  m_UnidentifiableCB = new TGCheckButton(EventTypeFrame, "Unidentifiable effect events", c_Unidentifiable);
+  m_UnidentifiableCB = new TGCheckButton(EventTypeFrame, "Unidentifiable events", c_Unidentifiable);
   TGLayoutHints* UnidentifiableCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_UnidentifiableCB, UnidentifiableCBLayout);
   m_UnidentifiableCB->SetState((m_GUIData->GetEventTypeUnidentifiable() == 1) ?  kButtonDown : kButtonUp);
@@ -228,7 +228,7 @@ void MGUIEventSelection::Create()
       }
     }
   }
-  m_DetectorList->Resize(200, 100);
+  m_DetectorList->Resize(m_FontScaler*200, m_FontScaler*100);
 
 
   

@@ -18,6 +18,7 @@
 
 // Cosima:
 #include "MCIsotopeStore.hh"
+#include "MCActivatorParticle.hh"
 
 // MEGAlib:
 #include "MAssert.h"
@@ -25,8 +26,9 @@
 #include "MTokenizer.h"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4LogicalVolume.hh"
-#include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 #include "G4Ions.hh"
 
 // Standard lib:
@@ -58,11 +60,11 @@ MCIsotopeStore::~MCIsotopeStore()
  */
 G4ParticleDefinition* MCIsotopeStore::GetParticleDefinition(int IonID, double Excitation)
 {
-  G4ParticleTable* ParticleTable = G4ParticleTable::GetParticleTable();
+  G4IonTable* IonTable = G4IonTable::GetIonTable();
   int AtomicNumber = int(IonID/1000);
   int AtomicMass = IonID - int(IonID/1000)*1000;
   
-  return ParticleTable->GetIon(AtomicNumber, AtomicMass, Excitation);
+  return IonTable->GetIon(AtomicNumber, AtomicMass, Excitation);
 }
 
 
@@ -280,14 +282,14 @@ bool MCIsotopeStore::Load(MString FileName)
 
 
 /******************************************************************************
- * Scale (multiply) to content by a certain factor
+ * Scale (multiply) to content by a certain factor S
  */
-void MCIsotopeStore::Scale(double Scale)
+void MCIsotopeStore::Scale(double S)
 {
   for (unsigned int v = 0; v < m_VolumeNames.size(); ++v) {
     for (unsigned int i = 0; i < m_IDs[v].size(); ++i) {
       for (unsigned int e = 0; e < m_Excitations[v][i].size(); ++e) {
-        m_Values[v][i][e] *= Scale;
+        m_Values[v][i][e] *= S;
       }
     }
   }
@@ -509,6 +511,7 @@ double MCIsotopeStore::GetValue(unsigned int v, unsigned int i, unsigned int e) 
 void MCIsotopeStore::Sort() 
 {
   // "Insert sort" algorithm:
+  cout<<"Sorting generated isotopes for speed up of search..."<<endl;
 
   // First sort according to volume names
   for (unsigned int v = 1; v < m_VolumeNames.size(); ++v) {
@@ -563,9 +566,6 @@ void MCIsotopeStore::Sort()
           for (unsigned int f = 0; f < e; ++f) {
             if (m_Excitations[v][i][e] > m_Excitations[v][i][f]) {
               // We know we have to insert it before position f:
-              
-              cout<<"Sorting excitations: "<<endl;
-
               m_Excitations[v][i].insert(m_Excitations[v][i].begin()+f, m_Excitations[v][i][e]);
               m_Excitations[v][i].erase(m_Excitations[v][i].begin()+e+1);
               
@@ -592,7 +592,7 @@ void MCIsotopeStore::RemoveStableElements()
       vector<double>::iterator A = m_Values[v][i].begin();
       while (E != m_Excitations[v][i].end() && A != m_Values[v][i].end()) {
         //cout<<"Element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
-        if (GetParticleDefinition(m_IDs[v][i], (*E))->GetPDGStable() == true && (*E) == 0.0) {
+        if (MCActivatorParticle::IsStable(GetParticleDefinition(m_IDs[v][i], (*E))) == true) {
           //cout<<"Removing stable element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
           E = m_Excitations[v][i].erase(E);
           A = m_Values[v][i].erase(A);

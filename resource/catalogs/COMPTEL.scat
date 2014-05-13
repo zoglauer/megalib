@@ -1,0 +1,22 @@
+
+Type scat
+Version 2
+
+# point source
+#PS <gal long [deg]> <gal lat [deg]> <flux [ph/cm2/s]> <name>
+
+# disk source
+#DS <gal long [deg]> <gal lat [deg]> <radius [deg]> <flux [ph/cm2/s]> <name>
+
+# supernova remnant
+#SR <gal long [deg]> <gal lat [deg]> <radius [deg]> <flux [ph/cm2/s]> <name>
+
+# OB association
+#OB <gal long [deg]> <gal lat [deg]> <radius [deg]> <flux [ph/cm2/s]> <name>
+
+
+
+
+PS PL Pulsar   GA -05.78 184.56  16.0 100000 10000000 2.22  Crab
+PS PL AGN      GA -11.01 191.37  14.3 100000 10000000 2.22  PKS 0528+134
+PS PL Pulsar   GA +04.27 195.13  352.9 100000 10000000 2.22  Geminga

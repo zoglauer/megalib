@@ -106,6 +106,7 @@ void MFile::Reset()
   m_ProgressLevel = 0;
   m_OwnProgress = true;
   m_Canceled = false;
+  m_SkippedProgressUpdates = 0;
 
   m_WasZipped = false;
   m_ZippedFileName = g_StringNotDefined;
@@ -446,6 +447,7 @@ void MFile::ShowProgress(bool Show)
       m_Progress->SetMinMax(0, 1);
       m_OwnProgress = true;
       m_Canceled = false;
+      m_SkippedProgressUpdates = 0;
     }
   } else {
     if (m_OwnProgress == true) {
@@ -492,13 +494,14 @@ void MFile::SetProgress(MGUIProgressBar* Progress, int Level)
   m_Progress = Progress;
   m_ProgressLevel = Level;
   m_OwnProgress = false;
+  m_SkippedProgressUpdates = 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFile::UpdateProgress()
+bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
@@ -506,6 +509,9 @@ bool MFile::UpdateProgress()
   if (m_Canceled == true) return false;
   if (m_Progress == 0 || m_FileLength == (streampos) 0) return true;
 
+  if (++m_SkippedProgressUpdates < UpdatesToSkip) return true;
+  m_SkippedProgressUpdates = 0;
+  
   double Value = (double) m_File.tellg() / (double) m_FileLength;
   m_Progress->SetValue(Value, m_ProgressLevel);
   gSystem->ProcessEvents();
@@ -603,6 +609,22 @@ MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString MFile::GetBaseName(const MString& Name)
+{
+  //! Return the base name of a file
+
+  if (Name.Length() == 0) return Name;
+  if (Name.Length() == 1 && Name[0] == '/') return Name;
+  size_t Pos = Name.Last('/');
+  if (Pos == MString::npos) return Name;
+  
+  return Name.GetSubString(Pos+1);
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 streampos MFile::GetFileLength()
 {
   // Return the file length
@@ -624,6 +646,23 @@ streampos MFile::GetFileLength()
   }
 
   return Length;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+streampos MFile::GetFilePosition()
+{
+  // Return the file length
+  // Since this is a random access operation it should be very fast...
+
+  if (IsOpen() == false) {
+    merr<<"File "<<m_FileName<<" not open!"<<show;
+    return 0;
+  }
+
+  return m_File.tellg();
 }
 
 

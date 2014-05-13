@@ -99,6 +99,9 @@ class MGUIMain : public TGMainFrame
   // The interface:
   MInterface* m_BaseInterface;
 
+  //! The font scaler (normal font size is 12 - if we have anything larger we need to scale some GUIs)
+  double m_FontScaler;
+
   enum ButtonIDs { c_Open = 70, 
                    c_LoadGeometry, 
                    c_LoadConfig, 

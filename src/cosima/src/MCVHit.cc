@@ -24,10 +24,11 @@ using namespace std;
 // Cosima:
 #include "MCVHit.hh"
 #include "MCCommon.hh"
-
-// MEGAlib
 #include "MStreams.h"
 #include "MDDetector.h"
+
+// Geant4:
+#include "G4SystemOfUnits.hh"
 
 
 /******************************************************************************/

@@ -52,9 +52,9 @@ MCTrackInformation::~MCTrackInformation()
 /******************************************************************************
  * Set, if the digitization of the last hit was successful
  */
-void MCTrackInformation::SetDigitized(const bool IsDigitized)
+void MCTrackInformation::SetDigitized(const bool IsDigitizedFlag)
 {
-  m_IsDigitized = IsDigitized;
+  m_IsDigitized = IsDigitizedFlag;
 }
 
 

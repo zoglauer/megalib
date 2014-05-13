@@ -1590,11 +1590,11 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MIsotope> MRealTimeAnalyzer::GetIsotopes() 
+vector<MQualifiedIsotope> MRealTimeAnalyzer::GetIsotopes() 
 {
   //! Get a COPY of the isotope list
 
-  vector<MIsotope> Isotopes;
+  vector<MQualifiedIsotope> Isotopes;
 
   m_IsotopeMutex.Lock();
   for (unsigned int i = 0; i < m_Isotopes.size(); ++i) {

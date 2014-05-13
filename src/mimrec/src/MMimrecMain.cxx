@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 {
   // Main function... the beginning...
 
-  // Initialize global MEGALIB variables, especially mgui, etc.
+  // Initialize global MEGAlib variables, especially mgui, etc.
   MGlobal::Initialize("Mimrec", "MEGAlib image reconstruction (and more)");
 
 	TApplication* AppMimrec = new TApplication("Mimrec", 0, 0);

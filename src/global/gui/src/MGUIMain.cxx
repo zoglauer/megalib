@@ -25,6 +25,7 @@
 #include <TSystem.h>
 
 // MEGAlib libs:
+#include "MGUIDefaults.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
 #include "MSystem.h"
@@ -57,6 +58,8 @@ MGUIMain::MGUIMain(unsigned int Width, unsigned int Height, MInterface* Interfac
   m_BaseInterface = Interface;
   m_BaseData = Data;
 
+  m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  
   gStyle->SetPalette(1, 0);
 }
 
@@ -124,11 +127,11 @@ void MGUIMain::Create()
   // The status bar  
   m_StatusBarLayout = new TGLayoutHints(kLHintsBottom | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
 
-  m_StatusBarFile = new MGUIEStatusBar(this, "File", true, 70);
-  m_StatusBarFile->Add("Active:", MGUIEStatusBar::c_Max);
+  m_StatusBarFile = new MGUIEStatusBar(this, "File", true, m_FontScaler*70);
+  m_StatusBarFile->Add("Active:", MGUIEStatusBar::c_Max, false);
 
-  m_StatusBarGeo = new MGUIEStatusBar(this, "Geometry", true, 70);
-  m_StatusBarGeo->Add("Active:", MGUIEStatusBar::c_Max);
+  m_StatusBarGeo = new MGUIEStatusBar(this, "Geometry", true, m_FontScaler*70);
+  m_StatusBarGeo->Add("Active:", MGUIEStatusBar::c_Max, false);
 
   return;
 }
@@ -359,8 +362,8 @@ void MGUIMain::UpdateConfiguration()
 {
   // Update the Gui
 
-  m_StatusBarFile->SetContent("Active:", m_BaseData->GetCurrentFileName());
-  m_StatusBarGeo->SetContent("Active:", m_BaseData->GetGeometryFileName());
+  m_StatusBarFile->SetContent("Active:", MFile::GetBaseName(m_BaseData->GetCurrentFileName()));
+  m_StatusBarGeo->SetContent("Active:", MFile::GetBaseName(m_BaseData->GetGeometryFileName()));
 
   UpdateFileHistory();
   UpdateGeometryHistory();

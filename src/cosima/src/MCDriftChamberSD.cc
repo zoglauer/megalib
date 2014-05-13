@@ -28,6 +28,7 @@
 #include "MStreams.h"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4Step.hh"
 #include "G4VTouchable.hh"
@@ -254,39 +255,39 @@ G4bool MCDriftChamberSD::PostProcessHits(const G4Step* Step)
     }
 
     // Create a hit:
-    MCDriftChamberHit* Hit = new MCDriftChamberHit();
-    Hit->SetEnergy(Energy/NElectrons);
-    Hit->SetXStrip(xStrip);
-    Hit->SetYStrip(yStrip);
-    Hit->SetADCCounts(Energy/NElectrons/keV);
-    Hit->SetPosition(DriftPosition);
-    Hit->SetDetectorName(DetectorName);
+    MCDriftChamberHit* H = new MCDriftChamberHit();
+    H->SetEnergy(Energy/NElectrons);
+    H->SetXStrip(xStrip);
+    H->SetYStrip(yStrip);
+    H->SetADCCounts(Energy/NElectrons/keV);
+    H->SetPosition(DriftPosition);
+    H->SetDetectorName(DetectorName);
     for (int v =  Hist->GetHistoryDepth()-1; v >= 0; v--) {
-      Hit->AddVolumeHistory(Hist->GetVolume(v)->GetName());
+      H->AddVolumeHistory(Hist->GetVolume(v)->GetName());
     }  
-    Hit->AddOrigin(((MCTrackInformation*) 
+    H->AddOrigin(((MCTrackInformation*) 
                     (Step->GetTrack()->GetUserInformation()))->GetId());
     if (m_HasTimeResolution == true) {
-      Hit->SetTime(Step->GetTrack()->GetGlobalTime());
+      H->SetTime(Step->GetTrack()->GetGlobalTime());
     }
 
     // Check if there is already a hit in the strips of this layer:
     bool Added = false;
     if (m_DiscretizeHits == true) {
       for (int h = 0; h < m_HitCollection->entries(); h++) {
-        if (*(*m_HitCollection)[h] == *Hit) {
-          *(*m_HitCollection)[h] += *Hit;
+        if (*(*m_HitCollection)[h] == *H) {
+          *(*m_HitCollection)[h] += *H;
           Added = true;
-          delete Hit;
-          Hit = 0;
+          delete H;
+          H = 0;
           break;
         }
       }
     }
     
     // Otherwise add the hit:
-    if (Hit != 0) {
-      m_HitCollection->insert(Hit);
+    if (H != 0) {
+      m_HitCollection->insert(H);
       Added = true;
     }  
 

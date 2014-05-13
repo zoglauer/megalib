@@ -76,7 +76,7 @@ void MGUIMemory::Create()
 {
   // Create the main window
 
-  int Width = 650;
+  int Width = m_FontScaler*650;
 
   // We start with a name and an icon...
   SetWindowName("Memory, accuracy, and thread management");  
@@ -87,7 +87,7 @@ void MGUIMemory::Create()
 
   m_MaxRAM = new MGUIEEntryList(this, "List-mode image reconstruction is rather memory extensive. You can give here the amount of RAM, which may be used for the image slices of the response (the \"backprojections\"). If the selected amount of memory is consumed, the response calculation is stopped and the iteration process starts.");
   m_MaxRAM->Add("Maximum amout of RAM in MB for the \"backprojections\":", m_GUIData->GetRAM(), true, 64);
-  m_MaxRAM->SetWrapLength(Width - 40);
+  m_MaxRAM->SetWrapLength(Width - m_FontScaler*40);
   m_MaxRAM->Create();
   AddFrame(m_MaxRAM, StandardLayout);
 
@@ -96,7 +96,7 @@ void MGUIMemory::Create()
   m_Bytes->Add("1 byte");
   m_Bytes->Add("4 byte");
   m_Bytes->SetSelected(m_GUIData->GetBytes());
-  m_Bytes->SetWrapLength(Width - 40);
+  m_Bytes->SetWrapLength(Width - m_FontScaler*40);
   m_Bytes->Create();
   AddFrame(m_Bytes, StandardLayout);
 
@@ -105,7 +105,7 @@ void MGUIMemory::Create()
   m_Maths->Add("Exact maths");
   m_Maths->Add("Approximated maths (up to 75% faster)");
   m_Maths->SetSelected((m_GUIData->GetApproximatedMaths() == true) ? 1 : 0);
-  m_Maths->SetWrapLength(Width - 40);
+  m_Maths->SetWrapLength(Width - m_FontScaler*40);
   m_Maths->Create();
   AddFrame(m_Maths, StandardLayout);
 
@@ -114,7 +114,7 @@ void MGUIMemory::Create()
   m_Parsing->Add("Secure file parsing");
   m_Parsing->Add("Fast file parsing");
   m_Parsing->SetSelected((m_GUIData->GetFastFileParsing() == true) ? 1 : 0);
-  m_Parsing->SetWrapLength(Width - 40);
+  m_Parsing->SetWrapLength(Width - m_FontScaler*40);
   m_Parsing->Create();
   AddFrame(m_Parsing, StandardLayout);
 
@@ -123,7 +123,7 @@ void MGUIMemory::Create()
     new MGUIEEntryList(this,
                    "Using multiple threads can speed up the image reconstruction on multi-core and/or multi-processor systems. However due to overhead and limitations (e.g. reading events from file), the performance will not scale with the number of threads. In addition, if you encounter unexpected crashes, reduce the number of threads to one.");
   m_Threads->Add("Number of threads to use: ", m_GUIData->GetNThreads(), true, 1, 64);
-  m_Threads->SetWrapLength(Width - 40);
+  m_Threads->SetWrapLength(Width - m_FontScaler*40);
   m_Threads->Create();
   AddFrame(m_Threads, StandardLayout);
 

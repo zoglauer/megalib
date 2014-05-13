@@ -281,7 +281,7 @@ bool MFunction2D::Set(const MString FileName, const MString KeyWord,
         m_Z[Parser.GetTokenizerAt(i)->GetTokenAtAsInt(1) + m_X.size()*Parser.GetTokenizerAt(i)->GetTokenAtAsInt(2)] = Parser.GetTokenizerAt(i)->GetTokenAtAsDouble(3);
       }
     } else if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "GR") == true) {
-      if (Parser.GetTokenizerAt(i)->GetNTokens() != 2 + int(m_X.size())) {
+      if (Parser.GetTokenizerAt(i)->GetNTokens() != 2 + m_X.size()) {
         mout<<"In the function defined by: "<<FileName<<endl;
         mout<<"Wrong number of arguments!"<<endl;
         return false;

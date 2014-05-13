@@ -170,7 +170,7 @@ public:
 
 
   /// Return true, if the successor flag couls be set correctly
-  bool SetIsSuccessor(const bool& IsSuccessor) { m_IsSuccessor = IsSuccessor; return true; }
+  bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
   /// Return the successor flag
   bool IsSuccessor() const { return m_IsSuccessor; }
 

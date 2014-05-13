@@ -119,7 +119,7 @@ void MGUIGeomegaMain::Create()
   AddFrame(m_TitleIcon, m_TitleIconLayout);
 
   // The status bar
-  m_StatusBarFile->SetContent("Active:", m_Data->GetCurrentFileName());
+  m_StatusBarFile->SetContent("Active:", MFile::GetBaseName(m_Data->GetCurrentFileName()));
   m_StatusBarFile->Create();
   AddFrame(m_StatusBarFile, m_StatusBarLayout);
 
@@ -137,7 +137,7 @@ void MGUIGeomegaMain::Create()
   int xDisplay, yDisplay;
   unsigned int wDisplay, hDisplay;
   gVirtualX->GetGeometry(-1, xDisplay, yDisplay, wDisplay, hDisplay);
-  SetWMSizeHints(660, 270, wDisplay, hDisplay, 0, 0);
+  SetWMSizeHints(660, 300, wDisplay, hDisplay, 0, 0);
 
   UpdateConfiguration();
 

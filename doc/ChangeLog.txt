@@ -3,6 +3,56 @@
 ******************************************************************************
 
 
+Version 2.29/2.30
+=================
+
+*** Important:
+
++ A compiler with C++11 support is now required - all current Mac and Linux
+  compiler should do
+  
+  
+*** Significant new features & improvements:
+
+General:
++ A compiler with C++11 support is now required - all current Mac and Linux
+  compiler should do
++ Capability to change font size for Retina displays
+
+Cosima:
++ Support for Geant4 10.0 (enables meta-stable states, but multi-threading 
+  is not yet supported)
++ New hadron physics list FTFP_BERT_HP
++ Restricted line source
++ dcosima - distributed simulations on multiple machines (see cosima manual for
+  instructions)
+
+Sivan:
++ Show start locations
+
+Geomega:
+
+Revan:
+
+Mimrec:
+
+Realta:
+
+Spectralizer:
+
+Examples:
+
+... plus many, many smaller things I already forgot about :)
+
+
+*** Important bug fixes:
+
+
+
+
+******************************************************************************
+
+
 Version 2.27/2.28
 =================
 

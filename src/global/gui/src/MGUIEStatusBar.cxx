@@ -53,9 +53,9 @@ MGUIEStatusBar::MGUIEStatusBar(const TGWindow *Parent, MString Label, bool Empha
 
   m_IsEmphasized = Emphasize;
 
-	m_Width = Width;
+  m_Width = Width;
   m_Label = Label;
-
+  
   Init();
 }
 
@@ -113,16 +113,16 @@ void MGUIEStatusBar::Init()
 {
   // Initilizations common to all constructors:
 
-	m_IsCreated = false;
+  m_IsCreated = false;
 
-	m_FieldNames = new TObjArray();
-	m_FieldFrames = new TObjArray();
-	m_FieldFrameLayouts = new TObjArray();
-	m_FieldTitles = new TObjArray();
-	m_FieldContentValues = new TObjArray();
-	m_FieldContentFrames = new TObjArray();
-	m_FieldContentFrameLayouts = new TObjArray();
-	m_FieldContents = new TObjArray();
+  m_FieldNames = new TObjArray();
+  m_FieldFrames = new TObjArray();
+  m_FieldFrameLayouts = new TObjArray();
+  m_FieldTitles = new TObjArray();
+  m_FieldContentValues = new TObjArray();
+  m_FieldContentFrames = new TObjArray();
+  m_FieldContentFrameLayouts = new TObjArray();
+  m_FieldContents = new TObjArray();
 }
 
 
@@ -134,14 +134,14 @@ void MGUIEStatusBar::Create()
   // Create the label and the input-field.
 
 
-	m_LabelFrameLayout = new TGLayoutHints(kLHintsLeft, 0, 0, 0, 0);
-	if (m_Width == c_Min) {
-		m_LabelFrame = new TGCompositeFrame(this, 100, 100, kHorizontalFrame);
-	} else {
+  m_LabelFrameLayout = new TGLayoutHints(kLHintsLeft, 0, 0, 0, 0);
+  if (m_Width == c_Min) {
+    m_LabelFrame = new TGCompositeFrame(this, 100, 100, kHorizontalFrame);
+  } else {
     m_LabelFrame = new TGCompositeFrame(this, 100, 100, kHorizontalFrame | kFixedWidth);
-		m_LabelFrame->Resize(m_Width, 30);
-	}
-	AddFrame(m_LabelFrame, m_LabelFrameLayout);
+    m_LabelFrame->Resize(m_Width, 30);
+  }
+  AddFrame(m_LabelFrame, m_LabelFrameLayout);
 
   
   m_TextLabel = new TGLabel(m_LabelFrame, new TGString(m_Label));
@@ -152,66 +152,72 @@ void MGUIEStatusBar::Create()
   m_LabelFrame->AddFrame(m_TextLabel, m_TextLabelLayout);
 
 
-	// Now add the fields:
-	m_FieldTitleLayout = new TGLayoutHints(kLHintsLeft, 3, 3, 2, 2);
-	m_FieldContentLayout = new TGLayoutHints(kLHintsLeft, 3, 3, 0, 0);
+  // Now add the fields:
+  m_FieldTitleLayout = new TGLayoutHints(kLHintsLeft, 3, 10, 2, 2);
+  m_FieldContentLayout = new TGLayoutHints(kLHintsLeft, 3, 3, 0, 0);
 
-	for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
-		// Create
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    // Create
 
-		TGLayoutHints* FieldFrameLayout;
-		if (m_FieldWidth[f] == c_Max) {
-			FieldFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 5, 0, 0, 0);
-		} else {
-			FieldFrameLayout = new TGLayoutHints(kLHintsLeft, 5, 0, 0, 0);
-		}
+    TGLayoutHints* FieldFrameLayout;
+    if (m_FieldWidth[f] == c_Max) {
+      FieldFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 5, 0, 0, 0);
+    } else {
+      FieldFrameLayout = new TGLayoutHints(kLHintsLeft, 5, 0, 0, 0);
+    }
 
-		TGCompositeFrame* FieldFrame = 
-			new TGCompositeFrame(this, 100, 100, kHorizontalFrame); 
-		AddFrame(FieldFrame, FieldFrameLayout);
+    TGCompositeFrame* FieldFrame = 
+      new TGCompositeFrame(this, 100, 100, kHorizontalFrame); 
+    AddFrame(FieldFrame, FieldFrameLayout);
 
-		MString Name = ((TObjString*) m_FieldNames->At(f))->GetString().Data();
-		TGLabel* FieldTitle = new TGLabel(FieldFrame, new TGString(Name));
-		FieldFrame->AddFrame(FieldTitle, m_FieldTitleLayout);
+    MString Name;
+    TGLabel* FieldTitle = 0;
+    if (m_FieldShowTitle[f] == true) {
+      Name = ((TObjString*) m_FieldNames->At(f))->GetString().Data();
+      TGLabel* FieldTitle = new TGLabel(FieldFrame, new TGString(Name));
+      FieldFrame->AddFrame(FieldTitle, m_FieldTitleLayout);
+    }
+    
+    TGCompositeFrame* FieldContentFrame;
+    TGLayoutHints* FieldContentFrameLayout;
+    if (m_FieldWidth[f] == c_Max) {
+      FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame); 
+      FieldContentFrameLayout = new TGLayoutHints(kLHintsRight | kLHintsExpandX, 2, 2, 2, 2);
+    } else if (m_FieldWidth[f] == c_Min) {
+      FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame); 
+      FieldContentFrameLayout = new TGLayoutHints(kLHintsRight, 2, 2, 2, 2);
+    } else {
+      FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame | kFixedWidth); 
+      FieldContentFrameLayout = new TGLayoutHints(kLHintsRight, 2, 2, 2, 2);
+    }
+    FieldContentFrame->Resize(m_FieldWidth[f], 30);
+    FieldFrame->AddFrame(FieldContentFrame, FieldContentFrameLayout);
+    FieldContentFrame->Layout();
 
-		TGCompositeFrame* FieldContentFrame;
-		TGLayoutHints* FieldContentFrameLayout;
-		if (m_FieldWidth[f] == c_Max) {
-			FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame | kSunkenFrame); 
-			FieldContentFrameLayout = new TGLayoutHints(kLHintsRight | kLHintsExpandX, 2, 2, 2, 2);
-		} else if (m_FieldWidth[f] == c_Min) {
-			FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame | kSunkenFrame); 
-			FieldContentFrameLayout = new TGLayoutHints(kLHintsRight, 2, 2, 2, 2);
-		} else {
-			FieldContentFrame = new TGCompositeFrame(FieldFrame, 100, 100, kHorizontalFrame | kSunkenFrame | kFixedWidth); 
-			FieldContentFrameLayout = new TGLayoutHints(kLHintsRight, 2, 2, 2, 2);
-		}
-		FieldContentFrame->Resize(m_FieldWidth[f], 30);
-		FieldFrame->AddFrame(FieldContentFrame, FieldContentFrameLayout);
-		FieldContentFrame->Layout();
+    Name = ((TObjString*) m_FieldContentValues->At(f))->GetString();
+    TGLabel* FieldContent = new TGLabel(FieldContentFrame, Name);
+    FieldContentFrame->AddFrame(FieldContent, m_FieldContentLayout);
+    FieldContent->Layout();
 
-		Name = ((TObjString*) m_FieldContentValues->At(f))->GetString();
-		TGLabel* FieldContent = new TGLabel(FieldContentFrame, Name);
-		FieldContentFrame->AddFrame(FieldContent, m_FieldContentLayout);
-		FieldContent->Layout();
-
-		// Store
-		m_FieldFrames->AddLast(FieldFrame);
-		m_FieldFrameLayouts->AddLast(FieldFrameLayout);
-		m_FieldTitles->AddLast(FieldTitle);
-		m_FieldContentFrames->AddLast(FieldContentFrame);
-		m_FieldContentFrameLayouts->AddLast(FieldContentFrameLayout);
-		m_FieldContents->AddLast(FieldContent);
-	}
+    // Store
+    if (m_FieldShowTitle[f] == true) {
+      m_FieldFrames->AddLast(FieldFrame);
+    }
+    m_FieldFrameLayouts->AddLast(FieldFrameLayout);
+    m_FieldTitles->AddLast(FieldTitle);
+    m_FieldContentFrames->AddLast(FieldContentFrame);
+    m_FieldContentFrameLayouts->AddLast(FieldContentFrameLayout);
+    m_FieldContents->AddLast(FieldContent);
+  }
   
 
   // Give this element the default size of its content:
   Resize(GetDefaultWidth(), GetDefaultHeight()+200); 
 
-	Layout();
-	MapSubwindows();
+  Layout();
+  MapSubwindows();
 
-	m_IsCreated = true;
+  m_IsCreated = true;
 
   return;
 }
@@ -220,25 +226,26 @@ void MGUIEStatusBar::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIEStatusBar::Add(MString Field, int Width)
+bool MGUIEStatusBar::Add(MString Field, int Width, bool ShowTitle)
 {
-	// Add a new field
-	// Returns false, if the field already exists or the element has already been created
+  // Add a new field
+  // Returns false, if the field already exists or the element has already been created
 
-	if (m_IsCreated == true) return false;
+  if (m_IsCreated == true) return false;
 
-	// Test if the name does not already exist:
-	for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
-		if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
-			return false;
-		}
-	}
+  // Test if the name does not already exist:
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
+      return false;
+    }
+  }
 
-	m_FieldNames->AddLast(new TObjString(Field));
-	m_FieldWidth.push_back(Width);
-	m_FieldContentValues->AddLast(new TObjString("0"));
+  m_FieldNames->AddLast(new TObjString(Field));
+  m_FieldWidth.push_back(Width);
+  m_FieldShowTitle.push_back(ShowTitle);
+  m_FieldContentValues->AddLast(new TObjString("0"));
 
-	return true;
+  return true;
 }
 
 
@@ -247,23 +254,23 @@ bool MGUIEStatusBar::Add(MString Field, int Width)
 
 bool MGUIEStatusBar::SetContent(MString Field, double Value)
 {
-	// Set the content of field Field:
+  // Set the content of field Field:
 
-	// Test if the name does not already exist:
-	for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
-		if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
-			((TObjString*) m_FieldContentValues->At(f))->SetString((char*) MakeSmartString(Value).Data());
+  // Test if the name does not already exist:
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
+      ((TObjString*) m_FieldContentValues->At(f))->SetString((char*) MakeSmartString(Value).Data());
 
-			if (m_IsCreated == true) {
-				((TGLabel*) m_FieldContents->At(f))->SetText(MakeSmartString(Value));
-				Layout();				
-			}
+      if (m_IsCreated == true) {
+        ((TGLabel*) m_FieldContents->At(f))->SetText(MakeSmartString(Value));
+        Layout();       
+      }
 
-			return true;
-		}
-	}
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
 
@@ -322,23 +329,23 @@ bool MGUIEStatusBar::SetContent(MString Field, int Value)
 
 bool MGUIEStatusBar::SetContent(MString Field, MString Value)
 {
-	// Set the content of field Field:
+  // Set the content of field Field:
 
-	// Test if the name does not already exist:
-	for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
-		if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
-			((TObjString*) m_FieldContentValues->At(f))->SetString((char*) Value.Data());
+  // Test if the name does not already exist:
+  for (int f = 0; f <= m_FieldNames->GetLast(); ++f) {
+    if (Field == ((TObjString*) m_FieldNames->At(f))->GetString().Data()) {
+      ((TObjString*) m_FieldContentValues->At(f))->SetString((char*) Value.Data());
 
-			if (m_IsCreated == true) {
-				((TGLabel*) m_FieldContents->At(f))->SetText(Value);
-				Layout();
-			}
+      if (m_IsCreated == true) {
+        ((TGLabel*) m_FieldContents->At(f))->SetText(Value);
+        Layout();
+      }
 
-			return true;
-		}
-	}
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
 

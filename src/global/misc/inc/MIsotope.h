@@ -28,18 +28,23 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! An isotope with its DAUGHTER! decay lines
 class MIsotope
 {
   // public interface:
  public:
+  //! Deafault constructor
   MIsotope();
+  //! Default destructor
   virtual ~MIsotope();
+
+  //! Compare two isotopes
+  virtual bool operator==(const MIsotope& I) const;
 
   //! Return the element name
   MString GetName() const;
- 	
-	//! Set the element name
+
+  //! Set the element name
   void SetElement(const MString& Element) { m_Element = Element; }
   //! Return the element name
   MString GetElement() const { return m_Element; }
@@ -57,23 +62,12 @@ class MIsotope
   double GetLineEnergy(unsigned int l) const;
   //! Return the line branching ratio
   double GetLineBranchingRatio(unsigned int l) const;
-
-  //! Set line found
-  void SetLineFound(unsigned int l, bool Found);
-  // Get line found
-  bool GetLineFound(unsigned int l);
-
-  //! Set the rating of the isotope
-  void SetRating(double Rating) { m_Rating = Rating; }
-  //! Add something to the rating of the isotope
-  void AddRating(double Rating) { m_Rating += Rating; }  
-  //! Get the rating of the isotope
-  double GetRating() const { return m_Rating; }
+  
+  //! Dump a string
+  virtual MString ToString() const;
   
   // protected methods:
  protected:
-  //MIsotope() {};
-  //MIsotope(const MIsotope& Isotope) {};
 
   // private methods:
  private:
@@ -96,11 +90,6 @@ class MIsotope
   vector<double> m_LineEnergies;
   //! The line branching ratio
   vector<double> m_LineBranchingRatios;
-  //! The line branching ratio
-  vector<bool> m_LineFound;
-
-  //! The rating of the isotope
-  double m_Rating;
  
 
 #ifdef ___CINT___
@@ -110,7 +99,7 @@ class MIsotope
 
 };
 
-//! Stream a nucleon
+//! Stream an isotope
 ostream& operator<<(ostream& os, const MIsotope& Isotope);
 
 #endif

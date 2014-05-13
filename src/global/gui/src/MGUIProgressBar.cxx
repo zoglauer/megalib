@@ -62,6 +62,8 @@ MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetR
   m_Minimum = 0;
   m_Maximum = 1;
 
+  m_UpdateFrequency = 0.001;
+
   m_IsFirstUpdate = true;
 
   m_ConfirmCancel = false;
@@ -230,12 +232,12 @@ void MGUIProgressBar::Create()
 
 
   // Frame which contains all status bars:
-  m_ProgressBarFrame = new TGVerticalFrame(this, this->GetWidth() - 20, 100);
+  m_ProgressBarFrame = new TGVerticalFrame(this, this->GetWidth() - m_FontScaler*20, m_FontScaler*100);
   m_ProgressBarFrameLayout = 
     new TGLayoutHints(kLHintsExpandX | kLHintsCenterX | kLHintsExpandY | kLHintsCenterY, 10, 10, 5, 16);
   AddFrame(m_ProgressBarFrame, m_ProgressBarFrameLayout);
 
-  m_Width = this->GetWidth() - 22;
+  m_Width = m_FontScaler*this->GetWidth() - m_FontScaler*22;
 
   m_ProgressBarLayout = 
     new TGLayoutHints(kLHintsExpandX | kLHintsCenterX, 0, 0, 0, 0);
@@ -244,12 +246,12 @@ void MGUIProgressBar::Create()
   AddProgressBar();
 
   // Cancel and OK:
-  m_ButtonFrame = new TGVerticalFrame(this, this->GetWidth()-40, 25, kFixedSize);
+  m_ButtonFrame = new TGVerticalFrame(this, this->GetWidth()-m_FontScaler*40, m_FontScaler*25, kFixedSize);
 	  
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 1); 
   m_CancelButton->Associate(this);
   m_CancelButtonLayout = 
-    new TGLayoutHints(kLHintsCenterX | kLHintsExpandX, 70, 70, 0, 0);
+    new TGLayoutHints(kLHintsCenterX | kLHintsExpandX, m_FontScaler*70, m_FontScaler*70, 0, 0);
 
   m_ButtonFrame->AddFrame(m_CancelButton, m_CancelButtonLayout);
   m_ButtonFrameLayout = 
@@ -274,7 +276,7 @@ void MGUIProgressBar::AddProgressBar()
 {
   m_ProgressBarFrame->UnmapWindow();
 
-  TGHProgressBar* ProgressBar = new TGHProgressBar(m_ProgressBarFrame, TGProgressBar::kFancy, m_Width);
+  TGHProgressBar* ProgressBar = new TGHProgressBar(m_ProgressBarFrame, m_Width, m_FontScaler*24);
   m_ProgressBar.push_back(ProgressBar);
   ProgressBar->SetBarColor("darkgreen");
   m_Percentage.push_back(0);
@@ -414,7 +416,7 @@ bool MGUIProgressBar::OnOk()
 {
   // The Ok button/Return key has been pressed
   // We do nothing!!!
-	
+
   return false;
 }
 

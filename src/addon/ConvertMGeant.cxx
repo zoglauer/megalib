@@ -188,7 +188,7 @@ int ConvertMGeant::GetNNonCommentTokens(MTokenizer* T)
 {
   int NTokens = 0;
 
-  for (int i = 0; i < T->GetNTokens(); ++i) {
+  for (unsigned int i = 0; i < T->GetNTokens(); ++i) {
     if (T->GetTokenAt(i).BeginsWith("!") == false) {
       NTokens++;
     } else {

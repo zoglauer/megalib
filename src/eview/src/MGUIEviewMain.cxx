@@ -41,6 +41,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MGUIDefaults.h"
 #include "MFile.h"
 #include "MAssert.h"
 #include "MStreams.h"
@@ -261,6 +262,9 @@ void MGUIEviewMain::Create()
 {
   // Create the main window
 
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  
+  
   // We start with a name and an icon...
   SetWindowName("Eview - MEGA Event viewer");  
 
@@ -304,7 +308,7 @@ void MGUIEviewMain::Create()
   AddFrame(m_MenuBar, m_MenuBarLayout);
 
   // The tool bar:
-  m_ToolBar = new MGUIEFlatToolBar(this, 600, 50, kHorizontalFrame | kRaisedFrame);
+  m_ToolBar = new MGUIEFlatToolBar(this, FontScaler*600, FontScaler*50, kHorizontalFrame | kRaisedFrame);
   m_ToolBarLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
   AddFrame(m_ToolBar, m_ToolBarLayout);
 
@@ -319,17 +323,17 @@ void MGUIEviewMain::Create()
   m_ToolBar->Add(this, g_MEGAlibPath + "/resource/icons/global/Exit.xpm", c_Exit, 40);
 
   // The center fold .... ehm frame...
-  m_CenterFrame = new TGCompositeFrame(this, 80, 60, kHorizontalFrame | kRaisedFrame);
+  m_CenterFrame = new TGCompositeFrame(this, FontScaler*80, FontScaler*60, kHorizontalFrame | kRaisedFrame);
   m_CenterFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandY | kLHintsExpandX | kLHintsTop, 0, 0, 0, 0);
   AddFrame(m_CenterFrame, m_CenterFrameLayout);
   
 
   // The options:
-  m_OptionsFrame = new TGCompositeFrame(m_CenterFrame, 230, 60, kVerticalFrame | kFixedWidth);
+  m_OptionsFrame = new TGCompositeFrame(m_CenterFrame, FontScaler*230, FontScaler*60, kVerticalFrame | kFixedWidth);
   m_OptionsFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 4, 4, 4, 4);
   m_CenterFrame->AddFrame(m_OptionsFrame, m_OptionsFrameLayout);
 
-  m_OptionsLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, 6, 0, 20, 0);
+  m_OptionsLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, 6, 18, 20, 0);
 
   // Title:
   MString TitleIcon(g_MEGAlibPath + "/resource/icons/eview/Smaller.xpm");
@@ -452,11 +456,11 @@ void MGUIEviewMain::Create()
  
 
   // The image:
-  m_RightFrame = new TGCompositeFrame(m_CenterFrame, 60, 60, kVerticalFrame);
+  m_RightFrame = new TGCompositeFrame(m_CenterFrame, FontScaler*60, FontScaler*60, kVerticalFrame);
   m_RightFrameLayout = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY | kLHintsRight, 0, 4, 4, 4);
   m_CenterFrame->AddFrame(m_RightFrame, m_RightFrameLayout);
 
-  m_ImageCanvas = new TRootEmbeddedCanvas("Event View", m_RightFrame, GetWidth()-100, GetHeight());
+  m_ImageCanvas = new TRootEmbeddedCanvas("Event View", m_RightFrame, GetWidth()-FontScaler*100, GetHeight());
   m_ImageCanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX |
                                           kLHintsExpandY, 0, 0, 0, 0);
   m_ImageCanvas->GetCanvas()->Clear();
@@ -471,12 +475,12 @@ void MGUIEviewMain::Create()
   // The status bar  
   m_StatusBarLayout = new TGLayoutHints(kLHintsBottom | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
 
-  m_StatusBarEvent = new MGUIEStatusBar(this, "Event", true, 50);
-  m_StatusBarEvent->Add("Id:", 60);
-  m_StatusBarEvent->Add("Type:", 110);
+  m_StatusBarEvent = new MGUIEStatusBar(this, "Event", true, FontScaler*50);
+  m_StatusBarEvent->Add("Id:", FontScaler*60);
+  m_StatusBarEvent->Add("Type:", FontScaler*110);
   m_StatusBarEvent->SetContent("Type:", "No event!");
-  m_StatusBarEvent->Add("Energy [keV]:", 60);
-  m_StatusBarEvent->Add("Framerate [fps]:", 30);
+  m_StatusBarEvent->Add("Energy [keV]:", FontScaler*60);
+  m_StatusBarEvent->Add("Framerate [fps]:", FontScaler*30);
   m_StatusBarEvent->Create();
 
   AddFrame(m_StatusBarEvent, m_StatusBarLayout);

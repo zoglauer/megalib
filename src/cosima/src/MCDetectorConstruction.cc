@@ -36,6 +36,7 @@ using namespace std;
 #include "MCGeometryConverter.hh"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "globals.hh"
 #include "G4Element.hh"
 #include "G4Material.hh"
@@ -88,7 +89,7 @@ using namespace std;
 #include "TRotMatrix.h"
 #include "TMatrix.h" 
 #include "TMath.h" 
-#include "TColor.h"
+//#include "TColor.h"
 
 
 /******************************************************************************
@@ -152,10 +153,10 @@ bool MCDetectorConstruction::Initialize()
   vector<MCRun>& Runs = MCRunManager::GetMCRunManager()->GetRuns();
   for (unsigned int r = 0; r < Runs.size(); ++r) {
     vector<MCSource*>& Sources = Runs[r].GetSourceList();
-    for (unsigned s = 0; s < Sources.size(); ++s) {
-      if (Sources[s]->GetStartAreaType() == MCSource::c_StartAreaUnknown) {
-        Sources[s]->SetStartAreaType(MCSource::c_StartAreaSphere);
-        if (Sources[s]->SetStartAreaParameters(m_Geometry->GetStartSpherePosition()[0]*cm,
+    for (unsigned t = 0; t < Sources.size(); ++t) {
+      if (Sources[t]->GetStartAreaType() == MCSource::c_StartAreaUnknown) {
+        Sources[t]->SetStartAreaType(MCSource::c_StartAreaSphere);
+        if (Sources[t]->SetStartAreaParameters(m_Geometry->GetStartSpherePosition()[0]*cm,
                                                m_Geometry->GetStartSpherePosition()[1]*cm,
                                                m_Geometry->GetStartSpherePosition()[2]*cm,
                                                0.0,
@@ -274,16 +275,16 @@ bool MCDetectorConstruction::ConstructDetectors()
       mdebug<<"Adding Strip detector for "<<Name<<endl;
       
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = 
-          Detector->GetSensitiveVolume(s)->GetName() + 
+          Detector->GetSensitiveVolume(sv)->GetName() + 
           "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned int s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            SS->at(s)->SetSensitiveDetector(TwoDStripSD);
+        for (unsigned int vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            SS->at(vs)->SetSensitiveDetector(TwoDStripSD);
           }
         }
       }
@@ -316,16 +317,16 @@ bool MCDetectorConstruction::ConstructDetectors()
       mdebug<<"Adding Voxler detector for "<<Name<<endl;
       
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = 
-          Detector->GetSensitiveVolume(s)->GetName() + 
+          Detector->GetSensitiveVolume(sv)->GetName() + 
           "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned int s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            SS->at(s)->SetSensitiveDetector(Voxel3DSD);
+        for (unsigned int vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            SS->at(vs)->SetSensitiveDetector(Voxel3DSD);
           }
         }
       }
@@ -357,16 +358,16 @@ bool MCDetectorConstruction::ConstructDetectors()
       mdebug<<"Adding drift chamber detector for "<<Name<<endl;
       
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = 
-          Detector->GetSensitiveVolume(s)->GetName() + 
+          Detector->GetSensitiveVolume(sv)->GetName() + 
           "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned int s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            SS->at(s)->SetSensitiveDetector(ChamberSD);
+        for (unsigned int vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            SS->at(vs)->SetSensitiveDetector(ChamberSD);
           }
         }
       }
@@ -385,16 +386,16 @@ bool MCDetectorConstruction::ConstructDetectors()
       }
     
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = 
-          Detector->GetSensitiveVolume(s)->GetName() 
+          Detector->GetSensitiveVolume(sv)->GetName() 
           + "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            SS->at(s)->SetSensitiveDetector(CalorimeterSD);
+        for (unsigned vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            SS->at(vs)->SetSensitiveDetector(CalorimeterSD);
           }
         }
       }
@@ -411,15 +412,15 @@ bool MCDetectorConstruction::ConstructDetectors()
       MVector UniquePositionInCommon(0.0, 0.0, 0.0);
 
       // Get the name of the sensitive volumes and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
-        MString SenName = Detector->GetSensitiveVolume(s)->GetName() + "Log";
-        MVector Pos = Detector->GetSensitiveVolume(s)->GetShape()->GetUniquePosition();
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
+        MString SenName = Detector->GetSensitiveVolume(sv)->GetName() + "Log";
+        MVector Pos = Detector->GetSensitiveVolume(sv)->GetShape()->GetUniquePosition();
         // The position of the hits is the unique position in the first volume
-        if (s == 0) {
+        if (sv == 0) {
           S->SetUniquePosition(SenName.Data(), G4ThreeVector(Pos[0]*cm, Pos[1]*cm, Pos[2]*cm));
           // Get the position in the common volume:
-          MDVolume* V = Detector->GetSensitiveVolume(s);
+          MDVolume* V = Detector->GetSensitiveVolume(sv);
           while (V != 0 && V != Detector->GetCommonVolume()) {
             UniquePositionInCommon = V->GetPositionInMotherVolume(UniquePositionInCommon);
             V = V->GetMother();
@@ -427,7 +428,7 @@ bool MCDetectorConstruction::ConstructDetectors()
         } else {
           // Build a volume tree:
           vector<MDVolume* > Vs;
-          Vs.push_back(Detector->GetSensitiveVolume(s));
+          Vs.push_back(Detector->GetSensitiveVolume(sv));
           while (Vs.back() != 0 && Vs.back() != Detector->GetCommonVolume()) {
             Vs.push_back(Vs.back()->GetMother());
           }
@@ -442,10 +443,10 @@ bool MCDetectorConstruction::ConstructDetectors()
           S->SetUniquePosition(SenName.Data(), G4ThreeVector(NewPos[0]*cm, NewPos[1]*cm, NewPos[2]*cm));
         }
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            cout<<"SenName: "<<SenName<<endl;
-            SS->at(s)->SetSensitiveDetector(S);
+        for (unsigned vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            //cout<<"SenName: "<<SenName<<endl;
+            SS->at(vs)->SetSensitiveDetector(S);
           }
         }
       }
@@ -459,16 +460,16 @@ bool MCDetectorConstruction::ConstructDetectors()
      
       // Get the name of the sensitive volumes and set its SD:
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int s = 0; 
-           s < Detector->GetNSensitiveVolumes(); ++s) {
+      for (unsigned int sv = 0; 
+           sv < Detector->GetNSensitiveVolumes(); ++sv) {
         MString SenName = 
-          Detector->GetSensitiveVolume(s)->GetName() 
+          Detector->GetSensitiveVolume(sv)->GetName() 
           + "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-        for (unsigned s = 0; s < SS->size(); ++s) {
-          if (SenName == SS->at(s)->GetName().c_str()) {
-            SS->at(s)->SetSensitiveDetector(S);
+        for (unsigned vs = 0; vs < SS->size(); ++vs) {
+          if (SenName == SS->at(vs)->GetName().c_str()) {
+            SS->at(vs)->SetSensitiveDetector(S);
           }
         }
       }
@@ -525,7 +526,7 @@ bool MCDetectorConstruction::ConstructVolumes()
   MString MaterialName;
   MString LogName;
   G4VSolid* Solid = 0;
-  bool ROOTColorNotInitialize = false;
+  //bool ROOTColorNotInitialize = false;
   
   for (unsigned int v = 0; v < m_Geometry->GetNVolumes(); ++v) {
 
@@ -746,6 +747,7 @@ bool MCDetectorConstruction::ConstructVolumes()
         merr<<"Unknown volume type: "<<Type<<endl;
         return false;
       }
+      
       G4LogicalVolume* LV = 
         new G4LogicalVolume(Solid, 
                             G4Material::GetMaterial(MaterialName.Data()), 
@@ -756,6 +758,7 @@ bool MCDetectorConstruction::ConstructVolumes()
       } else {
         Vis->SetVisibility(true);       
       }
+      /*
       // Convert ROOT color to Geant4 color
       TColor* C = gROOT->GetColor(m_Geometry->GetVolumeAt(v)->GetColor());
       if (C != 0) {
@@ -766,7 +769,9 @@ bool MCDetectorConstruction::ConstructVolumes()
           ROOTColorNotInitialize = true;
         }
       }
+      */
       LV->SetVisAttributes(Vis);
+   
       mdebug<<"Generating Log: "<<LogName.Data()<<" mat="<<MaterialName.Data()<<endl;
     } // no clone 
   }
@@ -789,39 +794,39 @@ bool MCDetectorConstruction::ConstructMaterials()
   // List of used materials:
   vector<MDMaterial*> UnusedMaterials = m_Geometry->GetListOfUnusedMaterials();
   
-  for (unsigned int m = 0; m < m_Geometry->GetNMaterials(); ++m) {
+  for (unsigned int mat = 0; mat < m_Geometry->GetNMaterials(); ++mat) {
     // Ignore unused materials:
     if (m_RunParameters.CreateCrossSectionFiles() == false) {
-      if (find(UnusedMaterials.begin(), UnusedMaterials.end(), m_Geometry->GetMaterialAt(m)) != UnusedMaterials.end()) {
-        mdebug<<"Removing unused material: "<<m_Geometry->GetMaterialAt(m)->GetName()<<endl;
+      if (find(UnusedMaterials.begin(), UnusedMaterials.end(), m_Geometry->GetMaterialAt(mat)) != UnusedMaterials.end()) {
+        mdebug<<"Removing unused material: "<<m_Geometry->GetMaterialAt(mat)->GetName()<<endl;
         continue;
       }
     }
     
     G4Material* Material = 
-      new G4Material(m_Geometry->GetMaterialAt(m)->GetName().Data(), 
-                     m_Geometry->GetMaterialAt(m)->GetDensity()*g/cm3,
-                     m_Geometry->GetMaterialAt(m)->GetNComponents());
+      new G4Material(m_Geometry->GetMaterialAt(mat)->GetName().Data(), 
+                     m_Geometry->GetMaterialAt(mat)->GetDensity()*g/cm3,
+                     m_Geometry->GetMaterialAt(mat)->GetNComponents());
     
     
     for (unsigned int c = 0; 
-         c < m_Geometry->GetMaterialAt(m)->GetNComponents(); ++c) {
+         c < m_Geometry->GetMaterialAt(mat)->GetNComponents(); ++c) {
       MDMaterialComponent* Component = 
-        m_Geometry->GetMaterialAt(m)->GetComponentAt(c);
+        m_Geometry->GetMaterialAt(mat)->GetComponentAt(c);
 
       ostringstream LongName;
-      LongName<<"LongName_"<<m_Geometry->GetMaterialAt(m)->GetName().Data()
+      LongName<<"LongName_"<<m_Geometry->GetMaterialAt(mat)->GetName().Data()
               <<"_El"<<c+1<<endl;
 
       ostringstream ShortName;
-      ShortName<<m_Geometry->GetMaterialAt(m)->GetName().Data()
+      ShortName<<m_Geometry->GetMaterialAt(mat)->GetName().Data()
                <<"_El"<<c+1<<endl;
 
       double A = Component->GetA();
       double Z = Component->GetZ();
 
       if (A < 1 && Z < 1) {
-        mout<<m_Geometry->GetMaterialAt(m)->GetName().Data()<<": Probably found Geant3 vaccum: upgrading to Geant4 vacuum"<<endl; 
+        mout<<m_Geometry->GetMaterialAt(mat)->GetName().Data()<<": Probably found Geant3 vaccum: upgrading to Geant4 vacuum"<<endl; 
         A = 1;
         Z = 1;
       }
@@ -834,7 +839,7 @@ bool MCDetectorConstruction::ConstructMaterials()
       }
       
       if (Element == 0) {
-        merr<<"Couldn't find all elements of: "<<m_Geometry->GetMaterialAt(m)->GetName()<<" Missing: Z="<<Z<<endl;
+        merr<<"Couldn't find all elements of: "<<m_Geometry->GetMaterialAt(mat)->GetName()<<" Missing: Z="<<Z<<endl;
         return false;
       }
       
@@ -871,11 +876,11 @@ bool MCDetectorConstruction::ConstructRegions()
       MString Name = Regions[r].GetVolumeName() + "Log";
       bool Found = false;
       // Find the volume in the logical volume store
-      for (unsigned s = 0; s < LVS->size(); ++s) {
-        if (Name == LVS->at(s)->GetName().c_str()) {
+      for (unsigned lv = 0; lv < LVS->size(); ++lv) {
+        if (Name == LVS->at(lv)->GetName().c_str()) {
           // Define region. The cuts are set in the physics list
           G4Region* Region = new G4Region(Regions[r].GetName().Data());
-          Region->AddRootLogicalVolume(LVS->at(s));
+          Region->AddRootLogicalVolume(LVS->at(lv));
           Found = true;
           break;
         }
@@ -884,7 +889,7 @@ bool MCDetectorConstruction::ConstructRegions()
         mout<<"Volume "<<Regions[r].GetVolumeName()<<" defining region ";
         mout<<Regions[r].GetName()<<" is not found in the LogicalVolumeStore."<<endl;
         mout<<"Available volumes are: ";
-        for (unsigned s = 0; s < LVS->size(); ++s) mout<<LVS->at(s)->GetName().c_str()<<" ";
+        for (unsigned lv = 0; lv < LVS->size(); ++lv) mout<<LVS->at(lv)->GetName().c_str()<<" ";
         mout<<endl;
         return false;
       }
@@ -926,12 +931,12 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
     G4LogicalVolume* MotherLog = 0;
 
     G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-    for (unsigned s = 0; s < SS->size(); ++s) {
-      if (ThisLog == 0 && CopyName == SS->at(s)->GetName().c_str()) {
-        ThisLog = SS->at(s);
+    for (unsigned lv = 0; lv < SS->size(); ++lv) {
+      if (ThisLog == 0 && CopyName == SS->at(lv)->GetName().c_str()) {
+        ThisLog = SS->at(lv);
       }
-      if (MotherLog == 0 && MotherName == SS->at(s)->GetName().c_str()) {
-        MotherLog = SS->at(s);
+      if (MotherLog == 0 && MotherName == SS->at(lv)->GetName().c_str()) {
+        MotherLog = SS->at(lv);
       }
       if (ThisLog != 0 && MotherLog != 0) break;
     }
@@ -984,12 +989,12 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
       G4LogicalVolume* MotherLog = 0;
 
       G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
-      for (unsigned s = 0; s < SS->size(); ++s) {
-        if (ThisLog == 0 && Name == SS->at(s)->GetName().c_str()) {
-          ThisLog = SS->at(s);
+      for (unsigned lv = 0; lv < SS->size(); ++lv) {
+        if (ThisLog == 0 && Name == SS->at(lv)->GetName().c_str()) {
+          ThisLog = SS->at(lv);
         }
-        if (MotherLog == 0 && MotherName == SS->at(s)->GetName().c_str()) {
-          MotherLog = SS->at(s);
+        if (MotherLog == 0 && MotherName == SS->at(lv)->GetName().c_str()) {
+          MotherLog = SS->at(lv);
         }
         if (ThisLog != 0 && MotherLog != 0) break;
       }

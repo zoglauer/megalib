@@ -105,8 +105,8 @@ void MGUIImageOptions::Create()
   m_Palette->AddEntry("Andreas' thesis - variability at low end", MImage::c_ThesisVarAtLow);
   m_Palette->Select(m_GUIData->GetImagePalette());
   m_Palette->Associate(this);
-  m_Palette->SetHeight(18);
-  m_Palette->SetWidth(200);
+  m_Palette->SetHeight(m_FontScaler*18);
+  m_Palette->SetWidth(m_FontScaler*200);
   PaletteFrame->AddFrame(m_Palette, RightLayout);
   
 
@@ -123,8 +123,8 @@ void MGUIImageOptions::Create()
   m_DrawMode->AddEntry("Smooth contours 2D with palette", MImage::c_COLCONT4Z);
   m_DrawMode->Associate(this);
   m_DrawMode->Select(m_GUIData->GetImageDrawMode());
-  m_DrawMode->SetHeight(18);
-  m_DrawMode->SetWidth(200);
+  m_DrawMode->SetHeight(m_FontScaler*18);
+  m_DrawMode->SetWidth(m_FontScaler*200);
   DrawModeFrame->AddFrame(m_DrawMode, RightLayout);
 
 

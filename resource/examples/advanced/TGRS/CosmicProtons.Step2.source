@@ -7,6 +7,8 @@ Geometry                           TGRS.geo.setup
 PhysicsListHD                      qgsp-bic-hp
 PhysicsListEM                      Livermore
 
+DetectorTimeConstant               0.000005
+
 StoreCalibrated                    true
 StoreSimulationInfo                true
 DiscretizeHits                     true

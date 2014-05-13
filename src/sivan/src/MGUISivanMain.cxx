@@ -151,11 +151,11 @@ void MGUISivanMain::Create()
   AddFrame(m_TitleIcon, m_TitleIconLayout);
 
   // The status bar  
-  m_StatusBarGeo->SetContent("Active:", m_Data->GetGeometryFileName());
+  m_StatusBarGeo->SetContent("Active:", MFile::GetBaseName(m_Data->GetGeometryFileName()));
   m_StatusBarGeo->Create();
   AddFrame(m_StatusBarGeo, m_StatusBarLayout);
 
-  m_StatusBarFile->SetContent("Active:", m_Data->GetCurrentFileName());
+  m_StatusBarFile->SetContent("Active:", MFile::GetBaseName(m_Data->GetCurrentFileName()));
   m_StatusBarFile->Create();
   AddFrame(m_StatusBarFile, m_StatusBarLayout);
 
@@ -170,7 +170,7 @@ void MGUISivanMain::Create()
   int xDisplay, yDisplay;
   unsigned int wDisplay, hDisplay;
   gVirtualX->GetGeometry(-1, xDisplay, yDisplay, wDisplay, hDisplay);
-  SetWMSizeHints(660, 274, wDisplay, hDisplay, 0, 0);
+  SetWMSizeHints(660, 330, wDisplay, hDisplay, 0, 0);
 
   UpdateConfiguration();
 

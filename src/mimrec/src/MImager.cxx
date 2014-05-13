@@ -85,6 +85,7 @@ const int MImager::c_AnimateNothing = 0;
 const int MImager::c_AnimateBackprojections = 1;
 const int MImager::c_AnimateIterations = 2;
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 

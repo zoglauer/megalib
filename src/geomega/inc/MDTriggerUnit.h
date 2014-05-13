@@ -45,14 +45,14 @@ class MDTriggerUnit
   void Reset();
 
   //! Set a flag indicating that vetoes are ignored
-  void IgnoreVetoes(bool IgnoreVetoes) { m_IgnoreVetoes = IgnoreVetoes; }
+  void IgnoreVetoes(bool IgnoreVetoesFlag) { m_IgnoreVetoes = IgnoreVetoesFlag; }
   //! Set a flag indicating that thresholds are ignored
-  void IgnoreThresholds(bool IgnoreThresholds) { m_IgnoreThresholds = IgnoreThresholds; }
+  void IgnoreThresholds(bool IgnoreThresholdsFlag) { m_IgnoreThresholds = IgnoreThresholdsFlag; }
 
   //! Set a flag indicating that we always assume to have triggered
-  void AlwaysAssumeTrigger(bool AlwaysAssumeTrigger) { m_AlwaysAssumeTrigger = AlwaysAssumeTrigger; }
+  void AlwaysAssumeTrigger(bool AlwaysAssumeTriggerFlag) { m_AlwaysAssumeTrigger = AlwaysAssumeTriggerFlag; }
   //! Set a flag indicating that we always assume to have vetoed
-  void AlwaysAssumeVeto(bool AlwaysAssumeVeto) { m_AlwaysAssumeVeto = AlwaysAssumeVeto; }
+  void AlwaysAssumeVeto(bool AlwaysAssumeVetoFlag) { m_AlwaysAssumeVeto = AlwaysAssumeVetoFlag; }
 
   //! Add a new hit
   bool AddHit(const MVector& Position, const double& Energy);

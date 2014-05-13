@@ -53,59 +53,59 @@ class MComptonEvent : public MPhysicalEvent
   // Basic data:
 
   //! Set the energy of the scattered gamma-ray
-  void SetEg(const double Eg) { m_Eg = Eg; }
+  void SetEg(const double EnergyGamma) { m_Eg = EnergyGamma; }
   //! Set the energy error of the scattered gamma-ray
-  void SetdEg(const double dEg) { m_dEg = dEg; }
+  void SetdEg(const double dEnergyGamma) { m_dEg = dEnergyGamma; }
 
   //! Set the energy of the recoil electron
-  void SetEe(const double Ee) { m_Ee = Ee; }
+  void SetEe(const double EnergyElectron) { m_Ee = EnergyElectron; }
   //! Set the energy error of the recoil electron
-  void SetdEe(const double dEe) { m_dEe = dEe; }
+  void SetdEe(const double dEnergyElectron) { m_dEe = dEnergyElectron; }
 
   //! Set the position of the first Compton interaction
-  void SetC1(const MVector& C1) { m_C1 = C1; }
+  void SetC1(const MVector& PositionFirstIA) { m_C1 = PositionFirstIA; }
   //! Set the position error of the first Compton interaction
-  void SetdC1(const MVector& dC1) { m_dC1 = dC1; }
+  void SetdC1(const MVector& dPositionFirstIA) { m_dC1 = dPositionFirstIA; }
 
   //! Set the position of the second (Compton) interaction
-  void SetC2(const MVector& C2) { m_C2 = C2; }
+  void SetC2(const MVector& PositionSecondIA) { m_C2 = PositionSecondIA; }
   //! Set the position error of the second (Compton) interaction
-  void SetdC2(const MVector& dC2) { m_dC2 = dC2; }
+  void SetdC2(const MVector& dPositionSecondIA) { m_dC2 = dPositionSecondIA; }
 
   //! Set the direction of the recoil electron
-  void SetDe(const MVector& De) { m_De = De; }
+  void SetDe(const MVector& ElectronDirection) { m_De = ElectronDirection; }
   //! Set the direction error of the recoil electron
-  void SetdDe(const MVector& dDe) { m_dDe = dDe; }
+  void SetdDe(const MVector& dElectronDirection) { m_dDe = dElectronDirection; }
 
   //! Set the time of flight between first and second interaction
-  void SetToF(const double& ToF) { m_ToF = ToF; }
+  void SetToF(const double& TimeOfFlight) { m_ToF = TimeOfFlight; }
   //! Set the time of flight error between first and second interaction
-  void SetdToF(const double& dToF) { m_dToF = dToF; }
+  void SetdToF(const double& dTimeOfFlight) { m_dToF = dTimeOfFlight; }
 
   //! Set the Compton quality factor resultion for the event reconstruction
-  void SetClusteringQualityFactor(const double ClusteringQualityFactor) { m_ClusteringQualityFactor = ClusteringQualityFactor; }
+  void SetClusteringQualityFactor(const double ClusteringQualityFactorValue) { m_ClusteringQualityFactor = ClusteringQualityFactorValue; }
 
   //! Set the length of the Compton sequence (number of Compton intercations)
   void SetSequenceLength(const unsigned int Length) { m_SequenceLength = Length; }
   //! Set the Compton quality factor resultion for the event reconstruction
-  void SetComptonQualityFactor1(const double ComptonQualityFactor1) { m_ComptonQualityFactor1 = ComptonQualityFactor1; }
+  void SetComptonQualityFactor1(const double ComptonQualityFactorValue1) { m_ComptonQualityFactor1 = ComptonQualityFactorValue1; }
   //! Set the Compton quality factor of the second best Compton interaction sequence
-  void SetComptonQualityFactor2(const double ComptonQualityFactor2) { m_ComptonQualityFactor2 = ComptonQualityFactor2; }
+  void SetComptonQualityFactor2(const double ComptonQualityFactorValue2) { m_ComptonQualityFactor2 = ComptonQualityFactorValue2; }
 
   //! Set the smallest lever arm in the Compton interaction sequence 
-  void SetLeverArm(const double LeverArm) { m_LeverArm = LeverArm; }
+  void SetLeverArm(const double LeverArmValue) { m_LeverArm = LeverArmValue; }
 
   //! Set the length (in layers) of the recoil electron track
   void SetTrackLength(const unsigned int Length) { m_TrackLength = Length; }
   //! Set the energy of the first deposit of the recoil electron
   void SetTrackInitialDeposit(const double Deposit) { m_TrackInitialDeposit = Deposit; }
   //! Set the quality factor of the electron track
-  void SetTrackQualityFactor1(const double TrackQualityFactor1) { m_TrackQualityFactor1 = TrackQualityFactor1; }
+  void SetTrackQualityFactor1(const double TrackQualityFactorValue1) { m_TrackQualityFactor1 = TrackQualityFactorValue1; }
   //! Set the quality factor of the second best (i.e. not choosen) electron track
-  void SetTrackQualityFactor2(const double TrackQualityFactor2) { m_TrackQualityFactor2 = TrackQualityFactor2; }
+  void SetTrackQualityFactor2(const double TrackQualityFactorValue2) { m_TrackQualityFactor2 = TrackQualityFactorValue2; }
 
   //! Set the coincidence window
-  void SetCoincidenceWindow(const MTime& CoincidenceWindow) { m_CoincidenceWindow = CoincidenceWindow; }
+  void SetCoincidenceWindow(const MTime& CoincidenceWindowValue) { m_CoincidenceWindow = CoincidenceWindowValue; }
   
 
   // Elementary Compton data, i.e. the stored stuff 

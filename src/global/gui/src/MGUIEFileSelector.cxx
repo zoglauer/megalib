@@ -132,7 +132,7 @@ void MGUIEFileSelector::Create()
   MString Icon = g_MEGAlibPath + "/resource/icons/folder.xpm";
   MFile::ExpandFileName(Icon);
 
-  m_ButtonFolderLayout = new TGLayoutHints(kLHintsRight, 5, 0, 0, 0);
+  m_ButtonFolderLayout = new TGLayoutHints(kLHintsRight | kLHintsCenterY, 5, 0, 0, 0);
   m_ButtonFolder = new TGPictureButton(m_InputFrame, fClient->GetPicture(Icon), 99);
   m_ButtonFolder->Associate(this);
   m_InputFrame->AddFrame(m_ButtonFolder, m_ButtonFolderLayout);

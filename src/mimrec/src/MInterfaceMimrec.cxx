@@ -1054,6 +1054,7 @@ void MInterfaceMimrec::ARMGamma()
   int NBins = m_Data->GetHistBinsARMGamma();
   double Disk = m_Data->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
+  double BinWidth = 2.0*Disk/NBins;
   
   // Initalize the image size (x-axis)
   TH1D* Hist = new TH1D("ARMComptonCone", "ARM (Compton cone)", NBins, -Disk, Disk);
@@ -1176,6 +1177,10 @@ void MInterfaceMimrec::ARMGamma()
                    "Lorentz Width 2", "Lorentz Height 2",
                    "Gaus Height", "Gaus Sigma 1", "Gaus Sigma 2");
   Fit->SetParameters(0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+  //Fit->SetParLimits(2, 0.5*BinWidth, 1000*Disk);
+  //Fit->SetParLimits(4, 0.5*BinWidth, 1000*Disk);
+  //Fit->SetParLimits(7, 0.5*BinWidth, 1000*Disk);
+  //Fit->SetParLimits(8, 0.5*BinWidth, 1000*Disk);
   Fit->SetParLimits(1, -Disk*0.99, Disk*0.99);
   Fit->FixParameter(0, 0);
   
@@ -1215,8 +1220,15 @@ void MInterfaceMimrec::ARMGamma()
   cout<<"RMS:                                     "<<Hist->GetRMS()<<" deg"<<endl;
   cout<<endl;
   if (Fit != 0) {
-    cout<<"Total FWHM of fit:                       "<<GetFWHM(Fit, -180, 180)<<" deg"<<endl;
-    //cout<<"Maximum of fit (x position):             "<<Fit->GetMaximumX(-Disk, +Disk)<<" deg with "<<Fit->GetMaximum(-Disk, +Disk)<<endl;
+    cout<<"Total FWHM of fit:                       "<<GetFWHM(Fit, -180, 180)<<" deg";
+    if (FitResult->Parameter(2) < 0.5*BinWidth || 
+        FitResult->Parameter(2) < 0.5*BinWidth || 
+        FitResult->Parameter(2) < 0.5*BinWidth || 
+        FitResult->Parameter(2) < 0.5*BinWidth) {
+      cout<<" --- WARNING: One of the widths is smaller than one bin --- fit result my be inaccurate!"<<endl;
+    } else {
+      cout<<endl;
+    }
     cout<<"Maximum of fit (x position):             "<<FitResult->Parameter(1)<<" ["<<FitResult->LowerError(1)+FitResult->Parameter(1)<<"..."<<FitResult->UpperError(1)+FitResult->Parameter(1)<<"] deg with maximum "<<Fit->Eval(FitResult->Parameter(1))<<" cts"<<endl;
 
     if (FitResult->IsValid() == false) {
@@ -3120,7 +3132,7 @@ void MInterfaceMimrec::SPDElectron()
   cout<<endl;
   cout<<"SPD - Characteristics:"<<endl;
   cout<<endl;
-  cout<<"FWHM of fittet function:  "<<GetFWHM(L, -Disk, Disk)<<""<<endl;
+  cout<<"FWHM of fitted function:  "<<GetFWHM(L, -Disk, Disk)<<""<<endl;
   cout<<endl;
   delete L;
   cout<<"Inside: "<<Inside<<endl;

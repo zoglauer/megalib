@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MIsotope.h"
+#include "MQualifiedIsotope.h"
 
 // Forward declarations:
 
@@ -68,15 +68,15 @@ class MPeak
   double GetSignificance() const { if (m_BackgroundCounts <= 0) return m_PeakCounts; else return m_PeakCounts/sqrt(m_BackgroundCounts); }
   
   //! Add candidate isotope:
-  void AddIsotope(MIsotope* I, unsigned int LineID);
+  void AddIsotope(MQualifiedIsotope* I, unsigned int LineID);
   //! Get the number of stored isotope:
   unsigned int GetNIsotopes() const { return m_Isotopes.size(); }
   //! Get the isotope
-  MIsotope* GetIsotope(unsigned int i) const;
+  MQualifiedIsotope* GetIsotope(unsigned int i) const;
   //! Contains the isotope
-  bool ContainsIsotope(MIsotope* I) const;
+  bool ContainsIsotope(MQualifiedIsotope* I) const;
   //! Remove the isotope
-  void RemoveIsotope(MIsotope* I);
+  void RemoveIsotope(MQualifiedIsotope* I);
   //! Get the isotope line ID
   unsigned int GetIsotopeLineID(unsigned int i) const;
   
@@ -103,7 +103,7 @@ class MPeak
   double m_BackgroundCounts;
 
   //! A list of candidate isotopes
-  vector<MIsotope*> m_Isotopes;
+  vector<MQualifiedIsotope*> m_Isotopes;
   //! And their candidate line IDs
   vector<unsigned int> m_IsotopeLineIDs;
   

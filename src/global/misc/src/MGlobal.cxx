@@ -43,6 +43,7 @@ using namespace std;
 #include <TObjString.h>
 
 // MEGAlib libs:
+#include "MGUIDefaults.h"
 #include "MStreams.h"
 #include "MFile.h"
 
@@ -90,6 +91,8 @@ const double c_FarAway = 1E20; // cm
 const double c_LargestEnergy = 0.999*numeric_limits<float>::max();
 const MVector c_NullVector(0.0, 0.0, 0.0);
 
+TMutex* g_Mutex = 0;
+
 MGlobal g_Global;
 
 
@@ -103,6 +106,9 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   g_DebugLevel = 1;
 #endif
 
+  // Load the GUI defaults by initializing the singleton
+  MGUIDefaults::GetInstance();
+
   // Initialize the GUI stream
   mgui.DumpToGui(true);
   __merr.DumpToStdErr(true);
@@ -112,9 +118,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gEnv->SetValue("Gui.BackgroundColor", "#e3dfdf");
 
   // Font smoothing:
-//#ifndef ___MACOSX___
   gEnv->SetValue("X11.UseXft", "true");
-//#endif
 
   // Set a common ROOT style for all programs:
   gStyle->SetTitleBorderSize(0);
@@ -191,6 +195,8 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gSystem->Exec("bash ${MEGALIB}/config/configure_updatetest &");
 #endif
 
+  g_Mutex = new TMutex();
+  
   return true;
 }
 

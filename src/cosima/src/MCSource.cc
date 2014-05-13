@@ -29,12 +29,13 @@
 using namespace std;
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "globals.hh"
 #include "Randomize.hh"
 #include "G4ParticleTypes.hh"
 #include "G4ThreeVector.hh"
 #include "G4GeneralParticleSource.hh"
-#include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 
 // ROOT:
 #include "TRandom.h"
@@ -1167,8 +1168,6 @@ bool MCSource::UpgradePosition()
     G4ThreeVector AmP = A - P;
     
     double Distance = (AmP - (AmP.dot(N))*N).mag();
-    cout<<A/cm<<":"<<B/cm<<":"<<N/cm<<":"<<P/cm<<":"<<AmP/cm<<endl;
-    cout<<"Minimum distance: "<<Distance/cm<<endl;
     
     if (Distance < m_StartAreaParam1) {
       mout<<m_Name<<": The beam type NearFieldRestrictedLine requires that the line does not cross the start sphere!"<<endl;
@@ -1177,7 +1176,6 @@ bool MCSource::UpgradePosition()
     } else {
       // Determine the maximum cone opening angle:
       m_PositionParam7 = asin(m_StartAreaParam1/Distance); // we need to use "7" so that it is the same as in restricted point and the cone beams!
-      cout<<"Cone opening angle: "<<m_PositionParam7/degree<<"deg"<<endl;
     }
   }
   else if (m_BeamType == c_NearFieldConeBeamGauss) {
@@ -1826,7 +1824,7 @@ bool MCSource::CalculateNextEmission(double Time, double Scale)
       // The time of one step:
       if (Steps > 0) {
         MinimumTime = Progress*m_BinWidthLightCurve/Steps;
-        for (int s = 0; s < Steps; ++s) {
+        for (int st = 0; st < Steps; ++st) {
           //cout<<"Step : "<<s<<endl;
           NextEmission += MinimumTime;
           if (CLHEP::RandFlat::shoot(1) < Scale) {
@@ -1899,10 +1897,10 @@ bool MCSource::GenerateParticleDefinition()
   int Type = m_ParticleType;
   if (Type > 1000) {
     G4ParticleDefinition* Ion = 0;
-    G4ParticleTable* ParticleTable = G4ParticleTable::GetParticleTable();
+    G4IonTable* IonTable = G4IonTable::GetIonTable();
     int AtomicNumber = int(Type/1000);
     int AtomicMass = Type - int(Type/1000)*1000;
-    Ion = ParticleTable->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
+    Ion = IonTable->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
     if (Ion == 0) {
       merr<<"Particle type not yet implemented!"<<endl;
       m_ParticleDefinition = 0;

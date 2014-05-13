@@ -130,7 +130,7 @@ bool MFileEventsRawa::LoadNextEvent()
       MTokenizer T(Line);
       m_PulseFormAdcs.push_back(T.GetTokenAtAsString(1));
       m_PulseForms.resize(m_PulseFormAdcs.size());
-      for (int t = 4; t < T.GetNTokens(); ++t) {
+      for (unsigned int t = 4; t < T.GetNTokens(); ++t) {
         m_PulseForms.back().push_back(T.GetTokenAtAsInt(t));
       }
     }

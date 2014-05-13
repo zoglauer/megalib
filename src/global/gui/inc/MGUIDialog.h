@@ -126,8 +126,10 @@ class MGUIDialog : public TGTransientFrame
 
   //! Font which is in some way emphasized (e.g. bold)
   FontStruct_t m_EmphasizedFont;
-  //! Standrad font but italic
+  //! Standard font but italic
   FontStruct_t m_ItalicFont;
+  //! The font scaler (normal font size is 12 - if we have anything larger we need to scale some GUIs)
+  double m_FontScaler;
 
   //! Types of Buttons which have been added
 	int m_ButtonTypes; 

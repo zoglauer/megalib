@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# Part of the cosima cluster
+# Check how many sims can be run on the machine
+
+# Return:
+# Positive: number of available simulation slots
+
+
+commandhelp() {
+  echo ""
+  echo "dcosima-runinstance - run a simulation instance";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dcosima-runinstance [options]";
+  echo ""
+  echo "Options:"
+  echo "  --source=[file name]: The cosima source file name"
+  echo "  --masterdir=[directory name]: In which directory to store the data"
+  echo "  --runid=[number]: Unique run id"
+  echo "  --instanceid=[number]: Unique run id"
+  echo "  --rsynccfg=[file name]: Unique run id"
+  echo "  --remote=[remote machine in format simy@128.32.13.12:21022]: If given check the remote machine, if not the local"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dcosima-runinstance --source=Crab.source --id=876237846";
+  echo "";
+}
+
+echo " "
+echo "Launching a cosima instance"
+echo " " 
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+REMOTEUSER=""
+REMOTEHOST=""
+REMOTEPORT=""
+SOURCE=""
+RUNID=""
+INSTANCEID=""
+MASTERDIR=""
+CFG="~/.dcosima.cfg"
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-re*=* ]]; then
+    REMOTEUSER=`echo ${C} | awk -F"=" '{ print $2 }'  | awk -F"@" '{ print $1 }'` 
+    REMOTEHOST=`echo ${C} | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+    REMOTEPORT=`echo ${C} | awk -F":" '{ print $2 }'`
+  elif [[ ${C} == *-s*=* ]]; then
+    SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-ru*=* ]]; then
+    RUNID=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-i*=* ]]; then
+    INSTANCEID=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-m*=* ]]; then
+    MASTERDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
+    eval MASTERDIR=${MASTERDIR}
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima-getinstances --help\" for a list of options"
+    exit 1
+  fi
+done
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+
+
+if [ "${SOURCE}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give source file for simulations"
+  exit 1
+fi
+if [[ ! -f ${SOURCE} ]]; then 
+  echo " "
+  echo "ERROR: The source file must exist"
+  exit 1
+fi
+echo " * Source file: ${SOURCE}"
+
+
+if [ "${RUNID}" != "" ]; then
+  RUNDIR="Run_ID${RUNID}"
+  echo " * Run directory: ${RUNDIR}"
+else
+  echo " "
+  echo "ERROR: You need to give an unique run ID to setup the instance"
+  commandhelp
+  exit 1
+fi
+
+
+if [ "${INSTANCEID}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give an instance ID"
+  commandhelp
+  exit 1
+fi
+
+
+if [ "${MASTERDIR}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give a directory"
+  exit 1
+fi
+echo " * Directory: ${DIRECTORY}"
+
+
+eval CFG=${CFG}
+if [[ -f ${CFG} ]]; then
+  echo " * Configuration file: ${CFG}"
+else 
+  echo " "
+  echo "ERROR: You need to have an existing configuration file (you gave: ${CFG}), the default one should be ~/.dcosima.cfg!"
+  commandhelp
+  exit 1  
+fi
+echo " "
+
+echo "Preparing for launch:"
+echo " " 
+
+# Make global directory
+echo " * Testing/making remote global directory..." 
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi; exit 0;"
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to create remote global directory"
+  exit 1
+fi
+
+# Make special directory relative to master dir
+echo " * Making remote working directory..." 
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MASTERDIR}; if [[ ! -d ${RUNDIR} ]]; then mkdir ${RUNDIR}; fi"
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to create remote working directory"
+  exit 1
+fi
+
+# Assemble all files to copy from the source and the geometry file
+echo " * Assembling files..." 
+TMPDIR="/tmp/${RUNDIR}"
+mkdir ${TMPDIR}
+FILES=`dcosima-assemblefiles --s=${SOURCE} --d=${TMPDIR}`
+if [ "$?" != "0" ]; then
+  rm -r ${TMPDIR}
+  echo "ERROR: Failed to assemble files"
+  exit 1
+fi
+
+# Copy files to remote directory
+echo " * Copying files..." 
+rsync -az -e "ssh -p ${REMOTEPORT}" /tmp/${RUNDIR} ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}
+if [ "$?" != "0" ]; then
+  rm -r ${TMPDIR}
+  echo "ERROR: Failed to copy files"
+  exit 1
+fi
+rm -r ${TMPDIR}
+
+# Start the simulation:
+echo " * Starting simulations..."
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; echo " \* Starting..."; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} ${SOURCE} > /dev/null 2>&1 &"
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to start simulations"
+  exit 1
+fi
+
+# Appending to the dcosima-rsync configuration file
+echo " * Adding to the rsync setup file"
+NEWLINE="rsync -az -e 'ssh -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
+EXISTS=0
+while read LINE; do
+  if [[ ${LINE} == *${NEWLINE}* ]]; then
+    EXISTS=1
+    break
+  fi
+done < ${RUNDIR}/dcosima-rsync.cfg
+if [ "${EXISTS}" == "0" ]; then 
+  echo ${NEWLINE} >> ${RUNDIR}/dcosima-rsync.cfg
+fi
+
+echo " * Done launching a simulation instance on ${REMOTEHOST}"
+
+exit 0

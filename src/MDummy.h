@@ -29,18 +29,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A dummy definition of a class
 class MDummy
 {
   // public interface:
  public:
+  //! Default constructor
   MDummy();
+  //! Default destuctor 
   virtual ~MDummy();
 
 
   // protected methods:
  protected:
-  //MDummy() {};
-  //MDummy(const MDummy& Dummy) {};
 
   // private methods:
  private:

@@ -25,6 +25,7 @@
 #include "MCSD.hh"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4SteppingManager.hh"
 #include "G4Track.hh"
 #include "G4Step.hh"
@@ -38,6 +39,7 @@
 #include "G4NuclearLevelManager.hh"
 #include "G4NuclearLevelStore.hh"
 #include "G4Ions.hh"
+#include "G4IonTable.hh"
 
 // MEGAlib
 #include "MStreams.h"
@@ -151,11 +153,34 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("PositronNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("ElectroNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   m_KnownProcess.push_back("ionInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("protonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("neutronInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("pi+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("pi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("kaon-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("kaon+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("kaon0LInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("kaon0SInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_neutronInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_protonInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("sigma+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("sigma-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_sigma+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti_sigma-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("lambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("anti-lambdaInelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("photonNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("electronNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("positronNuclear"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("xi-Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("xi+Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
+  m_KnownProcess.push_back("xi0Inelastic"); m_KnownProcessID.push_back(c_ProcessIDInelasticScattering);
   
   m_KnownProcess.push_back("HadronCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("nCapture"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("CHIPSNuclearCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   m_KnownProcess.push_back("muMinusCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
+  m_KnownProcess.push_back("hBertiniCaptureAtRest"); m_KnownProcessID.push_back(c_ProcessIDCapture);
   
   m_KnownProcess.push_back("Decay"); m_KnownProcessID.push_back(c_ProcessIDDecay);
   
@@ -174,6 +199,9 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
 
   m_KnownProcess.push_back("Transportation"); m_KnownProcessID.push_back(c_ProcessIDTransportation);
 
+  // To lower all processes:
+  for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) m_KnownProcessFrequency.push_back(0);  
+  
   for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) m_KnownProcessFrequency.push_back(0);
   m_KnownProcessCounter = 0;
   m_KnownProcessUpdateCounter = 1000;
@@ -265,15 +293,15 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       } else {
 
-        for (int s = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
-             s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
           // The photon may deposit a small bit of energy locally
           // To aid the response generation, we add handle this energy as if it originated from the new electron track
           ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
           
           // Now write some data about the real interaction positions 
@@ -304,14 +332,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
               <<"a local energy deposit of "<<Step->GetTotalEnergyDeposit()/keV<<" keV"<<show;
       }
 
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - 
-             GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - 
+             GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
  
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
 
@@ -338,14 +366,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // Take care of secondaries below the threshold, 
       // for which no new track is generated:
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - 
-             GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - 
+             GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
 
@@ -393,13 +421,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       } else {
 
-        for (int s = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
-             s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
           //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
           
           EventAction->AddIA("BREM", 
@@ -475,13 +503,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       } else {
 
-        for (int s = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
-             s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
           //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
           
           // Now write some data about the real interaction positions 
@@ -511,13 +539,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       //}
 
       // Take care of all secondary particles which are generated
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
         // Now write some data about the real interaction positions 
@@ -561,13 +589,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                           0.0);
       } else {
         // Take care of all secondary particles which are generated
-        for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --se) {
 
           m_InteractionId++;
           //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
           // Now write some data about the real interaction positions 
@@ -595,18 +623,17 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"Inelastic scattering didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
-        merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
+        mout<<"The Inelastic scattering of "<<Track->GetDefinition()->GetParticleName()<<" didn't generate secondaries! Either your thresholds for generating secondaires are too high or a simulation issue occurred!"<<endl;
       }
 
       // Take care of all secondary particles which are generated
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
         // Now write some data about the real interaction positions 
@@ -633,19 +660,18 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since we generate a new nucleus
       if (GeneratedSecondaries == 0) {
-        merr<<"HadronCapture/nCapture didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
-        merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
+        mout<<"The hadron capture of "<<Track->GetDefinition()->GetParticleName()<<" didn't generate secondaries! Either your thresholds for generating secondaires are too high or a simulation issue occurred!"<<endl;
       }
 
       // Take care of secondaries below the threshold, 
       // for which no new track is generated:
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
 
 
@@ -672,19 +698,18 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       // There always has to be a generated secondary, since something decays into something else
       // "19" doesn't generate secondaries in Geant4... 
       if (GeneratedSecondaries == 0 && GetParticleId(Track->GetDefinition()) != 19) {
-        merr<<"Decay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<endl;
-        merr<<"Changed particle: "<<GetParticleId(Track->GetDefinition())<<show;
+        mout<<"The the decay of "<<Track->GetDefinition()->GetParticleName()<<" didn't generate secondaries! Either your thresholds for generating secondaires are too high or a simulation issue occurred!"<<endl;
       }
 
       // Take care of secondaries below the threshold, 
       // for which no new track is generated:
-      for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-           s > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --s) {
+      for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+           se > (int) fpSteppingManager->GetSecondary()->size()-1 - GeneratedSecondaries; --se) {
 
         m_InteractionId++;
         //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+        G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
         TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
       
         // Now write some data about the real interaction positions 
@@ -840,14 +865,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
             if (M->IsValid() == true) {
               const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
-                G4ParticleTable* ParticleTable = G4ParticleTable::GetParticleTable();
-                Nucleus = dynamic_cast<G4Ions*>(ParticleTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
+                G4IonTable* IonTable = G4IonTable::GetIonTable();
+                Nucleus = dynamic_cast<G4Ions*>(IonTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
               }
             }
           } else {
             //cout<<"Alignment < 1 keV"<<endl;
-            G4ParticleTable* ParticleTable = G4ParticleTable::GetParticleTable();
-            Nucleus = dynamic_cast<G4Ions*>(ParticleTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
+            G4IonTable* IonTable = G4IonTable::GetIonTable();
+            Nucleus = dynamic_cast<G4Ions*>(IonTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
           }
           //cout<<"NE: "<<Nucleus->GetExcitationEnergy()/keV<<"keV"<<endl;
 
@@ -869,14 +894,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           //  merr<<"RadioactiveDecay didn't generate secondaries! Either your thresholds are insane or a simulation error occurred!"<<show;
           //}
           
-          for (int s = (int) fpSteppingManager->GetSecondary()->size()-1; 
-               s > (int) fpSteppingManager->GetSecondary()->size()-1 - 
-                 GeneratedSecondaries; --s) {
+          for (int se = (int) fpSteppingManager->GetSecondary()->size()-1; 
+               se > (int) fpSteppingManager->GetSecondary()->size()-1 - 
+                 GeneratedSecondaries; --se) {
             
             m_InteractionId++;
             //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
-            G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+            G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
             TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
             
             if (m_DecayMode == MCParameterFile::c_DecayModeBuildUp || 
@@ -929,17 +954,17 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           G4String Name = V->GetName();
           Name.remove(Name.size()-3, 3);
 
-          double Time = Step->GetPostStepPoint()->GetGlobalTime();
+          double GlobalTime = Step->GetPostStepPoint()->GetGlobalTime();
 //           if (Track->GetDefinition()->GetParticleName() == "Ge73[66.7]") {
 //             Time = gRandom->Exp(0.499*s/log(2));
-//             cout<<"New time: "<<Time<<endl;
+//             cout<<"New time: "<<GlobalTime<<endl;
 //           }
 
           MCRunManager::GetMCRunManager()->GetCurrentRun().AddToBuildUpEventList(0.0,
                                                                                  Track->GetPosition(),
                                                                                  G4ThreeVector(0.0, 0.0, 0.0),
                                                                                  G4ThreeVector(0.0, 0.0, 0.0),
-                                                                                 Time,
+                                                                                 GlobalTime,
                                                                                  //step->GetPostStepPoint()->GetGlobalTime(),
                                                                                  Track->GetDefinition(),
                                                                                  Name);
@@ -974,13 +999,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         
       } else {
         // Take care of secondary electrons generate by ionization
-        for (int s = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
-             s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
           //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           MCTrackInformation* Info = 
             new MCTrackInformation(m_InteractionId, m_InteractionId);
           TrackA->SetUserInformation(Info);
@@ -1035,13 +1060,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         }
       } else {
         // Take care of secondaries
-        for (int s = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
-             s < (int) fpSteppingManager->GetSecondary()->size(); ++s) {
+        for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
           //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
           
-          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[s];
+          G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
           
           // Now write some data about the real interaction positions 
@@ -1073,9 +1098,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       // We have a FIFO stack here, thus if we start from the end we can stop the search 
       // if we have found the first one with an entry
       if (fpSteppingManager->GetSecondary()->size() > 0) {
-        for (unsigned int s = fpSteppingManager->GetSecondary()->size()-1; 
-            s < fpSteppingManager->GetSecondary()->size(); --s) { 
-          if (fpSteppingManager->GetSecondary()->at(s)->GetUserInformation() != 0) break;
+        for (unsigned int se = fpSteppingManager->GetSecondary()->size()-1; 
+            se < fpSteppingManager->GetSecondary()->size(); --se) { 
+          if (fpSteppingManager->GetSecondary()->at(se)->GetUserInformation() != 0) break;
  
           // Set the additional Track info about the ID's
           MCTrackInformation* Info = 
@@ -1083,7 +1108,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                                     GetUserInformation())->GetId(), 
                                   ((MCTrackInformation*) Track->
                                     GetUserInformation())->GetOriginId());
-          fpSteppingManager->GetSecondary()->at(s)->SetUserInformation(Info);
+          fpSteppingManager->GetSecondary()->at(se)->SetUserInformation(Info);
         }
       }
 		} // All processes
@@ -1469,26 +1494,32 @@ int MCSteppingAction::GetParticleId(G4String Name)
 
   } else {
     // Check if we have an element
-    G4String::size_type loc = Name.find("[", 0);
+    //cout<<"Name: "<<Name<<endl;
+    
+    G4String Start;
+    G4String Stop;
+    size_t loc = Name.find("[", 0);
     if (loc != G4String::npos) {
-      G4String Start = Name.substr(0, loc);
-      G4String Stop = Name.substr(loc+1, Name.find("]", 0)-1);
-      //double Excitation = atof(Stop);
-      //if (Excitation > 0) {
-      //  cout<<"Excitation: "<<Excitation<<" ("<<Name<<")"<<endl;
-      //}
-      // Seperate text from number, Z from A
-      G4String sZ = "";
-      G4String sA = "";
-      for (unsigned int i = 0; i < Start.size(); ++i) {
-        if (isalpha(Start.c_str()[i])) {
-          sZ += Start[i];
-        } else {
-          sA += Start[i];
-        }
+      Start = Name.substr(0, loc);
+      Stop = Name.substr(loc+1, Name.find("]", 0)-1);
+    } else {
+      Start = Name; 
+    }
+
+    G4String sZ;
+    G4String sA;
+    for (unsigned int i = 0; i < Start.size(); ++i) {
+      if (isalpha(Start.c_str()[i])) {
+        sZ += Start[i];
+      } else {
+        sA += Start[i];
       }
-      int Z = MDMaterial::ConvertZToNumber(sZ);
-      int A = atoi(sA);
+    }
+    int Z = MDMaterial::ConvertZToNumber(sZ);
+    int A = atoi(sA);
+    
+    if (Z > 0 && Z < 120 && A > 0 && A < 1000) {
+      //cout<<1000*Z+A<<endl;
       return 1000*Z+A;
     } else {
       merr<<"Unknown particle name: "<<Name<<show; 

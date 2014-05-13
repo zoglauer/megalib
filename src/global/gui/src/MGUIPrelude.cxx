@@ -86,7 +86,7 @@ void MGUIPrelude::Create()
   m_TextLayout = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 20, 20, 3, 3);
   AddFrame(m_TextView, m_TextLayout);
 
-  m_ButtonFrame = new TGHorizontalFrame(this, 150, 25, kFixedSize);
+  m_ButtonFrame = new TGHorizontalFrame(this, m_FontScaler*150, m_FontScaler*25, kFixedSize);
   m_ButtonFrameLayout = 
     new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
                       10, 10, 10, 8);
@@ -104,7 +104,7 @@ void MGUIPrelude::Create()
   m_OKButton->Associate(this);
   m_ButtonFrame->AddFrame(m_OKButton, m_ButtonLayout);
 
-  PositionWindow(700, 500, false);
+  PositionWindow(m_FontScaler*700, m_FontScaler*500, false);
 
   // and bring it to the screen.
   MapSubwindows();

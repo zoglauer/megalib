@@ -26,6 +26,9 @@
 #include <iostream>
 using namespace std;
 
+// Geant4:
+#include "G4SystemOfUnits.hh"
+
 // MEGAlib:
 #include "MStreams.h"
 #include "MDDetector.h"

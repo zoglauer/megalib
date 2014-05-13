@@ -173,7 +173,7 @@ void MGUIEEntry::Init()
 
   m_IsEnabled = true;
 
-  m_Size = 85;
+  m_Size = m_FontScaler*85;
 
   m_IsModified = false;
 

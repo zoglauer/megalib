@@ -33,6 +33,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MGUIDefaults.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,44 +115,34 @@ void MGUIEText::Create()
   }    
 
   // Label:
-  MString FontName;
+  FontStruct_t LabelFont;
   if (m_IsBold == true) {
     if (m_IsItalic == true) {
-      FontName = "-*-helvetica-bold-o-*-*-12-*-*-*-*-*-iso8859-1";	
+      LabelFont = MGUIDefaults::GetInstance()->GetItalicBoldFont()->GetFontStruct();
     } else {
-      FontName = "-*-helvetica-bold-r-*-*-12-*-*-*-*-*-iso8859-1";	
+      LabelFont = MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct();
     }
   } else {
     if (m_IsItalic == true) {
-      FontName = "-*-helvetica-medium-o-*-*-12-*-*-*-*-*-iso8859-1";	
+      LabelFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
     } else {
-      FontName = "-*-helvetica-medium-r-*-*-12-*-*-*-*-*-iso8859-1";	
+      LabelFont = MGUIDefaults::GetInstance()->GetNormalMediumFont()->GetFontStruct();
     }
   }
-
-  const TGFont* Font = gClient->GetFont(FontName);
-  if (Font == 0) {
-    merr<<"Unable to retrieve font "<<FontName<<endl;
-    Font = gClient->GetResourcePool()->GetDefaultFont();
-  }
-  FontStruct_t LabelFont = Font->GetFontStruct();
-  GCValues_t gval;
-  gval.fMask = kGCBackground | kGCFont | kGCForeground;
-  gval.fFont = Font->GetFontHandle();
-  TGGC* Graphics = gClient->GetGC(&gval, kTRUE);
-
 
   TGLabel* Label = 0;
   while (Text.Contains("\n") == true) {
     SubString = Text;
     
-    Label = new TGLabel(this, new TGString(SubString.Remove(SubString.First('\n'))), Graphics->GetGC(), LabelFont);
+    Label = new TGLabel(this, new TGString(SubString.Remove(SubString.First('\n'))));
+    Label->SetTextFont(LabelFont);
     AddFrame(Label, LabelLayout);
     
     Text.Replace(0, Text.First('\n')+1, "");
   }
     
-  Label = new TGLabel(this, new TGString(Text), Graphics->GetGC(), LabelFont);
+  Label = new TGLabel(this, new TGString(Text));
+  Label->SetTextFont(LabelFont);
   AddFrame(Label, LabelLayout);
 
   // and bring it to the screen.

@@ -22,6 +22,7 @@
 // MEGAlib:
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "globals.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4VPhysicalVolume.hh"
@@ -154,7 +155,7 @@ bool MCGeometryConverter::Convert(MString OutputfileName)
       double theta = acos(SymAxis.getZ());
       double phi1 = 0.0;
       double phi2 = 0.0;
-      if (theta > 0.0 && theta < pi) {
+      if (theta > 0.0 && theta < CLHEP::pi) {
         phi1 = acos(SymAxis.getX()/SymAxis.getZ()/tan(theta));
         phi2 = asin(SymAxis.getY()/SymAxis.getZ()/tan(theta));
         if (fabs(phi1-phi2) > 1e-5) {
@@ -183,10 +184,10 @@ bool MCGeometryConverter::Convert(MString OutputfileName)
           <<Hist->Opening_angle/deg<<" "
           <<Hist->numSide<<" "
           <<Hist->Num_z_planes<<" ";
-      for (int i = 0; i < Hist->Num_z_planes; ++i) {
-	fout<<Hist->Z_values[i]/cm<<" "
-	  <<Hist->Rmin[i]/cm<<" "
-	  <<Hist->Rmax[i]/cm<<" ";
+      for (int j = 0; j < Hist->Num_z_planes; ++j) {
+        fout<<Hist->Z_values[j]/cm<<" "
+            <<Hist->Rmin[j]/cm<<" "
+            <<Hist->Rmax[j]/cm<<" ";
       }
       fout<<endl;
     } else if (S->GetEntityType() == "G4Polycone") {
@@ -196,10 +197,10 @@ bool MCGeometryConverter::Convert(MString OutputfileName)
           <<Hist->Start_angle/deg<<" "
           <<Hist->Opening_angle/deg<<" "
           <<Hist->Num_z_planes<<" ";
-      for (int i = 0; i < Hist->Num_z_planes; ++i) {
-	fout<<Hist->Z_values[i]/cm<<" "
-	  <<Hist->Rmin[i]/cm<<" "
-	  <<Hist->Rmax[i]/cm<<" ";
+      for (int j = 0; j < Hist->Num_z_planes; ++j) {
+        fout<<Hist->Z_values[j]/cm<<" "
+            <<Hist->Rmin[j]/cm<<" "
+            <<Hist->Rmax[j]/cm<<" ";
       }
       fout<<endl;
     } else {

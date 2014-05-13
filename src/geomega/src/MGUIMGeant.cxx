@@ -119,7 +119,7 @@ void MGUIMGeant::Create()
     m_SpecialName->SetState(kButtonDown);
   }
 
-  PositionWindow(500, 300, false);
+  PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
   
   // and bring it to the screen.
   MapSubwindows();

@@ -65,7 +65,7 @@ class MPhysicalEvent
   int GetType() const { return GetEventType(); };
 
   //! Set if you wish to store the coordinates in galactic coordinates
-  void SetHasGalacticPointing(bool HasGalacticPointing = true) { m_HasGalacticPointing = HasGalacticPointing; }
+  void SetHasGalacticPointing(bool GalacticPointing = true) { m_HasGalacticPointing = GalacticPointing; }
   //! Return if we have galactic coodinates
   bool HasGalacticPointing() const { return m_HasGalacticPointing; }
 

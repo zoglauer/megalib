@@ -14,15 +14,15 @@
 
 PRG = $(BN)/realta
 
-MOBJS     = $(LB)/MRealtaMain.o
+MOBJS = $(LB)/MRealtaMain.o
 
-LOBJS      = $(LB)/MSettingsRealta.o \
-						$(LB)/MRealTimeAnalyzer.o \
-						$(LB)/MRealTimeEvent.o \
+LOBJS = $(LB)/MSettingsRealta.o \
+	$(LB)/MRealTimeAnalyzer.o \
+	$(LB)/MRealTimeEvent.o \
 
-GOBJS      = $(LB)/MGUIRealtaMain.o \
-						$(LB)/MGUINetwork.o \
-						$(LB)/MGUIAccumulation.o \
+GOBJS = $(LB)/MGUIRealtaMain.o \
+	$(LB)/MGUINetwork.o \
+	$(LB)/MGUIAccumulation.o \
 
 PRGT	= $(BN)/eventtransmitter 
 MOBJT	= $(LB)/MEventTransmitter.o 
@@ -52,7 +52,7 @@ clean:
 		@rm -f inc/\#*
 		@rm -f *~
 		@rm -f \#*
-		@rm -f $(PRG)
+		@rm -f $(PRG) $(PRGT)
 		@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(SGOBJ) $(SLOBJ)
 
 #----------------------------------------------------------------
@@ -61,23 +61,11 @@ clean:
 
 $(SLOBJ): $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
-endif
 
 $(SGOBJ): $(GOBJS) $(LOBJS)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
-ifeq ($(ARCH),macosx)
-	$(LD) $(SOFLAGS) $(GOBJS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-	$(LD) -bundle -undefined suppress -Wl,-x $(LDFLAGS) $^ $(GLIBS) $(LIBS) \
-	   -o $(subst .$(DLL),.so,$@)
-else
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
-endif
 
 $(MOBJS) $(GOBJS) $(LOBJS) $(MOBJT): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."

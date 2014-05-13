@@ -78,7 +78,7 @@ MGUIEEntryList::MGUIEEntryList(const TGWindow* Parent, MString Label, int Mode) 
 	m_EntryList = new TObjArray();
 
 	m_Mode = Mode;
-  m_Size = 85;
+  m_Size = m_FontScaler*85;
 
   m_TextLabel = 0;
   m_TextLabelLayout = 0;
@@ -131,12 +131,12 @@ void MGUIEEntryList::Create()
   
 	// Create the list of text entries:
 	if (m_Mode == c_SingleLine) {
-		m_EntryLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 5, 0, 0, 0);
+		m_EntryLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, m_FontScaler*5, 0, 0, 0);
 		for (i = m_EntryList->GetLast(); i >= 0; i--) {
       AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
 		}
 	} else {
-		m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, 20, 0, 2, 0);
+		m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, m_FontScaler*20, 0, 2, 0);
 		for (i = 0; i < m_EntryList->GetLast()+1; i++) {
 			AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
 		}

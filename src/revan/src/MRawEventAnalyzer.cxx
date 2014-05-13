@@ -863,7 +863,7 @@ bool MRawEventAnalyzer::PostAnalysis()
        <<setw(Width)<<m_NGoodEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
        <<((m_NEvents == 0) ? 0 : 100.0*m_NGoodEvents/m_NEvents)<<"%)"<<setprecision(6)<<endl;
 
-    out<<"       Photo  ............................................ "
+    out<<"       Single-site  ...................................... "
        <<setw(Width)<<m_NPhotoEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
        <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NPhotoEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
     out<<"       Compton  .......................................... "

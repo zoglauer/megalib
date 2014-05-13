@@ -71,7 +71,7 @@ MGUIAbout::MGUIAbout(const TGWindow* Parent, const TGWindow* Main)
   m_Email = "andreas@megalibtoolkit.com";
   m_Updates = "You can find the latest version of MEGAlib at\n" + g_Homepage;
   m_Copyright = "(C) by Andreas Zoglauer and contributors\nAll rights reserved";
-  m_MasterReference = "A. Zoglauer et al., \"MEGAlib - The Medium Energy Gamma-ray\nAstronomy Library\", NewAR 50 (7-8), 629-632, 2006";
+  m_MasterReference = "A. Zoglauer et al., \"MEGAlib - The Medium Energy Gamma-ray Astronomy Library\", NewAR 50 (7-8), 629-632, 2006";
 }
 
 
@@ -98,7 +98,7 @@ void MGUIAbout::Create()
   SetWindowName(str.str().c_str());  
 
   // Set the tabs:
-  TGTab* MainTab = new TGTab(this, 300, 300);
+  TGTab* MainTab = new TGTab(this, m_FontScaler*300, m_FontScaler*300);
   TGLayoutHints* MainTabLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 10, 10, 10, 10);
   AddFrame(MainTab, MainTabLayout);
 
@@ -186,8 +186,7 @@ void MGUIAbout::Create()
   }
 
   // Define the window width here:
-  int TabWidth = MainTab->GetDefaultWidth();
-
+  int TabWidth = MainTab->GetDefaultWidth() + m_FontScaler*50;
 
   // The references frame:
 
@@ -197,6 +196,7 @@ void MGUIAbout::Create()
     MasterReferenceLabel->SetWrapLength(TabWidth);
     ReferencesFrame->AddFrame(MasterReferenceLabel, MasterReferenceLabelLayout);
     TGLabel* MasterReferenceText = new TGLabel(ReferencesFrame, m_MasterReference);
+    MasterReferenceText->SetWrapLength(TabWidth);
     ReferencesFrame->AddFrame(MasterReferenceText, ReferenceTextLayout);
   }
 

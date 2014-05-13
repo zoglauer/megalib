@@ -61,7 +61,7 @@ class MString
 
   //MString& Format(const char* Format, ...);
 
-  //char& operator[](size_t i) { return m_String[i]; } 
+  //char& operator[](size_t i) { return m_String[i]; }  
   //char operator[](size_t i) const { return m_String[i]; } 
 
   char& operator[](int i) { return m_String[i]; } 
@@ -91,7 +91,7 @@ class MString
   size_t Length() const { return m_String.size(); }
   
   //! Return a substring
-  MString GetSubString(unsigned int Start, unsigned int Length) const { return m_String.substr(Start, Length); }
+  MString GetSubString(unsigned int Start, unsigned int Size) const { return m_String.substr(Start, Size); }
   //! Return a substring starting at start with the remaining length of the string
   MString GetSubString(unsigned int Start) const { return m_String.substr(Start, m_String.size() - Start); }
 
@@ -122,9 +122,13 @@ class MString
   //! Remove all content and thus set the size to zero
   void Clear() { m_String.clear(); }
 
+  void AppendInPlace(const char* S) { m_String += S; }
   MString& Append(const char* S) { m_String += S; return *this; }
+  void AppendInPlace(MString& S) { m_String += S.m_String; }
   MString& Append(MString& S) { m_String += S.m_String; return *this; }
+  void PrependInPlace(const char* S) { m_String.insert(0, S); }
   MString& Prepend(const char* S) { m_String.insert(0, S); return *this; }
+  void PrependInPlace(MString& S) { m_String.insert(0, S.m_String); }
   MString& Prepend(MString& S) { m_String.insert(0, S.m_String); return *this; }
 
   MString& operator+=(char S) { m_String += S; return *this; }
@@ -142,18 +146,40 @@ class MString
 
 
   //! Remove all characters from Start to the End
+  void RemoveInPlace(size_t Start) { m_String.erase(Start, Length() - Start); }
+  //! Remove all characters from Start to the End and return the new string
   MString& Remove(size_t Start) { m_String.erase(Start, Length() - Start); return *this; }
-  MString& Remove(size_t Start, size_t Length) { m_String.erase(Start, Length); return *this; }
+  //! Remove all characters from Start with the given length
+  void RemoveInPlace(size_t Start, size_t Size) { m_String.erase(Start, Size); }
+  //! Remove all characters from Start with the given length and return the new string
+  MString& Remove(size_t Start, size_t Size) { m_String.erase(Start, Size); return *this; }
 
-  MString& Replace(size_t Start, size_t Length, const MString& S) { m_String.replace(Start, Length, S.m_String); return *this; }
+  //! Replace the characters starting at Start with Size with the string S
+  void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { m_String.replace(Start, Size, S.m_String); }
+  //! Replace the characters starting at Start with Size with the string S and return the new string
+  MString& Replace(size_t Start, size_t Size, const MString& S) { m_String.replace(Start, Size, S.m_String); return *this; }
+
+  //! Replace all occurances of from with string
+  void ReplaceAllInPlace(const MString& From, const MString& To); 
+  //! Replace all occurances of from with string and return the new string
   MString& ReplaceAll(const MString& From, const MString& To); 
 
-  MString& StripFront(const char S = ' ') { while (Length() > 0 && m_String[0] == S) m_String.erase(0, 1); return *this; }
-  MString& StripBack(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) m_String.erase(Length()-1, 1); return *this; }
-  MString& Strip(const char S = ' ') { StripFront(S); StripBack(S); return *this; }
+  //! Remove all occurances of From 
+  void RemoveAllInPlace(const MString& From);
+  //! Remove all occurances of From and return the new string
+  MString& RemoveAll(const MString& From);
   
-  void ToLower() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = tolower(m_String[p]); } 
-  void ToUpper() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = toupper(m_String[p]); } 
+  void StripFrontInPlace(const char S = ' ') { while (Length() > 0 && m_String[0] == S) m_String.erase(0, 1); }
+  MString& StripFront(const char S = ' ') { StripFrontInPlace(S); return *this; }
+  void StripBackInPlace(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) m_String.erase(Length()-1, 1); }
+  MString& StripBack(const char S = ' ') { StripBackInPlace(S); return *this; }
+  void StripInPlace(const char S = ' ') { StripFront(S); StripBack(S); }
+  MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
+  
+  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = tolower(m_String[p]); } 
+  MString& ToLower() { ToLowerInPlace(); return *this; } 
+  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = toupper(m_String[p]); } 
+  MString& ToUpper() { ToUpperInPlace(); return *this; } 
   
   
   

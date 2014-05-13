@@ -26,6 +26,7 @@
 #include "MStreams.h"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4CrossSectionHandler.hh"
 #include "G4Material.hh"
 #include "G4MaterialTable.hh"
@@ -98,9 +99,9 @@ bool MCCrossSections::CreateCrossSectionFiles(MString Path)
   const G4MaterialTable* Table = G4Material::GetMaterialTable();
   //const G4ProductionCutsTable* Table = G4ProductionCutsTable::GetProductionCutsTable();
 
-  for (unsigned int m = 0; m < Table->size(); ++m) {
-    //const G4Material* M = Table->GetMaterialCutsCouple(m)->GetMaterial();
-    const G4Material* M = Table->at(m);
+  for (unsigned int mat = 0; mat < Table->size(); ++mat) {
+    //const G4Material* M = Table->GetMaterialCutsCouple(mat)->GetMaterial();
+    const G4Material* M = Table->at(mat);
 
     unsigned long Hash = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetMaterialHash(M);
 

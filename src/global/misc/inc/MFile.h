@@ -54,6 +54,8 @@ class MFile
   virtual bool IsOpen();
   //! Return the file length
   virtual streampos GetFileLength();
+  //! Return the current file position
+  virtual streampos GetFilePosition();
 
 
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
@@ -75,8 +77,8 @@ class MFile
   bool IsShowProgress();
   //! Show the progress dialog GUI
   virtual void ShowProgress(bool Show = true);
-  //! Update the progress dialog GUI
-  virtual bool UpdateProgress();
+  //! Update the progress dialog GUI -- allow to skip a certain amount of updates  
+  virtual bool UpdateProgress(unsigned int UpdatesToSkip = 0);
   //! Set the titles of the progress dialog GUI -- only works after a call to ShowProgress
   void SetProgressTitle(MString Main, MString Sub);
   //! Use another progress dialog GUI instead of this one
@@ -102,6 +104,8 @@ class MFile
   static MString RelativeFileName(MString RelFileName, MString AbsFileName);
   //! Return the directory name (replacement for inconsistent gSystem->DirName)
   static MString GetDirectoryName(const MString& Name);
+  //! Return the directory name (replacement for inconsistent gSystem->DirName)
+  static MString GetBaseName(const MString& Name);
 
 
   //! The file modes: Write to a new file  
@@ -148,6 +152,8 @@ class MFile
   int m_ProgressLevel;
   //! True, if the progress bar has been created here
   bool m_OwnProgress;
+  //! Count the skipped progress updates
+  unsigned int m_SkippedProgressUpdates;
   //! The progress has been cancelled via GUI
   bool m_Canceled;
 

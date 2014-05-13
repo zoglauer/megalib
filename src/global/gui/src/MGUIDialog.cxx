@@ -43,11 +43,11 @@
 // ROOT libs:
 #include <KeySymbols.h>
 #include <TSystem.h>
-#include <MString.h>
 #include <TGLabel.h>
 #include <TGResourcePool.h>
 
 // MEGAlib libs:
+#include "MGUIDefaults.h"
 #include "MStreams.h"
 #include "MString.h"
 #include "MFile.h"
@@ -111,14 +111,10 @@ MGUIDialog::MGUIDialog(const TGWindow* Root, const TGWindow* Parent, unsigned in
   m_ButtonFrame = 0;
   m_ButtonFrameLayout = 0;    
 
-  const TGFont* Font = gClient->GetFont("-*-helvetica-bold-r-*-*-12-*-*-*-*-*-iso8859-1");
-  if (!Font) Font = gClient->GetResourcePool()->GetDefaultFont();
-  m_EmphasizedFont = Font->GetFontStruct();
-
-  Font = gClient->GetFont("-*-helvetica-medium-o-*-*-12-*-*-*-*-*-iso8859-1");
-  if (!Font) Font = gClient->GetResourcePool()->GetDefaultFont();
-  m_ItalicFont = Font->GetFontStruct();
-
+  m_EmphasizedFont = MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct();
+  m_ItalicFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
+  m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  
 	// Catch four keys: Esc, Ret, Ent, a
 //   BindKey(this, gVirtualX->KeysymToKeycode(kKey_a), kAnyModifier);
 //   BindKey(this, gVirtualX->KeysymToKeycode(kKey_A), kAnyModifier);

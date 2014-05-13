@@ -248,6 +248,10 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
 {
   // Return the next event from the list, wait if non is present...
 
+  if (UpdateProgress() == false) {
+    return 0;
+  }
+  
   if (m_Threaded == false) {
     return ReadNextEvent();
   } else {
@@ -324,10 +328,6 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   }
 
   m_EventType = MPhysicalEvent::c_Unknown;
-
-  if (UpdateProgress() == false) {
-    return 0;
-  }
 
   // Read until we reach a CO or PA or <to be continued>
   MString Line;

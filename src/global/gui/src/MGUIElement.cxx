@@ -37,6 +37,7 @@
 #include <TGResourcePool.h>
 
 // MEGAlib libs:
+#include "MGUIDefaults.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -55,9 +56,8 @@ MGUIElement::MGUIElement(const TGWindow* Parent, unsigned int Options) :
 {
   // Standard constructor
 
-  const TGFont* Font = gClient->GetFont("-*-helvetica-bold-r-*-*-12-*-*-*-*-*-iso8859-1");
-  if (!Font) Font = gClient->GetResourcePool()->GetDefaultFont();
-  m_EmphasizedFont = Font->GetFontStruct();
+  m_EmphasizedFont = MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct();
+  m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
 
 	m_IsEnabled = true;
   m_WrapLength = 900;

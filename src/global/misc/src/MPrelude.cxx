@@ -49,9 +49,6 @@ MPrelude::MPrelude()
 {
   // Construct an instance of MPrelude
   
-  m_Data = 0;
-  m_ChangeLogHash = 0;
-  m_LicenseHash = 0;
 }
 
 
@@ -70,8 +67,7 @@ MPrelude::~MPrelude()
 bool MPrelude::Play()
 {
   // First load the .megalib.cfg file
-  
-  Load();
+  m_Settings.Read();
 
   // Step 1: Take care of the license file
   MString LicenseFile = "$(MEGALIB)/doc/License.txt";
@@ -81,7 +77,7 @@ bool MPrelude::Play()
     in.open(LicenseFile);
     MString License;
     License.Read(in);
-    if (License.GetHash() != m_LicenseHash) {
+    if (License.GetHash() != m_Settings.GetLicenseHash()) {
       MGUIPrelude* P = new MGUIPrelude("License agreement", 
                                        "Please read the following license agreement very carefully\n"
                                        "You have to accept the license agreement to use the software", 
@@ -90,7 +86,7 @@ bool MPrelude::Play()
       if (P->IsOKed() == false) return false;
       delete P;     
       
-      m_LicenseHash = License.GetHash();
+      m_Settings.SetLicenseHash(License.GetHash());
     }
   }
 
@@ -102,7 +98,7 @@ bool MPrelude::Play()
     in.open(ChangeLogFile);
     MString ChangeLog;
     ChangeLog.Read(in);
-    if (ChangeLog.GetHash() != m_ChangeLogHash) {
+    if (ChangeLog.GetHash() != m_Settings.GetChangeLogHash()) {
       MGUIPrelude* P = new MGUIPrelude("Change Log", 
                                        "Please read the following change log file very carefully\n"
                                        "It contains information about enhancements, bugs, or changes required to run MEGAlib.", 
@@ -110,59 +106,16 @@ bool MPrelude::Play()
       P->Create();
       delete P;     
 
-      m_ChangeLogHash = ChangeLog.GetHash();
+      m_Settings.SetChangeLogHash(ChangeLog.GetHash());
     }
   }
 
-  Save();
+  // Finally save the global configuration file again
+  m_Settings.Write();
   
   return true;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MPrelude::Load()
-{
-  // First load the .megalib.cfg file
-  
-  m_LicenseHash = 0;  
-  m_ChangeLogHash = 0;
-
-  MString FileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".megalib.cfg"));
-  
-  if (MFile::Exists(FileName) == true) {
-    MXmlDocument*Data = new MXmlDocument();  
-    if (Data->Load(FileName) == true) {;
-      if (Data->GetNode("LicenseHash") != 0) {
-        m_LicenseHash = Data->GetNode("LicenseHash")->GetValueAsLong();
-      }
-      if (Data->GetNode("ChangeLogHash") != 0) {
-        m_ChangeLogHash = Data->GetNode("ChangeLogHash")->GetValueAsLong();
-      }
-    }
-    delete Data;
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MPrelude::Save()
-{
-  // First load the .megalib.cfg file
-  
-  MXmlDocument* m_Data = new MXmlDocument("MEGAlib");
-  new MXmlNode(m_Data, "LicenseHash", m_LicenseHash);
-  new MXmlNode(m_Data, "ChangeLogHash", m_ChangeLogHash);    
-
-  MString FileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".megalib.cfg"));
-  m_Data->Save(FileName);
-  
-  delete m_Data;
-}
 
 
 // MPrelude.cxx: the end...

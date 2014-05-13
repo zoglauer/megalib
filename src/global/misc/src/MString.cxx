@@ -122,9 +122,9 @@ vector<MString> MString::Tokenize(const MString& Delimeter)  const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString& MString::ReplaceAll(const MString& From, const MString& To)
+void MString::ReplaceAllInPlace(const MString& From, const MString& To)
 {
-  if (From.Length() == 0) return *this;
+  if (From.Length() == 0) return;
   
   size_t OldPos = 0; 
   size_t NewPos = 0; 
@@ -133,7 +133,42 @@ MString& MString::ReplaceAll(const MString& From, const MString& To)
     m_String.replace(NewPos, From.Length(), To.m_String);
     OldPos = NewPos + To.Length();
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString& MString::ReplaceAll(const MString& From, const MString& To)
+{
+  ReplaceAllInPlace(From, To);
+  return *this;
+} 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MString::RemoveAllInPlace(const MString& From)
+{
+  if (From.Length() == 0) return;
   
+  size_t OldPos = 0; 
+  size_t NewPos = 0; 
+  
+  while ((NewPos = m_String.find(From.m_String, OldPos)) != string::npos) {
+    m_String.erase(NewPos, From.Length());
+    OldPos = NewPos;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString& MString::RemoveAll(const MString& S)
+{
+  RemoveAllInPlace(S);
   return *this;
 }
 

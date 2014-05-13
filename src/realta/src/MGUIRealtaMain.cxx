@@ -76,7 +76,7 @@ using namespace std;
 #include "MImage2D.h"
 #include "MImageSpheric.h"
 #include "MBPData.h"
-#include "MIsotope.h"
+#include "MQualifiedIsotope.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -810,7 +810,7 @@ void MGUIRealtaMain::DoControlLoop()
         m_Analyzer->GetSpectrumHistogram()->Draw();
         double Width = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax() - m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
 
-        vector<MIsotope> I = m_Analyzer->GetIsotopes();
+        vector<MQualifiedIsotope> I = m_Analyzer->GetIsotopes();
         for (unsigned int i = 0; i < I.size(); ++i) {
           for (unsigned int l = 0; l < I[i].GetNLines(); ++l) {
             if (I[i].GetLineFound(l) == false) continue;

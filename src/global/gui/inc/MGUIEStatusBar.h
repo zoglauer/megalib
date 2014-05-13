@@ -50,50 +50,53 @@ class MGUIEStatusBar : public MGUIElement
   MGUIEStatusBar(const TGWindow* Parent, MString Title = "", bool Emphasized = false, int Width = -9998); 
   virtual ~MGUIEStatusBar();
 
-	bool Add(MString Field = "", int Width = 100);
+  bool Add(MString Field = "", int Width = 100, bool ShowTitle = true);
 
   bool SetContent(MString Field, double Value);
   bool SetContent(MString Field, int Value);
   bool SetContent(MString Field, unsigned int Value);
   bool SetContent(MString Field, MString Value);
 
-	void Create();
+  void Create();
 
-	enum Widths { c_Max = -9999, c_Min = -9998};
+  enum Widths { c_Max = -9999, c_Min = -9998};
 
   // private methods:
  private:
-	void Init();
+  void Init();
 
   MString MakeSmartString(double Number);
 
   // private members:
  private:
-	bool m_IsCreated;
+  bool m_IsCreated;
 
-	int m_Width;
-
-	TGGC* m_LabelGraphics;
+  int m_Width;
+  
+  TGGC* m_LabelGraphics;
   MString m_Label;
 
-	TGCompositeFrame* m_LabelFrame;
-	TGLayoutHints* m_LabelFrameLayout;
+  TGCompositeFrame* m_LabelFrame;
+  TGLayoutHints* m_LabelFrameLayout;
 
   TGLabel *m_TextLabel;
   TGLayoutHints *m_TextLabelLayout;
 
-	TGLayoutHints* m_FieldTitleLayout;
-	TGLayoutHints* m_FieldContentLayout;
+  TGLayoutHints* m_FieldTitleLayout;
+  TGLayoutHints* m_FieldContentLayout;
 
-	TObjArray* m_FieldNames;
-	vector<int> m_FieldWidth;
-	TObjArray* m_FieldFrames;
-	TObjArray* m_FieldFrameLayouts;
-	TObjArray* m_FieldTitles;
-	TObjArray* m_FieldContentValues;
-	TObjArray* m_FieldContentFrames;
-	TObjArray* m_FieldContentFrameLayouts;
-	TObjArray* m_FieldContents;
+  TObjArray* m_FieldNames;
+  vector<int> m_FieldWidth;
+  //! True if the title is shown
+  vector<bool> m_FieldShowTitle;
+
+  TObjArray* m_FieldFrames;
+  TObjArray* m_FieldFrameLayouts;
+  TObjArray* m_FieldTitles;
+  TObjArray* m_FieldContentValues;
+  TObjArray* m_FieldContentFrames;
+  TObjArray* m_FieldContentFrameLayouts;
+  TObjArray* m_FieldContents;
 
 
 #ifdef ___CINT___

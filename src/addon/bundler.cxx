@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
       infile.ignore(numeric_limits<streamsize>::max(),'\n');
     }
     infile.getline(cmd_string, 1000);
-    //std::cout<<"Process "<<procID<<" will execute: "<<cmd_string<<std::endl;
+    cout<<"Process "<<procID<<" will execute: "<<cmd_string<<endl;
   } else {
     cerr<<"CHECK YOUR CONFIG... JOBSCRIPT not found"<<endl;
     return -1;

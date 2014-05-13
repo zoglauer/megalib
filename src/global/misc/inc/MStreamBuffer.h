@@ -54,13 +54,13 @@ class MStreamBuffer : public streambuf
   bool Connect(MString FileName, bool Append = true, bool TimePrefix = false);
   bool Disconnect(MString FileName);
 
-  void DumpToStdOut(bool Enable) { m_StdOut = Enable; }
-  void DumpToStdErr(bool Enable) { m_StdErr = Enable; }
-  void DumpToGui(bool Enable) { m_Gui = Enable; }
+  void DumpToStdOut(bool EnableFlag) { m_StdOut = EnableFlag; }
+  void DumpToStdErr(bool EnableFlag) { m_StdErr = EnableFlag; }
+  void DumpToGui(bool EnableFlag) { m_Gui = EnableFlag; }
 
   void ShowOnce() { m_ShowOnce = true; }
 
-  void Enable(bool Enable) { m_Enabled = Enable; }
+  void Enable(bool EnableFlag) { m_Enabled = EnableFlag; }
 
   void endl();
   void fatal();

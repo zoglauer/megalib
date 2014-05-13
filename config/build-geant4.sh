@@ -14,7 +14,12 @@ COMPILEROPTIONS=`gcc --version | head -n 1`
 # Check if some of the frequently used software is installed:
 type cmake >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "ERROR: Geant4 requires cmake to be installed"
+    echo "ERROR: cmake must be installed"
+    exit 1
+fi 
+type curl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: curl must be installed"
     exit 1
 fi 
 

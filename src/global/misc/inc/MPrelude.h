@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MXmlDocument.h"
+#include "MSettingsGlobal.h"
 
 // Forward declarations:
 
@@ -61,13 +61,7 @@ class MPrelude
   // private members:
  private:
   //! The key data read from an XML file and stored there afterwards
-  MXmlDocument* m_Data;
-
-  //! The hash of the change-log file
-  long m_ChangeLogHash;
-  //! The hash of the license file
-  long m_LicenseHash;
-  
+  MSettingsGlobal m_Settings;  
   
 #ifdef ___CINT___
  public:

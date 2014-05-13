@@ -39,7 +39,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MMath.h"
 #include "MPeak.h"
-#include "MIsotope.h"
+#include "MQualifiedIsotope.h"
 #include "MFitFunctions.h"
 #include "MDGeometryQuest.h"
 #include "MInterface.h"
@@ -125,7 +125,7 @@ class MSpectralAnalyzer
   //! Return the number of found isotopes
   unsigned int GetNIsotopes() const { return m_Isotopes.size(); }
   //! Return a COPY of the list of isotopes
-  vector<MIsotope> GetIsotopes();
+  vector<MQualifiedIsotope> GetIsotopes();
   
 
   
@@ -175,10 +175,10 @@ class MSpectralAnalyzer
   vector<MPeak*> m_Peaks;
   
   //! the list of found isotopes
-  vector<MIsotope*> m_Isotopes;
+  vector<MQualifiedIsotope*> m_Isotopes;
   
   //! the list of found isotopes
-  vector<MIsotope*> m_ComparisonIsotopes;
+  vector<MQualifiedIsotope*> m_ComparisonIsotopes;
 
 
 #ifdef ___CINT___

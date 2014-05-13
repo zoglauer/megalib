@@ -80,8 +80,10 @@
 #ifndef __MGlobal__
 #define __MGlobal__
 
-
-#include <TSystem.h>
+#include "TROOT.h"
+#include "TSystem.h"
+#include "TMutex.h"
+#include "TVirtualMutex.h"
 
 #include "MVector.h"
 #include "MString.h"
@@ -113,6 +115,8 @@ extern const double g_DoubleNotDefined;
 extern const float g_FloatNotDefined;
 
 extern int g_DebugLevel;
+
+extern TMutex* g_Mutex;
 
 // And here a lot of other useful constants:
 extern const double c_Pi;

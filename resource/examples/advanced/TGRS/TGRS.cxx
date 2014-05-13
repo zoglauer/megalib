@@ -260,6 +260,7 @@ bool TGRS::Analyze()
     return false;
   }  
 
+  /*
   int NBinsSec = 0;
   double* BinsSec = new double[NBins];
   for (int b = 0; b < NBins-1; ++b) { 
@@ -267,6 +268,18 @@ bool TGRS::Analyze()
     BinsSec[NBinsSec] = Emin[b];
     NBinsSec++;
   }
+  */
+
+  int NBinsSec = 1500;
+  double* BinsSec = new double[NBinsSec+1];
+ 
+  double Min = log(Emin[0]);
+  double Max = log(Emax.back());
+  double Dist = (Max-Min)/(NBinsSec);
+  for (int i = 0; i < NBinsSec+1; ++i) {
+    BinsSec[i] = exp(Min+i*Dist);
+  }  
+ 
 
   // Open background files:
   //vector<MFileEventsEvta*> SimFiles;

@@ -27,6 +27,7 @@
 #include "MStreams.h"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4Step.hh"
 #include "G4VTouchable.hh"
@@ -183,24 +184,24 @@ G4bool MCCalorBarSD::PostProcessHits(const G4Step* Step)
   }
 
   // Now create a hit:
-  MCCalorBarHit *Hit = new MCCalorBarHit();
-  Hit->SetEnergy(Energy);
-  Hit->SetXBar(xBar);
-  Hit->SetYBar(yBar);
-  Hit->SetDetectorName(DetectorName);
-  Hit->AddOrigin(((MCTrackInformation*) 
+  MCCalorBarHit* H = new MCCalorBarHit();
+  H->SetEnergy(Energy);
+  H->SetXBar(xBar);
+  H->SetYBar(yBar);
+  H->SetDetectorName(DetectorName);
+  H->AddOrigin(((MCTrackInformation*) 
                   (Step->GetTrack()->GetUserInformation()))->GetId());
   for (int v =  Hist->GetHistoryDepth()-1; v >= 0; v--) {
-    Hit->AddVolumeHistory(Hist->GetVolume(v)->GetName());
+    H->AddVolumeHistory(Hist->GetVolume(v)->GetName());
   }  
-  Hit->SetPosition(Position);
+  H->SetPosition(Position);
   if (m_HasTimeResolution == true) {
-    Hit->SetTime(Step->GetTrack()->GetGlobalTime());
+    H->SetTime(Step->GetTrack()->GetGlobalTime());
   }
 
   // Create ADC for single and double-sided calorimeter:
   if (m_Is3D == false) {
-    Hit->SetADCCounts(Energy/keV);
+    H->SetADCCounts(Energy/keV);
   } else {
     double Eta = (m_StructuralDimension[2] - m_StructuralOffset[2] + DetectorPosition[2])/(2*m_StructuralSize[2]);
     if (Eta > 1.0 + m_Epsilon || Eta < 0.0 - m_Epsilon) {
@@ -211,26 +212,26 @@ G4bool MCCalorBarSD::PostProcessHits(const G4Step* Step)
     if (Eta < 0.0) Eta = 0.0;
     double ADCTop = 0.5*(1 + Eta)*Energy/keV;
     double ADCBottom = Energy/keV - ADCTop;
-    Hit->SetADCCounts(ADCTop, ADCBottom);
+    H->SetADCCounts(ADCTop, ADCBottom);
   }
 
   // Check if there is already a hit in the strips and this layer:
   bool Added = false;
   if (m_DiscretizeHits == true) {
     for (G4int h = 0; h < MCCalorBarSD::m_HitCollection->entries(); h++) {
-      if (*(*MCCalorBarSD::m_HitCollection)[h] == *Hit) {
-        *(*MCCalorBarSD::m_HitCollection)[h] += *Hit;
+      if (*(*MCCalorBarSD::m_HitCollection)[h] == *H) {
+        *(*MCCalorBarSD::m_HitCollection)[h] += *H;
         Added = true;
-        delete Hit;
-        Hit = 0;
+        delete H;
+        H = 0;
         break;
       }
     }
   }
 
   // Otherwise add as a new hit:
-  if (Hit != 0) {
-    MCCalorBarSD::m_HitCollection->insert(Hit);
+  if (H != 0) {
+    MCCalorBarSD::m_HitCollection->insert(H);
     Added = true;
   }  
 

@@ -44,31 +44,41 @@ ClassImp(MIsotope)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default constructor
 MIsotope::MIsotope()
 {
-  // Construct an instance of MIsotope
-
   m_Element = "";
   m_Nucleons = 0;
-  m_Rating = -1;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MIsotope::~MIsotope()
 {
-  // Delete this instance of MIsotope
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Check for equality
+bool MIsotope::operator==(const MIsotope& I) const
+{
+  if (m_Element != I.m_Element || m_Nucleons != I.m_Nucleons) return false;
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the element name
 MString MIsotope::GetName() const
 {
-  //! Return the element name
-
   ostringstream out;
   out<<GetElement();
   if (GetNucleons() > 0) {
@@ -82,26 +92,22 @@ MString MIsotope::GetName() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add line parameters:
 void MIsotope::AddLine(double Energy, double BranchingRatio) 
 { 
-  //! Add line parameters:
-
   m_LineEnergies.push_back(Energy); 
   m_LineBranchingRatios.push_back(BranchingRatio); 
-  m_LineFound.push_back(false); 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the line energy  
 double MIsotope::GetLineEnergy(unsigned int i) const
 {
-  //! Return the line energy
-  
   if (i < m_LineEnergies.size()) return m_LineEnergies[i];
 
   merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineEnergies.size()<<endl;
-  abort();
   return 0;
 }
 
@@ -109,10 +115,9 @@ double MIsotope::GetLineEnergy(unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the line branching ratio
 double MIsotope::GetLineBranchingRatio(unsigned int i) const
 {
-  //! Return the line branching ratio
-
   if (i < m_LineBranchingRatios.size()) return m_LineBranchingRatios[i];
 
   merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineBranchingRatios.size()<<fatal;
@@ -123,54 +128,34 @@ double MIsotope::GetLineBranchingRatio(unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MIsotope::SetLineFound(unsigned int l, bool Found)
+//! Dump the content into a string
+MString MIsotope::ToString() const
 {
-  //! Set line found
-
-  if (l < m_LineFound.size()) {
-    m_LineFound[l] = Found;
-    return;
-  }
-
-  merr<<"Index out of bounds: l="<<l<<" vs. size()="<<m_LineFound.size()<<fatal;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MIsotope::GetLineFound(unsigned int l)
-{
- //Get line found
-
-  if (l < m_LineFound.size()) return m_LineFound[l];
-
-  merr<<"Index out of bounds: l="<<l<<" vs. size()="<<m_LineFound.size()<<fatal;
-
-  return false;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-ostream& operator<<(ostream& os, const MIsotope& Isotope)
-{
-  os<<"Isotope "<<Isotope.GetName();
-  if (Isotope.GetRating() > 0) {
-    os<<" (rating:"<<Isotope.GetRating()<<")";  
-  }
-  if (Isotope.GetNLines() > 0) {
+  ostringstream os;
+  os<<"Isotope "<<GetName();
+  if (m_LineEnergies.size() > 0) {
     os<<" with the following lines: ";
-    for (unsigned int i = 0; i < Isotope.GetNLines(); ++i) {
-      os<<Isotope.GetLineEnergy(i)<<" keV ("<<Isotope.GetLineBranchingRatio(i)<<")";
-      if (i != Isotope.GetNLines()-1) os<<", ";
+    for (unsigned int i = 0; i < m_LineEnergies.size(); ++i) {
+      os<<m_LineEnergies[i]<<" keV ("<<m_LineBranchingRatios[i]<<")";
+      if (i != m_LineEnergies.size()-1) os<<", ";
     }  
   }
-  os<<endl;
+
+  return os.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Stream the isotope
+ostream& operator<<(ostream& os, const MIsotope& Isotope)
+{
+  os<<Isotope.ToString();
 
   return os;
 }
+
 
 // MIsotope.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

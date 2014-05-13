@@ -49,7 +49,7 @@ ClassImp(MSpectralAnalyzer)
 
 
 // Sort two isotopes by their rating
-bool SortIsotopesByRating(MIsotope* A, MIsotope* B) { return (A->GetRating() < B->GetRating()); }
+bool SortIsotopesByRating(MQualifiedIsotope* A, MQualifiedIsotope* B) { return (A->GetRating() < B->GetRating()); }
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -304,7 +304,7 @@ bool MSpectralAnalyzer::SetIsotopeFileName(MString IsotopeFileName)
       }
     }
     if (Found == false) {
-      MIsotope* Isotope = new MIsotope();
+      MQualifiedIsotope* Isotope = new MQualifiedIsotope();
       Isotope->SetElement(Name);
       Isotope->SetNucleons(Nucleons);
       Isotope->AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
@@ -323,11 +323,11 @@ bool MSpectralAnalyzer::SetIsotopeFileName(MString IsotopeFileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MIsotope> MSpectralAnalyzer::GetIsotopes() 
+vector<MQualifiedIsotope> MSpectralAnalyzer::GetIsotopes() 
 { 
   //! Return a COPY of the list of isotopes
 
-  vector<MIsotope> Isotopes;
+  vector<MQualifiedIsotope> Isotopes;
   for (unsigned int i = 0; i < m_Isotopes.size(); ++i) {
     Isotopes.push_back(*m_Isotopes[i]);
   } 
@@ -404,7 +404,8 @@ bool MSpectralAnalyzer::FindIsotopes()
   MString Option = "";
   if (m_IsBatch == true) Option = "goff";
   int NPeaksFound = PeakFinder->Search(PeakHist, Peaksigma, Option, threshold);
-  float* PeakEnergies = PeakFinder->GetPositionX();
+  // This is float* in ROOT 5 and double* in ROOT 6
+  auto PeakEnergies = PeakFinder->GetPositionX();
   
   if (m_IsBatch == false) {
     PeakCanvas->cd(1);
@@ -656,8 +657,8 @@ bool MSpectralAnalyzer::FindIsotopes()
   sort(m_Isotopes.begin(), m_Isotopes.end(), SortIsotopesByRating);
   // Remove all isotopes below a rating of 1 as long as still all peaks are found...
   
-  for (vector<MIsotope*>::iterator I = m_Isotopes.begin(); I != m_Isotopes.end(); ) {
-    MIsotope* ToBeRemoved = (*I);
+  for (vector<MQualifiedIsotope*>::iterator I = m_Isotopes.begin(); I != m_Isotopes.end(); ) {
+    MQualifiedIsotope* ToBeRemoved = (*I);
     bool Remove = true;
     for (unsigned int p = 0; p < m_Peaks.size(); ++p) {
       if (m_Peaks[p]->ContainsIsotope(ToBeRemoved) && m_Peaks[p]->GetNIsotopes() == 1) {
@@ -690,8 +691,8 @@ bool MSpectralAnalyzer::FindIsotopes()
 
   // Go over all peaks, find the contribution with the lowest branching ratio, and remove it if still all peaks can be found
   for (unsigned int p = 0; p < m_Peaks.size(); ++p) {
-    list<MIsotope*> ToBeRemovedList;
-    list<MIsotope*>::iterator I;
+    list<MQualifiedIsotope*> ToBeRemovedList;
+    list<MQualifiedIsotope*>::iterator I;
     list<double> BranchingRatios;
     list<double>::iterator B;
     // Create an ordered list of isotopes per peak according to branching ratios
@@ -724,7 +725,7 @@ bool MSpectralAnalyzer::FindIsotopes()
     // Eliminate the isotopes with worst branching ratio:
     while (true) {
       if (ToBeRemovedList.size() < 2) break;
-      MIsotope* ToBeRemoved = ToBeRemovedList.front();
+      MQualifiedIsotope* ToBeRemoved = ToBeRemovedList.front();
       for (unsigned int p2 = 0; p2 < m_Peaks.size(); ++p2) {
         if (m_Peaks[p2]->ContainsIsotope(ToBeRemoved) && m_Peaks[p2]->GetNIsotopes() == 1) break;
       }
@@ -739,7 +740,7 @@ bool MSpectralAnalyzer::FindIsotopes()
         }
       }
       if (Found == false) {
-        for (vector<MIsotope*>::iterator I = m_Isotopes.begin(); I != m_Isotopes.end(); ++I) {
+        for (vector<MQualifiedIsotope*>::iterator I = m_Isotopes.begin(); I != m_Isotopes.end(); ++I) {
           if ((*I) == ToBeRemoved) {
             m_Isotopes.erase(I);
             break;

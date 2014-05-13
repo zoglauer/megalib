@@ -67,7 +67,7 @@ MPeak::~MPeak()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MPeak::AddIsotope(MIsotope* I, unsigned int LineID) 
+void MPeak::AddIsotope(MQualifiedIsotope* I, unsigned int LineID) 
 { 
   //! Add candidate isotope:
 
@@ -84,7 +84,7 @@ void MPeak::AddIsotope(MIsotope* I, unsigned int LineID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MIsotope* MPeak::GetIsotope(unsigned int i) const
+MQualifiedIsotope* MPeak::GetIsotope(unsigned int i) const
 {
   //! Get the isotope
 
@@ -98,7 +98,7 @@ MIsotope* MPeak::GetIsotope(unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPeak::ContainsIsotope(MIsotope* I) const 
+bool MPeak::ContainsIsotope(MQualifiedIsotope* I) const 
 {
   //! Contains the isotope
 
@@ -113,11 +113,11 @@ bool MPeak::ContainsIsotope(MIsotope* I) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MPeak::RemoveIsotope(MIsotope* Isotope)
+void MPeak::RemoveIsotope(MQualifiedIsotope* Isotope)
 {
   //! Remove the isotope
   
-  vector<MIsotope*>::iterator I;
+  vector<MQualifiedIsotope*>::iterator I;
   vector<unsigned int>::iterator L;
   
   for (I = m_Isotopes.begin(), L = m_IsotopeLineIDs.begin(); I != m_Isotopes.end(); ) {

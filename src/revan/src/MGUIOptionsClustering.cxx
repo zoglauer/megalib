@@ -123,7 +123,7 @@ void MGUIOptionsClustering::Create()
     m_AdjacentLevel->AddEntry("12 neighboring voxels", 4);
     m_AdjacentLevel->AddEntry("20 neighboring voxels", 5);
     m_AdjacentLevel->AddEntry("24 neighboring voxels", 8);
-    m_AdjacentLevel->SetHeight(20);
+    m_AdjacentLevel->SetHeight(m_FontScaler*20);
     if (m_Data->GetAdjacentLevel() == 1 || 
         m_Data->GetAdjacentLevel() == 2 ||
         m_Data->GetAdjacentLevel() == 4 ||

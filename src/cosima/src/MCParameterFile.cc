@@ -27,6 +27,9 @@
 #include "MStreams.h"
 #include "MSimEvent.h"
 
+// Geant4:
+#include "G4SystemOfUnits.hh"
+
 
 /******************************************************************************/
 
@@ -279,6 +282,8 @@ bool MCParameterFile::Parse()
           m_PhysicsListHD = MCPhysicsList::c_HDQGSP_BIC_HP;
         } else if (Type == "qgsp-bert-hp") {
           m_PhysicsListHD = MCPhysicsList::c_HDQGSP_BERT_HP;
+        } else if (Type == "ftfp-bert-hp") {
+          m_PhysicsListHD = MCPhysicsList::c_HDFTFP_BERT_HP;
         } else {
           Typo(i, "Can not parse token PhysicsListHD correctly:"
                " Unknown package string (Usage: e.g. \"PhysicsListHD qgsp-bic-hp\"");
@@ -373,7 +378,7 @@ bool MCParameterFile::Parse()
     } else if (T->IsTokenAt(0, "StoreSimulationInfoWatchedVolumes", true) == true ||
                T->IsTokenAt(0, "StoreSimulationInfoWatchedVolume", true) == true) {
       if (T->GetNTokens() >= 2) {
-        for (int w = 1; w < T->GetNTokens(); ++w) {
+        for (unsigned int w = 1; w < T->GetNTokens(); ++w) {
           m_StoreSimulationInfoWatchedVolumes.push_back(T->GetTokenAt(w));
           mdebug<<"Watching volume: "<<m_StoreSimulationInfoWatchedVolumes.back()<<endl;
         }
@@ -427,7 +432,7 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "BlackAbsorber", true) == true) {
       if (T->GetNTokens() >= 2) {
-        for (int w = 1; w < T->GetNTokens(); ++w) {
+        for (unsigned int w = 1; w < T->GetNTokens(); ++w) {
           m_BlackAbsorbers.push_back(T->GetTokenAt(w));
           mdebug<<"Adding black absorber: "<<m_BlackAbsorbers.back()<<endl;
         }
@@ -788,10 +793,10 @@ bool MCParameterFile::Parse()
           MCIsotopeStore Store;
           if (Store.Load(T->GetTokenAtAsString(2)) == true) {
             vector<MCSource*> List = Store.CreateSourceListByActivity();
-            for (unsigned int i = 0; i < List.size(); ++i) {
+            for (unsigned int so = 0; so < List.size(); ++so) {
               // We could check if it already exists and add the rate here...
-              cout<<"Source: "<<List[i]->GetName()<<endl;
-              Run->AddSource(List[i], false);
+              cout<<"Source: "<<List[so]->GetName()<<endl;
+              Run->AddSource(List[so], false);
             }
           } else {
             Typo(i, "Can not load ActivationSources file token correctly!");
@@ -808,10 +813,10 @@ bool MCParameterFile::Parse()
           MCIsotopeStore Store;
           if (Store.Load(T->GetTokenAtAsString(2)) == true) {
             vector<MCSource*> List = Store.CreateSourceListByIsotopeCount();
-            for (unsigned int i = 0; i < List.size(); ++i) {
+            for (unsigned int so = 0; so < List.size(); ++so) {
               // We could check if it already exists and add the rate here...
-              cout<<"Source: "<<List[i]->GetName()<<endl;
-              Run->AddSource(List[i], false);
+              cout<<"Source: "<<List[so]->GetName()<<endl;
+              Run->AddSource(List[so], false);
             }
           } else {
             Typo(i, "Can not load IsotopeCountSources file token correctly!");
@@ -2520,9 +2525,9 @@ bool MCParameterFile::Parse()
     }
     for (unsigned int r = 0; r < m_RunList.size(); ++r) {
       vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
-      for (unsigned int s = 0; s < Sources.size(); ++s) {
-        Sources[s]->SetStartAreaType(StartAreaType);
-        Sources[s]->SetStartAreaParameters(StartAreaParameters[0],
+      for (unsigned int so = 0; so < Sources.size(); ++so) {
+        Sources[so]->SetStartAreaType(StartAreaType);
+        Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
                                            StartAreaParameters[1],
                                            StartAreaParameters[2],
                                            StartAreaParameters[3],
@@ -2537,30 +2542,30 @@ bool MCParameterFile::Parse()
   // Check if all successor are valid:
   for (unsigned int r = 0; r < m_RunList.size(); ++r) {
     vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
-    for (unsigned int s = 0; s < Sources.size(); ++s) {
+    for (unsigned int so = 0; so < Sources.size(); ++so) {
 //       if (Sources[s]->GetFlux() <= 0 && Sources[s]->IsSuccessor() == false) {
 //         mout<<"Source "<<Sources[s]->GetName()
 //             <<" does not have a positive flux!"<<endl;
 //         return false;        
 //       }
-      if (Sources[s]->IsSuccessor() == true) {
+      if (Sources[so]->IsSuccessor() == true) {
         // Check if that's true
         int NSuccessings = 0;
-        for (unsigned int i = 0; i < Sources.size(); ++i) {
-          if (Sources[i]->GetSuccessor() == Sources[s]->GetName()) {
+        for (unsigned int j = 0; j < Sources.size(); ++j) {
+          if (Sources[j]->GetSuccessor() == Sources[so]->GetName()) {
             NSuccessings++;
           }
         }
         if (NSuccessings == 0) {
-          mout<<"Source "<<Sources[s]->GetName()
+          mout<<"Source "<<Sources[so]->GetName()
               <<" is not the successor of any source!"<<endl;
           return false;
         } else if (NSuccessings > 1) {
-          mout<<"Source "<<Sources[s]->GetName()
+          mout<<"Source "<<Sources[so]->GetName()
               <<" is the successor of "<<NSuccessings<<" sources:"<<endl;
-          for (unsigned int i = 0; i < Sources.size(); ++i) {
-            if (Sources[i]->GetSuccessor() == Sources[s]->GetName()) {
-              mout<<"  * "<<Sources[i]->GetName()<<endl;
+          for (unsigned int j = 0; j < Sources.size(); ++j) {
+            if (Sources[j]->GetSuccessor() == Sources[so]->GetName()) {
+              mout<<"  * "<<Sources[j]->GetName()<<endl;
             }
           }
           return false;
@@ -2659,9 +2664,9 @@ MCRegion* MCParameterFile::GetRegion(MString Name)
 MCSource* MCParameterFile::GetSource(MString Name)
 {
   for (unsigned int i = 0; i < m_RunList.size(); ++i) {
-    for (unsigned int s = 0; s < m_RunList[i].GetSourceList().size(); ++s) {
-      if (Name.AreIdentical(m_RunList[i].GetSourceList()[s]->GetName())) {
-        return m_RunList[i].GetSourceList()[s];
+    for (unsigned int so = 0; so < m_RunList[i].GetSourceList().size(); ++so) {
+      if (Name.AreIdentical(m_RunList[i].GetSourceList()[so]->GetName())) {
+        return m_RunList[i].GetSourceList()[so];
       }
     }
   }

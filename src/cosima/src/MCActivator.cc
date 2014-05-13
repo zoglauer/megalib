@@ -30,11 +30,11 @@
 #include "TMath.h"
 
 // Geant4:
+#include "G4SystemOfUnits.hh"
 #include "G4RadioactiveDecay.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4DecayTable.hh"
 #include "G4VDecayChannel.hh"
-#include "G4ParticleTable.hh"
 #include "G4IonTable.hh"
 #include "G4RIsotopeTable.hh"
 #include "G4IsotopeProperty.hh"
@@ -63,7 +63,7 @@ MCActivator::MCActivator()
   m_CooldownTime = 0.0;
 
   // If the half life is lower than this value, then the decay is assumed to be immediate
-  m_HalfLifeCutOff = 1*ns;
+  m_HalfLifeCutOff = 1*ns;  
 }
 
 
@@ -173,12 +173,17 @@ bool MCActivator::LoadCountsFiles()
     // Merge with main file
     m_Rates.Add(Counts);
   }
+  
+  cout<<"*** NEW"<<endl;
   cout<<m_Rates<<endl;
+  cout<<"*** NEW"<<endl;
+  
   m_Rates.Save("Merged.dat");
 
   cout<<"Total time: "<<m_Rates.GetTime()/s<<" sec"<<endl;
   m_Rates.Scale(1.0/TotalTime);
-
+  
+  
   return true;
 }
 
@@ -190,6 +195,24 @@ bool MCActivator::CalculateEquilibriumRates()
 {
   // Determine the activation after ActivationTime & Cool-down time
 
+  /*
+  // Some test
+  G4IonTable* IonTable = G4IonTable::GetIonTable();
+  int Z = 30;
+  for (int A = 60; A <= 72; ++A) {
+    G4Ions* Ion = dynamic_cast<G4Ions*>(IonTable->GetIon(Z, A, 0));
+    if (Ion == 0) continue;
+    //Ion->DumpTable();
+
+    G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
+    G4DecayTable* DecayTable = Decay->LoadDecayTable(*Ion);
+    if (DecayTable == 0) continue;
+    if (DecayTable->entries() == 0) continue;
+    DecayTable->DumpInfo();
+  }
+  return true;
+  */
+  
 
   // We utilize G4RadioactiveDecay to retrieve the decay tables
   G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
@@ -205,7 +228,7 @@ bool MCActivator::CalculateEquilibriumRates()
   for (unsigned int v = 0; v < m_Rates.GetNVolumes(); ++v) {
     cout<<"Volume: "<<m_Rates.GetVolume(v)<<endl;
     for (unsigned int i = 0; i < m_Rates.GetNIDs(v); ++i) {
-      //cout<<"Start: ID: "<<m_Rates.GetID(v, i)<<"  #Ex: "<<m_Rates.GetNExcitations(v, i)<<endl;      
+      cout<<"Start: ID: "<<m_Rates.GetID(v, i)<<"  #Ex: "<<m_Rates.GetNExcitations(v, i)<<endl;      
 
       for (unsigned int e = 0; e < m_Rates.GetNExcitations(v, i); ++e) {
 //         if (m_Rates.GetValue(v, i, e) < 0.001/s) {
@@ -215,15 +238,26 @@ bool MCActivator::CalculateEquilibriumRates()
 
         vector<vector<MCActivatorParticle> > Tree;
 
-        cout<<"Start: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetNExcitations(v, i)<<"): Excitation: "<<m_Rates.GetExcitation(v, i, e)/keV<<": "<<m_Rates.GetParticleDefinition(v, i, e)->GetPDGLifeTime()/s<<endl;      
+        cout<<"Start: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetNExcitations(v, i)<<"): Excitation: "<<m_Rates.GetExcitation(v, i, e)/keV<<" & LifeTime: "<<m_Rates.GetParticleDefinition(v, i, e)->GetPDGLifeTime()/s<<" sec"<<endl;      
 
+        /*
         if (m_Rates.GetID(v, i) == 47099) {
-          for (unsigned int i = 0; i < 100; ++i) {
+          for (unsigned int ii = 0; ii < 100; ++i) {
             cout<<"Warning: This element crashes Geant4.9.2.1 -- skipping!"<<endl; 
           }
           continue;
         }
+        */
 
+        // Check if the particle really exists...
+        G4IonTable* IonTable = G4IonTable::GetIonTable();
+        int ID = m_Rates.GetID(v, i);
+        int AtomicNumber = int(ID/1000);
+        int AtomicMass = ID - int(ID/1000)*1000;
+        if (IonTable->GetIon(AtomicNumber, AtomicMass, ExcitationEnergy) == 0) {
+          mout<<"Error: Unable to find isotope: "<<m_Rates.GetParticleDefinition(v, i, e)->GetParticleName()<<endl;
+          continue;
+        }
 
         // Seed the tree of activation chains by the current isotope:
         MCActivatorParticle Particle;
@@ -248,15 +282,15 @@ bool MCActivator::CalculateEquilibriumRates()
           continue;        
         }
 
-//       // Dump the tree:
-//       cout<<"Tree after start: "<<endl;
-//       for (unsigned int br = 0; br < Tree.size(); ++br) {
-//         cout<<"  "<<br<<": ";
-//         for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//           cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-//         }
-//         cout<<endl;
-//       }
+       // Dump the tree:
+       cout<<"Tree after start: "<<endl;
+       for (unsigned int br = 0; br < Tree.size(); ++br) {
+         cout<<"  "<<br<<": ";
+         for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+           cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
+         }
+         cout<<endl;
+       }
 
         // Now we loop over all possible decays until all are found:
         bool TreeChanged = false;
@@ -293,8 +327,8 @@ bool MCActivator::CalculateEquilibriumRates()
                   if (ParticleType == "nucleus" && ParticleName != "alpha") {
                     if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
                       vector<MCActivatorParticle> ABranch = Tree[b];
-                      MCActivatorParticle Particle;
-                      Particle.SetIDAndExcitation(MCSteppingAction::GetParticleId(ParticleDef->GetParticleName()), 
+                      MCActivatorParticle NewParticle;
+                      NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleId(ParticleDef->GetParticleName()), 
                                                   ExcitationEnergy);
                       if (Tree[b].back().GetBranchingRatio()* Channel->GetBR() > 1.01) {
                         mout<<"Error (DecayLoop): Branching ratio of "<<Tree[b].back().GetName()<<" larger than one: "<<Tree[b].back().GetBranchingRatio()* Channel->GetBR()<<endl;
@@ -302,11 +336,11 @@ bool MCActivator::CalculateEquilibriumRates()
                       }
                       
                       // cout<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
-                      Particle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
-                      Particle.SetHalfLife(HalfLife);
+                      NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
+                      NewParticle.SetHalfLife(HalfLife);
                       
                       //cout<<"ID: "<<MCSteppingAction::GetParticleId(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
-                      ABranch.push_back(Particle);
+                      ABranch.push_back(NewParticle);
                       Tree.push_back(ABranch);
                       NewBranchAdded = true;
                     } else {
@@ -349,15 +383,15 @@ bool MCActivator::CalculateEquilibriumRates()
           bool ImmidiateDecayRound = true;
           int NChanges = 0;
           do {
-//             // Dump the tree:
-//             cout<<"Tree before excitation calculations: "<<endl;
-//             for (unsigned int br = 0; br < Tree.size(); ++br) {
-//               cout<<"  "<<br<<": ";
-//               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR: "<<Tree[br][l].GetBranchingRatio()<<"; E="<<Tree[br][l].GetExcitation()/keV<<"keV; HL="<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-//               }
-//               cout<<endl;
-//             }
+             // Dump the tree:
+             cout<<"Tree before excitation calculations: "<<endl;
+             for (unsigned int br = 0; br < Tree.size(); ++br) {
+               cout<<"  "<<br<<": ";
+               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR: "<<Tree[br][l].GetBranchingRatio()<<"; E="<<Tree[br][l].GetExcitation()/keV<<"keV; HL="<<Tree[br][l].GetHalfLife()/s<<"s) - ";
+               }
+               cout<<endl;
+             }
 
             NChanges = 0;
             unsigned int b_max = Tree.size();
@@ -378,15 +412,15 @@ bool MCActivator::CalculateEquilibriumRates()
                 const G4NuclearLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
                 if (NuclearLevel != 0) {
                   // Create new levels...
-                  for (int g = 0; g < NuclearLevel->NumberOfGammas(); ++g) {
+                  for (int h = 0; h < NuclearLevel->NumberOfGammas(); ++h) {
                     vector<MCActivatorParticle> ABranch = Tree[b];
                     
                     double NewLevelEnergy = 0.0;
                     double NewHalfLife = 0.0;
-                    if (fabs(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[g]) > 1*keV &&
+                    if (fabs(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]) > 1*keV &&
                         NuclearLevel->Energy() != M->HighestLevel()->Energy()) { // table has some significant uncertainties...
                       // Make sure we know the exact energy of the new level:
-                      const G4NuclearLevel* NewNuclearLevel = M->NearestLevel(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[g]);
+                      const G4NuclearLevel* NewNuclearLevel = M->NearestLevel(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]);
                       if (NewNuclearLevel != 0) {
                         NewLevelEnergy = NewNuclearLevel->Energy();
                         if (NewNuclearLevel->HalfLife() > m_HalfLifeCutOff) {
@@ -395,7 +429,7 @@ bool MCActivator::CalculateEquilibriumRates()
                           NewHalfLife = 0.0;
                         }
                       } else {
-                        mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[g]<<endl;
+                        mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]<<endl;
                         mout<<"       This isotope is excluded from further analysis!"<<endl;
                         LevelsOK = false;                        
                       }
@@ -408,33 +442,33 @@ bool MCActivator::CalculateEquilibriumRates()
                       NewHalfLife = 0.0;
                     }
                     
-                    MCActivatorParticle Particle;
-                    Particle.SetIDAndExcitation(MCSteppingAction::GetParticleId(Nucleus->GetParticleName()), 
+                    MCActivatorParticle NewParticle;
+                    NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleId(Nucleus->GetParticleName()), 
                                                 NewLevelEnergy);
-                    Particle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*NuclearLevel->GammaProbabilities()[g]);
-                    Particle.SetProductionRate(Tree[b].back().GetProductionRate()*NuclearLevel->GammaProbabilities()[g]);
+                    NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*NuclearLevel->GammaProbabilities()[h]);
+                    NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*NuclearLevel->GammaProbabilities()[h]);
                     // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
                     if (NewLevelEnergy > 0.0) {
-                      Particle.SetHalfLife(NewHalfLife);
-                      //cout<<Particle.GetName()<<":"<<NewHalfLife<<endl;
+                      NewParticle.SetHalfLife(NewHalfLife);
+                      //cout<<NewParticle.GetName()<<":"<<NewHalfLife<<endl;
                     } else {
-                      if (Particle.GetDefinition()->GetPDGStable() == true) {
-                        Particle.SetHalfLife(numeric_limits<double>::max());
+                      if (MCActivatorParticle::IsStable(NewParticle.GetDefinition()) == true) {
+                        NewParticle.SetHalfLife(numeric_limits<double>::max());
                       } else {
-                        Particle.SetHalfLife(Particle.GetDefinition()->GetPDGLifeTime()*log(2.0)); // ln == log
-                        //cout<<Particle.GetName()<<":"<<Particle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
+                        NewParticle.SetHalfLife(NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0)); // ln == log
+                        //cout<<NewParticle.GetName()<<":"<<NewParticle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
                       }
                     }
                     if (ABranch.back().GetHalfLife() < m_HalfLifeCutOff) {
                       // REPLACE the last element, add it to the back
                       // Since we have immediate decays we do not want to increase the length of the branch, but just determine the final population of intermediate states
-                      ABranch[ABranch.size()-1] = Particle;
+                      ABranch[ABranch.size()-1] = NewParticle;
                       Tree.push_back(ABranch);
                       TreeChanged = true;
                       NChanges++;
                     } else {
                       // We have a new branch
-                      ABranch.push_back(Particle);
+                      ABranch.push_back(NewParticle);
                       Tree.push_back(ABranch);
                       TreeChanged = true;
                       NChanges++;
@@ -460,15 +494,15 @@ bool MCActivator::CalculateEquilibriumRates()
               }
             } // all branches
             
-//             // Dump the tree:
-//             cout<<"Tree after generation of deexcited states: "<<endl;
-//             for (unsigned int br = 0; br < Tree.size(); ++br) {
-//               cout<<"  "<<br<<": ";
-//               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-//               }
-//               cout<<endl;
-//             }
+             // Dump the tree:
+             cout<<"Tree after generation of deexcited states: "<<endl;
+             for (unsigned int br = 0; br < Tree.size(); ++br) {
+               cout<<"  "<<br<<": ";
+               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
+               }
+               cout<<endl;
+             }
             
             // Switch the round:
             // Make sure that a non immideate round is only called when no immidiate decays are left
@@ -493,15 +527,15 @@ bool MCActivator::CalculateEquilibriumRates()
 
 
 
-//             // Dump the tree:
-//             cout<<"Tree after cleaning: "<<endl;
-//             for (unsigned int br = 0; br < Tree.size(); ++br) {
-//               cout<<"  "<<br<<": ";
-//               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") - ";
-//               }
-//               cout<<endl;
-//             }
+             // Dump the tree:
+             cout<<"Tree after cleaning: "<<endl;
+             for (unsigned int br = 0; br < Tree.size(); ++br) {
+               cout<<"  "<<br<<": ";
+               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") - ";
+               }
+               cout<<endl;
+             }
           
             // Sanity check to prevent endless loops:
             for (unsigned int b = 0; b < Tree.size(); ++b) {
@@ -529,16 +563,16 @@ bool MCActivator::CalculateEquilibriumRates()
           //           break;
         } while (TreeChanged == true);
         
-//         // Dump the tree:
-//         cout<<"Current tree - before relative branching ratios: "<<endl;
-//         for (unsigned int br = 0; br < Tree.size(); ++br) {
-//           cout<<"  "<<br<<": ";
-//           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
-//             if (l < Tree[br].size()-1) cout<<"-> ";
-//           }
-//           cout<<endl;
-//         }
+         // Dump the tree:
+         cout<<"Current tree - before relative branching ratios: "<<endl;
+         for (unsigned int br = 0; br < Tree.size(); ++br) {
+           cout<<"  "<<br<<": ";
+           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
+             if (l < Tree[br].size()-1) cout<<"-> ";
+           }
+           cout<<endl;
+         }
         
         // Up to now we have determined relative braching ratios.
         // For the following calculations absolute are prefered:
@@ -560,16 +594,16 @@ bool MCActivator::CalculateEquilibriumRates()
           mout<<"Error (CalculateRelativeBranchingRatios): Total branching ratio of "<<Tree[0][0].GetName()<<" not close to one: "<<TotalBranchingRatio<<endl;          
         }
         
-//         // Dump the tree:
-//         cout<<"Current tree - before determination of tree has already been calculated: "<<endl;
-//         for (unsigned int br = 0; br < Tree.size(); ++br) {
-//           cout<<"  "<<br<<": ";
-//           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
-//             if (l < Tree[br].size()-1) cout<<"-> ";
-//           }
-//           cout<<endl;
-//         }
+         // Dump the tree:
+         cout<<"Current tree - before determination of tree has already been calculated: "<<endl;
+         for (unsigned int br = 0; br < Tree.size(); ++br) {
+           cout<<"  "<<br<<": ";
+           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
+             if (l < Tree[br].size()-1) cout<<"-> ";
+           }
+           cout<<endl;
+         }
         
         // Since frequently the same isotopes are created in the same volumes,
         // we check if the tree has been already calculated
@@ -679,9 +713,9 @@ bool MCActivator::CalculateEquilibriumRates()
       } // excitations
     } // IDs
   } // volumes
-  //cout<<m_Activation<<endl;
+  cout<<m_Activation<<endl;
   m_Activation.RemoveStableElements();
-  //cout<<m_Activation<<endl;
+  cout<<m_Activation<<endl;
 
   return true;
 }  
@@ -1187,26 +1221,28 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
   HalfLife = 0.0;
   ExcitationEnergy = 0.0;
   
-  //cout<<ParticleDef->GetParticleType()<<":"<<ParticleDef->GetParticleName()<<endl;
+  cout<<"Determine HL: Type="<<ParticleDef->GetParticleType()<<" - Name="<<ParticleDef->GetParticleName()<<endl;
   if (ParticleDef->GetParticleType() == "nucleus" && 
       ParticleDef->GetParticleName() != "alpha") {
 
     G4Ions* Nucleus = dynamic_cast<G4Ions*>(ParticleDef); 
 
-    //cout<<"NE: "<<Nucleus->GetExcitationEnergy()<<":"<<Nucleus->GetAtomicNumber()<<":"<<Nucleus->GetAtomicMass()<<endl;
+    cout<<"Nucleus: "<<Nucleus->GetExcitationEnergy()<<":"<<Nucleus->GetAtomicNumber()<<":"<<Nucleus->GetAtomicMass()<<endl;
 
     if (Nucleus->GetExcitationEnergy() == 0.0) {
-      if (Nucleus->GetPDGStable() == true) {
+      if (MCActivatorParticle::IsStable(Nucleus) == true) {
+        //cout<<"Stable ("<<(Nucleus->GetPDGStable() == true ? "true" : "false")<<") with HL="<<Nucleus->GetPDGLifeTime()<<"="<<Nucleus->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl;
         HalfLife = numeric_limits<double>::max();
       } else {
+        //cout<<"Not stable ("<<(Nucleus->GetPDGStable() == true ? "true" : "false")<<") with HL="<<Nucleus->GetPDGLifeTime()<<"="<<Nucleus->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl;
         HalfLife = Nucleus->GetPDGLifeTime()*log(2.0); // ln == log
       }
     } else {
       G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-      //M->PrintAll();
+      M->PrintAll();
       if (M->IsValid() == true) {
         const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
-        //Level->PrintAll();
+        Level->PrintAll();
         if (Level != 0) {
           if (Level->HalfLife() > m_HalfLifeCutOff || IgnoreCutOff == true) {
             HalfLife = Level->HalfLife();
@@ -1227,14 +1263,14 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
       }
     }
   } else {
-    if (ParticleDef->GetPDGStable() == true) {
+    if (MCActivatorParticle::IsStable(ParticleDef) == true) {
       HalfLife = numeric_limits<double>::max();
     } else {
       HalfLife = ParticleDef->GetPDGLifeTime()*log(2.0); // ln == log
     }
   }
 
-  //cout<<"HL from Level: "<<HalfLife<<": E from level: "<<ExcitationEnergy<<endl;
+  cout<<"HL from Level: "<<HalfLife<<": E from level: "<<ExcitationEnergy<<endl;
   //abort();
             
   return OK;
@@ -1289,7 +1325,7 @@ bool MCActivator::ActivateByEquations(vector<MCActivatorParticle>& P, double Act
   if (P.size() >= 1) {
     P[0].SetActivation(ActivationO1(P[0].GetProductionRate(), 
                                     P[0].GetDecayConstant(), 
-                                    ActivationTime)); 
+                                    ActivationTime));
   }
   if (P.size() >= 2) {
     P[1].SetActivation(ActivationO2(P[0].GetProductionRate(), 
@@ -1619,7 +1655,11 @@ double MCActivator::CountsO4(double R, double D1, double Branching12, double D2,
     return Branching12*Branching23*Branching34*(R*t*D1*D1*D1*D2*D2*D3+exp(-D3*t)*D1*D1*D1*R*D2*D2-R*exp(-D2*t)*D1*D1*D1*D3*D3-R*D1*D1*D1*D3*D3*t*D2-R*D2*D2*D2*t*D1*D1*D3-exp(-D3*t)*D1*D1*R*D2*D2*D2+R*D1*D1*D3*D3*D3*t*D2+R*exp(-D2*t)*D1*D1*D3*D3*D3+R*exp(-D1*t)*D2*D2*D2*D3*D3+R*D3*D3*D2*D2*D2*t*D1-R*exp(-D1*t)*D2*D2*D3*D3*D3-R*D3*D3*D3*D2*D2*t*D1+R*(D1*D2+D1*D3+D3*D2)*D3*D3*D2+R*(D1*D2+D1*D3+D3*D2)*D1*D2*D2-R*(D1*D2+D1*D3+D3*D2)*D3*D2*D2+R*(D1*D2+D1*D3+D3*D2)*D1*D1*D3-R*(D1*D2+D1*D3+D3*D2)*D1*D3*D3-R*(D1*D2+D1*D3+D3*D2)*D1*D1*D2)/D1/D3/D2/(-D3*D3*D2+D3*D2*D2-D2*D2*D1+D1*D3*D3-D1*D1*D3+D1*D1*D2);
   }
   
-  return Branching12*Branching23*Branching34*(R*D1*D1*D1*D3*D3*D4-R*D1*D1*D1*D3*D3*D2+R*D1*D1*D1*D2*D4*D4-R*D1*D1*D1*D2*D2*D4+R*D2*D2*D3*D3*D3*D4-R*D2*D2*D3*D3*D3*D1-R*D2*D3*D3*D3*D4*D4+R*D2*D3*D3*D4*D4*D4+R*D1*D1*D1*D2*D2*D3-R*D1*D1*D2*D4*D4*D4+R*D2*D2*D2*D3*D3*D1-R*D2*D2*D2*D3*D3*D4-R*D2*D2*D3*D4*D4*D4+R*D2*D2*D2*D3*D4*D4-R*D2*D2*D2*D1*D1*D3+R*D2*D2*D2*D1*D1*D4+exp(-D4*t)*D2*D2*D2*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D1*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4+exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4+R*D1*D1*D3*D4*D4*D4-R*D1*D1*D1*D3*D4*D4+R*D1*D1*D3*D3*D3*D2-R*D1*D1*D3*D3*D3*D4+R*D1*D3*D3*D3*D4*D4-R*D1*D3*D3*D4*D4*D4-exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D1*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D2*D2*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D2*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D2*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4-exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4-exp(-D4*t)*D2*D2*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-R*exp(-D2*t)*D1*D3*D3*D3*D4*D4+R*exp(-D2*t)*D1*D1*D3*D3*D3*D4+R*exp(-D3*t)*D2*D2*D2*D1*D4*D4-R*exp(-D3*t)*D2*D2*D1*D4*D4*D4-R*exp(-D3*t)*D2*D2*D2*D1*D1*D4-R*exp(-D1*t)*D2*D2*D2*D3*D4*D4+R*exp(-D1*t)*D2*D2*D3*D4*D4*D4+R*exp(-D3*t)*D2*D1*D1*D4*D4*D4+R*exp(-D1*t)*D2*D2*D2*D3*D3*D4+R*exp(-D3*t)*D2*D2*D1*D1*D1*D4-R*exp(-D3*t)*D2*D1*D1*D1*D4*D4-R*exp(-D1*t)*D2*D2*D3*D3*D3*D4-R*exp(-D1*t)*D2*D3*D3*D4*D4*D4+R*exp(-D2*t)*D1*D1*D1*D3*D4*D4+R*exp(-D1*t)*D2*D3*D3*D3*D4*D4-R*exp(-D2*t)*D1*D1*D3*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D3*D3*D4+R*exp(-D2*t)*D1*D3*D3*D4*D4*D4+R*D2*D2*D1*D4*D4*D4-R*D2*D2*D2*D1*D4*D4)/D4/(D1*D2*D2*D4*D4*D4+D3*D3*D2*D2*D2*D1-D3*D3*D2*D2*D2*D4+D3*D2*D2*D2*D4*D4-D3*D2*D2*D4*D4*D4-D3*D3*D3*D2*D2*D1+D3*D3*D3*D2*D2*D4-D3*D3*D3*D2*D4*D4+D3*D3*D2*D4*D4*D4-D1*D1*D1*D2*D2*D4+D1*D1*D1*D2*D4*D4-D1*D1*D2*D4*D4*D4-D1*D1*D1*D3*D4*D4+D1*D1*D3*D4*D4*D4+D1*D3*D3*D3*D4*D4-D1*D3*D3*D4*D4*D4-D1*D1*D2*D2*D2*D3+D1*D1*D2*D2*D2*D4-D1*D2*D2*D2*D4*D4-D1*D1*D1*D3*D3*D2+D1*D1*D1*D3*D3*D4+D1*D1*D3*D3*D3*D2-D1*D1*D3*D3*D3*D4+D1*D1*D1*D2*D2*D3);
+  return Branching12*Branching23*Branching34*(R*D1*D1*D1*D3*D3*D4-R*D1*D1*D1*D3*D3*D2+R*D1*D1*D1*D2*D4*D4-R*D1*D1*D1*D2*D2*D4+R*D2*D2*D3*D3*D3*D4-R*D2*D2*D3*D3*D3*D1-R*D2*D3*D3*D3*D4*D4+R*D2*D3*D3*D4*D4*D4+R*D1*D1*D1*D2*D2*D3-R*D1*D1*D2*D4*D4*D4+R*D2*D2*D2*D3*D3*D1-R*D2*D2*D2*D3*D3*D4-R*D2*D2*D3*D4*D4*D4+R*D2*D2*D2*D3*D4*D4-R*D2*D2*D2*D1*D1*D3+R*D2*D2*D2*D1*D1*D4+exp(-D4*t)*D2*D2*D2*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D1*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4+exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4+R*D1*D1*D3*D4*D4*D4-R*D1*D1*D1*D3*D4*D4+R*D1*D1*D3*D3*D3*D2-R*D1*D1*D3*D3*D3*D4+R*D1*D3*D3*D3*D4*D4-R*D1*D3*D3*D4*D4*D4-exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*
+D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D1*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D2*D2*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)-exp(-D4*t)*D2*D2*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4+exp(-D4*t)*D2*D2*D2*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*
+D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4-exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-exp(-D4*t)*D2*D1*D1*R*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D1*D1*R*D3*D3*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4-exp(-D4*t)*D2*D2*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)+exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-
+D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4*D4-exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3/(D2*D1*D4-D2*D1*D3-D2*D4*D4+D2*D3*D4-D1*D4*D4+D1*D3*D4+D4*D4*D4-D3*D4*D4)*D4-R*exp(-D2*t)*D1*D3*D3*D3*D4*D4+R*exp(-D2*t)*D1*D1*D3*D3*D3*D4+R*exp(-D3*t)*D2*D2*D2*D1*D4*D4-R*exp(-D3*t)*D2*D2*D1*D4*D4*D4-R*exp(-D3*t)*D2*D2*D2*D1*D1*D4-R*exp(-D1*t)*D2*D2*D2*D3*D4*D4+R*exp(-D1*t)*D2*D2*D3*D4*D4*D4+R*exp(-D3*t)*D2*D1*D1*D4*D4*D4+R*exp(-D1*t)*D2*D2*D2*D3*D3*D4+R*exp(-D3*t)*D2*D2*D1*D1*D1*D4-R*exp(-D3*t)*D2*D1*D1*D1*D4*D4-R*exp(-D1*t)*D2*D2*D3*D3*D3*D4-R*exp(-D1*t)*D2*D3*D3*D4*D4*D4+R*exp(-D2*t)*D1*D1*D1*D3*D4*D4+R*exp(-D1*t)*D2*D3*D3*D3*D4*D4-R*exp(-D2*t)*D1*D1*D3*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D3*D3*D4+R*exp(-D2*t)*D1*D3*D3*D4*D4*D4+R*D2*D2*D1*D4*D4*D4-R*D2*D2*D2*D1*D4*D4)/D4/(D1*D2*D2*D4*D4*D4+D3*D3*D2*D2*D2*D1-D3*D3*D2*D2*D2*D4+D3*D2*D2*D2*D4*D4-D3*D2*D2*D4*D4*D4-D3*D3*D3*D2*D2*D1+D3*D3*D3*D2*D2*D4-D3*D3*D3*D2*D4*D4+D3*D3*D2*D4*D4*D4-D1*D1*D1*D2*D2*D4+D1*D1*D1*D2*D4*D4-D1*D1*D2*D4*D4*D4-D1*D1*D1*D3*D4*D4+D1*D1*D3*D4*D4*D4+D1*D3*D3*D3*
+D4*D4-D1*D3*D3*D4*D4*D4-D1*D1*D2*D2*D2*D3+D1*D1*D2*D2*D2*D4-D1*D2*D2*D2*D4*D4-D1*D1*D1*D3*D3*D2+D1*D1*D1*D3*D3*D4+D1*D1*D3*D3*D3*D2-D1*D1*D3*D3*D3*D4+D1*D1*D1*D2*D2*D3);
 }
 
 
@@ -1632,7 +1672,11 @@ double MCActivator::ActivationO4(double R, double D1, double Branching12, double
     return 0;
   }
   
-  return Branching12*Branching23*Branching34*(R*(1-exp(-D1*t))-R/D2/(-D2+D1)*(-D2*D1*exp(-D1*t)+D1*D2*exp(-D2*t))-(D1*exp(-D1*t)*R*D2*D3*D3-D1*exp(-D1*t)*R*D2*D2*D3-R*D2*exp(-D2*t)*D1*D3*D3+R*D2*exp(-D2*t)*D1*D1*D3+D3*D3*D3*exp(-D3*t)*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*exp(-D3*t)*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*exp(-D3*t)*D1*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*D3*exp(-D3*t)*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*D3*exp(-D3*t)*D1*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*exp(-D3*t)*D1*D1*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3))/D3/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2)-(-D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-R*D2*exp(-D2*t)*D1*D1*D1*D3*D4*D4+R*D3*exp(-D3*t)*D1*D1*D1*D2*D4*D4-R*D3*exp(-D3*t)*D1*D1*D1*D2*D2*D4-D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+R*D2*exp(-D2*t)*D1*D1*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D3*D3*D4*D4*D4+D1*exp(-D1*t)*R*D2*D2*D3*D3*D3*D4+D1*exp(-D1*t)*R*D2*D3*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D1*D3*D3*D3*D4+R*D2*exp(-D2*t)*D1*D3*D3*D3*D4*D4-D1*exp(-D1*t)*R*D2*D3*D3*D3*D4*D4-R*D3*exp(-D3*t)*D1*D1*D2*D4*D4*D4-D1*exp(-D1*t)*R*D2*D2*D2*D3*D3*D4+D1*exp(-D1*t)*R*D2*D2*D2*D3*D4*D4-D1*exp(-D1*t)*R*D2*D2*D3*D4*D4*D4+R*D2*exp(-D2*t)*D1*D1*D1*D3*D3*D4+R*D3*exp(-D3*t)*D1*D1*D2*D2*D2*D4-R*D3*exp(-D3*t)*D1*D2*D2*D2*D4*D4+R*D3*exp(-D3*t)*D1*D2*D2*D4*D4*D4)/D4/(D2*D3*D3*D4*D4*D4-D2*D3*D3*D3*D4*D4+D2*D2*D3*D3*D3*D4-D2*D2*D3*D4*D4*D4+D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D4+D2*D2*D1*D4*D4*D4-D2*D2*D2*D1*D4*D4-D1*D3*D3*D4*D4*D4+D1*D3*D3*D3*D4*D4-D1*D1*D3*D3*D3*D4+D1*D1*D3*D4*D4*D4-D1*D1*D1*D3*D4*D4+D1*D1*D1*D3*D3*D4-D1*D1*D2*D4*D4*D4+D1*D1*D1*D2*D4*D4-D1*D1*D1*D2*D2*D4-D2*D2*D3*D3*D3*D1+D2*D2*D2*D1*D1*D4+D2*D2*D1*D1*D1*D3-D2*D1*D1*D1*D3*D3+D2*D1*D1*D3*D3*D3-D2*D2*D2*D1*D1*D3+D2*D2*D2*D3*D3*D1));
+  return Branching12*Branching23*Branching34*(R*(1-exp(-D1*t))-R/D2/(-D2+D1)*(-D2*D1*exp(-D1*t)+D1*D2*exp(-D2*t))-(D1*exp(-D1*t)*R*D2*D3*D3-D1*exp(-D1*t)*R*D2*D2*D3-R*D2*exp(-D2*t)*D1*D3*D3+R*D2*exp(-D2*t)*D1*D1*D3+D3*D3*D3*exp(-D3*t)*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*exp(-D3*t)*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*exp(-D3*t)*D1*D1*R*D2*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*D3*D3*exp(-D3*t)*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)+D3*D3*exp(-D3*t)*D1*D1*D1*R*D2/(-D1*D3+D2*D1+D3*D3-D2*D3)-D3*exp(-D3*t)*D1*D1*D1*R*D2*D2/(-D1*D3+D2*D1+D3*D3-D2*D3))/D3/(D2*D3*D3-D2*D2*D3+D2*D2*D1-D1*D3*D3+D1*D1*D3-D1*D1*D2)-(-D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-R*D2*exp(-D2*t)*D1*D1*D1*D3*D4*D4+R*D3*exp(-D3*t)*D1*D1*D1*D2*D4*D4-R*D3*exp(-D3*t)*D1*D1*D1*D2*D2*D4-D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-
+D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D2*D1*D1*
+R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D2*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D2*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*exp(-D4*t)*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*
+D4*D4*exp(-D4*t)*D2*D2*D1*D1*D1*D1*R*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*exp(-D4*t)*D2*D2*D2*D1*D1*D1*D1*R*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)-D4*D4*D4*exp(-D4*t)*D2*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+D4*D4*exp(-D4*t)*D2*D1*D1*D1*R*D3*D3*D3*D3/(D3*D1*D4-D3*D2*D1-D3*D4*D4+D3*D2*D4-D1*D4*D4+D1*D2*D4+D4*D4*D4-D2*D4*D4)+R*D2*exp(-D2*t)*D1*D1*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D3*D3*D4*D4*D4+D1*exp(-D1*t)*R*D2*D2*D3*D3*D3*D4+D1*exp(-D1*t)*R*D2*D3*D3*D4*D4*D4-R*D2*exp(-D2*t)*D1*D1*D3*D3*D3*D4+R*D2*exp(-D2*t)*D1*D3*D3*D3*D4*D4-D1*exp(-D1*t)*R*D2*D3*D3*D3*D4*D4-R*D3*exp(-D3*t)*D1*D1*D2*D4*D4*D4-D1*exp(-D1*t)*R*D2*D2*D2*D3*D3*D4+D1*exp(-D1*t)*R*D2*D2*D2*D3*D4*D4-D1*exp(-D1*t)*R*D2*D2*D3*D4*D4*D4+R*D2*exp(-D2*t)*D1*D1*D1*D3*D3*D4+R*D3*exp(-D3*t)*D1*D1*D2*D2*D2*D4-R*D3*exp(-D3*t)*D1*D2*D2*D2*D4*D4+R*D3*exp(-D3*t)*D1*D2*D2*D4*D4*D4)/D4/(D2*D3*D3*D4*D4*D4-D2*D3*D3*D3*D4*D4+D2*D2*
+D3*D3*D3*D4-D2*D2*D3*D4*D4*D4+D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D4+D2*D2*D1*D4*D4*D4-D2*D2*D2*D1*D4*D4-D1*D3*D3*D4*D4*D4+D1*D3*D3*D3*D4*D4-D1*D1*D3*D3*D3*D4+D1*D1*D3*D4*D4*D4-D1*D1*D1*D3*D4*D4+D1*D1*D1*D3*D3*D4-D1*D1*D2*D4*D4*D4+D1*D1*D1*D2*D4*D4-D1*D1*D1*D2*D2*D4-D2*D2*D3*D3*D3*D1+D2*D2*D2*D1*D1*D4+D2*D2*D1*D1*D1*D3-D2*D1*D1*D1*D3*D3+D2*D1*D1*D3*D3*D3-D2*D2*D2*D1*D1*D3+D2*D2*D2*D3*D3*D1));
 }
 
 
@@ -1645,9 +1689,19 @@ double MCActivator::CooldownO4(double A1, double D1, double Branching12, double 
     return 0;
   }
 
-  return Branching12*Branching23*Branching34*(D4*exp(-D4*t)*D1*D1*D3*D3*D3*A4-D4*exp(-D4*t)*D1*D1*D3*D3*D3*A2+D4*D4*exp(-D4*t)*D2*D2*D3*D3*A2-D4*D4*D2*D1*D1*D1*exp(-D4*t)*A4+D4*D4*D2*D1*D1*D1*exp(-D4*t)*A3+D4*D4*D1*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D2*D2*D2*D3*exp(-D4*t)*A3-D4*D4*D2*D3*D3*D3*exp(-D4*t)*A2+D4*D4*D2*D3*D3*D3*exp(-D4*t)*A4-D4*D4*D2*D2*D3*D3*exp(-D4*t)*A3-D4*D4*exp(-D4*t)*D2*D2*D2*D1*A3+D4*D4*exp(-D4*t)*D2*D2*D2*D1*A4-D4*D4*D2*D2*D2*D3*exp(-D4*t)*A4-D4*D4*D4*exp(-D4*t)*D1*D3*D3*A3+D4*D2*D2*D1*D1*D1*exp(-D4*t)*A4-D4*D2*D2*D1*D1*D1*exp(-D4*t)*A3-D4*exp(-D4*t)*D2*D2*D2*D3*D3*A1+D4*D4*exp(-D4*t)*D1*D3*D3*D3*A2-D4*D4*D1*D1*D1*D3*exp(-D4*t)*A3+D4*D4*exp(-D4*t)*D1*D1*D3*D3*A3-D4*D4*D1*D1*D3*D3*exp(-D4*t)*A2-D4*D4*exp(-D4*t)*D1*D3*D3*D3*A4-D4*D1*D1*D1*D3*D3*exp(-D4*t)*A4-D4*D2*D2*D3*D3*D3*exp(-D4*t)*A4+D4*D2*D2*D3*D3*D3*exp(-D4*t)*A1-D4*exp(-D4*t)*D2*D2*D2*D1*D1*A4+D4*D4*exp(-D4*t)*D2*D2*D3*D1*A3+D4*D4*exp(-D4*t)*D2*D1*D1*D3*A2-D4*D4*D1*D1*D3*exp(-D4*t)*D2*A3-D4*D4*D2*D2*D1*exp(-D4*t)*D3*A2+D4*D4*D4*D2*D3*D3*exp(-D4*t)*A3-D4*D4*D4*D2*D2*D1*exp(-D4*t)*A4-D4*D4*D4*D2*D3*D3*exp(-D4*t)*A4-D4*D4*D4*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D4*exp(-D4*t)*D2*D2*D3*A4+D4*D4*D4*exp(-D4*t)*D2*D1*D1*A4+exp(-D2*t)*D1*D1*A1*D2*D3*D4*D4+D4*D4*D4*D1*D1*D3*exp(-D4*t)*A3-D4*D4*D4*exp(-D4*t)*D2*D1*D1*A3+exp(-D3*t)*D1*A1*D2*D3*D4*D4*D4-D4*D4*D4*exp(-D4*t)*D2*D2*D3*A3+D4*D4*D4*D2*D2*D1*exp(-D4*t)*A3+D4*D4*D4*exp(-D4*t)*D1*D3*D3*A4+D4*D1*D1*D1*D3*D3*exp(-D4*t)*A2+D4*exp(-D4*t)*D2*D2*D2*D1*D1*A3+D4*D2*D2*D2*D3*D3*exp(-D4*t)*A4+exp(-D3*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D2*t)*D2*A2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D3*D1*A3*D4*D4*D4+exp(-D3*t)*D2*D2*D2*A3*D1*D4*D4+exp(-D3*t)*D2*D2*A2*D3*D3*D1*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4+exp(-D3*t)*D1*D1*A1*D2*D2*D3*D4+D3*D1*D1*exp(-D3*t)*A2*D4*D4*D4+D3*D1*D1*D1*exp(-D3*t)*A2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A2*D4*D4+exp(-D3*t)*D3*D3*D2*D2*A3*D4*D4+exp(-D1*t)*D3*D2*D2*A1*D4*D4*D4+exp(-D1*t)*D3*D3*D2*D2*D2*A1*D4+exp(-D3*t)*D3*D2*D2*D2*A3*D1*D4+exp(-D1*t)*A1*D2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D2*D2*A3*D4*D4*D4+exp(-D3*t)*D2*A2*D3*D3*D4*D4*D4-exp(-D3*t)*D1*D1*A1*D2*D3*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A2*D2*D4-D3*D1*D1*D1*exp(-D3*t)*A2*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4-D3*D1*D1*D1*exp(-D3*t)*A3*D2*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4+D3*D1*D1*exp(-D3*t)*A3*D2*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D3*D1*D4+D3*D1*D1*D1*exp(-D3*t)*A3*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D4*D4*D4+exp(-D2*t)*D3*D3*D2*A2*D1*D1*D4-exp(-D2*t)*D3*D2*A2*D1*D1*D4*D4-D3*D1*D1*exp(-D3*t)*A3*D4*D4*D4+exp(-D2*t)*D3*D3*D1*A2*D4*D4*D4+exp(-D2*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D2*t)*A1*D2*D3*D3*D3*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-exp(-D2*t)*D1*D1*A1*D2*D3*D3*D4-exp(-D3*t)*D3*D3*D1*A2*D4*D4*D4-exp(-D2*t)*D1*A1*D2*D3*D4*D4*D4-exp(-D3*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A2*D1*D1*D4-exp(-D3*t)*D2*D2*D2*A3*D1*D1*D4-exp(-D2*t)*D3*D3*D3*D1*A2*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A3*D4*D4+exp(-D2*t)*D3*D3*D3*D1*D1*A2*D4-exp(-D3*t)*D2*D2*A2*D3*D3*D4*D4-exp(-D3*t)*D3*D2*D2*D2*A3*D4*D4-exp(-D3*t)*D2*D2*A3*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A1*D4*D4*D4-exp(-D1*t)*A1*D2*D2*D3*D3*D3*D4-exp(-D3*t)*D3*D2*D2*D2*A1*D1*D4-exp(-D2*t)*D2*A2*D3*D3*D3*D1*D4-exp(-D1*t)*A1*D2*D3*D3*D4*D4*D4-exp(-D3*t)*D3*D3*D2*D2*A3*D1*D4-exp(-D3*t)*D3*D3*D2*A3*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A3*D4*D4*D1+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A3*D2*D4-D4*exp(-D4*t)*D1*D1*D3*D3*D2*A3-D2*D2*D2*D3*D3*exp(-D4*t)*A4*D1+D1*D1*D1*D3*D3*exp(-D4*t)*A4*D2+exp(-D4*t)*D2*D2*D2*D1*D1*A4*D3+D2*D2*D3*D3*D3*exp(-D4*t)*A4*D1-exp(-D2*t)*D2*A2*D3*D3*D4*D4*D4+D4*D2*D2*D1*D1*exp(-D4*t)*A2*D3-D4*D2*D2*D2*D3*exp(-D4*t)*D1*A3-D4*D2*D1*D1*D1*exp(-D4*t)*D3*A2-D4*exp(-D4*t)*D2*D2*D3*D3*A2*D1-D4*exp(-D4*t)*D2*D2*D1*D1*D3*A1+D4*D2*D2*D2*D1*exp(-D4*t)*D3*A1+D4*D1*D1*D1*D3*exp(-D4*t)*D2*A3+D4*D1*D1*D3*D3*exp(-D4*t)*A1*D2+D4*D2*D3*D3*D3*exp(-D4*t)*A2*D1+D4*D2*D2*D3*D3*exp(-D4*t)*D1*A3-D4*exp(-D4*t)*D1*D3*D3*D3*A1*D2-D2*D2*D1*D1*D1*exp(-D4*t)*A4*D3-exp(-D1*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D3*t)*D3*D2*D2*A2*D1*D4*D4-D1*D1*D3*D3*D3*D2*exp(-D4*t)*A4)/(D2*D2*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4-D2*D3*D3*D4*D4*D4+D2*D2*D1*D1*D1*D4-D2*D1*D1*D1*D4*D4+D2*D1*D1*D4*D4*D4+D1*D1*D1*D3*D3*D2-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D4*D4-D1*D1*D3*D4*D4*D4-D1*D1*D3*D3*D3*D2+D1*D1*D3*D3*D3*D4-D1*D3*D3*D3*D4*D4+D1*D3*D3*D4*D4*D4+D2*D2*D2*D1*D1*D3-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D4*D4-D2*D2*D1*D4*D4*D4-D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D1+D2*D2*D2*D3*D3*D4+D2*D2*D3*D3*D3*D1-D2*D2*D3*D3*D3*D4-D2*D2*D1*D1*D1*D3);
+  return Branching12*Branching23*Branching34*(D4*exp(-D4*t)*D1*D1*D3*D3*D3*A4-D4*exp(-D4*t)*D1*D1*D3*D3*D3*A2+D4*D4*exp(-D4*t)*D2*D2*D3*D3*A2-D4*D4*D2*D1*D1*D1*exp(-D4*t)*A4+D4*D4*D2*D1*D1*D1*exp(-D4*t)*A3+D4*D4*D1*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D2*D2*D2*D3*exp(-D4*t)*A3-D4*D4*D2*D3*D3*D3*exp(-D4*t)*A2+D4*D4*D2*D3*D3*D3*exp(-D4*t)*A4-D4*D4*D2*D2*D3*D3*exp(-D4*t)*A3-D4*D4*exp(-D4*t)*D2*D2*D2*D1*A3+D4*D4*exp(-D4*t)*D2*D2*D2*D1*A4-D4*D4*D2*D2*D2*D3*exp(-D4*t)*A4-D4*D4*D4*exp(-D4*t)*D1*D3*D3*A3+D4*D2*D2*D1*D1*D1*exp(-D4*t)*A4-D4*D2*D2*D1*D1*D1*exp(-D4*t)*A3-D4*exp(-D4*t)*D2*D2*D2*D3*D3*A1+D4*D4*exp(-D4*t)*D1*D3*D3*D3*A2-D4*D4*D1*D1*D1*D3*exp(-D4*t)*A3+D4*D4*exp(-D4*t)*D1*D1*D3*D3*A3-D4*D4*D1*D1*D3*D3*exp(-D4*t)*A2-D4*D4*exp(-D4*t)*D1*D3*D3*D3*A4-D4*D1*D1*D1*D3*D3*exp(-D4*t)*A4-D4*D2*D2*D3*D3*D3*exp(-D4*t)*A4+D4*D2*D2*D3*D3*D3*exp(-D4*t)*A1-D4*exp(-D4*t)*D2*D2*D2*D1*D1*A4+D4*D4*exp(-D4*t)*D2*D2*D3*D1*A3+D4*D4*exp(-D4*t)*D2*D1*D1*D3*A2-D4*D4*D1*D1*D3*exp(-D4*t)*D2*A3-D4*D4*D2*D2*D1*exp(-D4*t)*D3*A2+D4*D4*D4*D2*D3*D3*
+exp(-D4*t)*A3-D4*D4*D4*D2*D2*D1*exp(-D4*t)*A4-D4*D4*D4*D2*D3*D3*exp(-D4*t)*A4-D4*D4*D4*D1*D1*D3*exp(-D4*t)*A4+D4*D4*D4*exp(-D4*t)*D2*D2*D3*A4+D4*D4*D4*exp(-D4*t)*D2*D1*D1*A4+exp(-D2*t)*D1*D1*A1*D2*D3*D4*D4+D4*D4*D4*D1*D1*D3*exp(-D4*t)*A3-D4*D4*D4*exp(-D4*t)*D2*D1*D1*A3+exp(-D3*t)*D1*A1*D2*D3*D4*D4*D4-D4*D4*D4*exp(-D4*t)*D2*D2*D3*A3+D4*D4*D4*D2*D2*D1*exp(-D4*t)*A3+D4*D4*D4*exp(-D4*t)*D1*D3*D3*A4+D4*D1*D1*D1*D3*D3*exp(-D4*t)*A2+D4*exp(-D4*t)*D2*D2*D2*D1*D1*A3+D4*D2*D2*D2*D3*D3*exp(-D4*t)*A4+exp(-D3*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D2*t)*D2*A2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D3*D1*A3*D4*D4*D4+exp(-D3*t)*D2*D2*D2*A3*D1*D4*D4+exp(-D3*t)*D2*D2*A2*D3*D3*D1*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4+exp(-D3*t)*D1*D1*A1*D2*D2*D3*D4+D3*D1*D1*exp(-D3*t)*A2*D4*D4*D4+D3*D1*D1*D1*exp(-D3*t)*A2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A2*D4*D4+exp(-D3*t)*D3*D3*D2*D2*A3*D4*D4+exp(-D1*t)*D3*D2*D2*A1*D4*D4*D4+exp(-D1*t)*D3*D3*D2*D2*D2*A1*D4+exp(-D3*t)*D3*D2*D2*D2*A3*D1*D4+exp(-D1*t)*A1*D2*D3*D3*D3*D4*D4+exp(-D3*t)*D3*D2*D2*A3*D4*D4*D4+exp(-D3*t)*D2*A2*
+D3*D3*D4*D4*D4-exp(-D3*t)*D1*D1*A1*D2*D3*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A2*D2*D4-D3*D1*D1*D1*exp(-D3*t)*A2*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4-D3*D1*D1*D1*exp(-D3*t)*A3*D2*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4+D3*D1*D1*exp(-D3*t)*A3*D2*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D3*D1*D4+D3*D1*D1*D1*exp(-D3*t)*A3*D4*D4+exp(-D2*t)*A1*D2*D3*D3*D4*D4*D4+exp(-D2*t)*D3*D3*D2*A2*D1*D1*D4-exp(-D2*t)*D3*D2*A2*D1*D1*D4*D4-D3*D1*D1*exp(-D3*t)*A3*D4*D4*D4+exp(-D2*t)*D3*D3*D1*A2*D4*D4*D4+exp(-D2*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D2*t)*A1*D2*D3*D3*D3*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-exp(-D2*t)*D1*D1*A1*D2*D3*D3*D4-exp(-D3*t)*D3*D3*D1*A2*D4*D4*D4-exp(-D2*t)*D1*A1*D2*D3*D4*D4*D4-exp(-D3*t)*D3*D2*A2*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A2*D1*D1*D4-exp(-D3*t)*D2*D2*D2*A3*D1*D1*D4-exp(-D2*t)*D3*D3*D3*D1*A2*D4*D4-exp(-D3*t)*D3*D3*D1*D1*A3*D4*D4+exp(-D2*t)*D3*D3*D3*D1*D1*A2*D4-exp(-D3*t)*D2*D2*A2*D3*D3*D4*D4-exp(-D3*t)*D3*D2*D2*D2*A3*D4*D4-exp(-D3*t)*D2*D2*A3*D1*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A1*D4*D4*D4-exp(-D1*t)*A1*D2*
+D2*D3*D3*D3*D4-exp(-D3*t)*D3*D2*D2*D2*A1*D1*D4-exp(-D2*t)*D2*A2*D3*D3*D3*D1*D4-exp(-D1*t)*A1*D2*D3*D3*D4*D4*D4-exp(-D3*t)*D3*D3*D2*D2*A3*D1*D4-exp(-D3*t)*D3*D3*D2*A3*D4*D4*D4-exp(-D3*t)*D3*D2*D2*A3*D4*D4*D1+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+exp(-D3*t)*D3*D3*D1*D1*A3*D2*D4-D4*exp(-D4*t)*D1*D1*D3*D3*D2*A3-D2*D2*D2*D3*D3*exp(-D4*t)*A4*D1+D1*D1*D1*D3*D3*exp(-D4*t)*A4*D2+exp(-D4*t)*D2*D2*D2*D1*D1*A4*D3+D2*D2*D3*D3*D3*exp(-D4*t)*A4*D1-exp(-D2*t)*D2*A2*D3*D3*D4*D4*D4+D4*D2*D2*D1*D1*exp(-D4*t)*A2*D3-D4*D2*D2*D2*D3*exp(-D4*t)*D1*A3-D4*D2*D1*D1*D1*exp(-D4*t)*D3*A2-D4*exp(-D4*t)*D2*D2*D3*D3*A2*D1-D4*exp(-D4*t)*D2*D2*D1*D1*D3*A1+D4*D2*D2*D2*D1*exp(-D4*t)*D3*A1+D4*D1*D1*D1*D3*exp(-D4*t)*D2*A3+D4*D1*D1*D3*D3*exp(-D4*t)*A1*D2+D4*D2*D3*D3*D3*exp(-D4*t)*A2*D1+D4*D2*D2*D3*D3*exp(-D4*t)*D1*A3-D4*exp(-D4*t)*D1*D3*D3*D3*A1*D2-D2*D2*D1*D1*D1*exp(-D4*t)*A4*D3-exp(-D1*t)*D3*D2*D2*D2*A1*D4*D4+exp(-D3*t)*D3*D2*D2*A2*D1*D4*D4-D1*D1*D3*D3*D3*D2*exp(-D4*t)*A4)/(D2*D2*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4-D2*D3*D3*D4*D4*D4+D2*D2*D1*D1*D1*D4-D2*D1*
+D1*D1*D4*D4+D2*D1*D1*D4*D4*D4+D1*D1*D1*D3*D3*D2-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D4*D4-D1*D1*D3*D4*D4*D4-D1*D1*D3*D3*D3*D2+D1*D1*D3*D3*D3*D4-D1*D3*D3*D3*D4*D4+D1*D3*D3*D4*D4*D4+D2*D2*D2*D1*D1*D3-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D4*D4-D2*D2*D1*D4*D4*D4-D2*D2*D2*D3*D4*D4-D2*D2*D2*D3*D3*D1+D2*D2*D2*D3*D3*D4+D2*D2*D3*D3*D3*D1-D2*D2*D3*D3*D3*D4-D2*D2*D1*D1*D1*D3);
   
-  // return Branching12*Branching23*Branching34*(-(-D1*D1*D3*D3*D3*exp(-D4*t)*D4*A2+D1*D1*D3*D3*exp(-D4*t)*A3*D4*D4+exp(-D4*t)*D2*D2*D3*D3*A2*D4*D4+D3*D3*D2*exp(-D4*t)*A3*D4*D4*D4-D3*D3*D3*D2*exp(-D4*t)*A2*D4*D4-D3*D3*D2*exp(-D4*t)*A4*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D3*D3*D4*A1-exp(-D4*t)*D2*D2*D3*A3*D4*D4*D4+exp(-D4*t)*D2*D2*D3*A4*D4*D4*D4-D3*D3*D3*D2*D2*exp(-D4*t)*D4*A1-D1*D1*D1*D2*D2*D4*exp(-D4*t)*A3+D1*D1*D2*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D2*D2*D2*D4*exp(-D4*t)*A4+D1*D1*D2*D2*D2*D4*exp(-D4*t)*A3-D1*D1*exp(-D4*t)*D4*D4*D4*A4*D3+D1*D1*D1*exp(-D4*t)*D3*D3*D4*A2+D1*D3*D3*D3*D2*D2*exp(-D4*t)*A4-D1*exp(-D4*t)*D3*D3*D3*D4*D4*A4-D1*exp(-D4*t)*D3*D3*D4*D4*D4*A3+D1*exp(-D4*t)*D3*D3*D3*D4*D4*A2-D1*D2*D2*exp(-D4*t)*D4*D4*D4*A4+D1*D4*D4*D4*D3*D3*exp(-D4*t)*A4+D1*D2*D2*exp(-D4*t)*D4*D4*D4*A3-D1*D2*D2*D2*exp(-D4*t)*D4*D4*A3+D1*D2*D2*D2*exp(-D4*t)*D4*D4*A4-D1*exp(-D4*t)*D2*D2*D2*D3*D3*A4+D1*D1*D1*exp(-D4*t)*D3*A4*D4*D4-D1*D1*D1*exp(-D4*t)*D3*A3*D4*D4+D1*D1*D1*D2*exp(-D4*t)*D3*D3*A4-D1*D1*D1*D2*exp(-D4*t)*D4*D4*A4+D1*D1*D1*D2*exp(-D4*t)*D4*D4*A3+D1*D1*D4*D4*D4*D3*exp(-D4*t)*A3+D1*D1*D3*D3*D3*exp(-D4*t)*A4*D4-D1*D1*D1*exp(-D4*t)*D3*D3*A4*D4-D1*D1*D2*D3*D3*D3*exp(-D4*t)*A4+D1*D1*D2*exp(-D4*t)*D4*D4*D4*A4-D1*D1*D2*exp(-D4*t)*D4*D4*D4*A3+D3*D3*exp(-D3*t)*A3*D2*D2*D4*D4-D3*D3*D2*D2*exp(-D4*t)*A3*D4*D4-D1*D1*D1*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*exp(-D4*t)*D4*D4*A2*D3-D1*D1*D2*exp(-D4*t)*D3*A3*D4*D4+D1*D3*D3*D3*D2*exp(-D4*t)*D4*A2+D1*D3*D3*D2*D2*exp(-D4*t)*D4*A3-D1*D2*D2*exp(-D4*t)*D4*D4*A2*D3+D1*exp(-D4*t)*D2*D2*D3*A3*D4*D4-D1*exp(-D4*t)*D2*D2*D2*D3*D4*A3-D1*exp(-D4*t)*D2*D2*D3*D3*D4*A2-D1*D1*D2*D3*D3*exp(-D4*t)*D4*A3-D1*D1*D4*D4*exp(-D4*t)*A2*D3*D3+D1*D1*D1*D2*exp(-D4*t)*D3*D4*A3-D1*D1*D2*exp(-D4*t)*D3*D3*D4*A1+A1*exp(-D1*t)*D2*D3*D3*D4*D4*D4+A1*exp(-D1*t)*D2*D2*D3*D3*D3*D4+D1*D2*D2*D3*exp(-D3*t)*A2*D4*D4+D1*exp(-D2*t)*A2*D3*D3*D4*D4*D4+D1*D1*exp(-D2*t)*A2*D3*D3*D3*D4+D2*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+D1*D1*D3*D3*exp(-D3*t)*A2*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D4*D4*D4+D2*D2*D3*exp(-D3*t)*A1*D4*D4*D4+D1*D3*D3*exp(-D3*t)*A3*D4*D4*D4+D1*D1*D3*exp(-D3*t)*A2*D4*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D2*D1*D4+D1*D1*D3*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*D3*exp(-D3*t)*A1*D4*D4+D2*D2*D2*D3*exp(-D3*t)*A1*D1*D4+D2*exp(-D2*t)*A1*D3*D3*D3*D4*D4+D1*D1*D3*exp(-D3*t)*A3*D2*D4*D4+D1*D1*D1*D3*exp(-D3*t)*A3*D4*D4+A1*exp(-D1*t)*D2*D2*D2*D3*D4*D4+D1*D1*D2*exp(-D2*t)*A1*D3*D3*D4+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+D2*exp(-D2*t)*A2*D1*D3*D4*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D4*D4*D4-D1*D2*D3*exp(-D3*t)*A2*D4*D4*D4-D2*exp(-D2*t)*A2*D1*D1*D3*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D3*D1*D4+D1*D2*D2*D2*exp(-D3*t)*A3*D4*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4-D1*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D1*D3*exp(-D3*t)*A2*D2*D4-D1*D1*D3*D3*exp(-D3*t)*A2*D2*D4-D1*D2*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D2*D2*D4*exp(-D4*t)*A2*D3+D1*D2*D3*D3*D3*exp(-D4*t)*D4*A1-D1*D1*D2*exp(-D2*t)*A1*D3*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D3*D1*D4-A1*exp(-D1*t)*D2*D2*D2*D3*D3*D4-D1*D2*D2*exp(-D3*t)*A3*D4*D4*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A1*D4-D1*D2*D3*exp(-D3*t)*A1*D4*D4*D4-D1*D1*D2*D2*D2*exp(-D3*t)*A3*D4-D3*D3*exp(-D3*t)*A3*D2*D2*D1*D4-A1*exp(-D1*t)*D2*D3*D3*D3*D4*D4-D2*D2*D3*D3*exp(-D3*t)*A2*D4*D4-D1*D3*D3*exp(-D3*t)*A2*D4*D4*D4-D3*D3*exp(-D3*t)*A3*D2*D4*D4*D4-D1*D1*D3*D3*exp(-D3*t)*A3*D4*D4-D2*D2*D2*D3*exp(-D3*t)*A1*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D2*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D4*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-D1*D1*D1*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D3*exp(-D3*t)*A3*D4*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4+D1*D1*D1*D2*D2*D4*exp(-D4*t)*A4-D1*D1*D1*D2*D4*exp(-D4*t)*A2*D3-D2*D2*exp(-D4*t)*D3*D3*D3*A4*D4+D2*exp(-D4*t)*D3*D3*D3*A4*D4*D4+D2*D2*D2*exp(-D4*t)*D3*D3*A4*D4+D2*D2*D2*D4*D4*exp(-D4*t)*A3*D3-D2*D2*D2*D4*D4*exp(-D4*t)*A4*D3+D2*D3*D3*exp(-D3*t)*A2*D4*D4*D4+D2*D2*D3*D3*exp(-D3*t)*A2*D1*D4+D1*D2*exp(-D2*t)*A1*D3*D4*D4*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4-D1*D1*D1*D3*exp(-D3*t)*A2*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D4*D4*D1-A1*exp(-D1*t)*D2*D2*D3*D4*D4*D4+D2*exp(-D2*t)*A2*D1*D1*D3*D3*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A2*D4)/(-D2*D3*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4+D2*D2*D3*D4*D4*D4-D2*D2*D2*D3*D4*D4-D2*D2*D1*D4*D4*D4+D2*D2*D2*D1*D4*D4-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D1*D3+D1*D3*D3*D4*D4*D4-D1*D3*D3*D3*D4*D4+D1*D1*D3*D3*D3*D4-D1*D1*D3*D3*D3*D2-D1*D1*D3*D4*D4*D4+D1*D1*D1*D3*D4*D4-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D3*D2+D1*D1*D2*D4*D4*D4-D1*D1*D1*D2*D4*D4+D1*D1*D1*D2*D2*D4-D1*D1*D1*D2*D2*D3-D2*D2*D3*D3*D3*D4+D2*D2*D3*D3*D3*D1+D2*D2*D2*D3*D3*D4-D2*D2*D2*D3*D3*D1));
+  /*
+  return Branching12*Branching23*Branching34*(-(-D1*D1*D3*D3*D3*exp(-D4*t)*D4*A2+D1*D1*D3*D3*exp(-D4*t)*A3*D4*D4+exp(-D4*t)*D2*D2*D3*D3*A2*D4*D4+D3*D3*D2*exp(-D4*t)*A3*D4*D4*D4-D3*D3*D3*D2*exp(-D4*t)*A2*D4*D4-D3*D3*D2*exp(-D4*t)*A4*D4*D4*D4+exp(-D4*t)*D2*D2*D2*D3*D3*D4*A1-exp(-D4*t)*D2*D2*D3*A3*D4*D4*D4+exp(-D4*t)*D2*D2*D3*A4*D4*D4*D4-D3*D3*D3*D2*D2*exp(-D4*t)*D4*A1-D1*D1*D1*D2*D2*D4*exp(-D4*t)*A3+D1*D1*D2*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D2*D2*D2*D4*exp(-D4*t)*A4+D1*D1*D2*D2*D2*D4*exp(-D4*t)*A3-D1*D1*exp(-D4*t)*D4*D4*D4*A4*D3+D1*D1*D1*exp(-D4*t)*D3*D3*D4*A2+D1*D3*D3*D3*D2*D2*exp(-D4*t)*A4-D1*exp(-D4*t)*D3*D3*D3*D4*D4*A4-D1*exp(-D4*t)*D3*D3*D4*D4*D4*A3+D1*exp(-D4*t)*D3*D3*D3*D4*D4*A2-D1*D2*D2*exp(-D4*t)*D4*D4*D4*A4+D1*D4*D4*D4*D3*D3*exp(-D4*t)*A4+D1*D2*D2*exp(-D4*t)*D4*D4*D4*A3-D1*D2*D2*D2*exp(-D4*t)*D4*D4*A3+D1*D2*D2*D2*exp(-D4*t)*D4*D4*A4-D1*exp(-D4*t)*D2*D2*D2*D3*D3*A4+D1*D1*D1*exp(-D4*t)*D3*A4*D4*D4-D1*D1*D1*exp(-D4*t)*D3*A3*D4*D4+D1*D1*D1*D2*exp(-D4*t)*D3*D3*A4-D1*D1*D1*D2*exp(-D4*t)*D4*D4*A4+D1*D1*D1*D2*
+exp(-D4*t)*D4*D4*A3+D1*D1*D4*D4*D4*D3*exp(-D4*t)*A3+D1*D1*D3*D3*D3*exp(-D4*t)*A4*D4-D1*D1*D1*exp(-D4*t)*D3*D3*A4*D4-D1*D1*D2*D3*D3*D3*exp(-D4*t)*A4+D1*D1*D2*exp(-D4*t)*D4*D4*D4*A4-D1*D1*D2*exp(-D4*t)*D4*D4*D4*A3+D3*D3*exp(-D3*t)*A3*D2*D2*D4*D4-D3*D3*D2*D2*exp(-D4*t)*A3*D4*D4-D1*D1*D1*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*exp(-D4*t)*D4*D4*A2*D3-D1*D1*D2*exp(-D4*t)*D3*A3*D4*D4+D1*D3*D3*D3*D2*exp(-D4*t)*D4*A2+D1*D3*D3*D2*D2*exp(-D4*t)*D4*A3-D1*D2*D2*exp(-D4*t)*D4*D4*A2*D3+D1*exp(-D4*t)*D2*D2*D3*A3*D4*D4-D1*exp(-D4*t)*D2*D2*D2*D3*D4*A3-D1*exp(-D4*t)*D2*D2*D3*D3*D4*A2-D1*D1*D2*D3*D3*exp(-D4*t)*D4*A3-D1*D1*D4*D4*exp(-D4*t)*A2*D3*D3+D1*D1*D1*D2*exp(-D4*t)*D3*D4*A3-D1*D1*D2*exp(-D4*t)*D3*D3*D4*A1+A1*exp(-D1*t)*D2*D3*D3*D4*D4*D4+A1*exp(-D1*t)*D2*D2*D3*D3*D3*D4+D1*D2*D2*D3*exp(-D3*t)*A2*D4*D4+D1*exp(-D2*t)*A2*D3*D3*D4*D4*D4+D1*D1*exp(-D2*t)*A2*D3*D3*D3*D4+D2*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*exp(-D3*t)*A3*D2*D4*D4*D4+D1*D1*D3*D3*exp(-D3*t)*A2*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D4*D4*D4+D2*D2*D3*exp(-D3*t)*A1*D4*D4*D4+D1*D3*D3*
+exp(-D3*t)*A3*D4*D4*D4+D1*D1*D3*exp(-D3*t)*A2*D4*D4*D4+D3*exp(-D3*t)*A3*D2*D2*D2*D1*D4+D1*D1*D3*D3*exp(-D3*t)*A3*D2*D4+D1*D1*D2*D3*exp(-D3*t)*A1*D4*D4+D2*D2*D2*D3*exp(-D3*t)*A1*D1*D4+D2*exp(-D2*t)*A1*D3*D3*D3*D4*D4+D1*D1*D3*exp(-D3*t)*A3*D2*D4*D4+D1*D1*D1*D3*exp(-D3*t)*A3*D4*D4+A1*exp(-D1*t)*D2*D2*D2*D3*D4*D4+D1*D1*D2*exp(-D2*t)*A1*D3*D3*D4+D1*D1*D1*exp(-D3*t)*A3*D2*D2*D4+D2*exp(-D2*t)*A2*D1*D3*D4*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D4*D4*D4-D1*D2*D3*exp(-D3*t)*A2*D4*D4*D4-D2*exp(-D2*t)*A2*D1*D1*D3*D4*D4-D2*exp(-D2*t)*A2*D3*D3*D3*D1*D4+D1*D2*D2*D2*exp(-D3*t)*A3*D4*D4+D1*D1*D1*exp(-D2*t)*A2*D3*D4*D4-D1*exp(-D2*t)*A2*D3*D3*D3*D4*D4+D1*D1*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D1*D3*exp(-D3*t)*A2*D2*D4-D1*D1*D3*D3*exp(-D3*t)*A2*D2*D4-D1*D2*D2*D2*D4*exp(-D4*t)*D3*A1+D1*D1*D2*D2*D4*exp(-D4*t)*A2*D3+D1*D2*D3*D3*D3*exp(-D4*t)*D4*A1-D1*D1*D2*exp(-D2*t)*A1*D3*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D3*D1*D4-A1*exp(-D1*t)*D2*D2*D2*D3*D3*D4-D1*D2*D2*exp(-D3*t)*A3*D4*D4*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A1*D4-D1*D2*D3*exp(-D3*t)*A1*D4*D4*D4-D1*D1*D2*
+D2*D2*exp(-D3*t)*A3*D4-D3*D3*exp(-D3*t)*A3*D2*D2*D1*D4-A1*exp(-D1*t)*D2*D3*D3*D3*D4*D4-D2*D2*D3*D3*exp(-D3*t)*A2*D4*D4-D1*D3*D3*exp(-D3*t)*A2*D4*D4*D4-D3*D3*exp(-D3*t)*A3*D2*D4*D4*D4-D1*D1*D3*D3*exp(-D3*t)*A3*D4*D4-D2*D2*D2*D3*exp(-D3*t)*A1*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D2*D4*D4-D2*exp(-D2*t)*A1*D3*D3*D4*D4*D4-D1*D1*D1*exp(-D3*t)*A3*D2*D4*D4-D1*D1*D1*D2*D2*exp(-D4*t)*D3*A4-D1*D1*D3*exp(-D3*t)*A3*D4*D4*D4-D1*D1*exp(-D2*t)*A2*D3*D4*D4*D4+D1*D1*D1*D2*D2*D4*exp(-D4*t)*A4-D1*D1*D1*D2*D4*exp(-D4*t)*A2*D3-D2*D2*exp(-D4*t)*D3*D3*D3*A4*D4+D2*exp(-D4*t)*D3*D3*D3*A4*D4*D4+D2*D2*D2*exp(-D4*t)*D3*D3*A4*D4+D2*D2*D2*D4*D4*exp(-D4*t)*A3*D3-D2*D2*D2*D4*D4*exp(-D4*t)*A4*D3+D2*D3*D3*exp(-D3*t)*A2*D4*D4*D4+D2*D2*D3*D3*exp(-D3*t)*A2*D1*D4+D1*D2*exp(-D2*t)*A1*D3*D4*D4*D4-D1*D1*D1*exp(-D2*t)*A2*D3*D3*D4-D1*D1*D1*D3*exp(-D3*t)*A2*D4*D4-D3*exp(-D3*t)*A3*D2*D2*D4*D4*D1-A1*exp(-D1*t)*D2*D2*D3*D4*D4*D4+D2*exp(-D2*t)*A2*D1*D1*D3*D3*D4-D1*D1*D2*D2*D3*exp(-D3*t)*A2*D4)/(-D2*D3*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4+D2*D2*D3*D4*D4*D4-D2*D2*D2*D3*D4*
+D4-D2*D2*D1*D4*D4*D4+D2*D2*D2*D1*D4*D4-D2*D2*D2*D1*D1*D4+D2*D2*D2*D1*D1*D3+D1*D3*D3*D4*D4*D4-D1*D3*D3*D3*D4*D4+D1*D1*D3*D3*D3*D4-D1*D1*D3*D3*D3*D2-D1*D1*D3*D4*D4*D4+D1*D1*D1*D3*D4*D4-D1*D1*D1*D3*D3*D4+D1*D1*D1*D3*D3*D2+D1*D1*D2*D4*D4*D4-D1*D1*D1*D2*D4*D4+D1*D1*D1*D2*D2*D4-D1*D1*D1*D2*D2*D3-D2*D2*D3*D3*D3*D4+D2*D2*D3*D3*D3*D1+D2*D2*D2*D3*D3*D4-D2*D2*D2*D3*D3*D1));
+  */
 }
 
 
@@ -1660,7 +1714,10 @@ double MCActivator::CountsO5(double R, double D1, double Branching12, double D2,
     return 0;
   }
   if (D5 == 0) {
-    return Branching12*Branching23*Branching34*Branching45*(-R*D2*D2*D2*D2*D3*D3*D4*D4*D4*t*D1+R*D2*D2*D2*D3*D3*D4*D4*D4*D4*t*D1+R*D2*D2*D2*D2*t*D1*D1*D1*D3*D3*D4-R*t*D1*D1*D1*D1*D2*D2*D2*D3*D3*D4+R*D2*D2*D3*D3*D3*D3*D4*D4*D4*t*D1+R*D1*D1*D1*D2*D2*D4*D4*D4*D4*t*D3-R*D1*D1*D3*D3*D3*D3*D4*D4*D4*t*D2-R*D2*D2*D3*D3*D3*D4*D4*D4*D4*t*D1-R*D1*D1*D1*D3*D3*D3*D3*t*D2*D2*D4-R*D2*D2*D2*D1*D1*D4*D4*D4*D4*t*D3-R*D3*D3*D3*D2*D2*D2*D2*t*D1*D1*D4-R*D2*D2*D2*D2*D1*D1*D1*D4*D4*t*D3+R*D2*D2*D2*D2*D1*D1*D4*D4*D4*t*D3+R*D1*D1*D3*D3*D3*D4*D4*D4*D4*t*D2+R*D1*D1*D1*D1*D3*D3*D4*D4*D4*t*D2+R*D2*D2*D2*D2*D3*D3*D3*D4*D4*t*D1+R*D3*D3*D3*D3*D2*D2*D2*t*D1*D1*D4-R*D2*D2*D2*D3*D3*D3*D3*D4*D4*t*D1-R*D1*D1*D1*D1*D3*D3*D3*D4*D4*t*D2-R*D1*D1*D1*D3*D3*D4*D4*D4*D4*t*D2+R*D1*D1*D1*D1*D3*D3*D3*t*D2*D2*D4+R*D1*D1*D1*D1*D2*D2*D2*D4*D4*t*D3-R*D1*D1*D1*D1*D2*D2*D4*D4*D4*t*D3+R*D1*D1*D1*D3*D3*D3*D3*D4*D4*t*D2+R*exp(-D1*t)*D2*D2*D3*D3*D3*D3*D4*D4*D4+R*exp(-D3*t)*D1*D1*D1*D1*D2*D2*D2*D4*D4+R*exp(-D4*t)*D1*D1*D1*D2*D2*D2*D2*D3*D3+R*exp(-D4*t)*D1*D1*D2*D2*D2*D3*D3*D3*D3+R*exp(-D2*t)*D1*D1*D3*D3*D3*D4*D4*D4*D4+R*exp(-D1*t)*D2*D2*D2*D4*D4*D4*D4*D3*D3+R*exp(-D4*t)*D1*D1*D1*D1*D2*D2*D3*D3*D3+R*exp(-D1*t)*D2*D2*D2*D2*D3*D3*D3*D4*D4+R*exp(-D2*t)*D1*D1*D1*D1*D3*D3*D4*D4*D4-R*exp(-D1*t)*D2*D2*D2*D3*D3*D3*D3*D4*D4-R*exp(-D1*t)*D2*D2*D3*D3*D3*D4*D4*D4*D4+R*exp(-D3*t)*D1*D1*D2*D2*D2*D2*D4*D4*D4+R*exp(-D3*t)*D1*D1*D1*D2*D2*D4*D4*D4*D4-R*exp(-D3*t)*D1*D1*D1*D2*D2*D2*D2*D4*D4-R*exp(-D1*t)*D2*D2*D2*D2*D4*D4*D4*D3*D3-R*exp(-D3*t)*D1*D1*D2*D2*D2*D4*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D1*D3*D3*D3*D4*D4-R*exp(-D2*t)*D1*D1*D3*D3*D3*D3*D4*D4*D4-R*exp(-D3*t)*D1*D1*D1*D1*D2*D2*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D4*D4*D4*D4*D3*D3-R*exp(-D4*t)*D1*D1*D1*D3*D3*D3*D3*D2*D2-R*exp(-D4*t)*D1*D1*D2*D2*D2*D2*D3*D3*D3-R*exp(-D4*t)*D1*D1*D1*D1*D2*D2*D2*D3*D3+R*exp(-D2*t)*D1*D1*D1*D3*D3*D3*D3*D4*D4+D1*D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4+D1*D1*D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3-D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4*D4-D1*D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3+D1*D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4+D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4*D4-D1*D1*D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4-D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4+D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4-D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4*D4-D1*D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4-D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4*D4+D1*D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4+D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4*D4*D4-D1*D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3+D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4*D4+D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4-D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3-D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4*D4*D4+D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3-D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4+D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3+D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4*D4-D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4)/D1/D2/D3/D4/(-D2*D2*D2*D1*D1*D4-D1*D1*D1*D2*D2*D3+D1*D1*D2*D4*D4*D4-D1*D1*D1*D2*D4*D4+D1*D1*D1*D2*D2*D4+D1*D1*D1*D3*D3*D2-D1*D1*D1*D3*D3*D4-D1*D1*D3*D4*D4*D4+D1*D1*D1*D3*D4*D4+D2*D2*D2*D1*D1*D3-D1*D3*D3*D3*D4*D4-D2*D3*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4+D2*D2*D3*D4*D4*D4-D2*D2*D2*D3*D4*D4+D2*D2*D2*D3*D3*D4-D2*D2*D2*D3*D3*D1+D2*D2*D3*D3*D3*D1-D2*D2*D3*D3*D3*D4+D1*D1*D3*D3*D3*D4-D1*D1*D3*D3*D3*D2-D2*D2*D1*D4*D4*D4+D2*D2*D2*D1*D4*D4+D1*D3*D3*D4*D4*D4);
+    return Branching12*Branching23*Branching34*Branching45*(-R*D2*D2*D2*D2*D3*D3*D4*D4*D4*t*D1+R*D2*D2*D2*D3*D3*D4*D4*D4*D4*t*D1+R*D2*D2*D2*D2*t*D1*D1*D1*D3*D3*D4-R*t*D1*D1*D1*D1*D2*D2*D2*D3*D3*D4+R*D2*D2*D3*D3*D3*D3*D4*D4*D4*t*D1+R*D1*D1*D1*D2*D2*D4*D4*D4*D4*t*D3-R*D1*D1*D3*D3*D3*D3*D4*D4*D4*t*D2-R*D2*D2*D3*D3*D3*D4*D4*D4*D4*t*D1-R*D1*D1*D1*D3*D3*D3*D3*t*D2*D2*D4-R*D2*D2*D2*D1*D1*D4*D4*D4*D4*t*D3-R*D3*D3*D3*D2*D2*D2*D2*t*D1*D1*D4-R*D2*D2*D2*D2*D1*D1*D1*D4*D4*t*D3+R*D2*D2*D2*D2*D1*D1*D4*D4*D4*t*D3+R*D1*D1*D3*D3*D3*D4*D4*D4*D4*t*D2+R*D1*D1*D1*D1*D3*D3*D4*D4*D4*t*D2+R*D2*D2*D2*D2*D3*D3*D3*D4*D4*t*D1+R*D3*D3*D3*D3*D2*D2*D2*t*D1*D1*D4-R*D2*D2*D2*D3*D3*D3*D3*D4*D4*t*D1-R*D1*D1*D1*D1*D3*D3*D3*D4*D4*t*D2-R*D1*D1*D1*D3*D3*D4*D4*D4*D4*t*D2+R*D1*D1*D1*D1*D3*D3*D3*t*D2*D2*D4+R*D1*D1*D1*D1*D2*D2*D2*D4*D4*t*D3-R*D1*D1*D1*D1*D2*D2*D4*D4*D4*t*D3+R*D1*D1*D1*D3*D3*D3*D3*D4*D4*t*D2+R*exp(-D1*t)*D2*D2*D3*D3*D3*D3*D4*D4*D4+R*exp(-D3*t)*D1*D1*D1*D1*D2*D2*D2*D4*D4+R*exp(-D4*t)*D1*D1*D1*D2*D2*D2*D2*D3*D3+R*exp(-D4*t)*D1*D1*D2*D2*
+D2*D3*D3*D3*D3+R*exp(-D2*t)*D1*D1*D3*D3*D3*D4*D4*D4*D4+R*exp(-D1*t)*D2*D2*D2*D4*D4*D4*D4*D3*D3+R*exp(-D4*t)*D1*D1*D1*D1*D2*D2*D3*D3*D3+R*exp(-D1*t)*D2*D2*D2*D2*D3*D3*D3*D4*D4+R*exp(-D2*t)*D1*D1*D1*D1*D3*D3*D4*D4*D4-R*exp(-D1*t)*D2*D2*D2*D3*D3*D3*D3*D4*D4-R*exp(-D1*t)*D2*D2*D3*D3*D3*D4*D4*D4*D4+R*exp(-D3*t)*D1*D1*D2*D2*D2*D2*D4*D4*D4+R*exp(-D3*t)*D1*D1*D1*D2*D2*D4*D4*D4*D4-R*exp(-D3*t)*D1*D1*D1*D2*D2*D2*D2*D4*D4-R*exp(-D1*t)*D2*D2*D2*D2*D4*D4*D4*D3*D3-R*exp(-D3*t)*D1*D1*D2*D2*D2*D4*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D1*D3*D3*D3*D4*D4-R*exp(-D2*t)*D1*D1*D3*D3*D3*D3*D4*D4*D4-R*exp(-D3*t)*D1*D1*D1*D1*D2*D2*D4*D4*D4-R*exp(-D2*t)*D1*D1*D1*D4*D4*D4*D4*D3*D3-R*exp(-D4*t)*D1*D1*D1*D3*D3*D3*D3*D2*D2-R*exp(-D4*t)*D1*D1*D2*D2*D2*D2*D3*D3*D3-R*exp(-D4*t)*D1*D1*D1*D1*D2*D2*D2*D3*D3+R*exp(-D2*t)*D1*D1*D1*D3*D3*D3*D3*D4*D4+D1*D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4+D1*D1*D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3-D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4*D4-D1*D1*D1*D2*R*(D1*D2*D4+D1*D3*
+D2+D1*D3*D4+D2*D3*D4)*D3*D3+D1*D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4+D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4*D4-D1*D1*D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4-D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4+D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4-D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4*D4-D1*D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D4*D4-D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4*D4+D1*D1*D1*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4+D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4*D4*D4-D1*D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3+D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4*D4+D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4-D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3-D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D4*D4*D4+D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3-D1*D2*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4+D1*D1*D2*
+R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3+D1*D2*D2*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D4*D4*D4-D1*D1*R*(D1*D2*D4+D1*D3*D2+D1*D3*D4+D2*D3*D4)*D3*D3*D3*D4)/D1/D2/D3/D4/(-D2*D2*D2*D1*D1*D4-D1*D1*D1*D2*D2*D3+D1*D1*D2*D4*D4*D4-D1*D1*D1*D2*D4*D4+D1*D1*D1*D2*D2*D4+D1*D1*D1*D3*D3*D2-D1*D1*D1*D3*D3*D4-D1*D1*D3*D4*D4*D4+D1*D1*D1*D3*D4*D4+D2*D2*D2*D1*D1*D3-D1*D3*D3*D3*D4*D4-D2*D3*D3*D4*D4*D4+D2*D3*D3*D3*D4*D4+D2*D2*D3*D4*D4*D4-D2*D2*D2*D3*D4*D4+D2*D2*D2*D3*D3*D4-D2*D2*D2*D3*D3*D1+D2*D2*D3*D3*D3*D1-D2*D2*D3*D3*D3*D4+D1*D1*D3*D3*D3*D4-D1*D1*D3*D3*D3*D2-D2*D2*D1*D4*D4*D4+D2*D2*D2*D1*D4*D4+D1*D3*D3*D4*D4*D4);
   }
 
   cout<<"More than 4 unstable elements in queue not allowed!"<<endl;

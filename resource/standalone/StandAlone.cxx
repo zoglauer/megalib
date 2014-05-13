@@ -37,52 +37,55 @@ using namespace std;
 #include "MGlobal.h"
 
 
-/******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
 
+
+//! A standalone program based on MEGAlib and ROOT
 class StandAlone
 {
 public:
-  /// Default constructor
+  //! Default constructor
   StandAlone();
-  /// Default destructor
+  //! Default destructor
   ~StandAlone();
   
-  /// Parse the command line
+  //! Parse the command line
   bool ParseCommandLine(int argc, char** argv);
-  /// Analyze what eveer needs to be analyzed...
+  //! Analyze what eveer needs to be analyzed...
   bool Analyze();
-  /// Interrupt the analysis
+  //! Interrupt the analysis
   void Interrupt() { m_Interrupt = true; }
 
 private:
-  /// True, if the analysis needs to be interrupted
+  //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
 };
 
-/******************************************************************************/
+
+////////////////////////////////////////////////////////////////////////////////
 
 
-/******************************************************************************
- * Default constructor
- */
+//! Default constructor
 StandAlone::StandAlone() : m_Interrupt(false)
 {
   gStyle->SetPalette(1, 0);
 }
 
 
-/******************************************************************************
- * Default destructor
- */
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Default destructor
 StandAlone::~StandAlone()
 {
   // Intentionally left blank
 }
 
 
-/******************************************************************************
- * Parse the command line
- */
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the command line
 bool StandAlone::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
@@ -146,9 +149,10 @@ bool StandAlone::ParseCommandLine(int argc, char** argv)
 }
 
 
-/******************************************************************************
- * Do whatever analysis is necessary
- */
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Do whatever analysis is necessary
 bool StandAlone::Analyze()
 {
   if (m_Interrupt == true) return false;
@@ -157,18 +161,18 @@ bool StandAlone::Analyze()
 }
 
 
-/******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+
 
 StandAlone* g_Prg = 0;
 int g_NInterruptCatches = 1;
 
-/******************************************************************************/
+
+////////////////////////////////////////////////////////////////////////////////
 
 
-/******************************************************************************
- * Called when an interrupt signal is flagged
- * All catched signals lead to a well defined exit of the program
- */
+//! Called when an interrupt signal is flagged
+//! All catched signals lead to a well defined exit of the program
 void CatchSignal(int a)
 {
   if (g_Prg != 0 && g_NInterruptCatches-- > 0) {
@@ -180,9 +184,10 @@ void CatchSignal(int a)
 }
 
 
-/******************************************************************************
- * Main program
- */
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Main program
 int main(int argc, char** argv)
 {
   // Catch a user interupt for graceful shutdown
@@ -211,6 +216,5 @@ int main(int argc, char** argv)
   return 0;
 }
 
-/*
- * Cosima: the end...
- ******************************************************************************/
+
+////////////////////////////////////////////////////////////////////////////////

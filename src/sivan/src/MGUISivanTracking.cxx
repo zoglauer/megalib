@@ -95,7 +95,7 @@ void MGUISivanTracking::Create()
 
   AddButtons();
 
-  PositionWindow(380, 250);
+  PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
 
   MapSubwindows();
   MapWindow(); 

@@ -159,7 +159,7 @@ MString MTokenizer::GetText() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MTokenizer::GetNTokens() const
+unsigned int MTokenizer::GetNTokens() const
 {
   // Return the number of tokens
 
@@ -170,11 +170,11 @@ int MTokenizer::GetNTokens() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MTokenizer::GetTokenAt(const int i) const
+MString MTokenizer::GetTokenAt(const unsigned int i) const
 {
   // Return the token at position i
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return m_Tokens[i];
   } else {
     mlog<<"MString MTokenizer::GetTokenAt(int i): "<<endl;
@@ -192,7 +192,7 @@ MString MTokenizer::GetTokenAt(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MTokenizer::GetTokenAtAsString(const int i) const
+MString MTokenizer::GetTokenAtAsString(const unsigned int i) const
 {
   // Return the token at position i as MString
 
@@ -204,12 +204,12 @@ MString MTokenizer::GetTokenAtAsString(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MTokenizer::GetTokenAfterAsString(const int i) const
+MString MTokenizer::GetTokenAfterAsString(const unsigned int i) const
 {
   // Return the token at position i and higher as MString
 
   MString T;
-  for (int j = i; j < GetNTokens(); j++) {
+  for (unsigned int j = i; j < GetNTokens(); j++) {
     if (j < GetNTokens()-1) {
       T += GetTokenAt(j) + " ";
     } else {
@@ -224,12 +224,12 @@ MString MTokenizer::GetTokenAfterAsString(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MTokenizer::GetTokenAtAsDouble(const int i) const
+double MTokenizer::GetTokenAtAsDouble(const unsigned int i) const
 {
   // Return the token at position i as double 
 
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return atof(m_Tokens[i]);
   } else {
     mlog<<"MString MTokenizer::GetTokenAtAsDouble(int i): "<<endl;
@@ -239,6 +239,7 @@ double MTokenizer::GetTokenAtAsDouble(const int i) const
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
     }
+    abort();
     return 0;
   }
 }
@@ -247,12 +248,12 @@ double MTokenizer::GetTokenAtAsDouble(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MTokenizer::GetTokenAtAsFloat(const int i) const
+float MTokenizer::GetTokenAtAsFloat(const unsigned int i) const
 {
   // Return the token at position i as double 
 
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return atof(m_Tokens[i]);
   } else {
     mlog<<"MString MTokenizer::GetTokenAtAsFloat(int i): "<<endl;
@@ -270,12 +271,12 @@ float MTokenizer::GetTokenAtAsFloat(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MTokenizer::GetTokenAtAsInt(const int i) const
+int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
 {
   // Return the token at position i as integer
 
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return int(atof(m_Tokens[i])); // atoi(m_Tokens[i]); is not working in cases such as 2.35e+02
   } else {
     mlog<<"int MTokenizer::GetTokenAtAsInt(int i): "<<endl;
@@ -293,12 +294,12 @@ int MTokenizer::GetTokenAtAsInt(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const int i) const
+unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
 {
   // Return the token at position i as unsigned integer
 
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     int Value = int(atof(m_Tokens[i]));
     if (Value < 0) {
       mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
@@ -322,11 +323,11 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-long MTokenizer::GetTokenAtAsLong(const int i) const
+long MTokenizer::GetTokenAtAsLong(const unsigned int i) const
 {
   // Return the token at position i as long integer
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return atol(m_Tokens[i]);
   } else {
     mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
@@ -344,11 +345,11 @@ long MTokenizer::GetTokenAtAsLong(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const int i) const
+unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const unsigned int i) const
 {
   // Return the token at position i as long integer
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     return strtoul(m_Tokens[i], NULL, 0);
   } else {
     mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
@@ -366,13 +367,13 @@ unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TArrayI MTokenizer::GetTokenAtAsIntArray(const int i) const
+TArrayI MTokenizer::GetTokenAtAsIntArray(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     TArrayI A(GetNTokens() - i);
-    for (int j = i; j < GetNTokens(); ++j) {
+    for (unsigned int j = i; j < GetNTokens(); ++j) {
       A[j-i] = GetTokenAtAsInt(j);
     }
     return A;
@@ -392,13 +393,13 @@ TArrayI MTokenizer::GetTokenAtAsIntArray(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TArrayD MTokenizer::GetTokenAtAsDoubleArray(const int i) const
+TArrayD MTokenizer::GetTokenAtAsDoubleArray(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     TArrayD A(GetNTokens() - i);
-    for (int j = i; j < GetNTokens(); ++j) {
+    for (unsigned int j = i; j < GetNTokens(); ++j) {
       A[j-i] = GetTokenAtAsDouble(j);
     }
     return A;
@@ -418,13 +419,13 @@ TArrayD MTokenizer::GetTokenAtAsDoubleArray(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<double> MTokenizer::GetTokenAtAsDoubleVector(const int i) const
+vector<double> MTokenizer::GetTokenAtAsDoubleVector(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
   vector<double> A;
-  if (i >= 0 && i < GetNTokens()) {
-    for (int j = i; j < GetNTokens(); ++j) {
+  if (i < GetNTokens()) {
+    for (unsigned int j = i; j < GetNTokens(); ++j) {
       A.push_back(GetTokenAtAsDouble(j));
     }
     return A;
@@ -444,13 +445,13 @@ vector<double> MTokenizer::GetTokenAtAsDoubleVector(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<float> MTokenizer::GetTokenAtAsFloatVector(const int i) const
+vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
   vector<float> A;
-  if (i >= 0 && i < GetNTokens()) {
-    for (int j = i; j < GetNTokens(); ++j) {
+  if (i < GetNTokens()) {
+    for (unsigned int j = i; j < GetNTokens(); ++j) {
       A.push_back(GetTokenAtAsFloat(j));
     }
     return A;
@@ -470,12 +471,12 @@ vector<float> MTokenizer::GetTokenAtAsFloatVector(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTokenizer::GetTokenAtAsBoolean(const int i) const
+bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
 {
   // Return the token at position i as boolean
 
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     MString Token = m_Tokens[i];
     Token.ToLower();
     if (Token == "false") {
@@ -500,13 +501,13 @@ bool MTokenizer::GetTokenAtAsBoolean(const int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTokenizer::IsTokenAt(const int i, const MString& Token, bool const IgnoreCase) const
+bool MTokenizer::IsTokenAt(const unsigned int i, const MString& Token, bool const IgnoreCase) const
 {
   // Return true, if Token is identical with the token at position i
 
   if (GetNTokens() == 0) return false;
 
-  if (i >= 0 && i < GetNTokens()) {
+  if (i < GetNTokens()) {
     if (IgnoreCase == true) {
       MString LowerCase = Token;
       LowerCase.ToLower();
@@ -538,7 +539,7 @@ bool MTokenizer::IsComposited() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTokenizer::Analyse(MString Text, const bool AllowMaths)
+bool MTokenizer::Analyze(MString Text, const bool AllowMaths)
 {
   // Split the Text into its tokens
   // White space is the prime delimiter, then the first token is splitted
@@ -552,9 +553,9 @@ bool MTokenizer::Analyse(MString Text, const bool AllowMaths)
   m_Text = Text;
 
   // Remove white spaces at the beginning of the line:
-  Text.StripFront(' ');
-  Text.StripBack(' ');
-  Text.ReplaceAll("\r", "");
+  Text.StripFrontInPlace(' ');
+  Text.StripBackInPlace(' ');
+  Text.RemoveAll("\r");
 
   MString Token;
   bool IsFirstToken = true;
@@ -722,8 +723,7 @@ MString MTokenizer::ToString()
 
   if (GetNTokens() > 0) {
     out<<"Tokenizer content ("<<GetNTokens()<<" Tokens):"<<endl;
-    int i;
-    for (i = 0; i < GetNTokens(); i++) {
+    for (unsigned int i = 0; i < GetNTokens(); i++) {
       out<<"Token "<<i<<": \""<<GetTokenAt(i)<<"\""<<endl;
     }
   } else {

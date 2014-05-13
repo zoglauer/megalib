@@ -1,0 +1,130 @@
+#!/bin/bash
+
+# Part of the cosima cluster
+# Check how many sims can be run on the machine
+
+# Return:
+# Positive: number of available simulation slots
+
+
+commandhelp() {
+  echo ""
+  echo "dcosima-rsync - rsync all files back";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dcosima-rsync [options]";
+  echo ""
+  echo "Options:"
+  echo "  --directory=[directory name]: The directory where to store the data"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dcosima-rsync --dir=Run_ID87236489726";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+DIRECTORY=""
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-d*=* ]]; then
+    DIRECTORY=`echo ${C} | awk -F"=" '{ print $2 }'`
+    eval DIRECTORY=${DIRECTORY}
+    #DIRECTORY=$(readlink -f ${DIRECTORY})
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima-rsync --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+if [ "${DIRECTORY}" == "" ]; then
+  echo " "
+  echo "ERROR: You need to give a directory"
+  exit 1
+fi
+if [[ ! -d ${DIRECTORY} ]]; then 
+  echo " "
+  echo "ERROR: The directory must exist"
+  exit 1
+fi
+echo " * Directory: ${DIRECTORY}"
+
+cd ${DIRECTORY}
+
+while true; do
+  # Sleep .....
+  echo "psync: Waiting for 20 seconds for more data to process..." 
+  sleep 20
+  
+  # Parse the configuration file
+  RSYNCS=( )
+  while read LINE; do
+    echo "Line: ${LINE}"
+    RSYNCS[${#RSYNCS[*]}]=${LINE}
+  done < dcosima-rsync.cfg
+
+  #echo "Found the following rsyncs: ${RSYNCS[@]}"
+
+  # Download data
+  MODIFIED=0
+  ALLINCLUDED=0
+  SUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+  for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
+    #echo "psync: Checking ${RSYNCS[$m]}"
+    if [[ ${RSYNCS[$m]} == rsync* ]]; then
+      echo "Syncing... ${RSYNCS[$m]}"
+      eval ${RSYNCS[$m]}
+    elif [[ ${RSYNCS[$m]} == DONE ]]; then
+      ALLINCLUDED=1
+      break
+    else 
+      echo "ERROR: Unknown rsync command: ${RSYNCS[$m]}"
+    fi  
+  done  
+
+  NEWSUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+  
+  if [ "${NEWSUM}" != "${SUM}" ]; then
+    echo "Downloaded more data, since the total file size before (${SUM} B) and after (${NEWSUM} B) differ."
+    MODIFIED=1
+  fi
+    
+  if [ ${MODIFIED} -eq 0 ] && [ ${ALLINCLUDED} -eq 1 ]; then
+    break;
+  fi
+    
+done
+
+chown ${USER}:${USER} *
+
+echo "All rsync processes have finished!"
+
+
+exit 0;

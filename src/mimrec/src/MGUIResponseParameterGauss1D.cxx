@@ -76,7 +76,7 @@ void MGUIResponseParameterGauss1D::Create()
 {
   // Create the main window
 
-  int Width = 550;
+  int Width = m_FontScaler*550;
 
   // We start with a name and an icon...
   SetWindowName("Response parameters Gauss 1D");  
@@ -88,20 +88,20 @@ void MGUIResponseParameterGauss1D::Create()
   m_Gaussians->Add("Compton across cone (e.g. 1 sigma of ARM width) [deg]:", m_GUIData->GetFitParameterComptonTransSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Compton along cone for tracked events (e.g. 1 sigma of SPD width) [deg]:", m_GUIData->GetFitParameterComptonLongSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Pairs [deg]:", m_GUIData->GetFitParameterPair(), true, 0.0, 180.0);
-  m_Gaussians->SetWrapLength(Width - 40);
+  m_Gaussians->SetWrapLength(Width - m_FontScaler*40);
   m_Gaussians->Create();
   AddFrame(m_Gaussians, GaussiansLayout);
 
   TGLayoutHints* CutOffLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 20);
   m_CutOff = new MGUIEEntryList(this, "Set the cut-off out to which distance the Gauss is calculated in sigma. A smaller cut-off increases the reconstruction speed, but deteriorates the image. If you use the maths approximations and/or 1-byte accuracy, then there will be an automatic cut-off at ~4.");
   m_CutOff->Add("Gaussian cut-off (suggested value: 2.5) [sigmas]:", m_GUIData->GetGauss1DCutOff(), true, 1.5);
-  m_CutOff->SetWrapLength(Width - 40);
+  m_CutOff->SetWrapLength(Width - m_FontScaler*40);
   m_CutOff->Create();
   AddFrame(m_CutOff, CutOffLayout);
 
   TGLayoutHints* AbsorptionsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 20, 20);
   m_Absorptions = new TGCheckButton(this, "Use absorption probabilities (very time consuming!!!) - they are always used for photo-effect (i.e. coded-mask) events", c_AbsorptionId);
-  m_Absorptions->SetWrapLength(Width - 40);
+  m_Absorptions->SetWrapLength(Width - m_FontScaler*40);
   AddFrame(m_Absorptions, AbsorptionsLayout);
 
   if (m_GUIData->GetUseAbsorptions() == true) {

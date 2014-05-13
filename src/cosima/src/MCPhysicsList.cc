@@ -18,15 +18,16 @@
 
 // Cosima:
 #include "MCPhysicsList.hh"
-#include "MCPhysicsListDecay.hh"
 #include "MCPhysicsListParticles.hh"
 
 // Geant4:
-#include "HadronPhysicsQGSP_BIC_HP.hh"
-#include "HadronPhysicsQGSP_BERT_HP.hh"
+#include "QGSP_BIC_HP.hh"
+#include "QGSP_BERT_HP.hh"
+#include "FTFP_BERT_HP.hh"
+
 #include "G4EmExtraPhysics.hh"
 #include "G4HadronElasticPhysicsHP.hh"
-#include "G4QStoppingPhysics.hh"
+#include "G4StoppingPhysics.hh"
 #include "G4IonPhysics.hh"
 #include "G4IonBinaryCascadePhysics.hh"
 #include "G4NeutronTrackingCut.hh"
@@ -37,6 +38,7 @@
 #include "G4EmLivermorePolarizedPhysics.hh"
 #include "G4EmPenelopePhysics.hh"
 #include "G4EmStandardPhysics.hh"
+#include "G4RadioactiveDecayPhysics.hh"
 #include "G4VProcess.hh"
 #include "G4VEmProcess.hh"
 #include "G4VEnergyLossProcess.hh"
@@ -67,8 +69,9 @@ const int MCPhysicsList::c_EMMax = 5;
 const int MCPhysicsList::c_HDNone = 0; 
 const int MCPhysicsList::c_HDQGSP_BIC_HP = 1; 
 const int MCPhysicsList::c_HDQGSP_BERT_HP = 2; 
+const int MCPhysicsList::c_HDFTFP_BERT_HP = 3; 
 const int MCPhysicsList::c_HDMin = 0; 
-const int MCPhysicsList::c_HDMax = 2; 
+const int MCPhysicsList::c_HDMax = 3; 
 
 
 /******************************************************************************
@@ -119,35 +122,57 @@ void MCPhysicsList::Register()
     mout<<"Using Penelope"<<endl;
     RegisterPhysics(new G4EmPenelopePhysics());
   }
-
+  
   
   // Take care of selected hadron physics
+  G4VModularPhysicsList* HDPhysics = 0;
   if (m_PhysicsListHD == c_HDNone) {
     // None
   } else if (m_PhysicsListHD == c_HDQGSP_BIC_HP) {
-    RegisterPhysics(new G4EmExtraPhysics());
-    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
-    RegisterPhysics(new G4QStoppingPhysics());
-    RegisterPhysics(new G4IonBinaryCascadePhysics());
-    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP());
+    HDPhysics = new QGSP_BIC_HP();
   } else if (m_PhysicsListHD == c_HDQGSP_BERT_HP) {
-    RegisterPhysics(new G4EmExtraPhysics());
-    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
-    RegisterPhysics(new G4QStoppingPhysics());
-    RegisterPhysics(new G4IonPhysics());
-    RegisterPhysics(new HadronPhysicsQGSP_BERT_HP());
+    HDPhysics = new QGSP_BERT_HP();
+  } else if (m_PhysicsListHD == c_HDFTFP_BERT_HP) {
+    HDPhysics = new FTFP_BERT_HP();
   } else {
     mout<<"Unknown HD physics list ID: "<<m_PhysicsListHD<<endl;
     mout<<"Using QGSP-BIC-HP"<<endl;
-    RegisterPhysics(new G4EmExtraPhysics());
-    RegisterPhysics(new G4HadronElasticPhysicsHP(0));
-    RegisterPhysics(new G4QStoppingPhysics());
-    RegisterPhysics(new G4IonBinaryCascadePhysics());
-    RegisterPhysics(new HadronPhysicsQGSP_BIC_HP());
+    HDPhysics = new QGSP_BIC_HP();
   }
+  if (HDPhysics != 0) {
+    for (int i = 0; ; ++i) {
+      G4VPhysicsConstructor* PC = const_cast<G4VPhysicsConstructor*>(HDPhysics->GetPhysics(i));
+      if (PC == 0) break;
+      
+      bool Ignore = false;
+      for (unsigned int p = 0; ; ++p) {
+        if (GetPhysics(p) == 0) break;
+        if (GetPhysics(p)->GetPhysicsType() == 0) continue;
+        if (PC->GetPhysicsType() == 0) continue;
+        if (GetPhysics(p)->GetPhysicsType() == PC->GetPhysicsType()) {
+          cout<<"Not registering "<<PC->GetPhysicsName()<<" since we already have "<<GetPhysics(p)->GetPhysicsName()<<endl;
+          Ignore = true;
+          break;
+        }
+      }
+      if (Ignore == true) continue;
+      
+      RegisterPhysics(PC);
+    }
+  }  
 
   // We always register all sorts of decays:
-  RegisterPhysics(new MCPhysicsListDecay());
+  RegisterPhysics(new G4RadioactiveDecayPhysics());
+  
+  // Check what we got:
+  cout<<"Chosen physics: "<<endl;
+  for (unsigned int p = 0; ; ++p) {
+    if (GetPhysics(p) == 0) {
+      break;
+    }
+    cout<<GetPhysics(p)->GetPhysicsName()<<"  "<<endl;
+  }
+  cout<<endl;
 }
 
 
