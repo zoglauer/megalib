@@ -10,6 +10,7 @@ Version 2.29/2.30
 
 + A compiler with C++11 support is now required - all current Mac and Linux
   compiler should do
++ First alpha version of calibration framework Fretalon with Melinator line calibrator
   
   
 *** Significant new features & improvements:
@@ -29,6 +30,10 @@ Cosima:
 
 Sivan:
 + Show start locations
+
+Fretalon:
++ First alpha version of calibration framework
++ First alpha version of Melinator - the MEGAlib line calibrator
 
 Geomega:
 

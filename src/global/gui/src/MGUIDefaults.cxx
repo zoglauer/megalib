@@ -68,7 +68,11 @@ MGUIDefaults::MGUIDefaults()
   
   MSettingsGlobal S;
   S.Read();
-  if (S.GetFontScaler() == "normal") {
+  if (S.GetFontScaler() == "tiny") {
+    m_DefaultFontSize = 8;
+  } else if (S.GetFontScaler() == "small") {
+    m_DefaultFontSize = 10;
+  } else if (S.GetFontScaler() == "normal") {
     m_DefaultFontSize = 12;
   } else if (S.GetFontScaler() == "large") {
     m_DefaultFontSize = 18;

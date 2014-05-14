@@ -38,6 +38,8 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MGUIDefaults.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -205,8 +207,9 @@ void MGUIMultiProgressBar::CloseWindow()
 //! Bring the GUI to the screen
 void MGUIMultiProgressBar::Create()
 {
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  
   SetWindowName(m_Title);  
-
   
   // Sub title: Frame and label
   TGHorizontalFrame* SubTitleFrame = new TGHorizontalFrame(this, 100, 0, kRaisedFrame);
@@ -234,7 +237,7 @@ void MGUIMultiProgressBar::Create()
 
   // Add the progress bar
   for (unsigned int p = 0; p < m_NumberOfProgressBars; ++p) {
-    TGHProgressBar* ProgressBar = new TGHProgressBar(ProgressBarFrame, TGProgressBar::kFancy, 200);
+    TGHProgressBar* ProgressBar = new TGHProgressBar(ProgressBarFrame, FontScaler*200, FontScaler*24);
     ProgressBar->SetBarColor("lightblue");
     ProgressBar->SetMin(0);
     ProgressBar->SetMax(100);

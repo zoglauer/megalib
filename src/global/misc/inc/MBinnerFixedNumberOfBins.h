@@ -42,6 +42,9 @@ class MBinnerFixedNumberOfBins : public MBinner
   //! Set the minimum and maximum
   void SetNumberOfBins(unsigned int NumberOfBins) { m_NumberOfBins = NumberOfBins; if (m_NumberOfBins < 1) m_NumberOfBins = 1; }
   
+  //! Set if the bins should be aligned
+  void AlignBins(bool AlignBins) { m_AlignBins = AlignBins; }
+  
   // protected methods:
  protected:
 
@@ -58,8 +61,10 @@ class MBinnerFixedNumberOfBins : public MBinner
 
   // private members:
  private:
+  //! The number of bins
   unsigned int m_NumberOfBins;
-   
+  //! Should the bins be aligned at integer number
+  bool m_AlignBins;
 
 #ifdef ___CINT___
  public:

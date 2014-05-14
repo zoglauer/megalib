@@ -57,6 +57,19 @@ clean_meg:
 
 
 #------------------------------------------------------------------------------
+# Fretalon:
+
+fre:
+	@$(MAKE) -C fretalon
+
+frelib:
+	@$(MAKE) -r lib -C fretalon
+
+clean_fre:
+	@$(MAKE) clean -C fretalon
+
+
+#------------------------------------------------------------------------------
 # spectralyze:
 
 spe:
@@ -220,6 +233,7 @@ link:
 	@$(MAKE) link -C sivan
 	@$(MAKE) link -C eview
 	@$(MAKE) link -C spectralyze
+	@$(MAKE) link -C fretalon
 	@$(MAKE) link -C response
 	@if test -d miworks; then $(MAKE) link -C miworks; fi
 	@if test -d megalyze; then $(MAKE) link -C megalyze; fi
@@ -236,6 +250,7 @@ all:
 	@$(MAKE) -C sivan
 	@$(MAKE) -C eview
 	@$(MAKE) -C spectralyze
+	@$(MAKE) -C fretalon
 	@$(MAKE) -C response
 	@$(MAKE) -C addon
 ifeq "$(strip $(GEANT4INSTALLED))" "0"
@@ -256,6 +271,7 @@ clean:
 	@$(MAKE) clean -C sivan
 	@$(MAKE) clean -C eview
 	@$(MAKE) clean -C spectralyze
+	@$(MAKE) clean -C fretalon
 	@$(MAKE) clean -C response
 	@$(MAKE) clean -C addon
 	@$(MAKE) clean -C cosima -f Makefile

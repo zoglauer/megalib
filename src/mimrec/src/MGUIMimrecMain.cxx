@@ -659,7 +659,7 @@ void MGUIMimrecMain::Open()
   if ((char *) Info.fFilename != 0) {
     m_Data->SetCurrentFileName(MString(Info.fFilename));
     UpdateConfiguration();
- } 
+  } 
   // ... or return when cancel has been pressed
   else {
     return;

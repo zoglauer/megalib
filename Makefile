@@ -42,16 +42,13 @@ CMD=
 #.NOPARALLEL:
 .EXPORT_ALL_VARIABLES: all copy miw geo geolib
 .SILENT:
-.NOTPARALLEL: info glo geo spe miw rev siv res mim evi meg her bm cal add cos 
+.NOTPARALLEL: info glo geo spe miw rev siv res mim evi meg her bm cal fre add cos 
 .SUFFIXES:
 .SUFFIXES: .cxx .h .o .so
 
 all: info link only
 
-only: info glo geo spe rev siv res mim evi rea add cos 
-hardware: info glo meg her bm cal add
-simulation: info glo geo siv cos
-imaging: info glo geo spe siv rev mim evi res 
+only: info glo geo spe rev siv res mim evi rea fre add cos 
 
 
 #------------------------------------------------------------------------------
@@ -129,6 +126,30 @@ meg: link glo
 
 clean_megalyze:
 	@$(MAKE) clean_meg -C src
+
+
+#------------------------------------------------------------------------------
+# Fretalon and tools
+
+FRETALONLIBS = \
+	-lMelinatorGui \
+	-lMelinator \
+	-lFretalonBase \
+	-lGeomega \
+	-lCommonGui \
+	-lCommonMisc \
+
+fretalon: info fre
+	@$(BN)/fretalon $(CMD)
+
+melinator: info fre
+	@$(BN)/melinator $(CMD)
+
+fre: link glo geo
+	@$(MAKE) fre -C src
+
+clean_fretalon:
+	@$(MAKE) clean_fre -C src
 
 
 #------------------------------------------------------------------------------

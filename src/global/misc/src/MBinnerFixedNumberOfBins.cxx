@@ -38,7 +38,7 @@ ClassImp(MBinnerFixedNumberOfBins)
 
 
 //! Default constructor
-MBinnerFixedNumberOfBins::MBinnerFixedNumberOfBins() : MBinner(), m_NumberOfBins(1)
+MBinnerFixedNumberOfBins::MBinnerFixedNumberOfBins() : MBinner(), m_NumberOfBins(1), m_AlignBins(false)
 {
 }
 
@@ -63,6 +63,8 @@ void MBinnerFixedNumberOfBins::Histogram()
   m_BinEdges.clear();
   m_BinnedData.clear();
   
+  double NumberOfBins = m_NumberOfBins;
+  
   double Min = m_Minimum;
   double Max = m_Maximum;
   if (m_Adapt == true) {
@@ -74,9 +76,21 @@ void MBinnerFixedNumberOfBins::Histogram()
       if (Back < Max && Back > Min) Max = Back;
     }
   }
-    
-  double BinSize = (Max - Min)/m_NumberOfBins;
-  for (unsigned int i = 0; i < m_NumberOfBins; ++i) {
+
+  if (m_AlignBins == true) {
+    Min = int(Min);
+    Max = int(Max) + 1;
+  }
+  
+  double BinSize = (Max - Min)/NumberOfBins;
+  if (m_AlignBins == true) {
+    BinSize = int(BinSize);
+    if (BinSize == 0) BinSize = 1;
+    NumberOfBins = (int) ((Max - Min)/BinSize);
+  }
+  cout<<"Number of bins: "<<NumberOfBins<<endl;
+  
+  for (unsigned int i = 0; i < NumberOfBins; ++i) {
     m_BinEdges.push_back(Min + i*BinSize);
   }
   m_BinEdges.push_back(Max);
