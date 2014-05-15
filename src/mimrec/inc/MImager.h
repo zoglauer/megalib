@@ -269,6 +269,8 @@ class MImager
   vector<TThread*> m_Threads;
   //! Storing a flag that the thread is running
   vector<bool> m_ThreadIsInitialized;
+  //! Storing a flag telling the thread to finished
+  vector<bool> m_ThreadShouldFinish;
   //! Storing a flag that the thread is finished
   vector<bool> m_ThreadIsFinished;
 
