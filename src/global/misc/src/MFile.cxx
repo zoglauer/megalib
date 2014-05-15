@@ -27,6 +27,7 @@
 #include <TSystem.h>
 #include <TROOT.h>
 #include <TRandom.h>
+#include <TThread.h>
 
 // Standard libs:
 #include <iostream>
@@ -506,10 +507,14 @@ bool MFile::UpdateProgress()
   if (m_Canceled == true) return false;
   if (m_Progress == 0 || m_FileLength == (streampos) 0) return true;
 
+  TThread::Lock(); // GUI is not allowed to be accessed from multiple threads!
+  
   double Value = (double) m_File.tellg() / (double) m_FileLength;
   m_Progress->SetValue(Value, m_ProgressLevel);
   gSystem->ProcessEvents();
 
+  TThread::UnLock();
+  
   if (m_Progress->TestCancel() == true) {
     ShowProgress(false);
     m_Canceled = true;

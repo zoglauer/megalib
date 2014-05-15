@@ -21,6 +21,7 @@ eventtransmitter
 eview
 geomega
 mimrec
+melinator
 realta
 responsecreator
 responsemanipulator
@@ -61,6 +62,8 @@ external
 *.gz
 *.sim
 *.tra
+*.orig
+*.rej
 .DS_Store
 callgrind.*
 new-source-megalib.sh
