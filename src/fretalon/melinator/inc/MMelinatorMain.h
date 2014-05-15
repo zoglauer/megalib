@@ -1,0 +1,23 @@
+/*
+ * MMelinatorMain.h
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ * Please see the source-file for the copyright-notice.
+ *
+ */
+
+
+#ifndef __MMelinatorMain__
+#define __MMelinatorMain__
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
