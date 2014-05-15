@@ -20,8 +20,7 @@ ROOTGLIBS     = $(shell root-config --glibs)
 
 # Compiler & linker options:
 CXX           = c++
-CXXFLAGS      = $(OPT) -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___
-#-fno-common -fno-exceptions 
+CXXFLAGS      = $(OPT) -std=c++0x -pipe -Wall -fPIC -D_REENTRANT -I$(IN) -I$(CT) -I. $(ROOTCFLAGS) -D___MACOSX___
 DEFINES       = -UHARDWARE
 LD            = c++
 LDFLAGS       = $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
