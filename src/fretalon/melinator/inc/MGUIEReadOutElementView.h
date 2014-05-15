@@ -51,7 +51,7 @@ class MGUIEReadOutElementView : public TGCanvas
   void Create();  
   
   //! Clear all the read-out elements
-  void Clear();
+  void ClearReadOutElements();
   
   //! Add a new read-out element
   void Add(const MReadOutElement& ROE, unsigned int ID) { m_ROEs.push_back(ROE.Clone()); m_ROEIDs.push_back(ID); }

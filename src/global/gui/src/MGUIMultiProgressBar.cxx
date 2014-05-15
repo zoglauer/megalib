@@ -112,7 +112,7 @@ void MGUIMultiProgressBar::SetNumberOfProgressBars(unsigned int ProgressBars)
 
 //! Set the Name of the given progress bar ID
 //! If it doesn't exist, throw an exception MExceptionIndexOutOfBounds
-void MGUIMultiProgressBar::SetName(unsigned int ID, const MString& Name)
+void MGUIMultiProgressBar::SetTitle(unsigned int ID, const MString& Name)
 {
   if (ID < m_NumberOfProgressBars) {
     m_Names[ID] = Name;

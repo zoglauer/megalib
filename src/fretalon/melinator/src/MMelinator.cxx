@@ -163,7 +163,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     if (Reader.Open(FileNames[f]) == false) {
       return false;
     }
-    ProgressBar.SetName(f, MFile::GetBaseName(FileNames[f]));
+    ProgressBar.SetTitle(f, MFile::GetBaseName(FileNames[f]));
     ProgressBar.SetMinMax(f, 0.0, Reader.GetFileLength());
     Reader.Close();
   }

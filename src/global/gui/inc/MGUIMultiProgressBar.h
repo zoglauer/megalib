@@ -59,7 +59,7 @@ class MGUIMultiProgressBar : public TGTransientFrame
   
   //! Set the Name of the given progress bar ID
   //! If it doesn't exist, throw an exception MExceptionIndexOutOfBounds
-  void SetName(unsigned int ID, const MString& Name);
+  void SetTitle(unsigned int ID, const MString& Name);
   //! Set the minimum and maximum value for the given progress bar ID
   //! If it doesn't exist, throw an exception MExceptionIndexOutOfBounds
   void SetMinMax(unsigned int ID, double Minimum, double Maximum);

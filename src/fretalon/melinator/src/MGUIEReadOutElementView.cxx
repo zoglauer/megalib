@@ -68,7 +68,7 @@ MGUIEReadOutElementView::~MGUIEReadOutElementView()
 
 
 //! Clear all the read-out elements
-void MGUIEReadOutElementView::Clear()
+void MGUIEReadOutElementView::ClearReadOutElements()
 {
   m_ROEs.clear(); 
 }
@@ -81,8 +81,6 @@ void MGUIEReadOutElementView::Clear()
 void MGUIEReadOutElementView::Create()
 {
   // Create the GUI element
-  
-  TGCompositeFrame
   
   UnmapWindow();
   m_Container->RemoveAll();

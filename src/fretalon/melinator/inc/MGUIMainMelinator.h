@@ -205,8 +205,6 @@ private:
  
   //! The canvas displaying the selection including scroll bars
   MGUIEReadOutElementView* m_MainSelectionCanvas;
-  //! The window where the selection will be drawn
-  TGVerticalFrame* m_MainSelectionView;
   //! All the read-out element GUI's
   vector<MGUIEReadOutElement*> m_ROEButtons;
   
