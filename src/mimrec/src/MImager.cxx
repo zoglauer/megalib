@@ -125,6 +125,7 @@ MImager::MImager(int CoordinateSystem, unsigned int NThreads)
     }      
     m_Threads.push_back(0);
     m_ThreadIsInitialized.push_back(false);
+    m_ThreadShouldFinish.push_back(false);
     m_ThreadIsFinished.push_back(false);
   }
 
@@ -214,6 +215,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
     }      
     m_Threads.push_back(0);
     m_ThreadIsInitialized.push_back(false);
+    m_ThreadShouldFinish.push_back(false);
     m_ThreadIsFinished.push_back(false);
   }
     
@@ -974,6 +976,7 @@ bool MImager::ComputeResponseSlices()
   m_EventFile.SetProgressTitle("Progress", "Progress of response slice generation");
 
   if (m_NThreads > 1) {
+    m_EventFile.SetAutomaticProgressUpdates(false);
     m_EventFile.SetDelayedFileParsing(true);
     m_EventFile.StartThread();
     
@@ -987,6 +990,7 @@ bool MImager::ComputeResponseSlices()
       m_Threads[t] = Thread;
       m_ThreadIsInitialized[t] = false;
       m_ThreadIsFinished[t] = false;
+      m_ThreadShouldFinish[t] = false;
 
       Thread->Run();
       
@@ -1004,6 +1008,12 @@ bool MImager::ComputeResponseSlices()
 
       // Sleep for a while...
       TThread::Sleep(0, 10000000);
+      
+      if (m_EventFile.UpdateProgress() == false) {
+        for (unsigned int t = 0; t < m_NThreads; ++t) {
+          m_ThreadShouldFinish[t] = true; 
+        }
+      }
       
       ThreadsAreRunning = false;
       for (unsigned int t = 0; t < m_NThreads; ++t) {
@@ -1075,7 +1085,7 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
 
 
   // The reconstruction loop
-  while (true) {
+  while (m_ThreadShouldFinish[ThreadID] == false) {
     if (m_OutOfMemory == true) break;
 
     Event = m_EventFile.GetNextEvent();
