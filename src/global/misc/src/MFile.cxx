@@ -27,6 +27,7 @@
 #include <TSystem.h>
 #include <TROOT.h>
 #include <TRandom.h>
+#include <TThread.h>
 
 // Standard libs:
 #include <iostream>
@@ -512,10 +513,14 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
   if (++m_SkippedProgressUpdates < UpdatesToSkip) return true;
   m_SkippedProgressUpdates = 0;
   
+  TThread::Lock(); // GUI is not allowed to be accessed from multiple threads!
+  
   double Value = (double) m_File.tellg() / (double) m_FileLength;
   m_Progress->SetValue(Value, m_ProgressLevel);
   gSystem->ProcessEvents();
 
+  TThread::UnLock();
+  
   if (m_Progress->TestCancel() == true) {
     ShowProgress(false);
     m_Canceled = true;

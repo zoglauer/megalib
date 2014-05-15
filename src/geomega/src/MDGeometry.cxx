@@ -570,7 +570,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         double dz = Tokenizer.GetTokenAtAsDouble(7);
 
         // Now we know the real number of keywords:
-        if (Tokenizer.GetNTokens() != int(8+x_max*y_max*z_max)) {
+        if (Tokenizer.GetNTokens() != 8+x_max*y_max*z_max) {
           Typo("This version of Vector.Matrix does not contain the right amount of numbers\"");
           return false;
         }

@@ -58,6 +58,8 @@ MSettingsGeomega::MSettingsGeomega(bool AutoLoad) : MSettings("GeomegaConfigurat
   m_StoreIAs = false;
   m_StoreVetoes = true;
 
+  m_PathLengthStart.SetXYZ(0, 0, 1000);
+  m_PathLengthStop.SetXYZ(0, 0, 0);
   
   if (AutoLoad == true) {
     Read();
@@ -88,6 +90,8 @@ bool MSettingsGeomega::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "MGeantOutputMode", m_MGeantOutputMode);
   new MXmlNode(Node, "MGeantFile", CleanPath(m_MGeantFileName));
   new MXmlNode(Node, "Position",  m_Position);
+  new MXmlNode(Node, "PathLengthStart",  m_PathLengthStart);
+  new MXmlNode(Node, "PathLengthStop",  m_PathLengthStop);
   new MXmlNode(Node, "StoreIAs", m_StoreIAs);
   new MXmlNode(Node, "StoreVetoes", m_StoreVetoes);
 
@@ -114,6 +118,12 @@ bool MSettingsGeomega::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("Position")) != 0) {
     m_Position = aNode->GetValueAsVector();
+  }
+  if ((aNode = Node->GetNode("PathLengthStart")) != 0) {
+    m_PathLengthStart = aNode->GetValueAsVector();
+  }
+  if ((aNode = Node->GetNode("PathLengthStop")) != 0) {
+    m_PathLengthStop = aNode->GetValueAsVector();
   }
   if ((aNode = Node->GetNode("StoreIAs")) != 0) {
     m_StoreIAs = aNode->GetValueAsBoolean();

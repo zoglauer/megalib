@@ -526,6 +526,28 @@ void MInterfaceGeomega::FindVolume(MVector Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceGeomega::GetPathLengths(const MVector& Start, const MVector& Stop)
+{
+  // Find the volume sequence for position Pos
+
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+    if (ReadGeometry() == false) {
+      return;
+    }
+  }
+
+  map<MDMaterial*, double> Couples = m_Geometry->GetPathLengths(Start, Stop);
+  
+  for (const auto& C : Couples) {
+    cout<<C.first->GetName()<<": "<<C.second<<" cm"<<endl;
+  }  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceGeomega::GetResolutions()
 {
   // Return the resolutions of all detectors:

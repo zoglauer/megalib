@@ -39,7 +39,9 @@ class MInterfaceGeomega : public MInterface
 {
   // Public Interface:
  public:
+  //! Default contructor
   MInterfaceGeomega();
+  //! standard destructor
   virtual ~MInterfaceGeomega();
 
   //! Each interface must be able to parse a command line - 
@@ -66,6 +68,9 @@ class MInterfaceGeomega : public MInterface
   void TestOnly();
   void FindVolume(MVector Pos);
   void CreateCrossSections();
+  
+  //! Given to positions give the path length in the material
+  void GetPathLengths(const MVector& Start, const MVector& Stop);
 
   // protected methods:
  protected:

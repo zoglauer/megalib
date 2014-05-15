@@ -58,6 +58,7 @@ class MGUIGeomegaMain : public MGUIMain
   virtual void About();
   void WriteMGeant();
   void Position();
+  void PathLengths();
 
   virtual bool LoadGeometry(MString FileName = "") { return false; }
 
@@ -87,7 +88,8 @@ class MGUIGeomegaMain : public MGUIMain
                    c_WriteG3, 
                    c_WriteG4, 
                    c_WriteMG, 
-                   c_Position, 
+                   c_Position,
+                   c_PathLengths,
                    c_Test }; 
 
 

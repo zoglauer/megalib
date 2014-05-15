@@ -688,7 +688,7 @@ bool MCalibrateLines::AssignEnergies()
   }
 
   // If one peak is used twice - throw out the one with lower count rate
-  bool FoundNotGood = false;
+  //bool FoundNotGood = false;
   for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
       if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
@@ -699,12 +699,12 @@ bool MCalibrateLines::AssignEnergies()
           if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
             cout<<"Bad: "<<m_Results.GetSpectralPoint(r, p)<<endl;
-            FoundNotGood = true;
+            //FoundNotGood = true;
             break;
           } else {
             m_Results.GetSpectralPoint(r, q).IsGood(false);  
             cout<<"Bad: "<<m_Results.GetSpectralPoint(r, q)<<endl;
-            FoundNotGood = true;
+            //FoundNotGood = true;
           }
         }
       }

@@ -12,51 +12,52 @@
 # Definitions:
 #
 
-PRG				= $(BN)/geomega
+PRG	= $(BN)/geomega
 
-MOBJS     = $(LB)/MGeomegaMain.o
+MOBJS	= $(LB)/MGeomegaMain.o
 
-GOBJS     = $(LB)/MInterfaceGeomega.o \
-						$(LB)/MGUIGeomegaMain.o \
-						$(LB)/MGUIMGeant.o \
-						$(LB)/MGUIPosition.o \
+GOBJS	= $(LB)/MInterfaceGeomega.o \
+	$(LB)/MGUIGeomegaMain.o \
+	$(LB)/MGUIMGeant.o \
+	$(LB)/MGUIPosition.o \
+	$(LB)/MGUIPathLength.o \
 
-LOBJS     = $(LB)/MSettingsGeomega.o \
-						$(LB)/MDGeometry.o \
-						$(LB)/MDGeometryQuest.o \
-						$(LB)/MDVolume.o \
-						$(LB)/MDVolumeSequence.o \
-						$(LB)/MDDetector.o \
-						$(LB)/MDACS.o \
-						$(LB)/MDAngerCamera.o \
-						$(LB)/MDCalorimeter.o \
-						$(LB)/MDStrip2D.o \
-						$(LB)/MDStrip3D.o \
-						$(LB)/MDStrip3DDirectional.o \
-						$(LB)/MDDriftChamber.o \
-						$(LB)/MDVoxel3D.o \
-						$(LB)/MDShape.o \
-						$(LB)/MDShapeBRIK.o \
-						$(LB)/MDShapeSPHE.o \
-						$(LB)/MDShapeTUBS.o \
-						$(LB)/MDShapeTRD1.o \
-						$(LB)/MDShapeTRD2.o \
-						$(LB)/MDShapeTRAP.o \
-						$(LB)/MDShapeGTRA.o \
-						$(LB)/MDShapePCON.o \
-						$(LB)/MDShapePGON.o \
-						$(LB)/MDShapeCONE.o \
-						$(LB)/MDShapeCONS.o \
-						$(LB)/MDMaterial.o \
-						$(LB)/MDMaterialComponent.o \
-						$(LB)/MDSystem.o \
-						$(LB)/MDTrigger.o \
-						$(LB)/MDTriggerUnit.o \
-						$(LB)/MDVector.o \
-						$(LB)/MDDebugInfo.o \
-						$(LB)/MDGrid.o \
-						$(LB)/MDGridPoint.o \
-						$(LB)/MDGridPointCollection.o \
+LOBJS	= $(LB)/MSettingsGeomega.o \
+	$(LB)/MDGeometry.o \
+	$(LB)/MDGeometryQuest.o \
+	$(LB)/MDVolume.o \
+	$(LB)/MDVolumeSequence.o \
+	$(LB)/MDDetector.o \
+	$(LB)/MDACS.o \
+	$(LB)/MDAngerCamera.o \
+	$(LB)/MDCalorimeter.o \
+	$(LB)/MDStrip2D.o \
+	$(LB)/MDStrip3D.o \
+	$(LB)/MDStrip3DDirectional.o \
+	$(LB)/MDDriftChamber.o \
+	$(LB)/MDVoxel3D.o \
+	$(LB)/MDShape.o \
+	$(LB)/MDShapeBRIK.o \
+	$(LB)/MDShapeSPHE.o \
+	$(LB)/MDShapeTUBS.o \
+	$(LB)/MDShapeTRD1.o \
+	$(LB)/MDShapeTRD2.o \
+	$(LB)/MDShapeTRAP.o \
+	$(LB)/MDShapeGTRA.o \
+	$(LB)/MDShapePCON.o \
+	$(LB)/MDShapePGON.o \
+	$(LB)/MDShapeCONE.o \
+	$(LB)/MDShapeCONS.o \
+	$(LB)/MDMaterial.o \
+	$(LB)/MDMaterialComponent.o \
+	$(LB)/MDSystem.o \
+	$(LB)/MDTrigger.o \
+	$(LB)/MDTriggerUnit.o \
+	$(LB)/MDVector.o \
+	$(LB)/MDDebugInfo.o \
+	$(LB)/MDGrid.o \
+	$(LB)/MDGridPoint.o \
+	$(LB)/MDGridPointCollection.o \
 
 
 SGOBJ = $(LB)/libGeomegaGui.$(DLL)
@@ -71,19 +72,19 @@ all: $(PRG)
 lib: $(SLOBJ) 
 
 link:
-		@$(LINK) $(shell pwd)/inc/*.h $(IN)
-		@rm -f $(IN)/LinkDef.h
+	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@rm -f $(IN)/LinkDef.h
 
 
 clean:
-		@rm -f src/*~
-		@rm -f src/\#*
-		@rm -f inc/*~
-		@rm -f inc/\#*
-		@rm -f *~
-		@rm -f \#*
-		@rm -f $(PRG)
-		@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(SGOBJ) $(SLOBJ)
+	@rm -f src/*~
+	@rm -f src/\#*
+	@rm -f inc/*~
+	@rm -f inc/\#*
+	@rm -f *~
+	@rm -f \#*
+	@rm -f $(PRG)
+	@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(SGOBJ) $(SLOBJ)
 
 
 #----------------------------------------------------------------

@@ -45,12 +45,17 @@ class MSettingsGeomega : public MSettings
   void SetPosition(const MVector& Position) { m_Position = Position; }
   MVector GetPosition() const { return m_Position; }
 
+  void SetPathLengthStart(const MVector& PathLengthStart) { m_PathLengthStart = PathLengthStart; }
+  MVector GetPathLengthStart() const { return m_PathLengthStart; }
+
+  void SetPathLengthStop(const MVector& PathLengthStop) { m_PathLengthStop = PathLengthStop; }
+  MVector GetPathLengthStop() const { return m_PathLengthStop; }
+
   void SetStoreIAs(const bool& StoreIAs) { m_StoreIAs = StoreIAs; }
   bool GetStoreIAs() const { return m_StoreIAs; }
 
   void SetStoreVetoes(const bool& StoreVetoes) { m_StoreVetoes = StoreVetoes; }
   bool GetStoreVetoes() const { return m_StoreVetoes; }
-
 
   void SetSpecialMode(const bool SpecialMode) { m_SpecialMode = SpecialMode; }
   bool GetSpecialMode() const { return m_SpecialMode; }
@@ -66,10 +71,18 @@ class MSettingsGeomega : public MSettings
  private:
   int m_MGeantOutputMode;
   MString m_MGeantFileName;
-  MVector m_Position;
   bool m_StoreIAs;
   bool m_StoreVetoes;
 
+  //! The test position for volume hierarchy determination
+  MVector m_Position;
+  
+  //! The start position for absorption calculation
+  MVector m_PathLengthStart;
+  
+  //! The stop position for absorption calculation
+  MVector m_PathLengthStop;
+  
   //! The special mode flag
   bool m_SpecialMode;
 

@@ -230,12 +230,12 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
 
   bool SameBeamType = true;
   bool SameSpectralType = true;
-  for (unsigned int s = 1; s < m_RunParameters.GetCurrentRun().GetNSources(); ++s) {
-    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetCoordinateSystem() != m_RunParameters.GetCurrentRun().GetSource(0)->GetCoordinateSystem() ||
-        m_RunParameters.GetCurrentRun().GetSource(s)->GetBeamType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamType()) {
+  for (unsigned int source = 1; source < m_RunParameters.GetCurrentRun().GetNSources(); ++source) {
+    if (m_RunParameters.GetCurrentRun().GetSource(source)->GetCoordinateSystem() != m_RunParameters.GetCurrentRun().GetSource(0)->GetCoordinateSystem() ||
+        m_RunParameters.GetCurrentRun().GetSource(source)->GetBeamType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamType()) {
       SameBeamType = false;
     }
-    if (m_RunParameters.GetCurrentRun().GetSource(s)->GetSpectralType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralType()) {
+    if (m_RunParameters.GetCurrentRun().GetSource(source)->GetSpectralType() != m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralType()) {
       SameSpectralType = false;
     }
   }

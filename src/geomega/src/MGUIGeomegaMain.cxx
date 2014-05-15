@@ -29,6 +29,7 @@
 #include "MGUIGeometry.h"
 #include "MGUIMGeant.h"
 #include "MGUIPosition.h"
+#include "MGUIPathLength.h"
 #include "MInterfaceGeomega.h"
 #include "MSystem.h"
 #include "MFile.h"
@@ -79,10 +80,12 @@ void MGUIGeomegaMain::Create()
   m_MenuAnalysis->AddEntry("Scan setup file", c_Scan);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("View geometry", c_View);
+  m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Calculate masses", c_Masses);
   m_MenuAnalysis->AddEntry("Determine detector resolutions", c_Resolutions);
   m_MenuAnalysis->AddEntry("Dump geometry information", c_Dump);
   m_MenuAnalysis->AddEntry("Position/volume information", c_Position);
+  m_MenuAnalysis->AddEntry("Determine path lengths", c_PathLengths);
   m_MenuAnalysis->AddEntry("Check for overlaps", c_Intersect);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Create Geant3 files", c_WriteG3);
@@ -200,6 +203,10 @@ bool MGUIGeomegaMain::ProcessMessage(long Message, long Parameter1,
         Position();
         break;
 
+      case c_PathLengths:
+        PathLengths();
+        break;
+
       case c_Test:
         m_Interface->TestOnly();
         break;
@@ -275,13 +282,29 @@ void MGUIGeomegaMain::WriteMGeant()
 
 void MGUIGeomegaMain::Position()
 {
-  // Write the geometry in MGeant format
+  // At the given position determine the volume hierarachy
   
   bool OkPressed = false;
   new MGUIPosition(gClient->GetRoot(), this, m_Data, OkPressed);
   
   if (OkPressed == true) {
     m_Interface->FindVolume(m_Data->GetPosition());
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIGeomegaMain::PathLengths()
+{
+  // Determine the absorption along a path
+  
+  bool OkPressed = false;
+  new MGUIPathLength(gClient->GetRoot(), this, m_Data, OkPressed);
+  
+  if (OkPressed == true) {
+    m_Interface->GetPathLengths(m_Data->GetPathLengthStart(), m_Data->GetPathLengthStop());
   }
 }
 
