@@ -58,15 +58,16 @@ class MDTrigger
 
   void SetDetectorType(const int Detectortype, const unsigned int Hits);
   void SetDetector(MDDetector* Detector, const unsigned int Hits);
-
-  vector<int> GetDetectorTypes() { return m_DetectorTypes; }
-  vector<MDDetector*> GetDetectors() { return m_Detectors; }
-  
-  //! Return true if this trigger applies to the detector
-  bool Applies(MDDetector* D) const;
   
   void SetGuardringDetectorType(const int Detectortype, const unsigned int Hits);
   void SetGuardringDetector(MDDetector* Detector, const unsigned int Hits);
+
+  vector<int> GetDetectorTypes() { return m_DetectorTypes; }
+  vector<MDDetector*> GetDetectors() { return m_Detectors; }
+  vector<int> GetTriggerTypes() { return m_Types; }
+  
+  //! Return true if this trigger applies to the detector
+  bool Applies(MDDetector* D) const;
 
   //! Returns true if the hit could be added 
   bool AddHit(MDVolumeSequence& VS);
