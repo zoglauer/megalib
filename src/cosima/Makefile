@@ -39,7 +39,7 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
-	@rm -f $(PRG)
+	@rm -f $(BN)/$(PRG)
 	@rm -f $(OBJ_FILES) $(SOBJ)
 
 
