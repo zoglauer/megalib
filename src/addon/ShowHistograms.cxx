@@ -193,6 +193,8 @@ bool ShowHistograms::Analyze()
       NewCanvas->Update();
     } else if (Class->InheritsFrom("TCanvas")) {
       TCanvas* C = (TCanvas*) Key->ReadObj();
+      C->Draw();
+      /*
       TIter CanvasContent(C->GetListOfPrimitives());
       TObject* Object;
       while ((Object = CanvasContent()) != 0) {
@@ -212,6 +214,7 @@ bool ShowHistograms::Analyze()
           NewCanvas->Update();
         }
       }
+      */
     }
   }
   

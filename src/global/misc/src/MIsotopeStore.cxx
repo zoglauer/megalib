@@ -68,19 +68,24 @@ bool MIsotopeStore::Load(MString FileName)
   MParser iParser;
   iParser.Open(FileName);
 
+  MString Flags;
   m_Isotopes.clear();
   for (unsigned int i = 0; i < iParser.GetNLines(); ++i) {
     if (iParser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
-    if (iParser.GetTokenizerAt(i)->GetNTokens() != 4) {
-      mout<<"Isotope file: An isotope line must have 4 arguments: "<<iParser.GetTokenizerAt(i)->GetText()<<endl;
+    if (iParser.GetTokenizerAt(i)->GetNTokens() < 4 || iParser.GetTokenizerAt(i)->GetNTokens() > 5) {
+      mout<<"Isotope file: An isotope line must have 4-5 arguments: "<<iParser.GetTokenizerAt(i)->GetText()<<endl;
       continue;
     }
     bool Found = false;
     MString Name = iParser.GetTokenizerAt(i)->GetTokenAtAsString(0);
+    MString Flags;
+    if (iParser.GetTokenizerAt(i)->GetNTokens() == 5) Flags = iParser.GetTokenizerAt(i)->GetTokenAtAsString(4);
     unsigned int Nucleons = iParser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
     for (unsigned int s = 0; s < m_Isotopes.size(); ++s) {
       if (m_Isotopes[s].GetElement() == Name && m_Isotopes[s].GetNucleons() == Nucleons) {
-        m_Isotopes[s].AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+        m_Isotopes[s].AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), 
+                              iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3),
+                              Flags);
         Found = true;
         break;
       }
@@ -89,7 +94,9 @@ bool MIsotopeStore::Load(MString FileName)
       MIsotope Isotope;
       Isotope.SetElement(Name);
       Isotope.SetNucleons(Nucleons);
-      Isotope.AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+      Isotope.AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), 
+                      iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3),
+                      Flags);
       m_Isotopes.push_back(Isotope);
     }
   }

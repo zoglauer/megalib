@@ -235,6 +235,9 @@ link:
 	@$(MAKE) link -C spectralyze
 	@$(MAKE) link -C fretalon
 	@$(MAKE) link -C response
+ifeq "$(strip $(GEANT4INSTALLED))" "0"
+	@$(MAKE) link -C cosima
+endif
 	@if test -d miworks; then $(MAKE) link -C miworks; fi
 	@if test -d megalyze; then $(MAKE) link -C megalyze; fi
 	@if test -d herty; then $(MAKE) link -C herty; fi

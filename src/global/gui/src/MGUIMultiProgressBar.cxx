@@ -256,7 +256,7 @@ void MGUIMultiProgressBar::Create()
   AddFrame(m_CancelButton, CancelButtonLayout);
 
   TGDimension D = GetDefaultSize();
-  if (D.fWidth < 350) D.fWidth = 350;
+  if (D.fWidth < FontScaler*350) D.fWidth = FontScaler*350;
   Resize(D);
   
   CenterOnParent();

@@ -58,6 +58,9 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
   //! Set the sigma of the Landau distribution
   void SetLandauSigma(double Sigma) { m_LandauSigma = Sigma; }
 
+  //! Get the FWHM
+  virtual double GetFWHM() const;
+
   // protected methods:
  protected:
   //! Set all fit parameters

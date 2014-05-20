@@ -289,16 +289,19 @@ bool MSpectralAnalyzer::SetIsotopeFileName(MString IsotopeFileName)
   m_ComparisonIsotopes.clear();
   for (unsigned int i = 0; i < iParser.GetNLines(); ++i) {
     if (iParser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
-    if (iParser.GetTokenizerAt(i)->GetNTokens() != 4) {
-      mout<<"Wrong number of arguments: "<<iParser.GetTokenizerAt(i)->GetText()<<endl;
+    if (iParser.GetTokenizerAt(i)->GetNTokens() < 4 || iParser.GetTokenizerAt(i)->GetNTokens() > 5) {
+      mout<<"Wrong number of arguments (expected 4-5): "<<iParser.GetTokenizerAt(i)->GetText()<<endl;
       continue;
     }
     bool Found = false;
     MString Name = iParser.GetTokenizerAt(i)->GetTokenAtAsString(0);
+    MString Flags;
+    if (iParser.GetTokenizerAt(i)->GetNTokens() == 5) Flags = iParser.GetTokenizerAt(i)->GetTokenAtAsString(4);
     unsigned int Nucleons = iParser.GetTokenizerAt(i)->GetTokenAtAsInt(1);
     for (unsigned int s = 0; s < m_ComparisonIsotopes.size(); ++s) {
       if (m_ComparisonIsotopes[s]->GetElement() == Name && m_ComparisonIsotopes[s]->GetNucleons() == Nucleons) {
-        m_ComparisonIsotopes[s]->AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+        m_ComparisonIsotopes[s]->AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), 
+                                         iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3), Flags);
         Found = true;
         break;
       }
@@ -307,7 +310,7 @@ bool MSpectralAnalyzer::SetIsotopeFileName(MString IsotopeFileName)
       MQualifiedIsotope* Isotope = new MQualifiedIsotope();
       Isotope->SetElement(Name);
       Isotope->SetNucleons(Nucleons);
-      Isotope->AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3));
+      Isotope->AddLine(iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(2), iParser.GetTokenizerAt(i)->GetTokenAtAsDouble(3), Flags);
       m_ComparisonIsotopes.push_back(Isotope);
     }
   }

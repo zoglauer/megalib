@@ -13,7 +13,7 @@ ACSPaper.Component             12.1  6.0  6   // C
 ACSPaper.Component             16.0  8.0  5   // O
 
 
-// Air at sealevel and 20 degrees 
+// Air at sealevel, 101.325 kPa, and 20 degrees - multiple times verified
 Material Air                          
 Air.Density                     1.2041E-03     
 Air.ComponentByMass             14.0    7.0  0.7556
@@ -28,7 +28,6 @@ Aluminium.Component             27.0 13.0 1
 
 Material Alu6061
 Alu6061.Density               2.6989
-# radiation length not needed since this is a mixture ... ;-)
 Alu6061.ComponentByMass       28.086  14.  0.0060
 Alu6061.ComponentByMass       55.847  26.  0.0070
 Alu6061.ComponentByMass       63.546  29.  0.0030

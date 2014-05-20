@@ -137,8 +137,16 @@ MCalibrationSpectralPoint& MCalibrationSpectrum::GetSpectralPoint(unsigned int R
 
 
 //! Return the calibration in a saveable format
-MString MCalibrationSpectrum::ToParsableString(bool WithDescriptor)
+//! Mode is: pak  - points ADC to keV
+//! Mode is: pakw - points ADC to keV and fwhm
+MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDescriptor)
 {
+  
+  if (Mode != "pak" && Mode != "pakw") {
+    throw MExceptionUnknownMode(Mode);
+    return "";
+  }
+  
   ostringstream out;
   
   // Make a single list of the points and store them for sorting
@@ -154,17 +162,29 @@ MString MCalibrationSpectrum::ToParsableString(bool WithDescriptor)
   // Sort the points by energy:
       
   // If we have multiple points with the same energy -- warn for now because we first need to have such an example to test it...
-      
-  if (WithDescriptor == true) {
-    out<<"pak "; 
-  }
-  out<<Points.size()<<" ";
+  
+  if (Mode == "pak") {
+    if (WithDescriptor == true) {
+      out<<"pak "; 
+    }
+    out<<Points.size()<<" ";
 
-  for (unsigned int p = 0; p < Points.size(); ++p) {
-    out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "; 
-  }
-  out<<endl;
+    for (unsigned int p = 0; p < Points.size(); ++p) {
+      out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "; 
+    }
+    out<<endl;
+  } else if (Mode == "pakw") {
+    if (WithDescriptor == true) {
+      out<<"pakw "; 
+    }
+    out<<Points.size()<<" ";
 
+    for (unsigned int p = 0; p < Points.size(); ++p) {
+      out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "<<Points[p].GetEnergyFWHM()<<" "; 
+    }     
+  }
+  
+  
   return out.str();
 }  
 

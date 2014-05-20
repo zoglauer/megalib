@@ -62,6 +62,8 @@ class MCalibrationFitGaussian : public MCalibrationFit
   
   //! Get the peak
   virtual double GetPeak() const { return m_GaussianMean; }
+  //! Get the FWHM
+  virtual double GetFWHM() const { return 2.35482*m_GaussianSigma; }
 
   // protected methods:
  protected:

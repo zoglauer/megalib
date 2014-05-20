@@ -454,6 +454,8 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 
       cout<<"Peak: "<<P.GetPeak()<<endl;
       
+      // Find the minimum and maximum of range around the peak
+      
       // Let's find the right lower limit
       int RightLimitBin = PeakBin;
       double Value = Data->GetBinContent(PeakBin);
@@ -469,20 +471,36 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       //cout<<"Right edge until next increase: "<<P.GetHighEdge()<<endl;
       
       // Let's crawl down on the left side and symmetrize if possible
+      int LeftLimitBin = PeakBin;
       Value = Data->GetBinContent(MaximumBin);
       for (int bb = MaximumBin - 1; bb >= 1; --bb) {
         if (Data->GetBinContent(bb) <= Value) {
           Value = Data->GetBinContent(bb);
-          P.SetLowEdge(Data->GetBinCenter(bb));
-          if (2.0*P.GetPeak() - P.GetLowEdge() < Data->GetBinCenter(RightLimitBin)) {
-            P.SetHighEdge(2.0*P.GetPeak() - P.GetLowEdge());
-          } else {
-            P.SetHighEdge(Data->GetBinCenter(RightLimitBin));
-          }
+          LeftLimitBin = bb;
         } else {
           break;
         }
       }
+      P.SetLowEdge(Data->GetBinCenter(LeftLimitBin));
+      
+      // Symmetrize
+      if (2.0*P.GetPeak() - P.GetLowEdge() < Data->GetBinCenter(RightLimitBin)) {
+        P.SetHighEdge(2.0*P.GetPeak() - P.GetLowEdge());
+      } else {
+        P.SetHighEdge(Data->GetBinCenter(RightLimitBin));
+      }
+      
+      /*
+      // Make sure the outer bins are not too large:
+      double MaxPeakSize = Data->GetBinLowEdge(RightLimitBin) -  Data->GetXaxis()->GetBinUpEdge(LeftLimitBin); 
+      if (Data->GetBinCenter(RightLimitBin) - Data->GetBinLowEdge(RightLimitBin) > MaxPeakSize) {
+        P.SetHighEdge(Data->GetBinLowEdge(RightLimitBin) + MaxPeakSize);
+      }
+      if (Data->GetXaxis()->GetBinUpEdge(LeftLimitBin) - Data->GetBinCenter(LeftLimitBin) > MaxPeakSize) {
+        P.SetLowEdge(Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - MaxPeakSize);
+      }
+      */
+      
       //cout<<"Left edge until next increase: "<<P.GetLowEdge()<<endl;
       //cout<<"Symetrized right edge until next increase: "<<P.GetHighEdge()<<endl;
            
@@ -567,6 +585,7 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
       P.IsGood(IsGood);
       P.SetPeak(Fit.GetPeak());
+      P.SetFWHM(Fit.GetFWHM());
       if (m_DiagnosticsMode == true) {
         TCanvas* C = new TCanvas();
         C->cd();

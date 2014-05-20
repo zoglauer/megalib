@@ -117,6 +117,45 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an index is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionUnknownMode : public exception
+{
+public:
+  //! Default constructor
+  MExceptionUnknownMode() : m_IsEmpty(true), m_Mode("") {
+    abort();
+  }
+  //! Standard constructor
+  MExceptionUnknownMode(const MString& Mode) : m_IsEmpty(true), m_Mode(Mode) {
+    abort();
+  }
+  //! Default destructor
+  ~MExceptionUnknownMode() throw() {}
+  //! Set the data minium array index, its size, and the accessing index in the array
+  void SetName(const MString& Mode) { m_Mode = Mode; }
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_IsEmpty == false) {
+      ostringstream stream;
+      stream<<"Unknown mode "<<m_Mode<<"!"<<endl; 
+      return stream.str().c_str();
+    } else {
+      return "Unknown mode!"; 
+    }
+  }
+
+private:
+  //! True if SetName() has never been called
+  bool m_IsEmpty;
+  //! The mode which is unknown
+  MString m_Mode;
+};
+
+
 #endif
 
 

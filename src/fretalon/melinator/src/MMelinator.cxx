@@ -79,7 +79,7 @@ MMelinator::MMelinator()
 
   m_PeakParametrizationMethod = MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak;
   
-  m_NThreads = 1;
+  m_NThreads = 4;
   
   Clear();
 }
@@ -180,8 +180,8 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   }
   
   unsigned int NThreads = m_NThreads;
-  if (m_CalibrationFileNames.size() < NThreads) NThreads = m_CalibrationFileNames.size();  
-  if (NThreads < 1) NThreads = 1;
+  NThreads = m_CalibrationFileNames.size();  
+  //if (NThreads < 1) NThreads = 1;
   m_ThreadNextItem = 0;
   m_Threads.resize(NThreads);
   m_ThreadIsInitialized.resize(NThreads);
@@ -758,7 +758,9 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
   ProgressBar.SetTitles("Calibration", "Progress of calibration");
   ProgressBar.SetMinMax(0, m_Store.GetNumberOfReadOutCollections()); 
   
-  if (m_NThreads < 1) m_NThreads = 1;
+  cout<<"Fixing threads to 1 due to some root bugs..."<<endl;
+  m_NThreads = 1;
+  //if (m_NThreads < 1) m_NThreads = 1;
   m_ThreadNextItem = 0;
   m_Threads.resize(m_NThreads);
   m_ThreadIsInitialized.resize(m_NThreads);
@@ -932,7 +934,7 @@ bool MMelinator::Save(MString FileName)
     MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))); // TF1 make problems when copying the thing --> pointer
     if (C != nullptr) {
       // Make a list of the points and store them for sorting
-      out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString(true)<<endl;
+      out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
     }
   }
   

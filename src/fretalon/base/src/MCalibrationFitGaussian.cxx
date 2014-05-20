@@ -24,6 +24,8 @@
 // ROOT libs:
 #include "TMath.h"
 #include "TFitResult.h"
+#include "TH1.h"
+#include "TF1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -109,7 +111,7 @@ double MCalibrationFitGaussian::operator() (double* X, double* P)
 
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     int Ps = GetBackgroundFitParameters();
-    if (P[Ps+2] != 0) {
+    if (P[Ps+3] != 0) {
       double Arg = ((X[0] - P[Ps+2])/P[Ps+3]);
       Return += P[Ps+4]/sqrt(2*TMath::Pi())/P[Ps+3] * TMath::Exp(-0.5*Arg*Arg);
     }
@@ -149,8 +151,10 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
   
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
+    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
   } else {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
+    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+1);
   }
     
   return FitResult->IsValid();

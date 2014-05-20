@@ -63,7 +63,7 @@ class MCalibrationSpectrum : public MCalibration
   MCalibrationSpectralPoint& GetSpectralPoint(unsigned int ROG, unsigned int Point);
     
   //! Return the data as parsable string
-  virtual MString ToParsableString(bool WithDescriptor = false);
+  virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
 
   // protected methods:
  protected:

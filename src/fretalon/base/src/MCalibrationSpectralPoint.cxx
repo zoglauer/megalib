@@ -38,7 +38,7 @@ ClassImp(MCalibrationSpectralPoint)
 
 
 //! Default constructor
-MCalibrationSpectralPoint::MCalibrationSpectralPoint() : m_Peak(0), m_Counts(0), m_LowEdge(0), m_HighEdge(0), m_Fit(0), m_IsGood(true)
+MCalibrationSpectralPoint::MCalibrationSpectralPoint() : m_Peak(0), m_FWHM(-1), m_Counts(0), m_LowEdge(0), m_HighEdge(0), m_Fit(0), m_IsGood(true)
 {
 }
 
@@ -89,8 +89,8 @@ MCalibrationFit& MCalibrationSpectralPoint::GetFit()
 MString MCalibrationSpectralPoint::ToString() const
 {
   ostringstream os;
-  os<<"Peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts";
-  os<<" corresponding to an energy of "<<m_Energy<<" keV";
+  os<<"Peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts and ";
+  os<<" corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<m_FWHM<<" keV";
   return os.str();
 }
 

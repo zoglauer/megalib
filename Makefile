@@ -259,7 +259,6 @@ SIVANLIBS = \
 	-lGeomega \
 	-lCommonMisc \
 	-lCommonGui \
-#	-lMimrec \
 
 sivan: info siv
 	@$(BN)/sivan $(CMD)
@@ -304,8 +303,9 @@ clean_revan:
 # Cosima:
 
 COSIMALIBS = \
-	-lGeomega \
+	-lCosima \
 	-lSivan \
+	-lGeomega \
 	-lCommonMisc \
 	-lCommonGui \
 

@@ -23,6 +23,8 @@
 
 // ROOT libs:
 #include "TMath.h"
+#include "TH1.h"
+#include "TF1.h"
 
 // MEGAlib libs:
 #include "MStreams.h"

@@ -93,10 +93,12 @@ MString MIsotope::GetName() const
 
 
 //! Add line parameters:
-void MIsotope::AddLine(double Energy, double BranchingRatio) 
+void MIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flags) 
 { 
   m_LineEnergies.push_back(Energy); 
-  m_LineBranchingRatios.push_back(BranchingRatio); 
+  m_LineBranchingRatios.push_back(BranchingRatio);
+  m_LineExcludeFlags.push_back(false);
+  if (Flags.Contains("E") == true) m_LineExcludeFlags.back() = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,6 +110,19 @@ double MIsotope::GetLineEnergy(unsigned int i) const
   if (i < m_LineEnergies.size()) return m_LineEnergies[i];
 
   merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineEnergies.size()<<endl;
+  return 0;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the line exclude flag
+double MIsotope::GetLineExcludeFlag(unsigned int i) const
+{
+  if (i < m_LineExcludeFlags.size()) return m_LineExcludeFlags[i];
+
+  merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineExcludeFlags.size()<<fatal;
   return 0;
 }
 

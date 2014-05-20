@@ -20,13 +20,18 @@
 #include "MCalibrationFitGaussLandau.h"
 
 // Standard libs:
+#include <cmath>
+using namespace std;
 
 // ROOT libs:
 #include "TMath.h"
 #include "TFitResult.h"
+#include "TH1.h"
+#include "TF1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MStreams.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -200,6 +205,76 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
     }
     m_Fit->SetParLimits(4+BPM, 0, 10*Hist.GetMaximum());
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+//! Get the FWHM
+double MCalibrationFitGaussLandau::GetFWHM() const
+{
+  cout<<"Gauss-Landau FWHM never tested!"<<endl;
+  
+  // A Gauss-Landau lambda without background and energy loss 
+  auto GL = [&](double x) {
+    double Return = 0.0;
+    if (m_GaussianSigma != 0) {
+      double Arg = ((x - m_GaussianMean)/m_GaussianSigma);
+      Return += m_GaussianHeight/sqrt(2*TMath::Pi())/m_GaussianSigma * TMath::Exp(-0.5*Arg*Arg);
+    }
+    Return += m_LandauHeight*TMath::Landau(-x + m_GaussianMean, 0, m_LandauSigma);
+    return Return;
+  };
+  
+  double HalfPeak = 2*GL(m_GaussianMean);
+  
+  // Find the low half value:
+  double Min = -1.0; // We have energies... I hope
+  while (GL(Min) > HalfPeak) {
+    Min *= 2;
+    if (std::isinf(Min) == true) {
+      merr<<"Cannot find a low value below 50% of peak"<<error;
+      return -1;
+    }
+  }
+  double Max = m_GaussianMean;
+  
+  double Epsilon = Max - Min;
+  while (Epsilon > 0.001) {
+    if (GL(0.5*(Min+Max)) > HalfPeak) {
+      Max = 0.5*(Min+Max);
+    } else {
+      Min = 0.5*(Min+Max);
+    }
+    Epsilon = Max - Min;
+  }
+  double Left = 0.5*(Min+Max);
+  
+  // Find the high half value:
+  Min = m_GaussianMean;
+  Max = 10*m_GaussianMean; // We have energies... I hope
+  while (GL(Max) > HalfPeak) {
+    Max *= 2;
+    if (std::isinf(Max) == true) {
+      merr<<"Cannot find a high value below 50% of peak"<<error;
+      return -1;
+    }
+  }
+  
+  Epsilon = Max - Min;
+  while (Epsilon > 0.001) {
+    if (GL(0.5*(Min+Max)) > HalfPeak) {
+      Max = 0.5*(Min+Max);
+    } else {
+      Min = 0.5*(Min+Max);
+    }
+    Epsilon = Max - Min;
+  }
+  double Right = 0.5*(Min+Max);
+  
+  return Right-Left;
 }
 
 

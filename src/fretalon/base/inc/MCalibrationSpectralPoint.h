@@ -50,11 +50,19 @@ class MCalibrationSpectralPoint
   void SetPeak(double Peak) { m_Peak = Peak; }
   //! Get the peak
   double GetPeak() const { return m_Peak; }
+  
+  //! Set the FWHM in ADCs
+  void SetFWHM(double FWHM) { m_FWHM = FWHM; }
+  //! Get the FWHM in ADCs
+  double GetFWHM() const { return m_FWHM; }
 
   //! Set the energy
   void SetEnergy(double Energy) { m_Energy = Energy; }
   //! Get the energy
   double GetEnergy() const { return m_Energy; }
+
+  //! Get the FWHM in energy units (keV)
+  double GetEnergyFWHM() const { if (m_Peak == 0) return 0.0; else return m_FWHM/m_Peak * m_Energy; }
 
   //! Set the number of counts
   void SetCounts(double Counts) { m_Counts = Counts; }
@@ -106,6 +114,8 @@ class MCalibrationSpectralPoint
  private:
   //! The peak
   double m_Peak;
+  //! The FWHM
+  double m_FWHM;
   //! The counts
   double m_Counts;
   //! The low edge

@@ -55,13 +55,15 @@ class MIsotope
   unsigned int GetNucleons() const { return m_Nucleons; }
   
   //! Add line parameters:
-  void AddLine(double Energy, double BranchingRatio);
+  void AddLine(double Energy, double BranchingRatio, const MString& Flags);
   //! Return the number of lines
   unsigned GetNLines() const { return m_LineEnergies.size(); }
   //! Return the line energy
   double GetLineEnergy(unsigned int l) const;
   //! Return the line branching ratio
   double GetLineBranchingRatio(unsigned int l) const;
+  //! Return the line exclude flag
+  double GetLineExcludeFlag(unsigned int l) const;
   
   //! Dump a string
   virtual MString ToString() const;
@@ -90,6 +92,8 @@ class MIsotope
   vector<double> m_LineEnergies;
   //! The line branching ratio
   vector<double> m_LineBranchingRatios;
+  //! The line exclude flags
+  vector<bool> m_LineExcludeFlags;
  
 
 #ifdef ___CINT___
