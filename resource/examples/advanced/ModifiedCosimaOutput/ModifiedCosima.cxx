@@ -91,6 +91,7 @@ class Saver
   bool Flush() {
     m_Out.write(m_Buffer, m_BufferSize*sizeof(Interaction));
     m_BufferSize = 0;
+    m_Out.flush();
     return true;
   }
   
