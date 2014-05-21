@@ -1,0 +1,37 @@
+// A world of air
+
+Name WorldOfAir
+Version 1.0
+
+SurroundingSphere 1000000.0  0.0  0.0  0.0  1000000.0
+
+
+// Air at sealevel and 20 degrees Celsius
+Material Air                          
+Air.Density                     1.2041E-03     
+Air.ComponentByMass             N   0.7556
+Air.ComponentByMass             O   0.2315
+Air.ComponentByMass             Ar  0.0129 
+
+Material Vacuum                          
+Vacuum.Density                  1E-12         
+Vacuum.Component                H   1 
+
+
+Volume WorldVolume             
+WorldVolume.Material Air
+WorldVolume.Visibility 1   
+WorldVolume.Shape SPHE 0 5000000 0.0 180.0 0.0 360.0
+WorldVolume.Mother 0
+
+Volume BlackAbsorber             
+BlackAbsorber.Material Vacuum
+BlackAbsorber.Visibility 1   
+BlackAbsorber.Shape TUBS 0.0 4900000.0 0.05 0.0 360.0
+BlackAbsorber.Position 0.0 0.0 -0.1
+BlackAbsorber.Mother WorldVolume
+
+
+
+
+

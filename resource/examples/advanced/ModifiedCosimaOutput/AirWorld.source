@@ -1,0 +1,28 @@
+
+Version         1
+Geometry        AirWorld.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  all
+StoreScientific                      true 6
+StoreSimulationInfoIonization        false
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       false
+
+BlackAbsorber                        BlackAbsorber
+
+DefaultRange    0.5
+
+Run MySim
+#MySim.FileName         InfiniteAir
+MySim.NEvents          10000
+
+MySim.Source MonoPS
+MonoPS.ParticleType        1
+MonoPS.Beam                ConeBeam 0.0 0.0 0.0 0.0 0.0 1.0  90.0
+MonoPS.Spectrum            Linear 1.0 3000.0
+MonoPS.Flux                1000000
