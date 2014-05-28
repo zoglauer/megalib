@@ -29,6 +29,7 @@ using namespace std;
 #include "TBox.h"
 
 // MEGAlib libs:
+#include "MExceptions.h"
 #include "MBinnerFixedNumberOfBins.h"
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
@@ -37,6 +38,7 @@ using namespace std;
 #include "MCalibrationFit.h"
 #include "MCalibrationFitGaussian.h"
 #include "MCalibrationFitGaussLandau.h"
+#include "MCalibrationModel.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -228,6 +230,13 @@ double GaussLandauFixedMeanFixedSigmaPol2Background(double *x, double *par)
 MCalibrateLines::MCalibrateLines() : MCalibrate()
 {
   m_PeakParametrizationMethod = c_PeakParametrizationMethodBayesianBlockPeak;
+  
+  m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear; 
+  m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone; 
+  m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
+  
+  m_CalibrationModelDeterminationMethod = c_CalibrationModelStepWise;
+  m_CalibrationModelDeterminationMethodFittingModel = MCalibrationModel::c_CalibrationModelPoly3;
 }
 
 
@@ -263,13 +272,14 @@ bool MCalibrateLines::Calibrate()
   m_Results.SetNumberOfReadOutDataGroups(m_ROGs.size());
   
   for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-
     FindPeaks(r);   
-    FitPeaks(r);   
+    FitPeaks(r);
   }
 
   AssignEnergies();
   
+  DetermineModels();
+
   return true;
 }
 
@@ -282,16 +292,23 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 {
   cout<<"Finding peaks for ROG ID: "<<ROGID<<endl;
   
+  int Prior = 6;
+  
+  int FirstPeakMinimumBinID = 7;
+  double FirstPeakMinimumPeakCounts = 300; 
+  
   double MinimumPeakCounts = 100; 
   double MinimumHeight = 1.5; 
   double MinimumBinWidthForBayesianBinner = 8;
+  double ComptonEdgeThreshold = 0.5;
+  double RangeBeyondPeak = 2.5;
   //double Epsilon = 0.01;
 
   // Step 1: Create a histogram with the correct binning:
   MBinnerBayesianBlocks Binner;
   Binner.SetMinimumBinWidth(MinimumBinWidthForBayesianBinner);
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
-  Binner.SetPrior(5);
+  Binner.SetPrior(Prior);
   for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
     MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(m_ROGs[ROGID].GetReadOutData(d)));
     if (ADC != nullptr) {
@@ -304,7 +321,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
   if (Data->GetNbinsX() < 5) return true;
         
   // Step 2: Do some mimial smoothing to elimintae mini-peaks in the Bayesian block binned data
-  //Data->Smooth(3);
+  //Data->Smooth(3); // --> Better to use a larger prior...
     
   // Step 3: Create a first derivation
   TH1D* FirstDerivation = 0;
@@ -321,20 +338,29 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
   }
 
   // Step 4: Find zero passages + --> -
-  bool First = true;
+  bool Start = true;
+  bool FirstPeak = false;
   for (int b = 2; b <= FirstDerivation->GetNbinsX(); ++b) {
     if (FirstDerivation->GetBinContent(b) > 0 && FirstDerivation->GetBinContent(b+1) < 0) {
-        
+      // We have found a zero passage, i.e. a peak
+      // Let's handle it
+      
+      cout<<endl<<"Start"<<endl;
+      
       // ignore the first peak as background rollover or noise
-      if (First == true) {
-        First = false;
-        continue;
+      if (Start == true) {
+        Start = false;
+        FirstPeak = true;
+        //cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak"<<endl;
+        //continue;
+      } else {
+        FirstPeak = false; 
       }
 
       // Ignore the last bin: 
       if (b+1 == FirstDerivation->GetNbinsX()) continue;
         
-        
+      // Create a peak
       MCalibrationSpectralPoint P;
       P.SetPeak(FirstDerivation->GetBinLowEdge(b+1));
       
@@ -397,15 +423,15 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       CountsPerBin -= 0.5*(CountsPerBinBefore + CountsPerBinAfter);
       cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Height etc. : "<<CountsPerBinBefore<<":"<<Height<<":"<<CountsPerBinAfter<<endl;
       Height -= 0.5*(CountsPerBinBefore + CountsPerBinAfter);
-              
+      
       if (CountsPerBin*Width < MinimumPeakCounts) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
+        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
         continue;
       }
       P.SetCounts(CountsPerBin*Width);
         
       if (Height < MinimumHeight) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Peak height to small: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;
+        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Peak height to small: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;
         continue;
       }
         
@@ -416,7 +442,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       if (!(Volatility > 0.015 && 
           ((Maximum > +0.0075 && Minimum < -0.0025) ||
            (Minimum < -0.0075 && Maximum > +0.0025)))) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Derivative peak not strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;
+        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Derivative peak not strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;
         continue;
       }
 
@@ -427,7 +453,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       
       // Optimize the fit window:
       
-      // Find better peak
+      // Find better peak:
       double Peak = 0;
       int PeakBin = b+1;
       for (int bb = MaximumBin; bb <= MinimumBin; ++bb) {
@@ -450,9 +476,20 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
           }
         }
       }
-      P.SetPeak(Total/TotalCounts);
+      P.SetPeak(Total/TotalCounts); // ???
 
       cout<<"Peak: "<<P.GetPeak()<<endl;
+      cout<<"Peak bin: "<<PeakBin<<endl;
+      
+      // If this is the first peak it must be at least 3 bins away from the first bin and from any bin with less than 1 counts:
+      if (FirstPeak == true) {
+        if (PeakBin < FirstPeakMinimumBinID) {
+          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start"<<endl;
+          continue;          
+        }
+      }
+      
+      
       
       // Find the minimum and maximum of range around the peak
       
@@ -468,6 +505,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
         }
       }
       P.SetHighEdge(Data->GetBinCenter(RightLimitBin));
+      cout<<"Right limit bin: "<<RightLimitBin<<endl;
       //cout<<"Right edge until next increase: "<<P.GetHighEdge()<<endl;
       
       // Let's crawl down on the left side and symmetrize if possible
@@ -482,22 +520,104 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
         }
       }
       P.SetLowEdge(Data->GetBinCenter(LeftLimitBin));
+      cout<<"Left limit bin: "<<LeftLimitBin<<endl;
       
-      // Symmetrize
+      // Compton edge check:
+      // If the left peak-to-valley is less than 50% (=ComptonEdgeThreshold) of the right peak-to-valley 
+      // then we probably have a Compton edge or another bad peak
+      if (Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin) < ComptonEdgeThreshold * (Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin))) {
+        cout<<FirstDerivation->GetBinLowEdge(b+1)<<": The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is less than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): We might have a Compton edge or other bad peak"<<endl;
+        continue;
+      }
+      
+      // Check if we have enough counts
+      double Average = 0.5*(Data->GetBinWidth(RightLimitBin)*Data->GetBinContent(RightLimitBin) + Data->GetBinWidth(LeftLimitBin)*Data->GetBinContent(LeftLimitBin))/(Data->GetBinWidth(RightLimitBin) + Data->GetBinWidth(LeftLimitBin));
+      double Integral = Data->Integral(LeftLimitBin, RightLimitBin, "width");
+      double Excess = Integral - Average*(Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - Data->GetBinLowEdge(LeftLimitBin));
+      
+      cout<<"Avg: "<<Average<<" Int: "<<Integral<<" Width: "<<Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - Data->GetBinLowEdge(LeftLimitBin)<<endl;
+      
+      if (FirstPeak == true) {
+        if (Excess < FirstPeakMinimumPeakCounts) {
+          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts for a first peak: "<<Excess<<endl;
+          continue;
+        }         
+      } else {
+        if (Excess < MinimumPeakCounts) {
+          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts: "<<Excess<<endl;
+          continue;
+        } 
+      }
+      cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Estimated peak counts: "<<Excess<<endl;
+      
+      
+      
+      // Symmetrize - use the smallest window on both sides:
+      if (P.GetPeak() - P.GetLowEdge() < P.GetHighEdge() - P.GetPeak()) {
+        P.SetHighEdge(2.0*P.GetPeak() - P.GetLowEdge());
+      } else {
+        P.SetLowEdge(2.0*P.GetPeak() - P.GetHighEdge());   
+      }
+      
+      /* Old symmetrize:
       if (2.0*P.GetPeak() - P.GetLowEdge() < Data->GetBinCenter(RightLimitBin)) {
         P.SetHighEdge(2.0*P.GetPeak() - P.GetLowEdge());
       } else {
         P.SetHighEdge(Data->GetBinCenter(RightLimitBin));
       }
+      */
+
+      // The right and left limit now define the floor
+      // Now determine when we dropped to half left and right and 
+      // take 4 (= RangeBeyondPeak) times that value as new limits (if they are smaller)
+      int RightHalfBin = PeakBin+1;
+      double RightHalf = 0.5 *(Data->GetBinContent(PeakBin) + Data->GetBinContent(RightLimitBin));
+      for (int bb = PeakBin+1; bb <= Data->GetNbinsX(); ++bb) {
+        cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<RightHalf<<endl;
+        if (Data->GetBinContent(bb) <= RightHalf) {
+          double Range = Data->GetBinCenter(bb) - P.GetPeak();
+          RightHalfBin = bb;
+          cout<<"Range right: "<<Range<<" vs. "<<P.GetHighEdge()<<":"<<P.GetPeak() + 4*Range<<endl;
+          if (P.GetHighEdge() > P.GetPeak() + RangeBeyondPeak*Range) {
+            cout<<"New high edge from FWHM determination: "<<P.GetPeak() + 4*Range<<endl;
+            P.SetHighEdge(P.GetPeak() + RangeBeyondPeak*Range);
+          }
+          break;
+        }
+      }
+      int LeftHalfBin = PeakBin;
+      double LeftHalf = 0.5 *(Data->GetBinContent(PeakBin) + Data->GetBinContent(LeftLimitBin));
+      for (int bb = PeakBin; bb > 0; --bb) {
+        cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<LeftHalf<<endl;
+        if (Data->GetBinContent(bb) <= LeftHalf) {
+          double Range = P.GetPeak() - Data->GetBinCenter(bb);
+          LeftHalfBin = bb;
+          cout<<"Range left: "<<Range<<" vs. "<<P.GetLowEdge()<<":"<<P.GetPeak() - 4*Range<<endl;
+          if (P.GetLowEdge() < P.GetPeak() - RangeBeyondPeak*Range) {
+            cout<<"New high edge from FWHM determination: "<<P.GetPeak() - 4*Range<<endl;
+            P.SetLowEdge(P.GetPeak() - RangeBeyondPeak*Range);
+          }
+          break;
+        }
+      }
+      P.SetFWHM(Data->GetBinLowEdge(RightHalfBin) - Data->GetXaxis()->GetBinUpEdge(LeftHalfBin));
+      cout<<"FWHM: "<<P.GetFWHM()<<endl;
+      
+      
       
       /*
+      
       // Make sure the outer bins are not too large:
       double MaxPeakSize = Data->GetBinLowEdge(RightLimitBin) -  Data->GetXaxis()->GetBinUpEdge(LeftLimitBin); 
-      if (Data->GetBinCenter(RightLimitBin) - Data->GetBinLowEdge(RightLimitBin) > MaxPeakSize) {
-        P.SetHighEdge(Data->GetBinLowEdge(RightLimitBin) + MaxPeakSize);
+      cout<<"MaxPeakSize: "<<MaxPeakSize<<endl;
+      
+      if (Data->GetBinCenter(RightLimitBin) - Data->GetBinLowEdge(RightLimitBin) > 0.25*MaxPeakSize) {
+        cout<<"Setting new high edge: "<<P.GetHighEdge()<<" --> "<<Data->GetBinLowEdge(RightLimitBin) + 0.5*MaxPeakSize<<endl;
+        P.SetHighEdge(Data->GetBinLowEdge(RightLimitBin) + 0.25*MaxPeakSize);
       }
-      if (Data->GetXaxis()->GetBinUpEdge(LeftLimitBin) - Data->GetBinCenter(LeftLimitBin) > MaxPeakSize) {
-        P.SetLowEdge(Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - MaxPeakSize);
+      if (Data->GetXaxis()->GetBinUpEdge(LeftLimitBin) - Data->GetBinCenter(LeftLimitBin) > 0.25*MaxPeakSize) {
+        cout<<"Setting new low edge: "<<P.GetLowEdge()<<" --> "<<Data->GetXaxis()->GetBinUpEdge(LeftLimitBin) - MaxPeakSize<<endl;
+        P.SetLowEdge(Data->GetXaxis()->GetBinUpEdge(LeftLimitBin) - 0.25*MaxPeakSize);
       }
       */
       
@@ -547,7 +667,7 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
     // we are already done since this is used during peak finding 
   } else if (m_PeakParametrizationMethod == c_PeakParametrizationMethodFittedPeak) {
     MBinnerFixedNumberOfBins FitBinner;
-    FitBinner.SetNumberOfBins(0.5*(m_RangeMaximum - m_RangeMinimum));
+    FitBinner.SetNumberOfBins(m_RangeMaximum - m_RangeMinimum);
     FitBinner.AlignBins(true);
     FitBinner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
     
@@ -560,43 +680,47 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
     TH1D* FitData = FitBinner.GetNormalizedHistogram("Data - fitting resolution", "ADC Values", "counts / ADC value");
     FitBinner.Clear();
 
-    TCanvas* FitDataCanvas = 0;
-    if (m_DiagnosticsMode == true) {
-      FitDataCanvas = new TCanvas();
-      FitDataCanvas->cd();
-      FitData->Draw();
-      FitDataCanvas->Update();
-    }  
-
   
     // Fit each point
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(ROGID); ++p) {
       MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(ROGID, p);
-       
-      MCalibrationFitGaussian G;
-      //MCalibrationFitGaussLandau G;
-      G.SetBackgroundModel(MCalibrationFit::c_BackgroundModelLinear);
-      G.SetEnergyLossModel(MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction);
-      G.SetGaussianMean(P.GetPeak());
-      P.SetFit(G);
+      
+      cout<<m_PeakParametrizationMethodFittedPeakPeakShapeModel<<endl;
+      if (m_PeakParametrizationMethodFittedPeakPeakShapeModel == MCalibrationFit::c_PeakShapeModelGaussian) {
+        MCalibrationFitGaussian G;
+        G.SetBackgroundModel(m_PeakParametrizationMethodFittedPeakBackgroundModel);
+        G.SetEnergyLossModel(m_PeakParametrizationMethodFittedPeakEnergyLossModel);
+        G.SetGaussianMean(P.GetPeak());
+        G.SetGaussianSigma(P.GetFWHM()/2.35);
+        P.SetFit(G);
+      } else if (m_PeakParametrizationMethodFittedPeakPeakShapeModel == MCalibrationFit::c_PeakShapeModelGaussLandau) {
+        MCalibrationFitGaussLandau G;
+        G.SetBackgroundModel(m_PeakParametrizationMethodFittedPeakBackgroundModel);
+        G.SetEnergyLossModel(m_PeakParametrizationMethodFittedPeakEnergyLossModel);
+        G.SetGaussianMean(P.GetPeak());
+        G.SetGaussianSigma(P.GetFWHM()/2.35);
+        P.SetFit(G);
+      } else {
+        new MExceptionUnknownMode("peak parametrization method peak shape", m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+        continue;
+      }
     
       // Somehow the copy constructor of ROOT's TF1 gives trouble
       MCalibrationFit& Fit = P.GetFit();
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
+      cout<<"Result: "<<(IsGood ? "true" : "false")<<endl;
       P.IsGood(IsGood);
       P.SetPeak(Fit.GetPeak());
       P.SetFWHM(Fit.GetFWHM());
       if (m_DiagnosticsMode == true) {
         TCanvas* C = new TCanvas();
         C->cd();
-        Fit.Draw(); //"SAME");
+        Fit.Draw();
+        FitData->DrawCopy("E SAME");
         C->Update();
       }
     }
     
-    if (m_DiagnosticsMode == true) {
-      FitDataCanvas->Update();
-    }  
   }
   
   return true;
@@ -702,7 +826,8 @@ bool MCalibrateLines::AssignEnergies()
         }
       }
       m_Results.GetSpectralPoint(r, p).SetIsotope(m_Isotopes[r][closest_i]);
-      m_Results.GetSpectralPoint(r, p).SetEnergy(m_Isotopes[r][closest_i].GetLineEnergy(closest_l));  
+      m_Results.GetSpectralPoint(r, p).SetEnergy(m_Isotopes[r][closest_i].GetLineEnergy(closest_l)); 
+      m_Results.GetSpectralPoint(r, p).IsGood(!m_Isotopes[r][closest_i].GetLineExcludeFlag(closest_l));
     }
   }
 
@@ -746,6 +871,92 @@ bool MCalibrateLines::AssignEnergies()
       
   return true;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the calibration model
+bool MCalibrateLines::DetermineModels()
+{
+  // Assemble the unique lines:
+  vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
+  if (Points.size() < 2) return true;
+  
+  if (m_CalibrationModelDeterminationMethod == c_CalibrationModelStepWise) {
+    // we are already done since this is used during peak finding 
+    cout<<"Doing calibration model steps"<<endl;
+  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelFit) {
+    cout<<"Doing calibration model fit"<<endl;
+    
+    // Set up the model:
+    MCalibrationModel* Model = 0;
+    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
+      Model = new MCalibrationModelPoly1();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
+      Model = new MCalibrationModelPoly2();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly3) {
+      Model = new MCalibrationModelPoly3();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly4) {
+      Model = new MCalibrationModelPoly4();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
+      Model = new MCalibrationModelPoly1Inv1();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
+      Model = new MCalibrationModelPoly1Exp1();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
+      Model = new MCalibrationModelPoly1Exp2();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
+      Model = new MCalibrationModelPoly1Exp3();
+    } else {
+      new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingModel);
+      return false;
+    }
+    
+    double Quality = Model->Fit(Points);
+    cout<<"Fit quality: "<<Quality<<endl;
+    
+    m_Results.SetModel(*Model);
+    
+    //delete Model;
+  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
+    cout<<"Find best (fitted) calibration model"<<endl;
+    
+    // Assemble the models
+    vector<MCalibrationModel*> Models;
+    Models.push_back(new MCalibrationModelPoly1());
+    Models.push_back(new MCalibrationModelPoly2());
+    Models.push_back(new MCalibrationModelPoly3());
+    Models.push_back(new MCalibrationModelPoly4());
+    Models.push_back(new MCalibrationModelPoly1Inv1());
+    Models.push_back(new MCalibrationModelPoly1Exp1());
+    Models.push_back(new MCalibrationModelPoly1Exp2());
+    Models.push_back(new MCalibrationModelPoly1Exp3());
+    
+    vector<double> Results;
+    for (unsigned int m = 0; m < Models.size(); ++m) {
+      Results.push_back(Models[m]->Fit(Points));
+      cout<<"Model "<<Models[m]->GetName()<<": "<<Results.back()<<endl;
+    }
+    
+    vector<double>::iterator MinI;
+    MinI = min_element(Results.begin(), Results.end());
+    
+    int Min = int(MinI -  Results.begin());
+    cout<<"Best model: "<<Models[Min]->GetName()<<endl;
+    
+    m_Results.SetModel(*Models[Min]);
+    
+    for (unsigned int m = 0; m < Models.size(); ++m) {
+      //delete Models[m];
+    }
+  } else {
+    new MExceptionUnknownMode("calibration model determination method", m_CalibrationModelDeterminationMethod);
+    return false;
+  }
+  
+  return true;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

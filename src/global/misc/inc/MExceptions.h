@@ -126,11 +126,16 @@ class MExceptionUnknownMode : public exception
 {
 public:
   //! Default constructor
-  MExceptionUnknownMode() : m_IsEmpty(true), m_Mode("") {
+  MExceptionUnknownMode() : m_IsEmpty(true), m_Type(""), m_Mode("") {
     abort();
   }
   //! Standard constructor
-  MExceptionUnknownMode(const MString& Mode) : m_IsEmpty(true), m_Mode(Mode) {
+  MExceptionUnknownMode(const MString& Mode) : m_IsEmpty(true), m_Type(""), m_Mode(Mode) {
+    abort();
+  }
+  //! Standard constructor
+  MExceptionUnknownMode(const MString& Type, int i) : m_IsEmpty(true), m_Type(Type) {
+    m_Mode += i;
     abort();
   }
   //! Default destructor
@@ -141,7 +146,11 @@ public:
   virtual const char* what() const throw() {
     if (m_IsEmpty == false) {
       ostringstream stream;
-      stream<<"Unknown mode "<<m_Mode<<"!"<<endl; 
+      if (m_Type == "") {
+        stream<<"Unknown mode "<<m_Mode<<"!"<<endl;
+      } else {
+        stream<<"Unknown "<<m_Type<<" mode "<<m_Mode<<"!"<<endl;        
+      }
       return stream.str().c_str();
     } else {
       return "Unknown mode!"; 
@@ -151,6 +160,8 @@ public:
 private:
   //! True if SetName() has never been called
   bool m_IsEmpty;
+  //! The type of the mode
+  MString m_Type;
   //! The mode which is unknown
   MString m_Mode;
 };

@@ -226,6 +226,59 @@ void MGUILoadCalibration::Create()
   m_Isotope53 = new TGComboBox(IsotopeFrame5, c_Isotope53);
   AddIsotopes(m_Isotope53, m_Settings->GetCalibrationFile5Isotope3());
   IsotopeFrame5->AddFrame(m_Isotope53, IsotopeLabelLayout);
+  
+  
+  m_FileName6 = 
+    new MGUIEFileSelector(this,
+                          "Sixth calibration file:",
+                          m_Settings->GetCalibrationFile6());
+  m_FileName6->SetFileType("Calib file", "*.roa");
+  m_FileName6->SetFileType("Calib file", "*.dat");
+  AddFrame(m_FileName6, SingleLayout);
+
+  TGHorizontalFrame* IsotopeFrame6 = new TGHorizontalFrame(this);
+  AddFrame(IsotopeFrame6, IsotopeFrameLayout);
+  
+  TGLabel* IsotopeLabel6 = new TGLabel(IsotopeFrame6, "Isotopes:  ");
+  IsotopeFrame6->AddFrame(IsotopeLabel6, IsotopeLabelLayout);
+  
+  m_Isotope61 = new TGComboBox(IsotopeFrame6, c_Isotope61);
+  AddIsotopes(m_Isotope61, m_Settings->GetCalibrationFile6Isotope1());
+  IsotopeFrame6->AddFrame(m_Isotope61, IsotopeLabelLayout);
+  
+  m_Isotope62 = new TGComboBox(IsotopeFrame6, c_Isotope62);
+  AddIsotopes(m_Isotope62, m_Settings->GetCalibrationFile6Isotope2());
+  IsotopeFrame6->AddFrame(m_Isotope62, IsotopeLabelLayout);
+  
+  m_Isotope63 = new TGComboBox(IsotopeFrame6, c_Isotope63);
+  AddIsotopes(m_Isotope63, m_Settings->GetCalibrationFile6Isotope3());
+  IsotopeFrame6->AddFrame(m_Isotope63, IsotopeLabelLayout);
+  
+  m_FileName7 = 
+    new MGUIEFileSelector(this,
+                          "Seventh calibration file:",
+                          m_Settings->GetCalibrationFile7());
+  m_FileName7->SetFileType("Calib file", "*.roa");
+  m_FileName7->SetFileType("Calib file", "*.dat");
+  AddFrame(m_FileName7, SingleLayout);
+
+  TGHorizontalFrame* IsotopeFrame7 = new TGHorizontalFrame(this);
+  AddFrame(IsotopeFrame7, IsotopeFrameLayout);
+  
+  TGLabel* IsotopeLabel7 = new TGLabel(IsotopeFrame7, "Isotopes:  ");
+  IsotopeFrame7->AddFrame(IsotopeLabel7, IsotopeLabelLayout);
+  
+  m_Isotope71 = new TGComboBox(IsotopeFrame7, c_Isotope71);
+  AddIsotopes(m_Isotope71, m_Settings->GetCalibrationFile7Isotope1());
+  IsotopeFrame7->AddFrame(m_Isotope71, IsotopeLabelLayout);
+  
+  m_Isotope72 = new TGComboBox(IsotopeFrame7, c_Isotope72);
+  AddIsotopes(m_Isotope72, m_Settings->GetCalibrationFile7Isotope2());
+  IsotopeFrame7->AddFrame(m_Isotope72, IsotopeLabelLayout);
+  
+  m_Isotope73 = new TGComboBox(IsotopeFrame7, c_Isotope73);
+  AddIsotopes(m_Isotope73, m_Settings->GetCalibrationFile7Isotope3());
+  IsotopeFrame7->AddFrame(m_Isotope73, IsotopeLabelLayout);
  
   
   TGLabel* Footer1 = new TGLabel(this, "You can add additional isotopes to the file: $(MEGALIB)/resource/libraries/Calibration.isotopes");
@@ -265,6 +318,9 @@ void MGUILoadCalibration::AddIsotopes(TGComboBox* ComboBox, MString Selected)
   ComboBox->Associate(this);
   ComboBox->SetHeight(m_FontScaler*19);
   ComboBox->SetWidth(m_FontScaler*80);
+  unsigned int Height = ComboBox->GetListBox()->GetNumberOfEntries()*ComboBox->GetListBox()->GetItemVsize();
+  ComboBox->GetListBox()->SetHeight(Height);
+
 }
 
 
@@ -355,6 +411,40 @@ bool MGUILoadCalibration::OnApply()
   Text = dynamic_cast<TGTextLBEntry*>(m_Isotope53->GetSelectedEntry())->GetText()->GetString();
   if (Text != m_Settings->GetCalibrationFile5Isotope3()) {
     m_Settings->SetCalibrationFile5Isotope3(Text);
+  }
+ 
+ 
+  if (m_FileName6->GetFileName() != m_Settings->GetCalibrationFile6()) {
+    m_Settings->SetCalibrationFile6(m_FileName6->GetFileName());
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope61->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile6Isotope1()) {
+    m_Settings->SetCalibrationFile6Isotope1(Text);
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope62->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile6Isotope2()) {
+    m_Settings->SetCalibrationFile6Isotope2(Text);
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope63->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile6Isotope3()) {
+    m_Settings->SetCalibrationFile6Isotope3(Text);
+  }
+ 
+ 
+  if (m_FileName7->GetFileName() != m_Settings->GetCalibrationFile7()) {
+    m_Settings->SetCalibrationFile7(m_FileName7->GetFileName());
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope71->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile7Isotope1()) {
+    m_Settings->SetCalibrationFile7Isotope1(Text);
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope72->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile7Isotope2()) {
+    m_Settings->SetCalibrationFile7Isotope2(Text);
+  }
+  Text = dynamic_cast<TGTextLBEntry*>(m_Isotope73->GetSelectedEntry())->GetText()->GetString();
+  if (Text != m_Settings->GetCalibrationFile7Isotope3()) {
+    m_Settings->SetCalibrationFile7Isotope3(Text);
   }
  
   

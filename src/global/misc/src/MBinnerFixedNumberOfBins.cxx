@@ -88,7 +88,7 @@ void MBinnerFixedNumberOfBins::Histogram()
     if (BinSize == 0) BinSize = 1;
     NumberOfBins = (int) ((Max - Min)/BinSize);
   }
-  cout<<"Number of bins: "<<NumberOfBins<<endl;
+  //cout<<"Number of bins: "<<NumberOfBins<<endl;
   
   for (unsigned int i = 0; i < NumberOfBins; ++i) {
     m_BinEdges.push_back(Min + i*BinSize);

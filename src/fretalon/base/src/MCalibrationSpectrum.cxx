@@ -20,6 +20,8 @@
 #include "MCalibrationSpectrum.h"
 
 // Standard libs:
+#include <algorithm>
+using namespace std;
 
 // ROOT libs:
 
@@ -41,6 +43,7 @@ ClassImp(MCalibrationSpectrum)
 //! Default constructor
 MCalibrationSpectrum::MCalibrationSpectrum()
 {
+  m_Model = 0;
 }
 
 
@@ -50,6 +53,7 @@ MCalibrationSpectrum::MCalibrationSpectrum()
 //! Default destructor
 MCalibrationSpectrum::~MCalibrationSpectrum()
 {
+  //delete m_Model;
 }
 
 
@@ -60,6 +64,8 @@ MCalibrationSpectrum::~MCalibrationSpectrum()
 void MCalibrationSpectrum::Clear()
 {
   m_SpectralPoints.clear();
+  delete m_Model;
+  m_Model = 0;
 }
 
 
@@ -72,6 +78,9 @@ MCalibrationSpectrum* MCalibrationSpectrum::Clone() const
   MCalibrationSpectrum* C = new MCalibrationSpectrum();
   C->m_IsCalibrated = m_IsCalibrated;
   C->m_SpectralPoints = m_SpectralPoints;
+  if (m_Model != 0) {
+    C->SetModel(*m_Model);
+  }
   
   return C;
 }
@@ -137,12 +146,12 @@ MCalibrationSpectralPoint& MCalibrationSpectrum::GetSpectralPoint(unsigned int R
 
 
 //! Return the calibration in a saveable format
-//! Mode is: pak  - points ADC to keV
-//! Mode is: pakw - points ADC to keV and fwhm
+//! Mode: pak  - points ADC to keV
+//! Mode: pakw - points ADC to keV and fwhm
+//! Mode: model - show the model (none, poly2, poly3, poly2gauss, etc.)
 MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDescriptor)
 {
-  
-  if (Mode != "pak" && Mode != "pakw") {
+  if (Mode != "pak" && Mode != "pakw" && Mode != "model") {
     throw MExceptionUnknownMode(Mode);
     return "";
   }
@@ -150,19 +159,8 @@ MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDes
   ostringstream out;
   
   // Make a single list of the points and store them for sorting
-  vector<MCalibrationSpectralPoint> Points;
-  for (unsigned int rog = 0; rog < m_SpectralPoints.size(); ++rog) {
-    for (unsigned int p = 0; p < m_SpectralPoints[rog].size(); ++p) {
-      if (GetSpectralPoint(rog, p).IsGood()) {
-        Points.push_back(GetSpectralPoint(rog, p));
-      }
-    }
-  }
-  
-  // Sort the points by energy:
-      
-  // If we have multiple points with the same energy -- warn for now because we first need to have such an example to test it...
-  
+  vector<MCalibrationSpectralPoint> Points = GetUniquePoints();
+   
   if (Mode == "pak") {
     if (WithDescriptor == true) {
       out<<"pak "; 
@@ -182,13 +180,70 @@ MString MCalibrationSpectrum::ToParsableString(const MString& Mode, bool WithDes
     for (unsigned int p = 0; p < Points.size(); ++p) {
       out<<Points[p].GetPeak()<<" "<<Points[p].GetEnergy()<<" "<<Points[p].GetEnergyFWHM()<<" "; 
     }     
+  } else if (Mode == "model") {
+    if (HasModel() == true) {
+      out<<m_Model->ToParsableString(WithDescriptor); 
+    } else {
+      out<<"none"; 
+    }
   }
   
   
   return out.str();
 }  
+  
+
+////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get a list of all unique spectral points in this spectrum
+vector<MCalibrationSpectralPoint> MCalibrationSpectrum::GetUniquePoints()
+{
+  // Make a single list of the points and store them for sorting
+  vector<MCalibrationSpectralPoint> Points;
+  for (unsigned int rog = 0; rog < m_SpectralPoints.size(); ++rog) {
+    for (unsigned int p = 0; p < m_SpectralPoints[rog].size(); ++p) {
+      if (GetSpectralPoint(rog, p).IsGood()) {
+        Points.push_back(GetSpectralPoint(rog, p));
+      }
+    }
+  }
+  
+  // Sort the points by energy:
+  auto comp = [](MCalibrationSpectralPoint a,  MCalibrationSpectralPoint b) -> bool { return a.GetEnergy() < b.GetEnergy(); };
+  sort(Points.begin(), Points.end(), comp);
+        
+  // If we have multiple points with the same energy -- warn for now because we first need to have such an example to test it...
+
+
+  return Points;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the calibration model
+void MCalibrationSpectrum::SetModel(MCalibrationModel& Model)
+{
+  cout<<"Setting model"<<endl;
+  delete m_Model;
+  m_Model = Model.Clone();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the fit, if it doesn't exist throw MExceptionObjectDoesNotExist
+//! Bad design since a new fit can be set any time...
+MCalibrationModel& MCalibrationSpectrum::GetModel() 
+{ 
+  if (m_Model == 0) {
+    throw MExceptionObjectDoesNotExist("Model does not exist!");
+  }
+  
+  return *m_Model; 
+}
 
 // MCalibrationSpectrum.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

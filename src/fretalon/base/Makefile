@@ -37,6 +37,7 @@ $(LB)/MCalibrationStore.o \
 $(LB)/MCalibrationFit.o \
 $(LB)/MCalibrationFitGaussian.o \
 $(LB)/MCalibrationFitGaussLandau.o \
+$(LB)/MCalibrationModel.o \
 
 SLOBJ = $(LB)/libFretalonBase.$(DLL)
 

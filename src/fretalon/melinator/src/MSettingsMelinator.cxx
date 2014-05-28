@@ -75,6 +75,16 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_CalibrationFile5Isotope2 = "None";
   m_CalibrationFile5Isotope3 = "None";
   
+  m_CalibrationFile6 = "";
+  m_CalibrationFile6Isotope1 = "None";
+  m_CalibrationFile6Isotope2 = "None";
+  m_CalibrationFile6Isotope3 = "None";
+  
+  m_CalibrationFile7 = "";
+  m_CalibrationFile7Isotope1 = "None";
+  m_CalibrationFile7Isotope2 = "None";
+  m_CalibrationFile7Isotope3 = "None";
+  
   m_HistogramMin = 0;
   m_HistogramMax = 1024;
   m_HistogramBinningMode = 0;
@@ -87,6 +97,13 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
 
   m_PeakParametrizationMethod = 0;
 
+  m_PeakParametrizationMethodFittingBackgroundModel = 0;
+  m_PeakParametrizationMethodFittingEnergyLossModel = 0;
+  m_PeakParametrizationMethodFittingPeakShapeModel = 1;
+
+  m_CalibrationModelDeterminationMethod = 0;
+  m_CalibrationModelDeterminationMethodFittingModel = 3;
+  
   m_SaveAsFileName = "Out.ecal";
   
   if (AutoLoad == true) {
@@ -139,6 +156,16 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "CalibrationFile5Isotope1", m_CalibrationFile5Isotope1);
   new MXmlNode(Node, "CalibrationFile5Isotope2", m_CalibrationFile5Isotope2);
   new MXmlNode(Node, "CalibrationFile5Isotope3", m_CalibrationFile5Isotope3);
+
+  new MXmlNode(Node, "CalibrationFile6", m_CalibrationFile6);
+  new MXmlNode(Node, "CalibrationFile6Isotope1", m_CalibrationFile6Isotope1);
+  new MXmlNode(Node, "CalibrationFile6Isotope2", m_CalibrationFile6Isotope2);
+  new MXmlNode(Node, "CalibrationFile6Isotope3", m_CalibrationFile6Isotope3);
+
+  new MXmlNode(Node, "CalibrationFile7", m_CalibrationFile7);
+  new MXmlNode(Node, "CalibrationFile7Isotope1", m_CalibrationFile7Isotope1);
+  new MXmlNode(Node, "CalibrationFile7Isotope2", m_CalibrationFile7Isotope2);
+  new MXmlNode(Node, "CalibrationFile7Isotope3", m_CalibrationFile7Isotope3);
   
   new MXmlNode(Node, "HistogramMin", m_HistogramMin);
   new MXmlNode(Node, "HistogramMax", m_HistogramMax);
@@ -151,7 +178,13 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "PeakHistogramBinningModeValue", m_PeakHistogramBinningModeValue);
 
   new MXmlNode(Node, "PeakParametrizationMethod", m_PeakParametrizationMethod);
+  new MXmlNode(Node, "PeakParametrizationMethodFittingBackgroundModel", m_PeakParametrizationMethodFittingBackgroundModel);
+  new MXmlNode(Node, "PeakParametrizationMethodFittingEnergyLossModel", m_PeakParametrizationMethodFittingEnergyLossModel);
+  new MXmlNode(Node, "PeakParametrizationMethodFittingPeakShapeModel", m_PeakParametrizationMethodFittingPeakShapeModel);
 
+  new MXmlNode(Node, "CalibrationModelDeterminationMethod", m_CalibrationModelDeterminationMethod);
+  new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingModel", m_CalibrationModelDeterminationMethodFittingModel);
+  
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
   
   return true;
@@ -238,6 +271,34 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
     m_CalibrationFile5Isotope3 = aNode->GetValueAsString();
   }
 
+
+  if ((aNode = Node->GetNode("CalibrationFile6")) != 0) {
+    m_CalibrationFile6 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile6Isotope1")) != 0) {
+    m_CalibrationFile6Isotope1 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile6Isotope2")) != 0) {
+    m_CalibrationFile6Isotope2 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile6Isotope3")) != 0) {
+    m_CalibrationFile6Isotope3 = aNode->GetValueAsString();
+  }
+
+
+  if ((aNode = Node->GetNode("CalibrationFile7")) != 0) {
+    m_CalibrationFile7 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile7Isotope1")) != 0) {
+    m_CalibrationFile7Isotope1 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile7Isotope2")) != 0) {
+    m_CalibrationFile7Isotope2 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile7Isotope3")) != 0) {
+    m_CalibrationFile7Isotope3 = aNode->GetValueAsString();
+  }
+
   if ((aNode = Node->GetNode("HistogramMin")) != 0) {
     m_HistogramMin = aNode->GetValueAsDouble();;
   }
@@ -266,6 +327,29 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
 
   if ((aNode = Node->GetNode("PeakParametrizationMethod")) != 0) {
     m_PeakParametrizationMethod = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakParametrizationMethodFittingBackgroundModel")) != 0) {
+    m_PeakParametrizationMethodFittingBackgroundModel = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakParametrizationMethodFittingEnergyLossModel")) != 0) {
+    m_PeakParametrizationMethodFittingEnergyLossModel = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakParametrizationMethodFittingPeakShapeModel")) != 0) {
+    m_PeakParametrizationMethodFittingPeakShapeModel = aNode->GetValueAsUnsignedInt();
+  }
+
+  if ((aNode = Node->GetNode("CalibrationModelDeterminationMethod")) != 0) {
+    m_CalibrationModelDeterminationMethod = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("CalibrationModelDeterminationMethodFittingModel")) != 0) {
+    m_CalibrationModelDeterminationMethodFittingModel = aNode->GetValueAsUnsignedInt();
+  }
+  
+  if ((aNode = Node->GetNode("PeakHistogramBinningMode")) != 0) {
+    m_PeakHistogramBinningMode = aNode->GetValueAsUnsignedInt();
+  }
+  if ((aNode = Node->GetNode("PeakHistogramBinningModeValue")) != 0) {
+    m_PeakHistogramBinningModeValue = aNode->GetValueAsDouble();
   }
 
   if ((aNode = Node->GetNode("SaveAsFileName")) != 0) {

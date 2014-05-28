@@ -92,7 +92,6 @@ TH1D* MCalibrate::CreateHistogramCountsBinned(MReadOutDataGroup& G, double Min, 
                           
     LocalCounts--;
     if (Value != LastValue && LocalCounts <= 0) {
-      cout<<LocalCounts<<":"<<Value<<endl;
       LocalCounts = Counts;
       if (Value > BinEdges.back() + MinBinWidth) {
         BinEdges.push_back(Value);

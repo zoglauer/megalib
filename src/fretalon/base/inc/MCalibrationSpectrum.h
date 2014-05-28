@@ -23,6 +23,7 @@
 // MEGAlib libs:
 #include "MCalibration.h"
 #include "MCalibrationSpectralPoint.h"
+#include "MCalibrationModel.h"
 
 // Forward declarations:
 
@@ -61,10 +62,22 @@ class MCalibrationSpectrum : public MCalibration
   //! Get a spectral point 
   //! If it or the read-out data group does not exist return an MExceptionIndexOutOfBounds exception
   MCalibrationSpectralPoint& GetSpectralPoint(unsigned int ROG, unsigned int Point);
-    
+  
+  //! Get a list of all unique spectral points in this spectrum
+  vector<MCalibrationSpectralPoint> GetUniquePoints();
+  
+  //! Set the calibration model
+  void SetModel(MCalibrationModel& Model);
+  //! Get the calibration model, if it doesn't exist throw MExceptionObjectDoesNotExist
+  MCalibrationModel& GetModel();
+  //! Return true if we have a model
+  bool HasModel() const { if (m_Model != 0) return true; else return false; }
+  
   //! Return the data as parsable string
   virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
 
+
+  
   // protected methods:
  protected:
 
@@ -79,8 +92,10 @@ class MCalibrationSpectrum : public MCalibration
 
   // private members:
  private:
+  //! The spectral points
   vector<vector<MCalibrationSpectralPoint> > m_SpectralPoints;
-
+  //! Their calibartion model
+  MCalibrationModel* m_Model;
 
 #ifdef ___CINT___
  public:

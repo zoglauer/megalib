@@ -86,6 +86,15 @@ class MCalibrationFit
   //! Energy loss model: Gaussian-convolved delta function
   static const unsigned int c_EnergyLossModelGaussianConvolvedDeltaFunction = 1;
   
+  // This is a bit unfortunate here, but a list of all available peak fitting algos helps a lot
+  //! Peak shape: None
+  static const unsigned int c_PeakShapeModelNone = 0;
+  //! Peak shape: Gaussian
+  static const unsigned int c_PeakShapeModelGaussian = 1;
+  //! Peak shape: Gauss-Landau
+  static const unsigned int c_PeakShapeModelGaussLandau = 2;
+  
+  
   // protected methods:
  protected:
   //! Return the number of fit parameters in the background fit

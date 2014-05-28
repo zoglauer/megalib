@@ -29,6 +29,7 @@
 #include "MReadOutStore.h"
 #include "MCalibrationStore.h"
 #include "MCalibrationSpectralPoint.h"
+#include "MCalibrationModel.h"
 
 // Forward declarations:
 
@@ -66,12 +67,31 @@ class MMelinator
   //! Set the peak parametrization method
   void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }
   
+  //! Set the peak parametrization options for the fitting method
+  void SetPeakParametrizationMethodFittedPeakOptions(unsigned int BackgroundModel, 
+                                                     unsigned int EnergyLossModel, 
+                                                     unsigned int PeakShapeModel) { 
+    m_PeakParametrizationMethodFittedPeakBackgroundModel = BackgroundModel; 
+    m_PeakParametrizationMethodFittedPeakEnergyLossModel = EnergyLossModel; 
+    m_PeakParametrizationMethodFittedPeakPeakShapeModel = PeakShapeModel; }
+  
+  //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
+  void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
+  //! Set the fitting model options for the calibration model determination method
+  void SetCalibrationModelDeterminationMethodFittingOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingModel = Model; }
+
+  
   //! Get the number of collections in the store
   unsigned int GetNumberOfCollections() const { return m_Store.GetNumberOfReadOutCollections(); }
   
   //! Get the number of groups in the store
   unsigned int GetNumberOfGroups() const { return m_Store.GetNumberOfReadOutDataGroups(); }
   
+  //! Return true if we have calibration model
+  bool HasCalibrationModel(unsigned int Collection);
+  //! Get the calibration model of the spectra
+  MCalibrationModel& GetCalibrationModel(unsigned int Collection);
   //! Get the number of calibration point in the spectra
   unsigned int GetNumberOfCalibrationSpectralPoints(unsigned int Collection);
   //! Return the given spectral point
@@ -168,6 +188,18 @@ class MMelinator
  
   //! The peak parametrization method in during calibration of the lines
   unsigned int m_PeakParametrizationMethod;
+  
+  //! The background model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakBackgroundModel; 
+  //! The energy loss model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakEnergyLossModel; 
+  //! The peak shape model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
+ 
+  //! The calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethod;
+  //! Fitting model of the calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
   
   
   //! Number of threads

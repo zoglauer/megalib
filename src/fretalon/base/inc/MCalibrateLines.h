@@ -47,7 +47,20 @@ class MCalibrateLines : public MCalibrate
   virtual ~MCalibrateLines();
   
   //! Set the peak parametrization method
-  void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }
+  void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }  
+  //! Set the peak parametrization options for the fitting method
+  void SetPeakParametrizationMethodFittedPeakOptions(unsigned int BackgroundModel, 
+                                                     unsigned int EnergyLossModel, 
+                                                     unsigned int PeakShapeModel) {
+    m_PeakParametrizationMethodFittedPeakBackgroundModel = BackgroundModel; 
+    m_PeakParametrizationMethodFittedPeakEnergyLossModel = EnergyLossModel; 
+    m_PeakParametrizationMethodFittedPeakPeakShapeModel = PeakShapeModel; }
+
+  //! Set the calibration model determination method 
+  void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
+  //! Set the fitting model options for the calibration model determination method
+  void SetCalibrationModelDeterminationMethodFittingOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingModel = Model; }
 
   //! Add a read-out data group and the associated isotopes
   void AddReadOutDataGroup(const MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes);
@@ -65,7 +78,14 @@ class MCalibrateLines : public MCalibrate
   static const unsigned int c_PeakParametrizationMethodSmoothedPeak = 1;
   //! ID for finding the peak parameters via fitting
   static const unsigned int c_PeakParametrizationMethodFittedPeak = 2;
-  
+    
+  //! ID for a step-wise interpolated calibration model
+  static const unsigned int c_CalibrationModelStepWise = 0;
+  //! ID for a fitted interpolated calibration model
+  static const unsigned int c_CalibrationModelFit = 1;
+  //! ID for a fitted interpolated calibration model chosen as the best fit from a selection
+  static const unsigned int c_CalibrationModelBestFit = 2;
+
   
   // protected methods:
  protected:
@@ -79,6 +99,7 @@ class MCalibrateLines : public MCalibrate
   bool AssignEnergies();
   
   //! Step 4: Find best fit to all data points
+  bool DetermineModels();
   
   // private methods:
  private:
@@ -100,6 +121,18 @@ class MCalibrateLines : public MCalibrate
 
   //! The peak parametrization method
   unsigned int m_PeakParametrizationMethod;
+  //! The background model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakBackgroundModel; 
+  //! The energy loss model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakEnergyLossModel; 
+  //! The peak shape model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
+ 
+  //! The calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethod;
+  //! Fitting model of the calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  
   
   //! Store the calibration results
   MCalibrationSpectrum m_Results;

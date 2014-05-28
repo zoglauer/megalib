@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <sstream>
+#include <iostream>
 #include <iomanip>
 using namespace std;
 
@@ -50,6 +51,7 @@ using namespace std;
 #include "MGUIEFileSelector.h"
 #include "MIsotope.h"
 #include "MIsotopeStore.h"
+#include "MCalibrationModel.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,6 +106,9 @@ void MGUIMelinatorMain::Create()
 
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
+  // Give it a default size
+  Resize(FontScaler*1200, FontScaler*700);
+  
   // We start with a name and an icon...
   SetWindowName("Melinator");  
   
@@ -114,6 +119,7 @@ void MGUIMelinatorMain::Create()
   // Some standard layouts:
   TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 3);
   TGLayoutHints* TopExpandXLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 3);
+  TGLayoutHints* BottomExpandXLayout = new TGLayoutHints(kLHintsBottom | kLHintsExpandX, 10, 2, 20, 17);
   //TGLayoutHints* TopExpandXYLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 3);
   TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 5, 0);
   
@@ -242,6 +248,7 @@ void MGUIMelinatorMain::Create()
   m_HistogramBinningMode->Associate(this);
   m_HistogramBinningMode->SetHeight(FontScaler*24);
   m_HistogramBinningMode->SetWidth(FontScaler*136);
+  m_HistogramBinningMode->GetListBox()->SetHeight(m_HistogramBinningMode->GetListBox()->GetNumberOfEntries()*m_HistogramBinningMode->GetListBox()->GetItemVsize());
   BinningModeFrame->AddFrame(m_HistogramBinningMode, TopLeftLayout);
   
   
@@ -304,6 +311,7 @@ void MGUIMelinatorMain::Create()
   m_PeakHistogramBinningMode->Associate(this);
   m_PeakHistogramBinningMode->SetHeight(FontScaler*24);
   m_PeakHistogramBinningMode->SetWidth(FontScaler*136);
+  m_PeakHistogramBinningMode->GetListBox()->SetHeight(m_PeakHistogramBinningMode->GetListBox()->GetNumberOfEntries()*m_PeakHistogramBinningMode->GetListBox()->GetItemVsize());
   PeakBinningModeFrame->AddFrame(m_PeakHistogramBinningMode, TopLeftLayout);
   
   
@@ -347,7 +355,7 @@ void MGUIMelinatorMain::Create()
   
   
   
-  //  Fit section
+  // Peak parametrization section
   TGGroupFrame* FitGroup = new TGGroupFrame(ControlColumn, "Peak parametrization options", kVerticalFrame);
   ControlColumn->AddFrame(FitGroup, GroupLayout);
 
@@ -365,11 +373,48 @@ void MGUIMelinatorMain::Create()
   m_PeakParametrizationMethod->Associate(this);
   m_PeakParametrizationMethod->SetHeight(FontScaler*24);
   m_PeakParametrizationMethod->SetWidth(FontScaler*136);
+  m_PeakParametrizationMethod->GetListBox()->SetHeight(m_PeakParametrizationMethod->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethod->GetListBox()->GetItemVsize());
   PeakParametrizationMethodFrame->AddFrame(m_PeakParametrizationMethod, TopLeftLayout);
   
-  m_FitAllButton = new TGTextButton(FitGroup, "Parametrize all peaks", c_FitAll); 
+  m_PeakParametrizationOptions = new TGCompositeFrame(FitGroup);
+  FitGroup->AddFrame(m_PeakParametrizationOptions, TopLeftLayout);
+  
+  OnSwitchPeakParametrizationMode(m_Settings->GetPeakParametrizationMethod());
+  
+  
+  // Calibration model determination section
+  TGGroupFrame* CalibrationModel = new TGGroupFrame(ControlColumn, "Calibration model options", kVerticalFrame);
+  ControlColumn->AddFrame(CalibrationModel, GroupLayout);
+
+  TGHorizontalFrame* CalibrationModelDeterminationFrame = new TGHorizontalFrame(CalibrationModel);
+  CalibrationModel->AddFrame(CalibrationModelDeterminationFrame, TopLeftLayout);
+
+  TGLabel* CalibrationModelDeterminationLabel = new TGLabel(CalibrationModelDeterminationFrame, "Method: ");
+  CalibrationModelDeterminationFrame->AddFrame(CalibrationModelDeterminationLabel, TopLeftTextLayout);
+  
+  m_CalibrationModelDeterminationMethod = new TGComboBox(CalibrationModelDeterminationFrame, c_CalibrationModelDeterminationMethod);
+  m_CalibrationModelDeterminationMethod->AddEntry("Interpolation", MCalibrateLines::c_CalibrationModelStepWise);
+  m_CalibrationModelDeterminationMethod->AddEntry("Fitting", MCalibrateLines::c_CalibrationModelFit);
+  m_CalibrationModelDeterminationMethod->AddEntry("Select best fit", MCalibrateLines::c_CalibrationModelBestFit);
+  m_CalibrationModelDeterminationMethod->Select(m_Settings->GetCalibrationModelDeterminationMethod());
+  m_CalibrationModelDeterminationMethod->Associate(this);
+  m_CalibrationModelDeterminationMethod->SetHeight(FontScaler*24);
+  m_CalibrationModelDeterminationMethod->SetWidth(FontScaler*136);
+  m_CalibrationModelDeterminationMethod->GetListBox()->SetHeight(m_CalibrationModelDeterminationMethod->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethod->GetListBox()->GetItemVsize());
+  CalibrationModelDeterminationFrame->AddFrame(m_CalibrationModelDeterminationMethod, TopLeftLayout);
+  
+  m_CalibrationModelDeterminationOptions = new TGCompositeFrame(CalibrationModel);
+  CalibrationModel->AddFrame(m_CalibrationModelDeterminationOptions, TopLeftLayout);
+  
+  OnSwitchCalibrationModelDeterminationMode(m_Settings->GetCalibrationModelDeterminationMethod());
+  
+  
+  
+  // The final "Calibration all" button
+  m_FitAllButton = new TGTextButton(ControlColumn, "Run full calibration", c_FitAll); 
   m_FitAllButton->Associate(this);
-  FitGroup->AddFrame(m_FitAllButton, TopExpandXLayout);
+  m_FitAllButton->SetHeight(FontScaler*25);
+  ControlColumn->AddFrame(m_FitAllButton, BottomExpandXLayout);
   
   
   
@@ -462,9 +507,16 @@ void MGUIMelinatorMain::Create()
   TGVerticalFrame* ResultsView = new TGVerticalFrame(CalibrationView, 100, 100); //, kRaisedFrame);
   CalibrationView->AddFrame(ResultsView, DataColumnLayout); 
 
+
+  TGHorizontalFrame* ResultsControl = new TGHorizontalFrame(ResultsView, 100, 100); //, kRaisedFrame);
+  TGLayoutHints* ResultsControlLayout =  new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 0, 0, 0, 0);
+  ResultsView->AddFrame(ResultsControl, ResultsControlLayout);
+  
+  m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration model: none");
+  ResultsControl->AddFrame(m_ResultsHistogramLabel, TopLeftTextLayout);
+
   m_ResultsCanvas = new TRootEmbeddedCanvas("ResultsCanvas", ResultsView, 100, 100);
-  TGLayoutHints* ResultsCanvasLayout =  new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsExpandY, 0, 0, 30, 1);
-  ResultsView->AddFrame(m_ResultsCanvas, ResultsCanvasLayout);
+  ResultsView->AddFrame(m_ResultsCanvas, CanvasLayout);
   
   
   
@@ -668,6 +720,12 @@ bool MGUIMelinatorMain::ProcessMessage(long Message, long Parameter1, long Param
         case c_PeakHistogramBinningMode:
           OnSwitchPeakHistogramBinningMode((unsigned int) Parameter2);
           break;
+        case c_PeakParametrizationMethod:
+          OnSwitchPeakParametrizationMode((unsigned int) Parameter2);
+          break;
+        case c_CalibrationModelDeterminationMethod:
+          OnSwitchCalibrationModelDeterminationMode((unsigned int) Parameter2);
+          break;
         default:
           break;
       } 
@@ -759,8 +817,20 @@ bool MGUIMelinatorMain::Update()
   }
   m_Settings->SetPeakHistogramBinningMode(m_PeakHistogramBinningMode->GetSelected());
   m_Settings->SetPeakHistogramBinningModeValue(m_PeakHistogramBinningModeValue->GetNumber());
+  
   m_Settings->SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-
+  if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+    m_Settings->SetPeakParametrizationMethodFittingBackgroundModel(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected());
+    m_Settings->SetPeakParametrizationMethodFittingEnergyLossModel(m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected());
+    m_Settings->SetPeakParametrizationMethodFittingPeakShapeModel(m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
+  }
+  
+  m_Settings->SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
+  if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+    m_Settings->SetCalibrationModelDeterminationMethodFittingModel(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+  }
+  
+  
   m_Settings->Write();
   
   return true;
@@ -797,6 +867,143 @@ bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
     m_HistogramBinningModeValueLabel->SetText("as prior");
   } else {
     m_HistogramBinningModeValueLabel->SetText("ERROR");
+  }
+
+  MapSubwindows();
+  MapWindow();  
+  Layout();  
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Switch the histogram binning mode
+bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
+{    
+  if (ID == MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak) {
+    m_PeakParametrizationOptions->RemoveAll();
+  } else if (ID == MCalibrateLines::c_PeakParametrizationMethodSmoothedPeak) {
+    m_PeakParametrizationOptions->RemoveAll();
+  } else if (ID == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) { 
+    m_PeakParametrizationOptions->RemoveAll();
+    
+    double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+    
+    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 2, 2, 2, 0);  
+    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 0, 0, 5, 0);  
+    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 20, 0, 2, 3);
+
+    TGHorizontalFrame* BackgroundModelFrame = new TGHorizontalFrame(m_PeakParametrizationOptions);
+    m_PeakParametrizationOptions->AddFrame(BackgroundModelFrame, TopLeftLayout);
+
+    TGLabel* BackgroundModelLabel = new TGLabel(BackgroundModelFrame, "Background: ");
+    BackgroundModelFrame->AddFrame(BackgroundModelLabel, TopLeftTextLayout);
+    
+    m_PeakParametrizationMethodFittingBackgroundModel = new TGComboBox(BackgroundModelFrame, c_PeakParametrizationMethodFittingBackgroundModel);
+    m_PeakParametrizationMethodFittingBackgroundModel->AddEntry("None", MCalibrationFit::c_BackgroundModelNone);
+    m_PeakParametrizationMethodFittingBackgroundModel->AddEntry("Flat", MCalibrationFit::c_BackgroundModelFlat);
+    m_PeakParametrizationMethodFittingBackgroundModel->AddEntry("Linear", MCalibrationFit::c_BackgroundModelLinear);
+    m_PeakParametrizationMethodFittingBackgroundModel->Select(m_Settings->GetPeakParametrizationMethodFittingBackgroundModel());
+    m_PeakParametrizationMethodFittingBackgroundModel->Associate(this);
+    m_PeakParametrizationMethodFittingBackgroundModel->SetHeight(FontScaler*24);
+    m_PeakParametrizationMethodFittingBackgroundModel->SetWidth(FontScaler*100);
+    unsigned int Height = m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetItemVsize();
+    m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->SetHeight(Height);
+    BackgroundModelFrame->AddFrame(m_PeakParametrizationMethodFittingBackgroundModel, TopRightLayout);
+
+
+    TGHorizontalFrame* EnergyLossModelFrame = new TGHorizontalFrame(m_PeakParametrizationOptions);
+    m_PeakParametrizationOptions->AddFrame(EnergyLossModelFrame, TopLeftLayout);
+
+    TGLabel* EnergyLossModelLabel = new TGLabel(EnergyLossModelFrame, "Energy-loss: ");
+    EnergyLossModelFrame->AddFrame(EnergyLossModelLabel, TopLeftTextLayout);
+
+    m_PeakParametrizationMethodFittingEnergyLossModel = new TGComboBox(EnergyLossModelFrame, c_PeakParametrizationMethodFittingEnergyLossModel);
+    m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("None", MCalibrationFit::c_EnergyLossModelNone);
+    m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("Gauss. Conv. Delta Function", MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction);
+    m_PeakParametrizationMethodFittingEnergyLossModel->Select(m_Settings->GetPeakParametrizationMethodFittingEnergyLossModel());
+    m_PeakParametrizationMethodFittingEnergyLossModel->Associate(this);
+    m_PeakParametrizationMethodFittingEnergyLossModel->SetHeight(FontScaler*24);
+    m_PeakParametrizationMethodFittingEnergyLossModel->SetWidth(FontScaler*100);
+    Height = m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->GetItemVsize();
+    m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->SetHeight(Height);
+    EnergyLossModelFrame->AddFrame(m_PeakParametrizationMethodFittingEnergyLossModel, TopRightLayout);
+
+
+    TGHorizontalFrame* PeakShapeModelFrame = new TGHorizontalFrame(m_PeakParametrizationOptions);
+    m_PeakParametrizationOptions->AddFrame(PeakShapeModelFrame, TopLeftLayout);
+
+    TGLabel* PeakShapeModelLabel = new TGLabel(PeakShapeModelFrame, "Peak-shape: ");
+    PeakShapeModelFrame->AddFrame(PeakShapeModelLabel, TopLeftTextLayout);
+
+    m_PeakParametrizationMethodFittingPeakShapeModel = new TGComboBox(PeakShapeModelFrame, c_PeakParametrizationMethodFittingPeakShapeModel);
+    m_PeakParametrizationMethodFittingPeakShapeModel->AddEntry("Gaussian", MCalibrationFit::c_PeakShapeModelGaussian);
+    m_PeakParametrizationMethodFittingPeakShapeModel->AddEntry("Gauss-Landau", MCalibrationFit::c_PeakShapeModelGaussLandau);
+    m_PeakParametrizationMethodFittingPeakShapeModel->Select(m_Settings->GetPeakParametrizationMethodFittingPeakShapeModel());
+    m_PeakParametrizationMethodFittingPeakShapeModel->Associate(this);
+    m_PeakParametrizationMethodFittingPeakShapeModel->SetHeight(FontScaler*24);
+    m_PeakParametrizationMethodFittingPeakShapeModel->SetWidth(FontScaler*100);
+    m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->SetMinWidth(1000);
+    Height = m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->GetItemVsize();
+    m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->SetHeight(Height);
+    PeakShapeModelFrame->AddFrame(m_PeakParametrizationMethodFittingPeakShapeModel, TopRightLayout);
+  }
+
+  MapSubwindows();
+  MapWindow();  
+  Layout();  
+  
+  return true;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Switch the histogram binning mode
+bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int ID)
+{    
+  if (ID == MCalibrateLines::c_CalibrationModelStepWise) {
+    m_CalibrationModelDeterminationOptions->RemoveAll();
+  } else if (ID == MCalibrateLines::c_CalibrationModelFit) {
+    m_CalibrationModelDeterminationOptions->RemoveAll();
+    
+    double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+    
+    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 2, 2, 2, 0);  
+    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 0, 0, 5, 0);  
+    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 20, 0, 2, 3);
+
+    TGHorizontalFrame* FittingModelFrame = new TGHorizontalFrame(m_CalibrationModelDeterminationOptions);
+    m_CalibrationModelDeterminationOptions->AddFrame(FittingModelFrame, TopLeftLayout);
+
+    TGLabel* FittingModelLabel = new TGLabel(FittingModelFrame, "Model: ");
+    FittingModelFrame->AddFrame(FittingModelLabel, TopLeftTextLayout);
+    
+    m_CalibrationModelDeterminationMethodFittingModel = new TGComboBox(FittingModelFrame, c_CalibrationModelDeterminationMethodFittingModel);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1", MCalibrationModel::c_CalibrationModelPoly1);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
+    m_CalibrationModelDeterminationMethodFittingModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingModel());
+    m_CalibrationModelDeterminationMethodFittingModel->Associate(this);
+    m_CalibrationModelDeterminationMethodFittingModel->SetHeight(FontScaler*24);
+    m_CalibrationModelDeterminationMethodFittingModel->SetWidth(FontScaler*130);
+    unsigned int Height = m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetItemVsize();
+    m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->SetHeight(Height);
+    FittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingModel, TopRightLayout);
+
+  } else if (ID == MCalibrateLines::c_CalibrationModelBestFit) { 
+    m_CalibrationModelDeterminationOptions->RemoveAll();
   }
 
   MapSubwindows();
@@ -1102,6 +1309,80 @@ bool MGUIMelinatorMain::OnLoadLast()
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
   }
+
+  
+  FileName = m_Settings->GetCalibrationFile6();
+  Isotopes.clear();
+  IsotopeName = m_Settings->GetCalibrationFile6Isotope1();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  IsotopeName = m_Settings->GetCalibrationFile6Isotope2();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  IsotopeName = m_Settings->GetCalibrationFile6Isotope3();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  if (FileName.IsEmpty() == false) {
+    if (MFile::Exists(FileName) == false) {
+      mgui<<"File not found:"<<FileName<<show;
+      return false;
+    }
+    AllIsotopes.push_back(Isotopes);
+    AllFileNames.push_back(FileName);
+  }
+
+  
+  FileName = m_Settings->GetCalibrationFile7();
+  Isotopes.clear();
+  IsotopeName = m_Settings->GetCalibrationFile7Isotope1();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  IsotopeName = m_Settings->GetCalibrationFile7Isotope2();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  IsotopeName = m_Settings->GetCalibrationFile7Isotope3();
+  if (IsotopeName != "None") {
+    if (Store.Contains(IsotopeName) == false) {
+      merr<<"Unable to find isotope: "<<IsotopeName<<show;
+      return false;
+    }
+    Isotopes.push_back(Store.Get(IsotopeName));
+  }
+  if (FileName.IsEmpty() == false) {
+    if (MFile::Exists(FileName) == false) {
+      mgui<<"File not found:"<<FileName<<show;
+      return false;
+    }
+    AllIsotopes.push_back(Isotopes);
+    AllFileNames.push_back(FileName);
+  }
+  
+
   
   //for (unsigned int f = 0; f < AllFileNames.size(); ++f) {
   //  m_Melinator.Load(AllFileNames[f], AllIsotopes[f]);
@@ -1364,12 +1645,16 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
     
     MCalibrationSpectralPoint P = m_Melinator.GetCalibrationSpectralPoint(Collection, m_ActiveLineFit);
     ostringstream Text;
-    Text<<"Line at "<<setprecision(5)<<P.GetPeak()<<" read-out units";
+    if (P.IsGood()) {
+      MIsotope I = P.GetIsotope();
+      Text<<I.GetName()<<" line at "<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV ("<<fixed<<setprecision(1)<<P.GetPeak()<<" read-out units)";      
+    } else {
+      Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" read-out units";
+    }
     m_FitHistogramLabel->SetText(Text.str().c_str());
     Layout();
     
   } else {
-    cout<<"2"<<endl;
     m_FitBackButton->SetEnabled(false);
     m_FitForwardButton->SetEnabled(false);
     m_FitCanvas->GetCanvas()->Clear(); 
@@ -1387,6 +1672,17 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
 void MGUIMelinatorMain::UpdateCalibration(unsigned int Collection) 
 {
   m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection);
+  
+  if (m_Melinator.HasCalibrationModel(Collection) == true) {
+    MCalibrationModel& M = m_Melinator.GetCalibrationModel(Collection);
+    ostringstream Text;
+    Text<<"Calibration model: "<<M.GetName();
+    m_ResultsHistogramLabel->SetText(Text.str().c_str());
+    Layout();
+  } else {
+    m_ResultsHistogramLabel->SetText("Calibration model: interpolation");
+    Layout();
+  }
 }
 
 
@@ -1398,6 +1694,15 @@ bool MGUIMelinatorMain::OnFit()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
+    }
+    
+    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+    }
+
     m_Melinator.Calibrate(m_ActiveCollection, false);
     OnUpdateHistogram();
   }
@@ -1414,6 +1719,15 @@ bool MGUIMelinatorMain::OnFitWithDiagnostics()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
+    }
+
+    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+    }
+    
     m_Melinator.Calibrate(m_ActiveCollection, true);
     OnUpdateHistogram();
   }
@@ -1430,6 +1744,15 @@ bool MGUIMelinatorMain::OnFitAll()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+      m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
+    }
+
+    m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+      m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
+    }
+    
     m_Melinator.Calibrate(false);
     OnUpdateHistogram();
   }

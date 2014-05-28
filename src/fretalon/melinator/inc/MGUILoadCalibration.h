@@ -67,6 +67,12 @@ class MGUILoadCalibration : public MGUIDialog
   static const int c_Isotope51        =   813;
   static const int c_Isotope52        =   814;
   static const int c_Isotope53        =   815;
+  static const int c_Isotope61        =   816;
+  static const int c_Isotope62        =   817;
+  static const int c_Isotope63        =   818;
+  static const int c_Isotope71        =   819;
+  static const int c_Isotope72        =   820;
+  static const int c_Isotope73        =   821;
 
   // protected members:
  protected:
@@ -102,6 +108,16 @@ class MGUILoadCalibration : public MGUIDialog
   TGComboBox* m_Isotope51;
   TGComboBox* m_Isotope52;
   TGComboBox* m_Isotope53;
+
+  MGUIEFileSelector* m_FileName6;
+  TGComboBox* m_Isotope61;
+  TGComboBox* m_Isotope62;
+  TGComboBox* m_Isotope63;
+
+  MGUIEFileSelector* m_FileName7;
+  TGComboBox* m_Isotope71;
+  TGComboBox* m_Isotope72;
+  TGComboBox* m_Isotope73;
 
   //! The isotope store from which we load the isotopes
   MIsotopeStore m_IsotopeStore;

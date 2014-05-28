@@ -51,12 +51,20 @@ MBinnerBayesianBlocks::~MBinnerBayesianBlocks()
 {
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void Print(vector<double>& Array) {
   for (unsigned int i = 0; i < Array.size(); ++i) {
     cout<<Array[i]<<" ";
   }
   cout<<endl;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 void Print(vector<int>& Array) {
   for (unsigned int i = 0; i < Array.size(); ++i) {
@@ -126,7 +134,7 @@ void MBinnerBayesianBlocks::Histogram()
   vector<float> CountsPerBin(Size, 0);
   for (list<MBinnedData>::iterator I = m_Values.begin(); I != m_Values.end(); ++I) {
     double Value = (*I).m_AxisValue;
-    for (unsigned int e = 0; e < Edges.size() - 1; ++e) {
+    for (unsigned int e = 0; e < Edges.size() - 1; ++e) { // Speed improvement possible
       if (Edges[e] <= Value && Edges[e+1] > Value) {
         CountsPerBin[e] += (*I).m_DataValue;
         break;     
@@ -143,6 +151,7 @@ void MBinnerBayesianBlocks::Histogram()
   for (unsigned int s = 0; s < Size; ++s) {
     //cout<<s<<" / "<<Size<<endl;
   
+    // Calculate the width of the blocks
     vector<float> Width; // log(float) is the fastest of the log calculations
     for (unsigned int i = 0; i <= s; ++i) {
       Width.push_back(BlockLength[i] - BlockLength[s+1]);
@@ -150,6 +159,7 @@ void MBinnerBayesianBlocks::Histogram()
     //cout<<"Width: "<<endl;
     //Print(Width);
     
+    // Calculate the block count
     vector<float> BlockCounts(s+1, 0); // log(float) is the fastest of the log calculations
     int LastCounts = 0;
     for (unsigned int i = s; i <= s; --i) {
@@ -159,6 +169,7 @@ void MBinnerBayesianBlocks::Histogram()
     //cout<<"BlockCounts: "<<endl;
     //Print(BlockCounts);
 
+    //
     vector<float> Fits;
     for (unsigned int i = 0; i <= s; ++i) {
       float Fit = BlockCounts[i] * (log(BlockCounts[i]) - log(Width[i]));

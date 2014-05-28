@@ -131,6 +131,10 @@ protected:
   virtual bool OnSwitchHistogramBinningMode(unsigned int ID);
   //! Switch the histogram binning mode for the peak histrogram
   virtual bool OnSwitchPeakHistogramBinningMode(unsigned int ID);
+  //! Switch the peak parametrization mode
+  virtual bool OnSwitchPeakParametrizationMode(unsigned int ID);
+  //! Switch the calibration model mode
+  virtual bool OnSwitchCalibrationModelDeterminationMode(unsigned int ID);
   //! Action when one of the ROE buttons was pressed
   virtual bool OnSwitchCollection(unsigned int Collection);
 
@@ -166,6 +170,8 @@ private:
   //! The view of the fit
   TRootEmbeddedCanvas* m_FitCanvas;
   
+  //! The label of the results view
+  TGLabel* m_ResultsHistogramLabel;
   //! The view of the fit
   TRootEmbeddedCanvas* m_ResultsCanvas;
   
@@ -200,9 +206,25 @@ private:
   
   //! Choose the peak parametrization method
   TGComboBox* m_PeakParametrizationMethod;
+  //! Options frame for the peak parametrization
+  TGCompositeFrame* m_PeakParametrizationOptions;
+  //! For fitting: Background model
+  TGComboBox* m_PeakParametrizationMethodFittingBackgroundModel;
+  //! For fitting: Energy-loss model
+  TGComboBox* m_PeakParametrizationMethodFittingEnergyLossModel;
+  //! For fitting: Peak-shape model
+  TGComboBox* m_PeakParametrizationMethodFittingPeakShapeModel;
+  
+  //! Choose the calibration model determination method
+  TGComboBox* m_CalibrationModelDeterminationMethod;
+  //! Options frame for the calibration model determination
+  TGCompositeFrame* m_CalibrationModelDeterminationOptions;
+  //! For fitting: Calibration model fit
+  TGComboBox* m_CalibrationModelDeterminationMethodFittingModel;
+  
   //! Button for fitting all histograms
   TGTextButton* m_FitAllButton;
- 
+   
   //! The canvas displaying the selection including scroll bars
   MGUIEReadOutElementView* m_MainSelectionCanvas;
   //! All the read-out element GUI's
@@ -228,8 +250,13 @@ private:
   static const int c_NextFit                    =  16;
   static const int c_PreviousFit                =  17;
   static const int c_PeakParametrizationMethod  =  18;
-  static const int c_Save                       =  19;
-  static const int c_SaveAs                     =  20;
+  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  19;
+  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  20;
+  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  21;
+  static const int c_CalibrationModelDeterminationMethod              =  22;
+  static const int c_CalibrationModelDeterminationMethodFittingModel  =  23;
+  static const int c_Save                       =  24;
+  static const int c_SaveAs                     =  25;
   static const int c_Remove                     = 400;
   static const int c_Options                    = 500;
   static const int c_Change                     = 600;

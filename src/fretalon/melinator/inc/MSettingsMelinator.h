@@ -132,6 +132,44 @@ class MSettingsMelinator : public MSettings
   void SetCalibrationFile5Isotope3(const MString& Isotope) { m_CalibrationFile5Isotope3 = Isotope; }
   //! Set the isotope 3 of calibration file 1
   MString GetCalibrationFile5Isotope3() const { return m_CalibrationFile5Isotope3; }
+
+  
+  //! Set the fifth calibration file
+  void SetCalibrationFile6(const MString& File) { m_CalibrationFile6 = File; }
+  //! Get the fifth calibration file
+  MString GetCalibrationFile6() const { return m_CalibrationFile6; }
+  
+  //! Set the isotope 1 of calibration file 1
+  void SetCalibrationFile6Isotope1(const MString& Isotope) { m_CalibrationFile6Isotope1 = Isotope; }
+  //! Set the isotope 1 of calibration file 1
+  MString GetCalibrationFile6Isotope1() const { return m_CalibrationFile6Isotope1; }
+  //! Set the isotope 2 of calibration file 1
+  void SetCalibrationFile6Isotope2(const MString& Isotope) { m_CalibrationFile6Isotope2 = Isotope; }
+  //! Set the isotope 2 of calibration file 1
+  MString GetCalibrationFile6Isotope2() const { return m_CalibrationFile6Isotope2; }
+  //! Set the isotope 3 of calibration file 1
+  void SetCalibrationFile6Isotope3(const MString& Isotope) { m_CalibrationFile6Isotope3 = Isotope; }
+  //! Set the isotope 3 of calibration file 1
+  MString GetCalibrationFile6Isotope3() const { return m_CalibrationFile6Isotope3; }
+
+  
+  //! Set the fifth calibration file
+  void SetCalibrationFile7(const MString& File) { m_CalibrationFile7 = File; }
+  //! Get the fifth calibration file
+  MString GetCalibrationFile7() const { return m_CalibrationFile7; }
+  
+  //! Set the isotope 1 of calibration file 1
+  void SetCalibrationFile7Isotope1(const MString& Isotope) { m_CalibrationFile7Isotope1 = Isotope; }
+  //! Set the isotope 1 of calibration file 1
+  MString GetCalibrationFile7Isotope1() const { return m_CalibrationFile7Isotope1; }
+  //! Set the isotope 2 of calibration file 1
+  void SetCalibrationFile7Isotope2(const MString& Isotope) { m_CalibrationFile7Isotope2 = Isotope; }
+  //! Set the isotope 2 of calibration file 1
+  MString GetCalibrationFile7Isotope2() const { return m_CalibrationFile7Isotope2; }
+  //! Set the isotope 3 of calibration file 1
+  void SetCalibrationFile7Isotope3(const MString& Isotope) { m_CalibrationFile7Isotope3 = Isotope; }
+  //! Set the isotope 3 of calibration file 1
+  MString GetCalibrationFile7Isotope3() const { return m_CalibrationFile7Isotope3; }
   
     
   //! The minimum range of the histogram
@@ -176,11 +214,35 @@ class MSettingsMelinator : public MSettings
   void SetPeakHistogramBinningModeValue(double PeakHistogramBinningModeValue) { m_PeakHistogramBinningModeValue = PeakHistogramBinningModeValue; }
 
   
-  //! Get the histogram parametrization method (number identical to what is defined in MMelinator.h
+  //! Get the histogram parametrization method (number identical to what is defined in MMelinator.h)
   unsigned int GetPeakParametrizationMethod() const { return m_PeakParametrizationMethod; }
-  //! Set the histogram parametrization method (number identical to what is defined in MMelinator.h
+  //! Set the histogram parametrization method (number identical to what is defined in MMelinator.h)
   void SetPeakParametrizationMethod(unsigned int PeakParametrizationMethod) { m_PeakParametrizationMethod = PeakParametrizationMethod; }
 
+  //! Get the background model for fitting (number identical to what is defined in MCalibrateLines.h)
+  unsigned int GetPeakParametrizationMethodFittingBackgroundModel() const { return m_PeakParametrizationMethodFittingBackgroundModel; } 
+  //! Set the background model for fitting (number identical to what is defined in MCalibrateLines.h)
+  void SetPeakParametrizationMethodFittingBackgroundModel(unsigned int Model) { m_PeakParametrizationMethodFittingBackgroundModel = Model; } 
+  //! Get the energy-loss model for fitting (number identical to what is defined in MCalibrateLines.h)
+  unsigned int GetPeakParametrizationMethodFittingEnergyLossModel() const { return m_PeakParametrizationMethodFittingEnergyLossModel; } 
+  //! Set the energy-loss model for fitting (number identical to what is defined in MCalibrateLines.h)
+  void SetPeakParametrizationMethodFittingEnergyLossModel(unsigned int Model) { m_PeakParametrizationMethodFittingEnergyLossModel = Model; } 
+  //! Get the peak-shape model for fitting (number identical to what is defined in MCalibrateLines.h)
+  unsigned int GetPeakParametrizationMethodFittingPeakShapeModel() const { return m_PeakParametrizationMethodFittingPeakShapeModel; } 
+  //! Set the peak-shape model for fitting (number identical to what is defined in MCalibrateLines.h)
+  void SetPeakParametrizationMethodFittingPeakShapeModel(unsigned int Model) { m_PeakParametrizationMethodFittingPeakShapeModel = Model; } 
+
+  
+  //! Get the calibration model determination method (number identical to what is defined in MCalibrateLines.h
+  unsigned int GetCalibrationModelDeterminationMethod() const { return m_CalibrationModelDeterminationMethod; }
+  //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
+  void SetCalibrationModelDeterminationMethod(unsigned int CalibrationModelDeterminationMethod) { m_CalibrationModelDeterminationMethod = CalibrationModelDeterminationMethod; }
+  //! Get the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  unsigned int GetCalibrationModelDeterminationMethodFittingModel() const { return m_CalibrationModelDeterminationMethodFittingModel; } 
+  //! Set the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  void SetCalibrationModelDeterminationMethodFittingModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingModel = Model; } 
+  
+  
   //! Set the save-as file name
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
   //! Get the save-as file name
@@ -241,6 +303,24 @@ class MSettingsMelinator : public MSettings
   //! The third isotope of the first calibration file
   MString m_CalibrationFile5Isotope3;
   
+  //! The first calibration file
+  MString m_CalibrationFile6;
+  //! The first isotope of the first calibration file
+  MString m_CalibrationFile6Isotope1;
+  //! The second isotope of the first calibration file
+  MString m_CalibrationFile6Isotope2;
+  //! The third isotope of the first calibration file
+  MString m_CalibrationFile6Isotope3;
+  
+  //! The first calibration file
+  MString m_CalibrationFile7;
+  //! The first isotope of the first calibration file
+  MString m_CalibrationFile7Isotope1;
+  //! The second isotope of the first calibration file
+  MString m_CalibrationFile7Isotope2;
+  //! The third isotope of the first calibration file
+  MString m_CalibrationFile7Isotope3;
+  
   //! The minimum range of the histogram
   double m_HistogramMin;
   //! The maximum range of the histogram
@@ -259,9 +339,20 @@ class MSettingsMelinator : public MSettings
   //! Depending on the binning mode, either bins, cts/bin, or prior
   double m_PeakHistogramBinningModeValue;
   
-  //! The binning mode: fixed number of bins, fixed cts per bin, Bayesian block
+  //! The peak parametrization mode: Bayesian blocks, smoothing, fitting
   unsigned int m_PeakParametrizationMethod;
-
+  //! The background model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittingBackgroundModel;
+  //! The energy-loss model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittingEnergyLossModel;
+  //! The peak-shape model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittingPeakShapeModel;
+  
+  //! The calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethod;
+  //! Fitting model of the calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  
   //! Set the save as file
   MString m_SaveAsFileName;
   

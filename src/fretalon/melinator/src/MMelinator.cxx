@@ -37,6 +37,8 @@ using namespace std;
 #include "TMarker.h"
 #include "TEllipse.h"
 #include "TLegend.h"
+#include "TGraph.h"
+#include "TGaxis.h"
 #include "TGraphErrors.h"
 
 // MEGAlib libs:
@@ -78,6 +80,11 @@ MMelinator::MMelinator()
   m_HistogramBinningModeValue = 100;
 
   m_PeakParametrizationMethod = MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak;
+  m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear;
+  m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone;
+  m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
+  
+  m_CalibrationModelDeterminationMethod = MCalibrateLines::c_CalibrationModelStepWise;
   
   m_NThreads = 4;
   
@@ -408,11 +415,13 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   
         
   vector<int> Colors;
-  Colors.push_back(kGreen);
+  Colors.push_back(kGreen+1);
   Colors.push_back(kRed);
   Colors.push_back(kBlue);
-  Colors.push_back(kViolet);
   Colors.push_back(kYellow);
+  Colors.push_back(kViolet);
+  Colors.push_back(kCyan);
+  Colors.push_back(kMagenta);
   for (unsigned int h = 0; h < Histograms.size(); ++h) {
     if (Histograms[h] == 0) continue;
     Histograms[h]->SetMaximum(1.1*Max);
@@ -503,8 +512,48 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
     Legend->AddEntry(Histograms[h], Names);
   }
   Legend->Draw("SAME");
+  
+  // Draw the axis of the first histogram again:
+  for (unsigned int h = 0; h < Histograms.size(); ++h) {
+    if (Histograms[h] == 0) continue;
+    Histograms[h]->Draw("AXIS SAME");
+    break;
+  }
 
   Canvas.Update();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+    
+//! Return true if we have calibration model
+bool MMelinator::HasCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    return C->HasModel();
+  }
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+    
+//! Get the calibration model of the spectra
+MCalibrationModel& MMelinator::GetCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    if (C->HasModel()) {
+      return C->GetModel();
+    }
+  }
+  
+  throw MExceptionObjectDoesNotExist("No calibration model available");  
+  
+  return C->GetModel();
 }
 
 
@@ -571,7 +620,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
   Canvas.SetGridy();
   //Canvas.SetLogy();
 
-  Canvas.SetLeftMargin(0.12);
+  Canvas.SetLeftMargin(0.17);
   Canvas.SetRightMargin(0.05);
   Canvas.SetTopMargin(0.05);
   Canvas.SetBottomMargin(0.12);
@@ -598,12 +647,14 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             Spectrum->GetXaxis()->SetTitleOffset(0.9);
             Spectrum->GetXaxis()->CenterTitle(true);
             Spectrum->GetXaxis()->SetMoreLogLabels(true);
+            Spectrum->GetXaxis()->SetNdivisions(509, true);
     
             //Spectrum->GetYaxis()->SetLabelOffset(0.001);
             Spectrum->GetYaxis()->SetLabelSize(0.05);
             Spectrum->GetYaxis()->SetTitleSize(0.06);
-            Spectrum->GetYaxis()->SetTitleOffset(1.0);
+            Spectrum->GetYaxis()->SetTitleOffset(1.4);
             Spectrum->GetYaxis()->CenterTitle(true);
+            Spectrum->GetYaxis()->SetNdivisions(509, true);
         
             Spectrum->Draw();
             
@@ -612,7 +663,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
               F.Draw("SAME");
             }
             
-            TLine* Line = new TLine(P.GetPeak(), Spectrum->GetMaximum(), P.GetPeak(), 0);
+            TLine* Line = new TLine(P.GetPeak(), Spectrum->GetMaximum(), P.GetPeak(), Spectrum->GetMinimum());
             Line->SetLineWidth(3);
             Line->Draw("SAME");
           }
@@ -633,6 +684,7 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
 void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
 {
   //Canvas.SetBit(kNoContextMenu);
+  //Canvas.Range(0, 1, 0, 1);
   Canvas.SetBit(kCannotPick);
   Canvas.Clear();
   Canvas.cd();
@@ -641,37 +693,36 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   //Canvas.SetLogy();
 
   Canvas.SetLeftMargin(0.17);
-  Canvas.SetRightMargin(0.05);
+  Canvas.SetRightMargin(0.17);
   Canvas.SetTopMargin(0.05);
   Canvas.SetBottomMargin(0.12);
   
-  TGraphErrors* Graph = new TGraphErrors(GetNumberOfCalibrationSpectralPoints(Collection));
   
+  double MaximumEnergy = 0.0; 
   double MaximumPeak = 0.0; 
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  vector<MCalibrationSpectralPoint> Points; 
+  TGraphErrors* Graph = new TGraphErrors();
   if (C != nullptr) {
-    unsigned int Points = 0;
-    for (unsigned int g = 0; g < C->GetNumberOfReadOutDataGroups(); ++g) {
-      for (unsigned int p = 0; p < C->GetNumberOfSpectralPoints(g); ++p) {
-        MCalibrationSpectralPoint P = C->GetSpectralPoint(g, p);
-        if (P.IsGood() == false) continue;
-        Graph->SetPoint(Points, P.GetPeak(), P.GetEnergy());
-        if (P.GetPeak() > MaximumPeak) MaximumPeak = P.GetPeak();
-        Points++;
-      }
+    Points = C->GetUniquePoints();
+    Graph->Set(Points.size());
+    for (unsigned int p = 0; p < Points.size(); ++p) {
+      Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
+      if (Points[p].GetPeak() > MaximumPeak) MaximumPeak = Points[p].GetPeak();
+      if (Points[p].GetEnergy() > MaximumEnergy) MaximumEnergy = Points[p].GetEnergy();
     }
-    Graph->Set(Points);
   }
   
   
   //cout<<"Drawing graph..."<<endl;
   Graph->Sort();
   Graph->SetMinimum(0);
+  Graph->SetMaximum(1.1*MaximumEnergy);
   Graph->Draw(); // Draw in order to have all axis!
   
   Graph->SetTitle("");
 
-  Graph->GetXaxis()->SetTitle("Read-out units");
+  Graph->GetXaxis()->SetTitle("read-out units");
   // Graph->GetXaxis()->SetLabelOffset(0.0);
   Graph->GetXaxis()->SetLabelSize(0.05);
   Graph->GetXaxis()->SetTitleSize(0.06);
@@ -681,7 +732,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumPeak);
   Graph->GetXaxis()->SetNdivisions(509, true);
   
-  Graph->GetYaxis()->SetTitle("Energy [keV]");
+  Graph->GetYaxis()->SetTitle("energy [keV]");
   // Graph->GetYaxis()->SetLabelOffset(0.001);
   Graph->GetYaxis()->SetLabelSize(0.05);
   Graph->GetYaxis()->SetTitleSize(0.06);
@@ -689,7 +740,65 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   Graph->GetYaxis()->CenterTitle(true);
   Graph->GetYaxis()->SetNdivisions(509, true);
 
-  Graph->Draw("AL*");
+  if (C != nullptr && C->HasModel() == true) {
+    Graph->Draw("A*");
+  } else {
+    Graph->Draw("A*");
+  }
+  
+  if (C != nullptr && C->HasModel() == true) {
+    MCalibrationModel& Model = C->GetModel();
+    Model.Draw("SAME");
+
+    TGraph* Residuals = new TGraph(Points.size());
+
+    // Residuals:
+    double Min = +numeric_limits<double>::max();
+    double Max = -numeric_limits<double>::max();
+    for (unsigned int p = 0; p < Points.size(); ++p) {
+      if (Points[p].IsGood() == false) continue;
+      double Value = Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()); 
+      if (Value < Min) Min = Value;
+      if (Value > Max) Max = Value;
+      //Residuals->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()));
+    }
+    
+    if (Min < 0) {
+      Min *= 1.1;
+    }
+    if (Max > 0) {
+      Max *= 1.1;
+    }
+    double ResidualRange = Max-Min;
+    for (unsigned int p = 0; p < Points.size(); ++p) {
+      if (Points[p].IsGood() == false) continue;
+      cout<<Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak())<<endl;
+      Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumEnergy/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
+    }
+    
+   
+    Residuals->SetMarkerColor(kBlue);
+    Residuals->SetMarkerStyle(33);
+    Residuals->Draw("SAME *");
+    
+    //TGaxis *axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(), gPad->GetUxmax(), gPad->GetUymax(), Min, Max, 510, "+L");
+    TGaxis *axis = new TGaxis(1.1*MaximumPeak, 0, 1.1*MaximumPeak, 1.1*MaximumEnergy/ResidualRange * (Max-Min), Min, Max, 510, "+L");
+    axis->SetLineColor(kBlue);
+    axis->SetLabelColor(kBlue);
+    axis->SetTitleColor(kBlue);
+    axis->SetTitle("residuals from model [keV]");
+    axis->SetLabelSize(0.05);
+    axis->SetLabelFont(Graph->GetXaxis()->GetLabelFont());
+    axis->SetLabelSize(Graph->GetXaxis()->GetLabelSize());
+    axis->SetTitleSize(0.06);
+    axis->SetTitleOffset(1.4);
+    axis->SetTitleFont(Graph->GetXaxis()->GetTitleFont());
+    axis->SetTitleSize(Graph->GetXaxis()->GetTitleSize());
+    axis->CenterTitle(true);
+    axis->SetNdivisions(509);
+    axis->Draw();
+    
+  }
   
   Canvas.Update();
 }
@@ -858,6 +967,10 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
       Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[g]);
     }
     Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
+    Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+    Cali.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
+    Cali.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+    
     Cali.SetDiagnosticsMode(false);
     Cali.SetRange(m_HistogramMin, m_HistogramMax);
     cout<<"Max: "<<m_HistogramMax<<endl;
@@ -894,6 +1007,9 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[g]);
   }
   Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
+  Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+  Cali.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
+  Cali.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
   Cali.SetDiagnosticsMode(ShowDiagnostics);
   Cali.SetRange(m_HistogramMin, m_HistogramMax);
   cout<<"Max: "<<m_HistogramMax<<endl;
@@ -926,8 +1042,8 @@ bool MMelinator::Save(MString FileName)
   out<<" "<<endl;
   out<<"TYPE ECAL"<<endl;
   out<<" "<<endl;
-  out<<"CF doublesidedstrip pointsadctokev"<<endl;
-  out<<endl;
+  //out<<"CF doublesidedstrip pointsadctokev"<<endl;
+  //out<<endl;
   
   for (unsigned int c = 0; c < m_CalibrationStore.GetNumberOfElements(); ++c) {
     MReadOutElement& ROE = m_CalibrationStore.GetReadOutElement(c);
@@ -935,6 +1051,9 @@ bool MMelinator::Save(MString FileName)
     if (C != nullptr) {
       // Make a list of the points and store them for sorting
       out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
+      if (C->HasModel() == true) {
+        out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("model", true)<<endl;
+      }
     }
   }
   

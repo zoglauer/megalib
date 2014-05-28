@@ -240,10 +240,10 @@ void MCalibrationFit::SetFitParameters(TH1D& Hist, double Min, double Max)
   if (m_EnergyLossModel == c_EnergyLossModelNone) {
   } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     m_Fit->SetParName(0+BPM, "Left offset energy loss");
-    m_Fit->SetParameter(0+BPM, 0);
+    m_Fit->SetParameter(0+BPM, 0.1*Hist.GetMaximum());
     m_Fit->SetParLimits(0+BPM, 0, 2*Hist.GetMaximum());
     m_Fit->SetParName(1+BPM, "Right offset energy loss");
-    m_Fit->SetParameter(1+BPM, 0);
+    m_Fit->SetParameter(1+BPM, 0.1*Hist.GetMaximum());
     m_Fit->SetParLimits(1+BPM, 0, 2*Hist.GetMaximum());
     m_Fit->SetParName(2+BPM, "Mean energy loss");
     m_Fit->SetParameter(2+BPM, 0.5*(Min+Max));

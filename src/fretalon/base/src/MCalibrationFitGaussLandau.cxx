@@ -109,12 +109,14 @@ double MCalibrationFitGaussLandau::operator() (double* X, double* P)
 
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     int Ps = GetBackgroundFitParameters();
-    if (4*P[Ps+5] <  P[Ps+3] || P[Ps+5] >  4*P[Ps+3]) return 0.001;
-    Return += P[Ps+6]*TMath::Landau(-X[0] + P[Ps+2], 0, P[Ps+5]);
+    //if (4*P[Ps+5] <  P[Ps+3] || P[Ps+5] >  4*P[Ps+3]) return 0.001;
+    //Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+5]), P[Ps+5]);
+    Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+3]), P[Ps+3]);
   } else {
     int Ps = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
-    if (4*P[Ps+1] <  P[Ps+3] || P[Ps+1] >  4*P[Ps+3]) return 0.001;
-    Return += P[Ps+4]*TMath::Landau(-X[0] + P[Ps], 0, P[Ps+3]);
+    //if (4*P[Ps+1] <  P[Ps+3] || P[Ps+1] >  4*P[Ps+3]) return 0.001;
+    //Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+3]), P[Ps+3]);
+    Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+1]), P[Ps+1]);
   }
   
   return Return;
@@ -181,7 +183,7 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
     } else {
       m_Fit->SetParameter(6+BPM, Hist.GetMaximum());
     }
-    m_Fit->SetParLimits(6+BPM, 0, 10*Hist.GetMaximum());
+    m_Fit->SetParLimits(6+BPM, 0, 3*Hist.GetMaximum());
 
     
   } else {
@@ -203,7 +205,7 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
     } else {
       m_Fit->SetParameter(4+BPM, Hist.GetMaximum());
     }
-    m_Fit->SetParLimits(4+BPM, 0, 10*Hist.GetMaximum());
+    m_Fit->SetParLimits(4+BPM, 0, 3*Hist.GetMaximum());
   }
 }
 
