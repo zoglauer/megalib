@@ -173,17 +173,26 @@ bool GradedZ::Analyze()
 
   int NBins = 200;
   double Emin = 0.0;
-  double Emax = 2000.0;
+  double Emax = 1000.0;
 
   TH1D* AllHits = new TH1D("All Hits", "AllHits", NBins, Emin, Emax);
-  TH1D* TransmissionCurve = new TH1D("TransmissionCurve", "Transmission Curve (any primary/secomdary making it through the shield)", NBins, Emin, Emax);
-  TransmissionCurve->SetXTitle("Energy");
+  
+  TH1D* TransmissionCurve = new TH1D("TransmissionCurve", "Transmission Curve (any primary/secondary making it through the shield)", NBins, Emin, Emax);
+  TransmissionCurve->SetXTitle("Energy of primary");
   TransmissionCurve->SetYTitle("Transmission [%]");
+  TransmissionCurve->SetNdivisions(520, "Y");
+ 
+  TH1D* TransmissionCurveUnharmed = new TH1D("TransmissionCurveUnharmed", "Transmission Curve (any primary making it through the shield unchanged)", NBins, Emin, Emax);
+  TransmissionCurveUnharmed->SetXTitle("Energy of primary");
+  TransmissionCurveUnharmed->SetYTitle("Transmission [%]");
+  TransmissionCurveUnharmed->SetNdivisions(520, "Y");
+  
   TH1D* ComptonInteractions = new TH1D("ComptonInteractions", "Compton interaction in shield (with and without transmission)", NBins, Emin, Emax);
-  ComptonInteractions->SetXTitle("Energy");
+  ComptonInteractions->SetXTitle("Energy of primary");
   ComptonInteractions->SetYTitle("Compton interactions [%]");
+  
   TH1D* ComptonInteractionWithT = new TH1D("ComptonInteractionWithT", "Compton interaction in shield with transmission", NBins, Emin, Emax);
-  ComptonInteractionWithT->SetXTitle("Energy");
+  ComptonInteractionWithT->SetXTitle("Energy of primary");
   ComptonInteractionWithT->SetYTitle("Compton interactions [%]");
 
   MSimEvent* SiEvent = 0;
@@ -192,13 +201,16 @@ bool GradedZ::Analyze()
       double Energy = SiEvent->GetIAAt(0)->GetSecondaryEnergy();
       AllHits->Fill(Energy, 1);
       bool HasCompton = false;
+      bool HasInteraction = false;
       double BlackAbsorberEnergy = 0;
       for (unsigned int i = 1; i < SiEvent->GetNIAs(); ++i) {
+        if (SiEvent->GetIAAt(i)->GetProcess() == "BLAK") { // 
+          BlackAbsorberEnergy += SiEvent->GetIAAt(i)->GetMotherEnergy();
+        } else {
+          HasInteraction = true;
+        }
         if (SiEvent->GetIAAt(i)->GetProcess() == "COMP") { // We can have multiples
           HasCompton = true;
-        }
-        if (SiEvent->GetIAAt(i)->GetProcess() == "BLAK") { // 
-          BlackAbsorberEnergy +=SiEvent->GetIAAt(i)->GetMotherEnergy();
         }
       }
       if (HasCompton == true) {
@@ -209,6 +221,9 @@ bool GradedZ::Analyze()
       }
       if (BlackAbsorberEnergy > 0) {
         TransmissionCurve->Fill(Energy, 1);
+      }
+      if (HasInteraction == false) {
+        TransmissionCurveUnharmed->Fill(Energy, 1);
       }
     }
     delete SiEvent;
@@ -222,10 +237,12 @@ bool GradedZ::Analyze()
       ComptonInteractions->SetBinContent(b, 100* ComptonInteractions->GetBinContent(b)/AllHits->GetBinContent(b));
       ComptonInteractionWithT->SetBinContent(b, 100*ComptonInteractionWithT->GetBinContent(b)/AllHits->GetBinContent(b));
       TransmissionCurve->SetBinContent(b, 100* TransmissionCurve->GetBinContent(b)/AllHits->GetBinContent(b));
+      TransmissionCurveUnharmed->SetBinContent(b, 100* TransmissionCurveUnharmed->GetBinContent(b)/AllHits->GetBinContent(b));
     } else {
       ComptonInteractions->SetBinContent(b, 0);
       ComptonInteractionWithT->SetBinContent(b, 0);
       TransmissionCurve->SetBinContent(b, 0);
+      TransmissionCurveUnharmed->SetBinContent(b, 0);
     }
   }
 
@@ -241,8 +258,17 @@ bool GradedZ::Analyze()
 
   TCanvas* TransmissionCurveCanvas = new TCanvas();
   TransmissionCurveCanvas->cd();
+  TransmissionCurveCanvas->SetGridx();
+  TransmissionCurveCanvas->SetGridy();
   TransmissionCurve->Draw();
   TransmissionCurveCanvas->Update();
+
+  TCanvas* TransmissionCurveUnharmedCanvas = new TCanvas();
+  TransmissionCurveUnharmedCanvas->cd();
+  TransmissionCurveUnharmedCanvas->SetGridx();
+  TransmissionCurveUnharmedCanvas->SetGridy();
+  TransmissionCurveUnharmed->Draw();
+  TransmissionCurveUnharmedCanvas->Update();
 
 
   return true;

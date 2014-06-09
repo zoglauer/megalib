@@ -57,6 +57,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MJulianDay.o \
 	$(LB)/MTokenizer.o \
 	$(LB)/MConnection.o \
+	$(LB)/MTransceiverTcpIpBinary.o \
 	$(LB)/MTransceiverTcpIp.o \
 	$(LB)/MTransceiverUDP.o \
 	$(LB)/MComptonEvent.o \

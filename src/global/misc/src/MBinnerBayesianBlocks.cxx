@@ -38,7 +38,7 @@ ClassImp(MBinnerBayesianBlocks)
 
 
 //! Default constructor
-MBinnerBayesianBlocks::MBinnerBayesianBlocks() : m_MinimumBinWidth(0.000001), m_Prior(4), m_UseBinning(true)
+MBinnerBayesianBlocks::MBinnerBayesianBlocks() : m_MinimumBinWidth(0.000001), m_MinimumCountsPerBin(0), m_Prior(4), m_UseBinning(true)
 {
 }
 
@@ -239,7 +239,7 @@ void MBinnerBayesianBlocks::Histogram()
       //}
     }
   }
-
+    
   // Step 8: Finally fill the data array
   m_BinnedData.resize(m_BinEdges.size()+1, 0);
   for (list<MBinnedData>::iterator I = m_Values.begin(); I != m_Values.end(); ++I) {
@@ -252,7 +252,23 @@ void MBinnerBayesianBlocks::Histogram()
       }
     }
   }    
-    
+
+  // Step 9: Reject bins with less than X elements
+  if (m_MinimumCountsPerBin > 0) {
+    for (unsigned int e = 0; e < m_BinEdges.size()-1; ++e) {
+      //cout<<"Content: "<<m_BinnedData[e]<<" going from "<<m_BinEdges[e]<<" - "<<m_BinEdges[e+1]<<endl;
+      if (m_BinnedData[e] < m_MinimumCountsPerBin && e < m_BinEdges.size() - 1) {
+        //cout<<"Erasing..."<<endl;
+        // Move higher content down and erase bins
+        m_BinnedData[e] += m_BinnedData[e+1];
+        m_BinnedData.erase(m_BinnedData.begin()+e+1);
+        m_BinEdges.erase(m_BinEdges.begin()+e+1);
+        e--;
+      }
+    }
+  }
+  
+  
   m_IsModified = false;
 }
 

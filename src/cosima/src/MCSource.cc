@@ -588,7 +588,9 @@ bool MCSource::UpgradeStartArea()
     }
   }
 
-  cout<<m_Name<<": average start area: "<<m_StartAreaAverageArea/cm/cm<<" cm2"<<endl;
+  if (m_CoordinateSystem == c_FarField) {
+    cout<<m_Name<<": average start area: "<<m_StartAreaAverageArea/cm/cm<<" cm2"<<endl;
+  }
 
   return true;
 }
@@ -1514,7 +1516,11 @@ bool MCSource::UpgradeFlux()
   }
 
   if (m_Flux > 0 && !isnan(m_Flux) && !isinf(m_Flux)) {
-    cout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second<<" ph/sec"<<endl;
+    if (m_CoordinateSystem == c_FarField) {
+      cout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second*cm*cm<<" ph/cm^2/sec"<<endl;
+    } else {
+      cout<<m_Name<<": Final flux: "<<m_Flux*second<<" ph/sec"<<endl;      
+    }
   }
 
   if (m_Flux <= 0 && m_StartAreaType != c_StartAreaUnknown && m_IsSuccessor == false) {

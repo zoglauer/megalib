@@ -292,7 +292,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 {
   cout<<"Finding peaks for ROG ID: "<<ROGID<<endl;
   
-  int Prior = 6;
+  int Prior = 8;
   
   int FirstPeakMinimumBinID = 7;
   double FirstPeakMinimumPeakCounts = 300; 

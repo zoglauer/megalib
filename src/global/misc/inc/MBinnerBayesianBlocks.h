@@ -46,6 +46,9 @@ class MBinnerBayesianBlocks : public MBinner
   //! Set the minimum bin width
   void SetMinimumBinWidth(double MinimumBinWidth) { m_MinimumBinWidth = MinimumBinWidth; }
   
+  //! Set the minimum counts per bin
+  void SetMinimumCountsPerBin(double MinimumCountsPerBin) { m_MinimumCountsPerBin = MinimumCountsPerBin; }
+  
   //! Set the minimum bin width
   void SetPrior(double Prior) { m_Prior = Prior; }
   
@@ -75,6 +78,8 @@ class MBinnerBayesianBlocks : public MBinner
  private:
   //! The minimum bin width
   double m_MinimumBinWidth;
+  //! The minimum counts per bin
+  double m_MinimumCountsPerBin;
   //! The prior
   double m_Prior;
   //! True if we use binning
