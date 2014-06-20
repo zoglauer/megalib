@@ -28,6 +28,8 @@
 
 // Standard libs:
 #include <limits>
+#include <vector>
+#include <algorithm>
 using namespace std;
 
 // ROOT libs:
@@ -260,16 +262,63 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync)
+{
+  // Check if something is in the received list, 
+  // If it starts with Sync, and there is more starting with Sync store the first one with sync
+
+  if (Sync.size() == 0) return false;
+  
+  m_ReceiveMutex.Lock();
+  
+  list<unsigned char> S;
+  for (unsigned char c: Sync) S.push_back(c);
+  
+  list <unsigned char>::iterator Start;
+  Start = std::search(m_PacketsToReceive.begin(), m_PacketsToReceive.end(), S.begin(), S.end());
+  if (Start != m_PacketsToReceive.end()) {
+    list<unsigned char>::iterator Stop = Start;
+    list<unsigned char>::iterator E;
+    list<unsigned char>::iterator SearchStart = Stop;
+    advance(SearchStart, Sync.size());
+    while ((E = search(SearchStart, m_PacketsToReceive.end(), Sync.begin(), Sync.end())) != m_PacketsToReceive.end()) {
+      Stop = E;
+      SearchStart = E;
+      advance(SearchStart, Sync.size());      
+    }
+    if (Stop != Start) {
+      for (auto I = Start; I != Stop; ++I) {
+        Packet.push_back((*I));
+      }
+      m_PacketsToReceive.erase(Start, Stop);
+      m_ReceiveMutex.UnLock();
+      return true;
+    }
+  }
+
+
+  m_ReceiveMutex.UnLock();
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MTransceiverTcpIpBinary::Receive(vector<unsigned char>& Packet)
 {
   // Check if an object is in the received strings list:
 
   m_ReceiveMutex.Lock();
-
+  
   if (m_NPacketsToReceive > 0) {
-    m_NPacketsToReceive--;
-    Packet = m_PacketsToReceive.front();
-    m_PacketsToReceive.pop_front();
+    Packet.clear();
+    for (unsigned char c: m_PacketsToReceive) {
+      Packet.push_back(c);
+    }
+    m_NPacketsToReceive = 0;
+    m_PacketsToReceive.clear();
     m_ReceiveMutex.UnLock();
     return true;
   }
@@ -411,7 +460,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     // Receive data
     
     // Add the object to the list:
-    vector<unsigned char> NewPacket;
+    list<unsigned char> NewPacket;
     do {
       Socket->SetOption(kNoBlock, 1); // don't block!
       Status = Socket->RecvRaw((void*) &ReadPacket[0], ReadPacketSize, kDontBlock);
@@ -447,18 +496,19 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     } 
     // If status > 0, we got a message
     else {
-      if (NewPacket.size() > 0) {
+      long NewPacketSize = NewPacket.size();
+      if (NewPacketSize > 0) {
         m_ReceiveMutex.Lock();
       
         //cout<<"Transceiver "<<m_Name<<": Received something from "<<m_Host<<":"<<m_Port<<" of size "<<NewPacket.size()<<endl;
       
         if (m_NPacketsToReceive < m_MaxBufferSize) {
-          m_PacketsToReceive.push_back(NewPacket);
-          m_NReceivedPackets++;
-          m_NPacketsToReceive++;
+          m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
+          m_NReceivedPackets += NewPacketSize;
+          m_NPacketsToReceive += NewPacketSize;
         } else {
-          m_NReceivedPackets++;
-          m_NLostPackets++;
+          m_NReceivedPackets += NewPacketSize;
+          m_NLostPackets += NewPacketSize;
         } 
         
         m_ReceiveMutex.UnLock();

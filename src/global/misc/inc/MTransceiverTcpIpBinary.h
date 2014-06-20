@@ -85,6 +85,8 @@ class MTransceiverTcpIpBinary
   bool Send(const vector<unsigned char>& Bytes);
   //! Receive something binary
   bool Receive(vector<unsigned char>& Bytes);
+  //! Receive something with sync word Sync
+  bool SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync);
 
   //! Set the maximum buffer size (in strings) after which to loose events
   void SetMaximumBufferSize(unsigned int MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
@@ -141,7 +143,7 @@ class MTransceiverTcpIpBinary
   TMutex m_SendMutex;
 
   //! List of packets which have been received and which are still in the buffer
-  list<vector<unsigned char>> m_PacketsToReceive;
+  list<unsigned char> m_PacketsToReceive;
   //! Number of packets which have been received and which are still in the buffer
   unsigned int m_NPacketsToReceive;
   //! A mutex for the receive queue
