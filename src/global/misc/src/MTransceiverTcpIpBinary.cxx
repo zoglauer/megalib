@@ -291,6 +291,7 @@ bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vecto
         Packet.push_back((*I));
       }
       m_PacketsToReceive.erase(Start, Stop);
+      m_NPacketsToReceive = m_PacketsToReceive.size();
       m_ReceiveMutex.UnLock();
       return true;
     }
