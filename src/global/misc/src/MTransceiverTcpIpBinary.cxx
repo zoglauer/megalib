@@ -88,7 +88,7 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   m_NReceivedPackets = 0; 
   m_NSentPackets = 0;
 
-  m_MaxBufferSize = numeric_limits<unsigned int>::max();
+  m_MaxBufferSize = 10000000;
 
   m_IsConnected = false;
   m_WishConnection = false;
@@ -178,12 +178,6 @@ bool MTransceiverTcpIpBinary::Disconnect(bool WaitForDisconnection, double TimeO
 
   return true;
 }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
