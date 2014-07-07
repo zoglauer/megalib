@@ -166,8 +166,8 @@ G4bool MCDriftChamberSD::PostProcessHits(const G4Step* Step)
   NElectrons = 1;
   
   // Calculate the drift parameters
-  double DriftLength = Position.getZ() + m_StructuralSize.getZ()/2;
-  massert(DriftLength >= 0);
+  //double DriftLength = Position.getZ() + m_StructuralSize.getZ()/2;
+  //massert(DriftLength >= 0);
   //double DriftRadiusSigma = m_DriftConstant * sqrt(DriftLength);
 
   //double DriftRadius = 0;

@@ -83,7 +83,9 @@ MCMain::MCMain()
 MCMain::~MCMain()
 {
   delete m_Session;
+#ifdef G4VIS_USE
   delete m_VisManager;
+#endif
   delete m_RunManager;
 }
 

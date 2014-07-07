@@ -307,7 +307,9 @@ bool MCEventAction::GzipSimFile()
     string Cmd = "gzip ";
     Cmd += m_OutFileName;
     Cmd += " &";
-    system(Cmd.c_str());
+    if (system(Cmd.c_str()) != 0) {
+      merr<<"Error: Something went wrong during zipping!"<<show;
+    }
     // The system call always returns 0
   }
 

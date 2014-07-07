@@ -212,8 +212,11 @@ double LorentzAsymGausArm(double* x, double* par)
 double DoubleLorentzAsymGausArm(double* x, double* par)
 {
   double Ret = par[0];
-  Ret += fabs(par[3])/(par[2]*par[2]+(x[0]-par[1])*(x[0]-par[1]));
-  Ret += fabs(par[5])/(par[4]*par[4]+(x[0]-par[1])*(x[0]-par[1]));
+  //Ret += fabs(par[3])/(par[2]*par[2]+(x[0]-par[1])*(x[0]-par[1]));
+  //Ret += fabs(par[5])/(par[4]*par[4]+(x[0]-par[1])*(x[0]-par[1]));
+
+  Ret += fabs(par[3]) * (par[2]*par[2])/(par[2]*par[2]+(x[0]-par[1])*(x[0]-par[1]));
+  Ret += fabs(par[5]) * (par[4]*par[4])/(par[4]*par[4]+(x[0]-par[1])*(x[0]-par[1]));
 
   double arg = 0;
   if (x[0] - par[1] >= 0) {

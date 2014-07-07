@@ -43,6 +43,7 @@ using namespace std;
 #include "TH3.h"
 #include "TVirtualFitter.h"
 #include "TFitResult.h"
+#include "Math/MinimizerOptions.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -1045,6 +1046,9 @@ void MInterfaceMimrec::ARMGamma()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  double ConfidenceLevel = 0.9; // 90%
+  MString ConfidenceLevelString = "90%";
+  
   int NEvents = 0;
   double Value = 0;
   int NAverages = 0;
@@ -1131,6 +1135,7 @@ void MInterfaceMimrec::ARMGamma()
   int CentralBin = Hist->FindBin(0);
   double All = Hist->Integral(1, NBins);
   double Content = 0.0;
+  double SigmaGuess = 1.0;
   for (int b = 0; b + CentralBin <= Hist->GetNbinsX(); ++b) {
     if (b == 0) {
       Content += Hist->GetBinContent(CentralBin);
@@ -1138,19 +1143,20 @@ void MInterfaceMimrec::ARMGamma()
       Content += Hist->GetBinContent(CentralBin + b) + Hist->GetBinContent(CentralBin - b);
     }
     if (Sigma0Found == false && Content >= Sigma0*All) {
-      mout<<100*Sigma0<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      //mout<<100*Sigma0<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma0Found = true;
     }
     if (Sigma1Found == false && Content >= Sigma1*All) {
-      mout<<100*Sigma1<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      //mout<<100*Sigma1<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      SigmaGuess = Hist->GetBinCenter(CentralBin + b);
       Sigma1Found = true;
     }
     if (Sigma2Found == false && Content >= Sigma2*All) {
-      mout<<100*Sigma2<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      //mout<<100*Sigma2<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma2Found = true;
     }
     if (Sigma3Found == false && Content >= Sigma3*All) {
-      mout<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      //mout<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma3Found = true;
     }
     
@@ -1169,6 +1175,7 @@ void MInterfaceMimrec::ARMGamma()
   Canvas->Update();
 
   TF1* Fit = 0;
+  ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
   Fit = new TF1("DoubleLorentzAsymGausArm", DoubleLorentzAsymGausArm, 
                 -Disk*0.99, Disk*0.99, 9);
   Fit->SetBit(kCanDelete);
@@ -1176,43 +1183,183 @@ void MInterfaceMimrec::ARMGamma()
                    "Lorentz Width 1", "Lorentz Height 1",
                    "Lorentz Width 2", "Lorentz Height 2",
                    "Gaus Height", "Gaus Sigma 1", "Gaus Sigma 2");
-  Fit->SetParameters(0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
-  //Fit->SetParLimits(2, 0.5*BinWidth, 1000*Disk);
-  //Fit->SetParLimits(4, 0.5*BinWidth, 1000*Disk);
-  //Fit->SetParLimits(7, 0.5*BinWidth, 1000*Disk);
-  //Fit->SetParLimits(8, 0.5*BinWidth, 1000*Disk);
-  Fit->SetParLimits(1, -Disk*0.99, Disk*0.99);
+  Fit->SetParameters(0, 1, SigmaGuess, 0.5*Hist->GetMaximum(), SigmaGuess, 0.5*Hist->GetMaximum(), 1, SigmaGuess, SigmaGuess);
   Fit->FixParameter(0, 0);
+  Fit->SetParLimits(1, -180, +180);
+  Fit->SetParLimits(2, 0.5*BinWidth, 180);
+  Fit->SetParLimits(3, 0, 2*Hist->GetMaximum());
+  Fit->SetParLimits(4, 0.5*BinWidth, 180);
+  Fit->SetParLimits(5, 0, 2*Hist->GetMaximum());
+  Fit->SetParLimits(6, 0, 2*Hist->GetMaximum());
+  Fit->SetParLimits(7, 0.5*SigmaGuess, 180);
+  Fit->SetParLimits(8, 0.5*SigmaGuess, 180);
   
   Canvas->cd();
   TFitResultPtr FitResult;
   TH1D* Confidence = 0;
   if (Fit != 0) {
-    FitResult = Hist->Fit(Fit, "RQI SE");
+    cout<<endl<<endl;
+    FitResult = Hist->Fit(Fit, "RIMQ SE");
     if (FitResult->IsValid() == true) {
       Confidence = new TH1D(*Hist);
       Confidence->SetName("ConfidenceHistogramARM");
       Confidence->SetTitle("Confidence Histogram ARM");
-      Confidence->SetLineColor(kBlue-9);
-      Confidence->SetFillColor(kBlue-9);
-      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence);
-      Hist->SetTitle("ARM (Compton cone) with confidence intervals");
+      Confidence->SetLineColor(kAzure+10);
+      Confidence->SetFillColor(kAzure+10);
+      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence, ConfidenceLevel);
+      Hist->SetTitle(MString("ARM (Compton cone) with ") + ConfidenceLevelString + MString(" confidence intervals"));
     }
   }
   Hist->Draw("HIST");
   if (Fit != 0) {
+    Fit->SetLineColor(kBlue+2);
     if (FitResult->IsValid() == true) {
       Confidence->Draw("E5 SAME");
-    } else {
-      Fit->Draw("SAME");      
     }
+    Fit->Draw("SAME");      
   }
   Hist->Draw("HIST SAME");
   Canvas->Modified();
   Canvas->Update();
   
+  // Calculate FWHM and its uncertainty using the confidence intervals
+  double FWHM = GetFWHM(Fit, -180, 180);
+  double MinFWHM = -1;
+  double MaxFWHM = -1;
+  
+  bool FWHMConfidenceGood = false;
+  if (Confidence != 0) {
+    FWHMConfidenceGood = true;
+    
+    // Sub-step a1: Find maximum of upper error curve
+    int MaxBin = 0;
+    double MaxContent = 0;
+    for (int b = 1; b <= Confidence->GetNbinsX(); ++b) {
+      if (Confidence->GetBinContent(b) > MaxContent) {
+        MaxContent = Confidence->GetBinContent(b);
+        MaxBin = b;
+      }
+    }
+    MaxContent = Fit->GetMaximum(); // Use the fit itstself since it is more accurate (and the Confidence is anyway derived from it)
+    
+    // Sub-step a2: Find left half value
+    int LeftBelow = 0;
+    for (int b = MaxBin; b >= 1; --b) { 
+      if (Confidence->GetBinContent(b) + Confidence->GetBinError(b) < 0.5*MaxContent) {
+        LeftBelow = b;
+        break;
+      }
+    }
+    if (LeftBelow == 0) {
+      cout<<"Error: You zoomed in too much into your ARM peak! Use a larger window around the peak!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    if (MaxBin - LeftBelow < 5) {
+      cout<<"Error: You zoomed out too much from your ARM peak or don't have enough bins! Use a smaller window around the peak or more bins!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    // y = m*x+t --> x_LeftFWHM = (0.5*MaxContent - t) / m
+    double x1 = Confidence->GetBinCenter(LeftBelow);
+    double x2 = Confidence->GetBinCenter(LeftBelow+1);
+    double y1 = Confidence->GetBinContent(LeftBelow) + Confidence->GetBinError(LeftBelow);
+    double y2 = Confidence->GetBinContent(LeftBelow+1) + Confidence->GetBinError(LeftBelow+1);
+    double m = (y2-y1) / (x2-x1);
+    double t = y2 - m*x2;
+    double LeftFWHMBoarder = (0.5*MaxContent - t) / m;
+    
+    // Sub-step a3: Find right half value
+    int RightBelow = Confidence->GetNbinsX()+1;
+    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) { 
+      if (Confidence->GetBinContent(b) + Confidence->GetBinError(b) < 0.5*MaxContent) {
+        RightBelow = b;
+        break;
+      }
+    }
+    if (RightBelow == Confidence->GetNbinsX()+1) {
+      cout<<"Error: You zoomed in too much into your ARM peak! Use a larger window around the peak!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    if (RightBelow - MaxBin < 5) {
+      cout<<"Error: You zoomed out too much from your ARM peak or don't have enough bins! Use a smaller window around the peak or more bins!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    // y = m*x+t --> x_LeftFWHM = (0.5*MaxContent - t) / m
+    x1 = Confidence->GetBinCenter(RightBelow-1);
+    x2 = Confidence->GetBinCenter(RightBelow);
+    y1 = Confidence->GetBinContent(RightBelow-1) + Confidence->GetBinError(RightBelow-1);
+    y2 = Confidence->GetBinContent(RightBelow) + Confidence->GetBinError(RightBelow);
+    m = (y2-y1) / (x2-x1);
+    t = y2 - m*x2;
+    double RightFWHMBoarder = (0.5*MaxContent - t) / m;
+    
+    MaxFWHM = RightFWHMBoarder - LeftFWHMBoarder;
+    //cout<<"Boarders: "<<LeftFWHMBoarder<<":"<<RightFWHMBoarder<<endl;
+    
+    
+    // Sub-step b1: Find maximum of lower error curve
+    // --> no need to redo
+    
+    // Sub-step b2: Find left half value
+    LeftBelow = 0;
+    for (int b = MaxBin; b >= 1; --b) { 
+      if (Confidence->GetBinContent(b) - Confidence->GetBinError(b) < 0.5*MaxContent) {
+        LeftBelow = b;
+        break;
+      }
+    }
+    if (LeftBelow == 0) {
+      cout<<"Error: You zoomed in too much into your ARM peak! Use a larger window around the peak!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    if (MaxBin - LeftBelow < 5) {
+      cout<<"Error: You zoomed out too much from your ARM peak or don't have enough bins! Use a smaller window around the peak or more bins!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    // y = m*x+t --> x_LeftFWHM = (0.5*MaxContent - t) / m
+    x1 = Confidence->GetBinCenter(LeftBelow);
+    x2 = Confidence->GetBinCenter(LeftBelow+1);
+    y1 = Confidence->GetBinContent(LeftBelow) - Confidence->GetBinError(LeftBelow);
+    y2 = Confidence->GetBinContent(LeftBelow+1) - Confidence->GetBinError(LeftBelow+1);
+    m = (y2-y1) / (x2-x1);
+    t = y2 - m*x2;
+    LeftFWHMBoarder = (0.5*MaxContent - t) / m;
+    
+    // Sub-step b3: Find right half value
+    RightBelow = Confidence->GetNbinsX()+1;
+    for (int b = MaxBin; b <= Confidence->GetNbinsX(); ++b) { 
+      if (Confidence->GetBinContent(b) - Confidence->GetBinError(b) < 0.5*MaxContent) {
+        RightBelow = b;
+        break;
+      }
+    }
+    if (RightBelow == Confidence->GetNbinsX()+1) {
+      cout<<"Error: You zoomed in too much into your ARM peak! Use a larger window around the peak!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    if (RightBelow - MaxBin < 5) {
+      cout<<"Error: You zoomed out too much from your ARM peak or don't have enough bins! Use a smaller window around the peak or more bins!"<<endl;
+      FWHMConfidenceGood = false;
+    }
+    // y = m*x+t --> x_LeftFWHM = (0.5*MaxContent - t) / m
+    x1 = Confidence->GetBinCenter(RightBelow-1);
+    x2 = Confidence->GetBinCenter(RightBelow);
+    y1 = Confidence->GetBinContent(RightBelow-1) - Confidence->GetBinError(RightBelow-1);
+    y2 = Confidence->GetBinContent(RightBelow) - Confidence->GetBinError(RightBelow);
+    m = (y2-y1) / (x2-x1);
+    t = y2 - m*x2;
+    RightFWHMBoarder = (0.5*MaxContent - t) / m;
+    
+    MinFWHM = RightFWHMBoarder - LeftFWHMBoarder;
+    //cout<<"Boarders: "<<LeftFWHMBoarder<<":"<<RightFWHMBoarder<<endl;
+  }
+  
+  
+  // Dump all the information
+  
   cout<<endl;
-  cout<<"Statistics of ARM histogram and fit: "<<endl;
+  cout<<endl;
+  cout<<"Statistics of ARM histogram and fit"<<endl;
+  cout<<"***********************************"<<endl;
   cout<<endl;
   cout<<"Analyzed Compton and pair events:        "<<NEvents<<endl;
   cout<<"Compton and pair events in histogram:    "<<Inside<<" ("<<((NEvents > 0) ? 100.0*Inside/NEvents : 0.0)<<"%)"<<endl;
@@ -1220,21 +1367,28 @@ void MInterfaceMimrec::ARMGamma()
   cout<<"RMS:                                     "<<Hist->GetRMS()<<" deg"<<endl;
   cout<<endl;
   if (Fit != 0) {
-    cout<<"Total FWHM of fit:                       "<<GetFWHM(Fit, -180, 180)<<" deg";
+    cout<<"Total FWHM of fit (not of data!):        "<<FWHM<<" deg";
+    if (FWHMConfidenceGood == true) {
+      cout<<" ("<<ConfidenceLevelString<<" confidence interval: "<<MinFWHM<<" deg ... "<<MaxFWHM<<" deg)"; 
+    }
     if (FitResult->Parameter(2) < 0.5*BinWidth || 
-        FitResult->Parameter(2) < 0.5*BinWidth || 
-        FitResult->Parameter(2) < 0.5*BinWidth || 
-        FitResult->Parameter(2) < 0.5*BinWidth) {
+        FitResult->Parameter(4) < 0.5*BinWidth || 
+        FitResult->Parameter(7) < 0.5*BinWidth || 
+        FitResult->Parameter(8) < 0.5*BinWidth) {
       cout<<" --- WARNING: One of the widths is smaller than one bin --- fit result my be inaccurate!"<<endl;
     } else {
       cout<<endl;
     }
-    cout<<"Maximum of fit (x position):             "<<FitResult->Parameter(1)<<" ["<<FitResult->LowerError(1)+FitResult->Parameter(1)<<"..."<<FitResult->UpperError(1)+FitResult->Parameter(1)<<"] deg with maximum "<<Fit->Eval(FitResult->Parameter(1))<<" cts"<<endl;
+    cout<<"Maximum of fit (x position):             "<<FitResult->Parameter(1)<<" deg";
+    if (FitResult->IsValid() == true) {
+      cout<<" (1-sigma uncertainty: "<<FitResult->LowerError(1)+FitResult->Parameter(1)<<" deg ... "<<FitResult->UpperError(1)+FitResult->Parameter(1)<<" deg)";
+    }
+    cout<<" with maximum "<<Fit->Eval(FitResult->Parameter(1))<<" cts"<<endl;
 
     if (FitResult->IsValid() == false) {
       cout<<endl;
-      cout<<"The fit to the data was not successful!"<<endl;
-      cout<<"Try again with a different window or different bin size or more statistics."<<endl;
+      cout<<"The fit to the data or the subsequent error calculation was not successful!"<<endl;
+      cout<<"Try again with a different range (min/max x-values) or different bin size or more statistics."<<endl;
     }
   }
   cout<<endl;

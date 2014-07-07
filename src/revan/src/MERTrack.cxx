@@ -223,6 +223,10 @@ bool MERTrack::Analyze(MRawEventList* REList)
         ++NHits;
       }
     }
+    //if (NHits > 50) {
+    //  mout<<"Too many hits for tracking: "<<NHits<<endl;
+    //  return true;
+    //}
     if (NHits >= 2) {
       StartTracking = true;
       break;
