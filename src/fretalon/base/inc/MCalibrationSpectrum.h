@@ -73,6 +73,8 @@ class MCalibrationSpectrum : public MCalibration
   //! Return true if we have a model
   bool HasModel() const { if (m_Model != 0) return true; else return false; }
   
+  //! Return the data as parsable string - this function is just here to satisfy the compiler...
+  virtual MString ToParsableString(bool WithDescriptor = false) { return ToParsableString("pak", WithDescriptor); }
   //! Return the data as parsable string
   virtual MString ToParsableString(const MString& Mode, bool WithDescriptor = false);
 
