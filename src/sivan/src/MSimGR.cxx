@@ -28,6 +28,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MDDetector.h"
+#include "MStreams.h"
 
 #ifdef ___CINT___
 ClassImp(MSimGR)
@@ -37,23 +38,35 @@ ClassImp(MSimGR)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSimGR::MSimGR()
+MSimGR::MSimGR(MDGeometryQuest* Geo)
 {
   // standard constructor
 
   m_DetectorType = MDDetector::c_NoDetectorType;
   m_Position = g_VectorNotDefined;
   m_Energy = 0;
+  m_VolumeSequence = 0;
+  m_Geometry = Geo;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Energy) : 
-  m_DetectorType(DetectorType), m_Position(Position), m_Energy(Energy)
+MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Energy, MDGeometryQuest* Geo) : 
+  m_DetectorType(DetectorType), m_Position(Position), m_Energy(Energy), m_Geometry(Geo)
 {
   // extended constructor
+  
+  if (m_Geometry != 0) {
+    m_VolumeSequence = m_Geometry->GetVolumeSequencePointer(m_Position, true, true);
+    if (m_VolumeSequence->GetDetector() == 0) {
+      mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding detector volume!"<<endl;
+    }
+    if (m_VolumeSequence->GetSensitiveVolume() == 0) {
+      mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding sensitive volume!"<<endl;
+    }
+  }
 }
 
 
@@ -63,6 +76,8 @@ MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Ene
 MSimGR::~MSimGR()
 {
   // standard destructor
+  
+  delete m_VolumeSequence;
 }
 
 
@@ -84,6 +99,8 @@ bool MSimGR::AddRawInput(MString LineBuffer, const int Version)
     }
   }
 
+  if (Noise(true) == false) return false;
+  
   return true;
 }
 
@@ -127,6 +144,79 @@ MString MSimGR::ToSimString(const int WhatToStore, const int ScientificPrecision
   S<<endl;
 
   return S.str().c_str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimGR::Noise(bool RecalculateVolumeSequence) 
+{ 
+  // Recalculate the volume sequence:
+
+  // Make sure we noise not twice:
+  m_Energy = m_OriginalEnergy;
+
+  //cout<<"Before: "<<m_Energy;
+  if (m_Geometry != 0) {
+    if (RecalculateVolumeSequence == true) {
+      delete m_VolumeSequence;
+      m_VolumeSequence = m_Geometry->GetVolumeSequencePointer(m_Position, true, true);
+      if (m_VolumeSequence->GetDetector() == 0) {
+        mout<<"This guard ring hit at "<<m_Position<<" has no corresponding detector volume!"<<endl;
+        mout<<"  --> It will not show up in the later analysis!"<<endl;
+        return false;
+      }
+      if (m_VolumeSequence->GetSensitiveVolume() == 0) {
+        mout<<"This guard ring hit at "<<m_Position<<" has no corresponding sensitive volume!"<<endl;
+        mout<<"  --> It will not show up in the later analysis!"<<endl;
+        return false;
+      }
+    }
+    if (m_Geometry->GetActivateNoising() == true) {
+      if (m_VolumeSequence->GetDetector()->NoiseGuardring(m_Energy) == false) {
+        merr<<"Error: Unable to noise guard ring energy!"<<show;
+      }
+
+      if (m_Energy <= 0.0) return false; // Below trigger threshold of guard ring
+    }    
+  }
+  //cout<<"After "<<m_Energy<<endl;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSimGR::SetVolumeSequence(MDVolumeSequence* VolumeSequence)
+{
+  // Set the volume, inside which this hit lies
+
+  delete m_VolumeSequence;
+  m_VolumeSequence = VolumeSequence;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDVolumeSequence* MSimGR::GetVolumeSequence()
+{
+  // Return the volume, in which this hit lies, or zero
+
+  if (m_VolumeSequence == 0 && m_Geometry != 0) {
+    m_VolumeSequence = m_Geometry->GetVolumeSequencePointer(m_Position, true, true);
+    if (m_VolumeSequence->GetDetector() == 0) {
+      mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding detector volume!"<<endl;
+    }
+    if (m_VolumeSequence->GetSensitiveVolume() == 0) {
+      mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding sensitive volume!"<<endl;
+    }
+  }
+  
+  return m_VolumeSequence;
 }
 
 

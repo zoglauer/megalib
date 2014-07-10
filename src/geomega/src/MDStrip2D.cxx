@@ -257,7 +257,7 @@ bool MDStrip2D::IsAboveGuardringTriggerThreshold(const double& Energy) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDStrip2D::NoiseGuardringEnergy(double& Energy) const
+bool MDStrip2D::NoiseGuardring(double& Energy) const
 {  
   if (m_GuardringEnergyResolutionType == c_GuardringEnergyResolutionTypeNone) {
     Energy = 0; 
@@ -372,7 +372,7 @@ MDGridPoint MDStrip2D::GetGridPoint(const MVector& PosInDetector) const
   Pos.SetX(Pos.X() - xWafer*(2*m_StructuralSize.X()+m_StructuralPitch.X()));
   Pos.SetY(Pos.Y() - yWafer*(2*m_StructuralSize.Y()+m_StructuralPitch.Y()));
   Pos -= m_StructuralSize;
-
+  
   // Ignore the hit if it is out side the sensitive part (guard ring?):
   if (fabs(Pos.X()) > m_WidthX/2.0 - m_OffsetX || 
       fabs(Pos.Y()) > m_WidthY/2.0 - m_OffsetY) {

@@ -162,7 +162,7 @@ class MSimHT
 
   //! Pointer to the geometry description
   MDGeometryQuest* m_Geometry;     
-  //! Volume history of theis hit
+  //! Volume history of this hit
   MDVolumeSequence* m_VolumeSequence;       
 
   //! Pointer to a cluster this hit eventually belongs to

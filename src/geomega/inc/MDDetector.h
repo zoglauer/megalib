@@ -198,10 +198,16 @@ class MDDetector
                                               MDVolume* Volume) = 0;
 
   virtual bool IsAboveTriggerThreshold(const double& Energy, const MDGridPoint& Point) const;
+  
+  //! Noise a normal hit
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const = 0;
+  
+  //! Noise a guard ring hit - if the detector has a guard ring
+  virtual bool NoiseGuardring(double&) const { return false; }
+  
   virtual bool AreNear(const MVector& Pos1, const MVector& dPos1, 
-                         const MVector& Pos2, const MVector& dPos2, 
-                         const double Sigma, const int Level) const;
+                       const MVector& Pos2, const MVector& dPos2, 
+                       const double Sigma, const int Level) const;
   virtual double ApplyPulseShape(const double Time, const double Energy) const;
 
   //! Block some channels from triggering

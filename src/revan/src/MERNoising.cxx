@@ -145,13 +145,13 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       double Energy = GR->GetEnergy();
       MDVolumeSequence* V = GR->GetVolumeSequence();
       if (V->GetDetector()->GetType() == MDDetector::c_Voxel3D) {
-        dynamic_cast<MDVoxel3D*>(V->GetDetector())->NoiseGuardringEnergy(Energy);
+        dynamic_cast<MDVoxel3D*>(V->GetDetector())->NoiseGuardring(Energy);
         GR->SetEnergyResolution(dynamic_cast<MDVoxel3D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
       } else if (V->GetDetector()->GetType() == MDDetector::c_Strip2D ||
                  V->GetDetector()->GetType() == MDDetector::c_Strip3D ||
                  V->GetDetector()->GetType() == MDDetector::c_Strip3DDirectional ||
                  V->GetDetector()->GetType() == MDDetector::c_DriftChamber) {
-        dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardringEnergy(Energy);
+        dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardring(Energy);
         GR->SetEnergyResolution(dynamic_cast<MDStrip2D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
       } else {
         merr<<"Detector "<<V->GetDetector()->GetName()<<" has no guard ring ?? !!"<<endl;

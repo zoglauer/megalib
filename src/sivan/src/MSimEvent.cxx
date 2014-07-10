@@ -399,12 +399,12 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
   }
   // Add deposited energy in guard ring:
   else if (LineBuffer[0] == 'G' && LineBuffer[1] == 'R') {
-    MSimGR* GR = new MSimGR();
+    MSimGR* GR = new MSimGR(m_Geometry);
     if (GR->AddRawInput(LineBuffer, Version) == true) {
       m_GRs.push_back(GR);
     } else {
-      mout<<"Error during scanning of sim file in token GR:"<<endl;
-      mout<<"  "<<LineBuffer<<endl;
+      //mout<<"Error during scanning of sim file in token GR:"<<endl;
+      //mout<<"  "<<LineBuffer<<endl;
       Ret = false;
       delete GR;
     }
@@ -2815,7 +2815,8 @@ bool MSimEvent::Discretize(int Detector)
         } else if (Point.GetType() == MDGridPoint::c_Guardring) {
           MSimGR* GR = new MSimGR((*Iter).first,
                                   Grid.GetWorldPositionGridPointAt(p),
-                                  Point.GetEnergy());
+                                  Point.GetEnergy(),
+                                  m_Geometry);
           if (GR->GetDetectorType() == MDDetector::c_NoDetectorType) {
             merr<<"Event "<<m_NEvent<<": Something went badly wrong: The new guard hit has no detector! Ignoring it right now"<<endl;
             delete GR;

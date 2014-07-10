@@ -51,7 +51,7 @@ ClassImp(MSimHT)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSimHT::MSimHT(MDGeometryQuest *Geo)
+MSimHT::MSimHT(MDGeometryQuest* Geo)
 {
   // standard constructor
 

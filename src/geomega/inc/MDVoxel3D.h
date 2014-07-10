@@ -41,7 +41,7 @@ class MDVoxel3D : public MDDetector
   virtual bool CopyDataToNamedDetectors();
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
-  virtual bool NoiseGuardringEnergy(double& Energy) const;
+  virtual bool NoiseGuardring(double& Energy) const;
   virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
                                          const double& Energy, 
                                          const double& Time, 

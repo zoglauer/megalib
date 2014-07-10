@@ -271,7 +271,7 @@ bool MDVoxel3D::IsAboveGuardringTriggerThreshold(const double& Energy) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVoxel3D::NoiseGuardringEnergy(double& Energy) const
+bool MDVoxel3D::NoiseGuardring(double& Energy) const
 {
   Energy = gRandom->Gaus(Energy, GetGuardringEnergyResolution(Energy));
   if (Energy < gRandom->Gaus(m_GuardringTriggerThreshold, m_GuardringTriggerThresholdSigma)) {
