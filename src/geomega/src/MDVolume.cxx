@@ -534,7 +534,7 @@ void MDVolume::SetDetector(MDDetector* Detector)
 {
   // Set the detector, this volume belongs to
 
-  //cout<<m_Name<<" with detector: "<<Detector->GetName()<<endl;
+  //cout<<m_Name<<" with detector: "<<(Detector != 0 ? Detector->GetName() : "none")<<endl;
 
   m_Detector = Detector;
 }
@@ -549,14 +549,13 @@ void MDVolume::SetIsDetectorVolume(MDDetector* Detector)
 
   m_IsDetectorVolume = true;
 
-  //cout<<"I ("<<m_Name<<") am a detector volume"<<endl;
+  // cout<<"I ("<<m_Name<<") am a detector volume"<<endl;
 
   // Set this volume as detector volume of this and of all (with exceptions) daughter volumes
   SetDetectorVolume(this, Detector);
 
   // Do the same for all clones:
-  unsigned int d;
-  for (d = 0; d < GetNClones(); d++) {
+  for (unsigned int d = 0; d < GetNClones(); d++) {
     GetCloneAt(d)->SetIsDetectorVolume(Detector);
   }
 }
@@ -570,7 +569,7 @@ void MDVolume::SetDetectorVolume(MDVolume* Volume, MDDetector* Detector)
   // If this volume represents a detector or is part a a detector,
   // "Volume" is the volume of the detector 
   
-  //cout<<"Setting det.vol. "<<Volume->GetName()<<" for "<<GetName()<<" with detector: "<<Detector->GetName()<<endl;
+  // cout<<"Setting det.vol. "<<Volume->GetName()<<" for "<<GetName()<<" with detector: "<<Detector->GetName()<<endl;
   
   m_DetectorVolume = Volume;
   m_Detector = Detector;
@@ -2099,7 +2098,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
 {
   // Fills the volume sequence pointer 
   // Return true if we are inside this volume
-  // Behaviour is not defined if we are inside "MANY" volumes
+  // Behaviour is not defined if we are inside "MANY" volumes --- but which are anyway no longer supported...
 
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
@@ -2138,13 +2137,15 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
     //mout<<"GetVSequence: Not inside any of the daughters"<<endl;
     if (m_IsSensitive == true && Sequence->GetSensitiveVolume() == 0) {
       //mout<<"GetVSequence: Adding sensitive volume: "<<m_Name<<endl;
-      Sequence->Reset();
+      Sequence->Reset(); // <-----
       Sequence->SetSensitiveVolume(this);
       Sequence->SetPositionInSensitiveVolume(Pos);
-      Sequence->SetDetectorVolume(this);
-      Sequence->SetPositionInDetector(Pos);
-      //cout<<m_Name<<": Setting detector: "<<GetDetector()->GetName()<<endl;
       Sequence->SetDetector(GetDetector());
+      if (GetDetector()->GetDetectorVolume() == this) { // Otherwise, we set it later on our way back up...
+        Sequence->SetDetectorVolume(this);
+        Sequence->SetPositionInDetector(Pos);
+      }
+      //cout<<m_Name<<": Setting detector: "<<GetDetector()->GetName()<<endl;
     }
   }
 
@@ -2163,7 +2164,7 @@ bool MDVolume::GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence)
   Sequence->AddVolumeFront(this);
   Sequence->AddPositionFront(Pos);
   
-  // If this is the world volume, we set the detector again, to get the named detector right
+  // If this is the world volume, we set the detector again, to get the named detectors right
   //cout<<"Check resetting of detector: "<<endl;
   if (Sequence->GetDetector() != 0 && Sequence->GetDetector()->HasNamedDetectors() == true) {
     MDDetector* D = Sequence->GetDetector()->FindNamedDetector(*Sequence);

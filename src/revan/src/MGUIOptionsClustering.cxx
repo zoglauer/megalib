@@ -138,7 +138,7 @@ void MGUIOptionsClustering::Create()
     AddFrame(m_AdjacentLevel, EntryLayout);
     m_AdjacentSigma = 
       new MGUIEEntry(this,
-                     "Position sigma for non voxelized dimension in cm (-1: ignore)    ",
+                     "Position sigma for non voxelized dimension (i.e. depth) in sigmas (-1: ignore)    ",
                      false,
                      m_Data->GetAdjacentSigma(), true, -10.0);
     AddFrame(m_AdjacentSigma, EntryLayout);

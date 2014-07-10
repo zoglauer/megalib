@@ -1279,7 +1279,7 @@ void MDDetector::SetDetectorVolume(MDVolume* Volume)
   // Set the volume which represents this detector
 
   m_DetectorVolume = Volume;
-  // Volume->SetIsDetectorVolume(this);
+  Volume->SetIsDetectorVolume(this); // Was commented out during named detectors introduction
 }
 
 
@@ -1691,6 +1691,7 @@ MString MDDetector::ToString() const
     out<<"Named detector (named after: "<<m_NamedAfter->m_Name<<") \"";
   }
   out<<m_Name<<"\" of type "<<GetDetectorTypeName(m_Type)<<endl;
+  out<<"   with detector volume: "<<m_DetectorVolume->GetName()<<endl;  
   out<<"   with sensitive volumes: ";  
   for (unsigned int i = 0; i < m_SVs.size(); i++) {
     out<<m_SVs[i]->GetName()<<" ";
