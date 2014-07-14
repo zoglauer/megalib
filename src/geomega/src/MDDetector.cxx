@@ -1661,20 +1661,24 @@ MVector MDDetector::GetGlobalPosition(const MVector& PositionInDetector, const M
 
   MVector Position = g_VectorNotDefined;
   
-  bool Found = false;
-  for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
-    if (m_NamedDetectors[d]->m_Name == NamedDetector) {
-      Position = m_NamedDetectors[d]->m_VolumeSequence.GetPositionInFirstVolume(PositionInDetector, m_NamedDetectors[d]->m_VolumeSequence.GetSensitiveVolume());
-      Found = true;
-    }
-  } 
+  if (m_IsNamedDetector == true) {
+    Position = m_VolumeSequence.GetPositionInFirstVolume(PositionInDetector, m_VolumeSequence.GetSensitiveVolume());
+  } else {
+    bool Found = false;
+    for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+      if (m_NamedDetectors[d]->m_Name == NamedDetector) {
+        Position = m_NamedDetectors[d]->m_VolumeSequence.GetPositionInFirstVolume(PositionInDetector, m_NamedDetectors[d]->m_VolumeSequence.GetSensitiveVolume());
+        Found = true;
+      }
+    } 
 
-  if (Found == false) {
-    mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
-    mout<<"Named detector not found: "<<NamedDetector<<endl;
+    if (Found == false) {
+      mout<<"   ***  Error  ***  in detector "<<m_Name<<endl;
+      mout<<"Named detector not found: "<<NamedDetector<<endl;
+    }
   }
 
-   return Position;
+  return Position;
 }
 
 
