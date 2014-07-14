@@ -208,6 +208,7 @@ rmdir root
 
 
 echo "Configuring..."
+export LD_LIBRARY_PATH=""
 sh configure ${CONFIGUREOPTIONS}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring ROOT!"

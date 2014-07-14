@@ -80,15 +80,11 @@ fi
 # Part 3:
 # Upgrade the input options:
 
-# Store command line
-CMD=""
-while [[ $# -gt 0 ]] ; do
-    CMD="${CMD} $1"
-    shift
-done
+# Store command line as array
+CMD=( "$@" )
 
 # Check for help
-for C in ${CMD}; do
+for C in "${CMD[@]}"; do
   if [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -122,7 +118,7 @@ UPDATES="off"
 
 
 # Prelude - Find an old configuration
-for C in ${CMD}; do
+for C in "${CMD[@]}"; do
   if [[ ${C} == *-m*=* ]]; then
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   fi
@@ -135,7 +131,7 @@ if [ "${MEGALIBPATH}" == "" ]; then
   fi
 fi
 
-if [ -f ${MEGALIBPATH}/config/SetupOptions.txt ]; then
+if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
   echo "Loading old options as default"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
   CMD="${OLDCMD} ${CMD}"
@@ -143,7 +139,7 @@ fi
 
 
 # Overwrite default options with user options:
-for C in ${CMD}; do
+for C in "${CMD[@]}"; do
   if [[ ${C} == *-m*=* ]]; then
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-rep*=* ]]; then
@@ -189,12 +185,42 @@ UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
 
 # Provide feed back and perform error checks:
 
+HERE=$(pwd)
+if [[ "${HERE}" != "${HERE% *}" ]]; then
+  echo "ERROR: The installation directory needs to be a path without spaces,"
+  echo "       but you chose: \"${HERE}\""
+  exit 1
+fi
+
+if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
+  echo "ERROR: MEGAlib needs to be installed in a path without spaces,"
+  echo "       but you chose: \"${MEGALIBPATH}\""
+  exit 1
+fi
 echo " * Using this path to MEGAlib: ${MEGALIBPATH}"
+
+if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
+  echo "ERROR: The external software needs to be installed in a path without spaces,"
+  echo "       but you chose: \"${EXTERNALPATH}\""
+  exit 1
+fi
 echo " * Using this path to install ROOT and Geant4: ${EXTERNALPATH}"
+
+if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
+  echo "ERROR: ROOT needs to be installed in a path without spaces,"
+  echo "       but you chose: \"${ROOTPATH}\""
+  exit 1
+fi
 if [ "${ROOTPATH}" == "" ]; then
   echo " * Download latest compatible version of ROOT"
 else 
   echo " * Using the installation of ROOT: ${ROOTPATH}"
+fi
+
+if [[ "${GEANT4PATH}" != "${GEANT4PATH% *}" ]]; then
+  echo "ERROR: Geant4 needs to be installed in a path without spaces,"
+  echo "       but you chose: \"${GEANT4PATH}\""
+  exit 1
 fi
 if [ "${GEANT4PATH}" == "" ]; then
   echo " * Download latest compatible version of Geant4"

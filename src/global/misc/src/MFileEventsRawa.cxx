@@ -28,8 +28,7 @@
 
 // Standard libs:
 #include <iostream>
-using std::cout;
-using std::endl;
+using namespace std;
 
 // ROOT libs:
 
@@ -96,7 +95,7 @@ bool MFileEventsRawa::LoadNextEvent()
 
   // Parse the dammed file:
   MString Line;
-  while(!m_File.eof()) {
+  while (m_File.good() == true) {
     Line.ReadLine(m_File);
 
     if (Line[0] == 'S' && Line[1] == 'E') {

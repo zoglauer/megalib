@@ -113,7 +113,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
     double EndObservationTime = 0.0;
 
     MString Line;
-    while(!m_File.eof()) {
+    while (m_File.good() == true) {
       if (++Lines >= MaxLines) break;
       Line.ReadLine(m_File);
       
@@ -192,7 +192,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
       MFile::Rewind();
     }
     Line.ReadLine(m_File); // Ignore the first line
-    while(!m_File.eof()) {
+    while (m_File.good() == true) {
       Line.ReadLine(m_File);
       if (Line.Length() < 2) continue;
 
@@ -645,7 +645,7 @@ int MFileEvents::GetNEvents(bool Count)
 
   if (Count == false) {
     MString Line;
-    while (m_File.eof() == false) {
+    while (m_File.good() == true) {
       Line.ReadLine(m_File);
       if (Line.Length() < 2) continue;
 
@@ -676,7 +676,7 @@ int MFileEvents::GetNEvents(bool Count)
     Rewind();
 
     MString Line;
-    while (m_File.eof() == false) {
+    while (m_File.good() == true) {
       Line.ReadLine(m_File);
       if (Line[0] == 'S' && Line[1] == 'E') {
         Id++;
@@ -704,8 +704,10 @@ int MFileEvents::GetNEvents(bool Count)
       return 0;
     }
   }
+  
+  m_File.clear();
   m_File.seekg(Current, ios_base::beg);
-
+  
   return Id;
 }
 

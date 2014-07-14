@@ -162,14 +162,14 @@ bool MGUIPosition::OnApply()
     if (!input.eof()) {
       mgui<<"Incorrectly formated input: z"<<error;
       return false;
-      }
+    }
     
     V.SetXYZ(x, y, z);
   } else {
     V.SetXYZ(m_Position->GetAsDouble(0),
              m_Position->GetAsDouble(1), 
              m_Position->GetAsDouble(2));
-    }
+  }
   
   m_Data->SetPosition(V);
 

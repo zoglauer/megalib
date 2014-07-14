@@ -131,7 +131,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
     // Find some initial keyword:
     MString Line;
     unsigned int MaxAdvanceRead = 100;
-    while(!m_File.eof()) {
+    while (m_File.good() == true) {
       if (MaxAdvanceRead-- == 0) break;
       Line.ReadLine(m_File);
       
@@ -166,9 +166,9 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
         MFile::Rewind();
       }
 
-     MString Line;
-     Line.ReadLine(m_File); // Ignore the first line
-      while(!m_File.eof()) {
+      MString Line;
+      Line.ReadLine(m_File); // Ignore the first line
+      while (m_File.good() == true) {
         Line.ReadLine(m_File);
       
         // In case the job crashed badly we might have no TS, thus use the last ID
@@ -234,7 +234,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
   }
 
   MString Line;
-  while(!m_File.eof()) {
+  while (m_File.good() == true) {
     Line.ReadLine(m_File);
     if (Line.Length() < 2) continue;
 

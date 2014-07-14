@@ -225,6 +225,7 @@ cd geant4.${VER}-build
 
 
 echo "Configuring ..."
+export LD_LIBRARY_PATH=""
 cmake ${CONFIGUREOPTIONS} ../geant4.${VER}-source
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) Geant4!"

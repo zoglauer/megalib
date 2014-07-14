@@ -482,8 +482,9 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
 
     if (DelayedRead == true) {
       string Line;
-      while (!S.eof()) {
+      while (S.good() == true) {
         getline(S, Line);
+        if (Line.size() < 2) continue;
         if ((Line[0] == 'S' && Line[1] == 'E') || (Line[0] == 'E' && Line[1] == 'N') || (Line[0] == 'N' && Line[1] == 'F')) {
           return true;
         }

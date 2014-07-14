@@ -1173,7 +1173,7 @@ void MInterfaceSivan::RetrieveCosima()
   double zDirGamma = 0;
 
   // Search SE - the first IA after SE is the one wanted:
-  while (FileCpp.eof() == false) {
+  while (FileCpp.good() == true) {
     //cout<<"Searching...!"<<endl;
     if (FileCpp.getline(LineBuffer, LineLength, '\n')) {
       //cout<<LineBuffer<<endl;

@@ -111,7 +111,7 @@ bool MPointSourceSelector::Open(MString FileName, unsigned int)
 
   // Now read the rest:
   MString Line;
-  while(!m_File.eof()) {
+  while (m_File.good() == true) {
     Line.ReadLine(m_File);
     if (Line.Length() < 2) continue;
 
@@ -165,7 +165,7 @@ bool MPointSourceSelector::TokenizeLine(MTokenizer& T)
     return false;
   }
 
-  if (m_File.eof() == true) return false;
+  if (m_File.good() == false) return false;
 
   MString Line;
   Line.ReadLine(m_File);

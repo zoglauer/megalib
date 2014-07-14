@@ -122,7 +122,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   // Stage one: Find out what kind of file we have
   
   MString Line;
-  while(!m_File.eof()) {
+  while (m_File.good() == true) {
     
     if (++Lines >= MaxLines) break;
     Line.ReadLine(m_File);
@@ -234,7 +234,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
     MFile::Rewind();
   }
   Line.ReadLine(m_File); // Ignore the first line
-  while(!m_File.eof()) {
+  while (m_File.good() == true) {
     Line.ReadLine(m_File);
     if (Line.Length() < 2) continue;
     
@@ -325,7 +325,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS)
   }
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
-  while (!m_File.eof()) {
+  while (m_File.good() == true) {
     Line.ReadLine(m_File);
     if (Line.Length() < 2) continue;
     //mout<<Line<<endl;
@@ -403,7 +403,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS)
       }
     }
     
-  } // End of while(!m_File.eof())
+  } // End of while(m_File.good() == true)
   
   // Done reading.  No more new events.
   if (ROS.GetNumberOfReadOuts() == 0) {
