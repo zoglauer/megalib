@@ -199,15 +199,10 @@ void MDGeometry::Reset()
     }
     m_GeoView = 0;
   }
-  mout<<"Memory leak..."<<endl;
-  /*
-  delete m_Geometry;
-  m_Geometry = 0;
-  */
-  m_Geometry = new TGeoManager("Give it a good name", "MissingName");
 
-  // gGeometry points to m_Geometry...
-  gGeometry = 0;
+  // Create a new geometry
+  delete m_Geometry;
+  m_Geometry = new TGeoManager("Give it a good name", "MissingName");
 
   delete m_System;
   m_System = new MDSystem("NoName");
@@ -984,6 +979,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
       m_Name = Tokenizer.GetTokenAt(1);
+      m_Geometry->SetNameTitle(m_Name, "A Geomega geometry"); 
       continue;
     }
 
@@ -3917,7 +3913,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
   m_Geometry->CloseGeometry();
   m_Geometry->SetMultiThread(true);
   m_Geometry->SetVisLevel(1000);
-  m_Geometry->SetNsegments(10*m_Geometry->GetNsegments());
+  m_Geometry->SetNsegments(2*m_Geometry->GetNsegments());
   m_Geometry->SetVisDensity(-1.0);
   if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogle");
 
