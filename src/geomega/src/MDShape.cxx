@@ -63,8 +63,9 @@ const double MDShape::c_NoIntersection = -947957.243756;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShape::MDShape()
+MDShape::MDShape(const MString& Name)
 {
+  m_Name = Name;
   m_Geo = 0;
 }
 
@@ -76,7 +77,7 @@ MDShape::~MDShape()
 {
   // default destructor
 
-  delete m_Geo;
+  // delete m_Geo; // Root will delete this!
 }
 
 
@@ -237,6 +238,45 @@ MVector MDShape::GetRandomPositionInside()
   return R;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDShape::Scale(const double Scale)
+{
+  // Scale this shape by a factor of Scale
+
+  m_Scaler = Scale;
+  Validate();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShape::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  merr<<"Error: The shape base class for shape "<<m_Type<<" cannot do any parsing..."<<endl; 
+  return false;
+}
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDShape* MDShape::GetSubShape(unsigned int i)
+{
+  // Return a specific subshape - if there are no subshapes or if i is out of bound return 0
+
+  if (i < m_SubShapes.size()) {
+    return m_SubShapes[i];
+  }
+  
+  return 0;
+}
+  
 
 // MDShape.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

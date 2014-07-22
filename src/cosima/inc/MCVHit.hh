@@ -27,8 +27,7 @@
 #include <vector>
 #include <set>
 #include <string>
-using std::vector;
-using std::string;
+using namespace std;
 
 // Geant4:
 #include "globals.hh"

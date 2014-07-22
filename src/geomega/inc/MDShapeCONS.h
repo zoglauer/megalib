@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TCONS.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,14 +30,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a cone shape
 class MDShapeCONS : public MDShape
 {
   // public interface:
  public:
-  MDShapeCONS();
+  //! Standard constructor
+  MDShapeCONS(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeCONS();
 
-  bool Initialize(double HalfHeight, double RminBottom, double RmaxBottom, double RminTop, double RmaxTop, double PhiMin, double PhiMax);
+  //! Set the all parameters of the shape
+  bool Set(double HalfHeight, double RminBottom, double RmaxBottom, double RminTop, double RmaxTop, double PhiMin, double PhiMax);
+
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
 
   TShape* GetShape();
   void CreateShape();
@@ -83,8 +92,6 @@ class MDShapeCONS : public MDShape
 
   // private members:
  private:
-  TCONS* m_CONS;
-
   double m_HalfHeight;
   double m_RminBottom;
   double m_RmaxBottom;

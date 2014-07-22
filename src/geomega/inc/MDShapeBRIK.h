@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TBRIK.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,28 +30,39 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a box shape
 class MDShapeBRIK : public MDShape
 {
   // public interface:
  public:
-  MDShapeBRIK();
+  //! Default constructor
+  MDShapeBRIK(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeBRIK();
 
-  bool Initialize(double x, double y, double z);
+  //! Set the shape data
+  bool Set(double x, double y, double z);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   virtual bool IsInside(const MVector& Pos, const double Tolerance = 0, const bool PreferOutside = false);
 
   MString ToString();
+  MString GetGeomega() const;
+
+  // Old Geant3/MGGPOD interface
   MString GetGeant3DIM(MString ShortName);
   MString GetGeant3DATA(MString ShortName);
   MString GetGeant3ShapeName();
   int GetGeant3NumberOfParameters();
   MString GetMGeantDATA(MString ShortName);
-  MString GetGeomega() const;
+
 
   double GetSizeX();
   double GetSizeY();
@@ -69,8 +79,6 @@ class MDShapeBRIK : public MDShape
   //! Return a random position withn this volume
   virtual MVector GetRandomPositionInside(); 
 
-	virtual vector<MVector> CreateSurfacePattern(const unsigned int Detail = 0) const;
-
   // protected methods:
  protected:
 
@@ -86,8 +94,6 @@ class MDShapeBRIK : public MDShape
 
   // private members:
  private:
-  TBRIK *m_BRIK;
-
   double m_Dx;
   double m_Dy;
   double m_Dz;

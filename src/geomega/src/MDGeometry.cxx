@@ -47,8 +47,9 @@ using namespace std;
 #include <TMath.h>
 
 // MEGAlib libs:
-#include "MAssert.h"
 #include "MGlobal.h"
+#include "MAssert.h"
+#include "MStreams.h"
 #include "MFile.h"
 #include "MTokenizer.h"
 #include "MDShape.h"
@@ -63,7 +64,9 @@ using namespace std;
 #include "MDShapeGTRA.h"
 #include "MDShapePCON.h"
 #include "MDShapePGON.h"
-#include "MStreams.h"
+#include "MDShapeSubtraction.h"
+#include "MDShapeUnion.h"
+#include "MDShapeIntersection.h"
 #include "MDCalorimeter.h"
 #include "MDStrip2D.h"
 #include "MDStrip3D.h"
@@ -118,6 +121,8 @@ MDGeometry::MDGeometry()
 
   m_TriggerUnit = new MDTriggerUnit(this);
   m_System = new MDSystem("NoName");
+  
+  m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
 }
 
 
@@ -155,6 +160,7 @@ void MDGeometry::Reset()
     delete m_DetectorList[i];
   }
   m_DetectorList.clear();
+  
   m_NDetectorTypes.clear();
   m_NDetectorTypes.resize(MDDetector::c_MaxDetector+1);
 
@@ -163,6 +169,16 @@ void MDGeometry::Reset()
   }
   m_TriggerList.clear();
 
+  for (unsigned int i = 0; i < m_ShapeList.size(); ++i) {
+    delete m_ShapeList[i];
+  }
+  m_ShapeList.clear();
+
+  for (unsigned int i = 0; i < m_OrientationList.size(); ++i) {
+    delete m_OrientationList[i];
+  }
+  m_OrientationList.clear();
+  
   for (unsigned int i = 0; i < m_VectorList.size(); ++i) {
     delete m_VectorList[i];
   }
@@ -182,9 +198,14 @@ void MDGeometry::Reset()
       delete m_GeoView;
     }
     m_GeoView = 0;
-  } 
+  }
+  mout<<"Memory leak..."<<endl;
+  /*
   delete m_Geometry;
   m_Geometry = 0;
+  */
+  m_Geometry = new TGeoManager("Give it a good name", "MissingName");
+
   // gGeometry points to m_Geometry...
   gGeometry = 0;
 
@@ -276,6 +297,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   MDTrigger* T = 0;
   MDSystem* S = 0;
   MDVector* Vector = 0;
+  MDShape* Shape = 0;
+  MDOrientation* Orientation = 0;
 
   // For scaling some volumes:
   map<MDVolume*, double> ScaledVolumes;
@@ -493,6 +516,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       Init == "MDDriftChamber" ||
       Init == "AngerCamera" ||
       Init == "MDAngerCamera" ||
+      Init == "Simple" ||
       Init == "Scintillator" ||
       Init == "ACS" ||
       Init == "MDACS" ||
@@ -930,6 +954,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     // - Trigger
     // - System
     // - Vector
+    // - Shape
+    // - Orientation
 
     // Volume (Most frequent, so start with this one)
     if (Tokenizer.IsTokenAt(0, "Volume") == true) {
@@ -1115,6 +1141,47 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                                  CreateShortName(Tokenizer.GetTokenAt(1), 19, false, true)));
       continue;
     }
+    
+    // Shape
+    else if (Tokenizer.IsTokenAt(0, "Shape") == true) {
+      if (Tokenizer.GetNTokens() != 3) {
+        Typo("Line must contain three strings, e.g. \"Shape BOX RedBox\"");
+        return false;
+      }
+      if (m_DoSanityChecks == true) {
+        if (ValidName(Tokenizer.GetTokenAt(2)) == false) {
+          return false;
+        }
+        if (NameExists(Tokenizer.GetTokenAt(2)) == true) {
+          return false;
+        }
+      }
+             
+      AddShape(Tokenizer.GetTokenAt(1), Tokenizer.GetTokenAt(2));
+      
+      continue;
+    }
+        
+    
+    // Orientation
+    else if (Tokenizer.IsTokenAt(0, "Orientation") == true) {
+      if (Tokenizer.GetNTokens() != 2) {
+        Typo("Line must contain two strings, e.g. \"Orientation RedBoxOrientation\"");
+        return false;
+      }
+      if (m_DoSanityChecks == true) {
+        if (ValidName(Tokenizer.GetTokenAt(1)) == false) {
+          return false;
+        }
+        if (NameExists(Tokenizer.GetTokenAt(1)) == true) {
+          return false;
+        }
+      }
+             
+      AddOrientation(new MDOrientation(Tokenizer.GetTokenAt(1)));
+      
+      continue;
+    }
         
     // Trigger
     else if (Tokenizer.IsTokenAt(0, "Trigger") == true) {
@@ -1257,6 +1324,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Detectors: ACS
     else if (Tokenizer.IsTokenAt(0, "Scintillator") == true || 
+             Tokenizer.IsTokenAt(0, "Simple") == true ||
              Tokenizer.IsTokenAt(0, "ACS") == true ||
              Tokenizer.IsTokenAt(0, "MDACS") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1413,11 +1481,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
 
-  //
+  
+  
+  ////////////////////////////////////////////////////////////////////////////////////////////
   // Third loop:
   // Fill the volumes, materials with life...
-  // 
-  //
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
@@ -1512,8 +1580,134 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("Unrecognized material option");
         return false;
       }
-    }
+    } // end materials
 
+    
+    
+    // Check for orientations:
+    else if ((Orientation = GetOrientation(Tokenizer.GetTokenAt(0))) != 0) {
+      if (Orientation->Parse(Tokenizer, m_DebugInfo) == false) {
+        Reset();
+        return false;
+      }
+    } // end orientations
+
+    
+    
+    // Check for shapes:
+    else if ((Shape = GetShape(Tokenizer.GetTokenAt(0))) != 0) {
+      if (Shape->GetType() == "Subtraction") {
+        if (Tokenizer.IsTokenAt(1, "Parameters") == true) {
+          if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
+            Typo("The shape subtraction needs 4-5 parameters");
+            return false;
+          }
+          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(2)); 
+          MDShape* Subtrahend = GetShape(Tokenizer.GetTokenAt(3));
+          MDOrientation* Orientation = 0;
+          if (Tokenizer.GetNTokens() == 5) {
+            Orientation = GetOrientation(Tokenizer.GetTokenAt(4));
+            if (Orientation == 0) {
+              Typo("The orientation was not found!");
+              return false;
+            }
+          } else {
+            Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
+            AddOrientation(Orientation);
+          }
+          
+          if (Minuend == 0) {
+            Typo("The minuend shape was not found!");
+            return false;
+          }
+          if (Subtrahend == 0) {
+            Typo("The subtrahend shape was not found!");
+            return false;
+          }
+          
+          if (dynamic_cast<MDShapeSubtraction*>(Shape)->Set(Minuend, Subtrahend, Orientation) == false) {
+            Typo("Unable to parse the shape correctly");
+            return false;
+          }
+        }
+      } else if (Shape->GetType() == "Union") {
+        if (Tokenizer.IsTokenAt(1, "Parameters") == true) {
+          if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
+            Typo("The shape Union needs 4-5 parameters");
+            return false;
+          }
+          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(2)); 
+          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDOrientation* Orientation = 0;
+          if (Tokenizer.GetNTokens() == 5) {
+            Orientation = GetOrientation(Tokenizer.GetTokenAt(4));
+            if (Orientation == 0) {
+              Typo("The orientation was not found!");
+              return false;
+            }
+          } else {
+            Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
+            AddOrientation(Orientation);
+          }
+          
+          if (Augend == 0) {
+            Typo("The augend shape was not found!");
+            return false;
+          }
+          if (Addend == 0) {
+            Typo("The addend shape was not found!");
+            return false;
+          }
+          
+          if (dynamic_cast<MDShapeUnion*>(Shape)->Set(Augend, Addend, Orientation) == false) {
+            Typo("Unable to parse the shape Union correctly");
+            return false;
+          }
+        }
+      } else if (Shape->GetType() == "Intersection") {
+        if (Tokenizer.IsTokenAt(1, "Parameters") == true) {
+          if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
+            Typo("The shape Intersection needs 4-5 parameters");
+            return false;
+          }
+          MDShape* Left = GetShape(Tokenizer.GetTokenAt(2)); 
+          MDShape* Right = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDOrientation* Orientation = 0;
+          if (Tokenizer.GetNTokens() == 5) {
+            Orientation = GetOrientation(Tokenizer.GetTokenAt(4));
+            if (Orientation == 0) {
+              Typo("The orientation was not found!");
+              return false;
+            }
+          } else {
+            Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
+            AddOrientation(Orientation);
+          }
+          
+          if (Left == 0) {
+            Typo("The left shape was not found!");
+            return false;
+          }
+          if (Right == 0) {
+            Typo("The right shape was not found!");
+            return false;
+          }
+          
+          if (dynamic_cast<MDShapeIntersection*>(Shape)->Set(Left, Right, Orientation) == false) {
+            Typo("Unable to parse the shape Intersection correctly");
+            return false;
+          }
+        }
+      } else {
+        if (Shape->Parse(Tokenizer, m_DebugInfo) == false) {
+          Reset();
+          return false;
+        }
+      }
+    } // end shapes
+    
+    
+    
     // Check for triggers:
     else if ((T = GetTrigger(Tokenizer.GetTokenAt(0))) != 0) {
       if (Tokenizer.IsTokenAt(1, "PositiveDetectorType") == true) {
@@ -1681,356 +1875,236 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         V->SetMaterial(M);
       } else if (Tokenizer.IsTokenAt(1, "Shape") == true) {
-        if (Tokenizer.IsTokenAt(2, "BRIK", true) == true || 
-            Tokenizer.IsTokenAt(2, "BOX", true) == true) {
-          if (Tokenizer.GetNTokens() != 6) {
-            Typo("Line must contain three strings and 3 doubles,"
-                 " e.g. \"Wafer.Shape BRIK 3.0 3.0 0.025\" (BOX == BRIK)");
-            return false;
-          }
-
-          MDShapeBRIK* BRIK = new MDShapeBRIK();
-          if (BRIK->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4), 
-                               Tokenizer.GetTokenAtAsDouble(5)) == false) {
-            Typo("Shape of BRIK not ok");
+        if (Tokenizer.GetNTokens() < 3) {
+          Typo("Not enough input parameters for this shape!");
+          return false;          
+        }
+        MString ShapeID = Tokenizer.GetTokenAtAsString(2);
+        ShapeID.ToLowerInPlace();
+        
+        if (ShapeID.AreIdentical("brik") == true || ShapeID.AreIdentical("box") == true) {
+          MDShapeBRIK* BRIK = new MDShapeBRIK(V->GetName() + "_Shape");
+          if (BRIK->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(BRIK);
+          AddShape(BRIK);
 
-        } else if (Tokenizer.IsTokenAt(2, "PCON", true) == true) {
-          if (Tokenizer.GetNTokens() < 12) {
-            Typo("Line must contain at least three strings and 9 doubles,"
-                 " e.g. \"Ge.Shape PCON  0.0 360.0  2    0.0  24.369  118.73    0.0  24.369  118.73\"");
-            return false;
-          }
-
-          unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(5);
-          if (Tokenizer.GetNTokens() != 6+3*n) {
-            Typo("This PCON must contain 6+3*n elements!");
-            return false;
-          }
-
-          MDShapePCON* PCON = new MDShapePCON();
-          if (PCON->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4), 
-                               Tokenizer.GetTokenAtAsInt(5)) == false) {
-            Typo("Shape of PCON not ok");
+        } else if (ShapeID.AreIdentical("pcon") == true) {
+          MDShapePCON* PCON = new MDShapePCON(V->GetName() + "_Shape");
+          if (PCON->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           } 
           V->SetShape(PCON);
+          AddShape(PCON);
 
-
-
-          // Check for ordering:
-          bool Increasing = true;
-          bool Ordered = false;
-          for (unsigned int i = 0; i < n-1; ++i) {
-            if (Tokenizer.GetTokenAtAsDouble(6+3*(i+1)) > Tokenizer.GetTokenAtAsDouble(6+3*i)) {
-              if (Ordered == true) {
-                if (Increasing == false) {
-                  Typo("z of shape PCON needs to be ordered");
-                  return false;                          
-                }
-              } else {
-                Ordered = true;
-                Increasing = true;
-              }
-            } else if (Tokenizer.GetTokenAtAsDouble(6+3*(i+1)) < Tokenizer.GetTokenAtAsDouble(6+3*i)){
-              if (Ordered == true) {
-                if (Increasing == true) {
-                  Typo("z of shape PCON needs to be ordered");
-                  return false;                          
-                }
-              } else {
-                Ordered = true;
-                Increasing = false;
-              }
-            }
-          }
-
-          //           // Make sure we start with the smallest z
-          //           double zmin = numeric_limits<double>::max();
-          //           for (int i = 0; i < n; ++i) {
-          //             if (Tokenizer.GetTokenAtAsDouble(6+3*i) > zmin) {
-          //               zmin = Tokenizer.GetTokenAtAsDouble(6+3*i);
-          //             }
-          //           }
-
-          unsigned int j = 0;
-          for (unsigned int i = 0; i < n; ++i) {
-            if (Increasing == false) {
-              j = n-i-1;
-            } else {
-              j = i;
-            }
-
-            double z = Tokenizer.GetTokenAtAsDouble(6+3*j);
-            double rmin = Tokenizer.GetTokenAtAsDouble(7+3*j);
-            double rmax = Tokenizer.GetTokenAtAsDouble(8+3*j);
-            //             if (i > 0) {
-            //               if (z < Tokenizer.GetTokenAtAsDouble(6+3*(j-1))) {
-            //                 Typo("z of shape PCON needs to be in increasing order");
-            //                 return false;                          
-            //               }
-            //             }
-
-            if (PCON->AddSection(i, z, rmin, rmax) == false) {
-              Typo("Shape of PCON not ok");
-              return false;
-            }
-          }
-        } else if (Tokenizer.IsTokenAt(2, "PGON", true) == true) {
-          if (Tokenizer.GetNTokens() < 13) {
-            Typo("Line must contain at least three strings and 10 doubles,"
-                 " e.g. \"Ge.Shape PGON  0.0 360.0  4 2    0.0  24.369  118.73    0.0  24.369  118.73\"");
-            return false;
-          }
-
-          unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(6);
-          if (Tokenizer.GetNTokens() != 7+3*n) {
-            Typo("This PGON must contain 6+3*n elements!");
-            return false;
-          }
-
-          MDShapePGON* PGON = new MDShapePGON();
-          if (PGON->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4), 
-                               Tokenizer.GetTokenAtAsInt(5), 
-                               Tokenizer.GetTokenAtAsInt(6)) == false) {
-            Typo("Shape of PGON not ok");
+        } else if (ShapeID.AreIdentical("pgon") == true) {
+          MDShapePGON* PGON = new MDShapePGON(V->GetName() + "_Shape");
+          if (PGON->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           } 
           V->SetShape(PGON);
-
-
-
-          // Check for ordering:
-          bool Increasing = true;
-          bool Ordered = false;
-          for (unsigned int i = 0; i < n-1; ++i) {
-            if (Tokenizer.GetTokenAtAsDouble(7+3*(i+1)) > Tokenizer.GetTokenAtAsDouble(7+3*i)) {
-              if (Ordered == true) {
-                if (Increasing == false) {
-                  Typo("z of shape PGON needs to be ordered");
-                  return false;                          
-                }
-              } else {
-                Ordered = true;
-                Increasing = true;
-              }
-            } else if (Tokenizer.GetTokenAtAsDouble(7+3*(i+1)) < Tokenizer.GetTokenAtAsDouble(7+3*i)){
-              if (Ordered == true) {
-                if (Increasing == true) {
-                  Typo("z of shape PGON needs to be ordered");
-                  return false;                          
-                }
-              } else {
-                Ordered = true;
-                Increasing = false;
-              }
-            }
-          }
-
-          unsigned int j = 0;
-          for (unsigned int i = 0; i < n; ++i) {
-            if (Increasing == false) {
-              j = n-i-1;
-            } else {
-              j = i;
-            }
-
-            double z = Tokenizer.GetTokenAtAsDouble(7+3*j);
-            double rmin = Tokenizer.GetTokenAtAsDouble(8+3*j);
-            double rmax = Tokenizer.GetTokenAtAsDouble(9+3*j);
-
-            if (PGON->AddSection(i, z, rmin, rmax) == false) {
-              Typo("Shape of PGON not ok");
-              return false;
-            }
-          }
+          AddShape(PGON);
         } 
+        
         // Sphere:
-        else if (Tokenizer.IsTokenAt(2, "SPHE", true) == true || Tokenizer.IsTokenAt(2, "SPHERE", true) == true) {
-          if (Tokenizer.GetNTokens() != 9) {
-            Typo("Line must contain three strings and 6 doubles: rmin, rmax, thetamin, thetamax, phimin, phimax"
-                 " e.g. \"UpperVeto.Shape SPHE 40.0 42.0 0.0 90.0 0.0 360.0\"");
-            return false;
-          }
-
-          MDShapeSPHE* SPHE = new MDShapeSPHE();
-          if (SPHE->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7),
-                               Tokenizer.GetTokenAtAsDouble(8)) == false) {
-            Typo("Shape of SPHE not ok");
+        else if (ShapeID.AreIdentical("sphe") == true || ShapeID.AreIdentical("sphere") == true) {
+          MDShapeSPHE* SPHE = new MDShapeSPHE(V->GetName() + "_Shape");
+          if (SPHE->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(SPHE);
-
+          AddShape(SPHE);
         } 
+        
         // Cylinder:
-        else if (Tokenizer.IsTokenAt(2, "TUBS", true) == true || Tokenizer.IsTokenAt(2, "TUBE", true) == true) {
-          if (Tokenizer.GetNTokens() != 8) {
-            Typo("Line must contain three strings and 5 doubles: rmin, rmax, half height, phi1, phi2"
-                 " e.g. \"Plate.Shape TUBS 0.0 42.0 5.0 0.0 360.0\"");
-            return false;
-          }
-
-          MDShapeTUBS* TUBS = new MDShapeTUBS();
-          if (TUBS->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7)) == false) {
-            Typo("Shape of TUBS not ok");
+        else if (ShapeID.AreIdentical("tubs") == true || ShapeID.AreIdentical("tube") == true) {
+          MDShapeTUBS* TUBS = new MDShapeTUBS(V->GetName() + "_Shape");
+          if (TUBS->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(TUBS);
-
+          AddShape(TUBS);
         } 
+        
         // Cone:
-        else if (Tokenizer.IsTokenAt(2, "CONE", true) == true) {
-          if (Tokenizer.GetNTokens() != 8) {
-            Typo("Line must contain three strings and 5 doubles: half height, rmin bottom, rmax bottom rmin top, rmax top"
-                 " e.g. \"Plate.Shape CONE 50.0 20.0 0.0 1.0 0.0\"");
-            return false;
-          }
-
-          MDShapeCONE* CONE = new MDShapeCONE();
-          if (CONE->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7)) == false) {
+        else if (ShapeID.AreIdentical("cone") == true) {
+          MDShapeCONE* CONE = new MDShapeCONE(V->GetName() + "_Shape");
+          if (CONE->Parse(Tokenizer, m_DebugInfo) == false) {
             Typo("Shape of CONE not ok");
             return false;
           }
           V->SetShape(CONE);
-
+          AddShape(CONE);
         } 
+        
         // CONS:
-        else if (Tokenizer.IsTokenAt(2, "CONS", true) == true) {
-          if (Tokenizer.GetNTokens() != 10) {
-            Typo("Line must contain three strings and 5 doubles: half height, rmin bottom, rmax bottom rmin top, rmax top, phi min, phi max"
-                 " e.g. \"MyShape.Shape CONS 50.0 20.0 0.0 1.0 0.0 90.0 180.0\"");
-            return false;
-          }
-
-          MDShapeCONS* CONS = new MDShapeCONS();
-          if (CONS->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7),
-                               Tokenizer.GetTokenAtAsDouble(8),
-                               Tokenizer.GetTokenAtAsDouble(9)) == false) {
-            Typo("Shape of CONS not ok");
+        else if (ShapeID.AreIdentical("cons") == true) {
+          MDShapeCONS* CONS = new MDShapeCONS(V->GetName() + "_Shape");
+          if (CONS->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(CONS);
-
+          AddShape(CONS);
         } 
         // General trapezoid:
-        else if (Tokenizer.IsTokenAt(2, "TRAP", true) == true) {
-          if (Tokenizer.GetNTokens() != 14) {
-            Typo("Line must contain three strings and 11 doubles: Dz, Theta, Phi, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2"
-                 " e.g. \"House.Shape TRAP ?\"");
-            return false;
-          }
-
-          MDShapeTRAP* TRAP = new MDShapeTRAP();
-          if (TRAP->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7),
-                               Tokenizer.GetTokenAtAsDouble(8),
-                               Tokenizer.GetTokenAtAsDouble(9),
-                               Tokenizer.GetTokenAtAsDouble(10),
-                               Tokenizer.GetTokenAtAsDouble(11),
-                               Tokenizer.GetTokenAtAsDouble(12),
-                               Tokenizer.GetTokenAtAsDouble(13)) == false) {
-            Typo("Shape of TRAP not ok");
+        else if (ShapeID.AreIdentical("trap") == true) {
+         MDShapeTRAP* TRAP = new MDShapeTRAP(V->GetName() + "_Shape");
+          if (TRAP->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(TRAP);
-
+          AddShape(TRAP);
         }        
         // General twisted trapezoid:
-        else if (Tokenizer.IsTokenAt(2, "GTRA", true) == true) {
-          if (Tokenizer.GetNTokens() != 15) {
-            Typo("Line must contain three strings and 15 doubles: Dz, Theta, Phi, Twist, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2"
-                 " e.g. \"House.Shape GTRA ?\"");
-            return false;
-          }
-
-
-          MDShapeGTRA* GTRA = new MDShapeGTRA();
-          if (GTRA->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7),
-                               Tokenizer.GetTokenAtAsDouble(8),
-                               Tokenizer.GetTokenAtAsDouble(9),
-                               Tokenizer.GetTokenAtAsDouble(10),
-                               Tokenizer.GetTokenAtAsDouble(11),
-                               Tokenizer.GetTokenAtAsDouble(12),
-                               Tokenizer.GetTokenAtAsDouble(13),
-                               Tokenizer.GetTokenAtAsDouble(14)) == false) {
-            Typo("Shape of GTRA not ok");
+        else if (ShapeID.AreIdentical("gtra") == true) {
+          MDShapeGTRA* GTRA = new MDShapeGTRA(V->GetName() + "_Shape");
+          if (GTRA->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(GTRA);
-
+          AddShape(GTRA);
         } 
         // Simple trapezoid
-        else if (Tokenizer.IsTokenAt(2, "TRD1", true) == true) {
-          if (Tokenizer.GetNTokens() != 7) {
-            Typo("Line must contain three strings and 4 doubles: lower x distance, upper x distance, y distance, z distance"
-                 " e.g. \"Triangle.Shape TRD1 10.0 1.0 10.0 10.0\"");
-            return false;
-          }
-
-
-          MDShapeTRD1* TRD1 = new MDShapeTRD1();
-          if (TRD1->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6)) == false) {
-            Typo("Shape of TRD1 not ok");
+        else if (ShapeID.AreIdentical("trd1") == true) {
+          MDShapeTRD1* TRD1 = new MDShapeTRD1(V->GetName() + "_Shape");
+          if (TRD1->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(TRD1);
-
+          AddShape(TRD1);
         }        
         // Simple trapezoid
-        else if (Tokenizer.IsTokenAt(2, "TRD2", true) == true) {
-          if (Tokenizer.GetNTokens() != 8) {
-            Typo("Line must contain three strings and 5 doubles: lower x distance, upper x distance, lower y distance, upper y distance, z distance"
-                 " e.g. \"Triangle.Shape TRD2 10.0 1.0 10.0 1.0 10.0\"");
-            return false;
-          }
-
-
-          MDShapeTRD2* TRD2 = new MDShapeTRD2();
-          if (TRD2->Initialize(Tokenizer.GetTokenAtAsDouble(3),
-                               Tokenizer.GetTokenAtAsDouble(4),
-                               Tokenizer.GetTokenAtAsDouble(5),
-                               Tokenizer.GetTokenAtAsDouble(6),
-                               Tokenizer.GetTokenAtAsDouble(7)) == false) {
-            Typo("Shape of TRD2 not ok");
+        else if (ShapeID.AreIdentical("trd2") == true) {
+          MDShapeTRD2* TRD2 = new MDShapeTRD2(V->GetName() + "_Shape");
+          if (TRD2->Parse(Tokenizer, m_DebugInfo) == false) {
+            Reset();
             return false;
           }
           V->SetShape(TRD2);
+          AddShape(TRD2);
+        } 
+        // Simple union of two shapes
+        else if (ShapeID.AreIdentical("union") == true) {
+          MDShapeUnion* Union = new MDShapeUnion(V->GetName() + "_Shape");
 
-        } else {
-          Typo("Unknown shape found!");
-          return false;
+          if (Tokenizer.GetNTokens() != 6) {
+            Typo("The shape Union needs 6 parameters");
+            return false;
+          }
+          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(4)); 
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
+          
+          if (Augend == 0) {
+            Typo("The augend shape was not found!");
+            return false;
+          }
+          if (Addend == 0) {
+            Typo("The addend shape was not found!");
+            return false;
+          }
+          if (Orientation == 0) {
+            Typo("The orientation was not found!");
+            return false;
+          }
+          
+          if (Union->Set(Augend, Addend, Orientation) == false) {
+            Typo("Unable to parse the shape Union correctly");
+            return false;
+          }
+
+          V->SetShape(Union);
+          AddShape(Union);
+        } 
+        // Subtraction
+        else if (ShapeID.AreIdentical("subtraction") == true) {
+          MDShapeSubtraction* Subtraction = new MDShapeSubtraction(V->GetName() + "_Shape");
+
+          if (Tokenizer.GetNTokens() != 6) {
+            Typo("The shape subtraction needs 6 parameters");
+            return false;
+          }
+          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDShape* Subtrahend = GetShape(Tokenizer.GetTokenAt(4)); 
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
+          
+          if (Minuend == 0) {
+            Typo("The minuend shape was not found!");
+            return false;
+          }
+          if (Subtrahend == 0) {
+            Typo("The subtrahend shape was not found!");
+            return false;
+          }
+          if (Orientation == 0) {
+            Typo("The orientation was not found!");
+            return false;
+          }
+          
+          if (Subtraction->Set(Minuend, Subtrahend, Orientation) == false) {
+            Typo("Unable to parse the shape correctly");
+            return false;
+          }
+
+          V->SetShape(Subtraction);
+          AddShape(Subtraction);
+        } 
+        // Intersection
+        else if (ShapeID.AreIdentical("intersection") == true) {
+          MDShapeIntersection* Intersection = new MDShapeIntersection(V->GetName() + "_Shape");
+
+          if (Tokenizer.GetNTokens() != 6) {
+            Typo("The shape Intersection needs 6 parameters");
+            return false;
+          }
+          MDShape* Left = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDShape* Right = GetShape(Tokenizer.GetTokenAt(4)); 
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
+          
+          if (Left == 0) {
+            Typo("The left shape was not found!");
+            return false;
+          }
+          if (Right == 0) {
+            Typo("The right shape was not found!");
+            return false;
+          }
+          if (Orientation == 0) {
+            Typo("The orientation was not found!");
+            return false;
+          }
+          
+          if (Intersection->Set(Left, Right, Orientation) == false) {
+            Typo("Unable to parse the shape Intersection correctly");
+            return false;
+          }
+
+          V->SetShape(Intersection);
+          AddShape(Intersection);
+        } 
+        
+        // Now check if it is in the list        
+        else {
+          MDShape* Shape = GetShape(Tokenizer.GetTokenAt(2));
+          if (Shape != 0) {
+            V->SetShape(Shape);
+          } else {
+            Typo("Unknown shape found!");
+            return false;
+          }
         }
+        
+        
       } else if (Tokenizer.IsTokenAt(1, "Mother") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain three strings"
@@ -2140,6 +2214,20 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"the keyword CrossSectionFilesDirectory or in \"auxiliary\" as default"<<endl;
         mout<<endl;
         FoundDepreciated = true;
+      } else if (Tokenizer.IsTokenAt(1, "Orientation") == true) {
+        if (Tokenizer.GetNTokens() != 3) {
+          Typo("Line must contain three strings,"
+               " e.g. \"Wafer.Orientation WaferOrientation\"");
+          return false;
+        }
+        Orientation = GetOrientation(Tokenizer.GetTokenAtAsString(2));
+        if (Orientation == 0) {
+          Typo("Cannot find the requested orientation. Did you define it?");
+          return false;
+        }
+        V->SetPosition(Orientation->GetPosition());
+        V->SetRotation(Orientation->GetRotationMatrix());
+        
       } else if (Tokenizer.IsTokenAt(1, "Position") == true) {
         if (Tokenizer.GetNTokens() != 5) {
           Typo("Line must contain two strings and 3 doubles,"
@@ -2193,6 +2281,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     } // end Volume
   } // end third loop...
 
+  
+  
+
+  
+  /////////////////////////////////////////////////////////////////////////////////////
   // Fourth loop:
   // Fill the detector not before everything else is done!
 
@@ -3116,6 +3209,25 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     Reset();
     return false;
   }
+  
+  
+  // Validate the orientations
+  for (unsigned int s = 0; s < GetNOrientations(); ++s) {
+    if (m_OrientationList[s]->Validate() == false) {
+      Reset();
+      return false;
+    }
+  }
+  
+  
+  // Validate the shapes (attention: some shapes are valuated multiple times internally)...
+  for (unsigned int s = 0; s < GetNShapes(); ++s) {
+    if (m_ShapeList[s]->Validate() == false) {
+      Reset();
+      return false;
+    }
+  }
+  
 
   // Set a possible default color for all volumes:
   if (m_DefaultColor >= 0) {
@@ -3602,8 +3714,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   return true;
 }
-
-
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -3799,21 +3911,15 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
     Canvas->cd();
   }
 
-  if (m_Geometry == 0) {
-    m_Geometry = new TGeometry();
-  }
-  m_Geometry->cd();
-  // gGeometry now points to m_Geometry...
+  //if (m_Geometry != 0) delete m_Geometry;
 
-  m_WorldVolume->DeleteNodes();
-  m_WorldVolume->CreateNodes();
-
-  m_Geometry->Draw();
-  //m_Geometry->Draw("x3d");
-  //if (Canvas == 0) { 
-  //  m_GeoView->GetViewer3D("x3d");
-  //} 
-  //m_Geometry->Update();
+  m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
+  m_Geometry->CloseGeometry();
+  m_Geometry->SetMultiThread(true);
+  m_Geometry->SetVisLevel(1000);
+  m_Geometry->SetNsegments(10*m_Geometry->GetNsegments());
+  m_Geometry->SetVisDensity(-1.0);
+  if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogle");
 
   if (Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<"s"<<endl;
@@ -5034,6 +5140,197 @@ unsigned int MDGeometry::GetNDetectors()
   // Return the number of volumes in the list
 
   return m_DetectorList.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometry::AddShape(const MString& Type, const MString& Name)
+{
+  // Add a shape to the list
+
+  MString S = Type;
+  S.ToLowerInPlace();
+  
+  if (S == "box" || S == "brik") {
+    AddShape(new MDShapeBRIK(Name));
+  } else if (S == "sphe" || S == "sphere") {
+    AddShape(new MDShapeSPHE(Name));    
+  } else if (S == "cone") {
+    AddShape(new MDShapeCONE(Name));    
+  } else if (S == "cons") {
+    AddShape(new MDShapeCONS(Name));    
+  } else if (S == "pcon") {
+    AddShape(new MDShapePCON(Name));    
+  } else if (S == "pgon") {
+    AddShape(new MDShapePGON(Name));    
+  } else if (S == "tubs" || S == "tube") {
+    AddShape(new MDShapeTUBS(Name));    
+  } else if (S == "trap") {
+    AddShape(new MDShapeTRAP(Name));    
+  } else if (S == "trd1") {
+    AddShape(new MDShapeTRD1(Name));    
+  } else if (S == "trd2") {
+    AddShape(new MDShapeTRD2(Name));    
+  } else if (S == "gtra") {
+    AddShape(new MDShapeGTRA(Name));    
+  } else if (S == "subtraction") {
+    AddShape(new MDShapeSubtraction(Name));    
+  } else if (S == "union") {
+    AddShape(new MDShapeUnion(Name));    
+  } else if (S == "intersection") {
+    AddShape(new MDShapeIntersection(Name));    
+  } else {
+    Typo("Line does not contain a known shape type!");
+    return false;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometry::AddShape(MDShape* Shape)
+{
+  // Add a shape to the list
+
+  m_ShapeList.push_back(Shape);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDShape* MDGeometry::GetShapeAt(unsigned int i)
+{
+  // return the shape at position i in the list. Counting starts with zero!
+
+  if (i < GetNShapes()) {
+    return m_ShapeList[i];
+  } else {
+    merr<<"Index ("<<i<<") out of bounds (0, "<<GetNShapes()-1<<")"<<endl;
+    return 0;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDShape* MDGeometry::GetShape(const MString& Name)
+{
+  // Return the shape with name Name or 0 if it does not exist
+
+  for (unsigned int i = 0; i < GetNShapes(); i++) {
+    if (Name == m_ShapeList[i]->GetName()) {
+      return m_ShapeList[i];
+    }
+  }
+  
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MDGeometry::GetShapeIndex(const MString& Name)
+{
+  // Return the index of the shape with name Name or g_UnsignedIntNotDefined if it does not exist
+
+  unsigned int i, i_max = GetNShapes();
+  for (i = 0; i < i_max; i++) {
+    if (Name == m_ShapeList[i]->GetName()) {
+      return i;
+    }
+  }
+
+  return g_UnsignedIntNotDefined;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MDGeometry::GetNShapes()
+{
+  // Return the number of shapes in the list
+
+  return m_ShapeList.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDGeometry::AddOrientation(MDOrientation* Orientation)
+{
+  // Add an orientation to the list
+
+  m_OrientationList.push_back(Orientation);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDOrientation* MDGeometry::GetOrientationAt(unsigned int i)
+{
+  // return the orientation at position i in the list. Counting starts with zero!
+
+  if (i < GetNOrientations()) {
+    return m_OrientationList[i];
+  } else {
+    merr<<"Index ("<<i<<") out of bounds (0, "<<GetNOrientations()-1<<")"<<endl;
+    return 0;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDOrientation* MDGeometry::GetOrientation(const MString& Name)
+{
+  // Return the orientation with name Name or 0 if it does not exist
+
+  for (unsigned int i = 0; i < GetNOrientations(); i++) {
+    if (Name == m_OrientationList[i]->GetName()) {
+      return m_OrientationList[i];
+    }
+  }
+  
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MDGeometry::GetOrientationIndex(const MString& Name)
+{
+  // Return the index of the orientation with name Name or g_UnsignedIntNotDefined if it does not exist
+
+  unsigned int i, i_max = GetNOrientations();
+  for (i = 0; i < i_max; i++) {
+    if (Name == m_OrientationList[i]->GetName()) {
+      return i;
+    }
+  }
+
+  return g_UnsignedIntNotDefined;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MDGeometry::GetNOrientations()
+{
+  // Return the number of orientations in the list
+
+  return m_OrientationList.size();
 }
 
 

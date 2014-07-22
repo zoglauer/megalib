@@ -58,6 +58,14 @@ Constant SizeCalorimeterHousingFront   0.1
 
 Constant SeparationCalorimeterSideL1L2 0.5  
 
+# Visibility
+Constant CalorimeterDetails 0
+Constant CalorimeterDetectorMaterial 0
+Constant TrackerDetails 0
+Constant TrackerDetectorMaterial 1
+
+
+
 # Resulting Constants
 Constant SizeTrackerXY { SizeLayerXY +  2*SizeTrackerMountingZ}
 Constant SizeTrackerZ { SizeLayerZ + 2*SizeTrackerMountingZ}
@@ -153,13 +161,13 @@ SCbody.Mother WorldVolume
 
 Volume BottomCalorimeterCrystal
 BottomCalorimeterCrystal.Material LaBr3
-BottomCalorimeterCrystal.Visibility 1
+BottomCalorimeterCrystal.Visibility CalorimeterDetectorMaterial
 BottomCalorimeterCrystal.Color 3
 BottomCalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsB/2.0 }
 
 Volume BottomCalorimeterWrapper
 BottomCalorimeterWrapper.Material Millipore
-BottomCalorimeterWrapper.Visibility 1
+BottomCalorimeterWrapper.Visibility 0
 BottomCalorimeterWrapper.Color 3
 BottomCalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*(SizeCalorimeterCrystalPlusSurroundings)/2.0 } { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsB/2.0 }
 
@@ -172,12 +180,12 @@ Done
 
 Volume BottomCalorimeterElectronics
 BottomCalorimeterElectronics.Material CircuitBoard
-BottomCalorimeterElectronics.Visibility 1
+BottomCalorimeterElectronics.Visibility CalorimeterDetails
 BottomCalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
 
 Volume BottomCalorimeterDiodes
 BottomCalorimeterDiodes.Material SiliconPIN
-BottomCalorimeterDiodes.Visibility 1
+BottomCalorimeterDiodes.Visibility CalorimeterDetails
 BottomCalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
 
 
@@ -236,13 +244,13 @@ Done
 
 Volume SideXL1CalorimeterCrystal
 SideXL1CalorimeterCrystal.Material LaBr3
-SideXL1CalorimeterCrystal.Visibility 1
+SideXL1CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
 SideXL1CalorimeterCrystal.Color 3
 SideXL1CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
 
 Volume SideXL1CalorimeterWrapper
 SideXL1CalorimeterWrapper.Material Millipore
-SideXL1CalorimeterWrapper.Visibility 1
+SideXL1CalorimeterWrapper.Visibility CalorimeterDetails
 SideXL1CalorimeterWrapper.Color 3
 SideXL1CalorimeterWrapper.Shape BRIK { SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalsSideL1/2.0 }
 
@@ -255,12 +263,12 @@ Done
 
 Volume SideXL1CalorimeterElectronics
 SideXL1CalorimeterElectronics.Material CircuitBoard
-SideXL1CalorimeterElectronics.Visibility 1
+SideXL1CalorimeterElectronics.Visibility CalorimeterDetails
 SideXL1CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
 
 Volume SideXL1CalorimeterDiodes
 SideXL1CalorimeterDiodes.Material SiliconPIN
-SideXL1CalorimeterDiodes.Visibility 1
+SideXL1CalorimeterDiodes.Visibility CalorimeterDetails
 SideXL1CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
 
 
@@ -319,13 +327,13 @@ SideXL1CalorimeterPos.Mother WorldVolume
 
 Volume SideXL2CalorimeterCrystal
 SideXL2CalorimeterCrystal.Material LaBr3
-SideXL2CalorimeterCrystal.Visibility 1
+SideXL2CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
 SideXL2CalorimeterCrystal.Color 3
 SideXL2CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
 
 Volume SideXL2CalorimeterWrapper
 SideXL2CalorimeterWrapper.Material Millipore
-SideXL2CalorimeterWrapper.Visibility 1
+SideXL2CalorimeterWrapper.Visibility CalorimeterDetails
 SideXL2CalorimeterWrapper.Color 3
 SideXL2CalorimeterWrapper.Shape BRIK { SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalsSideL2/2.0 }
 
@@ -338,13 +346,13 @@ Done
 
 Volume SideXL2CalorimeterElectronics
 SideXL2CalorimeterElectronics.Material CircuitBoard
-SideXL2CalorimeterElectronics.Visibility 1
+SideXL2CalorimeterElectronics.Visibility CalorimeterDetails
 SideXL2CalorimeterElectronics.Color 3
 SideXL2CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
 
 Volume SideXL2CalorimeterDiodes
 SideXL2CalorimeterDiodes.Material SiliconPIN
-SideXL2CalorimeterDiodes.Visibility 1
+SideXL2CalorimeterDiodes.Visibility CalorimeterDetails
 SideXL2CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
 
 
@@ -405,13 +413,13 @@ SideXL2CalorimeterPos.Mother WorldVolume
 
 Volume SideYL1CalorimeterCrystal
 SideYL1CalorimeterCrystal.Material LaBr3
-SideYL1CalorimeterCrystal.Visibility 1
+SideYL1CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
 SideYL1CalorimeterCrystal.Color 3
 SideYL1CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
 
 Volume SideYL1CalorimeterWrapper
 SideYL1CalorimeterWrapper.Material Millipore
-SideYL1CalorimeterWrapper.Visibility 1
+SideYL1CalorimeterWrapper.Visibility CalorimeterDetails
 SideYL1CalorimeterWrapper.Color 3
 SideYL1CalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
 
@@ -424,12 +432,12 @@ Done
 
 Volume SideYL1CalorimeterElectronics
 SideYL1CalorimeterElectronics.Material CircuitBoard
-SideYL1CalorimeterElectronics.Visibility 1
+SideYL1CalorimeterElectronics.Visibility CalorimeterDetails
 SideYL1CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
 
 Volume SideYL1CalorimeterDiodes
 SideYL1CalorimeterDiodes.Material SiliconPIN
-SideYL1CalorimeterDiodes.Visibility 1
+SideYL1CalorimeterDiodes.Visibility CalorimeterDetails
 SideYL1CalorimeterDiodes.Color 3
 SideYL1CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
 
@@ -438,6 +446,7 @@ SideYL1CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPl
 Volume SideYL1CalorimeterBlock
 SideYL1CalorimeterBlock.Material CarbonCyanateEster
 SideYL1CalorimeterBlock.Visibility 1
+SideYL1CalorimeterBlock.Color 3
 SideYL1CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideYYL1/2.0 }
 
 
@@ -491,13 +500,13 @@ SideYL1CalorimeterPos.Mother WorldVolume
 
 Volume SideYL2CalorimeterCrystal
 SideYL2CalorimeterCrystal.Material LaBr3
-SideYL2CalorimeterCrystal.Visibility 1
+SideYL2CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
 SideYL2CalorimeterCrystal.Color 3
 SideYL2CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
 
 Volume SideYL2CalorimeterWrapper
 SideYL2CalorimeterWrapper.Material Millipore
-SideYL2CalorimeterWrapper.Visibility 1
+SideYL2CalorimeterWrapper.Visibility CalorimeterDetails
 SideYL2CalorimeterWrapper.Color 3
 SideYL2CalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
 
@@ -510,19 +519,19 @@ Done
 
 Volume SideYL2CalorimeterElectronics
 SideYL2CalorimeterElectronics.Material CircuitBoard
-SideYL2CalorimeterElectronics.Visibility 1
+SideYL2CalorimeterElectronics.Visibility CalorimeterDetails
 SideYL2CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
 
 Volume SideYL2CalorimeterDiodes
 SideYL2CalorimeterDiodes.Material SiliconPIN
-SideYL2CalorimeterDiodes.Visibility 1
+SideYL2CalorimeterDiodes.Visibility CalorimeterDetails
 SideYL2CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
 
 
 # Position calorimeter
 Volume SideYL2CalorimeterBlock
 SideYL2CalorimeterBlock.Material CarbonCyanateEster
-SideYL2CalorimeterBlock.Visibility 1
+SideYL2CalorimeterBlock.Visibility CalorimeterDetails
 SideYL2CalorimeterBlock.Color 3
 SideYL2CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideYYL2/2.0 }
 
@@ -583,7 +592,7 @@ SideYL2CalorimeterPos.Mother WorldVolume
 
 Volume SiWafer
 SiWafer.Material Silicon
-SiWafer.Visibility 1
+SiWafer.Visibility TrackerDetectorMaterial
 SiWafer.Color 4
 SiWafer.Shape BRIK { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferZ/2.0 } 
 
@@ -594,7 +603,7 @@ SiWaferSpacer.Shape BRIK { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferXY/2.0 } {
 
 Volume SiElectronicsX
 SiElectronicsX.Material CircuitBoard
-SiElectronicsX.Visibility 1
+SiElectronicsX.Visibility TrackerDetails
 SiElectronicsX.Shape BRIK { SizeTrackerElectronicsX/2.0 } { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY } { SizeTrackerElectronicsZ/2.0 } 
 
 Volume SiElectronicsSpacerX
@@ -604,7 +613,7 @@ SiElectronicsSpacerX.Shape BRIK { SizeTrackerElectronicsX/2.0 } { NWafersXY*(Siz
 
 Volume SiElectronicsY
 SiElectronicsY.Material CircuitBoard
-SiElectronicsY.Visibility 1
+SiElectronicsY.Visibility TrackerDetails
 SiElectronicsY.Shape BRIK { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY } { SizeTrackerElectronicsX/2.0 } { SizeTrackerElectronicsZ/2.0 } 
 
 Volume SiElectronicsSpacerY
@@ -614,19 +623,19 @@ SiElectronicsSpacerY.Shape BRIK { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAr
 
 Volume SiFrame
 SiFrame.Material Peek
-SiFrame.Visibility 1
+SiFrame.Visibility TrackerDetails
 SiFrame.Color 4
 SiFrame.Shape BRIK { SizeLayerXY/2.0 } { SizeLayerXY/2.0 } { SizeTrackerFrameZ/2.0 }
 
 Volume SiFrameBridge
 SiFrameBridge.Material Peek
-SiFrameBridge.Visibility 1
+SiFrameBridge.Visibility TrackerDetails
 SiFrameBridge.Color 4
 SiFrameBridge.Shape BRIK { SizeTrackerElectronicsX/2.0 } { SizeTrackerElectronicsX/2.0 } { WaferDistance/2.0 - SizeTrackerFrameZ/2.0 } 
 
 Volume SiFrameSpacer
 SiFrameSpacer.Material Peek
-SiFrameSpacer.Visibility 1
+SiFrameSpacer.Visibility TrackerDetails
 SiFrameSpacer.Shape BRIK { GapTrackerAroundWafersXY } { GapTrackerAroundWafersXY } { WaferDistance/2.0 - SizeTrackerFrameZ/2.0 } 
 
 Volume SiLayer

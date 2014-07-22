@@ -27,6 +27,7 @@
 
 // MEGAlib:
 #include "MDGeometryQuest.h"
+#include "MDOrientation.h"
 
 // Cosima:
 #include "MCParameterFile.hh"
@@ -79,6 +80,9 @@ protected:
 
   /// Create a Geant4 Rotation from the volume information
   G4RotationMatrix* CreateRotation(MDVolume *Volume);
+
+  /// Create a Geant4 Rotation from the orientation information
+  G4RotationMatrix* CreateRotation(MDOrientation* Orientation);
 
   // protected members:
 protected:

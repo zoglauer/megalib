@@ -48,6 +48,9 @@ LOBJS	= $(LB)/MSettingsGeomega.o \
 	$(LB)/MDShapePGON.o \
 	$(LB)/MDShapeCONE.o \
 	$(LB)/MDShapeCONS.o \
+	$(LB)/MDShapeUnion.o \
+	$(LB)/MDShapeIntersection.o \
+	$(LB)/MDShapeSubtraction.o \
 	$(LB)/MDMaterial.o \
 	$(LB)/MDMaterialComponent.o \
 	$(LB)/MDSystem.o \
@@ -58,6 +61,7 @@ LOBJS	= $(LB)/MSettingsGeomega.o \
 	$(LB)/MDGrid.o \
 	$(LB)/MDGridPoint.o \
 	$(LB)/MDGridPointCollection.o \
+	$(LB)/MDOrientation.o \
 
 
 SGOBJ = $(LB)/libGeomegaGui.$(DLL)

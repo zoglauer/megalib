@@ -48,16 +48,14 @@ ClassImp(MDShapeTRD1)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeTRD1::MDShapeTRD1() : MDShape()
+MDShapeTRD1::MDShapeTRD1(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Ddx1 = 0;
   m_Ddx2 = 0;
   m_Dy = 0;
   m_Dz = 0;
-
-  m_TRD1 = 0;
 
   m_Type = "TRD1";
 }
@@ -68,16 +66,16 @@ MDShapeTRD1::MDShapeTRD1() : MDShape()
 
 MDShapeTRD1::~MDShapeTRD1()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeTRD1::Initialize(double dx1, double dx2, double y, double z)
+bool MDShapeTRD1::Set(double dx1, double dx2, double y, double z)
 {
-  // default constructor
+  // Set all parameters
 
   if (dx1 < 0) {
     mout<<"   ***  Error  ***  in shape TRD1 "<<endl;
@@ -111,6 +109,17 @@ bool MDShapeTRD1::Initialize(double dx1, double dx2, double y, double z)
   m_Dz = z;
 
   m_Type = "TRD1";
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeTRD1::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
 
   return true;
@@ -120,15 +129,31 @@ bool MDShapeTRD1::Initialize(double dx1, double dx2, double y, double z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeTRD1::CreateShape()
-{
-  //
-
-  if (m_TRD1 == 0) {
-    m_TRD1 = new TTRD1("Who", "knows...", "void", m_Ddx1, m_Ddx2, m_Dy, m_Dz);
-    m_TRD1->SetLineColor(m_Color);
-    m_TRD1->SetFillColor(m_Color);
+bool MDShapeTRD1::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset + 4) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset)) == false) {
+        Info.Error("The shape TRD1 has not been defined correctly");
+        return false;
+      } 
+    } else {
+      Info.Error("You have not correctly defined your shape TRD1. It is defined by 4 parameters (lower x distance, upper x distance, y distance, z distance)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape TRD1!");
+    return false;
   }
+ 
+  return true; 
 }
 
  
@@ -172,17 +197,6 @@ double MDShapeTRD1::GetZ() const
   //
 
   return m_Dz;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeTRD1::GetShape()
-{
-  //
-
-  return (TShape *) m_TRD1;
 }
 
 
@@ -305,8 +319,7 @@ void MDShapeTRD1::Scale(const double Factor)
   m_Dy *= Factor;
   m_Dz *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
+  Validate();
 }
 
 

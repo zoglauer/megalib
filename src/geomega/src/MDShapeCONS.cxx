@@ -49,9 +49,9 @@ ClassImp(MDShapeCONS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeCONS::MDShapeCONS() : MDShape()
+MDShapeCONS::MDShapeCONS(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_RminBottom = 0;
   m_RmaxBottom = 0;
@@ -60,8 +60,6 @@ MDShapeCONS::MDShapeCONS() : MDShape()
   m_HalfHeight = 0;
   m_PhiMin = 0;
   m_PhiMax = 0;
-
-  m_CONS = 0;
 
   m_Type = "CONS";
 }
@@ -72,17 +70,17 @@ MDShapeCONS::MDShapeCONS() : MDShape()
 
 MDShapeCONS::~MDShapeCONS()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeCONS::Initialize(double HalfHeight, 
-                             double RminBottom, double RmaxBottom, 
-                             double RminTop, double RmaxTop, 
-                             double PhiMin, double PhiMax) 
+bool MDShapeCONS::Set(double HalfHeight, 
+                      double RminBottom, double RmaxBottom, 
+                      double RminTop, double RmaxTop, 
+                      double PhiMin, double PhiMax) 
 {
   // default constructor
 
@@ -145,7 +143,17 @@ bool MDShapeCONS::Initialize(double HalfHeight,
   m_HalfHeight = HalfHeight;
   m_PhiMin = PhiMin;
   m_PhiMax = PhiMax;
+  
+  return true;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeCONS::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoConeSeg(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop, m_PhiMin, m_PhiMax);
 
   return true;
@@ -155,15 +163,34 @@ bool MDShapeCONS::Initialize(double HalfHeight,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeCONS::CreateShape()
-{
-  //
-
-  if (m_CONS == 0) {
-    m_CONS = new TCONS("Who", "knows...", "void", m_HalfHeight, 
-                       m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop, 
-                       m_PhiMin, m_PhiMax);
+bool MDShapeCONS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset+7) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset),
+              Tokenizer.GetTokenAtAsDouble(6+Offset),
+              Tokenizer.GetTokenAtAsDouble(7+Offset),
+              Tokenizer.GetTokenAtAsDouble(8+Offset)) == false) {
+        Info.Error("The parameters for the shape CONS are not OK.");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape Cons. It is defined by 7 parameters: half height, minimum radius bottom, maximum radius bottom, minimum radius top, maximum radius top, minimum phi angle, maximum phi angle");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape Cons!");
+    return false;
   }
+ 
+  return true; 
 }
 
 
@@ -239,17 +266,6 @@ double MDShapeCONS::GetPhiMax()
   //
 
   return m_PhiMax;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeCONS::GetShape()
-{
-  //
-
-  return (TShape *) m_CONS;
 }
 
 
@@ -375,8 +391,7 @@ void MDShapeCONS::Scale(const double Factor)
   m_RmaxTop *= Factor;
   m_HalfHeight *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoConeSeg(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop, m_PhiMin, m_PhiMax);
+  Validate();
 }
 
 

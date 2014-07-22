@@ -35,6 +35,8 @@
 using namespace std;
 
 // ROOT libs:
+#include "TGeoElement.h"
+#include "TGeoMaterial.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
@@ -84,6 +86,8 @@ MDMaterial::MDMaterial()
   m_CrossSectionFileDirectory = g_StringNotDefined;
 
   m_Hash = 0;
+  
+  m_GeoMedium = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -110,6 +114,8 @@ MDMaterial::MDMaterial(MString Name, MString ShortName, MString MGeantShortName)
   m_CrossSectionFileDirectory = g_StringNotDefined;
 
   m_Hash = 0;
+  
+  m_GeoMedium = 0;
 }
 
 
@@ -961,9 +967,7 @@ bool MDMaterial::Validate()
 //     }
 //   }
 
-  // Extract all information about the components of this material  
-
-
+  
   return true;
 }
 
@@ -1243,6 +1247,31 @@ bool MDMaterial::CopyDataToClones()
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TGeoMedium* MDMaterial::GetRootMedium()
+{
+  //! Return this material as ROOT medium
+  
+  if (m_GeoMedium == 0) {
+    TGeoMixture* Material = new TGeoMixture(m_Name, m_Components.size(), m_Density);
+    for (unsigned int i = 0; i < m_Components.size(); ++i) {
+      MDMaterialComponent* C = m_Components[i];
+      TGeoElement* Element = new TGeoElement("E", "E", C->GetZ(), C->GetA());
+      if (C->GetType() == MDMaterialComponent::c_ByMass) {
+        Material->AddElement(Element, double(C->GetWeight()));
+      } else {
+        Material->AddElement(Element, int(C->GetWeight()));      
+      }
+    }
+    m_GeoMedium = new TGeoMedium(m_Name, m_IDCounter, Material);
+  }
+  
+  return m_GeoMedium;
 }
 
 

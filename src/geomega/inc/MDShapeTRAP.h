@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TTRAP.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,19 +30,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a trapzoid shape
 class MDShapeTRAP : public MDShape
 {
   // public interface:
  public:
-  MDShapeTRAP();
+  //! Standard constructor
+  MDShapeTRAP(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeTRAP();
 
-  bool Initialize(double Dz, double Theta, double Phi, 
-                  double H1, double Bl1, double Tl1, double Alpha1, 
-                  double H2, double Bl2, double Tl2, double Alpha2);
+  //! Set the all parameters of the shape
+  bool Set(double Dz, double Theta, double Phi, 
+           double H1, double Bl1, double Tl1, double Alpha1, 
+           double H2, double Bl2, double Tl2, double Alpha2);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   double GetDz() const;
@@ -89,8 +96,6 @@ class MDShapeTRAP : public MDShape
 
   // private members:
  private:
-  TTRAP *m_TRAP;
-
   double m_Dz;
   double m_Theta;
   double m_Phi;

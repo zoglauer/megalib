@@ -48,15 +48,13 @@ ClassImp(MDShapePCON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapePCON::MDShapePCON() : MDShape()
+MDShapePCON::MDShapePCON(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Phi = 0;
   m_DPhi = 0;
   m_NSections = 0;
-
-  m_PCON = 0;
 
   m_Type = "PCON";
 }
@@ -67,13 +65,13 @@ MDShapePCON::MDShapePCON() : MDShape()
 
 MDShapePCON::~MDShapePCON()
 {
-  // default destructor
+  // Default destructor
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapePCON::Initialize(double Phi, double DPhi, unsigned int NSections)
+bool MDShapePCON::Set(double Phi, double DPhi, unsigned int NSections)
 {
   // Correctly initialize this shape
 
@@ -101,8 +99,6 @@ bool MDShapePCON::Initialize(double Phi, double DPhi, unsigned int NSections)
   m_Z.resize(NSections);
   m_Rmin.resize(NSections);
   m_Rmax.resize(NSections);
-
-  m_Geo = new TGeoPcon(Phi, DPhi, NSections);
 
   return true;
 }
@@ -134,8 +130,22 @@ bool MDShapePCON::AddSection(unsigned int Section, double Z, double Rmin, double
   m_Z[Section] = Z;
   m_Rmin[Section] = Rmin;
   m_Rmax[Section] = Rmax;
+
+  return true;
+}
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapePCON::Validate()
+{
+  delete m_Geo;
+  m_Geo = new TGeoPcon(m_Phi, m_DPhi, m_NSections);
   
-  dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(Section, Z, Rmin, Rmax);
+  for (unsigned int i = 0; i < m_NSections; ++i) {
+    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+  }
 
   return true;
 }
@@ -144,29 +154,82 @@ bool MDShapePCON::AddSection(unsigned int Section, double Z, double Rmin, double
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapePCON::CreateShape()
-{
-  //
-
-  if (m_PCON == 0) {
-    m_PCON = new TPCON("Who", "knows...", "void", m_Phi, m_DPhi, m_NSections);
-    for (unsigned int i = 0; i < m_NSections; ++i) {
-      m_PCON->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+bool MDShapePCON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    
+    if (Tokenizer.GetNTokens() < 2+Offset+3 + 3) {
+      Info.Error("This PGON must contain at least 6 elements!");
+      return false;
     }
-    m_PCON->SetLineColor(m_Color);
-    m_PCON->SetFillColor(m_Color);
+      
+    unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(4+Offset);
+    if (Tokenizer.GetNTokens() != 2+Offset+3 + 3*n) {
+      Info.Error("A PCON must contain 3 + 3*n parameters!");
+      return false;
+    }
+      
+    if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+            Tokenizer.GetTokenAtAsDouble(3+Offset), 
+            Tokenizer.GetTokenAtAsInt(4+Offset)) == false) {
+      Info.Error("The basic parameters for the shape PCON are not OK.");
+      return false;
+    } 
+
+    // Check for ordering:
+    bool Increasing = true;
+    bool Ordered = false;
+    for (unsigned int i = 0; i < n-1; ++i) {
+      if (Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 3*(i+1)) > Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 3*i)) {
+        if (Ordered == true) {
+          if (Increasing == false) {
+            Info.Error("z of shape PCON needs to be ordered");
+            return false;                          
+          }
+        } else {
+          Ordered = true;
+          Increasing = true;
+        }
+      } else if (Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 3*(i+1)) < Tokenizer.GetTokenAtAsDouble(2+Offset+3 + 3*i)){
+        if (Ordered == true) {
+          if (Increasing == true) {
+            Info.Error("z of shape PCON needs to be ordered");
+            return false;                          
+          }
+        } else {
+          Ordered = true;
+          Increasing = false;
+        }
+      }
+    }
+
+    unsigned int j = 0;
+    for (unsigned int i = 0; i < n; ++i) {
+      if (Increasing == false) {
+        j = n-i-1;
+      } else {
+        j = i;
+      }
+
+      double z =    Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 0 + 3*j);
+      double rmin = Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 1 + 3*j);
+      double rmax = Tokenizer.GetTokenAtAsDouble((2+Offset+3) + 2 + 3*j);
+
+      if (AddSection(i, z, rmin, rmax) == false) {
+        Info.Error("The segment parameters for the shape PCON are not OK.");
+        return false;
+      }
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape PCON!");
+    return false;
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapePCON::GetShape()
-{
-  //
-
-  return (TShape *) m_PCON;
+ 
+  return true; 
 }
 
 
@@ -373,15 +436,13 @@ void MDShapePCON::Scale(const double Factor)
 {
   // Scale this shape by Factor
 
-  delete m_Geo;
-  m_Geo = new TGeoPcon(m_Phi, m_DPhi, m_NSections);
-
   for (unsigned int i = 0; i < m_NSections; ++i) {
     m_Rmin[i] *= Factor;
     m_Rmax[i] *= Factor;
     m_Z[i] *= Factor;  
-    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
   }
+  
+  Validate();
 }
 
 

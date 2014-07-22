@@ -24,7 +24,7 @@ DEFINES       = -UHARDWARE
 LD            = g++
 LDFLAGS       = $(OPT) -D___LINUX___
 SOFLAGS       = -shared  
-LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lX3d -lGeom -lSpectrum
+LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum
 GLIBS         = $(ROOTGLIBS) 
 
 LINK          = ln -s -f

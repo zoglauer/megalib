@@ -237,10 +237,11 @@ void MDGeometryQuest::AddHit(MString Name, MVector Position, double Size, int Co
 {
   //
 
-  MDVolume *V = new MDVolume(Name, Name);
-  MDShapeSPHE* SPHE = new MDShapeSPHE(); // Shape is deleted with the volume...
-  SPHE->Initialize(0.0, Size, 0.0, 180.0, 0.0, 360.0);
-  V->SetShape(SPHE);
+  MDVolume* V = new MDVolume(Name, Name);
+  MDShapeSPHE* Sphere = new MDShapeSPHE(Name); // Shape is deleted with the volume...
+  Sphere->Set(0.0, Size, 0.0, 180.0, 0.0, 360.0);
+  Sphere->Validate();
+  V->SetShape(Sphere);
   V->SetPosition(Position);
   V->SetVisibility(1);
   V->SetColor(Color);
@@ -286,8 +287,9 @@ void MDGeometryQuest::RemoveAllHits()
 void MDGeometryQuest::AddLink(MVector PositionA, MVector PositionB, double Size, int Color)
 {
   MDVolume *V = new MDVolume("A Link", "Link");
-  MDShapeTUBS* TUBS = new MDShapeTUBS(); // Shape is deleted with the volume...
-  TUBS->Initialize(0.0, Size, 0.5*(PositionB - PositionA).Mag(), 0.0, 360.0);
+  MDShapeTUBS* TUBS = new MDShapeTUBS("Link"); // Shape is deleted with the volume...
+  TUBS->Set(0.0, Size, 0.5*(PositionB - PositionA).Mag(), 0.0, 360.0);
+  TUBS->Validate();
   V->SetShape(TUBS);
   V->SetPosition(0.5*(PositionA+PositionB));
   V->SetRotation(0.0, (PositionB - PositionA).Theta()*c_Deg, (PositionB - PositionA).Phi()*c_Deg);

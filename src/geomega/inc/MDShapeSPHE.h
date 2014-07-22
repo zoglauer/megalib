@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TSPHE.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,19 +30,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a spherical shape
 class MDShapeSPHE : public MDShape
 {
   // public interface:
  public:
-  MDShapeSPHE();
+  //! Standard constructor
+  MDShapeSPHE(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeSPHE();
 
-  bool Initialize(double Rmin, double Rmax, 
-                  double Thetamin, double Thetamax, 
-                  double Phimin, double Phimax);
+  //! Set the all parameters of the shape
+  bool Set(double Rmin, double Rmax);
+  //! Set the all parameters of the shape
+  bool Set(double Rmin, double Rmax, double Thetamin, double Thetamax, double Phimin, double Phimax);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   double GetRmin() const;
@@ -53,13 +60,14 @@ class MDShapeSPHE : public MDShape
   double GetPhimin() const;
   double GetPhimax() const;
 
-
-  MString ToString();
+  // Old Geant3/MGGPOD interface
   MString GetGeant3DIM(MString ShortName);
   MString GetGeant3DATA(MString ShortName);
   MString GetGeant3ShapeName();
   int GetGeant3NumberOfParameters();
   MString GetMGeantDATA(MString ShortName);
+
+  MString ToString();
   MString GetGeomega() const;
 
   double GetVolume();
@@ -88,8 +96,6 @@ class MDShapeSPHE : public MDShape
 
   // private members:
  private:
-  TSPHE *m_SPHE;
-
   double m_Rmin;
   double m_Rmax;
   double m_Thetamin;

@@ -21,13 +21,12 @@
 using namespace std;
 
 // ROOT libs:
-#include <TPCON.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -35,18 +34,27 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a polycone shape
 class MDShapePCON : public MDShape
 {
   // public interface:
  public:
-  MDShapePCON();
+  //! Standard constructor
+  MDShapePCON(const MString& Name);
+  //! Default destructor
   virtual ~MDShapePCON();
 
-  bool Initialize(double Phi, double DPhi, unsigned int NSection);
+  //! Set the all parameters of the shape
+  bool Set(double Phi, double DPhi, unsigned int NSection);
+  //! Add a section
   bool AddSection(unsigned int Section, double z, double Rmin, double Rmax);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   MString ToString();
@@ -87,8 +95,6 @@ class MDShapePCON : public MDShape
 
   // private members:
  private:
-  TPCON* m_PCON;
-
   double m_Phi;
   double m_DPhi;
   unsigned int m_NSections;

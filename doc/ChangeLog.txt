@@ -10,7 +10,11 @@ Version 2.29/2.30
 
 + A compiler with C++11 support is now required - all current Mac and Linux
   compiler should do
-+ First alpha version of calibration framework Fretalon with Melinator line calibrator
++ First alpha version of calibration framework Fretalon with Melinator line 
+  calibrator
++ Exchange of the ROOT geometry backend (switch to the TGeo* classes)
+  --> Since this switch required significant changes in Geomega, please verify
+      your geometries
   
   
 *** Significant new features & improvements:
@@ -36,6 +40,8 @@ Fretalon:
 + First alpha version of Melinator - the MEGAlib line calibrator
 
 Geomega:
++ Switch to ROOT's newer TGeo* geometry front end
++ Addition of boolean shapes generated via intersection, union, and subtraction
 
 Revan:
 
@@ -46,6 +52,8 @@ Realta:
 Spectralizer:
 
 Examples:
++ The Max.geo.setup examples has been modified to illustrate the use of the 
+  new boolean shapes
 
 ... plus many, many smaller things I already forgot about :)
 

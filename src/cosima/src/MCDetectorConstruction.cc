@@ -48,6 +48,9 @@ using namespace std;
 #include "G4Polycone.hh"
 #include "G4Polyhedra.hh"
 #include "G4Sphere.hh"
+#include "G4SubtractionSolid.hh"
+#include "G4UnionSolid.hh"
+#include "G4IntersectionSolid.hh"
 #include "G4LogicalVolume.hh"
 #include "G4ThreeVector.hh"
 #include "G4PVPlacement.hh"
@@ -75,6 +78,9 @@ using namespace std;
 #include "MDShapeCONS.h"
 #include "MDShapePGON.h"
 #include "MDShapePCON.h"
+#include "MDShapeIntersection.h"
+#include "MDShapeUnion.h"
+#include "MDShapeSubtraction.h"
 #include "MDMaterial.h"
 #include "MDMaterialComponent.h"
 #include "MDDetector.h"
@@ -210,6 +216,31 @@ G4RotationMatrix* MCDetectorConstruction::CreateRotation(MDVolume* Volume)
   zvcolumn = MVector(0.,0.,1.);
 
   TMatrixD RotMatrix = Volume->GetRotationMatrix();
+
+  xvcolumn = RotMatrix*xvcolumn;
+  yvcolumn = RotMatrix*yvcolumn;
+  zvcolumn = RotMatrix*zvcolumn;   
+
+  G4ThreeVector xColumn(xvcolumn[0], xvcolumn[1], xvcolumn[2]);
+  G4ThreeVector yColumn(yvcolumn[0], yvcolumn[1], yvcolumn[2]);
+  G4ThreeVector zColumn(zvcolumn[0], zvcolumn[1], zvcolumn[2]);
+
+  return new G4RotationMatrix(xColumn, yColumn, zColumn);
+}
+
+
+/******************************************************************************
+ * Create a rotation matrix 
+ */
+G4RotationMatrix* MCDetectorConstruction::CreateRotation(MDOrientation* Orientation)
+{
+  MVector xvcolumn, yvcolumn, zvcolumn;
+
+  xvcolumn = MVector(1.,0.,0.);
+  yvcolumn = MVector(0.,1.,0.);
+  zvcolumn = MVector(0.,0.,1.);
+
+  TMatrixD RotMatrix = Orientation->GetRotationMatrix();
 
   xvcolumn = RotMatrix*xvcolumn;
   yvcolumn = RotMatrix*yvcolumn;
@@ -528,108 +559,116 @@ bool MCDetectorConstruction::ConstructVolumes()
   G4VSolid* Solid = 0;
   //bool ROOTColorNotInitialize = false;
   
-  for (unsigned int v = 0; v < m_Geometry->GetNVolumes(); ++v) {
-
-    if (m_Geometry->GetVolumeAt(v)->GetCloneTemplate() == 0) {
-      
-      Type = m_Geometry->GetVolumeAt(v)->GetShape()->GetType();
-      VolumeName = m_Geometry->GetVolumeAt(v)->GetName();
-      MaterialName = m_Geometry->GetVolumeAt(v)->GetMaterial()->GetName();
-      LogName = VolumeName + "Log";
-
-      if (Type == "BRIK") {
-        MDShapeBRIK* BRIK = 
-          (MDShapeBRIK*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Box((VolumeName + "BOX").Data(), 
-                    BRIK->GetSizeX()*cm, 
-                    BRIK->GetSizeY()*cm, 
-                    BRIK->GetSizeZ()*cm);
-      } else if (Type == "TUBS") {
-        MDShapeTUBS* TUBS = 
-          (MDShapeTUBS*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Tubs((VolumeName + "TUBS").Data(), 
+  // Step 1: Convert all shapes
+  // We have to ensure to convert boolean volumes correctly since they need to 
+  // there internal shapes to be alreday converted!
+  
+  list<MDShape*> AllShapes;
+  for (unsigned int i = 0; i < m_Geometry->GetNShapes(); ++i) {
+    AllShapes.push_back(m_Geometry->GetShapeAt(i));
+    cout<<"Input shapes: "<<AllShapes.back()->GetName()<<endl;
+  }
+  list<G4VSolid*> AllSolids;
+  for (list<MDShape*>::iterator I = AllShapes.begin(); I != AllShapes.end(); ++I) {
+    MDShape* Shape = (*I);
+    // A. If not all sub shapes of this shape are defined, then push it back to the end to take care of it later
+    bool AllSubShapesDefined = true;
+    for (unsigned int sh = 0; sh < Shape->GetNSubShapes(); ++sh) {
+      G4String Name = Shape->GetSubShape(sh)->GetName().GetString();
+      bool Found = false;
+      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+        if ((*J)->GetName() == Name) {
+          Found = true;
+          break;
+        }
+      }
+      if (Found == false) {
+        AllSubShapesDefined = false;
+        break;
+      }
+    }
+    if (AllSubShapesDefined == false) {
+      AllShapes.push_back(Shape);
+      continue;
+    }
+    
+    // B. Convert it
+    Type = Shape->GetType();
+    
+    if (Type == "BRIK") {
+      MDShapeBRIK* BRIK = dynamic_cast<MDShapeBRIK*>(Shape);
+      Solid = new G4Box(Shape->GetName().GetString(), BRIK->GetSizeX()*cm, BRIK->GetSizeY()*cm, BRIK->GetSizeZ()*cm);
+    } else if (Type == "TUBS") {
+      MDShapeTUBS* TUBS = dynamic_cast<MDShapeTUBS*>(Shape);
+      Solid = new G4Tubs(Shape->GetName().GetString(), 
                      TUBS->GetRmin()*cm, 
                      TUBS->GetRmax()*cm, 
                      TUBS->GetHeight()*cm,
                      TUBS->GetPhi1()*deg,
                      (TUBS->GetPhi2()-TUBS->GetPhi1())*deg);
-      } else if (Type == "SPHE") {
-        MDShapeSPHE* SPHE = 
-          (MDShapeSPHE*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Sphere((VolumeName + "SPHE").Data(), 
+    } else if (Type == "SPHE") {
+      MDShapeSPHE* SPHE = dynamic_cast<MDShapeSPHE*>(Shape);
+      Solid = new G4Sphere(Shape->GetName().GetString(), 
                        SPHE->GetRmin()*cm, 
                        SPHE->GetRmax()*cm, 
                        SPHE->GetPhimin()*deg,
                        (SPHE->GetPhimax()-SPHE->GetPhimin())*deg,
                        SPHE->GetThetamin()*deg,
                        (SPHE->GetThetamax()-SPHE->GetThetamin())*deg);
-      } else if (Type == "TRD1") {
-        MDShapeTRD1* TRD1 = 
-          (MDShapeTRD1*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Trd((VolumeName + "TRD1").Data(), 
+    } else if (Type == "TRD1") {
+      MDShapeTRD1* TRD1 = dynamic_cast<MDShapeTRD1*>(Shape);
+      Solid = new G4Trd(Shape->GetName().GetString(), 
                     TRD1->GetDx1()*cm, 
                     TRD1->GetDx2()*cm, 
                     TRD1->GetY()*cm,
                     TRD1->GetY()*cm,
                     TRD1->GetZ()*cm);
-      } else if (Type == "CONE") {
-        MDShapeCONE* CONE = 
-          (MDShapeCONE*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Cons((VolumeName + "CONE").Data(), 
+    } else if (Type == "CONE") {
+      MDShapeCONE* CONE = dynamic_cast<MDShapeCONE*>(Shape);
+      Solid = new G4Cons(Shape->GetName().GetString(), 
                      CONE->GetRminBottom()*cm, 
                      CONE->GetRmaxBottom()*cm, 
                      CONE->GetRminTop()*cm,
                      CONE->GetRmaxTop()*cm, 
                      CONE->GetHalfHeight()*cm, 
                      0.0*deg, 360.0*deg);
-      } else if (Type == "CONS") {
-        MDShapeCONS* CONS = 
-          (MDShapeCONS*) m_Geometry->GetVolumeAt(v)->GetShape();
-        Solid = 
-          new G4Cons((VolumeName + "CONS").Data(), 
+    } else if (Type == "CONS") {
+      MDShapeCONS* CONS = dynamic_cast<MDShapeCONS*>(Shape);
+      Solid = new G4Cons(Shape->GetName().GetString(), 
                      CONS->GetRminBottom()*cm, 
                      CONS->GetRmaxBottom()*cm, 
                      CONS->GetRminTop()*cm,
                      CONS->GetRmaxTop()*cm, 
                      CONS->GetHalfHeight()*cm, 
                      CONS->GetPhiMin()*deg, CONS->GetPhiMax()*deg);
-      } else if (Type == "PCON") {
-        MDShapePCON* PCON = 
-          (MDShapePCON*) m_Geometry->GetVolumeAt(v)->GetShape();
-        double* z = new double[PCON->GetNSections()];
-        double* rmin = new double[PCON->GetNSections()];
-        double* rmax = new double[PCON->GetNSections()];
-        for (unsigned int i = 0; i < PCON->GetNSections(); ++i) {
-          z[i] = PCON->GetZ(i)*cm;
-          rmin[i] = PCON->GetRmin(i)*cm;
-          rmax[i] = PCON->GetRmax(i)*cm;
-        }
-        Solid = 
-          new G4Polycone((VolumeName + "PCON").Data(), 
+    } else if (Type == "PCON") {
+      MDShapePCON* PCON = dynamic_cast<MDShapePCON*>(Shape);
+      double* z = new double[PCON->GetNSections()];
+      double* rmin = new double[PCON->GetNSections()];
+      double* rmax = new double[PCON->GetNSections()];
+      for (unsigned int i = 0; i < PCON->GetNSections(); ++i) {
+        z[i] = PCON->GetZ(i)*cm;
+        rmin[i] = PCON->GetRmin(i)*cm;
+        rmax[i] = PCON->GetRmax(i)*cm;
+      }
+      Solid = new G4Polycone(Shape->GetName().GetString(), 
                          PCON->GetPhi()*deg, 
                          PCON->GetDPhi()*deg, 
                          PCON->GetNSections(),
                          z,
                          rmin,
                          rmax);
-      } else if (Type == "PGON") {
-        MDShapePGON* PGON =
-          (MDShapePGON*) m_Geometry->GetVolumeAt(v)->GetShape();
-        double* z = new double[PGON->GetNSections()];
-        double* rmin = new double[PGON->GetNSections()];
-        double* rmax = new double[PGON->GetNSections()];
-        for (unsigned int i = 0; i < PGON->GetNSections(); ++i) {
-          z[i] = PGON->GetZ(i)*cm;
-          rmin[i] = PGON->GetRmin(i)*cm;
-          rmax[i] = PGON->GetRmax(i)*cm;
-        }
-        Solid =
-          new G4Polyhedra((VolumeName + "PGON").Data(),
+    } else if (Type == "PGON") {
+      MDShapePGON* PGON = dynamic_cast<MDShapePGON*>(Shape);
+      double* z = new double[PGON->GetNSections()];
+      double* rmin = new double[PGON->GetNSections()];
+      double* rmax = new double[PGON->GetNSections()];
+      for (unsigned int i = 0; i < PGON->GetNSections(); ++i) {
+        z[i] = PGON->GetZ(i)*cm;
+        rmin[i] = PGON->GetRmin(i)*cm;
+        rmax[i] = PGON->GetRmax(i)*cm;
+      }
+      Solid = new G4Polyhedra(Shape->GetName().GetString(),
               PGON->GetPhi()*deg,
               PGON->GetDPhi()*deg,
               PGON->GetNSides(),
@@ -637,101 +676,99 @@ bool MCDetectorConstruction::ConstructVolumes()
               z,
               rmin,
               rmax);
-      } else if (Type == "TRAP") {
-        MDShapeTRAP* TRAP = 
-          (MDShapeTRAP*) m_Geometry->GetVolumeAt(v)->GetShape();
-        // For Geant4 no value is allowed to be zero:
-        double dz = TRAP->GetDz()*cm;
-        if (dz <= 0) dz = 1.0E-10;  
-        double theta = TRAP->GetTheta()*deg;
-        double phi = TRAP->GetPhi()*deg;
-        double h1 = TRAP->GetH1()*cm;
-        double bl1 = TRAP->GetBl1()*cm;
-        double tl1 = TRAP->GetTl1()*cm;
-        double a1 = TRAP->GetAlpha1()*deg;
-        double h2 = TRAP->GetH2()*cm;
-        double bl2 = TRAP->GetBl2()*cm;
-        double tl2 = TRAP->GetTl2()*cm;
-        double a2 = TRAP->GetAlpha2()*deg;
-        // Geant4 does not accept zeros...
-        // So we need some kind of logic, that if we add very small values,
-        // that everything still is planar...
-        // This does not take into account each possible  case...
+    } else if (Type == "TRAP") {
+      MDShapeTRAP* TRAP = dynamic_cast<MDShapeTRAP*>(Shape);
+      // For Geant4 no value is allowed to be zero:
+      double dz = TRAP->GetDz()*cm;
+      if (dz <= 0) dz = 1.0E-10;  
+      double theta = TRAP->GetTheta()*deg;
+      double phi = TRAP->GetPhi()*deg;
+      double h1 = TRAP->GetH1()*cm;
+      double bl1 = TRAP->GetBl1()*cm;
+      double tl1 = TRAP->GetTl1()*cm;
+      double a1 = TRAP->GetAlpha1()*deg;
+      double h2 = TRAP->GetH2()*cm;
+      double bl2 = TRAP->GetBl2()*cm;
+      double tl2 = TRAP->GetTl2()*cm;
+      double a2 = TRAP->GetAlpha2()*deg;
+      // Geant4 does not accept zeros...
+      // So we need some kind of logic, that if we add very small values,
+      // that everything still is planar...
+      // This does not take into account each possible  case...
 
-        int NZeros = 0;
-        if (h1 <= 0) NZeros++;  
-        if (bl1 <= 0) NZeros++;  
-        if (tl1 <= 0) NZeros++;  
-        if (h2 <= 0) NZeros++;  
-        if (bl2 <= 0) NZeros++;  
-        if (tl2 <= 0) NZeros++;  
+      int NZeros = 0;
+      if (h1 <= 0) NZeros++;  
+      if (bl1 <= 0) NZeros++;  
+      if (tl1 <= 0) NZeros++;  
+      if (h2 <= 0) NZeros++;  
+      if (bl2 <= 0) NZeros++;  
+      if (tl2 <= 0) NZeros++;  
         
-        if (NZeros != 0) {
-          mout<<endl;
-          mout<<"SEVERE WARNING!"<<endl;
-          mout<<"... for Shape TRAP:"<<endl;
-          mout<<"One of the parameters is zero & Geant4 does not allow this!"<<endl;
-          mout<<"Trying to estimate other parameters:"<<endl;
-          mout<<"Start: "<<endl;
-          mout<<"h1: "<<h1<<"  bl1: "<<bl1<<"  tl1: "<<tl1<<endl;
-          mout<<"h2: "<<h2<<"  bl2: "<<bl2<<"  tl2: "<<tl2<<endl;
+      if (NZeros != 0) {
+        mout<<endl;
+        mout<<"SEVERE WARNING!"<<endl;
+        mout<<"... for Shape TRAP:"<<endl;
+        mout<<"One of the parameters is zero & Geant4 does not allow this!"<<endl;
+        mout<<"Trying to estimate other parameters:"<<endl;
+        mout<<"Start: "<<endl;
+        mout<<"h1: "<<h1<<"  bl1: "<<bl1<<"  tl1: "<<tl1<<endl;
+        mout<<"h2: "<<h2<<"  bl2: "<<bl2<<"  tl2: "<<tl2<<endl;
 
-          const double Exp = 1E-10;
-          if (NZeros == 1) {
-            if (h1 <= 0) h1 = Exp*cm;  
-            if (bl1 <= 0) bl1 = Exp*cm;  
-            if (tl1 <= 0) tl1 = Exp*cm;  
-            if (h2 <= 0) h2 = Exp*cm;  
-            if (bl2 <= 0) bl2 = Exp*cm;  
-            if (tl2 <= 0) tl2 = Exp*cm;  
-          } else {
-            double Ratio = 0.0;
-            if (h1 != 0 && h2 != 0) Ratio = h1/h2;
-            else if (tl1 != 0 && tl2 != 0) Ratio = tl1/tl2;
-            else if (bl1 != 0 && bl2 != 0) Ratio = tl1/tl2;
-            
-            if (Ratio == 0.0) {
-              if (h1 != 0) Ratio = 1/Exp;
-              else Ratio = Exp;
-            }
-
-            if (h1 != 0 && h2 == 0) h2=h1/Ratio;
-            if (h1 == 0 && h2 != 0) h1=h2*Ratio;
-            
-            if (tl1 == 0 && tl2 == 0) {
-              if (h1 > h2) tl1 = Exp*cm;
-              else tl2 = Exp*cm;
-            }
-            if (tl1 != 0 && tl2 == 0) tl2=tl1/Ratio;
-            if (tl1 == 0 && tl2 != 0) tl1=tl2*Ratio;
-            
-            if (bl1 == 0 && bl2 == 0) {
-              if (h1 > h2) bl1 = Exp*cm;
-              else bl2 = Exp*cm;
-            }
-            if (bl1 != 0 && bl2 == 0) bl2=bl1/Ratio;
-            if (bl1 == 0 && bl2 != 0) bl1=bl2*Ratio;
-          }
+        const double Exp = 1E-10;
+        if (NZeros == 1) {
+          if (h1 <= 0) h1 = Exp*cm;  
+          if (bl1 <= 0) bl1 = Exp*cm;  
+          if (tl1 <= 0) tl1 = Exp*cm;  
+          if (h2 <= 0) h2 = Exp*cm;  
+          if (bl2 <= 0) bl2 = Exp*cm;  
+          if (tl2 <= 0) tl2 = Exp*cm;  
+        } else {
+          double Ratio = 0.0;
+          if (h1 != 0 && h2 != 0) Ratio = h1/h2;
+          else if (tl1 != 0 && tl2 != 0) Ratio = tl1/tl2;
+          else if (bl1 != 0 && bl2 != 0) Ratio = tl1/tl2;
           
-          // If still something is missing
-          if (h1 <= 0) h1 = 1.0E-6*cm;  
-          if (bl1 <= 0) bl1 = 1.0E-6*cm;  
-          if (tl1 <= 0) tl1 = 1.0E-6*cm;  
-          if (h2 <= 0) h2 = 1.0E-6*cm;  
-          if (bl2 <= 0) bl2 = 1.0E-6*cm;  
-          if (tl2 <= 0) tl2 = 1.0E-6*cm;  
-         
-          mout<<"Final:"<<endl;
-          mout<<"h1: "<<h1<<"  bl1: "<<bl1<<"  tl1: "<<tl1<<endl;
-          mout<<"h2: "<<h2<<"  bl2: "<<bl2<<"  tl2: "<<tl2<<endl;
-          mout<<"This estimation is a very risky thing..."<<endl;
-          mout<<"Better correct your geometry by yourself!!!!"<<endl;
-          mout<<"END SEVERE WARNING!"<<endl;
-          mout<<endl;
-        } 
+          if (Ratio == 0.0) {
+            if (h1 != 0) Ratio = 1/Exp;
+            else Ratio = Exp;
+          }
 
-        Solid = 
-          new G4Trap((VolumeName + "TRAP").Data(), 
+          if (h1 != 0 && h2 == 0) h2=h1/Ratio;
+          if (h1 == 0 && h2 != 0) h1=h2*Ratio;
+            
+          if (tl1 == 0 && tl2 == 0) {
+            if (h1 > h2) tl1 = Exp*cm;
+            else tl2 = Exp*cm;
+          }
+          if (tl1 != 0 && tl2 == 0) tl2=tl1/Ratio;
+          if (tl1 == 0 && tl2 != 0) tl1=tl2*Ratio;
+            
+          if (bl1 == 0 && bl2 == 0) {
+            if (h1 > h2) bl1 = Exp*cm;
+            else bl2 = Exp*cm;
+          }
+          if (bl1 != 0 && bl2 == 0) bl2=bl1/Ratio;
+          if (bl1 == 0 && bl2 != 0) bl1=bl2*Ratio;
+        }
+          
+        // If still something is missing
+        if (h1 <= 0) h1 = 1.0E-6*cm;  
+        if (bl1 <= 0) bl1 = 1.0E-6*cm;  
+        if (tl1 <= 0) tl1 = 1.0E-6*cm;  
+        if (h2 <= 0) h2 = 1.0E-6*cm;  
+        if (bl2 <= 0) bl2 = 1.0E-6*cm;  
+        if (tl2 <= 0) tl2 = 1.0E-6*cm;  
+         
+        mout<<"Final:"<<endl;
+        mout<<"h1: "<<h1<<"  bl1: "<<bl1<<"  tl1: "<<tl1<<endl;
+        mout<<"h2: "<<h2<<"  bl2: "<<bl2<<"  tl2: "<<tl2<<endl;
+        mout<<"This estimation is a very risky thing..."<<endl;
+        mout<<"Better correct your geometry by yourself!!!!"<<endl;
+        mout<<"END SEVERE WARNING!"<<endl;
+        mout<<endl;
+      } 
+
+      Solid = new G4Trap(Shape->GetName().GetString(), 
                      dz, 
                      theta, 
                      phi,
@@ -743,8 +780,128 @@ bool MCDetectorConstruction::ConstructVolumes()
                      bl2,
                      tl2,
                      a2);
-      } else {
-        merr<<"Unknown volume type: "<<Type<<endl;
+    } else if (Type == "Subtraction") {
+      MDShapeSubtraction* Subtraction = dynamic_cast<MDShapeSubtraction*>(Shape);
+      
+      // a) Find the solids
+      G4String MinuendName = Subtraction->GetMinuend()->GetName().GetString();
+      G4String SubtrahendName = Subtraction->GetSubtrahend()->GetName().GetString();
+
+      G4VSolid* MinuendSolid = 0;
+      G4VSolid* SubtrahendSolid = 0;
+      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+        if ((*J)->GetName() == MinuendName) {
+          MinuendSolid = *J;
+        }
+        if ((*J)->GetName() == SubtrahendName) {
+          SubtrahendSolid = *J;
+        }
+      }
+      if (MinuendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
+        return false;
+      }
+      if (SubtrahendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<SubtrahendName<<endl;
+        return false;
+      }
+      
+      // b) Create the solid
+      MDOrientation* O = Subtraction->GetOrientationSubtrahend() ;
+      G4ThreeVector Pos(O->GetPosition().X()*cm, O->GetPosition().Y()*cm, O->GetPosition().Z()*cm);
+      Solid = new G4SubtractionSolid(Shape->GetName().GetString(), MinuendSolid, SubtrahendSolid, CreateRotation(O), Pos);
+    } else if (Type == "Intersection") {
+      MDShapeIntersection* Intersection = dynamic_cast<MDShapeIntersection*>(Shape);
+      
+      // a) Find the solids
+      G4String MinuendName = Intersection->GetShapeA()->GetName().GetString();
+      G4String SubtrahendName = Intersection->GetShapeB()->GetName().GetString();
+
+      G4VSolid* MinuendSolid = 0;
+      G4VSolid* SubtrahendSolid = 0;
+      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+        if ((*J)->GetName() == MinuendName) {
+          MinuendSolid = *J;
+        }
+        if ((*J)->GetName() == SubtrahendName) {
+          SubtrahendSolid = *J;
+        }
+      }
+      if (MinuendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
+        return false;
+      }
+      if (SubtrahendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<SubtrahendName<<endl;
+        return false;
+      }
+      
+      // b) Create the solid
+      MDOrientation* O = Intersection->GetOrientationShapeB() ;
+      G4ThreeVector Pos(O->GetPosition().X()*cm, O->GetPosition().Y()*cm, O->GetPosition().Z()*cm);
+      Solid = new G4IntersectionSolid(Shape->GetName().GetString(), MinuendSolid, SubtrahendSolid, CreateRotation(O), Pos);
+    } else if (Type == "Union") {
+      MDShapeUnion* Union = dynamic_cast<MDShapeUnion*>(Shape);
+      
+      // a) Find the solids
+      G4String MinuendName = Union->GetAugend()->GetName().GetString();
+      G4String SubtrahendName = Union->GetAddend()->GetName().GetString();
+
+      G4VSolid* MinuendSolid = 0;
+      G4VSolid* SubtrahendSolid = 0;
+      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+        if ((*J)->GetName() == MinuendName) {
+          MinuendSolid = *J;
+        }
+        if ((*J)->GetName() == SubtrahendName) {
+          SubtrahendSolid = *J;
+        }
+      }
+      if (MinuendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<MinuendName<<endl;
+        return false;
+      }
+      if (SubtrahendSolid == 0) {
+        merr<<"Fatal error: No solid found with name "<<SubtrahendName<<endl;
+        return false;
+      }
+      
+      // b) Create the solid
+      MDOrientation* O = Union->GetOrientationAddend() ;
+      G4ThreeVector Pos(O->GetPosition().X()*cm, O->GetPosition().Y()*cm, O->GetPosition().Z()*cm);
+      Solid = new G4UnionSolid(Shape->GetName().GetString(), MinuendSolid, SubtrahendSolid, CreateRotation(O), Pos);
+    } else {
+      merr<<"Unknown volume type: "<<Type<<endl;
+      return false;
+    }
+    AllSolids.push_back(Solid);
+  }
+  
+  for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+    cout<<"Solid: "<<(*J)->GetName()<<endl;
+  }
+  
+  
+  // Step 2: All shapes are now defined, so we can build the volumes
+  
+  
+  for (unsigned int v = 0; v < m_Geometry->GetNVolumes(); ++v) {
+    if (m_Geometry->GetVolumeAt(v)->GetCloneTemplate() == 0) {
+      
+      G4String ShapeName = m_Geometry->GetVolumeAt(v)->GetShape()->GetName().GetString();
+      VolumeName = m_Geometry->GetVolumeAt(v)->GetName();
+      MaterialName = m_Geometry->GetVolumeAt(v)->GetMaterial()->GetName();
+      LogName = VolumeName + "Log";
+
+      Solid = 0;
+      for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+        if ((*J)->GetName() == ShapeName) {
+          Solid = *J;
+          break;
+        }
+      }
+      if (Solid == 0) {
+        merr<<"Fatal error: No solid found with name "<<ShapeName<<" for volume "<<VolumeName<<endl;
         return false;
       }
       

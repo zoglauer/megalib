@@ -14,19 +14,16 @@ AbsorptionFileDirectory ./absorptions
 
 Material vacuum
 vacuum.Density                  1E-16
-vacuum.RadiationLength          1E+16
 vacuum.Component                1 1 1
 vacuum.Sensitivity              1
 
 Material aluminum
 aluminum.Density               2.7
-aluminum.RadiationLength       8.9
 aluminum.Component             27.0 13.0 1
 aluminum.Sensitivity           1
 
 Material beryllium
 beryllium.Density               1.858
-beryllium.RadiationLength       35.300
 beryllium.Component             9.01  4.0 1
 beryllium.Sensitivity           1
 

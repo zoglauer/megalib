@@ -49,17 +49,15 @@ ClassImp(MDShapeCONE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeCONE::MDShapeCONE() : MDShape()
+MDShapeCONE::MDShapeCONE(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_RminBottom = 0;
   m_RmaxBottom = 0;
   m_RminTop = 0;
   m_RmaxTop = 0;
   m_HalfHeight = 0;
-
-  m_CONE = 0;
 
   m_Type = "CONE";
 }
@@ -70,16 +68,16 @@ MDShapeCONE::MDShapeCONE() : MDShape()
 
 MDShapeCONE::~MDShapeCONE()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeCONE::Initialize(double HalfHeight, 
-                             double RminBottom, double RmaxBottom, 
-                             double RminTop, double RmaxTop) 
+bool MDShapeCONE::Set(double HalfHeight, 
+                      double RminBottom, double RmaxBottom, 
+                      double RminTop, double RmaxTop) 
 {
   // default constructor
 
@@ -126,6 +124,16 @@ bool MDShapeCONE::Initialize(double HalfHeight,
   m_RmaxTop = RmaxTop;
   m_HalfHeight = HalfHeight;
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeCONE::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoCone(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop);
 
   return true;
@@ -135,14 +143,32 @@ bool MDShapeCONE::Initialize(double HalfHeight,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeCONE::CreateShape()
-{
-  //
-
-  if (m_CONE == 0) {
-    m_CONE = new TCONE("Who", "knows...", "void", m_HalfHeight, 
-                       m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop);
+bool MDShapeCONE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset+5) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset),
+              Tokenizer.GetTokenAtAsDouble(6+Offset)) == false) {
+        Info.Error("The parameters for the shape Cone are not OK.");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape Cone. It is defined by 5 parameters: half height, minimum radius bottom, maximum radius bottom, minimum radius top, maximum radius top");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape Cone!");
+    return false;
   }
+ 
+  return true; 
 }
 
 
@@ -196,17 +222,6 @@ double MDShapeCONE::GetHalfHeight()
   //
 
   return m_HalfHeight;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeCONE::GetShape()
-{
-  //
-
-  return (TShape *) m_CONE;
 }
 
 
@@ -331,8 +346,7 @@ void MDShapeCONE::Scale(const double Factor)
   m_RmaxTop *= Factor;
   m_HalfHeight *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoCone(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop);
+  Validate();
 }
 
 

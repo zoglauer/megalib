@@ -48,16 +48,14 @@ ClassImp(MDShapePGON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapePGON::MDShapePGON() : MDShape()
+MDShapePGON::MDShapePGON(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Phi = 0;
   m_DPhi = 0;
   m_NSides = 0;
   m_NSections = 0;
-
-  m_PGON = 0;
 
   m_Type = "PGON";
 }
@@ -68,15 +66,15 @@ MDShapePGON::MDShapePGON() : MDShape()
 
 MDShapePGON::~MDShapePGON()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapePGON::Initialize(double Phi, double DPhi, unsigned int NSides, 
-                             unsigned int NSections)
+bool MDShapePGON::Set(double Phi, double DPhi, unsigned int NSides, 
+                      unsigned int NSections)
 {
   // Correctly initialize this shape
 
@@ -110,8 +108,6 @@ bool MDShapePGON::Initialize(double Phi, double DPhi, unsigned int NSides,
   m_Rmin.resize(NSections);
   m_Rmax.resize(NSections);
 
-  m_Geo = new TGeoPgon(Phi, DPhi, NSides, NSections);
-
   return true;
 }
 
@@ -141,8 +137,6 @@ bool MDShapePGON::AddSection(unsigned int Section, double Z, double Rmin, double
   m_Z[Section] = Z;
   m_Rmin[Section] = Rmin;
   m_Rmax[Section] = Rmax;
-  
-  dynamic_cast<TGeoPgon*>(m_Geo)->DefineSection(Section, Z, Rmin, Rmax);
 
   return true;
 }
@@ -151,29 +145,101 @@ bool MDShapePGON::AddSection(unsigned int Section, double Z, double Rmin, double
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapePGON::CreateShape()
+bool MDShapePGON::Validate()
 {
-  //
+  delete m_Geo;
+  m_Geo = new TGeoPgon(m_Phi, m_DPhi, m_NSides, m_NSections);
 
-  if (m_PGON == 0) {
-    m_PGON = new TPGON("Who", "knows...", "void", m_Phi, m_DPhi, m_NSides, m_NSections);
-    for (unsigned int i = 0; i < m_NSections; ++i) {
-      m_PGON->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
-    }
-    m_PGON->SetLineColor(m_Color);
-    m_PGON->SetFillColor(m_Color);
+  for (unsigned int i = 0; i < m_NSections; ++i) {
+    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
   }
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TShape* MDShapePGON::GetShape()
-{
-  //
+bool MDShapePGON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    
+    if (Tokenizer.GetNTokens() < 6+Offset + 3) {
+      Info.Error("This PGON must contain at least 7 elements!");
+      return false;
+    }
+    
+    unsigned int n = Tokenizer.GetTokenAtAsUnsignedInt(5+Offset);
+    if (Tokenizer.GetNTokens() != 6+Offset + 3*n) {
+      Info.Error("This PGON must contain 4 + 3*n elements!");
+      return false;
+    }
 
-  return (TShape *) m_PGON;
+    if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+            Tokenizer.GetTokenAtAsDouble(3+Offset), 
+            Tokenizer.GetTokenAtAsInt(4+Offset), 
+            Tokenizer.GetTokenAtAsInt(5+Offset)) == false) {
+      Info.Error("The basic parameters for the shape PGON are not OK.");
+      return false;
+    } 
+
+
+    // Check for ordering:
+    bool Increasing = true;
+    bool Ordered = false;
+    for (unsigned int i = 0; i < n-1; ++i) {
+      if (Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 3*(i+1)) > Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 3*i)) {
+        if (Ordered == true) {
+          if (Increasing == false) {
+            Info.Error("z of shape PGON needs to be ordered");
+            return false;                          
+          }
+        } else {
+          Ordered = true;
+          Increasing = true;
+        }
+      } else if (Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 3*(i+1)) < Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 3*i)){
+        if (Ordered == true) {
+          if (Increasing == true) {
+            Info.Error("z of shape PGON needs to be ordered");
+            return false;                          
+          }
+        } else {
+          Ordered = true;
+          Increasing = false;
+        }
+      }
+    }
+
+    unsigned int j = 0;
+    for (unsigned int i = 0; i < n; ++i) {
+      if (Increasing == false) {
+        j = n-i-1;
+      } else {
+        j = i;
+      }
+
+      double z =    Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 0 + 3*j);
+      double rmin = Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 1 + 3*j);
+      double rmax = Tokenizer.GetTokenAtAsDouble((2+Offset+4) + 2 + 3*j);
+
+      if (AddSection(i, z, rmin, rmax) == false) {
+        Info.Error("The segment parameters for the shape PGON are not OK.");
+        return false;
+      }
+    }    
+
+  } else {
+    Info.Error("Unhandled descriptor in shape PGON!");
+    return false;
+  }
+ 
+  return true; 
 }
 
 
@@ -417,16 +483,14 @@ double MDShapePGON::GetVolume()
 void MDShapePGON::Scale(const double Factor)
 {
   // Scale this shape by Factor
-
-  delete m_Geo;
-  m_Geo = new TGeoPgon(m_Phi, m_DPhi, m_NSides, m_NSections);
-
+  
   for (unsigned int i = 0; i < m_NSections; ++i) {
     m_Rmin[i] *= Factor;
     m_Rmax[i] *= Factor;
     m_Z[i] *= Factor;  
-    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
   }
+  
+  Validate();
 }
 
 

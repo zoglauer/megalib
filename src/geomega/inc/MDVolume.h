@@ -17,10 +17,11 @@
 
 
 // ROOT libs:
-#include <TObjArray.h>
-#include <TRotMatrix.h>
-#include <TNode.h>
-#include <TMatrixD.h>
+#include "TObjArray.h"
+#include "TRotMatrix.h"
+#include "TMatrixD.h"
+#include "TGeoManager.h"
+#include "TGeoVolume.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -163,10 +164,8 @@ class MDVolume
   double DistanceInsideOut(MVector Pos);
   double DistanceOutsideIn(MVector Pos);
 
-  void CreateNodes();
-  void DeleteNodes();
-
-  TNode* GetNode();
+  //! Create the Root geometry presentation of thhis volume and its daughters
+  void CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother);
 
   
   // Interface for RECURSIVE manipulation of the volume tree or data retrieval
@@ -284,8 +283,8 @@ class MDVolume
 
   int m_Visibility;          // 2: volume is always visible, 1: volume is visible, 0: volume is not visible
   int m_Color;               // Color of the volume
-  int m_LineStyle;           // Line style of the TNode
-  int m_LineWidth;           // Line Width of the TNode
+  int m_LineStyle;           // Line style
+  int m_LineWidth;           // Line Width
 
   MDDetector* m_Detector;      // If this is a sensitive volume: associated detector
   // Don't use --- something ancient!
@@ -297,8 +296,6 @@ class MDVolume
   bool m_CloneTemplateVolumeWritten;   // True if the clone template has already been written to the geant file
   bool m_CloneTemplateDaughtersWritten;   // True if the clone template has already been written to the geant file
   int m_CloneTemplateId;
-  
-  vector<TNode*> m_Nodes;      // Pointer to the graphics-node of this volume
 
   bool m_IsSensitive;        // True if this volume is sensitive...
   bool m_DoAbsorptions;      // True if absorptions should be calculated for this volume

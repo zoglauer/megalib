@@ -49,15 +49,13 @@ ClassImp(MDShapeBRIK)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeBRIK::MDShapeBRIK() : MDShape()
+MDShapeBRIK::MDShapeBRIK(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Dx = 0;
   m_Dy = 0;
   m_Dz = 0;
-
-  m_BRIK = 0;
 
   m_Type = "BRIK";
 }
@@ -68,14 +66,14 @@ MDShapeBRIK::MDShapeBRIK() : MDShape()
 
 MDShapeBRIK::~MDShapeBRIK()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeBRIK::Initialize(double x, double y, double z)
+bool MDShapeBRIK::Set(double x, double y, double z)
 {
   // Correctly initialize this shape
 
@@ -99,7 +97,20 @@ bool MDShapeBRIK::Initialize(double x, double y, double z)
   m_Dy = y;
   m_Dz = z;
 
-  m_Geo = new TGeoBBox(x, y, z);
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeBRIK::Validate()
+{
+  // Correctly initialize this shape
+
+  delete m_Geo;
+  m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
+
 
   return true;
 }
@@ -108,28 +119,30 @@ bool MDShapeBRIK::Initialize(double x, double y, double z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeBRIK::CreateShape()
-{
-  //
-
-  // We only need
-
-  if (m_BRIK == 0) {
-    m_BRIK = new TBRIK("Who", "knows...", "void", m_Dx, m_Dy, m_Dz);
-    m_BRIK->SetLineColor(m_Color);
-    m_BRIK->SetFillColor(m_Color);
+bool MDShapeBRIK::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset + 3) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset), 
+              Tokenizer.GetTokenAtAsDouble(4+Offset)) == false) {
+        Info.Error("The shape BOX/BRIK has not been defined correctly");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape BOX/BRIK. It is defined by 3 parameters (x, y, z)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape Box!");
+    return false;
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeBRIK::GetShape()
-{
-  //
-
-  return (TShape *) m_BRIK;
+  
+  return true; 
 }
 
 
@@ -183,20 +196,6 @@ MString MDShapeBRIK::GetMGeantDATA(MString ShortName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeBRIK::GetGeomega() const
-{
-  // Return the Geomega representation 
-
-  ostringstream out;
-
-  out<<"BRIK "<<m_Dx<<" "<<m_Dy<<" "<<m_Dz;
-
-  return out.str().c_str();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeBRIK::GetGeant3ShapeName()
 {
   //
@@ -213,6 +212,21 @@ int MDShapeBRIK::GetGeant3NumberOfParameters()
   //
 
   return 3;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDShapeBRIK::GetGeomega() const
+{
+  // Return the Geomega representation 
+
+  ostringstream out;
+
+  out<<"BRIK "<<m_Dx<<" "<<m_Dy<<" "<<m_Dz;
+
+  return out.str().c_str();
 }
 
 
@@ -260,6 +274,21 @@ double MDShapeBRIK::GetSizeZ()
 double MDShapeBRIK::GetVolume()
 {
   return 8*m_Dx*m_Dy*m_Dz;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDShapeBRIK::Scale(const double Factor)
+{
+  // Scale this shape by Factor
+
+  m_Dx *= Factor;
+  m_Dy *= Factor;
+  m_Dz *= Factor;
+
+  Validate();
 }
 
 
@@ -316,22 +345,6 @@ bool MDShapeBRIK::IsInside(const MVector& Pos, const double Tolerance, const boo
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeBRIK::Scale(const double Factor)
-{
-  // Scale this shape by Factor
-
-  m_Dx *= Factor;
-  m_Dy *= Factor;
-  m_Dz *= Factor;
-  
-  delete m_Geo;
-  m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MVector MDShapeBRIK::GetUniquePosition() const
 {
   // Return a unique position within this detectors volume
@@ -350,37 +363,6 @@ MVector MDShapeBRIK::GetRandomPositionInside()
   return MVector((2.0*gRandom->Rndm()-1.0)*m_Dx, 
                  (2.0*gRandom->Rndm()-1.0)*m_Dy, 
                  (2.0*gRandom->Rndm()-1.0)*m_Dz);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-vector<MVector> MDShapeBRIK::CreateSurfacePattern(const unsigned int Detail) const
-{
- 	// Create a vector of points which are on the surface of this volume
-  // and can be used to check for intersections
-
-  vector<MVector> Points;
-
-  unsigned int Bins = 2 + Detail;
-
-  double xDelta = 2*m_Dx/(Bins-1); 
-  double yDelta = 2*m_Dy/(Bins-1); 
-  double zDelta = 2*m_Dz/(Bins-1);
-
-  for (unsigned int bx = 0; bx < Bins; ++bx) {
-    for (unsigned int by = 0; by < Bins; ++by) {
-      for (unsigned int bz = 0; bz < Bins; ++bz) {
-        // If at least one parameter is at the surface:
-        if (bx == 0 || by == 0 || bz == 0 || bx == Bins-1 || by == Bins-1 || bz == Bins-1) {
-          Points.push_back(MVector(-m_Dx+bx*xDelta, -m_Dy+by*yDelta, -m_Dz+bz*zDelta));
-        }
-      }
-    }
-  }
-
-	return Points; 
 }
 
 

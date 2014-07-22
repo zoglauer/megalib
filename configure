@@ -333,26 +333,11 @@ else
     Geant4Found=1;
   fi
   
-#    Geant4DawnFileFound=1;
-#    Geant4OpenGLFound=1;
-#    Geant4ConfigFile="${G4INSTALL}/.config/bin/${G4SYSTEM}/config.sh";
-#    if ( `test -f $Geant4ConfigFile` ); then
-#        found=`grep -e "g4vis_use_dawnfile='y'" $Geant4ConfigFile`; 
-#        if [ "$found" != "" ]; then 
-#            echo "Found Geant4 visualization: DAWNFILE";
-#            Geant4DawnFileFound=0;
-#        fi; 
-#        found=`grep -e "g4vis_use_openglx='y'" $Geant4ConfigFile`; 
-#        if [ "$found" != "" ]; then 
-#            echo "Found Geant4 visualization: OPENGLX";
-#            Geant4OpenGLFound=0;
-#        fi; 
-#    else 
-#        # Some Geant4 like the one through MacPorts don't keep the config.sh...
-#        echo ""
-#        echo "You seem to have an unusual GEANT4 installation (e.g. via MacPorts) or GEANT4 is not correctly installed!";
-#        echo "If the compilation of Cosima fails, check again if GEANT4 is correctly installed.";
-#    fi
+  Geant4OpenGLFound=1
+  if [ "${G4VIS_USE_OPENGLX}" == "1" ]; then
+    echo "Found Geant4 visualization: OPENGLX";
+    Geant4OpenGLFound=0;
+  fi; 
 fi
 
 # Check for path to HEAsoft

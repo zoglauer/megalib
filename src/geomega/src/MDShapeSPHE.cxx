@@ -50,9 +50,9 @@ ClassImp(MDShapeSPHE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeSPHE::MDShapeSPHE() : MDShape()
+MDShapeSPHE::MDShapeSPHE(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Rmin = 0;
   m_Rmax = 0;
@@ -60,8 +60,6 @@ MDShapeSPHE::MDShapeSPHE() : MDShape()
   m_Thetamax = 0;
   m_Phimin = 0;
   m_Phimax = 0;
-
-  m_SPHE = 0;
 
   m_Type = "SPHE";
 }
@@ -72,16 +70,16 @@ MDShapeSPHE::MDShapeSPHE() : MDShape()
 
 MDShapeSPHE::~MDShapeSPHE()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeSPHE::Initialize(double Rmin, double Rmax, 
-                             double Thetamin, double Thetamax, 
-                             double Phimin, double Phimax) 
+bool MDShapeSPHE::Set(double Rmin, double Rmax, 
+                      double Thetamin, double Thetamax, 
+                      double Phimin, double Phimax) 
 {
   // default constructor
   
@@ -137,7 +135,51 @@ bool MDShapeSPHE::Initialize(double Rmin, double Rmax,
   m_Thetamax = Thetamax;
   m_Phimin = Phimin;
   m_Phimax = Phimax;
+  
+  return true;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeSPHE::Set(double Rmin, double Rmax) 
+{
+  // default constructor
+  
+  if (Rmin < 0) {
+    mout<<"   ***  Error  ***  in shape SPHE "<<endl;
+    mout<<"Rmin needs to be larger or equal 0"<<endl;
+    return false;            
+  }
+  if (Rmax <= 0) {
+    mout<<"   ***  Error  ***  in shape SPHE "<<endl;
+    mout<<"Rmax needs to be larger than 0"<<endl;
+    return false;            
+  }
+  if (Rmin >= Rmax) {
+    mout<<"   ***  Error  ***  in shape SPHE "<<endl;
+    mout<<"Rmax needs to be larger than Rmin"<<endl;
+    return false;            
+  }
+
+  m_Rmin = Rmin;
+  m_Rmax = Rmax;
+  m_Thetamin = 0;
+  m_Thetamax = 180;
+  m_Phimin = 0;
+  m_Phimax = 360;
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeSPHE::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
 
   return true;
@@ -147,15 +189,41 @@ bool MDShapeSPHE::Initialize(double Rmin, double Rmax,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeSPHE::CreateShape()
-{
-  //
-
-  if (m_SPHE == 0) {
-    m_SPHE = new TSPHE("Who", "knows...", "void", m_Rmin, m_Rmax, 
-                       m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
+bool MDShapeSPHE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset+2) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset)) == false) { 
+        Info.Error("The shape Sphere has not been defined correctly");
+        return false;      
+      }
+    } else if (Tokenizer.GetNTokens() == 2+Offset+6) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset), 
+              Tokenizer.GetTokenAtAsDouble(4+Offset), 
+              Tokenizer.GetTokenAtAsDouble(5+Offset), 
+              Tokenizer.GetTokenAtAsDouble(6+Offset), 
+              Tokenizer.GetTokenAtAsDouble(7+Offset)) == false) {
+        Info.Error("The shape Sphere has not been defined correctly");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape Sphere. It is either defined by 2 parameters (rmin & rmax) or by 6 parameters (rmin, rmax, thetamin, thetamax, phimin, phimax)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape Sphere!");
+    return false;
   }
+ 
+  return true; 
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -220,17 +288,6 @@ double MDShapeSPHE::GetPhimax() const
   // 
 
   return m_Phimax;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeSPHE::GetShape()
-{
-  //
-
-  return (TShape *) m_SPHE;
 }
 
 
@@ -356,8 +413,7 @@ void MDShapeSPHE::Scale(const double Factor)
   m_Rmin *= Factor;
   m_Rmax *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
+  Validate();
 }
 
 

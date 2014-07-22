@@ -19,6 +19,7 @@
 // ROOT libs:
 #include <TCanvas.h>
 #include <TGeometry.h>
+#include <TGeoManager.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -32,6 +33,7 @@
 #include "MDDebugInfo.h"
 #include "MDTriggerUnit.h"
 #include "MDSystem.h"
+#include "MDOrientation.h"
 
 // Standard libs:
 #include <vector>
@@ -93,6 +95,19 @@ class MDGeometry
   MDDetector* GetDetector(const MString& Name);
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
+
+  bool AddShape(const MString& Type, const MString& Name);
+  void AddShape(MDShape* Shape);
+  MDShape* GetShapeAt(unsigned int i);
+  MDShape* GetShape(const MString& Name);
+  unsigned int GetShapeIndex(const MString& Name);
+  unsigned int GetNShapes();
+
+  void AddOrientation(MDOrientation* Orientation);
+  MDOrientation* GetOrientationAt(unsigned int i);
+  MDOrientation* GetOrientation(const MString& Name);
+  unsigned int GetOrientationIndex(const MString& Name);
+  unsigned int GetNOrientations();
 
   MDTriggerUnit* GetTriggerUnit() { return m_TriggerUnit; }
 
@@ -160,7 +175,7 @@ class MDGeometry
   MString WFS(MString Text);
   void ReplaceWholeWords(MString& Text, const MString& OldWord, const MString& NewWord);
   bool ContainsReplacableConstant(const MString& Text, const MString& Constant);
-
+  
   // private methods:
  private:
 
@@ -172,18 +187,29 @@ class MDGeometry
 
   //! Current debugging information
   MDDebugInfo m_DebugInfo;      
-  // Number of the line which is currently analyzed/debugged
+  //! Number of the line which is currently analyzed/debugged
   int m_NTextLine;             
 
-  MDVolume* m_WorldVolume;      // the world volume the geometry lays inside
-  MString m_StartVolume;        // replace the world volume by this one...
+  //! The world volume the geometry lays inside
+  MDVolume* m_WorldVolume;
+  //! A temporary world volume
+  MString m_StartVolume;
 
-  MDTriggerUnit* m_TriggerUnit;  // Unit taking care of all triggering aspects
-       
-  vector<MDVolume*> m_VolumeList;        // A list of all volumes - the structure is kept within the volumes, which are containers    
-  vector<MDMaterial*> m_MaterialList;    // A list of all materials
-  vector<MDDetector*> m_DetectorList;    // A list of all detectors
-  vector<MDTrigger*> m_TriggerList;      // A list of all triggers
+  //! Unit taking care of all triggering aspects
+  MDTriggerUnit* m_TriggerUnit;  
+  
+  //! A list of all volumes - the structure is kept within the volumes, which are containers
+  vector<MDVolume*> m_VolumeList;
+  //! A list of all materials
+  vector<MDMaterial*> m_MaterialList;
+  //! A list of all detectors
+  vector<MDDetector*> m_DetectorList;
+  //! A list of all triggers  
+  vector<MDTrigger*> m_TriggerList;
+  //! A list of all defined shapes
+  vector<MDShape*> m_ShapeList;
+  //! A list of all defined orientations
+  vector<MDOrientation*> m_OrientationList;
 
   //! The main system
   MDSystem* m_System;
@@ -219,7 +245,7 @@ class MDGeometry
   bool m_VirtualizeNonDetectorVolumes;
 
   TCanvas* m_GeoView;
-  TGeometry* m_Geometry;
+  TGeoManager* m_Geometry;
 
   //! Director where all cross sections are stored
   MString m_CrossSectionFileDirectory;

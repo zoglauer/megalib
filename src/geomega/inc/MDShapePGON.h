@@ -21,13 +21,12 @@
 using namespace std;
 
 // ROOT libs:
-#include <TPGON.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -35,18 +34,27 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a polygone shape
 class MDShapePGON : public MDShape
 {
   // public interface:
  public:
-  MDShapePGON();
+  //! Standard constructor
+  MDShapePGON(const MString& Name);
+  //! Default destructor
   virtual ~MDShapePGON();
 
-  bool Initialize(double Phi, double DPhi, unsigned int NSides, unsigned int NSection);
+  //! Set the key parameters of the shape
+  bool Set(double Phi, double DPhi, unsigned int NSides, unsigned int NSection);
+  //! Add a section to the polygone
   bool AddSection(unsigned int Section, double z, double Rmin, double Rmax);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   MString ToString();
@@ -88,8 +96,6 @@ class MDShapePGON : public MDShape
 
   // private members:
  private:
-  TPGON* m_PGON;
-
   double m_Phi;
   double m_DPhi;
   unsigned int m_NSides;

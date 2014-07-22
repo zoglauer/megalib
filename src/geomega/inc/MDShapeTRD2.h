@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TTRD2.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,17 +30,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a trapezoid shape
 class MDShapeTRD2 : public MDShape
 {
   // public interface:
  public:
-  MDShapeTRD2();
+  //! Standard constructor
+  MDShapeTRD2(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeTRD2();
 
-  bool Initialize(double dx1, double dx2, double dy1, double dy2, double z);
+  //! Set the all parameters of the shape
+  bool Set(double dx1, double dx2, double dy1, double dy2, double z);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   double GetDx1() const;
@@ -81,8 +88,6 @@ class MDShapeTRD2 : public MDShape
 
   // private members:
  private:
-  TTRD2* m_TRD2;
-
   double m_Dx1;
   double m_Dx2;
   double m_Dy1;

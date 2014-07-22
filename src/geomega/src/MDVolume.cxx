@@ -36,6 +36,10 @@ using namespace std;
 
 // ROOT libs:
 #include "TRotation.h"
+#include "TGeoMatrix.h"
+#include "TGeoMedium.h"
+#include "TGeoVolume.h"
+#include "TGeoShape.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
@@ -249,7 +253,7 @@ int MDVolume::GetColor()
 
 int MDVolume::GetLineWidth()
 {
-  // Return the line width of this volume (of the ROOT TNode object)
+  // Return the line width of this volume 
 
   return m_LineWidth;
 }
@@ -260,7 +264,7 @@ int MDVolume::GetLineWidth()
 
 int MDVolume::GetLineStyle()
 {
-  // Return the line style of this volume (of the ROOT TNode object)
+  // Return the line style of this volume
 
   return m_LineStyle;
 }
@@ -1681,70 +1685,50 @@ bool MDVolume::RemoveVirtualVolumes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDVolume::DeleteNodes()
-{
-  // Delete all nodes of this volume:
-  for (unsigned int n = 0; n < m_Nodes.size(); ++n) {
-    delete m_Nodes[n];
-  }
-  m_Nodes.resize(0);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDVolume::CreateNodes()
+void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
 {
   // Create a node for this volume and its daughters
-  // A node is a graphics represenatation of this volume
+  // A node is a graphics representation of this volume
 
   // Do not draw it, if it has no mother volume ...
   if (m_Mother == 0 && m_WorldVolume == false) return;
 
-  // cout<<"Draw Nodes for : "<<m_Name<<"!"<<(int) m_Node<<endl;
-
-  // Create a standard (= ROOT) BRIK, SPHE etc. shape 
-  // in order that ROOT knows this shape...
-  m_Shape->CreateShape();
-
-
-  // Create the node and set some of its parameters
-  if (m_Rotation == 0) {
-    m_Rotation = new TRotMatrix(m_Name, m_Name, m_Theta1, m_Phi1,
-                                m_Theta2, m_Phi2, m_Theta3, m_Phi3);
-  }
-  //cout<<m_Name<<": CreateNodes: Rot: "<<m_Theta1<<":"<<m_Phi1<<":"<<m_Theta2<<":"<<m_Phi2<<":"<<m_Theta3<<":"<<m_Phi3<<endl;
-  TNode* Node = new TNode(m_Name, m_Name, m_Shape->GetShape(),
-                     m_Position.X(), m_Position.Y(), m_Position.Z(), 
-                     m_Rotation);
-  m_Nodes.push_back(Node);
-
+  TGeoTranslation T(m_Position[0], m_Position[1], m_Position[2]);
+  TGeoRotation R(m_Name, m_Theta1, m_Phi1, m_Theta2, m_Phi2, m_Theta3, m_Phi3);
+  TGeoCombiTrans* C = new TGeoCombiTrans(T, R);
+  
+  TGeoMedium* Medium = m_Material->GetRootMedium();
+  TGeoShape* Shape = m_Shape->GetRootShape();
+  TGeoVolume* Volume = new TGeoVolume(m_Name, Shape, Medium);
+  //Volume->SetVisibility(true);
+  Volume->SetVisContainers();
+  
   if (m_Color == g_IntNotDefined || m_Color <= 0) m_Color = 1;
-  Node->SetLineColor(m_Color);
-  Node->SetFillColor(m_Color);
-  Node->SetLineStyle(m_LineStyle);
-  Node->SetLineWidth(m_LineWidth);
+  Volume->SetLineColor(m_Color);
+  Volume->SetFillColor(m_Color);
+  Volume->SetLineStyle(m_LineStyle);
+  Volume->SetLineWidth(m_LineWidth);
 
   if (m_WorldVolume == true) {
-    Node->SetVisibility(2);
+    Manager->SetTopVolume(Volume);
+    //Manager->SetTopVisible(true);
   } else {
-    if (m_Visibility > 1) {
-      Node->SetVisibility(1);
-//     } else if (m_Visibility == 0) {
-//       Node->SetVisibility(1);
+    Mother->AddNode(Volume, 1, C); 
+  }
+  
+  if (m_WorldVolume == true) {
+    Volume->SetVisibility(false);
+  } else {
+    if (m_Visibility >= 1) {
+      Volume->SetVisibility(true);
     } else {
-      Node->SetVisibility(m_Visibility);
+      Volume->SetVisibility(false);
     }
   }
 
   // Do the same for all daughters
-  unsigned int i;
-  for (i = 0; i < m_Daughters.size(); i++) {
-    // set the "Root-Add-Zoom" / the directory where to store 
-    // the generated pointer again to this node ...
-    Node->cd();
-    m_Daughters[i]->CreateNodes();
+  for (unsigned int i = 0; i < m_Daughters.size(); ++i) {
+    m_Daughters[i]->CreateRootGeometry(Manager, Volume);
   }
   
   return;

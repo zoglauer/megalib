@@ -21,6 +21,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MString.h"
+#include "MStreams.h"
 
 // Forward declarations:
 
@@ -67,6 +68,8 @@ class MDDebugInfo
   //! Prepend some text
   void Prepend(MString Pre) { SetText(Pre + m_Text); }
 
+  //! Print an error message
+  void Error(MString Message) const;
 
   // protected methods:
  protected:

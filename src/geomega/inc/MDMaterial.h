@@ -17,10 +17,11 @@
 
 
 // ROOT libs:
-#include <MString.h>
+#include "TGeoMedium.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 #include "MDMaterialComponent.h"
 #include "MResponseMatrixO1.h"
 #include "MResponseMatrixO3.h"
@@ -120,6 +121,8 @@ class MDMaterial
 
   bool CopyDataToClones();
 
+  //! Return this class as ROOT material
+  TGeoMedium* GetRootMedium();
 
   // protected methods:
  protected:
@@ -140,6 +143,9 @@ class MDMaterial
   MString m_MGeantShortName;
 
   int m_ID;
+  
+  //! The material in ROOT notation
+  TGeoMedium* m_GeoMedium;
 
   //! Hash value to cross check if cross sections file belongs to this class
   unsigned long m_Hash;

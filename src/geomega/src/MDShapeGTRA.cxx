@@ -48,9 +48,9 @@ ClassImp(MDShapeGTRA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeGTRA::MDShapeGTRA() : MDShape()
+MDShapeGTRA::MDShapeGTRA(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Dz = 0;
   m_Theta = 0;
@@ -65,8 +65,6 @@ MDShapeGTRA::MDShapeGTRA() : MDShape()
   m_Alpha1 = 0;
   m_Alpha2 = 0;
 
-  m_GTRA = 0;
-
   m_Type = "GTRA";
 }
 
@@ -76,16 +74,16 @@ MDShapeGTRA::MDShapeGTRA() : MDShape()
 
 MDShapeGTRA::~MDShapeGTRA()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeGTRA::Initialize(double Dz, double Theta, double Phi, double Twist,
-                             double H1, double Bl1, double Tl1, double Alpha1, 
-                             double H2, double Bl2, double Tl2, double Alpha2) 
+bool MDShapeGTRA::Set(double Dz, double Theta, double Phi, double Twist,
+                      double H1, double Bl1, double Tl1, double Alpha1, 
+                      double H2, double Bl2, double Tl2, double Alpha2) 
 {
   // Correctly initialize this shape
   
@@ -207,7 +205,17 @@ bool MDShapeGTRA::Initialize(double Dz, double Theta, double Phi, double Twist,
   m_Tl2 = Tl2;
   m_Alpha1 = Alpha1;
   m_Alpha2 = Alpha2;
+  
+  return true;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeGTRA::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoGtra(m_Dz, m_Theta, m_Phi, m_Twist, 
                        m_H1, m_Bl1, m_Tl1, m_Alpha1, 
                        m_H2, m_Bl2, m_Tl2, m_Alpha2);
@@ -219,31 +227,39 @@ bool MDShapeGTRA::Initialize(double Dz, double Theta, double Phi, double Twist,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeGTRA::CreateShape()
-{
-  //
-
-  // We only need
-
-  if (m_GTRA == 0) {
-    m_GTRA = new TGTRA("Who", "knows...", "void", 
-                       m_Dz, m_Theta, m_Phi, m_Twist,
-                       m_H1, m_Bl1, m_Tl1, m_Alpha1, 
-                       m_H2, m_Bl2, m_Tl2, m_Alpha2);
-    m_GTRA->SetLineColor(m_Color);
-    m_GTRA->SetFillColor(m_Color);
+bool MDShapeGTRA::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset+12) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset),
+              Tokenizer.GetTokenAtAsDouble(6+Offset),
+              Tokenizer.GetTokenAtAsDouble(7+Offset),
+              Tokenizer.GetTokenAtAsDouble(8+Offset),
+              Tokenizer.GetTokenAtAsDouble(9+Offset),
+              Tokenizer.GetTokenAtAsDouble(10+Offset),
+              Tokenizer.GetTokenAtAsDouble(11+Offset),
+              Tokenizer.GetTokenAtAsDouble(12+Offset),
+              Tokenizer.GetTokenAtAsDouble(13+Offset)) == false) {
+        Info.Error("The parameters for the shape GTRA are not OK.");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape GTRA. It is defined by 12 parameters (Dz, Theta, Phi, Twist, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape GTRA!");
+    return false;
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeGTRA::GetShape()
-{
-  //
-
-  return (TShape *) m_GTRA;
+ 
+  return true; 
 }
 
 
@@ -388,10 +404,7 @@ void MDShapeGTRA::Scale(const double Factor)
   // m_Alpha1 *= Factor;
   // m_Alpha2 *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoGtra(m_Dz, m_Theta, m_Phi, m_Twist, 
-                       m_H1, m_Bl1, m_Tl1, m_Alpha1, 
-                       m_H2, m_Bl2, m_Tl2, m_Alpha2);
+  Validate();
 }
 
 

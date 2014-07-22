@@ -15,7 +15,7 @@
 # You must have compiled them into Geant4!
 
 # Use this open statement instead for OpenGL in immediate mode.
-/vis/open OGLIX
+/vis/open OGL
 
 # Use this open statement to get an .eps and .prim files
 # suitable for viewing in DAWN.
@@ -50,10 +50,11 @@
 
 /vis/viewer/reset
 /vis/viewer/set/style  wireframe
-/vis/viewer/set/upVector 0 0 1
-/vis/viewer/set/viewpointThetaPhi  90 90
+/vis/viewer/set/upVector 1 0 0
+/vis/viewer/set/viewpointThetaPhi  91 91
 /vis/viewer/zoom        1.0
 
+/vis/viewer/set/style surface
 
 
 #########

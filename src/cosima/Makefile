@@ -17,7 +17,7 @@ CPP_FILES  := $(wildcard src/*.cc)
 CPP_FILES  := $(filter-out $(CPP_MAIN),$(CPP_FILES))
 OBJ_FILES  := $(addprefix $(LB)/,$(notdir $(CPP_FILES:.cc=.o)))
 SOBJ       := $(LB)/libCosima.$(DLL)
-G4_CFLAGS  := $(shell geant4-config --cflags)
+G4_CFLAGS  := $(shell geant4-config --cflags) -DG4VIS_USE
 G4_LIBS    := $(shell geant4-config --libs)
 
 

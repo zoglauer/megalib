@@ -40,6 +40,8 @@ WorldVolume.Mother 0
 
 Constant DetectorHalfWidth  4.0
 Constant DetectorHalfHeight 0.75
+Constant GuardRingSize      0.3
+Constant IngotRadius        { 2* 2.54}
 
 Constant CryoThickness  0.1
 Constant CryoOffset     0.5
@@ -57,15 +59,51 @@ CryoInnerHull.Material Vacuum
 CryoInnerHull.Visibility 1
 CryoInnerHull.Shape BRIK  { DetectorHalfWidth + CryoOffset }  { DetectorHalfWidth + CryoOffset }  { DetectorHalfHeight + CryoOffset } 
 
+
+# Create the whole wafer
+Shape BRIK WaferOuterBox
+WaferOuterBox.Parameters DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+
+Shape TUBE WaferCutDisk
+WaferCutDisk.Parameters 0.0 IngotRadius DetectorHalfHeight
+
+Shape Intersection WholeWafer
+WholeWafer.Parameters WaferOuterBox WaferCutDisk
+
+# Create the active wafer
+Shape BRIK ActiveWaferOuterBox
+ActiveWaferOuterBox.Parameters { DetectorHalfWidth - GuardRingSize }  { DetectorHalfWidth - GuardRingSize }  DetectorHalfHeight
+
+Shape TUBE ActiveWaferCutDisk
+ActiveWaferCutDisk.Parameters 0.0 { IngotRadius - GuardRingSize } DetectorHalfHeight
+
+Shape Intersection ActiveWafer
+ActiveWafer.Parameters ActiveWaferOuterBox ActiveWaferCutDisk
+
+# Create the guard ring
+Shape Subtraction GuardRing_AlmostThere
+GuardRing_AlmostThere.Parameters WholeWafer ActiveWafer
+
+# A little trick, to get the Strip detector to work: we have to do another intersection, so that the first volume is a box:
+Shape Intersection GuardRing
+GuardRing.Parameters WaferOuterBox GuardRing_AlmostThere
+
+
 Volume GeWafer
 GeWafer.Material Germanium
 GeWafer.Visibility 1
 GeWafer.Color 6
-GeWafer.Shape BRIK  DetectorHalfWidth  DetectorHalfWidth  DetectorHalfHeight
+GeWafer.Shape ActiveWafer
+GeWafer.Position  0.0 0.0 0.0
+GeWafer.Mother CryoInnerHull
 
-GeWafer.Copy GeWaferN01
-GeWaferN01.Position  0.0 0.0 0.0
-GeWaferN01.Mother CryoInnerHull
+Volume GeWaferGuardRing
+GeWaferGuardRing.Material Germanium
+GeWaferGuardRing.Visibility 1
+GeWaferGuardRing.Color 3
+GeWaferGuardRing.Shape GuardRing
+GeWaferGuardRing.Position  0.0 0.0 0.0
+GeWaferGuardRing.Mother CryoInnerHull
 
 CryoInnerHull.Copy Cryo
 Cryo.Position 0.0 0.0 0.0
@@ -99,56 +137,75 @@ GeE1N004.Mother WorldVolume
 # Detector and trigger section:
 
 
-MDStrip3D                  GStrip
+MDStrip3D                  ActiveDetector
 
-GStrip.DetectorVolume      GeWafer
-GStrip.SensitiveVolume     GeWafer
+ActiveDetector.DetectorVolume      GeWafer
+ActiveDetector.SensitiveVolume     GeWafer
 
-GStrip.StructuralPitch      0.0   0.0    0.0
-GStrip.StructuralOffset     0.0   0.0    CryoTotalHeight
+ActiveDetector.StructuralPitch     0.0   0.0    0.0
+ActiveDetector.StructuralOffset    0.0   0.0    CryoTotalHeight
 
-GStrip.Offset              0.0   0.0
-GStrip.StripNumber         40    40
+ActiveDetector.Offset              0.0   0.0
+ActiveDetector.StripNumber         40    40
 
-GStrip.NoiseThreshold      15
-GStrip.TriggerThreshold    30
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
 
-GStrip.DepthResolution     10  0.02
-GStrip.DepthResolution     100  0.02
-GStrip.DepthResolution     1000  0.02
+ActiveDetector.DepthResolution     10  0.02
+ActiveDetector.DepthResolution     100  0.02
+ActiveDetector.DepthResolution     1000  0.02
 
-GStrip.EnergyResolution Gaus 10      10        0.417   
-GStrip.EnergyResolution Gaus 20      20        0.425           
-GStrip.EnergyResolution Gaus 50      50        0.4375    
-GStrip.EnergyResolution Gaus 100     100       0.454     
-GStrip.EnergyResolution Gaus 200     200       0.492     
-GStrip.EnergyResolution Gaus 500     500       0.5875      
-GStrip.EnergyResolution Gaus 1000    1000      0.7217       
-GStrip.EnergyResolution Gaus 2000    2000      0.9317      
-GStrip.EnergyResolution Gaus 5000    5000      1.3819       
-GStrip.EnergyResolution Gaus 10000   10000     1.9094                     
-GStrip.EnergyResolution Gaus 100000  100000    5.907         
+ActiveDetector.EnergyResolution Gaus 10      10        0.417   
+ActiveDetector.EnergyResolution Gaus 20      20        0.425           
+ActiveDetector.EnergyResolution Gaus 50      50        0.4375    
+ActiveDetector.EnergyResolution Gaus 100     100       0.454     
+ActiveDetector.EnergyResolution Gaus 200     200       0.492     
+ActiveDetector.EnergyResolution Gaus 500     500       0.5875      
+ActiveDetector.EnergyResolution Gaus 1000    1000      0.7217       
+ActiveDetector.EnergyResolution Gaus 2000    2000      0.9317      
+ActiveDetector.EnergyResolution Gaus 5000    5000      1.3819       
+ActiveDetector.EnergyResolution Gaus 10000   10000     1.9094                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    5.907         
 
-GStrip.FailureRate 0.0
+ActiveDetector.FailureRate 0.0
 
-GStrip.Named D1
+ActiveDetector.Named D1
 D1.Assign 0.0  0.0  {  1.5*CryoTotalHeight }
-
-GStrip.Named D2
+ActiveDetector.Named D2
 D2.Assign 0.0  0.0  {  0.5*CryoTotalHeight }
-
-GStrip.Named D3
+ActiveDetector.Named D3
 D3.Assign  0.0  0.0  { -0.5*CryoTotalHeight }
-
-GStrip.Named D4  
+ActiveDetector.Named D4  
 D4.Assign 0.0  0.0  { -1.5*CryoTotalHeight }
+
+
+Simple GuardRingDetector
+
+GuardRingDetector.DetectorVolume      GeWaferGuardRing
+GuardRingDetector.SensitiveVolume     GeWaferGuardRing
+
+GuardRingDetector.TriggerThreshold      40
+GuardRingDetector.NoiseThresholdEqualsTriggerThreshold true
+
+GuardRingDetector.EnergyResolution Gaus 10      10        3   
+GuardRingDetector.EnergyResolution Gaus 20      20        3           
+GuardRingDetector.EnergyResolution Gaus 50      50        3    
+GuardRingDetector.EnergyResolution Gaus 100     100       3     
+GuardRingDetector.EnergyResolution Gaus 200     200       3     
+GuardRingDetector.EnergyResolution Gaus 500     500       3      
+GuardRingDetector.EnergyResolution Gaus 1000    1000      3       
+GuardRingDetector.EnergyResolution Gaus 2000    2000      3      
+GuardRingDetector.EnergyResolution Gaus 5000    5000      3       
 
 
 
 // Trigger: at least one hit in one Germanium detector  
-Trigger T1
-T1.Veto false
-T1.TriggerByChannel true
-T1.Detector GStrip 1
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByChannel true
+ActiveDetectorTrigger.Detector ActiveDetector 1
 
-
+Trigger GuradRingVeto
+GuradRingVeto.Veto true
+GuradRingVeto.TriggerByChannel true
+GuradRingVeto.Detector GuardRingDetector 1

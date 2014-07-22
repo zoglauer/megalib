@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TTUBS.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,17 +30,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a tube shape
 class MDShapeTUBS : public MDShape
 {
   // public interface:
  public:
-  MDShapeTUBS();
+  //! Standard constructor
+  MDShapeTUBS(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeTUBS();
 
-  bool Initialize(double Rmin, double Rmax, double HalfHeight, double Phi1, double Phi2);
+  //! Set the all parameters of the shape
+  bool Set(double Rmin, double Rmax, double HalfHeight, double Phi1, double Phi2);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   MString ToString();
@@ -84,8 +91,6 @@ class MDShapeTUBS : public MDShape
 
   // private members:
  private:
-  TTUBS *m_TUBS;
-
   double m_Rmin;
   double m_Rmax;
   double m_HalfHeight;

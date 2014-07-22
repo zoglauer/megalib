@@ -50,17 +50,15 @@ ClassImp(MDShapeTUBS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeTUBS::MDShapeTUBS() : MDShape()
+MDShapeTUBS::MDShapeTUBS(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Rmin = 0;
   m_Rmax = 0;
   m_HalfHeight = 0;
   m_Phi1 = 0;
   m_Phi2 = 0;
-
-  m_TUBS = 0;
 
   m_Type = "TUBS";
 }
@@ -71,17 +69,17 @@ MDShapeTUBS::MDShapeTUBS() : MDShape()
 
 MDShapeTUBS::~MDShapeTUBS()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeTUBS::Initialize(double Rmin, double Rmax, double HalfHeight, 
-                             double Phi1, double Phi2) 
+bool MDShapeTUBS::Set(double Rmin, double Rmax, double HalfHeight, 
+                      double Phi1, double Phi2) 
 {
-  // default constructor
+  // Set all parameters
 
   if (Rmin < 0) {
     mout<<"   ***  Error  ***  in shape TUBS "<<endl;
@@ -125,8 +123,22 @@ bool MDShapeTUBS::Initialize(double Rmin, double Rmax, double HalfHeight,
   m_Phi1 = Phi1;
   m_Phi2 = Phi2;
 
-  m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+  return true;
+}
+  
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeTUBS::Validate()
+{
+  delete m_Geo;
+  if (m_Phi1 == 0 && m_Phi2 == 360) {
+    m_Geo = new TGeoTube(m_Rmin, m_Rmax, m_HalfHeight);
+  } else {
+    m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+  }
+  
   return true;
 }
 
@@ -134,18 +146,45 @@ bool MDShapeTUBS::Initialize(double Rmin, double Rmax, double HalfHeight,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeTUBS::CreateShape()
-{
-  //
-
-  if (m_TUBS == 0) {
-    m_TUBS = new TTUBS("Who", "knows...", "void", m_Rmin, 
-                       m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+bool MDShapeTUBS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset + 3) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              0,
+              360) == false) {
+        Info.Error("The shape TUBS has not been defined correctly");
+        return false;
+      }
+    } else if (Tokenizer.GetNTokens() == 2+Offset + 5) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset),
+              Tokenizer.GetTokenAtAsDouble(6+Offset)) == false) {
+        Info.Error("The shape TUBS has not been defined correctly");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape TUBS. It is defined by 5 parameters (rmin, rmax, half height, phi1, phi2)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape TUBS!");
+    return false;
   }
+ 
+  return true; 
 }
 
-////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
 
 
 double MDShapeTUBS::GetRmin()
@@ -193,16 +232,6 @@ double MDShapeTUBS::GetPhi2()
   //
 
   return m_Phi2;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeTUBS::GetShape()
-{
-  //
-
-  return (TShape *) m_TUBS;
 }
 
 
@@ -323,8 +352,7 @@ void MDShapeTUBS::Scale(const double Factor)
   m_Rmax *= Factor;
   m_HalfHeight *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+  Validate();
 }
 
 

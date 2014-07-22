@@ -151,5 +151,21 @@ void MDDebugInfo::ReplaceFirst(MString Old, double Number)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDDebugInfo::Error(MString Message) const
+{
+  // Print an error message
+
+  mout<<endl;
+  mout<<"   ***  Error  ***  in setup file "<<GetFileName()<<" at line "<<GetLine()<<":"<<endl;
+  mout<<"\""<<GetText()<<"\""<<endl;
+  mout<<Message<<endl;
+  mout<<"Stopping to scan geometry file!"<<endl;
+  mout<<endl;
+}
+  
+
 // MDDebugInfo.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

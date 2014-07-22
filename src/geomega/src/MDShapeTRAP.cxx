@@ -48,9 +48,9 @@ ClassImp(MDShapeTRAP)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDShapeTRAP::MDShapeTRAP() : MDShape()
+MDShapeTRAP::MDShapeTRAP(const MString& Name) : MDShape(Name)
 {
-  // default constructor
+  // Standard constructor
 
   m_Dz = 0;
   m_Theta = 0;
@@ -64,8 +64,6 @@ MDShapeTRAP::MDShapeTRAP() : MDShape()
   m_Alpha1 = 0;
   m_Alpha2 = 0;
 
-  m_TRAP = 0;
-
   m_Type = "TRAP";
 }
 
@@ -75,16 +73,16 @@ MDShapeTRAP::MDShapeTRAP() : MDShape()
 
 MDShapeTRAP::~MDShapeTRAP()
 {
-  // default destructor
+  // Default destructor
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDShapeTRAP::Initialize(double Dz, double Theta, double Phi, 
-                             double H1, double Bl1, double Tl1, double Alpha1, 
-                             double H2, double Bl2, double Tl2, double Alpha2) 
+bool MDShapeTRAP::Set(double Dz, double Theta, double Phi, 
+                      double H1, double Bl1, double Tl1, double Alpha1, 
+                      double H2, double Bl2, double Tl2, double Alpha2) 
 {
   // Correctly initialize this object
 
@@ -217,6 +215,16 @@ bool MDShapeTRAP::Initialize(double Dz, double Theta, double Phi,
   m_Alpha1 = Alpha1;
   m_Alpha2 = Alpha2;
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDShapeTRAP::Validate()
+{
+  delete m_Geo;
   m_Geo = new TGeoTrap(m_Dz, m_Theta, m_Phi, 
                        m_H1, m_Bl1, m_Tl1, m_Alpha1, 
                        m_H2, m_Bl2, m_Tl2, m_Alpha2);
@@ -228,20 +236,38 @@ bool MDShapeTRAP::Initialize(double Dz, double Theta, double Phi,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDShapeTRAP::CreateShape()
-{
-  //
-
-  // We only need
-
-  if (m_TRAP == 0) {
-    m_TRAP = new TTRAP("Who", "knows...", "void", 
-                       m_Dz, m_Theta, m_Phi, 
-                       m_H1, m_Bl1, m_Tl1, m_Alpha1, 
-                       m_H2, m_Bl2, m_Tl2, m_Alpha2);
-    m_TRAP->SetLineColor(m_Color);
-    m_TRAP->SetFillColor(m_Color);
+bool MDShapeTRAP::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info) 
+{ 
+  // Parse some tokenized text
+  
+  if (Tokenizer.IsTokenAt(1, "Parameters") == true || Tokenizer.IsTokenAt(1, "Shape") == true) {
+    unsigned int Offset = 0;
+    if (Tokenizer.IsTokenAt(1, "Shape") == true) Offset = 1;
+    if (Tokenizer.GetNTokens() == 2+Offset + 11) {
+      if (Set(Tokenizer.GetTokenAtAsDouble(2+Offset),
+              Tokenizer.GetTokenAtAsDouble(3+Offset),
+              Tokenizer.GetTokenAtAsDouble(4+Offset),
+              Tokenizer.GetTokenAtAsDouble(5+Offset),
+              Tokenizer.GetTokenAtAsDouble(6+Offset),
+              Tokenizer.GetTokenAtAsDouble(7+Offset),
+              Tokenizer.GetTokenAtAsDouble(8+Offset),
+              Tokenizer.GetTokenAtAsDouble(9+Offset),
+              Tokenizer.GetTokenAtAsDouble(10+Offset),
+              Tokenizer.GetTokenAtAsDouble(11+Offset),
+              Tokenizer.GetTokenAtAsDouble(12+Offset)) == false) {
+        Info.Error("The shape TRAP has not been defined correctly");
+        return false;
+      }
+    } else {
+      Info.Error("You have not correctly defined your shape TRAP. It is defined by 11 parameters (Dz, Theta, Phi, H1, Bl1, Tl1, Alpha1, H2, Bl2, Tl2, Alpha2)");
+      return false;
+    }
+  } else {
+    Info.Error("Unhandled descriptor in shape TRAP!");
+    return false;
   }
+ 
+  return true; 
 }
 
 
@@ -363,17 +389,6 @@ double MDShapeTRAP::GetAlpha2() const
   //
 
   return m_Alpha2;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-TShape* MDShapeTRAP::GetShape()
-{
-  //
-
-  return (TShape *) m_TRAP;
 }
 
 
@@ -512,10 +527,7 @@ void MDShapeTRAP::Scale(const double Factor)
   m_Tl1 *= Factor;
   m_Tl2 *= Factor;
 
-  delete m_Geo;
-  m_Geo = new TGeoTrap(m_Dz, m_Theta, m_Phi, 
-                       m_H1, m_Bl1, m_Tl1, m_Alpha1, 
-                       m_H2, m_Bl2, m_Tl2, m_Alpha2);
+  Validate();
 }
 
 

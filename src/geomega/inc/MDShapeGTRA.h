@@ -17,13 +17,12 @@
 
 
 // ROOT libs:
-#include <TGTRA.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MDShape.h"
+#include "MString.h"
 #include "MVector.h"
+#include "MDShape.h"
 
 // Forward declarations:
 
@@ -31,19 +30,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Class representing a general trapezoid
 class MDShapeGTRA : public MDShape
 {
   // public interface:
  public:
-  MDShapeGTRA();
+  //! Standard constructor
+  MDShapeGTRA(const MString& Name);
+  //! Default destructor
   virtual ~MDShapeGTRA();
 
-  bool Initialize(double Dz, double Theta, double Phi, double Twist, 
-                  double H1, double Bl1, double Tl1, double Alpha1, 
-                  double H2, double Bl2, double Tl2, double Alpha2);
+  //! Set the all parameters of the shape
+  bool Set(double Dz, double Theta, double Phi, double Twist, 
+           double H1, double Bl1, double Tl1, double Alpha1, 
+           double H2, double Bl2, double Tl2, double Alpha2);
 
-  TShape* GetShape();
-  void CreateShape();
+  //! Validate the data and create the shape 
+  bool Validate();  
+  
+  //! Parse some tokenized text
+  bool Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info);
+
   MVector GetSize();
 
   MString ToString();
@@ -77,8 +84,6 @@ class MDShapeGTRA : public MDShape
 
   // private members:
  private:
-  TGTRA *m_GTRA;
-
   double m_Dz;
   double m_Theta;
   double m_Phi;

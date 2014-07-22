@@ -6,7 +6,7 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
-CONFIGUREOPTIONS="--gminimal --disable-cocoa --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
+CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
