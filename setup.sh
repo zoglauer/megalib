@@ -134,7 +134,7 @@ fi
 if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
   echo "Loading old options as default"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
-  CMD="${OLDCMD} ${CMD}"
+  CMD=( ${OLDCMD} ${CMD}  )
 fi
 
 
