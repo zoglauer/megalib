@@ -139,6 +139,8 @@ class MTransceiverTcpIpBinary
   list<vector<unsigned char>> m_PacketsToSend;
   //! Number of objects still waiting for sending
   unsigned int m_NPacketsToSend;
+  //! Number of bytes still waiting for sending
+  unsigned int m_NBytesToSend;
   //! A mutex for the send queue
   TMutex m_SendMutex;
 

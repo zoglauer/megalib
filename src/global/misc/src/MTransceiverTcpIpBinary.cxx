@@ -81,6 +81,7 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   m_Port = Port;
 
   m_NPacketsToSend = 0;
+  m_NBytesToSend = 0;
   m_NPacketsToReceive = 0;
 
   m_NLostPackets = 0;
@@ -176,6 +177,11 @@ bool MTransceiverTcpIpBinary::Disconnect(bool WaitForDisconnection, double TimeO
     }
   }
 
+  // Clean up:
+  m_PacketsToSend.clear();
+  m_NPacketsToSend = 0;
+  m_NBytesToSend = 0;
+  
   return true;
 }
 
@@ -239,12 +245,15 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
   // Add it to the end of the queue
   m_PacketsToSend.push_back(Packet);
   m_NPacketsToSend++;
+  m_NBytesToSend += Packet.size();
 
-  // If we have more than N events we remove the oldest from the buffer...
-  if (m_NPacketsToSend > m_MaxBufferSize) {
-    m_PacketsToSend.pop_front();
-    m_NLostPackets++;
+  
+  // If we have more than N bytes we remove the oldest from the buffer...
+  if (m_NBytesToSend > m_MaxBufferSize) {
+    m_NBytesToSend -= m_PacketsToSend.front().size();
     m_NPacketsToSend--;
+    m_NLostPackets++;
+    m_PacketsToSend.pop_front();
     cout<<"Buffer overflow: One packet lost (total loss: "<<m_NLostPackets<<")"<<endl;
   }
   m_SendMutex.UnLock();
@@ -456,6 +465,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     
     // Add the object to the list:
     list<unsigned char> NewPacket;
+    unsigned int MaxLoops = 100; 
     do {
       Socket->SetOption(kNoBlock, 1); // don't block!
       Status = Socket->RecvRaw((void*) &ReadPacket[0], ReadPacketSize, kDontBlock);
@@ -463,7 +473,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       for (int c = 0; c < Status; ++c) {
         NewPacket.push_back(ReadPacket[c]);
       }
-      if (Status < ReadPacketSize) break;
+      if (Status < ReadPacketSize || --MaxLoops == 0) break;
     } while (true);
 
      
@@ -497,14 +507,20 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       
         //cout<<"Transceiver "<<m_Name<<": Received something from "<<m_Host<<":"<<m_Port<<" of size "<<NewPacket.size()<<endl;
       
-        if (m_NPacketsToReceive < m_MaxBufferSize) {
-          m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
-          m_NReceivedPackets += NewPacketSize;
-          m_NPacketsToReceive += NewPacketSize;
-        } else {
-          m_NReceivedPackets += NewPacketSize;
+        if (m_NPacketsToReceive + NewPacketSize > m_MaxBufferSize) {
+          list<unsigned char>::iterator Stop = m_PacketsToReceive.begin();
+          advance(Stop, NewPacketSize);
+          m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
           m_NLostPackets += NewPacketSize;
-        } 
+          m_NPacketsToReceive -= NewPacketSize;
+          cout<<"Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes..."<<endl;
+        }
+        
+        m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
+        m_NReceivedPackets += NewPacketSize;
+        m_NPacketsToReceive += NewPacketSize;
+
+        //cout<<m_Name<<": Received packet size: "<<m_NPacketsToReceive<<endl;
         
         m_ReceiveMutex.UnLock();
         
@@ -540,6 +556,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       } else {
         m_SendMutex.Lock();
         m_NPacketsToSend--;
+        m_NBytesToSend -= Packet.size();
         m_PacketsToSend.pop_front();
         m_NSentPackets++;
         m_SendMutex.UnLock();
