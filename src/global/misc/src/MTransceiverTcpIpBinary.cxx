@@ -88,7 +88,8 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   
   m_NReceivedPackets = 0; 
   m_NSentPackets = 0;
-
+  m_NSentBytes = 0;
+  
   m_MaxBufferSize = 10000000;
 
   m_IsConnected = false;
@@ -248,13 +249,13 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
   m_NBytesToSend += Packet.size();
 
   
-  // If we have more than N bytes we remove the oldest from the buffer...
-  if (m_NBytesToSend > m_MaxBufferSize) {
+  // If we have more than N bytes we remove the oldest from the buffer... we are just removing one at a time!
+  while (m_NBytesToSend > m_MaxBufferSize && m_NPacketsToSend > 0) {
     m_NBytesToSend -= m_PacketsToSend.front().size();
     m_NPacketsToSend--;
     m_NLostPackets++;
     m_PacketsToSend.pop_front();
-    cout<<"Buffer overflow: One packet lost (total loss: "<<m_NLostPackets<<")"<<endl;
+    cout<<"Transceiver "<<m_Name<<": Buffer overflow: One packet lost (total loss: "<<m_NLostPackets<<")"<<endl;
   }
   m_SendMutex.UnLock();
   
@@ -265,7 +266,7 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync)
+bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync, unsigned int MaxPackets)
 {
   // Check if something is in the received list, 
   // If it starts with Sync, and there is more starting with Sync store the first one with sync
@@ -284,22 +285,23 @@ bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vecto
     list<unsigned char>::iterator E;
     list<unsigned char>::iterator SearchStart = Stop;
     advance(SearchStart, Sync.size());
-    while ((E = search(SearchStart, m_PacketsToReceive.end(), Sync.begin(), Sync.end())) != m_PacketsToReceive.end()) {
+    //cout<<"Transceiver "<<m_Name<<": Total size: "<<m_NPacketsToReceive<<endl;
+    while ((E = search(SearchStart, m_PacketsToReceive.end(), Sync.begin(), Sync.end())) != m_PacketsToReceive.end() && MaxPackets-- > 0) {
       Stop = E;
       SearchStart = E;
-      advance(SearchStart, Sync.size());      
+      advance(SearchStart, Sync.size());
     }
     if (Stop != Start) {
       for (auto I = Start; I != Stop; ++I) {
         Packet.push_back((*I));
       }
       m_PacketsToReceive.erase(Start, Stop);
-      m_NPacketsToReceive = m_PacketsToReceive.size();
+      //m_NPacketsToReceive = m_PacketsToReceive.size();
+      m_NPacketsToReceive -= Packet.size();
       m_ReceiveMutex.UnLock();
       return true;
     }
   }
-
 
   m_ReceiveMutex.UnLock();
   
@@ -513,7 +515,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
           m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
           m_NLostPackets += NewPacketSize;
           m_NPacketsToReceive -= NewPacketSize;
-          cout<<"Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes..."<<endl;
+          cout<<"Transceiver "<<m_Name<<": Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes..."<<endl;
         }
         
         m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
@@ -545,7 +547,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
       
       if (Status < 0) {
-        cout<<"Error in UDP transceiver "<<m_Name<<" (ERR="<<Status<<"): Sending failed!"<<endl;
+        cout<<"Transceiver "<<m_Name<<": Error (ERR="<<Status<<"): Sending failed!"<<endl;
 
         Socket->Close("force");
         delete Socket;
@@ -555,8 +557,10 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         continue; // Back --- we have to open a new socket
       } else {
         m_SendMutex.Lock();
+        //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
         m_NPacketsToSend--;
         m_NBytesToSend -= Packet.size();
+        m_NSentBytes += Packet.size();
         m_PacketsToSend.pop_front();
         m_NSentPackets++;
         m_SendMutex.UnLock();

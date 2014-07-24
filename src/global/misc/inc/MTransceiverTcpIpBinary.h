@@ -85,8 +85,8 @@ class MTransceiverTcpIpBinary
   bool Send(const vector<unsigned char>& Bytes);
   //! Receive something binary
   bool Receive(vector<unsigned char>& Bytes);
-  //! Receive something with sync word Sync
-  bool SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync);
+  //! Receive something with sync word Sync but not more than MaxPackets
+  bool SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync, unsigned int MaxPackets = 1000);
 
   //! Set the maximum buffer size (in strings) after which to loose events
   void SetMaximumBufferSize(unsigned int MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
@@ -95,6 +95,9 @@ class MTransceiverTcpIpBinary
   unsigned int GetNPacketsToSend() const { return m_NPacketsToSend; }
   //! Get the number of packets still to be receive (i.e. which are in the receive buffer)
   unsigned int GetNPacketsToReceive() const { return m_NPacketsToReceive; }
+
+  //! Get the number of sent bytes
+  unsigned int GetNSentBytes() const { return m_NSentBytes; }
 
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
@@ -158,6 +161,8 @@ class MTransceiverTcpIpBinary
   unsigned int m_NReceivedPackets;
   //! Counter for the number of sent strings, etc.
   unsigned int m_NSentPackets;
+  //! Counter for the number of sent bytes
+  unsigned int m_NSentBytes;
 
   //! Counter for the number of lost strings due to buffer overflow
   unsigned int m_NLostPackets;
