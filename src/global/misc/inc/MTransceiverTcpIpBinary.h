@@ -20,6 +20,7 @@
 #include <sstream>
 #include <string>
 #include <list>
+#include <deque>
 using namespace std;
 
 // ROOT libs:
@@ -58,6 +59,10 @@ class MTransceiverTcpIpBinary
   //! Get the name of the transceiver
   MString GetName() const { return m_Name; }
 
+  //! Set the verbosity of the debug output
+  //! (0: quiet, 1: errors, 2: errors & warnings (default), 3: errors, warnings & info)
+  void SetVerbosity(unsigned int Verbosity) { m_Verbosity = Verbosity; }
+  
   //! Set the host name
   void SetHost(MString Host) { m_Host = Host; }
   //! Get the host name
@@ -85,10 +90,12 @@ class MTransceiverTcpIpBinary
   bool Send(const vector<unsigned char>& Bytes);
   //! Receive something binary
   bool Receive(vector<unsigned char>& Bytes);
-  //! Receive something with sync word Sync but not more than MaxPackets
+  //! Receive something with sync word Sync but not more than MaxPackets 
+  //! The last package will always be missed since we will not find a new syncword for the last package
   bool SyncedReceive(vector<unsigned char>& Packet, vector<unsigned char>& Sync, unsigned int MaxPackets = 1000);
 
   //! Set the maximum buffer size (in strings) after which to loose events
+  //! Since we use C++ lists on char's we have an overhead of 16 : 1 on 64-bit systems!
   void SetMaximumBufferSize(unsigned int MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
 
   //! Get the number of objects still to be sent
@@ -98,6 +105,8 @@ class MTransceiverTcpIpBinary
 
   //! Get the number of sent bytes
   unsigned int GetNSentBytes() const { return m_NSentBytes; }
+  //! Get the number of receives bytes
+  unsigned int GetNReceivedBytes() const { return m_NReceivedBytes; }
 
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
@@ -129,6 +138,9 @@ class MTransceiverTcpIpBinary
   //! The port (e.g. 9090)
   unsigned int m_Port;
 
+  //! The verbosity (0: quiet, 1: errors, 2: errors & warnings (default), 3: errors, warnings & info)
+  unsigned int m_Verbosity;
+
   //! The thread where the receiving and transmitting happens
   TThread* m_TransceiverThread;     
   //! Unique Id for the thread...
@@ -148,7 +160,7 @@ class MTransceiverTcpIpBinary
   TMutex m_SendMutex;
 
   //! List of packets which have been received and which are still in the buffer
-  list<unsigned char> m_PacketsToReceive;
+  deque<unsigned char> m_PacketsToReceive;
   //! Number of packets which have been received and which are still in the buffer
   unsigned int m_NPacketsToReceive;
   //! A mutex for the receive queue
@@ -159,6 +171,8 @@ class MTransceiverTcpIpBinary
 
   //! Counter for the number of received strings, etc.
   unsigned int m_NReceivedPackets;
+  //! Counter for the number of received bytes
+  unsigned int m_NReceivedBytes;
   //! Counter for the number of sent strings, etc.
   unsigned int m_NSentPackets;
   //! Counter for the number of sent bytes
