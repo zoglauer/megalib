@@ -30,6 +30,19 @@ case $1 in
   exit 0;;
 esac
 
+# Check if a debugger is installed
+DEBUGGER=gdb
+type ${DEBUGGER} >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  DEBUGGER=lldb
+  type ${DEBUGGER} >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "ERROR: you must have either gdb or lldb installed"
+    exit 1
+  fi 
+fi 
+
+
 echo " "
 echo "Starting debug ..."
 
@@ -111,6 +124,18 @@ fi
 # C. Lauch the program
 echo "Starting gdb...";
 cd ${currdir}
-gdb -ex run --args ${program} ${args}
+if [ "${DEBUGGER}" == "gdb" ]; then
+  TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
+  echo "catch throw" >> ${TMP}
+  echo "run ${args}" >> ${TMP}
+  gdb -x ${TMP} ${program}
+  rm ${TMP}
+elif [ "${DEBUGGER}" == "lldb" ]; then
+  TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
+  echo "break set -E c++" >>${TMP}
+  echo "run" >> ${TMP}
+  lldb -s ${TMP} -f ${program} -- ${args}
+  rm ${TMP}
+fi
 
 exit 0;
