@@ -51,7 +51,7 @@ MTimer::MTimer()
   // Default constructor
 
   SetTimeOut(0);
-  m_Time = GetRelativeTime();
+  m_StartTime = GetRelativeTime();
 	m_HasTimedOut = false;
   m_ElapsedTime = 0;
   m_IsPaused = false;
@@ -66,7 +66,7 @@ MTimer::MTimer(double TimeOut)
   // Standard constrcutor
 
   SetTimeOut(TimeOut);
-  m_Time = GetRelativeTime();
+  m_StartTime = GetRelativeTime();
 	m_HasTimedOut = false;
   m_ElapsedTime = 0;
   m_IsPaused = false;
@@ -100,7 +100,7 @@ void MTimer::Start()
 {
   // (Re-) Start the timer
 
-  m_Time = GetRelativeTime();
+  m_StartTime = GetRelativeTime();
 	m_HasTimedOut = false;
   m_ElapsedTime = 0;
   m_IsPaused = false;
@@ -125,7 +125,9 @@ void MTimer::Pause()
 {
   // (Re-) Start the timer
 
-  m_ElapsedTime += ElapsedTime();
+  if (m_IsPaused == true) return;
+  
+  m_ElapsedTime = ElapsedTime();
   m_IsPaused = true;
 }
 
@@ -135,9 +137,11 @@ void MTimer::Pause()
 
 void MTimer::Continue()
 {
-  // (Re-) Start the timer --- same as start
+  // Start the timer after it has been paused - does not reset the time
 
-  m_Time = GetRelativeTime();
+  if (m_IsPaused == false) return;
+  
+  m_StartTime = GetRelativeTime();
   m_IsPaused = false;
 }
 
@@ -190,7 +194,7 @@ double MTimer::ElapsedTime()
   if (m_IsPaused == true) {
     return m_ElapsedTime;
   } else {
-    return GetRelativeTime() - m_Time + m_ElapsedTime;
+    return GetRelativeTime() - m_StartTime + m_ElapsedTime;
   }
 }
 
@@ -208,7 +212,7 @@ bool MTimer::HasTimedOut(double Seconds)
 
 	if (Seconds == -1) Seconds = m_TimeOut;
 
-  if (GetRelativeTime() - m_Time > Seconds) return true;
+  if (GetRelativeTime() - m_StartTime > Seconds) return true;
 
   return false;
 }

@@ -434,17 +434,18 @@ bool MGUIMain::ShowGeometryDialog()
   // Show the geometry dialog
   // Returns the geometry file name
 
-  MGUIGeometry* Geo = 
-    new MGUIGeometry(gClient->GetRoot(), this, m_BaseData);
+  MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_BaseData);
   gClient->WaitForUnmap(Geo);
-  MString Name = Geo->GetGeometryFileName();
-  delete Geo;
-  for (unsigned int i = 0; i < 100; ++i) {
-    gSystem->ProcessEvents();
-  }
+  if (Geo->OkPressed() == true) {
+    MString Name = Geo->GetGeometryFileName();
+    delete Geo;
+    for (unsigned int i = 0; i < 100; ++i) {
+      gSystem->ProcessEvents();
+    }
 
-  if (m_BaseInterface->SetGeometry(Name) == true) {
-    UpdateConfiguration();
+    if (m_BaseInterface->SetGeometry(Name) == true) {
+      UpdateConfiguration();
+    }
   }
 
   return true;

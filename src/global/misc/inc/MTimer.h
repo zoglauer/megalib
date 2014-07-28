@@ -67,7 +67,7 @@ class MTimer
   // private members:
  private:
   //! Time since last start or reset
-  double m_Time;
+  double m_StartTime;
   //! Total elapsed time since last start or reset
   double m_ElapsedTime;
   //! Time which needs to be elapsed until a timeout will be triggered

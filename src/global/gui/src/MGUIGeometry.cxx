@@ -50,7 +50,6 @@ MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const M
 {
   // Construct an instance of MGUIGeometry and bring it to the screen
 
-  m_GUIData = 0;
   m_GeometryFileName = FileName;
   if (m_GeometryFileName == g_StringNotDefined) m_GeometryFileName = "";
 
@@ -65,14 +64,15 @@ MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const M
 
 
 MGUIGeometry::MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, 
-                           MSettingsBasicFiles* Data)
+                           MSettingsBasicFiles* Settings)
   : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIGeometry and bring it to the screen
 
-  m_GUIData = Data;
-  m_GeometryFileName = m_GUIData->GetGeometryFileName();
+  if (Settings != 0) m_GeometryFileName = Settings->GetGeometryFileName();
   if (m_GeometryFileName == g_StringNotDefined) m_GeometryFileName = "";
+
+  m_OkPressed = false;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -100,16 +100,16 @@ void MGUIGeometry::Create()
   // We start with a name and an icon...
   SetWindowName("Geometry");  
 
-  AddSubTitle("Select the default geometry for all calculations:"); 
+  AddSubTitle("Select the geometry for the analysis"); 
 
   // Add here ...
   
-  m_FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
+  TGLayoutHints* FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
   m_FileSelector = new MGUIEFileSelector(this, "Currently selected geometry file (*.geo.setup):", 
                                          m_GeometryFileName);
   m_FileSelector->SetFileType("Geometry setup file", "*.geo.setup");
   m_FileSelector->SetFileType("Geometry file", "*.geo");
-  AddFrame(m_FileSelector, m_FileSelectorLayout);
+  AddFrame(m_FileSelector, FileSelectorLayout);
 
   AddOKCancelButtons();
 
@@ -130,7 +130,7 @@ void MGUIGeometry::Create()
 
 bool MGUIGeometry::OnOk()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   return OnApply();
 }
@@ -141,14 +141,14 @@ bool MGUIGeometry::OnOk()
 
 bool MGUIGeometry::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_OkPressed = true;
   m_GeometryFileName = m_FileSelector->GetFileName();
   
   UnmapWindow();
-	
-	return false;
+  
+  return false;
 }
 
 
@@ -157,11 +157,23 @@ bool MGUIGeometry::OnApply()
 
 bool MGUIGeometry::OnCancel()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
+  m_OkPressed = false;
   UnmapWindow();
 
-	return true;
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MGUIGeometry::CloseWindow()
+{
+  // Call OnCanel for controlled good-bye
+
+  OnCancel();
 }
 
 
