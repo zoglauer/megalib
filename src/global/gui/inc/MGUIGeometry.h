@@ -30,23 +30,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Display the default geometry selector dialog box in all MEGAlib GUIs
 class MGUIGeometry : public MGUIDialog
 {
   // Public Interface:
  public:
+  //! Standard constructor given a file name
   MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, const MString& FileName);
+  //! Standard constructor given a basic settings file containing the latest geometry file name
   MGUIGeometry(const TGWindow* Parent, const TGWindow* Main, MSettingsBasicFiles* Data);
+  //! Default destructor
   virtual ~MGUIGeometry();
 
-  virtual void Create();
+  //! Return true if OK has been pressed
   bool OkPressed() { return m_OkPressed; }
+  //! Return the name of the selected file
   MString GetGeometryFileName() { return m_FileSelector->GetFileName(); }
+  //! Called when x is pressed - Overwrite for graceful exit 
+  virtual void CloseWindow();
 
   // protected methods:
  protected:
-	virtual bool OnOk();
-	virtual bool OnApply();
-	virtual bool OnCancel();
+  //! Create the GUI
+  virtual void Create();
+  //! Handle a pressed OK button
+  virtual bool OnOk();
+  //! Handle a pressed Apply button
+  virtual bool OnApply();
+  //! Handle a pressed Cancel button
+  virtual bool OnCancel();
 
 
   // protected members:
@@ -55,9 +67,7 @@ class MGUIGeometry : public MGUIDialog
 
   // private members:
  private:
-  MSettingsBasicFiles* m_GUIData;
-
-  TGLayoutHints* m_FileSelectorLayout;
+  //! The file selector
   MGUIEFileSelector* m_FileSelector;
 
   //! True if, the OK Button was pressed
