@@ -191,6 +191,7 @@ bool MSpectralAnalyzer::SetSpectrum(int NBins, double EnergyMin, double EnergyMa
         AverageResolution += pow(Detectors[d]->GetEnergyResolution(E/Detectors.size()), 2);
       }
       Dist = sqrt(AverageResolution); // Div by zero taken care of earlier
+      if (Dist == 0) Dist = var; // Then we do 1-keV steps
       E += Dist/var;
       vBins.push_back(E);
     }
@@ -207,6 +208,7 @@ bool MSpectralAnalyzer::SetSpectrum(int NBins, double EnergyMin, double EnergyMa
     }   
   }
     
+
   // Create histogram
   m_InitialSpectrum = new TH1D("InitialSpectrum", "Initial Spectrum", NBins, Bins);
   m_InitialSpectrum->SetStats(false);

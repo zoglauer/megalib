@@ -63,6 +63,17 @@ MQualifiedIsotope::~MQualifiedIsotope()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add line parameters:
+void MQualifiedIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flags) 
+{ 
+  MIsotope::AddLine(Energy, BranchingRatio, Flags);
+  m_LineFound.push_back(false);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Set line found
 void MQualifiedIsotope::SetLineFound(unsigned int l, bool Found)
 {

@@ -122,7 +122,12 @@ MDGeometry::MDGeometry()
   m_TriggerUnit = new MDTriggerUnit(this);
   m_System = new MDSystem("NoName");
   
+  // Make sure we ignore the default ROOT geometry...
+  gGeoManager = 0;
+  // ... before 
   m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
+  // ... and never ever touch it ...
+  gGeoManager = 0;
 }
 
 
@@ -201,9 +206,11 @@ void MDGeometry::Reset()
   }
 
   // Create a new geometry
+  gGeoManager = 0;
   delete m_Geometry;
   m_Geometry = new TGeoManager("Give it a good name", "MissingName");
-
+  gGeoManager = 0;
+  
   delete m_System;
   m_System = new MDSystem("NoName");
 
@@ -3910,7 +3917,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
   //if (m_Geometry != 0) delete m_Geometry;
 
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
-  m_Geometry->CloseGeometry();
+  //m_Geometry->CloseGeometry();
   m_Geometry->SetMultiThread(true);
   m_Geometry->SetVisLevel(1000);
   m_Geometry->SetNsegments(2*m_Geometry->GetNsegments());
