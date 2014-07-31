@@ -59,6 +59,9 @@ class MDGeometry
   //! If create nodes is false, no nodes for drawing a created
   //! If VirtualizeNonDetectorVolumes is true, all non-detector volumes are eliminated from the volume tree
   bool ScanSetupFile(MString FileName = "", bool CreateNodes = true, bool VirtualizeNonDetectorVolumes = false, bool AllowCrossSectionCreation = true);
+  
+  //! Draws the geometry
+  //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0);
   bool WriteGeant3Files();
   bool WriteMGeantFiles(MString FilePrefix = "", bool StoreIAs = false, bool StoreVetoes = true);

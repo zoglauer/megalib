@@ -123,11 +123,11 @@ MDGeometry::MDGeometry()
   m_System = new MDSystem("NoName");
   
   // Make sure we ignore the default ROOT geometry...
+  // BUG: In case we are multi-threaded and some one interact with the geometry
+  //      before the gGeoManager is reset during new, we will get a seg-fault!
   gGeoManager = 0;
   // ... before 
   m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
-  // ... and never ever touch it ...
-  gGeoManager = 0;
 }
 
 
@@ -206,10 +206,11 @@ void MDGeometry::Reset()
   }
 
   // Create a new geometry
+  // BUG: In case we are multi-threaded and some one interact with the geometry
+  //      before the gGeoManager is reset during new, we will get a seg-fault!
   gGeoManager = 0;
   delete m_Geometry;
   m_Geometry = new TGeoManager("Give it a good name", "MissingName");
-  gGeoManager = 0;
   
   delete m_System;
   m_System = new MDSystem("NoName");
@@ -3881,8 +3882,8 @@ bool MDGeometry::NameExists(MString Name)
 
 bool MDGeometry::DrawGeometry(TCanvas* Canvas)
 {
-  // Draw the geometry with X3D
   // The geometry must have been loaded previously
+  // You cannot display 2 geometries at once!
 
 
   if (m_GeometryScanned == false) {
@@ -3914,7 +3915,6 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
     Canvas->cd();
   }
 
-  //if (m_Geometry != 0) delete m_Geometry;
 
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
   //m_Geometry->CloseGeometry();
@@ -3922,6 +3922,9 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
   m_Geometry->SetVisLevel(1000);
   m_Geometry->SetNsegments(2*m_Geometry->GetNsegments());
   m_Geometry->SetVisDensity(-1.0);
+
+  // Make sure we use the correct geometry for interactions
+  gGeoManager = m_Geometry;
   if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogle");
 
   if (Timer.ElapsedTime() > TimerLimit) {
