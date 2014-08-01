@@ -60,19 +60,20 @@ confhelp() {
 
 
 # Part 2:
-# A first sanity checks
-
-if [[ $EUID -eq 0 ]]; then
-  echo " " 1>&2
-  echo "Error: This script is not intended to be run as superuser/root." 1>&2
-  echo "       It is intended for a user installation of MEGAlib." 1>&2
-  exit 1
-fi
+# A first round of sanity checks
 
 if [ "$SHELL" != "/bin/bash" ]; then
   echo " " 
   echo "Info: This is a bash script. Thus you need to use bash for it and not: ${SHELL}"
   echo " "
+fi
+
+if [[ $EUID -eq 0 ]]; then
+  echo " " 1>&2
+  echo "Error: For security reasons, this script is not intended to be run as superuser/root." 1>&2
+  echo "       It is intended for a user installation of MEGAlib." 1>&2
+  echo " " 1>&2
+  exit 1
 fi
 
 
@@ -123,6 +124,16 @@ for C in "${CMD[@]}"; do
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   fi
 done
+# If we have a path make sure it contains a MEGAlib installation
+if [ "${MEGALIBPATH}" != "" ]; then
+  if [ ! -f ${MEGALIBPATH}/src/global/misc/src/MGlobal.cxx ]; then
+    echo ""
+    echo "ERROR: You have given a MEGAlib path to a non-empty directory which doesn't contain MEGAlib!"
+    echo "       Either give a not existing directory as MEGAlib path, or the path to an existing MEGAlib installation"
+    exit 1
+  fi
+fi
+# If we don't have one check if we are in a MEGAlib directory, or use the default "MEGAlib" path
 if [ "${MEGALIBPATH}" == "" ]; then
   if [ -f src/global/misc/src/MGlobal.cxx ]; then
     MEGALIBPATH="."
@@ -132,7 +143,7 @@ if [ "${MEGALIBPATH}" == "" ]; then
 fi
 
 if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
-  echo "Loading old options as default"
+  echo " * Loading old options as default --- they will be overwritten by you command line options!"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
   CMD=( ${OLDCMD} ${CMD}  )
 fi

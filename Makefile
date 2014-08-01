@@ -467,10 +467,8 @@ link:
 clean:
 	@$(MAKE) -s clean -C src 
 	@rm -f $(LB)/*.o
-	@rm -f $(LB)/*.$(DLL)
-ifneq ($(DLL),so)
+	@rm -f $(LB)/*.dylib
 	@rm -f $(LB)/*.so
-endif
 	@rm -f $(LB)/*Cint*
 	@rm -rf $(LB)/*SunWS_cache*
 	@rm -f *~
