@@ -289,14 +289,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\global\gui\src\MGUIEImage.cxx"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\src\MGUIEImageContainer.cxx"
-				>
-			</File>
-			<File
 				RelativePath="..\src\global\gui\src\MGUIElement.cxx"
 				>
 			</File>
@@ -334,10 +326,6 @@
 			</File>
 			<File
 				RelativePath="..\src\global\gui\src\MGUIGeometry.cxx"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\src\MGUIImageManager.cxx"
 				>
 			</File>
 			<File
@@ -695,14 +683,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\global\gui\inc\MGUIEImage.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\inc\MGUIEImageContainer.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\global\gui\inc\MGUIElement.h"
 				>
 			</File>
@@ -740,10 +720,6 @@
 			</File>
 			<File
 				RelativePath="..\src\global\gui\inc\MGUIGeometry.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\global\gui\inc\MGUIImageManager.h"
 				>
 			</File>
 			<File
