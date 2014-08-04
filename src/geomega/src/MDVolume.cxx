@@ -1322,7 +1322,7 @@ bool MDVolume::CopyDataToClones()
 bool MDVolume::Validate()
 {
   // Test if everything is ok
-
+  
   if (this == 0) {
     mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
     mout<<"Never mind... I do not exist..."<<endl;
@@ -1401,6 +1401,13 @@ bool MDVolume::Validate()
     mout<<"You have a clone template (volume to which you apply the .Copy operator)"<<endl;
     mout<<"Which is positioned in another volume: "<<m_Mother->GetName()<<endl;
     mout<<"This is fine, but depreciated... because error prone!"<<endl;
+  }
+  
+  // Give a warning if a clone does not have a mother
+  if (IsClone() == true && m_Mother == 0) {
+    mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
+    mout<<"All Cloned/Copied volumes must have a mother!"<<endl;
+    return false;
   }
 
   // If we are sensitive, then we need a detector volume:
@@ -2325,7 +2332,8 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
         if (GetDaughterAt(i)->IsClone()) {
           MDVolume* CloneTemplate = GetDaughterAt(i)->GetCloneTemplate();
           for (unsigned int c = 0; c < CloneTemplate->GetNClones(); ++c) {
-            if (CloneTemplate->GetCloneAt(c)->GetMother()->IsVirtual() == false) {
+            if (CloneTemplate->GetCloneAt(c)->GetMother() != 0 && 
+                CloneTemplate->GetCloneAt(c)->GetMother()->IsVirtual() == false) {
               NPlacements++;
             }
           }
