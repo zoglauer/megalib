@@ -32,6 +32,9 @@ confhelp() {
   echo "--environment-script=[file name of new environment script]"
   echo "    File in which the ROOT path is stored. This is used by the MEGAlib setup script" 
   echo " "
+  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "    Default is on."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -56,6 +59,9 @@ done
 
 TARBALL=""
 ENVFILE=""
+DEBUG="off"
+DEBUGSTRING="_debug"
+DEBUGOPTIONS="--build=debug"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -65,6 +71,8 @@ for C in ${CMD}; do
   elif [[ ${C} == *-e* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
+  elif [[ ${C} == *-d*=* ]]; then
+    DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -76,6 +84,24 @@ for C in ${CMD}; do
     exit 1
   fi
 done
+
+
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == n* ]] ); then
+  DEBUG="off"
+  DEBUGSTRING=""
+  DEBUGOPTIONS=""
+  echo " * Using no debugging code"
+elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
+  DEBUG="normal"
+  DEBUGSTRING="_debug"
+  DEBUGOPTIONS="--build=debug"
+  echo " * Using debugging code"
+else
+  echo " "
+  echo "ERROR: Unknown debugging code selection: ${DEBUG}"
+  confhelp
+  exit 0
+fi
 
 
 echo "Getting ROOT..."
@@ -158,11 +184,11 @@ else
   echo "Version of ROOT is: ${VER}"
 fi
 
-
+ROOTDIR=root_v${VER}${DEBUGSTRING}
 
 echo "Checking for old installation..."
-if [ -d root_v${VER} ]; then
-  cd root_v${VER}
+if [ -d ${ROOTDIR} ]; then
+  cd ${ROOTDIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
     SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
@@ -182,21 +208,21 @@ if [ -d root_v${VER} ]; then
     fi
   fi
     
-  echo "Old installation is either incompatible or incomplete. Removing root_v${VER}"
+  echo "Old installation is either incompatible or incomplete. Removing ${ROOTDIR}"
   cd ..
-  if echo "root_v${VER}" | grep -E '[ "]' >/dev/null; then
+  if echo "${ROOTDIR}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
     echo "       There should not be any spaces in the ROOT version..."
     exit 1
   fi
-  rm -r "root_v${VER}"
+  rm -r "${ROOTDIR}"
 fi
 
 
 
 echo "Unpacking..."
-mkdir root_v${VER}
-cd root_v${VER}
+mkdir ${ROOTDIR}
+cd ${ROOTDIR}
 tar xvfz ../${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
@@ -209,7 +235,7 @@ rmdir root
 
 echo "Configuring..."
 export LD_LIBRARY_PATH=""
-sh configure ${CONFIGUREOPTIONS}
+sh configure ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring ROOT!"
   exit 1
@@ -248,13 +274,13 @@ echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
 
 echo "Setting permissions..."
 cd ..
-chown -R ${USER}:${GROUP} root_v${VER}
-chmod -R go+rX root_v${VER}
+chown -R ${USER}:${GROUP} ${ROOTDIR}
+chmod -R go+rX ${ROOTDIR}
 
 
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the ROOT directory in the MEGAlib source script..."
-  echo "ROOTDIR=`pwd`/root_v${VER}" >> ${ENVFILE}
+  echo "ROOTDIR=`pwd`/${ROOTDIR}" >> ${ENVFILE}
 fi
 
 
