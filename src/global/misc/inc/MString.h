@@ -176,9 +176,9 @@ class MString
   void StripInPlace(const char S = ' ') { StripFront(S); StripBack(S); }
   MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
   
-  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = tolower(m_String[p]); } 
+  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(m_String[p]); } 
   MString& ToLower() { ToLowerInPlace(); return *this; } 
-  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = toupper(m_String[p]); } 
+  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(m_String[p]); } 
   MString& ToUpper() { ToUpperInPlace(); return *this; } 
   
   
