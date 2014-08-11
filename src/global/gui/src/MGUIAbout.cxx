@@ -37,6 +37,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIEText.h"
+#include "MGUIDefaults.h"
 #include "MStreams.h"
 #include "MParser.h"
 #include "MFile.h"
@@ -67,11 +68,17 @@ MGUIAbout::MGUIAbout(const TGWindow* Parent, const TGWindow* Main)
   m_IconPath = ""; 
   m_LeadProgrammer = "";
   m_Programmers = "";
+  m_ProgrammersAlphabetic = false;
   m_AdditionalProgrammers = "";
   m_Email = "andreas@megalibtoolkit.com";
   m_Updates = "You can find the latest version of MEGAlib at\n" + g_Homepage;
   m_Copyright = "(C) by Andreas Zoglauer and contributors\nAll rights reserved";
   m_MasterReference = "A. Zoglauer et al., \"MEGAlib - The Medium Energy Gamma-ray Astronomy Library\", NewAR 50 (7-8), 629-632, 2006";
+  
+  m_ShowPeopleTab = true;
+  m_ShowBugsTab = true;
+  m_ShowReferencesTab = true;
+  m_ShowDisclaimerTab = true;
 }
 
 
@@ -91,6 +98,8 @@ void MGUIAbout::Create()
 {
   // Create the main window
 
+  double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+
   // We start with a name and an icon...
   ostringstream str;
   str<<"About "<<m_ProgramName;
@@ -103,10 +112,10 @@ void MGUIAbout::Create()
   AddFrame(MainTab, MainTabLayout);
 
   TGCompositeFrame* AboutFrame = MainTab->AddTab("About");
-  TGCompositeFrame* ReferencesFrame = MainTab->AddTab("References");
-  TGCompositeFrame* PeopleFrame = MainTab->AddTab("People");
-  TGCompositeFrame* BugsFrame = MainTab->AddTab("Bugs");
-  TGCompositeFrame* DisclaimerFrame = MainTab->AddTab("Disclaimer");
+  TGCompositeFrame* ReferencesFrame = 0;
+  TGCompositeFrame* PeopleFrame = 0;
+  TGCompositeFrame* BugsFrame = 0;
+  TGCompositeFrame* DisclaimerFrame = 0;
 
 
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 10, 2);
@@ -124,11 +133,18 @@ void MGUIAbout::Create()
 
   if (m_IconPath != "") {
     MFile::ExpandFileName(m_IconPath);
-    const TGPicture* m_IconPicture = gClient->GetPicture(m_IconPath);
+    const TGPicture* m_IconPicture = gClient->GetPicture(m_IconPath); //, FontScaler*260, FontScaler*260/5);
     if (m_IconPicture == 0) {
       mgui<<"Can't find icon "<<m_IconPath<<"! Aborting!"<<error;
       CloseWindow();
     }
+    int Width = m_IconPicture->GetWidth();
+    int Height = m_IconPicture->GetHeight();
+    if (Width > FontScaler*260) {
+      gClient->FreePicture(m_IconPicture);
+      m_IconPicture = gClient->GetPicture(m_IconPath, FontScaler*260, FontScaler*260*Height/Width);
+    }
+    
     TGHorizontalFrame* m_IconFrame = new TGHorizontalFrame(AboutFrame, 100, 100);
     AboutFrame->AddFrame(m_IconFrame, TitleLayout);
    
@@ -159,7 +175,11 @@ void MGUIAbout::Create()
   }
 
   if (m_Programmers != "") {
-    MGUIEText* m_ProgrammersLabel = new MGUIEText(AboutFrame, "Programmers:", MGUIEText::c_Centered, true);
+    MString Title = "Programmers:";
+    if (m_ProgrammersAlphabetic == true) {
+      Title = "Programmers (in alphabetic order):";      
+    }
+    MGUIEText* m_ProgrammersLabel = new MGUIEText(AboutFrame, Title, MGUIEText::c_Centered, true);
     AboutFrame->AddFrame(m_ProgrammersLabel, LabelLayout);
     MGUIEText* m_ProgrammersText = new MGUIEText(AboutFrame, m_Programmers, MGUIEText::c_Centered);
     AboutFrame->AddFrame(m_ProgrammersText, TextLayout);
@@ -181,54 +201,58 @@ void MGUIAbout::Create()
 
   if (m_Copyright != "") {
     MGUIEText* m_CopyrightText = new MGUIEText(AboutFrame, m_Copyright, MGUIEText::c_Centered);
-    TGLayoutHints* CopyrightLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 10, 40);
+    TGLayoutHints* CopyrightLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 20, 40);
     AboutFrame->AddFrame(m_CopyrightText, CopyrightLayout);
   }
 
   // Define the window width here:
   int TabWidth = MainTab->GetDefaultWidth() + m_FontScaler*50;
 
+
   // The references frame:
-
-  if (m_MasterReference != "") {
-    TGLabel* MasterReferenceLabel = new TGLabel(ReferencesFrame, "Main MEGAlib reference:");
-    MasterReferenceLabel->SetTextFont(m_EmphasizedFont);
-    MasterReferenceLabel->SetWrapLength(TabWidth);
-    ReferencesFrame->AddFrame(MasterReferenceLabel, MasterReferenceLabelLayout);
-    TGLabel* MasterReferenceText = new TGLabel(ReferencesFrame, m_MasterReference);
-    MasterReferenceText->SetWrapLength(TabWidth);
-    ReferencesFrame->AddFrame(MasterReferenceText, ReferenceTextLayout);
-  }
-
-
-  if (m_References.size() != 0) {
-    MGUIEText* m_ReferencesLabel;
-    if (m_MasterReference == "") {
-      if (m_References.size() == 1) {
-        m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Reference:", MGUIEText::c_Centered, true);
-      } else {
-        m_ReferencesLabel = new MGUIEText(ReferencesFrame, "References:", MGUIEText::c_Centered, true);
-      }
-    } else {
-      if (m_References.size() == 1) {
-        m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Special reference:", MGUIEText::c_Centered, true);
-      } else {
-        m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Special references:", MGUIEText::c_Centered, true);
-      }
+  if (m_ShowReferencesTab == true) {
+    ReferencesFrame = MainTab->AddTab("References");
+  
+    if (m_MasterReference != "") {
+      TGLabel* MasterReferenceLabel = new TGLabel(ReferencesFrame, "Main MEGAlib reference:");
+      MasterReferenceLabel->SetTextFont(m_EmphasizedFont);
+      MasterReferenceLabel->SetWrapLength(TabWidth);
+      ReferencesFrame->AddFrame(MasterReferenceLabel, MasterReferenceLabelLayout);
+      TGLabel* MasterReferenceText = new TGLabel(ReferencesFrame, m_MasterReference);
+      MasterReferenceText->SetWrapLength(TabWidth);
+      ReferencesFrame->AddFrame(MasterReferenceText, ReferenceTextLayout);
     }
-    m_ReferencesLabel->SetWrapLength(TabWidth);
-    ReferencesFrame->AddFrame(m_ReferencesLabel, ReferenceLayout);
-    for (unsigned int r = 0; r < m_References.size(); ++r) {
-      TGLabel* Reference = new TGLabel(ReferencesFrame, m_References[r]);
-      Reference->SetWrapLength(TabWidth);
-      ReferencesFrame->AddFrame(Reference, ReferenceTextLayout);
-      TGLabel* ReferenceTopic = new TGLabel(ReferencesFrame, MString("(") + m_Topics[r] + MString(")"));
-      ReferenceTopic->SetWrapLength(TabWidth);
-      ReferenceTopic->SetTextFont(m_ItalicFont);
-      if (r == m_References.size()-1) {
-        ReferencesFrame->AddFrame(ReferenceTopic, LastReferenceTopicLayout);
+
+
+    if (m_References.size() != 0) {
+      MGUIEText* m_ReferencesLabel;
+      if (m_MasterReference == "") {
+        if (m_References.size() == 1) {
+          m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Reference:", MGUIEText::c_Centered, true);
+        } else {
+          m_ReferencesLabel = new MGUIEText(ReferencesFrame, "References:", MGUIEText::c_Centered, true);
+        }
       } else {
-        ReferencesFrame->AddFrame(ReferenceTopic, ReferenceTopicLayout);
+        if (m_References.size() == 1) {
+          m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Special reference:", MGUIEText::c_Centered, true);
+        } else {
+          m_ReferencesLabel = new MGUIEText(ReferencesFrame, "Special references:", MGUIEText::c_Centered, true);
+        }
+      }
+      m_ReferencesLabel->SetWrapLength(TabWidth);
+      ReferencesFrame->AddFrame(m_ReferencesLabel, ReferenceLayout);
+      for (unsigned int r = 0; r < m_References.size(); ++r) {
+        TGLabel* Reference = new TGLabel(ReferencesFrame, m_References[r]);
+        Reference->SetWrapLength(TabWidth);
+        ReferencesFrame->AddFrame(Reference, ReferenceTextLayout);
+        TGLabel* ReferenceTopic = new TGLabel(ReferencesFrame, MString("(") + m_Topics[r] + MString(")"));
+        ReferenceTopic->SetWrapLength(TabWidth);
+        ReferenceTopic->SetTextFont(m_ItalicFont);
+        if (r == m_References.size()-1) {
+          ReferencesFrame->AddFrame(ReferenceTopic, LastReferenceTopicLayout);
+        } else {
+          ReferencesFrame->AddFrame(ReferenceTopic, ReferenceTopicLayout);
+        }
       }
     }
   }
@@ -236,101 +260,106 @@ void MGUIAbout::Create()
 
 
   // The People frame:
+  if (m_ShowPeopleTab == true) {
+    PeopleFrame = MainTab->AddTab("People");
+    TGLabel* PeopleIntroLabel = new TGLabel(PeopleFrame, "The MEGAlib developers and contributors:");
+    PeopleIntroLabel->SetTextFont(m_EmphasizedFont);
+    PeopleIntroLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* PeopleIntroLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
+    PeopleFrame->AddFrame(PeopleIntroLabel, PeopleIntroLayout);
 
-  TGLabel* PeopleIntroLabel = new TGLabel(PeopleFrame, "The MEGAlib developers and contributors:");
-  PeopleIntroLabel->SetTextFont(m_EmphasizedFont);
-  PeopleIntroLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* PeopleIntroLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
-  PeopleFrame->AddFrame(PeopleIntroLabel, PeopleIntroLayout);
+    // Read the People list from file:
+    MString FileName = "$(MEGALIB)/doc/Peoples.txt";
+    vector<MString> DeveloperList;
+    if (MFile::Exists(FileName) == true) {
+      MParser Parser;
+      if (Parser.Open(FileName, MFile::c_Read) == true) {
 
-  // Read the People list from file:
-  MString FileName = "$(MEGALIB)/doc/Peoples.txt";
-  vector<MString> DeveloperList;
-  if (MFile::Exists(FileName) == true) {
-    MParser Parser;
-   if (Parser.Open(FileName, MFile::c_Read) == true) {
-
-      for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
-        if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
-        if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "NM") == true) {
-          DeveloperList.push_back(Parser.GetTokenizerAt(i)->GetTokenAfterAsString(1));
+        for (unsigned int i = 0; i < Parser.GetNLines(); ++i) {
+          if (Parser.GetTokenizerAt(i)->GetNTokens() == 0) continue;
+          if (Parser.GetTokenizerAt(i)->IsTokenAt(0, "NM") == true) {
+            DeveloperList.push_back(Parser.GetTokenizerAt(i)->GetTokenAfterAsString(1));
+          }
         }
-      }
-      Parser.Close();    
-    } 
-  }
-
-  MString People;
-  if (DeveloperList.size() > 0) {
-    for (unsigned int i = 0; i < DeveloperList.size(); ++i) {
-      People += DeveloperList[i];
-      if (i != DeveloperList.size()-1) People += ", ";
+        Parser.Close();    
+      } 
     }
-  } else {
-    People = "The file with the developers/contributors is empty --- you are probably using Windows...";
+
+    MString People;
+    if (DeveloperList.size() > 0) {
+      for (unsigned int i = 0; i < DeveloperList.size(); ++i) {
+        People += DeveloperList[i];
+        if (i != DeveloperList.size()-1) People += ", ";
+      }
+    } else {
+      People = "The file with the developers/contributors is empty --- you are probably using Windows...";
+    }
+
+    TGLabel* DeveloperLabel = new TGLabel(PeopleFrame, People);
+    DeveloperLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* DeveloperLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
+    PeopleFrame->AddFrame(DeveloperLabel, DeveloperLayout);
+
+    TGLabel* PeopleExtroLabel = new TGLabel(PeopleFrame, "If you do not appear here, but you think you should, then please write me an email: zog@ssl.berkeley.edu");
+    PeopleExtroLabel->SetWrapLength(TabWidth);
+    PeopleExtroLabel->SetTextFont(m_ItalicFont);
+    TGLayoutHints* PeopleExtroLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
+    PeopleFrame->AddFrame(PeopleExtroLabel, PeopleExtroLayout);
   }
-
-  TGLabel* DeveloperLabel = new TGLabel(PeopleFrame, People);
-  DeveloperLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* DeveloperLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
-  PeopleFrame->AddFrame(DeveloperLabel, DeveloperLayout);
-
-  TGLabel* PeopleExtroLabel = new TGLabel(PeopleFrame, "If you do not appear here, but you think you should, then please write me an email: zog@ssl.berkeley.edu");
-  PeopleExtroLabel->SetWrapLength(TabWidth);
-  PeopleExtroLabel->SetTextFont(m_ItalicFont);
-  TGLayoutHints* PeopleExtroLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
-  PeopleFrame->AddFrame(PeopleExtroLabel, PeopleExtroLayout);
-
 
 
   // The bugs frame:
+  if (m_ShowBugsTab == true) {
+    BugsFrame = MainTab->AddTab("Bugs");
+
+    TGLabel* ProblemsLabel = new TGLabel(BugsFrame, "Troubles with MEGAlib:");
+    ProblemsLabel->SetTextFont(m_EmphasizedFont);
+    ProblemsLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* ProblemsLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
+    BugsFrame->AddFrame(ProblemsLabel, ProblemsLabelLayout);
+    
+    TGLabel* Problems = new TGLabel(BugsFrame, "No program or documentation is free of bugs and obscurities. Neither is MEGAlib. However, to minimize their occurances, and thus to improve the performance of the program, if you find any problem in the latest version, please report it in a reproducable form at the MEGAlib issue tracker:");
+    Problems->SetWrapLength(TabWidth);
+    TGLayoutHints* ProblemsLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
+    BugsFrame->AddFrame(Problems, ProblemsLayout);
+    
+    TGLabel* IssueTracker = new TGLabel(BugsFrame, "https://github.com/zoglauer/megalib/issues");
+    IssueTracker->SetWrapLength(TabWidth);
+    TGLayoutHints* IssueTrackerLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
+    BugsFrame->AddFrame(IssueTracker, IssueTrackerLayout);
+    
+    TGLabel* EmailLabel = new TGLabel(BugsFrame, "Or just write me an email:");
+    EmailLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* EmailLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 5, 5);
+    BugsFrame->AddFrame(EmailLabel, EmailLabelLayout);
+    
+    TGLabel* Email = new TGLabel(BugsFrame, m_Email);
+    Email->SetWrapLength(TabWidth);
+    TGLayoutHints* EmailLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
+    BugsFrame->AddFrame(Email, EmailLayout);
+    
+    TGLabel* QuestionsLabel = new TGLabel(BugsFrame, "MEGAlib is a rather complex piece of software, which requires a deep understanding of the simulated and analyzed physical processes and detectors. If you have read the given references and the documentation, and still have questions, feel free to ask me.");
+    QuestionsLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* QuestionsLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 5, 30);
+    BugsFrame->AddFrame(QuestionsLabel, QuestionsLabelLayout);
+  }
   
-  TGLabel* ProblemsLabel = new TGLabel(BugsFrame, "Troubles with MEGAlib:");
-  ProblemsLabel->SetTextFont(m_EmphasizedFont);
-  ProblemsLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* ProblemsLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
-  BugsFrame->AddFrame(ProblemsLabel, ProblemsLabelLayout);
-
-  TGLabel* Problems = new TGLabel(BugsFrame, "No program or documentation is free of bugs and obscurities. Neither is MEGAlib. However, to minimize their occurances, and thus to improve the performance of the program, if you find any problem in the latest version, please report it in a reproducable form at the MEGAlib issue tracker:");
-  Problems->SetWrapLength(TabWidth);
-  TGLayoutHints* ProblemsLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 5);
-  BugsFrame->AddFrame(Problems, ProblemsLayout);
-
-  TGLabel* IssueTracker = new TGLabel(BugsFrame, "https://github.com/zoglauer/megalib/issues");
-  IssueTracker->SetWrapLength(TabWidth);
-  TGLayoutHints* IssueTrackerLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
-  BugsFrame->AddFrame(IssueTracker, IssueTrackerLayout);
-
-  TGLabel* EmailLabel = new TGLabel(BugsFrame, "Or just write me an email:");
-  EmailLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* EmailLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 5, 5);
-  BugsFrame->AddFrame(EmailLabel, EmailLabelLayout);
-
-  TGLabel* Email = new TGLabel(BugsFrame, m_Email);
-  Email->SetWrapLength(TabWidth);
-  TGLayoutHints* EmailLayout = new TGLayoutHints(kLHintsCenterX, 30, 30, 10, 10);
-  BugsFrame->AddFrame(Email, EmailLayout);
-
-  TGLabel* QuestionsLabel = new TGLabel(BugsFrame, "MEGAlib is a rather complex piece of software, which requires a deep understanding of the simulated and analyzed physical processes and detectors. If you have read the given references and the documentation, and still have questions, feel free to ask me.");
-  QuestionsLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* QuestionsLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 5, 30);
-  BugsFrame->AddFrame(QuestionsLabel, QuestionsLabelLayout);
-
-
   // The disclaimer frame:
+  if (m_ShowDisclaimerTab == true) {
+    DisclaimerFrame = MainTab->AddTab("Disclaimer");
 
-  TGLabel* DisclaimerLabel = new TGLabel(DisclaimerFrame, "Disclaimer:");
-  DisclaimerLabel->SetTextFont(m_EmphasizedFont);
-  DisclaimerLabel->SetWrapLength(TabWidth);
-  TGLayoutHints* DisclaimerLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
-  DisclaimerFrame->AddFrame(DisclaimerLabel, DisclaimerLabelLayout);
-
-  TGLabel* Disclaimer = new TGLabel(DisclaimerFrame, "Finally, the usual disclaimer applies: MEGAlib comes without warranty! Use it at your own risk! If your computer fails during a MEGAlib data simulation/analysis \"stress test\", or if MEGAlib deletes all your data, it's your fault!");
-  Disclaimer->SetWrapLength(TabWidth);
-  TGLayoutHints* DisclaimerLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 30);
-  DisclaimerFrame->AddFrame(Disclaimer, DisclaimerLayout);
-
-
+    TGLabel* DisclaimerLabel = new TGLabel(DisclaimerFrame, "Disclaimer:");
+    DisclaimerLabel->SetTextFont(m_EmphasizedFont);
+    DisclaimerLabel->SetWrapLength(TabWidth);
+    TGLayoutHints* DisclaimerLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 5);
+    DisclaimerFrame->AddFrame(DisclaimerLabel, DisclaimerLabelLayout);
+    
+    TGLabel* Disclaimer = new TGLabel(DisclaimerFrame, "Finally, the usual disclaimer applies: MEGAlib comes without warranty! Use it at your own risk! If your computer fails during a MEGAlib data simulation/analysis \"stress test\", or if MEGAlib deletes all your data, it's your fault!");
+    Disclaimer->SetWrapLength(TabWidth);
+    TGLayoutHints* DisclaimerLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 30);
+    DisclaimerFrame->AddFrame(Disclaimer, DisclaimerLayout);
+  }
+  
   AddButtons(MGUIDialog::c_Ok, false, 0);
 
   PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);

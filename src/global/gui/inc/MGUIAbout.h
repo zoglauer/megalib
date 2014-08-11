@@ -46,7 +46,7 @@ class MGUIAbout : public MGUIDialog
   void SetProgramName(MString Name) { m_ProgramName = Name; }
   void SetIconPath(MString IconPath) { m_IconPath = IconPath; }
   void SetLeadProgrammer(MString Lead) { m_LeadProgrammer = Lead; }
-  void SetProgrammers(MString Programmers) { m_Programmers = Programmers; }
+  void SetProgrammers(MString Programmers, bool Alphabetic = false) { m_Programmers = Programmers; m_ProgrammersAlphabetic = Alphabetic; }
   void SetAdditionalProgrammers(MString Add) { m_AdditionalProgrammers = Add; }
   void SetUpdates(MString Updates) { m_Updates = Updates; } 
   void SetCopyright(MString Copyright) { m_Copyright = Copyright; } 
@@ -54,7 +54,17 @@ class MGUIAbout : public MGUIDialog
   void SetReference(MString Topic, MString Reference) { 
     m_References.push_back(Reference); 
     m_Topics.push_back(Topic);
-  } 
+  }
+  
+  //! Show the peoples tab
+  void ShowPeopleTab(bool Show) { m_ShowPeopleTab = Show; }
+  //! Show the bugs tab
+  void ShowBugsTab(bool Show) { m_ShowBugsTab = Show; }
+  //! Show the bugs tab
+  void ShowReferencesTab(bool Show) { m_ShowReferencesTab = Show; }
+  //! Show the disclaimer tab
+  void ShowDisclaimerTab(bool Show) { m_ShowDisclaimerTab = Show; }
+  
 
   virtual void Create();
 
@@ -77,6 +87,7 @@ class MGUIAbout : public MGUIDialog
   MString m_IconPath; 
   MString m_LeadProgrammer;
   MString m_Programmers;
+  bool m_ProgrammersAlphabetic;
   MString m_AdditionalProgrammers;
   MString m_Email; 
   MString m_Updates; 
@@ -85,7 +96,15 @@ class MGUIAbout : public MGUIDialog
   vector<MString> m_References;
   vector<MString> m_Topics;
 
-
+  //! Show the peoples tab
+  bool m_ShowPeopleTab;
+  //! Show the peoples tab
+  bool m_ShowBugsTab;
+  //! Show the peoples tab
+  bool m_ShowReferencesTab;
+  //! Show the peoples tab
+  bool m_ShowDisclaimerTab;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MGUIAbout, 0) // GUI window for unkown purpose ...
