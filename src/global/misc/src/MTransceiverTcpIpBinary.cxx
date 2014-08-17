@@ -518,7 +518,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
           m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
           m_NLostPackets += NewPacketSize;
           m_NPacketsToReceive -= NewPacketSize;
-          if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes..."<<endl;
+          if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes! Now "<<m_NPacketsToReceive<<" bytes are in the buffer"<<endl;
         }
         
         m_PacketsToReceive.insert(m_PacketsToReceive.end(), NewPacket.begin(), NewPacket.end());
