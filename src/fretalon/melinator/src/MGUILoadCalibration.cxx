@@ -88,11 +88,16 @@ void MGUILoadCalibration::Create()
 
   AddSubTitle("Set the calibration file(s) to load and its associated isotope(s)"); 
 
+  TGLayoutHints* SubSubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 20, 20, 20, 0);
   TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 20, 0);
   TGLayoutHints* IsotopeFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
   TGLayoutHints* IsotopeLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 5, 0, 0);
-  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20, 20, 40, 0);
+  TGLayoutHints* GroupIDLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 30, 5, 0, 0);
+  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsTop, 20, 20, 40, 0);
 
+  TGLabel* SubSubTitle = new TGLabel(this, "Calibration files with the same group ID will be merged!");
+  AddFrame(SubSubTitle, SubSubTitleLayout);
+  
   m_FileName1 = 
     new MGUIEFileSelector(this,
                           "First calibration file:",
@@ -119,7 +124,11 @@ void MGUILoadCalibration::Create()
   AddIsotopes(m_Isotope13, m_Settings->GetCalibrationFile1Isotope3());
   IsotopeFrame1->AddFrame(m_Isotope13, IsotopeLabelLayout);
  
+  m_GroupID1 = new MGUIEEntry(IsotopeFrame1, "Group ID: ", false, (int) m_Settings->GetCalibrationFile1GroupID(), true, 0);
+  m_GroupID1->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame1->AddFrame(m_GroupID1, GroupIDLabelLayout);
 
+  
   m_FileName2 = 
     new MGUIEFileSelector(this,
                           "Second calibration file:",
@@ -145,6 +154,10 @@ void MGUILoadCalibration::Create()
   m_Isotope23 = new TGComboBox(IsotopeFrame2, c_Isotope23);
   AddIsotopes(m_Isotope23, m_Settings->GetCalibrationFile2Isotope3());
   IsotopeFrame2->AddFrame(m_Isotope23, IsotopeLabelLayout);
+ 
+  m_GroupID2 = new MGUIEEntry(IsotopeFrame2, "Group ID: ", false, (int) m_Settings->GetCalibrationFile2GroupID(), true, 0);
+  m_GroupID2->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame2->AddFrame(m_GroupID2, GroupIDLabelLayout);
 
   
   m_FileName3 = 
@@ -172,6 +185,10 @@ void MGUILoadCalibration::Create()
   m_Isotope33 = new TGComboBox(IsotopeFrame3, c_Isotope33);
   AddIsotopes(m_Isotope33, m_Settings->GetCalibrationFile3Isotope3());
   IsotopeFrame3->AddFrame(m_Isotope33, IsotopeLabelLayout);
+ 
+  m_GroupID3 = new MGUIEEntry(IsotopeFrame3, "Group ID: ", false, (int) m_Settings->GetCalibrationFile3GroupID(), true, 0);
+  m_GroupID3->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame3->AddFrame(m_GroupID3, GroupIDLabelLayout);
 
   
   m_FileName4 = 
@@ -199,6 +216,10 @@ void MGUILoadCalibration::Create()
   m_Isotope43 = new TGComboBox(IsotopeFrame4, c_Isotope43);
   AddIsotopes(m_Isotope43, m_Settings->GetCalibrationFile4Isotope3());
   IsotopeFrame4->AddFrame(m_Isotope43, IsotopeLabelLayout);
+ 
+  m_GroupID4 = new MGUIEEntry(IsotopeFrame4, "Group ID: ", false, (int) m_Settings->GetCalibrationFile4GroupID(), true, 0);
+  m_GroupID4->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame4->AddFrame(m_GroupID4, GroupIDLabelLayout);
 
   
   m_FileName5 = 
@@ -226,6 +247,10 @@ void MGUILoadCalibration::Create()
   m_Isotope53 = new TGComboBox(IsotopeFrame5, c_Isotope53);
   AddIsotopes(m_Isotope53, m_Settings->GetCalibrationFile5Isotope3());
   IsotopeFrame5->AddFrame(m_Isotope53, IsotopeLabelLayout);
+ 
+  m_GroupID5 = new MGUIEEntry(IsotopeFrame5, "Group ID: ", false, (int) m_Settings->GetCalibrationFile5GroupID(), true, 0);
+  m_GroupID5->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame5->AddFrame(m_GroupID5, GroupIDLabelLayout);
   
   
   m_FileName6 = 
@@ -253,6 +278,11 @@ void MGUILoadCalibration::Create()
   m_Isotope63 = new TGComboBox(IsotopeFrame6, c_Isotope63);
   AddIsotopes(m_Isotope63, m_Settings->GetCalibrationFile6Isotope3());
   IsotopeFrame6->AddFrame(m_Isotope63, IsotopeLabelLayout);
+ 
+  m_GroupID6 = new MGUIEEntry(IsotopeFrame6, "Group ID: ", false, (int) m_Settings->GetCalibrationFile6GroupID(), true, 0);
+  m_GroupID6->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame6->AddFrame(m_GroupID6, GroupIDLabelLayout);
+
   
   m_FileName7 = 
     new MGUIEFileSelector(this,
@@ -279,6 +309,10 @@ void MGUILoadCalibration::Create()
   m_Isotope73 = new TGComboBox(IsotopeFrame7, c_Isotope73);
   AddIsotopes(m_Isotope73, m_Settings->GetCalibrationFile7Isotope3());
   IsotopeFrame7->AddFrame(m_Isotope73, IsotopeLabelLayout);
+ 
+  m_GroupID7 = new MGUIEEntry(IsotopeFrame7, "Group ID: ", false, (int) m_Settings->GetCalibrationFile7GroupID(), true, 0);
+  m_GroupID7->SetEntryFieldSize(m_FontScaler*40);
+  IsotopeFrame7->AddFrame(m_GroupID7, GroupIDLabelLayout);
  
   
   TGLabel* Footer1 = new TGLabel(this, "You can add additional isotopes to the file: $(MEGALIB)/resource/libraries/Calibration.isotopes");
@@ -346,6 +380,10 @@ bool MGUILoadCalibration::OnApply()
   if (Text != m_Settings->GetCalibrationFile1Isotope3()) {
     m_Settings->SetCalibrationFile1Isotope3(Text);
   }
+  if (m_GroupID1->GetAsInt() != (int) m_Settings->GetCalibrationFile1GroupID()) {
+    m_Settings->SetCalibrationFile1GroupID(m_GroupID1->GetAsInt()); 
+  }
+ 
  
   if (m_FileName2->GetFileName() != m_Settings->GetCalibrationFile2()) {
     m_Settings->SetCalibrationFile2(m_FileName2->GetFileName());
@@ -362,7 +400,11 @@ bool MGUILoadCalibration::OnApply()
   if (Text != m_Settings->GetCalibrationFile2Isotope3()) {
     m_Settings->SetCalibrationFile2Isotope3(Text);
   }
- 
+  if (m_GroupID2->GetAsInt() != (int) m_Settings->GetCalibrationFile2GroupID()) {
+    m_Settings->SetCalibrationFile2GroupID(m_GroupID2->GetAsInt()); 
+  }
+
+  
   if (m_FileName3->GetFileName() != m_Settings->GetCalibrationFile3()) {
     m_Settings->SetCalibrationFile3(m_FileName3->GetFileName());
   }
@@ -377,6 +419,9 @@ bool MGUILoadCalibration::OnApply()
   Text = dynamic_cast<TGTextLBEntry*>(m_Isotope33->GetSelectedEntry())->GetText()->GetString();
   if (Text != m_Settings->GetCalibrationFile3Isotope3()) {
     m_Settings->SetCalibrationFile3Isotope3(Text);
+  }
+  if (m_GroupID3->GetAsInt() != (int) m_Settings->GetCalibrationFile3GroupID()) {
+    m_Settings->SetCalibrationFile3GroupID(m_GroupID3->GetAsInt()); 
   }
  
  
@@ -395,6 +440,9 @@ bool MGUILoadCalibration::OnApply()
   if (Text != m_Settings->GetCalibrationFile4Isotope3()) {
     m_Settings->SetCalibrationFile4Isotope3(Text);
   }
+  if (m_GroupID4->GetAsInt() != (int) m_Settings->GetCalibrationFile4GroupID()) {
+    m_Settings->SetCalibrationFile4GroupID(m_GroupID4->GetAsInt()); 
+  }
  
  
   if (m_FileName5->GetFileName() != m_Settings->GetCalibrationFile5()) {
@@ -411,6 +459,9 @@ bool MGUILoadCalibration::OnApply()
   Text = dynamic_cast<TGTextLBEntry*>(m_Isotope53->GetSelectedEntry())->GetText()->GetString();
   if (Text != m_Settings->GetCalibrationFile5Isotope3()) {
     m_Settings->SetCalibrationFile5Isotope3(Text);
+  }
+  if (m_GroupID5->GetAsInt() != (int) m_Settings->GetCalibrationFile5GroupID()) {
+    m_Settings->SetCalibrationFile5GroupID(m_GroupID5->GetAsInt()); 
   }
  
  
@@ -429,6 +480,9 @@ bool MGUILoadCalibration::OnApply()
   if (Text != m_Settings->GetCalibrationFile6Isotope3()) {
     m_Settings->SetCalibrationFile6Isotope3(Text);
   }
+  if (m_GroupID6->GetAsInt() != (int) m_Settings->GetCalibrationFile6GroupID()) {
+    m_Settings->SetCalibrationFile6GroupID(m_GroupID6->GetAsInt()); 
+  }
  
  
   if (m_FileName7->GetFileName() != m_Settings->GetCalibrationFile7()) {
@@ -445,6 +499,9 @@ bool MGUILoadCalibration::OnApply()
   Text = dynamic_cast<TGTextLBEntry*>(m_Isotope73->GetSelectedEntry())->GetText()->GetString();
   if (Text != m_Settings->GetCalibrationFile7Isotope3()) {
     m_Settings->SetCalibrationFile7Isotope3(Text);
+  }
+  if (m_GroupID7->GetAsInt() != (int) m_Settings->GetCalibrationFile7GroupID()) {
+    m_Settings->SetCalibrationFile7GroupID(m_GroupID7->GetAsInt()); 
   }
  
   

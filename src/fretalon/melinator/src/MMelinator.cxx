@@ -29,6 +29,7 @@
 // Standard libs:
 #include <algorithm>
 #include <new>
+#include <map>
 using namespace std;
 
 // ROOT libs:
@@ -42,6 +43,7 @@ using namespace std;
 #include "TGraphErrors.h"
 
 // MEGAlib libs:
+#include "MFile.h"
 #include "MExceptions.h"
 #include "MStreams.h"
 #include "MGUIProgressBar.h"
@@ -119,45 +121,9 @@ void MMelinator::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Load the calibration data containing the given isotopes
-bool MMelinator::Load(const MString& FileName, const vector<MIsotope>& Isotopes)
-{
-  // Open the reader
-  MFileReadOuts Reader;
-  if (Reader.Open(FileName) == false) {
-    return false;
-  }
-  Reader.ShowProgress();
-  Reader.SetProgressTitle("Melinator: Loading", MString("Loading ") + MFile::GetBaseName(FileName) + MString(" ..."));
-
-  // Add a new group to the store
-  unsigned int GroupID = m_Store.AddReadOutDataGroup(FileName);
-  m_GroupIDs.push_back(GroupID);
-  m_Isotopes.push_back(Isotopes);
-  
-  MReadOutSequence Sequence;
-  while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
-    m_Store.Add(Sequence, GroupID);
-  }
-  
-  Reader.Close();
-  
-  // Let's ensure that both stores have the same read-out elements at the same positions
-  m_CalibrationStore.Clear();
-  for (unsigned int c = 0; c < m_Store.GetNumberOfReadOutCollections(); ++c) {
-    m_CalibrationStore.Add(m_Store.GetReadOutCollection(c).GetReadOutElement());
-  }
-  
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Load the calibration data containing the given isotopes - return false if an error occurred
 //! This function performs parallel loading of all given files
-bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIsotope> >& Isotopes)
+bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIsotope> >& Isotopes, const vector<unsigned int>& GroupIDs)
 {
   MGUIMultiProgressBar ProgressBar(FileNames.size());
   ProgressBar.SetTitles("Melinator Progress", "Progress of reading the calibration files");
@@ -179,7 +145,77 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   gSystem->ProcessEvents();
   
   m_CalibrationFileNames = FileNames;
-  m_Isotopes = Isotopes;
+  //m_Isotopes = Isotopes;
+  
+  //! Map the external group IDs to internal IDs starting at 0 and combined the isotopes of the individial groups
+  m_GroupIDs.clear();
+  unsigned int InternalID = 0;
+  map<unsigned int, unsigned int> IDMap;
+  map<unsigned int, MString> NameMap;
+  map<unsigned int, vector<MIsotope>> IsotopeMap;
+  for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
+    map<unsigned int, unsigned int>::iterator I = IDMap.find(GroupIDs[g]);
+    if (I == IDMap.end()) {
+      IDMap[GroupIDs[g]] = InternalID;
+      InternalID++;
+    } 
+    // Add, sort and remove duplicate isotopes
+    IsotopeMap[GroupIDs[g]].insert(IsotopeMap[GroupIDs[g]].end(), Isotopes[g].begin(), Isotopes[g].end());
+    sort(IsotopeMap[GroupIDs[g]].begin(), IsotopeMap[GroupIDs[g]].end());
+    IsotopeMap[GroupIDs[g]].erase(unique(IsotopeMap[GroupIDs[g]].begin(), IsotopeMap[GroupIDs[g]].end()), IsotopeMap[GroupIDs[g]].end());
+    
+    m_GroupIDs.push_back(IDMap[GroupIDs[g]]);
+    MString Name = MFile::GetBaseName(FileNames[g]);
+    if (NameMap[GroupIDs[g]] == "") {
+      NameMap[GroupIDs[g]] += Name;
+    } else {
+      NameMap[GroupIDs[g]] += " & " + Name;
+    }
+  }
+  /*
+  cout<<"Group ID mapping: "<<endl;
+  for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
+    cout<<GroupIDs[g]<<" --> "<<m_GroupIDs[g]<<endl; 
+  }
+  cout<<"Group ID to name mapping: "<<endl;
+  for (auto N: IDMap) {
+    cout<<N.first<<" --> "<<N.second<<" --> "<<NameMap[N.first]<<endl; 
+  }
+  cout<<"Group ID to isotope mapping: "<<endl;
+  for (auto N: IsotopeMap) {
+    cout<<N.first<<" --> ";
+    for (auto I: N.second) {
+      cout<<I.GetName()<<" "; 
+    }
+    cout<<endl;
+  }
+  */
+  
+  //! Set up the read-out data groups in the store
+  for (auto N: NameMap) {
+    unsigned int GroupID = m_Store.AddReadOutDataGroup(N.second);
+    if (GroupID != IDMap[N.first]) {
+      cout<<"ERROR: Something went wrong with the group ID creation!"<<endl;
+      return false;
+    }
+  }
+  
+  //! Now make sure the groups have all the same isotopes
+  m_Isotopes.clear();
+  for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
+    m_Isotopes.push_back(IsotopeMap[GroupIDs[g]]); 
+  }
+  /*
+  cout<<"Isotopes: "<<endl;
+  for (auto V: m_Isotopes) {
+    cout<<" --> ";
+    for (auto I: V) {
+      cout<<I.GetName()<<" "; 
+    }
+    cout<<endl;
+  }
+  */
+  
   
   m_CalibrationFileLoadingProgress.resize(FileNames.size());
   for (unsigned int c = 0; c < m_CalibrationFileLoadingProgress.size(); ++c) {
@@ -304,11 +340,8 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
       return false;
     }
     
-    TThread::Lock();
-    unsigned int GroupID = m_Store.AddReadOutDataGroup(m_CalibrationFileNames[ID]);
-    m_GroupIDs.push_back(GroupID);
-    TThread::UnLock();
-
+    unsigned int GroupID = m_GroupIDs[ID];
+    
     // Cannot show progress this way 
     // Reader.ShowProgress();
     // Reader.SetProgressTitle("Melinator: Loading", MString("Loading ") + MFile::GetBaseName(m_CalibrationFileNames[ID]) + MString(" ..."));
@@ -496,17 +529,18 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.94, NULL, "brNDC");
   Legend->SetHeader("Isotope list:");
   
-  // Final draw so that evergything is on top of each other:
+  // Final draw so that everything is on top of each other:
   for (unsigned int h = 0; h < Histograms.size(); ++h) {
     if (Histograms[h] == 0) continue;
     Histograms[h]->Draw("SAME");
     MString Names;
-    for (unsigned int i = 0; i < m_Isotopes[h].size(); ++i) {
+    unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), h));
+    for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
       Names += "^{";
-      Names += m_Isotopes[h][i].GetNucleons();
+      Names += m_Isotopes[IsotopeIndex][i].GetNucleons();
       Names += "}";
-      Names += m_Isotopes[h][i].GetElement();
-      if (i < m_Isotopes[h].size()-1) {
+      Names += m_Isotopes[IsotopeIndex][i].GetElement();
+      if (i < m_Isotopes[IsotopeIndex].size()-1) {
         Names += ", ";
       }
     }
@@ -965,7 +999,7 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
 
     MCalibrateLines Cali;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-      Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[g]);
+      Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
     Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
     Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
@@ -1005,7 +1039,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
 
   MCalibrateLines Cali;
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[g]);
+    Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
   Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);

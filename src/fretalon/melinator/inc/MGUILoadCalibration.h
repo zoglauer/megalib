@@ -88,36 +88,43 @@ class MGUILoadCalibration : public MGUIDialog
   TGComboBox* m_Isotope11;
   TGComboBox* m_Isotope12;
   TGComboBox* m_Isotope13;
+  MGUIEEntry* m_GroupID1; 
 
   MGUIEFileSelector* m_FileName2;
   TGComboBox* m_Isotope21;
   TGComboBox* m_Isotope22;
   TGComboBox* m_Isotope23;
+  MGUIEEntry* m_GroupID2; 
 
   MGUIEFileSelector* m_FileName3;
   TGComboBox* m_Isotope31;
   TGComboBox* m_Isotope32;
   TGComboBox* m_Isotope33;
+  MGUIEEntry* m_GroupID3; 
 
   MGUIEFileSelector* m_FileName4;
   TGComboBox* m_Isotope41;
   TGComboBox* m_Isotope42;
   TGComboBox* m_Isotope43;
+  MGUIEEntry* m_GroupID4; 
 
   MGUIEFileSelector* m_FileName5;
   TGComboBox* m_Isotope51;
   TGComboBox* m_Isotope52;
   TGComboBox* m_Isotope53;
+  MGUIEEntry* m_GroupID5; 
 
   MGUIEFileSelector* m_FileName6;
   TGComboBox* m_Isotope61;
   TGComboBox* m_Isotope62;
   TGComboBox* m_Isotope63;
+  MGUIEEntry* m_GroupID6; 
 
   MGUIEFileSelector* m_FileName7;
   TGComboBox* m_Isotope71;
   TGComboBox* m_Isotope72;
   TGComboBox* m_Isotope73;
+  MGUIEEntry* m_GroupID7; 
 
   //! The isotope store from which we load the isotopes
   MIsotopeStore m_IsotopeStore;

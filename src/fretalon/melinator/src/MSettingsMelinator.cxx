@@ -51,36 +51,43 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_SettingsFileName = m_DefaultSettingsFileName;
   
   m_CalibrationFile1 = "";
+  m_CalibrationFile1GroupID = 1;
   m_CalibrationFile1Isotope1 = "None";
   m_CalibrationFile1Isotope2 = "None";
   m_CalibrationFile1Isotope3 = "None";
   
   m_CalibrationFile2 = "";
+  m_CalibrationFile2GroupID = 2;
   m_CalibrationFile2Isotope1 = "None";
   m_CalibrationFile2Isotope2 = "None";
   m_CalibrationFile2Isotope3 = "None";
   
   m_CalibrationFile3 = "";
+  m_CalibrationFile3GroupID = 3;
   m_CalibrationFile3Isotope1 = "None";
   m_CalibrationFile3Isotope2 = "None";
   m_CalibrationFile3Isotope3 = "None";
   
   m_CalibrationFile4 = "";
+  m_CalibrationFile4GroupID = 4;
   m_CalibrationFile4Isotope1 = "None";
   m_CalibrationFile4Isotope2 = "None";
   m_CalibrationFile4Isotope3 = "None";
   
   m_CalibrationFile5 = "";
+  m_CalibrationFile5GroupID = 5;
   m_CalibrationFile5Isotope1 = "None";
   m_CalibrationFile5Isotope2 = "None";
   m_CalibrationFile5Isotope3 = "None";
   
   m_CalibrationFile6 = "";
+  m_CalibrationFile6GroupID = 6;
   m_CalibrationFile6Isotope1 = "None";
   m_CalibrationFile6Isotope2 = "None";
   m_CalibrationFile6Isotope3 = "None";
   
   m_CalibrationFile7 = "";
+  m_CalibrationFile7GroupID = 7;
   m_CalibrationFile7Isotope1 = "None";
   m_CalibrationFile7Isotope2 = "None";
   m_CalibrationFile7Isotope3 = "None";
@@ -135,36 +142,43 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   MSettings::WriteXml(Node);
 
   new MXmlNode(Node, "CalibrationFile1", m_CalibrationFile1);
+  new MXmlNode(Node, "CalibrationFile1GroupID", m_CalibrationFile1GroupID);
   new MXmlNode(Node, "CalibrationFile1Isotope1", m_CalibrationFile1Isotope1);
   new MXmlNode(Node, "CalibrationFile1Isotope2", m_CalibrationFile1Isotope2);
   new MXmlNode(Node, "CalibrationFile1Isotope3", m_CalibrationFile1Isotope3);
 
   new MXmlNode(Node, "CalibrationFile2", m_CalibrationFile2);
+  new MXmlNode(Node, "CalibrationFile2GroupID", m_CalibrationFile2GroupID);
   new MXmlNode(Node, "CalibrationFile2Isotope1", m_CalibrationFile2Isotope1);
   new MXmlNode(Node, "CalibrationFile2Isotope2", m_CalibrationFile2Isotope2);
   new MXmlNode(Node, "CalibrationFile2Isotope3", m_CalibrationFile2Isotope3);
 
   new MXmlNode(Node, "CalibrationFile3", m_CalibrationFile3);
+  new MXmlNode(Node, "CalibrationFile3GroupID", m_CalibrationFile3GroupID);
   new MXmlNode(Node, "CalibrationFile3Isotope1", m_CalibrationFile3Isotope1);
   new MXmlNode(Node, "CalibrationFile3Isotope2", m_CalibrationFile3Isotope2);
   new MXmlNode(Node, "CalibrationFile3Isotope3", m_CalibrationFile3Isotope3);
 
   new MXmlNode(Node, "CalibrationFile4", m_CalibrationFile4);
+  new MXmlNode(Node, "CalibrationFile4GroupID", m_CalibrationFile4GroupID);
   new MXmlNode(Node, "CalibrationFile4Isotope1", m_CalibrationFile4Isotope1);
   new MXmlNode(Node, "CalibrationFile4Isotope2", m_CalibrationFile4Isotope2);
   new MXmlNode(Node, "CalibrationFile4Isotope3", m_CalibrationFile4Isotope3);
 
   new MXmlNode(Node, "CalibrationFile5", m_CalibrationFile5);
+  new MXmlNode(Node, "CalibrationFile5GroupID", m_CalibrationFile5GroupID);
   new MXmlNode(Node, "CalibrationFile5Isotope1", m_CalibrationFile5Isotope1);
   new MXmlNode(Node, "CalibrationFile5Isotope2", m_CalibrationFile5Isotope2);
   new MXmlNode(Node, "CalibrationFile5Isotope3", m_CalibrationFile5Isotope3);
 
   new MXmlNode(Node, "CalibrationFile6", m_CalibrationFile6);
+  new MXmlNode(Node, "CalibrationFile6GroupID", m_CalibrationFile6GroupID);
   new MXmlNode(Node, "CalibrationFile6Isotope1", m_CalibrationFile6Isotope1);
   new MXmlNode(Node, "CalibrationFile6Isotope2", m_CalibrationFile6Isotope2);
   new MXmlNode(Node, "CalibrationFile6Isotope3", m_CalibrationFile6Isotope3);
 
   new MXmlNode(Node, "CalibrationFile7", m_CalibrationFile7);
+  new MXmlNode(Node, "CalibrationFile7GroupID", m_CalibrationFile7GroupID);
   new MXmlNode(Node, "CalibrationFile7Isotope1", m_CalibrationFile7Isotope1);
   new MXmlNode(Node, "CalibrationFile7Isotope2", m_CalibrationFile7Isotope2);
   new MXmlNode(Node, "CalibrationFile7Isotope3", m_CalibrationFile7Isotope3);
@@ -209,6 +223,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CalibrationFile1")) != 0) {
     m_CalibrationFile1 = aNode->GetValueAsString();
   }
+  if ((aNode = Node->GetNode("CalibrationFile1GroupID")) != 0) {
+    m_CalibrationFile1GroupID = aNode->GetValueAsInt();
+  }
   if ((aNode = Node->GetNode("CalibrationFile1Isotope1")) != 0) {
     m_CalibrationFile1Isotope1 = aNode->GetValueAsString();
   }
@@ -222,6 +239,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
 
   if ((aNode = Node->GetNode("CalibrationFile2")) != 0) {
     m_CalibrationFile2 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile2GroupID")) != 0) {
+    m_CalibrationFile2GroupID = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("CalibrationFile2Isotope1")) != 0) {
     m_CalibrationFile2Isotope1 = aNode->GetValueAsString();
@@ -237,6 +257,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CalibrationFile3")) != 0) {
     m_CalibrationFile3 = aNode->GetValueAsString();
   }
+  if ((aNode = Node->GetNode("CalibrationFile3GroupID")) != 0) {
+    m_CalibrationFile3GroupID = aNode->GetValueAsInt();
+  }
   if ((aNode = Node->GetNode("CalibrationFile3Isotope1")) != 0) {
     m_CalibrationFile3Isotope1 = aNode->GetValueAsString();
   }
@@ -250,6 +273,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
 
   if ((aNode = Node->GetNode("CalibrationFile4")) != 0) {
     m_CalibrationFile4 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile4GroupID")) != 0) {
+    m_CalibrationFile4GroupID = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("CalibrationFile4Isotope1")) != 0) {
     m_CalibrationFile4Isotope1 = aNode->GetValueAsString();
@@ -265,6 +291,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CalibrationFile5")) != 0) {
     m_CalibrationFile5 = aNode->GetValueAsString();
   }
+  if ((aNode = Node->GetNode("CalibrationFile5GroupID")) != 0) {
+    m_CalibrationFile5GroupID = aNode->GetValueAsInt();
+  }
   if ((aNode = Node->GetNode("CalibrationFile5Isotope1")) != 0) {
     m_CalibrationFile5Isotope1 = aNode->GetValueAsString();
   }
@@ -278,6 +307,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
 
   if ((aNode = Node->GetNode("CalibrationFile6")) != 0) {
     m_CalibrationFile6 = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("CalibrationFile6GroupID")) != 0) {
+    m_CalibrationFile6GroupID = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("CalibrationFile6Isotope1")) != 0) {
     m_CalibrationFile6Isotope1 = aNode->GetValueAsString();
@@ -293,6 +325,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CalibrationFile7")) != 0) {
     m_CalibrationFile7 = aNode->GetValueAsString();
   }
+  if ((aNode = Node->GetNode("CalibrationFile7GroupID")) != 0) {
+    m_CalibrationFile7GroupID = aNode->GetValueAsInt();
+  }
   if ((aNode = Node->GetNode("CalibrationFile7Isotope1")) != 0) {
     m_CalibrationFile7Isotope1 = aNode->GetValueAsString();
   }
@@ -304,10 +339,10 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
   }
 
   if ((aNode = Node->GetNode("HistogramMin")) != 0) {
-    m_HistogramMin = aNode->GetValueAsDouble();;
+    m_HistogramMin = aNode->GetValueAsDouble();
   }
   if ((aNode = Node->GetNode("HistogramMax")) != 0) {
-    m_HistogramMax = aNode->GetValueAsDouble();;
+    m_HistogramMax = aNode->GetValueAsDouble();
   }
   if ((aNode = Node->GetNode("HistogramBinningMode")) != 0) {
     m_HistogramBinningMode = aNode->GetValueAsUnsignedInt();

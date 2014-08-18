@@ -68,7 +68,19 @@ ostream& operator<<(ostream& out, const MString& S)
   return out; 
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+bool MString::operator<(const MString& N) const
+{
+  // Is lower operator for sorting by name
+
+  if (m_String.compare(N.m_String) < 0) return true; 
+  
+  return false;
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

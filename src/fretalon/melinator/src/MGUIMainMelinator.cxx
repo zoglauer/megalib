@@ -1124,6 +1124,7 @@ bool MGUIMelinatorMain::OnLoadLast()
 
   vector<MString> AllFileNames;
   vector<vector<MIsotope> > AllIsotopes;
+  vector<unsigned int> AllGroupIDs;
   
   MIsotopeStore Store;
   if (Store.Load("$(MEGALIB)/resource/libraries/Calibration.isotopes") == false) {
@@ -1165,6 +1166,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile1GroupID());
   }
 
   
@@ -1201,6 +1203,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile2GroupID());
   }
 
   
@@ -1237,6 +1240,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile3GroupID());
   }
 
   
@@ -1273,6 +1277,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile4GroupID());
   }
 
   
@@ -1309,6 +1314,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile5GroupID());
   }
 
   
@@ -1345,6 +1351,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile6GroupID());
   }
 
   
@@ -1381,6 +1388,7 @@ bool MGUIMelinatorMain::OnLoadLast()
     }
     AllIsotopes.push_back(Isotopes);
     AllFileNames.push_back(FileName);
+    AllGroupIDs.push_back(m_Settings->GetCalibrationFile7GroupID());
   }
   
 
@@ -1388,7 +1396,7 @@ bool MGUIMelinatorMain::OnLoadLast()
   //for (unsigned int f = 0; f < AllFileNames.size(); ++f) {
   //  m_Melinator.Load(AllFileNames[f], AllIsotopes[f]);
   //}
-  m_Melinator.Load(AllFileNames, AllIsotopes);
+  m_Melinator.Load(AllFileNames, AllIsotopes, AllGroupIDs);
   
   //m_Melinator.RemoveCollectionsWithNoPositiveEntries();
     

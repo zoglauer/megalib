@@ -76,6 +76,24 @@ bool MIsotope::operator==(const MIsotope& I) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Less than operator for sorting!
+bool MIsotope::operator<(const MIsotope& I) const
+{
+  if (m_Nucleons < I.m_Nucleons) {
+    return true;
+  } else if (m_Nucleons > I.m_Nucleons) {
+    return false;
+  } else {
+    return (m_Element < I.m_Element); 
+  }
+    
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the element name
 MString MIsotope::GetName() const
 {

@@ -114,6 +114,10 @@ class MString
 
   // Comparison
 
+
+  //! Is lower operator for sorting by name
+  bool operator<(const MString& N) const;  
+  
   //! Fast comparison especially in case of ignoring the case
   bool AreIdentical(const MString& S, bool IgnoreCase = false) const;
 

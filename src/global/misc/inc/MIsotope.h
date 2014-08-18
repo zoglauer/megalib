@@ -41,6 +41,9 @@ class MIsotope
   //! Compare two isotopes
   virtual bool operator==(const MIsotope& I) const;
 
+  //! Is lower operator for sorting by name
+  bool operator<(const MIsotope& I) const;
+
   //! Return the element name
   MString GetName() const;
 

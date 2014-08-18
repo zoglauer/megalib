@@ -54,12 +54,10 @@ class MMelinator
   //! Set the ID of the selected detector (use all detectors when negative)
   void SetSelectedDetectorID(int SelectedDetector) { m_SelectedDetectorID = SelectedDetector; }
   
-  //! Load the calibration data containing the given isotopes - return false if an error occurred
-  bool Load(const MString& FileName, const vector<MIsotope>& Isotopes);
-  
-  //! Load the calibration data containing the given isotopes - return false if an error occurred
+  //! Load the calibration data containing the given isotopes and eventually merge files with identical data groups
+  //! Return false if an error occurred
   //! This function performs parallel loading of all given files
-  bool Load(const vector<MString>& FileName, const vector<vector<MIsotope> >& Isotopes);
+  bool Load(const vector<MString>& FileName, const vector<vector<MIsotope> >& Isotopes, const vector<unsigned int>& GroupIDs);
   
   //! Set the basic properties of the histogram
   void SetHistogramProperties(double Min, double Max, unsigned int HistogramBinningMode, double HistogramBinningModeValue) { 
@@ -180,7 +178,7 @@ class MMelinator
   vector<MString> m_CalibrationFileNames;
   //! The loading progress of the given file:
   vector<double> m_CalibrationFileLoadingProgress;
-  //! The isotopes per group
+  //! The isotopes per input file
   vector<vector<MIsotope> > m_Isotopes;
   
   //! The minimum range of the histogram

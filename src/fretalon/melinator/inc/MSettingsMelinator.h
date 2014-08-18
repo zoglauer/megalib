@@ -44,6 +44,11 @@ class MSettingsMelinator : public MSettings
   //! Get the first calibration file
   MString GetCalibrationFile1() const { return m_CalibrationFile1; }
   
+  //! Set the group ID of the first calibration file
+  void SetCalibrationFile1GroupID(unsigned int GroupID) { m_CalibrationFile1GroupID = GroupID; }
+  //! Get the group ID of the first calibration file
+  unsigned int GetCalibrationFile1GroupID() const { return m_CalibrationFile1GroupID; }
+  
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile1Isotope1(const MString& Isotope) { m_CalibrationFile1Isotope1 = Isotope; }
   //! Set the isotope 1 of calibration file 1
@@ -62,6 +67,11 @@ class MSettingsMelinator : public MSettings
   void SetCalibrationFile2(const MString& File) { m_CalibrationFile2 = File; }
   //! Get the second calibration file
   MString GetCalibrationFile2() const { return m_CalibrationFile2; }
+  
+  //! Set the group ID of the second calibration file
+  void SetCalibrationFile2GroupID(unsigned int GroupID) { m_CalibrationFile2GroupID = GroupID; }
+  //! Get the group ID of the second calibration file
+  unsigned int GetCalibrationFile2GroupID() const { return m_CalibrationFile2GroupID; }
   
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile2Isotope1(const MString& Isotope) { m_CalibrationFile2Isotope1 = Isotope; }
@@ -82,6 +92,11 @@ class MSettingsMelinator : public MSettings
   //! Get the third calibration file
   MString GetCalibrationFile3() const { return m_CalibrationFile3; }
   
+  //! Set the group ID of the third calibration file
+  void SetCalibrationFile3GroupID(unsigned int GroupID) { m_CalibrationFile3GroupID = GroupID; }
+  //! Get the group ID of the third calibration file
+  unsigned int GetCalibrationFile3GroupID() const { return m_CalibrationFile3GroupID; }
+  
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile3Isotope1(const MString& Isotope) { m_CalibrationFile3Isotope1 = Isotope; }
   //! Set the isotope 1 of calibration file 1
@@ -100,6 +115,11 @@ class MSettingsMelinator : public MSettings
   void SetCalibrationFile4(const MString& File) { m_CalibrationFile4 = File; }
   //! Get the fourth calibration file
   MString GetCalibrationFile4() const { return m_CalibrationFile4; }
+  
+  //! Set the group ID of the fourth calibration file
+  void SetCalibrationFile4GroupID(unsigned int GroupID) { m_CalibrationFile4GroupID = GroupID; }
+  //! Get the group ID of the fourth calibration file
+  unsigned int GetCalibrationFile4GroupID() const { return m_CalibrationFile4GroupID; }
   
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile4Isotope1(const MString& Isotope) { m_CalibrationFile4Isotope1 = Isotope; }
@@ -120,6 +140,11 @@ class MSettingsMelinator : public MSettings
   //! Get the fifth calibration file
   MString GetCalibrationFile5() const { return m_CalibrationFile5; }
   
+  //! Set the group ID of the fifth calibration file
+  void SetCalibrationFile5GroupID(unsigned int GroupID) { m_CalibrationFile5GroupID = GroupID; }
+  //! Get the group ID of the fifth calibration file
+  unsigned int GetCalibrationFile5GroupID() const { return m_CalibrationFile5GroupID; }
+  
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile5Isotope1(const MString& Isotope) { m_CalibrationFile5Isotope1 = Isotope; }
   //! Set the isotope 1 of calibration file 1
@@ -134,10 +159,15 @@ class MSettingsMelinator : public MSettings
   MString GetCalibrationFile5Isotope3() const { return m_CalibrationFile5Isotope3; }
 
   
-  //! Set the fifth calibration file
+  //! Set the sixth calibration file
   void SetCalibrationFile6(const MString& File) { m_CalibrationFile6 = File; }
-  //! Get the fifth calibration file
+  //! Get the sixth calibration file
   MString GetCalibrationFile6() const { return m_CalibrationFile6; }
+  
+  //! Set the group ID of the sixth calibration file
+  void SetCalibrationFile6GroupID(unsigned int GroupID) { m_CalibrationFile6GroupID = GroupID; }
+  //! Get the group ID of the sixth calibration file
+  unsigned int GetCalibrationFile6GroupID() const { return m_CalibrationFile6GroupID; }
   
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile6Isotope1(const MString& Isotope) { m_CalibrationFile6Isotope1 = Isotope; }
@@ -153,10 +183,15 @@ class MSettingsMelinator : public MSettings
   MString GetCalibrationFile6Isotope3() const { return m_CalibrationFile6Isotope3; }
 
   
-  //! Set the fifth calibration file
+  //! Set the seventh calibration file
   void SetCalibrationFile7(const MString& File) { m_CalibrationFile7 = File; }
-  //! Get the fifth calibration file
+  //! Get the seventh calibration file
   MString GetCalibrationFile7() const { return m_CalibrationFile7; }
+  
+  //! Set the group ID of the seventh calibration file
+  void SetCalibrationFile7GroupID(unsigned int GroupID) { m_CalibrationFile7GroupID = GroupID; }
+  //! Get the group ID of the seventh calibration file
+  unsigned int GetCalibrationFile7GroupID() const { return m_CalibrationFile7GroupID; }
   
   //! Set the isotope 1 of calibration file 1
   void SetCalibrationFile7Isotope1(const MString& Isotope) { m_CalibrationFile7Isotope1 = Isotope; }
@@ -265,6 +300,8 @@ class MSettingsMelinator : public MSettings
  private:
   //! The first calibration file
   MString m_CalibrationFile1;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile1GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile1Isotope1;
   //! The second isotope of the first calibration file
@@ -274,6 +311,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile2;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile2GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile2Isotope1;
   //! The second isotope of the first calibration file
@@ -283,6 +322,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile3;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile3GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile3Isotope1;
   //! The second isotope of the first calibration file
@@ -292,6 +333,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile4;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile4GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile4Isotope1;
   //! The second isotope of the first calibration file
@@ -301,6 +344,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile5;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile5GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile5Isotope1;
   //! The second isotope of the first calibration file
@@ -310,6 +355,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile6;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile6GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile6Isotope1;
   //! The second isotope of the first calibration file
@@ -319,6 +366,8 @@ class MSettingsMelinator : public MSettings
   
   //! The first calibration file
   MString m_CalibrationFile7;
+  //! The group ID of the first calibration file
+  unsigned int m_CalibrationFile7GroupID;
   //! The first isotope of the first calibration file
   MString m_CalibrationFile7Isotope1;
   //! The second isotope of the first calibration file
