@@ -427,8 +427,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       map<MString, MString>::iterator Iter = m_ConstantMap.find(Tokenizer.GetTokenAt(1));
       if (Iter != m_ConstantMap.end()) {
-        Typo("Constant already defined!");
-        return false;        
+        if (m_ConstantMap[Tokenizer.GetTokenAt(1)] != Tokenizer.GetTokenAt(2)) {
+          Typo("Constant has already been defined and both are not identical!");
+          return false;
+        }
       }
       m_ConstantMap[Tokenizer.GetTokenAt(1)] = Tokenizer.GetTokenAt(2);
       m_ConstantList.push_back(Tokenizer.GetTokenAt(1));
