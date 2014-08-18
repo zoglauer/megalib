@@ -311,7 +311,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileReadOuts::ReadNext(MReadOutSequence& ROS)
+bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
 {
   // Return next single event from file... or 0 if there are no more.
 
@@ -378,9 +378,11 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS)
         
       m_ROE->Parse(T, 1);
       m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
-        
-      MReadOut RO(*m_ROE, *m_ROD);
-      ROS.AddReadOut(RO);
+      
+      if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
+        MReadOut RO(*m_ROE, *m_ROD);
+        ROS.AddReadOut(RO);
+      }
         
     } else if (Line[0] == 'S' && Line[1] == 'H') {
       int DetectorID = 0;
@@ -391,10 +393,13 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS)
       long UncorrectedADC = 0;
       long CorrectedADC = 0;
       if (sscanf(Line.Data(), "SH %d %c %d %d %lu %li %li\n", &DetectorID, &PosOrNeg, &StripID, &Triggered, &Timing, &UncorrectedADC, &CorrectedADC) == 7) {
-        const MReadOutElement& ROE = MReadOutElementDoubleStrip(DetectorID, StripID, PosOrNeg == 'p');
-        const MReadOutData& ROD = MReadOutDataADCValueWithTiming((double) CorrectedADC, (double) Timing);
-        MReadOut RO(ROE, ROD);
-        ROS.AddReadOut(RO);
+        if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && DetectorID == SelectedDetectorID)) {
+          const MReadOutElement& ROE = MReadOutElementDoubleStrip(DetectorID, StripID, PosOrNeg == 'p');
+          const MReadOutData& ROD = MReadOutDataADCValueWithTiming((double) CorrectedADC, (double) Timing);
+
+          MReadOut RO(ROE, ROD);
+          ROS.AddReadOut(RO);
+        }
         //if (StripID == 13) {
         //  cout<<RO<<endl;
         //}

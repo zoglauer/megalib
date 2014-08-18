@@ -1113,8 +1113,9 @@ bool MGUIMelinatorMain::OnChooseCalibrationFiles()
 bool MGUIMelinatorMain::OnLoadLast()
 {
   // Closes the application
- 
+   
   m_Melinator.Clear();
+  m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
  
   MString FileName;
   MString IsotopeName;

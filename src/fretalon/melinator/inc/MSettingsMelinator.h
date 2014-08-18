@@ -248,6 +248,11 @@ class MSettingsMelinator : public MSettings
   //! Get the save-as file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
 
+  //! Set the single detector to use (negative means use all)
+  void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
+  //! Get the single detector to use (negative means use all)
+  int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
+  
   
 // protected members:
  protected:
@@ -355,6 +360,10 @@ class MSettingsMelinator : public MSettings
   
   //! Set the save as file
   MString m_SaveAsFileName;
+  
+  //! Set the single detector to use (negative means use all)
+  int m_SelectedDetectorID;
+  
   
 #ifdef ___CINT___
  public:

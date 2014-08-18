@@ -47,7 +47,8 @@ class MFileReadOuts : public MFile
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
 
   //! Return the next event
-  bool ReadNext(MReadOutSequence& Sequence);
+  //! If SelectedDetectorID >= 0 then restrict yourself to SelectedDetectorID
+  bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1);
 
   // protected methods:
  protected:

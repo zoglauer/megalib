@@ -69,6 +69,8 @@ public:
   virtual bool OnLoadLast();
   //! Parmetrize all data
   virtual bool OnFitAll();
+  //! Actions when the save button has been pressed
+  virtual bool OnSave();
 
   // protected members:
 protected:
@@ -101,8 +103,6 @@ protected:
   virtual bool OnAbout();
   //! Actions when the load button has been pressed
   virtual bool OnLoad();
-  //! Actions when the save button has been pressed
-  virtual bool OnSave();
   //! Actions when the save as button has been pressed
   virtual bool OnSaveAs();
   //! Actions when the next button has been pressed

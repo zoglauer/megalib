@@ -51,6 +51,9 @@ class MMelinator
   //! Clear all data
   void Clear();
 
+  //! Set the ID of the selected detector (use all detectors when negative)
+  void SetSelectedDetectorID(int SelectedDetector) { m_SelectedDetectorID = SelectedDetector; }
+  
   //! Load the calibration data containing the given isotopes - return false if an error occurred
   bool Load(const MString& FileName, const vector<MIsotope>& Isotopes);
   
@@ -167,6 +170,9 @@ class MMelinator
   MReadOutStore m_Store;
   //! The storage for all calibrations
   MCalibrationStore m_CalibrationStore;
+  
+  //! The selected detector ID (negative means all detectors)
+  int m_SelectedDetectorID;
   
   //! The group IDs
   vector<unsigned int> m_GroupIDs;

@@ -729,6 +729,7 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
 class Match 
 {
 public:
@@ -765,6 +766,8 @@ bool MCalibrateLines::AssignEnergies()
       }
     }
   }
+  
+  if (Matches.size() == 0) return false;
   
   // Calculate the quality factor:
   for (unsigned int m = 0; m < Matches.size(); ++m) {

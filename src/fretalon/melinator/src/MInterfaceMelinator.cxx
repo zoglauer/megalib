@@ -98,7 +98,13 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -l:"<<endl;
   Usage<<"             Load the last used calibration files"<<endl;
   Usage<<"      -p:"<<endl;
-  Usage<<"             Load the last used calibration files and parametrize their peaks"<<endl;
+  Usage<<"             Load the last used calibration files and parametrize all peaks"<<endl;
+  Usage<<"      -a:"<<endl;
+  Usage<<"             Load the last used calibration files, parametrize all peaks, save the result, and exit"<<endl;
+  Usage<<"      -s:"<<endl;
+  Usage<<"             Save file name"<<endl;
+  Usage<<"      -d --detector:"<<endl;
+  Usage<<"             Only look at this detector"<<endl;
   Usage<<"      -c --configuration <filename>.cfg:"<<endl;
   Usage<<"             Use this file as configuration file."<<endl;
   Usage<<"             If no configuration file is give ~/.melinator.cfg is used"<<endl;
@@ -129,7 +135,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
-    }		
+    }
   }
   
   // Now parse all low level options
@@ -138,6 +144,17 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
     if (Option == "--configuration" || Option == "-c") {
       m_Data->Read(argv[++i]);
       cout<<"Command-line parser: Use configuration file "<<argv[i]<<endl;
+    }
+  }
+  // Now parse all low level options
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--save" || Option == "-s") {
+      m_Data->SetSaveAsFileName(argv[++i]);
+      cout<<"Command-line parser: Use save as file name "<<m_Data->GetSaveAsFileName()<<endl;
+    } else if (Option == "--detector" || Option == "-d") {
+      m_Data->SetSelectedDetectorID(atoi(argv[++i]));
+      cout<<"Command-line parser: Use only this detector: "<<m_Data->GetSelectedDetectorID()<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
     }
@@ -150,6 +167,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   // Now some automatic things done after the GUI is up
   bool LoadLast = false;
   bool Parametrize = false;
+  bool Automatic = false;
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "-l") {
@@ -159,6 +177,11 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
       LoadLast = true;
       Parametrize = true;
       cout<<"Command-line parser: Automatically parametrizing the peaks in the last file(s)..."<<endl;
+    } else if (Option == "-a") {
+      LoadLast = true;
+      Parametrize = true;
+      Automatic = true;
+      cout<<"Command-line parser: Automatically load, parametrizing the peaks, save, and exit..."<<endl;
     }
   }
   
@@ -166,7 +189,11 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
     m_Gui->OnLoadLast();
   }
   if (Parametrize == true) {
-    m_Gui->OnFitAll(); 
+    m_Gui->OnFitAll();
+  }
+  if (Automatic == true) {
+    m_Gui->OnSave();
+    return false;
   }
   
 

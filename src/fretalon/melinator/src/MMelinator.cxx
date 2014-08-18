@@ -111,6 +111,8 @@ void MMelinator::Clear()
   m_GroupIDs.clear();
   m_CalibrationFileNames.clear();
   m_Isotopes.clear();
+  
+  m_SelectedDetectorID = -1;
 }
 
 
@@ -134,7 +136,7 @@ bool MMelinator::Load(const MString& FileName, const vector<MIsotope>& Isotopes)
   m_Isotopes.push_back(Isotopes);
   
   MReadOutSequence Sequence;
-  while (Reader.ReadNext(Sequence) == true) {
+  while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
     m_Store.Add(Sequence, GroupID);
   }
   
@@ -157,8 +159,6 @@ bool MMelinator::Load(const MString& FileName, const vector<MIsotope>& Isotopes)
 //! This function performs parallel loading of all given files
 bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIsotope> >& Isotopes)
 {
-  Clear();
-  
   MGUIMultiProgressBar ProgressBar(FileNames.size());
   ProgressBar.SetTitles("Melinator Progress", "Progress of reading the calibration files");
   
@@ -290,7 +290,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
   cout<<"Parallel loading thread #"<<ThreadID<<" has started"<<endl;
   
   m_ThreadIsInitialized[ThreadID] = true;
-
+  
   while (true) {
     TThread::Lock();
     unsigned int ID = m_ThreadNextItem;
@@ -319,8 +319,9 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
     MReadOutSequence Sequence;
     long Counter = 0;
     long NewCounter = 0;
-    while (Reader.ReadNext(Sequence) == true) {
+    while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
       Store.Add(Sequence, 0);
+        
       ++NewCounter;
       if (++Counter%10000 == 0) {
         double Pos = Reader.GetFilePosition();
@@ -330,7 +331,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
         if (m_ThreadShouldTerminate[ThreadID] == true) break;
         
         // Check that we still have enough memory left:
-        unsigned long Reserve = 32*(NewCounter+2*100000) + 200000*m_Store.GetNumberOfReadOutCollections();
+        unsigned long Reserve = 32*(NewCounter+2*100000) + 300000*m_Store.GetNumberOfReadOutCollections();
         int* Memory = new(nothrow) int[Reserve];
         if (Memory == 0) {
           cout<<"Cannot reserve "<<sizeof(int)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;

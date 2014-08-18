@@ -106,6 +106,8 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   
   m_SaveAsFileName = "Out.ecal";
   
+  m_SelectedDetectorID = -1;
+  
   if (AutoLoad == true) {
     Read();
   }
@@ -186,6 +188,8 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingModel", m_CalibrationModelDeterminationMethodFittingModel);
   
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
+  
+  new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
   
   return true;
 }
@@ -354,6 +358,10 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
 
   if ((aNode = Node->GetNode("SaveAsFileName")) != 0) {
     m_SaveAsFileName = aNode->GetValueAsString();
+  }
+ 
+  if ((aNode = Node->GetNode("SelectedDetectorID")) != 0) {
+    m_SelectedDetectorID = aNode->GetValueAsInt();
   }
  
   return true;
