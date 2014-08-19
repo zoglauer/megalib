@@ -246,20 +246,21 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
   // Now put the events into a list
 
   m_SendMutex.Lock();
+    
   // Add it to the end of the queue
   m_PacketsToSend.push_back(Packet);
   m_NPacketsToSend++;
   m_NBytesToSend += Packet.size();
 
-  
   // If we have more than N bytes we remove the oldest from the buffer... we are just removing one at a time!
-  while (m_NBytesToSend > m_MaxBufferSize && m_NPacketsToSend > 0) {
+  while (m_NBytesToSend > m_MaxBufferSize && m_NPacketsToSend > 0 && m_PacketsToSend.empty() == false) {
     m_NBytesToSend -= m_PacketsToSend.front().size();
     m_NPacketsToSend--;
     m_NLostPackets++;
     m_PacketsToSend.pop_front();
     if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Buffer overflow: One packet lost (total loss: "<<m_NLostPackets<<")"<<endl;
   }
+
   m_SendMutex.UnLock();
   
   return true;
@@ -506,7 +507,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     } 
     // If status > 0, we got a message
     else {
-      long NewPacketSize = NewPacket.size();
+      unsigned long NewPacketSize = NewPacket.size();
       if (NewPacketSize > 0) {
         m_ReceiveMutex.Lock();
       
@@ -538,13 +539,24 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
     // Step 4:
     // Send data:
-
+    m_SendMutex.Lock();
+    bool SomethingToSend = (m_NPacketsToSend > 0) ? true : false;
+    m_SendMutex.UnLock();
+    
+    
     // Create a message out of the first entry of the list and send the event...
-    if (m_NPacketsToSend > 0) {
+    if (SomethingToSend == true) {
 
       m_SendMutex.Lock();
+      if (m_PacketsToSend.empty() == true) {
+        if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<": BAD Error: the deque seems to be empty ("<<m_PacketsToSend.size()<<"), but the counter says otherwise ("<<m_NPacketsToSend<<")! Resyncing..."<<endl;
+        m_NPacketsToSend = 0;
+        m_SendMutex.UnLock();
+        continue;
+      }
       vector<unsigned char>& Packet = m_PacketsToSend.front(); // Make sure we don't copy the string...
       m_SendMutex.UnLock();
+      
       //cout<<"Transceiver "<<m_Name<<": Sending something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
       Socket->SetOption(kNoBlock, 0); // Not sure about this...
       Status = Socket->SendRaw((void*) &Packet[0], Packet.size());
@@ -562,11 +574,26 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       } else {
         m_SendMutex.Lock();
         //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
+        
+        if (m_PacketsToSend.empty() == true) {
+          if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<": BAD Error: the deque seems to be empty ("<<m_PacketsToSend.size()<<"), but the counter says otherwise ("<<m_NPacketsToSend<<")! Resyncing..."<<endl;
+          m_NPacketsToSend = 0;
+          m_SendMutex.UnLock();
+          continue;
+        }
+        if (m_NPacketsToSend == 0) {
+          if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<": BAD Error: the packet counter says there are no packets left ("<<m_NPacketsToSend<<"), but we reached this point... resyncing and skipping"<<endl;
+          m_NPacketsToSend = m_PacketsToSend.size();
+          m_SendMutex.UnLock();
+          continue;
+        }
+
         m_NPacketsToSend--;
         m_NBytesToSend -= Packet.size();
         m_NSentBytes += Packet.size();
         m_PacketsToSend.pop_front();
         m_NSentPackets++;
+       
         m_SendMutex.UnLock();
 
         SleepAllowed = false; // No sleep because we might have more work to do (i.e. send more events)

@@ -96,17 +96,17 @@ class MTransceiverTcpIpBinary
 
   //! Set the maximum buffer size (in strings) after which to loose events
   //! Since we use C++ lists on char's we have an overhead of 16 : 1 on 64-bit systems!
-  void SetMaximumBufferSize(unsigned int MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
+  void SetMaximumBufferSize(unsigned long MaxBufferSize) { m_MaxBufferSize = MaxBufferSize; }
 
   //! Get the number of objects still to be sent
-  unsigned int GetNPacketsToSend() const { return m_NPacketsToSend; }
+  unsigned long GetNPacketsToSend() const { return m_NPacketsToSend; }
   //! Get the number of packets still to be receive (i.e. which are in the receive buffer)
-  unsigned int GetNPacketsToReceive() const { return m_NPacketsToReceive; }
+  unsigned long GetNPacketsToReceive() const { return m_NPacketsToReceive; }
 
   //! Get the number of sent bytes
-  unsigned int GetNSentBytes() const { return m_NSentBytes; }
+  unsigned long GetNSentBytes() const { return m_NSentBytes; }
   //! Get the number of receives bytes
-  unsigned int GetNReceivedBytes() const { return m_NReceivedBytes; }
+  unsigned long GetNReceivedBytes() const { return m_NReceivedBytes; }
 
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
@@ -167,19 +167,19 @@ class MTransceiverTcpIpBinary
   TMutex m_ReceiveMutex;
 
   //! The maximum buffer size:
-  unsigned int m_MaxBufferSize;
+  unsigned long m_MaxBufferSize;
 
   //! Counter for the number of received strings, etc.
-  unsigned int m_NReceivedPackets;
+  unsigned long m_NReceivedPackets;
   //! Counter for the number of received bytes
-  unsigned int m_NReceivedBytes;
+  unsigned long m_NReceivedBytes;
   //! Counter for the number of sent strings, etc.
-  unsigned int m_NSentPackets;
+  unsigned long m_NSentPackets;
   //! Counter for the number of sent bytes
-  unsigned int m_NSentBytes;
+  unsigned long m_NSentBytes;
 
   //! Counter for the number of lost strings due to buffer overflow
-  unsigned int m_NLostPackets;
+  unsigned long m_NLostPackets;
 
   //! True if a connection is established
   bool m_IsConnected;
