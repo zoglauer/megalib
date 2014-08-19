@@ -519,11 +519,17 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         //cout<<"Transceiver "<<m_Name<<": Received something from "<<m_Host<<":"<<m_Port<<" of size "<<NewPacket.size()<<endl;
       
         if (m_NPacketsToReceive + NewPacketSize > m_MaxBufferSize) {
-          deque<unsigned char>::iterator Stop = m_PacketsToReceive.begin();
-          advance(Stop, NewPacketSize);
-          m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
-          m_NLostPackets += NewPacketSize;
-          m_NPacketsToReceive -= NewPacketSize;
+          if (NewPacketSize > m_NPacketsToReceive) {
+            m_NLostPackets += m_NPacketsToReceive;
+            m_NPacketsToReceive = 0;
+            m_PacketsToReceive.clear();
+          } else {
+            deque<unsigned char>::iterator Stop = m_PacketsToReceive.begin();
+            advance(Stop, NewPacketSize);
+            m_PacketsToReceive.erase(m_PacketsToReceive.begin(), Stop);
+            m_NLostPackets += NewPacketSize;
+            m_NPacketsToReceive -= NewPacketSize;
+          }
           if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Buffer overflow: Deleted oldest "<<NewPacketSize<<" bytes! Now "<<m_NPacketsToReceive<<" bytes are in the buffer"<<endl;
         }
         
