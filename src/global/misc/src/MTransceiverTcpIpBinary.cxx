@@ -301,7 +301,12 @@ bool MTransceiverTcpIpBinary::SyncedReceive(vector<unsigned char>& Packet, vecto
       }
       m_PacketsToReceive.erase(Start, Stop);
       //m_NPacketsToReceive = m_PacketsToReceive.size();
-      m_NPacketsToReceive -= Packet.size();
+      if (m_NPacketsToReceive < Packet.size()) {
+        if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<": BAD Error: the Size of the current packet ("<<Packet.size()<<") is larger than what I expect to have as total packets ("<<m_NPacketsToReceive<<")! Resyncing..."<<endl;
+        m_NPacketsToReceive = m_PacketsToReceive.size();
+      } else {
+        m_NPacketsToReceive -= Packet.size();
+      }
       m_ReceiveMutex.UnLock();
       return true;
     }
