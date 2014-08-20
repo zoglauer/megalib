@@ -76,7 +76,7 @@ MGUIECBList::MGUIECBList(const TGWindow *Parent, MString Label, bool IsMultiple)
   m_Parent = (TGWindow *) Parent;
   m_Label = Label;
 
-	m_IsMultiple = IsMultiple;
+  m_IsMultiple = IsMultiple;
   m_CBList = new TObjArray();
   m_NamesList = new TObjArray();
 
@@ -88,7 +88,7 @@ MGUIECBList::MGUIECBList(const TGWindow *Parent, MString Label, bool IsMultiple)
   m_TextLabel = 0;
   m_TextLabelLayout = 0;
 
-	m_IsEnabled = true;
+  m_IsEnabled = true;
   m_WrapLength = 800;
 
   m_Associate = 0;
@@ -165,9 +165,9 @@ bool MGUIECBList::ProcessMessage(long Message, long Parameter1,
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_CHECKBUTTON:
-			if (m_IsMultiple == true) break;
+      if (m_IsMultiple == true) break;
       if (Parameter1 >= 0 && Parameter1 <= m_CBList->GetLast()) {
-	      for (i = 0; i <= m_CBList->GetLast(); i++) {
+        for (i = 0; i <= m_CBList->GetLast(); i++) {
           CB = (TGCheckButton *) m_CBList->At(i);
           if (CB->GetState() == kButtonDisabled) continue;
 
@@ -177,12 +177,12 @@ bool MGUIECBList::ProcessMessage(long Message, long Parameter1,
             CB->SetState(kButtonDown);
           }
         }
-	    }
+      }
       break;
-		default:
-			break;
-		}
-		break;
+    default:
+      break;
+    }
+    break;
   case kC_VSCROLL:
     switch (GET_SUBMSG(Message)) {
     case kSB_SLIDERPOS:
@@ -217,7 +217,7 @@ bool MGUIECBList::ProcessMessage(long Message, long Parameter1,
 void MGUIECBList::Associate(TGWindow* Associate)
 {
   m_Associate = Associate;
-	
+  
   for (int i = 0; i < m_CBList->GetLast()+1; i++) {
     ((TGCheckButton *) (m_CBList->At(i)))->Associate(Associate);
   }
@@ -236,8 +236,7 @@ TArrayI MGUIECBList::GetSelected()
   int i;
   TArrayI Selected(m_CBList->GetLast()+1);
   for (i = 0; i < m_CBList->GetLast()+1; i++) {
-    Selected[i] = 
-      (((TGCheckButton *) (m_CBList->At(i)))->GetState() == kButtonUp) ? 0 : 1; 
+    Selected[i] = (((TGCheckButton *) (m_CBList->At(i)))->GetState() == kButtonUp) ? 0 : 1; 
   }
 
   return Selected;
@@ -370,7 +369,7 @@ void MGUIECBList::Add(MString CBLabel, int Selected)
   TGCheckButton *CB = 
     new TGCheckButton(GetContainer(), CBLabel, m_CBList->GetLast()+1);
   (Selected == 0) ? CB->SetState(kButtonUp) : CB->SetState(kButtonDown);
-	CB->Associate(this);
+  CB->Associate(this);
   if (m_Associate != 0) {
     CB->Associate(m_Associate);
   }
@@ -388,8 +387,8 @@ void MGUIECBList::Add(MString CBLabel, int Selected)
 
 void MGUIECBList::SetEnabled(bool flag)
 {
-	m_IsEnabled = flag;
-	
+  m_IsEnabled = flag;
+  
   for (int i = 0; i < m_CBList->GetLast()+1; i++) {
     if (m_IsEnabled == true) {
       ((TGCheckButton *) (m_CBList->At(i)))->SetState(kButtonUp); 
@@ -405,9 +404,9 @@ void MGUIECBList::SetEnabled(bool flag)
 
 void MGUIECBList::SetMultiple(bool IsMultiple)
 {
-	// True if multiple selctions are allowed 
+  // True if multiple selctions are allowed 
 
-	m_IsMultiple = IsMultiple;
+  m_IsMultiple = IsMultiple;
 }
 
 
@@ -418,9 +417,9 @@ void MGUIECBList::SelectAll()
 {
   // Set all check button to selected
 
-	if (m_IsMultiple == false) {
-		return;
-	}
+  if (m_IsMultiple == false) {
+    return;
+  }
 
   int i;
   for (i = 0; i < m_CBList->GetLast()+1; i++) {
@@ -461,9 +460,6 @@ void MGUIECBList::SetWrapLength(int WrapLength)
   }
 
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 
 // MGUIECBList.cxx: the end...

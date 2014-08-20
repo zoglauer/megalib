@@ -56,6 +56,16 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   //! Set if the connection should be established immediately after the lauch of the application
   void SetConnectOnStart(bool ConnectOnStart) { m_ConnectOnStart = ConnectOnStart; }
 
+  //! Return if coincidence search is done
+  bool GetDoCoincidence() const { return m_DoCoincidence; }
+  //! Set this if you want to do coincidence search
+  void SetDoCoincidence(bool DoCoincidence) { m_DoCoincidence = DoCoincidence; }
+
+  //! Return if identification is done
+  bool GetDoIdentification() const { return m_DoIdentification; }
+  //! Set this if you want to do isotope identification
+  void SetDoIdentification(bool DoIdentification) { m_DoIdentification = DoIdentification; }
+  
   //! Return the transceiver mode: MTransceiverTcpIp::c_ModeASCIIText or MTransceiverTcpIp::c_ModeRawEventList
   unsigned int GetTransceiverMode() const { return m_TransceiverMode; }
   //! Set the transceiver mode: MTransceiverTcpIp::c_ModeASCIIText or MTransceiverTcpIp::c_ModeRawEventList
@@ -105,6 +115,11 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   
   //! The connection mode (represents one of MTransceiverTcpIp::c_ModeASCIIText, MTransceiverTcpIp::c_ModeRawEventList)
   unsigned int m_TransceiverMode;
+  
+  //! True if coincidence search is done
+  bool m_DoCoincidence;
+  //! True if coincidence search is done
+  bool m_DoIdentification;
   
   //! The event accumulation time
   double m_AccumulationTime;

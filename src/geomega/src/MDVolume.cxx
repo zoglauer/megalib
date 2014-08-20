@@ -2564,6 +2564,7 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
       cout<<"         Start: "<<Start<<"   Stop: "<<Stop<<endl;
       cout<<"         Total length in volume: "<<Length<<endl;
       cout<<"         Total length in daughters: "<<LengthInDaughters<<endl;
+      cout<<"         --> It is extremely likely that you have overlaps in your geometry!"<<endl;
     }
   }
 

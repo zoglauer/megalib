@@ -23,6 +23,7 @@
 #include "MGUIDialog.h"
 #include "MGUIEFileSelector.h"
 #include "MSettingsRealta.h"
+#include "MGUIECBList.h"
 
 // Forward declarations:
 class MGUIEEntry;
@@ -58,6 +59,9 @@ class MGUIAccumulation : public MGUIDialog
  private:
   MSettingsRealta* m_Settings;
 
+  //! The optional threads to start
+  MGUIECBList* m_Threads;
+  
   //! The accumulation time
   MGUIEEntry* m_AccumulationTime;
   

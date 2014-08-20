@@ -79,6 +79,13 @@ void MGUIAccumulation::Create()
 
   AddSubTitle("Set all event accumulation, etc. options"); 
 
+  TGLayoutHints* ThreadsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 5, 20);
+  m_Threads = new MGUIECBList(this, "Choose if you want to run the following threads:");
+  m_Threads->Add("Do coincidence search", m_Settings->GetDoCoincidence() ? 1 : 0);
+  m_Threads->Add("Do isotope identification", m_Settings->GetDoIdentification() ? 1 : 0);
+  m_Threads->Create();
+  AddFrame(m_Threads, ThreadsLayout);
+  
   TGLayoutHints* AccumulationTimeLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 5, 20);
   m_AccumulationTime  = new MGUIEEntry(this, "Accumulation time [sec]:", false, m_Settings->GetAccumulationTime());
   AddFrame(m_AccumulationTime, AccumulationTimeLayout);
@@ -151,6 +158,9 @@ bool MGUIAccumulation::OnApply()
   } else {
     m_Settings->SetAccumulationFileNameAddDateAndTime(false);    
   }
+  
+  m_Settings->SetDoCoincidence(m_Threads->IsSelected(0));
+  m_Settings->SetDoIdentification(m_Threads->IsSelected(1));
 
   UnmapWindow();
   

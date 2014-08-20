@@ -64,6 +64,9 @@ MSettingsRealta::MSettingsRealta(bool AutoLoad) : MSettings("RealtaConfiguration
   
   m_TransceiverMode = 0;
   
+  m_DoCoincidence = false;
+  m_DoIdentification = false;
+
   if (AutoLoad == true) {
     Read();
   }
@@ -99,6 +102,9 @@ bool MSettingsRealta::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "ConnectOnStart", m_ConnectOnStart);
   new MXmlNode(Node, "TransceiverMode", m_TransceiverMode);
 
+  new MXmlNode(Node, "DoCoincidence", m_DoCoincidence);
+  new MXmlNode(Node, "DoIdentification", m_DoIdentification);
+  
   new MXmlNode(Node, "AccumulationTime", m_AccumulationTime);
   new MXmlNode(Node, "AccumulationFileName", MSettings::CleanPath(m_AccumulationFileName));
   new MXmlNode(Node, "AccumulationFileNameAddDateAndTime", m_AccumulationFileNameAddDateAndTime);
@@ -132,6 +138,12 @@ bool MSettingsRealta::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("ConnectOnStart")) != 0) {
     m_ConnectOnStart = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("DoIdentification")) != 0) {
+    m_DoIdentification = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("DoCoincidence")) != 0) {
+    m_DoCoincidence = aNode->GetValueAsBoolean();
   }
   if ((aNode = Node->GetNode("TransceiverMode")) != 0) {
     m_TransceiverMode = aNode->GetValueAsUnsignedInt();

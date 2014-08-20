@@ -154,8 +154,8 @@ void MGUIRealtaMain::Create()
   MenuSettings->AddSeparator();
   MenuSettings->AddLabel("General settings");
   MenuSettings->AddSeparator();
-  MenuSettings->AddEntry("Accumulation times", c_Accumulation);
-  MenuSettings->AddEntry("Network", c_Network);
+  MenuSettings->AddEntry("Threads, Accumulation, Histogramming, and Saving", c_Accumulation);
+  MenuSettings->AddEntry("Network options", c_Network);
   MenuSettings->AddEntry("Geometry", c_Geometry);
   MenuSettings->AddSeparator();
   MenuSettings->AddLabel("Event reconstruction settings");

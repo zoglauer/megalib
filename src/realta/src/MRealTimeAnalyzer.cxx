@@ -658,6 +658,12 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
         Event->SetID(RE->GetEventID());
         Event->SetTime(RE->GetEventTime());
         Event->SetInitialRawEvent(RE);
+        /*
+        if (m_DoCoincidence == false) {
+          Event->IsCoincident(true);
+          Event->SetCoincidentRawEvent(new MRERawEvent(Event->GetInitialRawEvent()));      
+        }
+        */
   
         // Search for the correct position to add it:
         if (m_Events.empty() == true) {
@@ -740,7 +746,8 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
 {
   // Do the coincidence search...
 
-
+  bool DoCoincidence = m_Settings->GetDoCoincidence();
+  
   // Load geometry:
   MGeometryRevan* Geometry = new MGeometryRevan();
 
@@ -783,7 +790,7 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
   MRealTimeEvent* Event = 0;
   while (m_StopThreads == false) {
     Event = (*EventIter);
- 
+     
     while (Event->IsInitialized() == false && m_StopThreads == false) {
       //cout<<"Reconstruction thread: Waiting for initialization...."<<endl;
       gSystem->Sleep((unsigned int) NapAmount);
@@ -797,8 +804,14 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
       }
     }
     if (m_StopThreads == true) break;
-  
-    if (Event->IsCoincident() == false) {
+
+    if (DoCoincidence == false) {
+      Event->SetCoincidentRawEvent(new MRERawEvent(Event->GetInitialRawEvent()));  
+      Event->IsCoincident(true);
+      m_CoincidenceThreadLastEventID = Event->GetID();
+    }
+    
+    if (DoCoincidence == true && Event->IsCoincident() == false) {
       MRERawEvent* RawEvent = new MRERawEvent(Event->GetInitialRawEvent());
       // --> it will be deleted by the RawEventAnalyzer!!
       
@@ -863,7 +876,7 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
       
       m_CoincidenceThreadLastEventID = Event->GetID();
     }
-    
+        
     while (Event == m_Events.front() && m_StopThreads == false) {
       //cout<<"Coincidence thread: Waiting for new events...."<<endl;
       gSystem->Sleep((unsigned int) NapAmount);
@@ -1564,11 +1577,12 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     if (m_StopThreads == true) break;
 
 
-    // Only here at the end are allowed to shrink the array:
+    // Only here at the end are we allowed to shrink the array:
     while (Event != m_Events.end()) {
       MRealTimeEvent* DelMe = (*Event);
       unsigned int ID = DelMe->GetID();
       // Attention: This is not atomic, but shouldn't cause any too server problems...
+      //cout<<ID<<":"<<m_ImagingThreadLastEventID<<":"<<m_ReconstructionThreadLastEventID<<":"<<m_CoincidenceThreadLastEventID<<":"<<m_TransmissionThreadLastEventID<<":"<<m_IdentificationThreadLastEventID<<endl;
       if (ID >= m_ImagingThreadLastEventID || 
           ID >= m_ReconstructionThreadLastEventID || 
           ID >= m_CoincidenceThreadLastEventID || 
@@ -1617,6 +1631,8 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
     cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
     return;
   }
+
+  bool DoIdentification = m_Settings->GetDoIdentification();
 
   // Calculate the energy bins:
   double Emin = m_Settings->GetFirstEnergyRangeMin();
@@ -1721,8 +1737,10 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
     }
 
     // Reset the spectrum:
-    S.Reset();
-    S.SetSpectrum(1000, Emin, Emax, 2);
+    if (DoIdentification == true) {
+      S.Reset();
+      S.SetSpectrum(1000, Emin, Emax, 2);
+    }
 
     list<MRealTimeEvent*>::iterator Event = EventHorizon.base();
     EventHorizonTime = (*EventHorizon)->GetTime().GetAsDouble();
@@ -1743,7 +1761,7 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
 
     if (m_StopThreads == true) break;
 
-    if (S.FindIsotopes() == true) {
+    if (DoIdentification == true && S.FindIsotopes() == true) {
       m_IsotopeMutex.Lock();
       m_Isotopes.clear();
       m_Isotopes = S.GetIsotopes();
