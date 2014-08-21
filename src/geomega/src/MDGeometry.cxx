@@ -269,6 +269,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // If the file contains such a statement, this one is overwritten
   m_VirtualizeNonDetectorVolumes = VirtualizeNonDetectorVolumes;
 
+  // If the is set the visibility of everything but the sensitive volume to zero 
+  bool ShowOnlySensitiveVolumes = false;
+  
   m_FileName = FileName;
   if (m_FileName == "") {
     mout<<"   *** Error: No geometry file name given"<<endl;
@@ -1032,6 +1035,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       m_ShowVolumes = Tokenizer.GetTokenAtAsBoolean(1);
+
+      continue;
+    }
+
+    // Show volumes
+    else if (Tokenizer.IsTokenAt(0, "ShowOnlySensitiveVolumes") == true) {
+      if (Tokenizer.GetNTokens() != 2) {
+        Typo("Line must contain two values: ShowVolumes false");
+        return false;
+      }
+
+      ShowOnlySensitiveVolumes = Tokenizer.GetTokenAtAsBoolean(1);
 
       continue;
     }
@@ -3216,6 +3231,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     return false;
   }
   
+  //
+  if (ShowOnlySensitiveVolumes == true) {
+    cout<<"Show only sensitive volumes"<<endl;
+    for (unsigned int i = 0; i < GetNVolumes(); i++) {
+      if (GetVolumeAt(i)->IsSensitive() == true) {
+        GetVolumeAt(i)->SetVisibility(1); 
+      } else {
+        GetVolumeAt(i)->SetVisibility(0); 
+      }
+    }
+  }
   
   // Validate the orientations
   for (unsigned int s = 0; s < GetNOrientations(); ++s) {
