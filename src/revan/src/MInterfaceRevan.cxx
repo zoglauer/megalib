@@ -163,15 +163,15 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
-    }		
+    }   
     // Double argument
     //     if (Option == "-c" || Option == "--calibrate") {
-    // 			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-    // 				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-    // 				cout<<Usage.str()<<endl;
-    // 				return false;
-    // 			}
-    // 		}
+    //      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+    //        cout<<Usage.str()<<endl;
+    //        return false;
+    //      }
+    //    }
 
   }
     
@@ -461,9 +461,9 @@ void MInterfaceRevan::ExportSpectrum()
   for (int b = 1; b <= Hist->GetNbinsX() + 1; ++b) {
     if (b <= Hist->GetNbinsX()) {
       out<<Hist->GetBinLowEdge(b)<<"  "<<Hist->GetBinContent(b)<<endl;
-	  } else {
-	    out<<Hist->GetBinLowEdge(b-1) + Hist->GetBinWidth(b-1)<<"   -"<<endl;
-	  }
+    } else {
+      out<<Hist->GetBinLowEdge(b-1) + Hist->GetBinWidth(b-1)<<"   -"<<endl;
+    }
   }
   out<<"EN"<<endl;
   out<<endl;
@@ -690,12 +690,12 @@ void MInterfaceRevan::TriggerStatistics()
 
 
 //   TH1D* CSRGood = new TH1D("CSR Good Test Statistics", "CSR Good Test Statistics", 
-// 			   50, m_Data->GetCSRThresholdMin(), m_Data->GetCSRThresholdMax());
+//         50, m_Data->GetCSRThresholdMin(), m_Data->GetCSRThresholdMax());
 //   CSRGood->SetBit(kCanDelete);
 //   CSRGood->SetFillColor(8);
 
 //   TH1D* CSRAll = new TH1D("CSR All Test Statistics", "CSR All Test Statistics", 
-// 			  50, m_Data->GetCSRThresholdMin(), m_Data->GetCSRThresholdMax());
+//        50, m_Data->GetCSRThresholdMin(), m_Data->GetCSRThresholdMax());
 //   CSRAll->SetBit(kCanDelete);
 //   CSRAll->SetFillColor(8);
 
@@ -754,16 +754,16 @@ void MInterfaceRevan::EnergyDistribution()
   double EMin = m_Data->GetTotalEnergyMin();
 
   TH1D* Before = new TH1D("InitialEnergySpectrum", 
-			  "Energy spectrum BEFORE reconstruction", 
-			  NBins, EMin, EMax);
+        "Energy spectrum BEFORE reconstruction", 
+        NBins, EMin, EMax);
   Before->SetBit(kCanDelete);
   Before->SetFillColor(8);
   Before->GetXaxis()->SetTitle("Energy [keV]");
   Before->GetYaxis()->SetTitle("counts");
 
   TH1D* After = new TH1D("InitialEnergySpectrum", 
-			 "Energy spectrum AFTER reconstruction", 
-			 NBins, EMin, EMax);
+       "Energy spectrum AFTER reconstruction", 
+       NBins, EMin, EMax);
   After->SetBit(kCanDelete);
   After->SetFillColor(8);
   After->GetXaxis()->SetTitle("Energy [keV]");
@@ -794,12 +794,12 @@ void MInterfaceRevan::EnergyDistribution()
   } while (true);
 
   if (Analyzer.PostAnalysis() == false) return;
-	
+  
   TCanvas* BeforeCanvas = new TCanvas("Before", "Before", 640, 480);
   BeforeCanvas->cd();
   Before->Draw();
   BeforeCanvas->Update();
-	
+  
   TCanvas* AfterCanvas = new TCanvas("After", "After", 640, 480);
   AfterCanvas->cd();
   After->Draw();
@@ -1061,10 +1061,10 @@ void MInterfaceRevan::HitStatistics()
         Name == "xantippe" || Name == "aphrodite") {
       SumD28 += (*Iter).second;
     } else if (Name == "medusa" || Name == "fortuna" || Name == "penelope" || Name == "venus" ||
-	       Name == "hydra" || Name == "aetna" || Name == "ariadne" || Name == "helena") {
+         Name == "hydra" || Name == "aetna" || Name == "ariadne" || Name == "helena") {
       SumD24 += (*Iter).second;
     } else if (Name == "antigone" || Name == "diane" || Name == "persephone" || Name == "minerva" || 
-	       Name == "pallas" || Name == "thetis" || Name == "circe" || Name == "europa") {
+         Name == "pallas" || Name == "thetis" || Name == "circe" || Name == "europa") {
       SumD22 += (*Iter).second;
     } else {
       SumD1 += (*Iter).second;
@@ -1077,10 +1077,10 @@ void MInterfaceRevan::HitStatistics()
         Name == "xantippe" || Name == "aphrodite") {
       DetectorEfficiency[Name] = 4.0*(*Iter).second/SumD28;
     } else if (Name == "medusa" || Name == "fortuna" || Name == "penelope" || Name == "venus" ||
-	       Name == "hydra" || Name == "aetna" || Name == "ariadne" || Name == "helena") {
+         Name == "hydra" || Name == "aetna" || Name == "ariadne" || Name == "helena") {
       DetectorEfficiency[Name] = 8.0*(*Iter).second/SumD24;
     } else if (Name == "antigone" || Name == "diane" || Name == "persephone" || Name == "minerva" || 
-	       Name == "pallas" || Name == "thetis" || Name == "circe" || Name == "europa") {
+         Name == "pallas" || Name == "thetis" || Name == "circe" || Name == "europa") {
       DetectorEfficiency[Name] = 8.0*(*Iter).second/SumD22;
     } else {
       DetectorEfficiency[Name] = 11.0*(*Iter).second/SumD1;
@@ -1357,29 +1357,30 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   }
   Reader->ShowProgress(m_UseGui);
 
-  double xMin = -100;
-  double xMax = +100;
-  double yMin = -100;
-  double yMax = +100;
-  double zMin = -100;
-  double zMax = +100;
-
-  int MaxNBins = 200;
-
   unsigned int MaxNPositions = 10000000;
   vector<MVector> Positions;
   vector<double> Energies;
 
-
+  double MinTotalEnergy = m_Data->GetTotalEnergyMin();
+  double MaxTotalEnergy = m_Data->GetTotalEnergyMax();
+  
   // Step 1: Accumulate many, many hits:
 
   MRESE* RESE = 0;
   MRERawEvent* RE = 0;
-  while ((RE = Reader->GetNextEvent()) != 0) { 
-    // categorize the beam into layers:
+  while ((RE = Reader->GetNextEvent()) != 0) {
+    
+    // Make sure the total energy is right:
+    double Total = 0;
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
-      Positions.push_back(RE->GetRESEAt(i)->GetPosition());
-      Energies.push_back(RE->GetRESEAt(i)->GetEnergy());
+      Total += RE->GetRESEAt(i)->GetEnergy();
+    }
+    if (Total >= MinTotalEnergy && Total <= MaxTotalEnergy) { 
+      // Save positions and energies
+      for (int i = 0; i < RE->GetNRESEs(); ++i) {
+        Positions.push_back(RE->GetRESEAt(i)->GetPosition());
+        Energies.push_back(RE->GetRESEAt(i)->GetEnergy());
+      }
     }
     
     delete RE;
@@ -1390,8 +1391,16 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   }
 
   // Step 2: Create the histograms
-
+  double xMin = -100;
+  double xMax = +100;
+  double yMin = -100;
+  double yMax = +100;
+  double zMin = -100;
+  double zMax = +100;
   DetermineAxis(xMin, xMax, yMin, yMax, zMin, zMax, Positions);
+
+  int MaxNBins = 200;
+
 
   MString HistName;
   MString HistTitle;
@@ -1605,7 +1614,7 @@ void MInterfaceRevan::EnergyPerDetector()
     }
 
     if (RE->GetEnergy() > Emax || 
-	//if (RE->GetEnergy() > 1.1*Emax || RE->GetEnergy() < 0.9*Emax ||
+  //if (RE->GetEnergy() > 1.1*Emax || RE->GetEnergy() < 0.9*Emax ||
         NHitsD1 == 0 || NHitsD2 == 0) {
       delete RE;
       continue;
@@ -1678,25 +1687,25 @@ void MInterfaceRevan::EnergyPerDetector()
   D2dHist->Draw();
   D2dCanvas->Update();
 
-  // 	TCanvas* D2d1Canvas = new TCanvas();
-  // 	D2d1Canvas->cd();
-  // 	D2d1Hist->Draw();
-  // 	D2d1Canvas->Update();
+  //  TCanvas* D2d1Canvas = new TCanvas();
+  //  D2d1Canvas->cd();
+  //  D2d1Hist->Draw();
+  //  D2d1Canvas->Update();
 
-  // 	TCanvas* D2d2Canvas = new TCanvas();
-  // 	D2d2Canvas->cd();
-  // 	D2d2Hist->Draw();
-  // 	D2d2Canvas->Update();
+  //  TCanvas* D2d2Canvas = new TCanvas();
+  //  D2d2Canvas->cd();
+  //  D2d2Hist->Draw();
+  //  D2d2Canvas->Update();
 
-  // 	TCanvas* D2d3Canvas = new TCanvas();
-  // 	D2d3Canvas->cd();
-  // 	D2d3Hist->Draw();
-  // 	D2d3Canvas->Update();
+  //  TCanvas* D2d3Canvas = new TCanvas();
+  //  D2d3Canvas->cd();
+  //  D2d3Hist->Draw();
+  //  D2d3Canvas->Update();
 
-  // 	TCanvas* D2d4Canvas = new TCanvas();
-  // 	D2d4Canvas->cd();
-  // 	D2d4Hist->Draw();
-  // 	D2d4Canvas->Update();
+  //  TCanvas* D2d4Canvas = new TCanvas();
+  //  D2d4Canvas->cd();
+  //  D2d4Hist->Draw();
+  //  D2d4Canvas->Update();
 
 
   cout<<"Avg Energy D1: "<<AvgEnergyD1/AllHitsD1<<endl;
@@ -1815,32 +1824,32 @@ void MInterfaceRevan::EnergyPerCentralTrackElement()
   } while (true);
 
   if (Analyzer.PostAnalysis() == false) return;
-	
+  
   TCanvas* StartEnergyCanvas = new TCanvas("StartEnergy", "StartEnergy", 640, 480);
   StartEnergyCanvas->cd();
   StartEnergy->Draw();
   StartEnergyCanvas->Update();
-	
+  
   TCanvas* StartAngleCanvas = new TCanvas("StartAngle", "StartAngle", 640, 480);
   StartAngleCanvas->cd();
   StartAngle->Draw();
   StartAngleCanvas->Update();
-	
+  
   TCanvas* CentralEnergyCanvas = new TCanvas("CentralEnergy", "CentralEnergy", 640, 480);
   CentralEnergyCanvas->cd();
   CentralEnergy->Draw();
   CentralEnergyCanvas->Update();
-	
+  
   TCanvas* CentralAngleCanvas = new TCanvas("CentralAngle", "CentralAngle", 640, 480);
   CentralAngleCanvas->cd();
   CentralAngle->Draw();
   CentralAngleCanvas->Update();
-	
+  
   TCanvas* StopEnergyCanvas = new TCanvas("StopEnergy", "StopEnergy", 640, 480);
   StopEnergyCanvas->cd();
   StopEnergy->Draw();
   StopEnergyCanvas->Update();
-	
+  
   TCanvas* StopAngleCanvas = new TCanvas("StopAngle", "StopAngle", 640, 480);
   StopAngleCanvas->cd();
   StopAngle->Draw();
