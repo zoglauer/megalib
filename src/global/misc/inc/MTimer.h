@@ -33,11 +33,12 @@ class MTimer
 {
   // public interface:
  public:
-  MTimer();
+  // Default constructor
+  MTimer(bool Start = true);
   MTimer(double TimeOutSeconds);
   virtual ~MTimer();
 
-	void SetTimeOut(double TimeOutSeconds = -1);
+  void SetTimeOut(double TimeOutSeconds = -1);
 
   //! Start the timer - counting resarts from zero
   void Start();
@@ -53,7 +54,7 @@ class MTimer
   double GetElapsed() { return ElapsedTime(); }
   double ElapsedTime();
   bool HasTimedOut(double Seconds = -1);
-	void SetHasTimedOut();
+  void SetHasTimedOut();
   double GetTimeOut();
 
   // protected methods:
@@ -71,13 +72,13 @@ class MTimer
   //! Total elapsed time since last start or reset
   double m_ElapsedTime;
   //! Time which needs to be elapsed until a timeout will be triggered
-	double m_TimeOut;
+  double m_TimeOut;
 
   //! Flag indicating that this timer is paused
-	bool m_IsPaused;
+  bool m_IsPaused;
 
   //! Flag indicating a time out, even when the real time has not yet elapsed 
-	bool m_HasTimedOut;
+  bool m_HasTimedOut;
 
 
 

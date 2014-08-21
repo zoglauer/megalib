@@ -46,15 +46,15 @@ ClassImp(MTimer)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MTimer::MTimer()
+MTimer::MTimer(bool Start)
 {
   // Default constructor
 
   SetTimeOut(0);
   m_StartTime = GetRelativeTime();
-	m_HasTimedOut = false;
+  m_HasTimedOut = false;
   m_ElapsedTime = 0;
-  m_IsPaused = false;
+  m_IsPaused = !Start;
 }
 
 
@@ -67,7 +67,7 @@ MTimer::MTimer(double TimeOut)
 
   SetTimeOut(TimeOut);
   m_StartTime = GetRelativeTime();
-	m_HasTimedOut = false;
+  m_HasTimedOut = false;
   m_ElapsedTime = 0;
   m_IsPaused = false;
 }
@@ -89,7 +89,7 @@ void MTimer::SetHasTimedOut()
 {
   // Force a time out
 
-	m_HasTimedOut = true;
+  m_HasTimedOut = true;
 }
 
 
@@ -101,7 +101,7 @@ void MTimer::Start()
   // (Re-) Start the timer
 
   m_StartTime = GetRelativeTime();
-	m_HasTimedOut = false;
+  m_HasTimedOut = false;
   m_ElapsedTime = 0;
   m_IsPaused = false;
 }
@@ -168,7 +168,7 @@ void MTimer::SetTimeOut(double TimeOut)
   // Set the timeout
   // If timeout <= 0 then never timeout
 
-	m_TimeOut = TimeOut;
+  m_TimeOut = TimeOut;
 };
  
 
@@ -206,11 +206,11 @@ bool MTimer::HasTimedOut(double Seconds)
 {
   // Convert the time to seconds and return as double
 
-	if (m_HasTimedOut == true) return true;
+  if (m_HasTimedOut == true) return true;
 
   if (m_TimeOut <= 0) return false;
 
-	if (Seconds == -1) Seconds = m_TimeOut;
+  if (Seconds == -1) Seconds = m_TimeOut;
 
   if (GetRelativeTime() - m_StartTime > Seconds) return true;
 
