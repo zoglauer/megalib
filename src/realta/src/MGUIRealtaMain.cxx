@@ -98,8 +98,12 @@ MGUIRealtaMain::MGUIRealtaMain() : TGMainFrame(gClient->GetRoot(), 800, 800)
   
   m_Geometry = new MDGeometryQuest();
   if (m_Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<m_Geometry->GetName()<<" failed!!"<<endl;
-    return;
+    cout<<"Loading of geometry "<<m_Settings->GetGeometryFileName()<<" failed! Trying the dummy geometry..."<<endl;
+    if (m_Geometry->ScanSetupFile("$(MEGALIB)/resource/examples/geomega/special/Dummy.geo.setup", false) == false) {
+      cout<<"Loading of dummy geometry "<<m_Geometry->GetName()<<" failed, too!"<<endl;
+      cout<<"Delete your ~/.realta.cfg file and make sure MEGAlib is correctly installed! Aborting!"<<endl;
+      gApplication->Terminate(0);
+    }
   }
 
   Create();
