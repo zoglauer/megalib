@@ -111,7 +111,7 @@ else
     echo "ERROR: Unable to determine required Geant4 version!"
     exit 1
   fi
-  echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on Geant4 website"
+  echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on the Geant4 website --- sometimes this takes a few minutes..."
   
   # Now check Geant4 repository for the given version:
   TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"

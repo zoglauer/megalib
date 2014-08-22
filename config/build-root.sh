@@ -137,7 +137,7 @@ else
     echo "ERROR: Unable to determine required ROOT version!"
     exit 1
   fi
-  echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on ROOT website"
+  echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on the ROOT website --- sometimes this takes a few minutes..."
   
   # Now check root repository for the given version:
   TARBALL=`curl ftp://root.cern.ch/root/ -sl | grep "^root_v${WANTEDVERSION}" | grep "source.tar.gz$" | sort | tail -n 1`
