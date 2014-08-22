@@ -175,16 +175,22 @@ bool GradedZ::Analyze()
   double Emin = 0.0;
   double Emax = 1000.0;
 
+  TH1D* MeasuredSpectrum = new TH1D("", "Measured Spectrum", NBins, Emin, Emax);
+  MeasuredSpectrum->SetXTitle("Energy of primary");
+  MeasuredSpectrum->SetYTitle("cts");
+
   TH1D* AllHits = new TH1D("All Hits", "AllHits", NBins, Emin, Emax);
   
   TH1D* TransmissionCurve = new TH1D("TransmissionCurve", "Transmission Curve (any primary/secondary making it through the shield)", NBins, Emin, Emax);
   TransmissionCurve->SetXTitle("Energy of primary");
   TransmissionCurve->SetYTitle("Transmission [%]");
+  TransmissionCurve->SetMaximum(100);
   TransmissionCurve->SetNdivisions(520, "Y");
  
   TH1D* TransmissionCurveUnharmed = new TH1D("TransmissionCurveUnharmed", "Transmission Curve (any primary making it through the shield unchanged)", NBins, Emin, Emax);
   TransmissionCurveUnharmed->SetXTitle("Energy of primary");
   TransmissionCurveUnharmed->SetYTitle("Transmission [%]");
+  TransmissionCurveUnharmed->SetMaximum(100);
   TransmissionCurveUnharmed->SetNdivisions(520, "Y");
   
   TH1D* ComptonInteractions = new TH1D("ComptonInteractions", "Compton interaction in shield (with and without transmission)", NBins, Emin, Emax);
@@ -204,7 +210,8 @@ bool GradedZ::Analyze()
       bool HasInteraction = false;
       double BlackAbsorberEnergy = 0;
       for (unsigned int i = 1; i < SiEvent->GetNIAs(); ++i) {
-        if (SiEvent->GetIAAt(i)->GetProcess() == "BLAK") { // 
+        if (SiEvent->GetIAAt(i)->GetProcess() == "BLAK") { //
+          MeasuredSpectrum->Fill(SiEvent->GetIAAt(i)->GetMotherEnergy());
           BlackAbsorberEnergy += SiEvent->GetIAAt(i)->GetMotherEnergy();
         } else {
           HasInteraction = true;
@@ -245,6 +252,11 @@ bool GradedZ::Analyze()
       TransmissionCurveUnharmed->SetBinContent(b, 0);
     }
   }
+
+  TCanvas* MeasuredSpectrumCanvas = new TCanvas();
+  MeasuredSpectrumCanvas->cd();
+  MeasuredSpectrum->Draw();
+  MeasuredSpectrumCanvas->Update();
 
   TCanvas* ComptonInteractionsCanvas = new TCanvas();
   ComptonInteractionsCanvas->cd();

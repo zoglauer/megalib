@@ -23,7 +23,7 @@ the shield.
 
 To run the example, do the following:
 cosima GradedZShield.source
-make -f ${MEGALIB}/ resource/standalone/Makefile.StandAlone PRG=GradedZShield only
+make -f ${MEGALIB}/resource/standalone/Makefile.StandAlone PRG=GradedZShield only
 GradedZShield -f GradedZShield.inc1.id1.sim -g GradedZShield.geo.setup
 
 Please ignore all warnings about not present trigger criteria.
