@@ -363,6 +363,8 @@ bool MDDetector::CopyDataToNamedDetectors()
 MDDetector::~MDDetector()
 {
   // default destructor
+  
+  delete m_PulseShape;
 }
 
 
