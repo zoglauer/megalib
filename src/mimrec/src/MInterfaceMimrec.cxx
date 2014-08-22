@@ -1163,12 +1163,8 @@ void MInterfaceMimrec::ARMGamma()
   }
 
 
-  TCanvas* Canvas = new TCanvas("CanvasARMGamma", "Canvas ARM Gamma", 800, 600);
-  Canvas->SetFillColor(0);
-  Canvas->SetFrameBorderSize(0);
-  Canvas->SetFrameBorderMode(0);
-  Canvas->SetBorderSize(0);
-  Canvas->SetBorderMode(0);
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle("ARM of Compton cone");
   Canvas->cd();
   Hist->Draw();
   Canvas->Modified();
@@ -3528,10 +3524,10 @@ void MInterfaceMimrec::EnergySpectra()
   TH1D* Hist = new TH1D("EnergySpectrum", "Energy spectrum", NBins, xBins);
   delete [] xBins;
 
+  Hist->SetDirectory(0);
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("Energy [keV]");
   Hist->SetYTitle("counts");
-  //Hist->SetYTitle("counts");
   Hist->SetStats(false);
   Hist->SetFillColor(8);
   Hist->SetMinimum(0);
@@ -3613,7 +3609,8 @@ void MInterfaceMimrec::EnergySpectra()
 //     Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
 //   }
 
-  TCanvas* Canvas = new TCanvas("SpectrumCanvas", "Spectrum canvas", 800, 600);
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle("Spectrum canvas");
   Canvas->cd();
   if (xLog == true) {
     Canvas->SetLogx();
