@@ -227,7 +227,7 @@ bool DecayAnalyzer::ParseCommandLine(int argc, char** argv)
       m_GeometryFileName = argv[++i];
 			cout<<"Accepting geometry file name: "<<m_GeometryFileName<<endl;
     } else if (Option == "--debug") {
-      if (g_DebugLevel < 2) g_DebugLevel = 2;
+      if (g_Verbosity < 2) g_Verbosity = 2;
 			cout<<"Activating debug level"<<endl;
 		} else {
 			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;

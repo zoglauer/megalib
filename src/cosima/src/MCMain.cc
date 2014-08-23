@@ -285,7 +285,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
     mgui.Enable(false);
     mdebug.Enable(false);
   } else if (m_Verbosity >= 2) {
-    if (g_DebugLevel < 2) g_DebugLevel = 2;
+    if (g_Verbosity < 2) g_Verbosity = 2;
     m_UseDebug = true;
     mout<<"Enabling debug mode!"<<endl;
   }

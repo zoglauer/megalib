@@ -360,7 +360,7 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
       m_Recycle = true;
 			cout<<"Accepting recycling events"<<endl;
     } else if (Option == "-d") {
-      if (g_DebugLevel < 2) g_DebugLevel = 2;
+      if (g_Verbosity < 2) g_Verbosity = 2;
 			cout<<"Entering debug mode..."<<endl;
 		} else {
 			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;

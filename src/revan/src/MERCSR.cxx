@@ -268,7 +268,7 @@ void MERCSR::FindComptonSequence(MRERawEvent* RE)
   // permutations and quality factors
   int NGoodSequences = ComputeAllQualityFactors(RE);
 
-  if (g_DebugLevel >= 1) {
+  if (g_Verbosity >= 1) {
     // Dump all permutations:
     int NShownCombis = 120;
     mout<<"CSR - Sequence: Top "<< NShownCombis<<" valid permutations ("<<m_QualityFactors.size()<<")"<<endl;

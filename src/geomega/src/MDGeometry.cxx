@@ -3404,6 +3404,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The volume sequence does not point to the right detector!");
             return false;                             
           }
+          if (Start->IsSensitive() == 0) {
+            Typo("The volume sequence does not point to a sensitive volume!");
+            return false;                             
+          }
           Pos = Start->GetShape()->GetRandomPositionInside();
           Pos = Seq.GetPositionInFirstVolume(Pos, Start);
         } 

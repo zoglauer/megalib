@@ -420,7 +420,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
-  if (g_DebugLevel > 1) DumpOutput = true;
+  if (g_Verbosity > 1) DumpOutput = true;
 
 	bool Return = true;
 

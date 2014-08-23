@@ -97,7 +97,7 @@ class MRealTimeAnalyzer
   //! Get spectrum historgram
   TH1D* GetSpectrumHistogram() { return m_Spectrum; }
   //! Get image
-  MImageSpheric* GetImage() { return m_Image; }
+  MImage* GetImage() { return m_Image; }
   //! Get a COPY of the isotope list
   vector<MQualifiedIsotope> GetIsotopes();
   
@@ -238,7 +238,7 @@ class MRealTimeAnalyzer
   //! The current spectrum histogram
   TH1D* m_Spectrum;
   //! The current image
-  MImageSpheric* m_Image;
+  MImage* m_Image;
   
   //! A list of isoptopes to identify:
   vector<MQualifiedIsotope> m_Isotopes;

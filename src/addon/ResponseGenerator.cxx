@@ -545,7 +545,7 @@ bool ResponseGenerator::ParseCommandLine(int argc, char** argv)
       m_NoAbsorptions = true;
       cout<<"Calculating no absorptions"<<endl;
     } else if (Option == "-d") {
-      if (g_DebugLevel < 2) g_DebugLevel = 2;
+      if (g_Verbosity < 2) g_Verbosity = 2;
       cout<<"Enabling debug!"<<endl;
       mdebug<<"Debug enabled!"<<endl;
     } else {
@@ -959,7 +959,7 @@ bool ResponseGenerator::VerifyTrackReconstruction()
     RE = REList->GetRawEventAt(0);
     massert(RE != 0);
 
-    //g_DebugLevel = 1;
+    //g_Verbosity = 1;
 
     int NTracks = 0;
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
@@ -1053,7 +1053,7 @@ bool ResponseGenerator::VerifyTrackReconstruction()
       }
     }
 
-    //g_DebugLevel = 0;
+    //g_Verbosity = 0;
   }
 
   cout<<"Failure reasons:"<<endl;
@@ -2680,7 +2680,7 @@ bool ResponseGenerator::GenerateTrackPdf()
   int Counter = 0;
   while (LoadEvents() == true) {
 
-    //g_DebugLevel = 1;
+    //g_Verbosity = 1;
 
     //cout<<"New event"<<endl;
     
@@ -2839,7 +2839,7 @@ bool ResponseGenerator::GenerateTrackPdf()
 
     if (m_Interrupt == true) break;
 
-    //g_DebugLevel = 0;
+    //g_Verbosity = 0;
   }
   
   GoodBadTable.Write((m_ResponseName + ".t.goodbad.rsp").c_str(), true);
@@ -3564,7 +3564,7 @@ bool ResponseGenerator::GenerateComptonPdf()
 
     SecondLoop.Start();
 
-    //g_DebugLevel = 1;
+    //g_Verbosity = 1;
 
 
     int r_max = REList->GetNRawEvents();
@@ -3801,7 +3801,7 @@ bool ResponseGenerator::GenerateComptonPdf()
 
     if (m_Interrupt == true) break;
 
-    //g_DebugLevel = 0;
+    //g_Verbosity = 0;
   } while (true);
 
   cerr<<"Some timings:"<<endl;

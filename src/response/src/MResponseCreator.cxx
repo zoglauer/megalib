@@ -238,7 +238,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       m_NoAbsorptions = true;
       cout<<"Calculating no absorptions"<<endl;
     } else if (Option == "-d") {
-      if (g_DebugLevel < 2) g_DebugLevel = 2;
+      if (g_Verbosity < 2) g_Verbosity = 2;
       cout<<"Enabling debug!"<<endl;
       mdebug<<"Debug enabled!"<<endl;
     } else {

@@ -621,7 +621,7 @@ void MERCSRChiSquare::FindComptonSequence(MRERawEvent* RE)
   int NGoodSequences = ComputeAllQualityFactors(RE);
 
   // Dump all permutations:
-  if (g_DebugLevel > 0) {
+  if (g_Verbosity > 0) {
     int NShownCombis = 120;
     mdebug<<"CSR-CS - Sequence: Top "<< NShownCombis<<" valid permutations ("<<m_QualityFactors.size()<<")"<<endl;
     for (m_QualityFactorsIterator = m_QualityFactors.begin(); 

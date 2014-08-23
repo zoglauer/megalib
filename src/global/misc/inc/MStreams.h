@@ -127,26 +127,26 @@ extern MStreams mgui;
 //#define mdebug5 ((Level >= 1) ? mlog : mnull)
 
 // Fast but unsafe version
-#define mdebug  if (g_DebugLevel >= 2) mlog
-#define mdebug1 if (g_DebugLevel >= 1) mlog
-#define mdebug2 if (g_DebugLevel >= 2) mlog
-#define mdebug3 if (g_DebugLevel >= 3) mlog
-#define mdebug4 if (g_DebugLevel >= 4) mlog
-#define mdebug5 if (g_DebugLevel >= 5) mlog
+#define mdebug  if (g_Verbosity >= 2) mlog
+#define mdebug1 if (g_Verbosity >= 1) mlog
+#define mdebug2 if (g_Verbosity >= 2) mlog
+#define mdebug3 if (g_Verbosity >= 3) mlog
+#define mdebug4 if (g_Verbosity >= 4) mlog
+#define mdebug5 if (g_Verbosity >= 5) mlog
 
 
 extern MStreams __mdep;
 #ifdef ___WINDOWS___
-#define mdep { ostringstream __oss; __oss<<"Depreciated function in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str().c_str()); }  { ostringstream __oss; __oss<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str().c_str()); } __mdep.SetPrefix("  "); if (g_DebugLevel >= 1) __mdep
+#define mdep { ostringstream __oss; __oss<<"Depreciated function in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str().c_str()); }  { ostringstream __oss; __oss<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str().c_str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
 #else
-#define mdep { ostringstream __oss; __oss<<"Depreciated use of function \""<<__func__<<"\" in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str()); } __mdep.SetPrefix("  "); if (g_DebugLevel >= 1) __mdep
+#define mdep { ostringstream __oss; __oss<<"Depreciated use of function \""<<__func__<<"\" in file "<<__FILE__<<" before line "<<__LINE__<<":"; __mdep.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mdep.SetRejection(__oss.str()); } __mdep.SetPrefix("  "); if (g_Verbosity >= 1) __mdep
 #endif
 
 extern MStreams __mimp;
 #ifdef ___WINDOWS___
-#define mimp { ostringstream __oss1; __oss1<<"***** Implementation limitation in file "<<__FILE__<<" around line "<<__LINE__<<":"; __mimp.SetHeader(__oss1.str().c_str()); }  { ostringstream __oss2; __oss2<<__FILE__<<" "<<__LINE__; __mimp.SetRejection(__oss2.str().c_str()); } __mimp.SetPrefix("      "); if (g_DebugLevel >= 1) __mimp
+#define mimp { ostringstream __oss1; __oss1<<"***** Implementation limitation in file "<<__FILE__<<" around line "<<__LINE__<<":"; __mimp.SetHeader(__oss1.str().c_str()); }  { ostringstream __oss2; __oss2<<__FILE__<<" "<<__LINE__; __mimp.SetRejection(__oss2.str().c_str()); } __mimp.SetPrefix("      "); if (g_Verbosity >= 1) __mimp
 #else
-#define mimp { ostringstream __oss; __oss<<"***** Implementation limitation in function \""<<__func__<<"\" in file "<<__FILE__<<" around line "<<__LINE__<<":"; __mimp.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mimp.SetRejection(__oss.str()); } __mimp.SetPrefix("      "); if (g_DebugLevel >= 1) __mimp
+#define mimp { ostringstream __oss; __oss<<"***** Implementation limitation in function \""<<__func__<<"\" in file "<<__FILE__<<" around line "<<__LINE__<<":"; __mimp.SetHeader(__oss.str()); }  { ostringstream __oss; __oss<<__func__<<" "<<__FILE__<<" "<<__LINE__; __mimp.SetRejection(__oss.str()); } __mimp.SetPrefix("      "); if (g_Verbosity >= 1) __mimp
 #endif
 
 

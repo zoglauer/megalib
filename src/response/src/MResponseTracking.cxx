@@ -328,7 +328,7 @@ bool MResponseTracking::CreateResponse()
   int Counter = 0;
   while (InitializeNextMatchingEvent() == true) {
 
-    //g_DebugLevel = 1;
+    //g_Verbosity = 1;
 
     //cout<<"New event"<<endl;
     

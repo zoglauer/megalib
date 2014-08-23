@@ -53,6 +53,9 @@ using namespace std;
 #include "MERCSRChiSquare.h"
 #include "MBPData.h"
 #include "MImage.h"
+#include "MImageSpheric.h"
+#include "MImageGalactic.h"
+#include "MImage2D.h"
 #include "MComptonEvent.h"
 #include "MPairEvent.h"
 #include "MPhotoEvent.h"
@@ -1543,7 +1546,8 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
     m_Image = 0;
     delete m_Image;
-    m_Image = dynamic_cast<MImageSpheric*>(Images.back());
+    //m_Image = dynamic_cast<MImageSpheric*>(Images.back());
+    m_Image = Images.back();
     if (Images.size() > 1) {
       for (unsigned int i = 0; i < Images.size() - 1; ++i) {
         delete Images[i];
@@ -1555,7 +1559,7 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     si.setf(ios::fixed, ios::floatfield);
     si<<"Image from "<<LatestTime<<" sec to "<<EventHorizonTime<<" sec with "<<NBackprojections<<" events";
     m_Image->SetTitle(si.str().c_str());
-
+    
     ostringstream ss;
     ss.precision(2);
     ss.setf(ios::fixed, ios::floatfield);

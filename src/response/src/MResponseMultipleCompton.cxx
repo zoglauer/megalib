@@ -417,7 +417,7 @@ bool MResponseMultipleCompton::CreateResponse()
     RE = 0;
     REList = m_ReReader->GetRawEventList();
 
-    //g_DebugLevel = 1;
+    //g_Verbosity = 1;
 
 
     int r_max = REList->GetNRawEvents();
@@ -589,7 +589,7 @@ bool MResponseMultipleCompton::CreateResponse()
       SaveMatrices();
     }
 
-    //g_DebugLevel = 0;
+    //g_Verbosity = 0;
   } while (true);
 
   SaveMatrices();

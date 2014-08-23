@@ -201,7 +201,7 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
 		Option = argv[i];
     if (Option == "--debug" || Option == "-d") {
-			if (g_DebugLevel < 2) g_DebugLevel = 2;
+			if (g_Verbosity < 2) g_Verbosity = 2;
 			cout<<"Command-line parser: Use debug mode"<<endl;
 		} else if (Option == "--revan-cfg" || Option == "-c") {
       cout<<"Command-line parser: Reading revan configuration file"<<endl;

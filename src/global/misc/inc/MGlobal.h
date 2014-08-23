@@ -114,7 +114,15 @@ extern const unsigned int g_UnsignedIntNotDefined;
 extern const double g_DoubleNotDefined;
 extern const float g_FloatNotDefined;
 
-extern int g_DebugLevel;
+//! The global verbosity
+extern int g_Verbosity;
+// and its levels
+extern const int c_Quiet;
+extern const int c_Error;
+extern const int c_Warning;
+extern const int c_Info;
+extern const int c_Chatty;
+extern const int c_Extreme;
 
 extern TMutex* g_Mutex;
 

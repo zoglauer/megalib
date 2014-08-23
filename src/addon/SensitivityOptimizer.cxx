@@ -800,7 +800,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
 			mlog<<"Accepting background file name: "<<m_BackgroundFiles.back()<<" ("<<m_BackgroundTimes.back()<<"sec)"<<endl;
     } else if (Option == "-n") { ++i;
-    } else if (Option == "-d") { if (g_DebugLevel < 2) g_DebugLevel = 2;
+    } else if (Option == "-d") { if (g_Verbosity < 2) g_Verbosity = 2;
     } else if (Option == "-c") {
       ConfigurationFile = argv[++i];
       if (MFile::Exists(ConfigurationFile) == false) {

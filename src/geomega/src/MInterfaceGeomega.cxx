@@ -178,7 +178,7 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
       m_UseGui = false;
       gROOT->SetBatch(true);
     } else if (Option == "--debug" || Option == "-d") {
-      if (g_DebugLevel < 2) g_DebugLevel = 2;
+      if (g_Verbosity < 2) g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
     } else if (Option == "--configuration" || Option == "-c") {
       m_Data->Read(argv[++i]);

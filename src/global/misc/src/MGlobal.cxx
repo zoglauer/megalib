@@ -65,7 +65,7 @@ unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
 // Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2013"; 
+const MString g_CopyrightYear = "2014"; 
 const MString g_Homepage = "http://megalibtoolkit.com"; 
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
@@ -78,7 +78,13 @@ const unsigned int g_UnsignedIntNotDefined = numeric_limits<unsigned int>::max()
 const double g_DoubleNotDefined = numeric_limits<double>::max()/11;
 const float g_FloatNotDefined = numeric_limits<float>::max()/11;
 
-int g_DebugLevel = 0;
+int g_Verbosity = 0;
+const int c_Quiet    = 0;
+const int c_Error    = 1;
+const int c_Warning  = 2;
+const int c_Info     = 3;
+const int c_Chatty   = 4;
+const int c_Extreme  = 5;
 
 const double c_Pi = 3.14159265358979311600;
 const double c_TwoPi = 2*c_Pi;
@@ -103,7 +109,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 {
 
 #ifdef DEBUG1
-  g_DebugLevel = 1;
+  g_Verbosity = 1;
 #endif
 
   // Load the GUI defaults by initializing the singleton
