@@ -24,6 +24,7 @@
 #include "MGUIEFileSelector.h"
 #include "MSettingsRealta.h"
 #include "MGUIECBList.h"
+#include "MGUIEMinMaxEntry.h"
 
 // Forward declarations:
 class MGUIEEntry;
@@ -69,7 +70,9 @@ class MGUIAccumulation : public MGUIDialog
   MGUIEEntry* m_BinsCountRate;
   //! The number bins in the spectrum
   MGUIEEntry* m_BinsSpectrum;  
-  
+  //! The range of the spectrum
+  MGUIEMinMaxEntry* m_RangeSpectrum;
+
   //! Choose a file to save the data to:
   MGUIEFileSelector* m_AccumulationFileName;
   //! True if we want to add the date and time to the filename

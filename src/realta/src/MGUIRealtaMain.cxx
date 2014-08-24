@@ -42,6 +42,7 @@ using namespace std;
 #include <TKey.h>
 #include <TArrow.h>
 #include <TText.h>
+#include <TBox.h>
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -814,6 +815,18 @@ void MGUIRealtaMain::DoControlLoop()
         m_Analyzer->GetSpectrumHistogram()->Draw();
         double Width = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax() - m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
 
+        // Highlight the windows
+        vector<double> Min = m_Analyzer->GetMinimaOfSpectralWindows();
+        vector<double> Max = m_Analyzer->GetMaximaOfSpectralWindows();
+        for (unsigned int i = 0; i < Min.size(); ++i) {
+          TBox* Box = new TBox(Min[i], 0.0, Max[i], m_Analyzer->GetSpectrumHistogram()->GetMaximum());
+          //Box->SetFillStyle(3001);
+          Box->SetFillColor(kAzure+10);
+          Box->Draw("SAME");
+        }
+        m_Analyzer->GetSpectrumHistogram()->Draw("SAME");
+       
+        // Print the isotopes
         vector<MQualifiedIsotope> I = m_Analyzer->GetIsotopes();
         for (unsigned int i = 0; i < I.size(); ++i) {
           for (unsigned int l = 0; l < I[i].GetNLines(); ++l) {

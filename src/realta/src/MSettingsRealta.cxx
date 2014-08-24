@@ -61,6 +61,8 @@ MSettingsRealta::MSettingsRealta(bool AutoLoad) : MSettings("RealtaConfiguration
   
   m_BinsCountRate = 10;
   m_BinsSpectrum = 50;
+  m_MinimumSpectrum = 0;
+  m_MaximumSpectrum = 2000;
   
   m_TransceiverMode = 0;
   
@@ -111,6 +113,8 @@ bool MSettingsRealta::WriteXml(MXmlNode* Node)
 
   new MXmlNode(Node, "BinsCountRate", m_BinsCountRate);
   new MXmlNode(Node, "BinsSpectrum", m_BinsSpectrum);
+  new MXmlNode(Node, "MinimumSpectrum", m_MinimumSpectrum);
+  new MXmlNode(Node, "MaximumSpectrum", m_MaximumSpectrum);
 
   return true;
 }
@@ -162,6 +166,12 @@ bool MSettingsRealta::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("BinsSpectrum")) != 0) {
     m_BinsSpectrum = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("MinimumSpectrum")) != 0) {
+    m_MinimumSpectrum = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("MaximumSpectrum")) != 0) {
+    m_MaximumSpectrum = aNode->GetValueAsDouble();
   }
     
   return true;

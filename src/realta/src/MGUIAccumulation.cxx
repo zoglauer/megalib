@@ -97,6 +97,17 @@ void MGUIAccumulation::Create()
   m_BinsSpectrum = new MGUIEEntry(this, "Number of bins in spectrum:", false, m_Settings->GetBinsSpectrum());
   AddFrame(m_BinsSpectrum, BinsLayout);
 
+  m_RangeSpectrum = new MGUIEMinMaxEntry(this,
+                                          MString("Energy window in main spectrum::"), 
+                                          false,
+                                          "Minimum energy [keV]: ",
+                                          "Maximum energy [keV]: ",
+                                          m_Settings->GetMinimumSpectrum(), 
+                                          m_Settings->GetMaximumSpectrum(),
+                                          true, 0.0);
+  //m_EnergySpectrum->SetEntryFieldSize(FieldSize);
+  AddFrame(m_RangeSpectrum, BinsLayout);
+
 
   TGLayoutHints* AccumulationFileNameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 20, 5);
   m_AccumulationFileName = new MGUIEFileSelector(this, "Save the events after they are received (don't save if empty)", 
@@ -152,6 +163,8 @@ bool MGUIAccumulation::OnApply()
   m_Settings->SetAccumulationFileName(m_AccumulationFileName->GetFileName());
   m_Settings->SetBinsCountRate(m_BinsCountRate->GetAsInt());
   m_Settings->SetBinsSpectrum(m_BinsSpectrum->GetAsInt());
+  m_Settings->SetMinimumSpectrum(m_RangeSpectrum->GetMinValue());
+  m_Settings->SetMaximumSpectrum(m_RangeSpectrum->GetMaxValue());
   
   if (m_AddDateAndTime->GetState() == kButtonDown) {
     m_Settings->SetAccumulationFileNameAddDateAndTime(true);

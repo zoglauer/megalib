@@ -266,7 +266,7 @@ void MRealTimeAnalyzer::StartAnalysis()
     
     while (m_IsTransmissionThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents(); // We cannot have GUI events during start up...
     }
   }
   
@@ -284,7 +284,7 @@ void MRealTimeAnalyzer::StartAnalysis()
     
     while (m_IsCoincidenceThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents();
     }
   } 
 
@@ -302,7 +302,7 @@ void MRealTimeAnalyzer::StartAnalysis()
     
     while (m_IsReconstructionThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents();
     }
   } 
 
@@ -320,7 +320,7 @@ void MRealTimeAnalyzer::StartAnalysis()
     
     while (m_IsImagingThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents();
     }
   } 
 
@@ -338,7 +338,7 @@ void MRealTimeAnalyzer::StartAnalysis()
 
     while (m_IsHistogrammingThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents();
     }
   }
 
@@ -356,7 +356,7 @@ void MRealTimeAnalyzer::StartAnalysis()
 
     while (m_IsIdentificationThreadRunning == false) {
       gSystem->Sleep(10);
-      gSystem->ProcessEvents();
+      //gSystem->ProcessEvents();
     }
   }
   
@@ -1211,9 +1211,9 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
 
   // Memory management... needs clean up...
   Imager->SetMemoryManagment(m_Settings->GetRAM(),
-                               m_Settings->GetSwap(),
-                               m_Settings->GetMemoryExhausted(),
-                               m_Settings->GetBytes());
+                             m_Settings->GetSwap(),
+                             m_Settings->GetMemoryExhausted(),
+                             m_Settings->GetBytes());
 
   if (m_Settings->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
     Imager->SetDeconvolutionAlgorithmClassicEM();
@@ -1369,25 +1369,11 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
   TH1D* InternalCountRate = new TH1D(*CountRate);
 
-  double Emin = m_Settings->GetFirstEnergyRangeMin();
-  double Emax = m_Settings->GetFirstEnergyRangeMax();
+  double Emin = m_Settings->GetMinimumSpectrum();
+  double Emax = m_Settings->GetMaximumSpectrum();
 
-  if (m_Settings->GetSecondEnergyRangeMin() != 0 || m_Settings->GetSecondEnergyRangeMax() != 0) {
-    if (m_Settings->GetSecondEnergyRangeMin() < Emin) Emin = m_Settings->GetSecondEnergyRangeMin();
-    if (m_Settings->GetSecondEnergyRangeMax() > Emax) Emax = m_Settings->GetSecondEnergyRangeMax();    
-  }
-
-  if (m_Settings->GetThirdEnergyRangeMin() != 0 || m_Settings->GetThirdEnergyRangeMax() != 0) {
-    if (m_Settings->GetThirdEnergyRangeMin() < Emin) Emin = m_Settings->GetThirdEnergyRangeMin();
-    if (m_Settings->GetThirdEnergyRangeMax() > Emax) Emax = m_Settings->GetThirdEnergyRangeMax();    
-  }
-
-  if (m_Settings->GetFourthEnergyRangeMin() != 0 || m_Settings->GetFourthEnergyRangeMax() != 0) {
-    if (m_Settings->GetFourthEnergyRangeMin() < Emin) Emin = m_Settings->GetFourthEnergyRangeMin();
-    if (m_Settings->GetFourthEnergyRangeMax() > Emax) Emax = m_Settings->GetFourthEnergyRangeMax();    
-  }
-
-  TH1D* Spectrum = new TH1D("Spectrum", "Spectrum", m_Settings->GetBinsSpectrum(), Emin, Emax);
+  TH1D* Spectrum = new TH1D("Spectrum", "Spectrum", m_Settings->GetBinsSpectrum(), 
+                            m_Settings->GetMinimumSpectrum(), m_Settings->GetMaximumSpectrum());
   Spectrum->SetXTitle("Energy in keV");
   Spectrum->SetYTitle("cts/sec/keV");
   Spectrum->SetMinimum(0);
@@ -1396,8 +1382,18 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   // no delete for the time being...
   m_Spectrum = Spectrum;
 
+  cout<<m_Settings->GetFirstEnergyRangeMin()<<":"<<m_Settings->GetSecondEnergyRangeMin()<<endl;
+  m_SpectrumMin.push_back(m_Settings->GetFirstEnergyRangeMin());
+  m_SpectrumMin.push_back(m_Settings->GetSecondEnergyRangeMin());
+  m_SpectrumMin.push_back(m_Settings->GetThirdEnergyRangeMin());
+  m_SpectrumMin.push_back(m_Settings->GetFourthEnergyRangeMin());
+  
+  m_SpectrumMax.push_back(m_Settings->GetFirstEnergyRangeMax());
+  m_SpectrumMax.push_back(m_Settings->GetSecondEnergyRangeMax());
+  m_SpectrumMax.push_back(m_Settings->GetThirdEnergyRangeMax());
+  m_SpectrumMax.push_back(m_Settings->GetFourthEnergyRangeMax());
+  
   TH1D* InternalSpectrum = new TH1D(*Spectrum);
-
 
   MImagerExternallyManaged* Imager = InitializeImager();
 

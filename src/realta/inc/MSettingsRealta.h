@@ -86,6 +86,16 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   //! Set the bins in the spectrum
   void SetBinsSpectrum(int BinsSpectrum) { m_BinsSpectrum = BinsSpectrum; }
   
+  //! Get the minimum of the spectrum
+  double GetMinimumSpectrum() const { return m_MinimumSpectrum; }
+  //! Set the minimum of the spectrum
+  void SetMinimumSpectrum(double MinimumSpectrum) { m_MinimumSpectrum = MinimumSpectrum; }
+  
+  //! Get the maximum of the spectrum
+  double GetMaximumSpectrum() const { return m_MaximumSpectrum; }
+  //! Set the maximum of the spectrum
+  void SetMaximumSpectrum(double MaximumSpectrum) { m_MaximumSpectrum = MaximumSpectrum; }
+  
   //! Get the accumulation file name 
   MString GetAccumulationFileName() const { return m_AccumulationFileName; }
   //! Set the accumulation file name
@@ -128,6 +138,10 @@ class MSettingsRealta : public MSettings, public MSettingsEventSelections, publi
   int m_BinsCountRate;
   //! The bins in the spectrum
   int m_BinsSpectrum;
+  //! The minimum of the spectrum
+  double m_MinimumSpectrum;
+  //! The maximum of the spectrum
+  double m_MaximumSpectrum;
   
   //! The event accumulation file name
   MString m_AccumulationFileName;

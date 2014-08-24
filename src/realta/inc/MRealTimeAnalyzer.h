@@ -100,6 +100,10 @@ class MRealTimeAnalyzer
   MImage* GetImage() { return m_Image; }
   //! Get a COPY of the isotope list
   vector<MQualifiedIsotope> GetIsotopes();
+  //! Get the current list of the minima of the energy windows
+  vector<double> GetMinimaOfSpectralWindows() { return m_SpectrumMin; }
+  //! Get the current list of the minima of the energy windows
+  vector<double> GetMaximaOfSpectralWindows() { return m_SpectrumMax; }
   
   //! Return the connection
   bool IsConnected() { return m_IsConnected; }
@@ -239,6 +243,11 @@ class MRealTimeAnalyzer
   TH1D* m_Spectrum;
   //! The current image
   MImage* m_Image;
+  
+  //! The current list of the minima of the energy windows
+  vector<double> m_SpectrumMin;
+  //! The current list of the maxima of the energy windows
+  vector<double> m_SpectrumMax;
   
   //! A list of isoptopes to identify:
   vector<MQualifiedIsotope> m_Isotopes;
