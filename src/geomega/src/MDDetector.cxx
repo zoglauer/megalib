@@ -239,7 +239,11 @@ MDDetector::MDDetector(const MDDetector& D)
 
   m_HasGuardring = D.m_HasGuardring;
 
-  if (D.m_PulseShape != 0) m_PulseShape = new TF1(*D.m_PulseShape);
+  if (D.m_PulseShape != 0) {
+    m_PulseShape = new TF1(*D.m_PulseShape);
+  } else {
+    m_PulseShape = 0; 
+  }
   m_PulseShapeMin = D.m_PulseShapeMin;
   m_PulseShapeMax = D.m_PulseShapeMax;
 
