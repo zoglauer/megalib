@@ -298,7 +298,7 @@ bool MInterfaceGeomega::SaveConfiguration(MString FileName)
 {
   // Save the configuration file
 
-  massert(m_Data != 0);
+  if (m_Data == nullptr) return false;
 
   m_Data->Write(FileName);
 

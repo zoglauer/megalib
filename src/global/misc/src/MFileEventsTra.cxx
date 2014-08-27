@@ -444,7 +444,7 @@ bool MFileEventsTra::AddEvent(MPhysicalEvent* Tra)
 {
   // Add an event to the stream
 
-  massert(Tra != 0);
+  if (Tra == nullptr) return false;
 
   if (m_Way == c_Read) {
     merr<<"Only valid if file is in write-mode!"<<endl;

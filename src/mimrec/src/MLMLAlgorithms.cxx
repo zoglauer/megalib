@@ -252,6 +252,7 @@ void MLMLAlgorithms::SetBackground(MBackground *Background)
   m_Background = Background;
 
   if (m_Ri != 0) delete [] m_Ri;
+  m_Ri = new(nothrow) double[m_NEvents];
   //m_Ri = m_Background->GetBackground(m_BPStorage);
 
   // Total Background
