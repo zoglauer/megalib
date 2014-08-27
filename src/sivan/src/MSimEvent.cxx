@@ -1503,7 +1503,7 @@ double MSimEvent::GetRCEnergyGamma()
     }
   }
 
-  delete IAList;
+  delete [] IAList;
 
   return EnergyGamma;
 }
@@ -1558,7 +1558,7 @@ double MSimEvent::GetRCEnergyElectron()
     }
   }
 
-  delete IAList;
+  delete [] IAList;
 
   return EnergyElectron;
 }
@@ -1595,12 +1595,15 @@ bool MSimEvent::IsElectronContainedInD1()
       if (GetHTAt(i)->IsOrigin(IAList[j]) == true && 
           GetHTAt(i)->IsAdded() == false) {
         GetHTAt(i)->SetAddFlag();
-        if (GetHTAt(i)->GetDetectorType() != D1) return false;
+        if (GetHTAt(i)->GetDetectorType() != D1) {
+          delete [] IAList;
+          return false;
+        }
       }  
     }
   }
 
-  delete IAList;
+  delete [] IAList;
 
   return true;
 }
@@ -1747,7 +1750,7 @@ double MSimEvent::GetRCEnergy()
     }
   }
 
-  delete IAList;
+  delete [] IAList;
 
   return EnergyElectron + EnergyGamma;
 }

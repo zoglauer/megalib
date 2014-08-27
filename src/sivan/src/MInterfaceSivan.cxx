@@ -1790,6 +1790,7 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
   MSimEvent *Event;
   MSimEventLoader *Loader = new MSimEventLoader(m_Data->GetCurrentFileName());
   if (Loader->IsFileOpen() == false) {
+    delete [] Length;
     return; 
   }
 
@@ -1818,6 +1819,7 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
     }
   }
 
+  delete [] Length;
   delete Progress;
 
   if (NEvents > 1) {

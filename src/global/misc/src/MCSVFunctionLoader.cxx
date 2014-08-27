@@ -95,8 +95,6 @@ bool MCSVFunctionLoader::Load()
   if ((File = fopen(m_Filename, "r")) == NULL) {
     cout<<"MCSVFunctionLoader::Load()"<<endl;
     cout<<"Can't open file m_Filename with key word m_Keyword!"<<endl;
-    
-    
     return false;
   }
 
@@ -118,6 +116,7 @@ bool MCSVFunctionLoader::Load()
 
   int counter = 0;
   char *FormatString = new char[strlen(m_Filename) + 20];
+  FormatString[0] = '\0';
   strcat(FormatString, m_Keyword);
   strcat(FormatString, "%lf;%lf\n");
 
@@ -129,6 +128,9 @@ bool MCSVFunctionLoader::Load()
 	      &m_Y[counter]) == 2)
       counter++;
  
+  fclose(File);
+  delete [] LineBuffer;
+  delete [] FormatString;
 
   // Step Three: Sort them:
   int *Index = new int[m_NEntries];
@@ -156,10 +158,7 @@ bool MCSVFunctionLoader::Load()
     }
   }
   
-	/*
-  for (counter = 0; counter < m_NEntries; counter++)
-    cout<<counter<<": "<<m_X[counter]<<"!"<<m_Y[counter]<<endl;
-	*/
+  delete [] Index;
 
   return true;
 }

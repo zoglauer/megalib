@@ -93,7 +93,7 @@ void MGUILoadCalibration::Create()
   TGLayoutHints* IsotopeFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
   TGLayoutHints* IsotopeLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 5, 0, 0);
   TGLayoutHints* GroupIDLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 30, 5, 0, 0);
-  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsTop, 20, 20, 40, 0);
+  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop, 20, 20, 40, 0);
 
   TGLabel* SubSubTitle = new TGLabel(this, "Calibration files with the same group ID will be merged!");
   AddFrame(SubSubTitle, SubSubTitleLayout);

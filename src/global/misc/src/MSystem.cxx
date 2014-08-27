@@ -129,6 +129,7 @@ bool MSystem::FreeMemory(int &Free)
     Warning("bool MSystem::FreeMemory(int &Free)",
             "Cannot read memory info file \'/proc/meminfo\'!\n");
     Free = -1;
+    fclose(meminfo);
     return false;
   }
 
@@ -139,6 +140,7 @@ bool MSystem::FreeMemory(int &Free)
   if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
              &total, &used, &mfree, &buffers, &cached) != 5) {
     Free = -1;
+    fclose(meminfo);
     return false;
   }
   
@@ -215,6 +217,7 @@ bool MSystem::GetMemory()
     Warning("bool MSystem::FreeMemory(int &Free)",
             "Cannot read memory info file \'/proc/meminfo\'!\n");
     Reset();
+    fclose(meminfo);
     return false;
   }
 
@@ -222,6 +225,7 @@ bool MSystem::GetMemory()
   if (fscanf(meminfo, "%*s %d %d %d %*d %d %d\n",
              &total, &used, &mfree, &buffers, &cached) != 5) {
     Reset();
+    fclose(meminfo);
     return false;
     merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;
   }
@@ -239,6 +243,7 @@ bool MSystem::GetMemory()
   if (fscanf(meminfo, "%*s %d %d %d\n",
              &total, &used, &mfree) != 3) {
     Reset();
+    fclose(meminfo);
     return false;
     merr<<"Unable to read /proc/meminfo... What Kernel are you using???"<<endl;    
   }

@@ -4703,8 +4703,11 @@ void MInterfaceMimrec::LocationOfFirstIA()
   for (x = 0; x < x1NBins*x2NBins; x++) Array[x] = 0.0;
 
   // Start the Event loader
-  if (InitializeEventloader() == false) return;
-
+  if (InitializeEventloader() == false) {
+    delete [] Array;
+    return;
+  }
+  
   // ... loop over all events and save a count in the belonging bin ...
   MPhysicalEvent* Event;
   MComptonEvent Compton;
@@ -5672,7 +5675,10 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
   for (unsigned int i = 0; i < LatBins*LongBins; ++i) Array[i] = 0;
   
   // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
+  if (InitializeEventloader() == false) {
+    delete [] Array;
+    return;
+  }
 
   MPhysicalEvent* Event = 0;
   // ... loop over all events and save a count in the belonging bin ...

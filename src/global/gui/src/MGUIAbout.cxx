@@ -137,6 +137,7 @@ void MGUIAbout::Create()
     if (m_IconPicture == 0) {
       mgui<<"Can't find icon "<<m_IconPath<<"! Aborting!"<<error;
       CloseWindow();
+      return;
     }
     int Width = m_IconPicture->GetWidth();
     int Height = m_IconPicture->GetHeight();

@@ -596,13 +596,17 @@ void MGUIControlCenter::StartControlLoop()
     // Open the storage-files
     if (m_EventStreamer == 0 || m_ObjectStreamer == 0) {
       if (OpenStorage() == kFALSE) {
+        delete [] ImageArray;
         return;
       }
     }
   } 
   // Read from file:
   else {
-    if (OpenFile() == kFALSE) return;
+    if (OpenFile() == kFALSE) {
+      delete [] ImageArray;
+      return;
+    }
     NextKey = new TIter(m_ObjectStreamer->GetListOfKeys());
   }
 
@@ -841,6 +845,8 @@ void MGUIControlCenter::StartControlLoop()
 
     Update++;
   }
+  
+  delete [] ImageArray;
 }
 
 

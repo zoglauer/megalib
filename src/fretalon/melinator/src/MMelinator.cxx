@@ -370,7 +370,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
           cout<<"Cannot reserve "<<sizeof(int)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
           break;
         } else {
-          delete Memory;
+          delete [] Memory;
         }
       
         //cout<<GroupID<<": "<<Counter<<endl;
