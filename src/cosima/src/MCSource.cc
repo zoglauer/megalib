@@ -1275,6 +1275,40 @@ bool MCSource::SetPosition(MString FileName)
 
 
 /******************************************************************************
+ * Return the specific position parameter
+ */
+double MCSource::GetPositionParameter(unsigned int i)
+{
+  if (i == 1) { 
+    return m_PositionParam1;
+  } else if (i == 2) { 
+    return m_PositionParam2;
+  } else if (i == 3) { 
+    return m_PositionParam3;
+  } else if (i == 4) { 
+    return m_PositionParam4;
+  } else if (i == 5) { 
+    return m_PositionParam5;
+  } else if (i == 6) { 
+    return m_PositionParam6;
+  } else if (i == 7) { 
+    return m_PositionParam7;
+  } else if (i == 8) { 
+    return m_PositionParam8;
+  } else if (i == 9) { 
+    return m_PositionParam9;
+  } else if (i == 10) { 
+    return m_PositionParam10;
+  } else if (i == 11) { 
+    return m_PositionParam11;
+  } else {
+    mout<<m_Name<<": Position parameter out of range "<<i<<endl;
+    return false;
+  }
+}
+
+
+/******************************************************************************
  * Return true, if the energy vector could be set correctly. For a 
  * description of the meaning of the parameters see the documentation.
  */

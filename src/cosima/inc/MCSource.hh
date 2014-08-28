@@ -141,6 +141,8 @@ public:
   bool SetFlux(const double& Flux);
   /// Return the intensity
   double GetFlux() const { return m_Flux; } 
+  /// Return the intensity
+  double GetInputFlux() const { return m_InputFlux; } 
 
   /// Return true, if the total energy flux (energy/cm^2) could be set correctly
   bool SetTotalEnergyFlux(const double& TotalEnergyFlux);
@@ -194,6 +196,8 @@ public:
                    double PositionParam11 = c_Invalid);
   /// Return true, if the file containing the beam could be set correctly
   bool SetPosition(MString FileName);
+  /// Return the specific position parameter 
+  double GetPositionParameter(unsigned int i);
 
   /// Return true if the combined normalized energy-beam-flux-function could be set
   bool SetNormalizedEnergyBeamFluxFunction(MString FileName);
