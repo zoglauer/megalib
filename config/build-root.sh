@@ -35,6 +35,9 @@ confhelp() {
   echo "--debug=[off/no, on/yes, strong/hard]"
   echo "    Default is on."
   echo " "
+  echo "--maxthreads=[integer >=1]"
+  echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -59,18 +62,19 @@ done
 
 TARBALL=""
 ENVFILE=""
+MAXTHREADS=1024
 DEBUG="off"
-DEBUGSTRING="_debug"
-DEBUGOPTIONS="--build=debug"
+DEBUGSTRING=""
+DEBUGOPTIONS=""
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-    echo "Using this tarball: ${TARBALL}"
-  elif [[ ${C} == *-e* ]]; then
+  elif [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
-    echo "Using this MEGALIB environment file: ${ENVFILE}"
+  elif [[ ${C} == *-m*=* ]]; then
+    MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-d*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
@@ -81,12 +85,51 @@ for C in ${CMD}; do
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
     echo "       See \"$0 --help\" for a list of options"
+    echo " "
     exit 1
   fi
 done
 
+echo ""
+echo ""
+echo ""
+echo "Setting up ROOT..."
+echo ""
+echo "Verifying chosen configuration options:"
+echo ""
 
-if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == n* ]] ); then
+if [ "${TARBALL}" != "" ]; then
+  if [[ ! -f "${TARBALL}" ]]; then
+    echo "ERROR: The chosen tarball cannot be found: ${TARBALL}"
+    exit 1     
+  else   
+    echo " * Using this tarball: ${TARBALL}"    
+  fi
+fi
+
+if [ "${ENVFILE}" != "" ]; then
+  if [[ ! -f "${ENVFILE}" ]]; then
+    echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
+    exit 1     
+  else   
+    echo " * Using this environment file: ${ENVFILE}"    
+  fi
+fi
+
+
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
+  echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
+  exit 1
+fi  
+if [ "${MAXTHREADS}" -le "0" ]; then
+  echo "ERROR: The maximum number of threads must be at least 1 and not ${MAXTHREADS}!"
+  exit 1
+else 
+  echo " * Using this maximum number of threads: ${MAXTHREADS}"
+fi
+
+
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
   DEBUG="off"
   DEBUGSTRING=""
   DEBUGOPTIONS=""
@@ -97,13 +140,14 @@ elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] );
   DEBUGOPTIONS="--build=debug"
   echo " * Using debugging code"
 else
-  echo " "
   echo "ERROR: Unknown debugging code selection: ${DEBUG}"
   confhelp
   exit 0
 fi
 
 
+echo " "
+echo " "
 echo "Getting ROOT..."
 VER=""
 if [ "${TARBALL}" != "" ]; then
@@ -251,6 +295,9 @@ elif ( `test -f /proc/cpuinfo` ); then
 fi
 if [ "$?" != "0" ]; then
   CORES=1
+fi
+if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
+  CORES=${MAXTHREADS}
 fi
 echo "Using this number of cores for compilation: ${CORES}"
 

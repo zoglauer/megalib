@@ -170,7 +170,7 @@ else
 fi
 
 
-if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == n* ]] ); then
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
   DEBUG="off"
   echo " * Using no debugging code"
 elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then

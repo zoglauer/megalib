@@ -40,6 +40,9 @@ confhelp() {
   echo "--geant=[path to existing GEANT4 installation]"
   echo "    Instead of installing a new version of GEANT4 use this one. If it is not compatible with MEGAlib, the script will stop with an error."
   echo " "
+  echo "--maxthreads=[integer >=1]"
+  echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
+  echo " "
   echo "Options for MEGAlib compilation:"
   echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
   echo "    Compilation optimization for MEGAlib: Default is normal."
@@ -116,11 +119,12 @@ OS=`uname -s`
 OPT="normal"
 DEBUG="on"
 UPDATES="off"
+MAXTHREADS=1024
 
 
 # Prelude - Find an old configuration
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-m*=* ]]; then
+  if [[ ${C} == *-me*=* ]]; then
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   fi
 done
@@ -128,7 +132,7 @@ done
 if [ "${MEGALIBPATH}" != "" ]; then
   if [ ! -f ${MEGALIBPATH}/src/global/misc/src/MGlobal.cxx ]; then
     echo ""
-    echo "ERROR: You have given a MEGAlib path to a non-empty directory which doesn't contain MEGAlib!"
+    echo "ERROR: You have given a MEGAlib path (\"${MEGALIBPATH}\") to a non-empty directory which doesn't contain MEGAlib!"
     echo "       Either give a not existing directory as MEGAlib path, or the path to an existing MEGAlib installation"
     exit 1
   fi
@@ -151,7 +155,7 @@ fi
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-m*=* ]]; then
+  if [[ ${C} == *-me*=* ]]; then
     MEGALIBPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-rep*=* ]]; then
     REPOSITORY=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -171,6 +175,8 @@ for C in "${CMD[@]}"; do
     UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-comp*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-ma*=* ]]; then
+    MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -215,6 +221,8 @@ if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
   echo "       but you chose: \"${EXTERNALPATH}\""
   exit 1
 fi
+if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
+EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
 echo " * Using this path to install ROOT and Geant4: ${EXTERNALPATH}"
 
 if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
@@ -316,7 +324,7 @@ else
 fi
 
 
-if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == n* ]] ); then
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
   DEBUG="off"
   echo " * Using no debugging code"
 elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
@@ -330,6 +338,18 @@ else
   echo "ERROR: Unknown debugging code selection: ${DEBUG}"
   confhelp
   exit 1
+fi
+
+
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
+  echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
+  exit 1
+fi  
+if [ "${MAXTHREADS}" -le "0" ]; then
+  echo "ERROR: The maximum number of threads must be at least 1 and not ${MAXTHREADS}!"
+  exit 1
+else 
+  echo " * Using this maximum number of threads: ${MAXTHREADS}"
 fi
 
 
@@ -621,9 +641,6 @@ echo "(3) Downloading and building ROOT:"
 echo " "
 
 
-if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
-EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
-
 
 MEGALIBDIR=${MEGALIBPATH}
 export MEGALIB=${MEGALIBDIR}
@@ -657,7 +674,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE}
+  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -706,7 +723,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
-  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE}
+  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -757,6 +774,9 @@ elif ( `test -f /proc/cpuinfo` ); then
 fi
 if [ "$?" != "0" ]; then
   CORES=1
+fi
+if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
+  CORES=${MAXTHREADS}
 fi
 echo "Using this number of cores for compilation: ${CORES}"
 
