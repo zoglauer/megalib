@@ -117,7 +117,7 @@ ROOTPATH=""
 GEANT4PATH=""
 OS=`uname -s`
 OPT="normal"
-DEBUG="on"
+DEBUG="off"
 UPDATES="off"
 MAXTHREADS=1024
 
@@ -221,8 +221,6 @@ if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
   echo "       but you chose: \"${EXTERNALPATH}\""
   exit 1
 fi
-if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
-EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
 echo " * Using this path to install ROOT and Geant4: ${EXTERNALPATH}"
 
 if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
@@ -648,6 +646,8 @@ export MEGALIB=${MEGALIBDIR}
 #echo "ATTENTION: HARD CODED MEGALIB PATH SINCE THE LATEST VERSION IS NOT YET CHECKED IN!!!!"
 #MEGALIBDIR="/home/andreas/Home/Science/Software/MEGAlib"
 
+if [ "${EXTERNALPATH}" == "" ]; then EXTERNALPATH=${MEGALIBPATH}/external; fi
+EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
 
 cd ${STARTPATH}
 if [ "${ROOTPATH}" != "" ]; then
