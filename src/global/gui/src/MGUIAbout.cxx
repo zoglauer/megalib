@@ -133,6 +133,8 @@ void MGUIAbout::Create()
 
   if (m_IconPath != "") {
     MFile::ExpandFileName(m_IconPath);
+  }
+  if (MFile::Exists(m_IconPath) == true) {
     const TGPicture* m_IconPicture = gClient->GetPicture(m_IconPath); //, FontScaler*260, FontScaler*260/5);
     if (m_IconPicture == 0) {
       mgui<<"Can't find icon "<<m_IconPath<<"! Aborting!"<<error;

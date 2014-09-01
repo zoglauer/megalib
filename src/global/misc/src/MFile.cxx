@@ -147,21 +147,7 @@ bool MFile::FileExists(const char* FileName)
 {
   // Check if the file exists:
 
-  MString Name(FileName);
-  MFile::ExpandFileName(Name);
- 
-  if (Name == GetDirectoryName(Name)) {
-    return false;
-  }
-
-  ifstream in;
-  in.open(Name);
-  if (in.is_open() == false) {
-    return false;
-  }
-  in.close();
-
-  return true;  
+  return Exists(MString(FileName));  
 }
 
 
@@ -173,13 +159,15 @@ bool MFile::Exists(MString FileName)
   // Check if the file exists:
 
   MFile::ExpandFileName(FileName);
- 
-  if (FileName == GetDirectoryName(FileName)) {
+  if (FileName.Length() <= 1) return false; 
+  if (FileName.EndsWith("/") == true) return false;
+  
+  if (FileName == GetDirectoryName(FileName)) { // does not work in all cases..!
     return false;
   }
 
   ifstream in;
-  in.open(FileName);
+  in.open(FileName, ios::in);
   if (in.is_open() == false) {
     return false;
   }
