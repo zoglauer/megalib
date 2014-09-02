@@ -141,7 +141,7 @@ void MGUIModuleSelector::CloseWindow()
 {
   // When the x is pressed, this function is called.
 
-  DeleteWindow();
+  OnCancel();
 }
 
 
@@ -196,7 +196,7 @@ bool MGUIModuleSelector::OnOk()
   // The OK button has been pressed
 
   if (OnApply() == true) {
-    CloseWindow();
+    UnmapWindow();
     return true;
   }
   
@@ -211,7 +211,7 @@ bool MGUIModuleSelector::OnCancel()
 {
   // The Cancel button has been pressed
 
-  CloseWindow();
+  UnmapWindow();
 
   return true;
 }
@@ -233,6 +233,8 @@ bool MGUIModuleSelector::OnApply()
     vector<MModule*> Modules = m_Data->ReturnPossibleVolumes(m_Position);
     m_Data->SetModule(Modules[m_List->GetSelected()], m_Position);
   }
+
+  UnmapWindow();
 
   return true;
 }

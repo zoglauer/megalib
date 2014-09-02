@@ -66,8 +66,8 @@ class MGUIExpo : public TGCompositeFrame
   //! Reset the data in the UI - must be overwritten to clear the histograms, etc.
   virtual void Reset() {};
 
-  //! Print the data in the UI - must be overwritten
-  virtual void Print(const MString& FileName) {};
+  //! Export the data in the UI to a file - must be overwritten
+  virtual void Export(const MString& FileName) {};
 
   //! Get the title
   MString GetTabTitle() { return m_TabTitle; }

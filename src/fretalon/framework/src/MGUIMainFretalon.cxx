@@ -393,7 +393,8 @@ bool MGUIMainFretalon::OnChange(unsigned int ModuleID)
 {
   MGUIModuleSelector* S = new MGUIModuleSelector(m_Supervisor, ModuleID);
   gClient->WaitForUnmap(S);
-  
+  delete S;  
+
   UpdateModules();
 
   return true;

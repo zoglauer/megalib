@@ -140,7 +140,6 @@ FRETALONLIBS = \
 	-lCommonMisc \
 
 fretalon: info fre
-	@$(BN)/fretalon $(CMD)
 
 melinator: info fre
 	@$(BN)/melinator $(CMD)
@@ -215,7 +214,7 @@ spectralyze: info spe
 
 spelib: link glo geolib
 	@$(MAKE) spelib -C src
-	
+
 spe: link glo geolib
 	@$(MAKE) spe -C src
 
