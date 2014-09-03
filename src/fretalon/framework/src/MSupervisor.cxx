@@ -331,7 +331,7 @@ bool MSupervisor::Validate()
   }
 
   // (2) Make sure all predecessor requirements are fulfilled
-  vector<int> PredecessorTypes;
+  vector<uint64_t> PredecessorTypes;
   for (unsigned int m = 0; m < m_Modules.size(); ++m) {
     for (unsigned int t = 0; t < m_Modules[m]->GetNPreceedingModuleTypes(); ++t) {
       bool Found = false;
@@ -549,7 +549,7 @@ bool MSupervisor::LaunchUI()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+/*
 bool MSupervisor::Analyze()
 {
   if (m_UseMultiThreading == true) {
@@ -665,13 +665,9 @@ bool MSupervisor::AnalyzeSingleThreaded()
         break;
       }
       ModuleTimers[m].Pause();
-      /*
-      if (Event->IsDataRead() == false) break;
-      // Only analyze non-vetoed, triggered events
-      if (Event->GetVeto() == true || Event->GetTrigger() == false) {
-        break;
-      }
-      */
+      
+      if (Event->IsGood() == false) break;
+
     }
     // if (Event->IsDataRead() == false) break;
     
@@ -706,12 +702,12 @@ bool MSupervisor::AnalyzeSingleThreaded()
 
   return true;
 }
-
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSupervisor::AnalyzeMultiThreaded()
+bool MSupervisor::Analyze()
 {
   if (m_IsAnalysisRunning == true) return false;
   m_IsAnalysisRunning = true;
@@ -747,7 +743,7 @@ bool MSupervisor::AnalyzeMultiThreaded()
   for (unsigned int m = 0; m < GetNModules(); ++m) {
     ModuleTimers[m].Continue();
     GetModule(m)->SetInterrupt(false);
-    GetModule(m)->UseMultiThreading(true);
+    GetModule(m)->UseMultiThreading(m_UseMultiThreading);
     if (GetModule(m)->Initialize() == false) {
       ModuleTimers[m].Pause();
       if (m_Interrupt == true) {
@@ -777,30 +773,70 @@ bool MSupervisor::AnalyzeMultiThreaded()
   
   
   // Do the analysis pipeline
-  bool AllOK = true;
-  while (m_Interrupt == false && AllOK == true) {
+  bool HasMoreEvents = false;
+  bool DoShutdown = false;
+  unsigned int CurrentShutdownModule = 0;
+  while (true) {
 
+    if (m_Interrupt == true) {
+      DoShutdown = true;
+    }
+    
+    
+    
+    // We ensured before that "0" exists 
+    if (GetModule(0)->IsStartModule() == true && GetModule(0)->IsFinished() == true) {
+      DoShutdown = true; 
+    }
+    
+    if (DoShutdown == true) {
+      if (CurrentShutdownModule < GetNModules() && GetModule(CurrentShutdownModule)->HasAddedEvents() == false) {
+        if (CurrentShutdownModule == 0 || (CurrentShutdownModule > 0 && GetModule(CurrentShutdownModule - 1)->HasAnalyzedEvents() == false)) {
+          GetModule(CurrentShutdownModule)->SetInterrupt(true);
+          ++CurrentShutdownModule;
+        }
+      }
+    }
+    
+    HasMoreEvents = false;
     for (unsigned int m = 0; m < GetNModules(); ++m) {
       ModuleTimers[m].Continue();
+      
       MModule* M = GetModule(m);
+
+      if (HasMoreEvents == false && (M->HasAddedEvents() == true || M->HasAnalyzedEvents() == true)) {
+        HasMoreEvents = true;
+        //cout<<"Events for module "<<m<<endl; 
+      } else {
+        //cout<<"No events for module "<<m<<endl; 
+      }
+
       if (M->IsMultiThreaded() == false) { // We have to do the heavy lifing
+        //cout<<"Do analysis for "<<m<<endl;
         M->DoSingleAnalysis(); 
       }
       if (M->HasAnalyzedEvents() == true) {
         MReadOutAssembly* E = M->GetAnalyzedEvent();
-        if (m < GetNModules()-1) {
-          GetModule(m+1)->AddEvent(E);
-        } else {
+        if (E->IsFilteredOut() == true) {
           delete E;
+        } else {
+          if (m < GetNModules()-1) {
+            //cout<<"Moving event: "<<m<<" -> "<<m+1<<": "<<E->GetID()<<endl;
+            GetModule(m+1)->AddEvent(E);
+          } else {
+            if (m == GetNModules()-1) delete E;
+          }
         }
       }
 
       if (M->IsOK() == false) {
         mout<<"Module \""<<GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
-        AllOK = false;
+        DoShutdown = true;
       }
       ModuleTimers[m].Pause();
     }
+    
+    if (DoShutdown == true && HasMoreEvents == false && CurrentShutdownModule == GetNModules()) break;
     
     gSystem->ProcessEvents();    
   }
@@ -821,12 +857,12 @@ bool MSupervisor::AnalyzeMultiThreaded()
   }
   mout<<endl;
   
-  if (g_Verbosity >= 2) {
+  //if (g_Verbosity >= c_Error) {
     cout<<"Timings: "<<endl;
     for (unsigned int m = 0; m < GetNModules(); ++m) {
-      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<GetModule(m)->GetName()<<endl;
+      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<GetModule(m)->GetName()<<" and analyzed "<<GetModule(m)->GetNumberOfAnalyzedEvents()<<" events."<<endl;
     }
-  }
+  //}
   
   m_IsAnalysisRunning = false;
 

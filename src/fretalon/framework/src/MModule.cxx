@@ -69,6 +69,7 @@ MModule::MModule()
   
   m_IsOK = true;
   m_IsReady = true;
+  m_IsFinished = false;
   
   m_Interrupt = false;
   
@@ -76,6 +77,8 @@ MModule::MModule()
   m_NAllowedWorkerThreads = 0;
   m_Thread = 0;
   m_IsThreadRunning = false;
+  
+  m_NAnalyzedEvents = 0;
 }
 
 
@@ -87,6 +90,22 @@ MModule::~MModule()
   // Delete this instance of MModule
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModule::FullfillsRequirements(MReadOutAssembly* Event)
+{
+  //! Return true, if the read-out assembly fullfills the preeceding modules requirements
+
+  for (unsigned int i = 0; i < GetNPreceedingModuleTypes(); ++i) {
+    if (Event->HasAnalysisProgress(GetPreceedingModuleType(i)) == false) {
+      return false; 
+    }
+  }
+    
+  return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -163,6 +182,8 @@ MReadOutAssembly* MModule::GetAnalyzedEvent()
 bool MModule::Initialize()
 {
   m_IsOK = true;
+  m_IsFinished = false;
+  m_NAnalyzedEvents = 0;
   
   for (auto E: m_Expos) {
     E->Reset(); 
@@ -224,15 +245,25 @@ bool MModule::DoSingleAnalysis()
     m_IncomingEventsMutex.UnLock();
   }
   // If we got one from the incoming list, or if this is a start module which generates them:
-  if (E == 0 && m_IsStartModule == true) {
+  if (E == 0 && m_IsStartModule == true && m_IsFinished == false && m_Interrupt == false) {
     E = new MReadOutAssembly();
   }
   
   if (E != 0) {
-    AnalyzeEvent(E);
-    m_OutgoingEventsMutex.Lock();
-    m_OutgoingEvents.push_back(E);
-    m_OutgoingEventsMutex.UnLock();
+    if (FullfillsRequirements(E) == true) {
+      AnalyzeEvent(E);
+      if (m_IsFinished == true) {
+        delete E;
+        E = 0;
+      } else {
+        ++m_NAnalyzedEvents;
+      }
+    }
+    if (E != 0) {
+      m_OutgoingEventsMutex.Lock();
+      m_OutgoingEvents.push_back(E);
+      m_OutgoingEventsMutex.UnLock();
+    }
     return true;
   } else {
     return false;

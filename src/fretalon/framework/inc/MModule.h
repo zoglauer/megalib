@@ -67,18 +67,21 @@ class MModule
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
-  int GetPreceedingModuleType(unsigned int i) { return m_PreceedingModules.at(i); }
+  uint64_t GetPreceedingModuleType(unsigned int i) { return m_PreceedingModules.at(i); }
 
   //! Return the number of module types
   unsigned int GetNModuleTypes() { return m_Modules.size(); }
   //! Return the module type at position i (no error checks performed)
-  int GetModuleType(unsigned int i) { return m_Modules.at(i); }
+  uint64_t GetModuleType(unsigned int i) { return m_Modules.at(i); }
 
   //! Return the number of the succeeding modules
   unsigned int GetNSucceedingModuleTypes() { return m_SucceedingModules.size(); }
   //! Return the succeeding module at position i (no error checks performed)
-  int GetSucceedingModuleType(unsigned int i) { return m_SucceedingModules.at(i); }
+  uint64_t GetSucceedingModuleType(unsigned int i) { return m_SucceedingModules.at(i); }
 
+  //! Return true, if the read-out assembly fullfills the preeceding modules requirements
+  bool FullfillsRequirements(MReadOutAssembly* Event);
+  
   //! Raise an interrupt
   void SetInterrupt(bool Flag = true) { m_Interrupt = Flag; }
 
@@ -116,6 +119,9 @@ class MModule
   //! Check if there are events in the outgoing event list - only used by the supervisor
   virtual bool HasAnalyzedEvents();
 
+  //! The number of events passing through the analysis routine
+  long GetNumberOfAnalyzedEvents() const { return m_NAnalyzedEvents; }
+  
   //! Check if there are events in the outgoing event list - only used by the supervisor
   virtual MReadOutAssembly* GetAnalyzedEvent();
 
@@ -142,9 +148,10 @@ class MModule
 
   //! Return if the module is ready to analyze events
   virtual bool IsReady() { return m_IsReady; }
-
   //! Return if the status of the module is OK
   virtual bool IsOK() { return m_IsOK; }
+  //! Return if the module has finished all possible analyses
+  virtual bool IsFinished() { return m_IsFinished; }
 
   // protected methods:
  protected:
@@ -174,11 +181,11 @@ class MModule
   MString m_XmlTag;
 
   //! List of preceeding modules
-  vector<int> m_PreceedingModules;
+  vector<uint64_t> m_PreceedingModules;
   //! List of succeeding modules
-  vector<int> m_SucceedingModules;
+  vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules
-  vector<int> m_Modules;
+  vector<uint64_t> m_Modules;
   
   //! The incoming event list
   deque<MReadOutAssembly*> m_IncomingEvents;
@@ -204,9 +211,10 @@ class MModule
   
   //! True, if the module is ready to analyze events
   bool m_IsReady;
-  
   //! True, if the status of the module is OK
   bool m_IsOK;
+  //! True, if the module is finished (e.g. cannot read any more events)
+  bool m_IsFinished;
   
   //! Interrupt whatever it is doing and break
   bool m_Interrupt;
@@ -225,6 +233,8 @@ class MModule
   //! True if the analysis thread is in its execution loop
   bool m_IsThreadRunning;
 
+  //! The number of events passing through the Analysis function
+  long m_NAnalyzedEvents;
   
   // private members:
  private:

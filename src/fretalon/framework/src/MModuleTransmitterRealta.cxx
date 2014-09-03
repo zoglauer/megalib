@@ -139,6 +139,8 @@ bool MModuleTransmitterRealta::AnalyzeEvent(MReadOutAssembly* Event)
   estream<<"EN"<<endl;
   m_Transmitter->Send(estream.str());
   
+  Event->SetAnalysisProgress(MAssembly::c_EventTransmitter);
+  
   return true;
 }
 

@@ -123,9 +123,9 @@ class MSupervisor
   // protected methods:
  protected:
   //! Analyze the data - single-threaded mode
-  bool AnalyzeSingleThreaded();
+  //bool AnalyzeSingleThreaded();
   //! Analyze the data - multi-threaded mode
-  bool AnalyzeMultiThreaded();
+  //bool AnalyzeMultiThreaded();
  
   //! End the program (and saves the GUI data)
   void Terminate();
