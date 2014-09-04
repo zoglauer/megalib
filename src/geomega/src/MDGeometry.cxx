@@ -3958,6 +3958,10 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
   // Make sure we use the correct geometry for interactions
   gGeoManager = m_Geometry;
   if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogle");
+  if (m_Geometry->GetListOfNavigators() == nullptr) {
+    m_Geometry->AddNavigator();
+  }
+  m_Geometry->SetCurrentNavigator(0);
 
   if (Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<"s"<<endl;
