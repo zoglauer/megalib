@@ -32,6 +32,12 @@ confhelp() {
   echo "--environment-script=[file name of new environment script]"
   echo "    File in which the ROOT path is stored. This is used by the MEGAlib setup script" 
   echo " "
+  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "    Default is on."
+  echo " "
+  echo "--maxthreads=[integer >=1]"
+  echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -56,15 +62,21 @@ done
 
 TARBALL=""
 ENVFILE=""
+MAXTHREADS=1024
+DEBUG="off"
+DEBUGSTRING=""
+DEBUGOPTIONS=""
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-    echo "Using this tarball: ${TARBALL}"
-  elif [[ ${C} == *-e* ]]; then
+  elif [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
-    echo "Using this MEGALIB environment file: ${ENVFILE}"
+  elif [[ ${C} == *-m*=* ]]; then
+    MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-d*=* ]]; then
+    DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -73,11 +85,69 @@ for C in ${CMD}; do
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
     echo "       See \"$0 --help\" for a list of options"
+    echo " "
     exit 1
   fi
 done
 
+echo ""
+echo ""
+echo ""
+echo "Setting up ROOT..."
+echo ""
+echo "Verifying chosen configuration options:"
+echo ""
 
+if [ "${TARBALL}" != "" ]; then
+  if [[ ! -f "${TARBALL}" ]]; then
+    echo "ERROR: The chosen tarball cannot be found: ${TARBALL}"
+    exit 1     
+  else   
+    echo " * Using this tarball: ${TARBALL}"    
+  fi
+fi
+
+if [ "${ENVFILE}" != "" ]; then
+  if [[ ! -f "${ENVFILE}" ]]; then
+    echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
+    exit 1     
+  else   
+    echo " * Using this environment file: ${ENVFILE}"    
+  fi
+fi
+
+
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
+  echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
+  exit 1
+fi  
+if [ "${MAXTHREADS}" -le "0" ]; then
+  echo "ERROR: The maximum number of threads must be at least 1 and not ${MAXTHREADS}!"
+  exit 1
+else 
+  echo " * Using this maximum number of threads: ${MAXTHREADS}"
+fi
+
+
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
+  DEBUG="off"
+  DEBUGSTRING=""
+  DEBUGOPTIONS=""
+  echo " * Using no debugging code"
+elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
+  DEBUG="normal"
+  DEBUGSTRING="_debug"
+  DEBUGOPTIONS="--build=debug"
+  echo " * Using debugging code"
+else
+  echo "ERROR: Unknown debugging code selection: ${DEBUG}"
+  confhelp
+  exit 0
+fi
+
+
+echo " "
+echo " "
 echo "Getting ROOT..."
 VER=""
 if [ "${TARBALL}" != "" ]; then
@@ -111,7 +181,7 @@ else
     echo "ERROR: Unable to determine required ROOT version!"
     exit 1
   fi
-  echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on ROOT website"
+  echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on the ROOT website --- sometimes this takes a few minutes..."
   
   # Now check root repository for the given version:
   TARBALL=`curl ftp://root.cern.ch/root/ -sl | grep "^root_v${WANTEDVERSION}" | grep "source.tar.gz$" | sort | tail -n 1`
@@ -158,11 +228,11 @@ else
   echo "Version of ROOT is: ${VER}"
 fi
 
-
+ROOTDIR=root_v${VER}${DEBUGSTRING}
 
 echo "Checking for old installation..."
-if [ -d root_v${VER} ]; then
-  cd root_v${VER}
+if [ -d ${ROOTDIR} ]; then
+  cd ${ROOTDIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
     SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
@@ -182,21 +252,21 @@ if [ -d root_v${VER} ]; then
     fi
   fi
     
-  echo "Old installation is either incompatible or incomplete. Removing root_v${VER}"
+  echo "Old installation is either incompatible or incomplete. Removing ${ROOTDIR}"
   cd ..
-  if echo "root_v${VER}" | grep -E '[ "]' >/dev/null; then
+  if echo "${ROOTDIR}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
     echo "       There should not be any spaces in the ROOT version..."
     exit 1
   fi
-  rm -r "root_v${VER}"
+  rm -r "${ROOTDIR}"
 fi
 
 
 
 echo "Unpacking..."
-mkdir root_v${VER}
-cd root_v${VER}
+mkdir ${ROOTDIR}
+cd ${ROOTDIR}
 tar xvfz ../${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
@@ -208,7 +278,8 @@ rmdir root
 
 
 echo "Configuring..."
-sh configure ${CONFIGUREOPTIONS}
+export LD_LIBRARY_PATH=""
+sh configure ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring ROOT!"
   exit 1
@@ -224,6 +295,9 @@ elif ( `test -f /proc/cpuinfo` ); then
 fi
 if [ "$?" != "0" ]; then
   CORES=1
+fi
+if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
+  CORES=${MAXTHREADS}
 fi
 echo "Using this number of cores for compilation: ${CORES}"
 
@@ -247,13 +321,13 @@ echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
 
 echo "Setting permissions..."
 cd ..
-chown -R ${USER}:${GROUP} root_v${VER}
-chmod -R go+rX root_v${VER}
+chown -R ${USER}:${GROUP} ${ROOTDIR}
+chmod -R go+rX ${ROOTDIR}
 
 
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the ROOT directory in the MEGAlib source script..."
-  echo "ROOTDIR=`pwd`/root_v${VER}" >> ${ENVFILE}
+  echo "ROOTDIR=`pwd`/${ROOTDIR}" >> ${ENVFILE}
 fi
 
 

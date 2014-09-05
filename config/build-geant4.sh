@@ -38,6 +38,12 @@ confhelp() {
   echo "--environment-script=[file name of new environment script]"
   echo "    File in which the Geant4 path is stored. This is used by the MEGAlib setup script" 
   echo " "
+  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "    Default is on."
+  echo " "
+  echo "--maxthreads=[integer >=1]"
+  echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -62,15 +68,22 @@ done
 
 TARBALL=""
 ENVFILE=""
+MAXTHREADS=1024
+DEBUG="off"
+DEBUGSTRING=""
+DEBUGOPTIONS=""
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-    echo "Using this tarball: ${TARBALL}"
-  elif [[ ${C} == *-e* ]]; then
+  elif [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
+  elif [[ ${C} == *-m*=* ]]; then
+    MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-d*=* ]]; then
+    DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -83,6 +96,58 @@ for C in ${CMD}; do
   fi
 done
 
+echo ""
+echo ""
+echo ""
+echo "Setting up Geant4..."
+echo ""
+echo "Verifying chosen configuration options:"
+echo ""
+
+if [ "${TARBALL}" != "" ]; then
+  if [[ ! -f "${TARBALL}" ]]; then
+    echo "ERROR: The chosen tarball cannot be found: ${TARBALL}"
+    exit 1     
+  else   
+    echo " * Using this tarball: ${TARBALL}"    
+  fi
+fi
+
+if [ "${ENVFILE}" != "" ]; then
+  if [[ ! -f "${ENVFILE}" ]]; then
+    echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
+    exit 1     
+  else   
+    echo " * Using this environment file: ${ENVFILE}"    
+  fi
+fi
+
+if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
+  echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
+  exit 1
+fi  
+if [ "${MAXTHREADS}" -le "0" ]; then
+  echo "ERROR: The maximum number of threads must be at least 1 and not ${MAXTHREADS}!"
+  exit 1
+else 
+  echo " * Using this maximum number of threads: ${MAXTHREADS}"
+fi
+
+if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
+  DEBUG="off"
+  DEBUGSTRING=""
+  DEBUGOPTIONS=""
+  echo " * Using no debugging code"
+elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
+  DEBUG="normal"
+  DEBUGSTRING="_debug"
+  DEBUGOPTIONS="-DCMAKE_BUILD_TYPE=Debug"
+  echo " * Using debugging code"
+else
+  echo "ERROR: Unknown debugging code selection: ${DEBUG}"
+  confhelp
+  exit 0
+fi
 
 
 
@@ -111,7 +176,7 @@ else
     echo "ERROR: Unable to determine required Geant4 version!"
     exit 1
   fi
-  echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on Geant4 website"
+  echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on the Geant4 website --- sometimes this takes a few minutes..."
   
   # Now check Geant4 repository for the given version:
   TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"
@@ -169,8 +234,9 @@ fi
 
 
 echo "Checking for old installation..."
-if [ -d geant4_v${VER} ]; then
-  cd geant4_v${VER}
+GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
+if [ -d ${GEANT4DIR} ]; then
+  cd ${GEANT4DIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
     SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
@@ -190,14 +256,14 @@ if [ -d geant4_v${VER} ]; then
     fi
   fi
     
-  echo "Old installation is either incompatible or incomplete. Removing geant4_v${VER}"
+  echo "Old installation is either incompatible or incomplete. Removing ${GEANT4DIR}"
   cd ..
-  if echo "geant4_v${VER}" | grep -E '[ "]' >/dev/null; then
+  if echo "${GEANT4DIR}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
     echo "       There should not be any spaces in the Geant4 version..."
     exit 1
   fi
-  rm -rf "geant4_v${VER}"
+  rm -rf "${GEANT4DIR}"
 fi
 
 
@@ -216,8 +282,8 @@ if [ "$?" != "0" ]; then
   exit 1
 fi
 mv geant4.${VER} geant4.${VER}-source
-mkdir geant4_v${VER}
-cd geant4_v${VER}
+mkdir ${GEANT4DIR}
+cd ${GEANT4DIR}
 mv ../geant4.${VER}-source .
 mkdir geant4.${VER}-build
 cd geant4.${VER}-build
@@ -225,7 +291,8 @@ cd geant4.${VER}-build
 
 
 echo "Configuring ..."
-cmake ${CONFIGUREOPTIONS} ../geant4.${VER}-source
+export LD_LIBRARY_PATH=""
+cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../geant4.${VER}-source
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) Geant4!"
   exit 1
@@ -241,6 +308,9 @@ elif ( `test -f /proc/cpuinfo` ); then
 fi
 if [ "$?" != "0" ]; then
   CORES=1
+fi
+if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
+  CORES=${MAXTHREADS}
 fi
 echo "Using this number of cores: ${CORES}"
 
@@ -273,14 +343,14 @@ echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
 
 echo "Setting permissions..."
 cd ..
-chown -R ${USER}:${GROUP} geant4_v${VER}
-chmod -R go+rX geant4_v${VER}
+chown -R ${USER}:${GROUP} ${GEANT4DIR}
+chmod -R go+rX ${GEANT4DIR}
 
 
 
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the Geant4 directory in the MEGAlib source script..."
-  echo "GEANT4DIR=`pwd`/geant4_v${VER}" >> ${ENVFILE}
+  echo "GEANT4DIR=`pwd`/${GEANT4DIR}" >> ${ENVFILE}
 fi
 
 
