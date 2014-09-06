@@ -11,7 +11,7 @@
 # Definitions:
 #
 
-PRG        := cosima
+PRG        := $(BN)/cosima
 CPP_MAIN   := src/MCCosima.cc
 CPP_FILES  := $(wildcard src/*.cc)
 CPP_FILES  := $(filter-out $(CPP_MAIN),$(CPP_FILES))
@@ -48,8 +48,8 @@ clean:
 #
 
 $(PRG): $(CPP_MAIN) $(SOBJ)
-	@echo "Compiling and linking $(PRG) ..."
-	@$(LD) $(CXXFLAGS) $(G4_CFLAGS) $(LDFLAGS) $(CPP_MAIN) $(COSIMALIBS) $(GLIBS) $(LIBS) $(G4_LIBS) -o $(BN)/$(PRG)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) $(G4_CFLAGS) $(LDFLAGS) $(CPP_MAIN) $(COSIMALIBS) $(GLIBS) $(LIBS) $(G4_LIBS) -o $(PRG)
 
 $(SOBJ): $(OBJ_FILES)
 	@echo "Linking $(subst $(LB)/,,$@) ..."

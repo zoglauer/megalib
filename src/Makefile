@@ -68,6 +68,12 @@ frelib:
 clean_fre:
 	@$(MAKE) clean -C fretalon
 
+fretalonframework:
+	@$(MAKE) framework -C fretalon
+
+clean_fretalonframework:
+	@$(MAKE) clean_framework -C fretalon
+
 
 #------------------------------------------------------------------------------
 # spectralyze:

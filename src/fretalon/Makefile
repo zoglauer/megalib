@@ -16,7 +16,6 @@
 all:
 	@$(MAKE) -C base
 	@$(MAKE) -C melinator
-#	@$(MAKE) -C framework
 
 link:
 	@$(MAKE) link -C base
@@ -26,7 +25,13 @@ link:
 clean:
 	@$(MAKE) clean -C base
 	@$(MAKE) clean -C melinator
-#	@$(MAKE) clean -C framework
+	@$(MAKE) clean -C framework
+
+framework: all
+	@$(MAKE) -C framework
+
+clean_framework: 
+	@$(MAKE) clean -C framework
 
 
 #

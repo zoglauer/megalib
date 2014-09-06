@@ -70,6 +70,8 @@ MSupervisor::MSupervisor()
   m_UICoAuthors = "";
   
   m_Geometry = 0;
+  m_Gui = 0;
+  m_ExpoCombinedViewer = 0;
   
   m_ConfigurationFileName = gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg");
   
@@ -87,6 +89,9 @@ void MSupervisor::Clear()
   //! Reset all data
 
   m_Modules.clear();
+  
+  delete m_Gui;
+  delete m_ExpoCombinedViewer;
   
   m_GeometryFileName = "";
   delete m_Geometry;

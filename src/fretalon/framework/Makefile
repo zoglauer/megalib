@@ -12,7 +12,7 @@
 # Definitions:
 #
 
-PRG        := fretalon
+PRG        := $(BN)/fretalon
 CXX_MAIN   := src/MAssembly.cxx src/MReadOutAssembly.cxx
 CXX_FILES  := $(wildcard src/*.cxx)
 CXX_FILES  := $(filter-out $(CXX_MAIN),$(CXX_FILES))
@@ -24,6 +24,8 @@ SOBJ       := $(LB)/libFretalon.$(DLL)
 #----------------------------------------------------------------
 # Commands:
 #
+
+.PHONY: fretalon
 
 all: $(PRG)
 
@@ -48,8 +50,8 @@ clean:
 
 
 $(PRG): $(CPP_MAIN) $(SOBJ)
-	@echo "Compiling and linking $(PRG) ..."
-	@$(LD) $(CXXFLAGS) -Iinc $(LDFLAGS) $(CXX_MAIN) $(SOBJ) $(FRETALONLIBS) $(GLIBS) $(LIBS) -o $(BN)/$(PRG)
+	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(CXXFLAGS) -Iinc $(LDFLAGS) $(CXX_MAIN) $(SOBJ) $(FRETALONLIBS) $(GLIBS) $(LIBS) -o $(PRG)
 
 $(SOBJ): $(OBJ_FILES)
 	@echo "Linking $(subst $(LB)/,,$@) ..."

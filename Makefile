@@ -33,6 +33,7 @@ include $(TOP)/config/Makefile.user
 CXXFLAGS    += -I$(IN)
 LDFLAGS     += -L$(LB)
 
+#MAKEFLAGS += --no-builtin-rules
 
 #------------------------------------------------------------------------------
 # Commands:
@@ -72,7 +73,7 @@ ifneq ($(strip $(GEANT4VERSIONOK)),)
 	exit 1;		
 endif
 endif
-	echo "MEGAlib compilation mode: $(CMODE)"
+	echo "Starting MEGAlib compilation in mode: $(CMODE)"
 
 global: info glo 
 
@@ -149,6 +150,12 @@ fre: link glo geo
 
 clean_fretalon:
 	@$(MAKE) clean_fre -C src
+
+fretalonframework: link glo geo fre
+	@$(MAKE) fretalonframework -C src
+
+clean_fretalonframework:
+	@$(MAKE) clean_fretalonframework -C src
 
 
 #------------------------------------------------------------------------------

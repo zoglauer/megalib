@@ -49,12 +49,25 @@ class MReadOutAssembly
 
   //! Set and get the Time of this event
   void SetTime(MTime Time) { m_Time = Time; }
+  //! Return the time this event has been obtained
   MTime GetTime() const { return m_Time; }
 
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
   bool IsGood() const { return true; }
   //! Returns true if any of the "bad" or "incomplete" falgs has been set
   bool IsBad() const { return !IsGood(); }
+
+  //! Set the filtered-out flag
+  void SetFilteredOut(bool Flag = true) { m_FilteredOut = Flag; }
+  //! Get the filgtered-out flag
+  bool IsFilteredOut() const { return m_FilteredOut; }
+
+  //! Set a specific analysis progress
+  void SetAnalysisProgress(uint64_t Progress) { m_AnalysisProgress |= Progress; }
+  //! Check if we have a certain progress
+  bool HasAnalysisProgress(uint64_t Progress) const { return (m_AnalysisProgress & Progress) == Progress ? true : false; }
+  //! Return the analysis progress flag
+  uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
 
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
@@ -83,6 +96,12 @@ class MReadOutAssembly
 
   //! The time of this event
   MTime m_Time;
+
+  //! The analysis progress 
+  uint64_t m_AnalysisProgress;
+  
+  //! True if event has been filtered out
+  bool m_FilteredOut;
 
   
   
