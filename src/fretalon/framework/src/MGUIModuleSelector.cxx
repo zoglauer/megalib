@@ -34,6 +34,8 @@
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MModule.h"
+#include "MGUIDefaults.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -79,12 +81,8 @@ void MGUIModuleSelector::Create()
   SetWindowName("Module selector");  
 
   // Main label
-  const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-14-*-*-*-*-*-iso8859-1");
-  if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
-  FontStruct_t LargeFont = lFont->GetFontStruct();
-
   TGLabel* MainLabel = new TGLabel(this, "Choose a module:");
-  MainLabel->SetTextFont(LargeFont);
+  MainLabel->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
   TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 10, 10);
   AddFrame(MainLabel, MainLabelLayout);
 

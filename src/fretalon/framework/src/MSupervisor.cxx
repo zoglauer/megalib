@@ -768,13 +768,20 @@ bool MSupervisor::Analyze()
     m_ExpoCombinedViewer->Create();
   }
   m_ExpoCombinedViewer->RemoveExpos();
+  int NExpos = 0;
   for (unsigned int m = 0; m < GetNModules(); ++m) {
     if (GetModule(m)->HasExpos() == true) {
       m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
+      ++NExpos;
     }
   }
   m_ExpoCombinedViewer->OnReset();
   m_ExpoCombinedViewer->ShowExpos();
+  if (NExpos == 0) {
+    gSystem->ProcessEvents();
+    m_ExpoCombinedViewer->CloseWindow(); 
+    gSystem->ProcessEvents();
+  }
   
   
   // Do the analysis pipeline
