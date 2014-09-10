@@ -203,7 +203,7 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   
   new MXmlNode(Node, "SaveAsFileName", m_SaveAsFileName);
   
-  new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
+  //new MXmlNode(Node, "SelectedDetectorID", m_SelectedDetectorID);
   
   return true;
 }
@@ -395,9 +395,11 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
     m_SaveAsFileName = aNode->GetValueAsString();
   }
  
+  /*
   if ((aNode = Node->GetNode("SelectedDetectorID")) != 0) {
     m_SelectedDetectorID = aNode->GetValueAsInt();
   }
+  */
  
   return true;
 }
