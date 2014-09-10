@@ -35,6 +35,7 @@ using namespace std;
 #include <TSystem.h>
 #include <TGClient.h>
 #include <TGMsgBox.h>
+#include <TGResourcePool.h>
 
 // MEGAlib libs:
 #include "MExceptions.h"
@@ -236,6 +237,7 @@ void MGUIMultiProgressBar::Create()
   TGLayoutHints* ProgressBarLayout = new TGLayoutHints(kLHintsExpandX | kLHintsCenterX, 0, 0, 2, 2);
 
   // Add the progress bar
+  int MaxLength = 0;
   for (unsigned int p = 0; p < m_NumberOfProgressBars; ++p) {
     TGHProgressBar* ProgressBar = new TGHProgressBar(ProgressBarFrame, FontScaler*200, FontScaler*24);
     ProgressBar->SetBarColor("lightblue");
@@ -246,6 +248,11 @@ void MGUIMultiProgressBar::Create()
     ProgressBar->ShowPosition(true, false, Format);
     ProgressBarFrame->AddFrame(ProgressBar, ProgressBarLayout);
 
+    int Length = gVirtualX->TextWidth(gClient->GetResourcePool()->GetDefaultFont()->GetFontStruct(), Format.GetString().c_str(), Format.Length());
+    if (Length > MaxLength) {
+      MaxLength = Length;
+    }
+    
     m_ProgressBars.push_back(ProgressBar);
   }
 
@@ -256,7 +263,7 @@ void MGUIMultiProgressBar::Create()
   AddFrame(m_CancelButton, CancelButtonLayout);
 
   TGDimension D = GetDefaultSize();
-  if (D.fWidth < FontScaler*350) D.fWidth = FontScaler*350;
+  if (D.fWidth < FontScaler*100 + MaxLength) D.fWidth = FontScaler*100 + MaxLength;
   Resize(D);
   
   CenterOnParent();
