@@ -88,12 +88,12 @@ void MGUILoadCalibration::Create()
 
   AddSubTitle("Set the calibration file(s) to load and its associated isotope(s)"); 
 
-  TGLayoutHints* SubSubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 20, 20, 20, 0);
-  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 20, 0);
-  TGLayoutHints* IsotopeFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
-  TGLayoutHints* IsotopeLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 5, 0, 0);
-  TGLayoutHints* GroupIDLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 30, 5, 0, 0);
-  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop, 20, 20, 40, 0);
+  TGLayoutHints* SubSubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 0);
+  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 0);
+  TGLayoutHints* IsotopeFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 5*m_FontScaler, 0);
+  TGLayoutHints* IsotopeLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 5*m_FontScaler, 0, 0);
+  TGLayoutHints* GroupIDLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 30*m_FontScaler, 5*m_FontScaler, 0, 0);
+  TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 40*m_FontScaler, 0);
 
   TGLabel* SubSubTitle = new TGLabel(this, "Calibration files with the same group ID will be merged!");
   AddFrame(SubSubTitle, SubSubTitleLayout);
