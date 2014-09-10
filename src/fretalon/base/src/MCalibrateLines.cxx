@@ -627,7 +627,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       m_Results.AddSpectralPoint(ROGID, P);
     }
   }
-  
+
        
   if (m_DiagnosticsMode == true) {
     TLockGuard G(gROOTMutex);
@@ -723,6 +723,42 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
     
   }
   
+  // Another sanity check:
+  // Calculate the median FWHM
+  // If one peak is at least 3x the average, then exclude it
+  cout<<"Sanity check: median FWHM"<<endl;
+  double MedianExclusionFactor = 2.5;
+  vector<double> FWHMes;
+  for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
+    for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
+      if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
+      MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
+      FWHMes.push_back(P.GetFWHM());
+    }
+  }
+  
+  if (FWHMes.size() > 1) {
+    size_t midIndex = FWHMes.size()/2;
+    nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
+    double Median = FWHMes[midIndex]; 
+    cout<<"Median FWHM: "<<Median<<endl;
+    
+    for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
+      for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
+        if (m_Results.GetSpectralPoint(rg, sp).IsGood() == false) continue;
+        MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
+        if (P.GetFWHM() > MedianExclusionFactor*Median) {
+          P.IsGood(false);
+          cout<<"Bad peak - FWHM test: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
+        } else {
+          cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+        }
+      }
+    }
+  } else {
+    cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
+  }
+  
   return true;
 }
 
@@ -750,7 +786,7 @@ public:
 
 //! Assign energies to the different spectral points
 bool MCalibrateLines::AssignEnergies()
-{
+{   
   vector<Match> Matches;
     
   // Create all combinations
