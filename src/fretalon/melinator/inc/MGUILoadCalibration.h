@@ -46,6 +46,7 @@ class MGUILoadCalibration : public MGUIDialog
  protected:
   virtual void Create();
   virtual bool OnApply();
+  bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
   //! Add the isotopes to the combo box
   void AddIsotopes(TGComboBox* ComboBox, MString Select);

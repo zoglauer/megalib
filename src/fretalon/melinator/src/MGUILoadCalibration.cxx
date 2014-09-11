@@ -32,6 +32,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MFile.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -93,6 +94,7 @@ void MGUILoadCalibration::Create()
   TGLayoutHints* FirstLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, 0, 0);
   TGLayoutHints* FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 5*m_FontScaler, 0, 0, 0);
   TGLayoutHints* IsotopeLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 0, 0, 0);
+  TGLayoutHints* ButtonLayout = new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 20*m_FontScaler, 0, 0, 0);
   
   TGLayoutHints* FooterLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler, 0);
   
@@ -138,16 +140,23 @@ void MGUILoadCalibration::Create()
     }
     m_Isotopes.push_back(vector<TGComboBox*>());
     for (unsigned int i = 0; i < CalibrationIsotopes[f].size(); ++i) {
-      TGComboBox* Isotope = new TGComboBox(CalibrationFrame, 1000 + 10*f + i);
+      TGComboBox* Isotope = new TGComboBox(CalibrationFrame, 10000 + 100*f + i);
       AddIsotopes(Isotope, CalibrationIsotopes[f][i]);
       CalibrationFrame->AddFrame(Isotope, FirstLabelLayout);
       m_Isotopes.back().push_back(Isotope);
     }
  
     MGUIEEntry* GroupID = new MGUIEEntry(CalibrationFrame, "Group ID: ", false, (int) CalibrationGroupIDs[f], true, 0);
-    GroupID->SetEntryFieldSize(m_FontScaler*30);
+    GroupID->SetEntryFieldSize(m_FontScaler*35);
     CalibrationFrame->AddFrame(GroupID, IsotopeLabelLayout);
     m_GroupIDs.push_back(GroupID);
+    
+    MString Icon = "$(ROOTSYS)/icons/bld_delete.xpm";
+    MFile::ExpandFileName(Icon);
+
+    TGPictureButton* Clear = new TGPictureButton(CalibrationFrame, Icon, 10000 + 100*f + 99);
+    Clear->Associate(this);
+    CalibrationFrame->AddFrame(Clear, ButtonLayout);
   }
  
   TGLabel* Footer1 = new TGLabel(this, "Tips: Calibration files with the same group ID will be merged.  You can add additional isotopes to the file: $(MEGALIB)/resource/libraries/Calibration.isotopes");
@@ -167,6 +176,36 @@ void MGUILoadCalibration::Create()
   fClient->WaitFor(this);
  
   return;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUILoadCalibration::ProcessMessage(long Message, long Parameter1, 
+                                         long Parameter2)
+{
+  // Process the messages for this application
+
+  switch (GET_MSG(Message)) {
+  case kC_COMMAND:
+    switch (GET_SUBMSG(Message)) {
+    case kCM_BUTTON:
+      if (Parameter1 % 100 == 99) {
+        int ID = (Parameter1 - 10099) / 100;
+        m_FileNames[ID]->SetFileName("");
+        m_GroupIDs[ID]->SetValue(0);
+        for (unsigned int i = 0; i < m_Isotopes[ID].size(); ++i) {
+          m_Isotopes[ID][i]->Select(0);
+        }
+      }
+    default:
+      break;
+    }
+  default:
+    break;
+  }
+
+  return MGUIDialog::ProcessMessage(Message, Parameter1, Parameter2);
 }
 
 
