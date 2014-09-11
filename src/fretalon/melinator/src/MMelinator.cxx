@@ -217,8 +217,17 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   //! Now make sure the groups have all the same isotopes
   m_Isotopes.clear();
   for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
-    m_Isotopes.push_back(IsotopeMap[GroupIDs[g]]); 
+    m_Isotopes.push_back(IsotopeMap[GroupIDs[g]]);
   }
+
+  m_NLinesToConsider = 0;
+  for (auto N: IsotopeMap) {
+    for (auto I: N.second) {
+      m_NLinesToConsider += I.GetNLines();
+    }
+  }
+  //cout<<"Lines: "<<m_NLinesToConsider<<endl;
+  
   /*
   cout<<"Isotopes: "<<endl;
   for (auto V: m_Isotopes) {
@@ -229,7 +238,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     cout<<endl;
   }
   */
-  
+    
   
   m_CalibrationFileLoadingProgress.resize(NFiles);
   for (unsigned int c = 0; c < m_CalibrationFileLoadingProgress.size(); ++c) {
@@ -379,10 +388,11 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
         if (m_ThreadShouldTerminate[ThreadID] == true) break;
         
         // Check that we still have enough memory left:
-        unsigned long Reserve = 32*(NewCounter+2*100000) + 300000*m_Store.GetNumberOfReadOutCollections();
-        int* Memory = new(nothrow) int[Reserve];
+        //cout<<"Check: "<<sizeof(Sequence)*NewCounter<<":"<<160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections()<<":"<<m_NLinesToConsider<<":"<<m_Store.GetNumberOfReadOutCollections()<<endl;
+        unsigned long Reserve = 5000000 + sizeof(Sequence)*NewCounter + 160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections();
+        char* Memory = new(nothrow) char[Reserve];
         if (Memory == 0) {
-          cout<<"Cannot reserve "<<sizeof(int)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
+          cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
           break;
         } else {
           delete [] Memory;

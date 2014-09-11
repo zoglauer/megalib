@@ -181,6 +181,9 @@ class MMelinator
   //! The isotopes per input file
   vector<vector<MIsotope> > m_Isotopes;
   
+  //! The total number of lines to consider --- only for the total memory calculation
+  unsigned int m_NLinesToConsider;
+  
   //! The minimum range of the histogram
   double m_HistogramMin;
   //! The maximum range of the histogram
@@ -218,8 +221,7 @@ class MMelinator
   vector<bool> m_ThreadIsFinished;
   //! ID of the next item to be processed
   unsigned int m_ThreadNextItem;
-  
-  
+
   
 #ifdef ___CINT___
  public:
