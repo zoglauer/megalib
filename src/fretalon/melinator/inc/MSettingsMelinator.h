@@ -39,173 +39,16 @@ class MSettingsMelinator : public MSettings
   virtual ~MSettingsMelinator();
 
   
-  //! Set the first calibration file
-  void SetCalibrationFile1(const MString& File) { m_CalibrationFile1 = File; }
-  //! Get the first calibration file
-  MString GetCalibrationFile1() const { return m_CalibrationFile1; }
+  //! Set all calibration files, group IDs, and Isotopes at once
+  void SetAllCalibrationFiles(const vector<MString>& Files, const vector<unsigned int> GroupIDs, const vector<vector<MString>>& Isotopes);
   
-  //! Set the group ID of the first calibration file
-  void SetCalibrationFile1GroupID(unsigned int GroupID) { m_CalibrationFile1GroupID = GroupID; }
-  //! Get the group ID of the first calibration file
-  unsigned int GetCalibrationFile1GroupID() const { return m_CalibrationFile1GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile1Isotope1(const MString& Isotope) { m_CalibrationFile1Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile1Isotope1() const { return m_CalibrationFile1Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile1Isotope2(const MString& Isotope) { m_CalibrationFile1Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile1Isotope2() const { return m_CalibrationFile1Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile1Isotope3(const MString& Isotope) { m_CalibrationFile1Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile1Isotope3() const { return m_CalibrationFile1Isotope3; }
-
-  
-  //! Set the second calibration file
-  void SetCalibrationFile2(const MString& File) { m_CalibrationFile2 = File; }
-  //! Get the second calibration file
-  MString GetCalibrationFile2() const { return m_CalibrationFile2; }
-  
-  //! Set the group ID of the second calibration file
-  void SetCalibrationFile2GroupID(unsigned int GroupID) { m_CalibrationFile2GroupID = GroupID; }
-  //! Get the group ID of the second calibration file
-  unsigned int GetCalibrationFile2GroupID() const { return m_CalibrationFile2GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile2Isotope1(const MString& Isotope) { m_CalibrationFile2Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile2Isotope1() const { return m_CalibrationFile2Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile2Isotope2(const MString& Isotope) { m_CalibrationFile2Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile2Isotope2() const { return m_CalibrationFile2Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile2Isotope3(const MString& Isotope) { m_CalibrationFile2Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile2Isotope3() const { return m_CalibrationFile2Isotope3; }
-
-  
-  //! Set the third calibration file
-  void SetCalibrationFile3(const MString& File) { m_CalibrationFile3 = File; }
-  //! Get the third calibration file
-  MString GetCalibrationFile3() const { return m_CalibrationFile3; }
-  
-  //! Set the group ID of the third calibration file
-  void SetCalibrationFile3GroupID(unsigned int GroupID) { m_CalibrationFile3GroupID = GroupID; }
-  //! Get the group ID of the third calibration file
-  unsigned int GetCalibrationFile3GroupID() const { return m_CalibrationFile3GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile3Isotope1(const MString& Isotope) { m_CalibrationFile3Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile3Isotope1() const { return m_CalibrationFile3Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile3Isotope2(const MString& Isotope) { m_CalibrationFile3Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile3Isotope2() const { return m_CalibrationFile3Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile3Isotope3(const MString& Isotope) { m_CalibrationFile3Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile3Isotope3() const { return m_CalibrationFile3Isotope3; }
-
-  
-  //! Set the fourth calibration file
-  void SetCalibrationFile4(const MString& File) { m_CalibrationFile4 = File; }
-  //! Get the fourth calibration file
-  MString GetCalibrationFile4() const { return m_CalibrationFile4; }
-  
-  //! Set the group ID of the fourth calibration file
-  void SetCalibrationFile4GroupID(unsigned int GroupID) { m_CalibrationFile4GroupID = GroupID; }
-  //! Get the group ID of the fourth calibration file
-  unsigned int GetCalibrationFile4GroupID() const { return m_CalibrationFile4GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile4Isotope1(const MString& Isotope) { m_CalibrationFile4Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile4Isotope1() const { return m_CalibrationFile4Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile4Isotope2(const MString& Isotope) { m_CalibrationFile4Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile4Isotope2() const { return m_CalibrationFile4Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile4Isotope3(const MString& Isotope) { m_CalibrationFile4Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile4Isotope3() const { return m_CalibrationFile4Isotope3; }
-
-  
-  //! Set the fifth calibration file
-  void SetCalibrationFile5(const MString& File) { m_CalibrationFile5 = File; }
-  //! Get the fifth calibration file
-  MString GetCalibrationFile5() const { return m_CalibrationFile5; }
-  
-  //! Set the group ID of the fifth calibration file
-  void SetCalibrationFile5GroupID(unsigned int GroupID) { m_CalibrationFile5GroupID = GroupID; }
-  //! Get the group ID of the fifth calibration file
-  unsigned int GetCalibrationFile5GroupID() const { return m_CalibrationFile5GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile5Isotope1(const MString& Isotope) { m_CalibrationFile5Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile5Isotope1() const { return m_CalibrationFile5Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile5Isotope2(const MString& Isotope) { m_CalibrationFile5Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile5Isotope2() const { return m_CalibrationFile5Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile5Isotope3(const MString& Isotope) { m_CalibrationFile5Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile5Isotope3() const { return m_CalibrationFile5Isotope3; }
-
-  
-  //! Set the sixth calibration file
-  void SetCalibrationFile6(const MString& File) { m_CalibrationFile6 = File; }
-  //! Get the sixth calibration file
-  MString GetCalibrationFile6() const { return m_CalibrationFile6; }
-  
-  //! Set the group ID of the sixth calibration file
-  void SetCalibrationFile6GroupID(unsigned int GroupID) { m_CalibrationFile6GroupID = GroupID; }
-  //! Get the group ID of the sixth calibration file
-  unsigned int GetCalibrationFile6GroupID() const { return m_CalibrationFile6GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile6Isotope1(const MString& Isotope) { m_CalibrationFile6Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile6Isotope1() const { return m_CalibrationFile6Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile6Isotope2(const MString& Isotope) { m_CalibrationFile6Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile6Isotope2() const { return m_CalibrationFile6Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile6Isotope3(const MString& Isotope) { m_CalibrationFile6Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile6Isotope3() const { return m_CalibrationFile6Isotope3; }
-
-  
-  //! Set the seventh calibration file
-  void SetCalibrationFile7(const MString& File) { m_CalibrationFile7 = File; }
-  //! Get the seventh calibration file
-  MString GetCalibrationFile7() const { return m_CalibrationFile7; }
-  
-  //! Set the group ID of the seventh calibration file
-  void SetCalibrationFile7GroupID(unsigned int GroupID) { m_CalibrationFile7GroupID = GroupID; }
-  //! Get the group ID of the seventh calibration file
-  unsigned int GetCalibrationFile7GroupID() const { return m_CalibrationFile7GroupID; }
-  
-  //! Set the isotope 1 of calibration file 1
-  void SetCalibrationFile7Isotope1(const MString& Isotope) { m_CalibrationFile7Isotope1 = Isotope; }
-  //! Set the isotope 1 of calibration file 1
-  MString GetCalibrationFile7Isotope1() const { return m_CalibrationFile7Isotope1; }
-  //! Set the isotope 2 of calibration file 1
-  void SetCalibrationFile7Isotope2(const MString& Isotope) { m_CalibrationFile7Isotope2 = Isotope; }
-  //! Set the isotope 2 of calibration file 1
-  MString GetCalibrationFile7Isotope2() const { return m_CalibrationFile7Isotope2; }
-  //! Set the isotope 3 of calibration file 1
-  void SetCalibrationFile7Isotope3(const MString& Isotope) { m_CalibrationFile7Isotope3 = Isotope; }
-  //! Set the isotope 3 of calibration file 1
-  MString GetCalibrationFile7Isotope3() const { return m_CalibrationFile7Isotope3; }
-  
+  //! Get the calibration files
+  vector<MString> GetCalibrationFiles() const { return m_CalibrationFiles; }
+  //! Get the calibration group IDs
+  vector<unsigned int> GetCalibrationGroupIDs() const { return m_CalibrationGroupIDs; }
+  //! Get the calibration isotope names
+  vector<vector<MString>> GetCalibrationIsotopes() const { return m_CalibrationIsotopes; }
+    
     
   //! The minimum range of the histogram
   double GetHistogramMin() const { return m_HistogramMin; }
@@ -298,82 +141,12 @@ class MSettingsMelinator : public MSettings
 
   // private members:
  private:
-  //! The first calibration file
-  MString m_CalibrationFile1;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile1GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile1Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile1Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile1Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile2;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile2GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile2Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile2Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile2Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile3;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile3GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile3Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile3Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile3Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile4;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile4GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile4Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile4Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile4Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile5;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile5GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile5Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile5Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile5Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile6;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile6GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile6Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile6Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile6Isotope3;
-  
-  //! The first calibration file
-  MString m_CalibrationFile7;
-  //! The group ID of the first calibration file
-  unsigned int m_CalibrationFile7GroupID;
-  //! The first isotope of the first calibration file
-  MString m_CalibrationFile7Isotope1;
-  //! The second isotope of the first calibration file
-  MString m_CalibrationFile7Isotope2;
-  //! The third isotope of the first calibration file
-  MString m_CalibrationFile7Isotope3;
+  //! A list of all calibration files
+  vector<MString> m_CalibrationFiles;
+  //! A list of all calibration groups
+  vector<unsigned int> m_CalibrationGroupIDs;
+  //! A list of all isotopes
+  vector<vector<MString>> m_CalibrationIsotopes;
   
   //! The minimum range of the histogram
   double m_HistogramMin;

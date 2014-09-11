@@ -118,7 +118,11 @@ void MGUIEFileSelector::Create()
   }
 
   m_InputFrame = new TGHorizontalFrame(this, 100, 40);
-  m_InputFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 5, 0);
+  if (m_Label != "") {
+    m_InputFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 5, 0);
+  } else {
+    m_InputFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);
+  }
   AddFrame(m_InputFrame, m_InputFrameLayout);
 
   // input-field

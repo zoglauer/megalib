@@ -125,13 +125,23 @@ void MMelinator::Clear()
 //! This function performs parallel loading of all given files
 bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIsotope> >& Isotopes, const vector<unsigned int>& GroupIDs)
 {
-  MGUIMultiProgressBar ProgressBar(FileNames.size());
+  int NFiles = 0;
+  for (unsigned int f = 0; f < FileNames.size(); ++f) {
+    if (FileNames[f] == "") continue;
+    ++NFiles;
+  }
+
+    
+  MGUIMultiProgressBar ProgressBar(NFiles);
   ProgressBar.SetTitles("Melinator Progress", "Progress of reading the calibration files");
   
   // Check for consistency and file size
   if (FileNames.size() == 0) return false;
   if (FileNames.size() != Isotopes.size()) return false;
+  m_CalibrationFileNames.clear();
   for (unsigned int f = 0; f < FileNames.size(); ++f) {
+    if (FileNames[f] == "") continue;
+    
     MFileReadOuts Reader;
     if (Reader.Open(FileNames[f]) == false) {
       return false;
@@ -139,12 +149,13 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     ProgressBar.SetTitle(f, MFile::GetBaseName(FileNames[f]));
     ProgressBar.SetMinMax(f, 0.0, Reader.GetFileLength());
     Reader.Close();
+    m_CalibrationFileNames.push_back(FileNames[f]);
   }
   ProgressBar.SetMinimumChange(0.2*FileNames.size());
   ProgressBar.Create();
   gSystem->ProcessEvents();
   
-  m_CalibrationFileNames = FileNames;
+  //m_CalibrationFileNames = FileNames;
   //m_Isotopes = Isotopes;
   
   //! Map the external group IDs to internal IDs starting at 0 and combined the isotopes of the individial groups
@@ -154,6 +165,8 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   map<unsigned int, MString> NameMap;
   map<unsigned int, vector<MIsotope>> IsotopeMap;
   for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
+    if (FileNames[g] == "") continue;
+    
     map<unsigned int, unsigned int>::iterator I = IDMap.find(GroupIDs[g]);
     if (I == IDMap.end()) {
       IDMap[GroupIDs[g]] = InternalID;
@@ -172,6 +185,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
       NameMap[GroupIDs[g]] += " & " + Name;
     }
   }
+  
   /*
   cout<<"Group ID mapping: "<<endl;
   for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
@@ -217,7 +231,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   */
   
   
-  m_CalibrationFileLoadingProgress.resize(FileNames.size());
+  m_CalibrationFileLoadingProgress.resize(NFiles);
   for (unsigned int c = 0; c < m_CalibrationFileLoadingProgress.size(); ++c) {
     m_CalibrationFileLoadingProgress[c] = 0.0;
   }
@@ -305,6 +319,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
 
   return true;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
