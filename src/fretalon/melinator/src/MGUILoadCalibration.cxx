@@ -147,7 +147,7 @@ void MGUILoadCalibration::Create()
     }
  
     MGUIEEntry* GroupID = new MGUIEEntry(CalibrationFrame, "Group ID: ", false, (int) CalibrationGroupIDs[f], true, 0);
-    GroupID->SetEntryFieldSize(m_FontScaler*35);
+    GroupID->SetEntryFieldSize(m_FontScaler*45);
     CalibrationFrame->AddFrame(GroupID, IsotopeLabelLayout);
     m_GroupIDs.push_back(GroupID);
     
