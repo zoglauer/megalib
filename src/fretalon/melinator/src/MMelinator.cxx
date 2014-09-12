@@ -33,6 +33,8 @@
 using namespace std;
 
 // ROOT libs:
+#include "TObject.h"
+#include "TList.h"
 #include "TBox.h"
 #include "TLine.h"
 #include "TMarker.h"
@@ -80,6 +82,8 @@ MMelinator::MMelinator()
   m_HistogramMax = 1000;
   m_HistogramBinningMode = c_HistogramBinningModeFixedNumberOfBins;
   m_HistogramBinningModeValue = 100;
+  m_HistogramChanged = true;
+  m_HistogramCollection = -1;
 
   m_PeakParametrizationMethod = MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak;
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear;
@@ -115,6 +119,11 @@ void MMelinator::Clear()
   m_Isotopes.clear();
   
   m_SelectedDetectorID = -1;
+  
+  m_HistogramChanged = true;
+  m_HistogramCollection = -1;
+  for (auto H: m_Histograms) delete H;
+  m_Histograms.clear();
 }
 
 
@@ -433,46 +442,9 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
 {
   MReadOutCollection& C = GetCollection(Collection);
   
-  //Canvas.SetBit(kNoContextMenu);
-  Canvas.SetBit(kCannotPick);
-  Canvas.Clear();
-  Canvas.cd();
-  Canvas.SetGridx();
-  Canvas.SetGridy();
-  //Canvas.SetLogy();
-
-  Canvas.SetLeftMargin(0.08);
-  Canvas.SetRightMargin(0.05);
-  Canvas.SetTopMargin(0.05);
-  Canvas.SetBottomMargin(0.12);
-
+  if (m_HistogramCollection != Collection) m_HistogramChanged = true;
+  m_HistogramCollection = Collection;
   
-  //! Create the histograms
-  vector<TH1D*> Histograms;
-  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    MReadOutDataGroup& G = C.GetReadOutDataGroup(g);
-    TH1D* H = CreateSpectrum(G.GetName(), G, m_HistogramMin, m_HistogramMax, m_HistogramBinningMode, m_HistogramBinningModeValue);
-    if (H->GetMaximum() > 0) {
-      Histograms.push_back(H); //C.GetReadOutElement().ToString(), G));
-    } else {
-      Histograms.push_back(0);
-      delete H;
-    }
-  }
-  
-  double Max = 0;
-  double Min = numeric_limits<double>::max();
-  for (unsigned int h = 0; h < Histograms.size(); ++h) {
-    if (Histograms[h] == 0) continue;
-    if (Histograms[h]->GetMaximum() > Max) {
-      Max = Histograms[h]->GetMaximum(); 
-    }
-    if (Histograms[h]->GetMinimum() < Min) {
-      Min = Histograms[h]->GetMinimum(); 
-    }
-  }
-  
-        
   vector<int> Colors;
   Colors.push_back(kGreen+1);
   Colors.push_back(kRed);
@@ -481,30 +453,89 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   Colors.push_back(kViolet);
   Colors.push_back(kCyan);
   Colors.push_back(kMagenta);
-  for (unsigned int h = 0; h < Histograms.size(); ++h) {
-    if (Histograms[h] == 0) continue;
-    Histograms[h]->SetMaximum(1.1*Max);
-    Histograms[h]->SetMinimum(0.9*Min);
-    if (h < Colors.size()) {
-      Histograms[h]->SetLineColor(Colors[h]+1);
-    } else {
-      Histograms[h]->SetLineColor(kBlack);
-    }
-    Histograms[h]->SetLineWidth(2);
-
-    //Histograms[h]->GetXaxis()->SetLabelOffset(0.0);
-    Histograms[h]->GetXaxis()->SetLabelSize(0.05);
-    Histograms[h]->GetXaxis()->SetTitleSize(0.06);
-    Histograms[h]->GetXaxis()->SetTitleOffset(0.9);
-    Histograms[h]->GetXaxis()->CenterTitle(true);
-    Histograms[h]->GetXaxis()->SetMoreLogLabels(true);
+  
+  //Canvas.SetBit(kNoContextMenu);
+  Canvas.SetBit(kCannotPick);
+  Canvas.Clear();
+  Canvas.cd();
+  Canvas.SetGridx();
+  Canvas.SetGridy();
+  //Canvas.SetLogy();
+  
+  Canvas.SetLeftMargin(0.08);
+  Canvas.SetRightMargin(0.05);
+  Canvas.SetTopMargin(0.05);
+  Canvas.SetBottomMargin(0.12);
+  
+  
+  
+  if (m_HistogramChanged == true) {
     
-    //Histograms[h]->GetYaxis()->SetLabelOffset(0.001);
-    Histograms[h]->GetYaxis()->SetLabelSize(0.05);
-    Histograms[h]->GetYaxis()->SetTitleSize(0.06);
-    Histograms[h]->GetYaxis()->SetTitleOffset(0.6);
-    Histograms[h]->GetYaxis()->CenterTitle(true);
+    for (auto H: m_Histograms) delete H;
+    m_Histograms.clear();
+    
+    //! Create the histograms
+    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+      MReadOutDataGroup& G = C.GetReadOutDataGroup(g);
+      TH1D* H = CreateSpectrum(G.GetName(), G, m_HistogramMin, m_HistogramMax, m_HistogramBinningMode, m_HistogramBinningModeValue);
+      if (H->GetMaximum() > 0) {
+        m_Histograms.push_back(H); //C.GetReadOutElement().ToString(), G));
+      } else {
+        m_Histograms.push_back(0);
+        delete H;
+      }
+    }
+    
+    double Max = 0;
+    double Min = numeric_limits<double>::max();
+    for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+      if (m_Histograms[h] == 0) continue;
+      if (m_Histograms[h]->GetMaximum() > Max) {
+        Max = m_Histograms[h]->GetMaximum(); 
+      }
+      for (int b = 1; b <= m_Histograms[h]->GetNbinsX(); ++b) { 
+        if (m_Histograms[h]->GetBinContent(b) > 0 && m_Histograms[h]->GetBinContent(b) < Min) {
+          Min = m_Histograms[h]->GetBinContent(b); 
+        }
+      }
+    }
+    
+    for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+      if (m_Histograms[h] == 0) continue;
+      m_Histograms[h]->SetMaximum(1.1*Max);
+      m_Histograms[h]->SetMinimum(0.9*Min);
+      if (h < Colors.size()) {
+        m_Histograms[h]->SetLineColor(Colors[h]+1);
+      } else {
+        m_Histograms[h]->SetLineColor(kBlack);
+      }
+      m_Histograms[h]->SetLineWidth(2);
+      
+      //m_Histograms[h]->GetXaxis()->SetLabelOffset(0.0);
+      m_Histograms[h]->GetXaxis()->SetLabelSize(0.05);
+      m_Histograms[h]->GetXaxis()->SetTitleSize(0.06);
+      m_Histograms[h]->GetXaxis()->SetTitleOffset(0.9);
+      m_Histograms[h]->GetXaxis()->CenterTitle(true);
+      m_Histograms[h]->GetXaxis()->SetMoreLogLabels(true);
+      
+      //m_Histograms[h]->GetYaxis()->SetLabelOffset(0.001);
+      m_Histograms[h]->GetYaxis()->SetLabelSize(0.05);
+      m_Histograms[h]->GetYaxis()->SetTitleSize(0.06);
+      m_Histograms[h]->GetYaxis()->SetTitleOffset(0.6);
+      m_Histograms[h]->GetYaxis()->CenterTitle(true);
+    }
   }
+  
+  for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+    if (m_Histograms[h] == 0) continue;
+    
+    if (h == 0) {
+      m_Histograms[h]->DrawCopy();
+    } else {
+      m_Histograms[h]->DrawCopy("SAME");
+    }
+  }
+  
   
   vector<int> ColorOffsets;
   ColorOffsets.push_back(-4);
@@ -513,15 +544,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   ColorOffsets.push_back(-10);
   
   unsigned int LineID = 0;
-  for (unsigned int h = 0; h < Histograms.size(); ++h) {
-    if (Histograms[h] == 0) continue;
-
-    if (h == 0) {
-      Histograms[h]->Draw();
-    } else {
-      Histograms[h]->Draw("SAME");
-    }
-
+  for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
     //! Draw the line-fit regions:
     unsigned int CalibrationIndex = m_CalibrationStore.FindCalibration(C.GetReadOutElement());
     if (CalibrationIndex != g_UnsignedIntNotDefined) {
@@ -529,7 +552,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       if (C != nullptr) {
         for (unsigned int p = 0; p < C->GetNumberOfSpectralPoints(h); ++p) {
           MCalibrationSpectralPoint P = C->GetSpectralPoint(h, p);
-          TBox* Box = new TBox(P.GetLowEdge(), 0.0, P.GetHighEdge(), Histograms[h]->GetMaximum());
+          TBox* Box = new TBox(P.GetLowEdge(), 0.0, P.GetHighEdge(), m_Histograms[h]->GetMaximum());
           if (p < ColorOffsets.size()) {
             Box->SetFillColor(Colors[h]+ColorOffsets[p]);
           } else {
@@ -537,9 +560,9 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
           }
           Box->SetFillStyle(3001);
           Box->Draw("SAME");
-          cout<<LineID<<":"<<Line<<endl;
+          //cout<<LineID<<":"<<Line<<endl;
           if (LineID == Line) {
-            TMarker* Marker = new TMarker(P.GetPeak(), 0.9*Histograms[h]->GetMaximum(), 20);
+            TMarker* Marker = new TMarker(P.GetPeak(), 0.9*m_Histograms[h]->GetMaximum(), 20);
             Marker->Draw("SAME");
           }
           ++LineID;
@@ -549,15 +572,15 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       cout<<"No calibration found!"<<endl;
     }
   }
-      
-  double ySizeMin = 0.84 - 0.075*Histograms.size();
+  
+  double ySizeMin = 0.84 - 0.075*m_Histograms.size();
   TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.94, NULL, "brNDC");
   Legend->SetHeader("Isotope list:");
   
   // Final draw so that everything is on top of each other:
-  for (unsigned int h = 0; h < Histograms.size(); ++h) {
-    if (Histograms[h] == 0) continue;
-    Histograms[h]->Draw("SAME");
+  for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+    if (m_Histograms[h] == 0) continue;
+    m_Histograms[h]->DrawCopy("SAME");
     MString Names;
     unsigned int IsotopeIndex = distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), h));
     for (unsigned int i = 0; i < m_Isotopes[IsotopeIndex].size(); ++i) {
@@ -569,18 +592,20 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
         Names += ", ";
       }
     }
-    Legend->AddEntry(Histograms[h], Names);
+    Legend->AddEntry(m_Histograms[h], Names);
   }
   Legend->Draw("SAME");
   
+  
   // Draw the axis of the first histogram again:
-  for (unsigned int h = 0; h < Histograms.size(); ++h) {
-    if (Histograms[h] == 0) continue;
-    Histograms[h]->Draw("AXIS SAME");
+  for (unsigned int h = 0; h < m_Histograms.size(); ++h) {
+    if (m_Histograms[h] == 0) continue;
+    m_Histograms[h]->DrawCopy("AXIS SAME");
     break;
   }
-
+  
   Canvas.Update();
+  m_HistogramChanged = false;
 }
 
 
@@ -832,7 +857,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     double ResidualRange = Max-Min;
     for (unsigned int p = 0; p < Points.size(); ++p) {
       if (Points[p].IsGood() == false) continue;
-      cout<<Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak())<<endl;
+      //cout<<Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak())<<endl;
       Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumEnergy/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
     }
     
@@ -1033,7 +1058,7 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
     
     Cali.SetDiagnosticsMode(false);
     Cali.SetRange(m_HistogramMin, m_HistogramMax);
-    cout<<"Max: "<<m_HistogramMax<<endl;
+    //cout<<"Max: "<<m_HistogramMax<<endl;
   
     if (Cali.Calibrate() == false) {
       cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
@@ -1072,7 +1097,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   Cali.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
   Cali.SetDiagnosticsMode(ShowDiagnostics);
   Cali.SetRange(m_HistogramMin, m_HistogramMax);
-  cout<<"Max: "<<m_HistogramMax<<endl;
+  //cout<<"Max: "<<m_HistogramMax<<endl;
   
   if (Cali.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;

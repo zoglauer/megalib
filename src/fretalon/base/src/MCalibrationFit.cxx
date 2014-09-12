@@ -251,7 +251,13 @@ void MCalibrationFit::SetFitParameters(TH1D& Hist, double Min, double Max)
     m_Fit->SetParName(3+BPM, "Sigma energy loss");
     m_Fit->SetParameter(3+BPM, 5*Hist.GetBinWidth(1));
     m_Fit->SetParLimits(3+BPM, Hist.GetBinWidth(1), Max-Min);
-  }  
+  }
+  
+  for (int b = 1; b <= Hist.GetNbinsX(); ++b) {
+    double Error = sqrt(Hist.GetBinContent(b));
+    if (Error == 0) Error = 1;
+    Hist.SetBinError(b, Error);
+  }
 }
 
 

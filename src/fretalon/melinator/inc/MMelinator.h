@@ -61,8 +61,10 @@ class MMelinator
   
   //! Set the basic properties of the histogram
   void SetHistogramProperties(double Min, double Max, unsigned int HistogramBinningMode, double HistogramBinningModeValue) { 
-    m_HistogramMin = Min; m_HistogramMax = Max; 
-    m_HistogramBinningMode = HistogramBinningMode; m_HistogramBinningModeValue = HistogramBinningModeValue; 
+    if (m_HistogramMin != Min) { m_HistogramMin = Min; m_HistogramChanged = true; }
+    if (m_HistogramMax != Max) { m_HistogramMax = Max; m_HistogramChanged = true; }
+    if (m_HistogramBinningMode != HistogramBinningMode) { m_HistogramBinningMode = HistogramBinningMode; m_HistogramChanged = true; }
+    if (m_HistogramBinningModeValue != HistogramBinningModeValue) { m_HistogramBinningModeValue = HistogramBinningModeValue; m_HistogramChanged = true; }
   }
   
   //! Set the peak parametrization method
@@ -192,6 +194,12 @@ class MMelinator
   unsigned int m_HistogramBinningMode;
   //! Depending on the binning mode, either bins, cts/bin, or prior
   double m_HistogramBinningModeValue;
+  //! True if the histogram settings have changed since the last draw
+  bool m_HistogramChanged;
+  //! The last drawn collection
+  unsigned int m_HistogramCollection;
+  //! The current histograms
+  vector<TH1D*> m_Histograms;
  
   //! The peak parametrization method in during calibration of the lines
   unsigned int m_PeakParametrizationMethod;

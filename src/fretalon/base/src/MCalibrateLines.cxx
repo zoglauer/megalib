@@ -277,9 +277,16 @@ bool MCalibrateLines::Calibrate()
   }
 
   AssignEnergies();
-  
+
   DetermineModels();
 
+  cout<<"Calibration result: "<<endl;
+  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+      cout<<m_Results.GetSpectralPoint(r, p)<<endl;
+    }
+  }
+  
   return true;
 }
 
@@ -679,13 +686,11 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
     }
     TH1D* FitData = FitBinner.GetNormalizedHistogram("Data - fitting resolution", "ADC Values", "counts / ADC value");
     FitBinner.Clear();
-
-  
+    
     // Fit each point
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(ROGID); ++p) {
       MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(ROGID, p);
       
-      cout<<m_PeakParametrizationMethodFittedPeakPeakShapeModel<<endl;
       if (m_PeakParametrizationMethodFittedPeakPeakShapeModel == MCalibrationFit::c_PeakShapeModelGaussian) {
         MCalibrationFitGaussian G;
         G.SetBackgroundModel(m_PeakParametrizationMethodFittedPeakBackgroundModel);
@@ -708,8 +713,14 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
       // Somehow the copy constructor of ROOT's TF1 gives trouble
       MCalibrationFit& Fit = P.GetFit();
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
-      cout<<"Result: "<<(IsGood ? "true" : "false")<<endl;
+      cout<<"Result of fit: "<<(IsGood ? "true" : "false")<<endl;
       P.IsGood(IsGood);
+      if (Fit.GetReducedChisquare() > 2.0) {
+        cout<<"Rejection: Bad chi square: "<<Fit.GetReducedChisquare()<<endl;
+        P.IsGood(false);
+      } else {
+        cout<<"Good chi square: "<<Fit.GetReducedChisquare()<<endl;
+      }
       P.SetPeak(Fit.GetPeak());
       P.SetFWHM(Fit.GetFWHM());
       if (m_DiagnosticsMode == true) {
@@ -828,12 +839,17 @@ bool MCalibrateLines::AssignEnergies()
           }
         }
         
-        QualityFactor += fabs(Energy - m_Isotopes[r][closest_i].GetLineEnergy(closest_l))/m_Isotopes[r][closest_i].GetLineEnergy(closest_l);
+        QualityFactor += 
+          0.001/(m_Isotopes[r][closest_i].GetLineEnergy(closest_l) * m_Isotopes[r][closest_i].GetLineBranchingRatio(closest_l)) + fabs(Energy - m_Isotopes[r][closest_i].GetLineEnergy(closest_l))/m_Isotopes[r][closest_i].GetLineEnergy(closest_l);
         QualityFactorCounter++;
+        //cout<<m_Isotopes[r][closest_i].GetLineEnergy(closest_l)<<": "<<QualityFactor<<endl;
       }
     }
     Matches[m].m_QualityFactor = QualityFactor/QualityFactorCounter;
   }
+    
+    
+    
     
   // Find the best (=smallest) quality factor
   unsigned int BestMatch = 0;

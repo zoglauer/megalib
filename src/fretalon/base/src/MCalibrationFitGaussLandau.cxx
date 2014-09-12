@@ -213,7 +213,6 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 //! Get the FWHM
 double MCalibrationFitGaussLandau::GetFWHM() const
 {

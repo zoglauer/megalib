@@ -100,7 +100,7 @@ bool MModuleTransmitterRealta::Initialize()
   //m_Transmitter->SetVerbosity(3);
   m_Transmitter->Connect();
   
-  return true;
+  return MModule::Initialize();
 }
 
 
@@ -128,7 +128,7 @@ bool MModuleTransmitterRealta::AnalyzeEvent(MReadOutAssembly* Event)
   */
   
   if (Event->IsBad() == true) return true;
-
+  
   static int ID = 0;
   static double Time = 0.0;
   Event->SetTime(Time += 0.01);
@@ -151,6 +151,8 @@ bool MModuleTransmitterRealta::AnalyzeEvent(MReadOutAssembly* Event)
 void MModuleTransmitterRealta::Finalize()
 {
   // Initialize the module
+  
+  MModule::Finalize();
   
   delete m_Transmitter;
   m_Transmitter = 0;

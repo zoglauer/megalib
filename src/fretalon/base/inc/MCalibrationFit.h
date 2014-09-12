@@ -19,13 +19,14 @@
 // Standard libs:
 
 // ROOT libs:
+#include "TF1.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 
 // Forward declarations:
 class TH1D;
-class TF1;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -61,6 +62,9 @@ class MCalibrationFit
   virtual double GetPeak() const { return 0.0; }
   //! Get the FWHM
   virtual double GetFWHM() const { return -1.0; }
+  
+  //! Get the reduced chi square
+  double GetReducedChisquare() const { return IsFitUpToDate() ? m_Fit->GetChisquare()/m_Fit->GetNDF() : 0; }
   
   //! Mimic ROOT Draw functionality
   void Draw(MString Options = "");

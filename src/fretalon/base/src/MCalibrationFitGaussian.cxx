@@ -151,6 +151,8 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
   
   TFitResultPtr FitResult = Histogram.Fit(m_Fit, "RNI S");
   
+  //cout<<"Fit quality: "<<m_Fit->GetChisquare()<<" - "<<m_Fit->GetNDF()<<endl;
+  
   m_IsFitUpToDate = true;
   
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {

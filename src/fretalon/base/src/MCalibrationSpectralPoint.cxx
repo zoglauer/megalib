@@ -89,8 +89,13 @@ MCalibrationFit& MCalibrationSpectralPoint::GetFit()
 MString MCalibrationSpectralPoint::ToString() const
 {
   ostringstream os;
-  os<<"Peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts and ";
-  os<<" corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<m_FWHM<<" keV";
+  if (IsGood() == true) {
+    os<<"Good "; 
+  } else {
+    os<<"Bad "; 
+  }
+  os<<"peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts and ";
+  os<<"corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<m_FWHM<<" keV";
   return os.str();
 }
 

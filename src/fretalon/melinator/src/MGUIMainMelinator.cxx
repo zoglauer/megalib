@@ -1062,6 +1062,7 @@ bool MGUIMelinatorMain::OnXAxis(bool IsLog)
 bool MGUIMelinatorMain::OnYAxis(bool IsLog)
 {
   if (IsLog) {
+    /*
     bool OneBinIsZero = false;
     // Get a list of primitives
     TIter Next(m_SpectrumCanvas->GetCanvas()->GetListOfPrimitives());
@@ -1080,12 +1081,15 @@ bool MGUIMelinatorMain::OnYAxis(bool IsLog)
       if (OneBinIsZero == true) break;
     }
 
+    
     if (OneBinIsZero == true) {
       merr<<"Cannot switch to log since one or more bins are zero or negative"<<show;
       m_HistogramLogY->SetState(kButtonUp);
     } else {    
       m_SpectrumCanvas->GetCanvas()->SetLogy(1);
     }
+    */
+    m_SpectrumCanvas->GetCanvas()->SetLogy(1);
   } else {
     m_SpectrumCanvas->GetCanvas()->SetLogy(0);
   }
