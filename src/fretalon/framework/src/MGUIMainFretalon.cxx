@@ -95,7 +95,7 @@ void MGUIMainFretalon::Create()
   // Create the main window
 
   // We start with a name and an icon...
-  SetWindowName("Nuclearizer");  
+  SetWindowName(m_ProgramName);  
 
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
 
@@ -134,31 +134,32 @@ void MGUIMainFretalon::Create()
 
 
   // Main label
-  //MString TitleIconName("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  MFile::ExpandFileName(m_PicturePath);
-  
-  TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 2, 2, 10, 0);
   bool PictureFound = false;
-  if (MFile::Exists(m_PicturePath) == true) {
-    const TGPicture* TitlePicture = fClient->GetPicture(m_PicturePath, FontScaler*300, FontScaler*300/5);
-    if (TitlePicture == 0) {
-      mout<<"Can't find picture \""<<m_PicturePath<<"\"! Aborting!"<<endl;
-    } else {
-      TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
-      AddFrame(TitleIcon, TitleIconLayout);
-      PictureFound = true;
+  if (m_PicturePath != "") {
+    MFile::ExpandFileName(m_PicturePath);
+  
+    TGLayoutHints* TitleIconLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsCenterX, 0, 0, 10*FontScaler, 0);
+    if (MFile::Exists(m_PicturePath) == true) {
+      const TGPicture* TitlePicture = fClient->GetPicture(m_PicturePath, FontScaler*300, FontScaler*300/5);
+      if (TitlePicture == 0) {
+        mout<<"Can't find picture \""<<m_PicturePath<<"\"! Aborting!"<<endl;
+      } else {
+        TGIcon* TitleIcon = new TGIcon(this, TitlePicture, TitlePicture->GetWidth()+2, TitlePicture->GetHeight()+2);
+        AddFrame(TitleIcon, TitleIconLayout);
+        PictureFound = true;
+      }
     }
   }
   
   if (PictureFound == false) {
-    mout<<"Can't find picture "<<m_PicturePath<<"! Using text!"<<endl;
-    const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-24-*-*-*-*-*-iso8859-1");
+    //mout<<"Can't find picture "<<m_PicturePath<<"! Using text!"<<endl;
+    const TGFont* lFont = gClient->GetFont("-*-helvetica-bold-r-*-*-48-*-*-*-*-*-iso8859-1");
     if (!lFont) lFont = gClient->GetResourcePool()->GetDefaultFont();
     FontStruct_t LargeFont = lFont->GetFontStruct();
 
     TGLabel* MainLabel = new TGLabel(this, m_ProgramName);
     MainLabel->SetTextFont(LargeFont);
-    TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 30, 0);
+    TGLayoutHints* MainLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 20*FontScaler, 0);
     AddFrame(MainLabel, MainLabelLayout);
   }
 
@@ -168,34 +169,39 @@ void MGUIMainFretalon::Create()
 
   TGLabel* SubTitle = new TGLabel(this, m_SubTitle);
   SubTitle->SetTextFont(ItalicFont);
-  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, FontScaler*12);
+  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 0, 12*FontScaler);
   AddFrame(SubTitle, SubTitleLayout);
 
   
   
   
   
-  TGLayoutHints* SectionLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 10, 10, 0, 10);
+
   
 
   // Modules
-  m_ModuleFrame = new TGGroupFrame(this, "Choose the module sequence for your detector setup");
+  TGLabel* ChooseLabel = new TGLabel(this, "Choose the module sequence for your detector setup:");
+  TGLayoutHints* ChooseLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20*FontScaler, 20*FontScaler, 20*FontScaler, 5*FontScaler);
+  AddFrame(ChooseLabel, ChooseLayout);
+  
+  m_ModuleFrame = new TGVerticalFrame(this);
+  TGLayoutHints* SectionLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 40*FontScaler, 20*FontScaler, 0, 10*FontScaler);
   AddFrame(m_ModuleFrame, SectionLayout);
 
-  m_ModuleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 3, 3);
+  m_ModuleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 3*FontScaler, 3*FontScaler);
   UpdateModules();
 
 
   // Start & Exit buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, 10, 10);
+  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 20*FontScaler, 20*FontScaler, 20*FontScaler, 10*FontScaler);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself
   TGTextButton*	StartButton = new TGTextButton(ButtonFrame, "Start", c_Start); 
   StartButton->Associate(this);
-  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40, 0, 0, 0);
+  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40*FontScaler, 0, 0, 0);
   ButtonFrame->AddFrame(StartButton, StartButtonLayout);
   
   TGTextButton* ViewButton = new TGTextButton(ButtonFrame, "     View     ", c_View); 
@@ -205,7 +211,7 @@ void MGUIMainFretalon::Create()
   
   TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
   StopButton->Associate(this);
-  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20, 0, 0, 0);
+  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20*FontScaler, 0, 0, 0);
   ButtonFrame->AddFrame(StopButton, StopButtonLayout);
   
   // Give this element the default size of its content:
@@ -225,9 +231,12 @@ void MGUIMainFretalon::Create()
 void MGUIMainFretalon::UpdateModules()
 {
   // Remove all existing modules:
+
+  m_ModuleFrame->RemoveAll();
+  m_ModuleFrame->Resize();
   for (unsigned int m = m_Modules.size()-1; m < m_Modules.size(); --m) {
-    m_ModuleFrame->RemoveFrame(m_Modules[m]);
-    m_Modules[m]->UnmapWindow();
+    //m_ModuleFrame->RemoveFrame(m_Modules[m]);
+    //m_Modules[m]->UnmapWindow();
     delete m_Modules[m];
   }
   m_Modules.clear();
@@ -246,7 +255,9 @@ void MGUIMainFretalon::UpdateModules()
     m_Modules.push_back(GuiModule);
   }
 
-  Resize(GetDefaultWidth(), GetDefaultHeight()); 
+  //Resize(GetDefaultWidth(), GetDefaultHeight()); 
+  m_ModuleFrame->Resize();
+  Resize();
 
   MapSubwindows();
   MapWindow();  
@@ -526,7 +537,6 @@ bool MGUIMainFretalon::OnLoadConfiguration()
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Supervisor->Load(MString(Info.fFilename));
-    m_FileSelectorGeometry->SetFileName(m_Supervisor->GetGeometryFileName());
 
     UpdateModules();
   } 

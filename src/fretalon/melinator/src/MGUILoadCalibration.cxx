@@ -165,7 +165,7 @@ void MGUILoadCalibration::Create()
   
   AddOKCancelButtons();
 
-  PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
+  PositionWindow(GetDefaultWidth(), GetDefaultHeight(), true);
 
   // and bring it to the screen.
   MapSubwindows();

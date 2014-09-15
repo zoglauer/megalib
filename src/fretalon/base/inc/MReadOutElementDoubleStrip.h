@@ -70,7 +70,7 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
   //! Parse the data from the tokenizer 
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
   //! Return the data as parsable string
-  virtual MString ToParsableString(bool WithDescriptor = false); 
+  virtual MString ToParsableString(bool WithDescriptor = false) const; 
 
   //! Dump a string
   virtual MString ToString() const;

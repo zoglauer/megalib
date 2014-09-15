@@ -79,7 +79,6 @@ MCalibrationModel& MCalibrationModel::operator= (const MCalibrationModel& Calibr
 {
   delete m_Fit;
   if (CalibrationModel.m_Fit != 0) {
-    cout<<"Cloning fit..."<<endl;
     m_Fit = new TF1(*CalibrationModel.m_Fit);
     for (int i = 0; i < CalibrationModel.m_Fit->GetNpar(); ++i) {
       m_Fit->SetParameter(i, CalibrationModel.m_Fit->GetParameter(i));
@@ -114,7 +113,7 @@ void MCalibrationModel::Draw(MString Options)
   if (m_Fit != 0 && m_IsFitUpToDate == true) {
     m_Fit->DrawCopy(Options);
   } else {
-    merr<<"Fit cannot be drawn since it is not up to date"<<endl; 
+    if (g_Verbosity >= c_Error) cout<<"Error: Fit cannot be drawn since it is not up to date"<<endl; 
   }
 }
 
@@ -125,6 +124,11 @@ void MCalibrationModel::Draw(MString Options)
 //! Fit the given histogram in the given range - return the quality of the fit
 double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
 {
+  if (Points.size() < GetNParameters()) {
+    if (g_Verbosity >= c_Error) cout<<"Error: We have more fit parameters ("<<GetNParameters()<<") than data points ("<<Points.size()<<")!"<<endl;
+    return -1;
+  }
+  
   // Create a TGraph and fit it
   TGraph* Graph = new TGraph(Points.size());
   
@@ -135,7 +139,10 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   delete m_Fit;
   m_Fit = new TF1("", this, 0, Points.back().GetPeak(), GetNParameters());
   InitializeFitParameters();
-  TFitResultPtr FitResult = Graph->Fit(m_Fit, "RNI S");
+  
+  MString Options = "RNI S"; 
+  if (g_Verbosity < c_Chatty) Options += " Q";
+  TFitResultPtr FitResult = Graph->Fit(m_Fit, Options);
   
   m_IsFitUpToDate = true;
   

@@ -121,6 +121,18 @@ MString MReadOutDataInterfaceTiming::ToString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Dump the content into a parsable string
+MString MReadOutDataInterfaceTiming::ToParsableString() const 
+{
+  ostringstream os;
+  os<<m_Timing;
+  return os.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Append the context as text 
 ostream& operator<<(ostream& os, const MReadOutDataInterfaceTiming& R)
 {

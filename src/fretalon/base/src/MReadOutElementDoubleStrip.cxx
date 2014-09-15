@@ -180,7 +180,7 @@ bool MReadOutElementDoubleStrip::Parse(const MTokenizer& T, unsigned int StartEl
 
 
 //! Return the data as parsable string
-MString MReadOutElementDoubleStrip::ToParsableString(bool WithDescriptor) 
+MString MReadOutElementDoubleStrip::ToParsableString(bool WithDescriptor) const
 {
   MString Return;
   if (WithDescriptor == true) {

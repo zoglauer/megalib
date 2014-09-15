@@ -140,6 +140,18 @@ MString MReadOutDataInterfaceADCValue::ToString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Dump the content into a string
+MString MReadOutDataInterfaceADCValue::ToParsableString() const
+{
+  ostringstream os;
+  os<<m_ADCValue;
+  return os.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Append the context as text 
 ostream& operator<<(ostream& os, const MReadOutDataInterfaceADCValue& R)
 {

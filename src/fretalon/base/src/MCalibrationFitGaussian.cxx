@@ -114,15 +114,15 @@ double MCalibrationFitGaussian::operator() (double* X, double* P)
     int Ps = GetBackgroundFitParameters();
     if (P[Ps+3] != 0) {
       double Arg = ((X[0] - P[Ps+2])/P[Ps+3]);
-      //Return += P[Ps+4]/sqrt(2*TMath::Pi())/P[Ps+3] * TMath::Exp(-0.5*Arg*Arg);
-      Return += P[Ps+4] * TMath::Exp(-0.5*Arg*Arg);
+      //Return += P[Ps+4]/sqrt(2*TMath::Pi())/P[Ps+3] * TMath::Exp(-0.5*Arg*Arg); // Integral is 1
+      Return += P[Ps+4] * TMath::Exp(-0.5*Arg*Arg); // Height is 1
     }
   } else {
     int Ps = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
     if (P[Ps+1] != 0) {
       double Arg = ((X[0] - P[Ps])/P[Ps+1]);
-      //Return += P[Ps+2]/sqrt(2*TMath::Pi())/P[Ps+1] * TMath::Exp(-0.5*Arg*Arg);
-      Return += P[Ps+2] * TMath::Exp(-0.5*Arg*Arg);
+      //Return += P[Ps+2]/sqrt(2*TMath::Pi())/P[Ps+1] * TMath::Exp(-0.5*Arg*Arg); // Integral is 1
+      Return += P[Ps+2] * TMath::Exp(-0.5*Arg*Arg); // Height is 1
     }
   }
   
@@ -149,7 +149,9 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
   
   SetFitParameters(Histogram, Min, Max);
   
-  TFitResultPtr FitResult = Histogram.Fit(m_Fit, "RNI S");
+  MString Options = "RNI S"; 
+  if (g_Verbosity < c_Chatty) Options += " Q";
+  TFitResultPtr FitResult = Histogram.Fit(m_Fit, Options);
   
   //cout<<"Fit quality: "<<m_Fit->GetChisquare()<<" - "<<m_Fit->GetNDF()<<endl;
   
@@ -158,10 +160,23 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
     m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
+    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters()+4);
   } else {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
     m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+1);
+    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+2);
   }
+    
+  m_AverageDeviation = 0;
+  for (int b = 1; b <= Histogram.GetNbinsX(); ++b) {
+    if (Histogram.GetBinCenter(b) < Min || Histogram.GetBinCenter(b) > Max) continue;
+    double FitValue = m_Fit->Eval(Histogram.GetBinCenter(b));
+    if (FitValue != 0) {
+      m_AverageDeviation += (Histogram.GetBinContent(b) - FitValue)/FitValue;
+    }
+  }
+  m_AverageDeviation = fabs(m_AverageDeviation/Histogram.GetNbinsX());
+    
     
   return FitResult->IsValid();
 }

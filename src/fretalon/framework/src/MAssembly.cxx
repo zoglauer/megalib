@@ -52,6 +52,9 @@ using namespace std;
 #include "MGUIMainFretalon.h"
 #include "MReadOutAssembly.h"
 #include "MModule.h"
+#include "MModuleLoaderRoa.h"
+#include "MModuleTransmitterRealta.h"
+#include "MModuleSaver.h"
 
 
 
@@ -78,18 +81,17 @@ MAssembly::MAssembly()
   
   m_Supervisor->SetConfigurationFileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg"));
   
-  /*
-  m_Supervisor->AddAvailableModule(new MNCTModuleSimulationLoader());
-  m_Supervisor->AddAvailableModule(new MNCTModuleMeasurementLoaderROA());
+  m_Supervisor->AddAvailableModule(new MModuleLoaderRoa());  
+  m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
+  m_Supervisor->AddAvailableModule(new MModuleSaver());  
 
   m_Supervisor->Load();
   
-  m_Supervisor->SetUIProgramName("Nuclearizer");
-  m_Supervisor->SetUIPicturePath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
-  m_Supervisor->SetUISubTitle("A measurement and simulation calibrator for COSI and GRIPS");
+  m_Supervisor->SetUIProgramName("Fretalon");
+  //m_Supervisor->SetUIPicturePath("$(NUCLEARIZER)/resource/icons/Nuclearizer.xpm");
+  m_Supervisor->SetUISubTitle("A calibration framework");
   m_Supervisor->SetUILeadAuthor("Andreas Zoglauer");
-  m_Supervisor->SetUICoAuthors("Alan Chiu, Alex Lowell, Andreas Zoglauer,\nAres Hernandez, Carolyn Kierans, Clio Sleator,\nDaniel Perez-Becker, Eric Bellm, Jau-Shian Liang,\nMark Bandstra");
-  */
+  m_Supervisor->SetUICoAuthors("and others");
 }
 
 

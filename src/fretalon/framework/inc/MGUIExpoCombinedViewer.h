@@ -97,8 +97,6 @@ class MGUIExpoCombinedViewer : public MGUIDialog
   TGTab* m_MainTab;
   //! ... and its layout
   TGLayoutHints* m_MainTabLayout;
-  //! The observation time info:
-  TGLabel* m_ObservationTime;
 
   //! The update timer
   MTimer m_Timer;

@@ -54,6 +54,8 @@ class MReadOutDataInterfaceTiming
   
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;  
+  //! Return the data as parsable string
+  virtual MString ToParsableString() const; 
   //! Parse the data from the tokenizer 
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
 

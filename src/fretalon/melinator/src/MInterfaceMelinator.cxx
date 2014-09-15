@@ -101,9 +101,11 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   Usage<<"             Load the last used calibration files and parametrize all peaks"<<endl;
   Usage<<"      -a:"<<endl;
   Usage<<"             Load the last used calibration files, parametrize all peaks, save the result, and exit"<<endl;
-  Usage<<"      -s:"<<endl;
+  Usage<<"      -s <filename>.ecal:"<<endl;
   Usage<<"             Save file name"<<endl;
-  Usage<<"      -d --detector:"<<endl;
+  Usage<<"      -d --detector <int>:"<<endl;
+  Usage<<"             Only look at this detector"<<endl;
+  Usage<<"      -v --verbosity <0..5>:"<<endl;
   Usage<<"             Only look at this detector"<<endl;
   Usage<<"      -c --configuration <filename>.cfg:"<<endl;
   Usage<<"             Use this file as configuration file."<<endl;
@@ -129,12 +131,23 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     
     // Single argument
-    if (Option == "-c" || Option == "--configuration") {
+    if (Option == "-c" || Option == "--configuration" ||
+        Option == "-s" || Option == "--save" ||
+        Option == "-d" || Option == "--detector" ||
+        Option == "-v" || Option == "--verbosity") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
         cout<<Usage.str()<<endl;
         return false;
       }
+    }
+  }
+  
+  // Now parse all very low level options
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--verbosity" || Option == "-v") {
+      g_Verbosity = atoi(argv[++i]);
     }
   }
   

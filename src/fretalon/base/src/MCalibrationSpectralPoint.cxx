@@ -94,8 +94,10 @@ MString MCalibrationSpectralPoint::ToString() const
   } else {
     os<<"Bad "; 
   }
-  os<<"peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts and ";
-  os<<"corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<m_FWHM<<" keV";
+  os<<"peak at "<<m_Peak<<" ["<<m_LowEdge<<", "<<m_HighEdge<<"] with ~"<<m_Counts<<" counts";
+  if (IsGood() == true) {
+    os<<", corresponding to an energy of "<<m_Energy<<" keV with a FWHM of "<<GetEnergyFWHM()<<" keV";
+  }
   return os.str();
 }
 

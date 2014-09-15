@@ -179,7 +179,7 @@ bool MReadOutElementStrip::Parse(const MTokenizer& T, unsigned int StartElement)
 
 
 //! Return the data as parsable string
-MString MReadOutElementStrip::ToParsableString(bool WithDescriptor) 
+MString MReadOutElementStrip::ToParsableString(bool WithDescriptor) const
 {
   MString Return;
   if (WithDescriptor == true) {

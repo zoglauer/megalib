@@ -107,7 +107,7 @@ void MGUIMelinatorMain::Create()
   double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
   // Give it a default size
-  Resize(FontScaler*1200, FontScaler*700);
+  Resize(FontScaler*1200, 250 + FontScaler*550);
   
   // We start with a name and an icon...
   SetWindowName("Melinator");  
@@ -117,15 +117,17 @@ void MGUIMelinatorMain::Create()
   SetIconPixmap(Path);
 
   // Some standard layouts:
-  TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 2, 3);
-  TGLayoutHints* TopExpandXLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 2, 2, 2, 3);
+  TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 3);
+  TGLayoutHints* TopExpandXLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 0, FontScaler*3, 3);
   TGLayoutHints* BottomExpandXLayout = new TGLayoutHints(kLHintsBottom | kLHintsExpandX, 10, 2, 20, 17);
   //TGLayoutHints* TopExpandXYLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 3);
-  TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 5, 0);
+  TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, FontScaler*3, 0);
+  TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsRight, FontScaler*10, 0, 0, 0);
+  TGLayoutHints* ButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, FontScaler*3, 3);
   
-  TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, 2, 3);
+  //TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 2, 2, 2, 3);
 
-  TGLayoutHints* GroupLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 2, 2, 5, 5);
+  TGLayoutHints* GroupLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 5, 5);
   
   // We have three main columns - the control column on the left, data column in the center, and selection on the right 
   
@@ -222,12 +224,15 @@ void MGUIMelinatorMain::Create()
   HistogramGroup->AddFrame(ADCFrame, TopLeftLayout);
   
   TGLabel* ADCLabelMin = new TGLabel(ADCFrame, "Range:");
+  ADCLabelMin->ChangeOptions(kFixedWidth);
+  ADCLabelMin->SetTextJustify(kTextLeft);
+  ADCLabelMin->SetWidth(FontScaler*50);  
   ADCFrame->AddFrame(ADCLabelMin, TopLeftTextLayout);
   
   m_HistogramRangeMin = new TGNumberEntry(ADCFrame, m_Settings->GetHistogramMin());
   ADCFrame->AddFrame(m_HistogramRangeMin, TopLeftLayout);
   
-  TGLabel* ADCLabelMax = new TGLabel(ADCFrame, "  to ");
+  TGLabel* ADCLabelMax = new TGLabel(ADCFrame, "  to  ");
   ADCFrame->AddFrame(ADCLabelMax, TopLeftTextLayout);
   
   m_HistogramRangeMax = new TGNumberEntry(ADCFrame, m_Settings->GetHistogramMax());
@@ -238,6 +243,9 @@ void MGUIMelinatorMain::Create()
   HistogramGroup->AddFrame(BinningModeFrame, TopLeftLayout);
   
   TGLabel* BinsLabel = new TGLabel(BinningModeFrame, "Binning: ");
+  BinsLabel->ChangeOptions(kFixedWidth);
+  BinsLabel->SetTextJustify(kTextLeft);
+  BinsLabel->SetWidth(FontScaler*50);  
   BinningModeFrame->AddFrame(BinsLabel, TopLeftTextLayout);
   
   m_HistogramBinningMode = new TGComboBox(BinningModeFrame, c_HistogramBinningMode);
@@ -256,7 +264,7 @@ void MGUIMelinatorMain::Create()
   HistogramGroup->AddFrame(BinningValueFrame, TopLeftLayout);
  
   TGLabel* HistogramBinningModeValueIntroLabel = new TGLabel(BinningValueFrame, "with:");
-  TGLayoutHints* HistogramBinningModeValueIntroLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, FontScaler*53, 2, 5, 0);
+  TGLayoutHints* HistogramBinningModeValueIntroLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, FontScaler*52, FontScaler*2, FontScaler*3, 0);
   BinningValueFrame->AddFrame(HistogramBinningModeValueIntroLabel, HistogramBinningModeValueIntroLabelLayout);
   
   m_HistogramBinningModeValue = new TGNumberEntry(BinningValueFrame, m_Settings->GetHistogramBinningModeValue());
@@ -273,6 +281,9 @@ void MGUIMelinatorMain::Create()
  
   
   TGLabel* LogLabel = new TGLabel(LogFrame, "Log: ");
+  LogLabel->ChangeOptions(kFixedWidth);
+  LogLabel->SetTextJustify(kTextLeft);
+  LogLabel->SetWidth(FontScaler*50);  
   LogFrame->AddFrame(LogLabel, TopLeftTextLayout);
   
   m_HistogramLogX = new TGCheckButton(LogFrame, "x-axis", c_HistogramLogX);
@@ -301,6 +312,9 @@ void MGUIMelinatorMain::Create()
   PeakGroup->AddFrame(PeakBinningModeFrame, TopLeftLayout);
 
   TGLabel* PeakBinningLabel = new TGLabel(PeakBinningModeFrame, "Binning: ");
+  PeakBinningLabel->ChangeOptions(kFixedWidth);
+  PeakBinningLabel->SetTextJustify(kTextLeft);
+  PeakBinningLabel->SetWidth(FontScaler*50);  
   PeakBinningModeFrame->AddFrame(PeakBinningLabel, TopLeftTextLayout);
   
   m_PeakHistogramBinningMode = new TGComboBox(PeakBinningModeFrame, c_PeakHistogramBinningMode);
@@ -310,16 +324,15 @@ void MGUIMelinatorMain::Create()
   m_PeakHistogramBinningMode->Select(m_Settings->GetPeakHistogramBinningMode());
   m_PeakHistogramBinningMode->Associate(this);
   m_PeakHistogramBinningMode->SetHeight(FontScaler*24);
-  m_PeakHistogramBinningMode->SetWidth(FontScaler*136);
+  //m_PeakHistogramBinningMode->SetWidth(FontScaler*136);
   m_PeakHistogramBinningMode->GetListBox()->SetHeight(m_PeakHistogramBinningMode->GetListBox()->GetNumberOfEntries()*m_PeakHistogramBinningMode->GetListBox()->GetItemVsize());
   PeakBinningModeFrame->AddFrame(m_PeakHistogramBinningMode, TopLeftLayout);
-  
   
   TGHorizontalFrame* PeakBinningValueFrame = new TGHorizontalFrame(PeakGroup);
   PeakGroup->AddFrame(PeakBinningValueFrame, TopLeftLayout);
  
-  TGLabel* PeakHistogramBinningModeValueIntroLabel = new TGLabel(PeakBinningValueFrame, "with:");
-  TGLayoutHints* PeakHistogramBinningModeValueIntroLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, FontScaler*53, 2, 5, 0);
+  TGLabel* PeakHistogramBinningModeValueIntroLabel = new TGLabel(PeakBinningValueFrame, "with:  ");
+  TGLayoutHints* PeakHistogramBinningModeValueIntroLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, FontScaler*52, 2, 5, 0);
   PeakBinningValueFrame->AddFrame(PeakHistogramBinningModeValueIntroLabel, PeakHistogramBinningModeValueIntroLabelLayout);
   
   m_PeakHistogramBinningModeValue = new TGNumberEntry(PeakBinningValueFrame, m_Settings->GetPeakHistogramBinningModeValue());
@@ -363,6 +376,9 @@ void MGUIMelinatorMain::Create()
   FitGroup->AddFrame(PeakParametrizationMethodFrame, TopLeftLayout);
 
   TGLabel* PeakParametrizationMethodLabel = new TGLabel(PeakParametrizationMethodFrame, "Method: ");
+  PeakParametrizationMethodLabel->ChangeOptions(kFixedWidth);
+  PeakParametrizationMethodLabel->SetTextJustify(kTextLeft);
+  PeakParametrizationMethodLabel->SetWidth(FontScaler*70);
   PeakParametrizationMethodFrame->AddFrame(PeakParametrizationMethodLabel, TopLeftTextLayout);
   
   m_PeakParametrizationMethod = new TGComboBox(PeakParametrizationMethodFrame, c_PeakParametrizationMethod);
@@ -372,9 +388,9 @@ void MGUIMelinatorMain::Create()
   m_PeakParametrizationMethod->Select(m_Settings->GetPeakParametrizationMethod());
   m_PeakParametrizationMethod->Associate(this);
   m_PeakParametrizationMethod->SetHeight(FontScaler*24);
-  m_PeakParametrizationMethod->SetWidth(FontScaler*136);
+  //m_PeakParametrizationMethod->SetWidth(FontScaler*136);
   m_PeakParametrizationMethod->GetListBox()->SetHeight(m_PeakParametrizationMethod->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethod->GetListBox()->GetItemVsize());
-  PeakParametrizationMethodFrame->AddFrame(m_PeakParametrizationMethod, TopLeftLayout);
+  PeakParametrizationMethodFrame->AddFrame(m_PeakParametrizationMethod, TopRightLayout);
   
   m_PeakParametrizationOptions = new TGCompositeFrame(FitGroup);
   FitGroup->AddFrame(m_PeakParametrizationOptions, TopLeftLayout);
@@ -390,6 +406,9 @@ void MGUIMelinatorMain::Create()
   CalibrationModel->AddFrame(CalibrationModelDeterminationFrame, TopLeftLayout);
 
   TGLabel* CalibrationModelDeterminationLabel = new TGLabel(CalibrationModelDeterminationFrame, "Method: ");
+  CalibrationModelDeterminationLabel->ChangeOptions(kFixedWidth);
+  CalibrationModelDeterminationLabel->SetTextJustify(kTextLeft);
+  CalibrationModelDeterminationLabel->SetWidth(FontScaler*70);
   CalibrationModelDeterminationFrame->AddFrame(CalibrationModelDeterminationLabel, TopLeftTextLayout);
   
   m_CalibrationModelDeterminationMethod = new TGComboBox(CalibrationModelDeterminationFrame, c_CalibrationModelDeterminationMethod);
@@ -399,9 +418,9 @@ void MGUIMelinatorMain::Create()
   m_CalibrationModelDeterminationMethod->Select(m_Settings->GetCalibrationModelDeterminationMethod());
   m_CalibrationModelDeterminationMethod->Associate(this);
   m_CalibrationModelDeterminationMethod->SetHeight(FontScaler*24);
-  m_CalibrationModelDeterminationMethod->SetWidth(FontScaler*136);
+  //m_CalibrationModelDeterminationMethod->SetWidth(FontScaler*136);
   m_CalibrationModelDeterminationMethod->GetListBox()->SetHeight(m_CalibrationModelDeterminationMethod->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethod->GetListBox()->GetItemVsize());
-  CalibrationModelDeterminationFrame->AddFrame(m_CalibrationModelDeterminationMethod, TopLeftLayout);
+  CalibrationModelDeterminationFrame->AddFrame(m_CalibrationModelDeterminationMethod, TopRightLayout);
   
   m_CalibrationModelDeterminationOptions = new TGCompositeFrame(CalibrationModel);
   CalibrationModel->AddFrame(m_CalibrationModelDeterminationOptions, TopLeftLayout);
@@ -446,23 +465,27 @@ void MGUIMelinatorMain::Create()
   m_ForwardButton->Associate(this);
   m_ForwardButton->SetWidth(100);
   m_ForwardButton->SetEnabled(false);
-  CanvasControl->AddFrame(m_ForwardButton, TopRightLayout);
+  m_ForwardButton->SetMargins(FontScaler*5, FontScaler*5);
+  CanvasControl->AddFrame(m_ForwardButton, ButtonLayout);
 
   m_BackButton = new TGTextButton(CanvasControl, "Back", c_Back); 
   m_BackButton->Associate(this);
   m_BackButton->SetMinWidth(100);
   m_BackButton->SetEnabled(false);
-  CanvasControl->AddFrame(m_BackButton, TopRightLayout);
+  m_BackButton->SetMargins(FontScaler*5, FontScaler*5);
+  CanvasControl->AddFrame(m_BackButton, ButtonLayout);
 
   TGTextButton* FitButton = new TGTextButton(CanvasControl, "Parametrize", c_Fit); 
   FitButton->Associate(this);
   FitButton->SetWidth(100);
-  CanvasControl->AddFrame(FitButton, TopRightLayout);
+  FitButton->SetMargins(FontScaler*5, FontScaler*5);
+  CanvasControl->AddFrame(FitButton, ButtonLayout);
 
   TGTextButton* FitWithDiagnosticsButton = new TGTextButton(CanvasControl, "Parametrize with diagnostics", c_FitWithDiagnostics); 
   FitWithDiagnosticsButton->Associate(this);
   FitWithDiagnosticsButton->SetWidth(100);
-  CanvasControl->AddFrame(FitWithDiagnosticsButton, TopRightLayout);
+  FitWithDiagnosticsButton->SetMargins(FontScaler*5, FontScaler*5);
+  CanvasControl->AddFrame(FitWithDiagnosticsButton, ButtonLayout);
 
   
   m_SpectrumCanvas = new TRootEmbeddedCanvas("SpectrumCanvas", MainDataView, 100, 100);
@@ -490,13 +513,15 @@ void MGUIMelinatorMain::Create()
   m_FitForwardButton->Associate(this);
   m_FitForwardButton->SetWidth(100);
   m_FitForwardButton->SetEnabled(false);
-  FitControl->AddFrame(m_FitForwardButton, TopRightLayout);
+  m_FitForwardButton->SetMargins(FontScaler*5, FontScaler*5);
+  FitControl->AddFrame(m_FitForwardButton, ButtonLayout);
 
   m_FitBackButton = new TGTextButton(FitControl, "Back", c_PreviousFit); 
   m_FitBackButton->Associate(this);
   m_FitBackButton->SetMinWidth(100);
   m_FitBackButton->SetEnabled(false);
-  FitControl->AddFrame(m_FitBackButton, TopRightLayout);
+  m_FitBackButton->SetMargins(FontScaler*5, FontScaler*5);
+  FitControl->AddFrame(m_FitBackButton, ButtonLayout);
 
   m_FitCanvas = new TRootEmbeddedCanvas("FitCanvas", FitView, 100, 100);
   FitView->AddFrame(m_FitCanvas, CanvasLayout);
@@ -513,7 +538,8 @@ void MGUIMelinatorMain::Create()
   ResultsView->AddFrame(ResultsControl, ResultsControlLayout);
   
   m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration model: none");
-  ResultsControl->AddFrame(m_ResultsHistogramLabel, TopLeftTextLayout);
+  TGLayoutHints* ResultsLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
+  ResultsControl->AddFrame(m_ResultsHistogramLabel, ResultsLabelLayout);
 
   m_ResultsCanvas = new TRootEmbeddedCanvas("ResultsCanvas", ResultsView, 100, 100);
   ResultsView->AddFrame(m_ResultsCanvas, CanvasLayout);
@@ -860,11 +886,11 @@ bool MGUIMelinatorMain::OnExit()
 bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
 {  
   if (ID == MMelinator::c_HistogramBinningModeFixedNumberOfBins) {
-    m_HistogramBinningModeValueLabel->SetText("bins");
+    m_HistogramBinningModeValueLabel->SetText("  bins");
   } else if (ID == MMelinator::c_HistogramBinningModeFixedCountsPerBin) {
-    m_HistogramBinningModeValueLabel->SetText("cts/bin");
+    m_HistogramBinningModeValueLabel->SetText("  cts/bin");
   } else if (ID == MMelinator::c_HistogramBinningModeBayesianBlocks) {
-    m_HistogramBinningModeValueLabel->SetText("as prior");
+    m_HistogramBinningModeValueLabel->SetText("  as prior");
   } else {
     m_HistogramBinningModeValueLabel->SetText("ERROR");
   }
@@ -891,15 +917,19 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
     m_PeakParametrizationOptions->RemoveAll();
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
+    unsigned int Height = 0;
     
-    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 2, 2, 2, 0);  
-    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 0, 0, 5, 0);  
-    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 20, 0, 2, 3);
+    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);  
+    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, FontScaler*3, 0);  
+    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsRight, FontScaler*10, 0, 2, 3);
 
     TGHorizontalFrame* BackgroundModelFrame = new TGHorizontalFrame(m_PeakParametrizationOptions);
     m_PeakParametrizationOptions->AddFrame(BackgroundModelFrame, TopLeftLayout);
 
     TGLabel* BackgroundModelLabel = new TGLabel(BackgroundModelFrame, "Background: ");
+    BackgroundModelLabel->ChangeOptions(kFixedWidth);
+    BackgroundModelLabel->SetTextJustify(kTextLeft);
+    BackgroundModelLabel->SetWidth(FontScaler*70);
     BackgroundModelFrame->AddFrame(BackgroundModelLabel, TopLeftTextLayout);
     
     m_PeakParametrizationMethodFittingBackgroundModel = new TGComboBox(BackgroundModelFrame, c_PeakParametrizationMethodFittingBackgroundModel);
@@ -909,16 +939,18 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
     m_PeakParametrizationMethodFittingBackgroundModel->Select(m_Settings->GetPeakParametrizationMethodFittingBackgroundModel());
     m_PeakParametrizationMethodFittingBackgroundModel->Associate(this);
     m_PeakParametrizationMethodFittingBackgroundModel->SetHeight(FontScaler*24);
-    m_PeakParametrizationMethodFittingBackgroundModel->SetWidth(FontScaler*100);
-    unsigned int Height = m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetItemVsize();
+    //m_PeakParametrizationMethodFittingBackgroundModel->SetWidth(FontScaler*100);
+    Height = m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->GetItemVsize();
     m_PeakParametrizationMethodFittingBackgroundModel->GetListBox()->SetHeight(Height);
     BackgroundModelFrame->AddFrame(m_PeakParametrizationMethodFittingBackgroundModel, TopRightLayout);
-
 
     TGHorizontalFrame* EnergyLossModelFrame = new TGHorizontalFrame(m_PeakParametrizationOptions);
     m_PeakParametrizationOptions->AddFrame(EnergyLossModelFrame, TopLeftLayout);
 
     TGLabel* EnergyLossModelLabel = new TGLabel(EnergyLossModelFrame, "Energy-loss: ");
+    EnergyLossModelLabel->ChangeOptions(kFixedWidth);
+    EnergyLossModelLabel->SetWidth(FontScaler*70);
+    EnergyLossModelLabel->SetTextJustify(kTextLeft);
     EnergyLossModelFrame->AddFrame(EnergyLossModelLabel, TopLeftTextLayout);
 
     m_PeakParametrizationMethodFittingEnergyLossModel = new TGComboBox(EnergyLossModelFrame, c_PeakParametrizationMethodFittingEnergyLossModel);
@@ -927,7 +959,7 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
     m_PeakParametrizationMethodFittingEnergyLossModel->Select(m_Settings->GetPeakParametrizationMethodFittingEnergyLossModel());
     m_PeakParametrizationMethodFittingEnergyLossModel->Associate(this);
     m_PeakParametrizationMethodFittingEnergyLossModel->SetHeight(FontScaler*24);
-    m_PeakParametrizationMethodFittingEnergyLossModel->SetWidth(FontScaler*100);
+    //m_PeakParametrizationMethodFittingEnergyLossModel->SetWidth(FontScaler*100);
     Height = m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->GetItemVsize();
     m_PeakParametrizationMethodFittingEnergyLossModel->GetListBox()->SetHeight(Height);
     EnergyLossModelFrame->AddFrame(m_PeakParametrizationMethodFittingEnergyLossModel, TopRightLayout);
@@ -937,6 +969,9 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
     m_PeakParametrizationOptions->AddFrame(PeakShapeModelFrame, TopLeftLayout);
 
     TGLabel* PeakShapeModelLabel = new TGLabel(PeakShapeModelFrame, "Peak-shape: ");
+    PeakShapeModelLabel->ChangeOptions(kFixedWidth);
+    PeakShapeModelLabel->SetWidth(FontScaler*70);
+    PeakShapeModelLabel->SetTextJustify(kTextLeft);
     PeakShapeModelFrame->AddFrame(PeakShapeModelLabel, TopLeftTextLayout);
 
     m_PeakParametrizationMethodFittingPeakShapeModel = new TGComboBox(PeakShapeModelFrame, c_PeakParametrizationMethodFittingPeakShapeModel);
@@ -946,7 +981,7 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
     m_PeakParametrizationMethodFittingPeakShapeModel->Associate(this);
     m_PeakParametrizationMethodFittingPeakShapeModel->SetHeight(FontScaler*24);
     m_PeakParametrizationMethodFittingPeakShapeModel->SetWidth(FontScaler*100);
-    m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->SetMinWidth(1000);
+    //m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->SetMinWidth(1000);
     Height = m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->GetNumberOfEntries()*m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->GetItemVsize();
     m_PeakParametrizationMethodFittingPeakShapeModel->GetListBox()->SetHeight(Height);
     PeakShapeModelFrame->AddFrame(m_PeakParametrizationMethodFittingPeakShapeModel, TopRightLayout);
@@ -975,14 +1010,17 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
     
-    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 2, 2, 2, 0);  
-    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsLeft, 0, 0, 5, 0);  
-    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 20, 0, 2, 3);
+    TGLayoutHints* TopLeftLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 0, 0, 0);  
+    TGLayoutHints* TopLeftTextLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, FontScaler*3, 0);  
+    TGLayoutHints* TopRightLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsRight, FontScaler*10, 0, 2, 3);
 
     TGHorizontalFrame* FittingModelFrame = new TGHorizontalFrame(m_CalibrationModelDeterminationOptions);
     m_CalibrationModelDeterminationOptions->AddFrame(FittingModelFrame, TopLeftLayout);
 
     TGLabel* FittingModelLabel = new TGLabel(FittingModelFrame, "Model: ");
+    FittingModelLabel->ChangeOptions(kFixedWidth);
+    FittingModelLabel->SetWidth(FontScaler*70);
+    FittingModelLabel->SetTextJustify(kTextLeft);
     FittingModelFrame->AddFrame(FittingModelLabel, TopLeftTextLayout);
     
     m_CalibrationModelDeterminationMethodFittingModel = new TGComboBox(FittingModelFrame, c_CalibrationModelDeterminationMethodFittingModel);
@@ -997,7 +1035,7 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     m_CalibrationModelDeterminationMethodFittingModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingModel());
     m_CalibrationModelDeterminationMethodFittingModel->Associate(this);
     m_CalibrationModelDeterminationMethodFittingModel->SetHeight(FontScaler*24);
-    m_CalibrationModelDeterminationMethodFittingModel->SetWidth(FontScaler*130);
+    //m_CalibrationModelDeterminationMethodFittingModel->SetWidth(FontScaler*130);
     unsigned int Height = m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetNumberOfEntries()*m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->GetItemVsize();
     m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->SetHeight(Height);
     FittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingModel, TopRightLayout);
@@ -1021,13 +1059,13 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
 bool MGUIMelinatorMain::OnSwitchPeakHistogramBinningMode(unsigned int ID)
 {  
   if (ID == MMelinator::c_HistogramBinningModeFixedNumberOfBins) {
-    m_PeakHistogramBinningModeValueLabel->SetText("bins");
+    m_PeakHistogramBinningModeValueLabel->SetText("  bins");
   } else if (ID == MMelinator::c_HistogramBinningModeFixedCountsPerBin) {
-    m_PeakHistogramBinningModeValueLabel->SetText("cts/bin");
+    m_PeakHistogramBinningModeValueLabel->SetText("  cts/bin");
   } else if (ID == MMelinator::c_HistogramBinningModeBayesianBlocks) {
-    m_PeakHistogramBinningModeValueLabel->SetText("as prior");
+    m_PeakHistogramBinningModeValueLabel->SetText("  as prior");
   } else {
-    m_PeakHistogramBinningModeValueLabel->SetText("ERROR");
+    m_PeakHistogramBinningModeValueLabel->SetText("  ERROR");
   }
 
   MapSubwindows();

@@ -105,18 +105,26 @@ MCalibrationFitGaussLandau* MCalibrationFitGaussLandau::Clone() const
 //! The function for ROOT fitting
 double MCalibrationFitGaussLandau::operator() (double* X, double* P)
 { 
+  // We do have (not case c_EnergyLossModelGaussianConvolvedDeltaFunction):
+  // 0 .. Ps-1: Background + Energy loss
+  // Ps+1: Mean landau & gauss
+  // Ps+1: sigma gauss
+  // Ps+2: amplitude gauss
+  // Ps+3: sigma landau
+  // Ps+4: amplitude landau
+  
   double Return = MCalibrationFitGaussian::operator()(X, P);
 
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     int Ps = GetBackgroundFitParameters();
     //if (4*P[Ps+5] <  P[Ps+3] || P[Ps+5] >  4*P[Ps+3]) return 0.001;
     //Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+5]), P[Ps+5]);
-    Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+3]), P[Ps+3]);
+    Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+3]), P[Ps+3], true);
   } else {
     int Ps = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
     //if (4*P[Ps+1] <  P[Ps+3] || P[Ps+1] >  4*P[Ps+3]) return 0.001;
     //Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+3]), P[Ps+3]);
-    Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+1]), P[Ps+1]);
+    Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+1]), P[Ps+1], true);
   }
   
   return Return;
@@ -141,17 +149,43 @@ bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
   
   SetFitParameters(Histogram, Min, Max);
   
-  TFitResultPtr FitResult = Histogram.Fit(m_Fit, "RN S");
+  MString Options = "RNIM S"; 
+  if (g_Verbosity < c_Chatty) Options += " Q";
+  TFitResultPtr FitResult = Histogram.Fit(m_Fit, Options);
   
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
   } else {
     m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
+    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
   }
-  
+
+  if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
+    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
+    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters()+4);
+    m_LandauSigma = m_GaussianSigma;
+    m_LandauHeight = m_Fit->GetParameter(GetBackgroundFitParameters()+6);
+  } else {
+    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
+    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+1);
+    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+2);
+    m_LandauSigma = m_GaussianSigma;
+    m_LandauHeight = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+4);
+  }
+
   m_IsFitUpToDate = true;
-  
-  m_Fit->Print();
+    
+  m_AverageDeviation = 0;
+  for (int b = 1; b <= Histogram.GetNbinsX(); ++b) {
+    if (Histogram.GetBinCenter(b) < Min || Histogram.GetBinCenter(b) > Max) continue;
+    double FitValue = m_Fit->Eval(Histogram.GetBinCenter(b));
+    if (FitValue != 0) {
+      //cout<<Histogram.GetBinContent(b)<<":"<<FitValue<<endl;
+      m_AverageDeviation += (Histogram.GetBinContent(b) - FitValue)/FitValue;
+    }
+  }
+  m_AverageDeviation = fabs(m_AverageDeviation/Histogram.GetNbinsX());
   
   return FitResult->IsValid();
 }
@@ -181,9 +215,9 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
     if (m_LandauHeight != g_DoubleNotDefined) {
       m_Fit->SetParameter(6+BPM, m_LandauHeight);
     } else {
-      m_Fit->SetParameter(6+BPM, Hist.GetMaximum());
+      m_Fit->SetParameter(6+BPM, 0.25*Hist.GetMaximum());
     }
-    m_Fit->SetParLimits(6+BPM, 0, 3*Hist.GetMaximum());
+    m_Fit->SetParLimits(6+BPM, 0, 5*Hist.GetMaximum());
 
     
   } else {
@@ -203,7 +237,7 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
     if (m_LandauHeight != g_DoubleNotDefined) {
       m_Fit->SetParameter(4+BPM, m_LandauHeight);
     } else {
-      m_Fit->SetParameter(4+BPM, Hist.GetMaximum());
+      m_Fit->SetParameter(4+BPM, 0.25*Hist.GetMaximum());
     }
     m_Fit->SetParLimits(4+BPM, 0, 3*Hist.GetMaximum());
   }
@@ -215,23 +249,25 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
 
 //! Get the FWHM
 double MCalibrationFitGaussLandau::GetFWHM() const
-{
-  cout<<"Gauss-Landau FWHM never tested!"<<endl;
-  
+{  
   // A Gauss-Landau lambda without background and energy loss 
   auto GL = [&](double x) {
     double Return = 0.0;
     if (m_GaussianSigma != 0) {
       double Arg = ((x - m_GaussianMean)/m_GaussianSigma);
-      Return += m_GaussianHeight/sqrt(2*TMath::Pi())/m_GaussianSigma * TMath::Exp(-0.5*Arg*Arg);
+      //Return += m_GaussianHeight/sqrt(2*TMath::Pi())/m_GaussianSigma * TMath::Exp(-0.5*Arg*Arg);
+      Return += m_GaussianHeight * TMath::Exp(-0.5*Arg*Arg);
     }
-    Return += m_LandauHeight*TMath::Landau(-x + m_GaussianMean, 0, m_LandauSigma);
+    Return += m_LandauHeight*TMath::Landau(-x, -(m_GaussianMean - 0.22278298*m_GaussianSigma), m_LandauSigma, true);
     return Return;
   };
   
-  double HalfPeak = 2*GL(m_GaussianMean);
+  double HalfPeak = 0.5*GL(m_GaussianMean);
+  //cout<<"Peak: "<<GL(m_GaussianMean)<<" at "<<m_GaussianMean<<" adu"<<endl;
   
   // Find the low half value:
+  
+  // (a) Just in case the first guess for half is not enough go even farther left
   double Min = -1.0; // We have energies... I hope
   while (GL(Min) > HalfPeak) {
     Min *= 2;
@@ -242,18 +278,23 @@ double MCalibrationFitGaussLandau::GetFWHM() const
   }
   double Max = m_GaussianMean;
   
-  double Epsilon = Max - Min;
+  // (b) Test half point and choose a new max or min, depending where the half height is 
+  double Epsilon = GL(Max) - GL(Min);
   while (Epsilon > 0.001) {
     if (GL(0.5*(Min+Max)) > HalfPeak) {
       Max = 0.5*(Min+Max);
     } else {
       Min = 0.5*(Min+Max);
     }
-    Epsilon = Max - Min;
+    Epsilon = GL(Max) - GL(Min);
   }
   double Left = 0.5*(Min+Max);
-  
+  //cout<<"left: "<<GL(Left)<<" at "<<Left<<" adu"<<endl;
+
   // Find the high half value:
+    
+    
+  // (a) Just in case the first guess for half is not enough go even farther right
   Min = m_GaussianMean;
   Max = 10*m_GaussianMean; // We have energies... I hope
   while (GL(Max) > HalfPeak) {
@@ -264,16 +305,20 @@ double MCalibrationFitGaussLandau::GetFWHM() const
     }
   }
   
-  Epsilon = Max - Min;
+  // (b) Test half point and choose a new max or min, depending where the half height is 
+  Epsilon = GL(Min) - GL(Max);
   while (Epsilon > 0.001) {
     if (GL(0.5*(Min+Max)) > HalfPeak) {
-      Max = 0.5*(Min+Max);
-    } else {
       Min = 0.5*(Min+Max);
+    } else {
+      Max = 0.5*(Min+Max);
     }
-    Epsilon = Max - Min;
+    Epsilon = GL(Min) - GL(Max);
   }
   double Right = 0.5*(Min+Max);
+  //cout<<"Right: "<<GL(Right)<<" at "<<Right<<" adu"<<endl;
+  
+  //cout<<"Gaus-Landau FWHM: "<<Right-Left<<endl;
   
   return Right-Left;
 }

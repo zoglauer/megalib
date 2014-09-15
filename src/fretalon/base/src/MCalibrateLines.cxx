@@ -280,10 +280,12 @@ bool MCalibrateLines::Calibrate()
 
   DetermineModels();
 
-  cout<<"Calibration result: "<<endl;
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      cout<<m_Results.GetSpectralPoint(r, p)<<endl;
+  if (g_Verbosity >= c_Info) {
+    cout<<"Calibration result: "<<endl;
+    for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+      for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+        cout<<m_Results.GetSpectralPoint(r, p)<<endl;
+      }
     }
   }
   
@@ -297,7 +299,7 @@ bool MCalibrateLines::Calibrate()
 //! Find the peaks in this read-out data group
 bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 {
-  cout<<"Finding peaks for ROG ID: "<<ROGID<<endl;
+  if (g_Verbosity >= c_Info) cout<<"Finding peaks for ROG ID: "<<ROGID<<endl;
   
   int Prior = 8;
   
@@ -352,7 +354,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       // We have found a zero passage, i.e. a peak
       // Let's handle it
       
-      cout<<endl<<"Start"<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<endl<<"Start"<<endl;
       
       // ignore the first peak as background rollover or noise
       if (Start == true) {
@@ -370,6 +372,8 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       // Create a peak
       MCalibrationSpectralPoint P;
       P.SetPeak(FirstDerivation->GetBinLowEdge(b+1));
+      
+      if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - investigating..."<<endl;
       
       // Find edges:
       int MaximumBin = b;
@@ -401,7 +405,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       
       
       // Minimum counts check
-      cout<<"Maximum/Minimum bin: "<<MaximumBin<<":"<<MinimumBin<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Maximum/Minimum bin: "<<MaximumBin<<":"<<MinimumBin<<endl;
       double CountsPerBinBefore = Data->GetBinContent(MaximumBin);
       int StartBin = MaximumBin;
       if (MaximumBin-1 >= 1) {
@@ -428,17 +432,17 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
         Width += Data->GetBinWidth(bb);
       }
       CountsPerBin -= 0.5*(CountsPerBinBefore + CountsPerBinAfter);
-      cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Height etc. : "<<CountsPerBinBefore<<":"<<Height<<":"<<CountsPerBinAfter<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<FirstDerivation->GetBinLowEdge(b+1)<<": Height etc. : "<<CountsPerBinBefore<<":"<<Height<<":"<<CountsPerBinAfter<<endl;
       Height -= 0.5*(CountsPerBinBefore + CountsPerBinAfter);
       
       if (CountsPerBin*Width < MinimumPeakCounts) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
         continue;
       }
       P.SetCounts(CountsPerBin*Width);
         
       if (Height < MinimumHeight) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Peak height to small: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Peak height to small: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;
         continue;
       }
         
@@ -449,7 +453,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       if (!(Volatility > 0.015 && 
           ((Maximum > +0.0075 && Minimum < -0.0025) ||
            (Minimum < -0.0075 && Maximum > +0.0025)))) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Derivative peak not strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Derivative peak not strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;
         continue;
       }
 
@@ -485,13 +489,13 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       }
       P.SetPeak(Total/TotalCounts); // ???
 
-      cout<<"Peak: "<<P.GetPeak()<<endl;
-      cout<<"Peak bin: "<<PeakBin<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Peak: "<<P.GetPeak()<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Peak bin: "<<PeakBin<<endl;
       
       // If this is the first peak it must be at least 3 bins away from the first bin and from any bin with less than 1 counts:
       if (FirstPeak == true) {
         if (PeakBin < FirstPeakMinimumBinID) {
-          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start"<<endl;
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start"<<endl;
           continue;          
         }
       }
@@ -512,7 +516,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
         }
       }
       P.SetHighEdge(Data->GetBinCenter(RightLimitBin));
-      cout<<"Right limit bin: "<<RightLimitBin<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Right limit bin: "<<RightLimitBin<<endl;
       //cout<<"Right edge until next increase: "<<P.GetHighEdge()<<endl;
       
       // Let's crawl down on the left side and symmetrize if possible
@@ -527,13 +531,13 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
         }
       }
       P.SetLowEdge(Data->GetBinCenter(LeftLimitBin));
-      cout<<"Left limit bin: "<<LeftLimitBin<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Left limit bin: "<<LeftLimitBin<<endl;
       
       // Compton edge check:
       // If the left peak-to-valley is less than 50% (=ComptonEdgeThreshold) of the right peak-to-valley 
       // then we probably have a Compton edge or another bad peak
       if (Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin) < ComptonEdgeThreshold * (Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin))) {
-        cout<<FirstDerivation->GetBinLowEdge(b+1)<<": The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is less than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): We might have a Compton edge or other bad peak"<<endl;
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - rejectd: The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is less than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): We might have a Compton edge or other bad peak"<<endl;
         continue;
       }
       
@@ -542,20 +546,20 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       double Integral = Data->Integral(LeftLimitBin, RightLimitBin, "width");
       double Excess = Integral - Average*(Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - Data->GetBinLowEdge(LeftLimitBin));
       
-      cout<<"Avg: "<<Average<<" Int: "<<Integral<<" Width: "<<Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - Data->GetBinLowEdge(LeftLimitBin)<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"Avg: "<<Average<<" Int: "<<Integral<<" Width: "<<Data->GetXaxis()->GetBinUpEdge(RightLimitBin) - Data->GetBinLowEdge(LeftLimitBin)<<endl;
       
       if (FirstPeak == true) {
         if (Excess < FirstPeakMinimumPeakCounts) {
-          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts for a first peak: "<<Excess<<endl;
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts for a first peak: "<<Excess<<endl;
           continue;
         }         
       } else {
         if (Excess < MinimumPeakCounts) {
-          cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts: "<<Excess<<endl;
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts: "<<Excess<<endl;
           continue;
         } 
       }
-      cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Estimated peak counts: "<<Excess<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Estimated peak counts: "<<Excess<<endl;
       
       
       
@@ -580,13 +584,13 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       int RightHalfBin = PeakBin+1;
       double RightHalf = 0.5 *(Data->GetBinContent(PeakBin) + Data->GetBinContent(RightLimitBin));
       for (int bb = PeakBin+1; bb <= Data->GetNbinsX(); ++bb) {
-        cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<RightHalf<<endl;
+        if (g_Verbosity >= c_Chatty) cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<RightHalf<<endl;
         if (Data->GetBinContent(bb) <= RightHalf) {
           double Range = Data->GetBinCenter(bb) - P.GetPeak();
           RightHalfBin = bb;
-          cout<<"Range right: "<<Range<<" vs. "<<P.GetHighEdge()<<":"<<P.GetPeak() + 4*Range<<endl;
+          if (g_Verbosity >= c_Chatty) cout<<"Range right: "<<Range<<" vs. "<<P.GetHighEdge()<<":"<<P.GetPeak() + 4*Range<<endl;
           if (P.GetHighEdge() > P.GetPeak() + RangeBeyondPeak*Range) {
-            cout<<"New high edge from FWHM determination: "<<P.GetPeak() + 4*Range<<endl;
+            if (g_Verbosity >= c_Chatty) cout<<"New high edge from FWHM determination: "<<P.GetPeak() + 4*Range<<endl;
             P.SetHighEdge(P.GetPeak() + RangeBeyondPeak*Range);
           }
           break;
@@ -595,20 +599,20 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       int LeftHalfBin = PeakBin;
       double LeftHalf = 0.5 *(Data->GetBinContent(PeakBin) + Data->GetBinContent(LeftLimitBin));
       for (int bb = PeakBin; bb > 0; --bb) {
-        cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<LeftHalf<<endl;
+        if (g_Verbosity >= c_Chatty) cout<<"Check: "<<bb<<" - "<<Data->GetBinContent(bb)<<" vs. "<<LeftHalf<<endl;
         if (Data->GetBinContent(bb) <= LeftHalf) {
           double Range = P.GetPeak() - Data->GetBinCenter(bb);
           LeftHalfBin = bb;
-          cout<<"Range left: "<<Range<<" vs. "<<P.GetLowEdge()<<":"<<P.GetPeak() - 4*Range<<endl;
+          if (g_Verbosity >= c_Chatty) cout<<"Range left: "<<Range<<" vs. "<<P.GetLowEdge()<<":"<<P.GetPeak() - 4*Range<<endl;
           if (P.GetLowEdge() < P.GetPeak() - RangeBeyondPeak*Range) {
-            cout<<"New high edge from FWHM determination: "<<P.GetPeak() - 4*Range<<endl;
+            if (g_Verbosity >= c_Chatty) cout<<"New high edge from FWHM determination: "<<P.GetPeak() - 4*Range<<endl;
             P.SetLowEdge(P.GetPeak() - RangeBeyondPeak*Range);
           }
           break;
         }
       }
       P.SetFWHM(Data->GetBinLowEdge(RightHalfBin) - Data->GetXaxis()->GetBinUpEdge(LeftHalfBin));
-      cout<<"FWHM: "<<P.GetFWHM()<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<"FWHM: "<<P.GetFWHM()<<endl;
       
       
       
@@ -710,16 +714,22 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
         continue;
       }
     
-      // Somehow the copy constructor of ROOT's TF1 gives trouble
+      // Do the fit and do some average deviation checks
+      double ChiSquareLimit = 2.0;
+      double AverageDeviationLimit = 0.05;
       MCalibrationFit& Fit = P.GetFit();
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
-      cout<<"Result of fit: "<<(IsGood ? "true" : "false")<<endl;
-      P.IsGood(IsGood);
-      if (Fit.GetReducedChisquare() > 2.0) {
-        cout<<"Rejection: Bad chi square: "<<Fit.GetReducedChisquare()<<endl;
+      if (IsGood == false) {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Negative fit result --- ignoring in favour of chi-square and deviation test"<<endl;
+        //P.IsGood(false);
+        //continue;
+      }
+      if (Fit.GetReducedChisquare() > ChiSquareLimit && Fit.GetAverageDeviation() > AverageDeviationLimit) {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Bad chisquare "<<Fit.GetReducedChisquare()<<" (with limit "<<ChiSquareLimit<<") and average deviation between fit and data ("<<100*Fit.GetAverageDeviation()<<"% vs. a limit of "<<100*AverageDeviationLimit<<"%)"<<endl;
         P.IsGood(false);
+        continue;
       } else {
-        cout<<"Good chi square: "<<Fit.GetReducedChisquare()<<endl;
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Good chi square: "<<Fit.GetReducedChisquare()<<" (compare to an average deviation of "<<100*Fit.GetAverageDeviation()<<"%)"<<endl;
       }
       P.SetPeak(Fit.GetPeak());
       P.SetFWHM(Fit.GetFWHM());
@@ -737,7 +747,7 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
   // Another sanity check:
   // Calculate the median FWHM
   // If one peak is at least 3x the average, then exclude it
-  cout<<"Sanity check: median FWHM"<<endl;
+  if (g_Verbosity >= c_Chatty) cout<<"Sanity check: median FWHM"<<endl;
   double MedianExclusionFactor = 2.5;
   vector<double> FWHMes;
   for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
@@ -752,7 +762,7 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
     size_t midIndex = FWHMes.size()/2;
     nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
     double Median = FWHMes[midIndex]; 
-    cout<<"Median FWHM: "<<Median<<endl;
+    if (g_Verbosity >= c_Chatty) cout<<"Median FWHM: "<<Median<<endl;
     
     for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
       for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
@@ -760,14 +770,14 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
         MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
         if (P.GetFWHM() > MedianExclusionFactor*Median) {
           P.IsGood(false);
-          cout<<"Bad peak - FWHM test: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
         } else {
-          cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+          if (g_Verbosity >= c_Chatty) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
         }
       }
     }
   } else {
-    cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
+    if (g_Verbosity >= c_Chatty) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
   
   return true;
@@ -897,12 +907,12 @@ bool MCalibrateLines::AssignEnergies()
         if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
           if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
-            cout<<"Bad: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+            if (g_Verbosity >= c_Info) cout<<"Bad: "<<m_Results.GetSpectralPoint(r, p)<<endl;
             //FoundNotGood = true;
             break;
           } else {
             m_Results.GetSpectralPoint(r, q).IsGood(false);  
-            cout<<"Bad: "<<m_Results.GetSpectralPoint(r, q)<<endl;
+            if (g_Verbosity >= c_Info) cout<<"Bad: "<<m_Results.GetSpectralPoint(r, q)<<endl;
             //FoundNotGood = true;
           }
         }
@@ -940,9 +950,9 @@ bool MCalibrateLines::DetermineModels()
   
   if (m_CalibrationModelDeterminationMethod == c_CalibrationModelStepWise) {
     // we are already done since this is used during peak finding 
-    cout<<"Doing calibration model steps"<<endl;
+    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model steps"<<endl;
   } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelFit) {
-    cout<<"Doing calibration model fit"<<endl;
+    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model fit"<<endl;
     
     // Set up the model:
     MCalibrationModel* Model = 0;
@@ -967,14 +977,19 @@ bool MCalibrateLines::DetermineModels()
       return false;
     }
     
+    if (Points.size() < Model->GetNParameters()) {
+      if (g_Verbosity >= c_Warning) cout<<"Warning: We have more fit parameters ("<<Model->GetNParameters()<<") than data points ("<<Points.size()<<")!"<<endl;
+      return true;
+    }
+    
     double Quality = Model->Fit(Points);
-    cout<<"Fit quality: "<<Quality<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<Quality<<endl;
     
     m_Results.SetModel(*Model);
     
     //delete Model;
   } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
-    cout<<"Find best (fitted) calibration model"<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Find best (fitted) calibration model"<<endl;
     
     // Assemble the models
     vector<MCalibrationModel*> Models;
@@ -990,14 +1005,14 @@ bool MCalibrateLines::DetermineModels()
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {
       Results.push_back(Models[m]->Fit(Points));
-      cout<<"Model "<<Models[m]->GetName()<<": "<<Results.back()<<endl;
+      if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": "<<Results.back()<<endl;
     }
     
     vector<double>::iterator MinI;
     MinI = min_element(Results.begin(), Results.end());
     
     int Min = int(MinI -  Results.begin());
-    cout<<"Best model: "<<Models[Min]->GetName()<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<endl;
     
     m_Results.SetModel(*Models[Min]);
     

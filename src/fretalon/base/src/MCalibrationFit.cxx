@@ -41,7 +41,7 @@ ClassImp(MCalibrationFit)
 
 
 //! Default constructor
-MCalibrationFit::MCalibrationFit() : m_Fit(0), m_IsFitUpToDate(false), m_BackgroundModel(0), m_EnergyLossModel(0)
+MCalibrationFit::MCalibrationFit() : m_Fit(0), m_IsFitUpToDate(false), m_AverageDeviation(1), m_BackgroundModel(0), m_EnergyLossModel(0)
 {
 }
 
@@ -85,6 +85,7 @@ MCalibrationFit& MCalibrationFit::operator= (const MCalibrationFit& CalibrationF
   }
     
   m_IsFitUpToDate = CalibrationFit.m_IsFitUpToDate;
+  m_AverageDeviation = CalibrationFit.m_AverageDeviation;
   m_BackgroundModel = CalibrationFit.m_BackgroundModel;
   m_EnergyLossModel = CalibrationFit.m_EnergyLossModel;
 

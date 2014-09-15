@@ -155,6 +155,21 @@ MString MReadOutDataADCValueWithTiming::ToString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Dump the content into a parsable string
+MString MReadOutDataADCValueWithTiming::ToParsableString(bool WithDescriptor) const 
+{
+  ostringstream os;
+  if (WithDescriptor == true) {
+    os<<GetType()<<" ";
+  }
+  os<<MReadOutDataInterfaceADCValue::ToParsableString()<<" "<<MReadOutDataInterfaceTiming::ToParsableString();
+  return os.str();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Append the context as text 
 ostream& operator<<(ostream& os, const MReadOutDataADCValueWithTiming& R)
 {

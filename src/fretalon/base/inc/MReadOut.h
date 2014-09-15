@@ -58,6 +58,8 @@ class MReadOut
    //! Return a const reference to the read-out data
   const MReadOutData& GetReadOutData() const { return *m_ROD; }
   
+  //! Return the data as parsable string
+  virtual MString ToParsableString(bool WithDescriptor = false); 
   
   //! Dump a string
   virtual MString ToString() const;

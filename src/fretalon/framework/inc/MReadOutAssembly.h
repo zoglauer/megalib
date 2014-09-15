@@ -17,12 +17,15 @@
 
 
 // Standard libs:
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MTime.h"
+#include "MReadOut.h"
 
 // Forward declarations:
 
@@ -69,13 +72,22 @@ class MReadOutAssembly
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
 
+  //! Return the number of read outs
+  unsigned int GetNReadOuts() const { return m_ReadOuts.size(); }
+  //! Return read out i - throws an exception of the index is not found
+  MReadOut& GetReadOut(unsigned int i);
+  //! Add a read out
+  void AddReadOut(MReadOut& ReadOut);
+  //! Remove a read out - does do nothing if the index is not found
+  void RemoveReadOut(unsigned int i);
+
   //! Parse some content from a line
   bool Parse(MString& Line, int Version = 1);
   
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
   //! Stream the content in MEGAlib's roa format 
-  void StreamRoa(ostream& S);
+  void StreamRoa(ostream& S, bool WithDescriptor = true);
 
 
   // protected methods:
@@ -103,7 +115,8 @@ class MReadOutAssembly
   //! True if event has been filtered out
   bool m_FilteredOut;
 
-  
+  //! The read-outs
+  vector<MReadOut*> m_ReadOuts;
   
 #ifdef ___CINT___
  public:

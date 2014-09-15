@@ -32,9 +32,6 @@
 #include "MSupervisor.h"
 #include "MGUIEModule.h"
 
-// Forward declarations:
-class MGUIEFileSelector;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -118,19 +115,12 @@ private:
   MString m_CoAuthors;
   
   //! The frame for the modules
-  TGGroupFrame* m_ModuleFrame;
+  TGVerticalFrame* m_ModuleFrame;
   //! The layout of an module
   TGLayoutHints* m_ModuleLayout;
   
   //! List of the modules
   vector<MGUIEModule*> m_Modules;
-
-  //! GUI element storing the current load file name
-  MGUIEFileSelector* m_FileSelectorLoad;
-  //! GUI element storing the current save file name
-  MGUIEFileSelector* m_FileSelectorSave;
-  //! GUI element storing the current geometry file name
-  MGUIEFileSelector* m_FileSelectorGeometry;
 
 
   // IDs:

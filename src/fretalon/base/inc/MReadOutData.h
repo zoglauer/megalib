@@ -58,6 +58,8 @@ class MReadOutData
   //! Parse the data from the tokenizer 
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement) { return false; }
   
+  //! Return the data as parsable string
+  virtual MString ToParsableString(bool WithDescriptor = false) const { return ""; }
   //! Dump a string
   virtual MString ToString() const { return "Read-out data"; };
   

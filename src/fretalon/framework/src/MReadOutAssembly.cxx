@@ -33,13 +33,13 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
-
+#include "MExceptions.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MReadOutAssembly)
+ClassImp(MReadOutAssembly)*m_ReadOuts[i]
 #endif
 
 
@@ -78,6 +78,48 @@ void MReadOutAssembly::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MReadOut& MReadOutAssembly::GetReadOut(unsigned int i) 
+{ 
+  //! Return read out i
+
+  if (i < m_ReadOuts.size()) {
+    return *m_ReadOuts[i];
+  }
+  
+  throw MExceptionIndexOutOfBounds(0, m_ReadOuts.size(), i);
+
+  return *m_ReadOuts.at(0); // never reached so should never crash...
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void MReadOutAssembly::AddReadOut(MReadOut& ReadOut)
+{
+  //! Add a read out
+  
+  return m_ReadOuts.push_back(new MReadOut(ReadOut));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MReadOutAssembly::RemoveReadOut(unsigned int i)
+{
+  //! Remove a read out
+  
+  if (i < m_ReadOuts.size()) {
+    vector<MReadOut*>::iterator it;
+    it = m_ReadOuts.begin()+i;
+    m_ReadOuts.erase(it);
+    delete (*it);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MReadOutAssembly::StreamEvta(ostream& S)
 {
   //! Stream the content in MEGAlib's evta format 
@@ -91,13 +133,17 @@ void MReadOutAssembly::StreamEvta(ostream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MReadOutAssembly::StreamRoa(ostream& S)
+void MReadOutAssembly::StreamRoa(ostream& S, bool WithDescriptor)
 {
-  //! Stream the content in MEGAlib's evta format 
+  //! Stream the content in MEGAlib's roa format 
 
   S<<"SE"<<endl;
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
+  
+  for (auto RO: m_ReadOuts) {
+    S<<RO->ToParsableString(WithDescriptor)<<endl;
+  }
 }
   
 

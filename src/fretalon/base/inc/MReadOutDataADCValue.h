@@ -59,6 +59,8 @@ class MReadOutDataADCValue : public MReadOutData, public MReadOutDataInterfaceAD
   
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;  
+  //! Return the data as parsable string
+  virtual MString ToParsableString(bool WithDescriptor = false) const; 
   //! Parse the data from the tokenizer 
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
   

@@ -66,6 +66,9 @@ class MCalibrationFit
   //! Get the reduced chi square
   double GetReducedChisquare() const { return IsFitUpToDate() ? m_Fit->GetChisquare()/m_Fit->GetNDF() : 0; }
   
+  //! Get the average deviation between fir and histogram in percent
+  double GetAverageDeviation() const { return m_AverageDeviation; }
+  
   //! Mimic ROOT Draw functionality
   void Draw(MString Options = "");
   
@@ -126,6 +129,9 @@ class MCalibrationFit
   //! True if the fit has been performed and no parameters have been chnaged
   bool m_IsFitUpToDate;
 
+  //! The average percentual deviation between histogram and fit -- good values are around 1
+  double m_AverageDeviation;
+  
   //! The used background model. One of c_BackgroundModelXXX
   unsigned int m_BackgroundModel;
 

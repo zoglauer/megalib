@@ -49,7 +49,7 @@ clean:
 #
 
 
-$(PRG): $(CPP_MAIN) $(SOBJ)
+$(PRG): $(CXX_MAIN) $(SOBJ)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	@$(LD) $(CXXFLAGS) -Iinc $(LDFLAGS) $(CXX_MAIN) $(SOBJ) $(FRETALONLIBS) $(GLIBS) $(LIBS) -o $(PRG)
 

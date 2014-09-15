@@ -207,12 +207,6 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   }
   MFile::Rewind();
   
-  // Take care of redundant formats:
-  if (m_Detector == "GRIPS2013") {
-    ReadOutElementFormat = "doublesidedstrip";
-    ReadOutDataFormat = "datawithtiming";
-  }
-  
   // Create the read-out elements and data to fill
   if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
     cout<<"No read-out element of type "<<ReadOutElementFormat<<" is registered!"<<endl;
@@ -365,13 +359,6 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       } else {
         Error = true;
       }
-    } else if (Line[0] == 'C' && Line[1] == 'L') {
-      unsigned long Clock = 0;
-      if (sscanf(Line.Data(), "CL %lu\n", &Clock) == 1) {
-        ROS.SetClock(Clock);
-      } else {
-        Error = true;
-      }
     } else if (Line[0] == 'U' && Line[1] == 'H') {
       MTokenizer T(' ', false);
       T.Analyze(Line, false);
@@ -382,29 +369,6 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
         MReadOut RO(*m_ROE, *m_ROD);
         ROS.AddReadOut(RO);
-      }
-        
-    } else if (Line[0] == 'S' && Line[1] == 'H') {
-      int DetectorID = 0;
-      char PosOrNeg = 'a';
-      int StripID = 0;
-      int Triggered = 0;
-      unsigned long Timing = 0;
-      long UncorrectedADC = 0;
-      long CorrectedADC = 0;
-      if (sscanf(Line.Data(), "SH %d %c %d %d %lu %li %li\n", &DetectorID, &PosOrNeg, &StripID, &Triggered, &Timing, &UncorrectedADC, &CorrectedADC) == 7) {
-        if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && DetectorID == SelectedDetectorID)) {
-          const MReadOutElement& ROE = MReadOutElementDoubleStrip(DetectorID, StripID, PosOrNeg == 'p');
-          const MReadOutData& ROD = MReadOutDataADCValueWithTiming((double) CorrectedADC, (double) Timing);
-
-          MReadOut RO(ROE, ROD);
-          ROS.AddReadOut(RO);
-        }
-        //if (StripID == 13) {
-        //  cout<<RO<<endl;
-        //}
-      } else {
-        Error = true;
       }
     }
     

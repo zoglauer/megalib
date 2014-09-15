@@ -166,7 +166,7 @@ bool MReadOutElement::Parse(const MTokenizer& T, unsigned int StartElement)
 
 
 //! Return the data as parsable string
-MString MReadOutElement::ToParsableString(bool WithDescriptor) 
+MString MReadOutElement::ToParsableString(bool WithDescriptor) const 
 {
   MString Return;
   if (WithDescriptor == true) {

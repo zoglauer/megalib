@@ -94,14 +94,18 @@ void MGUIEModule::Create()
   }
 
   m_ChangeButton = new TGTextButton(this, ChangeText, 600+m_ID); 
-  m_ChangeButton->SetLeftMargin(m_FontScaler*5);
-  m_ChangeButton->SetRightMargin(m_FontScaler*5);
+  m_ChangeButton->ChangeOptions(m_ChangeButton->GetOptions() | kFixedWidth);
+  m_ChangeButton->SetLeftMargin(5*m_FontScaler);
+  m_ChangeButton->SetRightMargin(5*m_FontScaler);
+  m_ChangeButton->SetWidth(60*m_FontScaler);
   TGLayoutHints* ChangeButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
   AddFrame(m_ChangeButton, ChangeButtonLayout);
  
   m_RemoveButton = new TGTextButton(this, "Remove", 400+m_ID); 
-  m_RemoveButton->SetLeftMargin(m_FontScaler*5);
-  m_RemoveButton->SetRightMargin(m_FontScaler*5);
+  m_RemoveButton->ChangeOptions(m_ChangeButton->GetOptions() | kFixedWidth);
+  m_RemoveButton->SetLeftMargin(5*m_FontScaler);
+  m_RemoveButton->SetRightMargin(5*m_FontScaler);
+  m_RemoveButton->SetWidth(60*m_FontScaler);
   TGLayoutHints* RemoveButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 10, 0, 0, 0);
   AddFrame(m_RemoveButton, RemoveButtonLayout);
   if (m_Module == 0) {
@@ -109,8 +113,10 @@ void MGUIEModule::Create()
   }
  
   m_OptionsButton = new TGTextButton(this, "Options", 500+m_ID); 
-  m_OptionsButton->SetLeftMargin(m_FontScaler*5);
-  m_OptionsButton->SetRightMargin(m_FontScaler*5);
+  m_OptionsButton->ChangeOptions(m_ChangeButton->GetOptions() | kFixedWidth);
+  m_OptionsButton->SetLeftMargin(5*m_FontScaler);
+  m_OptionsButton->SetRightMargin(5*m_FontScaler);
+  m_OptionsButton->SetWidth(60*m_FontScaler);
   TGLayoutHints* OptionsButtonLayout = new TGLayoutHints(kLHintsCenterY | kLHintsRight, 30, 0, 0, 0);
   AddFrame(m_OptionsButton, OptionsButtonLayout);
   if (m_Module == 0 || (m_Module != 0 && m_Module->HasOptionsGUI() == false)) {

@@ -133,7 +133,20 @@ MString MReadOut::ToString() const
   return os.str();
 }
 
+  
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the data as parsable string
+MString MReadOut::ToParsableString(bool WithDescriptor)
+{
+  ostringstream os;
+  os<<"UH "<<m_ROE->ToParsableString(WithDescriptor)<<" "<<m_ROD->ToParsableString(WithDescriptor);
+  return os.str();
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

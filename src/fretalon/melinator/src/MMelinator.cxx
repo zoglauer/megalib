@@ -195,24 +195,24 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     }
   }
   
-  /*
-  cout<<"Group ID mapping: "<<endl;
-  for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
-    cout<<GroupIDs[g]<<" --> "<<m_GroupIDs[g]<<endl; 
-  }
-  cout<<"Group ID to name mapping: "<<endl;
-  for (auto N: IDMap) {
-    cout<<N.first<<" --> "<<N.second<<" --> "<<NameMap[N.first]<<endl; 
-  }
-  cout<<"Group ID to isotope mapping: "<<endl;
-  for (auto N: IsotopeMap) {
-    cout<<N.first<<" --> ";
-    for (auto I: N.second) {
-      cout<<I.GetName()<<" "; 
+  if (g_Verbosity >= c_Chatty) {
+    cout<<"Group ID mapping: "<<endl;
+    for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
+      cout<<GroupIDs[g]<<" --> "<<m_GroupIDs[g]<<endl; 
     }
-    cout<<endl;
+    cout<<"Group ID to name mapping: "<<endl;
+    for (auto N: IDMap) {
+      cout<<N.first<<" --> "<<N.second<<" --> "<<NameMap[N.first]<<endl; 
+    }
+    cout<<"Group ID to isotope mapping: "<<endl;
+    for (auto N: IsotopeMap) {
+      cout<<N.first<<" --> ";
+      for (auto I: N.second) {
+        cout<<I.GetName()<<" "; 
+      }
+      cout<<endl;
+    }
   }
-  */
   
   //! Set up the read-out data groups in the store
   for (auto N: NameMap) {
@@ -237,17 +237,17 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   }
   //cout<<"Lines: "<<m_NLinesToConsider<<endl;
   
-  /*
-  cout<<"Isotopes: "<<endl;
-  for (auto V: m_Isotopes) {
-    cout<<" --> ";
-    for (auto I: V) {
-      cout<<I.GetName()<<" "; 
+  if (g_Verbosity >= c_Chatty) {
+    cout<<"Isotopes: "<<endl;
+    for (auto V: m_Isotopes) {
+      cout<<" --> ";
+      for (auto I: V) {
+        cout<<I.GetName()<<" "; 
+      }
+      cout<<endl;
     }
-    cout<<endl;
   }
-  */
-    
+  
   
   m_CalibrationFileLoadingProgress.resize(NFiles);
   for (unsigned int c = 0; c < m_CalibrationFileLoadingProgress.size(); ++c) {
@@ -356,7 +356,7 @@ void MMelinatorCallParallelLoadingThread(void* Address)
 //! Perform the calibration of the given collection
 bool MMelinator::LoadParallel(unsigned int ThreadID)
 {
-  cout<<"Parallel loading thread #"<<ThreadID<<" has started"<<endl;
+  if (g_Verbosity >= c_Info) cout<<"Parallel loading thread #"<<ThreadID<<" has started"<<endl;
   
   m_ThreadIsInitialized[ThreadID] = true;
   
@@ -401,7 +401,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
         unsigned long Reserve = 5000000 + sizeof(Sequence)*NewCounter + 160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections();
         char* Memory = new(nothrow) char[Reserve];
         if (Memory == 0) {
-          cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
+          if (g_Verbosity >= c_Warning) cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
           break;
         } else {
           delete [] Memory;
@@ -428,7 +428,7 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
 
   m_ThreadIsFinished[ThreadID] = true;
 
-  cout<<"Parallel loading thread #"<<ThreadID<<" has finished"<<endl;
+  if (g_Verbosity >= c_Info) cout<<"Parallel loading thread #"<<ThreadID<<" has finished"<<endl;
 
   return true;
 }
@@ -569,7 +569,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
         }
       }
     } else {
-      cout<<"No calibration found!"<<endl;
+      if (g_Verbosity >= c_Info) cout<<"No calibration found!"<<endl;
     }
   }
   
@@ -1100,7 +1100,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   //cout<<"Max: "<<m_HistogramMax<<endl;
   
   if (Cali.Calibrate() == false) {
-    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    if (g_Verbosity >= c_Error) cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
     return false;
   }
   
