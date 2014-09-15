@@ -59,7 +59,7 @@ class MCalibrationModel
   virtual double operator() (double* X, double* P) { return 0; }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 0; }
+  virtual unsigned int GetNParameters() { return 0; }
   
   //! Return true, if the fit is up-to-date
   bool IsFitUpToDate() const { return m_IsFitUpToDate; }
@@ -143,7 +143,7 @@ class MCalibrationModelPoly1 : public MCalibrationModel
   virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0]; }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 2; }
+  virtual unsigned int GetNParameters() { return 2; }
   
   // protected methods:
  protected:
@@ -186,7 +186,7 @@ class MCalibrationModelPoly2 : public MCalibrationModel
   virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0]; }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 3; }
+  virtual unsigned int GetNParameters() { return 3; }
    
   
   // protected methods:
@@ -230,7 +230,7 @@ class MCalibrationModelPoly3 : public MCalibrationModel
   virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0] + P[3]*X[0]*X[0]*X[0]; }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 4; }
+  virtual unsigned int GetNParameters() { return 4; }
    
   
   // protected methods:
@@ -274,7 +274,7 @@ class MCalibrationModelPoly4 : public MCalibrationModel
   virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0] + P[3]*X[0]*X[0]*X[0] + P[4]*X[0]*X[0]*X[0]*X[0]; }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 5; }
+  virtual unsigned int GetNParameters() { return 5; }
    
   
   // protected methods:
@@ -318,7 +318,7 @@ class MCalibrationModelPoly1Inv1 : public MCalibrationModel
   virtual double operator() (double* X, double* P) { if (P[2] + P[3]*X[0] == 0) return 1000000000.0; return P[0] + P[1]*X[0] + 1.0/(P[2] + P[3]*X[0]); }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 4; }
+  virtual unsigned int GetNParameters() { return 4; }
    
   
   // protected methods:
@@ -366,7 +366,7 @@ class MCalibrationModelPoly1Exp1 : public MCalibrationModel
   }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 4; }
+  virtual unsigned int GetNParameters() { return 4; }
    
   
   // protected methods:
@@ -414,7 +414,7 @@ class MCalibrationModelPoly1Exp2 : public MCalibrationModel
   }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 4; }
+  virtual unsigned int GetNParameters() { return 4; }
    
   
   // protected methods:
@@ -462,7 +462,7 @@ class MCalibrationModelPoly1Exp3 : public MCalibrationModel
   }
 
   //! Return the number of fit parameters
-  virtual int GetNParameters() { return 4; }
+  virtual unsigned int GetNParameters() { return 4; }
    
   
   // protected methods:
