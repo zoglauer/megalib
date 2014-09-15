@@ -73,6 +73,7 @@ using namespace std;
 #include "MDShapeTUBS.h"
 #include "MDShapeSPHE.h"
 #include "MDShapeTRD1.h"
+#include "MDShapeTRD2.h"
 #include "MDShapeTRAP.h"
 #include "MDShapeCONE.h"
 #include "MDShapeCONS.h"
@@ -623,7 +624,15 @@ bool MCDetectorConstruction::ConstructVolumes()
                     TRD1->GetY()*cm,
                     TRD1->GetY()*cm,
                     TRD1->GetZ()*cm);
-    } else if (Type == "CONE") {
+    } else if (Type == "TRD2") {
+      MDShapeTRD2* TRD2 = dynamic_cast<MDShapeTRD2*>(Shape);
+      Solid = new G4Trd(Shape->GetName().GetString(), 
+                    TRD2->GetDx1()*cm, 
+                    TRD2->GetDx2()*cm, 
+                    TRD2->GetDy1()*cm,
+                    TRD2->GetDy2()*cm,
+                    TRD2->GetZ()*cm);
+    }else if (Type == "CONE") {
       MDShapeCONE* CONE = dynamic_cast<MDShapeCONE*>(Shape);
       Solid = new G4Cons(Shape->GetName().GetString(), 
                      CONE->GetRminBottom()*cm, 
