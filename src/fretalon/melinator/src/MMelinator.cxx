@@ -153,12 +153,12 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     
     MFileReadOuts Reader;
     if (Reader.Open(FileNames[f]) == false) {
-      return false;
+      return false; // we cannot simply ignore it here otherwise the cod ebelow will break down
     }
-    ProgressBar.SetTitle(f, MFile::GetBaseName(FileNames[f]));
-    ProgressBar.SetMinMax(f, 0.0, Reader.GetFileLength());
-    Reader.Close();
     m_CalibrationFileNames.push_back(FileNames[f]);
+    ProgressBar.SetTitle(m_CalibrationFileNames.size()-1, MFile::GetBaseName(FileNames[f]));
+    ProgressBar.SetMinMax(m_CalibrationFileNames.size()-1, 0.0, Reader.GetFileLength());
+    Reader.Close();
   }
   ProgressBar.SetMinimumChange(0.2*FileNames.size());
   ProgressBar.Create();
@@ -170,41 +170,45 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   //! Map the external group IDs to internal IDs starting at 0 and combined the isotopes of the individial groups
   m_GroupIDs.clear();
   unsigned int InternalID = 0;
-  map<unsigned int, unsigned int> IDMap;
-  map<unsigned int, MString> NameMap;
-  map<unsigned int, vector<MIsotope>> IsotopeMap;
+  map<unsigned int, unsigned int> IDMap; // maps external ID to internal ID
+  map<unsigned int, MString> NameMap; // maps internal ID to file names
+  map<unsigned int, vector<MIsotope>> IsotopeMap; // maps internal ID to file names
   for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
     if (FileNames[g] == "") continue;
     
+    unsigned int CurrentInternalID = 0;
     map<unsigned int, unsigned int>::iterator I = IDMap.find(GroupIDs[g]);
     if (I == IDMap.end()) {
       IDMap[GroupIDs[g]] = InternalID;
+      CurrentInternalID = InternalID;
       InternalID++;
-    } 
+    } else {
+      CurrentInternalID = (*I).second;
+    }
     // Add, sort and remove duplicate isotopes
-    IsotopeMap[GroupIDs[g]].insert(IsotopeMap[GroupIDs[g]].end(), Isotopes[g].begin(), Isotopes[g].end());
-    sort(IsotopeMap[GroupIDs[g]].begin(), IsotopeMap[GroupIDs[g]].end());
-    IsotopeMap[GroupIDs[g]].erase(unique(IsotopeMap[GroupIDs[g]].begin(), IsotopeMap[GroupIDs[g]].end()), IsotopeMap[GroupIDs[g]].end());
+    IsotopeMap[CurrentInternalID].insert(IsotopeMap[CurrentInternalID].end(), Isotopes[g].begin(), Isotopes[g].end());
+    sort(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end());
+    IsotopeMap[CurrentInternalID].erase(unique(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end()), IsotopeMap[CurrentInternalID].end());
     
     m_GroupIDs.push_back(IDMap[GroupIDs[g]]);
     MString Name = MFile::GetBaseName(FileNames[g]);
-    if (NameMap[GroupIDs[g]] == "") {
-      NameMap[GroupIDs[g]] += Name;
+    if (NameMap[CurrentInternalID] == "") {
+      NameMap[CurrentInternalID] += Name;
     } else {
-      NameMap[GroupIDs[g]] += " & " + Name;
+      NameMap[CurrentInternalID] += " & " + Name;
     }
   }
   
   if (g_Verbosity >= c_Chatty) {
-    cout<<"Group ID mapping: "<<endl;
+    cout<<"Group ID mapping (external to internal): "<<endl;
     for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
       cout<<GroupIDs[g]<<" --> "<<m_GroupIDs[g]<<endl; 
     }
-    cout<<"Group ID to name mapping: "<<endl;
+    cout<<"External group ID to internal group ID to name mapping: "<<endl;
     for (auto N: IDMap) {
-      cout<<N.first<<" --> "<<N.second<<" --> "<<NameMap[N.first]<<endl; 
+      cout<<N.first<<" --> "<<N.second<<" --> "<<NameMap[N.second]<<endl; 
     }
-    cout<<"Group ID to isotope mapping: "<<endl;
+    cout<<"Internal group ID to isotope mapping: "<<endl;
     for (auto N: IsotopeMap) {
       cout<<N.first<<" --> ";
       for (auto I: N.second) {
@@ -216,17 +220,18 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   
   //! Set up the read-out data groups in the store
   for (auto N: NameMap) {
+    cout<<"Doing: "<<N.second<<endl;
     unsigned int GroupID = m_Store.AddReadOutDataGroup(N.second);
-    if (GroupID != IDMap[N.first]) {
-      cout<<"ERROR: Something went wrong with the group ID creation!"<<endl;
+    if (GroupID != N.first) {
+      cout<<"ERROR: Something went wrong with the group ID creation: internal group ID="<<N.first<<" vs. read out data group ID="<<GroupID<<endl;
       return false;
     }
   }
   
   //! Now make sure the groups have all the same isotopes
   m_Isotopes.clear();
-  for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
-    m_Isotopes.push_back(IsotopeMap[GroupIDs[g]]);
+  for (unsigned int g = 0; g < m_GroupIDs.size(); ++g) {
+    m_Isotopes.push_back(IsotopeMap[m_GroupIDs[g]]);
   }
 
   m_NLinesToConsider = 0;
@@ -446,13 +451,25 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   m_HistogramCollection = Collection;
   
   vector<int> Colors;
-  Colors.push_back(kGreen+1);
+  Colors.push_back(kGreen+2);
   Colors.push_back(kRed);
-  Colors.push_back(kBlue);
+  Colors.push_back(kBlue+1);
+  Colors.push_back(kCyan+2);
   Colors.push_back(kYellow);
-  Colors.push_back(kViolet);
-  Colors.push_back(kCyan);
-  Colors.push_back(kMagenta);
+  Colors.push_back(kMagenta+2);
+  Colors.push_back(kAzure-2);
+  Colors.push_back(kTeal);
+  Colors.push_back(kSpring);
+  Colors.push_back(kOrange);
+  Colors.push_back(kPink-2);
+  Colors.push_back(kViolet+2);
+  Colors.push_back(kGreen+4);
+  Colors.push_back(kYellow+3);
+  Colors.push_back(kRed+3);
+  Colors.push_back(kBlue+4);
+  Colors.push_back(kCyan+4);
+
+  
   
   //Canvas.SetBit(kNoContextMenu);
   Canvas.SetBit(kCannotPick);
