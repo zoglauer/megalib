@@ -299,11 +299,11 @@ bool MCalibrateLines::Calibrate()
 //! Find the peaks in this read-out data group
 bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 {
-  if (g_Verbosity >= c_Info) cout<<"Finding peaks for ROG ID: "<<ROGID<<endl;
+  if (g_Verbosity >= c_Info) cout<<endl<<"Finding peaks for ROG ID: "<<ROGID<<" ("<<m_ROGs[ROGID].GetName()<<")"<<endl;
   
   int Prior = 8;
   
-  int FirstPeakMinimumBinID = 7;
+  int FirstPeakMinimumBinID = 3;
   double FirstPeakMinimumPeakCounts = 300; 
   
   double MinimumPeakCounts = 100; 
@@ -495,7 +495,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
       // If this is the first peak it must be at least 3 bins away from the first bin and from any bin with less than 1 counts:
       if (FirstPeak == true) {
         if (PeakBin < FirstPeakMinimumBinID) {
-          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start"<<endl;
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start, and not only "<<PeakBin<<endl;
           continue;          
         }
       }
