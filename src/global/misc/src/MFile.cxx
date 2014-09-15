@@ -171,6 +171,12 @@ bool MFile::Exists(MString FileName)
   if (in.is_open() == false) {
     return false;
   }
+  char c;
+  in.get(c);
+  if (in.good() == false) {
+    in.close();
+    return false;
+  }
   in.close();
 
   return true;  
