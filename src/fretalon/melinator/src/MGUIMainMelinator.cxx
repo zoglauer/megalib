@@ -44,7 +44,6 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIDefaults.h"
 #include "MFile.h"
-#include "MCalibrateLines.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
 #include "MGUILoadCalibration.h"
@@ -52,6 +51,8 @@ using namespace std;
 #include "MIsotope.h"
 #include "MIsotopeStore.h"
 #include "MCalibrationModel.h"
+#include "MCalibrateEnergyFindLines.h"
+#include "MCalibrateEnergyDetermineModel.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -382,9 +383,9 @@ void MGUIMelinatorMain::Create()
   PeakParametrizationMethodFrame->AddFrame(PeakParametrizationMethodLabel, TopLeftTextLayout);
   
   m_PeakParametrizationMethod = new TGComboBox(PeakParametrizationMethodFrame, c_PeakParametrizationMethod);
-  m_PeakParametrizationMethod->AddEntry("Bayesian Blocks", MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak);
-  m_PeakParametrizationMethod->AddEntry("Smoothing", MCalibrateLines::c_PeakParametrizationMethodSmoothedPeak);
-  m_PeakParametrizationMethod->AddEntry("Fitting", MCalibrateLines::c_PeakParametrizationMethodFittedPeak);
+  m_PeakParametrizationMethod->AddEntry("Bayesian Blocks", MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak);
+  m_PeakParametrizationMethod->AddEntry("Smoothing", MCalibrateEnergyFindLines::c_PeakParametrizationMethodSmoothedPeak);
+  m_PeakParametrizationMethod->AddEntry("Fitting", MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak);
   m_PeakParametrizationMethod->Select(m_Settings->GetPeakParametrizationMethod());
   m_PeakParametrizationMethod->Associate(this);
   m_PeakParametrizationMethod->SetHeight(FontScaler*24);
@@ -412,9 +413,9 @@ void MGUIMelinatorMain::Create()
   CalibrationModelDeterminationFrame->AddFrame(CalibrationModelDeterminationLabel, TopLeftTextLayout);
   
   m_CalibrationModelDeterminationMethod = new TGComboBox(CalibrationModelDeterminationFrame, c_CalibrationModelDeterminationMethod);
-  m_CalibrationModelDeterminationMethod->AddEntry("Interpolation", MCalibrateLines::c_CalibrationModelStepWise);
-  m_CalibrationModelDeterminationMethod->AddEntry("Fitting", MCalibrateLines::c_CalibrationModelFit);
-  m_CalibrationModelDeterminationMethod->AddEntry("Select best fit", MCalibrateLines::c_CalibrationModelBestFit);
+  m_CalibrationModelDeterminationMethod->AddEntry("Interpolation", MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise);
+  m_CalibrationModelDeterminationMethod->AddEntry("Fitting", MCalibrateEnergyDetermineModel::c_CalibrationModelFit);
+  m_CalibrationModelDeterminationMethod->AddEntry("Select best fit", MCalibrateEnergyDetermineModel::c_CalibrationModelBestFit);
   m_CalibrationModelDeterminationMethod->Select(m_Settings->GetCalibrationModelDeterminationMethod());
   m_CalibrationModelDeterminationMethod->Associate(this);
   m_CalibrationModelDeterminationMethod->SetHeight(FontScaler*24);
@@ -856,14 +857,14 @@ bool MGUIMelinatorMain::Update()
   m_Settings->SetPeakHistogramBinningModeValue(m_PeakHistogramBinningModeValue->GetNumber());
   
   m_Settings->SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-  if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+  if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
     m_Settings->SetPeakParametrizationMethodFittingBackgroundModel(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected());
     m_Settings->SetPeakParametrizationMethodFittingEnergyLossModel(m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected());
     m_Settings->SetPeakParametrizationMethodFittingPeakShapeModel(m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
   }
   
   m_Settings->SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-  if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+  if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
     m_Settings->SetCalibrationModelDeterminationMethodFittingModel(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
   }
   
@@ -920,11 +921,11 @@ bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
 //! Switch the histogram binning mode
 bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
 {    
-  if (ID == MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak) {
+  if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak) {
     m_PeakParametrizationOptions->RemoveAll();
-  } else if (ID == MCalibrateLines::c_PeakParametrizationMethodSmoothedPeak) {
+  } else if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodSmoothedPeak) {
     m_PeakParametrizationOptions->RemoveAll();
-  } else if (ID == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) { 
+  } else if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) { 
     m_PeakParametrizationOptions->RemoveAll();
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
@@ -1014,9 +1015,9 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
 //! Switch the histogram binning mode
 bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int ID)
 {    
-  if (ID == MCalibrateLines::c_CalibrationModelStepWise) {
+  if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise) {
     m_CalibrationModelDeterminationOptions->RemoveAll();
-  } else if (ID == MCalibrateLines::c_CalibrationModelFit) {
+  } else if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
     m_CalibrationModelDeterminationOptions->RemoveAll();
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
@@ -1051,7 +1052,7 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     m_CalibrationModelDeterminationMethodFittingModel->GetListBox()->SetHeight(Height);
     FittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingModel, TopRightLayout);
 
-  } else if (ID == MCalibrateLines::c_CalibrationModelBestFit) { 
+  } else if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelBestFit) { 
     m_CalibrationModelDeterminationOptions->RemoveAll();
   }
 
@@ -1537,12 +1538,12 @@ bool MGUIMelinatorMain::OnFit()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
     
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
     }
 
@@ -1562,12 +1563,12 @@ bool MGUIMelinatorMain::OnFitWithDiagnostics()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
 
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
     }
     
@@ -1587,12 +1588,12 @@ bool MGUIMelinatorMain::OnFitAll()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
-    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateLines::c_PeakParametrizationMethodFittedPeak) {
+    if (m_PeakParametrizationMethod->GetSelected() == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) {
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
 
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
-    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateLines::c_CalibrationModelFit) {
+    if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
     }
     
