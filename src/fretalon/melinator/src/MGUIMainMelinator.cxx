@@ -523,6 +523,13 @@ void MGUIMelinatorMain::Create()
   m_FitBackButton->SetMargins(FontScaler*5, FontScaler*5);
   FitControl->AddFrame(m_FitBackButton, ButtonLayout);
 
+  m_FitToggleButton = new TGTextButton(FitControl, "Toggle", c_ToggleFit); 
+  m_FitToggleButton->Associate(this);
+  m_FitToggleButton->SetMinWidth(100);
+  m_FitToggleButton->SetEnabled(false);
+  m_FitToggleButton->SetMargins(FontScaler*5, FontScaler*5);
+  FitControl->AddFrame(m_FitToggleButton, ButtonLayout);
+
   m_FitCanvas = new TRootEmbeddedCanvas("FitCanvas", FitView, 100, 100);
   FitView->AddFrame(m_FitCanvas, CanvasLayout);
 
@@ -687,6 +694,10 @@ bool MGUIMelinatorMain::ProcessMessage(long Message, long Parameter1, long Param
 
         case c_NextFit:
           Status = OnNextFit();
+          break;
+
+        case c_ToggleFit:
+          Status = OnToggleFit();
           break;
 
         case c_Fit:
@@ -1335,6 +1346,25 @@ bool MGUIMelinatorMain::OnPreviousFit()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Actions when the toggle-line button has been pressed
+bool MGUIMelinatorMain::OnToggleFit()
+{
+  // Toggle line
+  MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, m_ActiveLineFit);
+  P.IsGood(!P.IsGood());
+  
+  // Redo fit!
+  m_Melinator.ReCalibrateModel(m_ActiveCollection);
+  
+  UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+  
+  return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Update the histogram with the latest settings
 bool MGUIMelinatorMain::OnUpdateHistogram()
 {
@@ -1446,6 +1476,12 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
       m_FitForwardButton->SetEnabled(true);
     }
     
+    if (NumberOfCalibrationSpectralPoints > 0) {
+      m_FitToggleButton->SetEnabled(true);
+    } else {
+      m_FitToggleButton->SetEnabled(false);
+    }
+    
     m_Melinator.DrawLineFit(*(m_FitCanvas->GetCanvas()), Collection, m_ActiveLineFit, 
       m_Settings->GetPeakHistogramBinningMode(), m_Settings->GetPeakHistogramBinningModeValue());
     
@@ -1453,9 +1489,9 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
     ostringstream Text;
     if (P.IsGood()) {
       MIsotope I = P.GetIsotope();
-      Text<<I.GetName()<<" line at "<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV ("<<fixed<<setprecision(1)<<P.GetPeak()<<" read-out units)";      
+      Text<<I.GetName()<<" ("<<fixed<<setprecision(1)<<P.GetEnergy()<<" keV at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's)";      
     } else {
-      Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" read-out units";
+      Text<<"Excluded line at "<<fixed<<setprecision(1)<<P.GetPeak()<<" rou's";
     }
     m_FitHistogramLabel->SetText(Text.str().c_str());
     Layout();
@@ -1463,6 +1499,7 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
   } else {
     m_FitBackButton->SetEnabled(false);
     m_FitForwardButton->SetEnabled(false);
+    m_FitToggleButton->SetEnabled(false);
     m_FitCanvas->GetCanvas()->Clear(); 
     m_FitCanvas->GetCanvas()->Update();
     m_FitHistogramLabel->SetText("No peak parametrizations available to display");

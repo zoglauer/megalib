@@ -29,7 +29,10 @@ $(LB)/MReadOutDataGroup.o \
 $(LB)/MReadOutCollection.o \
 $(LB)/MReadOutStore.o \
 $(LB)/MCalibrate.o \
-$(LB)/MCalibrateLines.o \
+$(LB)/MCalibrateEnergy.o \
+$(LB)/MCalibrateEnergyAssignEnergies.o \
+$(LB)/MCalibrateEnergyDetermineModel.o \
+$(LB)/MCalibrateEnergyFindLines.o \
 $(LB)/MCalibration.o \
 $(LB)/MCalibrationSpectrum.o \
 $(LB)/MCalibrationSpectralPoint.o \

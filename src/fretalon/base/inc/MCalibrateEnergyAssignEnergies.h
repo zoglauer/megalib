@@ -1,5 +1,5 @@
 /*
- * MCalibrate.h
+ * MCalibrateEnergyAssignEnergies.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MCalibrate__
-#define __MCalibrate__
+#ifndef __MCalibrateEnergyAssignEnergies__
+#define __MCalibrateEnergyAssignEnergies__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,11 +19,9 @@
 // Standard libs:
 
 // ROOT libs:
-#include "TH1.h"
 
 // MEGAlib libs:
-#include "MCalibration.h"
-#include "MReadOutDataGroup.h"
+#include "MCalibrateEnergy.h"
 
 // Forward declarations:
 
@@ -31,21 +29,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A base class for any calibration task
-class MCalibrate
+//! A class to calibrate the lines in a spectrum
+class MCalibrateEnergyAssignEnergies : public MCalibrateEnergy
 {
   // public interface:
  public:
   //! Default constructor
-  MCalibrate();
+  MCalibrateEnergyAssignEnergies();
   //! Default destuctor 
-  virtual ~MCalibrate();
-
-  //! Set the diagnoistiocs mode
-  void SetDiagnosticsMode(bool Mode = true) { m_DiagnosticsMode = Mode; }
+  virtual ~MCalibrateEnergyAssignEnergies();
   
   //! Perform the calibration
-  virtual bool Calibrate() = 0;
+  virtual bool Calibrate();
   
   // protected methods:
  protected:
@@ -53,20 +48,15 @@ class MCalibrate
   // private methods:
  private:
 
-
-
   // protected members:
  protected:
-  //! True when we are in diagnostics mode
-  bool m_DiagnosticsMode;
-  
+
   // private members:
  private:
 
-
 #ifdef ___CINT___
  public:
-  ClassDef(MCalibrate, 0) // no description
+  ClassDef(MCalibrateEnergyAssignEnergies, 0) // no description
 #endif
 
 };

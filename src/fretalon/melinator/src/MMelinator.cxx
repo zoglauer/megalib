@@ -54,7 +54,9 @@ using namespace std;
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
-#include "MCalibrateLines.h"
+#include "MCalibrateEnergyAssignEnergies.h"
+#include "MCalibrateEnergyDetermineModel.h"
+#include "MCalibrateEnergyFindLines.h"
 #include "MCalibrationSpectralPoint.h"
 #include "MCalibrationSpectrum.h"
 #include "MBinner.h"
@@ -85,12 +87,12 @@ MMelinator::MMelinator()
   m_HistogramChanged = true;
   m_HistogramCollection = -1;
 
-  m_PeakParametrizationMethod = MCalibrateLines::c_PeakParametrizationMethodBayesianBlockPeak;
+  m_PeakParametrizationMethod = MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak;
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear;
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone;
   m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
   
-  m_CalibrationModelDeterminationMethod = MCalibrateLines::c_CalibrationModelStepWise;
+  m_CalibrationModelDeterminationMethod = MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise;
   
   m_NThreads = 4;
   
@@ -220,7 +222,6 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   
   //! Set up the read-out data groups in the store
   for (auto N: NameMap) {
-    cout<<"Doing: "<<N.second<<endl;
     unsigned int GroupID = m_Store.AddReadOutDataGroup(N.second);
     if (GroupID != N.first) {
       cout<<"ERROR: Something went wrong with the group ID creation: internal group ID="<<N.first<<" vs. read out data group ID="<<GroupID<<endl;
@@ -451,13 +452,13 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   m_HistogramCollection = Collection;
   
   vector<int> Colors;
-  Colors.push_back(kGreen+2);
   Colors.push_back(kRed);
-  Colors.push_back(kBlue+1);
-  Colors.push_back(kCyan+2);
-  Colors.push_back(kYellow);
+  Colors.push_back(kBlue);
+  Colors.push_back(kGreen+1);
   Colors.push_back(kMagenta+2);
   Colors.push_back(kAzure-2);
+  Colors.push_back(kCyan+2);
+  Colors.push_back(kYellow);
   Colors.push_back(kTeal);
   Colors.push_back(kSpring);
   Colors.push_back(kOrange);
@@ -522,7 +523,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
       m_Histograms[h]->SetMaximum(1.1*Max);
       m_Histograms[h]->SetMinimum(0.9*Min);
       if (h < Colors.size()) {
-        m_Histograms[h]->SetLineColor(Colors[h]+1);
+        m_Histograms[h]->SetLineColor(Colors[h]);
       } else {
         m_Histograms[h]->SetLineColor(kBlack);
       }
@@ -683,7 +684,7 @@ unsigned int MMelinator::GetNumberOfCalibrationSpectralPoints(unsigned int Colle
   
 //! Return the given spectral point
 //! If it doesn't exist, the exception MExceptionIndexOutOfBounds is thrown
-MCalibrationSpectralPoint MMelinator::GetCalibrationSpectralPoint(unsigned int Collection, unsigned int Line) 
+MCalibrationSpectralPoint& MMelinator::GetCalibrationSpectralPoint(unsigned int Collection, unsigned int Line) 
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   if (C != nullptr) {
@@ -701,7 +702,7 @@ MCalibrationSpectralPoint MMelinator::GetCalibrationSpectralPoint(unsigned int C
  
   throw MExceptionIndexOutOfBounds(0, GetNumberOfCalibrationSpectralPoints(Collection), Line);  
   
-  return MCalibrationSpectralPoint();
+  return C->GetSpectralPoint(0, 0); // Wrong, but we never reach that point...
 }
 
 
@@ -1061,31 +1062,8 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
     TThread::UnLock();
     
     if (ID >= m_Store.GetNumberOfReadOutCollections()) break;
-    
-    MReadOutCollection& C = GetCollection(ID);
 
-    MCalibrateLines Cali;
-    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-      Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-    }
-    Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
-    Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
-    Cali.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-    Cali.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
-    
-    Cali.SetDiagnosticsMode(false);
-    Cali.SetRange(m_HistogramMin, m_HistogramMax);
-    //cout<<"Max: "<<m_HistogramMax<<endl;
-  
-    if (Cali.Calibrate() == false) {
-      cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
-      return false;
-    }
-    
-  
-    TThread::Lock();
-    m_CalibrationStore.Add(C.GetReadOutElement(), Cali.GetCalibration());
-    TThread::UnLock();
+    Calibrate(ID);
     
     if (m_ThreadShouldTerminate[ThreadID] == true) break;
   }
@@ -1103,25 +1081,104 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
 bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
 {
   MReadOutCollection& C = GetCollection(Collection);
-
-  MCalibrateLines Cali;
-  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    Cali.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-  }
-  Cali.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
-  Cali.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
-  Cali.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-  Cali.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
-  Cali.SetDiagnosticsMode(ShowDiagnostics);
-  Cali.SetRange(m_HistogramMin, m_HistogramMax);
-  //cout<<"Max: "<<m_HistogramMax<<endl;
   
-  if (Cali.Calibrate() == false) {
-    if (g_Verbosity >= c_Error) cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+  // Step 1: find the lines
+  MCalibrateEnergyFindLines FindLines;
+  FindLines.SetDiagnosticsMode(ShowDiagnostics);
+  FindLines.SetRange(m_HistogramMin, m_HistogramMax);
+  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+    FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+  }
+  FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
+  FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+  
+  if (FindLines.Calibrate() == false) {
+    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
     return false;
   }
   
-  m_CalibrationStore.Add(C.GetReadOutElement(), Cali.GetCalibration());
+  
+  // Step 2: Assign the energies
+  MCalibrateEnergyAssignEnergies AssignEnergies;
+  AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
+  AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
+  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+    AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+  }
+  AssignEnergies.SetCalibrationResult(FindLines.GetCalibrationResult());
+  
+  if (AssignEnergies.Calibrate() == false) {
+    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    return false;
+  }
+  
+  
+  // Step 3: Determine model
+  MCalibrateEnergyDetermineModel DetermineModel;
+  DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
+  DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
+  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+    DetermineModel.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+  }
+  DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+  DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
+  
+  if (DetermineModel.Calibrate() == false) {
+    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    return false;
+  }
+  
+  
+  // Step 4: Set the result in the store
+  TThread::Lock(); // <-- this function can be called from the thread so we have to protect it!
+  m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
+  TThread::UnLock();
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Given an existing calibration for the collection, do a reassignment of energies and determination of the model
+bool MMelinator::ReCalibrateModel(unsigned int Collection)
+{
+  MReadOutCollection& C = GetCollection(Collection);
+
+  MCalibrationSpectrum* CS = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection))); 
+  
+  // Step A: Assign the energies
+  MCalibrateEnergyAssignEnergies AssignEnergies;
+  AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
+  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+    AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+  }
+  AssignEnergies.SetCalibrationResult(*CS);
+  
+  if (AssignEnergies.Calibrate() == false) {
+    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    return false;
+  }
+  
+  
+  // Step B: Determine model
+  MCalibrateEnergyDetermineModel DetermineModel;
+  DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
+  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+    DetermineModel.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+  }
+  DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+  DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
+  
+  if (DetermineModel.Calibrate() == false) {
+    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    return false;
+  }
+  
+  m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
   
   return true;
 }

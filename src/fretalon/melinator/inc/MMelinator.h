@@ -99,7 +99,7 @@ class MMelinator
   unsigned int GetNumberOfCalibrationSpectralPoints(unsigned int Collection);
   //! Return the given spectral point
   //! If it doesn't exist, the exception MExceptionIndexOutOfBounds is thrown
-  MCalibrationSpectralPoint GetCalibrationSpectralPoint(unsigned int Collection, unsigned int Line);  
+  MCalibrationSpectralPoint& GetCalibrationSpectralPoint(unsigned int Collection, unsigned int Line);  
   
   //! Draw the spectra into the Canvas for the given Collection
   void DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned int Line);
@@ -125,6 +125,9 @@ class MMelinator
  
   //! Perform the calibration of the given collection
   bool Calibrate(unsigned int Collection, bool ShowDiagnostics = false);
+
+  //! Given an existing calibration for the collection, do a reassignment of energies and determination of the model
+  bool ReCalibrateModel(unsigned int Collection);
   
   //! Remove all collection which don't have positive data entries
   //void RemoveCollectionsWithNoPositiveEntries() { m_Store.RemoveCollectionsWithNoPositiveEntries(); }

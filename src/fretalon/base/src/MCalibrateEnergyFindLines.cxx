@@ -1,5 +1,5 @@
 /*
- * MCalibrateLines.cxx
+ * MCalibrateEnergyFindLines.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -17,7 +17,7 @@
 
 
 // Include the header:
-#include "MCalibrateLines.h"
+#include "MCalibrateEnergyFindLines.h"
 
 // Standard libs:
 #include <algorithm>
@@ -45,198 +45,21 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MCalibrateLines)
+ClassImp(MCalibrateEnergyFindLines)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-double GaussLandauFlatBackground(double *x, double *par)
-{
-  // par[0] is Offset
-  // par[1] is Landau-height
-  // par[2] is Landau-mean
-  // par[3] is Landau-sigma
-  // par[4] is Gaus-height
-  // par[5] is Gaus-mean
-  // par[6] is Gaus-sigma
-
-  double fitval = par[0];
-  double arg = 0;
-
-  if (par[6] != 0) arg = ((x[0] - par[5])/par[6]);
-  fitval += par[4]*TMath::Exp(-0.5*arg*arg);
-
-  fitval += par[1]*TMath::Landau(-x[0] + par[2], 0, par[3]);
-
-  return fitval;
-}
-
-
-double GaussLandauLinearBackground(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is Gaus-mean
-  // par[5] is Gaus-sigma
-  // par[6] is Gradient
-  // par[7] is Offset
-
-  double fitval = par[6]*x[0] + par[7];
-  double arg = 0;
-
-  if (par[5] != 0) arg = ((x[0] - par[4])/par[5]);
-  fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-
-double GaussLandauFixedMeanPol0Background(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is Gaus-sigma
-  // par[5] is Offset
-
-  double fitval = par[5];
-  double arg = 0;
-
-  if (par[4] != 0) {
-    arg = ((x[0] - par[1])/par[4]);
-    fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-  }
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-
-double GaussLandauFixedMeanPol1Background(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is Gaus-sigma
-  // par[5] is Gradient
-  // par[6] is Offset
-
-  double fitval = par[5]*x[0] + par[6];
-  double arg = 0;
-
-  if (par[4] != 0) {
-    arg = ((x[0] - par[1])/par[4]);
-    fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-  }
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-double GaussLandauFixedMeanPol2Background(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is Gaus-sigma
-  // par[5] is pol0
-  // par[6] is pol1
-  // par[7] is pol2
-
-  double fitval = par[5] + par[6]*x[0] + par[7]*x[0]*x[0];
-  double arg = 0;
-
-  if (par[4] != 0) {
-    arg = ((x[0] - par[1])/par[4]);
-    fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-  }
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-double GaussLandauFixedSigmaPol2Background(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is Gaus-mean
-  // par[5] is pol0
-  // par[6] is pol1
-  // par[7] is pol2
-
-  double fitval = par[5] + par[6]*x[0] + par[7]*x[0]*x[0];
-  double arg = 0;
-
-  if (par[4] != 0) {
-    arg = ((x[0] - par[4])/par[2]);
-    fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-  }
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-double GaussLandauFixedMeanFixedSigmaPol2Background(double *x, double *par)
-{
-  // par[0] is Landau-height
-  // par[1] is Landau-mean
-  // par[2] is Landau-sigma
-  // par[3] is Gaus-height
-  // par[4] is pol0
-  // par[5] is pol1
-  // par[6] is pol2
-
-  double fitval = par[4] + par[5]*x[0] + par[6]*x[0]*x[0];
-  double arg = 0;
-
-  if (par[4] != 0) {
-    arg = ((x[0] - par[1])/par[2]);
-    fitval += par[3]*TMath::Exp(-0.5*arg*arg);
-  }
-
-  fitval += par[0]*TMath::Landau(-x[0] + par[1], 0, par[2]);
-
-  return fitval;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 //! Default constructor
-MCalibrateLines::MCalibrateLines() : MCalibrate()
+MCalibrateEnergyFindLines::MCalibrateEnergyFindLines() : MCalibrateEnergy()
 {
   m_PeakParametrizationMethod = c_PeakParametrizationMethodBayesianBlockPeak;
   
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear; 
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone; 
   m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
-  
-  m_CalibrationModelDeterminationMethod = c_CalibrationModelStepWise;
-  m_CalibrationModelDeterminationMethodFittingModel = MCalibrationModel::c_CalibrationModelPoly3;
 }
 
 
@@ -244,21 +67,8 @@ MCalibrateLines::MCalibrateLines() : MCalibrate()
 
 
 //! Default destructor
-MCalibrateLines::~MCalibrateLines()
+MCalibrateEnergyFindLines::~MCalibrateEnergyFindLines()
 {
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Add a read-out data group and the associated isotopes
-void MCalibrateLines::AddReadOutDataGroup(const MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes)
-{
-  m_ROGs.push_back(ROG);
-  m_Isotopes.push_back(Isotopes);
-  vector<MCalibrationSpectralPoint> P;
-  m_SpectralPoints.push_back(P);
 }
 
 
@@ -266,7 +76,7 @@ void MCalibrateLines::AddReadOutDataGroup(const MReadOutDataGroup& ROG, const ve
 
 
 //! Perform the calibration
-bool MCalibrateLines::Calibrate()
+bool MCalibrateEnergyFindLines::Calibrate()
 {
   m_Results.Clear();
   m_Results.SetNumberOfReadOutDataGroups(m_ROGs.size());
@@ -274,19 +84,6 @@ bool MCalibrateLines::Calibrate()
   for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
     FindPeaks(r);   
     FitPeaks(r);
-  }
-
-  AssignEnergies();
-
-  DetermineModels();
-
-  if (g_Verbosity >= c_Info) {
-    cout<<"Calibration result: "<<endl;
-    for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-      for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-        cout<<m_Results.GetSpectralPoint(r, p)<<endl;
-      }
-    }
   }
   
   return true;
@@ -297,7 +94,7 @@ bool MCalibrateLines::Calibrate()
 
 
 //! Find the peaks in this read-out data group
-bool MCalibrateLines::FindPeaks(unsigned int ROGID)
+bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
 {
   if (g_Verbosity >= c_Info) cout<<endl<<"Finding peaks for ROG ID: "<<ROGID<<" ("<<m_ROGs[ROGID].GetName()<<")"<<endl;
   
@@ -672,7 +469,7 @@ bool MCalibrateLines::FindPeaks(unsigned int ROGID)
 
 
 //! Fit the peaks in this read-out data group
-bool MCalibrateLines::FitPeaks(unsigned int ROGID)
+bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
 {
   if (m_PeakParametrizationMethod == c_PeakParametrizationMethodBayesianBlockPeak) {
     // we are already done since this is used during peak finding 
@@ -784,260 +581,5 @@ bool MCalibrateLines::FitPeaks(unsigned int ROGID)
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-class Match 
-{
-public:
-  Match(unsigned int ROG, unsigned int Point,  unsigned int Isotope, unsigned int Line) {
-    m_ROG = ROG;
-    m_Point = Point;
-    m_Isotope = Isotope;
-    m_Line = Line;
-  }
-  unsigned int m_ROG;
-  unsigned int m_Point;
-  unsigned int m_Isotope;
-  unsigned int m_Line;
-  double m_Conversion;
-  double m_QualityFactor;
-};
-
-
-//! Assign energies to the different spectral points
-bool MCalibrateLines::AssignEnergies()
-{   
-  vector<Match> Matches;
-    
-  // Create all combinations
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
-      for (unsigned int i = 0; i < m_Isotopes[r].size(); ++i) {
-        for (unsigned int l = 0; l < m_Isotopes[r][i].GetNLines(); ++l) {
-          Match M(r, i, p, l);
-          M.m_Conversion = m_Isotopes[r][i].GetLineEnergy(l)/m_Results.GetSpectralPoint(r, p).GetPeak();
-          Matches.push_back(M);
-        }
-      }
-    }
-  }
-  
-  if (Matches.size() == 0) return false;
-  
-  // Calculate the quality factor:
-  for (unsigned int m = 0; m < Matches.size(); ++m) {
-    double QualityFactor = 0.0;
-    int QualityFactorCounter = 0.;
-    for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-      for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-        if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
-        double Energy = m_Results.GetSpectralPoint(r, p).GetPeak() * Matches[m].m_Conversion;
-        
-        // Find closest line:
-        unsigned int closest_i = 0;
-        unsigned int closest_l = 0;
-        double Difference = numeric_limits<double>::max();
-        for (unsigned int i = 0; i < m_Isotopes[r].size(); ++i) {
-          for (unsigned int l = 0; l < m_Isotopes[r][i].GetNLines(); ++l) {
-            if (fabs(Energy - m_Isotopes[r][i].GetLineEnergy(l)) < Difference) {
-              Difference = fabs(Energy - m_Isotopes[r][i].GetLineEnergy(l));
-              closest_i = i;
-              closest_l = l;
-            }
-          }
-        }
-        
-        QualityFactor += 
-          0.001/(m_Isotopes[r][closest_i].GetLineEnergy(closest_l) * m_Isotopes[r][closest_i].GetLineBranchingRatio(closest_l)) + fabs(Energy - m_Isotopes[r][closest_i].GetLineEnergy(closest_l))/m_Isotopes[r][closest_i].GetLineEnergy(closest_l);
-        QualityFactorCounter++;
-        //cout<<m_Isotopes[r][closest_i].GetLineEnergy(closest_l)<<": "<<QualityFactor<<endl;
-      }
-    }
-    Matches[m].m_QualityFactor = QualityFactor/QualityFactorCounter;
-  }
-    
-    
-    
-    
-  // Find the best (=smallest) quality factor
-  unsigned int BestMatch = 0;
-  double BestMatchQualityFactor = Matches[BestMatch].m_QualityFactor;
-  for (unsigned int m = 1; m < Matches.size(); ++m) {
-    if (Matches[m].m_QualityFactor < BestMatchQualityFactor) {
-      BestMatchQualityFactor = Matches[m].m_QualityFactor;
-      BestMatch = m;
-    }
-  }
-    
-  // Finally do the assignment:  
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
-      double Energy = m_Results.GetSpectralPoint(r, p).GetPeak() * Matches[BestMatch].m_Conversion;
-        
-      // Find closest line:
-      unsigned int closest_i = 0;
-      unsigned int closest_l = 0;
-      double Difference = numeric_limits<double>::max();
-      for (unsigned int i = 0; i < m_Isotopes[r].size(); ++i) {
-        for (unsigned int l = 0; l < m_Isotopes[r][i].GetNLines(); ++l) {
-          if (fabs(Energy - m_Isotopes[r][i].GetLineEnergy(l)) < Difference) {
-            Difference = fabs(Energy - m_Isotopes[r][i].GetLineEnergy(l));
-            closest_i = i;
-            closest_l = l;
-          }
-        }
-      }
-      m_Results.GetSpectralPoint(r, p).SetIsotope(m_Isotopes[r][closest_i]);
-      m_Results.GetSpectralPoint(r, p).SetEnergy(m_Isotopes[r][closest_i].GetLineEnergy(closest_l)); 
-      m_Results.GetSpectralPoint(r, p).IsGood(!m_Isotopes[r][closest_i].GetLineExcludeFlag(closest_l));
-    }
-  }
-
-  // If one peak is used twice - throw out the one with lower count rate
-  //bool FoundNotGood = false;
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
-      double Energy = m_Results.GetSpectralPoint(r, p).GetEnergy();
-      for (unsigned int q = p+1; q < m_Results.GetNumberOfSpectralPoints(r); ++q) {
-        if (m_Results.GetSpectralPoint(r, q).IsGood() == false) continue;
-        if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
-          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
-            m_Results.GetSpectralPoint(r, p).IsGood(false);
-            if (g_Verbosity >= c_Info) cout<<"Bad: "<<m_Results.GetSpectralPoint(r, p)<<endl;
-            //FoundNotGood = true;
-            break;
-          } else {
-            m_Results.GetSpectralPoint(r, q).IsGood(false);  
-            if (g_Verbosity >= c_Info) cout<<"Bad: "<<m_Results.GetSpectralPoint(r, q)<<endl;
-            //FoundNotGood = true;
-          }
-        }
-      }
-    }
-  }
-   
-  //! Rinse and repeat?
-  //if (FoundNotGood == true) {
-  //  AssignEnergies();
-  //}
-      
-  /*
-  cout<<"Calibration result: "<<endl;
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
-    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
-      cout<<m_Results.GetSpectralPoint(r, p)<<endl;
-    }
-  }
-  */ 
-      
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Determine the calibration model
-bool MCalibrateLines::DetermineModels()
-{
-  // Assemble the unique lines:
-  vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
-  if (Points.size() < 2) return true;
-  
-  if (m_CalibrationModelDeterminationMethod == c_CalibrationModelStepWise) {
-    // we are already done since this is used during peak finding 
-    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model steps"<<endl;
-  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelFit) {
-    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model fit"<<endl;
-    
-    // Set up the model:
-    MCalibrationModel* Model = 0;
-    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
-      Model = new MCalibrationModelPoly1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
-      Model = new MCalibrationModelPoly2();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly3) {
-      Model = new MCalibrationModelPoly3();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly4) {
-      Model = new MCalibrationModelPoly4();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
-      Model = new MCalibrationModelPoly1Inv1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
-      Model = new MCalibrationModelPoly1Exp1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
-      Model = new MCalibrationModelPoly1Exp2();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
-      Model = new MCalibrationModelPoly1Exp3();
-    } else {
-      new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingModel);
-      return false;
-    }
-    
-    if (Points.size() < Model->GetNParameters()) {
-      if (g_Verbosity >= c_Warning) cout<<"Warning: We have more fit parameters ("<<Model->GetNParameters()<<") than data points ("<<Points.size()<<")!"<<endl;
-      return true;
-    }
-    
-    double Quality = Model->Fit(Points);
-    if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<Quality<<endl;
-    
-    m_Results.SetModel(*Model);
-    
-    //delete Model;
-  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
-    if (g_Verbosity >= c_Info) cout<<"Find best (fitted) calibration model"<<endl;
-    
-    // Assemble the models
-    vector<MCalibrationModel*> Models;
-    Models.push_back(new MCalibrationModelPoly1());
-    Models.push_back(new MCalibrationModelPoly2());
-    Models.push_back(new MCalibrationModelPoly3());
-    Models.push_back(new MCalibrationModelPoly4());
-    Models.push_back(new MCalibrationModelPoly1Inv1());
-    Models.push_back(new MCalibrationModelPoly1Exp1());
-    Models.push_back(new MCalibrationModelPoly1Exp2());
-    Models.push_back(new MCalibrationModelPoly1Exp3());
-    
-    vector<double> Results;
-    for (unsigned int m = 0; m < Models.size(); ++m) {
-      Results.push_back(Models[m]->Fit(Points));
-      if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": "<<Results.back()<<endl;
-    }
-    
-    vector<double>::iterator MinI;
-    MinI = min_element(Results.begin(), Results.end());
-    
-    int Min = int(MinI -  Results.begin());
-    if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<endl;
-    
-    m_Results.SetModel(*Models[Min]);
-    
-    for (unsigned int m = 0; m < Models.size(); ++m) {
-      //delete Models[m];
-    }
-  } else {
-    new MExceptionUnknownMode("calibration model determination method", m_CalibrationModelDeterminationMethod);
-    return false;
-  }
-  
-  return true;
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Get/compile the calibration result
-MCalibrationSpectrum MCalibrateLines::GetCalibration()
-{
-  return m_Results;
-}
-
-
-// MCalibrateLines.cxx: the end...
+// MCalibrateEnergyFindLines.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -113,6 +113,8 @@ protected:
   virtual bool OnNextFit();
   //! Actions when the previous fit button has been pressed
   virtual bool OnPreviousFit();
+  //! Actions when the toggle line button has been pressed
+  virtual bool OnToggleFit();
   //! Actions when the load calibration button has been pressed
   virtual bool OnChooseCalibrationFiles();
   //! Toggle the X-log display of the histogram x-axis
@@ -167,6 +169,8 @@ private:
   TGTextButton* m_FitForwardButton;  
   //! The back button of the fit view
   TGTextButton* m_FitBackButton;
+  //! The toggle button of the fit view
+  TGTextButton* m_FitToggleButton;
   //! The view of the fit
   TRootEmbeddedCanvas* m_FitCanvas;
   
@@ -249,14 +253,15 @@ private:
   static const int c_HistogramLogY              =  15;
   static const int c_NextFit                    =  16;
   static const int c_PreviousFit                =  17;
-  static const int c_PeakParametrizationMethod  =  18;
-  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  19;
-  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  20;
-  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  21;
-  static const int c_CalibrationModelDeterminationMethod              =  22;
-  static const int c_CalibrationModelDeterminationMethodFittingModel  =  23;
-  static const int c_Save                       =  24;
-  static const int c_SaveAs                     =  25;
+  static const int c_ToggleFit                  =  18;
+  static const int c_PeakParametrizationMethod  =  19;
+  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  20;
+  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  21;
+  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  22;
+  static const int c_CalibrationModelDeterminationMethod              =  23;
+  static const int c_CalibrationModelDeterminationMethodFittingModel  =  24;
+  static const int c_Save                       =  25;
+  static const int c_SaveAs                     =  26;
   static const int c_Remove                     = 400;
   static const int c_Options                    = 500;
   static const int c_Change                     = 600;

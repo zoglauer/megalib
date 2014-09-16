@@ -226,7 +226,6 @@ vector<MCalibrationSpectralPoint> MCalibrationSpectrum::GetUniquePoints()
 //! Set the calibration model
 void MCalibrationSpectrum::SetModel(MCalibrationModel& Model)
 {
-  cout<<"Setting model"<<endl;
   delete m_Model;
   m_Model = Model.Clone();
 }
