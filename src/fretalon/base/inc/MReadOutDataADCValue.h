@@ -26,7 +26,6 @@ using namespace std;
 #include "MGlobal.h"
 #include "MTokenizer.h"
 #include "MReadOutData.h"
-#include "MReadOutDataInterfaceADCValue.h"
 
 // Forward declarations:
 
@@ -35,25 +34,41 @@ using namespace std;
 
 
 //! This basic read-out data just consisting of one (ADC) value
-class MReadOutDataADCValue : public MReadOutData, public MReadOutDataInterfaceADCValue
+class MReadOutDataADCValue : public MReadOutData
 {
   // public interface:
  public:
+  //! The type name --- must be unique
+  static const MString m_Type;
+  //! The type name ID --- must be unique
+  static const long m_TypeID;
+
   //! Default constructor
   MReadOutDataADCValue();
-  //! Constructor given the data
-  MReadOutDataADCValue(double Data);
+  //! Constructor wrapping around another data
+  MReadOutDataADCValue(MReadOutData* Data);
   //! Simple default destructor
   virtual ~MReadOutDataADCValue();
+
+  //! Return the type of this read-out data --- hard coded to save space
+  virtual MString GetType() const { return m_Type; }
+  //! Return the type ID of this read-out data --- hard coded to save memory
+  virtual long GetTypeID() const { return m_TypeID; }
 
   //! Clear the content of this read-out data element
   virtual void Clear();
 
-  //! Return true if this read-out data is of the given type
-  virtual bool IsOfType(const MString& String) const;
-  //! Return the type of this read-out data
-  virtual MString GetType() const;
+  //! Return true if the data is zero
+  virtual bool IsZero() const;
+  //! Return true if the data is positive
+  virtual bool IsPositive() const;
 
+  //! Set the ADC value
+  void SetADCValue(unsigned int ADCValue) { m_ADCValue = ADCValue; }
+  //! Get the ADC value
+  unsigned int GetADCValue() const { return m_ADCValue; }
+
+ 
   //! Clone this data element - the returned element must be deleted
   virtual MReadOutDataADCValue* Clone() const;
   
@@ -75,13 +90,13 @@ class MReadOutDataADCValue : public MReadOutData, public MReadOutDataInterfaceAD
  private:
 
 
-
   // protected members:
  protected:
+  //! The data
+  unsigned int m_ADCValue;
 
   // private members:
  private:
-
 
 
 #ifdef ___CINT___

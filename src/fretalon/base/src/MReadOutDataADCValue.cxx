@@ -45,8 +45,17 @@ ClassImp(MReadOutDataADCValue)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The type name --- must be unique
+const MString MReadOutDataADCValue::m_Type = "adc";
+//! The type name ID --- must be unique
+const long MReadOutDataADCValue::m_TypeID = m_Type.GetHash();
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Default constructor
-MReadOutDataADCValue::MReadOutDataADCValue() : MReadOutData(), MReadOutDataInterfaceADCValue(0)
+MReadOutDataADCValue::MReadOutDataADCValue() : MReadOutData(nullptr), m_ADCValue(0)
 {
 }
 
@@ -55,7 +64,7 @@ MReadOutDataADCValue::MReadOutDataADCValue() : MReadOutData(), MReadOutDataInter
 
 
 //! Constructor given the data
-MReadOutDataADCValue::MReadOutDataADCValue(double Data) : MReadOutData(), MReadOutDataInterfaceADCValue(Data)
+MReadOutDataADCValue::MReadOutDataADCValue(MReadOutData* Data) : MReadOutData(Data), m_ADCValue(0)
 {
 }
   
@@ -71,22 +80,31 @@ MReadOutDataADCValue::~MReadOutDataADCValue()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return true if this read-out element is of the given type
-bool MReadOutDataADCValue::IsOfType(const MString& String) const
-{ 
-  if (String == "adc" || String == "data") return true;
-  
-  return false;
+//! Clear the content of this read-out element
+void MReadOutDataADCValue::Clear()
+{
+  MReadOutData::Clear();
+  m_ADCValue = 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
- 
-//! Return the type
-MString MReadOutDataADCValue::GetType() const
+
+//! Return true is all values are zero
+bool MReadOutDataADCValue::IsZero() const
 {
-  return "adc";
+  return ((m_ADCValue == 0) ? true : false);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true is the value is positive
+bool MReadOutDataADCValue::IsPositive() const
+{
+  return ((m_ADCValue > 0) ? true : false);
 }
 
 
@@ -96,17 +114,12 @@ MString MReadOutDataADCValue::GetType() const
 //! Clone this element
 MReadOutDataADCValue* MReadOutDataADCValue::Clone() const
 {
-  return new MReadOutDataADCValue(m_ADCValue);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Clear the content of this read-out element
-void MReadOutDataADCValue::Clear()
-{
-  MReadOutDataInterfaceADCValue::Clear();
+  MReadOutDataADCValue* ROD = new MReadOutDataADCValue();
+  ROD->SetADCValue(m_ADCValue);
+  if (m_Wrapped != 0) {
+    ROD->SetWrapped(m_Wrapped->Clone());
+  }
+  return ROD;
 }
 
 
@@ -116,7 +129,7 @@ void MReadOutDataADCValue::Clear()
 //! Return the number of parsable elements
 unsigned int MReadOutDataADCValue::GetNumberOfParsableElements() const
 {
-  return MReadOutDataInterfaceADCValue::GetNumberOfParsableElements();
+  return MReadOutData::GetNumberOfParsableElements() + 1;
 }
 
 
@@ -126,12 +139,11 @@ unsigned int MReadOutDataADCValue::GetNumberOfParsableElements() const
 //! Parse the data from the tokenizer 
 bool MReadOutDataADCValue::Parse(const MTokenizer& T, unsigned int StartElement)
 {
-  if (T.GetNTokens() < StartElement + GetNumberOfParsableElements()) {
-    merr<<GetType()<<": Not enough elements to parse"<<show;
-    return false;
-  }
+  // Go deep first:
+  if (MReadOutData::Parse(T, StartElement) == false) return false;
   
-  if (MReadOutDataInterfaceADCValue::Parse(T, StartElement) == false) return false;
+  // Then here:
+  m_ADCValue = T.GetTokenAtAsUnsignedIntFast(StartElement + MReadOutData::GetNumberOfParsableElements());
   
   return true;
 }
@@ -144,7 +156,8 @@ bool MReadOutDataADCValue::Parse(const MTokenizer& T, unsigned int StartElement)
 MString MReadOutDataADCValue::ToString() const
 {
   ostringstream os;
-  os<<MReadOutData::ToString()<<" "<<MReadOutDataInterfaceADCValue::ToString();
+  os<<MReadOutData::ToString()<<m_ADCValue<<" ";
+  
   return os.str();
 }
 
@@ -157,9 +170,9 @@ MString MReadOutDataADCValue::ToParsableString(bool WithDescriptor) const
 {
   ostringstream os;
   if (WithDescriptor == true) {
-    os<<GetType()<<" ";
+    os<<GetCombinedType()<<" ";
   }
-  os<<MReadOutDataInterfaceADCValue::ToParsableString();
+  os<<ToString();
   return os.str();
 }
 

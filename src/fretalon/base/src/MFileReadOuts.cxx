@@ -40,7 +40,7 @@
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutData.h"
 #include "MReadOutDataADCValue.h"
-#include "MReadOutDataADCValueWithTiming.h"
+#include "MReadOutDataTiming.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -212,12 +212,34 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
     cout<<"No read-out element of type "<<ReadOutElementFormat<<" is registered!"<<endl;
     return false;
   }
-  if ((m_ROD = MFretalonRegistry::Instance().GetReadOutData(ReadOutDataFormat)) == 0) {
-    cout<<"No read-out data of type "<<ReadOutDataFormat<<" is registered!"<<endl;
-    return false;
+  // Assemble the ROD
+  vector<MString> RODNames;
+  int Minus = ReadOutDataFormat.Tokenize("-").size();
+  int With = ReadOutDataFormat.Tokenize("with").size();
+  if (Minus > With) {
+    RODNames = ReadOutDataFormat.Tokenize("-");
+  } else if (Minus < With) {
+    RODNames = ReadOutDataFormat.Tokenize("with");
+  } else {
+    RODNames.push_back(ReadOutDataFormat); 
   }
   
+  vector<MReadOutData*> RODs;
+  for (auto Name: RODNames) {
+    MReadOutData* ROD = MFretalonRegistry::Instance().GetReadOutData(Name);
+    if (ROD == 0) {
+      cout<<"No read-out data of type "<<Name<<" is registered!"<<endl;
+      return false;
+    }
+    RODs.push_back(ROD);
+  }
   
+  m_ROD = 0; // should already been 0 before
+  for (auto ROD: RODs) {
+    MReadOutData* NewROD = ROD->Clone();
+    NewROD->SetWrapped(m_ROD);
+    m_ROD = NewROD;
+  }
   
   // Now go to the end of the file to find the TE, CE keywords
   m_File.clear();
@@ -317,6 +339,8 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
   if (UpdateProgress(50) == false) {
     return 0;
   }
+
+  MTokenizer T(' ', false);  
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
   while (m_File.good() == true) {
@@ -354,21 +378,24 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       }
     } else if (Line[0] == 'T' && Line[1] == 'I') {
       MTime T(0);
-      if (T.Set(Line) == true) {
+      if (T.Set(Line.Data()) == true) {
         ROS.SetTime(T);
       } else {
         Error = true;
       }
     } else if (Line[0] == 'U' && Line[1] == 'H') {
-      MTokenizer T(' ', false);
       T.Analyze(Line, false);
         
       m_ROE->Parse(T, 1);
       m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
+  
+      
+      //cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
       
       if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
         MReadOut RO(*m_ROE, *m_ROD);
         ROS.AddReadOut(RO);
+        //cout<<RO.ToString()<<endl;
       }
     }
     

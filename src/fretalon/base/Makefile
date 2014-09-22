@@ -20,10 +20,8 @@ $(LB)/MReadOutElement.o \
 $(LB)/MReadOutElementStrip.o \
 $(LB)/MReadOutElementDoubleStrip.o \
 $(LB)/MReadOutData.o \
-$(LB)/MReadOutDataInterfaceADCValue.o \
-$(LB)/MReadOutDataInterfaceTiming.o \
 $(LB)/MReadOutDataADCValue.o \
-$(LB)/MReadOutDataADCValueWithTiming.o \
+$(LB)/MReadOutDataTiming.o \
 $(LB)/MReadOutSequence.o \
 $(LB)/MReadOutDataGroup.o \
 $(LB)/MReadOutCollection.o \

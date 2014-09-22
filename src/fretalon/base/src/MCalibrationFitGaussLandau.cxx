@@ -28,6 +28,13 @@ using namespace std;
 #include "TFitResult.h"
 #include "TH1.h"
 #include "TF1.h"
+#include "Math/WrappedTF1.h"
+#include "Math/WrappedMultiTF1.h"
+#include "Math/MinimizerOptions.h"
+#include "Fit/BinData.h"
+#include "Fit/UnBinData.h"
+#include "HFitInterface.h"
+#include "Fit/Fitter.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -103,7 +110,7 @@ MCalibrationFitGaussLandau* MCalibrationFitGaussLandau::Clone() const
 
 
 //! The function for ROOT fitting
-double MCalibrationFitGaussLandau::operator() (double* X, double* P)
+double MCalibrationFitGaussLandau::DoEvalPar(double X, const double* P) const
 { 
   // We do have (not case c_EnergyLossModelGaussianConvolvedDeltaFunction):
   // 0 .. Ps-1: Background + Energy loss
@@ -113,18 +120,18 @@ double MCalibrationFitGaussLandau::operator() (double* X, double* P)
   // Ps+3: sigma landau
   // Ps+4: amplitude landau
   
-  double Return = MCalibrationFitGaussian::operator()(X, P);
+  double Return = MCalibrationFitGaussian::DoEvalPar(X, P);
 
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     int Ps = GetBackgroundFitParameters();
     //if (4*P[Ps+5] <  P[Ps+3] || P[Ps+5] >  4*P[Ps+3]) return 0.001;
-    //Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+5]), P[Ps+5]);
-    Return += P[Ps+6]*TMath::Landau(-X[0], -(P[Ps+2] - 0.22278298 * P[Ps+3]), P[Ps+3], true);
+    //Return += P[Ps+6]*TMath::Landau(-X, -(P[Ps+2] - 0.22278298 * P[Ps+5]), P[Ps+5]);
+    Return += P[Ps+6]*TMath::Landau(-X, -(P[Ps+2] - 0.22278298 * P[Ps+3]), P[Ps+3], true);
   } else {
     int Ps = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
     //if (4*P[Ps+1] <  P[Ps+3] || P[Ps+1] >  4*P[Ps+3]) return 0.001;
-    //Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+3]), P[Ps+3]);
-    Return += P[Ps+4]*TMath::Landau(-X[0], -(P[Ps] - 0.22278298*P[Ps+1]), P[Ps+1], true);
+    //Return += P[Ps+4]*TMath::Landau(-X, -(P[Ps] - 0.22278298*P[Ps+3]), P[Ps+3]);
+    Return += P[Ps+4]*TMath::Landau(-X, -(P[Ps] - 0.22278298*P[Ps+1]), P[Ps+1], true);
   }
   
   return Return;
@@ -134,60 +141,118 @@ double MCalibrationFitGaussLandau::operator() (double* X, double* P)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Fit the given histogram in the given range
-bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
+//! Number of parameters of the fit
+unsigned int MCalibrationFitGaussLandau::NPar() const
 {
-  int Parameters = GetBackgroundFitParameters();
+  unsigned int Parameters = GetBackgroundFitParameters();
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     Parameters += 7;
   } else {
     Parameters += GetEnergyLossFitParameters() + 5;
   }
-  
+  return Parameters;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Fit the given histogram in the given range
+bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
+{
+  // Clean up the old fit:
   delete m_Fit;
-  m_Fit = new TF1("", this, Min, Max, Parameters);
+  m_Fit = 0;
+  m_IsFitUpToDate = false;
+  m_AverageDeviation = 1;
   
-  SetFitParameters(Histogram, Min, Max);
-  
-  MString Options = "RNIM S"; 
-  if (g_Verbosity < c_Chatty) Options += " Q";
-  TFitResultPtr FitResult = Histogram.Fit(m_Fit, Options);
-  
-  if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
-    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
-  } else {
-    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
-    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
-  }
+  int Parameters = NPar();
 
-  if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
-    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters()+2);
-    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters()+3);
-    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters()+4);
-    m_LandauSigma = m_GaussianSigma;
-    m_LandauHeight = m_Fit->GetParameter(GetBackgroundFitParameters()+6);
-  } else {
-    m_GaussianMean = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
-    m_GaussianSigma = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+1);
-    m_GaussianHeight = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+2);
-    m_LandauSigma = m_GaussianSigma;
-    m_LandauHeight = m_Fit->GetParameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+4);
-  }
+  // Prepare the array for ROOT
+  m_ROOTParameters.resize(Parameters, 0);
+  
+  ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 
-  m_IsFitUpToDate = true;
-    
-  m_AverageDeviation = 0;
-  for (int b = 1; b <= Histogram.GetNbinsX(); ++b) {
-    if (Histogram.GetBinCenter(b) < Min || Histogram.GetBinCenter(b) > Max) continue;
-    double FitValue = m_Fit->Eval(Histogram.GetBinCenter(b));
-    if (FitValue != 0) {
-      //cout<<Histogram.GetBinContent(b)<<":"<<FitValue<<endl;
-      m_AverageDeviation += (Histogram.GetBinContent(b) - FitValue)/FitValue;
+  ROOT::Fit::DataOptions Options; 
+  ROOT::Fit::DataRange Range; 
+  Range.SetRange(Min, Max);
+  ROOT::Fit::BinData TheData(Options, Range); 
+  ROOT::Fit::FillData(TheData, &Histogram);
+
+  ROOT::Fit::Fitter TheFitter; 
+  TheFitter.Config().SetMinimizer("Minuit2");
+  
+  TheFitter.SetFunction(*this);
+  
+  SetFitParameters(TheFitter, Histogram, Min, Max);
+  
+  bool ReturnCode = TheFitter.Fit(TheData);
+  if (ReturnCode == true) {
+    if (TheFitter.CalculateHessErrors() == false) {
+      if (TheFitter.CalculateMinosErrors() == false) {
+        cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+        ReturnCode = false;
+      }
     }
   }
-  m_AverageDeviation = fabs(m_AverageDeviation/Histogram.GetNbinsX());
   
-  return FitResult->IsValid();
+  const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
+  if (TheFitResult.IsEmpty()) ReturnCode = false;
+  
+  if (ReturnCode == true) {
+  
+    m_IsFitUpToDate = true;
+    
+    // Copy the key data  
+    if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+      m_GaussianMean = TheFitResult.Parameter(GetBackgroundFitParameters()+2);
+    } else {
+      m_GaussianMean = TheFitResult.Parameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
+      m_GaussianSigma = TheFitResult.Parameter(GetBackgroundFitParameters()+3);
+    }
+    
+    if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
+      m_GaussianMean = TheFitResult.Parameter(GetBackgroundFitParameters()+2);
+      m_GaussianSigma = TheFitResult.Parameter(GetBackgroundFitParameters()+3);
+      m_GaussianHeight = TheFitResult.Parameter(GetBackgroundFitParameters()+4);
+      m_LandauSigma = m_GaussianSigma;
+      m_LandauHeight = TheFitResult.Parameter(GetBackgroundFitParameters()+6);
+    } else {
+      m_GaussianMean = TheFitResult.Parameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+0);
+      m_GaussianSigma = TheFitResult.Parameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+1);
+      m_GaussianHeight = TheFitResult.Parameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+2);
+      m_LandauSigma = m_GaussianSigma;
+      m_LandauHeight = TheFitResult.Parameter(GetBackgroundFitParameters() + GetEnergyLossFitParameters()+4);
+    }
+    
+    // Create a TF1 object for drawing
+    delete m_Fit;
+    m_Fit = new TF1("", this, Min, Max, Parameters);
+    
+    m_Fit->SetChisquare(TheFitResult.Chi2());
+    m_Fit->SetNDF(TheFitResult.Ndf());
+    m_Fit->SetNumberFitPoints(TheData.Size());
+
+    m_Fit->SetParameters( &(TheFitResult.Parameters().front()) ); 
+    if (int(TheFitResult.Errors().size()) >= m_Fit->GetNpar()) { 
+      m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
+    }
+
+    
+    // Calculate the average deviation for evaluation
+    m_AverageDeviation = 0;
+    for (int b = 1; b <= Histogram.GetNbinsX(); ++b) {
+      if (Histogram.GetBinCenter(b) < Min || Histogram.GetBinCenter(b) > Max) continue;
+      double FitValue = m_Fit->Eval(Histogram.GetBinCenter(b));
+      if (FitValue != 0) {
+        //cout<<Histogram.GetBinContent(b)<<":"<<FitValue<<endl;
+        m_AverageDeviation += (Histogram.GetBinContent(b) - FitValue)/FitValue;
+      }
+    }
+    m_AverageDeviation = fabs(m_AverageDeviation/Histogram.GetNbinsX());
+  }
+  
+  return ReturnCode;
 }
 
 
@@ -195,51 +260,49 @@ bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
 
 
 //! Set all fit parameters
-void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double Max)
+void MCalibrationFitGaussLandau::SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, double Min, double Max)
 {
-  if (m_Fit == 0) return;
-  
-  MCalibrationFitGaussian::SetFitParameters(Hist, Min, Max);
+  MCalibrationFitGaussian::SetFitParameters(Fitter, Hist, Min, Max);
   if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     int BPM = GetBackgroundFitParameters();
-    m_Fit->SetParName(2+BPM, "Mean (energy loss, Gaussian & Landau)");
-    m_Fit->SetParName(5+BPM, "Sigma (Landau)");
+    Fitter.Config().ParSettings(2+BPM).SetName("Mean (energy loss, Gaussian & Landau)");
+    Fitter.Config().ParSettings(5+BPM).SetName("Sigma (Landau)");
     if (m_LandauSigma != g_DoubleNotDefined) {
-      m_Fit->SetParameter(5+BPM, m_LandauSigma);
+      Fitter.Config().ParSettings(5+BPM).SetValue(m_LandauSigma);
     } else {
-      m_Fit->SetParameter(5+BPM, 5*Hist.GetBinWidth(1));
+      Fitter.Config().ParSettings(5+BPM).SetValue(5*Hist.GetBinWidth(1));
     }
-    m_Fit->SetParLimits(5+BPM, Hist.GetBinWidth(1), 0.5*(Max-Min));
+    Fitter.Config().ParSettings(5+BPM).SetLimits(Hist.GetBinWidth(1), 0.5*(Max-Min));
 
-    m_Fit->SetParName(6+BPM, "Amplitude (Landau)");
+    Fitter.Config().ParSettings(6+BPM).SetName("Amplitude (Landau)");
     if (m_LandauHeight != g_DoubleNotDefined) {
-      m_Fit->SetParameter(6+BPM, m_LandauHeight);
+      Fitter.Config().ParSettings(6+BPM).SetValue(m_LandauHeight);
     } else {
-      m_Fit->SetParameter(6+BPM, 0.25*Hist.GetMaximum());
+      Fitter.Config().ParSettings(6+BPM).SetValue(0.25*Hist.GetMaximum());
     }
-    m_Fit->SetParLimits(6+BPM, 0, 5*Hist.GetMaximum());
+    Fitter.Config().ParSettings(6+BPM).SetLimits(0, 5*Hist.GetMaximum());
 
     
   } else {
     int BPM = GetBackgroundFitParameters() + GetEnergyLossFitParameters();
     
-    m_Fit->SetParName(0+BPM, "Mean (Gaussian + Landau)");
+    Fitter.Config().ParSettings(0+BPM).SetName("Mean (Gaussian + Landau)");
     
-    m_Fit->SetParName(3+BPM, "Sigma (Landau)");
+    Fitter.Config().ParSettings(3+BPM).SetName("Sigma (Landau)");
     if (m_LandauSigma != g_DoubleNotDefined) {
-      m_Fit->SetParameter(3+BPM, m_LandauSigma);
+      Fitter.Config().ParSettings(3+BPM).SetValue(m_LandauSigma);
     } else {
-      m_Fit->SetParameter(3+BPM, 5*Hist.GetBinWidth(1));
+      Fitter.Config().ParSettings(3+BPM).SetValue(5*Hist.GetBinWidth(1));
     }
-    m_Fit->SetParLimits(3+BPM, Hist.GetBinWidth(1), 0.5*(Max-Min));
+    Fitter.Config().ParSettings(3+BPM).SetLimits(Hist.GetBinWidth(1), 0.5*(Max-Min));
     
-    m_Fit->SetParName(4+BPM, "Amplitude (Landau)");
+    Fitter.Config().ParSettings(4+BPM).SetName("Amplitude (Landau)");
     if (m_LandauHeight != g_DoubleNotDefined) {
-      m_Fit->SetParameter(4+BPM, m_LandauHeight);
+      Fitter.Config().ParSettings(4+BPM).SetValue(m_LandauHeight);
     } else {
-      m_Fit->SetParameter(4+BPM, 0.25*Hist.GetMaximum());
+      Fitter.Config().ParSettings(4+BPM).SetValue(0.25*Hist.GetMaximum());
     }
-    m_Fit->SetParLimits(4+BPM, 0, 3*Hist.GetMaximum());
+    Fitter.Config().ParSettings(4+BPM).SetLimits(0, 3*Hist.GetMaximum());
   }
 }
 
@@ -249,7 +312,12 @@ void MCalibrationFitGaussLandau::SetFitParameters(TH1D& Hist, double Min, double
 
 //! Get the FWHM
 double MCalibrationFitGaussLandau::GetFWHM() const
-{  
+{ 
+  if (m_IsFitUpToDate == false) {
+    if (g_Verbosity >= c_Error) cout<<"Error: The FWHM can only be determined if we have an up-to-date fit!"<<endl;
+    return 1000000;
+  }
+  
   // A Gauss-Landau lambda without background and energy loss 
   auto GL = [&](double x) {
     double Return = 0.0;

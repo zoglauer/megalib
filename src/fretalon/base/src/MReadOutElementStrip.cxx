@@ -120,10 +120,10 @@ MString MReadOutElementStrip::GetType() const
 bool MReadOutElementStrip::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementStrip* S = dynamic_cast<const MReadOutElementStrip*>(&R);
-  
   if (S == 0) return false;
-  if (MReadOutElement::operator==(R) == false) return false;
+
   if (m_StripID != S->m_StripID) return false;
+  if (m_DetectorID != S->m_DetectorID) return false;
   
   return true;
 }
@@ -136,9 +136,9 @@ bool MReadOutElementStrip::operator==(const MReadOutElement& R) const
 bool MReadOutElementStrip::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementStrip* S = dynamic_cast<const MReadOutElementStrip*>(&R);
-  
   if (S == 0) return false;
-  if (MReadOutElement::operator<(R) == true) return true;
+  
+  if (m_DetectorID < S->m_DetectorID) return true;
   if (m_DetectorID == S->m_DetectorID) {
     if (m_StripID < S->m_StripID) return true;
   }
@@ -168,8 +168,8 @@ bool MReadOutElementStrip::Parse(const MTokenizer& T, unsigned int StartElement)
     return false;
   }
   
-  m_DetectorID = T.GetTokenAtAsUnsignedInt(StartElement);
-  m_StripID = T.GetTokenAtAsUnsignedInt(StartElement+1);
+  m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
+  m_StripID = T.GetTokenAtAsUnsignedIntFast(StartElement+1);
   
   return true;
 }

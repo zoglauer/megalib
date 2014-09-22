@@ -120,9 +120,10 @@ MString MReadOutElementDoubleStrip::GetType() const
 bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 {
   const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  
   if (S == 0) return false;
-  if (MReadOutElementStrip::operator==(R) == false) return false;
+  
+  if (m_StripID != S->m_StripID) return false;
+  if (m_DetectorID != S->m_DetectorID) return false;
   if (m_IsPositiveStrip != S->m_IsPositiveStrip) return false;
   
   return true;
@@ -136,11 +137,14 @@ bool MReadOutElementDoubleStrip::operator==(const MReadOutElement& R) const
 bool MReadOutElementDoubleStrip::operator<(const MReadOutElement& R) const
 {
   const MReadOutElementDoubleStrip* S = dynamic_cast<const MReadOutElementDoubleStrip*>(&R);
-  
   if (S == 0) return false;
-  if (MReadOutElementStrip::operator<(R) == true) return true;
-  if (m_DetectorID == S->m_DetectorID && m_StripID == S->m_StripID) {
-    if (m_IsPositiveStrip == false && S->m_IsPositiveStrip == true) return true;
+  
+  if (m_DetectorID < S->m_DetectorID) return true;
+  if (m_DetectorID == S->m_DetectorID) {
+    if (m_StripID < S->m_StripID) return true;
+    if (m_StripID == S->m_StripID) {
+      if (m_IsPositiveStrip == false && S->m_IsPositiveStrip == true) return true;
+    }  
   }
   
   return false;
@@ -168,8 +172,8 @@ bool MReadOutElementDoubleStrip::Parse(const MTokenizer& T, unsigned int StartEl
     return false;
   }
   
-  m_DetectorID = T.GetTokenAtAsUnsignedInt(StartElement);
-  m_StripID = T.GetTokenAtAsUnsignedInt(StartElement+1);
+  m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
+  m_StripID = T.GetTokenAtAsUnsignedIntFast(StartElement+1);
   m_IsPositiveStrip = (T.GetTokenAt(StartElement+2) == "p") ? true : false;
   
   return true;

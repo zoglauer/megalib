@@ -38,34 +38,51 @@ class MReadOutData
   // public interface:
  public:
   //! Default constructor
-  MReadOutData() {};
+  MReadOutData();
+  //! Standard constructor
+  MReadOutData(MReadOutData* ReadOutData);
   //! Simple default destructor
-  virtual ~MReadOutData() {};
+  virtual ~MReadOutData();
 
-  //! Clear the content of this read-out data element
-  virtual void Clear() {}
+  //! Return the type of this read-out data --- hard coded to save space
+  virtual MString GetType() const { return "base"; }
+  //! Return the type ID of this read-out data --- hard coded to save memory
+  virtual long GetTypeID() const { return 0; }
+
+  //! Return the combined type of this read-out data and its wrapped data
+  virtual MString GetCombinedType() const;
 
   //! Return true if this read-out data is of the given type
-  virtual bool IsOfType(const MString& String) const { return false; }
-  //! Return the type of this read-out data
-  virtual MString GetType() const { return "none"; }
+  bool IsOfType(const MString& Type) const { return (GetType() == Type); }
+  //! Return true if this read-out data is of the given type
+  bool IsOfType(long Type) const { return (GetTypeID() == Type); }
 
+  //! Clear the content of this read-out data element
+  virtual void Clear() { if (m_Wrapped != 0) m_Wrapped->Clear(); }
+
+  void SetWrapped(MReadOutData* ROD) { m_Wrapped = ROD; }
+  
+  //! Return this read-out data as the given type - return nullptr if not possible
+  virtual MReadOutData* Get(long TypeID);
+  
   //! Clone this data element - the returned element must be deleted
   virtual MReadOutData* Clone() const { return new MReadOutData(); }
   
   //! Return the number of parsable elements
-  virtual unsigned int GetNumberOfParsableElements() const { return 0; }  
+  virtual unsigned int GetNumberOfParsableElements() const { return m_Wrapped != 0 ? m_Wrapped->GetNumberOfParsableElements() : 0; }  
   //! Parse the data from the tokenizer 
-  virtual bool Parse(const MTokenizer& T, unsigned int StartElement) { return false; }
+  virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
   
   //! Return the data as parsable string
-  virtual MString ToParsableString(bool WithDescriptor = false) const { return ""; }
+  virtual MString ToParsableString(bool WithDescriptor = false) const { return m_Wrapped != 0 ? m_Wrapped->ToParsableString(WithDescriptor) : ""; }
   //! Dump a string
-  virtual MString ToString() const { return "Read-out data"; };
+  virtual MString ToString() const { return m_Wrapped != 0 ? m_Wrapped->ToString() : ""; }  
   
   
   // protected methods:
  protected:
+  //! Standard constructor - do the decoration
+  MReadOutData(MReadOutData* Data, const MString& Type);
 
   // private methods:
  private:
@@ -74,12 +91,14 @@ class MReadOutData
 
   // protected members:
  protected:
+  //! The wrapped read-out data
+  MReadOutData* m_Wrapped;
+
 
   // private members:
  private:
 
-
-
+  
 #ifdef ___CINT___
  public:
   ClassDef(MReadOutData, 0) // no description

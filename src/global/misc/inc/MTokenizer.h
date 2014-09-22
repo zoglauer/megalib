@@ -89,6 +89,8 @@ class MTokenizer
   int GetTokenAtAsInt(const unsigned int i) const;
   //! Return the token at i as unsigned int --- return 0 in case of error
   unsigned int GetTokenAtAsUnsignedInt(const unsigned int i) const;
+  //! Return the token at i as unsigned int --- return 0 in case of error
+  unsigned int GetTokenAtAsUnsignedIntFast(const unsigned int i) const;
   //! Return the token at i as long --- return 0 in case of error
   long GetTokenAtAsLong(const unsigned int i) const;
   //! Return the token at i as unsigned long --- return 0 in case of error

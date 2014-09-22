@@ -26,7 +26,7 @@ using namespace std;
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MReadOutDataInterfaceADCValue.h"
+#include "MReadOutDataADCValue.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +59,7 @@ MCalibrateEnergy::~MCalibrateEnergy()
 
 
 //!  Sort two ADC values increasing
-bool SortADCValuesIncreasing(MReadOutDataInterfaceADCValue* A, MReadOutDataInterfaceADCValue* B) 
+bool SortADCValuesIncreasing(MReadOutDataADCValue* A, MReadOutDataADCValue* B) 
 { 
   return (A->GetADCValue() < B->GetADCValue()); 
 }
@@ -68,9 +68,9 @@ bool SortADCValuesIncreasing(MReadOutDataInterfaceADCValue* A, MReadOutDataInter
 TH1D* MCalibrateEnergy::CreateHistogramCountsBinned(MReadOutDataGroup& G, double Min, double Max, int Counts, double MinBinWidth)
 {
   // Make local copy of the read-out elements representing ADC values
-  vector<MReadOutDataInterfaceADCValue*> Data;
+  vector<MReadOutDataADCValue*> Data;
   for (unsigned int d = 0; d < G.GetNumberOfReadOutDatas(); ++d) {
-    MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(G.GetReadOutData(d)));
+    MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(G.GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Data.push_back(ADC);
     }

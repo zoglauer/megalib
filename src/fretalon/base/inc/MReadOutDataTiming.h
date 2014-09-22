@@ -1,5 +1,5 @@
 /*
- * MReadOutDataInterfaceADCValue.h
+ * MReadOutDataTiming.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MReadOutDataInterfaceADCValue__
-#define __MReadOutDataInterfaceADCValue__
+#ifndef __MReadOutDataTiming__
+#define __MReadOutDataTiming__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +25,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MTokenizer.h"
+#include "MReadOutData.h"
 
 // Forward declarations:
 
@@ -32,36 +33,43 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A read-out data interface just consisting of one ADC value
-class MReadOutDataInterfaceADCValue
+//! This basic read-out data just consisting of one timing value as unsigned int
+class MReadOutDataTiming : public MReadOutData
 {
   // public interface:
  public:
+  //! The type name --- must be unique
+  static const MString m_Type;
+  //! The type name ID --- must be unique
+  static const long m_TypeID;
+
   //! Default constructor
-  MReadOutDataInterfaceADCValue();
+  MReadOutDataTiming();
   //! Constructor given the data
-  MReadOutDataInterfaceADCValue(double ADCValue);
+  MReadOutDataTiming(MReadOutData* Data);
   //! Simple default destructor
-  virtual ~MReadOutDataInterfaceADCValue();
+  virtual ~MReadOutDataTiming();
+
+  //! Return the type of this read-out data --- hard coded to save space
+  virtual MString GetType() const { return m_Type; }
+  //! Return the type ID of this read-out data --- hard coded to save memory
+  virtual long GetTypeID() const { return m_TypeID; }
 
   //! Clear the content of this read-out data element
   virtual void Clear();
 
-  //! Return true if the data is zero
-  virtual bool IsZero() const;
+  //! Set the timing
+  void SetTiming(unsigned int Timing) { m_Timing = Timing; }
+  //! Get the timing
+  unsigned int GetTiming() const { return m_Timing; }
 
-  //! Return true if the data is positive
-  virtual bool IsPositive() const;
-
-  //! Set the ADC value
-  void SetADCValue(double ADCValue) { m_ADCValue = ADCValue; }
-  //! Get the ADC value
-  double GetADCValue() const { return m_ADCValue; }
+  //! Clone this data element - the returned element must be deleted
+  virtual MReadOutDataTiming* Clone() const;
   
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;  
   //! Return the data as parsable string
-  virtual MString ToParsableString() const; 
+  virtual MString ToParsableString(bool WithDescriptor = false) const; 
   //! Parse the data from the tokenizer 
   virtual bool Parse(const MTokenizer& T, unsigned int StartElement);
   
@@ -79,8 +87,8 @@ class MReadOutDataInterfaceADCValue
 
   // protected members:
  protected:
-  //! The data
-  double m_ADCValue;
+  //! The timing
+  unsigned int m_Timing;
 
   // private members:
  private:
@@ -89,13 +97,13 @@ class MReadOutDataInterfaceADCValue
 
 #ifdef ___CINT___
  public:
-  ClassDef(MReadOutDataInterfaceADCValue, 0) // no description
+  ClassDef(MReadOutDataTiming, 0) // no description
 #endif
 
 };
 
 //! Streamify the read-out data
-ostream& operator<<(ostream& os, const MReadOutDataInterfaceADCValue& R);
+ostream& operator<<(ostream& os, const MReadOutDataTiming& R);
 
 #endif
 

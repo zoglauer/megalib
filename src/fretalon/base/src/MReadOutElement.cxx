@@ -156,7 +156,7 @@ bool MReadOutElement::Parse(const MTokenizer& T, unsigned int StartElement)
     return false;
   }
   
-  m_DetectorID = T.GetTokenAtAsUnsignedInt(StartElement);
+  m_DetectorID = T.GetTokenAtAsUnsignedIntFast(StartElement);
   
   return true;
 }

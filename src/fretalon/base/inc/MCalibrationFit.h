@@ -20,6 +20,12 @@
 
 // ROOT libs:
 #include "TF1.h"
+#include "Math/WrappedTF1.h"
+#include "Math/WrappedMultiTF1.h"
+#include "Fit/BinData.h"
+#include "Fit/UnBinData.h"
+#include "HFitInterface.h"
+#include "Fit/Fitter.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -32,7 +38,7 @@ class TH1D;
 
 
 //! Class representing a fit to a line
-class MCalibrationFit
+class MCalibrationFit : public ROOT::Math::IParamFunction
 {
   // public interface:
  public:
@@ -49,8 +55,12 @@ class MCalibrationFit
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationFit* Clone() const;
   
+  // Interface for ROOT fitting
   //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return 0; }
+  virtual double DoEvalPar(double X, const double* P) const { return 0; }
+  void SetParameters(const double *p) { m_ROOTParameters.clear(); for (unsigned int i = 0; i < NPar(); ++i) m_ROOTParameters.push_back(p[i]);  }
+  const double* Parameters() const { return &m_ROOTParameters[0]; }
+  virtual unsigned int NPar() const { return GetBackgroundFitParameters() + GetEnergyLossFitParameters(); }
 
   //! Return true, if the fit is up-to-date
   bool IsFitUpToDate() const { return m_IsFitUpToDate; }
@@ -105,17 +115,17 @@ class MCalibrationFit
   // protected methods:
  protected:
   //! Return the number of fit parameters in the background fit
-  int GetBackgroundFitParameters();
+  int GetBackgroundFitParameters() const;
   //! Return the number of fit parameters in the energy loss fit
-  int GetEnergyLossFitParameters();
+  int GetEnergyLossFitParameters() const;
   
   //! The function for fitting the background
-  double BackgroundFit(double* X, double* P);
+  double BackgroundFit(double X, const double* P) const;
   //! The function for fitting the energy loss
-  double EnergyLossFit(double* X, double* P);
-
+  double EnergyLossFit(double X, const double* P) const;
+  
   //! Set all fit parameters
-  virtual void SetFitParameters(TH1D& Hist, double Min, double Max);
+  virtual void SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, double Min, double Max);
   
   // private methods:
  private:
@@ -134,13 +144,15 @@ class MCalibrationFit
   
   //! The used background model. One of c_BackgroundModelXXX
   unsigned int m_BackgroundModel;
-
   //! The used energy loss model. One of c_EnergyLossModelXXX
   unsigned int m_EnergyLossModel;
   
+  //! The parameters for the ROOT fitting
+  vector<double> m_ROOTParameters;
+
   // private members:
  private:
-
+  
 
 #ifdef ___CINT___
  public:

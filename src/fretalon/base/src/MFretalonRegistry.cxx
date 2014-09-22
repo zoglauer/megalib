@@ -28,7 +28,7 @@
 #include "MReadOutElementStrip.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
-#include "MReadOutDataADCValueWithTiming.h"
+#include "MReadOutDataTiming.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +50,7 @@ MFretalonRegistry::MFretalonRegistry()
   m_ROEs.push_back(new MReadOutElementDoubleStrip());
   
   m_RODs.push_back(new MReadOutDataADCValue());
-  m_RODs.push_back(new MReadOutDataADCValueWithTiming());
+  m_RODs.push_back(new MReadOutDataTiming());
 }
 
 

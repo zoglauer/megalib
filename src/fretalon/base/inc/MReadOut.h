@@ -52,11 +52,15 @@ class MReadOut
   void SetReadOutElement(const MReadOutElement& ROE);
   //! Return a const reference to the read-out element
   const MReadOutElement& GetReadOutElement() const { return *m_ROE; }
+  //! Return a reference to the read-out element
+  MReadOutElement& GetReadOutElement() { return *m_ROE; }
   
   //! Set the read-out data
   void SetReadOutData(const MReadOutData& ROD);
    //! Return a const reference to the read-out data
   const MReadOutData& GetReadOutData() const { return *m_ROD; }
+   //! Return a reference to the read-out data
+  MReadOutData& GetReadOutData() { return *m_ROD; }
   
   //! Return the data as parsable string
   virtual MString ToParsableString(bool WithDescriptor = false); 

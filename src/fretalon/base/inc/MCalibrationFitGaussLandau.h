@@ -48,7 +48,9 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
   virtual MCalibrationFitGaussLandau* Clone() const;
 
   //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P);
+  virtual double DoEvalPar(double X, const double* P) const;
+  //! The number of parameters for ROOT fitting
+  virtual unsigned int NPar() const;
   
   //! Fit the given histogram in the given range
   virtual bool Fit(TH1D& Histogram, double Min, double Max);
@@ -64,7 +66,7 @@ class MCalibrationFitGaussLandau : public MCalibrationFitGaussian
   // protected methods:
  protected:
   //! Set all fit parameters
-  virtual void SetFitParameters(TH1D& Hist, double Min, double Max);
+  virtual void SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, double Min, double Max);
 
   // private methods:
  private:

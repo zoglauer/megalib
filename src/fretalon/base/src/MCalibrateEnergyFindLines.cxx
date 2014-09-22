@@ -34,7 +34,7 @@ using namespace std;
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
 #include "MCalibrationSpectralPoint.h"
-#include "MReadOutDataInterfaceADCValue.h"
+#include "MReadOutDataADCValue.h"
 #include "MCalibrationFit.h"
 #include "MCalibrationFitGaussian.h"
 #include "MCalibrationFitGaussLandau.h"
@@ -116,7 +116,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
   Binner.SetPrior(Prior);
   for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-    MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(m_ROGs[ROGID].GetReadOutData(d)));
+    MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Binner.Add(ADC->GetADCValue());
     }
@@ -275,7 +275,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       double Total = 0.0;
       unsigned int TotalCounts = 0;
       for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-        MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(m_ROGs[ROGID].GetReadOutData(d)));
+        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
         if (ADC != nullptr) {
           if (ADC->GetADCValue() >= Data->GetBinLowEdge(PeakBin) && 
               ADC->GetADCValue() < Data->GetBinLowEdge(PeakBin) + Data->GetBinWidth(PeakBin)) {
@@ -480,7 +480,7 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     FitBinner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
     
     for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-      MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(m_ROGs[ROGID].GetReadOutData(d)));
+        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
       if (ADC != nullptr) {
         FitBinner.Add(ADC->GetADCValue());
       }
@@ -517,9 +517,9 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
       MCalibrationFit& Fit = P.GetFit();
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
       if (IsGood == false) {
-        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Negative fit result --- ignoring in favour of chi-square and deviation test"<<endl;
-        //P.IsGood(false);
-        //continue;
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The line could not be fit good enough."<<endl;
+        P.IsGood(false);
+        continue;
       }
       if (Fit.GetReducedChisquare() > ChiSquareLimit && Fit.GetAverageDeviation() > AverageDeviationLimit) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Bad chisquare "<<Fit.GetReducedChisquare()<<" (with limit "<<ChiSquareLimit<<") and average deviation between fit and data ("<<100*Fit.GetAverageDeviation()<<"% vs. a limit of "<<100*AverageDeviationLimit<<"%)"<<endl;

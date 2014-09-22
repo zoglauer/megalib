@@ -90,6 +90,8 @@ MCalibrationModel& MCalibrationModel::operator= (const MCalibrationModel& Calibr
   m_IsFitUpToDate = CalibrationModel.m_IsFitUpToDate;
   m_Keyword = CalibrationModel.m_Keyword;
 
+  m_ROOTParameters = CalibrationModel.m_ROOTParameters;
+  
   return *this;
 }
 
@@ -124,43 +126,82 @@ void MCalibrationModel::Draw(MString Options)
 //! Fit the given histogram in the given range - return the quality of the fit
 double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
 {
-  if (Points.size() < GetNParameters()) {
-    if (g_Verbosity >= c_Error) cout<<"Error: We have more fit parameters ("<<GetNParameters()<<") than data points ("<<Points.size()<<")!"<<endl;
+  if (Points.size() < NPar()) {
+    if (g_Verbosity >= c_Error) cout<<"Error: We have more fit parameters ("<<NPar()<<") than data points ("<<Points.size()<<")!"<<endl;
     return -1;
   }
   
-  // Create a TGraph and fit it
-  TGraph* Graph = new TGraph(Points.size());
+  // Clean up the old fit:
+  delete m_Fit;
+  m_Fit = 0;
+  m_IsFitUpToDate = false;
   
+  // Prepare the array for ROOT
+  m_ROOTParameters.resize(NPar(), 0);
+   
+  // SEt up the fitter
+  ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
+
+  ROOT::Fit::BinData TheData;
+  TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
   for (unsigned int p = 0; p < Points.size(); ++p) {
-    Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
+    TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);
+  }
+
+  ROOT::Fit::Fitter TheFitter; 
+  TheFitter.Config().SetMinimizer("Minuit2");
+  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
+  
+  TheFitter.SetFunction(*this);
+  InitializeFitParameters(TheFitter);
+  
+  // Fit
+  bool ReturnCode = TheFitter.Fit(TheData);
+  if (ReturnCode == true) {
+    if (TheFitter.CalculateHessErrors() == false) {
+      if (TheFitter.CalculateMinosErrors() == false) {
+        cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+        ReturnCode = false;
+      }
+    }
   }
   
-  delete m_Fit;
-  m_Fit = new TF1("", this, 0, Points.back().GetPeak(), GetNParameters());
-  InitializeFitParameters();
+  // Prepare the results
+  const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
+  if (TheFitResult.IsEmpty()) ReturnCode = false;  
   
-  MString Options = "RNI S"; 
-  if (g_Verbosity < c_Chatty) Options += " Q";
-  TFitResultPtr FitResult = Graph->Fit(m_Fit, Options);
+  if (ReturnCode == true) {
   
-  m_IsFitUpToDate = true;
+    m_IsFitUpToDate = true;
+        
+    // Create a TF1 object for drawing
+    m_Fit = new TF1("", this, 0, 1.1*Points.back().GetPeak(), NPar());
+    
+    m_Fit->SetChisquare(TheFitResult.Chi2());
+    m_Fit->SetNDF(TheFitResult.Ndf());
+    m_Fit->SetNumberFitPoints(TheData.Size());
+
+    m_Fit->SetParameters( &(TheFitResult.Parameters().front()) ); 
+    if (int(TheFitResult.Errors().size()) >= m_Fit->GetNpar()) { 
+      m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
+    }
+
+    return m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+  }  
   
-  return m_Fit->GetChisquare()/m_Fit->GetNDF(); 
+  return numeric_limits<double>::max()/1000;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Get the fit value - if the fit doesn't exist throw MExceptionObjectDoesNotExist
+//! Get the fit value - return 0 if the fit does not exist
 double MCalibrationModel::GetFitValue(double Value) const
 {
   if (m_Fit != 0 && m_IsFitUpToDate == true) {
     return m_Fit->Eval(Value);
   }
-  
-  throw MExceptionObjectDoesNotExist("Fit does not exist!");
   
   return 0;
 }
@@ -181,8 +222,6 @@ MString MCalibrationModel::ToParsableString(bool WithDescriptor)
   }
   return out.str();
 }
-   
-
 
 
 // MCalibrationModel.cxx: the end...

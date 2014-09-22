@@ -239,7 +239,7 @@ void MString::Read(istream& in)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-long MString::GetHash()
+long MString::GetHash() const
 {
   //! Return a hash value
 

@@ -1,5 +1,5 @@
 /*
- * MCalibrate.cxx
+ * MModuleInterfaceFileName.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -16,44 +16,48 @@
  */
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// MModuleInterfaceFileName
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
 // Include the header:
-#include "MCalibrate.h"
+#include "MModuleInterfaceFileName.h"
 
 // Standard libs:
-#include <algorithm>
-using namespace std;
 
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MReadOutDataADCValue.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #ifdef ___CINT___
-ClassImp(MCalibrate)
+ClassImp(MModuleInterfaceFileName)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Default constructor
-MCalibrate::MCalibrate() : m_DiagnosticsMode(false)
+MModuleInterfaceFileName::MModuleInterfaceFileName() 
 {
+  // Construct an instance of MModuleInterfaceFileName
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Default destructor
-MCalibrate::~MCalibrate()
+MModuleInterfaceFileName::~MModuleInterfaceFileName()
 {
+  // Delete this instance of MModuleInterfaceFileName
 }
 
 
-// MCalibrate.cxx: the end...
+// MModuleInterfaceFileName.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

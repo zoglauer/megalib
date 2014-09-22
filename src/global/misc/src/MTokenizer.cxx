@@ -174,12 +174,12 @@ MString MTokenizer::GetTokenAt(const unsigned int i) const
 {
   // Return the token at position i
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return m_Tokens[i];
   } else {
     mlog<<"MString MTokenizer::GetTokenAt(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -209,8 +209,8 @@ MString MTokenizer::GetTokenAfterAsString(const unsigned int i) const
   // Return the token at position i and higher as MString
 
   MString T;
-  for (unsigned int j = i; j < GetNTokens(); j++) {
-    if (j < GetNTokens()-1) {
+  for (unsigned int j = i; j < m_Tokens.size(); j++) {
+    if (j < m_Tokens.size()-1) {
       T += GetTokenAt(j) + " ";
     } else {
       T += GetTokenAt(j);
@@ -229,12 +229,12 @@ double MTokenizer::GetTokenAtAsDouble(const unsigned int i) const
   // Return the token at position i as double 
 
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return atof(m_Tokens[i]);
   } else {
     mlog<<"MString MTokenizer::GetTokenAtAsDouble(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -253,12 +253,12 @@ float MTokenizer::GetTokenAtAsFloat(const unsigned int i) const
   // Return the token at position i as double 
 
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return atof(m_Tokens[i]);
   } else {
     mlog<<"MString MTokenizer::GetTokenAtAsFloat(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -276,12 +276,40 @@ int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
   // Return the token at position i as integer
 
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return int(atof(m_Tokens[i])); // atoi(m_Tokens[i]); is not working in cases such as 2.35e+02
   } else {
     mlog<<"int MTokenizer::GetTokenAtAsInt(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+    } else {
+      mlog<<"The Tokenizer is empty!"<<endl;
+    }
+    return 0;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MTokenizer::GetTokenAtAsUnsignedIntFast(const unsigned int i) const
+{
+  // Return the token at position i as unsigned integer
+  
+  if (i < m_Tokens.size()) {
+    // From: http://stackoverflow.com/questions/16826422/c-most-efficient-way-to-convert-string-to-int-faster-than-atoi
+    uint32_t val = 0;
+    const char* str = m_Tokens[i].Data();
+    while (*str) {
+      val = (val << 1) + (val << 3) + *(str++) - 48;
+    }
+    return val;
+  } else {
+    mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -297,9 +325,8 @@ int MTokenizer::GetTokenAtAsInt(const unsigned int i) const
 unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
 {
   // Return the token at position i as unsigned integer
-
-
-  if (i < GetNTokens()) {
+  
+  if (i < m_Tokens.size()) {
     int Value = int(atof(m_Tokens[i]));
     if (Value < 0) {
       mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i)"<<endl;
@@ -309,8 +336,8 @@ unsigned int MTokenizer::GetTokenAtAsUnsignedInt(const unsigned int i) const
     return (unsigned int) Value;
   } else {
     mlog<<"int MTokenizer::GetTokenAtAsUnsignedInt(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -327,12 +354,12 @@ long MTokenizer::GetTokenAtAsLong(const unsigned int i) const
 {
   // Return the token at position i as long integer
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return atol(m_Tokens[i]);
   } else {
     mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -349,12 +376,12 @@ unsigned long MTokenizer::GetTokenAtAsUnsignedLong(const unsigned int i) const
 {
   // Return the token at position i as long integer
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     return strtoul(m_Tokens[i], NULL, 0);
   } else {
     mlog<<"long MTokenizer::GetTokenAtAsLong(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -371,16 +398,16 @@ TArrayI MTokenizer::GetTokenAtAsIntArray(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
-  if (i < GetNTokens()) {
-    TArrayI A(GetNTokens() - i);
-    for (unsigned int j = i; j < GetNTokens(); ++j) {
+  if (i < m_Tokens.size()) {
+    TArrayI A(m_Tokens.size() - i);
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
       A[j-i] = GetTokenAtAsInt(j);
     }
     return A;
   } else {
     mlog<<"TArrayI MTokenizer::GetTokenAtAsIntArray(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -397,16 +424,16 @@ TArrayD MTokenizer::GetTokenAtAsDoubleArray(const unsigned int i) const
 {
   // Return all tokens from position i to end as integer array
 
-  if (i < GetNTokens()) {
-    TArrayD A(GetNTokens() - i);
-    for (unsigned int j = i; j < GetNTokens(); ++j) {
+  if (i < m_Tokens.size()) {
+    TArrayD A(m_Tokens.size() - i);
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
       A[j-i] = GetTokenAtAsDouble(j);
     }
     return A;
   } else {
     mlog<<"TArrayD MTokenizer::GetTokenAtAsDoubleArray(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -424,15 +451,15 @@ vector<double> MTokenizer::GetTokenAtAsDoubleVector(const unsigned int i) const
   // Return all tokens from position i to end as integer array
 
   vector<double> A;
-  if (i < GetNTokens()) {
-    for (unsigned int j = i; j < GetNTokens(); ++j) {
+  if (i < m_Tokens.size()) {
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
       A.push_back(GetTokenAtAsDouble(j));
     }
     return A;
   } else {
     mlog<<"vector<double> MTokenizer::GetTokenAtAsDoubleVector(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -450,15 +477,15 @@ vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
   // Return all tokens from position i to end as integer array
 
   vector<float> A;
-  if (i < GetNTokens()) {
-    for (unsigned int j = i; j < GetNTokens(); ++j) {
+  if (i < m_Tokens.size()) {
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
       A.push_back(GetTokenAtAsFloat(j));
     }
     return A;
   } else {
     mlog<<"vector<float> MTokenizer::GetTokenAtAsFloatVector(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -476,7 +503,7 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
   // Return the token at position i as boolean
 
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     MString Token = m_Tokens[i];
     Token.ToLower();
     if (Token == "false") {
@@ -487,8 +514,8 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
     return (Token.ToInt() == 0) ? false : true;
   } else {
     mlog<<"bool MTokenizer::GetTokenAtAsBoolean(int i): "<<endl;
-    if (GetNTokens() > 0) {
-      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")\n";
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
     } else {
       mlog<<"The Tokenizer is empty!"<<endl;
@@ -505,9 +532,9 @@ bool MTokenizer::IsTokenAt(const unsigned int i, const MString& Token, bool cons
 {
   // Return true, if Token is identical with the token at position i
 
-  if (GetNTokens() == 0) return false;
+  if (m_Tokens.size() == 0) return false;
 
-  if (i < GetNTokens()) {
+  if (i < m_Tokens.size()) {
     if (IgnoreCase == true) {
       MString LowerCase = Token;
       LowerCase.ToLower();
@@ -518,7 +545,7 @@ bool MTokenizer::IsTokenAt(const unsigned int i, const MString& Token, bool cons
       return (Token == m_Tokens[i]) ? true : false;
     }
   } else {
-    merr<<"Index ("<<i<<") out of bounds (min=0, max="<<GetNTokens()-1<<")"<<endl;
+    merr<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")"<<endl;
     mout<<"The text line was: \""<<m_Text<<"\""<<endl;
     return false;
   }
@@ -721,9 +748,9 @@ MString MTokenizer::ToString()
 {
   ostringstream out;
 
-  if (GetNTokens() > 0) {
-    out<<"Tokenizer content ("<<GetNTokens()<<" Tokens):"<<endl;
-    for (unsigned int i = 0; i < GetNTokens(); i++) {
+  if (m_Tokens.size() > 0) {
+    out<<"Tokenizer content ("<<m_Tokens.size()<<" Tokens):"<<endl;
+    for (unsigned int i = 0; i < m_Tokens.size(); i++) {
       out<<"Token "<<i<<": \""<<GetTokenAt(i)<<"\""<<endl;
     }
   } else {

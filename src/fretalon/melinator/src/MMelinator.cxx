@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <new>
 #include <map>
+#include <thread>
 using namespace std;
 
 // ROOT libs:
@@ -63,7 +64,7 @@ using namespace std;
 #include "MBinnerFixedNumberOfBins.h"
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
-#include "MReadOutDataInterfaceADCValue.h"
+#include "MReadOutDataADCValue.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,7 +95,8 @@ MMelinator::MMelinator()
   
   m_CalibrationModelDeterminationMethod = MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise;
   
-  m_NThreads = 4;
+  m_NThreads = thread::hardware_concurrency();
+  if (m_NThreads < 1) m_NThreads = 1;
   
   Clear();
 }
@@ -136,6 +138,8 @@ void MMelinator::Clear()
 //! This function performs parallel loading of all given files
 bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIsotope> >& Isotopes, const vector<unsigned int>& GroupIDs)
 {
+  MTimer LoadingTimer;
+  
   int NFiles = 0;
   for (unsigned int f = 0; f < FileNames.size(); ++f) {
     if (FileNames[f] == "") continue;
@@ -260,9 +264,8 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     m_CalibrationFileLoadingProgress[c] = 0.0;
   }
   
-  unsigned int NThreads = m_NThreads;
-  NThreads = m_CalibrationFileNames.size();  
-  //if (NThreads < 1) NThreads = 1;
+  unsigned int NThreads = m_CalibrationFileNames.size();  
+
   m_ThreadNextItem = 0;
   m_Threads.resize(NThreads);
   m_ThreadIsInitialized.resize(NThreads);
@@ -340,6 +343,8 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   for (unsigned int c = 0; c < m_Store.GetNumberOfReadOutCollections(); ++c) {
     m_CalibrationStore.Add(m_Store.GetReadOutCollection(c).GetReadOutElement());
   }
+  
+  if (g_Verbosity >= c_Info) cout<<"Loading finished after "<<LoadingTimer.GetElapsed()<<" seconds"<<endl;
 
   return true;
 }
@@ -592,6 +597,7 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
   }
   
   double ySizeMin = 0.84 - 0.075*m_Histograms.size();
+  if (ySizeMin < 0.5) ySizeMin = 0.5;
   TLegend* Legend = new TLegend(0.8, ySizeMin, 0.94, 0.94, NULL, "brNDC");
   Legend->SetHeader("Isotope list:");
   
@@ -932,7 +938,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
   
   Binner->SetMinMax(Min, Max);
   for (unsigned int d = 0; d < G.GetNumberOfReadOutDatas(); ++d) {
-    MReadOutDataInterfaceADCValue* ADC = dynamic_cast<MReadOutDataInterfaceADCValue*>(&(G.GetReadOutData(d)));
+    MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(G.GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Binner->Add(ADC->GetADCValue());
     }
@@ -966,13 +972,12 @@ void MMelinatorCallParallelCalibrationThread(void* Address)
 //! Perform the calibration of the given collection
 bool MMelinator::Calibrate(bool ShowDiagnostics)
 {
+  MTimer Timer;
+  
   MGUIProgressBar ProgressBar;
   ProgressBar.SetTitles("Calibration", "Progress of calibration");
   ProgressBar.SetMinMax(0, m_Store.GetNumberOfReadOutCollections()); 
   
-  cout<<"Fixing threads to 1 due to some root bugs..."<<endl;
-  m_NThreads = 1;
-  //if (m_NThreads < 1) m_NThreads = 1;
   m_ThreadNextItem = 0;
   m_Threads.resize(m_NThreads);
   m_ThreadIsInitialized.resize(m_NThreads);
@@ -998,6 +1003,7 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
       while (m_ThreadIsInitialized[t] == false && m_ThreadIsFinished[t] == false) {
         // Sleep for a while...
         TThread::Sleep(0, 10000000);
+        gSystem->ProcessEvents();
       }    
 
       //cout<<Name<<" is running"<<endl;
@@ -1008,7 +1014,8 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
 
       // Sleep for a while...
       TThread::Sleep(0, 10000000);
-      
+      gSystem->ProcessEvents();
+     
       ThreadsAreRunning = false;
       for (unsigned int t = 0; t < m_NThreads; ++t) {
         if (m_ThreadIsFinished[t] == false) {
@@ -1038,11 +1045,14 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
   // Non-threaded mode
   else {
     for (unsigned int c = 0; c < m_Store.GetNumberOfReadOutCollections(); ++c) {
-      if (Calibrate(c, ShowDiagnostics) == false) return false;
+      if (Calibrate(c, ShowDiagnostics) == false) continue;
       ProgressBar.SetValue(c);
       if (ProgressBar.TestCancel() == true) break;
     }
-  }  
+  }
+  
+  if (g_Verbosity >= c_Info) cout<<"Time spent in calibration: "<<Timer.GetElapsed()<<" sec"<<endl;
+  
   return true;
 }
 
@@ -1082,6 +1092,9 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
 {
   MReadOutCollection& C = GetCollection(Collection);
   
+  unsigned int Verbosity = g_Verbosity;
+  if (ShowDiagnostics == true) g_Verbosity = c_Chatty;
+  
   // Step 1: find the lines
   MCalibrateEnergyFindLines FindLines;
   FindLines.SetDiagnosticsMode(ShowDiagnostics);
@@ -1094,6 +1107,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   
   if (FindLines.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
   
@@ -1109,9 +1123,9 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   
   if (AssignEnergies.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
-  
   
   // Step 3: Determine model
   MCalibrateEnergyDetermineModel DetermineModel;
@@ -1126,6 +1140,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   
   if (DetermineModel.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    g_Verbosity = Verbosity;
     return false;
   }
   
@@ -1134,6 +1149,8 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   TThread::Lock(); // <-- this function can be called from the thread so we have to protect it!
   m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
   TThread::UnLock();
+
+  g_Verbosity = Verbosity;
   
   return true;
 }

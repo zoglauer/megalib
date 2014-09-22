@@ -34,7 +34,7 @@ using namespace std;
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
 #include "MCalibrationSpectralPoint.h"
-#include "MReadOutDataInterfaceADCValue.h"
+#include "MReadOutDataADCValue.h"
 #include "MCalibrationFit.h"
 #include "MCalibrationFitGaussian.h"
 #include "MCalibrationFitGaussLandau.h"

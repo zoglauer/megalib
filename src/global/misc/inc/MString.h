@@ -192,7 +192,7 @@ class MString
   //! Read one line into this string replace all previous content
   void Read(istream& in);
   //! Return a hash value of the string
-  long GetHash();
+  long GetHash() const;
   
   // Analyze
   

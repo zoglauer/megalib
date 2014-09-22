@@ -22,20 +22,27 @@ using namespace std;
 
 // ROOT libs:
 #include "TF1.h"
+#include "TH1D.h"
+#include "Math/WrappedTF1.h"
+#include "Math/WrappedMultiTF1.h"
+#include "Fit/BinData.h"
+#include "Fit/UnBinData.h"
+#include "HFitInterface.h"
+#include "Fit/Fitter.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MCalibrationSpectralPoint.h"
 
 // Forward declarations:
-class TH1D;
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Class representing the base class for all calibration models for a set of calibration points
-class MCalibrationModel
+class MCalibrationModel : public ROOT::Math::IParamFunction
 {
   // public interface:
  public:
@@ -55,11 +62,14 @@ class MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "Model base class"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return 0; }
-
-  //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 0; }
+  //! ROOT fitting interface: Set the number of parameters
+  void SetParameters(const double *p) { m_ROOTParameters.clear(); for (unsigned int i = 0; i < NPar(); ++i) m_ROOTParameters.push_back(p[i]);  }
+  //! ROOT fitting interface: Get the parameters
+  const double* Parameters() const { return &m_ROOTParameters[0]; }
+  //! ROOT fitting interface: Return the number of fit parameters
+  virtual unsigned int NPar() const { return 0; }
+  //! Return the number of fit parameters 
+  unsigned int GetNParameters() const { return NPar(); }
   
   //! Return true, if the fit is up-to-date
   bool IsFitUpToDate() const { return m_IsFitUpToDate; }
@@ -67,7 +77,7 @@ class MCalibrationModel
   //! Fit the given histogram in the given range - return the quality of the fit
   virtual double Fit(const vector<MCalibrationSpectralPoint> Points);
   
-  //! Get value - if the fit doesn't exist throw MExceptionObjectDoesNotExist
+  //! Get value - return 0 if the fit doesn't exist
   double GetFitValue(double Value) const;
   
   //! Mimic ROOT Draw functionality
@@ -90,8 +100,10 @@ class MCalibrationModel
   
   // protected methods:
  protected:
+  //! ROOT fitting interface: evaulate the fit function
+  virtual double DoEvalPar(double X, const double* P) const { return 0.0; }
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {}
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) { cout<<"Base class init"<<endl; }
   
   // private methods:
  private:
@@ -106,7 +118,9 @@ class MCalibrationModel
   bool m_IsFitUpToDate;
   //! The short keyword of this model, e.g. poly1
   MString m_Keyword;
-
+  
+  //! The parameters for the ROOT fitting
+  vector<double> m_ROOTParameters;
   
   // private members:
  private:
@@ -139,17 +153,18 @@ class MCalibrationModelPoly1 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0]; }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 2; }
-  
+  virtual unsigned int NPar() const { return 2; }
+
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { return P[0] + P[1]*X; }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
   }
   
   // private members:
@@ -182,18 +197,20 @@ class MCalibrationModelPoly2 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*x^2"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0]; }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 3; }
+  virtual unsigned int NPar() const { return 3; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { return P[0] + P[1]*X + P[2]*X*X; }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
   }
   
   // private members:
@@ -226,18 +243,21 @@ class MCalibrationModelPoly3 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*x^2 + a3*x^3"; }
     
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0] + P[3]*X[0]*X[0]*X[0]; }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 4; }
+  virtual unsigned int NPar() const { return 4; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { return P[0] + P[1]*X + P[2]*X*X + P[3]*X*X*X; }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1, 1); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(1);
   }
 
   // private members:
@@ -270,18 +290,22 @@ class MCalibrationModelPoly4 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*x^2 + a3*x^3 + a4*x^4"; }
     
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { return P[0] + P[1]*X[0] + P[2]*X[0]*X[0] + P[3]*X[0]*X[0]*X[0] + P[4]*X[0]*X[0]*X[0]*X[0]; }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 5; }
+  virtual unsigned int NPar() const { return 5; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { return P[0] + P[1]*X + P[2]*X*X + P[3]*X*X*X + P[4]*X*X*X*X; }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1, 1, 1); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(1);
+    Fitter.Config().ParSettings(4).SetValue(1);
   }
 
   // private members:
@@ -313,19 +337,22 @@ class MCalibrationModelPoly1Inv1 : public MCalibrationModel
 
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + 1/(a2 + a3*x)"; }
-    
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { if (P[2] + P[3]*X[0] == 0) return 1000000000.0; return P[0] + P[1]*X[0] + 1.0/(P[2] + P[3]*X[0]); }
 
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 4; }
+  virtual unsigned int NPar() const { return 4; }
    
   
   // protected methods:
- protected:
+ protected:  
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { if (P[2] + P[3]*X == 0) return 1000000000.0; return P[0] + P[1]*X + 1.0/(P[2] + P[3]*X); }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, -10, 1); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(-10);
+    Fitter.Config().ParSettings(3).SetValue(1);
   }
 
   // private members:
@@ -358,22 +385,25 @@ class MCalibrationModelPoly1Exp1 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*exp(-x/a3)"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { 
-    double Return =  P[0] + P[1]*X[0];
-    if (P[3] != 0) Return += P[2]*exp(-X[0]/P[3]); 
-    return Return;
-  }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 4; }
+  virtual unsigned int NPar() const { return 4; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { 
+    double Return =  P[0] + P[1]*X;
+    if (P[3] != 0) Return += P[2]*exp(-X/P[3]); 
+    return Return;
+  }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1, 7); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(7);
   }
   
   // private members:
@@ -406,22 +436,25 @@ class MCalibrationModelPoly1Exp2 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*exp(-(x/a3)^2)"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { 
-    double Return =  P[0] + P[1]*X[0];
-    if (P[3] != 0) Return += P[2]*exp(-pow(X[0]/P[3], 2)); 
-    return Return;
-  }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 4; }
+  virtual unsigned int NPar() const { return 4; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { 
+    double Return =  P[0] + P[1]*X;
+    if (P[3] != 0) Return += P[2]*exp(-pow(X/P[3], 2)); 
+    return Return;
+  }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1, 7); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(7);
   }
   
   // private members:
@@ -454,22 +487,25 @@ class MCalibrationModelPoly1Exp3 : public MCalibrationModel
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*exp(-(x/a3)^3)"; }
   
-  //! The function for ROOT fitting
-  virtual double operator() (double* X, double* P) { 
-    double Return =  P[0] + P[1]*X[0];
-    if (P[3] != 0) Return += P[2]*exp(-pow(X[0]/P[3], 3)); 
-    return Return;
-  }
-
   //! Return the number of fit parameters
-  virtual unsigned int GetNParameters() { return 4; }
+  virtual unsigned int NPar() const { return 4; }
    
   
   // protected methods:
  protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { 
+    double Return =  P[0] + P[1]*X;
+    if (P[3] != 0) Return += P[2]*exp(-pow(X/P[3], 3)); 
+    return Return;
+  }
+
   //! Initialize the fit parameters
-  virtual void InitializeFitParameters() {
-    m_Fit->SetParameters(0, 1, 1, 7); 
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(7);
   }
   
   // private members:

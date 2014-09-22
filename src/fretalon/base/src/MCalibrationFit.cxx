@@ -72,7 +72,7 @@ MCalibrationFit::~MCalibrationFit()
 
 
 //! The assignment operator
-MCalibrationFit& MCalibrationFit::operator= (const MCalibrationFit& CalibrationFit)
+MCalibrationFit& MCalibrationFit::operator=(const MCalibrationFit& CalibrationFit)
 {
   delete m_Fit;
   if (CalibrationFit.m_Fit != 0) {
@@ -89,6 +89,8 @@ MCalibrationFit& MCalibrationFit::operator= (const MCalibrationFit& CalibrationF
   m_BackgroundModel = CalibrationFit.m_BackgroundModel;
   m_EnergyLossModel = CalibrationFit.m_EnergyLossModel;
 
+  m_ROOTParameters = CalibrationFit.m_ROOTParameters;
+  
   return *this;
 }
 
@@ -142,7 +144,7 @@ void MCalibrationFit::SetEnergyLossModel(unsigned int EnergyLossModel)
 
 
 //! Return the number of fit parameters in the background fit
-int MCalibrationFit::GetBackgroundFitParameters()
+int MCalibrationFit::GetBackgroundFitParameters() const
 {
   if (m_BackgroundModel == c_BackgroundModelNone) {
     return 0;
@@ -161,7 +163,7 @@ int MCalibrationFit::GetBackgroundFitParameters()
 
 
 //! Return the number of fit parameters in the energy loss fit
-int MCalibrationFit::GetEnergyLossFitParameters()
+int MCalibrationFit::GetEnergyLossFitParameters() const
 {
   if (m_EnergyLossModel == c_EnergyLossModelNone) {
     return 0;
@@ -178,14 +180,14 @@ int MCalibrationFit::GetEnergyLossFitParameters()
 
 
 //! The function for fitting the background
-double MCalibrationFit::BackgroundFit(double* X, double* P)
+double MCalibrationFit::BackgroundFit(double X, const double* P) const
 {
   if (m_BackgroundModel == c_BackgroundModelNone) {
     return 0;
   } else if (m_BackgroundModel == c_BackgroundModelFlat) {
     return P[0];
   } else if (m_BackgroundModel == c_BackgroundModelLinear) {
-    return P[0] + P[1]*X[0];
+    return P[0] + P[1]*X;
   }
   
   merr<<"Unknown background model ID: "<<m_BackgroundModel<<". Using no background model"<<endl; 
@@ -197,7 +199,7 @@ double MCalibrationFit::BackgroundFit(double* X, double* P)
 
 
 //! The function for fitting the energy loss
-double MCalibrationFit::EnergyLossFit(double* X, double* P)
+double MCalibrationFit::EnergyLossFit(double X, const double* P) const
 {
   int BPM = GetBackgroundFitParameters();
   
@@ -206,7 +208,7 @@ double MCalibrationFit::EnergyLossFit(double* X, double* P)
   } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
     double Return = 0.5*(P[0+BPM] + P[1+BPM]);
     if (P[3+BPM] != 0) {
-      Return += 0.5*(P[1+BPM] - P[0+BPM])*TMath::Erf((X[0]-P[2+BPM])/sqrt(2.0)/P[3+BPM]);
+      Return += 0.5*(P[1+BPM] - P[0+BPM])*TMath::Erf((X-P[2+BPM])/sqrt(2.0)/P[3+BPM]);
     }
     return Return;
   }
@@ -220,38 +222,36 @@ double MCalibrationFit::EnergyLossFit(double* X, double* P)
 
 
 //! Set all fit parameters
-void MCalibrationFit::SetFitParameters(TH1D& Hist, double Min, double Max)
+void MCalibrationFit::SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, double Min, double Max)
 {
-  if (m_Fit == 0) return;
-  
   if (m_BackgroundModel == c_BackgroundModelNone) {
   } else if (m_BackgroundModel == c_BackgroundModelFlat) {
-    m_Fit->SetParName(0, "Offset flat background");
-    m_Fit->SetParameter(0, 0);
-    m_Fit->SetParLimits(0, 0, 2*Hist.GetMaximum());
+    Fitter.Config().ParSettings(0).SetName("Offset flat background");
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(0).SetLimits(0, 2*Hist.GetMaximum());
   } else if (m_BackgroundModel == c_BackgroundModelLinear) {
-    m_Fit->SetParName(0, "Offset linear background");
-    m_Fit->SetParameter(0, 0);
-    m_Fit->SetParName(1, "Gradient linear background");
-    m_Fit->SetParameter(1, 0);
+    Fitter.Config().ParSettings(0).SetName("Offset linear background");
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetName("Gradient linear background");
+    Fitter.Config().ParSettings(1).SetValue(0);
   }
   
   int BPM = GetBackgroundFitParameters();
   
   if (m_EnergyLossModel == c_EnergyLossModelNone) {
   } else if (m_EnergyLossModel == c_EnergyLossModelGaussianConvolvedDeltaFunction) {
-    m_Fit->SetParName(0+BPM, "Left offset energy loss");
-    m_Fit->SetParameter(0+BPM, 0.1*Hist.GetMaximum());
-    m_Fit->SetParLimits(0+BPM, 0, 2*Hist.GetMaximum());
-    m_Fit->SetParName(1+BPM, "Right offset energy loss");
-    m_Fit->SetParameter(1+BPM, 0.1*Hist.GetMaximum());
-    m_Fit->SetParLimits(1+BPM, 0, 2*Hist.GetMaximum());
-    m_Fit->SetParName(2+BPM, "Mean energy loss");
-    m_Fit->SetParameter(2+BPM, 0.5*(Min+Max));
-    m_Fit->SetParLimits(2+BPM, Min, Max);
-    m_Fit->SetParName(3+BPM, "Sigma energy loss");
-    m_Fit->SetParameter(3+BPM, 5*Hist.GetBinWidth(1));
-    m_Fit->SetParLimits(3+BPM, Hist.GetBinWidth(1), Max-Min);
+    Fitter.Config().ParSettings(0+BPM).SetName("Left offset energy loss");
+    Fitter.Config().ParSettings(0+BPM).SetValue(0.1*Hist.GetMaximum());
+    Fitter.Config().ParSettings(0+BPM).SetLimits(0, 2*Hist.GetMaximum());
+    Fitter.Config().ParSettings(1+BPM).SetName("Right offset energy loss");
+    Fitter.Config().ParSettings(1+BPM).SetValue(0.1*Hist.GetMaximum());
+    Fitter.Config().ParSettings(1+BPM).SetLimits(0, 2*Hist.GetMaximum());
+    Fitter.Config().ParSettings(2+BPM).SetName("Mean energy loss");
+    Fitter.Config().ParSettings(2+BPM).SetValue(0.5*(Min+Max));
+    Fitter.Config().ParSettings(2+BPM).SetLimits(Min, Max);
+    Fitter.Config().ParSettings(3+BPM).SetName("Sigma energy loss");
+    Fitter.Config().ParSettings(3+BPM).SetValue(5*Hist.GetBinWidth(1));
+    Fitter.Config().ParSettings(3+BPM).SetLimits(Hist.GetBinWidth(1), Max-Min);
   }
   
   for (int b = 1; b <= Hist.GetNbinsX(); ++b) {

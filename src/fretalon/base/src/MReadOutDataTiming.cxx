@@ -1,5 +1,5 @@
 /*
- * MReadOutDataInterfaceADCValue.cxx
+ * MReadOutDataTiming.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MReadOutDataInterfaceADCValue
+// MReadOutDataTiming
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MReadOutDataInterfaceADCValue.h"
+#include "MReadOutDataTiming.h"
 
 // Standard libs:
 
@@ -38,15 +38,24 @@
 
 
 #ifdef ___CINT___
-ClassImp(MReadOutDataInterfaceADCValue)
+ClassImp(MReadOutDataTiming)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The type name --- must be unique
+const MString MReadOutDataTiming::m_Type = "timing";
+//! The type name ID --- must be unique
+const long MReadOutDataTiming::m_TypeID = m_Type.GetHash();
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Default constructor
-MReadOutDataInterfaceADCValue::MReadOutDataInterfaceADCValue() : m_ADCValue(0)
+MReadOutDataTiming::MReadOutDataTiming() : MReadOutData(nullptr), m_Timing(0)
 {
 }
 
@@ -55,7 +64,7 @@ MReadOutDataInterfaceADCValue::MReadOutDataInterfaceADCValue() : m_ADCValue(0)
 
 
 //! Constructor given the data
-MReadOutDataInterfaceADCValue::MReadOutDataInterfaceADCValue(double ADCValue) : m_ADCValue(ADCValue)
+MReadOutDataTiming::MReadOutDataTiming(MReadOutData* Data) : MReadOutData(Data), m_Timing(0)
 {
 }
   
@@ -63,8 +72,23 @@ MReadOutDataInterfaceADCValue::MReadOutDataInterfaceADCValue(double ADCValue) : 
 
 
 //! Default destructor
-MReadOutDataInterfaceADCValue::~MReadOutDataInterfaceADCValue()
+MReadOutDataTiming::~MReadOutDataTiming()
 {
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Clone this element
+MReadOutDataTiming* MReadOutDataTiming::Clone() const
+{
+  MReadOutDataTiming* ROD = new MReadOutDataTiming();
+  ROD->SetTiming(m_Timing);
+  if (m_Wrapped != 0) {
+    ROD->SetWrapped(m_Wrapped->Clone());
+  }
+  return ROD;
 }
 
 
@@ -72,29 +96,10 @@ MReadOutDataInterfaceADCValue::~MReadOutDataInterfaceADCValue()
 
 
 //! Clear the content of this read-out element
-void MReadOutDataInterfaceADCValue::Clear()
+void MReadOutDataTiming::Clear()
 {
-  m_ADCValue = 0;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return true is all values are zero
-bool MReadOutDataInterfaceADCValue::IsZero() const
-{
-  return ((m_ADCValue == 0) ? true : false);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-//! Return true is the value is positive
-bool MReadOutDataInterfaceADCValue::IsPositive() const
-{
-  return ((m_ADCValue > 0) ? true : false);
+  MReadOutData::Clear();
+  m_Timing = 0;
 }
 
 
@@ -102,9 +107,9 @@ bool MReadOutDataInterfaceADCValue::IsPositive() const
 
  
 //! Return the number of parsable elements
-unsigned int MReadOutDataInterfaceADCValue::GetNumberOfParsableElements() const
+unsigned int MReadOutDataTiming::GetNumberOfParsableElements() const
 {
-  return 1; 
+  return MReadOutData::GetNumberOfParsableElements() + 1;
 }
 
 
@@ -112,14 +117,13 @@ unsigned int MReadOutDataInterfaceADCValue::GetNumberOfParsableElements() const
 
 
 //! Parse the data from the tokenizer 
-bool MReadOutDataInterfaceADCValue::Parse(const MTokenizer& T, unsigned int StartElement)
+bool MReadOutDataTiming::Parse(const MTokenizer& T, unsigned int StartElement)
 {
-  if (T.GetNTokens() < StartElement + MReadOutDataInterfaceADCValue::GetNumberOfParsableElements()) {
-    merr<<"adc: Not enough elements to parse"<<show;
-    return false;
-  }
+  // Go deep first:
+  if (MReadOutData::Parse(T, StartElement) == false) return false;
   
-  m_ADCValue = T.GetTokenAtAsDouble(StartElement);
+  // Then here:
+  m_Timing = T.GetTokenAtAsUnsignedIntFast(StartElement + MReadOutData::GetNumberOfParsableElements());
   
   return true;
 }
@@ -129,10 +133,10 @@ bool MReadOutDataInterfaceADCValue::Parse(const MTokenizer& T, unsigned int Star
 
 
 //! Dump the content into a string
-MString MReadOutDataInterfaceADCValue::ToString() const
+MString MReadOutDataTiming::ToString() const
 {
   ostringstream os;
-  os<<"ADC = "<<m_ADCValue;
+  os<<MReadOutData::ToString()<<m_Timing<<" ";
   return os.str();
 }
 
@@ -140,11 +144,14 @@ MString MReadOutDataInterfaceADCValue::ToString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Dump the content into a string
-MString MReadOutDataInterfaceADCValue::ToParsableString() const
+//! Dump the content into a parsable string
+MString MReadOutDataTiming::ToParsableString(bool WithDescriptor) const 
 {
   ostringstream os;
-  os<<m_ADCValue;
+  if (WithDescriptor == true) {
+    os<<GetCombinedType()<<" ";
+  }
+  os<<ToString();
   return os.str();
 }
 
@@ -153,12 +160,12 @@ MString MReadOutDataInterfaceADCValue::ToParsableString() const
 
 
 //! Append the context as text 
-ostream& operator<<(ostream& os, const MReadOutDataInterfaceADCValue& R)
+ostream& operator<<(ostream& os, const MReadOutDataTiming& R)
 {
   os<<R.ToString();
   return os;
 }
 
   
-// MReadOutDataInterfaceADCValue.cxx: the end...
+// MReadOutDataTiming.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

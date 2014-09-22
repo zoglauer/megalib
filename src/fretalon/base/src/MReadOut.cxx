@@ -129,7 +129,7 @@ void MReadOut::SetReadOutData(const MReadOutData& ROD)
 MString MReadOut::ToString() const
 {
   ostringstream os;
-  os<<"RO with "<<m_ROE->ToString()<<" and "<<m_ROD->ToString();
+  os<<"RO with "<<m_ROE->ToParsableString(true)<<" and "<<m_ROD->ToParsableString(true);
   return os.str();
 }
 
