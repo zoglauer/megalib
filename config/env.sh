@@ -59,31 +59,6 @@ if [[ "${MTMP_PREFIX}" != */ ]]; then
 fi
 
 
-# Set ROOT:
-if [ "${MTMP_ROOTPATH}" != "${MTMP_NODEFAULT}" ]; then
-  if [[ "${MTMP_ROOTPATH}" != /* ]]; then
-    MTMP_ROOTPATH="${MTMP_PREFIX}${MTMP_ROOTPATH}"
-  fi
-
-  if (test ! -d ${MTMP_ROOTPATH}); then
-    echo ""
-    echo "ERROR: Root directory not found: ${MTMP_ROOTPATH}"
-    echo ""
-    return
-  fi
-
-  if (test ! -f ${MTMP_ROOTPATH}/bin/thisroot.sh); then
-    echo ""
-    echo "ERROR: Root environment script not found: ${MTMP_ROOTPATH}/bin/thisroot.sh"
-    echo ""
-    return
-  fi
-   
-  # Has to come before HEADAS since both have a libMinuit.so
-  source ${MTMP_ROOTPATH}/bin/thisroot.sh
-fi
-
-
 # Set CLHEP:
 if [ "${MTMP_CLHEPPATH}" != "${MTMP_NODEFAULT}" ]; then
   if [[ "${MTMP_CLHEPPATH}" != /* ]]; then
@@ -247,5 +222,30 @@ if [ "${MTMP_HEADASPATH}" != "${MTMP_NODEFAULT}" ]; then
   fi
 fi
 
+
+# Set ROOT last --- headas and root have Minuit libaries but only ROOT loads them via a plugin manager 
+# who ignores the default search paths and might find the headas version first and crash
+if [ "${MTMP_ROOTPATH}" != "${MTMP_NODEFAULT}" ]; then
+  if [[ "${MTMP_ROOTPATH}" != /* ]]; then
+    MTMP_ROOTPATH="${MTMP_PREFIX}${MTMP_ROOTPATH}"
+  fi
+
+  if (test ! -d ${MTMP_ROOTPATH}); then
+    echo ""
+    echo "ERROR: Root directory not found: ${MTMP_ROOTPATH}"
+    echo ""
+    return
+  fi
+
+  if (test ! -f ${MTMP_ROOTPATH}/bin/thisroot.sh); then
+    echo ""
+    echo "ERROR: Root environment script not found: ${MTMP_ROOTPATH}/bin/thisroot.sh"
+    echo ""
+    return
+  fi
+   
+  # Has to come before HEADAS since both have a libMinuit.so
+  source ${MTMP_ROOTPATH}/bin/thisroot.sh
+fi
 
 
