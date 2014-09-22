@@ -905,7 +905,13 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     axis->SetTitleSize(Graph->GetXaxis()->GetTitleSize());
     axis->CenterTitle(true);
     axis->SetNdivisions(509);
-    axis->Draw();
+    axis->Draw("SAME");
+    
+    if (Min < 0 && Max > 0) {
+      TLine* Zero = new TLine(0, -Min/(Max-Min) * 1.1*MaximumEnergy, 1.1*MaximumPeak, -Min/(Max-Min) * 1.1*MaximumEnergy);
+      Zero->SetLineColor(kBlue);
+      Zero->Draw("SAME");
+    }
     
   }
   
@@ -1093,7 +1099,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   MReadOutCollection& C = GetCollection(Collection);
   
   unsigned int Verbosity = g_Verbosity;
-  if (ShowDiagnostics == true) g_Verbosity = c_Chatty;
+  if (ShowDiagnostics == true) g_Verbosity = c_Info;
   
   // Step 1: find the lines
   MCalibrateEnergyFindLines FindLines;
@@ -1117,7 +1123,8 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
   AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   AssignEnergies.SetCalibrationResult(FindLines.GetCalibrationResult());
   
@@ -1127,12 +1134,14 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     return false;
   }
   
+  
   // Step 3: Determine model
   MCalibrateEnergyDetermineModel DetermineModel;
   DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
   DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    DetermineModel.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
   DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
@@ -1145,11 +1154,12 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   }
   
   
+  
   // Step 4: Set the result in the store
   TThread::Lock(); // <-- this function can be called from the thread so we have to protect it!
   m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
   TThread::UnLock();
-
+  
   g_Verbosity = Verbosity;
   
   return true;
@@ -1170,7 +1180,8 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
   MCalibrateEnergyAssignEnergies AssignEnergies;
   AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   AssignEnergies.SetCalibrationResult(*CS);
   
@@ -1184,7 +1195,8 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
   MCalibrateEnergyDetermineModel DetermineModel;
   DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    DetermineModel.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
   DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
@@ -1194,6 +1206,7 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
     return false;
   }
+  
   
   m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
   

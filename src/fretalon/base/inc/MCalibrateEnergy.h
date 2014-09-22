@@ -47,7 +47,9 @@ class MCalibrateEnergy : public MCalibrate
   void SetRange(double Minimum, double Maximum) { m_RangeMinimum = Minimum; m_RangeMaximum = Maximum; }
 
   //! Add a read-out data group and the associated isotopes
-  void AddReadOutDataGroup(const MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes);
+  void AddReadOutDataGroup(MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes);
+  //! Add the associated isotopes
+  void AddIsotopes(const vector<MIsotope>& Isotopes);
   
   //! Perform the calibration
   virtual bool Calibrate() = 0;
@@ -75,7 +77,7 @@ class MCalibrateEnergy : public MCalibrate
   double m_RangeMaximum;
     
   //! The read-out data groups to be calibrated
-  vector<MReadOutDataGroup> m_ROGs;
+  vector<MReadOutDataGroup*> m_ROGs;
   //! The isotopes associated with the read-out data groups
   vector<vector<MIsotope> > m_Isotopes;
 

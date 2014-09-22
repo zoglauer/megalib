@@ -161,7 +161,9 @@ unsigned int MCalibrationFitGaussLandau::NPar() const
 bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
 {
   // Clean up the old fit:
+  TThread::Lock();
   delete m_Fit;
+  TThread::UnLock();
   m_Fit = 0;
   m_IsFitUpToDate = false;
   m_AverageDeviation = 1;
@@ -185,7 +187,8 @@ bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
   TheFitter.SetFunction(*this);
   
   SetFitParameters(TheFitter, Histogram, Min, Max);
-  
+
+  /*  
   bool ReturnCode = TheFitter.Fit(TheData);
   if (ReturnCode == true) {
     if (TheFitter.CalculateHessErrors() == false) {
@@ -198,6 +201,19 @@ bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
   
   const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
   if (TheFitResult.IsEmpty()) ReturnCode = false;
+  */
+  
+  if (TheFitter.Fit(TheData) == false) {
+    cout<<"The fit is not perfectly OK..."<<endl;
+  }
+  
+  const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
+  bool ReturnCode = true;
+  if (TheFitResult.IsEmpty()) {
+    ReturnCode = false;
+  }
+  
+  
   
   if (ReturnCode == true) {
   
@@ -226,8 +242,9 @@ bool MCalibrationFitGaussLandau::Fit(TH1D& Histogram, double Min, double Max)
     }
     
     // Create a TF1 object for drawing
-    delete m_Fit;
+    TThread::Lock();
     m_Fit = new TF1("", this, Min, Max, Parameters);
+    TThread::UnLock();
     
     m_Fit->SetChisquare(TheFitResult.Chi2());
     m_Fit->SetNDF(TheFitResult.Ndf());

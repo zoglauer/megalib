@@ -159,7 +159,9 @@ unsigned int MCalibrationFitGaussian::NPar() const
 bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
 {
   // Clean up the old fit:
+  TThread::Lock();
   delete m_Fit;
+  TThread::UnLock();
   m_Fit = 0;
   m_IsFitUpToDate = false;
   m_AverageDeviation = 1;
@@ -180,13 +182,15 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
 
   ROOT::Fit::Fitter TheFitter; 
   TheFitter.Config().SetMinimizer("Minuit2");
-  //TheFitter.Config().MinimizerOptions().SetPrintLevel(10);
+  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
   
   TheFitter.SetFunction(*this);
   
   SetFitParameters(TheFitter, Histogram, Min, Max);
   
+  /*
   bool ReturnCode = TheFitter.Fit(TheData);
+  cout<<"Return code: "<<<<endl;
   if (ReturnCode == true) {
     if (TheFitter.CalculateHessErrors() == false) {
       if (TheFitter.CalculateMinosErrors() == false) {
@@ -195,9 +199,17 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
       }
     }
   }
+  */
+  
+  if (TheFitter.Fit(TheData) == false) {
+    cout<<"The fit is not perfectly OK..."<<endl;
+  }
   
   const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
-  if (TheFitResult.IsEmpty()) ReturnCode = false;
+  bool ReturnCode = true;
+  if (TheFitResult.IsEmpty()) {
+    ReturnCode = false;
+  }
   
   if (ReturnCode == true) {
   
@@ -215,7 +227,9 @@ bool MCalibrationFitGaussian::Fit(TH1D& Histogram, double Min, double Max)
     }
     
     // Create a TF1 object for drawing
+    TThread::Lock();
     m_Fit = new TF1("", this, Min, Max, Parameters);
+    TThread::UnLock();
     
     m_Fit->SetChisquare(TheFitResult.Chi2());
     m_Fit->SetNDF(TheFitResult.Ndf());

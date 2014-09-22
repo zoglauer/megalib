@@ -132,7 +132,9 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   }
   
   // Clean up the old fit:
+  TThread::Lock();
   delete m_Fit;
+  TThread::UnLock();
   m_Fit = 0;
   m_IsFitUpToDate = false;
   
@@ -175,7 +177,9 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
     m_IsFitUpToDate = true;
         
     // Create a TF1 object for drawing
+    TThread::Lock();
     m_Fit = new TF1("", this, 0, 1.1*Points.back().GetPeak(), NPar());
+    TThread::UnLock();
     
     m_Fit->SetChisquare(TheFitResult.Chi2());
     m_Fit->SetNDF(TheFitResult.Ndf());

@@ -59,20 +59,20 @@ MCalibrateEnergy::~MCalibrateEnergy()
 
 
 //!  Sort two ADC values increasing
-bool SortADCValuesIncreasing(MReadOutDataADCValue* A, MReadOutDataADCValue* B) 
+bool SortADCValuesIncreasing(double A, double B) 
 { 
-  return (A->GetADCValue() < B->GetADCValue()); 
+  return (A < B); 
 }
 
 //! Create a histogram from the read-out data group using a fixed number of counts per bin
 TH1D* MCalibrateEnergy::CreateHistogramCountsBinned(MReadOutDataGroup& G, double Min, double Max, int Counts, double MinBinWidth)
 {
-  // Make local copy of the read-out elements representing ADC values
-  vector<MReadOutDataADCValue*> Data;
+  // Make local copy of the read-out datas ADC values
+  vector<double> Data;
   for (unsigned int d = 0; d < G.GetNumberOfReadOutDatas(); ++d) {
     MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(G.GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
-      Data.push_back(ADC);
+      Data.push_back(ADC->GetADCValue());
     }
   }
 
@@ -86,7 +86,7 @@ TH1D* MCalibrateEnergy::CreateHistogramCountsBinned(MReadOutDataGroup& G, double
   double Value;
   double LastValue = -numeric_limits<double>::max();
   for (unsigned int d = 0; d < Data.size(); ++d) {
-    Value = Data[d]->GetADCValue();
+    Value = Data[d];
     if (Value < Min || Value > Max) continue;
     if (Value < BinEdges.back()) continue; // MinBinWidth jumps forward, so make sure we have catched up
                           
@@ -111,8 +111,8 @@ TH1D* MCalibrateEnergy::CreateHistogramCountsBinned(MReadOutDataGroup& G, double
   Histogram->SetXTitle("Read-out values");
   Histogram->SetYTitle("counts per read-out value");
   for (unsigned int d = 0; d < Data.size(); ++d) {
-    if (Data[d]->GetADCValue() < Min || Data[d]->GetADCValue() > Max) continue;
-    Histogram->Fill(Data[d]->GetADCValue());
+    if (Data[d] < Min || Data[d] > Max) continue;
+    Histogram->Fill(Data[d]);
   }
     
   // Step 5: Normalize
@@ -132,9 +132,19 @@ TH1D* MCalibrateEnergy::CreateHistogramCountsBinned(MReadOutDataGroup& G, double
 
 
 //! Add a read-out data group and the associated isotopes
-void MCalibrateEnergy::AddReadOutDataGroup(const MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes)
+void MCalibrateEnergy::AddReadOutDataGroup(MReadOutDataGroup& ROG, const vector<MIsotope>& Isotopes)
 {
-  m_ROGs.push_back(ROG);
+  m_ROGs.push_back(&ROG);
+  m_Isotopes.push_back(Isotopes);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add a read-out data group and the associated isotopes
+void MCalibrateEnergy::AddIsotopes(const vector<MIsotope>& Isotopes)
+{
   m_Isotopes.push_back(Isotopes);
 }
 

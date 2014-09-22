@@ -96,7 +96,7 @@ bool MCalibrateEnergyFindLines::Calibrate()
 //! Find the peaks in this read-out data group
 bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
 {
-  if (g_Verbosity >= c_Info) cout<<endl<<"Finding peaks for ROG ID: "<<ROGID<<" ("<<m_ROGs[ROGID].GetName()<<")"<<endl;
+  if (g_Verbosity >= c_Info) cout<<endl<<"Finding peaks for ROG ID: "<<ROGID<<" ("<<m_ROGs[ROGID]->GetName()<<")"<<endl;
   
   int Prior = 8;
   
@@ -115,8 +115,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   Binner.SetMinimumBinWidth(MinimumBinWidthForBayesianBinner);
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
   Binner.SetPrior(Prior);
-  for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-    MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
+  for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
+    MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Binner.Add(ADC->GetADCValue());
     }
@@ -274,8 +274,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       //! Determine the average value in the peak
       double Total = 0.0;
       unsigned int TotalCounts = 0;
-      for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
+      for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
+        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
         if (ADC != nullptr) {
           if (ADC->GetADCValue() >= Data->GetBinLowEdge(PeakBin) && 
               ADC->GetADCValue() < Data->GetBinLowEdge(PeakBin) + Data->GetBinWidth(PeakBin)) {
@@ -479,8 +479,8 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     FitBinner.AlignBins(true);
     FitBinner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
     
-    for (unsigned int d = 0; d < m_ROGs[ROGID].GetNumberOfReadOutDatas(); ++d) {
-        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID].GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
+    for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
+        MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
       if (ADC != nullptr) {
         FitBinner.Add(ADC->GetADCValue());
       }

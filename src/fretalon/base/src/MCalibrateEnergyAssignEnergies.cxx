@@ -94,7 +94,7 @@ bool MCalibrateEnergyAssignEnergies::Calibrate()
   vector<Match> Matches;
     
   // Create all combinations
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
       if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
       for (unsigned int i = 0; i < m_Isotopes[r].size(); ++i) {
@@ -113,7 +113,7 @@ bool MCalibrateEnergyAssignEnergies::Calibrate()
   for (unsigned int m = 0; m < Matches.size(); ++m) {
     double QualityFactor = 0.0;
     int QualityFactorCounter = 0.;
-    for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+    for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
       for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
         if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
         double Energy = m_Results.GetSpectralPoint(r, p).GetPeak() * Matches[m].m_Conversion;
@@ -155,7 +155,7 @@ bool MCalibrateEnergyAssignEnergies::Calibrate()
   }
     
   // Finally do the assignment:  
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
       if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
       double Energy = m_Results.GetSpectralPoint(r, p).GetPeak() * Matches[BestMatch].m_Conversion;
@@ -181,7 +181,7 @@ bool MCalibrateEnergyAssignEnergies::Calibrate()
 
   // If one peak is used twice - throw out the one with lower count rate
   //bool FoundNotGood = false;
-  for (unsigned int r = 0; r < m_ROGs.size(); ++r) {
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
     for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
       if (m_Results.GetSpectralPoint(r, p).IsGood() == false) continue;
       double Energy = m_Results.GetSpectralPoint(r, p).GetEnergy();
