@@ -278,6 +278,7 @@ rmdir root
 
 
 echo "Configuring..."
+export ROOTSYS=${ROOTDIR}
 export LD_LIBRARY_PATH=""
 sh configure ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}
 if [ "$?" != "0" ]; then
