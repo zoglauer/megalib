@@ -119,7 +119,16 @@ OS=`uname -s`
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
-MAXTHREADS=1024
+MAXTHREADS=1;
+if ( `test -f /usr/sbin/sysctl` ); then
+  MAXTHREADS=`sysctl -n hw.logicalcpu_max`
+elif ( `test -f /proc/cpuinfo` ); then 
+  MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
+fi
+if [ "$?" != "0" ]; then
+  MAXTHREADS=1
+fi
+
 
 
 # Prelude - Find an old configuration
@@ -147,7 +156,7 @@ if [ "${MEGALIBPATH}" == "" ]; then
 fi
 
 if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
-  echo " * Loading old options as default --- they will be overwritten by you command line options!"
+  echo " * Loading old options as default --- they will be overwritten by your command line options!"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
   CMD=( ${OLDCMD} ${CMD[@]}  )
 fi
@@ -340,7 +349,7 @@ fi
 
 
 if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
-  echo "ERROR: The maximum number of threads must be number and not ${MAXTHREADS}!"
+  echo "ERROR: The maximum number of threads must be a number and not ${MAXTHREADS}!"
   exit 1
 fi  
 if [ "${MAXTHREADS}" -le "0" ]; then
@@ -778,24 +787,10 @@ if [ "$?" != "0" ]; then
   exit 1
 fi
 
-CORES=1;
-if ( `test -f /usr/sbin/sysctl` ); then
-  CORES=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
-  CORES=`grep processor /proc/cpuinfo | wc -l`
-fi
-if [ "$?" != "0" ]; then
-  CORES=1
-fi
-if [ "${CORES}" -gt "${MAXTHREADS}" ]; then
-  CORES=${MAXTHREADS}
-fi
-echo "Using this number of cores for compilation: ${CORES}"
-
 
 
 echo "Compiling MEGAlib..."
-make -j${CORES}
+make -j${MAXTHREADS}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong while compiling MEGAlib!"
   exit 1
