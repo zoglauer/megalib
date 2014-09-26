@@ -205,6 +205,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   for (unsigned int i = 0; i < m_KnownProcess.size(); ++i) m_KnownProcessFrequency.push_back(0);
   m_KnownProcessCounter = 0;
   m_KnownProcessUpdateCounter = 1000;
+  
+  m_PreventEventStuckBugCounter = 0;
 }
 
 
@@ -244,6 +246,18 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     merr<<"Geant4 hick-up: Detected NaN! Aborting track!"<<endl;
     Track->SetTrackStatus(fStopAndKill);
     return;
+  }
+  
+  if (Track->GetPosition() != m_PreventEventStuckBugPosition) {
+    m_PreventEventStuckBugPosition = Track->GetPosition();
+    m_PreventEventStuckBugCounter = 0;
+  } else {
+    m_PreventEventStuckBugCounter++;
+    if (m_PreventEventStuckBugCounter > 1000) {
+      merr<<"Geant4 hick-up: The event seems to be stuck at the same position for 1000 steps! Aborting track!"<<endl;
+      Track->SetTrackStatus(fStopAndKill);
+      return;
+    }
   }
 
   // Prepare the IA interactions:

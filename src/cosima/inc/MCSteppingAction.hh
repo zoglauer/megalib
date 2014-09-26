@@ -132,6 +132,11 @@ private:
   /// Temporarily store the name of the last decay - to prevent a Geant4 bug
   MString m_PreventLastDecayBug;
   
+  /// Temporarily store the last position of the event - to prevent a Geant4 bug
+  G4ThreeVector m_PreventEventStuckBugPosition;
+  /// Temporarily store the number of times we are stuck at the same position - to prevent a Geant4 bug
+  int m_PreventEventStuckBugCounter;
+  
   /// List of all know process names...
   vector<G4String> m_KnownProcess;
   /// Process IDs of all known process names
