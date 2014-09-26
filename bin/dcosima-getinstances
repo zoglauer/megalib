@@ -46,6 +46,7 @@ REMOTEPORT=""
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-r*=* ]]; then
+    REMOTE=`echo ${C} | awk -F"=" '{ print $2 }'`
     REMOTEUSER=`echo ${C} | awk -F"=" '{ print $2 }'  | awk -F"@" '{ print $1 }'` 
     REMOTEHOST=`echo ${C} | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
     REMOTEPORT=`echo ${C} | awk -F":" '{ print $2 }'`
@@ -65,9 +66,9 @@ done
 # Check for restricted users
 if [ "${REMOTE}" == "" ]; then
   # Get the remote inhibitors
-  INHIBITORS=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^inhibitors; else echo 'all'; fi;"`
+  INHIBITORS=`if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^inhibitors; else echo 'all'; fi;`
   # Get the remote users
-  RUNNINGUSERS=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "who | cut -d' ' -f1 | sort | uniq"`
+  RUNNINGUSERS=`who | cut -d' ' -f1 | sort | uniq`
   
   #echo "Inhibitors: ${INHIBITORS} - Users: ${RUNNINGUSERS}"
   
@@ -89,11 +90,11 @@ fi
 # Check how many cosima's are running for all users:
 AllowedInstances=0
 if [ "${REMOTE}" == "" ]; then
-  #echo "Remote"
-  RunningInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "ps -Ac | grep cosima | wc -l | sed 's/^ *//g'"`
+  #echo "Remote A"
+  RunningInstances=`ps -Ac | grep "\ cosima" | wc -l | sed 's/^ *//g'`
   #echo "Running: ${RunningInstances}"
   
-  MaximumInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^instances; else echo 'instances $(nproc)'; fi"`
+  MaximumInstances=`if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^instances; else echo 'instances $(nproc)'; fi`
   MaximumInstances=`echo ${MaximumInstances} | awk '{ print $2 }'`
   #echo "Max: ${MaximumInstances}"
   
@@ -104,7 +105,8 @@ if [ "${REMOTE}" == "" ]; then
   fi 
   #echo "Allowed: ${AllowedInstances}"    
 else
-  AllowedInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEPORT} ". .bash_local; dcosima-getinstances"` 
+  #echo "Remote B"
+  AllowedInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; dcosima-getinstances"` 
 fi
 
 echo "${AllowedInstances}"

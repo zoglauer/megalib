@@ -182,7 +182,7 @@ rm -r ${TMPDIR}
 
 # Start the simulation:
 echo " * Starting simulations..."
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; echo " \* Starting..."; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} ${SOURCE} > /dev/null 2>&1 &"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} ${SOURCE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start simulations"
   exit 1
@@ -192,12 +192,14 @@ fi
 echo " * Adding to the rsync setup file"
 NEWLINE="rsync -az -e 'ssh -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
 EXISTS=0
-while read LINE; do
-  if [[ ${LINE} == *${NEWLINE}* ]]; then
-    EXISTS=1
-    break
-  fi
-done < ${RUNDIR}/dcosima-rsync.cfg
+if [ -f ${RUNDIR}/dcosima-rsync.cfg ]; then
+  while read LINE; do
+    if [[ ${LINE} == *${NEWLINE}* ]]; then
+      EXISTS=1
+      break
+    fi
+  done < ${RUNDIR}/dcosima-rsync.cfg
+fi
 if [ "${EXISTS}" == "0" ]; then 
   echo ${NEWLINE} >> ${RUNDIR}/dcosima-rsync.cfg
 fi

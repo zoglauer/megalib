@@ -80,13 +80,13 @@ cd ${DIRECTORY}
 
 while true; do
   # Sleep .....
-  echo "psync: Waiting for 20 seconds for more data to process..." 
+  echo "dcosima-rsync: Waiting for 20 seconds for more data to be simulated..." 
   sleep 20
   
   # Parse the configuration file
   RSYNCS=( )
   while read LINE; do
-    echo "Line: ${LINE}"
+    #echo "Line: ${LINE}"
     RSYNCS[${#RSYNCS[*]}]=${LINE}
   done < dcosima-rsync.cfg
 
@@ -95,11 +95,15 @@ while true; do
   # Download data
   MODIFIED=0
   ALLINCLUDED=0
-  SUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+  SUM=0
+  SIMFILECOUNT=`ls -1 *.sim 2>/dev/null | wc -l`
+  if [ ${SIMFILECOUNT} != 0 ]; then
+    SUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+  fi
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
     #echo "psync: Checking ${RSYNCS[$m]}"
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
-      echo "Syncing... ${RSYNCS[$m]}"
+      echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
       eval ${RSYNCS[$m]}
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       ALLINCLUDED=1
@@ -112,7 +116,7 @@ while true; do
   NEWSUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
   
   if [ "${NEWSUM}" != "${SUM}" ]; then
-    echo "Downloaded more data, since the total file size before (${SUM} B) and after (${NEWSUM} B) differ."
+    echo "dcosima-rsync: Downloaded more data, since the total file size before (${SUM} Bytes) and after (${NEWSUM} Bytes) differ."
     MODIFIED=1
   fi
     
@@ -124,7 +128,7 @@ done
 
 chown ${USER}:${USER} *
 
-echo "All rsync processes have finished!"
+echo "dcosima-rsync: All rsync processes have finished! Done!"
 
 
 exit 0;
