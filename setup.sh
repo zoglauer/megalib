@@ -474,6 +474,7 @@ if [ -d $MEGALIBPATH ]; then
     fi
   elif [ "${REPOSITORY}" == "git" ]; then
     cd ${MEGALIBPATH}
+
     echo "Getting all the latest changes from the repository..."
     git fetch origin
     if [ "$?" != "0" ]; then
@@ -481,22 +482,30 @@ if [ -d $MEGALIBPATH ]; then
       echo "ERROR: Unable to fetch the latest versions from the repository"
       exit 1
     fi
+
+    CurrentBranch=`git rev-parse --abbrev-ref HEAD`
+    echo "Current branch: ${CurrentBranch}"
+
     if [ "${RELEASE}" == "dev" ]; then
-      echo "Switching to latest development version of MEGAlib in the git repository..."
-      git checkout master
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to switch to the latest development version in git"
-        exit 1
+      if [ "${CurrentBranch}" != "master" ]; then
+        echo "Switching to the latest development version of MEGAlib in the git repository..."
+        git checkout master
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to switch to the latest development version in git"
+          exit 1
+        fi
       fi
     else
-      echo "Switching to latest release version of MEGAlib from the git repository..."
       Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
-      git checkout ${Branch}
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to update the git repository to the latest release branch"
-        exit 1
+      if [ "${CurrentBranch}" != "${Branch}" ]; then
+        echo "Switching to latest release version of MEGAlib from the git repository..."
+        git checkout ${Branch}
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to update the git repository to the latest release branch"
+          exit 1
+        fi
       fi
     fi
     echo "Fast forwarding to the head"
@@ -506,6 +515,7 @@ if [ -d $MEGALIBPATH ]; then
       echo "ERROR: Unable to fast forward to the head"
       exit 1
     fi
+
     cd ${STARTPATH}
   fi
   if [ "$?" != "0" ]; then
@@ -592,6 +602,8 @@ else
         echo "ERROR: Unable to update the git repository to the latest release branch"
         exit 1
       fi
+
+
       cd ${STARTPATH}
     fi
   else 
