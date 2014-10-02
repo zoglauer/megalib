@@ -38,6 +38,7 @@
 #include "MXmlNode.h"
 #include "MGUIMainFretalon.h"
 #include "MGUIExpoCombinedViewer.h"
+#include "MGUIExpoSupervisor.h"
 #include "MModule.h"
 #include "MReadOutAssembly.h"
 
@@ -72,6 +73,7 @@ MSupervisor::MSupervisor()
   m_Geometry = 0;
   m_Gui = 0;
   m_ExpoCombinedViewer = 0;
+  m_ExpoSupervisor = 0;
   
   m_ConfigurationFileName = gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg");
   
@@ -92,6 +94,7 @@ void MSupervisor::Clear()
   
   delete m_Gui;
   delete m_ExpoCombinedViewer;
+  delete m_ExpoSupervisor;
   
   m_GeometryFileName = "";
   delete m_Geometry;
@@ -767,8 +770,16 @@ bool MSupervisor::Analyze()
     m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
     m_ExpoCombinedViewer->Create();
   }
+  
   m_ExpoCombinedViewer->RemoveExpos();
+
   int NExpos = 0;
+
+  delete m_ExpoSupervisor;
+  m_ExpoSupervisor = new MGUIExpoSupervisor();   
+  m_ExpoCombinedViewer->AddExpo(m_ExpoSupervisor);
+  ++NExpos;
+
   for (unsigned int m = 0; m < GetNModules(); ++m) {
     if (GetModule(m)->HasExpos() == true) {
       m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
@@ -776,6 +787,13 @@ bool MSupervisor::Analyze()
     }
   }
   m_ExpoCombinedViewer->OnReset();
+  
+  m_ExpoSupervisor->Reset();
+  m_ExpoSupervisor->SetNModules(GetNModules());
+  for (unsigned int m = 0; m < GetNModules(); ++m) {
+    m_ExpoSupervisor->SetModuleName(m, GetModule(m)->GetName());
+  }
+    
   m_ExpoCombinedViewer->ShowExpos();
   if (NExpos == 0) {
     gSystem->ProcessEvents();
@@ -788,6 +806,8 @@ bool MSupervisor::Analyze()
   bool HasMoreEvents = false;
   bool DoShutdown = false;
   unsigned int CurrentShutdownModule = 0;
+  long NPasses = 0;
+  MTimer LastUIUpdate;
   while (true) {
 
     if (m_Interrupt == true) {
@@ -846,9 +866,19 @@ bool MSupervisor::Analyze()
         DoShutdown = true;
       }
       ModuleTimers[m].Pause();
+      
+      m_ExpoSupervisor->SetProcessedEvents(m, M->GetNumberOfAnalyzedEvents());
+      m_ExpoSupervisor->SetProcessingTime(m, ModuleTimers[m].GetElapsed());
     }
     
     if (DoShutdown == true && HasMoreEvents == false && CurrentShutdownModule == GetNModules()) break;
+
+    if (++NPasses % 100 == 0) {
+       if (LastUIUpdate.GetElapsed() > 5.0) {
+        m_ExpoCombinedViewer->OnUpdate();
+        LastUIUpdate.Reset();
+      }
+    }
     
     gSystem->ProcessEvents();    
   }

@@ -30,6 +30,7 @@ using namespace std;
 class MModule;
 class MGUIMainFretalon;
 class MGUIExpoCombinedViewer;
+class MGUIExpoSupervisor;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +164,8 @@ class MSupervisor
   MGUIMainFretalon* m_Gui;
   //! The expos - main combined viewer
   MGUIExpoCombinedViewer* m_ExpoCombinedViewer;
+  //! The supervisor's own expo
+  MGUIExpoSupervisor* m_ExpoSupervisor;
   
 
   //! The interrupt flag - the analysis will stop when this flag is set

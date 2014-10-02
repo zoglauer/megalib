@@ -166,7 +166,7 @@ bool MAssembly::ParseCommandLine(int argc, char** argv)
       g_Verbosity = atoi(argv[++i]);
       cout<<"Command-line parser: Verbosity "<<g_Verbosity<<endl;
     } else if (Option == "--multithreading" || Option == "-m") {
-      if (atoi(argv[++i]) != 0) m_Supervisor->UseMultiThreading(true);
+      m_Supervisor->UseMultiThreading((atoi(argv[i]) != 0 ? true : false));
       cout<<"Command-line parser: Using multithreading: "<<(atoi(argv[i]) != 0 ? "yes" : "no")<<endl;
     } else if (Option == "--auto" || Option == "-a") {
       // Parse later
