@@ -161,22 +161,22 @@ bool MCActivatorParticle::IsStable(G4ParticleDefinition* P)
     G4Ions* Nucleus = dynamic_cast<G4Ions*>(P); 
 
     if (Nucleus->GetExcitationEnergy() > 0.0) {
-      //cout<<"Not stable - we have an excitation energy"<<endl;      
+      //cout<<P->GetParticleName()<<": Not stable - we have an excitation energy"<<endl;      
       return false;
     } else {
       // It is stable if we don't have entries in the decay table
       G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
       G4DecayTable* DecayTable = Decay->LoadDecayTable(*P);
       if (DecayTable == 0) {
-        //cout<<"Stable - no decay table"<<endl;
+        //cout<<P->GetParticleName()<<": Stable - no decay table"<<endl;
         return true;
       }
       if (DecayTable->entries() == 0) {
-        //cout<<"Stable - decay table is empty"<<endl;
+        //cout<<P->GetParticleName()<<": Stable - decay table is empty"<<endl;
         return true;        
       }
       // Does the decay table contain something else but this element?
-      DecayTable->DumpInfo();
+      //DecayTable->DumpInfo();
       bool HasSomethingElse = false;
       for (int c = 0; c < DecayTable->entries(); ++c) {
         G4VDecayChannel* Channel = DecayTable->GetDecayChannel(c);
@@ -190,11 +190,11 @@ bool MCActivatorParticle::IsStable(G4ParticleDefinition* P)
         if (HasSomethingElse == true) break;
       }
       if (HasSomethingElse == true) {
-        cout<<"Not stable: The decay table has real decay chains..."<<endl;
+        //cout<<P->GetParticleName()<<": Not stable: The decay table has real decay chains..."<<endl;
         return false;
       }
           
-      //cout<<"Stable - the decay table just contains this element"<<endl; 
+      //cout<<P->GetParticleName()<<": Stable - the decay table just contains this element"<<endl; 
       return true;
     }
   }

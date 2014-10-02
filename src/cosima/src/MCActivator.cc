@@ -1227,7 +1227,7 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
 
     G4Ions* Nucleus = dynamic_cast<G4Ions*>(ParticleDef); 
 
-    cout<<"Nucleus: "<<Nucleus->GetExcitationEnergy()<<":"<<Nucleus->GetAtomicNumber()<<":"<<Nucleus->GetAtomicMass()<<endl;
+    cout<<"Nucleus: E="<<Nucleus->GetExcitationEnergy()<<" keV, A="<<Nucleus->GetAtomicNumber()<<", N="<<Nucleus->GetAtomicMass()<<endl;
 
     if (Nucleus->GetExcitationEnergy() == 0.0) {
       if (MCActivatorParticle::IsStable(Nucleus) == true) {
@@ -1239,10 +1239,10 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
       }
     } else {
       G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
-      M->PrintAll();
+      //M->PrintAll();
       if (M->IsValid() == true) {
         const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
-        Level->PrintAll();
+        //Level->PrintAll();
         if (Level != 0) {
           if (Level->HalfLife() > m_HalfLifeCutOff || IgnoreCutOff == true) {
             HalfLife = Level->HalfLife();
