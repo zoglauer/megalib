@@ -819,6 +819,7 @@ void MGUIRealtaMain::DoControlLoop()
         vector<double> Min = m_Analyzer->GetMinimaOfSpectralWindows();
         vector<double> Max = m_Analyzer->GetMaximaOfSpectralWindows();
         for (unsigned int i = 0; i < Min.size(); ++i) {
+          if (Max[i] == 0) continue;
           TBox* Box = new TBox(Min[i], 0.0, Max[i], m_Analyzer->GetSpectrumHistogram()->GetMaximum());
           //Box->SetFillStyle(3001);
           Box->SetFillColor(kAzure+10);

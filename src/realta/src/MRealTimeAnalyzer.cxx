@@ -1382,12 +1382,13 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   // no delete for the time being...
   m_Spectrum = Spectrum;
 
-  cout<<m_Settings->GetFirstEnergyRangeMin()<<":"<<m_Settings->GetSecondEnergyRangeMin()<<endl;
+  m_SpectrumMin.clear();
   m_SpectrumMin.push_back(m_Settings->GetFirstEnergyRangeMin());
   m_SpectrumMin.push_back(m_Settings->GetSecondEnergyRangeMin());
   m_SpectrumMin.push_back(m_Settings->GetThirdEnergyRangeMin());
   m_SpectrumMin.push_back(m_Settings->GetFourthEnergyRangeMin());
   
+  m_SpectrumMax.clear();
   m_SpectrumMax.push_back(m_Settings->GetFirstEnergyRangeMax());
   m_SpectrumMax.push_back(m_Settings->GetSecondEnergyRangeMax());
   m_SpectrumMax.push_back(m_Settings->GetThirdEnergyRangeMax());
