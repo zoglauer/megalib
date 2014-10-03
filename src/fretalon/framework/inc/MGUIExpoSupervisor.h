@@ -84,8 +84,6 @@ class MGUIExpoSupervisor : public MGUIExpo
 
   // private members:
  private:
-  //! The numkber of modules
-  unsigned int m_NModules;
   //! The name of the displayed module
   vector<MString> m_ModuleNames;
   //! The processed counts in the modules
