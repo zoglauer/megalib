@@ -78,38 +78,38 @@ public:
   void SetStorageMarker(unsigned int i) { m_StorageMarker = i; }
 
   /// Return the ID
-  unsigned int GetID() { return m_ID; }
+  unsigned int GetID() const { return m_ID; }
 
   /// Return the excitation
-  double GetExcitation() { return m_Excitation; }
+  double GetExcitation() const { return m_Excitation; }
 
   /// Return the particle name
-  G4String GetName() { if (m_Definition != 0) return m_Definition->GetParticleName(); else return "Not yet defined!"; }
+  G4String GetName() const { if (m_Definition != 0) return m_Definition->GetParticleName(); else return "Not yet defined!"; }
 
   /// Return the branching ratio from mother to this nuclid
-  double GetBranchingRatio() { return m_BranchingRatio; }
+  double GetBranchingRatio() const { return m_BranchingRatio; }
 
   /// Return the decay constant
-  double GetDecayConstant();
+  double GetDecayConstant() const;
 
   /// Return the half life
   /// numeric_limits<double>::max() means stable, 0 means immediate decay
-  double GetHalfLife() { return m_HalfLife; }
+  double GetHalfLife() const { return m_HalfLife; }
 
   /// Return the production rate
-  double GetProductionRate() { return m_ProductionRate; }
+  double GetProductionRate() const { return m_ProductionRate; }
 
   /// Return the counts
-  double GetCounts() { return m_Counts; }
+  double GetCounts() const { return m_Counts; }
 
   /// Return the production rate
-  double GetActivation() { return m_Activation; }
+  double GetActivation() const { return m_Activation; }
 
   /// Return storage marker (meaning of value defined outside this class)
-  unsigned int GetStorageMarker() { return m_StorageMarker; }
+  unsigned int GetStorageMarker() const { return m_StorageMarker; }
 
   /// Get the particle definition
-  G4ParticleDefinition* GetDefinition() { return m_Definition; }
+  G4ParticleDefinition* GetDefinition() const { return m_Definition; }
 
   /// Get the particle definition
   static bool IsStable(G4ParticleDefinition* P);

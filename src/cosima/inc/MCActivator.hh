@@ -147,7 +147,10 @@ protected:
   /// Determine the counts of the fifth produced element after Time t 
   double CountsO5(double R, double D1, double Branching12, double D2, double Branching23, double D3, double Branching34, double D4, double Branching45, double D5, double t);
 
-
+  /// Dump the tree
+  void DumpTree(const vector<vector<MCActivatorParticle> >& Tree, const MString& Intro = "") const;
+  
+  
   // protected members:
 protected:
 

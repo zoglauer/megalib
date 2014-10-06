@@ -591,9 +591,9 @@ void MCIsotopeStore::RemoveStableElements()
       vector<double>::iterator E = m_Excitations[v][i].begin();
       vector<double>::iterator A = m_Values[v][i].begin();
       while (E != m_Excitations[v][i].end() && A != m_Values[v][i].end()) {
-        //cout<<"Element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
+        cout<<"Element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
         if (MCActivatorParticle::IsStable(GetParticleDefinition(m_IDs[v][i], (*E))) == true) {
-          //cout<<"Removing stable element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
+          cout<<"Removing stable element: "<<GetParticleDefinition(m_IDs[v][i], (*E))->GetParticleName()<<endl;
           E = m_Excitations[v][i].erase(E);
           A = m_Values[v][i].erase(A);
           continue;

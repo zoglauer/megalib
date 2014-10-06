@@ -136,7 +136,7 @@ void MCActivatorParticle::SetIDAndExcitation(unsigned int ID, double Excitation)
 /******************************************************************************
  * Return the decay constant
  */
-double MCActivatorParticle::GetDecayConstant()
+double MCActivatorParticle::GetDecayConstant() const
 {
   if (m_HalfLife == 0) return numeric_limits<double>::max();
   if (m_HalfLife == numeric_limits<double>::max()) return 0;
@@ -154,29 +154,29 @@ bool MCActivatorParticle::IsStable(G4ParticleDefinition* P)
   // return P->GetPDGStable()
   // but as of 10.0 it is always stable and even if it has a life time is doesn't always have decay chains...
   
-  
+  /*
   if (P->GetParticleType() == "nucleus" && 
       P->GetParticleName() != "alpha") {
 
     G4Ions* Nucleus = dynamic_cast<G4Ions*>(P); 
 
     if (Nucleus->GetExcitationEnergy() > 0.0) {
-      //cout<<P->GetParticleName()<<": Not stable - we have an excitation energy"<<endl;      
+      cout<<P->GetParticleName()<<": Not stable - we have an excitation energy"<<endl;      
       return false;
     } else {
       // It is stable if we don't have entries in the decay table
       G4RadioactiveDecay* Decay = new G4RadioactiveDecay();
       G4DecayTable* DecayTable = Decay->LoadDecayTable(*P);
       if (DecayTable == 0) {
-        //cout<<P->GetParticleName()<<": Stable - no decay table"<<endl;
+        cout<<P->GetParticleName()<<": Stable - no decay table"<<endl;
         return true;
       }
       if (DecayTable->entries() == 0) {
-        //cout<<P->GetParticleName()<<": Stable - decay table is empty"<<endl;
+        cout<<P->GetParticleName()<<": Stable - decay table is empty"<<endl;
         return true;        
       }
       // Does the decay table contain something else but this element?
-      //DecayTable->DumpInfo();
+      DecayTable->DumpInfo();
       bool HasSomethingElse = false;
       for (int c = 0; c < DecayTable->entries(); ++c) {
         G4VDecayChannel* Channel = DecayTable->GetDecayChannel(c);
@@ -190,18 +190,16 @@ bool MCActivatorParticle::IsStable(G4ParticleDefinition* P)
         if (HasSomethingElse == true) break;
       }
       if (HasSomethingElse == true) {
-        //cout<<P->GetParticleName()<<": Not stable: The decay table has real decay chains..."<<endl;
+        cout<<P->GetParticleName()<<": Not stable: The decay table has real decay chains..."<<endl;
         return false;
       }
           
-      //cout<<P->GetParticleName()<<": Stable - the decay table just contains this element"<<endl; 
+      cout<<P->GetParticleName()<<": Stable - the decay table just contains this element"<<endl; 
       return true;
     }
   }
-  
-  //merr<<"Function has only been tested for nuclei and not for "<<P->GetParticleType()<<" - "<<P->GetParticleName()<<show;
-  
-  // At this stage we don't care
+  */
+    
   return P->GetPDGStable();
 }
 

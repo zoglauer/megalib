@@ -166,7 +166,10 @@ bool MCActivator::LoadCountsFiles()
       return false;
     }
 
+    cout<<"Counts (before stable removal):"<<endl<<Counts<<endl;
+    
     Counts.RemoveStableElements();
+    cout<<"Counts (after stable removal):"<<endl<<Counts<<endl;
 
     TotalTime += Counts.GetTime();
 
@@ -282,15 +285,7 @@ bool MCActivator::CalculateEquilibriumRates()
           continue;        
         }
 
-       // Dump the tree:
-       cout<<"Tree after start: "<<endl;
-       for (unsigned int br = 0; br < Tree.size(); ++br) {
-         cout<<"  "<<br<<": ";
-         for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-           cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-         }
-         cout<<endl;
-       }
+        DumpTree(Tree, "Tree after start: ");
 
         // Now we loop over all possible decays until all are found:
         bool TreeChanged = false;
@@ -299,30 +294,45 @@ bool MCActivator::CalculateEquilibriumRates()
         do {
           TreeChanged = false;
           
+          DumpTree(Tree, "Tree at restart");
+          
           // Step 1: Create new nuclei
           if (FirstRound == false) {
-            unsigned int b_max = Tree.size();
+            unsigned int b_max = Tree.size(); // The tree will grow, thus do not go beyond the original max size --- we will visit the new branches later!
             for (unsigned int b = 0; b < b_max; ++b) {
               //if (Tree[b].back().GetHalfLife() == numeric_limits<double>::max()) continue;
-              //cout<<Tree[b].back().GetName()<<"  EX: "<<Tree[b].back().GetExcitation()/keV<<"keV"<<endl;
+              //cout<<Tree[b].back().GetName()<<"  EX: "<<Tree[b].back().GetExcitation()/keV<<"keV --- "<<b<<"/"<<Tree.size()<<endl;
+              //DumpTree(Tree);
               if (Tree[b].back().GetHalfLife() == numeric_limits<double>::max()) continue;
               
+              //cout<<<<endl;
               DecayTable = Decay->LoadDecayTable(*(Tree[b].back().GetDefinition()));
               if (DecayTable == 0) {
                 mout<<"Error: Decay table not found for: "<<m_Rates.GetID(v, i)<<endl;
                 continue;
               }
               
+              // The trees which we intend to add to this on:
+              vector<vector<MCActivatorParticle> > AdditionalTrees;
+              
               // Loop over all decay channels, store decayable secondaries
               bool NewBranchAdded = false;
               for (int c = 0; c < DecayTable->entries(); ++c) {
                 G4VDecayChannel* Channel = DecayTable->GetDecayChannel(c);
+                //Channel->DumpInfo();
                 
-                //cout<<"  Channel "<<c<<": number of daughters: "<<Channel->GetNumberOfDaughters()<<"  BR: "<<Channel->GetBR()<<endl;
+                //cout<<"  Channel "<<c<<": "<<Channel->GetKinematicsName()<<" with number of daughters: "<<Channel->GetNumberOfDaughters()<<"  BR: "<<Channel->GetBR()<<endl;
                 for (int d = 0; d < Channel->GetNumberOfDaughters(); ++d) {
                   G4ParticleDefinition* ParticleDef = Channel->GetDaughter(d);
                   ParticleName = ParticleDef->GetParticleName();
                   ParticleType = ParticleDef->GetParticleType();
+                  //cout<<"Daughter: "<<ParticleName<<endl;
+                  
+                  // If we are not excited and mother equal daughter then we skip it
+                  if (Tree[b].back().GetName() == ParticleName && Tree[b].back().GetExcitation() == 0) {
+                    cout<<"Error: We have a decay channel into the same particle when the original particle is not excited (Those are misqualified double beta decays)"<<endl;
+                    continue; 
+                  }
                   
                   if (ParticleType == "nucleus" && ParticleName != "alpha") {
                     if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
@@ -335,13 +345,13 @@ bool MCActivator::CalculateEquilibriumRates()
                         continue;
                       }
                       
-                      // cout<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
+                      //cout<<"Adding to branch "<<b<<", after "<<ABranch.back().GetName()<<": "<<ParticleDef->GetParticleName()<<" -> BR="<<Channel->GetBR()<<endl;
                       NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
                       NewParticle.SetHalfLife(HalfLife);
                       
                       //cout<<"ID: "<<MCSteppingAction::GetParticleId(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
                       ABranch.push_back(NewParticle);
-                      Tree.push_back(ABranch);
+                      AdditionalTrees.push_back(ABranch);
                       NewBranchAdded = true;
                     } else {
                       mout<<"Error: Unable to determine half life: "<<ParticleDef->GetParticleName()<<endl;
@@ -354,6 +364,10 @@ bool MCActivator::CalculateEquilibriumRates()
               if (NewBranchAdded == true) {
                 // Empty the current branch for later deletion:
                 Tree[b].clear();
+                CleanDecayChains(AdditionalTrees);
+                for (unsigned int a = 0; a <  AdditionalTrees.size(); ++a) {
+                  Tree.push_back(AdditionalTrees[a]); 
+                }
                 TreeChanged = true;
               }
             } // Master tree loop
@@ -383,22 +397,15 @@ bool MCActivator::CalculateEquilibriumRates()
           bool ImmidiateDecayRound = true;
           int NChanges = 0;
           do {
-             // Dump the tree:
-             cout<<"Tree before excitation calculations: "<<endl;
-             for (unsigned int br = 0; br < Tree.size(); ++br) {
-               cout<<"  "<<br<<": ";
-               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR: "<<Tree[br][l].GetBranchingRatio()<<"; E="<<Tree[br][l].GetExcitation()/keV<<"keV; HL="<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-               }
-               cout<<endl;
-             }
+            
+            DumpTree(Tree, "Tree before excitation calculations: ");
 
             NChanges = 0;
-            unsigned int b_max = Tree.size();
+            unsigned int b_max = Tree.size(); // The tree will grow, thus do not go beyond the original max size --- we will visit the new branches later!
             for (unsigned int b = 0; b < b_max; ++b) {
               if (Tree[b].size() == 0 || Tree[b].back().GetExcitation() < 1.0*keV) continue;
               
-              // We have to make sure that in the first round only all immidiate deacys are handles, which replace individial elements
+              // We have to make sure that in the first round only all immidiate decays are handled, which replace individial elements
               // in the chain, only in the second round we ONCE add to the chain and then test immidiate decays again
               if (Tree[b].back().GetHalfLife() > m_HalfLifeCutOff && ImmidiateDecayRound == true) {
                 continue;
@@ -409,15 +416,19 @@ bool MCActivator::CalculateEquilibriumRates()
               bool LevelsOK = true;
               G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
               if (M->IsValid() == true) {
+                //M->PrintAll();
                 const G4NuclearLevel* NuclearLevel = M->NearestLevel(Nucleus->GetExcitationEnergy());
+                cout<<"Nearest level: "<<NuclearLevel->Energy()/keV<<" vs. "<<Nucleus->GetExcitationEnergy()/keV<<endl;
                 if (NuclearLevel != 0) {
                   // Create new levels...
+                  cout<<"Number of gammas: "<<NuclearLevel->NumberOfGammas()<<endl;
                   for (int h = 0; h < NuclearLevel->NumberOfGammas(); ++h) {
                     vector<MCActivatorParticle> ABranch = Tree[b];
+                    cout<<"Gamma energy: "<<NuclearLevel->GammaEnergies()[h]/keV<<endl;
                     
                     double NewLevelEnergy = 0.0;
                     double NewHalfLife = 0.0;
-                    if (fabs(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]) > 1*keV &&
+                    if (fabs(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]) > 1*keV && /* NuclearLevel->GammaEnergies()[h] > 1*keV && */
                         NuclearLevel->Energy() != M->HighestLevel()->Energy()) { // table has some significant uncertainties...
                       // Make sure we know the exact energy of the new level:
                       const G4NuclearLevel* NewNuclearLevel = M->NearestLevel(NuclearLevel->Energy() - NuclearLevel->GammaEnergies()[h]);
@@ -433,14 +444,21 @@ bool MCActivator::CalculateEquilibriumRates()
                         mout<<"       This isotope is excluded from further analysis!"<<endl;
                         LevelsOK = false;                        
                       }
+                    } else {
+                      mout<<"Error: Identical levels! Decaying it to the ground state"<<endl;
+                      NewLevelEnergy = 0.0;
+                      NewHalfLife = 0.0;
                     }
                     
+                    cout<<"NewLevel: "<<NewLevelEnergy/keV<<" with "<<NewHalfLife/s<<endl;
+
                     if (NewLevelEnergy != 0.0 && fabs(Tree[b].back().GetExcitation() - NewLevelEnergy) < 0.1*keV) {
                       mout<<"Error in data files: Missing level reference leads to de-excitation to the same state for "<<Nucleus->GetParticleName()<<endl;
                       mout<<"                     Forcing IMMEDIATE de-excitation to ground state!"<<endl;
                       NewLevelEnergy = 0.0;
                       NewHalfLife = 0.0;
                     }
+                    
                     
                     MCActivatorParticle NewParticle;
                     NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleId(Nucleus->GetParticleName()), 
@@ -450,13 +468,13 @@ bool MCActivator::CalculateEquilibriumRates()
                     // The PDGLifeTime is not always ok for excited states, thus we have to get it this way:
                     if (NewLevelEnergy > 0.0) {
                       NewParticle.SetHalfLife(NewHalfLife);
-                      //cout<<NewParticle.GetName()<<":"<<NewHalfLife<<endl;
+                      cout<<NewParticle.GetName()<<":"<<NewHalfLife<<endl;
                     } else {
                       if (MCActivatorParticle::IsStable(NewParticle.GetDefinition()) == true) {
                         NewParticle.SetHalfLife(numeric_limits<double>::max());
                       } else {
                         NewParticle.SetHalfLife(NewParticle.GetDefinition()->GetPDGLifeTime()*log(2.0)); // ln == log
-                        //cout<<NewParticle.GetName()<<":"<<NewParticle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
+                        cout<<NewParticle.GetName()<<":"<<NewParticle.GetDefinition()->GetPDGLifeTime()*log(2)<<":"<<Nucleus->GetParticleName()<<endl;
                       }
                     }
                     if (ABranch.back().GetHalfLife() < m_HalfLifeCutOff) {
@@ -466,17 +484,20 @@ bool MCActivator::CalculateEquilibriumRates()
                       Tree.push_back(ABranch);
                       TreeChanged = true;
                       NChanges++;
+                      cout<<"Replacing highest entry"<<endl;
                     } else {
                       // We have a new branch
                       ABranch.push_back(NewParticle);
                       Tree.push_back(ABranch);
                       TreeChanged = true;
                       NChanges++;
+                      cout<<"Adding entry with energy: "<<NewParticle.GetExcitation()/keV<<endl;
                     }
                   } // all possible gammas
                   if (NuclearLevel->NumberOfGammas() > 0 && LevelsOK == true) {
                     Tree[b].clear(); // mark for removal
                     TreeChanged = true;
+                    cout<<"Original tree cleared"<<endl;
                   }
                 } else { // level not ok
                   mout<<"Error: No nearest level found for: "<<Nucleus->GetParticleName()<<" Excitation: "<<Nucleus->GetExcitationEnergy()<<endl;
@@ -491,18 +512,11 @@ bool MCActivator::CalculateEquilibriumRates()
               if (LevelsOK == false) {
                 Tree[b].clear();
                 TreeChanged = true;
+                cout<<"Tree cleared - level not OK"<<endl;
               }
             } // all branches
             
-             // Dump the tree:
-             cout<<"Tree after generation of deexcited states: "<<endl;
-             for (unsigned int br = 0; br < Tree.size(); ++br) {
-               cout<<"  "<<br<<": ";
-               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR"<<Tree[br][l].GetBranchingRatio()<<"; HL:"<<Tree[br][l].GetHalfLife()/s<<"s) - ";
-               }
-               cout<<endl;
-             }
+            DumpTree(Tree, "Tree after generation of deexcited states: ");
             
             // Switch the round:
             // Make sure that a non immideate round is only called when no immidiate decays are left
@@ -525,54 +539,48 @@ bool MCActivator::CalculateEquilibriumRates()
               }
             }
 
-
-
-             // Dump the tree:
-             cout<<"Tree after cleaning: "<<endl;
-             for (unsigned int br = 0; br < Tree.size(); ++br) {
-               cout<<"  "<<br<<": ";
-               for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-                 cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") - ";
-               }
-               cout<<endl;
-             }
+            DumpTree(Tree, "Tree after cleaning: ");
           
             // Sanity check to prevent endless loops:
+            for (vector<vector<MCActivatorParticle> >::iterator I = Tree.begin(); I != Tree.end(); ) {
+              if ((*I).size() >= 2) {
+                if ((*I)[(*I).size()-1].GetID() == (*I)[(*I).size()-2].GetID() && 
+                    fabs((*I)[(*I).size()-1].GetExcitation() - (*I)[(*I).size()-2].GetExcitation()) < 0.2*keV) {
+                  mout<<"GEANT4 ERROR: mother and daughter in decay are identical! Erasing this branch!"<<endl;
+                  I = Tree.erase(I);
+                  continue;
+                }
+              }
+              ++I;
+            }
+
+            /*
             for (unsigned int b = 0; b < Tree.size(); ++b) {
               if (Tree[b].size() >= 2) {
-                if (Tree[b][Tree[b].size()-1].GetID() == Tree[b][Tree[b].size()-2].GetID() &&
+                if (Tree[b][Tree[b].size()-1].GetID() == Tree[b][Tree[b].size()-2].GetID() && 
                     fabs(Tree[b][Tree[b].size()-1].GetExcitation() - Tree[b][Tree[b].size()-2].GetExcitation()) < 0.2*keV) {
                   mout<<"Identical particles: "<<b<<endl;
                   massert(false);
                 }
               }
             }
+            */
             //break;
           } while (MoreDecays == true);
           
-//           // Dump the tree:
-//           cout<<"Tree after generation of deexcited states: "<<endl;
-//           for (unsigned int br = 0; br < Tree.size(); ++br) {
-//             cout<<"  "<<br<<": ";
-//             for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-//               cout<<Tree[br][l].GetName()<<" ("<<Tree[br][l].GetBranchingRatio()<<") - ";
-//             }
-//             cout<<endl;
-//           }
+//           DumpTree(Tree, "Tree after generation of deexcited states: ");
 
           //           break;
         } while (TreeChanged == true);
         
-         // Dump the tree:
-         cout<<"Current tree - before relative branching ratios: "<<endl;
-         for (unsigned int br = 0; br < Tree.size(); ++br) {
-           cout<<"  "<<br<<": ";
-           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
-             if (l < Tree[br].size()-1) cout<<"-> ";
-           }
-           cout<<endl;
-         }
+        
+        if (Tree.size() == 0) {
+          mout<<"Warning: Tree is empty - ignoring it"<<endl;
+          continue;
+        }
+
+        
+        DumpTree(Tree, "Current tree - before relative branching ratios: ");
         
         // Up to now we have determined relative braching ratios.
         // For the following calculations absolute are prefered:
@@ -594,16 +602,7 @@ bool MCActivator::CalculateEquilibriumRates()
           mout<<"Error (CalculateRelativeBranchingRatios): Total branching ratio of "<<Tree[0][0].GetName()<<" not close to one: "<<TotalBranchingRatio<<endl;          
         }
         
-         // Dump the tree:
-         cout<<"Current tree - before determination of tree has already been calculated: "<<endl;
-         for (unsigned int br = 0; br < Tree.size(); ++br) {
-           cout<<"  "<<br<<": ";
-           for (unsigned int l = 0; l < Tree[br].size(); ++l) {
-             cout<<Tree[br][l].GetName()<<" (PR:"<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<" HL:"<<Tree[br][l].GetHalfLife()/s<<") ";
-             if (l < Tree[br].size()-1) cout<<"-> ";
-           }
-           cout<<endl;
-         }
+        DumpTree(Tree, "Current tree - before determination of tree has already been calculated: ");
         
         // Since frequently the same isotopes are created in the same volumes,
         // we check if the tree has been already calculated
@@ -721,6 +720,23 @@ bool MCActivator::CalculateEquilibriumRates()
 }  
 
   
+
+/******************************************************************************
+ * Dump the tree
+ */
+void MCActivator::DumpTree(const vector<vector<MCActivatorParticle> >& Tree, const MString& Intro) const
+{
+  if (Intro != "") cout<<Intro<<endl;
+    
+  for (unsigned int br = 0; br < Tree.size(); ++br) {
+    cout<<"  "<<br<<": ";
+    for (unsigned int l = 0; l < Tree[br].size(); ++l) {
+      cout<<Tree[br][l].GetName()<<" (PR: "<<Tree[br][l].GetProductionRate()*s<<"  BR:"<<Tree[br][l].GetBranchingRatio()<<"; E="<<Tree[br][l].GetExcitation()/keV<<" keV;  HL:"<<Tree[br][l].GetHalfLife()/s<<" sec) ";
+      if (l < Tree[br].size()-1) cout<<"-> ";
+    }
+    cout<<endl;
+  }
+}
 
 /******************************************************************************
  * Clean the trees calculated during decay chain determination
@@ -1221,13 +1237,13 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
   HalfLife = 0.0;
   ExcitationEnergy = 0.0;
   
-  cout<<"Determine HL: Type="<<ParticleDef->GetParticleType()<<" - Name="<<ParticleDef->GetParticleName()<<endl;
+  //cout<<"Determine HL: Type="<<ParticleDef->GetParticleType()<<" - Name="<<ParticleDef->GetParticleName()<<endl;
   if (ParticleDef->GetParticleType() == "nucleus" && 
       ParticleDef->GetParticleName() != "alpha") {
 
     G4Ions* Nucleus = dynamic_cast<G4Ions*>(ParticleDef); 
 
-    cout<<"Nucleus: E="<<Nucleus->GetExcitationEnergy()<<" keV, A="<<Nucleus->GetAtomicNumber()<<", N="<<Nucleus->GetAtomicMass()<<endl;
+    //cout<<"Nucleus: E="<<Nucleus->GetExcitationEnergy()<<" keV, A="<<Nucleus->GetAtomicNumber()<<", N="<<Nucleus->GetAtomicMass()<<endl;
 
     if (Nucleus->GetExcitationEnergy() == 0.0) {
       if (MCActivatorParticle::IsStable(Nucleus) == true) {
@@ -1236,6 +1252,11 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
       } else {
         //cout<<"Not stable ("<<(Nucleus->GetPDGStable() == true ? "true" : "false")<<") with HL="<<Nucleus->GetPDGLifeTime()<<"="<<Nucleus->GetPDGLifeTime()*log(2.0)/s<<" sec"<<endl;
         HalfLife = Nucleus->GetPDGLifeTime()*log(2.0); // ln == log
+        if (Nucleus->GetPDGLifeTime() < 0) {
+          merr<<"BAD ERROR: Geant4 thinks that "<<ParticleDef->GetParticleName()<<" has a negative life time... Don't know what to do... Declaring this element as stable..."<<endl;
+          HalfLife = numeric_limits<double>::max();
+          OK = false;
+        }
       }
     } else {
       G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());
@@ -1245,8 +1266,10 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
         //Level->PrintAll();
         if (Level != 0) {
           if (Level->HalfLife() > m_HalfLifeCutOff || IgnoreCutOff == true) {
+            //cout<<"Half life: "<<Level->HalfLife()<<endl;
             HalfLife = Level->HalfLife();
           } else {
+            //cout<<"Half life: "<<Level->HalfLife()<<" ---> Declared as immdiate decay!"<<endl;
             HalfLife = 0.0;
           }
           // This excitation energy is more exact:
@@ -1264,14 +1287,15 @@ bool MCActivator::DetermineHalfLife(G4ParticleDefinition* ParticleDef, double& H
     }
   } else {
     if (MCActivatorParticle::IsStable(ParticleDef) == true) {
+      //cout<<"Stable"<<endl;
       HalfLife = numeric_limits<double>::max();
     } else {
+      //cout<<"Not stable: "<<ParticleDef->GetPDGLifeTime()*log(2.0)<<endl;
       HalfLife = ParticleDef->GetPDGLifeTime()*log(2.0); // ln == log
     }
   }
 
-  cout<<"HL from Level: "<<HalfLife<<": E from level: "<<ExcitationEnergy<<endl;
-  //abort();
+  //cout<<ParticleDef->GetParticleName()<<" has a half life of "<<HalfLife/s<<" sec and an excitation energy of "<<ExcitationEnergy/keV<<" keV"<<endl;
             
   return OK;
 }
