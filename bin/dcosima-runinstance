@@ -184,7 +184,7 @@ rm -r ${TMPDIR}
 echo " * Starting simulations..."
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} ${SOURCE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to start simulations"
+  echo "ERROR: Failed to start the simulations"
   exit 1
 fi
 

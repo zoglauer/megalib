@@ -135,15 +135,16 @@ RSYNCPID=$!
 
 # Launch the runs
 while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
+
+  echo " " 
     
   STARTED=0
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
-    echo " " 
-    echo "Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+    echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
     if [[ ${ALLOWED} -gt 0 ]]; then
       LAUNCHED=$(( ${LAUNCHED} + 1 ))
-      echo "Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
+      echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
       dcosima-runinstance --source=${SOURCE} --runid=${RUNID} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR}
       STARTED=1
     fi
@@ -151,7 +152,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   done
   
   if [[ ${STARTED} -eq 0 ]]; then
-    echo " * No slots available... Sleeping longer..."
+    echo " * No simulation slots available at the moment... Sleeping a while..."
     sleep 10
   else 
     # Sleep a bit to give the last instance a chance to start before we revisit the node
