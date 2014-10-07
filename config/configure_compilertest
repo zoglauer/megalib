@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+
+COMPILER=$1
+if ( [[ ${COMPILER} != g++ ]] && [[ ${COMPILER} != clang++ ]] && [[ ${COMPILER} != icc ]] ); then
+  echo "ERROR: You must give an acceptable compiler to this script, e.g. g++, clang++, or icc"
+  exit 1;
+fi
+
+
+# Allowed versions
+GCCMIN=40600
+CLANGMIN=30300
+ICCMIN=1500
+
+
+CODE="
+#include <iostream>
+using namespace std;
+
+int main()
+{
+  int Version = 0;
+#ifdef __clang__
+  Version = __clang_patchlevel__;
+  Version += 100*__clang_minor__;
+  Version += 10000*__clang_major__;
+  cout<<Version<<endl;
+  return 0;
+#endif  
+
+#ifdef __ICC
+  Version = __ICC;
+  cout<<Version<<endl;
+  return 0;
+#endif
+
+#ifdef __GNUC__
+  Version = __GNUC_PATCHLEVEL__;
+  Version += 100*__GNUC_MINOR__;
+  Version += 10000*__GNUC__;
+  cout<<Version<<endl;
+  return 0;
+#endif  
+
+  return 1;
+}
+"
+
+#echo "${CODE}"
+
+echo "${CODE}" | ${COMPILER} -o compilertest -x c++ -
+STATUS=""
+if [[ -f compilertest ]]; then
+  STATUS=`./compilertest`
+  rm -f compilertest
+else 
+  echo "ERROR: I could not compiler the test program"
+  exit 1;
+fi
+
+echo ${STATUS}
+if [[ ${COMPILER} == g* ]]; then
+  if [[ ${STATUS} -ge ${GCCMIN} ]]; then
+    exit 0;
+  else 
+    echo "ERROR: You need at least g++ ${GCCMIN} for MEGAlib"
+    exit 1;
+  fi
+elif  [[ ${COMPILER} == c* ]]; then
+  if [[ ${STATUS} -ge ${CLANGMIN} ]]; then
+    exit 0;
+  else 
+    echo "ERROR: You need at least clang++ ${CLANGMIN} for MEGAlib"
+    exit 1;
+  fi
+elif  [[ ${COMPILER} == i* ]]; then
+  if [[ ${STATUS} -ge ${ICCMIN} ]]; then
+    exit 0;
+  else 
+    echo "ERROR: You need at least icc ${ICCMIN} for MEGAlib"
+    exit 1;
+  fi
+fi
+
+echo "ERROR: I was unable to determine the compiler you are using"
+
+exit 1

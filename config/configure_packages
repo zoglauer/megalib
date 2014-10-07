@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# This file is part of MEGAlib.
+# Copyright (C) by Andreas Zoglauer.
+#
+# Please see the MEGAlib software license and documentation for more informations.
+
+IsDebianClone=0
+IsRedhatClone=0
+IsOpenSuseClone=0
+
+if [ -f /etc/os-release ]; then
+  OS=`cat /etc/os-release | grep "LIKE" | awk -F= '{ print $2 }'`
+  if [[ ${OS} == debian ]]; then
+    IsDebianClone=1
+  fi
+fi
+
+if [[ ${IsDebianClone} -eq 1 ]]; then
+  REQUIRED="git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
+  TOBEINSTALLED=""
+  
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do 
+    # Check if the file is installed
+    STATUS=`dpkg-query -Wf'${db:Status-abbrev}' ${PACKAGE} 2>/dev/null | grep '^i'`
+    #echo "${PACKAGE}: >${STATUS}<"
+    if [[ "${STATUS}" == "" ]]; then
+      # Check if it exists at all:
+      echo "Not installed: ${PACKAGE}"
+      TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+
+      #STATUS=`apt-cache pkgnames ${PACKAGE} 2>/dev/null`
+      #if [[ "${STATUS}" != "" ]]; then
+      #  TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+      #fi
+    fi
+  done
+  
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo "The following packages to be installed: ${TOBEINSTALLED}"
+    echo "sudo apt-get update; sudo apt-get install ${TOBEINSTALLED}"
+    exit 1;
+  else 
+    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04."
+  fi
+fi
+
+
+exit 0
