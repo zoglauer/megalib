@@ -233,6 +233,7 @@ bool MModule::DoSingleAnalysis()
 {
   // First check if we are ready:
   if (IsReady() == false) return false;
+  if (IsOK() == false) return false;
   
   MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list

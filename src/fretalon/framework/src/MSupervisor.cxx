@@ -861,7 +861,7 @@ bool MSupervisor::Analyze()
         }
       }
 
-      if (M->IsOK() == false) {
+      if (M->IsOK() == false && DoShutdown == false) {
         mout<<"Module \""<<GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
         DoShutdown = true;
       }
