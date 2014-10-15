@@ -57,23 +57,23 @@ done
 
 # Create the install paths on all machines
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MEGALIBPATH} ]]; then mkdir -p ${MEGALIBPATH}; fi; exit 0;"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MEGALIBPATH} ]]; then mkdir -p ${MEGALIBPATH}; fi; exit 0;"
 done
 
 # Download the latest setup file
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
 done
 
 # Run the setup file
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev"
 done
 
 # Add the path to .bash_local, if it is not yet there
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   SOURCE="source ~/${MEGALIBPATH}/MEGAlib/bin/source-megalib.sh"
-  ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'SOURCE=~/${MEGALIBPATH}/MEGAlib/bin/source-megalib.sh; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE=~/${MEGALIBPATH}/MEGAlib/bin/source-megalib.sh; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'
 done
 
 

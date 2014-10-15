@@ -87,7 +87,7 @@ done
 echo ""
 echo "Chosen options:"
 
-
+echo " * Remote: ${REMOTEUSER}@${REMOTEHOST}:${REMOTEPORT}"
 
 if [ "${SOURCE}" == "" ]; then
   echo " "

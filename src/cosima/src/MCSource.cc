@@ -1900,6 +1900,7 @@ bool MCSource::GenerateParticle(G4GeneralParticleSource* ParticleGun)
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
+      //cout<<"Setting particle (from list): "<<m_EventListParticleType.front()->GetParticleName()<<endl;
       ParticleGun->SetParticleDefinition(m_EventListParticleType.front());
       m_ParticleType = MCSteppingAction::GetParticleId(m_EventListParticleType.front()->GetParticleName());
       return true;
@@ -1909,6 +1910,7 @@ bool MCSource::GenerateParticle(G4GeneralParticleSource* ParticleGun)
   }
 
   if (m_ParticleDefinition != 0) {
+    //cout<<"Setting particle: "<<m_ParticleDefinition->GetParticleName()<<endl;
     ParticleGun->SetParticleDefinition(m_ParticleDefinition);
   } else {
     merr<<"No particle definition found: "<<m_Name<<endl;    

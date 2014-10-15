@@ -866,13 +866,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           }
         }
         //cout<<"  P:"<<int(IsPrimaryDecay)<<"  K:"<<int(Keep)<<"  S:"<<int(Store)<<"  F:"<<int(FutureEvent)<<endl;
+        //cout<<"Handling: "<<dynamic_cast<G4Ions*>(Track->GetDefinition())->GetParticleName()<<endl;
         
         if (Store == true) {
-          //cout<<"Store"<<endl;
           // Since we store only when we do not keep, this code occurs only once per decay
  
           // Make sure the excitation energy is unique to avoid storing nucleii with similar excitation energies
           G4Ions* Nucleus = dynamic_cast<G4Ions*>(Track->GetDefinition());
+          //cout<<"Storing: "<<Nucleus->GetParticleName()<<endl;
           if (Nucleus->GetExcitationEnergy() > 1*keV) {
             //cout<<"Alignment > 1 keV"<<endl;
             G4NuclearLevelManager* M = G4NuclearLevelStore::GetInstance()->GetManager(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass());

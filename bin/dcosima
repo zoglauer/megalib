@@ -154,6 +154,8 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   STARTED=0
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
+    echo " "
+    echo "Preparing for next launch:"
     echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
     if [[ ${ALLOWED} -gt 0 ]]; then
       LAUNCHED=$(( ${LAUNCHED} + 1 ))

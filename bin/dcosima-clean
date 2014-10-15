@@ -71,8 +71,8 @@ done
 
 # Create the install paths on all machines
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  echo "Cleaning ${MASTERDIR} on ${REMOTEUSER}@${REMOTEHOST}..."
-  ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ -d ${MASTERDIR} ]]; then rm -rf ${MASTERDIR}/Run_ID*; fi; exit 0;"
+  echo "Cleaning ${MASTERDIR} on ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}..."
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${MASTERDIR} ]]; then rm -rf ${MASTERDIR}/Run_ID*; fi; exit 0;"
 done
 
 
