@@ -1803,11 +1803,11 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       m_IsValid = false;
     }
 
-//     if (GetNRESEs() > 100) {
-//       mimp<<"Hard coded hit limit of 100 - no longer adding hits to event "<<m_EventID<<endl;
-//       m_IsValid = false;
-//       return 2;
-//     }
+    if (GetNRESEs() > 100) {
+      mout<<"Hard coded hit limit of max. 100 hits - no longer adding hits to event "<<m_EventID<<endl;
+      m_IsValid = false;
+      return 2;
+    }
 
     MREHit* Hit = new MREHit(Line, Version);
 
