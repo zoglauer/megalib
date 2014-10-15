@@ -105,7 +105,20 @@ REMOTEUSER=( )
 REMOTEHOST=( )
 REMOTEPORT=( )
 ALLOWEDINSTANCES=( )
-MASTERDIR="dcosima"
+
+# Find the master simulation directory
+MASTERDIR=( `cat ${CFG} | grep "^directory" | gawk '{ print $2 }'` )
+if [[ "${MASTERDIR}" == "" ]]; then
+  MASTERDIR="dcosima"
+fi
+if [[ ${MASTERDIR} == /* ]]; then
+  echo "ERROR: The simulation directory can not be an absolute path! Using default path dcosima"
+  MASTERDIR="dcosima"
+fi
+if [[ ${MASTERDIR} == .* ]]; then
+  echo "ERROR: The simulation directory must sit in the users main directory! Using default path dcosima"
+  MASTERDIR="dcosima"
+fi
 
 echo " "
 echo "Remote machines setup:"
