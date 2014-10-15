@@ -74,9 +74,9 @@ void MCTrackingAction::PostUserTrackingAction(const G4Track* Track)
 {
   // Intentionally left blank
 
-  if (Track->GetDefinition()->GetParticleName() == "gamma") {
-    MCRunManager::GetMCRunManager()->GetPhysicsList()->SetCuts();
-  }
+  //if (Track->GetDefinition()->GetParticleName() == "gamma") {
+  //  MCRunManager::GetMCRunManager()->GetPhysicsList()->SetCuts();
+  //}
 }
 
 
@@ -86,7 +86,6 @@ void MCTrackingAction::PostUserTrackingAction(const G4Track* Track)
 void MCTrackingAction::SetNGeneratedParticles(int NGeneratedParticles)
 {
   m_NPrimaries = NGeneratedParticles;
-
 }
 
 
