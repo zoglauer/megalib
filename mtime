@@ -1,0 +1,37 @@
+#! /bin/bash
+
+
+help() {
+  echo ""
+  echo "mtime - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mtime [list of sim files]";
+  echo "";
+  echo "Example:";
+  echo "    mtime RunTest*.sim";
+  echo "";
+  echo "This script determines the observation time."
+  echo "";
+}
+
+if [ $# -eq 0 ]; then
+    echo "Error: This script requires one input parameter, not $#"
+    exit -1;
+fi
+
+Files=""
+for f in "$@"; do
+  Files="${Files} ${f}"
+done
+
+ObsTime=0
+for f in `ls ${Files}`; do
+  Time=`tac $f | grep -m 1 "TI" | awk '{ print $2 }'`
+  ObsTime=`echo "${ObsTime} + ${Time}" | bc -l`
+done
+
+echo "${ObsTime}"
+
+exit 0;
