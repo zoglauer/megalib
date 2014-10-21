@@ -69,6 +69,11 @@ class MDGeometry
   void DumpInformation();
   void CalculateMasses();
 
+  //! Check for overlaps using the ROOT overlap checker
+  bool CheckOverlaps();
+  //! Add a preferred visible volume --- if any is given, only those will be shown
+  void AddPreferredVisibleVolume(const MString& Name) { m_PreferredVisibleVolumeNames.push_back(Name); }
+  
   MString GetFileName();
   MString GetName();
 
@@ -197,6 +202,8 @@ class MDGeometry
   MDVolume* m_WorldVolume;
   //! A temporary world volume
   MString m_StartVolume;
+  //! A list of preferred volumes - only those will be shown
+  vector<MString> m_PreferredVisibleVolumeNames;
 
   //! Unit taking care of all triggering aspects
   MDTriggerUnit* m_TriggerUnit;  
