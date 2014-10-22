@@ -3082,6 +3082,12 @@ MString MDVolume::ToString(bool Recursive)
     out<<"   This is a virtual volume!"<<endl;
   }
   out<<"   Visibility: "<<m_Visibility<<endl;
+  if (IsDetectorVolume()) {
+    out<<"   Detector: "<<m_Detector->GetName()<<endl;
+  }
+  if (IsSensitive() == true) {
+    out<<"   Sensitive volume: yes"<<endl;
+  }
 
   if (Recursive == true) {
     for (unsigned int i = 0; i < GetNDaughters(); i++) {

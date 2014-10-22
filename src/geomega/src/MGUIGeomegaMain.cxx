@@ -91,11 +91,6 @@ void MGUIGeomegaMain::Create()
   m_MenuAnalysis->AddEntry("Create Geant3 files", c_WriteG3);
   m_MenuAnalysis->AddEntry("Create MGeant/MGGPOD files", c_WriteMG);
 
-  // If cosima does not exist disable the overlap check options
-  if (MFile::Exists(g_MEGAlibPath + "/bin/cosima") == false) {
-    m_MenuAnalysis->GetEntry(c_Intersect)->GetLabel()->SetString("Check for overlaps - no cosima");
-    m_MenuAnalysis->DisableEntry(c_Intersect);
-  }
   m_MenuAnalysis->Associate(this);
   m_MenuBar->AddPopup("Analysis", m_MenuAnalysis, m_MenuBarItemLayoutLeft);
 

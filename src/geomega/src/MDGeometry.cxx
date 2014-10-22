@@ -45,6 +45,8 @@ using namespace std;
 #include <TSystem.h>
 #include <TObjString.h>
 #include <TMath.h>
+#include <TGeoOverlap.h>
+#include <TObjArray.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -3235,7 +3237,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   
   //
   if (ShowOnlySensitiveVolumes == true) {
-    cout<<"Show only sensitive volumes"<<endl;
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
       if (GetVolumeAt(i)->IsSensitive() == true) {
         GetVolumeAt(i)->SetVisibility(1); 
@@ -3476,6 +3477,39 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
+  // Take care of preferred visible volumes
+  if (m_PreferredVisibleVolumeNames.size() > 0) {
+  
+    // Take care of preferred visible volumes - make everything not visible
+    if (m_PreferredVisibleVolumeNames.size() > 0) {
+      for (unsigned int i = 0; i < GetNVolumes(); i++) {
+        m_VolumeList[i]->SetVisibility(0);
+        for (unsigned int c = 0; c < GetVolumeAt(i)->GetNClones(); ++c) {
+          GetVolumeAt(i)->GetCloneAt(c)->SetVisibility(0);
+        }
+      }
+    }
+
+    bool FoundOne = false;
+    for (auto N: m_PreferredVisibleVolumeNames) {
+      for (unsigned int i = 0; i < GetNVolumes(); i++) {
+        if (GetVolumeAt(i)->GetName() == N) {
+          GetVolumeAt(i)->SetVisibility(1);
+          FoundOne = true;
+        }
+        for (unsigned int c = 0; c < GetVolumeAt(i)->GetNClones(); ++c) {
+          if (GetVolumeAt(i)->GetCloneAt(c)->GetName() == N) {
+            GetVolumeAt(i)->GetCloneAt(c)->SetVisibility(1);
+            FoundOne = true;
+          }          
+        }
+      }
+    }
+    if (FoundOne == false) {
+      mout<<"ERROR: None of your preferred visible volumes has been found!"<<endl; 
+    }
+  }
+  
   //
   // Validation routines for the detectors:
   //
@@ -3951,11 +3985,12 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
 
 
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
-  //m_Geometry->CloseGeometry();
+  // m_Geometry->CloseGeometry(); // we do not close the geometry,
   m_Geometry->SetMultiThread(true);
   m_Geometry->SetVisLevel(1000);
   m_Geometry->SetNsegments(2*m_Geometry->GetNsegments());
   m_Geometry->SetVisDensity(-1.0);
+  //m_Geometry->Voxelize("ALL");
 
   // Make sure we use the correct geometry for interactions
   gGeoManager = m_Geometry;
@@ -4013,6 +4048,46 @@ bool MDGeometry::TestIntersections()
   cout<<"Testing intersections finished!"<<endl;
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDGeometry::CheckOverlaps()
+{  
+  // Check for overlaps using the ROOT overlap checker
+
+  if (IsScanned() == false) {
+    Error("bool MDGeometry::TestIntersections()",
+          "You have to scan the geometry file first!");
+    return false;
+  }
+
+  m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
+  m_Geometry->CloseGeometry();
+  m_Geometry->CheckOverlaps(0.000001);
+  
+  TObjArray* Overlaps = m_Geometry->GetListOfOverlaps();
+  if (Overlaps->GetEntries() > 0) {
+    mout<<"List of extrusions and overlaps: "<<endl;
+    for (int i = 0; i < Overlaps->GetEntries(); ++i) {
+      TGeoOverlap* O = (TGeoOverlap*) (Overlaps->At(i));
+      if (O->IsOverlap() == true) {
+        mout<<"Overlap: "<<O->GetFirstVolume()->GetName()<<" with "<<O->GetSecondVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
+      }
+      if (O->IsExtrusion() == true) {
+        mout<<"Extrusion: "<<O->GetSecondVolume()->GetName()<<" extrudes "<<O->GetFirstVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
+      }
+    }
+  } else {
+    mout<<endl;
+    mout<<"No extrusions and overlaps detected with ROOT (ROOT claims to be able to detect 95% of them)"<<endl;     
+  }
+
+  
+
+  return Overlaps->GetEntries() > 0 ? false : true;
 }
 
 

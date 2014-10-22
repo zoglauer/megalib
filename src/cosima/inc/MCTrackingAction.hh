@@ -45,8 +45,6 @@ public:
 
   /// Actions before tracking starts
   virtual void PreUserTrackingAction(const G4Track* Track);
-  /// Actions after tracking ended
-  virtual void PostUserTrackingAction(const G4Track* Track);
 
   /// Set the number of generated primaries in this EVENT (not track!)
   void SetNGeneratedParticles(int NGeneratedParticles);

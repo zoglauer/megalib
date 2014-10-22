@@ -116,6 +116,8 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"              copies, use one of the Copy names!)"<<endl;
   Usage<<"             WARNING: DO NOT trust absolute coordinate"<<endl;
   Usage<<"                      values anymore !!!!!"<<endl;
+  Usage<<"      -r --reveal <name>:"<<endl;
+  Usage<<"             Only show this volume and all other volumes given with this option"<<endl;
   Usage<<"      -h --help:"<<endl;
   Usage<<"             You know the answer..."<<endl;
   Usage<<endl;
@@ -206,7 +208,11 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;
     } else if (Option == "--startvolume" || Option == "-s") {
       m_Geometry->SetStartVolumeName(argv[++i]);
-      cout<<"Command-line parser: Use start volume "<<m_Geometry->GetStartVolumeName()<<endl;
+      cout<<"Command-line parser: Using start (=new mother) volume "<<m_Geometry->GetStartVolumeName()<<endl;
+    } else if (Option == "--reveal" || Option == "-r") {
+      MString Preferred = argv[++i];
+      m_Geometry->AddPreferredVisibleVolume(Preferred);
+      cout<<"Command-line parser: Useing preferred volume "<<Preferred<<endl;
     } else if (Option == "--special") {
       m_Data->SetSpecialMode(true);
       cout<<"Command-line parser: Activating special mode - hope, you know what you are doing..."<<endl;
@@ -340,9 +346,30 @@ void MInterfaceGeomega::TestIntersections()
 {
   // Test for intersections
 
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+    if (ReadGeometry() == false) {
+      return;
+    }
+  }
+  
+  mout<<endl;
+  mout<<"Overlap checking"<<endl;
+  mout<<endl;
+  mout<<"Part 1: ROOT"<<endl;
+  mout<<endl;
+  
+  bool NoOverlaps = m_Geometry->CheckOverlaps();
+  
+  if (NoOverlaps == false) return;
+  
+  mout<<endl;
+  mout<<"Part 2: Geant4"<<endl;
+  mout<<endl;
+  
   if (MFile::Exists(g_MEGAlibPath + "/bin/cosima") == false) {
     mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot check intersections since cosima is not present."<<endl;
+    mout<<"Cannot check intersections with Geant4 since cosima is not present."<<endl;
     return;
   }
 

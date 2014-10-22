@@ -68,19 +68,6 @@ void MCTrackingAction::PreUserTrackingAction(const G4Track* Track)
 
 
 /******************************************************************************
- * Action after tracking has completed
- */
-void MCTrackingAction::PostUserTrackingAction(const G4Track* Track)
-{
-  // Intentionally left blank
-
-  //if (Track->GetDefinition()->GetParticleName() == "gamma") {
-  //  MCRunManager::GetMCRunManager()->GetPhysicsList()->SetCuts();
-  //}
-}
-
-
-/******************************************************************************
  * Set the number of generated particles
  */
 void MCTrackingAction::SetNGeneratedParticles(int NGeneratedParticles)
