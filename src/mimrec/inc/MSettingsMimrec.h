@@ -89,6 +89,11 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   void SetHistBinsPolarization(int HistBinsPolarization) { m_HistBinsPolarization = HistBinsPolarization; } 
 
 
+  //! Set the special GUI mode (this is not saved to file!)
+  void SetSpecialMode(const bool SpecialMode) { m_SpecialMode = SpecialMode; }
+  //! Get the special GUI mode (this is not saved to file!)
+  bool GetSpecialMode() const { return m_SpecialMode; }
+
 
   // protected members:
  protected:

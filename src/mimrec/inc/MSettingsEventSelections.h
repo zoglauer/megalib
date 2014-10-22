@@ -296,11 +296,6 @@ class MSettingsEventSelections : public MSettingsInterface
 
 
 
-  //! Set the special GUI mode (this is not saved to file!)
-  void SetSpecialMode(const bool SpecialMode) { m_SpecialMode = SpecialMode; }
-  //! Get the special GUI mode (this is not saved to file!)
-  bool GetSpecialMode() const { return m_SpecialMode; }
-
 
   // protected members:
  protected:
@@ -424,10 +419,6 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_BeamFocalSpotZ;
   double m_BeamRadius;
   double m_BeamDepth;
-
-  
-  //! The special GUI mode flag
-  bool m_SpecialMode;
 
 
 
