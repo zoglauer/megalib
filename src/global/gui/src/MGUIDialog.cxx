@@ -224,28 +224,20 @@ void MGUIDialog::PositionWindow(int Width, int Height, bool AllowResize)
 {
   // This method positions the dialog window in the center of its parent window,
   // but (if possible) the whole window is shown on the screen.
-  
-  // First we compute the above-mentioned x and y coordinates ...
-  int x = 0, y = 0;
-  Window_t WindowDummy;
-  gVirtualX->TranslateCoordinates(m_ParentWindow->GetId(), 
-                                  GetParent()->GetId(),
-																	(m_ParentWindow->GetWidth() - Width) >> 1,
-																	(m_ParentWindow->GetHeight() - Height) >> 1,
-                                  x, 
-                                  y, 
-                                  WindowDummy);
 
+  int xParent = 0;
+  int yParent = 0;
+  unsigned int wParent = 0;
+  unsigned int hParent = 0;
+  gVirtualX->GetWindowSize(m_ParentWindow->GetId(), xParent, yParent, wParent, hParent);
+
+  int x = xParent + wParent/2 - Width/2;
+  int y = yParent + hParent/2 - Height/2;
 
   // ... get the width and height of the display ...
   int xDisplay, yDisplay;
   unsigned int wDisplay, hDisplay;
   gVirtualX->GetGeometry(-1, xDisplay, yDisplay, wDisplay, hDisplay);
-
-
-//   if (Width > 800-50 || Height > 600-50) {
-//     merr<<"This GUI will probably not fit on a 800x600 screen: Width="<<Width<<" and Height="<<Height<<show;
-//   }
 
   // ... make sure that the whole dialog window is shown on the screen ...
   if (Width > (int) wDisplay) {
@@ -257,13 +249,11 @@ void MGUIDialog::PositionWindow(int Width, int Height, bool AllowResize)
 
 
   if (x + Width > (int) wDisplay) {
-    //x = wDisplay - Width - 8;
     x = wDisplay - Width;
-	}
+  }
   if (y + Height > (int) hDisplay) {
-    //y = hDisplay - Height - 28;
     y = hDisplay - Height;
-	}
+  }
 
   if (x < 0) x = 0;
   if (y < 0) y = 0;
@@ -277,11 +267,11 @@ void MGUIDialog::PositionWindow(int Width, int Height, bool AllowResize)
     SetWMSizeHints(Width, Height, Width, Height, 0, 0);
   }
   
-	// This stupid hack is required, so that the GUIs are shown on Windoof:
-	// Don't remove unless you are sure that all windows are shown all the times
-	// on all windows/root combinations.
-	cout<<""<<flush;
-  
+  // This stupid hack is required, so that the GUIs are shown on Windoof:
+  // Don't remove unless you are sure that all windows are shown all the times
+  // on all windows/root combinations.
+  // cout<<""<<flush;
+ 
   return;
 }
 
