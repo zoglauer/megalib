@@ -166,6 +166,9 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_FlaggedAsBad = false;
 
   m_ExcludedDetectors.clear();
+
+  // The special GUI mode
+  m_SpecialMode = false;
 }
 
 

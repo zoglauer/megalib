@@ -79,10 +79,6 @@ MSettingsMimrec::MSettingsMimrec(bool AutoLoad) : MSettings("MimrecConfiguration
   // Polarization
   m_PolarizationBackgroundFileName = "";
   m_PolarizationArmCut = 10;
-
-
-  // The special GUI mode
-  m_SpecialMode = false;
   
   if (AutoLoad == true) {
     Read();

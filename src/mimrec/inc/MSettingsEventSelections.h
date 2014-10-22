@@ -295,6 +295,10 @@ class MSettingsEventSelections : public MSettingsInterface
   void SetInitialEnergyDepositPairMax(double InitialEnergyDepositPairMax) { m_InitialEnergyDepositPairMax = InitialEnergyDepositPairMax; m_EventSelectionModified = true; }
 
 
+  //! Set the special GUI mode (this is not saved to file!)
+  void SetSpecialMode(const bool SpecialMode) { m_SpecialMode = SpecialMode; }
+  //! Get the special GUI mode (this is not saved to file!)
+  bool GetSpecialMode() const { return m_SpecialMode; }
 
 
   // protected members:
@@ -420,6 +424,9 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_BeamRadius;
   double m_BeamDepth;
 
+
+  //! The special mode flag
+  bool m_SpecialMode;
 
 
 #ifdef ___CINT___
