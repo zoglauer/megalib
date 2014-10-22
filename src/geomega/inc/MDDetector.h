@@ -392,8 +392,8 @@ class MDDetector
   //! Function containing a 1D energy calibration
   MFunction m_EnergyCalibration;
 
-
-	double m_FailureRate;
+  //! A random failure rate for each read-out element
+  double m_FailureRate;
 
   //! If this flag is set than noise equals trigger threshold, i.e. there is only the trigger threshold
   bool m_NoiseThresholdEqualsTriggerThreshold;
@@ -406,8 +406,8 @@ class MDDetector
   double m_TriggerThreshold;
   double m_TriggerThresholdSigma;
 
-	double m_Overflow;
-	double m_OverflowSigma;
+  double m_Overflow;
+  double m_OverflowSigma;
 
 
   //! Half (!) size of the box-like detector volume
