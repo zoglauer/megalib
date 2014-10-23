@@ -153,8 +153,6 @@ bool MTransceiverTcpIpBinary::Connect(bool WaitForConnection, double TimeOut)
     }
     if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connected to "<<m_Host<<":"<<m_Port<<endl; 
   }
-
-  m_TimeLastConnection.Now();
   
   return true;
 }
@@ -383,6 +381,10 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
     SleepAllowed = true;
     
+    if (m_IsConnected == true) {
+      m_TimeLastConnection.Now();
+    }
+    
     // Step 0:
     // Check if the thread should be stopped (and this the connection)
     
@@ -418,7 +420,6 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
             Socket->SetOption(kNoBlock, 1);
             m_IsServer = false;
             m_IsConnected = true;
-            m_TimeLastConnection.Now();
           } else {
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as client..."<<endl;
             Socket->Close("force");
@@ -450,7 +451,6 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
             m_IsConnected = true;  
-            m_TimeLastConnection.Now();
           } else {
             Socket = 0; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
@@ -518,7 +518,6 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     } 
     // If status > 0, we got a message
     else {  
-      m_TimeLastConnection.Now();
       unsigned long NewPacketSize = NewPacket.size();
       if (NewPacketSize > 0) {
         m_ReceiveMutex.Lock();
@@ -590,7 +589,6 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         
         continue; // Back --- we have to open a new socket
       } else {  
-        m_TimeLastConnection.Now();
         m_SendMutex.Lock();
         //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
         
