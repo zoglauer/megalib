@@ -40,7 +40,7 @@ class MTimer
 
   void SetTimeOut(double TimeOutSeconds = -1);
 
-  //! Start the timer - counting resarts from zero
+  //! Start the timer - counting restarts from zero
   void Start();
   //! Reset the timer
   void Reset();
