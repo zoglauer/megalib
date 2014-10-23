@@ -412,7 +412,9 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         if (m_WishClient == true) {
           int Level = gErrorIgnoreLevel;
           gErrorIgnoreLevel = kFatal;
+          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
           Socket = new TSocket(m_Host, m_Port); //, 10000000);
+          m_SocketMutex.UnLock();
           gErrorIgnoreLevel = Level;
           
           if (Socket->IsValid() == true) {
@@ -435,8 +437,10 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         // If we where unable to connect as client try as server:
         if (m_WishServer == true && m_IsConnected == false) {
 
+          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
           ServerSocket = new TServerSocket(m_Port, true, 10000000);
           ServerSocket->SetOption(kNoBlock,1);
+          m_SocketMutex.UnLock();
 
           // Wait for a client to connect - we add a random amount to make sure that two instances of this class can connect at same point in time
           gSystem->Sleep(10*SleepAmount + gRandom->Integer(10*SleepAmount));

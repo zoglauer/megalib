@@ -157,7 +157,9 @@ class MTransceiverTcpIpBinary
   bool m_StopThread;
   //! Flag indicating that the thread is running
   bool m_IsThreadRunning;
-
+  //! Mutex to prevent multiple socket initializations
+  TMutex m_SocketMutex;
+  
   //! List of byte packets still waiting for sending
   list<vector<unsigned char>> m_PacketsToSend;
   //! Number of objects still waiting for sending
