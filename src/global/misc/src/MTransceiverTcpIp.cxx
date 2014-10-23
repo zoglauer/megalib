@@ -203,7 +203,7 @@ void MTransceiverTcpIp::StartTransceiving()
   m_TransceiverThread->Run();
   
   while (m_IsThreadRunning == false) {
-    gSystem->ProcessEvents();
+    // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
   //cout<<"Receiver thread running!"<<endl;    
@@ -218,7 +218,7 @@ void MTransceiverTcpIp::StopTransceiving()
   m_StopThread = true;
   
   while (m_IsThreadRunning == true) {
-    gSystem->ProcessEvents();
+    // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
     

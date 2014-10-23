@@ -31,6 +31,8 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MTime.h"
+#include "MTimer.h"
 #include "MTransceiver.h"
 
 // Forward declarations:
@@ -74,9 +76,9 @@ class MTransceiverTcpIpBinary
   unsigned int GetPort() { return m_Port; }
   
   //! Request this connection to be a client
-  void RequestClient(bool Client) { m_WishClient = Client; if (m_WishClient) m_WishServer = false; } 
+  void RequestClient(bool Client = true) { m_WishClient = Client; if (m_WishClient) m_WishServer = false; } 
   //! Request this connection to be a server
-  void RequestServer(bool Server) { m_WishServer = Server; if (m_WishServer) m_WishClient = false; } 
+  void RequestServer(bool Server = true) { m_WishServer = Server; if (m_WishServer) m_WishClient = false; } 
   
   //! Connect. If wait for connection is true, and we ran into time-out, return false, otherwise always true 
   bool Connect(bool WaitForConnection = false, double TimeOut = 60);
@@ -86,6 +88,9 @@ class MTransceiverTcpIpBinary
   //! Return true if we are connected
   bool IsConnected() { return m_IsConnected; }
 
+  //! Return the time of the last connection of a successful receive or send
+  MTime GetTimeLastConnection() const { return m_TimeLastConnection; }
+  
   //! Send something binary
   bool Send(const vector<unsigned char>& Bytes);
   //! Receive something binary
@@ -141,6 +146,9 @@ class MTransceiverTcpIpBinary
   //! The verbosity (0: quiet, 1: errors, 2: errors & warnings (default), 3: errors, warnings & info)
   unsigned int m_Verbosity;
 
+  //! The time of the last connection
+  MTime m_TimeLastConnection;
+  
   //! The thread where the receiving and transmitting happens
   TThread* m_TransceiverThread;     
   //! Unique Id for the thread...

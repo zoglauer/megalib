@@ -80,6 +80,8 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   m_Host = Host;
   m_Port = Port;
 
+  m_TimeLastConnection.Set(0);  
+  
   m_NPacketsToSend = 0;
   m_NBytesToSend = 0;
   m_NPacketsToReceive = 0;
@@ -152,7 +154,9 @@ bool MTransceiverTcpIpBinary::Connect(bool WaitForConnection, double TimeOut)
     if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connected to "<<m_Host<<":"<<m_Port<<endl; 
   }
 
-return true;
+  m_TimeLastConnection.Now();
+  
+  return true;
 }
 
 
@@ -214,7 +218,7 @@ void MTransceiverTcpIpBinary::StartTransceiving()
   m_TransceiverThread->Run();
   
   while (m_IsThreadRunning == false) {
-    gSystem->ProcessEvents();
+    // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
 }
@@ -228,7 +232,7 @@ void MTransceiverTcpIpBinary::StopTransceiving()
   m_StopThread = true;
   
   while (m_IsThreadRunning == true) {
-    gSystem->ProcessEvents();
+    // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
     
@@ -414,6 +418,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
             Socket->SetOption(kNoBlock, 1);
             m_IsServer = false;
             m_IsConnected = true;
+            m_TimeLastConnection.Now();
           } else {
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as client..."<<endl;
             Socket->Close("force");
@@ -444,7 +449,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
             Socket->SetOption(kNoBlock, 1);
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
-            m_IsConnected = true;
+            m_IsConnected = true;  
+            m_TimeLastConnection.Now();
           } else {
             Socket = 0; // Since it can be negative... yes...
             if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
@@ -511,7 +517,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       // Empty...
     } 
     // If status > 0, we got a message
-    else {
+    else {  
+      m_TimeLastConnection.Now();
       unsigned long NewPacketSize = NewPacket.size();
       if (NewPacketSize > 0) {
         m_ReceiveMutex.Lock();
@@ -582,7 +589,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         m_IsConnected = false;
         
         continue; // Back --- we have to open a new socket
-      } else {
+      } else {  
+        m_TimeLastConnection.Now();
         m_SendMutex.Lock();
         //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
         
