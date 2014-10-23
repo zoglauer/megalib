@@ -88,8 +88,10 @@ class MTransceiverTcpIpBinary
   //! Return true if we are connected
   bool IsConnected() { return m_IsConnected; }
 
-  //! Return the time of the last connection of a successful receive or send
-  MTime GetTimeLastConnection() const { return m_TimeLastConnection; }
+  //! Return the time of the last connection
+  MTimer GetTimeSinceLastConnection() const { return m_TimeSinceLastConnection; }
+  //! Return the time of the last successful receive or send
+  MTimer GetTimeSinceLastIO() const { return m_TimeSinceLastIO; }
   
   //! Send something binary
   bool Send(const vector<unsigned char>& Bytes);
@@ -147,7 +149,9 @@ class MTransceiverTcpIpBinary
   unsigned int m_Verbosity;
 
   //! The time of the last connection
-  MTime m_TimeLastConnection;
+  MTimer m_TimeSinceLastConnection;
+  //! The time of the last read or write
+  MTimer m_TimeSinceLastIO;
   
   //! The thread where the receiving and transmitting happens
   TThread* m_TransceiverThread;     

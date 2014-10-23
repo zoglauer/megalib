@@ -79,8 +79,6 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
   m_Name = Name;
   m_Host = Host;
   m_Port = Port;
-
-  m_TimeLastConnection.Set(0);  
   
   m_NPacketsToSend = 0;
   m_NBytesToSend = 0;
@@ -382,7 +380,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     SleepAllowed = true;
     
     if (m_IsConnected == true) {
-      m_TimeLastConnection.Now();
+      m_TimeSinceLastConnection.Reset();
     }
     
     // Step 0:
@@ -483,14 +481,14 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
     // Step 3: 
     // Receive data
-    
+      
     // Add the object to the list:
     deque<unsigned char> NewPacket;
     unsigned int MaxLoops = 100; 
     do {
       Socket->SetOption(kNoBlock, 1); // don't block!
       Status = Socket->RecvRaw((void*) &ReadPacket[0], ReadPacketSize, kDontBlock);
-      //cout<<"Read Status: "<<Status<<" and string starting with "<<ReadPacket[0]<<endl;
+      // cout<<"Read Status: "<<Status<<" and string starting with "<<ReadPacket[0]<<endl;
       for (int c = 0; c < Status; ++c) {
         NewPacket.push_back(ReadPacket[c]);
       }
@@ -521,7 +519,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       // Empty...
     } 
     // If status > 0, we got a message
-    else {  
+    else {
+      m_TimeSinceLastIO.Reset();
       unsigned long NewPacketSize = NewPacket.size();
       if (NewPacketSize > 0) {
         m_ReceiveMutex.Lock();
@@ -592,7 +591,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         m_IsConnected = false;
         
         continue; // Back --- we have to open a new socket
-      } else {  
+      } else {
+        m_TimeSinceLastIO.Reset();
         m_SendMutex.Lock();
         //cout<<"Sent "<<Packet.size()<<" bytes --- "<<m_NPacketsToSend<<":"<<m_PacketsToSend.size()<<endl;
         
