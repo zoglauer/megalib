@@ -11,7 +11,7 @@ confhelp() {
   echo "Example:";
   echo "    debug mimrec -f MyFile.tra";
   echo "";
-  echo "This script lauches a program with gdb (and if you have a known MEGAlib program, it recompiles first)"
+  echo "This script lauches a program with gdb/lldb (and if you have a known MEGAlib program, it recompiles first)"
   echo "";
 }
 
@@ -122,17 +122,20 @@ fi
 
      
 # C. Lauch the program
-echo "Starting gdb...";
 cd ${currdir}
 if [ "${DEBUGGER}" == "gdb" ]; then
+  echo "Starting gdb...";
   TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
   echo "catch throw" >> ${TMP}
+  echo "handle SIGPIPE nostop" >> ${TMP}
   echo "run ${args}" >> ${TMP}
   gdb -x ${TMP} ${program}
   rm ${TMP}
 elif [ "${DEBUGGER}" == "lldb" ]; then
+  echo "Starting lldb...";
   TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
-  echo "break set -E c++" >>${TMP}
+  echo "break set -E c++" >> ${TMP}
+  echo "process handle SIGPIPE -n true -p true -s false" >> ${TMP}
   echo "run" >> ${TMP}
   lldb -s ${TMP} -f ${program} -- ${args}
   rm ${TMP}
