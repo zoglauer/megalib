@@ -115,6 +115,9 @@ class MTransceiverTcpIpBinary
   //! Get the number of receives bytes
   unsigned long GetNReceivedBytes() const { return m_NReceivedBytes; }
 
+  //! Get the number of resets
+  unsigned long GetNResets() const { return m_NResets; }
+  
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
 
@@ -195,6 +198,9 @@ class MTransceiverTcpIpBinary
   //! Counter for the number of lost strings due to buffer overflow
   unsigned long m_NLostPackets;
 
+  //! Counter for the resets
+  unsigned long m_NResets;
+  
   //! True if a connection is established
   bool m_IsConnected;
   //! True if this tranceiver tries to connect
