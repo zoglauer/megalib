@@ -80,6 +80,12 @@ class MTransceiverTcpIpBinary
   //! Request this connection to be a server
   void RequestServer(bool Server = true) { m_WishServer = Server; if (m_WishServer) m_WishClient = false; } 
   
+  //! Clear the send and receive buffers
+  void ClearBuffers();
+  
+  //! Turn on or off the automatic reconnect feature - it will be turned on during the next call of Connect
+  void AutomaticReconnection(bool AutomaticReconnection = true) { m_AutomaticReconnection = AutomaticReconnection; }
+  
   //! Connect. If wait for connection is true, and we ran into time-out, return false, otherwise always true 
   bool Connect(bool WaitForConnection = false, double TimeOut = 60);
   //! Disconnect. If wait for connection is true, and we ran into time-out, return false, otherwise always true 
@@ -205,7 +211,9 @@ class MTransceiverTcpIpBinary
   bool m_IsConnected;
   //! True if this tranceiver tries to connect
   bool m_WishConnection;
-
+  //! True if we automatically reconnect if we loose connection
+  bool m_AutomaticReconnection;
+  
   //! True if this connection is intended as server
   bool m_WishServer;
   //! True if this connection is intended as client

@@ -97,6 +97,7 @@ MTransceiverTcpIpBinary::MTransceiverTcpIpBinary(MString Name, MString Host, uns
 
   m_IsConnected = false;
   m_WishConnection = false;
+  m_AutomaticReconnection = true;
   
   m_IsServer = false;
   m_WishServer = true;
@@ -125,6 +126,30 @@ MTransceiverTcpIpBinary::~MTransceiverTcpIpBinary()
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MTransceiverTcpIpBinary::ClearBuffers() 
+{
+  //! Clear the send and receive buffers
+
+  m_SendMutex.Lock();
+  
+  m_PacketsToSend.clear();
+  m_NPacketsToSend = 0;
+  m_NBytesToSend = 0;
+  
+  m_SendMutex.UnLock();
+  
+
+
+  m_ReceiveMutex.Lock();
+
+  m_NPacketsToReceive = 0;
+  m_PacketsToReceive.clear();
+
+  m_ReceiveMutex.UnLock();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -133,9 +158,10 @@ bool MTransceiverTcpIpBinary::Connect(bool WaitForConnection, double TimeOut)
 {
   // Connect to the given host.
   
+  m_AutomaticReconnection = true; // must come before any return
   if (m_IsConnected == true) return true;
-  
   m_WishConnection = true;
+  
   if (m_IsThreadRunning == false) {
     StartTransceiving();
   }
@@ -383,12 +409,28 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     
     if (m_IsConnected == true) {
       m_TimeSinceLastConnection.Reset();
+      
+      if (Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
+        if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Found a broken connection... Resetting!"<<endl;
+        
+        if (Socket != 0) {
+          Socket->Close("force");
+          delete Socket;
+          Socket = 0;
+          ++m_NResets;
+        }
+        
+        m_IsConnected = false;
+        m_IsServer = false;
+      }
     }
     
     // Step 0:
     // Check if the thread should be stopped (and this the connection)
     
     if (m_StopThread == true) {
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Stopping thread...!"<<endl;
+
       if (Socket != 0) {
         Socket->Close("force");
         delete Socket;
@@ -407,7 +449,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     // Connect if not connected and a connection is wished
     
     if (m_IsConnected == false) {
-      if (m_WishConnection == true) {
+      if (m_WishConnection == true && m_AutomaticReconnection == true) {
         // Try to (re-) connect as client:
 
         if (m_WishClient == true) {
@@ -473,6 +515,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     }
     // If we are connected but wish disconnection
     else if (m_IsConnected == true && m_WishConnection == false) {
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): No longer wishing connection..."<<endl;
+
       Socket->Close("force");
       delete Socket;
       Socket = 0;
@@ -585,7 +629,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       vector<unsigned char>& Packet = m_PacketsToSend.front(); // Make sure we don't copy the string...
       m_SendMutex.UnLock();
       
-      //cout<<"Transceiver "<<m_Name<<": Sending something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
+      cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Trying to send something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
       Socket->SetOption(kNoBlock, 0); // Not sure about this...
       Status = Socket->SendRaw((void*) &Packet[0], Packet.size());
 
@@ -618,6 +662,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
           continue;
         }
 
+        cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Successfully sent something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
         m_NPacketsToSend--;
         m_NBytesToSend -= Packet.size();
         m_NSentBytes += Packet.size();
