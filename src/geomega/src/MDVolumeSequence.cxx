@@ -136,38 +136,34 @@ void MDVolumeSequence::Join(MDVolumeSequence VS)
       m_Positions[i] = 0.5*(m_Positions[i]+VS.m_Positions[i]);
     }
   }
-
-  if (m_SensitiveVolume != 0 &&  VS.m_SensitiveVolume != 0) {
-    if (m_SensitiveVolume->GetName() != VS.m_SensitiveVolume->GetName()) {
-      m_Detector = 0;
-      m_NamedDetector = 0;
+  
+  // Invalidate the rotation --- it will be regenerated next time:
+  m_ValidRotation = false;
+  m_RotMatrix.ResizeTo(3,3);
+  m_RotMatrix(0,0) = 1;
+  m_RotMatrix(1,1) = 1;
+  m_RotMatrix(2,2) = 1;    
+  
+  if (m_Detector == 0 || VS.m_Detector == 0 || m_Detector->GetName() != VS.m_Detector->GetName()) {
+    m_Detector = 0;
+    m_NamedDetector = 0;
       
-      m_DetectorVolume = 0;
-      m_PositionInDetector = g_VectorNotDefined;
+    m_DetectorVolume = 0;
+    m_PositionInDetector = g_VectorNotDefined;
 
+    m_SensitiveVolume = 0;
+    m_PositionInSensitiveVolume = g_VectorNotDefined;
+  } else { // Detector names are equal
+    massert(m_Detector->GetName() == VS.m_Detector->GetName());
+    
+    m_PositionInDetector = 0.5*(m_PositionInDetector + VS.m_PositionInDetector);
+    
+    if (m_SensitiveVolume == 0 || VS.m_SensitiveVolume == 0 || m_SensitiveVolume->GetName() != VS.m_SensitiveVolume->GetName()) {
       m_SensitiveVolume = 0;
       m_PositionInSensitiveVolume = g_VectorNotDefined;
-
-      m_RotMatrix.ResizeTo(3,3);
-      m_RotMatrix(0,0) = 1;
-      m_RotMatrix(1,1) = 1;
-      m_RotMatrix(2,2) = 1;
-    } else if (m_Detector != 0 && VS.m_Detector != 0) {
-      if (m_Detector->GetName() != VS.m_Detector->GetName()) {
-        m_Detector = 0;
-        m_NamedDetector = 0;
-        m_PositionInDetector = g_VectorNotDefined;
-
-        m_SensitiveVolume = 0;
-        m_PositionInSensitiveVolume = g_VectorNotDefined;
-      }    
     } else {
-      m_Detector = 0;
-      m_NamedDetector = 0;
+      m_PositionInSensitiveVolume = 0.5*(m_PositionInSensitiveVolume + VS.m_PositionInSensitiveVolume);      
     }
-  } else {
-    m_DetectorVolume = 0;
-    m_SensitiveVolume = 0;
   }
 }
 
@@ -188,7 +184,7 @@ void MDVolumeSequence::Reset()
   m_SensitiveVolume = 0;
   m_PositionInSensitiveVolume = g_VectorNotDefined;
 
-  m_ValidRotation = true;
+  m_ValidRotation = false;
   m_RotMatrix.ResizeTo(3,3);
   m_RotMatrix(0,0) = 1;
   m_RotMatrix(1,1) = 1;
