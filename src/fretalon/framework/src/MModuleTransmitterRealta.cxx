@@ -129,10 +129,10 @@ bool MModuleTransmitterRealta::AnalyzeEvent(MReadOutAssembly* Event)
   
   if (Event->IsBad() == true) return true;
   
-  static int ID = 0;
-  static double Time = 0.0;
-  Event->SetTime(Time += 0.01);
-  Event->SetID(++ID);
+  //static int ID = 0;
+  //static double Time = 0.0;
+  //Event->SetTime(Time += 0.01);
+  //Event->SetID(++ID);
   
   ostringstream estream;
   Event->StreamEvta(estream);
