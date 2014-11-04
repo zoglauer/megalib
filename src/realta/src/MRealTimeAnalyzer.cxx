@@ -543,6 +543,12 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
   bool NoisingDefined = false;
   MERNoising* Noising = 0;
   
+  // The maximum number of allowed time jumps before we reset
+  int MaxNContinuousTimeJumps = 100;
+  int NContinuousTimeJumps = 0;
+  
+  bool RestartInitilization = false; 
+  
   // The infinite loop
   while (true) {
    
@@ -588,6 +594,8 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
       gSystem->Sleep(int(NapAmount));
       NapTime += NapAmount/1000.0;
     } else {
+      // Begin: we have events
+      
       // Split message into lines
       vector<MString> Tokens = Message.Tokenize("\n");
       //cout<<"Message size: "<<Message.Length()<<endl;
@@ -647,12 +655,24 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
             continue;
           }
         }
-
-        if (m_Events.empty() == false && RE->GetEventTime() > m_Events.front()->GetTime() + 5*InitializationCutOff) {
-          cout<<"Time jump: "<<RE->GetEventID()<<":"<<RE->GetEventTime()<<endl;
-          cout<<"Ignoring event!"<<endl;
-          delete RE;
-          continue;
+        
+        // If we have events, check the time timing 
+        
+        if (m_Events.empty() == false && (
+              RE->GetEventTime() > m_Events.front()->GetTime() + 5*InitializationCutOff ||
+              RE->GetEventTime() < (*InitIter)->GetTime())
+            ) {
+          cout<<"Time jump for event "<<RE->GetEventID()<<": T="<<RE->GetEventTime()<<" vs. T="<<m_Events.front()->GetTime()<<" in youngest event vs. T="<<(*InitIter)->GetTime()<<" of oldest event"<<endl;
+          ++NContinuousTimeJumps;
+          if (NContinuousTimeJumps < MaxNContinuousTimeJumps) {
+            cout<<"Only "<<NContinuousTimeJumps<<" continuous time jumps: Ignoring event!"<<endl;
+            delete RE;
+            continue;
+          } else {
+            RestartInitilization = true; 
+          }
+        } else {
+          NContinuousTimeJumps = 0; 
         }
 
         //cout<<"Received event "<<RE->GetEventID()<<" with obs time "<<RE->GetEventTime()<<" seconds."<<endl;
@@ -661,59 +681,72 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
         Event->SetID(RE->GetEventID());
         Event->SetTime(RE->GetEventTime());
         Event->SetInitialRawEvent(RE);
-        /*
-        if (m_DoCoincidence == false) {
-          Event->IsCoincident(true);
-          Event->SetCoincidentRawEvent(new MRERawEvent(Event->GetInitialRawEvent()));      
-        }
-        */
   
         // Search for the correct position to add it:
         if (m_Events.empty() == true) {
           m_Events.push_front(Event);
           InitIter = m_Events.rbegin();
         } else {
-          bool AtInitilizationLimit = false;
-          list<MRealTimeEvent*>::iterator EventIter = m_Events.begin();
-          while (EventIter != m_Events.end() && (*EventIter)->GetTime() > Event->GetTime()) {
-            //cout<<"Checking: "<<(*EventIter)->GetTime()<<" vs. "<<Event->GetTime()<<endl;
-            if ((*EventIter)->IsInitialized() == true) {
-              //cout<<(*EventIter)->GetTime()<<" already init"<<endl;
-              AtInitilizationLimit = true;
-              break;
+          // Sometimes we might have to restart the initialization:
+          if (RestartInitilization == false) {
+          
+            bool AtInitilizationLimit = false;
+            list<MRealTimeEvent*>::iterator EventIter = m_Events.begin();
+            while (EventIter != m_Events.end() && (*EventIter)->GetTime() > Event->GetTime()) {
+              //cout<<"Checking: "<<(*EventIter)->GetTime()<<" vs. "<<Event->GetTime()<<endl;
+              if ((*EventIter)->IsInitialized() == true) {
+                //cout<<(*EventIter)->GetTime()<<" already init"<<endl;
+                AtInitilizationLimit = true;
+                break;
+              }
+              EventIter++;       
             }
-            EventIter++;       
-          }
-          if (AtInitilizationLimit == true) {
-            cout<<"Error: Event "<<Event->GetID()<<" has been dropped because it arrived out of sync and too late!"<<endl;
-            cout<<"       Youngest event time on file: "<<(*EventIter)->GetTime()<<" sec ("<<(*EventIter)->GetID()<<") vs. this events time : "<<Event->GetTime()<<" sec ("<<Event->GetID()<<")"<<endl;
-            delete Event;
-            Event = 0;
-          } else {
-            if (EventIter == m_Events.end()) {
-              m_Events.push_back(Event);
+            if (AtInitilizationLimit == true) {
+              cout<<"Error: Event "<<Event->GetID()<<" has been dropped because it arrived out of sync and too late!"<<endl;
+              cout<<"       Youngest event time on file: "<<(*EventIter)->GetTime()<<" sec ("<<(*EventIter)->GetID()<<") vs. this events time : "<<Event->GetTime()<<" sec ("<<Event->GetID()<<")"<<endl;
+              cout<<"ATTENTION: We should never ever reach this fall back code!"<<endl;
+              delete Event;
+              Event = 0;
             } else {
-              // insert before!
-              m_Events.insert(EventIter, Event);
+              if (EventIter == m_Events.end()) {
+                m_Events.push_back(Event);
+              } else {
+                // insert before!
+                m_Events.insert(EventIter, Event);
+              }
             }
           }
-        }
+          // Restart initialization
+          else {
+            cout<<"Restarting event initialization!"<<endl;
+            // Add the event
+            m_Events.push_front(Event);
+            // and initialize all up to this event:
+            while ((*InitIter) != m_Events.front()) {
+              (*InitIter)->IsInitialized(true);
+              InitIter++;
+            }
+            (*InitIter)->IsInitialized(true); // Initilize front to have a true restart, nothing which comes before this event is accepted! The code below about initialization will be ignored!
+          
+            RestartInitilization = false;
+          }
       
-        if (Event != 0) {
-          m_TransmissionThreadLastEventID = Event->GetID();
-        }
+          if (Event != 0) {
+            m_TransmissionThreadLastEventID = Event->GetID();
+          }
       
-        // Finally we anounce that the event can be used:
-        MTime Front = m_Events.front()->GetTime();
-        //cout<<"Front ID: "<<m_Events.front()->GetID()<<" is init: "<<((m_Events.front()->IsInitialized() == true) ? "true" : "false")<<":"<<(*InitIter)->GetID()<<endl;
-        while ((Front - (*InitIter)->GetTime()).GetAsSeconds() > InitializationCutOff) {
-          (*InitIter)->IsInitialized(true);
-          //cout<<"Initializing: "<<(*InitIter)->GetID()<<endl;
-          if ((*InitIter) == m_Events.front()) break; // Make sure we never go beyond the first event!
-          InitIter++;
-        }
-      }
-    }
+          // Finally we anounce that the event can be used:
+          MTime Front = m_Events.front()->GetTime();
+          //cout<<"Front ID: "<<m_Events.front()->GetID()<<" is init: "<<((m_Events.front()->IsInitialized() == true) ? "true" : "false")<<":"<<(*InitIter)->GetID()<<endl;
+          while ((Front - (*InitIter)->GetTime()).GetAsSeconds() > InitializationCutOff) {
+            (*InitIter)->IsInitialized(true);
+            //cout<<"Initializing: "<<(*InitIter)->GetID()<<endl;
+            if ((*InitIter) == m_Events.front()) break; // Make sure we never go beyond the first event!
+            InitIter++;
+          }
+        } // event list not empty        
+      } // current event
+    } // end we have events!
 
     
     if (NapTimer.GetElapsed() > 5.0) {
@@ -1480,7 +1513,7 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     int NEventsCountRate = 0;
     int NEventsSpectrum = 0;
     int NBackprojections = 0;
-    while (Event != m_Events.end() && EventHorizonTime - (*Event)->GetTime().GetAsDouble() < AccumulationTime) {
+    while (Event != m_Events.end() && EventHorizonTime - (*Event)->GetTime().GetAsDouble() < AccumulationTime && EventHorizonTime - (*Event)->GetTime().GetAsDouble() >= 0) {
       if (m_StopThreads == true) break;
       LatestTime = (*Event)->GetTime().GetAsDouble();
       // The count rate histogram is always filled 
@@ -1509,7 +1542,7 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
     // Normalize the histograms
     for (int b = 1; b <= InternalCountRate->GetXaxis()->GetNbins(); ++b) {
-      InternalCountRate->SetBinContent(b, InternalCountRate->GetBinContent(b)/m_CountRate->GetBinWidth(b));
+      InternalCountRate->SetBinContent(b, InternalCountRate->GetBinContent(b)/InternalCountRate->GetBinWidth(b));
     }
     if (EventHorizonTime - LatestTime > 0) {
       for (int b = 1; b <= InternalSpectrum->GetXaxis()->GetNbins(); ++b) {

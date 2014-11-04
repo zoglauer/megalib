@@ -220,7 +220,7 @@ void MGUIRealtaMain::Create()
   
   // The status column
   
-  int StatusColumnWidth = 225;
+  int StatusColumnWidth = 250;
   
   TGLayoutHints* StatusColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 10, 10, 10, 10);
   TGVerticalFrame* StatusColumn = new TGVerticalFrame(Columns, StatusColumnWidth, StatusColumnWidth); //, kRaisedFrame);
