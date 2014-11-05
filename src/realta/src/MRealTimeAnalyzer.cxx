@@ -1395,6 +1395,8 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   CountRate->SetMinimum(0);
   CountRate->SetLabelSize(0.06f, "XY");
   CountRate->SetTitleSize(0.06f, "XY");
+  CountRate->SetFillColor(kViolet+6);
+  CountRate->SetLineColor(kViolet+10);
 
   // Make it atomic...
   // no delete for the time being...
@@ -1410,6 +1412,8 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
   Spectrum->SetXTitle("Energy in keV");
   Spectrum->SetYTitle("cts/sec/keV");
   Spectrum->SetMinimum(0);
+  Spectrum->SetFillColor(kViolet+6);
+  Spectrum->SetLineColor(kViolet+10);
 
   // Set it in one step...
   // no delete for the time being...

@@ -821,11 +821,11 @@ void MGUIRealtaMain::DoControlLoop()
         for (unsigned int i = 0; i < Min.size(); ++i) {
           if (Max[i] == 0) continue;
           TBox* Box = new TBox(Min[i], 0.0, Max[i], m_Analyzer->GetSpectrumHistogram()->GetMaximum());
-          //Box->SetFillStyle(3001);
-          Box->SetFillColor(kAzure+10);
+          Box->SetFillStyle(0);
+          Box->SetLineColor(kBlue+3);
           Box->Draw("SAME");
         }
-        m_Analyzer->GetSpectrumHistogram()->Draw("SAME");
+        //m_Analyzer->GetSpectrumHistogram()->Draw("SAME");
        
         // Print the isotopes
         vector<MQualifiedIsotope> I = m_Analyzer->GetIsotopes();
