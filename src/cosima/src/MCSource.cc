@@ -434,7 +434,7 @@ bool MCSource::SetStartAreaParameters(double StartAreaParam1,
 
   // Some sanity checks:
   if (m_StartAreaType == c_StartAreaUnknown) {
-    mout<<m_Name<<": The start area typ is not yet set"<<endl;
+    mout<<m_Name<<": The start area type is not yet set"<<endl;
     return false;
   } else if (m_StartAreaType == c_StartAreaSphere) {
     if (StartAreaParam7 == c_Invalid) {
