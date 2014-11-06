@@ -43,6 +43,8 @@ using namespace std;
 #include <TArrow.h>
 #include <TText.h>
 #include <TBox.h>
+#include <TObject.h>
+#include <TList.h>
 
 // MEGAlib libs:
 #include "MStreams.h"
@@ -801,67 +803,100 @@ void MGUIRealtaMain::DoControlLoop()
      CanvasTimer.Reset();
 
       if (m_Analyzer->GetCountRateHistogram() != 0) {
-        m_CountRateCanvas->GetCanvas()->cd();
-        m_Analyzer->GetCountRateHistogram()->Draw();
-        m_CountRateCanvas->GetCanvas()->Update();
-        AnImageShown = true;
+        // The whole thing here is to prevent a crash when we are interacting with the canvas during an draw
+        TIter Next(m_CountRateCanvas->GetCanvas()->GetListOfPrimitives());
+        bool FoundInteraction = false;
+        TObject* O = 0;
+        while ((O = Next())) {
+          if (TString("TPad") == O->ClassName()) {
+            FoundInteraction = true; 
+          }
+        }
+        if (FoundInteraction == false) {
+          m_CountRateCanvas->GetCanvas()->cd();
+          m_Analyzer->GetCountRateHistogram()->Draw();
+          m_CountRateCanvas->GetCanvas()->Update();
+          AnImageShown = true;
+        }
       }
       
       gSystem->ProcessEvents();
       if (m_Analyzer->GetSpectrumHistogram() != 0) {
-        m_SpectrumCanvas->GetCanvas()->cd();
-        m_Analyzer->GetSpectrumHistogram()->SetMaximum(-1111);
-        m_Analyzer->GetSpectrumHistogram()->SetMaximum(1.35*m_Analyzer->GetSpectrumHistogram()->GetMaximum());
-        m_Analyzer->GetSpectrumHistogram()->Draw();
-        double Width = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax() - m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
-
-        // Highlight the windows
-        vector<double> Min = m_Analyzer->GetMinimaOfSpectralWindows();
-        vector<double> Max = m_Analyzer->GetMaximaOfSpectralWindows();
-        for (unsigned int i = 0; i < Min.size(); ++i) {
-          if (Max[i] == 0) continue;
-          TBox* Box = new TBox(Min[i], 0.0, Max[i], m_Analyzer->GetSpectrumHistogram()->GetMaximum());
-          Box->SetFillStyle(0);
-          Box->SetLineColor(kBlue+3);
-          Box->Draw("SAME");
-        }
-        //m_Analyzer->GetSpectrumHistogram()->Draw("SAME");
-       
-        // Print the isotopes
-        vector<MQualifiedIsotope> I = m_Analyzer->GetIsotopes();
-        for (unsigned int i = 0; i < I.size(); ++i) {
-          for (unsigned int l = 0; l < I[i].GetNLines(); ++l) {
-            if (I[i].GetLineFound(l) == false) continue;
-            double YMax = m_Analyzer->GetSpectrumHistogram()->GetMaximum();
-            double Max = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax();
-            double Min = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
-            double X = (I[i].GetLineEnergy(l) - Min) / (Max - Min);
-            X = I[i].GetLineEnergy(l);
-            //TArrow* A = new TArrow(X, 0.98*YMax, X, 0.7*YMax, 0.03);
-            //A->SetFillColor(1);
-            //A->Draw();
-            MString Name = I[i].GetElement();
-            if (I[i].GetNucleons() > 0) {
-              Name += "-";
-              Name += I[i].GetNucleons();
-            }
-            TText* T = new TText(X+0.01*Width, 0.75*YMax, Name);
-            T->SetTextAngle(90);
-            T->Draw();
-            //break; // Hack: Only show the highest energy isotope
+        // The whole thing here is to prevent a crash when we are interacting with the canvas during an draw
+        TIter Next(m_SpectrumCanvas->GetCanvas()->GetListOfPrimitives());
+        bool FoundInteraction = false;
+        TObject* O = 0;
+        while ((O = Next())) {
+          if (TString("TPad") == O->ClassName()) {
+            FoundInteraction = true; 
           }
         }
-        
-        m_SpectrumCanvas->GetCanvas()->Update();
-        AnImageShown = true;
+        if (FoundInteraction == false) {
+          m_SpectrumCanvas->GetCanvas()->cd();
+          m_Analyzer->GetSpectrumHistogram()->SetMaximum(-1111);
+          m_Analyzer->GetSpectrumHistogram()->SetMaximum(1.35*m_Analyzer->GetSpectrumHistogram()->GetMaximum());
+          m_Analyzer->GetSpectrumHistogram()->Draw();
+          double Width = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax() - m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
+          
+          // Highlight the windows
+          vector<double> Min = m_Analyzer->GetMinimaOfSpectralWindows();
+          vector<double> Max = m_Analyzer->GetMaximaOfSpectralWindows();
+          for (unsigned int i = 0; i < Min.size(); ++i) {
+            if (Max[i] == 0) continue;
+            TBox* Box = new TBox(Min[i], 0.0, Max[i], m_Analyzer->GetSpectrumHistogram()->GetMaximum());
+            Box->SetFillStyle(0);
+            Box->SetLineColor(kBlue+3);
+            Box->Draw("SAME");
+          }
+          //m_Analyzer->GetSpectrumHistogram()->Draw("SAME");
+          
+          // Print the isotopes
+          vector<MQualifiedIsotope> I = m_Analyzer->GetIsotopes();
+          for (unsigned int i = 0; i < I.size(); ++i) {
+            for (unsigned int l = 0; l < I[i].GetNLines(); ++l) {
+              if (I[i].GetLineFound(l) == false) continue;
+              double YMax = m_Analyzer->GetSpectrumHistogram()->GetMaximum();
+              double Max = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmax();
+              double Min = m_Analyzer->GetSpectrumHistogram()->GetXaxis()->GetXmin();
+              double X = (I[i].GetLineEnergy(l) - Min) / (Max - Min);
+              X = I[i].GetLineEnergy(l);
+              //TArrow* A = new TArrow(X, 0.98*YMax, X, 0.7*YMax, 0.03);
+              //A->SetFillColor(1);
+              //A->Draw();
+              MString Name = I[i].GetElement();
+              if (I[i].GetNucleons() > 0) {
+                Name += "-";
+                Name += I[i].GetNucleons();
+              }
+              TText* T = new TText(X+0.01*Width, 0.75*YMax, Name);
+              T->SetTextAngle(90);
+              T->Draw();
+              //break; // Hack: Only show the highest energy isotope
+            }
+          }
+          
+          m_SpectrumCanvas->GetCanvas()->Update();
+          AnImageShown = true;
+        }
       }
       
       gSystem->ProcessEvents();
       if (m_Analyzer->GetImage() != 0) {
-        m_ImageCanvas->GetCanvas()->cd();
-        m_Analyzer->GetImage()->Display(m_ImageCanvas->GetCanvas());
-        m_ImageCanvas->GetCanvas()->Update();
-        AnImageShown = true;
+        // The whole thing here is to prevent a crash when we are interacting with the canvas during an draw
+        TIter Next(m_ImageCanvas->GetCanvas()->GetListOfPrimitives());
+        bool FoundInteraction = false;
+        TObject* O = 0;
+        while ((O = Next())) {
+          if (TString("TPad") == O->ClassName()) {
+            FoundInteraction = true; 
+          }
+        }
+        if (FoundInteraction == false) {
+          m_ImageCanvas->GetCanvas()->cd();
+          m_Analyzer->GetImage()->Display(m_ImageCanvas->GetCanvas());
+          m_ImageCanvas->GetCanvas()->Update();
+          AnImageShown = true;
+        }
       }
       gSystem->ProcessEvents();
 
