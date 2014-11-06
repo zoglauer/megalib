@@ -245,7 +245,9 @@ bool MTransceiverTcpIp::Send(const MString& String)
     m_StringsToSend.pop_front();
     m_NLostStrings++;
     m_NStringsToSend--;
-    cout<<"Buffer overflow: One object lost (total loss: "<<m_NLostStrings<<")"<<endl;
+    if (m_NLostStrings == 1 || m_NLostStrings == 10 || m_NLostStrings == 100 || m_NLostStrings == 1000 ||  m_NLostStrings == 10000 || m_NLostStrings % 100000 == 0) { 
+      cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
+    }
   }
   m_SendMutex.UnLock();
   

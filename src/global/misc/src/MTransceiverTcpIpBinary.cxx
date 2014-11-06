@@ -286,7 +286,9 @@ bool MTransceiverTcpIpBinary::Send(const vector<unsigned char>& Packet)
     m_NPacketsToSend--;
     m_NLostPackets++;
     m_PacketsToSend.pop_front();
-    if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Buffer overflow: One packet lost (total loss: "<<m_NLostPackets<<")"<<endl;
+    if (m_NLostPackets == 1 || m_NLostPackets == 10 || m_NLostPackets == 100 || m_NLostPackets == 1000 || m_NLostPackets == 10000 || m_NLostPackets % 100000 == 0) {
+      if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Buffer overflow: Packets lost (total loss: "<<m_NLostPackets<<")"<<endl;
+    }
   }
 
   m_SendMutex.UnLock();

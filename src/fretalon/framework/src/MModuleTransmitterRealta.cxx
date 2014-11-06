@@ -97,6 +97,7 @@ bool MModuleTransmitterRealta::Initialize()
   // Set up the transceiver and connect:
   delete m_Transmitter;
   m_Transmitter = new MTransceiverTcpIp("Realta-Transmitter", m_HostName, m_HostPort, MTransceiverTcpIp::c_ModeRawEventList);
+  m_Transmitter->SetMaximumBufferSize(100000); // This is events so need to be low!
   //m_Transmitter->SetVerbosity(3);
   m_Transmitter->Connect();
   
