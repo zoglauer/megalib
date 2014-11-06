@@ -79,7 +79,11 @@ void MGUIExpo::CloseWindow()
 {
   // When the x is pressed, this function is called.
 
+  m_Mutex.Lock();
+  
   DeleteWindow();
+  
+  m_Mutex.UnLock();
 }
 
 

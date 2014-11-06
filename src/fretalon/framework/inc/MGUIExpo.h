@@ -25,11 +25,13 @@
 #include <TGButton.h>
 #include <TString.h>
 #include <TGClient.h>
+#include <TMutex.h>
 
 // MEGAlib libs:
 #include "MTimer.h"
 #include "MXmlNode.h"
 #include "MGUIERBList.h"
+
 
 // Nuclearizer libs
 
@@ -97,6 +99,9 @@ class MGUIExpo : public TGCompositeFrame
   
   //! True if it has been created
   bool m_IsCreated;
+  
+  //! The main mutex which protects the modifixcation of the data
+  TMutex m_Mutex;
   
   // private members:
  private:
