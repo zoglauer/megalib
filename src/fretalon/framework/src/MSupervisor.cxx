@@ -803,6 +803,8 @@ bool MSupervisor::Analyze()
   
   
   // Do the analysis pipeline
+  
+  // We have events 
   bool HasMoreEvents = false;
   bool DoShutdown = false;
   unsigned int CurrentShutdownModule = 0;
@@ -873,11 +875,17 @@ bool MSupervisor::Analyze()
     
     if (DoShutdown == true && HasMoreEvents == false && CurrentShutdownModule == GetNModules()) break;
 
+    // Update the GUI infrequently
     if (++NPasses % 100 == 0) {
        if (LastUIUpdate.GetElapsed() > 5.0) {
         m_ExpoCombinedViewer->OnUpdate();
         LastUIUpdate.Reset();
       }
+    }
+    
+    // If there were no events --- sleep a bit
+    if (HasMoreEvents == false) {
+      gSystem->Sleep(10); 
     }
     
     gSystem->ProcessEvents();    
