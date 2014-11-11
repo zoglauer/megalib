@@ -3385,7 +3385,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
       
-      if (m_DetectorList[i]->GetCommonVolume() == false) {
+      if (m_DetectorList[i]->GetCommonVolume() == 0) {
         mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction"<<endl;
         mout<<"If your detector has multiple sensitive volumes, those must have a common volume and there are no copies allowed starting with the sensitive volume up to the common volume."<<endl;
         mout<<"Stopping to scan geometry file!"<<endl;
