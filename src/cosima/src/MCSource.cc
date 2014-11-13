@@ -25,6 +25,7 @@
 #include "MCActivator.hh"
 
 // Stdlib:
+#include <cmath>
 #include <limits>
 using namespace std;
 
@@ -35,7 +36,7 @@ using namespace std;
 #include "G4ParticleTypes.hh"
 #include "G4ThreeVector.hh"
 #include "G4GeneralParticleSource.hh"
-#include "G4IonTable.hh"
+#include "G4ParticleTable.hh"
 
 // ROOT:
 #include "TRandom.h"
@@ -1549,7 +1550,7 @@ bool MCSource::UpgradeFlux()
     }
   }
 
-  if (m_Flux > 0 && !isnan(m_Flux) && !isinf(m_Flux)) {
+  if (m_Flux > 0 && !std::isnan(m_Flux) && !std::isinf(m_Flux)) { // std:: is needed due to a similar definition in G4 
     if (m_CoordinateSystem == c_FarField) {
       cout<<m_Name<<": Final flux: "<<m_Flux/m_StartAreaAverageArea*second*cm*cm<<" ph/cm^2/sec"<<endl;
     } else {
@@ -1939,10 +1940,10 @@ bool MCSource::GenerateParticleDefinition()
   int Type = m_ParticleType;
   if (Type > 1000) {
     G4ParticleDefinition* Ion = 0;
-    G4IonTable* IonTable = G4IonTable::GetIonTable();
+    G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
     int AtomicNumber = int(Type/1000);
     int AtomicMass = Type - int(Type/1000)*1000;
-    Ion = IonTable->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
+    Ion = Table->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
     if (Ion == 0) {
       merr<<"Particle type not yet implemented!"<<endl;
       m_ParticleDefinition = 0;

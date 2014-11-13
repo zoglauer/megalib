@@ -39,7 +39,7 @@
 #include "G4NuclearLevelManager.hh"
 #include "G4NuclearLevelStore.hh"
 #include "G4Ions.hh"
-#include "G4IonTable.hh"
+#include "G4ParticleTable.hh"
 
 // MEGAlib
 #include "MStreams.h"
@@ -48,6 +48,7 @@
 #include "MSimEvent.h"
 
 // Standard lib:
+#include <cmath>
 #include <iomanip>
 #include <algorithm>
 #include <functional>
@@ -242,7 +243,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
   double Time = Step->GetPostStepPoint()->GetGlobalTime()/second;
 
   // Quick sanity check to prevent some Geant4 hick-ups:
-  if (isnan(Track->GetPosition().getX())) {
+  if (std::isnan(Track->GetPosition().getX())) {
     merr<<"Geant4 hick-up: Detected NaN! Aborting track!"<<endl;
     Track->SetTrackStatus(fStopAndKill);
     return;
@@ -880,14 +881,14 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
             if (M->IsValid() == true) {
               const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
-                G4IonTable* IonTable = G4IonTable::GetIonTable();
-                Nucleus = dynamic_cast<G4Ions*>(IonTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
+                G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+                Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
               }
             }
           } else {
             //cout<<"Alignment < 1 keV"<<endl;
-            G4IonTable* IonTable = G4IonTable::GetIonTable();
-            Nucleus = dynamic_cast<G4Ions*>(IonTable->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
+            G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+            Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
           }
           //cout<<"NE: "<<Nucleus->GetExcitationEnergy()/keV<<"keV"<<endl;
 

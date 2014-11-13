@@ -35,7 +35,7 @@
 #include "G4ParticleDefinition.hh"
 #include "G4DecayTable.hh"
 #include "G4VDecayChannel.hh"
-#include "G4IonTable.hh"
+#include "G4ParticleTable.hh"
 #include "G4RIsotopeTable.hh"
 #include "G4IsotopeProperty.hh"
 #include "G4NuclearLevelManager.hh"
@@ -253,11 +253,11 @@ bool MCActivator::CalculateEquilibriumRates()
         */
 
         // Check if the particle really exists...
-        G4IonTable* IonTable = G4IonTable::GetIonTable();
+        G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
         int ID = m_Rates.GetID(v, i);
         int AtomicNumber = int(ID/1000);
         int AtomicMass = ID - int(ID/1000)*1000;
-        if (IonTable->GetIon(AtomicNumber, AtomicMass, ExcitationEnergy) == 0) {
+        if (Table->GetIon(AtomicNumber, AtomicMass, ExcitationEnergy) == 0) {
           mout<<"Error: Unable to find isotope: "<<m_Rates.GetParticleDefinition(v, i, e)->GetParticleName()<<endl;
           continue;
         }
