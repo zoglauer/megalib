@@ -7,7 +7,7 @@
 
 
 CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
-# In case you have trouble with anything related to freetype, comment in this option
+# In case you have trouble with anything related to freetype, try to comment in this option
 # CONFIGUREOPTIONS="${CONFIGUREOPTIONS} --enable-builtin-freetype"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
