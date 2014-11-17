@@ -631,7 +631,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       vector<unsigned char>& Packet = m_PacketsToSend.front(); // Make sure we don't copy the string...
       m_SendMutex.UnLock();
       
-      cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Trying to send something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
+      if (m_Verbosity >= 1) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Trying to send something to "<<m_Host<<":"<<m_Port<<" ..."<<endl;
       Socket->SetOption(kNoBlock, 0); // Not sure about this...
       Status = Socket->SendRaw((void*) &Packet[0], Packet.size());
 
