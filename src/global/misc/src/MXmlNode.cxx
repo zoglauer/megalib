@@ -524,12 +524,54 @@ MString MXmlNode::ToString(unsigned int Indent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MXmlNode::IsClosed(MString Text)
+{
+  //! Parse text into this node
+
+  if (Text.Length() >= 2 && Text[0] == '<' && Text[Text.Length()-1] == '>') {
+  
+    size_t FirstBegin = Text.Index("<", 0);
+    size_t FirstEnd = Text.Index(">", 0);
+  
+    // Check for comments "<!--"
+    if (Text[1] == '!' && Text.Length() >= 4 && Text[2] == '-' && Text[3] == '-') {
+      FirstEnd = Text.Index("-->", 0);
+      Text = Text.Replace(FirstBegin, FirstEnd-FirstBegin+3, "");
+      return false;
+    }
+
+    // Check for specials "<?"
+    if (Text[1] == '?') {
+      FirstEnd = Text.Index("?>", 0);
+      Text = Text.Replace(FirstBegin, FirstEnd-FirstBegin+2, "");
+      return false;
+    }
+
+    MString Name = Text.GetSubString(FirstBegin+1, FirstEnd-FirstBegin-1);
+    Name.Strip();
+    // Check if it is an empty node
+    size_t Empty = Name.Index("/", 0);
+    // Make sure "/" is really the last entry (has to be after the above strip) and not part of some other text
+    if (Empty != MString::npos) {
+      if (Empty != Name.Length()-1) Empty = MString::npos;
+    }
+   
+    if (Empty != MString::npos) return true;
+  }
+  
+  return false;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MXmlNode::Parse(MString Text)
 {
   //! Parse text into this node
 
   Text = Text.Strip();
-
+  
   // For all nodes with:
   while (Text.Length() >= 2 && Text[0] == '<' && Text[Text.Length()-1] == '>') {
     size_t FirstBegin = Text.Index("<", 0);
@@ -551,12 +593,10 @@ bool MXmlNode::Parse(MString Text)
 
     MString Name = Text.GetSubString(FirstBegin+1, FirstEnd-FirstBegin-1);
     Name.Strip();
+    
     // Check if it is an empty node
-    size_t Empty = Name.Index("/", 0);
-    // Make sure "/" is really the last entry (has to be after the above strip) and not part of some other text
-    if (Empty != MString::npos) {
-      if (Empty != Name.Length()-1) Empty = MString::npos;
-    }
+    bool Empty = IsClosed(Text);
+
     // Make sure to take care of attributes
     size_t FirstAttribute = Name.Index(" ", 0);
     MString Attributes("");
@@ -573,12 +613,41 @@ bool MXmlNode::Parse(MString Text)
     MXmlNode* Node = new MXmlNode(this, Name);
 
     // Parse its content if there is any:
-    if (Empty == MString::npos) {
-      size_t LastBegin = Text.Index(MString("</") + Name + MString(">"));
-      size_t LastSize = (MString("</") + Name + MString(">")).Length();
+    if (Empty == false) {
+      // Find the next </Name>, but take care of cases of nested <Name><Name></Name></Name>
+      unsigned int NBegins = 1;
+      unsigned int NEnds = 0;
+      size_t LastBegin = FirstEnd;
+      size_t SecondBegin = FirstEnd;
+      while (true) {
+        SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+        if (SecondBegin != MString::npos) {
+          if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
+        } else {
+          break;
+        }
+      }
       
+      while (NBegins != NEnds && LastBegin != MString::npos) {
+        LastBegin = Text.Index(MString("</") + Name + MString(">"), LastBegin+1); 
+        if (LastBegin != MString::npos) ++NEnds;
+        while (SecondBegin < LastBegin) {
+          ++NBegins;
+          while (true) {
+            SecondBegin = Text.Index(MString("<") + Name + MString(" "), SecondBegin+1);
+            if (SecondBegin != MString::npos) {
+              if (IsClosed(Text.GetSubString(SecondBegin)) == false) break;
+            } else {
+              break;
+            }
+          }
+        }
+      }
+      
+      size_t LastSize = (MString("</") + Name + MString(">")).Length();
+            
       if (LastBegin == MString::npos) {
-        merr<<"Xml: Parse error in node \""<<m_Name<<"\" --- cannot find: "<<MString("</") + Name + MString(">")<<endl;
+        merr<<"Xml: Parse error in node \""<<m_Name<<"\" with "<<Attributes<<" --- cannot find: "<<MString("</") + Name + MString(">")<<endl;
         return false;
       }
     

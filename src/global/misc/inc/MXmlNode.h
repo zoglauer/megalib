@@ -111,7 +111,9 @@ class MXmlNode : public MXmlData
  protected:
   //! Parse text into this node
   virtual bool Parse(MString Text);
-
+  //! Return true if the next tag is closed
+  virtual bool IsClosed(MString Text);
+  
   // private methods:
  private:
 
