@@ -23,6 +23,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFile.h"
+#include "MFileEvents.h"
 #include "MTime.h"
 #include "MReadOutSequence.h"
 #include "MReadOutData.h"
@@ -34,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 //! Read the measured data from a file
-class MFileReadOuts : public MFile
+class MFileReadOuts : public MFileEvents
 {
   // public interface:
  public:

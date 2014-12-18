@@ -616,7 +616,11 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
 
   m_ObservationTime += m_IncludeFile->GetObservationTime();
 
-  mout<<"Swiched to "<<FileName<<" and added "<<m_IncludeFile->GetObservationTime()<<" sec observation time."<<endl;
+  mout<<"Swiched to "<<FileName;
+  if (m_IncludeFile->GetObservationTime() > 0) {
+    mout<<" and added "<<m_IncludeFile->GetObservationTime()<<" sec observation time.";
+  }
+  mout<<endl; 
 
   return true;
 }

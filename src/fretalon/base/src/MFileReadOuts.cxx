@@ -55,7 +55,7 @@ ClassImp(MFileReadOuts)
 
 
 //! Default constructor
-MFileReadOuts::MFileReadOuts() : MFile()
+MFileReadOuts::MFileReadOuts() : MFileEvents()
 {
   // Construct an instance of MFileReadOuts
   
@@ -93,6 +93,10 @@ MFileReadOuts::~MFileReadOuts()
 //! Open the file
 bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 {
+  m_IncludeFileUsed = false;
+  m_IncludeFile = new MFileReadOuts();
+  m_IncludeFile->SetIsIncludeFile(true);
+
   m_FileType = "ROA";
   if (MFile::Open(FileName, c_Read) == false) {
     return false;
@@ -330,7 +334,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
 bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
 {
   // Return next single event from file... or 0 if there are no more.
-
+  
   ROS.Clear();
   
   bool Error = false;
@@ -340,16 +344,30 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
     return 0;
   }
 
+  // If we have an include file, we get the event from it!
+  if (m_IncludeFileUsed == true) {
+    bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID);
+    if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
+      m_IncludeFile->Close();
+      m_IncludeFileUsed = false;
+    } else {
+      m_NGoodEventsInFile++;
+      return true;
+    }
+  }
+
+  
+  
   MTokenizer T(' ', false);  
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
   while (m_File.good() == true) {
     Line.ReadLine(m_File);
     if (Line.Length() < 2) continue;
-    //mout<<Line<<endl;
           
     // Case 1: The event is completed.  Check to see if we're at the following "SE".
-    if (Line[0] == 'S' && Line[1] == 'E') {
+    if ((Line[0] == 'S' && Line[1] == 'E') ||
+        (Line[0] == 'I' && Line[1] == 'N')) {
       // If the event is empty, then we ignore it and prepare for the next event:
       //mout << "MNCTFileEventsDat::ReadNextEvent: Done reading event" << endl;
       m_NEventsInFile++;
@@ -396,6 +414,24 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
         MReadOut RO(*m_ROE, *m_ROD);
         ROS.AddReadOut(RO);
         //cout<<RO.ToString()<<endl;
+      }
+    } else if (Line[0] == 'I' && Line[1] == 'N') {
+
+      if (OpenIncludeFile(Line) == true) {
+        //mout<<"Switched to new include file: "<<m_IncludeFile->GetFileName()<<endl;
+        // Now we have to read the first event:
+        bool Return = dynamic_cast<MFileReadOuts*>(m_IncludeFile)->ReadNext(ROS, SelectedDetectorID);
+        if (ROS.GetNumberOfReadOuts() == 0 || Return == false) {
+          //mout<<"Closing: "<<m_IncludeFile->GetFileName()<<endl;
+          m_IncludeFile->Close();
+          m_IncludeFileUsed = false;
+        } else {
+          m_NGoodEventsInFile++;
+          return true;
+        }        
+      } else {
+        mgui<<"Your current file contains a \"IN\" -- include file -- directive."<<endl
+            <<"However, the file could not be found or read: "<<m_IncludeFile->GetFileName()<<show;
       }
     }
     

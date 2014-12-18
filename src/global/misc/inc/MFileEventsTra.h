@@ -56,7 +56,7 @@ class MFileEventsTra : public MFileEvents
   //! Set if you want automatic progressbas updates --- must be set to wrong if we have multiple thread pulling data
   void SetAutomaticProgressUpdates(bool AutomaticProgressUpdates) { m_AutomaticProgressUpdates = AutomaticProgressUpdates; }
   
-  //! If yu want this class to be multi-threaded, call this function
+  //! If you want this class to be multi-threaded, call this function
   bool StartThread();
 
   MPhysicalEvent* GetNextEvent();
