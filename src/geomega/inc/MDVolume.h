@@ -96,6 +96,7 @@ class MDVolume
   // TRotMatrix* GetRotation();
   TMatrixD GetRotationMatrix() const;
   TMatrixD GetInvRotationMatrix() const;
+  TMatrixD GetInverseRotationMatrix() const { return GetInvRotationMatrix(); }
   bool IsRotated() const;
   int GetRotationID() const;
 

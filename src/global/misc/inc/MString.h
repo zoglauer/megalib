@@ -204,7 +204,7 @@ class MString
   bool EndsWith(const MString& S) const; 
   
   //! Split the string in substring using the delimeter
-  vector<MString> Tokenize(const MString& Delimeter) const;
+  vector<MString> Tokenize(const MString& Delimeter, bool IgnoreEmpty = true) const;
 
   //! Test if the string is a number -- ignores whitespace at beginning and end
   bool IsNumber() const;

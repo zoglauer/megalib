@@ -225,7 +225,7 @@ void MDMaterial::SetName(MString Name, MString ShortName, MString MGeantShortNam
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetName()
+MString MDMaterial::GetName() const
 {
   // Return the name of this material
   
@@ -236,7 +236,7 @@ MString MDMaterial::GetName()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetShortName()
+MString MDMaterial::GetShortName() const
 {
   // Return the name of this material
   
@@ -247,7 +247,7 @@ MString MDMaterial::GetShortName()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetMGeantShortName()
+MString MDMaterial::GetMGeantShortName() const
 {
   // Return the name of this material
   
@@ -258,7 +258,7 @@ MString MDMaterial::GetMGeantShortName()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetOriginalMGeantShortName()
+MString MDMaterial::GetOriginalMGeantShortName() const
 {
   // Return the short name created by MDGeometry::CreateShortName()
   // Only used in ShortNameExists!
@@ -288,6 +288,15 @@ void MDMaterial::SetRadiationLength(double RadiationLength)
   massert(RadiationLength > 0);
 
   m_RadiationLength = RadiationLength;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MDMaterial::SetComponent(MDMaterialComponent* C) 
+{
+  m_Components.push_back(C); 
 }
 
 
@@ -340,7 +349,7 @@ void MDMaterial::SetSensitivity(int Sensitive)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDMaterial::GetID()
+int MDMaterial::GetID() const
 {
   //
 
@@ -360,7 +369,7 @@ void MDMaterial::SetCrossSectionFileDirectory(MString Directory)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetCrossSectionFileDirectory()
+MString MDMaterial::GetCrossSectionFileDirectory() const
 {
   return m_CrossSectionFileDirectory;
 }
@@ -369,7 +378,7 @@ MString MDMaterial::GetCrossSectionFileDirectory()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterial::GetAbsorptionCoefficient(double Energy)
+double MDMaterial::GetAbsorptionCoefficient(double Energy) const
 {
   if (m_CrossSectionsPresent == false) return 0;
   return m_TotalCrossSection.GetInterpolated(Energy);
@@ -379,7 +388,7 @@ double MDMaterial::GetAbsorptionCoefficient(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterial::GetComptonAbsorptionCoefficient(double Energy)
+double MDMaterial::GetComptonAbsorptionCoefficient(double Energy) const
 {
   if (m_CrossSectionsPresent == false) return 0;
   return m_ComptonCrossSection.GetInterpolated(Energy);
@@ -389,7 +398,7 @@ double MDMaterial::GetComptonAbsorptionCoefficient(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterial::GetPhotoAbsorptionCoefficient(double Energy)
+double MDMaterial::GetPhotoAbsorptionCoefficient(double Energy) const
 {
   if (m_CrossSectionsPresent == false) return 0;
   return m_PhotoCrossSection.GetInterpolated(Energy);
@@ -399,7 +408,7 @@ double MDMaterial::GetPhotoAbsorptionCoefficient(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterial::GetPairAbsorptionCoefficient(double Energy)
+double MDMaterial::GetPairAbsorptionCoefficient(double Energy) const
 {
   if (m_CrossSectionsPresent == false) return 0;
   return m_PairCrossSection.GetInterpolated(Energy);
@@ -409,7 +418,7 @@ double MDMaterial::GetPairAbsorptionCoefficient(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterial::GetRayleighAbsorptionCoefficient(double Energy)
+double MDMaterial::GetRayleighAbsorptionCoefficient(double Energy) const
 {
   if (m_CrossSectionsPresent == false) return 0;
   return m_RayleighCrossSection.GetInterpolated(Energy);
@@ -419,7 +428,7 @@ double MDMaterial::GetRayleighAbsorptionCoefficient(double Energy)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetGeant3DIM()
+MString MDMaterial::GetGeant3DIM() const
 {
   // Return the Geant3 dimensions
 
@@ -440,7 +449,7 @@ MString MDMaterial::GetGeant3DIM()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetGeant3DATA()
+MString MDMaterial::GetGeant3DATA() const
 {
   // Return the DATA.string for geant3
 
@@ -475,7 +484,7 @@ MString MDMaterial::GetGeant3DATA()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetGeant3()
+MString MDMaterial::GetGeant3() const
 {
   // Return the GSMATE/GSMIXT tables
 
@@ -512,7 +521,7 @@ MString MDMaterial::GetGeant3()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetMGeant()
+MString MDMaterial::GetMGeant() const
 {
   // Fetch material data in MGEANT/MGGPOD format
   // Guest author RMK Jan-2004
@@ -636,7 +645,7 @@ MString MDMaterial::GetMGeant()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetMGeantTmed(int Sensitivity)
+MString MDMaterial::GetMGeantTmed(int Sensitivity) const
 {
   // Fetch tracking media data in MGEANT/MGGPOD format
   // Guest author RMK Jan-2004
@@ -669,7 +678,7 @@ MString MDMaterial::GetMGeantTmed(int Sensitivity)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::GetGeomega()
+MString MDMaterial::GetGeomega() const
 {
   // Return the content in Geomega format:
 
@@ -677,27 +686,10 @@ MString MDMaterial::GetGeomega()
 
   out<<"Material "<<m_Name<<endl;
   out<<m_Name<<".Density "<<m_Density<<endl;
-  out<<m_Name<<".Sensitivity 1"<<endl;
-  if (GetNComponents() == 1) {
-    out<<m_Name<<".RadiationLength "<<m_RadiationLength<<endl;
-    if (GetComponentAt(0)->GetType() == MDMaterialComponent::c_ByAtoms) {
-      out<<m_Name<<".ComponentByAtoms "<<GetComponentAt(0)->GetA()
-         <<" "<<GetComponentAt(0)->GetZ()<<" "<<GetComponentAt(0)->GetWeight()<<endl;
-    } else {
-      out<<m_Name<<".ComponentByMass "<<GetComponentAt(0)->GetA()
-         <<" "<<GetComponentAt(0)->GetZ()<<" "<<GetComponentAt(0)->GetWeight()<<endl;      
-    }
-  } else {
-    for (unsigned int c = 0; c < GetNComponents(); ++c) {
-      if (GetComponentAt(0)->GetType() == MDMaterialComponent::c_ByAtoms) {
-        out<<m_Name<<".ComponentByAtoms "<<GetComponentAt(c)->GetA()
-           <<" "<<GetComponentAt(c)->GetZ()<<" "<<GetComponentAt(c)->GetWeight()<<endl;
-      } else {
-        out<<m_Name<<".ComponentByMass "<<GetComponentAt(c)->GetA()
-           <<" "<<GetComponentAt(c)->GetZ()<<" "<<GetComponentAt(c)->GetWeight()<<endl;
-      }
-    }
+  for (auto C : m_Components) {
+    out<<m_Name<<C->GetGeomega()<<endl; 
   }
+  out<<endl;
 
   return out.str().c_str();
 }
@@ -706,7 +698,7 @@ MString MDMaterial::GetGeomega()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDMaterialComponent* MDMaterial::GetComponentAt(unsigned int i)
+MDMaterialComponent* MDMaterial::GetComponentAt(unsigned int i) const
 {
   // Return the ith Component of this material
 
@@ -724,7 +716,7 @@ MDMaterialComponent* MDMaterial::GetComponentAt(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MDMaterial::GetNComponents()
+unsigned int MDMaterial::GetNComponents() const
 {
   // Return the number of components of this material
 
@@ -735,7 +727,7 @@ unsigned int MDMaterial::GetNComponents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDMaterial::GetZMainComponent()
+int MDMaterial::GetZMainComponent() const
 {
   // Determine the main component of this material and return its Z:
 
@@ -760,7 +752,7 @@ int MDMaterial::GetZMainComponent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterial::ToString()
+MString MDMaterial::ToString() const
 {
   // 
 
@@ -1167,7 +1159,7 @@ void MDMaterial::AddClone(MDMaterial* Clone)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MDMaterial::GetNClones()
+unsigned int MDMaterial::GetNClones() const
 {
   // return the number clones of this volume
 
@@ -1177,7 +1169,7 @@ unsigned int MDMaterial::GetNClones()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDMaterial* MDMaterial::GetCloneAt(unsigned int i)
+MDMaterial* MDMaterial::GetCloneAt(unsigned int i) const
 {
   // Return the clone at position i
 
@@ -1195,7 +1187,7 @@ MDMaterial* MDMaterial::GetCloneAt(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MDMaterial::GetCloneId(MDMaterial* Clone)
+unsigned int MDMaterial::GetCloneId(MDMaterial* Clone) const
 {
   // Get the ID of the clone
 
@@ -1253,7 +1245,7 @@ bool MDMaterial::CopyDataToClones()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TGeoMedium* MDMaterial::GetRootMedium()
+TGeoMedium* MDMaterial::GetRootMedium() 
 {
   //! Return this material as ROOT medium
   

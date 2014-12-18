@@ -281,6 +281,32 @@ void MDOrientation::SetRotation(double x, double y, double z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MDOrientation::SetRotation(double x11, double x21, double x31, 
+                                double x12, double x22, double x32, 
+                                double x13, double x23, double x33)
+{
+  // Set the rotation x{row number}{column number}
+
+  TMatrixD Matrix(3, 3);
+  Matrix(0,0) = x11;
+  Matrix(1,0) = x21;
+  Matrix(2,0) = x31;
+ 
+  Matrix(0,1) = x12;
+  Matrix(1,1) = x22;
+  Matrix(2,1) = x32;
+
+  Matrix(0,2) = x13;
+  Matrix(1,2) = x23;
+  Matrix(2,2) = x33;
+
+  SetRotation(Matrix);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDOrientation::SetRotation(TMatrixD Rotation)
 {
   // Set the rotation of this volume and handle all IDs

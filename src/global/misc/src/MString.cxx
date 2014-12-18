@@ -111,7 +111,7 @@ bool MString::AreIdentical(const MString& S, bool IgnoreCase) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MString> MString::Tokenize(const MString& Delimeter)  const
+vector<MString> MString::Tokenize(const MString& Delimeter, bool IgnoreEmpty)  const
 { 
   MString S;
   vector<MString> T;
@@ -119,12 +119,16 @@ vector<MString> MString::Tokenize(const MString& Delimeter)  const
   size_t NewPos = 0; 
   while ((NewPos = m_String.find(Delimeter.m_String, OldPos)) != string::npos) {
     S = MString(m_String.substr(OldPos, NewPos-OldPos));
-    T.push_back(S);
+    if (IgnoreEmpty == false || (IgnoreEmpty == true && S != "")) { 
+      T.push_back(S);
+    }
     OldPos = NewPos + Delimeter.Length();
   }
   if (Length() > OldPos) {
     S = MString(m_String.substr(OldPos, Length() - OldPos));
-    T.push_back(S);
+    if (IgnoreEmpty == false || (IgnoreEmpty == true && S != "")) { 
+      T.push_back(S);
+    }
   }
 
   return T; 

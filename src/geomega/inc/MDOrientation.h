@@ -73,6 +73,8 @@ class MDOrientation
   void SetRotation(double x, double y, double z);
   //! Set the rotation 
   void SetRotation(TMatrixD Rotation);
+  //! Set the rotation x{row number}{column number}
+  void SetRotation(double x11, double x21, double x31, double x12, double x22, double x32, double x13, double x23, double x33);
   //! Set the rotation
   void SetRotation(TMatrixD RotationMatrix, int RotID);
   //! Set the rotation in Euler notarion   

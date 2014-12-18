@@ -35,6 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MDMaterial.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,6 +66,20 @@ MDMaterialComponent::MDMaterialComponent(): m_A(c_NaturalComposition), m_Z(1), m
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MDMaterialComponent::MDMaterialComponent(const MDMaterialComponent& C)
+{
+  // default constructor
+
+  SetA(C.m_A);
+  SetZ(C.m_Z);
+  SetWeight(C.m_Weight);
+  SetType(C.m_Type);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MDMaterialComponent::MDMaterialComponent(double A, double Z, 
                                          double Weight, int Type)
 {
@@ -84,6 +99,7 @@ MDMaterialComponent::~MDMaterialComponent()
 {
   // default destructor
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -179,7 +195,7 @@ void MDMaterialComponent::SetType(int Type)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterialComponent::GetA()
+double MDMaterialComponent::GetA() const
 {
   // Return the atomic mass of this component
 
@@ -190,7 +206,7 @@ double MDMaterialComponent::GetA()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterialComponent::GetZ()
+double MDMaterialComponent::GetZ() const
 {
   // Return the number of protons
 
@@ -201,7 +217,7 @@ double MDMaterialComponent::GetZ()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterialComponent::GetWeight()
+double MDMaterialComponent::GetWeight() const
 {
   // Return the number of atoms or mass fraction
 
@@ -212,7 +228,7 @@ double MDMaterialComponent::GetWeight()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MDMaterialComponent::GetType()
+int MDMaterialComponent::GetType() const
 {
   // Return the type, which is either component by mass of by atoms
 
@@ -248,7 +264,7 @@ bool MDMaterialComponent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDMaterialComponent::ToString()
+MString MDMaterialComponent::ToString() const
 {
   // Return string with the content of this instance
 
@@ -260,6 +276,32 @@ MString MDMaterialComponent::ToString()
   }
 
   return out.str().c_str();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDMaterialComponent::GetGeomega() const
+{
+  // Return the content in Geomega format:
+
+  ostringstream out;
+
+  if (GetType() == MDMaterialComponent::c_ByAtoms) {
+    out<<".ComponentByAtoms ";
+  } else {
+    out<<".ComponentByMass ";      
+  }
+  if (HasNaturalIsotopeComposition() == true) {
+    out<<MDMaterial::ConvertZToString(GetZ())<<" ";
+  } else {
+    out<<GetA()<<" "<<GetZ()<<" ";
+  }
+  out<<GetWeight();
+  
+
+  return out.str().c_str();
 }
 
 

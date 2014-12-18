@@ -33,12 +33,13 @@ class MDMaterialComponent
   // public interface:
  public:
   MDMaterialComponent();
+  MDMaterialComponent(const MDMaterialComponent& MaterialComponent);
   MDMaterialComponent(double AtomicMass, double NProtons, double Weight, int Type);
   virtual ~MDMaterialComponent();
 
   bool Validate();
 
-  //! Set the element by name and the A by naterual composition, returns fals eif element is not found
+  //! Set the element by name and the A by natural composition, returns false if element is not found
   bool SetElement(MString Name);
   void SetA(double A);
   void SetZ(double Z);
@@ -46,18 +47,21 @@ class MDMaterialComponent
   void SetType(int Type);
 
   //! Return true if we have natural isotope composition
-  bool HasNaturalIsotopeComposition() { return (m_A ==  c_NaturalComposition) ? true : false; }
+  bool HasNaturalIsotopeComposition() const { return (m_A == c_NaturalComposition) ? true : false; }
   
   //! Number of nucleons...
-  double GetA();
+  double GetA() const;
   //! Number of protons...
-  double GetZ();
+  double GetZ() const;
   //! Get weighting as stored 
-  double GetWeight();
+  double GetWeight() const;
   //! Get the original type of the weight
-  int GetType();
+  int GetType() const;
 
-  MString ToString();
+  //! Return in Geomega compatible format
+  MString GetGeomega() const;
+
+  MString ToString() const;
 
   static const int c_ByAtoms;
   static const int c_ByMass;

@@ -41,7 +41,7 @@ class MDShapeTUBS : public MDShape
   virtual ~MDShapeTUBS();
 
   //! Set the all parameters of the shape
-  bool Set(double Rmin, double Rmax, double HalfHeight, double Phi1, double Phi2);
+  bool Set(double Rmin, double Rmax, double HalfHeight, double Phi1 = 0.0, double Phi2 = 360.0);
 
   //! Validate the data and create the shape 
   bool Validate();  
