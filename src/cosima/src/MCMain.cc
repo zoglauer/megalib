@@ -124,7 +124,7 @@ bool MCMain::Initialize(int argc, char** argv)
 
   if (m_ConvertFileName != "") {
     MCGeometryConverter* Converter = new MCGeometryConverter();
-    Converter->Convert(m_ConvertFileName);
+    Converter->Convert(m_ConvertFileName.GetString());
     mout<<"Geometry converted. Aborting program. Ignore following error messages."<<endl;
     return false;
   }

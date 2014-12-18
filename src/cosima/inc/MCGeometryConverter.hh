@@ -26,13 +26,15 @@
 #include "G4VPhysicalVolume.hh"
 
 // Cosima:
+// --- Make sure you use only Geant4 and C++ classes
 
 // MEGAlib:
-#include "MString.h"
+// --- Make sure you use only Geant4 and C++ classes
 
 // Standard lib:
 #include <map>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 // Forward declarations:
@@ -50,20 +52,27 @@ public:
   virtual ~MCGeometryConverter();
 
   /// Convert the geometry from G4 to MEGAlib format
-  bool Convert(MString OutputFileName = "G4ToMEGAlib.geo.setup"); 
+  bool Convert(G4String OutputFileName = "G4ToMEGAlib.geo.setup"); 
 
   // protected methods:
 protected:
   /// Create an unique material name:
-  MString CreateUniqueName(G4Material* M);
+  G4String CreateUniqueName(G4Material* M);
   /// Create an unique logiocal volume name:
-  MString CreateUniqueName(G4LogicalVolume* L);
+  G4String CreateUniqueName(G4LogicalVolume* L);
   /// Create an unique physical volume name:
-  MString CreateUniqueName(G4VPhysicalVolume* P);
+  G4String CreateUniqueName(G4VPhysicalVolume* P);
 
   /// Convert the name to MEGAlib conventions
-  MString MakeValidName(MString Name);
+  G4String MakeValidName(G4String Name);
 
+  // Convert the shape in a logical volume
+  // If volume name is given, it is part of a volume
+  bool ConvertShape(ofstream& fout, G4String& Name, G4VSolid* S, bool PartOfVolume = true);
+  
+  // Convert an orientation
+  bool ConvertOrientation(ofstream& fout, G4String Name, G4ThreeVector Translation, G4RotationMatrix Rotation);
+  
   /// Convert very small numberes to zero
   double Zeroing(double Number);
 
@@ -74,11 +83,11 @@ protected:
   // private members:
 private:
   /// Map material pointers to unique names
-  map<G4Material*, MString> m_UniqueMaterialNames;
+  map<G4Material*, G4String> m_UniqueMaterialNames;
   /// Map logical volume pointers to unique names
-  map<G4LogicalVolume*, MString> m_UniqueLogicalVolumeNames;
+  map<G4LogicalVolume*, G4String> m_UniqueLogicalVolumeNames;
   /// Map physicalvolume pointers to unique names
-  map<G4VPhysicalVolume*, MString> m_UniquePhysicalVolumeNames;
+  map<G4VPhysicalVolume*, G4String> m_UniquePhysicalVolumeNames;
 };
 
 #endif
