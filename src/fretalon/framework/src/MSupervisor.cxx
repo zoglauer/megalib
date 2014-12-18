@@ -898,6 +898,8 @@ bool MSupervisor::Analyze()
     GetModule(m)->Finalize();
     ModuleTimers[m].Pause();
   }
+
+  m_ExpoCombinedViewer->OnUpdate();
   
   mout<<endl;
   if (m_Interrupt == true) {
