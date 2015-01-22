@@ -65,6 +65,9 @@ MFile::MFile()
 {
   // Construct an instance of MFile
 
+  m_Progress = 0;  
+  m_ZipFile = 0;
+
   Reset();
 }
 
@@ -92,7 +95,7 @@ MFile::~MFile()
 
 void MFile::Reset()
 {
-  // Close th file and set all values to default values
+  // Close the file and set all values to default values
   
   Close();
 
@@ -106,12 +109,13 @@ void MFile::Reset()
 
   m_FileLength = 0;
 
-  m_Progress = 0;
+  // m_Progress = 0; // Already managed by initial close!
   m_ProgressLevel = 0;
   m_OwnProgress = true;
   m_Canceled = false;
   m_SkippedProgressUpdates = 0;
 
+  // m_ZipFile = 0; // Already managed by the initial close
   m_WasZipped = false;
   m_ZippedFileName = g_StringNotDefined;
 
@@ -282,9 +286,9 @@ void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
   gSystem->ExpandPathName(Name);
   FileName = Name;
   
-	// On Unix system we start always with a "/", on windows we have a : before the first "/" or "\"
-	// Problem: What is with file:// something??
-	if (FileName.BeginsWith("/") == false && FileName.BeginsWith("\\") == false && !(FileName.Length() >= 2 && FileName[1] == ':')) {
+  // On Unix system we start always with a "/", on windows we have a : before the first "/" or "\"
+  // Problem: What is with file:// something??
+  if (FileName.BeginsWith("/") == false && FileName.BeginsWith("\\") == false && !(FileName.Length() >= 2 && FileName[1] == ':')) {
     if (WorkingDir == "") {
       FileName = MString(gSystem->WorkingDirectory()) + "/" + FileName;
     } else {
