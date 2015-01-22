@@ -6,15 +6,19 @@
 Version 2.29/2.30
 =================
 
-*** Important:
+*** Important - please always read:
 
-+ A compiler with C++11 support is now required - all current Mac and Linux
-  compiler should do
++ Partial rewrite of the MEGAlib file I/O classes to enable transparent 
+  handling of gzip'ed files
+  --> Since I had to modify the whole I/O chain, email me if there are any 
+      problems reading or writing files
 + First alpha version of calibration framework Fretalon with Melinator line 
   calibrator
 + Exchange of the ROOT geometry backend (switch to the TGeo* classes)
   --> Since this switch required significant changes in Geomega, please verify
       your geometries
++ A compiler with C++11 support is now required - all current Mac and Linux
+  compiler should do
   
   
 *** Significant new features & improvements:
@@ -23,6 +27,7 @@ General:
 + A compiler with C++11 support is now required - all current Mac and Linux
   compiler should do
 + Capability to change font size for Retina displays
++ Capability to read and write gzip'ed files via zlib library
 
 Cosima:
 + Support for Geant4 10.0 (enables meta-stable states, but multi-threading 

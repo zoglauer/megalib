@@ -21,6 +21,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFile.h"
+#include "MTime.h"
 
 // Forward declarations:
 
@@ -68,13 +69,11 @@ class MFileEvents : public MFile
   int GetNEvents(bool Count);
 
   //! Return the observation time in this event
-  //! Attention: This information is only complete after all files have been scanned,
-  //! i.e. after GetEvents has been called for all events!
-  //! In addition, this is the observation time for the total file, NOT up to the just read events!!
-  double GetObservationTime() const { return m_ObservationTime; }
+  //! If it has not yet been read, read it (can be very slow if the file is gzip'ed)
+  MTime GetObservationTime();
   
   //! Set the observation time 
-  void SetObservationTime(double ObservationTime) { m_ObservationTime = ObservationTime; }
+  void SetObservationTime(MTime ObservationTime) { m_ObservationTime = ObservationTime; m_HasObservationTime = true; }
 
   // protected methods:
  protected:
@@ -90,6 +89,12 @@ class MFileEvents : public MFile
   //! Create a file name indicated suiting for the "IN" keyword
   MString CreateIncludeFileName(const MString& FileName);
 
+  //! Read the special information at the end of file
+  //! If Continue is true, we do not seek to the end of the file, but just read the current file to the end
+  bool ReadFooter(bool Continue = false);
+  //! Parse the special information at the end of file -- add your special parsing in there
+  virtual bool ParseFooter(const MString& Line);
+  
   //! ID indicating there is no ID
   static const int c_NoId;
 
@@ -121,8 +126,14 @@ class MFileEvents : public MFile
   //! The original file name (different from m_FileName in case ofjumping from file to file via NF keyword)
   MString m_OriginalFileName;
  
-  //! The observation time
-  double m_ObservationTime;
+  //! The start of the observation time
+  MTime m_StartObservationTime;
+  //! The end of the observation time
+  MTime m_EndObservationTime;
+  //! The total observation time
+  MTime m_ObservationTime;
+  //! True if we have an observation time
+  bool m_HasObservationTime;
   
   // private members:
  private:

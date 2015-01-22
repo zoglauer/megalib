@@ -41,7 +41,7 @@ class MComptonEvent : public MPhysicalEvent
   bool Assimilate(MPhysicalEvent* Event); 
   bool Assimilate(const MVector& C1, const MVector& C2, const MVector& De, const double Ee, const double Eg);
   bool Assimilate(char* LineBuffer);
-  virtual bool Stream(fstream& Stream, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();

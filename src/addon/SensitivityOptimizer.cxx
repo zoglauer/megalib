@@ -2416,7 +2416,7 @@ bool SensitivityOptimizer::Analyze()
         //mlog<<"Test qualified!"<<endl;
         if (OpenSelector.IsQualifiedEventFast(Event) == true) {
           //mlog<<"Qualified!"<<endl;
-          if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+          if (Event->GetType() == MPhysicalEvent::c_Compton) {
             //mlog<<"Good Compton!"<<endl;
             Compton = dynamic_cast<MComptonEvent*>(Event);
             
@@ -2516,7 +2516,7 @@ bool SensitivityOptimizer::Analyze()
             }
           } 
           // Pair:
-          else if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+          else if (Event->GetType() == MPhysicalEvent::c_Pair) {
             Pair = dynamic_cast<MPairEvent*>(Event);
             for (unsigned int d = 0; d < d_max; ++d) {
               //mlog<<"1"<<endl;
@@ -2552,7 +2552,7 @@ bool SensitivityOptimizer::Analyze()
             }
           }
           // Photo:
-          else if (Event->GetEventType() == MPhysicalEvent::c_Photo) {
+          else if (Event->GetType() == MPhysicalEvent::c_Photo) {
             for (unsigned int c = 0; c < c_max; ++c) {
               //cout<<"c: "<<c<<":"<<c_max<<endl;
               for (unsigned int b = 0; b < b_max; ++b) {
@@ -2601,7 +2601,7 @@ bool SensitivityOptimizer::Analyze()
     while ((Event = Source.GetNextEvent()) != 0) {
       if (++counts % 10000 == 0) mlog<<"Counts: "<<counts<<" after "<<TimerBackground.GetElapsed()<<" sec"<<endl;
       if (OpenSelector.IsQualifiedEventFast(Event) == true) {
-        if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+        if (Event->GetType() == MPhysicalEvent::c_Compton) {
 
           // Tracked Compton
           Compton = dynamic_cast<MComptonEvent*>(Event);
@@ -2684,7 +2684,7 @@ bool SensitivityOptimizer::Analyze()
           }
         }
         // Pairs:
-        else if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+        else if (Event->GetType() == MPhysicalEvent::c_Pair) {
 
           Pair = dynamic_cast<MPairEvent*>(Event);
           for (unsigned int d = 0; d < d_max; ++d) {
@@ -2723,7 +2723,7 @@ bool SensitivityOptimizer::Analyze()
           }
         }
         // Photos:
-        else if (Event->GetEventType() == MPhysicalEvent::c_Photo) {
+        else if (Event->GetType() == MPhysicalEvent::c_Photo) {
           for (unsigned int c = 0; c < c_max; ++c) {
             for (unsigned int b = 0; b < b_max; ++b) {
               for (unsigned int e = m_EnergyMax.size()-1; e < m_EnergyMax.size(); --e) {

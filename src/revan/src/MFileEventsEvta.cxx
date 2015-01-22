@@ -172,8 +172,8 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   MRERawEvent* Event = new MRERawEvent(m_Geometry);
 
   MString Line;
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
 
     // Round 1: Take care of new files --- but do not yet read them or new events in them:

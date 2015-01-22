@@ -125,7 +125,7 @@ bool MDecayEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MDecayEvent::Assimilate(const MDecayEventData *DecayEventData)
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Decay) {
+  if (Event->GetType() == MPhysicalEvent::c_Decay) {
     return Assimilate((MDecayEvent *) Event);
   } else {
     return false; 
@@ -185,21 +185,22 @@ unsigned int MDecayEvent::GetNPhysicalEvents() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDecayEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
+bool MDecayEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
-  bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
+  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
     // Write Decay specific infos:
+    ostringstream S;
     S<<"DB "<<m_BetaEnergy<<" "
      <<m_BetaPosition[0]<<" "<<m_BetaPosition[1]<<" "<<m_BetaPosition[2]<<endl;
     for (unsigned int i = 0; i < GetNPhysicalEvents(); ++i) {
       S<<"DA "<<endl;
     }
-
-    S.flush();
+    File.Write(S);
+    File.Flush();
   }
 
   return Return;

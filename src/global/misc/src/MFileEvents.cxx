@@ -72,6 +72,7 @@ MFileEvents::MFileEvents() : MFile()
   m_OriginalFileName = "";
 
   m_ObservationTime = 0.0;
+  m_HasObservationTime = false;
 }
 
 
@@ -91,6 +92,8 @@ MFileEvents::~MFileEvents()
 
 bool MFileEvents::Open(MString FileName, unsigned int Way) 
 {
+  // Open the file and read some basic data common to all MEGAlib event files
+  
   if (MFile::Open(FileName, Way) == false) {
     return false;
   }
@@ -104,21 +107,20 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
     bool FoundGeometry = false;
     bool FoundMEGAlibVersion = false;
     bool FoundTB = false;
-    bool FoundTE = false;
+
+    m_ObservationTime = 0.0;
+    m_HasObservationTime = false;
 
     int Lines = 0;
     int MaxLines = 100;
 
-    double BeginObservationTime = 0.0;
-    double EndObservationTime = 0.0;
-
     MString Line;
-    while (m_File.good() == true) {
+    while (IsGood() == true) {
       if (++Lines >= MaxLines) break;
-      Line.ReadLine(m_File);
+      ReadLine(Line);
       
       if (FoundType == false) {
-        if (Line.BeginsWith("Type") == true) {
+        if (Line.BeginsWith("Ty") == true || Line.BeginsWith("TY") == true) {
           MTokenizer Tokens;
           Tokens.Analyze(Line);
           if (Tokens.GetNTokens() != 2) {
@@ -126,12 +128,13 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
             mout<<"Unable to read file type (should be "<<m_FileType<<")"<<endl;              
           } else {
             m_FileType = Tokens.GetTokenAtAsString(1);
+            m_FileType.ToLower();
             FoundType = true;
           }
         }
       }
       if (FoundVersion == false) {
-        if (Line.BeginsWith("Version") == true) {
+        if (Line.BeginsWith("Version") == true || Line.BeginsWith("VE") == true) {
           MTokenizer Tokens;
           Tokens.Analyze(Line);
           if (Tokens.GetNTokens() != 2) {
@@ -177,84 +180,94 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
             mout<<"Error while opening file "<<m_FileName<<": "<<endl;
             mout<<"Unable to read TB keyword"<<endl;              
           } else {
-            BeginObservationTime = Tokens.GetTokenAtAsDouble(1);
+            m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
             FoundTB = true;
           }
         }
       }
     }
-    // Now go to the end of the file to find the TE keyword
-    m_File.clear();
-    if (m_FileLength > (streampos) 100000) {
-      m_File.seekg(m_FileLength - streamoff(100000));
-    } else {
-      // start from the beginning...
-      MFile::Rewind();
-    }
-    Line.ReadLine(m_File); // Ignore the first line
-    while (m_File.good() == true) {
-      Line.ReadLine(m_File);
-      if (Line.Length() < 2) continue;
-
-      // In case the job crashed badly we might have no TE, thus use the last TI
-      if (Line[0] == 'T' && Line[1] == 'I') {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() < 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read TI keyword"<<endl;              
-        } else {
-          EndObservationTime = Tokens.GetTokenAtAsDouble(1);
-        }
-      }
-      if (FoundTE == false) {
-        if (Line[0] == 'T' && Line[1] == 'E') {
-          MTokenizer Tokens;
-          Tokens.Analyze(Line);
-          if (Tokens.GetNTokens() != 2) {
-            mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-            mout<<"Unable to read TE keyword"<<endl;              
-          } else {
-            EndObservationTime = Tokens.GetTokenAtAsDouble(1);
-            FoundTE = true;
-          }
-        }
-      }
-    }
-    MFile::Rewind();
-
-//     // Uncomment the MEGAlib stuff some time in the future (now = 2008-09-15)
-//     if (FoundVersion == false || FoundType == false || FoundGeometry == false /*|| FoundMEGAlibVersion == false*/) { 
-//       mout<<"A problem occurred while opening file "<<m_FileName<<": "<<endl;
-//       mout<<"The following information is not found within the first "<<MaxLines<<" lines:"<<endl;
-//       if (FoundVersion == false) {
-//         mout<<"Version information not found!"<<endl;
-//       }
-//       if (FoundType == false) {
-//         mout<<"Type information not found!"<<endl;
-//       }
-//       if (FoundGeometry == false) {
-//         mout<<"Geometry information not found!"<<endl;
-//       }
-//       /*
-//       if (FoundMEGAlibVersion == false) {
-//         mout<<"MEGAlib version information not found!"<<endl;
-//       }
-//       */
-//     }
-
-//     if (FoundTB == true) { // FoundTE is not required since if TE is not there, the last TI is used
-//       m_ObservationTime = EndObservationTime - BeginObservationTime;
-//     } else {
-//       m_ObservationTime = 0.0;
-//     }
-    m_ObservationTime = EndObservationTime - BeginObservationTime;
   }
 
 
   // Store the file name, since it might change when we go through a file tree via NF keyword
   m_OriginalFileName = m_FileName;
 
+  // Now rewind - don't use the local one, since it reopens the file...
+  MFile::Rewind();
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEvents::ReadFooter(bool Continue)
+{
+  // Read the footer of the file
+  
+  streampos Position = GetUncompressedFilePosition();
+  
+  if (Continue == false) {
+    MFile::Rewind();
+    if (GetUncompressedFileLength() > (streampos) 100000) {
+      Seek(GetUncompressedFileLength(false) - streamoff(100000));
+    }
+  }
+  
+  MString Line;
+  while (IsGood() == true) {
+    ReadLine(Line);
+    if (Line.Length() < 2) continue;
+
+    ParseFooter(Line);
+  }
+  
+
+  if (Continue == false) {
+    Clear(); // We very likely have reached the end of the file
+    Seek(Position);
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEvents::ParseFooter(const MString& Line)
+{
+  // Parse the footer
+  
+  // In case the job crashed badly we might have no TE, thus use the last TI
+  if (Line[0] == 'T' && Line[1] == 'I') {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() < 2) {
+      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+      mout<<"Unable to read TI keyword"<<endl;
+      return false;
+    } else {
+      m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      m_HasObservationTime = true;
+    }
+  }
+  if (Line[0] == 'T' && Line[1] == 'E') {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() != 2) {
+      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+      mout<<"Unable to read TE keyword"<<endl;
+      return false;
+    } else {
+      m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+      m_HasObservationTime = true;
+    }
+  }
+  
   return true;
 }
 
@@ -279,6 +292,17 @@ bool MFileEvents::Rewind()
   return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MFileEvents::GetObservationTime()
+{ 
+  if (m_HasObservationTime == false) {
+    ReadFooter();
+  }
+  
+  return m_ObservationTime; 
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -318,13 +342,15 @@ bool MFileEvents::WriteHeader()
 
   MTime Now;
 
-  m_File<<"Type      "<<m_FileType<<endl;
-  m_File<<"Version   "<<m_Version<<endl;
-  m_File<<"Geometry  "<<m_GeometryFileName<<endl;
-  m_File<<endl;
-  m_File<<"Date      "<<Now.GetSQLString()<<endl;
-  m_File<<"MEGAlib   "<<g_VersionString<<endl;
-  m_File<<endl;
+  ostringstream Header;
+  Header<<"Type      "<<m_FileType<<endl;
+  Header<<"Version   "<<m_Version<<endl;
+  Header<<"Geometry  "<<m_GeometryFileName<<endl;
+  Header<<endl;
+  Header<<"Date      "<<Now.GetSQLString()<<endl;
+  Header<<"MEGAlib   "<<g_VersionString<<endl;
+  Header<<endl;
+  Write(Header);
 
   return true;
 }
@@ -350,9 +376,11 @@ bool MFileEvents::AddFooter(const MString& Text)
   
   // Text always goes to the main file!
   if (Text.IsEmpty() == false) {
-    m_File<<endl<<"FT START"<<flush;
-    m_File<<Text<<flush;
-    m_File<<"FT STOP"<<endl<<flush;
+    ostringstream ToWrite;
+    ToWrite<<endl<<"FT START"<<endl;
+    ToWrite<<Text<<endl;
+    ToWrite<<"FT STOP"<<endl<<endl;
+    Write(ToWrite);
 
     if (GetFileLength() >= numeric_limits<streamsize>::max()) {
       mout<<"Warning: Writing footer resulted in exceeding of max file size..."<<endl;
@@ -377,10 +405,12 @@ bool MFileEvents::CloseEventList()
     return false;
   }
 
-  m_File<<"EN"<<endl;
-  m_File<<endl;
-  m_File<<"TE "<<m_ObservationTime<<endl;
-  m_File<<endl;
+  ostringstream ToWrite;
+  ToWrite<<"EN"<<endl;
+  ToWrite<<endl;
+  ToWrite<<"TE "<<m_ObservationTime<<endl;
+  ToWrite<<endl;
+  Write(ToWrite);
   
   return true;
 }
@@ -420,7 +450,7 @@ bool MFileEvents::OpenNextFile(const MString& Line)
   // We need to wait after Close() to assign the new file name! 
   m_FileName = FileName;
 
-  double ObservationTime = m_ObservationTime; // preserve the original observation time
+  MTime ObservationTime = GetObservationTime(); // preserve the original observation time
   MString OriginalFileName = m_OriginalFileName; // preserve the original file name
   if (Open(m_FileName) == false) {
     return false;
@@ -449,27 +479,28 @@ bool MFileEvents::CreateNextFile()
   // (a) Remove Suffix
   MString NewFileName = m_FileName;
   NewFileName.Remove(NewFileName.Length() - m_FileType.Length()-1, m_FileType.Length()+1);
-  cout<<NewFileName<<endl;
+  //cout<<NewFileName<<endl;
   // (b) Check for Extension
   if (m_ExtensionNumber > 0) {
     ostringstream out;
     out<<".id"<<m_ExtensionNumber;
     MString Id(out.str().c_str());
     NewFileName.Remove(NewFileName.Length() - Id.Length(), Id.Length());    
-    cout<<NewFileName<<endl;
+    //cout<<NewFileName<<endl;
   }
   // (c) Build the new name:
   m_ExtensionNumber++;
   ostringstream New;
   New<<NewFileName<<".id"<<m_ExtensionNumber<<"."<<m_FileType;
   NewFileName = New.str().c_str();
-  cout<<NewFileName<<endl;
+  //cout<<NewFileName<<endl;
 
 
   // Write NF information - per default all Event files are is c_Cpp / Ascii mode
-  m_File<<"SE"<<endl;
-  m_File<<"NF "<<NewFileName<<endl<<flush;
-  
+  ostringstream out;
+  out<<"SE"<<endl;
+  out<<"NF "<<NewFileName<<endl;
+  Write(out);
 
   // Open new file
   Close();
@@ -543,7 +574,9 @@ bool MFileEvents::CreateIncludeFile()
 
     // Write header information - this ensures that the file can be used by itself
     WriteHeader();
-    m_File<<"IN "<<MFile::RelativeFileName(IncludeFileName, m_FileName)<<endl<<flush;
+    ostringstream out;
+    out<<"IN "<<MFile::RelativeFileName(IncludeFileName, m_FileName)<<endl;
+    Write(out);
   } else {
     IncludeFileName = m_IncludeFile->GetFileName();
     m_IncludeFile->CloseEventList();
@@ -554,7 +587,9 @@ bool MFileEvents::CreateIncludeFile()
   MString NewFileName = CreateIncludeFileName(IncludeFileName);
 
   // Write IN information - per default all Event files are is c_Cpp / Ascii mode
-  m_File<<"IN "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl<<flush;
+  ostringstream out;
+  out<<"IN "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl<<flush;
+  Write(out);
 
   cout<<"Changing to new include file "<<MFile::RelativeFileName(NewFileName, m_FileName)<<endl;
 
@@ -608,20 +643,20 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
     m_IncludeFileUsed = false;
     return false;
   }
-
+  
   if (m_Progress != 0) {
     m_IncludeFile->SetProgress(m_Progress, m_ProgressLevel+1);
     m_Progress->SetValue(0, m_ProgressLevel+1);
   }
-
+  
   m_ObservationTime += m_IncludeFile->GetObservationTime();
-
-  mout<<"Swiched to "<<FileName;
+  
+  mout<<"Switched to "<<FileName;
   if (m_IncludeFile->GetObservationTime() > 0) {
     mout<<" and added "<<m_IncludeFile->GetObservationTime()<<" sec observation time.";
   }
   mout<<endl; 
-
+  
   return true;
 }
 
@@ -636,21 +671,22 @@ int MFileEvents::GetNEvents(bool Count)
   // Return the number of events in this file:
   // Warning this resets the current file position!!
 
-  streampos Current = m_File.tellg();
+  // Save the current position in order to go back to it
+  streampos CurrentPos = GetUncompressedFilePosition();
   MString CurrentFileName = m_FileName;
 
-  m_File.seekg(0, ios_base::end);
-  streampos Max = m_File.tellg();
+  Seek(0, ios_base::end);
+  streampos Max = GetUncompressedFilePosition();
   streamoff Start = Max - streampos(10000);
   if (int(Start) < 0) Start = streampos(0); 
-  m_File.seekg(Start, ios_base::beg);
+  Seek(Start, ios_base::beg);
 
   int Id = c_NoId;
 
   if (Count == false) {
     MString Line;
-    while (m_File.good() == true) {
-      Line.ReadLine(m_File);
+    while (IsGood() == true) {
+      ReadLine(Line);
       if (Line.Length() < 2) continue;
 
       if (Line[0] == 'S' && Line[1] == 'E') {
@@ -680,8 +716,8 @@ int MFileEvents::GetNEvents(bool Count)
     Rewind();
 
     MString Line;
-    while (m_File.good() == true) {
-      Line.ReadLine(m_File);
+    while (IsGood() == true) {
+      ReadLine(Line);
       if (Line[0] == 'S' && Line[1] == 'E') {
         Id++;
       } else if (Line[0] == 'I' && Line[1] == 'N') {
@@ -709,8 +745,8 @@ int MFileEvents::GetNEvents(bool Count)
     }
   }
   
-  m_File.clear();
-  m_File.seekg(Current, ios_base::beg);
+  Clear();
+  Seek(CurrentPos);
   
   return Id;
 }

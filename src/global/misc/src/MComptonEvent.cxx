@@ -264,43 +264,43 @@ MString MComptonEvent::ToString() const
 {
   // Display the compton-data of this event
 
-  ostringstream out;
+  ostringstream S;
 
-  out<<endl;
-  out<<"Compton event "<<m_Id<<":"<<endl;
-  out<<"  Energy of scattered gamma-ray: "<<m_Eg<<" +- "<<m_dEg<<endl; 
-  out<<"  Energy of recoil electron: "<<m_Ee<<" +- "<<m_dEe<<endl; 
-  out<<"  Position of first Compton IA: "<<m_C1.X()<<", "<<m_C1.Y()<<", "<<m_C1.Z()<<endl;
-  out<<"  Position of second Compton IA: "<<m_C2.X()<<", "<<m_C2.Y()<<", "<<m_C2.Z()<<endl;
+  S<<endl;
+  S<<"Compton event "<<m_Id<<":"<<endl;
+  S<<"  Energy of scattered gamma-ray: "<<m_Eg<<" +- "<<m_dEg<<endl; 
+  S<<"  Energy of recoil electron: "<<m_Ee<<" +- "<<m_dEe<<endl; 
+  S<<"  Position of first Compton IA: "<<m_C1.X()<<", "<<m_C1.Y()<<", "<<m_C1.Z()<<endl;
+  S<<"  Position of second Compton IA: "<<m_C2.X()<<", "<<m_C2.Y()<<", "<<m_C2.Z()<<endl;
   if (m_HasTrack == true) {
-    out<<"  Electron direction: "<<m_De.X()<<", "<<m_De.Y()<<", "<<m_De.Z()<<endl;
-    out<<"  Incoming direction: "<<m_Di.X()<<", "<<m_Di.Y()<<", "<<m_Di.Z()<<endl;
+    S<<"  Electron direction: "<<m_De.X()<<", "<<m_De.Y()<<", "<<m_De.Z()<<endl;
+    S<<"  Incoming direction: "<<m_Di.X()<<", "<<m_Di.Y()<<", "<<m_Di.Z()<<endl;
   } else {
-    out<<"  Event has no track!"<<endl;
+    S<<"  Event has no track!"<<endl;
   }
 
-  out<<"  Detector rotation: x("
+  S<<"  Detector rotation: x("
      <<m_DetectorRotationXAxis.X()<<", "<<m_DetectorRotationXAxis.Y()<<", "<<m_DetectorRotationXAxis.Z()
      <<") z("<<m_DetectorRotationZAxis.X()<<", "<<m_DetectorRotationZAxis.Y()<<", "<<m_DetectorRotationZAxis.Z()<<")"<<endl;
 
-  out<<"  Compton scatter angle phi: "<<m_Phi*c_Deg<<endl;
-  out<<"  Electron scatter angle phi: "<<m_Epsilon*c_Deg<<endl;
-  out<<"  Total scatter angle theta (energies): "<<m_Theta*c_Deg<<endl;
-  out<<"  Total scatter angle theta (geo): "<<CalculateThetaViaAngles()*c_Deg<<endl;
-  out<<"  First lever arm: "<<(m_C2-m_C1).Mag()<<endl; 
-  out<<"  Minimum lever arm in sequence: "<<m_LeverArm<<endl; 
-  out<<"  Sequence Length: "<<m_SequenceLength<<endl; 
-  out<<"  Clustering quality factor: "<<m_ClusteringQualityFactor<<endl; 
-  out<<"  Compton quality factor 1: "<<m_ComptonQualityFactor1<<endl; 
-  out<<"  Compton quality factor 2: "<<m_ComptonQualityFactor2<<endl; 
-  out<<"  Track quality factor 1: "<<m_TrackQualityFactor1<<endl; 
-  out<<"  Track quality factor 2: "<<m_TrackQualityFactor2<<endl; 
+  S<<"  Compton scatter angle phi: "<<m_Phi*c_Deg<<endl;
+  S<<"  Electron scatter angle phi: "<<m_Epsilon*c_Deg<<endl;
+  S<<"  Total scatter angle theta (energies): "<<m_Theta*c_Deg<<endl;
+  S<<"  Total scatter angle theta (geo): "<<CalculateThetaViaAngles()*c_Deg<<endl;
+  S<<"  First lever arm: "<<(m_C2-m_C1).Mag()<<endl; 
+  S<<"  Minimum lever arm in sequence: "<<m_LeverArm<<endl; 
+  S<<"  Sequence Length: "<<m_SequenceLength<<endl; 
+  S<<"  Clustering quality factor: "<<m_ClusteringQualityFactor<<endl; 
+  S<<"  Compton quality factor 1: "<<m_ComptonQualityFactor1<<endl; 
+  S<<"  Compton quality factor 2: "<<m_ComptonQualityFactor2<<endl; 
+  S<<"  Track quality factor 1: "<<m_TrackQualityFactor1<<endl; 
+  S<<"  Track quality factor 2: "<<m_TrackQualityFactor2<<endl; 
   if (IsDecay() == true) {
-    out<<"  Probably decay..."<<endl;
+    S<<"  Probably decay..."<<endl;
   }
-  out<<endl;
+  S<<endl;
 
-  return out.str().c_str();
+  return S.str().c_str();
 }
 
 
@@ -529,7 +529,7 @@ bool MComptonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MComptonEvent::Assimilate(const MComptonEventData *ComptonEventData)
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == MPhysicalEvent::c_Compton) {
     return Assimilate(dynamic_cast<MComptonEvent*>(Event));
   } else {
     return false; 
@@ -987,9 +987,9 @@ MString MComptonEvent::ToBasicString() const
 
   return MString(LineBuffer);
   
-  ostringstream out;
+  ostringstream S;
 
-  //out<<"<?>"<<LineBuffer<<"</?>"<<endl;
+  //S<<"<?>"<<LineBuffer<<"</?>"<<endl;
 
 
   // Let's try xml:
@@ -1000,36 +1000,39 @@ MString MComptonEvent::ToBasicString() const
   // </Event>
 
   
-  out<<"<Event>"<<endl;
-  out<<"<HD1><X>"<<m_C1.X()
+  S<<"<Event>"<<endl;
+  S<<"<HD1><X>"<<m_C1.X()
      <<"</X><Y>"<<m_C1.Y()
      <<"</Y><Z>"<<m_C1.Z()
      <<"</Z><E>"<<m_Ee<<"</E></HD1>"<<endl;
-  out<<"<HD2><X>"<<m_C2.X()
+  S<<"<HD2><X>"<<m_C2.X()
      <<"</X><Y>"<<m_C2.Y()
      <<"</Y><Z>"<<m_C2.Z()
      <<"</Z><E>"<<m_Eg<<"</E></HD2>"<<endl;
-  out<<"<ED><X>"<<m_De.X()
+  S<<"<ED><X>"<<m_De.X()
      <<"</X><Y>"<<m_De.Y()
      <<"</Y><Z>"<<m_De.Z()<<"</Z></ED>"<<endl;
-  out<<"</Event>"<<endl<<endl;
+  S<<"</Event>"<<endl<<endl;
 
-  return out.str().c_str();
+  return S.str().c_str();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MComptonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
+bool MComptonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
   // Rearely used options which are zero and default to zero are not streamed!
   
-  bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
+  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
     // Write Compton specific infos:
+    
+    ostringstream S;
+    
     if (m_ClusteringQualityFactor != 0) S<<"PQ "<<m_ClusteringQualityFactor<<endl;
     S<<"SQ "<<m_SequenceLength<<endl;
     S<<"CT "<<m_ComptonQualityFactor1<<" "<<m_ComptonQualityFactor2<<endl;
@@ -1046,7 +1049,9 @@ bool MComptonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool R
     if (m_ToF != 0 || m_dToF != 0) S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
     S<<"LA "<<m_LeverArm<<endl;
     if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
-    S.flush();
+    
+    File.Write(S);
+    File.Flush();
   }
 
   return Return;

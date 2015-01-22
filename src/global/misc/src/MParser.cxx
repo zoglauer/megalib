@@ -86,8 +86,8 @@ bool MParser::Open(MString FileName, unsigned int Way)
   if (Way == c_Read) {
 
     MString Line;
-    while (m_File.good() == true) {
-      Line.ReadLine(m_File);
+    while (IsGood() == true) {
+      ReadLine(Line);
       AddLine(Line);
     }
  
@@ -240,8 +240,8 @@ bool MParser::TokenizeLine(MTokenizer& T)
   char c;
   MString Line;
   while (true) {
-    m_File.get(c);
-    if (m_File.good() == false) {
+    Get(c);
+    if (IsGood() == false) {
       return false;
     }
     if (c != '\n' && c != '\0') {
@@ -269,49 +269,11 @@ bool MParser::GetFloat(float& f)
     return false;
   }
 
-  m_File>>f;
+  Get(f);
 
   return true;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MParser::Write(ostringstream& s)
-{
-  // Write some text to the file
-
-  if (m_Way == c_Read) {
-    merr<<"Only valid if file is in write-mode!"<<endl;
-    massert(m_Way != c_Read);
-    return false;
-  }
-
-  m_File<<s.str();
-  s.str("");
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MParser::Write(float f, char Separator)
-{
-  // Write some text to the file
-
-  if (m_Way == c_Read) {
-    merr<<"Only valid if file is in write-mode!"<<endl;
-    massert(m_Way != c_Read);
-    return false;
-  }
-
-  m_File<<f<<Separator;
-
-  return true;
-}
 
 
 

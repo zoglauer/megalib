@@ -37,6 +37,7 @@
 #include <cstdio>
 using namespace std;
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -91,7 +92,9 @@ MFile::~MFile()
 
 void MFile::Reset()
 {
-  // Set all values to default values
+  // Close th file and set all values to default values
+  
+  Close();
 
   m_FileName = "";
   m_Way = c_Read;
@@ -112,6 +115,9 @@ void MFile::Reset()
   m_WasZipped = false;
   m_ZippedFileName = g_StringNotDefined;
 
+  m_FileLength = 0;
+  m_HasFileLength = false;
+  
   // The maximum allowed file length
   m_MaxFileLength = numeric_limits<streamsize>::max()/100*95;
   //m_MaxFileLength = 100000;
@@ -166,17 +172,31 @@ bool MFile::Exists(MString FileName)
     return false;
   }
 
+  // Check if we can open it:
   ifstream in;
   in.open(FileName, ios::in);
   if (in.is_open() == false) {
     return false;
   }
-  char c;
-  in.get(c);
+  // Get the file size:
+  in.seekg(0, ios_base::end);
+  streampos Length = in.tellg();
+  in.seekg(0, ios_base::beg);
   if (in.good() == false) {
     in.close();
     return false;
   }
+  
+  // Check if we can read something
+  if (Length > 0) {
+    char c;
+    in.get(c);
+    if (in.good() == false) {
+      in.close();
+      return false;
+    }
+  }
+  
   in.close();
 
   return true;  
@@ -284,6 +304,9 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // Close the file just in case we are open
   Close();
 
+  m_FileLength = 0;
+  m_HasFileLength = false;
+  
   m_FileName = FileName;
   if (m_FileName == "") {
     mgui<<"You need to give a file name, before I can open a file."<<error;
@@ -294,85 +317,40 @@ bool MFile::Open(MString FileName, unsigned int Way)
   ExpandFileName(m_FileName);
 
   // If the file is zipped we have to unzip it
-  m_WasZipped = false;
-  if (Way == c_Read && CheckFileExtension("gz") == true) {
-    MString Temp = gSystem->TempDirectory();
-
-    // Create a new temporary file name
-    MString NewFileName = "";
-    do {
-      NewFileName = Temp + MString("/");
-      for (int i = 0; i < 32; ++i) {
-        NewFileName += (char) (int('a') + gRandom->Integer(26));
-      }
-      NewFileName += ".";
-      MString Type = m_FileType;
-      Type.ToLower();
-      NewFileName += Type;
-    } while (Exists(NewFileName) == true);
-
-    // Unzip
-    mout<<"Unzipping file... please stand by..."<<endl;
-    MString Unzip = MString("gunzip -c ") + m_FileName + MString(" > ") + NewFileName;
-    int Success = gSystem->Exec(Unzip);
-
-    if (Success != 0) {
-      remove(NewFileName);
-      mgui<<"Unable to unzip: "<<endl
-          <<"\""<<m_FileName<<"\""<<error;
-      return false;
-    }
-
-    // Store information about the old and new file
+  
+  if (CheckFileExtension("gz") == true) {
     m_WasZipped = true;
-    m_ZippedFileName = m_FileName;
-    m_FileName = NewFileName;
+  } else {
+    m_WasZipped = false;
   }
-
-
-  // Do a sanity check on the file type
-  if (m_FileType != c_TypeUnknown) {
-    if (CheckFileExtension(m_FileType) == false) {
-      mgui<<"The file: "<<endl
-          <<"\""<<m_FileName<<"\""
-          <<endl<<"has not the correct extension \""<<m_FileType<<"\"!"<<error;
+  
+  if (m_WasZipped == true) {
+    if (Way == c_Read) {
+      m_ZipFile = gzopen(m_FileName, "rb");
+    } else {
+      m_ZipFile = gzopen(m_FileName, "wb");
+    }
+    if (m_ZipFile == NULL) {
+      mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
+      return false;
+    }
+  } else {
+    m_File.clear();
+    if (Way == c_Read) {
+      m_File.open(m_FileName, ios_base::in);
+    } else {
+      m_File.open(m_FileName, ios_base::out);
+    }
+    if (m_File.is_open() == false) {
+      mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
       return false;
     }
   }
-
-  // Make sure the file exists when we try to read it
-  if (Way == c_Read && FileExists(m_FileName) == false) {
-    mgui<<"The file: "<<endl
-        <<"\""<<m_FileName<<"\""<<endl
-        <<"does not exist!"<<error;
-    return false;
-  }
-
-  // Finally open it
-
-  m_File.clear();
-  if (Way == c_Write) {
-    m_File.open(m_FileName, ios_base::out);
-  } else {
-    m_File.open(m_FileName, ios_base::in);
-  }
-
-  if (m_File.is_open() == false) {
-    mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
-    return false;
-  }
-
-  // Determine the file length
-  if (Way == c_Read) {
-    m_File.seekg(0, ios_base::end);
-    m_FileLength = m_File.tellg();
-    m_File.seekg(0, ios_base::beg);
-  } 
 
   // We are open now
   m_IsOpen = true;
   m_Way = Way;
-
+  
   return true;
 }
 
@@ -388,9 +366,13 @@ bool MFile::Rewind()
     return false;
   }
 
-  m_File.clear();
-  m_File.seekg(0);
-
+  if (m_WasZipped == true) {
+    gzrewind(m_ZipFile);
+  } else {
+    m_File.clear();
+    m_File.seekg(0);
+  }
+  
   if (m_Progress != 0) {
     UpdateProgress();
     m_Progress->ResetTimer();
@@ -405,18 +387,15 @@ bool MFile::Rewind()
 
 bool MFile::Close()
 {
-  // If we created an unzipped copy we have to delete the unzipped version
-  if (m_WasZipped == true) {
-    // Sanity check: the file name must be in the temporary directory
-    if (m_FileName.BeginsWith(gSystem->TempDirectory()) == true) {
-      remove(m_FileName);
-    }
-  }
+  if (IsOpen() == false) return true;
 
-  if (IsOpen() == true) {
+  // Close the file first
+  if (m_WasZipped == true) {
+    gzclose(m_ZipFile);
+  } else {
     m_File.close();
-    m_IsOpen = false;
-	}
+  }
+  m_IsOpen = false;
 
   ShowProgress(false);
 
@@ -424,6 +403,239 @@ bool MFile::Close()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+  //! Return true is the file is good
+bool MFile::IsGood() 
+{ 
+  if (m_WasZipped == true) {
+    return (gzeof(m_ZipFile) == 0 ? true : false);
+  } else {
+    return m_File.good();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFile::Clear() 
+{ 
+  if (m_WasZipped == true) {
+    // Don't do anything...
+  } else {
+    return m_File.clear(); 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFile::Seek(streampos Pos) 
+{ 
+  //! Seek the given position
+  
+  if (m_WasZipped == true) {
+    gzseek(m_ZipFile, Pos, SEEK_SET);
+  } else {
+    m_File.seekg(Pos);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+  //! Seek the given position
+void MFile::Seek(streamoff Offset, ios_base::seekdir Way) 
+{ 
+  if (m_WasZipped == true) {
+    if (Way == ios_base::beg) {
+      gzseek(m_ZipFile, (z_off_t) Offset, SEEK_SET);
+    } else if (Way == ios_base::cur) {
+      gzseek(m_ZipFile, (z_off_t) Offset, SEEK_CUR);
+    } else if (Way == ios_base::end) {
+      gzseek(m_ZipFile, (z_off_t) Offset, SEEK_END);
+    }
+  } else {
+    m_File.seekg(Offset, Way); 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text
+void MFile::Write(const ostringstream& S) 
+{ 
+  if (m_WasZipped == true) {
+    gzputs(m_ZipFile, S.str().c_str());
+  } else {
+    m_File<<S.str(); 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text
+void MFile::Write(const MString& S) 
+{   
+  if (m_WasZipped == true) {
+    gzputs(m_ZipFile, S);
+  } else {
+    m_File<<S; 
+  }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text
+void MFile::Write(const char c) 
+{ 
+  if (m_WasZipped == true) {
+    gzputc(m_ZipFile, c);
+  } else {
+    m_File<<c; 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Flush all written text
+void MFile::Flush() 
+{ 
+  if (m_WasZipped == true) {
+    // We do not want to do this, since it degrades perfromance...
+  } else {
+    m_File<<flush;
+  }
+}
+ 
+  
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get one character
+void MFile::Get(char& c) 
+{ 
+  if (m_WasZipped == true) {  
+    c = '\0';
+    int i = gzgetc(m_ZipFile);
+    if (i == -1) {
+      if (gzeof(m_ZipFile) == 0) {
+        int ErrorCode;
+        cout<<"Error in MFile::Get(char& c): "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+      }
+      return;
+    }
+    c = (char) i;
+  } else {
+    m_File.get(c);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get one float
+void MFile::Get(float& f) 
+{ 
+  if (m_WasZipped == true) {  
+    f = 0;
+    string temp;
+    int i;
+    while (gzeof(m_ZipFile) == 0) {
+      i = gzgetc(m_ZipFile);
+      if (i == -1) {
+        if (gzeof(m_ZipFile) == 0) {
+          int ErrorCode;
+          cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+        }
+        return;
+      }
+      if (i == ' ' || i == '\n' || i == '\0' || i == '\t') break; 
+      temp += (char) i;
+    }
+    f = atof(temp.c_str());
+  } else {
+    m_File>>f;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFile::ReadLine(MString& String)
+{
+  //! Read one line
+
+  String.Clear();
+  
+  if (m_WasZipped == true) {
+    unsigned int Length = 1000;
+    char* Buffer = new char[Length];
+    char* Return = 0;
+    
+    do {
+      Buffer[0] = '\0';
+      Return = gzgets(m_ZipFile, Buffer, Length-1);
+      if (Return == Z_NULL) {
+        if (gzeof(m_ZipFile) == 0) {
+          int ErrorCode;
+          cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+        }
+        delete [] Buffer;
+        return false;
+      }
+      String.Append(Return);
+    } while (strlen(Return) == Length-2);
+    String.RemoveAll('\n');
+    delete [] Buffer;
+  } else {
+    String.ReadLine(m_File);
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
+{
+  //! Read one line
+  if (m_WasZipped == true) {
+    for (unsigned int i = 0; i < Size; ++i) {
+      int c = gzgetc(m_ZipFile);
+      if (c == -1 || (char) c == Delimeter) {
+        String[i] = '\0';
+        return true; 
+      }
+      String[i] = (char) c;
+    }
+  } else {
+    m_File.getline(String, Size, Delimeter);
+  }
+  
+  return true;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -500,16 +712,17 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
-
+  
   if (m_Canceled == true) return false;
-  if (m_Progress == 0 || m_FileLength == (streampos) 0) return true;
+  if (m_Progress == 0 || GetFileLength() == (streampos) 0) return true;
 
   if (++m_SkippedProgressUpdates < UpdatesToSkip) return true;
   m_SkippedProgressUpdates = 0;
   
   TThread::Lock(); // GUI is not allowed to be accessed from multiple threads!
   
-  double Value = (double) m_File.tellg() / (double) m_FileLength;
+  double Value = (double) GetFilePosition() / (double) GetFileLength();
+  
   m_Progress->SetValue(Value, m_ProgressLevel);
   gSystem->ProcessEvents();
 
@@ -624,26 +837,113 @@ MString MFile::GetBaseName(const MString& Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-streampos MFile::GetFileLength()
+streampos MFile::GetUncompressedFileLength(bool Redetermine)
 {
   // Return the file length
   // Since this is a random access operation it should be very fast...
 
+  if (Redetermine == false && m_HasUncompressedFileLength == true) return m_UncompressedFileLength;
+  
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
     return 0;
   }
 
   streampos Length;
-  if (m_Way == c_Read) {
-    streampos Current = m_File.tellg();
-    m_File.seekg(0, ios_base::end);
-    Length = m_File.tellg();
-    m_File.seekg(Current, ios_base::beg);
+  if (m_WasZipped == true) {
+    if (m_Way == c_Read) {
+      
+      // First get the compressed file size
+      ifstream in;
+      in.open(m_FileName);
+      in.seekg(0, ios_base::end);
+      double CompressedTotal = in.tellg();
+      in.close();
+      
+      Length = 0;
+      if (CompressedTotal > 1000000) {
+        cout<<"Handling a larger compressed file... this might take a while to initialize..."<<endl;
+        // Get the uncompressed file size after stepping ahead the compressed total ...
+        double Uncompressed = gzseek(m_ZipFile, CompressedTotal, SEEK_SET);
+        // ... and the compressed position
+        gzgetc(m_ZipFile); // Need one to get the correct offset 
+        double Compressed = gzoffset(m_ZipFile);
+      
+        //cout<<CompressedTotal<<":"<<Uncompressed<<":"<<Compressed<<endl;
+        
+        // Now calculate the 97% position minus 100000:
+        streampos Ahead = (streampos) (Uncompressed / Compressed * CompressedTotal - 100000);
+        Ahead = 0.97*Ahead;
+        //cout<<"Ahead: "<<Ahead<<endl;
+        
+        Length = gzseek(m_ZipFile, Ahead, SEEK_SET);
+      }
+     
+      while (gzgetc(m_ZipFile) != -1) Length += 1;
+      gzrewind(m_ZipFile);
+      
+      //cout<<"Uncompressed file length: "<<Length<<endl;
+    } else {
+      Length = (streampos) gzoffset(m_ZipFile); // We are already at the end
+    }
   } else {
-    Length = m_File.tellp();
+    if (m_Way == c_Read) {
+      streampos Current = m_File.tellg();
+      m_File.seekg(0, ios_base::end);
+      Length = m_File.tellg();
+      m_File.seekg(Current, ios_base::beg);
+    } else {
+      Length = m_File.tellp(); // We are already at the end
+    }
+  }    
+
+  m_UncompressedFileLength = Length;
+  m_HasUncompressedFileLength = true;
+  
+  return Length;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+streampos MFile::GetFileLength(bool Redetermine)
+{
+  // Return the file length on disk
+
+  if (Redetermine == false && m_HasFileLength == true) return m_FileLength;
+  
+  if (IsOpen() == false) {
+    merr<<"File "<<m_FileName<<" not open!"<<show;
+    return 0;
   }
 
+  streampos Length;
+  if (m_WasZipped == true) {
+    if (m_Way == c_Read) {
+      // First get the compressed file size
+      ifstream in;
+      in.open(m_FileName);
+      in.seekg(0, ios_base::end);
+      Length = in.tellg();
+      in.close();
+    } else {
+      Length = (streampos) gzoffset(m_ZipFile); // We are already at the end
+    }
+  } else {
+    if (m_Way == c_Read) {
+      streampos Current = m_File.tellg();
+      m_File.seekg(0, ios_base::end);
+      Length = m_File.tellg();
+      m_File.seekg(Current, ios_base::beg);
+    } else {
+      Length = m_File.tellp(); // We are already at the end
+    }
+  }    
+
+  m_FileLength = Length;
+  m_HasFileLength = true;
+  
   return Length;
 }
 
@@ -661,10 +961,39 @@ streampos MFile::GetFilePosition()
     return 0;
   }
 
-  return m_File.tellg();
+  streampos Pos;
+  if (m_WasZipped == true) {
+    Pos = (streampos) gzoffset(m_ZipFile);
+  } else {
+    Pos = m_File.tellg();
+  }
+  
+  return Pos;
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+streampos MFile::GetUncompressedFilePosition()
+{
+  // Return the file length
+  // Since this is a random access operation it should be very fast...
+
+  if (IsOpen() == false) {
+    merr<<"File "<<m_FileName<<" not open!"<<show;
+    return 0;
+  }
+
+  streampos Pos;
+  if (m_WasZipped == true) {
+    Pos = (streampos) gztell(m_ZipFile);
+  } else {
+    Pos = m_File.tellg();
+  }
+  
+  return Pos;
+}
 
 
 // MFile.cxx: the end...

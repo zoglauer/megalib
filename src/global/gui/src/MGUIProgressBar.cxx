@@ -353,7 +353,7 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
 
       MTimer Intermediate;
 
-      m_ProgressBar[Level]->Increment(100.0*(Percentage-m_Percentage[Level])); 
+      m_ProgressBar[Level]->SetPosition(100.0*Percentage); 
       m_Percentage[Level] = Percentage;
       
       char c[100];

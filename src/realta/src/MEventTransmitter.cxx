@@ -215,7 +215,7 @@ bool MEventTransmitter::Analyze()
     }
     Readers.push_back(Reader);
   }
-  double ObservationTime = 0.0;
+  MTime ObservationTime = 0.0;
   
   // Set up the transceiver and connect:
   MTransceiverTcpIp* Transceiver = new MTransceiverTcpIp("A transceiver", m_Host, m_Port, MTransceiverTcpIp::c_ModeRawEventList);
@@ -271,7 +271,7 @@ bool MEventTransmitter::Analyze()
         ++ID;
         SiEvent->SetID(ID);
         SiEvent->SetTime(SiEvent->GetTime() + ObservationTime);
-        double TimeDifference = SiEvent->GetTime() - Timer.GetElapsed();
+        double TimeDifference = SiEvent->GetTime().GetAsSeconds() - Timer.GetElapsed();
         if (TimeDifference > 0) gSystem->Sleep(int(1000*TimeDifference));
     
         SendString += SiEvent->ToSimString(MSimEvent::c_StoreSimulationInfoNone, 6);

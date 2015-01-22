@@ -391,8 +391,12 @@ void MInterfaceRevan::AnalyzeEvents()
   MString FilenameOut = m_Data->GetCurrentFileName();
   if (FilenameOut.EndsWith("evta")) {
     FilenameOut.Replace(FilenameOut.Length()-4, 4, "tra");
+  } else if (FilenameOut.EndsWith("evta.gz")) {
+    FilenameOut.Replace(FilenameOut.Length()-7, 7, "tra.gz");
   } else if (FilenameOut.EndsWith("sim")) {
     FilenameOut.Replace(FilenameOut.Length()-3, 3, "tra");
+  } else if (FilenameOut.EndsWith("sim.gz")) {
+    FilenameOut.Replace(FilenameOut.Length()-6, 6, "tra.gz");
   }
 
   MRawEventAnalyzer Analyzer;

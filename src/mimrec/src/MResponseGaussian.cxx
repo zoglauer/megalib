@@ -244,11 +244,11 @@ bool MResponseGaussian::AnalyzeEvent(MPhysicalEvent* Event)
   // Extract all necessary information out of the event:
 
   // Only the Compton angle is of interest:
-  if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == MPhysicalEvent::c_Compton) {
     m_Phi = dynamic_cast<MComptonEvent*>(Event)->Phi();
     m_HasTrack = dynamic_cast<MComptonEvent*>(Event)->HasTrack();
     return true;
-  } else if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
     return true;
   }
 

@@ -39,6 +39,7 @@ using namespace std;
 #include "MCParameterFile.hh"
 
 // MEGAlib:
+#include "MFile.h"
 #include "MTimer.h"
 #include "MTransceiverTcpIp.h"
 #include "MSimEvent.h"
@@ -62,7 +63,7 @@ public:
 
   /// Set the function to which we relegate the events
   void SetRelegator(void (Relegator)(MSimEvent*));
-
+  
   /// Prepare for next run: Open the output file and reset
   bool NextRun();
 
@@ -99,9 +100,6 @@ protected:
   /// Write the file header 
   bool WriteFileHeader(double ObservationStartTime);
 
-  /// Close and Gzip the simulation file
-  bool GzipSimFile();
-
   /// Save the event to file (only saves the event if we really want to)
   bool SaveEventToFile(MSimEvent* Event);
   /// Transmit event via TCP/IP (only transmit it if we have an open transceiver)
@@ -137,7 +135,7 @@ private:
   /// True if the evnts should be saved to file
   bool m_SaveEvents;
   /// Stream to the output file
-  fstream *m_OutFile;
+  MFile m_OutFile;
   /// Name of the current iutput file
   string m_OutFileName;
   /// Id of the output file, if the maximum file size has been exceeded

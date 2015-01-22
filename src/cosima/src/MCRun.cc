@@ -67,7 +67,8 @@ MCRun::MCRun()
   m_ParallelID = 0;  
   m_IncarnationID = 0;  
   m_IsIncarnationIDFixed = false;
-
+  m_Zip = false;
+  
   m_TcpIpHostName = "";
   m_TcpIpPort = 9090;
 
@@ -317,6 +318,7 @@ void MCRun::CheckIncarnationID()
 {
   if (m_FileName == "") return;
   
+  mdebug<<"Checking incarnation ID"<<endl;
   if (m_IsIncarnationIDFixed == false) {
   
     m_IncarnationID = 0;
@@ -337,7 +339,7 @@ void MCRun::CheckIncarnationID()
         } else {
           FileName<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id"<<Id<<".";
         }
-        mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"(...) ...";
+        mdebug<<"Checking (loop 1): "<<FileName.str().c_str()<<"[sim,sim.gz,sim.zip] ...";
         if (MFile::FileExists((FileName.str() + "sim").c_str()) ||
             MFile::FileExists((FileName.str() + "sim.gz").c_str()) ||
             MFile::FileExists((FileName.str() + "sim.zip").c_str())) {
@@ -380,10 +382,14 @@ void MCRun::CheckIncarnationID()
   } else {
     Name<<m_FileName<<".p"<<m_ParallelID<<".inc"<<m_IncarnationID<<".id1.sim";
   }
+  if (m_Zip == true) {
+    Name<<".gz"; 
+  }
   ofstream out;
   out.open(Name.str().c_str());
-  out<<"You can delete me."<<endl;
+  out<<"# You can delete me."<<endl;
   out.close();
+  mdebug<<"Incarnation found: "<<Name.str()<<endl;
 }
 
 

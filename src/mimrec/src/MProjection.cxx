@@ -100,14 +100,14 @@ bool MProjection::Assimilate(MPhysicalEvent* Event)
   massert(Event != 0);
   m_Event = Event;
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == MPhysicalEvent::c_Compton) {
     m_C = dynamic_cast<MComptonEvent*>(Event);
-  } else if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
     m_P = dynamic_cast<MPairEvent*>(Event);
-  } else if (Event->GetEventType() == MPhysicalEvent::c_Photo) {
+  } else if (Event->GetType() == MPhysicalEvent::c_Photo) {
     m_Photo = dynamic_cast<MPhotoEvent*>(Event);
   } else {
-    cout<<"Unknown event type: "<<Event->GetEventType()<<endl;
+    cout<<"Unhandled event type: "<<Event->GetTypeString()<<endl;
     return false;
   }
 

@@ -125,7 +125,7 @@ bool MMuonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MMuonEvent::Assimilate(const MMuonEventData *MuonEventData)
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Muon) {
+  if (Event->GetType() == MPhysicalEvent::c_Muon) {
     return Assimilate((MMuonEvent *) Event);
   } else {
     merr<<"Trying to assimilate a non muon event!"<<endl; 
@@ -226,18 +226,20 @@ MPhysicalEvent* MMuonEvent::Data()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MMuonEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
+bool MMuonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
-  bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
+  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
     // Write Muon specific infos:
+    ostringstream S;
     S<<"ME "<<m_Energy<<endl;
     S<<"MD "<<m_Direction[0]<<" "<<m_Direction[1]<<" "<<m_Direction[2]<<endl;
     S<<"MG "<<m_CenterOfGravity[0]<<" "<<m_CenterOfGravity[1]<<" "<<m_CenterOfGravity[2]<<endl;
-    S.flush();
+    File.Write(S);
+    File.Flush();
   }
 
   return Return;

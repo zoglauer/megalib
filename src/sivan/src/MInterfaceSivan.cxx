@@ -3077,9 +3077,9 @@ void MInterfaceSivan::ChanceCoincidences()
 
       // Compute average time:
       if (NSingleTrig > 1) {
-        AverageEventDistance = (Event->GetTime() - FirstTime) / (NSingleTrig - 1);
+        AverageEventDistance = (Event->GetTime().GetAsSeconds() - FirstTime) / (NSingleTrig - 1);
       } else {
-        FirstTime = Event->GetTime();
+        FirstTime = Event->GetTime().GetAsSeconds();
       }
 
       // Add events as until we cover the time span TimeSpan in out history
@@ -3179,7 +3179,7 @@ void MInterfaceSivan::ChanceCoincidences()
             for (unsigned int h = 0; h < (*IterCheck)->GetNHTs(); ++h) {
               double HitEnergy = (*IterCheck)->GetHTAt(h)->GetEnergy();
               MVector HitPosition = (*IterCheck)->GetHTAt(h)->GetPosition();
-              m_Geometry->ApplyPulseShape((*Iter)->GetTime() - (*IterCheck)->GetTime(), HitPosition, HitEnergy);
+              m_Geometry->ApplyPulseShape((*Iter)->GetTime().GetAsSeconds() - (*IterCheck)->GetTime().GetAsSeconds(), HitPosition, HitEnergy);
               E += HitEnergy;
             }
             Energy += E;

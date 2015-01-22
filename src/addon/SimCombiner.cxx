@@ -241,7 +241,7 @@ bool SimCombiner::Analyze()
     }
     SiReader->ShowProgress();
     Events[f] = SiReader->GetNEvents(false);
-    ObservationTimes[f] = SiReader->GetObservationTime();
+    ObservationTimes[f] = SiReader->GetObservationTime().GetAsSeconds();
     NextEventTime[f] = gRandom->Exp(ObservationTimes[f]/Events[f]);
     cout<<"Triggered events: "<<Events[f]<<" --- Observation time: "<<ObservationTimes[f]<<endl;
     SiReader->Rewind();

@@ -111,8 +111,8 @@ bool MPointSourceSelector::Open(MString FileName, unsigned int)
 
   // Now read the rest:
   MString Line;
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
 
     if ((Line[0] == 'P' && Line[1] == 'S') ||
@@ -165,10 +165,10 @@ bool MPointSourceSelector::TokenizeLine(MTokenizer& T)
     return false;
   }
 
-  if (m_File.good() == false) return false;
+  if (IsGood() == false) return false;
 
   MString Line;
-  Line.ReadLine(m_File);
+  ReadLine(Line);
   T.Analyse(Line);
 
   return true;

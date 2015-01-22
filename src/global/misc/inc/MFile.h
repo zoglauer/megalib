@@ -18,6 +18,7 @@
 
 // ROOT libs:
 #include <TFile.h>
+#include "zlib.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -25,6 +26,7 @@
 
 // Forward declarations:
 #include <fstream>
+#include <sstream>
 #include <streambuf>
 using namespace std;
 
@@ -49,14 +51,51 @@ class MFile
   virtual bool Close();
   //! Rewind the file
   virtual bool Rewind();
-
+  
   //! Return true if the file is open
   virtual bool IsOpen();
-  //! Return the file length
-  virtual streampos GetFileLength();
-  //! Return the current file position
-  virtual streampos GetFilePosition();
+  //! Return true is the file is good
+  virtual bool IsGood();
+  //! Clear all flags
+  virtual void Clear();
 
+  //! Return the file length on disk
+  virtual streampos GetFileLength(bool Redetermine = false);
+  //! Return the file length as if the file were uncompressed
+  virtual streampos GetUncompressedFileLength(bool Redetermine = false);
+
+  //! Return the current file position on disk
+  virtual streampos GetFilePosition();
+  //! Return the current file position as if the file were uncompressed
+  virtual streampos GetUncompressedFilePosition();
+
+  //! Return the maximum allowed file length
+  virtual streampos GetMaxFileLength() { return m_MaxFileLength; }
+
+  //! Seek the given position
+  virtual void Seek(streampos Pos);
+  //! Seek the given position
+  virtual void Seek(streamoff Offset, ios_base::seekdir Way);
+
+  //! Write some text
+  virtual void Write(const ostringstream& S);
+  //! Write some text
+  virtual void Write(const MString& S);
+  //! Write some text
+  virtual void Write(const char c);
+  //! Flush all written text
+  virtual void Flush();
+ 
+  
+  //! Get one character
+  virtual void Get(char& c);
+  //! Get one float
+  virtual void Get(float& f);
+
+  //! Read one line the MEGAlib way
+  virtual bool ReadLine(MString& String);
+  //! Read one line the C way
+  virtual bool ReadLine(char* String, streamsize Size, char Delimeter);
 
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
   void SetFileName(MString FileName) { m_FileName = FileName; }
@@ -129,7 +168,9 @@ class MFile
   //! Name of the file (empty string if not yet open)
   MString m_FileName;
 
+  //! The file type string
   MString m_FileType;
+  //! The version of the file
   int m_Version;
 
   //! True if the file is open
@@ -137,14 +178,6 @@ class MFile
 
   //! The Mode: read or write
   unsigned int m_Way;
-
-  //! The basic file stream
-  fstream m_File;
-
-  //! The known file length in READ mode
-  streampos m_FileLength;
-  //! The maximum allowed file length
-  streamsize m_MaxFileLength;
 
   //! The Progress bar
   MGUIProgressBar* m_Progress;
@@ -169,8 +202,26 @@ class MFile
 
   // private members:
  private:
+  //! The basic file stream for normal C++ 
+  fstream m_File;
 
+  //! The basic file stream for zlib 
+  gzFile m_ZipFile;
 
+  //! The known file length on disk -- if it has not yet been determined m_HasFileLength is false
+  streampos m_FileLength;
+  //! True if the file length has already been determined
+  bool m_HasFileLength;
+
+  //! The known uncompressed file length -- if it has not yet been determined m_HasFileLength is false
+  streampos m_UncompressedFileLength;
+  //! True if the file length has already been determined
+  bool m_HasUncompressedFileLength;
+  
+  //! The maximum allowed file length
+  streamsize m_MaxFileLength;
+  
+  
 
 #ifdef ___CINT___
  public:

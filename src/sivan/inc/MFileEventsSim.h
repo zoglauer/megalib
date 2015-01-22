@@ -63,7 +63,7 @@ class MFileEventsSim : public MFileEvents
   //! Attention: This information is only complete after all files have been scanned,
   //! i.e. after GetEvents has been called for all events!
   //! In addition, this is the number for the total file(s), NOT up to the just read event!!
-  long GetSimulatedEvents() const { return m_SimulatedEvents; }
+  long GetSimulatedEvents();
   //! Set the simulated events
   void SetSimulatedEvents(long SimulatedEvents) { m_SimulatedEvents = SimulatedEvents; }
 
@@ -74,6 +74,9 @@ class MFileEventsSim : public MFileEvents
  protected:
   //! Perform initializations
   void Init();
+  
+  //! Parse the special information at the end of file -- add your special parsing in there
+  virtual bool ParseFooter(const MString& Line);
 
   //! Open a file given by the "IN" keyword
   virtual bool OpenIncludeFile(const MString& Line);
@@ -99,8 +102,10 @@ class MFileEventsSim : public MFileEvents
 
   //! Number of simulated events
   long m_SimulatedEvents;
+  //! True if the simulated events have been read
+  bool m_HasSimulatedEvents;
 
-  //! m_SimulationStartAreaFarField
+  //! The simulated start area of far field simualtions
   double m_SimulationStartAreaFarField;
 
 #ifdef ___CINT___

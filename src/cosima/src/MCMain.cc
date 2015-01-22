@@ -104,8 +104,10 @@ bool MCMain::Initialize(int argc, char** argv)
 
   vector<MCRun>& Runs = m_RunManager->GetRuns();
   for (unsigned int r = 0; r < Runs.size(); ++r) {
+    Runs[r].SetZip(m_Zip);
     Runs[r].SetIncarnationID(m_IncarnationID);
-    Runs[r].SetParallelID(m_ParallelID); // Incarnation ID first otherwise we will create a dummy file
+    Runs[r].SetParallelID(m_ParallelID);
+    Runs[r].CheckIncarnationID();
   }
 
   // set mandatory initialization classes
@@ -242,6 +244,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
   Usage<<"         -m:   macro file name (type: *.mac)"<<endl;
   Usage<<"         -z:   gzip *.sim files"<<endl;
   //Usage<<"         -p:   parallel ID (used by mcosima)"<<endl;
+  //Usage<<"         -f:   incarnation ID (used by mcosima)"<<endl;
   Usage<<"         -v:   verbosity (0: Basic Geant, 1: Standard, 2: Debug, 3: All Geant)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;

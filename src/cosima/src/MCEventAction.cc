@@ -62,7 +62,6 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip,
   m_RunParameters(RunParameters),
   m_Zip(Zip)
 {
-  m_OutFile = 0;
   m_OutFileName = "";
 
   m_StoreSimulationInfo = RunParameters.StoreSimulationInfo();
@@ -98,14 +97,6 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip,
 MCEventAction::~MCEventAction()
 {
   delete m_Event;
-
-  if (m_SaveEvents == true) {
-    if (m_OutFile != 0) {
-      m_OutFile->close();
-    }
-    m_OutFile = 0;
-    GzipSimFile();
-  }
 }
 
 
@@ -128,12 +119,9 @@ bool MCEventAction::NextRun()
   if (Name != "") {
     m_SaveEvents = true;
     
-    if (m_OutFile != 0) {
-      m_OutFile->close();
-      m_OutFile = 0;
-      GzipSimFile();
+    if (m_OutFile.IsOpen()) {
+      m_OutFile.Close();
     }
-    m_OutFile = new fstream();
     m_FileNumber = 1;
     m_Incarnation = m_RunParameters.GetCurrentRun().GetIncarnationID();
     m_ParallelID = m_RunParameters.GetCurrentRun().GetParallelID();
@@ -144,11 +132,14 @@ bool MCEventAction::NextRun()
     } else {
       FileName<<BaseName<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id1.sim";
     }
+    if (m_Zip == true) {
+      FileName<<".gz";
+    }
     m_OutFileName = FileName.str().c_str();
 
-    m_OutFile->open(m_OutFileName.c_str(), ios_base::out);
+    m_OutFile.Open(m_OutFileName, MFile::c_Write);
 
-    if (m_OutFile->is_open() == false) {
+    if (m_OutFile.IsOpen() == false) {
       mout<<"Can't open file!"<<endl;
       return false;
     }
@@ -196,23 +187,24 @@ bool MCEventAction::NextRun()
  */
 bool MCEventAction::WriteFileHeader(double SimulationStartTime)
 {
-  (*m_OutFile)<<"# Simulation data file"<<endl;
-  (*m_OutFile)<<"# Created by Cosima and "<<G4RunManager::GetRunManager()->GetVersionString()<<endl;
-  (*m_OutFile)<<endl;
-  (*m_OutFile)<<"Type       SIM"<<endl;
-  (*m_OutFile)<<"Version    "<<m_StoreSimulationInfoVersion<<endl;
-  (*m_OutFile)<<"Geometry   "<<m_RunParameters.GetGeometryFileName()<<endl;
-  (*m_OutFile)<<endl;
+  ostringstream Out;
+  Out<<"# Simulation data file"<<endl;
+  Out<<"# Created by Cosima and "<<G4RunManager::GetRunManager()->GetVersionString()<<endl;
+  Out<<endl;
+  Out<<"Type       SIM"<<endl;
+  Out<<"Version    "<<m_StoreSimulationInfoVersion<<endl;
+  Out<<"Geometry   "<<m_RunParameters.GetGeometryFileName()<<endl;
+  Out<<endl;
   MTime Now;
-  (*m_OutFile)<<"Date       "<<Now.GetSQLString()<<endl;
-  (*m_OutFile)<<"MEGAlib    "<<g_VersionString<<endl;
-  (*m_OutFile)<<endl;
-  (*m_OutFile)<<"Seed       "<<m_Seed<<endl;
-  (*m_OutFile)<<endl;
+  Out<<"Date       "<<Now.GetSQLString()<<endl;
+  Out<<"MEGAlib    "<<g_VersionString<<endl;
+  Out<<endl;
+  Out<<"Seed       "<<m_Seed<<endl;
+  Out<<endl;
 //   if (m_RunParameters.GetCurrentRun().GetNSources() == 1) {
-//     (*m_OutFile)<<"FX "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetFlux()<<endl; 
+//     Out<<"FX "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetFlux()<<endl; 
 //   } else {
-//     (*m_OutFile)<<"# The FX keyword only appears when you have only one source"<<endl;
+//     Out<<"# The FX keyword only appears when you have only one source"<<endl;
 //   }
   bool ValidStartArea = true;
   for (unsigned int so = 0; so < m_RunParameters.GetCurrentRun().GetNSources(); ++so) {
@@ -222,10 +214,10 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   }
     
   if (ValidStartArea == true) {
-    (*m_OutFile)<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
+    Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
   } else {
-    (*m_OutFile)<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a surrounding sphere"<<endl;
-    (*m_OutFile)<<"SimulationStartAreaFarField 0.0"<<endl;
+    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a surrounding sphere"<<endl;
+    Out<<"SimulationStartAreaFarField 0.0"<<endl;
   }
 
   bool SameBeamType = true;
@@ -241,21 +233,23 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   }
   
   if (SameBeamType == true) {
-    (*m_OutFile)<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamTypeAsString()<<endl;
+    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamTypeAsString()<<endl;
   } else {
-    (*m_OutFile)<<"BeamType Multiple"<<endl;
+    Out<<"BeamType Multiple"<<endl;
   }
   
   if (SameSpectralType == true) {
-    (*m_OutFile)<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralTypeAsString()<<endl;
+    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralTypeAsString()<<endl;
   } else {
-    (*m_OutFile)<<"SpectralType Multiple"<<endl;
+    Out<<"SpectralType Multiple"<<endl;
   }
   
-  (*m_OutFile)<<endl;
-  (*m_OutFile)<<"TB "<<SimulationStartTime<<endl; 
-  (*m_OutFile)<<endl; 
+  Out<<endl;
+  Out<<"TB "<<SimulationStartTime<<endl; 
+  Out<<endl; 
 
+  m_OutFile.Write(Out);
+  
   return true;
 }
   
@@ -296,25 +290,6 @@ void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
   m_Relegator = Relegator;
 }
 
-
-/******************************************************************************
- * Pack the simulation file in gzip format and close it
- */
-bool MCEventAction::GzipSimFile()
-{
-  if (m_OutFile == 0 && m_Zip == true && m_OutFileName != "") {
-    mout<<"Zipping simulation file... please stand by..."<<endl;
-    string Cmd = "gzip ";
-    Cmd += m_OutFileName;
-    Cmd += " &";
-    if (system(Cmd.c_str()) != 0) {
-      merr<<"Error: Something went wrong during zipping!"<<show;
-    }
-    // The system call always returns 0
-  }
-
-  return true;
-}
 
 
 /******************************************************************************
@@ -668,11 +643,10 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
 
     // Check if we are reaching the maximum file size: 
     if (m_SaveEvents == true) {
-      streampos Length;
-      Length = m_OutFile->tellp(); // position at end is length
-      if (Length > 0.95*numeric_limits<streamsize>::max()) {
+      streampos Length = m_OutFile.GetFileLength();
+      if (Length > m_OutFile.GetMaxFileLength()) {
         mout<<"Current file length ("<<Length
-            <<") exceeds maximum file length ("<<0.95*numeric_limits<streamsize>::max()<<")!"<<endl;
+            <<") exceeds maximum (safe) file length ("<<m_OutFile.GetMaxFileLength()<<")!"<<endl;
 
         ostringstream FileName;
         if (m_ParallelID == 0) {
@@ -680,29 +654,31 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
         } else {
           FileName<<Run.GetFileName()<<".p"<<m_ParallelID<<".inc"<<m_Incarnation<<".id"<<(++m_FileNumber)<<".sim";
         }
+        if (m_Zip == true) {
+          FileName<<".gz";
+        }
 
         mout<<"Opening new file: "<<FileName.str().c_str()<<endl;
       
-        (*m_OutFile)<<endl; 
-        (*m_OutFile)<<"NF "<<FileName.str()<<endl;
-        (*m_OutFile)<<endl; 
-        (*m_OutFile)<<"EN"<<endl; 
-        (*m_OutFile)<<endl; 
-        (*m_OutFile)<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
-        (*m_OutFile)<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
-        m_OutFile->close();
-        m_OutFile = 0;
-        GzipSimFile();
-        m_OutFile = new fstream();
-        m_OutFile->open(FileName.str().c_str(), ios_base::out);
+        ostringstream Out;
+        Out<<endl; 
+        Out<<"NF "<<FileName.str()<<endl;
+        Out<<endl; 
+        Out<<"EN"<<endl; 
+        Out<<endl; 
+        Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
+        Out<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
+        m_OutFile.Write(Out);
+        m_OutFile.Close();
+
+        m_OutFile.Open(FileName.str(), MFile::c_Write);
         m_OutFileName = FileName.str().c_str();
       
-        if (m_OutFile->is_open() == false) {
+        if (m_OutFile.IsOpen() == false) {
           mout<<"Can't open file!"<<endl;
         }
 
-        (*m_OutFile)<<"# Continued file..."<<endl;
-        (*m_OutFile)<<endl;
+        m_OutFile.Write("# Continued file...\n");
         WriteFileHeader(Run.GetSimulatedTime()/s);
       }
     }
@@ -715,14 +691,14 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
 
   if (m_Interrupt == true || Run.CheckStopConditions() == true) {
     if (m_SaveEvents == true) {
-      (*m_OutFile)<<endl; 
-      (*m_OutFile)<<"EN"<<endl; 
-      (*m_OutFile)<<endl; 
-      (*m_OutFile)<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
-      (*m_OutFile)<<"TS "<<Run.GetNSimulatedEvents()<<endl; 
-      m_OutFile->close();
-      m_OutFile = 0;
-      GzipSimFile();
+      ostringstream Out;
+      Out<<endl; 
+      Out<<"EN"<<endl; 
+      Out<<endl; 
+      Out<<"TE "<<Run.GetSimulatedTime()/s<<endl; 
+      Out<<"TS "<<Run.GetNSimulatedEvents()<<endl;
+      m_OutFile.Write(Out);
+      m_OutFile.Close();
     }
     if (m_TransmitEvents == true) {
       if (m_Transceiver.GetNStringsToSend() > 0) {
@@ -744,8 +720,8 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
 bool MCEventAction::SaveEventToFile(MSimEvent* Event)
 {
   if (m_SaveEvents == true) {
-    if (m_OutFile->is_open() == false) return false;
-    (*m_OutFile)<<Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion);
+    if (m_OutFile.IsOpen() == false) return false;
+    m_OutFile.Write(Event->ToSimString(m_StoreSimulationInfo, m_StoreScientificPrecision, m_StoreSimulationInfoVersion));
   }
   
   return true;

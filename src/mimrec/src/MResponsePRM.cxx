@@ -159,7 +159,7 @@ bool MResponsePRM::AnalyzeEvent(MPhysicalEvent* Event)
 {
   // Extract all necessary information out of the event:
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == MPhysicalEvent::c_Compton) {
     MComptonEvent* Compton = dynamic_cast<MComptonEvent*>(Event);
     m_Ei = Compton->Ei();
     m_Ee = Compton->Ee();

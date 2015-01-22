@@ -642,13 +642,15 @@ void MGUIMimrecMain::Open()
 {
   // Open a file
 
-  const char** Types = new const char*[6];
+  const char** Types = new const char*[8];
   Types[0] = "Tracked events";
   Types[1] = "*.tra";
-  Types[2] = "All files";
-  Types[3] = "*";
-  Types[4] = 0;
-  Types[5] = 0;
+  Types[2] = "Gzip'ed tracked events";
+  Types[3] = "*.tra.gz";
+  Types[4] = "All files";
+  Types[5] = "*";
+  Types[6] = 0;
+  Types[7] = 0;
   
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
@@ -697,17 +699,12 @@ void MGUIMimrecMain::About()
 
 void MGUIMimrecMain::Launch(bool Animate)
 {
-  // This method is called after pressing the MEGA-button in the 
-  // M.I.Works main GUI:
-  // The reconstruction is started.
-
+  // This method is called after pressing the start button
   
-  MSystem Sys;
-  MString Suffix;
-  Sys.GetFileSuffix(m_Data->GetCurrentFileName(), &Suffix);
+  MString Name = m_Data->GetCurrentFileName();
 
-  if (Suffix != "tra") {
-    mgui<<"The input file of Mimrec needs to have the suffix \"tra\"!"<<error;
+  if (Name.EndsWith("tra") == false && Name.EndsWith("tra.gz") == false) {
+    mgui<<"The input file of Mimrec needs to have the suffix \".tra\" or \".tra.gz\"!"<<error;
     return;
   }
 

@@ -346,7 +346,7 @@ void MGUIRevanMain::Open()
 {
   // Open a file
 
-  const char** Types = new const char*[8];
+  const char** Types = new const char*[12];
 
   MSystem Sys;
   MString Suffix;
@@ -355,21 +355,29 @@ void MGUIRevanMain::Open()
   if (Suffix == "sim") {
     Types[0] = "Simulated events";
     Types[1] = "*.sim";
-    Types[2] = "Analyzed events";
-    Types[3] = "*.evta";
-    Types[4] = "All files";
-    Types[5] = "*";
-    Types[6] = 0;
-    Types[7] = 0;
+    Types[2] = "Gzip'ed simulated events";
+    Types[3] = "*.sim.gz";
+    Types[4] = "Analyzed events";
+    Types[5] = "*.evta";
+    Types[6] = "Gzip'ed analyzed events";
+    Types[7] = "*.evta.gz";
+    Types[8] = "All files";
+    Types[9] = "*";
+    Types[10] = 0;
+    Types[1] = 0;
   } else {
     Types[0] = "Analyzed events";
     Types[1] = "*.evta";
-    Types[2] = "Simulated events";
-    Types[3] = "*.sim";
-    Types[4] = "All files";
-    Types[5] = "*";
-    Types[6] = 0;
-    Types[7] = 0;
+    Types[2] = "Gzip'ed analyzed events";
+    Types[3] = "*.evta.gz";
+    Types[4] = "Simulated events";
+    Types[5] = "*.sim";
+    Types[6] = "Gzip'ed simulated events";
+    Types[7] = "*.sim.gz";
+    Types[8] = "All files";
+    Types[9] = "*";
+    Types[10] = 0;
+    Types[11] = 0;
   }
 
   TGFileInfo Info;
@@ -424,12 +432,11 @@ void MGUIRevanMain::Launch()
   // M.I.Works main GUI:
   // The reconstruction is started.
   
-  MSystem Sys;
-  MString Suffix;
-  Sys.GetFileSuffix(m_Data->GetCurrentFileName(), &Suffix);
+  MString Name = m_Data->GetCurrentFileName();
 
-  if (Suffix != "sim" && Suffix != "evta") {
-    mgui<<"The input file of Revan needs to have the suffix \"sim\" or \"evta\"!"<<error;
+  if (Name.EndsWith("sim") == false && Name.EndsWith("evta") == false && 
+      Name.EndsWith("sim.gz") == false && Name.EndsWith("evta.gz") == false) {
+    mgui<<"The input file of Revan needs to have the suffix \"sim\", \"sim.gz\", \"evta\", or \"evta.gz\"!"<<error;
     return;
   }
 

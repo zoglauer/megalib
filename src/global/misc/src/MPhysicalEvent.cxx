@@ -84,15 +84,30 @@ MPhysicalEvent::~MPhysicalEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MPhysicalEvent::GetEventType() const
+MString MPhysicalEvent::GetTypeString() const
 {
   // Return the event type:
-  //
-  // MET_Unkown = -1,
-  // MET_Compton = 0,
-  // MET_Pair = 1
-
-  return m_EventType;
+  
+  MString String;
+  if (m_EventType == c_Compton) {
+    String = "Compton";
+  } else if  (m_EventType == c_Pair) {
+    String = "Pair";
+  } else if  (m_EventType == c_Muon) {
+    String = "Muon";
+  } else if  (m_EventType == c_Shower) {
+    String = "Shower";
+  } else if  (m_EventType == c_Photo) {
+    String = "Photo";
+  } else if  (m_EventType == c_Decay) {
+    String = "Decay";
+  } else if  (m_EventType == c_Unidentifiable) {
+    String = "Unidentifiable";
+  } else {
+    String = "Unknown"; 
+  }
+  
+  return String;
 }
 
 
@@ -415,11 +430,12 @@ MVector MPhysicalEvent::GetOrigin() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool DelayedRead)
+bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool DelayedRead)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
   if (Read == false) {
+    ostringstream S;
     switch (m_EventType) {
     case c_Compton:
       S<<"ET CO"<<endl;
@@ -474,6 +490,9 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
     if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined) {
       S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<endl;
     }
+    
+    File.Write(S);
+    File.Flush();
   } else {
     // Read each line until we reach the end of the file or a new SE...
     Reset();
@@ -481,10 +500,10 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
 
 
     if (DelayedRead == true) {
-      string Line;
-      while (S.good() == true) {
-        getline(S, Line);
-        if (Line.size() < 2) continue;
+      MString Line;
+      while (File.IsGood() == true) {
+        File.ReadLine(Line);
+        if (Line.Length() < 2) continue;
         if ((Line[0] == 'S' && Line[1] == 'E') || (Line[0] == 'E' && Line[1] == 'N') || (Line[0] == 'N' && Line[1] == 'F')) {
           return true;
         }
@@ -494,8 +513,7 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
       // Doing it purely in C is faster than using string
       const int LineLength = 1000;
       char LineBuffer[LineLength];
-      while (S.getline(LineBuffer, LineLength, '\n')) {
-
+      while (File.ReadLine(LineBuffer, LineLength, '\n')) {
         Ret = ParseLine(LineBuffer, Fast);
         if (Ret >= 0) {
           continue;
@@ -506,6 +524,7 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
         }
       }
       Validate();
+      
       // end of file reached ... so return false
     } 
   }
@@ -520,7 +539,7 @@ bool MPhysicalEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool 
 bool MPhysicalEvent::ParseDelayed(bool Fast)
 {
   for (unsigned int l = 0; l < m_Lines.size(); ++l) {
-    ParseLine(m_Lines[l].c_str(), Fast);
+    ParseLine(m_Lines[l], Fast);
   }
 
   Validate();
@@ -540,36 +559,36 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   // Return -1, if the end of event has been reached
  
   int Ret = 0;
-
+  
   if (Line[0] == 'E' && Line[1] == 'T') {
     if (Line[3] == 'C' && Line[4] == 'O') {
       if (m_EventType != c_Compton) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Compton event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'A') {
       if (m_EventType != c_Pair) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Pair event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Pair event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'P' && Line[4] == 'H') {
       if (m_EventType != c_Photo) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Photo event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Photo event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'M' && Line[4] == 'U') {
       if (m_EventType != c_Muon) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Muon event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Muon event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'D' && Line[4] == 'Y') {
       if (m_EventType != c_Decay) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else if (Line[3] == 'U' && Line[4] == 'N') {
       if (m_EventType != c_Unidentifiable) {
-        cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested!!!"<<endl;
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
     } else {

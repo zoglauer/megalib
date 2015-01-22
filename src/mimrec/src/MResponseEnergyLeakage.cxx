@@ -265,7 +265,7 @@ bool MResponseEnergyLeakage::AnalyzeEvent(MPhysicalEvent* Event)
 
   // Only the Compton angle is of interest:
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+  if (Event->GetType() == MPhysicalEvent::c_Compton) {
     if (((MComptonEvent*) Event)->HasTrack() == false) return false;
     m_Compton = (MComptonEvent*) Event;
     

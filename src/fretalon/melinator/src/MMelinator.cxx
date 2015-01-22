@@ -159,7 +159,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
     
     MFileReadOuts Reader;
     if (Reader.Open(FileNames[f]) == false) {
-      return false; // we cannot simply ignore it here otherwise the cod ebelow will break down
+      return false; // we cannot simply ignore it here otherwise the code below will break down
     }
     m_CalibrationFileNames.push_back(FileNames[f]);
     ProgressBar.SetTitle(m_CalibrationFileNames.size()-1, MFile::GetBaseName(FileNames[f]));

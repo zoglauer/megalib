@@ -176,29 +176,29 @@ bool GradedZ::Analyze()
   double Emax = 1000.0;
 
   TH1D* MeasuredSpectrum = new TH1D("", "Measured Spectrum", NBins, Emin, Emax);
-  MeasuredSpectrum->SetXTitle("Energy of primary");
+  MeasuredSpectrum->SetXTitle("Energy of primary [keV]");
   MeasuredSpectrum->SetYTitle("cts");
 
   TH1D* AllHits = new TH1D("All Hits", "AllHits", NBins, Emin, Emax);
   
   TH1D* TransmissionCurve = new TH1D("TransmissionCurve", "Transmission Curve (any primary/secondary making it through the shield)", NBins, Emin, Emax);
-  TransmissionCurve->SetXTitle("Energy of primary");
+  TransmissionCurve->SetXTitle("Energy of primary [keV]");
   TransmissionCurve->SetYTitle("Transmission [%]");
   TransmissionCurve->SetMaximum(100);
   TransmissionCurve->SetNdivisions(520, "Y");
  
   TH1D* TransmissionCurveUnharmed = new TH1D("TransmissionCurveUnharmed", "Transmission Curve (any primary making it through the shield unchanged)", NBins, Emin, Emax);
-  TransmissionCurveUnharmed->SetXTitle("Energy of primary");
+  TransmissionCurveUnharmed->SetXTitle("Energy of primary [keV]");
   TransmissionCurveUnharmed->SetYTitle("Transmission [%]");
   TransmissionCurveUnharmed->SetMaximum(100);
   TransmissionCurveUnharmed->SetNdivisions(520, "Y");
   
   TH1D* ComptonInteractions = new TH1D("ComptonInteractions", "Compton interaction in shield (with and without transmission)", NBins, Emin, Emax);
-  ComptonInteractions->SetXTitle("Energy of primary");
+  ComptonInteractions->SetXTitle("Energy of primary [keV]");
   ComptonInteractions->SetYTitle("Compton interactions [%]");
   
   TH1D* ComptonInteractionWithT = new TH1D("ComptonInteractionWithT", "Compton interaction in shield with transmission", NBins, Emin, Emax);
-  ComptonInteractionWithT->SetXTitle("Energy of primary");
+  ComptonInteractionWithT->SetXTitle("Energy of primary [keV]");
   ComptonInteractionWithT->SetYTitle("Compton interactions [%]");
 
   MSimEvent* SiEvent = 0;
@@ -257,16 +257,19 @@ bool GradedZ::Analyze()
   MeasuredSpectrumCanvas->cd();
   MeasuredSpectrum->Draw();
   MeasuredSpectrumCanvas->Update();
+  MeasuredSpectrumCanvas->SaveAs("SpectrumBehindShield.pdf");
 
   TCanvas* ComptonInteractionsCanvas = new TCanvas();
   ComptonInteractionsCanvas->cd();
   ComptonInteractions->Draw();
   ComptonInteractionsCanvas->Update();
+  ComptonInteractionsCanvas->SaveAs("ComptonInteractionsWithAndWithoutTransmission.pdf");
 
   TCanvas* ComptonInteractionWithTCanvas = new TCanvas();
   ComptonInteractionWithTCanvas->cd();
   ComptonInteractionWithT->Draw();
   ComptonInteractionWithTCanvas->Update();
+  ComptonInteractionWithTCanvas->SaveAs("ComptonInteractionsWithTransmission.pdf");
 
   TCanvas* TransmissionCurveCanvas = new TCanvas();
   TransmissionCurveCanvas->cd();
@@ -274,6 +277,7 @@ bool GradedZ::Analyze()
   TransmissionCurveCanvas->SetGridy();
   TransmissionCurve->Draw();
   TransmissionCurveCanvas->Update();
+  TransmissionCurveCanvas->SaveAs("TransmissionCurve.pdf");
 
   TCanvas* TransmissionCurveUnharmedCanvas = new TCanvas();
   TransmissionCurveUnharmedCanvas->cd();
@@ -281,7 +285,9 @@ bool GradedZ::Analyze()
   TransmissionCurveUnharmedCanvas->SetGridy();
   TransmissionCurveUnharmed->Draw();
   TransmissionCurveUnharmedCanvas->Update();
+  TransmissionCurveUnharmedCanvas->SaveAs("TransmissionCurveUnharmed.pdf");
 
+  cout<<"The simulation file contained "<<SiReader.GetSimulatedEvents()<<" events simulated over an observation time of "<<SiReader.GetObservationTime()<<endl;
 
   return true;
 }

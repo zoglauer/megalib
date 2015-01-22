@@ -78,11 +78,6 @@ class MParser : public MFile
   //! WRITE-MODE ONLY: Adds and tokenizes a line at the end
   virtual bool AddLine(MString Line);
 
-  //! WRITE-MODE ONLY: Write a stream to the file
-  bool Write(ostringstream& s);
-  //! WRITE-MODE ONLY: Write a float to the file with the given separator
-  bool Write(float f, char Separator = ' ');
-
   //! Dump a type message related to the given line
   void Typo(int Line, MString Error); 
 

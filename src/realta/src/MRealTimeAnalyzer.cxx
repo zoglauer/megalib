@@ -961,7 +961,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
     return;
   }  
 
-  fstream fout;
+  MFile File;
   bool SaveEvents = false;
   if (m_Settings->GetAccumulationFileName().IsEmpty() == false) {
     MString FileName = m_Settings->GetAccumulationFileName();
@@ -981,8 +981,8 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
         FileName += Now.GetShortString();
       }
     }
-    fout.open(FileName, ios::out);
-    if (fout.is_open() == true) SaveEvents = true;
+    File.Open(FileName, MFile::c_Write);
+    if (File.IsOpen() == true) SaveEvents = true;
   }
 
 
@@ -1093,8 +1093,8 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
       if (SaveEvents == true) {
         cout<<"Saving..."<<endl;
         if (Event->GetPhysicalEvent() != 0) {
-          Event->GetPhysicalEvent()->Stream(fout, 1, false);
-          fout.flush();
+          Event->GetPhysicalEvent()->Stream(File, 1, false);
+          File.Flush();
         }
       }
       Event->IsReconstructed(true);      
@@ -1135,7 +1135,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
   }
   
   if (SaveEvents == true) {
-    fout.close();
+    File.Close();
   }
       
   m_IsReconstructionThreadRunning = false;

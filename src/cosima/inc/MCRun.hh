@@ -75,20 +75,28 @@ public:
   /// Return the name of this run
   MString GetName() const { return m_Name; }
 
-  /// Set the parallel ID of this run
-  void SetParallelID(const int ParallelID) { m_ParallelID = ParallelID; CheckIncarnationID(); }
+  /// Set the parallel ID of this run - call CheckIncarnation() afterwards
+  void SetParallelID(const int ParallelID) { m_ParallelID = ParallelID; }
   /// Get the parallel ID of this run
   int GetParallelID() const { return m_ParallelID; }
 
-  /// Set a FIXED incarnation ID of this run if the IncarnationID is larger than 0, otherwise it is detrmined automatically
+  /// Set a FIXED incarnation ID of this run if the IncarnationID is larger than 0, otherwise it is detrmined automatically - call CheckIncarnation() afterwards
   void SetIncarnationID(const int IncarnationID) { m_IncarnationID = IncarnationID; if (m_IncarnationID > 0) m_IsIncarnationIDFixed = true; else m_IsIncarnationIDFixed = false; }
   /// Get the incarnation of this run --- will obviously only give final results if ParallelID and FileName are set!
   int GetIncarnationID() { return m_IncarnationID; }
 
-  /// Set the file name of this run. Returns always true
+  /// Set the file name of this run. Returns always true - call CheckIncarnation() afterwards
   bool SetFileName(const MString& FileName) { m_FileName = FileName; /* CheckIncarnationID(); */ return true; }
   /// Returns the name of the underlaying file (empty string if there is none, i.e. no saving of the file is wished)
   MString GetFileName() const { return m_FileName; }
+
+  /// Set if we want to zip the file - call CheckIncarnation() afterwards
+  bool SetZip(const bool Zip) { m_Zip = Zip; return true; }
+  /// Return if we want to zip the file
+  bool GetZip() const { return m_Zip; }
+
+  /// Check the incarnation this run --- will obviously only give final results if ParallelID and FileName are set!
+  void CheckIncarnationID();
 
   /// Set the name of TCP/IP host. Returns always true
   bool SetTcpIpHostName(const MString& TcpIpHostName) { m_TcpIpHostName = TcpIpHostName; return true; }
@@ -197,8 +205,6 @@ public:
 
   // protected methods:
 protected:
-  /// Check the incarnation this run --- will obviously only give final results if ParallelID and FileName are set!
-  void CheckIncarnationID();
 
 
   // protected members:
@@ -214,6 +220,9 @@ private:
   /// Name of the geometry file
   MString m_GeometryFileName;
 
+  /// Do we want to zip the output files
+  bool m_Zip;
+  
   /// If multiple simulations are started in parallel, this is the ID 
   int m_ParallelID;
   /// If multiple filenames exists, this is the ID of the current incarnation

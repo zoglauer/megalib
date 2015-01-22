@@ -30,6 +30,7 @@ using namespace std;
 #include "MTime.h"
 #include "MVector.h"
 #include "MStreams.h"
+#include "MFile.h"
 
 // Forward declarations:
 
@@ -49,7 +50,7 @@ class MPhysicalEvent
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();
   //! Stream the content to the given file-stream
-  virtual bool Stream(fstream& Stream, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
   //! Parse the content of the stream
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Parse the content of the stream
@@ -60,9 +61,13 @@ class MPhysicalEvent
 
   virtual void Reset();
 
-  // Remove this (name contains "event")
-  int GetEventType() const;
-  int GetType() const { return GetEventType(); };
+  //! Return the type of this event
+  int GetType() const { return m_EventType; }
+  //! Return the type of this event
+  //[[deprecated("Use GetType() instead")]]
+  int GetEventType() const { return m_EventType; }
+  //! Return the type of this event as string 
+  MString GetTypeString() const;
 
   //! Set if you wish to store the coordinates in galactic coordinates
   void SetHasGalacticPointing(bool GalacticPointing = true) { m_HasGalacticPointing = GalacticPointing; }
@@ -248,7 +253,7 @@ class MPhysicalEvent
   MVector m_OIDirection;
 
   //! Store the read lines for delayed parsing
-  vector<string> m_Lines; // string fatser than MString, vector faster than list
+  vector<MString> m_Lines; // string fatser than MString, vector faster than list
 
   // private members:
  private:

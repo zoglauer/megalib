@@ -112,7 +112,7 @@ bool MUnidentifiableEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MUnidentifiableEvent::Assimilate(const MUnidentifiableEventData *UnidentifiableEventData)
 
-  if (Event->GetEventType() == MPhysicalEvent::c_Unidentifiable) {
+  if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
     return Assimilate((MUnidentifiableEvent *) Event);
   } else {
     return false; 
@@ -150,15 +150,17 @@ bool MUnidentifiableEvent::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MUnidentifiableEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
+bool MUnidentifiableEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
-  bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
+  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
+    ostringstream S;
     S<<"PE "<<m_Energy<<endl;
-    S.flush();
+    File.Write(S);
+    File.Flush();
   } 
 
   return Return;

@@ -167,7 +167,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
-          if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+          if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
             TMatrix Rotation = Compton->GetDetectorRotationMatrix();

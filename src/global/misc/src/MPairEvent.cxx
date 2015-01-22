@@ -163,7 +163,7 @@ bool MPairEvent::Assimilate(MPairEvent* PairEventData)
 
 bool MPairEvent::Assimilate(MPhysicalEvent* Event)
 {
-  if (Event->GetEventType() == MPhysicalEvent::c_Pair) {
+  if (Event->GetType() == MPhysicalEvent::c_Pair) {
     return Assimilate(dynamic_cast<MPairEvent*>(Event));
   } else {
     return false;
@@ -441,14 +441,15 @@ bool MPairEvent::Assimilate(char* LineBuffer)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MPairEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool ReadDelayed)
+bool MPairEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool ReadDelayed)
 {
   // Hopefully a faster way to stream data from and to a file than ROOT...
 
-  bool Return = MPhysicalEvent::Stream(S, Version, Read, Fast, ReadDelayed);
+  bool Return = MPhysicalEvent::Stream(File, Version, Read, Fast, ReadDelayed);
 
   if (Read == false) {
     // Write pair specific infos:
+    ostringstream S;
     S<<"PC "<<m_PairCreationIA.X()<<" "<<m_PairCreationIA.Y()<<" "<<m_PairCreationIA.Z()<<endl;
     S<<"PE "<<m_EnergyElectron<<" "<<m_EnergyErrorElectron<<" "
      <<m_ElectronDirection.X()<<" "<<m_ElectronDirection.Y()<<" "<<m_ElectronDirection.Z()<<endl;
@@ -456,7 +457,8 @@ bool MPairEvent::Stream(fstream& S, int Version, bool Read, bool Fast, bool Read
      <<m_PositronDirection.X()<<" "<<m_PositronDirection.Y()<<" "<<m_PositronDirection.Z()<<endl;
     S<<"PI "<<m_InitialEnergyDeposit<<endl;
     S<<"TQ "<<m_TrackQualityFactor<<endl;
-    S.flush();
+    File.Write(S);
+    File.Flush();
   } 
 
   return Return;

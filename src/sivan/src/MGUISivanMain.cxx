@@ -332,13 +332,15 @@ void MGUISivanMain::Open()
 {
   // Open a file
 
-  const char** Types = new const char*[6];
+  const char** Types = new const char*[8];
   Types[0] = "Simulated events";
   Types[1] = "*.sim";
-  Types[2] = "All files";
-  Types[3] = "*";
-  Types[4] = 0;
-  Types[5] = 0;
+  Types[2] = "Gzip'ed simulated events";
+  Types[3] = "*.sim.gz";
+  Types[4] = "All files";
+  Types[5] = "*";
+  Types[6] = 0;
+  Types[7] = 0;
   
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
@@ -381,16 +383,12 @@ void MGUISivanMain::About()
 
 void MGUISivanMain::Launch()
 {
-  // This method is called after pressing the MEGA-button in the 
-  // M.I.Works main GUI:
-  // The reconstruction is started.
+  // This method is called after pressing the "Start" button
   
-  MSystem Sys;
-  MString Suffix;
-  Sys.GetFileSuffix(m_Data->GetCurrentFileName(), &Suffix);
+  MString Name = m_Data->GetCurrentFileName();
 
-  if (Suffix != "sim" && Suffix != "evta") {
-    mgui<<"The input file of Sivan needs to have the suffix \"sim\" or \"evta\"!"<<error;
+  if (Name.EndsWith("sim") == false && Name.EndsWith("sim.gz") == false) {
+    mgui<<"The input file of Sivan needs to have the suffix \"sim\" or \"sim.gz\"!"<<error;
     return;
   }
 

@@ -119,6 +119,10 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
   if (MFileEvents::Open(FileName, Way) == false) {
     return false;
   }
+  
+  m_SimulatedEvents = 0;
+  m_SimulationStartAreaFarField = 0;
+  m_HasSimulatedEvents = false;
 
   if (Way == c_Read) {
     if (m_Geo->IsScanned() == false) {
@@ -131,9 +135,9 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
     // Find some initial keyword:
     MString Line;
     unsigned int MaxAdvanceRead = 100;
-    while (m_File.good() == true) {
+    while (IsGood() == true) {
       if (MaxAdvanceRead-- == 0) break;
-      Line.ReadLine(m_File);
+      ReadLine(Line);
       
       if (Line.BeginsWith("SimulationStartAreaFarField") == true) {
         MTokenizer Tokens;
@@ -147,62 +151,62 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
         }
       }
     }
-
-    // Now go to the end of the file to find the TS keyword
-    bool FoundTS = false;
-    int Start = 1;
-    int StartMax = 100000;
-    while (FoundTS == false) {
-      Start *= 10;
-      if (Start > StartMax) break;
-
-      m_SimulatedEvents = 0;
-
-      m_File.clear();
-      if (m_FileLength > (streampos) Start) {
-        m_File.seekg(m_FileLength - streamoff(Start));
-      } else {
-        // start from the beginning...
-        MFile::Rewind();
-      }
-
-      MString Line;
-      Line.ReadLine(m_File); // Ignore the first line
-      while (m_File.good() == true) {
-        Line.ReadLine(m_File);
-      
-        // In case the job crashed badly we might have no TS, thus use the last ID
-        if (Line.BeginsWith("ID") == true) {
-          MTokenizer Tokens;
-          Tokens.Analyze(Line);
-          if (Tokens.GetNTokens() == 3) {
-            m_SimulatedEvents = Tokens.GetTokenAtAsInt(2);
-          }
-        }
-        if (FoundTS == false) {
-          if (Line.BeginsWith("TS") == true) {
-            MTokenizer Tokens;
-            Tokens.Analyze(Line);
-            if (Tokens.GetNTokens() != 2) {
-              mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-              mout<<"Unable to read TS keyword"<<endl;              
-            } else {
-              m_SimulatedEvents = Tokens.GetTokenAtAsInt(1);
-              FoundTS = true;
-              break;
-            }
-          }
-        }
-      }
-      MFile::Rewind();
-
-      if (m_SimulatedEvents > 0) break;
-    }
   }
 
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEventsSim::ParseFooter(const MString& Line)
+{
+  // Parse the footer
+  
+  // Handle common data in the base class
+  MFileEvents::ParseFooter(Line);
+  
+  // In case the job crashed badly we might have no TS, thus use the last ID
+  if (Line.BeginsWith("ID") == true) {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() == 3) {
+      m_SimulatedEvents = Tokens.GetTokenAtAsInt(2);
+      m_HasSimulatedEvents = true;
+    }
+  }
+  if (Line.BeginsWith("TS") == true) {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() != 2) {
+      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+      mout<<"Unable to read TS keyword"<<endl;
+      return false;
+    } else {
+      m_SimulatedEvents = Tokens.GetTokenAtAsInt(1);
+      m_HasSimulatedEvents = true;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+long MFileEventsSim::GetSimulatedEvents()
+{
+  //! Return the number of simulated events
+
+  if (m_HasSimulatedEvents == false) {
+    ReadFooter(); 
+  }
+  
+  return m_SimulatedEvents;
+}
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -234,8 +238,8 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
   }
 
   MString Line;
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
 
     if (Line[0] == 'S' && Line[1] == 'E') {
@@ -297,6 +301,9 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     } 
     // The end of file keyword
     else if (Line[0] == 'E' && Line[1] == 'N') {
+      // What ever we decide to do next, first read the foorter in continue mode
+      ReadFooter(true);
+      
       if (m_IsFirstEvent == false) {
         if (Analyze == true) {
           Event->Analyze();
@@ -342,12 +349,13 @@ bool MFileEventsSim::AddText(const MString& Text)
 
   if (m_IncludeFileUsed == true) {
     ((MFileEventsSim*) m_IncludeFile)->AddText(Text);
-    if (m_IncludeFile->GetFileLength() > m_MaxFileLength) {
+    if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   } else {
-    m_File<<Text<<flush;
-    if (m_IsIncludeFile == false && GetFileLength() > m_MaxFileLength) {
+    Write(Text);
+    Flush();
+    if (m_IsIncludeFile == false && GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   }
@@ -373,12 +381,13 @@ bool MFileEventsSim::AddEvent(MSimEvent* Event)
 
   if (m_IncludeFileUsed == true) {
     ((MFileEventsSim*) m_IncludeFile)->AddEvent(Event);
-    if (m_IncludeFile->GetFileLength() > m_MaxFileLength) {
+    if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   } else {
-    m_File<<Event->ToSimString(MSimEvent::c_StoreSimulationInfoAll, 0)<<flush;
-    if (m_IsIncludeFile == false && GetFileLength() > m_MaxFileLength) {
+    Write(Event->ToSimString(MSimEvent::c_StoreSimulationInfoAll, 0));
+    Flush();
+    if (m_IsIncludeFile == false && GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   }
@@ -415,11 +424,13 @@ bool MFileEventsSim::CloseEventList()
     return false;
   }
 
-  m_File<<"EN"<<endl;
-  m_File<<endl;
-  m_File<<"TE "<<m_ObservationTime<<endl;
-  m_File<<"TS "<<m_SimulatedEvents<<endl;
-  m_File<<endl;
+  ostringstream out;
+  out<<"EN"<<endl;
+  out<<endl;
+  out<<"TE "<<m_ObservationTime<<endl;
+  out<<"TS "<<m_SimulatedEvents<<endl;
+  out<<endl;
+  Write(out);
   
   return true;
 }

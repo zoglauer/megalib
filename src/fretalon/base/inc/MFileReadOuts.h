@@ -53,8 +53,8 @@ class MFileReadOuts : public MFileEvents
 
   // protected methods:
  protected:
-  //MFileReadOuts() {};
-  //MFileReadOuts(const MFileReadOuts& FileReadOuts) {};
+  //! Parse the special information at the end of file
+  virtual bool ParseFooter(const MString& Line);
 
   // private methods:
  private:
@@ -67,20 +67,16 @@ class MFileReadOuts : public MFileEvents
 
   // private members:
  private:
-  //! Name of the detector which we are reading
-  MString m_Detector;
   //! The number of events in the file
   unsigned int m_NEventsInFile;
   //! The number of good events in file
   unsigned int m_NGoodEventsInFile;
-  //! Start of the observation time
-  MTime m_StartObservationTime;
   //! Clock time belonging to the start of the observation time
   unsigned long m_StartClock; 
-  //! End of the observation time
-  MTime m_EndObservationTime;
   //! Clock time belonging to the end of the observation time
   unsigned long m_EndClock;
+  //! True if the end clock tag has been read
+  bool m_HasEndClock;
 
   //! The read-out element
   MReadOutElement* m_ROE;

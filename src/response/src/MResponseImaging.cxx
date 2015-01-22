@@ -249,7 +249,7 @@ bool MResponseImaging::CreateResponse()
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event, false) == true) {
-          if (Event->GetEventType() == MPhysicalEvent::c_Compton) {
+          if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
             if (Compton->IsKinematicsOK() == false) continue;

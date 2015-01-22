@@ -59,13 +59,11 @@ MFileReadOuts::MFileReadOuts() : MFileEvents()
 {
   // Construct an instance of MFileReadOuts
   
-  m_FileType = "Unknown";
-  m_Detector = "Unknown";
-  m_Version = -1;
-  m_StartObservationTime = MTime(0);
-  m_EndObservationTime = MTime(0);
+  m_FileType = "roa";
+
   m_StartClock = numeric_limits<long>::max();
   m_EndClock = numeric_limits<long>::max();
+  m_HasEndClock = false;
   
   m_NEventsInFile = 0;
   m_NGoodEventsInFile = 0;
@@ -83,7 +81,6 @@ MFileReadOuts::~MFileReadOuts()
 {
   delete m_ROE;
   delete m_ROD;
-
 }
 
 
@@ -97,19 +94,14 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   m_IncludeFile = new MFileReadOuts();
   m_IncludeFile->SetIsIncludeFile(true);
 
-  m_FileType = "ROA";
-  if (MFile::Open(FileName, c_Read) == false) {
+  if (MFileEvents::Open(FileName, c_Read) == false) {
     return false;
   }
     
   bool Error = false;
-  bool FoundVersion = false;
-  bool FoundType = false;
   bool FoundUF = false;
-  bool FoundTB = false;
   bool FoundCB = false;
-  bool FoundTE = false;
-  bool FoundCE = false;
+  m_HasEndClock = true;
   
   MString ReadOutElementFormat = "";
   MString ReadOutDataFormat = "";
@@ -124,60 +116,14 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   
   
   // Stage one: Find out what kind of file we have
+  MFile::Rewind();
   
   MString Line;
-  while (m_File.good() == true) {
+  while (IsGood() == true) {
     
     if (++Lines >= MaxLines) break;
-    Line.ReadLine(m_File);
+    ReadLine(Line);
     
-    if (FoundType == false) {
-      if (Line.BeginsWith("TY") == true) {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read file type (should be "<<m_FileType<<")"<<endl;
-          Error = true;
-        } else {
-          m_FileType = Tokens.GetTokenAtAsString(1);
-          m_FileType.ToLower();
-          FoundType = true;
-          //mout<<"Found calibration file Type: "<<m_FileType<<endl;
-        }
-      }
-    }
-    if (FoundVersion == false) {
-      if (Line.BeginsWith("VE") == true) {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 3) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read file version."<<endl;              
-          Error = true;
-        } else {
-          m_Detector = Tokens.GetTokenAtAsString(1);
-          m_Detector.ToLower();
-          m_Version = Tokens.GetTokenAtAsInt(2);
-          FoundVersion = true;
-          //mout<<"Found dat file version: "<<m_Version<<" for detector "<<m_Detector<<endl;
-        }
-      }
-    }
-    if (FoundTB == false) {
-      if (Line.BeginsWith("TB") == true) {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read TB keyword"<<endl;              
-          Error = true;
-        } else {
-          m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
-          FoundTB = true;
-        }
-      }
-    }
     if (FoundUF == false) {
       if (Line.BeginsWith("UF") == true) {
         MTokenizer Tokens;
@@ -245,50 +191,6 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
     m_ROD = NewROD;
   }
   
-  // Now go to the end of the file to find the TE, CE keywords
-  m_File.clear();
-  if (m_FileLength > (streampos) 10000) {
-    m_File.seekg(m_FileLength - streamoff(10000));
-  } else {
-    // start from the beginning...
-    MFile::Rewind();
-  }
-  Line.ReadLine(m_File); // Ignore the first line
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
-    if (Line.Length() < 2) continue;
-    
-    if (FoundTE == false) {
-      if (Line[0] == 'T' && Line[1] == 'E') {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read TE keyword"<<endl;              
-          Error = true;
-        } else {
-          m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
-          FoundTE = true;
-        }
-      }
-    }
-    if (FoundCE == false) {
-      if (Line[0] == 'C' && Line[1] == 'E') {
-        MTokenizer Tokens;
-        Tokens.Analyze(Line);
-        if (Tokens.GetNTokens() != 2) {
-          mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-          mout<<"Unable to read CE keyword"<<endl;              
-          Error = true;
-        } else {
-          m_EndClock = Tokens.GetTokenAtAsDouble(1);
-          FoundCE = true;
-        }
-      }
-    }
-  }
-  MFile::Rewind();
-  
   // Now do the sanity checks:
   if (m_FileType != "dat" && m_FileType != "roa") {
     mout<<"Error while opening file "<<m_FileName<<": "<<endl;
@@ -296,35 +198,35 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
     Error = true;
     return false;
   }
-  /*
-  if (FoundTB == false) {
-    mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"Did not find the start time in the file (TB keyword)"<<endl;              
-    Error = true;
-  }
-  if (FoundTE == false) {
-    mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"Did not find the end time in the file (TE keyword)"<<endl;              
-    Error = true;
-  }
-  if (FoundCB == false) {
-    mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"Did not find the start clock in the file (CB keyword)"<<endl;              
-    Error = true;
-  }
-  if (FoundCE == false) {
-    mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"Did not find the end clock in the file (CE keyword)"<<endl;              
-    Error = true;
-  }
-  if (m_StartObservationTime > m_EndObservationTime) {
-    mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"The start of the observation time is larger than its end!"<<endl;              
-    Error = true;
-  }
-  */
   
   return !Error;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileReadOuts::ParseFooter(const MString& Line)
+{
+  // Parse the footer
+  
+  // Handle common data in the base class
+  MFileEvents::ParseFooter(Line);
+  
+  if (Line[0] == 'C' && Line[1] == 'E') {
+    MTokenizer Tokens;
+    Tokens.Analyze(Line);
+    if (Tokens.GetNTokens() != 2) {
+      mout<<"Error while opening file "<<m_FileName<<": "<<endl;
+      mout<<"Unable to read CE keyword"<<endl;
+      return false;
+    } else {
+      m_EndClock = Tokens.GetTokenAtAsDouble(1);
+      m_HasEndClock = true;
+    }
+  }
+  
+  return true;
 }
 
 
@@ -361,8 +263,8 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
   MTokenizer T(' ', false);  
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
           
     // Case 1: The event is completed.  Check to see if we're at the following "SE".

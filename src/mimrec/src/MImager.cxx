@@ -798,8 +798,8 @@ bool MImager::Analyze(bool CalculateResponse)
   
   if (m_AnimationMode == c_AnimateBackprojections) { 
     // Determine the total observation time:
-    double Time = m_EventFile.GetObservationTime();
-    double EventFraction = m_BPEvents.size()/Time * m_AnimationFrameTime;
+    MTime Time = m_EventFile.GetObservationTime();
+    double EventFraction = m_BPEvents.size()/Time.GetAsSeconds() * m_AnimationFrameTime;
     cout<<"Events per "<<m_AnimationFrameTime<<" sec: "<<EventFraction<<endl;
 
     double PictureID = 0;

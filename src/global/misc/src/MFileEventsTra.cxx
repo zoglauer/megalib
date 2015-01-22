@@ -335,10 +335,10 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
 
   // Read until we reach a CO or PA or <to be continued>
   MString Line;
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
     if (Line.Length() < 2) continue;
-
+    
     if (Line[0] == 'E' && Line[1] == 'T') {
       if (Line.Length() < 5) {
         cout<<"Error reading event type"<<endl;
@@ -347,31 +347,31 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
       }
       if (Line[3] == 'C' && Line[4] == 'O') {
         MComptonEvent* P = new MComptonEvent();
-        P->Stream(m_File, m_Version, true, m_Fast, m_ParseDelayed);
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Compton;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'P' && Line[4] == 'A') {
         MPairEvent* P = new MPairEvent();
-        P->Stream(m_File, m_Version, true, m_Fast, m_ParseDelayed);
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Pair;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'P' && Line[4] == 'H') {
         MPhotoEvent* P = new MPhotoEvent();
-        P->Stream(m_File, m_Version, true, m_Fast, m_ParseDelayed);
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Photo;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'M' && Line[4] == 'U') {
         MMuonEvent* P = new MMuonEvent();
-        P->Stream(m_File, m_Version, true, m_Fast, m_ParseDelayed);
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Muon;
         Phys = (MPhysicalEvent*) P;
         break;
       } else  if (Line[3] == 'U' && Line[4] == 'N') {
         MUnidentifiableEvent* P = new MUnidentifiableEvent();
-        P->Stream(m_File, m_Version, true, m_Fast, m_ParseDelayed);
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Unidentifiable;
         Phys = (MPhysicalEvent*) P;
         break;
@@ -423,12 +423,12 @@ bool MFileEventsTra::AddText(const MString& Text)
 
   if (m_IncludeFileUsed == true) {
     ((MFileEventsTra*) m_IncludeFile)->AddText(Text);
-    if (m_IncludeFile->GetFileLength() > m_MaxFileLength) {
+    if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   } else {
-    m_File<<Text<<flush;
-    if (m_IsIncludeFile == false && GetFileLength() > m_MaxFileLength) {
+    Write(Text);
+    if (m_IsIncludeFile == false && GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   }
@@ -456,13 +456,15 @@ bool MFileEventsTra::AddEvent(MPhysicalEvent* Tra)
 
   if (m_IncludeFileUsed == true) {
     ((MFileEventsTra*) m_IncludeFile)->AddEvent(Tra);
-    if (m_IncludeFile->GetFileLength() > m_MaxFileLength) {
+    if (m_IncludeFile->GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   } else {
-    m_File<<"SE"<<endl;
-    Tra->Stream(m_File, m_Version, false);
-    if (m_IsIncludeFile == false && GetFileLength() > m_MaxFileLength) {
+    ostringstream out;
+    out<<"SE"<<endl;
+    Write(out);
+    Tra->Stream(*this, m_Version, false);
+    if (m_IsIncludeFile == false && GetFileLength() > GetMaxFileLength()) {
       return CreateIncludeFile();
     }
   }

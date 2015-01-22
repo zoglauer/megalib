@@ -567,7 +567,7 @@ bool MCDetectorConstruction::ConstructVolumes()
   list<MDShape*> AllShapes;
   for (unsigned int i = 0; i < m_Geometry->GetNShapes(); ++i) {
     AllShapes.push_back(m_Geometry->GetShapeAt(i));
-    cout<<"Input shapes: "<<AllShapes.back()->GetName()<<endl;
+    //cout<<"Input shapes: "<<AllShapes.back()->GetName()<<endl;
   }
   list<G4VSolid*> AllSolids;
   for (list<MDShape*>::iterator I = AllShapes.begin(); I != AllShapes.end(); ++I) {
@@ -886,9 +886,9 @@ bool MCDetectorConstruction::ConstructVolumes()
     AllSolids.push_back(Solid);
   }
   
-  for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
-    cout<<"Solid: "<<(*J)->GetName()<<endl;
-  }
+  //for (list<G4VSolid*>::iterator J = AllSolids.begin(); J != AllSolids.end(); ++J) {
+  //  cout<<"Solid: "<<(*J)->GetName()<<endl;
+  //}
   
   
   // Step 2: All shapes are now defined, so we can build the volumes

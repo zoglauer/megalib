@@ -325,7 +325,7 @@ MRERawEvent* ExternalAnalysisPipelineExample::Convert(MSimEvent* SE)
     REHit->SetDetector(SE->GetHTAt(h)->GetDetectorType());
     REHit->SetPosition(SE->GetHTAt(h)->GetPosition());
     REHit->SetEnergy(SE->GetHTAt(h)->GetEnergy());
-    REHit->SetTime(SE->GetHTAt(h)->GetTime() + SE->GetTime());
+    REHit->SetTime(SE->GetHTAt(h)->GetTime() + SE->GetTime().GetAsSeconds());
     REHit->RetrieveResolutions(m_Geometry);
     REHit->Noise(m_Geometry);  // <- for sims only!!
     RE->AddRESE(REHit);

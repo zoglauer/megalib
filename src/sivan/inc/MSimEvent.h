@@ -80,7 +80,7 @@ class MSimEvent
   //! Set the time of the event
   void SetTime(const MTime Time) { m_Time = Time; }
   //! Get the time of the event
-  double GetTime() const { return m_Time.GetAsDouble(); }
+  MTime GetTime() const { return m_Time; }
 
   //! Add the content of the given event to this one
   bool Add(const MSimEvent& Event);

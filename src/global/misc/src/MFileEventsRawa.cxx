@@ -95,8 +95,8 @@ bool MFileEventsRawa::LoadNextEvent()
 
   // Parse the dammed file:
   MString Line;
-  while (m_File.good() == true) {
-    Line.ReadLine(m_File);
+  while (IsGood() == true) {
+    ReadLine(Line);
 
     if (Line[0] == 'S' && Line[1] == 'E') {
       if (sscanf(Line.Data(), "SE%i", &Int1) == 1) {
