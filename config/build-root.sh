@@ -152,12 +152,21 @@ echo " "
 echo " "
 echo "Getting ROOT..."
 VER=""
+ROOTTOPDIR=""
 if [ "${TARBALL}" != "" ]; then
   # Use given ROOT tarball
   echo "The given ROOT tarball is ${TARBALL}"
   
+  # Determine the name of the top level directory in the tar ball
+  ROOTTOPDIR=`tar tzf ${TARBALL} | sed -e 's@/.*@@' | uniq`
+  RESULT=$?
+  if [ "${RESULT}" != "0" ]; then
+    echo "ERROR: Cannot find top level directory in the tar ball!"
+    exit 1
+  fi
+  
   # Check if it has the correct version:
-  VER=`tar xfzO ${TARBALL} root/build/version_number | sed 's|/|.|g'`
+  VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     echo "ERROR: Something went wrong unpacking the ROOT tarball!"
@@ -217,8 +226,16 @@ else
       exit 1
     fi
   fi
+
+  # Determine the name of the top level directory in the tar ball
+  ROOTTOPDIR=`tar tzf ${TARBALL} | sed -e 's@/.*@@' | uniq`
+  RESULT=$?
+  if [ "${RESULT}" != "0" ]; then
+    echo "ERROR: Cannot find top level directory in the tar ball!"
+    exit 1
+  fi
   
-  VER=`tar xfzO ${TARBALL} root/build/version_number | sed 's|/|.|g'`
+  VER=`tar xfzO ${TARBALL} ${ROOTTOPDIR}/build/version_number | sed 's|/|.|g'`
   if [ "$?" != "0" ]; then
     echo "ERROR: Something went wrong unpacking the ROOT tarball!"
     exit 1
@@ -274,9 +291,9 @@ if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
   exit 1
 fi
-mv root/* .
-mv root/.??* .
-rmdir root
+mv ${ROOTTOPDIR}/* .
+mv ${ROOTTOPDIR}/.??* .
+rmdir ${ROOTTOPDIR}
 
 
 
