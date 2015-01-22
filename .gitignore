@@ -67,6 +67,8 @@ external
 *.tra
 *.orig
 *.rej
+*.dSYM*
+*.killcosimas.bash
 .DS_Store
 callgrind.*
 new-source-megalib.sh
