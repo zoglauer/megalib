@@ -139,7 +139,7 @@ if [ "${Source}" == "!@#$" ]; then
   exit 1;
 fi
 RUNS=`grep "^Run\ " ${Source} | wc -l`
-if [ "${RUNS}" != "1" ]; then
+if [[ ${RUNS} != *1 ]]; then
   echo " "
   echo "Error: You have more than one run in the source file:"
   grep "^Run\ " ${Source}
@@ -262,7 +262,6 @@ grep -i ".FileName" ${Source} | while read line; do
 
   # Wait until the header is written
   if [[ "${Zip}" == "yes" ]]; then
-    cp ${FirstFileName} Tmp.gz
     while [ `gunzip -c ${FirstFileName} 2> /dev/null | wc -l | awk -F" " '{ print $1 }'` -le 100 ]; do
       # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
       sleep 1;
@@ -325,6 +324,7 @@ grep -i ".FileName" ${Source} | while read line; do
 done
 
 
+# Check if we wait until all threads have finished
 if [ "${Wait}" = "yes" ]; then
   echo "Waiting till all sub-processes have finished..."
   wait
@@ -332,31 +332,3 @@ fi
 
 exit 0;
 
-# Check if we wait until all threads have finished
-if [ "${Wait}" = "yes" ]; then
-  echo "Waiting till all processes have finished..."
-  while true; do
-    Counter=0
-    for (( p = 0; p < ${#Pids[*]}; p++ )); do
-      if [ ${Pids[$p]} -eq 0 ]; then
-        continue
-      fi
-      FoundIt=`ps cax | grep ${Pids[$p]} | grep -o '^[ ]*[0-9]'`
-      if [ -z "${FoundIt}" ]; then
-        echo "ID ${Pids[$p]} no longer running"
-        Pids[$p]=0
-      else
-        echo "ID ${Pids[$p]} still running"
-        Counter=$(( ${Counter} + 1 ))
-      fi
-    done
-    if [ ${Counter} -eq 0 ]; then
-      break;
-    fi
-    sleep 10
-  done
-  echo "All processes have finished..."
-fi
-
-
-exit 0;
