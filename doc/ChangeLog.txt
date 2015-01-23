@@ -6,12 +6,12 @@
 Version 2.29/2.30
 =================
 
-*** Important - please always read:
+*** IMPORTANT - PLEASE READ:
 
 + Partial rewrite of the MEGAlib file I/O classes to enable transparent 
   handling of gzip'ed files
-  --> Since I had to modify the whole I/O chain, email me if there are any 
-      problems reading or writing files
+  --> Since I had to modify the whole I/O chain (including the interfaces), 
+      email me if there are any problems reading or writing files
 + First alpha version of calibration framework Fretalon with Melinator line 
   calibrator
 + Exchange of the ROOT geometry backend (switch to the TGeo* classes)
