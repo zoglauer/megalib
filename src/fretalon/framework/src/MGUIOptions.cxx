@@ -138,6 +138,7 @@ void MGUIOptions::CloseWindow()
 {
   // When the x is pressed, this function is called.
 
+  UnmapWindow(); // This unmap is required on Clio's MacBook for some unknown reason
   DeleteWindow();
 }
 
