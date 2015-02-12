@@ -95,7 +95,7 @@ class MResponseMatrixO13 : public MResponseMatrix
            float x13, float Value = 1);
   void SetMatrix(unsigned int b, MResponseMatrixO12 R12);
 
-  virtual unsigned int GetNBins() const;
+  virtual unsigned long GetNBins() const;
 
   virtual float GetAxisContent(unsigned int b, unsigned int order = 13) const;
   virtual vector<float> GetAxis(unsigned int order = 13) const;

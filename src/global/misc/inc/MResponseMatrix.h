@@ -52,7 +52,7 @@ class MResponseMatrix
   virtual bool Read(MString FileName);
   virtual bool Write(MString FileName, bool Stream = false) = 0;
 
-  virtual unsigned int GetNBins() const = 0;
+  virtual unsigned long GetNBins() const = 0;
 
   virtual float GetAxisContent(unsigned int b, unsigned int order = 0) const = 0;
   virtual vector<float> GetAxis(unsigned int order = 0) const = 0;
@@ -110,8 +110,8 @@ class MResponseMatrix
 
   // protected members:
  protected:
-  static const unsigned int c_SizeLimit;
-  static const unsigned int c_Outside;
+  static const unsigned long c_SizeLimit;
+  static const unsigned long c_Outside;
 
   //! True if the values correspond to bin centers
   bool m_ValuesCentered;

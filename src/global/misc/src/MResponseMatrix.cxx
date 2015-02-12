@@ -48,8 +48,8 @@ ClassImp(MResponseMatrix)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const unsigned int MResponseMatrix::c_SizeLimit = 100000000;
-const unsigned int MResponseMatrix::c_Outside = numeric_limits<int>::max()-1;
+const unsigned long MResponseMatrix::c_SizeLimit = numeric_limits<long>::max();
+const unsigned long MResponseMatrix::c_Outside = numeric_limits<long>::max()-1;
 const float MResponseMatrix::c_ShowX = numeric_limits<float>::max()/2.22;
 const float MResponseMatrix::c_ShowY = numeric_limits<float>::max()/2.23;
 const float MResponseMatrix::c_ShowZ = numeric_limits<float>::max()/2.24;

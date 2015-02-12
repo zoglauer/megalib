@@ -53,6 +53,13 @@ class MFileResponse : public MParser
   //! Are the values centered
   unsigned long GetHash() const { return m_Hash; }
 
+  // we want also the Write's from MFile
+  using MFile::Write;
+  //! Write some text (and clear the stream)
+  virtual void Write(ostringstream& S);
+  //! Write some text plus space afterwards
+  virtual void Write(const double d);
+
   // protected methods:
  protected:
 

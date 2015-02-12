@@ -265,6 +265,28 @@ MResponseMatrix* MFileResponse::Read(MString FileName)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text and clear the stream
+void MFileResponse::Write(ostringstream& S) 
+{ 
+  MFile::Write(S);
+  S.str("");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text
+void MFileResponse::Write(const double d) 
+{   
+  MFile::Write(d);
+  MFile::Write(' ');
+}
+
+
 // MFileResponse.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
 

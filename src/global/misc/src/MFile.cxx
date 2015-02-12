@@ -472,7 +472,7 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Write some text
+//! Write some text and clear the stream
 void MFile::Write(const ostringstream& S) 
 { 
   if (m_WasZipped == true) {
@@ -493,6 +493,22 @@ void MFile::Write(const MString& S)
     gzputs(m_ZipFile, S);
   } else {
     m_File<<S; 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some text
+void MFile::Write(const double d) 
+{   
+  if (m_WasZipped == true) {
+    ostringstream out;
+    out<<d;
+    gzputs(m_ZipFile, out.str().c_str());
+  } else {
+    m_File<<d; 
   }
 }
 

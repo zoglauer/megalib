@@ -338,7 +338,7 @@ void MResponseMatrixO1::Add(float x, float Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMatrixO1::GetNBins() const
+unsigned long MResponseMatrixO1::GetNBins() const
 {
   // Return the number of bins
 
@@ -807,6 +807,7 @@ bool MResponseMatrixO1::Write(MString FileName, bool Stream)
     s<<"StopStream"<<endl;
     File.Write(s);
   }
+ 
   
   mdebug<<"File \""<<FileName<<"\" with "<<m_AxisO1.size()-1
         <<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;

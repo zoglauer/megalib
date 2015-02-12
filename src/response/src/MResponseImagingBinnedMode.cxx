@@ -110,21 +110,21 @@ bool MResponseImagingBinnedMode::CreateResponse()
   vector<float> AxisEnergyGammaIdeal = CreateEquiDist(0, 2000, 200);
 
 
-//   MResponseMatrixO7 Response("Response", AxisPhi, AxisChi, AxisPsi, AxisEnergyMeasured, AxisLambda, AxisNy, AxisEnergyInitial);
-//   Response.SetAxisNames("#phi [deg]", 
-//                         "#chi [deg]", 
-//                         "#psi [deg]",
-//                         "Measured Energy [keV}",
-//                         "#lambda [deg]", 
-//                         "#nu [deg]",
-//                         "Initial energy [keV]");
+  MResponseMatrixO7 Response("Binned response 7D", AxisLambda, AxisNy, AxisEnergyInitial, AxisPhi, AxisChi, AxisPsi, AxisEnergyMeasured);
+  Response.SetAxisNames("#lambda [deg]", 
+                        "#nu [deg]",
+                        "Initial energy [keV]",
+                        "#phi [deg]", 
+                        "#chi [deg]", 
+                        "#psi [deg]",
+                        "Measured Energy [keV]");
 
   MResponseMatrixO1 Normalization("Normalization", AxisNormalization);
 
   MResponseMatrixO3 Exposure("Exposure", AxisLambda, AxisNy, AxisEnergyInitial);
   Exposure.SetAxisNames("#lambda [deg]", 
-                       "#nu [deg]",
-                       "Initial energy [keV]");
+                        "#nu [deg]",
+                        "Initial energy [keV]");
 
   MResponseMatrixO2 KleinNishinaResponse("ElectronEnergyResponse", AxisPhi, AxisEnergyInitial);
   KleinNishinaResponse.SetAxisNames("#varphi [deg]", "Total energy [keV]");
@@ -205,10 +205,18 @@ bool MResponseImagingBinnedMode::CreateResponse()
 
               Normalization.Add(1);
 
+              Response.Add(IdealOriginDir.Phi()*c_Deg,
+                           IdealOriginDir.Theta()*c_Deg,
+                           EnergyInitial,
+                           Phi,
+                           Chi,
+                           Psi,
+                           EnergyElectron+EnergyGamma);
+              
               // Stimmt nicht ganz: Auch solche die keine zweite WW machen gehoren da rein:
               Exposure.Add(IdealOriginDir.Phi()*c_Deg,
-                          IdealOriginDir.Theta()*c_Deg,
-                          EnergyInitial);
+                           IdealOriginDir.Theta()*c_Deg,
+                           EnergyInitial);
 
               // ok 
               KleinNishinaResponse.Add(PhiGeo, EnergyInitial);
@@ -227,6 +235,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
                 cout<<"Saving intermediate results..."<<endl;
                 Normalization.SetBinContent(0, NSimulatedEvents);
                 Normalization.Write(m_ResponseName + ".Normalization.rsp", true);
+                Response.Write(m_ResponseName + ".Response.rsp", true);
                 Exposure.Write(m_ResponseName + ".Exposure.rsp", true);
                 KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina.rsp", true);
                 ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse.rsp", true);
@@ -242,6 +251,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
 
   Normalization.SetBinContent(0, NSimulatedEvents);
   Normalization.Write(m_ResponseName + ".Normalization.rsp", true);
+  Response.Write(m_ResponseName + ".Response.rsp", true);
   Exposure.Write(m_ResponseName + ".Exposure.rsp", true);
   KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina.rsp", true);
   ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse.rsp", true);

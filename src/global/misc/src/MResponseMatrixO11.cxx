@@ -381,12 +381,12 @@ void MResponseMatrixO11::SetMatrix(unsigned int b, MResponseMatrixO10 R)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMatrixO11::GetNBins() const
+unsigned long MResponseMatrixO11::GetNBins() const
 {
   // Return the number of bins
 
   if (m_AxisO11.size() < 2) return 0;
-  unsigned int Bins = m_AxisO11.size()-1;
+  unsigned long Bins = m_AxisO11.size()-1;
   return Bins*m_AxesO10[0].GetNBins();
 }
 

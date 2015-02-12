@@ -412,12 +412,12 @@ void MResponseMatrixO17::SetMatrix(unsigned int b, MResponseMatrixO16 R)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMatrixO17::GetNBins() const
+unsigned long MResponseMatrixO17::GetNBins() const
 {
   // Return the number of bins
 
   if (m_AxisO17.size() < 2) return 0;
-  unsigned int Bins = m_AxisO17.size()-1;
+  unsigned long Bins = m_AxisO17.size()-1;
   return Bins*m_AxesO16[0].GetNBins();
 }
 

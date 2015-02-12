@@ -77,7 +77,7 @@ class MResponseMatrixO1 : public MResponseMatrix
   void Set(float x, float Value = 1);
   void Add(float x, float Value = 1);
 
-  virtual unsigned int GetNBins() const;
+  virtual unsigned long GetNBins() const;
 
   virtual float GetAxisContent(unsigned int b, unsigned int order = 1) const;
   virtual vector<float> GetAxis(unsigned int order = 1) const;
