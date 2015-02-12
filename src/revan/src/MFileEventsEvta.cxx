@@ -97,7 +97,7 @@ bool MFileEventsEvta::Open(MString FileName, unsigned int Way)
   m_IncludeFile = new MFileEventsEvta(m_Geometry);
   m_IncludeFile->SetIsIncludeFile(true);
 
-  if (FileName.EndsWith("sim") == true) {
+  if (FileName.EndsWith("sim") == true || FileName.EndsWith("sim.gz") == true) {
     m_IsSimulation = true;
   } else {
     m_IsSimulation = false;
