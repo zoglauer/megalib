@@ -67,6 +67,7 @@ MFile::MFile()
 
   m_Progress = 0;  
   m_ZipFile = 0;
+  m_IsOpen = false;
 
   Reset();
 }
