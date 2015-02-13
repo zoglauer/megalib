@@ -300,10 +300,10 @@ bool MResponseImaging::CreateResponse()
       }    
     }
     if (Counter % m_SaveAfter == 0) {
-      Phi.Write(m_ResponseName + ".phi.rsp", true);
-      Epsilon.Write(m_ResponseName + ".epsilon.rsp", true);
-      Energy.Write(m_ResponseName + ".energy.rsp", true);
-      InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
+      Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
+      Epsilon.Write(m_ResponseName + ".epsilon" + m_Suffix, true);
+      Energy.Write(m_ResponseName + ".energy" + m_Suffix, true);
+      InteractionDistance.Write(m_ResponseName + ".iadistance" + m_Suffix, true);
     }
   }  
   // Finally scale 
@@ -316,15 +316,15 @@ bool MResponseImaging::CreateResponse()
     // A_eff = Area * [(Measured events in bin)/(Area in bin)] / [(All started events)/(4pi)]
     
     Efficiency *= Area/Events * 4*c_Pi;
-    Efficiency.Write(m_ResponseName + ".effectivearea.rsp", true);
+    Efficiency.Write(m_ResponseName + ".effectivearea" + m_Suffix, true);
   } else {
-    Efficiency.Write(m_ResponseName + ".effective_area_is_wrong_since_you_didnt_go_through_the_whole_sim_file.rsp", true); 
+    Efficiency.Write(m_ResponseName + ".effective_area_is_wrong_since_you_didnt_go_through_the_whole_sim_file" + m_Suffix, true); 
   }
   
-  Phi.Write(m_ResponseName + ".phi.rsp", true);
-  Epsilon.Write(m_ResponseName + ".epsilon.rsp", true);
-  Energy.Write(m_ResponseName + ".energy.rsp", true);  
-  InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
+  Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
+  Epsilon.Write(m_ResponseName + ".epsilon" + m_Suffix, true);
+  Energy.Write(m_ResponseName + ".energy" + m_Suffix, true);  
+  InteractionDistance.Write(m_ResponseName + ".iadistance" + m_Suffix, true);
 
   cout<<"We had "<<Counter<<" good events"<<endl;
   

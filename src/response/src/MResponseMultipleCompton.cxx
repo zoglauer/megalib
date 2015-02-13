@@ -365,25 +365,25 @@ bool MResponseMultipleCompton::CreateMatrices()
 bool MResponseMultipleCompton::SaveMatrices()
 {
   mout<<"Stared saving matrices... Please remain calm ... and don't throw your computer out of the window!"<<endl;
-  m_GoodBadTable.Write(m_ResponseName + ".mc.goodbad.rsp", true);
+  m_GoodBadTable.Write(m_ResponseName + ".mc.goodbad" + m_Suffix, true);
   
-  m_PdfDualGood.Write(m_ResponseName + ".mc.dual.good.rsp", true);
-  m_PdfDualBad.Write(m_ResponseName + ".mc.dual.bad.rsp", true);
+  m_PdfDualGood.Write(m_ResponseName + ".mc.dual.good" + m_Suffix, true);
+  m_PdfDualBad.Write(m_ResponseName + ".mc.dual.bad" + m_Suffix, true);
   
-  m_PdfStartGood.Write(m_ResponseName + ".mc.start.good.rsp", true);
-  m_PdfStartBad.Write(m_ResponseName + ".mc.start.bad.rsp", true);
+  m_PdfStartGood.Write(m_ResponseName + ".mc.start.good" + m_Suffix, true);
+  m_PdfStartBad.Write(m_ResponseName + ".mc.start.bad" + m_Suffix, true);
   
-  m_PdfTrackGood.Write(m_ResponseName + ".mc.track.good.rsp", true);
-  m_PdfTrackBad.Write(m_ResponseName + ".mc.track.bad.rsp", true);
+  m_PdfTrackGood.Write(m_ResponseName + ".mc.track.good" + m_Suffix, true);
+  m_PdfTrackBad.Write(m_ResponseName + ".mc.track.bad" + m_Suffix, true);
   
-  m_PdfComptonGood.Write(m_ResponseName + ".mc.compton.good.rsp", true);
-  m_PdfComptonBad.Write(m_ResponseName + ".mc.compton.bad.rsp", true);
+  m_PdfComptonGood.Write(m_ResponseName + ".mc.compton.good" + m_Suffix, true);
+  m_PdfComptonBad.Write(m_ResponseName + ".mc.compton.bad" + m_Suffix, true);
   
-  m_PdfComptonScatterProbabilityGood.Write(m_ResponseName + ".mc.comptondistance.good.rsp", true);
-  m_PdfComptonScatterProbabilityBad.Write(m_ResponseName + ".mc.comptondistance.bad.rsp", true);
+  m_PdfComptonScatterProbabilityGood.Write(m_ResponseName + ".mc.comptondistance.good" + m_Suffix, true);
+  m_PdfComptonScatterProbabilityBad.Write(m_ResponseName + ".mc.comptondistance.bad" + m_Suffix, true);
       
-  m_PdfPhotoAbsorptionProbabilityGood.Write(m_ResponseName + ".mc.photodistance.good.rsp", true);
-  m_PdfPhotoAbsorptionProbabilityBad.Write(m_ResponseName + ".mc.photodistance.bad.rsp", true);
+  m_PdfPhotoAbsorptionProbabilityGood.Write(m_ResponseName + ".mc.photodistance.good" + m_Suffix, true);
+  m_PdfPhotoAbsorptionProbabilityBad.Write(m_ResponseName + ".mc.photodistance.bad" + m_Suffix, true);
   mout<<"Matrices saved!"<<endl;
       
   return true;

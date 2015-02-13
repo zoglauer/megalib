@@ -63,6 +63,9 @@ class MResponseBase
   //! Safe the response after this amount of events are stored
   void SetSaveAfterNumberOfEvents(const unsigned int Number) { m_SaveAfter = Number; }
 
+  //! Compress the final response files
+  void SetCompression(const bool Compress) { m_Compress = Compress; if (m_Compress == true) m_Suffix = ".rsp.gz"; else m_Suffix = "rsp"; }
+
   //! Do all the response creation
   virtual bool CreateResponse() = 0;
 
@@ -132,7 +135,11 @@ class MResponseBase
   unsigned int m_MaxNEvents;
   //! Safe the response after this amount of events are stored
   unsigned int m_SaveAfter;
-
+  //! Compress the response files
+  bool m_Compress;
+  //! The file suffix 
+  MString m_Suffix;
+  
   //! Flag indicating that the only the initial IA is required
   bool m_OnlyINITRequired;
 

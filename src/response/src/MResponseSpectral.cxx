@@ -136,11 +136,11 @@ bool MResponseSpectral::CreateResponse()
       Energy.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy());
     }
     if (++Counter % m_SaveAfter == 0) {
-      Energy.Write(m_ResponseName + ".energy.rsp", true);
+      Energy.Write(m_ResponseName + ".energy" + m_Suffix, true);
     }
   }  
 
-  Energy.Write(m_ResponseName + ".energy.rsp", true);  
+  Energy.Write(m_ResponseName + ".energy" + m_Suffix, true);  
 
   return true;
 }

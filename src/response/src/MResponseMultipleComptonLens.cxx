@@ -146,11 +146,11 @@ bool MResponseMultipleComptonLens::SaveMatrices()
 {
   // Store the (soon to be) pdfs  
 
-  //GoodBadTable.Write(m_ResponseName + ".tc.goodbad.rsp", true);
+  //GoodBadTable.Write(m_ResponseName + ".tc.goodbad" + m_Suffix, true);
   
 
-  m_PdfFromLensGood.Write(m_ResponseName + ".lmc.good.rsp", true);
-  m_PdfFromLensBad.Write(m_ResponseName + ".lmc.bad.rsp", true);
+  m_PdfFromLensGood.Write(m_ResponseName + ".lmc.good" + m_Suffix, true);
+  m_PdfFromLensBad.Write(m_ResponseName + ".lmc.bad" + m_Suffix, true);
 
   return true;
 }

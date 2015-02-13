@@ -196,11 +196,11 @@ bool MResponseEarthHorizon::CreateResponse()
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      EHC.Write(m_ResponseName + ".compton.ehc.rsp", true);
+      EHC.Write(m_ResponseName + ".compton.ehc" + m_Suffix, true);
     }
   }  
 
-  EHC.Write(m_ResponseName + ".compton.ehc.rsp", true);
+  EHC.Write(m_ResponseName + ".compton.ehc" + m_Suffix, true);
 
   return true;
 }

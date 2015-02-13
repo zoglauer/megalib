@@ -194,11 +194,11 @@ bool MResponseImagingARM::CreateResponse()
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      Phi.Write(m_ResponseName + ".phi.rsp", true);
+      Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
     }
   }  
 
-  Phi.Write(m_ResponseName + ".phi.rsp", true);
+  Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
 
   return true;
 }

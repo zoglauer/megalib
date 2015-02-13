@@ -80,7 +80,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
   if (OpenSimulationFile() == false) return false;
-
+  
   cout<<"Generating binned mode imaging pdfs"<<endl;
 
   // Bin 1: Number of simulated events
@@ -234,13 +234,13 @@ bool MResponseImagingBinnedMode::CreateResponse()
               if (Counter % m_SaveAfter == 0) {
                 cout<<"Saving intermediate results..."<<endl;
                 Normalization.SetBinContent(0, NSimulatedEvents);
-                Normalization.Write(m_ResponseName + ".Normalization.rsp", true);
-                Response.Write(m_ResponseName + ".Response.rsp", true);
-                Exposure.Write(m_ResponseName + ".Exposure.rsp", true);
-                KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina.rsp", true);
-                ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse.rsp", true);
-                ScatteredPhotonDir.Write(m_ResponseName + ".ScatteredPhotonDir.rsp", true);
-                GammaEnergyResponse.Write(m_ResponseName + ".GammaEnergyResponse.rsp", true);
+                Normalization.Write(m_ResponseName + ".Normalization" + m_Suffix, true);
+                Response.Write(m_ResponseName + ".Response" + m_Suffix, true);
+                Exposure.Write(m_ResponseName + ".Exposure" + m_Suffix, true);
+                KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina" + m_Suffix, true);
+                ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse" + m_Suffix, true);
+                ScatteredPhotonDir.Write(m_ResponseName + ".ScatteredPhotonDir" + m_Suffix, true);
+                GammaEnergyResponse.Write(m_ResponseName + ".GammaEnergyResponse" + m_Suffix, true);
               }
             }
           }
@@ -250,13 +250,13 @@ bool MResponseImagingBinnedMode::CreateResponse()
   }  
 
   Normalization.SetBinContent(0, NSimulatedEvents);
-  Normalization.Write(m_ResponseName + ".Normalization.rsp", true);
-  Response.Write(m_ResponseName + ".Response.rsp", true);
-  Exposure.Write(m_ResponseName + ".Exposure.rsp", true);
-  KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina.rsp", true);
-  ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse.rsp", true);
-  ScatteredPhotonDir.Write(m_ResponseName + ".ScatteredPhotonDir.rsp", true);
-  GammaEnergyResponse.Write(m_ResponseName + ".GammaEnergyResponse.rsp", true);
+  Normalization.Write(m_ResponseName + ".Normalization" + m_Suffix, true);
+  Response.Write(m_ResponseName + ".Response" + m_Suffix, true);
+  Exposure.Write(m_ResponseName + ".Exposure" + m_Suffix, true);
+  KleinNishinaResponse.Write(m_ResponseName + ".KleinNishina" + m_Suffix, true);
+  ElectronEnergyResponse.Write(m_ResponseName + ".ElectronEnergyResponse" + m_Suffix, true);
+  ScatteredPhotonDir.Write(m_ResponseName + ".ScatteredPhotonDir" + m_Suffix, true);
+  GammaEnergyResponse.Write(m_ResponseName + ".GammaEnergyResponse" + m_Suffix, true);
 
   return true;
 }

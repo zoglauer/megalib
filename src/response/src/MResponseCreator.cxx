@@ -87,6 +87,8 @@ MResponseCreator::MResponseCreator()
   m_NoAbsorptions = false;
 
   m_SaveAfter = 100000;
+  
+  m_Compress = false;
 }
 
 
@@ -129,6 +131,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -b  --mimrec-config   file     use this mimrec configuration file instead of defaults for the imaging response"<<endl;
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"          --no-absorptions           don't calculate absoption probabilities"<<endl;
+  Usage<<"      -z                             gzip the generated files"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
 
@@ -231,6 +234,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
+    } else if (Option == "-z") {
+      m_Compress = true;
+      cout<<"Choosing compression (gzip) mode"<<endl;
     } else if (Option == "-v") {
       m_Verify = true;
       cout<<"Choosing Verification mode"<<endl;
@@ -284,6 +290,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -305,6 +312,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -326,6 +334,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -341,6 +350,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -360,6 +370,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -380,6 +391,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -400,6 +412,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -420,6 +433,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -440,6 +454,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
@@ -460,6 +475,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);

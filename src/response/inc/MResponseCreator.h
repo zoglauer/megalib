@@ -91,6 +91,9 @@ class MResponseCreator
 
   //! Don't look at absorptions when in multiple Compton mode
   bool m_NoAbsorptions;
+  
+  //! Compress the output response files
+  bool m_Compress;
 
   //! Modes
   const static int c_ModeUnknown                   = 0;

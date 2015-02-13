@@ -470,35 +470,35 @@ bool MResponseTracking::CreateResponse()
     }
     
     if (++Counter % m_SaveAfter == 0) {
-      GoodBadTable.Write(m_ResponseName + ".t.goodbad.rsp", true);
+      GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
   
-      PdfStartGood.Write(m_ResponseName + ".t.start.good.rsp", true);
-      PdfStartBad.Write(m_ResponseName + ".t.start.bad.rsp", true);
+      PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
+      PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
   
-      PdfDualGood.Write(m_ResponseName + ".t.dual.good.rsp", true);
-      PdfDualBad.Write(m_ResponseName + ".t.dual.bad.rsp", true);
+      PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
+      PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
       
-      PdfGood.Write(m_ResponseName + ".t.central.good.rsp", true);
-      PdfBad.Write(m_ResponseName + ".t.central.bad.rsp", true);
+      PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
+      PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
       
-      PdfStopGood.Write(m_ResponseName + ".t.stop.good.rsp", true);
-      PdfStopBad.Write(m_ResponseName + ".t.stop.bad.rsp", true);
+      PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
+      PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
     }
   }
   
-  GoodBadTable.Write(m_ResponseName + ".t.goodbad.rsp", true);
+  GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
   
-  PdfStartGood.Write(m_ResponseName + ".t.start.good.rsp", true);
-  PdfStartBad.Write(m_ResponseName + ".t.start.bad.rsp", true);
+  PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
+  PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
   
-  PdfDualGood.Write(m_ResponseName + ".t.dual.good.rsp", true);
-  PdfDualBad.Write(m_ResponseName + ".t.dual.bad.rsp", true);
+  PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
+  PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
 
-  PdfGood.Write(m_ResponseName + ".t.central.good.rsp", true);
-  PdfBad.Write(m_ResponseName + ".t.central.bad.rsp", true);
+  PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
+  PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
 
-  PdfStopGood.Write(m_ResponseName + ".t.stop.good.rsp", true);
-  PdfStopBad.Write(m_ResponseName + ".t.stop.bad.rsp", true);
+  PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
+  PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
 
   return true;
 }

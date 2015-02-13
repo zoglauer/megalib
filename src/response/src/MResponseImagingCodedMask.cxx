@@ -160,7 +160,7 @@ bool MResponseImagingCodedMask::CreateResponse()
               ++Counter;
               if (Counter % m_SaveAfter == 0) {
                 cout<<"Saving intermediate results..."<<endl;
-                Response.Write(m_ResponseName + ".cmbi.rsp", true);
+                Response.Write(m_ResponseName + ".cmbi" + m_Suffix, true);
               }
             }
           }
@@ -169,7 +169,7 @@ bool MResponseImagingCodedMask::CreateResponse()
     }
   }  
   
-  Response.Write(m_ResponseName + ".cmbi.rsp", true);
+  Response.Write(m_ResponseName + ".cmbi" + m_Suffix, true);
 
   return true;
 }

@@ -205,13 +205,13 @@ bool MResponseFirstInteractionPosition::CreateResponse()
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
-      ElectronDirection.Write(m_ResponseName + ".iadirection.rsp", true);
+      InteractionDistance.Write(m_ResponseName + ".iadistance" + m_Suffix, true);
+      ElectronDirection.Write(m_ResponseName + ".iadirection" + m_Suffix, true);
     }
   }  
 
-  InteractionDistance.Write(m_ResponseName + ".iadistance.rsp", true);
-  ElectronDirection.Write(m_ResponseName + ".iadirection.rsp", true);
+  InteractionDistance.Write(m_ResponseName + ".iadistance" + m_Suffix, true);
+  ElectronDirection.Write(m_ResponseName + ".iadirection" + m_Suffix, true);
 
   return true;
 }
