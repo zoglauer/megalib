@@ -1,0 +1,93 @@
+#! /bin/bash
+
+
+commandhelp() {
+  echo ""
+  echo "presponsecreator - parallel responsecreator on the same machine";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    presponsecreator <identical to responsereator>";
+  echo "";
+  echo "Example:";
+  echo "    presponsecreator -g Max.geo.setup -f Response.p1.inc*.id1.sim -r Binned -m ib -c Max.revan.cfg -b Max.mimrec.cfg -z";
+  echo "";
+  echo "This script launches multiple instances of responsecreator."
+  echo "The number of instances is limited to the number of cores."
+  echo "--> Make sure the \"file (-f)\" option contains some kind of wild card to catch multiple input files."
+  echo "";
+}
+
+
+# Initialize
+THREADS=1;
+if ( `test -f /usr/sbin/sysctl` ); then
+  THREADS=`sysctl -n hw.logicalcpu_max`
+elif ( `test -f /proc/cpuinfo` ); then 
+  THREADS=`grep processor /proc/cpuinfo | wc -l`
+fi
+
+
+# Check if responsecreator exists
+if (`test -f ${MEGAlib}/bin/responsecreator`); then
+  echo " "
+  echo "ERROR: The responsecreator executable does not exist. Try to (re-)compile MEGAlib."
+  echo " "
+  exit 1;
+fi
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Extract the files
+NEWCMD=""
+FILES=""
+NAME=""
+for (( c1=0; c1<=$(( ${#CMD[*]} -1 )); c1++ )); do
+  if [[ ${CMD[$c1]} == *-f* ]]; then
+    for (( c2=c1+1; c2<=$(( ${#CMD[*]} -1 )); c2++ )); do
+      if [[ ${CMD[$c2]} != -* ]]; then
+        FILES="${FILES} ${CMD[$c2]}"
+      else
+        c1=$(( $c2 -1 ))
+        break
+      fi
+    done
+  elif [[ ${CMD[$c1]} == *-r* ]]; then
+    c1=$(( $c1 + 1 ))
+    NAME="${CMD[$c1]}"
+  else 
+    NEWCMD="${NEWCMD} ${CMD[$c1]}"
+  fi
+done
+
+echo "Running these files: ${FILES}"
+echo "Output file name: ${NAME}.idXYZ"
+echo "Standard arguments: ${NEWCMD}"
+
+COUNTER=1
+for SINGLEFILE in ${FILES}; do
+  OUT="${NAME}.${COUNTER}"
+  mdelay responsecreator ${THREADS}
+  responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+  COUNTER=$(( ${COUNTER} + 1 ))
+done
+
+
+echo "Waiting till all sub-processes have finished..."
+wait
+echo "Done"
+
+exit 0;
+
