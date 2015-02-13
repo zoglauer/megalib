@@ -21,6 +21,7 @@ commandhelp() {
   echo "  --instanceid=[number]: Unique run id"
   echo "  --rsynccfg=[file name]: Unique run id"
   echo "  --remote=[remote machine in format simy@128.32.13.12:21022]: If given check the remote machine, if not the local"
+  echo "  --zip: Compress the output file"
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -54,6 +55,7 @@ SOURCE=""
 RUNID=""
 INSTANCEID=""
 MASTERDIR=""
+ZIP="FALSE"
 CFG="~/.dcosima.cfg"
 
 # Overwrite default options with user options:
@@ -71,6 +73,8 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-m*=* ]]; then
     MASTERDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
     eval MASTERDIR=${MASTERDIR}
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -182,7 +186,7 @@ rm -r ${TMPDIR}
 
 # Start the simulation:
 echo " * Starting simulations..."
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} ${SOURCE} > /dev/null 2>&1 &"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations"
   exit 1

@@ -20,6 +20,7 @@ commandhelp() {
   echo "Options:"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
+  echo "  --zip: Compress the output files."
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -45,6 +46,7 @@ done
 # Default options:
 SOURCE=""
 INSTANCES="1"
+ZIP="FALSE"
 CFG=~/.dcosima.cfg
 
 
@@ -54,6 +56,8 @@ for C in "${CMD[@]}"; do
     SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -160,7 +164,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     if [[ ${ALLOWED} -gt 0 ]]; then
       LAUNCHED=$(( ${LAUNCHED} + 1 ))
       echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-      dcosima-runinstance --source=${SOURCE} --runid=${RUNID} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR}
+      dcosima-runinstance --source=${SOURCE} --runid=${RUNID} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
       STARTED=1
     fi
     if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
