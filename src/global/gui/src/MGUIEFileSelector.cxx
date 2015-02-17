@@ -40,12 +40,12 @@
 #include "MStreams.h"
 
 // ROOT libs:
-#include <TGMsgBox.h>
-#include <TSystem.h>
+#include "TGMsgBox.h"
+#include "TSystem.h"
+#include "TGFileDialog.h"
 
 // MEGAlib libs:
 #include "MFile.h"
-#include "MFileManager.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -243,18 +243,14 @@ bool MGUIEFileSelector::ProcessMessage(long Message, long Parameter1,
                                        long Parameter2)
 {
   // Process the messages for this application
-
-  MFileManager *FM = new MFileManager();
-
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
       case 99:
-        FM->SelectFileToLoad(m_FileName, m_FileTypes);
-        m_Input->SetText(m_FileName);
-        Layout();
+        SelectFileName();
         break;
       default:
         break;
@@ -265,9 +261,38 @@ bool MGUIEFileSelector::ProcessMessage(long Message, long Parameter1,
   default:
     break;
   }
-  
-  delete FM;
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MGUIEFileSelector::SelectFileName()
+{
+  TGFileInfo Info;
+  Info.fFilename = StrDup(gSystem->BaseName(m_FileName));
+  Info.fIniDir = StrDup(gSystem->DirName(m_FileName));
+  Info.fFileTypes = m_FileTypes;
+  
+  new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
+  
+  // Get the filename ...
+  if ((char *) Info.fFilename != 0) {
+    m_FileName = MString((char *) Info.fFilename);
+    if (m_FileName.IsEmpty()) {
+      return false;
+    }
+  } 
+  // ... or return when cancel has been pressed
+  else {
+    return false;
+  }  
+  
+  m_Input->SetText(m_FileName);
+  Layout();
+  
   return true;
 }
 

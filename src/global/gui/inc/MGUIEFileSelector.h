@@ -54,6 +54,9 @@ class MGUIEFileSelector : public MGUIElement
   // private methods:
  private:
   void Create();
+  
+  //! Select a file name
+  bool SelectFileName();
 
 
   // private members:
