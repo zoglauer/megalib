@@ -147,6 +147,19 @@ echo " "
 echo "Preparing for launch:"
 echo " " 
 
+# Check if we have a global directory defined in the configuration file, if yes we will use that one
+echo "* Checking for remote global directory..."
+MASTERDIR=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^directory; fi;"`
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to read remote global directory"
+  exit 1
+fi
+if [ "${MASTERDIR}" != "" ]; then
+  MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
+  echo "  --> new master directory: $MASTERDIR"
+fi
+exit
+
 # Make global directory
 echo " * Testing/making remote global directory..." 
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi; exit 0;"
