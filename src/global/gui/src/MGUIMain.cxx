@@ -435,10 +435,18 @@ bool MGUIMain::ShowGeometryDialog()
   // Returns the geometry file name
 
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_BaseData);
-  gClient->WaitForUnmap(Geo);
+
+  // The following code is a work around for an issue that raises an Unmap of Geo
+  // already when the underlying TGFileDialog is deleted...
+  do { 
+    gClient->WaitForUnmap(Geo);
+  } while (Geo->IsMapped() == true);
+
   if (Geo->OkPressed() == true) {
     MString Name = Geo->GetGeometryFileName();
     delete Geo;
+    
+    // Another stupid work-around...
     for (unsigned int i = 0; i < 100; ++i) {
       gSystem->ProcessEvents();
     }
