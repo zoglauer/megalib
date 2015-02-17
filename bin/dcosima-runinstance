@@ -158,7 +158,6 @@ if [ "${MASTERDIR}" != "" ]; then
   MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
   echo "  --> new master directory: $MASTERDIR"
 fi
-exit
 
 # Make global directory
 echo " * Testing/making remote global directory..." 
