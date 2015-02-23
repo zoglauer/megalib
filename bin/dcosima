@@ -171,7 +171,8 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   done
   
   if [[ ${STARTED} -eq 0 ]]; then
-    echo " * No simulation slots available at the moment... Sleeping a while..."
+    echo ""
+    echo " --> No simulation slots available at the moment... Sleeping for a while..."
     sleep 10
   else 
     # Sleep a bit to give the last instance a chance to start before we revisit the node
