@@ -549,8 +549,10 @@ void MFile::Flush()
 
 
 //! Get one character
-void MFile::Get(char& c) 
+bool MFile::Get(char& c) 
 { 
+  if (IsGood() == false) return false;
+
   if (m_WasZipped == true) {  
     c = '\0';
     int i = gzgetc(m_ZipFile);
@@ -559,12 +561,14 @@ void MFile::Get(char& c)
         int ErrorCode;
         cout<<"Error in MFile::Get(char& c): "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
       }
-      return;
+      return false;
     }
     c = (char) i;
   } else {
-    m_File.get(c);
+    if (m_File.get(c) == false) return false;
   }
+  
+  return true;
 }
 
 
@@ -572,8 +576,10 @@ void MFile::Get(char& c)
 
 
 //! Get one float
-void MFile::Get(float& f) 
+bool MFile::Get(float& f) 
 { 
+  if (IsGood() == false) return false;
+
   if (m_WasZipped == true) {  
     f = 0;
     string temp;
@@ -585,7 +591,7 @@ void MFile::Get(float& f)
           int ErrorCode;
           cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
-        return;
+        return false;
       }
       if (i == ' ' || i == '\n' || i == '\0' || i == '\t') break; 
       temp += (char) i;
@@ -593,7 +599,10 @@ void MFile::Get(float& f)
     f = atof(temp.c_str());
   } else {
     m_File>>f;
+    if (m_File == false) return false;
   }
+  
+  return true;
 }
 
 
@@ -603,6 +612,8 @@ void MFile::Get(float& f)
 bool MFile::ReadLine(MString& String)
 {
   //! Read one line
+
+  if (IsGood() == false) return false;
 
   String.Clear();
   
@@ -639,6 +650,8 @@ bool MFile::ReadLine(MString& String)
 
 bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
 {
+  if (IsGood() == false) return false;
+  
   //! Read one line
   if (m_WasZipped == true) {
     for (unsigned int i = 0; i < Size; ++i) {

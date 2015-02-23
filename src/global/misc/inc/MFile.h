@@ -89,14 +89,14 @@ class MFile
   virtual void Flush();
  
   
-  //! Get one character
-  virtual void Get(char& c);
-  //! Get one float
-  virtual void Get(float& f);
+  //! Get one character - returns false if before the read IsGood() would return false
+  virtual bool Get(char& c);
+  //! Get one float - returns false if before the read IsGood() would return false
+  virtual bool Get(float& f);
 
-  //! Read one line the MEGAlib way
+  //! Read one line the MEGAlib way - returns false if before the read IsGood() would return false
   virtual bool ReadLine(MString& String);
-  //! Read one line the C way
+  //! Read one line the C way - returns false if before the read IsGood() would return false
   virtual bool ReadLine(char* String, streamsize Size, char Delimeter);
 
   //! Set the file name - this does not open any file and you have to give the file name when you call Open()
