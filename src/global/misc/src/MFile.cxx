@@ -565,7 +565,8 @@ bool MFile::Get(char& c)
     }
     c = (char) i;
   } else {
-    if (m_File.get(c) == false) return false;
+    m_File.get(c);
+    if (m_File.good() == false) return false;
   }
   
   return true;
@@ -599,7 +600,7 @@ bool MFile::Get(float& f)
     f = atof(temp.c_str());
   } else {
     m_File>>f;
-    if (m_File == false) return false;
+    if (m_File.good() == false) return false;
   }
   
   return true;
