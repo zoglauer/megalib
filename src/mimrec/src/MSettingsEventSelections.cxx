@@ -414,7 +414,7 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
       if ((cNode = bNode->GetNode("UsePointSource")) != 0) {
         m_SourceUsePointSource = cNode->GetValueAsBoolean();
       }
-      if ((cNode = bNode->GetNode("UseCoordinates")) != 0) {
+      if ((cNode = bNode->GetNode("Coordinates")) != 0) {
         m_SourceCoordinates = cNode->GetValueAsInt();
       }
       if ((cNode = bNode->GetNode("Phi")) != 0) {
