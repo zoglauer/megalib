@@ -54,6 +54,8 @@ MREAMStartInformation::MREAMStartInformation() : MREAM()
 
   m_Position = MVector(0.0, 0.0, 0.0);
   m_Direction = MVector(0.0, 0.0, 0.0);
+  m_Polarization = MVector(0.0, 0.0, 0.0);
+  m_Energy = 0.0;
 }
 
 
@@ -68,6 +70,8 @@ MREAMStartInformation::MREAMStartInformation(const MREAMStartInformation& REAM)
 
   m_Position = REAM.m_Position;
   m_Direction = REAM.m_Direction;
+  m_Polarization = REAM.m_Polarization;
+  m_Energy = REAM.m_Energy;
 }
 
 

@@ -255,14 +255,15 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
       // This information is only transfered during hacks --- no guarantee that it still works
       // We parse the IA information (if present) and transfer the position and direction of the first hit 
       // as OI information to the event
+      
       /*
       if (Line[0] == 'I' && Line[1] == 'A') {
         if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
-          double x, y, z, dx, dy, dz;
-          if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*lf;%lf;%lf;%lf;%*d;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*d;%lf;%lf;%lf;%*lf;%*lf;%*lf;%*lf",
-                     &x, &y, &z, &dx, &dy, &dz) == 6) {
+          double x, y, z, dx, dy, dz, px, py, pz, e;
+          if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*lf;%lf;%lf;%lf;%*d;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+                     &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
             ostringstream out;
-            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<endl;
+            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
             Line = out.str().c_str();
           }
         }

@@ -165,11 +165,15 @@ class MPhysicalEvent
   MString GetBadString() const { return m_BadString; }
 
   //! Set the OI information
-  void SetOIInformation(const MVector Position, const MVector Direction) { m_OIPosition = Position; m_OIDirection = Direction; }
+  void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
   //! Get the OI position information
   MVector GetOIPosition() const { return m_OIPosition; }
   //! Get the OI direction information
   MVector GetOIDirection() const { return m_OIDirection; }
+  //! Get the OI polarization information
+  MVector GetOIPolarization() const { return m_OIPolarization; }
+  //! Get the OI energy information
+  double GetOIEnergy() const { return m_OIEnergy; }
 
   virtual MString ToString() const;
 
@@ -246,6 +250,10 @@ class MPhysicalEvent
   MVector m_OIPosition;
   //! OI Direction (the meaning is a secret...)
   MVector m_OIDirection;
+  //! OI Polarization (the meaning is a secret...)
+  MVector m_OIPolarization;
+  //! OI energy (the meaning is a secret...)
+  double m_OIEnergy;
 
   //! Store the read lines for delayed parsing
   vector<string> m_Lines; // string fatser than MString, vector faster than list

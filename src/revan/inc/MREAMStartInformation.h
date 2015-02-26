@@ -53,14 +53,22 @@ class MREAMStartInformation : public MREAM
   virtual MString ToString(int Level = 0);
 
 
-  //! Set OD theta (degree)
+  //! Set original position
   void SetPosition(const MVector Position) { m_Position = Position; }
-  //! Set OD phi (degree)
+  //! Set original direction
   void SetDirection(const MVector Direction) { m_Direction = Direction; }
-  //! Return OD theta (degree)
+  //! Set original polarization
+  void SetPolarization(const MVector Polarization) { m_Polarization = Polarization; }
+  //! Set original energy
+  void SetEnergy(const double Energy) { m_Energy = Energy; }
+  //! Return original position
   MVector GetPosition() const { return m_Position; }
-  //! Return OD phi (degree)
+  //! Return original position
+  MVector GetPolarization() const { return m_Polarization; }
+  //! Return original direction 
   MVector GetDirection() const { return m_Direction; }
+  //! Return original energy 
+  double GetEnergy() const { return m_Energy; }
 
   // protected methods:
  protected:
@@ -77,7 +85,10 @@ class MREAMStartInformation : public MREAM
   MVector m_Position;
   //! Original direction
   MVector m_Direction;
-
+  //! Original polarization
+  MVector m_Polarization;
+  //! Original energy
+  double m_Energy;
 
 #ifdef ___CINT___
  public:

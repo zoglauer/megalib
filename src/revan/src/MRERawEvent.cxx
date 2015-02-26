@@ -1141,7 +1141,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
   for (unsigned int m = 0; m < m_Measurements.size(); ++m) {
     if (m_Measurements[m]->GetType() == MREAM::c_StartInformation) {
       MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
-      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection());
+      m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
     }
 
   }
@@ -1756,10 +1756,16 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     double dx = 0.0;
     double dy = 0.0;
     double dz = 0.0;
-    if (sscanf(Line, "OI %lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz) == 6) {
+    double px = 0.0;
+    double py = 0.0;
+    double pz = 0.0;
+    double e = 0.0;
+    if (sscanf(Line, "OI %lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf", &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
       MREAMStartInformation* Start = new MREAMStartInformation();
       Start->SetPosition(MVector(x, y, z));
       Start->SetDirection(MVector(dx, dy, dz));
+      Start->SetPolarization(MVector(px, py, pz));
+      Start->SetEnergy(e);
       m_Measurements.push_back(Start);
     } else {
       Ret = 1;
