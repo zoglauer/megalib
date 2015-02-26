@@ -377,6 +377,8 @@ void MPhysicalEvent::Reset()
 
   m_OIPosition = g_VectorNotDefined;
   m_OIDirection = g_VectorNotDefined;
+  m_OIPolarization = g_VectorNotDefined;
+  m_OIEnergy = g_DoubleNotDefined;
 
   m_Lines.clear();
 }
@@ -487,8 +489,8 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
     if (m_Decay == true) {
       S<<"DC"<<endl;
     }
-    if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined) {
-      S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<endl;
+    if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
+      S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
     }
     
     File.Write(S);
@@ -716,9 +718,13 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
       m_OIPosition[2] = strtod(p, &p);
       m_OIDirection[0] = strtod(p, &p);
       m_OIDirection[1] = strtod(p, &p);
-      m_OIDirection[2] = strtod(p, NULL);
+      m_OIDirection[2] = strtod(p, &p);
+      m_OIPolarization[0] = strtod(p, &p);
+      m_OIPolarization[1] = strtod(p, &p);
+      m_OIPolarization[2] = strtod(p, &p);
+      m_OIEnergy = strtod(p, NULL);
     } else {
-      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2]) != 6) {
+      if (sscanf(Line, "OI %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &m_OIPosition[0], &m_OIPosition[1], &m_OIPosition[2], &m_OIDirection[0], &m_OIDirection[1], &m_OIDirection[2], &m_OIPolarization[0], &m_OIPolarization[1], &m_OIPolarization[2], &m_OIEnergy) != 10) {
         Ret = 1;
       }
     }
