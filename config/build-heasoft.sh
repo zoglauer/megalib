@@ -220,11 +220,11 @@ if [ "$?" != "0" ]; then
   echo "       Check the file "`pwd`"/build.log"
   exit 1
 fi
-ERRORS=`grep -v "char \*\*\*" build.log | grep "\*\*\*"`
+ERRORS=`grep -v "char \*\*\*" build.log | grep "\ \*\*\*\ "`
 if [ "${ERRORS}" == "" ]; then
   echo "Installing ..."
   make -j1 install > install.log 2>&1 
-  ERRORS=`grep -v "char \*\*\*" install.log | grep "\*\*\*"`
+  ERRORS=`grep -v "char \*\*\*" install.log | grep "\ \*\*\*\ "`
   if [ "${ERRORS}" != "" ]; then
     echo "ERROR: Errors occured during the installation. Check your install.log"
     echo "       Check the file "`pwd`"/install.log"
