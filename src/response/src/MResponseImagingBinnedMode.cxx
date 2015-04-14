@@ -183,7 +183,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
             EnergyElectron = Compton->Ee();
             EnergyGamma = Compton->Eg();
 
-            cout<<Phi<<":"<<Chi<<":"<<Psi<<endl;
+            //cout<<Phi<<":"<<Chi<<":"<<Psi<<endl;
 
             // Now get the ideal origin:
             if (m_SiEvent->GetNIAs() > 0) {
@@ -195,7 +195,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
               EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
               PhiGeo = IdealOriginDir.Angle(Dg)*c_Deg;
 
-              cout<<"PhiGeo: "<<PhiGeo<<endl;
+              //cout<<"PhiGeo: "<<PhiGeo<<endl;
               
               if (cos(PhiGeo*c_Rad)*EnergyInitial-EnergyInitial-c_E0 == 0) {
                 continue;
