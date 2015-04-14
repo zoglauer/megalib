@@ -73,9 +73,9 @@ class MResponseMatrixO1 : public MResponseMatrix
   void SetAxisNames(MString xName);
   MString GetAxisName(unsigned int order = 1) const;
 
-  void SetBinContent(unsigned int x, float Value = 1);
-  void Set(float x, float Value = 1);
-  void Add(float x, float Value = 1);
+  void SetBinContent(unsigned int x1, float Value = 1);
+  void Set(float x1, float Value = 1);
+  void Add(float x1, float Value = 1);
 
   virtual unsigned long GetNBins() const;
 
@@ -91,8 +91,8 @@ class MResponseMatrixO1 : public MResponseMatrix
 
   virtual float GetBinContent(unsigned int x1) const;
   virtual float GetBinArea(unsigned int x1) const;
-  virtual float Get(float x) const;
-  virtual float GetInterpolated(float x, bool DoExtrapolate = false) const;
+  virtual float Get(float x1) const;
+  virtual float GetInterpolated(float x1, bool DoExtrapolate = false) const;
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
