@@ -64,7 +64,7 @@ class MResponseBase
   void SetSaveAfterNumberOfEvents(const unsigned int Number) { m_SaveAfter = Number; }
 
   //! Compress the final response files
-  void SetCompression(const bool Compress) { m_Compress = Compress; if (m_Compress == true) m_Suffix = ".rsp.gz"; else m_Suffix = "rsp"; }
+  void SetCompression(const bool Compress) { m_Compress = Compress; if (m_Compress == true) m_Suffix = ".rsp.gz"; else m_Suffix = ".rsp"; }
 
   //! Do all the response creation
   virtual bool CreateResponse() = 0;

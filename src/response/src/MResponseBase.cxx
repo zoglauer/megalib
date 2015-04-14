@@ -83,6 +83,8 @@ MResponseBase::MResponseBase()
   m_ReGeometry = 0;
 
   m_Interrupt = false;
+  
+  m_Suffix = ".rsp";
 
   m_OnlyINITRequired = false;
 
