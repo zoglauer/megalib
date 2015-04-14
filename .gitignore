@@ -36,6 +36,11 @@ StandAlone
 Clusterizer
 ConvertPhantom
 Shells
+MDetectorEffectsEngineCOSI
+SimpleBinnedComptonImaging
+ThresholdDeterminator
+nuclearizer
+pnGraphs
 SiStack
 
 
