@@ -1141,7 +1141,9 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
                                                 values[2], axes[2])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM3D1C", m_Name + "_RM3D1C", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
+      Canvas->SetTitle(m_Name + "_RM3D1C");
+      //Canvas->SetCanvasSize(600, 600);
       Canvas->cd();
       Hist->Draw();
       Canvas->Update();
@@ -1156,7 +1158,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
       for (unsigned int i = 0; i <= GetAxisBins(axes[1]); ++i) {
         yBins[i] = GetAxisContent(i, axes[1]);
       }
-      Hist = new TH2D(m_Name+"_RM3D2", m_Name+"_RM3D2", GetAxisBins(axes[0]), xBins, GetAxisBins(axes[1]), yBins);
+      Hist = new TH2D(m_Name + "_RM3D2", m_Name + "_RM3D2", GetAxisBins(axes[0]), xBins, GetAxisBins(axes[1]), yBins);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(GetAxisName(axes[0]));
@@ -1183,7 +1185,9 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas(m_Name+"_RM3D2C", m_Name+"_RM3D2C", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
+      Canvas->SetTitle(m_Name + "_RM3D2C");
+      //Canvas->SetCanvasSize(600, 600);
       Canvas->cd();
       Hist->Draw("colz");
       Canvas->Update();
@@ -1201,7 +1205,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
       for (unsigned int i = 0; i <= GetAxisBins(axes[2]); ++i) {
         x3Bins[i] = GetAxisContent(i, axes[2]);
       }
-      Hist = new TH3D(m_Name+"_RM3D3", m_Name+"_RM3D3", 
+      Hist = new TH3D(m_Name + "_RM3D3", m_Name + "_RM3D3", 
                       GetAxisBins(axes[0]), x1Bins, 
                       GetAxisBins(axes[1]), x2Bins, 
                       GetAxisBins(axes[2]), x3Bins);
@@ -1234,7 +1238,9 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
 
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM3D3C", m_Name + "_RM3D3C", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
+      Canvas->SetTitle(m_Name + "_RM3D3C");
+      //Canvas->SetCanvasSize(600, 600);
       Canvas->cd();
       Hist->Draw("box");
       Canvas->Update();

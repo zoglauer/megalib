@@ -1037,7 +1037,7 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
       for (unsigned int i = 0; i <= GetAxisBins(axes[0]); ++i) {
         Bins[i] = GetAxisContent(i, axes[0]);
       }
-      Hist = new TH1D(m_Name + "_RM1", m_Name + "_RM1", GetAxisBins(axes[0]), Bins);
+      Hist = new TH1D(m_Name + "_RM2D1", m_Name + "_RM2D1", GetAxisBins(axes[0]), Bins);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(GetAxisName(axes[0]));
@@ -1057,7 +1057,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         Hist->SetBinContent(i1+1, GetBinContent(i1, axes[0], values[1], axes[1])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM2C", m_Name + "_RM2C", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
+      Canvas->SetTitle(m_Name + "_RM2D1C");
       Canvas->cd();
       Hist->Draw();
       Canvas->Update();
@@ -1072,7 +1073,7 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
       for (unsigned int i = 0; i <= GetAxisBins(axes[1]); ++i) {
         yBins[i] = GetAxisContent(i, axes[1]);
       }
-      Hist = new TH2D(m_Name+"_RM2", m_Name+"_RM2", GetAxisBins(axes[0]), xBins, GetAxisBins(axes[1]), yBins);
+      Hist = new TH2D(m_Name+"_RM2D2", m_Name+"_RMD22", GetAxisBins(axes[0]), xBins, GetAxisBins(axes[1]), yBins);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(GetAxisName(axes[0]));
@@ -1093,7 +1094,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas(m_Name+"_RM2C", m_Name+"_RM2C", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
+      Canvas->SetTitle(m_Name + "_RM2D2C");
       Canvas->cd();
       Hist->Draw("colz");
       Canvas->Update();

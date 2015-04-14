@@ -588,7 +588,7 @@ float MResponseMatrixO1::GetInterpolated(float x1, bool DoExtrapolate) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO1::Get(float x) const
+float MResponseMatrixO1::Get(float x1) const
 {
   // Return the array-data according to value x 
 
@@ -596,7 +596,7 @@ float MResponseMatrixO1::Get(float x) const
     return 0;
   } 
 
-  int Position = FindBin(m_AxisO1, x);
+  int Position = FindBin(m_AxisO1, x1);
 
   if (Position < 0) {
     Position = 0;
@@ -831,7 +831,7 @@ void MResponseMatrixO1::Show(bool Normalize)
     for (unsigned int i = 0; i <= GetAxisBins(1); ++i) {
       Bins[i] = GetAxisContent(i);
     }
-    Hist = new TH1D(m_Name + "_RM1", m_Name + "_RM1", GetAxisBins(1), Bins);
+    Hist = new TH1D("", m_Name + "_RM1", GetAxisBins(1), Bins);
     Hist->SetStats(true);
     Hist->SetContour(50);
     Hist->SetXTitle(GetAxisName(1));
@@ -851,7 +851,7 @@ void MResponseMatrixO1::Show(bool Normalize)
       Hist->SetBinContent(i1+1, GetBinContent(i1)*Norm);
     }
     
-    TCanvas* Canvas = new TCanvas(m_Name + "_RM1C", m_Name + "_RM1C", 0, 0, 600, 600);
+    TCanvas* Canvas = new TCanvas("", m_Name + "_RM1C", 0, 0, 600, 600);
     Canvas->cd();
     Hist->Draw();
     Canvas->Update();
