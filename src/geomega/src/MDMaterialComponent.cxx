@@ -173,9 +173,13 @@ void MDMaterialComponent::SetWeight(double Weight)
   // Set the number of atoms or the fractional mass of this component
   // What it is is controled via the type
 
-  massert(Weight > 0);
-
-  m_Weight = Weight;
+  if (Weight <= 0) {
+    mout<<"   ***  Error  *** "<<endl;
+    mout<<"You have a component with a non-positive weighting factor!"<<endl;
+    m_Weight = 0;
+  } else {
+    m_Weight = Weight;
+  }
 }
 
 
