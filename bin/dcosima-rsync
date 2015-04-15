@@ -62,7 +62,7 @@ done
 
 # Provide feed back and perform error checks:
 echo ""
-echo "Chosen options:"
+echo "dcosima-rsync: Chosen options:"
 
 if [ "${DIRECTORY}" == "" ]; then
   echo " "
@@ -78,10 +78,17 @@ echo " * Directory: ${DIRECTORY}"
 
 cd ${DIRECTORY}
 
+TOTALWAIT=0
 while true; do
   # Sleep .....
   echo "dcosima-rsync: Waiting for 20 seconds for more data to be simulated..." 
   sleep 20
+  TOTALWAIT=$((TOTALWAIT + 20))
+  
+  if [ ! -f dcosima-rsync.cfg ]; then
+    echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!"
+    exit 
+  fi
   
   # Parse the configuration file
   RSYNCS=( )
@@ -96,9 +103,9 @@ while true; do
   MODIFIED=0
   ALLINCLUDED=0
   SUM=0
-  SIMFILECOUNT=`ls -1 *.sim 2>/dev/null | wc -l`
+  SIMFILECOUNT=`ls -1 *.sim* 2>/dev/null | wc -l`
   if [ ${SIMFILECOUNT} != 0 ]; then
-    SUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+    SUM=`du -cb *.sim* | tail -n 1 | awk '{ print $1 }'`
   fi
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
     #echo "psync: Checking ${RSYNCS[$m]}"
@@ -113,11 +120,19 @@ while true; do
     fi  
   done  
 
-  NEWSUM=`du -cb *.sim | tail -n 1 | awk '{ print $1 }'`
+  NEWSUM=`du -cb *.sim* | tail -n 1 | awk '{ print $1 }'`
   
   if [ "${NEWSUM}" != "${SUM}" ]; then
     echo "dcosima-rsync: Downloaded more data, since the total file size before (${SUM} Bytes) and after (${NEWSUM} Bytes) differ."
     MODIFIED=1
+  elif [ "${NEWSUM}" == "0" ]; then
+    if [ "${TOTALWAIT}" -gt "600" ]; then
+      echo "dcosima-rsync: Did not get any data for ${TOTALWAIT} seconds! Terminating!"
+      exit
+    else
+      echo "dcosima-rsync: Did not yet get any data... waiting..."
+      MODIFIED=1
+    fi
   fi
     
   if [ ${MODIFIED} -eq 0 ] && [ ${ALLINCLUDED} -eq 1 ]; then
