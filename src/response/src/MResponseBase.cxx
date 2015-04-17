@@ -186,11 +186,11 @@ bool MResponseBase::InitializeNextMatchingEvent()
   bool Restart = true;
   while (m_RevanEventID != m_SivanEventID || TryNextEvent == true) {
     if (m_SivanEventID > m_MaxNEvents) return false;
-
-    //cout<<"Response: Levels: "<<m_RevanLevel<<":"<<m_SivanLevel<<":"<<m_RevanEventID<<":"<<m_SivanEventID<<endl;
+    
+    //cout<<"Response: Levels: r="<<m_RevanLevel<<" s="<<m_SivanLevel<<" IDs: r="<<m_RevanEventID<<" s="<<m_SivanEventID<<endl;
     
     
-    if (m_RevanLevel < m_SivanLevel || m_RevanEventID < m_SivanEventID || Restart == true) {
+    if (m_RevanLevel < m_SivanLevel || m_RevanEventID < m_SivanEventID || Restart == true || TryNextEvent == true) {
       Restart = false;
       // Read revan
       //mout<<"Response: Searching revan event..."<<endl;
@@ -281,7 +281,7 @@ bool MResponseBase::InitializeNextMatchingEvent()
     }
   }
   
-  // mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
+  //mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
   
   return MoreEvents;  
 }
