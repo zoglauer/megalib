@@ -399,7 +399,7 @@ bool MREHit::RetrieveResolutions(MDGeometryQuest* Geometry)
 
   // Check if we do have a resonable volume sequence:
   if (V->GetDetector() == 0) {
-    merr<<"Found volume sequence with out detector!"<<show;
+    merr<<"Found volume sequence without detector!"<<show;
     delete V;
     return false;
   } else {
