@@ -79,6 +79,8 @@ MModule::MModule()
   m_IsThreadRunning = false;
   
   m_NAnalyzedEvents = 0;
+  
+  m_Timer.Clear();
 }
 
 
@@ -184,6 +186,7 @@ bool MModule::Initialize()
   m_IsOK = true;
   m_IsFinished = false;
   m_NAnalyzedEvents = 0;
+  m_Timer.Clear();
   
   for (auto E: m_Expos) {
     E->Reset(); 
@@ -235,6 +238,8 @@ bool MModule::DoSingleAnalysis()
   if (IsReady() == false) return false;
   if (IsOK() == false) return false;
   
+  m_Timer.Continue();
+  
   MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list
   if (m_IsStartModule == false) { 
@@ -265,8 +270,10 @@ bool MModule::DoSingleAnalysis()
       m_OutgoingEvents.push_back(E);
       m_OutgoingEventsMutex.UnLock();
     }
+    m_Timer.Pause();
     return true;
   } else {
+    m_Timer.Pause();
     return false;
   }
 }

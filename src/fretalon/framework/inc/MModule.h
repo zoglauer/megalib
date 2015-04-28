@@ -31,6 +31,7 @@ using namespace std;
 #include "MGUIExpo.h"
 #include "MAssembly.h"
 #include "MReadOutAssembly.h"
+#include "MTimer.h"
 
 // Forward declarations:
 
@@ -153,6 +154,10 @@ class MModule
   //! Return if the module has finished all possible analyses
   virtual bool IsFinished() { return m_IsFinished; }
 
+  //! Return the processing time in seconds - thread safe!
+  double GetProcessingTime() { return m_Timer.GetElapsed(); } 
+  
+  
   // protected methods:
  protected:
   //! Set the name of this module
@@ -238,7 +243,8 @@ class MModule
   
   // private members:
  private:
-
+  //! The internal analysis timer
+  MTimer m_Timer;
 
 
 

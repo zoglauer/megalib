@@ -733,9 +733,6 @@ bool MSupervisor::Analyze()
     m_IsAnalysisRunning = false;
     return false;
   }
-
-  // Create a bunch of individual timers
-  vector<MTimer> ModuleTimers(GetNModules(), MTimer(false));
   
   
   // Initialize the modules:
@@ -749,11 +746,9 @@ bool MSupervisor::Analyze()
   }
   
   for (unsigned int m = 0; m < GetNModules(); ++m) {
-    ModuleTimers[m].Continue();
     GetModule(m)->SetInterrupt(false);
     GetModule(m)->UseMultiThreading(m_UseMultiThreading);
     if (GetModule(m)->Initialize() == false) {
-      ModuleTimers[m].Pause();
       if (m_Interrupt == true) {
         break;
       }
@@ -761,7 +756,6 @@ bool MSupervisor::Analyze()
       m_IsAnalysisRunning = false;
       return false;
     }
-    ModuleTimers[m].Pause();
   }
   
   
@@ -834,7 +828,6 @@ bool MSupervisor::Analyze()
     
     HasMoreEvents = false;
     for (unsigned int m = 0; m < GetNModules(); ++m) {
-      ModuleTimers[m].Continue();
       
       MModule* M = GetModule(m);
 
@@ -867,10 +860,9 @@ bool MSupervisor::Analyze()
         mout<<"Module \""<<GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
         DoShutdown = true;
       }
-      ModuleTimers[m].Pause();
       
       m_ExpoSupervisor->SetProcessedEvents(m, M->GetNumberOfAnalyzedEvents());
-      m_ExpoSupervisor->SetProcessingTime(m, ModuleTimers[m].GetElapsed());
+      m_ExpoSupervisor->SetProcessingTime(m, M->GetProcessingTime());
     }
     
     if (DoShutdown == true && HasMoreEvents == false && CurrentShutdownModule == GetNModules()) break;
@@ -894,9 +886,7 @@ bool MSupervisor::Analyze()
   
   // Finalize the modules:
   for (unsigned int m = 0; m < GetNModules(); ++m) {
-    ModuleTimers[m].Continue();
     GetModule(m)->Finalize();
-    ModuleTimers[m].Pause();
   }
 
   m_ExpoCombinedViewer->OnUpdate();
@@ -912,7 +902,7 @@ bool MSupervisor::Analyze()
   //if (g_Verbosity >= c_Error) {
     cout<<"Timings: "<<endl;
     for (unsigned int m = 0; m < GetNModules(); ++m) {
-      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<GetModule(m)->GetName()<<" and analyzed "<<GetModule(m)->GetNumberOfAnalyzedEvents()<<" events."<<endl;
+      cout<<"Spent "<<GetModule(m)->GetProcessingTime()<<" sec in module "<<GetModule(m)->GetName()<<" and analyzed "<<GetModule(m)->GetNumberOfAnalyzedEvents()<<" events."<<endl;
     }
   //}
   
