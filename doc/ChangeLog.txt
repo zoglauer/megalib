@@ -8,6 +8,9 @@ Version 2.29/2.30
 
 *** IMPORTANT - PLEASE READ:
 
++ Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new
+  MRotation class
+  --> If something seems wrong with your rotations email me
 + Partial rewrite of the MEGAlib file I/O classes to enable transparent 
   handling of gzip'ed files
   --> Since I had to modify the whole I/O chain (including the interfaces), 
@@ -28,6 +31,7 @@ General:
   compiler should do
 + Capability to change font size for Retina displays
 + Capability to read and write gzip'ed files via zlib library
++ MTimer is now thread reentrant
 
 Cosima:
 + Support for Geant4 10.0 (enables meta-stable states, but multi-threading 
@@ -47,7 +51,12 @@ Fretalon:
 Geomega:
 + Switch to ROOT's newer TGeo* geometry front end
 + Addition of boolean shapes generated via intersection, union, and subtraction
-
++ Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new MRotation 
+  class
+  
+Reponse:
++ Improved binned Compton imaging response creation
+  
 Revan:
 
 Mimrec:

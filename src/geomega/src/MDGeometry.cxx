@@ -3447,11 +3447,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       } else {
         // Determine the correct rotation and position of this volume, to keep all positions correct:
         MVector Position(0, 0, 0);
-        TMatrixD Rotation;
-        Rotation.ResizeTo(3,3);
-        Rotation(0,0) = 1;
-        Rotation(1,1) = 1;
-        Rotation(2,2) = 1;
+        MRotation Rotation;
         
         MDVolume* Volume = SV;
         while (Volume->GetMother() != 0) {

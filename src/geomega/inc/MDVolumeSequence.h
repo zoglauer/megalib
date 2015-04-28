@@ -18,11 +18,11 @@
 
 // ROOT libs:
 #include <MString.h>
-#include <TMatrixD.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MVector.h"
+#include "MRotation.h"
 #include "MDGridPoint.h"
 
 // Standard libs:
@@ -114,9 +114,9 @@ class MDVolumeSequence
   MVector GetPositionInFirstVolume(const MVector& Position, MDVolume* Volume) const;
 
   //! Return the rotation of the given volume IN the world volume
-  TMatrixD GetRotationInFirstVolume(MDVolume* Volume) const;
+  MRotation GetRotationInFirstVolume(MDVolume* Volume) const;
   //! Return the TOTAL rotation world volume -> deepest volume
-  TMatrixD GetRotation();
+  MRotation GetRotation();
 
   //! Given a position in the world volume, rotate/translate into volume Volume
   //! It is not mandatory if the position is really inside - only the rotations/translations are executed:
@@ -166,7 +166,7 @@ class MDVolumeSequence
   //! True if we have a valid rotation - the rotation is only calculated upon request to save computation time
   bool m_ValidRotation;
   //! The rotation of the deepest volume relative to the world volume
-  TMatrixD m_RotMatrix; 
+  MRotation m_RotMatrix; 
 
 
 #ifdef ___CINT___

@@ -19,7 +19,6 @@
 // ROOT libs:
 #include "TObjArray.h"
 #include "TRotMatrix.h"
-#include "TMatrixD.h"
 #include "TGeoManager.h"
 #include "TGeoVolume.h"
 
@@ -28,6 +27,7 @@
 #include "MDShape.h"
 #include "MDMaterial.h"
 #include "MVector.h"
+#include "MRotation.h"
 #include "MString.h"
 
 // Standard libs::
@@ -88,15 +88,14 @@ class MDVolume
   MVector GetPosition();
 
   void SetRotation(double x, double y, double z);
-  void SetRotation(TMatrixD RotationMatrix, int RotID);
-  void SetRotation(TMatrixD Rotation);
+  void SetRotation(MRotation Rotation, int RotID);
+  void SetRotation(MRotation Rotation);
   void SetRotation(double theta1, double phi1, 
                    double theta2, double phi2, 
                    double theta3, double phi3);
-  // TRotMatrix* GetRotation();
-  TMatrixD GetRotationMatrix() const;
-  TMatrixD GetInvRotationMatrix() const;
-  TMatrixD GetInverseRotationMatrix() const { return GetInvRotationMatrix(); }
+  MRotation GetRotationMatrix() const;
+  MRotation GetInvRotationMatrix() const;
+  MRotation GetInverseRotationMatrix() const { return GetInvRotationMatrix(); }
   bool IsRotated() const;
   int GetRotationID() const;
 
@@ -271,15 +270,15 @@ class MDVolume
   MVector m_Position;         // Position of the volume in the mother volume
 
   bool m_IsRotated;          // True if this volume is rotated
-  TRotMatrix* m_Rotation;      // Rotation as RotMatrix for display
-  TMatrixD m_RotMatrix;         // Rotation as matrix for computaions
-  TMatrixD m_InvertedRotMatrix; // Inverted rotation as matrix for computaions
+
+  MRotation m_RotMatrix;         // Rotation as matrix for computaions
+  MRotation m_InvertedRotMatrix; // Inverted rotation as matrix for computaions
   double m_Theta1, m_Phi1;   // Rotation of the new x-Axis in MCS (Mother Coo)
   double m_Theta2, m_Phi2;   // Rotation of the new y-Axis in MCS
   double m_Theta3, m_Phi3;   // Rotation of the new z-Axis in MCS
 
 
-  TMatrixD m_WorldRotation;    // Rotation matrix, for rotation a point in world to this volume
+  MRotation m_WorldRotation;    // Rotation matrix, for rotation a point in world to this volume
   MVector m_WorldTranslation;  // Translation vector, for translation a point in world coordinates into this volume
 
   int m_Visibility;          // 2: volume is always visible, 1: volume is visible, 0: volume is not visible

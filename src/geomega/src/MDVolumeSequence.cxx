@@ -33,7 +33,6 @@
 using namespace std;
 
 // ROOT libs:
-#include <TMatrixD.h>
 
 // MEGAlib libs:
 #include "MAssert.h"
@@ -102,7 +101,6 @@ MDVolumeSequence::MDVolumeSequence(const MDVolumeSequence& V)
 
   m_ValidRotation = V.m_ValidRotation;
 
-  m_RotMatrix.ResizeTo(3,3);
   m_RotMatrix = V.m_RotMatrix; 
 }
 
@@ -139,10 +137,7 @@ void MDVolumeSequence::Join(MDVolumeSequence VS)
   
   // Invalidate the rotation --- it will be regenerated next time:
   m_ValidRotation = false;
-  m_RotMatrix.ResizeTo(3,3);
-  m_RotMatrix(0,0) = 1;
-  m_RotMatrix(1,1) = 1;
-  m_RotMatrix(2,2) = 1;    
+  m_RotMatrix.SetIdentity();    
   
   if (m_Detector == 0 || VS.m_Detector == 0 || m_Detector->GetName() != VS.m_Detector->GetName()) {
     m_Detector = 0;
@@ -185,10 +180,7 @@ void MDVolumeSequence::Reset()
   m_PositionInSensitiveVolume = g_VectorNotDefined;
 
   m_ValidRotation = false;
-  m_RotMatrix.ResizeTo(3,3);
-  m_RotMatrix(0,0) = 1;
-  m_RotMatrix(1,1) = 1;
-  m_RotMatrix(2,2) = 1;
+  m_RotMatrix.SetIdentity();
 
   m_Volumes.clear();
   m_Positions.clear();
@@ -263,7 +255,7 @@ MDVolume* MDVolumeSequence::GetDeepestVolume() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TMatrixD MDVolumeSequence::GetRotation()
+MRotation MDVolumeSequence::GetRotation()
 {
   // Return the rotation of the deepest volume relative to the world volume
 
@@ -564,18 +556,13 @@ MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-TMatrixD MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume) const
+MRotation MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume) const
 {
   // Return the rotation of a volume in the first (the world) volume
 
-  mimp<<"Untested"<<endl;
+  mout<<"Untested"<<endl;
 
-  TMatrixD RotMatrix;
-  RotMatrix.ResizeTo(3,3);
-  RotMatrix(0,0) = 1;
-  RotMatrix(1,1) = 1;
-  RotMatrix(2,2) = 1;
-
+  MRotation RotMatrix;
 
   // Find the volume...
   unsigned int p = numeric_limits<unsigned int>::max();

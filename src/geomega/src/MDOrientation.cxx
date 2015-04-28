@@ -50,14 +50,8 @@ MDOrientation::MDOrientation(const MString Name): m_Name(Name)
 {
   // Construct an instance of MDOrientation
   
-  m_RotMatrix.ResizeTo(3,3);
-  m_RotMatrix(0,0) = 1;
-  m_RotMatrix(1,1) = 1;
-  m_RotMatrix(2,2) = 1;
-  m_InvertedRotMatrix.ResizeTo(3,3);
-  m_InvertedRotMatrix(0,0) = 1;
-  m_InvertedRotMatrix(1,1) = 1;
-  m_InvertedRotMatrix(2,2) = 1;
+  m_RotMatrix.SetIdentity();
+  m_InvertedRotMatrix.SetIdentity();
   m_Theta1 = 90.0;
   m_Phi1 = 0.0;
   m_Theta2 = 90.0;
@@ -165,18 +159,18 @@ void MDOrientation::SetRotation(double theta1, double phi1,
 
 
   // Set the columns of the rotation matrix: correct!
-  TMatrixD Matrix(3, 3);
-  Matrix(0, 0) = xcolumn[0];
-  Matrix(1, 0) = ycolumn[0];
-  Matrix(2, 0) = zcolumn[0];
+  MRotation Matrix;
+  Matrix.SetXX(xcolumn[0]);
+  Matrix.SetXY(ycolumn[0]);
+  Matrix.SetXZ(zcolumn[0]);
 
-  Matrix(0, 1) = xcolumn[1];
-  Matrix(1, 1) = ycolumn[1];
-  Matrix(2, 1) = zcolumn[1];
+  Matrix.SetYX(xcolumn[1]);
+  Matrix.SetYY(ycolumn[1]);
+  Matrix.SetYZ(zcolumn[1]);
 
-  Matrix(0, 2) = xcolumn[2];
-  Matrix(1, 2) = ycolumn[2];
-  Matrix(2, 2) = zcolumn[2];
+  Matrix.SetZX(xcolumn[2]);
+  Matrix.SetZY(ycolumn[2]);
+  Matrix.SetZZ(zcolumn[2]);
 
 
   // We have to do some sanity checks, if the axis are orthogonal:
@@ -261,18 +255,18 @@ void MDOrientation::SetRotation(double x, double y, double z)
   ycolumn = MVector(0.,1.,0.);
   zcolumn = MVector(0.,0.,1.);
   
-  TMatrixD Matrix(3,3);
-  Matrix(0,0) =   cosz*cosy;
-  Matrix(1,0) = - sinz*cosx + cosz*siny*sinx;
-  Matrix(2,0) =   sinz*sinx + cosz*siny*cosx;
+  MRotation Matrix;
+  Matrix.SetXX(  cosz*cosy);
+  Matrix.SetXY(- sinz*cosx + cosz*siny*sinx);
+  Matrix.SetXZ(  sinz*sinx + cosz*siny*cosx);
  
-  Matrix(0,1) =   sinz*cosy;
-  Matrix(1,1) =   cosz*cosx + sinz*siny*sinx;
-  Matrix(2,1) = - cosz*sinx + sinz*siny*cosx;
+  Matrix.SetYX(  sinz*cosy);
+  Matrix.SetYY(  cosz*cosx + sinz*siny*sinx);
+  Matrix.SetYZ(- cosz*sinx + sinz*siny*cosx);
 
-  Matrix(0,2) = - siny;
-  Matrix(1,2) =   cosy*sinx;
-  Matrix(2,2) =   cosy*cosx;
+  Matrix.SetZX(- siny);
+  Matrix.SetZY(  cosy*sinx);
+  Matrix.SetZZ(  cosy*cosx);
 
   SetRotation(Matrix);
 }
@@ -287,18 +281,18 @@ void MDOrientation::SetRotation(double x11, double x21, double x31,
 {
   // Set the rotation x{row number}{column number}
 
-  TMatrixD Matrix(3, 3);
-  Matrix(0,0) = x11;
-  Matrix(1,0) = x21;
-  Matrix(2,0) = x31;
+  MRotation Matrix;
+  Matrix.SetXX(x11);
+  Matrix.SetXY(x21);
+  Matrix.SetXZ(x31);
  
-  Matrix(0,1) = x12;
-  Matrix(1,1) = x22;
-  Matrix(2,1) = x32;
+  Matrix.SetYX(x12);
+  Matrix.SetYY(x22);
+  Matrix.SetYZ(x32);
 
-  Matrix(0,2) = x13;
-  Matrix(1,2) = x23;
-  Matrix(2,2) = x33;
+  Matrix.SetZX(x13);
+  Matrix.SetZY(x23);
+  Matrix.SetZZ(x33);
 
   SetRotation(Matrix);
 }
@@ -307,7 +301,7 @@ void MDOrientation::SetRotation(double x11, double x21, double x31,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDOrientation::SetRotation(TMatrixD Rotation)
+void MDOrientation::SetRotation(MRotation Rotation)
 {
   // Set the rotation of this volume and handle all IDs
 
@@ -316,9 +310,6 @@ void MDOrientation::SetRotation(TMatrixD Rotation)
   xcolumn = MVector(1.,0.,0.);
   ycolumn = MVector(0.,1.,0.);
   zcolumn = MVector(0.,0.,1.);
-  
-  m_InvertedRotMatrix.ResizeTo(3,3);
-  m_RotMatrix.ResizeTo(3,3);
 
   // I never figuered out, why we have to invert it here...
   m_RotMatrix = Rotation.Invert();
@@ -349,7 +340,7 @@ void MDOrientation::SetRotation(TMatrixD Rotation)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDOrientation::SetRotation(TMatrixD RotationMatrix, int RotID)
+void MDOrientation::SetRotation(MRotation RotationMatrix, int RotID)
 {
   // Set the rotation of this volume as a rotation matrix
 
@@ -365,7 +356,7 @@ void MDOrientation::SetRotation(TMatrixD RotationMatrix, int RotID)
   ycolumn = MVector(0.,1.,0.);
   zcolumn = MVector(0.,0.,1.);
 
-  TMatrixD RM = RotationMatrix;
+  MRotation RM = RotationMatrix;
   RM.Invert();
 
   xcolumn = RM*xcolumn;

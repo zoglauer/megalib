@@ -22,11 +22,11 @@ using namespace std;
 
 // ROOT libs:
 #include "TRotMatrix.h"
-#include "TMatrixD.h"
 #include "TGeoMatrix.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MRotation.h"
 #include "MTokenizer.h"
 #include "MDDebugInfo.h"
 
@@ -72,19 +72,19 @@ class MDOrientation
   //! Set the rotation
   void SetRotation(double x, double y, double z);
   //! Set the rotation 
-  void SetRotation(TMatrixD Rotation);
+  void SetRotation(MRotation Rotation);
   //! Set the rotation x{row number}{column number}
   void SetRotation(double x11, double x21, double x31, double x12, double x22, double x32, double x13, double x23, double x33);
   //! Set the rotation
-  void SetRotation(TMatrixD RotationMatrix, int RotID);
+  void SetRotation(MRotation RotationMatrix, int RotID);
   //! Set the rotation in Euler notarion   
   void SetRotation(double theta1, double phi1, 
                    double theta2, double phi2, 
                    double theta3, double phi3);
   //! Return as a rotation matrix
-  TMatrixD GetRotationMatrix() const { return m_RotMatrix; }
+  MRotation GetRotationMatrix() const { return m_RotMatrix; }
   //! Return the inverted rotation matrix
-  TMatrixD GetInvRotationMatrix() const { return m_InvertedRotMatrix; }
+  MRotation GetInvRotationMatrix() const { return m_InvertedRotMatrix; }
   //! The if we have a rotation
   bool IsRotated() const;
 
@@ -111,9 +111,9 @@ class MDOrientation
   //! True is this volume is rotated
   bool m_IsRotated;
   //! The rotation matrix
-  TMatrixD m_RotMatrix;
+  MRotation m_RotMatrix;
   //! The inverted rotation matrix
-  TMatrixD m_InvertedRotMatrix;
+  MRotation m_InvertedRotMatrix;
   //! Rotation of the new x-Axis in MCS (Mother Coordinate System)
   double m_Theta1, m_Phi1;   
   //! Rotation of the new y-Axis in MCS

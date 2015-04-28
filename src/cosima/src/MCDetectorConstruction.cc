@@ -91,6 +91,7 @@ using namespace std;
 #include "MDDriftChamber.h"
 #include "MDVoxel3D.h"
 #include "MVector.h"
+#include "MRotation.h"
 
 // Root:
 #include "TRotMatrix.h"
@@ -216,7 +217,7 @@ G4RotationMatrix* MCDetectorConstruction::CreateRotation(MDVolume* Volume)
   yvcolumn = MVector(0.,1.,0.);
   zvcolumn = MVector(0.,0.,1.);
 
-  TMatrixD RotMatrix = Volume->GetRotationMatrix();
+  MRotation RotMatrix = Volume->GetRotationMatrix();
 
   xvcolumn = RotMatrix*xvcolumn;
   yvcolumn = RotMatrix*yvcolumn;
@@ -241,7 +242,7 @@ G4RotationMatrix* MCDetectorConstruction::CreateRotation(MDOrientation* Orientat
   yvcolumn = MVector(0.,1.,0.);
   zvcolumn = MVector(0.,0.,1.);
 
-  TMatrixD RotMatrix = Orientation->GetRotationMatrix();
+  MRotation RotMatrix = Orientation->GetRotationMatrix();
 
   xvcolumn = RotMatrix*xvcolumn;
   yvcolumn = RotMatrix*yvcolumn;
