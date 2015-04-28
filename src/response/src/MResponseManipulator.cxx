@@ -624,11 +624,15 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
   MFileResponse File;
   MResponseMatrix* First = 0;
   MResponseMatrix* Append = 0;
+  bool AnyZipped = false;
   for (int i = 0; i <= Files->LastIndex(); ++i) {
     MString Name = Files->At(i)->GetName();
-    cout<<"Checking "<<Name<<"... ";
-    if (Name.BeginsWith(Prefix) == true && Name.EndsWith(Type) == true) {
+    cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
+    if (Name.BeginsWith(Prefix) == true && (Name.EndsWith(Type) == true || Name.EndsWith(Type + ".gz") == true)) {
       cout<<"ok"<<endl;
+      if (Name.EndsWith(".gz") == true) {
+        AnyZipped = true;
+      }
       if (First == 0) {
         First = File.Read(Name);
         massert(First != 0);
@@ -701,7 +705,9 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
   }
 
   if (First != 0) {
-    First->Write(Prefix + Type, true);
+    MString NewName = Prefix + Type;
+    if (AnyZipped == true) NewName += ".gz";
+    First->Write(NewName, true);
     delete First;
   } else {
     mout<<"No File has been opened!"<<endl;
@@ -716,17 +722,19 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
  */
 bool MResponseManipulator::Join()
 {
-  FindFiles(m_Prefix, ".tc.goodbad.rsp");
-  FindFiles(m_Prefix, ".tc.start.good.rsp");
-  FindFiles(m_Prefix, ".tc.start.bad.rsp");
-  FindFiles(m_Prefix, ".tc.stop.good.rsp");
-  FindFiles(m_Prefix, ".tc.stop.bad.rsp");
-  FindFiles(m_Prefix, ".tc.compton.good.rsp");
-  FindFiles(m_Prefix, ".tc.compton.bad.rsp");
-  FindFiles(m_Prefix, ".tc.comptondistance.good.rsp");
-  FindFiles(m_Prefix, ".tc.comptondistance.bad.rsp");
-  FindFiles(m_Prefix, ".tc.photodistance.good.rsp");
-  FindFiles(m_Prefix, ".tc.photodistance.bad.rsp");
+  FindFiles(m_Prefix, ".mc.goodbad.rsp");
+  FindFiles(m_Prefix, ".mc.dual.good.rsp");
+  FindFiles(m_Prefix, ".mc.dual.bad.rsp");
+  FindFiles(m_Prefix, ".mc.start.good.rsp");
+  FindFiles(m_Prefix, ".mc.start.bad.rsp");
+  FindFiles(m_Prefix, ".mc.track.good.rsp");
+  FindFiles(m_Prefix, ".mc.track.bad.rsp");
+  FindFiles(m_Prefix, ".mc.compton.good.rsp");
+  FindFiles(m_Prefix, ".mc.compton.bad.rsp");
+  FindFiles(m_Prefix, ".mc.comptondistance.good.rsp");
+  FindFiles(m_Prefix, ".mc.comptondistance.bad.rsp");
+  FindFiles(m_Prefix, ".mc.photodistance.good.rsp");
+  FindFiles(m_Prefix, ".mc.photodistance.bad.rsp");
 
   FindFiles(m_Prefix, ".t.goodbad.rsp");
   FindFiles(m_Prefix, ".t.central.good.rsp");
