@@ -17,6 +17,7 @@
 
 
 // Standard libs:
+#include <mutex>
 
 // ROOT libs:
 
@@ -29,20 +30,31 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A thread-safe timer
 class MTimer
 {
   // public interface:
  public:
   // Default constructor
   MTimer(bool Start = true);
+  //! Standard constructor with time
   MTimer(double TimeOutSeconds);
+  //! Copy constructor
+  //! Side remark: Since we have to lock Timer's mutex, we cannot have a const here
+  MTimer(const MTimer& Timer);
+  //! Default destructor
   virtual ~MTimer();
 
-  void SetTimeOut(double TimeOutSeconds = -1);
-
+  //! Copy operator
+  //! Side remark: Since we have to lock Timer's mutex, we cannot have a const here
+  MTimer& operator=(const MTimer& Timer);
+  
+  //! Pauses the time and sets all stored values to zero
+  void Clear();
+  
   //! Start the timer - counting restarts from zero
   void Start();
-  //! Reset the timer
+  //! Reset the timer and start it again
   void Reset();
 
   //! Pause the timer
@@ -50,16 +62,24 @@ class MTimer
   //! Continue the timer
   void Continue();
 
-  //! 
-  double GetElapsed() { return ElapsedTime(); }
-  double ElapsedTime();
-  bool HasTimedOut(double Seconds = -1);
-  void SetHasTimedOut();
+  //! Get the elapsed time in seconds
+  double GetElapsed();
+  //! Get the elapsed time in seconds
+  double ElapsedTime() { return GetElapsed(); }
+  
+  //! Set a time out time
+  void SetTimeOut(double TimeOutSeconds = -1);
+  //! Get the timeout
   double GetTimeOut();
+  //! Check if the timer has timed out -- if we do not have a timeout we will return always false
+  bool HasTimedOut(double Seconds = -1);
 
   // protected methods:
  protected:
+  // Get the relative time in seconds
   double GetRelativeTime();
+  //! Get the elapsed time in seconds -- not thread safe version!
+  double GetElapsedTime();
 
   // protected members:
  protected:
@@ -80,6 +100,9 @@ class MTimer
   //! Flag indicating a time out, even when the real time has not yet elapsed 
   bool m_HasTimedOut;
 
+  //! A mutex ensuring that this class is completely reentrant
+  //! Needs to be mutable for copy constructor and copy operator
+  mutable mutex m_Guard;
 
 
 #ifdef ___CINT___
