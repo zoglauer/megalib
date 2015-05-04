@@ -105,9 +105,9 @@ class MSimEvent
   unsigned int GetNHTs();
   //! Get a hit by its position in the storage vector
   MSimHT* GetHTAt(unsigned int i);
-  //! Remove the given hit from the event
+  //! Remove the given hit from the event - the HT is not deleted!
   void RemoveHT(MSimHT* HT);
-  //! Remove all but the given hit from the event  
+  //! Remove all but the given hit from the event - the HT's are not deleted!
   void RemoveAllHTsBut(MSimHT* HT);
 
   //! Add a directional information
