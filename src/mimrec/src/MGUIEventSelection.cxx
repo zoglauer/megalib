@@ -549,9 +549,9 @@ void MGUIEventSelection::Create()
   m_UseCartesianPointSource->Associate(this);
 
   m_SourceCartesian = new MGUIEEntryList(SourceFrame, "Location (x, y, z) [cm]", MGUIEEntryList::c_SingleLine);
-  m_SourceCartesian->Add("", m_GUIData->GetSourceX(), kTRUE, 0.0);
-  m_SourceCartesian->Add("", m_GUIData->GetSourceY(), kTRUE, 0.0);
-  m_SourceCartesian->Add("", m_GUIData->GetSourceZ(), kTRUE, 0.0);
+  m_SourceCartesian->Add("", m_GUIData->GetSourceX(), true);
+  m_SourceCartesian->Add("", m_GUIData->GetSourceY(), true);
+  m_SourceCartesian->Add("", m_GUIData->GetSourceZ(), true);
   m_SourceCartesian->SetEntryFieldSize(FieldSize);
   m_SourceCartesian->Create();
   SourceFrame->AddFrame(m_SourceCartesian, SourceLayout);
