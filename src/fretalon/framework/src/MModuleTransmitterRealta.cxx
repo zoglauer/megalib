@@ -75,6 +75,10 @@ MModuleTransmitterRealta::MModuleTransmitterRealta() : MModule()
   m_Transmitter = 0;
   m_HostName = "localhost";
   m_HostPort = 12354;
+  
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

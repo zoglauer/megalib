@@ -81,6 +81,10 @@ MModuleTemplate::MModuleTemplate() : MModule()
   m_HasOptionsGUI = false;
   // If true, you have to derive a class from MGUIOptions (use MGUIOptionsTemplate)
   // and implement all your GUI options
+  
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

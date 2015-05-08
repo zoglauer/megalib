@@ -69,7 +69,9 @@ MModuleSaver::MModuleSaver() : MModule(), MModuleInterfaceFileName()
   // Set if this module has an options GUI
   m_HasOptionsGUI = true;
   
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

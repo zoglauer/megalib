@@ -39,6 +39,9 @@ class MModuleInterfaceFileName
   //! Default destructor
   virtual ~MModuleInterfaceFileName();
 
+  //! Create a new object of this class 
+  virtual MModuleInterfaceFileName* Clone() = 0;
+
   //! Get the file name
   MString GetFileName() const { return m_FileName; }
   //! Set the file name

@@ -42,6 +42,9 @@ class MModuleTransmitterRealta : public MModule
   //! Default destructor
   virtual ~MModuleTransmitterRealta();
 
+  //! Create a new object of this class 
+  virtual MModuleTransmitterRealta* Clone() { return new MModuleTransmitterRealta(); }
+
   //! Return the name of the host computer
   MString GetHostName() const { return m_HostName; }
   //! Set the name of the host computer

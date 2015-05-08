@@ -44,6 +44,9 @@ class MModuleSaver : public MModule, public MModuleInterfaceFileName
   MModuleSaver();
   //! Default destructor
   virtual ~MModuleSaver();
+
+  //! Create a new object of this class 
+  virtual MModuleSaver* Clone()  { return new MModuleSaver(); }
   
   //! Initialize the module
   virtual bool Initialize();

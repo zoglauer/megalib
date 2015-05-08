@@ -41,6 +41,9 @@ class MModuleLoaderRoa : public MModule, public MModuleInterfaceFileName
   //! Default destructor
   virtual ~MModuleLoaderRoa();
 
+  //! Create a new object of this class 
+  virtual MModuleLoaderRoa* Clone() { return new MModuleLoaderRoa(); };
+
   //! Initialize the module
   virtual bool Initialize();
 

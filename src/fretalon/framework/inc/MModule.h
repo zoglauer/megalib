@@ -55,6 +55,9 @@ class MModule
   //! Default destructor
   virtual ~MModule();
 
+  //! Create a new object of this class 
+  virtual MModule* Clone() = 0;
+  
   //! Return the name of this module:
   MString GetName() { return m_Name; }
 
@@ -85,6 +88,11 @@ class MModule
   
   //! Raise an interrupt
   void SetInterrupt(bool Flag = true) { m_Interrupt = Flag; }
+
+  //! Return true, if this module allows multi-threading
+  bool AllowsMultiThreading() const { return m_AllowMultiThreading; }
+  //! Return true, if this module allows to be used in multiple instances
+  bool AllowsMultipleInstances() const { return m_AllowMultipleInstances; }
 
   //! Use multi threading -- but it is only really used if the module allows it
   void UseMultiThreading(bool UseMultiThreading = true) { m_UseMultiThreading = UseMultiThreading; }
@@ -175,6 +183,10 @@ class MModule
 
   // private methods:
  private:
+  //! No Copy constructor
+  MModule(const MModule&) = delete;
+  //! No copying whatsoever
+  MModule& operator=(const MModule&) = delete;
 
 
 
@@ -224,14 +236,13 @@ class MModule
   //! Interrupt whatever it is doing and break
   bool m_Interrupt;
 
-  //! Flag indicating if we should use mutlithreading if available
-  bool m_UseMultiThreading;
+  //! Flag indicating that this module allows multi-threading
+  bool m_AllowMultiThreading;
+  //! Flag indicating that this module allows multiple instances
+  bool m_AllowMultipleInstances;
   
-  //! The number of allowed worker threads (0: main thread, 1: one worker thread)
-  //! The current maximum is one
-  unsigned int m_NAllowedWorkerThreads;
-  //! The number of active worker threads (currently the maximum is one)
-  unsigned int m_NActiveWorkerThreads;
+  //! Flag indicating if we should use multithreading if available
+  bool m_UseMultiThreading;
   
   //! The thread where the analysis happens
   TThread* m_Thread;     

@@ -76,8 +76,9 @@ MModuleLoaderRoa::MModuleLoaderRoa() : MModule(), MModuleInterfaceFileName()
   // This is a special start module which can generate its own events
   m_IsStartModule = true;
   
-  // This module is allowed to run multi-threaded using one thread
-  m_NAllowedWorkerThreads = 1;
+  // Allow the use of multiple threads and instances
+  m_AllowMultiThreading = true;
+  m_AllowMultipleInstances = false;
 }
 
 

@@ -73,8 +73,10 @@ MModule::MModule()
   
   m_Interrupt = false;
   
+  m_AllowMultiThreading = false;
+  m_AllowMultipleInstances = false;
+
   m_UseMultiThreading = false;
-  m_NAllowedWorkerThreads = 0;
   m_Thread = 0;
   m_IsThreadRunning = false;
   
@@ -192,7 +194,7 @@ bool MModule::Initialize()
     E->Reset(); 
   }
   
-  if (m_UseMultiThreading == true && m_NAllowedWorkerThreads > 0) {
+  if (m_UseMultiThreading == true && m_AllowMultiThreading > 0) {
     m_IsThreadRunning = false;
   
     delete m_Thread;
@@ -234,11 +236,18 @@ void MModule::AnalysisLoop()
 
 bool MModule::DoSingleAnalysis()
 {
-  // First check if we are ready:
-  if (IsReady() == false) return false;
-  if (IsOK() == false) return false;
-  
   m_Timer.Continue();
+
+  // First check if we are ready:
+  if (IsReady() == false) {
+    m_Timer.Pause();
+    return false;
+  }
+  if (IsOK() == false) {
+    m_Timer.Pause();
+    return false;
+  }
+  
   
   MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list

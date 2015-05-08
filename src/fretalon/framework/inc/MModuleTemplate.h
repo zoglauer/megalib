@@ -38,7 +38,10 @@ class MModuleTemplate : public MModule
   MModuleTemplate();
   //! Default destructor
   virtual ~MModuleTemplate();
-
+  
+  //! Create a new object of this class 
+  virtual MModuleTemplate* Clone() { return new MModuleTemplate(); }
+  
   //! Initialize the module
   virtual bool Initialize();
 
@@ -59,7 +62,10 @@ class MModuleTemplate : public MModule
 
   // private methods:
  private:
-
+  //! No Copy constructor
+  MModuleTemplate(const MModuleTemplate&) = delete;
+  //! No copying whatsoever
+  MModuleTemplate& operator=(const MModuleTemplate&) = delete;
 
 
   // protected members:
