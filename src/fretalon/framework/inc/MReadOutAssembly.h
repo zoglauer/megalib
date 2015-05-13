@@ -46,9 +46,9 @@ class MReadOutAssembly
   void Clear();
   
   //! Set the ID of this event
-  void SetID(unsigned int ID) { m_ID = ID; }
+  void SetID(unsigned long ID) { m_ID = ID; }
   //! Return the ID of this event
-  unsigned int GetID() const { return m_ID; }
+  unsigned long GetID() const { return m_ID; }
 
   //! Set and get the Time of this event
   void SetTime(MTime Time) { m_Time = Time; }
@@ -104,7 +104,7 @@ class MReadOutAssembly
   // private members:
  private:
   //! ID of this event
-  unsigned int m_ID;
+  unsigned long m_ID;
 
   //! The time of this event
   MTime m_Time;

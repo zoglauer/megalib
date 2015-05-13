@@ -64,6 +64,9 @@ class MGUIExpoCombinedViewer : public MGUIDialog
   //! Set a new expo tab
   void AddExpos(vector<MGUIExpo*> Expos) { m_Expos.insert(m_Expos.end(), Expos.begin(), Expos.end()); }
 
+  //! Return the number of expo's
+  unsigned int GetNExpos() const { return m_Expos.size(); }
+  
   //! Remove all expos
   void RemoveExpos();
 

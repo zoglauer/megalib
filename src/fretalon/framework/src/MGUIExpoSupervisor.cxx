@@ -20,6 +20,8 @@
 #include "MGUIExpoSupervisor.h"
 
 // Standard libs:
+#include <iomanip>
+using namespace std;
 
 // ROOT libs:
 #include <TSystem.h>
@@ -75,6 +77,7 @@ void MGUIExpoSupervisor::Reset()
   m_ModuleNames.clear();
   m_ModuleProcessedEvents.clear();
   m_ModuleProcessingTime.clear();
+  m_ModuleInstances.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +90,7 @@ void MGUIExpoSupervisor::SetNModules(int NModules)
   m_ModuleNames.resize(NModules);
   m_ModuleProcessedEvents.resize(NModules);
   m_ModuleProcessingTime.resize(NModules);
+  m_ModuleInstances.resize(NModules);
 }
 
 
@@ -120,6 +124,17 @@ void MGUIExpoSupervisor::SetProcessingTime(unsigned int ModuleID, double Process
 {
   if (m_ModuleProcessingTime.size() <= ModuleID) m_ModuleProcessingTime.resize(ModuleID);
   m_ModuleProcessingTime[ModuleID] = ProcessingTime; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the number of instances
+void MGUIExpoSupervisor::SetInstances(unsigned int ModuleID, unsigned int Instances)
+{
+  if (m_ModuleInstances.size() <= ModuleID) m_ModuleInstances.resize(ModuleID);
+  m_ModuleInstances[ModuleID] = Instances; 
 }
 
 
@@ -172,6 +187,13 @@ void MGUIExpoSupervisor::Create()
   TitleColumnTime->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
   TimeFrame->AddFrame(TitleColumnTime, TitleColumnLayout);
   
+  TGVerticalFrame* InstancesFrame = new TGVerticalFrame(ModuleFrame);
+  ModuleFrame->AddFrame(InstancesFrame, ColumnLayout);
+
+  TGLabel* TitleColumnInstances = new TGLabel(InstancesFrame, "Instances"); 
+  TitleColumnInstances->SetTextFont(MGUIDefaults::GetInstance()->GetNormalBoldFont()->GetFontStruct());
+  InstancesFrame->AddFrame(TitleColumnInstances, TitleColumnLayout);
+  
   
   for (unsigned int i = 0; i < m_ModuleNames.size(); ++i) {
     // Name
@@ -180,22 +202,31 @@ void MGUIExpoSupervisor::Create()
     NameFrame->AddFrame(LabelName, LabelNameLayout);
     
     // Events
-    ostringstream out;
-    out<<m_ModuleProcessedEvents[i];
+    ostringstream eout;
+    eout<<m_ModuleProcessedEvents[i];
     
-    TGLabel* LabelProcessedEvents = new TGLabel(EventsFrame, out.str().c_str()); 
+    TGLabel* LabelProcessedEvents = new TGLabel(EventsFrame, eout.str().c_str()); 
     TGLayoutHints* LabelProcessedEventsLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2);
     EventsFrame->AddFrame(LabelProcessedEvents, LabelProcessedEventsLayout);
     m_LabelProcessedEvents.push_back(LabelProcessedEvents);
     
     // Time
-    ostringstream t;
-    t<<m_ModuleProcessingTime[i]<<" s";
+    ostringstream tout;
+    tout<<fixed<<setprecision(1)<<m_ModuleProcessingTime[i]<<" s";
     
-    TGLabel* LabelProcessingTime = new TGLabel(TimeFrame, t.str().c_str()); 
+    TGLabel* LabelProcessingTime = new TGLabel(TimeFrame, tout.str().c_str()); 
     TGLayoutHints* LabelProcessingTimeLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2);
     TimeFrame->AddFrame(LabelProcessingTime, LabelProcessingTimeLayout);
     m_LabelProcessingTime.push_back(LabelProcessingTime);
+    
+    // Instances
+    ostringstream iout;
+    iout<<m_ModuleInstances[i];
+    
+    TGLabel* LabelInstances = new TGLabel(InstancesFrame, iout.str().c_str()); 
+    TGLayoutHints* LabelInstancesLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 2);
+    InstancesFrame->AddFrame(LabelInstances, LabelInstancesLayout);
+    m_LabelInstances.push_back(LabelInstances);
   }
 
   
@@ -211,13 +242,17 @@ void MGUIExpoSupervisor::Update()
   //! Update the frame
 
   for (unsigned int i = 0; i < m_LabelProcessedEvents.size(); ++i) {
-    ostringstream out;
-    out<<m_ModuleProcessedEvents[i];
-    m_LabelProcessedEvents[i]->SetText(out.str().c_str());
+    ostringstream eout;
+    eout<<m_ModuleProcessedEvents[i];
+    m_LabelProcessedEvents[i]->SetText(eout.str().c_str());
     
-    ostringstream t;
-    t<<m_ModuleProcessingTime[i]<<" s";
-    m_LabelProcessingTime[i]->SetText(t.str().c_str());
+    ostringstream tout;
+    tout<<fixed<<setprecision(1)<<m_ModuleProcessingTime[i]<<" s";
+    m_LabelProcessingTime[i]->SetText(tout.str().c_str());
+    
+    ostringstream iout;
+    iout<<m_ModuleInstances[i];
+    m_LabelInstances[i]->SetText(iout.str().c_str());
   }
 }
 

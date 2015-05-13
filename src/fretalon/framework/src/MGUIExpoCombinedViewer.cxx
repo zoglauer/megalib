@@ -67,7 +67,10 @@ MGUIExpoCombinedViewer::MGUIExpoCombinedViewer() : MGUIDialog(gClient->GetRoot()
 
 MGUIExpoCombinedViewer::~MGUIExpoCombinedViewer()
 {
-  // Deep Cleanup automatically deletes all used GUI elements
+  // No automatic cleanup so we have to do it ourselves
+  // TODO: Cleanup
+  
+  RemoveExpos();
 }
 
 
@@ -170,9 +173,11 @@ void MGUIExpoCombinedViewer::RemoveExpos()
   }
   m_Expos.clear();
 
-  MapSubwindows();
-  MapWindow();  
-  Layout();
+  if (IsMapped() == true) {
+    MapSubwindows();
+    MapWindow();  
+    Layout();
+  }
 }
 
 

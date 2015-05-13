@@ -27,6 +27,9 @@
 #include "MSupervisor.h"
 
 // Standard libs:
+#include <iomanip>
+#include <thread>
+using namespace std;
 
 // ROOT libs:
 #include "TSystem.h"
@@ -70,14 +73,12 @@ MSupervisor::MSupervisor()
   m_UILeadAuthor = "No lead author!";
   m_UICoAuthors = "";
   
-  m_Geometry = 0;
-  m_Gui = 0;
-  m_ExpoCombinedViewer = 0;
-  m_ExpoSupervisor = 0;
+  m_Geometry = nullptr;
+  m_Gui = nullptr;
+  m_ExpoCombinedViewer = nullptr;
+  m_ExpoSupervisor = nullptr;
   
   m_ConfigurationFileName = gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg");
-  
-  Clear();
 
   // All the rest:
 }
@@ -92,13 +93,22 @@ void MSupervisor::Clear()
 
   m_Modules.clear();
   
-  delete m_Gui;
-  delete m_ExpoCombinedViewer;
+  // Don't delete those! Otherwise we have to add improved handling of when 
+  // the canvases within the UI's get deleted...
+  // delete m_Gui;
+  // delete m_ExpoCombinedViewer;
+  // m_ExpoCombinedViewer = nullptr;
+  if (m_ExpoCombinedViewer != nullptr) {
+    m_ExpoCombinedViewer->CloseWindow();
+    m_ExpoCombinedViewer->RemoveExpos();
+  }
+  
   delete m_ExpoSupervisor;
+  m_ExpoSupervisor = nullptr;
   
   m_GeometryFileName = "";
   delete m_Geometry;
-  m_Geometry = 0;
+  m_Geometry = nullptr;
 }
 
 
@@ -128,7 +138,7 @@ MModule* MSupervisor::GetModule(unsigned int i)
     return m_Modules[i];
   }
 
-  return 0; 
+  return nullptr; 
 }
 
 
@@ -143,7 +153,7 @@ MModule* MSupervisor::GetAvailableModule(unsigned int i)
     return m_AvailableModules[i]; 
   }
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -160,7 +170,7 @@ MModule* MSupervisor::GetAvailableModule(MString Name)
     }
   }
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -513,7 +523,7 @@ bool MSupervisor::LoadGeometry()
   } else {
     mlog<<"Loading of geometry "<<m_GeometryFileName<<" failed!!"<<endl;
     delete m_Geometry;
-    m_Geometry = 0;
+    m_Geometry = nullptr;
     return false;
   }  
 
@@ -554,163 +564,6 @@ bool MSupervisor::LaunchUI()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/*
-bool MSupervisor::Analyze()
-{
-  if (m_UseMultiThreading == true) {
-    return AnalyzeMultiThreaded();
-  } else {
-    return AnalyzeSingleThreaded();
-  }
-}
- 
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MSupervisor::AnalyzeSingleThreaded()
-{
-  if (m_IsAnalysisRunning == true) return false;
-  m_IsAnalysisRunning = true;
-
-  // Start with saving the data:
-  Save(m_ConfigurationFileName);
-
-  m_Interrupt = false;
-  
-  // Start a global timer:
-  MTimer Timer;
-
-  // Load the geometry:
-  if (LoadGeometry() == false) {
-    m_IsAnalysisRunning = false;
-    return false;
-  }
-  
-  // Create a bunch of individual timers
-  vector<MTimer> ModuleTimers(GetNModules(), MTimer(false));
-  
-  // Initialize the modules:
-  for (unsigned int m = 0; m < GetNModules(); ++m) {
-    ModuleTimers[m].Continue();
-    GetModule(m)->SetInterrupt(false);
-    if (GetModule(m)->Initialize() == false) {
-      ModuleTimers[m].Pause();
-      if (m_Interrupt == true) {
-        break;
-      }
-      mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
-      m_IsAnalysisRunning = false;
-      return false;
-    }
-    ModuleTimers[m].Pause();
-  }
-  
-  // Create the expo viewer:
-  if (m_ExpoCombinedViewer == 0) {
-    m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
-    m_ExpoCombinedViewer->Create();
-  }
-  m_ExpoCombinedViewer->RemoveExpos();
-  for (unsigned int m = 0; m < GetNModules(); ++m) {
-    if (GetModule(m)->HasExpos() == true) {
-      m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
-    }
-  }
-  m_ExpoCombinedViewer->OnReset();
-  m_ExpoCombinedViewer->ShowExpos();
-  
-  // Do the pipeline
-  MReadOutAssembly* Event = new MReadOutAssembly(); // will be loaded on start
-  while (m_Interrupt == false) {
-    // Reset the event to zero
-    Event->Clear();
-
-    // Some modules need to be made ready for the next event, do this here
-    bool AllReady = true;
-    bool AllOK = true;
-    do {
-      AllReady = true;
-      AllOK = true;
-      for (unsigned int m = 0; m < GetNModules(); ++m) {
-        ModuleTimers[m].Continue();
-        if (GetModule(m)->IsReady() == false) {
-          if (m_Interrupt == true) break;
-          mout<<"Module \""<<GetModule(m)->GetName()<<"\" is not yet ready..."<<endl;
-          AllReady = false;
-        }
-        if (GetModule(m)->IsOK() == false) {
-          mout<<"Module \""<<GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
-          AllOK = false;
-        }
-        ModuleTimers[m].Pause();
-      }
-      if (AllReady == false && AllOK == true) {
-        cout<<"Not all modules ready (probably waiting for more data)... sleeping 100 ms"<<endl;
-        gSystem->Sleep(100);
-        gSystem->ProcessEvents();
-      }
-    } while (AllReady == false && AllOK == true && m_Interrupt == false);
-    if (AllOK == false) {
-      cout<<"One module had problems, exiting analysis loop"<<endl;
-      break;
-    }
-    
-    if (m_Interrupt == true) break;
-      
-    // Loop over all modules and do the analysis
-    for (unsigned int m = 0; m < GetNModules(); ++m) {
-      ModuleTimers[m].Continue();
-      // Do the analysis
-      if (GetModule(m)->AnalyzeEvent(Event) == false) {
-        if (Event->GetID() != g_UnsignedIntNotDefined) {
-          mout<<"Analysis failed for event "<<Event->GetID()
-              <<" in module \""<<GetModule(m)->GetName()<<"\""<<endl;
-        } 
-        ModuleTimers[m].Pause();
-        break;
-      }
-      ModuleTimers[m].Pause();
-      
-      if (Event->IsGood() == false) break;
-
-    }
-    // if (Event->IsDataRead() == false) break;
-    
-    gSystem->ProcessEvents();    
-  }
-  
-  // Finalize the modules:
-  for (unsigned int m = 0; m < GetNModules(); ++m) {
-    ModuleTimers[m].Continue();
-    GetModule(m)->Finalize();
-    ModuleTimers[m].Pause();
-  }
-  
-  mout<<endl;
-  if (m_Interrupt == true) {
-    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
-  } else {
-    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
-  }
-  mout<<endl;
-  
-  if (g_Verbosity >= 2) {
-    cout<<"Timings: "<<endl;
-    for (unsigned int m = 0; m < GetNModules(); ++m) {
-      cout<<"Spent "<<ModuleTimers[m].GetElapsed()<<" sec in module "<<GetModule(m)->GetName()<<endl;
-    }
-  }
-  
-  m_IsAnalysisRunning = false;
-  
-  if (m_Terminate == true) Terminate();
-
-  return true;
-}
-*/
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 bool MSupervisor::Analyze()
 {
@@ -742,8 +595,10 @@ bool MSupervisor::Analyze()
     return false;
   }
   for (unsigned int m = 0; m < GetNModules(); ++m) {
+    if (g_Verbosity >= c_Info) cout<<"Initializing: "<<GetModule(m)->GetName()<<": "<<long(GetModule(m))<<endl;
     GetModule(m)->SetInterrupt(false);
     GetModule(m)->UseMultiThreading(m_UseMultiThreading);
+    GetModule(m)->ClearQueues(); // Just in case a module did not call Finalize...
     if (GetModule(m)->Initialize() == false) {
       if (m_Interrupt == true) {
         break;
@@ -756,11 +611,10 @@ bool MSupervisor::Analyze()
   
   
   // Create the expo viewer:
-  if (m_ExpoCombinedViewer == 0) {
+  if (m_ExpoCombinedViewer == nullptr) {
     m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
     m_ExpoCombinedViewer->Create();
   }
-  
   m_ExpoCombinedViewer->RemoveExpos();
 
   int NExpos = 0;
@@ -797,8 +651,15 @@ bool MSupervisor::Analyze()
   // We have events 
   bool HasMoreEvents = false;
   bool DoShutdown = false;
+  
+  // Timing stuff
   long NPasses = 0;
   MTimer LastUIUpdate;
+  long NumberOfUIUpdates = 0;
+  
+  // Number of instances per module
+  unsigned int MaxInstances = thread::hardware_concurrency();
+  if (MaxInstances < 2) MaxInstances = 2;
   
   // Create a local list of the modules
   vector<vector<MModule*>> Modules;
@@ -829,13 +690,11 @@ bool MSupervisor::Analyze()
     
     HasMoreEvents = false;
     for (unsigned int m = 0; m < Modules.size(); ++m) {
-      long ProcessedEvents = 0;
-      double ProcessingTime = 0;
       for (unsigned int s = 0; s < Modules[m].size(); ++s) {
       
         MModule* M = Modules[m][s];
 
-        if (HasMoreEvents == false && (M->HasAddedEvents() == true || M->HasAnalyzedEvents() == true)) {
+        if (HasMoreEvents == false && (M->HasAddedReadOutAssemblies() == true || M->HasAnalyzedReadOutAssemblies() == true)) {
           HasMoreEvents = true;
           //cout<<"Events for module "<<m<<endl; 
         } else {
@@ -843,22 +702,17 @@ bool MSupervisor::Analyze()
         }
 
         if (M->IsMultiThreaded() == false) { // We have to do the heavy lifing
-          cout<<"Do analysis for "<<M->GetName()<<endl;
+          //cout<<"Do analysis for "<<M->GetName()<<endl;
           M->DoSingleAnalysis(); 
         }
-        if (M->HasAnalyzedEvents() == true) {
-          MReadOutAssembly* E = M->GetAnalyzedEvent();
+        if (M->HasAnalyzedReadOutAssemblies() == true) {
+          MReadOutAssembly* E = M->GetAnalyzedReadOutAssembly();
           if (E->IsFilteredOut() == true) {
             delete E;
           } else {
             if (m < Modules.size()-1) {
-              //cout<<"Moving event: "<<m<<" -> "<<m+1<<": "<<E->GetID()<<endl;
-              if (Modules[m+1].size() > 1) {
-                // randomly fill
-                Modules[m+1][gRandom->Integer(Modules[m+1].size())]->AddEvent(E);
-              } else {
-                Modules[m+1][0]->AddEvent(E);
-              }
+              Modules[m+1][0]->AddReadOutAssembly(E); 
+              // Remark: the modules share their queue, so it does not matter to which we add the event
             } else {
               if (m == Modules.size()-1) delete E;
             }
@@ -869,39 +723,31 @@ bool MSupervisor::Analyze()
           mout<<"Module \""<<GetModule(m)->GetName()<<"\" is no longer OK... exiting analysis loop..."<<endl;
           DoShutdown = true;
         }
-      
-        ProcessedEvents += M->GetNumberOfAnalyzedEvents();
-        ProcessingTime += M->GetProcessingTime();
       }
-      m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
-      m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
     }
     
     if (DoShutdown == true && HasMoreEvents == false) break;
 
-    // Update the GUI infrequently
+    // Update the GUI infrequently and check for spawn even less frequently
     if (++NPasses % 100 == 0) {
-       if (LastUIUpdate.GetElapsed() > 5.0) {
-        m_ExpoCombinedViewer->OnUpdate();
-        LastUIUpdate.Reset();
-      }
-      
-      // Check for spawns even less frequently
-      if (NPasses % 100000 == 0) {
+             
+      // Check & create spawns:
+      if (NPasses % 10000 == 0) {
         double Last = 0;
         for (unsigned int m = 0; m < Modules.size(); ++m) {
           double Now = 0;
           for (unsigned int s = 0; s < Modules[m].size(); ++s) {
             Now += Modules[m][s]->GetNumberOfAnalyzedEvents();
           }
-          if (Now < 0.66*Last) {
-            if (Modules[m][0]->AllowsMultipleInstances() == true && Modules[m].size() < 4) {
+          if (Now + 50000*Modules[m].size() < 0.8*Last) { // I know...
+            if (Modules[m][0]->AllowsMultipleInstances() == true && Modules[m].size() < MaxInstances) {
               MModule* M = Modules[m][0]->Clone();
               MXmlNode* Node = Modules[m][0]->CreateXmlConfiguration();
               M->ReadXmlConfiguration(Node);
               delete Node;
               M->SetInterrupt(false);
               M->UseMultiThreading(m_UseMultiThreading);
+              Modules[m][0]->ShareQueues(M);
               if (M->Initialize() == false) {
                 delete M;
               } else {
@@ -913,13 +759,36 @@ bool MSupervisor::Analyze()
           Last = Now;
         }
       }
+
+      // Update the processing time:
+      for (unsigned int m = 0; m < Modules.size(); ++m) {
+        long ProcessedEvents = 0;
+        double ProcessingTime = 0;
+        for (unsigned int s = 0; s < Modules[m].size(); ++s) {
+          ProcessedEvents += Modules[m][s]->GetNumberOfAnalyzedEvents();
+          ProcessingTime += Modules[m][s]->GetProcessingTime();
+        }
+        m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
+        m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
+        m_ExpoSupervisor->SetInstances(m, Modules[m].size());
+      }
+        
+      // Update the UI
+      // Little trick: Start with frequent updates after 1 sec, 2 sec, 3 sec, 4 sec
+      // and then after each 5 seconds have past
+      double UIElapsed = LastUIUpdate.GetElapsed();
+      if (UIElapsed > 5.0 || UIElapsed > NumberOfUIUpdates) { 
+        m_ExpoCombinedViewer->OnUpdate();
+        LastUIUpdate.Reset();
+        ++NumberOfUIUpdates;
+      }
     }
     
     // If there were no events --- sleep a bit
     if (m_UseMultiThreading == true && HasMoreEvents == false) {
       gSystem->Sleep(10); 
     }
-    
+
     gSystem->ProcessEvents();    
   }
   
@@ -933,22 +802,43 @@ bool MSupervisor::Analyze()
 
   m_ExpoCombinedViewer->OnUpdate();
   
-  mout<<endl;
+  cout<<endl;
   if (m_Interrupt == true) {
-    mout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
+    cout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
   } else {
-    mout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
+    cout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
   }
-  mout<<endl;
   
   //if (g_Verbosity >= c_Error) {
-  cout<<"Timings: "<<endl;
+  ios::fmtflags SavedFlags(cout.flags());
+  cout.setf(ios::fixed);
+  cout.precision(1);
+  cout<<endl;
+  cout<<"Summary: "<<endl;
   for (unsigned int m = 0; m < Modules.size(); ++m) {
+    long ProcessedEvents = 0;
+    double ProcessingTime = 0;
+    double SleepingTime = 0;
     for (unsigned int s = 0; s < Modules[m].size(); ++s) {
-      cout<<"Spent "<<Modules[m][s]->GetProcessingTime()<<" sec in module "<<Modules[m][s]->GetName()<<" and analyzed "<<Modules[m][s]->GetNumberOfAnalyzedEvents()<<" events."<<endl;
+      ProcessedEvents += Modules[m][s]->GetNumberOfAnalyzedEvents();
+      ProcessingTime += Modules[m][s]->GetProcessingTime();
+      SleepingTime += Modules[m][s]->GetSleepingTime();
     }
+    m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
+    m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
+    m_ExpoSupervisor->SetInstances(m, Modules[m].size());
+
+    cout<<"Spent "<<ProcessingTime<<" sec analyzing ";
+    cout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
+    cout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
+    cout<<"utilizing "<<Modules[m].size()<<" instance"<<(Modules[m].size() > 1 ? "s " : " ");
+    cout<<"and processed "<<ProcessedEvents<<" events."<<endl;
   }
+  cout.flags(SavedFlags);
   //}
+
+  // A final UI update:
+  m_ExpoCombinedViewer->OnUpdate();
   
   m_IsAnalysisRunning = false;
 
@@ -965,7 +855,7 @@ void MSupervisor::View()
 {
   // Show the view
   
-  if (m_ExpoCombinedViewer != 0) {
+  if (m_ExpoCombinedViewer != nullptr && m_ExpoCombinedViewer->GetNExpos() > 0) {
      m_ExpoCombinedViewer->MapWindow();
   }
 }

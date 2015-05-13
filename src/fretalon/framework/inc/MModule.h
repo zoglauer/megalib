@@ -19,10 +19,11 @@
 // Standard libs:
 #include <vector>
 #include <deque>
+#include <memory>
+#include <mutex>
 using namespace std;
 
 // ROOT libs:
-#include "TMutex.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -34,7 +35,7 @@ using namespace std;
 #include "MTimer.h"
 
 // Forward declarations:
-
+class MModuleReadOutAssemblyQueues;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -119,20 +120,26 @@ class MModule
   //! Has to be overwritten in derived class
   virtual bool AnalyzeEvent(MReadOutAssembly* Event) = 0;
 
-  //! Add an event to the incoming event list - only used by the supervisor
-  virtual bool AddEvent(MReadOutAssembly* Event);
+  //! Clear the queues
+  void ClearQueues();
+
+  //! Share the queue between modules
+  void ShareQueues(MModule* M) { M->m_Queues = m_Queues; }
   
-  //! Check if there are events in the incoming event list - only used by the supervisor
-  virtual bool HasAddedEvents();
+  //! Add an read-out assembly to the incoming read-out assembly list - only used by the supervisor
+  virtual bool AddReadOutAssembly(MReadOutAssembly* Assembly);
   
-  //! Check if there are events in the outgoing event list - only used by the supervisor
-  virtual bool HasAnalyzedEvents();
+  //! Check if there are read-out assemblies in the incoming read-out assembly list - only used by the supervisor
+  virtual bool HasAddedReadOutAssemblies();
+  
+  //! Check if there are read-out assemblies in the outgoing read-out assembly list - only used by the supervisor
+  virtual bool HasAnalyzedReadOutAssemblies();
+  
+  //! Check if there are read-out assemblies in the outgoing read-out assembly list - only used by the supervisor
+  virtual MReadOutAssembly* GetAnalyzedReadOutAssembly();
 
   //! The number of events passing through the analysis routine
   long GetNumberOfAnalyzedEvents() const { return m_NAnalyzedEvents; }
-  
-  //! Check if there are events in the outgoing event list - only used by the supervisor
-  virtual MReadOutAssembly* GetAnalyzedEvent();
 
   //! The analysis loop in multi-threaded mode
   virtual void AnalysisLoop();
@@ -163,7 +170,9 @@ class MModule
   virtual bool IsFinished() { return m_IsFinished; }
 
   //! Return the processing time in seconds - thread safe!
-  double GetProcessingTime() { return m_Timer.GetElapsed(); } 
+  double GetProcessingTime() { return GetTimer(); } 
+  //! Return the processing time in seconds - thread safe!
+  double GetSleepingTime() { return m_SleepTime; } 
   
   
   // protected methods:
@@ -179,6 +188,14 @@ class MModule
   //! Set which modules are expected to follow this one
   void AddSucceedingModuleType(int Type) { m_SucceedingModules.push_back(Type); };
 
+  //! Get the value of the processing timer -- thread safe
+  double GetTimer();
+  //! Clear the value of the processing timer -- thread safe
+  void ClearTimer();
+  //! Continue the processing timer -- thread safe
+  void ContinueTimer();
+  //! Pause the processing timer -- thread safe
+  void PauseTimer();
   
 
   // private methods:
@@ -203,15 +220,6 @@ class MModule
   vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules
   vector<uint64_t> m_Modules;
-  
-  //! The incoming event list
-  deque<MReadOutAssembly*> m_IncomingEvents;
-  //! A mutex protecting the incoming event list
-  TMutex m_IncomingEventsMutex;
-  //! The outgoing event list
-  deque<MReadOutAssembly*> m_OutgoingEvents; 
-  //! A mutex protecting the outgoing event list
-  TMutex m_OutgoingEventsMutex;
   
   //! The Geometry description
   MDGeometryQuest* m_Geometry;
@@ -256,7 +264,13 @@ class MModule
  private:
   //! The internal analysis timer
   MTimer m_Timer;
+  //! The mutex protecting the analysis timer
+  mutex m_TimerGuard;
+  //! The internal sleep time
+  double m_SleepTime;
 
+  //! The incoming and outgoing event queues
+  shared_ptr<MModuleReadOutAssemblyQueues> m_Queues;
 
 
 #ifdef ___CINT___

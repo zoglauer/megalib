@@ -31,6 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MModuleReadOutAssemblyQueues.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +83,10 @@ MModule::MModule()
   
   m_NAnalyzedEvents = 0;
   
-  m_Timer.Clear();
+  ClearTimer();
+  m_SleepTime = 0;
+  
+  m_Queues = make_shared<MModuleReadOutAssemblyQueues>();
 }
 
 
@@ -111,16 +115,26 @@ bool MModule::FullfillsRequirements(MReadOutAssembly* Event)
   return true;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModule::AddEvent(MReadOutAssembly* Event)
+void MModule::ClearQueues() 
+{ 
+  //! Clear the queues
+
+  m_Queues->Clear(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MModule::AddReadOutAssembly(MReadOutAssembly* Event)
 {
   //! Add an event to the incoming event list
 
-  m_IncomingEventsMutex.Lock();
-  m_IncomingEvents.push_back(Event);
-  m_IncomingEventsMutex.UnLock();
+  m_Queues->AddIncoming(Event);
   
   return true;
 }
@@ -129,54 +143,33 @@ bool MModule::AddEvent(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModule::HasAddedEvents()
+bool MModule::HasAddedReadOutAssemblies()
 {
   //! Check if there are events in the incoming event list
 
-  bool HasEvents = false;
-
-  m_IncomingEventsMutex.Lock();
-  HasEvents = m_IncomingEvents.begin() != m_IncomingEvents.end(); // faster for deque than size if filled!
-  m_IncomingEventsMutex.UnLock();
-
-  return HasEvents;
+  return m_Queues->HasIncoming();
 }
   
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MModule::HasAnalyzedEvents()
+bool MModule::HasAnalyzedReadOutAssemblies()
 {
   //! Check if there are events in the outgoing event list
 
-  bool HasEvents = false;
-
-  m_OutgoingEventsMutex.Lock();
-  HasEvents = m_OutgoingEvents.begin() != m_OutgoingEvents.end(); // faster for deque than size if filled!
-  m_OutgoingEventsMutex.UnLock();
-
-  return HasEvents;
+  return m_Queues->HasOutgoing();
 }
   
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly* MModule::GetAnalyzedEvent()
+MReadOutAssembly* MModule::GetAnalyzedReadOutAssembly()
 {
   //! Check if there are events in the outgoing event list
-
-  MReadOutAssembly* E = 0;
   
-  m_OutgoingEventsMutex.Lock();
-  if (m_OutgoingEvents.begin() != m_OutgoingEvents.end()) {
-    E = m_OutgoingEvents.front();
-    m_OutgoingEvents.pop_front();
-  }
-  m_OutgoingEventsMutex.UnLock();
-  
-  return E;
+  return m_Queues->GetOutgoing();
 }
 
 
@@ -188,7 +181,14 @@ bool MModule::Initialize()
   m_IsOK = true;
   m_IsFinished = false;
   m_NAnalyzedEvents = 0;
-  m_Timer.Clear();
+  ClearTimer();
+  m_SleepTime = 0;
+  
+  // If we have allow multiple instances of this module, we have to enable sorting 
+  // This is safe to be called multiple times, from different Initialize();
+  if (m_AllowMultipleInstances == true) {
+    m_Queues->EnableSorting(); 
+  }
   
   for (auto E: m_Expos) {
     E->Reset(); 
@@ -223,7 +223,9 @@ void MModule::AnalysisLoop()
   while (m_Interrupt == false) {
     
     if (DoSingleAnalysis() == false) {
+      MTimer SleepTimer;
       gSystem->Sleep(20);
+      m_SleepTime += SleepTimer.GetElapsed(); // Sleep() is not perfectly accurate...
     }
   }
 
@@ -236,15 +238,15 @@ void MModule::AnalysisLoop()
 
 bool MModule::DoSingleAnalysis()
 {
-  m_Timer.Continue();
+  ContinueTimer();
 
   // First check if we are ready:
   if (IsReady() == false) {
-    m_Timer.Pause();
+    PauseTimer();
     return false;
   }
   if (IsOK() == false) {
-    m_Timer.Pause();
+    PauseTimer();
     return false;
   }
   
@@ -252,12 +254,9 @@ bool MModule::DoSingleAnalysis()
   MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list
   if (m_IsStartModule == false) { 
-    m_IncomingEventsMutex.Lock();
-    if (m_IncomingEvents.begin() != m_IncomingEvents.end()) {
-      E = m_IncomingEvents.front();
-      m_IncomingEvents.pop_front();
+    if (m_Queues->HasIncoming() == true) {
+      E = m_Queues->GetIncoming(); // E can still be zero, if another thread did something!
     }
-    m_IncomingEventsMutex.UnLock();
   }
   // If we got one from the incoming list, or if this is a start module which generates them:
   if (E == 0 && m_IsStartModule == true && m_IsFinished == false && m_Interrupt == false) {
@@ -275,14 +274,12 @@ bool MModule::DoSingleAnalysis()
       }
     }
     if (E != 0) {
-      m_OutgoingEventsMutex.Lock();
-      m_OutgoingEvents.push_back(E);
-      m_OutgoingEventsMutex.UnLock();
+      m_Queues->AddOutgoing(E);
     }
-    m_Timer.Pause();
+    PauseTimer();
     return true;
   } else {
-    m_Timer.Pause();
+    PauseTimer();
     return false;
   }
 }
@@ -302,21 +299,65 @@ void MModule::Finalize()
     m_Thread = 0;
   }
   
-  if (HasAddedEvents() > 0) {
-    for (auto E: m_IncomingEvents) {
-      delete E; 
-    }
-    m_IncomingEvents.clear();
-  }
-  if (HasAnalyzedEvents() > 0) {
-    for (auto E: m_OutgoingEvents) {
-      delete E; 
-    }
-    m_OutgoingEvents.clear();
-  }
+  // If we have multiple instances, this will be called for the same queue, several
+  // time, but that's safe
+  m_Queues->Clear();
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MModule::GetTimer()
+{
+  //! Get the value of the processing timer -- thread safe
+  
+  lock_guard<mutex> lock(m_TimerGuard);
+  
+  return m_Timer.GetElapsed();
+}
+ 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+ 
+void MModule::ClearTimer()
+{
+  //! Clear the value of the processing timer -- thread safe
+  
+  lock_guard<mutex> lock(m_TimerGuard);
+  
+  m_Timer.Clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModule::ContinueTimer()
+{
+  //! Continue the processing timer -- thread safe
+  
+  lock_guard<mutex> lock(m_TimerGuard);
+  
+  m_Timer.Continue();
+} 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MModule::PauseTimer()
+{
+  //! Pause the processing timer -- thread safe
+
+  lock_guard<mutex> lock(m_TimerGuard);
+  
+  m_Timer.Pause();
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 

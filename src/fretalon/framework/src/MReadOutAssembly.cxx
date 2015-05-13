@@ -46,7 +46,7 @@ ClassImp(MReadOutAssembly)*m_ReadOuts[i]
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly()
+MReadOutAssembly::MReadOutAssembly() : m_Time(0)
 {
   // Construct an instance of MReadOutAssembly
   

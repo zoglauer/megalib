@@ -66,7 +66,7 @@ class MGUIExpoSupervisor : public MGUIExpo
   //! Set numbe rof modules
   void SetNModules(int NModules);
 
-  //! Set the name oif a module
+  //! Set the name of a module
   void SetModuleName(unsigned int ModuleID, MString Name);
 
   //! Set the number of processed events
@@ -74,6 +74,9 @@ class MGUIExpoSupervisor : public MGUIExpo
 
   //! Set the processing time
   void SetProcessingTime(unsigned int ModuleID, double ProcessingTime);
+
+  //! Set the running instances of the given module
+  void SetInstances(unsigned int ModuleID, unsigned int Instances);
 
   // protected methods:
  protected:
@@ -90,11 +93,15 @@ class MGUIExpoSupervisor : public MGUIExpo
   vector<long> m_ModuleProcessedEvents;
   //! The processed counts in the modules
   vector<double> m_ModuleProcessingTime;
+  //! The running instances of the module 
+  vector<unsigned int> m_ModuleInstances;
 
-  //! The labels containg the processed event info
+  //! The labels containing the processed event info
   vector<TGLabel*> m_LabelProcessedEvents;
-  //! The labels containg the processed event info
+  //! The labels containing the processed event info
   vector<TGLabel*> m_LabelProcessingTime;
+  //! The labels containing the processed event info
+  vector<TGLabel*> m_LabelInstances;
 
   
   
