@@ -17,7 +17,9 @@
 
 
 // Standard libs:
-#include <mutex>
+#include <chrono>
+using namespace std;
+using namespace std::chrono;
 
 // ROOT libs:
 
@@ -30,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A thread-safe timer
+//! A timer class
 class MTimer
 {
   // public interface:
@@ -40,16 +42,14 @@ class MTimer
   //! Standard constructor with time
   MTimer(double TimeOutSeconds);
   //! Copy constructor
-  //! Side remark: Since we have to lock Timer's mutex, we cannot have a const here
   MTimer(const MTimer& Timer);
   //! Default destructor
   virtual ~MTimer();
 
   //! Copy operator
-  //! Side remark: Since we have to lock Timer's mutex, we cannot have a const here
   MTimer& operator=(const MTimer& Timer);
   
-  //! Pauses the time and sets all stored values to zero
+  //! Pauses the timer and sets all stored values to zero
   void Clear();
   
   //! Start the timer - counting restarts from zero
@@ -76,10 +76,10 @@ class MTimer
 
   // protected methods:
  protected:
-  // Get the relative time in seconds
-  double GetRelativeTime();
-  //! Get the elapsed time in seconds -- not thread safe version!
-  double GetElapsedTime();
+  //! Get the time now 
+  time_point<steady_clock> Now();  
+  //! Get the elapsed time 
+  duration<double> GetElapsedTime();
 
   // protected members:
  protected:
@@ -88,21 +88,17 @@ class MTimer
   // private members:
  private:
   //! Time since last start or reset
-  double m_StartTime;
+  time_point<steady_clock> m_StartTime;
   //! Total elapsed time since last start or reset
-  double m_ElapsedTime;
+  duration<double> m_ElapsedTime;
   //! Time which needs to be elapsed until a timeout will be triggered
-  double m_TimeOut;
+  duration<double> m_TimeOut;
 
   //! Flag indicating that this timer is paused
   bool m_IsPaused;
 
   //! Flag indicating a time out, even when the real time has not yet elapsed 
   bool m_HasTimedOut;
-
-  //! A mutex ensuring that this class is completely reentrant
-  //! Needs to be mutable for copy constructor and copy operator
-  mutable mutex m_Guard;
 
 
 #ifdef ___CINT___

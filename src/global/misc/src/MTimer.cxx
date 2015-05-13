@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -51,11 +52,11 @@ MTimer::MTimer(bool Start)
 {
   // Default constructor
 
-  m_StartTime = GetRelativeTime();
-  m_ElapsedTime = 0;
+  m_StartTime = Now();
+  m_ElapsedTime = duration<double>(0);
 
   m_HasTimedOut = false;
-  m_TimeOut = 0;
+  m_TimeOut = duration<double>(0);
 
   m_IsPaused = !Start;
 }
@@ -68,11 +69,11 @@ MTimer::MTimer(double TimeOut)
 {
   // Standard constrcutor
 
-  m_StartTime = GetRelativeTime();
-  m_ElapsedTime = 0;
+  m_StartTime = Now();
+  m_ElapsedTime = duration<double>(0);
 
   m_HasTimedOut = false;
-  m_TimeOut = TimeOut;
+  m_TimeOut = duration<double>(TimeOut);
 
   m_IsPaused = false;
 }
@@ -84,8 +85,6 @@ MTimer::MTimer(double TimeOut)
 MTimer::MTimer(const MTimer& Timer)
 {
   // Copy constructor
-  
-  lock_guard<mutex> lock(Timer.m_Guard);
  
   m_StartTime = Timer.m_StartTime;
   m_HasTimedOut = Timer.m_HasTimedOut;
@@ -110,12 +109,8 @@ MTimer::~MTimer()
 MTimer& MTimer::operator=(const MTimer& Timer)
 {
   // Copy constructor
-  
-  lock_guard<mutex> lock(m_Guard);
  
   if (this != &Timer) {
-    lock_guard<mutex> lock2(Timer.m_Guard);
-    
     m_StartTime = Timer.m_StartTime;
     m_HasTimedOut = Timer.m_HasTimedOut;
     m_TimeOut = Timer.m_TimeOut;
@@ -133,15 +128,13 @@ MTimer& MTimer::operator=(const MTimer& Timer)
 void MTimer::Clear()
 {
   // (Re-) Start the timer
-
-  lock_guard<mutex> lock(m_Guard);
   
   m_IsPaused = true;
 
-  m_StartTime = 0;
+  m_StartTime = time_point<steady_clock>(duration<long int>(0));
   m_HasTimedOut = false;
-  m_TimeOut = 0;
-  m_ElapsedTime = 0;
+  m_TimeOut = duration<double>(0);
+  m_ElapsedTime = duration<double>(0);
 }
 
 
@@ -151,12 +144,10 @@ void MTimer::Clear()
 void MTimer::Start()
 {
   // (Re-) Start the timer
-
-  lock_guard<mutex> lock(m_Guard);
   
-  m_StartTime = GetRelativeTime();
+  m_StartTime = Now();
   m_HasTimedOut = false;
-  m_ElapsedTime = 0;
+  m_ElapsedTime = duration<double>(0);
   m_IsPaused = false;
 }
 
@@ -178,8 +169,6 @@ void MTimer::Reset()
 void MTimer::Pause()
 {
   // (Re-) Start the timer
-
-  lock_guard<mutex> lock(m_Guard);
   
   if (m_IsPaused == true) return;
   
@@ -195,11 +184,9 @@ void MTimer::Continue()
 {
   // Start the timer after it has been paused - does not reset the time
 
-  lock_guard<mutex> lock(m_Guard);
-
   if (m_IsPaused == false) return;
   
-  m_StartTime = GetRelativeTime();
+  m_StartTime = Now();
   m_IsPaused = false;
 }
 
@@ -207,14 +194,11 @@ void MTimer::Continue()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MTimer::GetRelativeTime()
+time_point<steady_clock> MTimer::Now()
 {
-  // Convert the time to seconds and return as double
+  // Return the time now
   
-  long int Seconds = 0, Nanoseconds = 0;
-  MSystem::GetTime(Seconds, Nanoseconds);
-
-  return Nanoseconds/1000000000.0 + Seconds;
+  return steady_clock::now();
 }
 
 
@@ -224,11 +208,9 @@ double MTimer::GetRelativeTime()
 void MTimer::SetTimeOut(double TimeOut) 
 { 
   // Set the timeout
-  // If timeout <= 0 then never timeout
-
-  lock_guard<mutex> lock(m_Guard);
+  // If timeout <= 0 then we never timeout
   
-  m_TimeOut = TimeOut;
+  m_TimeOut = duration<double>(TimeOut);
 }
  
 
@@ -240,9 +222,7 @@ double MTimer::GetTimeOut()
   // Return the timeout
   // If timeout <= 0 then never timeout
 
-  lock_guard<mutex> lock(m_Guard);
-
-  return m_TimeOut;
+  return m_TimeOut.count();
 }
 
 
@@ -253,23 +233,21 @@ double MTimer::GetElapsed()
 {
   // Convert the time to seconds and return as double
 
-  lock_guard<mutex> lock(m_Guard);
-
-  return GetElapsedTime();
+  return GetElapsedTime().count();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MTimer::GetElapsedTime()
+duration<double> MTimer::GetElapsedTime()
 {
   // Convert the time to seconds and return as double
 
   if (m_IsPaused == true) {
     return m_ElapsedTime;
   } else {
-    return GetRelativeTime() - m_StartTime + m_ElapsedTime;
+    return Now() - m_StartTime + m_ElapsedTime;
   }
 }
 
@@ -281,15 +259,13 @@ bool MTimer::HasTimedOut(double Seconds)
 {
   // Convert the time to seconds and return as double
 
-  lock_guard<mutex> lock(m_Guard);
-
   if (m_HasTimedOut == true) return true;
 
-  if (m_TimeOut <= 0) return false;
+  if (m_TimeOut <= duration<double>(0)) return false;
 
-  if (Seconds == -1) Seconds = m_TimeOut;
+  if (Seconds == -1) Seconds = m_TimeOut.count();
 
-  if (GetRelativeTime() - m_StartTime > Seconds) return true;
+  if ((Now() - m_StartTime).count() > Seconds) return true;
 
   return false;
 }
