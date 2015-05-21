@@ -374,6 +374,21 @@ else
 fi
 
 
+# Do a compiler test
+COMPILER="g++"
+if [[ ${OS} == linux ]]; then
+  COMPILER="g++" 
+elif [[ ${OS} == macosx ]]; then
+  COMPILER="c++"
+fi
+
+bash config/configure_compilertest ${COMPILER}
+if [ "$?" != "0" ]; then
+  exit 1
+fi
+
+
+
 
 echo " "
 echo "(2) Preparing the MEGAlib source code:"

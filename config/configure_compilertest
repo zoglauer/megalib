@@ -7,17 +7,20 @@
 
 
 COMPILER=$1
-if ( [[ ${COMPILER} != g++ ]] && [[ ${COMPILER} != clang++ ]] && [[ ${COMPILER} != icc ]] ); then
-  echo "ERROR: You must give an acceptable compiler to this script, e.g. g++, clang++, or icc"
+if ( [[ ${COMPILER} != g++ ]] && [[ ${COMPILER} != clang++ ]] && [[ ${COMPILER} != c++ ]] && [[ ${COMPILER} != icc ]] ); then
+  echo "ERROR: You must give an acceptable compiler to this script, e.g. g++, clang++, c++, or icc"
   exit 1;
 fi
 
 
 # Allowed versions
-GCCMIN=40600
+GCCMIN=40700
 CLANGMIN=30300
+APPLECLANGMIN=60000
 ICCMIN=1500
 
+OS=`uname -s`
+OS=`echo ${OS} | tr '[:upper:]' '[:lower:]'`
 
 CODE="
 #include <iostream>
@@ -59,35 +62,60 @@ STATUS=""
 if [[ -f compilertest ]]; then
   STATUS=`./compilertest`
   rm -f compilertest
-else 
+else
+  echo " "
   echo "ERROR: I could not compiler the test program"
   exit 1;
 fi
 
-echo ${STATUS}
+#echo ${STATUS}
+
 if [[ ${COMPILER} == g* ]]; then
   if [[ ${STATUS} -ge ${GCCMIN} ]]; then
     exit 0;
   else 
-    echo "ERROR: You need at least g++ ${GCCMIN} for MEGAlib"
+    MAJOR=$(( GCCMIN / 10000 ))
+    MINOR=$(( (GCCMIN - 10000*MAJOR) / 100 ))
+    PATCH=$(( (GCCMIN - 10000*MAJOR - 100*MINOR) ))
+    echo " "
+    echo "ERROR: You need at least g++ version ${MAJOR}.${MINOR}.${PATCH} for MEGAlib"
     exit 1;
   fi
 elif  [[ ${COMPILER} == c* ]]; then
-  if [[ ${STATUS} -ge ${CLANGMIN} ]]; then
-    exit 0;
-  else 
-    echo "ERROR: You need at least clang++ ${CLANGMIN} for MEGAlib"
-    exit 1;
+  if [[ ${OS} == linux ]]; then
+    if [[ ${STATUS} -ge ${CLANGMIN} ]]; then
+      exit 0;
+    else 
+      MAJOR=$(( CLANGMIN / 10000 ))
+      MINOR=$(( (CLANGMIN - 10000*MAJOR) / 100 ))
+      PATCH=$(( (CLANGMIN - 10000*MAJOR - 100*MINOR) ))
+      echo " "
+      echo "ERROR: You need at least clang++ version ${MAJOR}.${MINOR}.${PATCH} for MEGAlib on Linux"
+      exit 1;
+    fi
+  elif [[ ${OS} == darwin ]]; then
+    if [[ ${STATUS} -ge ${APPLECLANGMIN} ]]; then
+      exit 0;
+    else 
+      MAJOR=$(( APPLECLANGMIN / 10000 ))
+      MINOR=$(( (APPLECLANGMIN - 10000*MAJOR) / 100 ))
+      PATCH=$(( (APPLECLANGMIN - 10000*MAJOR - 100*MINOR) ))
+      echo " "
+      echo "ERROR: You need at least Apple compiler version ${MAJOR}.${MINOR}.${PATCH} for MEGAlib on a Mac"
+      exit 1;
+    fi
   fi
 elif  [[ ${COMPILER} == i* ]]; then
   if [[ ${STATUS} -ge ${ICCMIN} ]]; then
     exit 0;
   else 
+    echo " "
     echo "ERROR: You need at least icc ${ICCMIN} for MEGAlib"
     exit 1;
   fi
 fi
 
+echo " "
 echo "ERROR: I was unable to determine the compiler you are using"
 
 exit 1
