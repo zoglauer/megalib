@@ -21,14 +21,16 @@ Version 2.29/2.30
   --> Since this switch required significant changes in Geomega, please verify
       your geometries
 + A compiler with C++11 support is now required - all current Mac and Linux
-  compiler should do
+  compiler should do, e.g. g++ 4.7 and higher and Apple compiler 6.0
+  and higher. 
   
   
 *** Significant new features & improvements:
 
 General:
 + A compiler with C++11 support is now required - all current Mac and Linux
-  compiler should do
+  compiler should do, e.g. g++ 4.7 and higher and Apple compiler 6.0
+  and higher. The setup script will test for the compiler.
 + Capability to change font size for Retina displays
 + Capability to read and write gzip'ed files via zlib library
 + MTimer is now thread reentrant
