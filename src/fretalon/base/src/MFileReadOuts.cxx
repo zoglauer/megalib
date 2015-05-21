@@ -315,7 +315,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       if (SelectedDetectorID < 0 || (SelectedDetectorID >= 0 && (int) m_ROE->GetDetectorID() == SelectedDetectorID)) {
         MReadOut RO(*m_ROE, *m_ROD);
         ROS.AddReadOut(RO);
-        //cout<<RO.ToString()<<endl;
+        //cout<<"Added: "<<RO.ToString()<<endl;
       }
     } else if (Line[0] == 'I' && Line[1] == 'N') {
 

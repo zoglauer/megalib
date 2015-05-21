@@ -106,7 +106,8 @@ bool MReadOutStore::Move(MReadOutStore& Store, unsigned int GroupID)
   for (unsigned int c = 0; c < Store.m_Collection.size(); ++c) {
     MReadOutCollection C(Store.m_Collection[c].GetReadOutElement());
     vector<MReadOutCollection>::iterator I = lower_bound(m_Collection.begin(), m_Collection.end(), C);
-    if (I == m_Collection.end()) {
+    // We have a lower bound, i.e. the first which is not "<", so we might not yet have found it and we have to check a final time:
+    if (I == m_Collection.end() || !((*I).GetReadOutElement() == Store.m_Collection[c].GetReadOutElement())) {
       vector<MReadOutCollection>::iterator New = m_Collection.insert(I, C);
       (*New).AddReadOutDataGroups(m_ReadOutDataGroups);
       (*New).Move(Store.m_Collection[c].GetReadOutDataGroup(0), GroupID);
@@ -138,6 +139,7 @@ bool MReadOutStore::Add(const MReadOutSequence& Sequence, unsigned int Group)
       
       MReadOutCollection C(Sequence.GetReadOut(r).GetReadOutElement());
       vector<MReadOutCollection>::iterator I = lower_bound(m_Collection.begin(), m_Collection.end(), C);
+      // We have a lower bound, i.e. the first which is not "<", so we might not yet have found it and we have to check a final time:
       if (I == m_Collection.end() || (*I).Add(Sequence.GetReadOut(r), Group) == false) {
         C.AddReadOutDataGroups(m_ReadOutDataGroups);
         C.Add(Sequence, Group);
