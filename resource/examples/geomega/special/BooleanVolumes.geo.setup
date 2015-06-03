@@ -1,0 +1,96 @@
+# Composite volumes example
+
+Name    Composite
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+Shape Sphere Sphere1
+Sphere1.Parameters 0 12 
+
+Shape Box Box1
+Box1.Parameters 10 10 10
+
+Orientation Box1Orientation
+Box1Orientation.Position 0 0 0
+Box1Orientation.Rotation 45 45 0
+
+Shape Subtraction BoxMinusSphere
+BoxMinusSphere.Parameters Sphere1 Box1
+
+Orientation SubtractionsPosition
+SubtractionsPosition.Position -10 0 0
+
+Volume Subtraction
+Subtraction.Material CsI
+Subtraction.Shape BoxMinusSphere
+#Subtraction.Orientation SubtractionsPosition
+Subtraction.Position 0 0 0 
+Subtraction.Mother WorldVolume
+
+Volume Intersection
+Intersection.Material CsI
+Intersection.Shape Intersection Sphere1 Box1 Box1Orientation
+#Intersection.Orientation SubtractionsPosition
+Intersection.Position 30 0 0 
+Intersection.Mother WorldVolume
+
+Volume Union
+Union.Material CsI
+Union.Shape Union Sphere1 Box1 Box1Orientation
+#Union.Orientation SubtractionsPosition
+Union.Position -30 0 0 
+Union.Mother WorldVolume
+
+Volume Rod
+Rod.Material CsI
+Rod.Shape TUBE 0 1 10
+
+Orientation RodXO
+RodXO.Position 60 0 0
+RodXO.Rotate 0 90 0 
+
+Rod.Copy RodX
+RodX.Orientation RodXO
+RodX.Mother WorldVolume
+
+Rod.Copy RodY
+RodY.Position 0 60 0
+RodY.Rotate 90 0 0 
+RodY.Mother WorldVolume
+
+Rod.Copy RodZ
+RodZ.Position 0 0 60 
+RodZ.Mother WorldVolume
+
+
+
+
+
+
+
+
+
+
