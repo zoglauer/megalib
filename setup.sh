@@ -374,21 +374,6 @@ else
 fi
 
 
-# Do a compiler test
-COMPILER="g++"
-if [[ ${OS} == linux ]]; then
-  COMPILER="g++" 
-elif [[ ${OS} == macosx ]]; then
-  COMPILER="c++"
-fi
-
-bash config/configure_compilertest ${COMPILER}
-if [ "$?" != "0" ]; then
-  exit 1
-fi
-
-
-
 
 echo " "
 echo "(2) Preparing the MEGAlib source code:"
@@ -667,6 +652,21 @@ echo "# or put the following line into your .bashrc file" >> ${ENVFILE}
 echo "# . ${MEGALIBPATH}/bin/source-megalib.sh" >> ${ENVFILE}
 echo " " >> ${ENVFILE}
 echo "MEGALIBDIR=${MEGALIBPATH}" >> ${ENVFILE}
+
+
+# Do a compiler test
+COMPILER="g++"
+if [[ ${OS} == linux ]]; then
+  COMPILER="g++" 
+elif [[ ${OS} == macosx ]]; then
+  COMPILER="c++"
+fi
+
+bash ${MEGALIBPATH}/config/configure_compilertest ${COMPILER}
+if [ "$?" != "0" ]; then
+  exit 1
+fi
+
 
 
 
