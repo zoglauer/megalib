@@ -284,6 +284,10 @@ bool MCParameterFile::Parse()
           m_PhysicsListHD = MCPhysicsList::c_HDQGSP_BERT_HP;
         } else if (Type == "ftfp-bert-hp") {
           m_PhysicsListHD = MCPhysicsList::c_HDFTFP_BERT_HP;
+        } else if (Type == "ftfp-inclxx-hp") {
+          m_PhysicsListHD = MCPhysicsList::c_HDFTFP_INCLXX_HP;
+        } else if (Type == "qgsp-inclxx-hp") {
+          m_PhysicsListHD = MCPhysicsList::c_HDQGSP_INCLXX_HP;
         } else {
           Typo(i, "Can not parse token PhysicsListHD correctly:"
                " Unknown package string (Usage: e.g. \"PhysicsListHD qgsp-bic-hp\"");

@@ -24,6 +24,8 @@
 #include "QGSP_BIC_HP.hh"
 #include "QGSP_BERT_HP.hh"
 #include "FTFP_BERT_HP.hh"
+#include "FTFP_INCLXX_HP.hh"
+#include "QGSP_INCLXX_HP.hh"
 
 #include "G4EmExtraPhysics.hh"
 #include "G4HadronElasticPhysicsHP.hh"
@@ -50,6 +52,11 @@
 #include "G4LivermoreIonisationModel.hh"
 #include "G4PenelopeIonisationModel.hh"
 #include "G4PenelopeComptonModel.hh"
+#include "G4RadioactiveDecay.hh"
+#include "G4IonConstructor.hh"
+#include "G4UAtomicDeexcitation.hh"
+#include "G4LossTableManager.hh"  
+
 
 // MEGAlib:
 #include "MStreams.h"
@@ -70,8 +77,10 @@ const int MCPhysicsList::c_HDNone = 0;
 const int MCPhysicsList::c_HDQGSP_BIC_HP = 1; 
 const int MCPhysicsList::c_HDQGSP_BERT_HP = 2; 
 const int MCPhysicsList::c_HDFTFP_BERT_HP = 3; 
+const int MCPhysicsList::c_HDFTFP_INCLXX_HP = 4; 
+const int MCPhysicsList::c_HDQGSP_INCLXX_HP = 5; 
 const int MCPhysicsList::c_HDMin = 0; 
-const int MCPhysicsList::c_HDMax = 3; 
+const int MCPhysicsList::c_HDMax = 5; 
 
 
 /******************************************************************************
@@ -99,7 +108,7 @@ MCPhysicsList::~MCPhysicsList()
 }
 
 /******************************************************************************
- * Register the selcted processes
+ * Register the selected processes
  */
 void MCPhysicsList::Register()
 {
@@ -123,7 +132,6 @@ void MCPhysicsList::Register()
     RegisterPhysics(new G4EmPenelopePhysics());
   }
   
-  
   // Take care of selected hadron physics
   G4VModularPhysicsList* HDPhysics = 0;
   if (m_PhysicsListHD == c_HDNone) {
@@ -134,6 +142,10 @@ void MCPhysicsList::Register()
     HDPhysics = new QGSP_BERT_HP();
   } else if (m_PhysicsListHD == c_HDFTFP_BERT_HP) {
     HDPhysics = new FTFP_BERT_HP();
+  } else if (m_PhysicsListHD == c_HDFTFP_INCLXX_HP) {
+    HDPhysics = new FTFP_INCLXX_HP();
+  } else if (m_PhysicsListHD == c_HDQGSP_INCLXX_HP) {
+    HDPhysics = new QGSP_INCLXX_HP();
   } else {
     mout<<"Unknown HD physics list ID: "<<m_PhysicsListHD<<endl;
     mout<<"Using QGSP-BIC-HP"<<endl;
@@ -159,8 +171,8 @@ void MCPhysicsList::Register()
       
       RegisterPhysics(PC);
     }
-  }  
-
+  }
+  
   // We always register all sorts of decays:
   RegisterPhysics(new G4RadioactiveDecayPhysics());
   
@@ -182,6 +194,37 @@ void MCPhysicsList::Register()
 void MCPhysicsList::ConstructProcess()
 {
   G4VModularPhysicsList::ConstructProcess();
+  
+  // Do some additional modifications to the default lists:
+  theParticleIterator->reset();
+  while ((*theParticleIterator)() == true) {
+    G4ParticleDefinition* particle = theParticleIterator->value();
+    G4ProcessManager* pmanager = particle->GetProcessManager();
+    G4ProcessVector* pvector = pmanager->GetProcessList();
+    //cout<<particle->GetParticleName()<<endl;
+    //cout<<"Gamma processes: "<<pvector->size()<<endl;
+    for (G4int p = 0; p < pvector->size(); ++p) {
+      G4VProcess* P = (*pvector)[p];
+      //cout<<P->GetProcessName()<<endl;
+      if (dynamic_cast<G4RadioactiveDecay*>(P) != 0) {
+        G4RadioactiveDecay* RadioactiveDecay = dynamic_cast<G4RadioactiveDecay*>(P);
+        RadioactiveDecay->SetICM(true);  // Internal Conversion
+        RadioactiveDecay->SetARM(true);  // Atomic Rearrangement, i.e. filling of shell vacancies
+        RadioactiveDecay->SetHLThreshold(1.0E-9*second);  // Half life cut-off of isomeruic states
+      }
+    }
+  }
+  
+  G4VAtomDeexcitation* D = G4LossTableManager::Instance()->AtomDeexcitation();
+  D->SetFluo(true);
+  D->SetAuger(true);
+  D->SetPIXE(true);
+
+  
+  
+  
+  
+  
   
   /* unnecessary as of Geant4 9.6
   // Do some additional modifications to the default lists:

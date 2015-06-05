@@ -39,7 +39,7 @@
 #include "G4NuclearLevelManager.hh"
 #include "G4NuclearLevelStore.hh"
 #include "G4Ions.hh"
-#include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 
 // MEGAlib
 #include "MStreams.h"
@@ -881,13 +881,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
             if (M->IsValid() == true) {
               const G4NuclearLevel* Level = M->NearestLevel(Nucleus->GetExcitationEnergy());
               if (Level != 0) {
-                G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+                G4IonTable* Table = G4IonTable::GetIonTable();
                 Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), Level->Energy()));
               }
             }
           } else {
             //cout<<"Alignment < 1 keV"<<endl;
-            G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+            G4IonTable* Table = G4IonTable::GetIonTable();
             Nucleus = dynamic_cast<G4Ions*>(Table->GetIon(Nucleus->GetAtomicNumber(), Nucleus->GetAtomicMass(), 0.0));
           }
           //cout<<"NE: "<<Nucleus->GetExcitationEnergy()/keV<<"keV"<<endl;
@@ -962,7 +962,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         }
         
         if (FutureEvent == true) { // && Track->GetDefinition()->GetParticleName() != "Ge73[13.3]") {
-          //cout<<"Future: "<<Track->GetDefinition()->GetParticleName()<<" --> "<<Step->GetPostStepPoint()->GetGlobalTime()/second<<" sec "<<Step->GetPreStepPoint()->GetGlobalTime()/second<<" sec"<<endl;
+          //cout<<"Future: "<<Track->GetDefinition()->GetParticleName()<<" decays in "<<Step->GetPostStepPoint()->GetGlobalTime()/second<<" sec (now: "<<Step->GetPreStepPoint()->GetGlobalTime()/second<<" sec)"<<endl;
  
           // Get the volume name, so that we know from which volume we have to skip an event later:
           G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());

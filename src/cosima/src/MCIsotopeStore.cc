@@ -29,6 +29,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4LogicalVolume.hh"
 #include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 #include "G4Ions.hh"
 
 // Standard lib:
@@ -60,7 +61,7 @@ MCIsotopeStore::~MCIsotopeStore()
  */
 G4ParticleDefinition* MCIsotopeStore::GetParticleDefinition(int IonID, double Excitation)
 {
-  G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+  G4IonTable* Table = G4IonTable::GetIonTable();
   int AtomicNumber = int(IonID/1000);
   int AtomicMass = IonID - int(IonID/1000)*1000;
   

@@ -41,6 +41,7 @@
 #include "G4NuclearLevelManager.hh"
 #include "G4NuclearLevel.hh"
 #include "G4NuclearLevelStore.hh"
+#include "G4IonTable.hh"
 
 // Standard lib:
 #include <limits>
@@ -253,7 +254,8 @@ bool MCActivator::CalculateEquilibriumRates()
         */
 
         // Check if the particle really exists...
-        G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+        //G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+        G4IonTable* Table = G4IonTable::GetIonTable();
         int ID = m_Rates.GetID(v, i);
         int AtomicNumber = int(ID/1000);
         int AtomicMass = ID - int(ID/1000)*1000;

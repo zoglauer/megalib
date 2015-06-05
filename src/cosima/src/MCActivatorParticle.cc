@@ -25,6 +25,7 @@
 
 // Geant4:
 #include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 #include "G4RadioactiveDecay.hh"
 #include "G4DecayTable.hh"
 #include "G4VDecayChannel.hh"
@@ -124,7 +125,8 @@ void MCActivatorParticle::SetIDAndExcitation(unsigned int ID, double Excitation)
 
   if (m_Excitation < 0.0) m_Excitation = 0.0;
 
-  G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+  //G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+  G4IonTable* Table = G4IonTable::GetIonTable();
   int AtomicNumber = int(m_ID/1000);
   int AtomicMass = m_ID - int(m_ID/1000)*1000;
   m_Definition = Table->GetIon(AtomicNumber, AtomicMass, Excitation);

@@ -72,6 +72,10 @@ class MCPhysicsList: public G4VModularPhysicsList
   static const int c_HDQGSP_BERT_HP; 
   /// Id representing QGSP_BERT_HP hadron package
   static const int c_HDFTFP_BERT_HP; 
+  /// Id representing FTFP_INCLXX_HP hadron package
+  static const int c_HDFTFP_INCLXX_HP; 
+  /// Id representing QGSP_INCLXX_HP hadron package
+  static const int c_HDQGSP_INCLXX_HP; 
   /// Id representing minimum hadron package ID
   static const int c_HDMin; 
   /// Id representing maximum hadron package ID

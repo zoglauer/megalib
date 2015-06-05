@@ -37,6 +37,7 @@ using namespace std;
 #include "G4ThreeVector.hh"
 #include "G4GeneralParticleSource.hh"
 #include "G4ParticleTable.hh"
+#include "G4IonTable.hh"
 
 // ROOT:
 #include "TRandom.h"
@@ -1940,7 +1941,7 @@ bool MCSource::GenerateParticleDefinition()
   int Type = m_ParticleType;
   if (Type > 1000) {
     G4ParticleDefinition* Ion = 0;
-    G4ParticleTable* Table = G4ParticleTable::GetParticleTable();
+    G4IonTable* Table = G4IonTable::GetIonTable();
     int AtomicNumber = int(Type/1000);
     int AtomicMass = Type - int(Type/1000)*1000;
     Ion = Table->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
