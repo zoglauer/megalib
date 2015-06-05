@@ -106,7 +106,9 @@ void MGUISivanMain::Create()
   m_MenuAnalysis->AddEntry("Statistics on missing interactions", c_MissingInteractions);
   m_MenuAnalysis->AddEntry("Ratio of completly absorbed events", c_CompleteAbsorptionRatio);
   m_MenuAnalysis->AddEntry("Interaction per voxels...", c_InteractionsPerVoxel);
-  m_MenuAnalysis->AddEntry("Energy per nucleus...", c_EnergyPerNucleus);
+  m_MenuAnalysis->AddSeparator();
+  m_MenuAnalysis->AddEntry("Newly generated isotopes distribution", c_IsotopeGeneration);
+  m_MenuAnalysis->AddEntry("Energy distribution by decayed isotope", c_EnergyPerNucleus);
   // m_MenuAnalysis->AddEntry("Charge sharing between voxels...", c_ChargeSharing);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Doppler broadening", c_DopplerARM);
@@ -310,7 +312,11 @@ bool MGUISivanMain::ProcessMessage(long Message, long Parameter1,
       case c_EnergyPerNucleus:
         m_Interface->EnergyPerNucleus();
         break;
-
+        
+      case c_IsotopeGeneration:
+        m_Interface->IsotopeGeneration();
+        break;
+        
       default:
         break;
       }

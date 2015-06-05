@@ -77,6 +77,7 @@ class MGUISivanMain : public MGUIMain
                    c_ChargeSharing, 
                    c_InteractionsPerVoxel,
                    c_EnergyPerNucleus,
+                   c_IsotopeGeneration,
                    c_EnergyPerVoxel, 
                    c_ComptonEnergyEscape, 
                    c_StartLocations,
