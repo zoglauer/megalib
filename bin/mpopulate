@@ -17,13 +17,13 @@ commandhelp() {
   echo ""
   echo "Options:"
   echo "  --new=[current repository with newest files]: Mandatory/No default"
-  echo "  --old=[outdated repository]: Mandatory/No default"
+  echo "  --old=[outdated repository]: Default \".\""
   echo "  --mode=[all/existing]: All copies all newer files, existing only those which exist in the outdated repository"
   echo "  --help: Show this help."
   echo ""
   echo "";
   echo "Example: "
-  echo "  mpopulate --new='current repository with newest files' --old='outdated repository'";
+  echo "  mpopulate --new=../MEGAlib_trunk --old=.";
   echo "";
 }
 
@@ -45,7 +45,7 @@ done
 
 # Default options:
 NEW="XYZ1234XYZ"
-OLD="XYZ1234XYZ"
+OLD="."
 MODE="existing"
 
 
