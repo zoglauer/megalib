@@ -73,7 +73,7 @@ done
 # Add the path to .bash_local, if it is not yet there
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # unfortunately we have to hard code the MEGAlib path here since we have to use ''
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; qif [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'
 done
 
 
