@@ -17,11 +17,10 @@ DCal2.TriggerThreshold     326   150
 DCal2.Overflow             5157  1700
 DCal2.FailureRate 0.096
 
-DCal2.EnergyResolutionType Lorentz
-DCal2.EnergyResolutionAt 0      38 6
-DCal2.EnergyResolutionAt 511    38 6
-DCal2.EnergyResolutionAt 662    38 7
-DCal2.EnergyResolutionAt 1275   38 8
-DCal2.EnergyResolutionAt 10000  38 8
+DCal2.EnergyResolution Lorentz     0     0  38 
+DCal2.EnergyResolution Lorentz   511   511  38 
+DCal2.EnergyResolution Lorentz   662   662  38 
+DCal2.EnergyResolution Lorentz  1275  1275  38 
+DCal2.EnergyResolution Lorentz 10000 10000  38 
 
 #DCal2.PulseShape 2.78652e-03 1.11233e-04 1.13468e-07 -3.63642e-11 4.80242e-15 -3.56580e-19 1.60263e-23 -4.33004e-28 6.47700e-33 -4.12352e-38 0 30000

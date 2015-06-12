@@ -14,7 +14,7 @@ Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
 
 Material Na
 Na.Density 0.968
-Na.Component 23.0 11.0 1.0
+Na.Component Na 1.0
 
 Volume WorldVolume             
 WorldVolume.Material Vacuum

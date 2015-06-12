@@ -15,25 +15,20 @@ AbsorptionFileDirectory ./absorptions
 Material vacuum
 vacuum.Density                  1E-16
 vacuum.Component                1 1 1
-vacuum.Sensitivity              1
 
 Material aluminum
 aluminum.Density               2.7
 aluminum.Component             27.0 13.0 1
-aluminum.Sensitivity           1
 
 Material beryllium
 beryllium.Density               1.858
 beryllium.Component             9.01  4.0 1
-beryllium.Sensitivity           1
 
 Material Densimet180
 Densimet180.Density               18
 Densimet180.ComponentByMass       183.8  74  0.95
 Densimet180.ComponentByMass       55.84  26  0.16
 Densimet180.ComponentByMass       58.69  28  0.44
-Densimet180.Sensitivity           1
-
 
 
 
@@ -70,7 +65,6 @@ prop_mixt.ComponentByMass 14.0067 7 0.87121
 Material cold_gas
 cold_gas.Density 0.149
 cold_gas.ComponentByMass 14.0067 7 1
-cold_gas.RadiationLength 254.953
 
 Material inox1810
 inox1810.Density 9.147
@@ -105,7 +99,6 @@ nicd_cells.ComponentByMass 112.41 48 0.146
 Material isot_cu
 isot_cu.Density 8.933
 isot_cu.ComponentByMass 63.546 29 1
-isot_cu.RadiationLength 1.43993
 
 Material electr
 electr.Density 10
@@ -183,7 +176,6 @@ hget.ComponentByMass 106.4 46 0.869
 Material inor
 inor.Density 7.31
 inor.ComponentByMass 114.82 49 1
-inor.RadiationLength 1.21056
 
 Material steel_302
 steel_302.Density 7.86
@@ -221,7 +213,6 @@ nit_fil.ComponentByMass 14.0067 7 1
 Material gold
 gold.Density 19.3
 gold.ComponentByMass 196.967 79 1
-gold.RadiationLength 0.334783
 
 Material steel_a286
 steel_a286.Density 7.92
@@ -242,17 +233,14 @@ steel_a286.ComponentByMass 50.9415 23 0.003
 Material germanium
 germanium.Density 5.323
 germanium.ComponentByMass 72.64 32 1
-germanium.RadiationLength 2.30216
 
 Material active_ge_recoil
 active_ge_recoil.Density 5.323
 active_ge_recoil.ComponentByMass 72.64 32 1
-active_ge_recoil.RadiationLength 2.30216
 
 Material active_si_recoil
 active_si_recoil.Density 2.33
 active_si_recoil.ComponentByMass 28.08 14.0 1
-active_si_recoil.Sensitivity 1
 
 Material active_czt_recoil
 active_czt_recoil.Density 5.78
@@ -267,7 +255,6 @@ Peek.Density                     1.31
 Peek.Component                   1.0   1.0  8   // H
 Peek.Component                   12.1  6.0  5   // C
 Peek.Component                   16.0  8.0  2   // O
-Peek.Sensitivity                 1
 
 ## ****************************************************
 ## MATERIALS from NCT file
@@ -284,7 +271,6 @@ ro4003.ComponentByMass    26.982  13.0    0.0190        // Al
 ro4003.ComponentByMass    10.811   5.0    0.0110        // B
 ro4003.ComponentByMass    39.098  19.0    0.0010        // K
 ro4003.ComponentByMass    24.305  12.0    0.0050        // Mg
-ro4003.Sensitivity        1
 
 Material roTMM3   // one of circuit board materials by Rogers Corporation
                   // used in NCT
@@ -300,13 +286,10 @@ roTMM3.ComponentByMass    26.982  13.0    0.0011        // Al
 roTMM3.ComponentByMass    10.811   5.0    0.0003        // B
 roTMM3.ComponentByMass    24.305  12.0    0.0002        // Mg
 roTMM3.ComponentByMass    32.066  16.0    0.0010        // S
-roTMM3.Sensitivity        1
 
 Material indium
 indium.Density                  7.310
 indium.Component                114.818     49.0  1
-indium.Sensitivity              1
-indium.RadiationLength          1.21054
 
 // stainless steel according to P.Turin for NCT screws
 Material Steel_18_8
@@ -315,13 +298,11 @@ Steel_18_8.ComponentByMass      51.99 24.0  0.18   // Cr
 Steel_18_8.ComponentByMass      58.69 28.0  0.09   // Ni
 Steel_18_8.ComponentByMass      12.01  6.0  0.013  // C
 Steel_18_8.ComponentByMass      55.85 26.0  0.717   // Fe
-Steel_18_8.Sensitivity          1
 
 Material INST_ACsupport    // Support for AC including wiring (carbon fiber + misc)
 INST_ACsupport.Density               0.144
 INST_ACsupport.ComponentByMass       12.01  6.0  0.98     // C
 INST_ACsupport.ComponentByMass       63.546 29.0 0.01     // Cu
 INST_ACsupport.ComponentByMass       28.086 14.0 0.01     // Al
-INST_ACsupport.Sensitivity               1
 
 

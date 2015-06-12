@@ -20,6 +20,9 @@ Version 2.29/2.30
 + Exchange of the ROOT geometry backend (switch to the TGeo* classes)
   --> Since this switch required significant changes in Geomega, please verify
       your geometries
++ The MEGAlib default materials have been changed to the new format
+  ("XYZ.ComponentByAtoms Si 1") which is based on natural isotope distributions
+  in Geant4. Thus the cross sections changed slightly.
 + A compiler with C++11 support is now required - all current Mac and Linux
   compiler should do, e.g. g++ 4.7 and higher and Apple compiler 6.0
   and higher. 
@@ -60,6 +63,10 @@ Geomega:
 + Addition of boolean shapes generated via intersection, union, and subtraction
 + Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new MRotation 
   class
++ The MEGAlib default materials have been changed to the new format
+  ("XYZ.ComponentByAtoms Si 1") which is based on natural isotope distributions
+  in Geant4. Thus the cross sections changed slightly. You also get a warning now
+  when you use the old format.
   
 Reponse:
 + Improved binned Compton imaging response creation

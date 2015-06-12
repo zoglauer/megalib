@@ -18,15 +18,11 @@ SurroundingSphere 175  0.0  0.0  0.0  175.0
 
 Material Silicon
 Silicon.Density                 2.33
-Silicon.RadiationLength         9.35
-Silicon.Component               28.08 14.0 1
-Silicon.Sensitivity             1   
+Silicon.Component               Si 1
 
 Material Vacuum                          
 Vacuum.Density                  1E-16        
-Vacuum.RadiationLength          1E+16          
-Vacuum.Component                1E-16 1E-16 1 
-Vacuum.Sensitivity              1
+Vacuum.Component                H 1 
 
 
 // Trigger: at least three hits in D3

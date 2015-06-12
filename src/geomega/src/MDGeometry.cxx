@@ -1542,7 +1542,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  Tokenizer.IsTokenAt(1, "ComponentByAtoms") == true) {
         if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0\""
+               " e.g. \"Alu.ComponentByAtoms 27.0 13.0 1.0  --> but this is depreciated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByAtoms Al 1.0\"");
           return false;
@@ -1559,11 +1559,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                           Tokenizer.GetTokenAtAsDouble(3), 
                           Tokenizer.GetTokenAtAsDouble(4),
                           MDMaterialComponent::c_ByAtoms);
+          mout<<"   ***  Info  ***  "<<endl;
+          mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
+          mout<<"e.g. \"Alu.ComponentByAtoms Al 1.0\""<<endl;
         }
       } else if (Tokenizer.IsTokenAt(1, "ComponentByMass") == true) {
        if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
-               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0\""
+               " e.g. \"Alu.ComponentByMass 27.0 13.0 1.0  --> but this is depreciated\""
                " or three string and one double\""
                " e.g. \"Alu.ComponentByMass Al 1.0\"");
           return false;
@@ -1580,6 +1583,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                           Tokenizer.GetTokenAtAsDouble(3), 
                           Tokenizer.GetTokenAtAsDouble(4),
                           MDMaterialComponent::c_ByMass);
+          mout<<"   ***  Info  ***  "<<endl;
+          mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
+          mout<<"e.g. \"Alu.ComponentByMass Al 1.0\""<<endl;
         }
       } else if (Tokenizer.IsTokenAt(1, "Sensitivity") == true) {
         if (Tokenizer.GetNTokens() != 3) {
