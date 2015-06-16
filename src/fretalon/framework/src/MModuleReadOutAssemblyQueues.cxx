@@ -178,7 +178,7 @@ bool MModuleReadOutAssemblyQueues::AddOutgoing(MReadOutAssembly* Event)
       }
       return false;
     }
-    // and add the event at the right place
+    // ... and add the event at the right place
     deque<MReadOutAssembly*>::reverse_iterator ROAIter = m_OutgoingEvents.rbegin() + (Iter - m_SortingOrder.rbegin());
     *ROAIter = Event; 
   } else {

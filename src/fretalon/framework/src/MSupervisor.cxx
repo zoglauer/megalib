@@ -701,20 +701,25 @@ bool MSupervisor::Analyze()
           //cout<<"No events for module "<<m<<endl; 
         }
 
-        if (M->IsMultiThreaded() == false) { // We have to do the heavy lifing
-          //cout<<"Do analysis for "<<M->GetName()<<endl;
+        if (M->IsMultiThreaded() == false) { // We have to do the heavy lifting in this thread
+          //cout<<"Doing analysis for module "<<M->GetName()<<endl;
           M->DoSingleAnalysis(); 
         }
         if (M->HasAnalyzedReadOutAssemblies() == true) {
-          MReadOutAssembly* E = M->GetAnalyzedReadOutAssembly();
-          if (E->IsFilteredOut() == true) {
-            delete E;
+          MReadOutAssembly* ROA = M->GetAnalyzedReadOutAssembly();
+          if (ROA->IsFilteredOut() == true) {
+            //cout<<"ROA "<<ROA->GetID()<<" has been filterered out"<<endl;
+            delete ROA;
           } else {
             if (m < Modules.size()-1) {
-              Modules[m+1][0]->AddReadOutAssembly(E); 
+              //cout<<"Adding ROA "<<ROA->GetID()<<" to module "<<Modules[m+1][0]->GetName()<<endl;
+              Modules[m+1][0]->AddReadOutAssembly(ROA); 
               // Remark: the modules share their queue, so it does not matter to which we add the event
             } else {
-              if (m == Modules.size()-1) delete E;
+              if (m == Modules.size()-1) {
+                //cout<<"ROA "<<ROA->GetID()<<" passed through all modules"<<endl;
+                delete ROA;
+              }
             }
           }
         }
@@ -782,7 +787,7 @@ bool MSupervisor::Analyze()
         LastUIUpdate.Reset();
         ++NumberOfUIUpdates;
       }
-    }
+    } // UI updates and spwan checks
     
     // If there were no events --- sleep a bit
     if (m_UseMultiThreading == true && HasMoreEvents == false) {
@@ -790,7 +795,7 @@ bool MSupervisor::Analyze()
     }
 
     gSystem->ProcessEvents();    
-  }
+  } // big while loop
   
   
   // Finalize the modules:
