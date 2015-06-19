@@ -1444,7 +1444,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("A volume of this name already exists!");
           return false;
         }
-
+        if (V->IsClone() == true) {
+          Typo("You cannot create a copy of a copy...");
+          return false;
+        }
+        
         VCopy = new MDVolume(Tokenizer.GetTokenAt(2));
 
         AddVolume(VCopy);
