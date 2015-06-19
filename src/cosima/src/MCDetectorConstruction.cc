@@ -151,8 +151,7 @@ bool MCDetectorConstruction::Initialize()
   m_Geometry = new MDGeometryQuest(); 
 
   // Read and initilize the geometry from MEGAlib
-  if (m_Geometry->ScanSetupFile(m_RunParameters.GetGeometryFileName().c_str(), false, false, false) 
-      == false) {
+  if (m_Geometry->ScanSetupFile(m_RunParameters.GetGeometryFileName().c_str(), false, false, false) == false) {
     return false;
   }
 
@@ -181,7 +180,11 @@ bool MCDetectorConstruction::Initialize()
   if (ConstructVolumes() == false) return false;
 
   // Recursively position all volumes
-  PositionVolumes(m_Geometry->GetWorldVolume());
+  if (PositionVolumes(m_Geometry->GetWorldVolume()) == false) {
+    cout<<"Error during positioning volumes. Aborting"<<endl;
+    return false;
+  }
+    
   if (m_WorldVolume == 0) return false;
 
   if (ConstructDetectors() == false) return false;
@@ -1081,7 +1084,7 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
 {
   // This is far too complex to REALLY understand without investing time ...
   // But since it works: "Don't f&*k with it!" 
-
+  
   MDVolume* VC;
   MString Name, MotherName, CopyName;
 
@@ -1213,7 +1216,7 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
 
     // Do the same for all daughters:
     for (unsigned int i = 0; i < Volume->GetNDaughters(); i++) {
-     if (PositionVolumes(Volume->GetDaughterAt(i)) == false) return false;
+      if (PositionVolumes(Volume->GetDaughterAt(i)) == false) return false;
     }
   }
 	
