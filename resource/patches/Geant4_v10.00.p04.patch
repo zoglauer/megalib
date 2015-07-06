@@ -1,39 +1,54 @@
-diff -r geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc
-321,347d320
-<   // Sanity check that we have energy conservation
-<   double Energy = 0.0;
-<   for (unsigned int i = 0; i < vectorOfParticles->size(); ++i) {
-<     Energy += vectorOfParticles->operator[](i)->GetKineticEnergy();
-<   }
-<   
-<   if (Energy < atomicShell->BindingEnergy()) {
-<     G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
-<      
-<     // Isotropic angular distribution for the outcoming e-
-<     G4double newcosTh = 1.-2.*G4UniformRand();
-<     G4double  newsinTh = std::sqrt(1.-newcosTh*newcosTh);
-<     G4double newPhi = twopi*G4UniformRand();
-<        
-<     G4double xDir =  newsinTh*std::sin(newPhi);
-<     G4double yDir = newsinTh*std::cos(newPhi);
-<     G4double zDir = newcosTh;
-<        
-<     G4ThreeVector newElectronDirection(xDir,yDir,zDir);
-<        
-<     aParticle = new  G4DynamicParticle(G4Electron::Electron(), 
-<       newElectronDirection,
-<       atomicShell->BindingEnergy() - Energy);
-<      
-<     vectorOfParticles->push_back(aParticle);
-<   }  
-<   
-diff -r geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc
-172,175c172,174
-<     //_vSN = dtransition->GetOrbitNumber();   
-<     //_electronO.RemoveElectron(_vSN);
-<     G4cout<<"AZ: Fixed energy of electron"<<G4endl;
-<     lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2);
----
->     _vSN = dtransition->GetOrbitNumber();   
->     _electronO.RemoveElectron(_vSN);
->     lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2 - dtransition->GetBondEnergy());
+diff -rupN geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc
+--- geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc	2015-03-05 05:25:02.000000000 -0800
++++ geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/electromagnetic/lowenergy/src/G4UAtomicDeexcitation.cc	2015-06-02 19:55:52.160184516 -0700
+@@ -318,6 +318,33 @@ void G4UAtomicDeexcitation::GeneratePart
+       G4Exception("G4UAtomicDeexcitation::GenerateParticles()","de0001",JustWarning, "Energy deposited locally");
+     }
+   
++  // Sanity check that we have energy conservation
++  double Energy = 0.0;
++  for (unsigned int i = 0; i < vectorOfParticles->size(); ++i) {
++    Energy += vectorOfParticles->operator[](i)->GetKineticEnergy();
++  }
++  
++  if (Energy < atomicShell->BindingEnergy()) {
++    G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
++     
++    // Isotropic angular distribution for the outcoming e-
++    G4double newcosTh = 1.-2.*G4UniformRand();
++    G4double  newsinTh = std::sqrt(1.-newcosTh*newcosTh);
++    G4double newPhi = twopi*G4UniformRand();
++       
++    G4double xDir =  newsinTh*std::sin(newPhi);
++    G4double yDir = newsinTh*std::cos(newPhi);
++    G4double zDir = newcosTh;
++       
++    G4ThreeVector newElectronDirection(xDir,yDir,zDir);
++       
++    aParticle = new  G4DynamicParticle(G4Electron::Electron(), 
++      newElectronDirection,
++      atomicShell->BindingEnergy() - Energy);
++     
++    vectorOfParticles->push_back(aParticle);
++  }  
++  
+   //G4cout << "---------FATTO!---------" << G4endl; //debug 
+ 
+ }
+diff -rupN geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc
+--- geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc	2015-03-05 05:24:39.000000000 -0800
++++ geant4_v10.00.p04_fixed/geant4.10.00.p04-source/source/processes/hadronic/models/de_excitation/photon_evaporation/src/G4VGammaDeexcitation.cc	2015-06-01 23:38:21.268282831 -0700
+@@ -169,9 +169,10 @@ G4Fragment* G4VGammaDeexcitation::Genera
+   if (dtransition && !( dtransition->IsAGamma()) ) {
+     eTransition = true; 
+     gamma = G4Electron::Electron(); 
+-    _vSN = dtransition->GetOrbitNumber();   
+-    _electronO.RemoveElectron(_vSN);
+-    lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2 - dtransition->GetBondEnergy());
++    //_vSN = dtransition->GetOrbitNumber();   
++    //_electronO.RemoveElectron(_vSN);
++    G4cout<<"AZ: Fixed energy of electron"<<G4endl;
++    lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2);
+   }
+ 
+   G4double cosTheta = 1. - 2. * G4UniformRand(); 
