@@ -61,4 +61,4 @@
 # Step: 5
 # Simulate and draw some events:
 
-/run/beamOn             1000
+/run/beamOn             10
