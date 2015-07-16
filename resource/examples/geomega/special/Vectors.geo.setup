@@ -1,0 +1,54 @@
+# Example showing the use of vectors
+
+Name Vectors
+Version 1.0
+
+SurroundingSphere 100  0.0  0.0  0.0  100.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+Constant ElementsX 2
+Constant ElementsY 2
+Constant ElementsZ 2
+
+Vector DetectorSizes
+// Scheme: (-x/-y/-z) (+x/-y/-z) (-x/+y/-z) (+x/+y/-z) (-x/-y/+z) (+x/-y/+z) (-x/+y/+z) (+x/+y/+z)
+DetectorSizes.Matrix ElementsX 1.0 ElementsY 1.0 ElementsZ 1.0 \\
+2.0 4.0 \\ 
+6.0 8.0 \\
+12.0 14.0 \\
+16.0 18.0 \\
+
+
+Constant XYmin  -100.0
+Constant XYdist  200.0
+
+Constant Zmin   0.0
+Constant Zdist 100.0
+
+ForVector DetectorSizes X Y Z V
+  Volume Detector_%X_%Y_%Z
+  Detector_%X_%Y_%Z.Material Germanium
+  Detector_%X_%Y_%Z.Shape Box 50.0 40.0 $V
+  Detector_%X_%Y_%Z.Position { XYmin + $X*XYdist } { XYmin + $Y*XYdist } { Zmin + $Z*Zdist }
+  Detector_%X_%Y_%Z.Mother WorldVolume
+DoneVector
