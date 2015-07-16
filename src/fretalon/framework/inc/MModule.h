@@ -205,13 +205,12 @@ class MModule
   //! No copying whatsoever
   MModule& operator=(const MModule&) = delete;
 
-
-
+  
   // protected members:
  protected:
   //! Name of this module
   MString m_Name;
-  //! Name of the XML tag --- has to be uniquie
+  //! Name of the XML tag --- has to be unique
   MString m_XmlTag;
 
   //! List of preceeding modules
@@ -259,6 +258,7 @@ class MModule
 
   //! The number of events passing through the Analysis function
   long m_NAnalyzedEvents;
+  
   
   // private members:
  private:
