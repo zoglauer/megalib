@@ -17,7 +17,7 @@ CXX_MAIN   := src/MAssembly.cxx src/MReadOutAssembly.cxx
 CXX_FILES  := $(wildcard src/*.cxx)
 CXX_FILES  := $(filter-out $(CXX_MAIN),$(CXX_FILES))
 H_FILES    := $(wildcard $(CURDIR)/inc/*.h)
-#H_FILES    := $(filter-out $(CURDIR)/inc/MAssembly.h $(CURDIR)/inc/MReadOutAssembly.h,$(H_FILES))
+H_FILES    := $(filter-out $(CURDIR)/inc/MAssembly.h $(CURDIR)/inc/MReadOutAssembly.h,$(H_FILES))
 OBJ_FILES  := $(addprefix $(LB)/,$(notdir $(CXX_FILES:.cxx=.o)))
 DEP_FILES  := $(OBJ_FILES:.o=.d)
 SOBJ       := $(LB)/libFretalon.$(DLL)
