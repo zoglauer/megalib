@@ -26,5 +26,6 @@ LDFLAGS       = $(OPT) -D___LINUX___
 SOFLAGS       = -shared  
 LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum
 GLIBS         = $(ROOTGLIBS) 
+DEPFLAGS      = -MD -MF
 
 LINK          = ln -s -f
