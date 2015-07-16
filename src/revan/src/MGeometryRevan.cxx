@@ -192,7 +192,7 @@ int MGeometryRevan::GetLayerDistance(MRESE *Orig, MRESE *Test)
     OOrig = Orig->GetVolumeSequence()->GetRotation() * OOrig;
 
     if (OOrig.Mag() == 0) {
-      merr<<"Tracker layer distance is zero: Seems you forgot to set the correct structural pitch for an electron tracker!"<<show;
+      merr<<"Tracker layer distance is zero ("<<Orig->GetPosition()<<" vs "<<Test->GetPosition()<<" vs. "<<OOrig<<"): Seems you forgot to set the correct structural pitch for an electron tracker!"<<show;
       return 0;
     }
 
