@@ -1,6 +1,16 @@
 # MEGAlib gitignore file
 
 # bin directory
+bin/cosima
+bin/eview
+bin/geomega
+bin/mimrec
+bin/melinator
+bin/realta
+bin/revan
+bin/sivan
+bin/spectralyze
+
 BackgroundMixer
 ConvertACTtools
 ConvertMGGPOD
@@ -16,20 +26,11 @@ SimAnalyzer
 SimCombiner
 SimRandomCoincidence
 SimpleComptonImaging
-cosima
 eventtransmitter
-eview
-geomega
-mimrec
-melinator
 modifiedcosima
 quickparse
-realta
 responsecreator
 responsemanipulator
-revan
-sivan
-spectralyze
 bundler
 SimRewriter
 StandAlone
@@ -53,6 +54,7 @@ UpdateCheck.txt
 configure_lastgoodoptions
 source-megalib.sh
 SetupOptions.txt
+new-source-megalib.sh
 
 # doc directory:
 Peoples.txt
@@ -78,5 +80,5 @@ External
 *.killcosimas.bash
 .DS_Store
 callgrind.*
-new-source-megalib.sh
+
 
