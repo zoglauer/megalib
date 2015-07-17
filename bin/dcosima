@@ -103,12 +103,8 @@ else
   exit 1  
 fi
 
-# Read configuration file and extract machines
-MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
-REMOTEUSER=( )
-REMOTEHOST=( )
-REMOTEPORT=( )
-ALLOWEDINSTANCES=( )
+# The md5 checksum of the configuration file to tell if it changed - initialize empty
+CFGMD5=""
 
 # Find the master simulation directory
 MASTERDIR=( `cat ${CFG} | grep "^directory" | gawk '{ print $2 }'` )
@@ -123,17 +119,6 @@ if [[ ${MASTERDIR} == .* ]]; then
   echo "ERROR: The simulation directory must sit in the users main directory! Using default path dcosima"
   MASTERDIR="dcosima"
 fi
-
-echo " "
-echo "Remote machines setup:"
-for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
-  REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
-  REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-  echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
-  ALLOWEDINSTANCES[$m]=`dcosima-getinstances --remote=${MACHINES[$m]}`
-  echo "   --> Allowed instances: ${ALLOWEDINSTANCES[$m]}" 
-done
 
 echo " "
 echo "Starting runs:"
@@ -153,7 +138,21 @@ RSYNCSTARTED="FALSE"
 while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
 
   echo " " 
-    
+
+  # (Re-) Read configuration file and extract machines
+  if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
+    echo " "
+    echo "Reading remote machines setup:"
+    MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      REMOTEUSER=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+      REMOTEHOST=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+      REMOTEPORT=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+      echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER}, address: ${REMOTEHOST}, port: ${REMOTEPORT})"
+    done
+    CFGMD5=`md5sum ${CFG}`
+  fi
+
   STARTED=0
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
@@ -178,7 +177,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     sleep 1
     # If we have not yet launched the rsync process, do it now
     if [ "${RSYNCSTARTED}" == "FALSE" ]; then
-      dcosima-rsync --dir=${LOCALDIR} &
+      dcosima-rsync --dir=${LOCALDIR} --instances=${INSTANCES} &
       RSYNCPID=$!
       RSYNCSTARTED="TRUE"
     fi

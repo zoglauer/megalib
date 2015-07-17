@@ -16,6 +16,7 @@ commandhelp() {
   echo ""
   echo "Options:"
   echo "  --directory=[directory name]: The directory where to store the data"
+  echo "  --instances=[number]: The number of running indstances, i.e. the number of expected instances"
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -40,6 +41,7 @@ done
 
 # Default options:
 DIRECTORY=""
+INSTANCES=0
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -47,6 +49,8 @@ for C in "${CMD[@]}"; do
     DIRECTORY=`echo ${C} | awk -F"=" '{ print $2 }'`
     eval DIRECTORY=${DIRECTORY}
     #DIRECTORY=$(readlink -f ${DIRECTORY})
+  elif [[ ${C} == *-i*=* ]]; then
+    INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -76,14 +80,28 @@ if [[ ! -d ${DIRECTORY} ]]; then
 fi
 echo " * Directory: ${DIRECTORY}"
 
+if [ ${INSTANCES} -gt 0 ]; then
+  echo " * Simulations instances: ${INSTANCES}"
+else
+  echo " "
+  echo "ERROR: You need to set a positive number of instances!"
+  commandhelp
+  exit 1
+fi
+
 cd ${DIRECTORY}
 
-TOTALWAIT=0
+INITIALWAIT=0
+MAXINITIALWAIT=300
+
+echo ""
+echo "Starting..."
+
 while true; do
   # Sleep .....
   echo "dcosima-rsync: Waiting for 20 seconds for more data to be simulated..." 
   sleep 20
-  TOTALWAIT=$((TOTALWAIT + 20))
+  INITIALWAIT=$((INITIALWAIT + 20))
   
   if [ ! -f dcosima-rsync.cfg ]; then
     echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!"
@@ -122,19 +140,35 @@ while true; do
 
   NEWSUM=`du -cb *.sim* | tail -n 1 | awk '{ print $1 }'`
   
-  if [ "${NEWSUM}" != "${SUM}" ]; then
-    echo "dcosima-rsync: Downloaded more data, since the total file size before (${SUM} Bytes) and after (${NEWSUM} Bytes) differ."
-    MODIFIED=1
-  elif [ "${NEWSUM}" == "0" ]; then
-    if [ "${TOTALWAIT}" -gt "600" ]; then
-      echo "dcosima-rsync: Did not get any data for ${TOTALWAIT} seconds! Terminating!"
-      exit
-    else
-      echo "dcosima-rsync: Did not yet get any data... waiting..."
+  
+  if [ "${NEWSUM}" == "0" ]; then
+    if [ "${SIMFILECOUNT}" -gt 0 ]; then
+      echo "dcosima-rsync: Waiting for the first data..."
+      MODIFIED=1    
+    else 
+      if [ "${INITIALWAIT}" -gt "${MAXINITIALWAIT}" ]; then
+        echo "dcosima-rsync: Did not get any data for ${INITIALWAIT} seconds! Terminating!"
+        exit
+      else
+        echo "dcosima-rsync: Did not yet get any data... waiting..."
+        MODIFIED=1
+      fi
+    fi
+  else 
+    if [ "${NEWSUM}" != "${SUM}" ]; then
+      echo "dcosima-rsync: Downloaded more data, since the total file size before (${SUM} Bytes) and after (${NEWSUM} Bytes) differ."
       MODIFIED=1
+    elif [ "${NEWSUM}" == "${SUM}" ]; then
+      if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
+        echo "dcosima-rsync: Waiting for the last file to finish..."
+        MODIFIED=1
+      else
+        echo "dcosima-rsync: Waiting for more data..."
+        MODIFIED=1
+      fi
     fi
   fi
-    
+  
   if [ ${MODIFIED} -eq 0 ] && [ ${ALLINCLUDED} -eq 1 ]; then
     break;
   fi
