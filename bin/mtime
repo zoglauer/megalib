@@ -28,10 +28,15 @@ done
 
 ObsTime=0
 for f in `ls ${Files}`; do
-  Time=`tac $f | grep -m 1 "TI" | awk '{ print $2 }'`
+  echo "Processing: ${f}"
+  if [[ ${f} == *.gz ]]; then
+   Time=`zcat $f | tac | grep -m 1 "TI" | awk '{ print $2 }'`  
+  else 
+   Time=`tac $f | grep -m 1 "TI" | awk '{ print $2 }'`
+  fi
   ObsTime=`echo "${ObsTime} + ${Time}" | bc -l`
 done
 
-echo "${ObsTime}"
+echo "Observation time: ${ObsTime}"
 
 exit 0;
