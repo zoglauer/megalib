@@ -304,8 +304,8 @@ bool MCSource::GenerateSkippedEvents(MCSource* Source)
       Source->m_IsEventList == false && 
       m_EventListSize > 0) {
     
-    if (Source->m_ParticleDefinition == m_EventListParticleType.front() && 
-        Source->m_Volume == m_EventListVolumeName.front()) {
+    if (Source->m_ParticleDefinition == m_EventList.front().m_ParticleType && 
+        Source->m_Volume == m_EventList.front().m_VolumeName) {
       Source->NEventsToSkip(1);
       //cout<<m_Name<<": Setting one event to skip: "<<Source->m_NEventsToSkip<<" in "<<Source->m_Name<<endl;
       return true;
@@ -351,13 +351,7 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
   }
 
   if (m_IsEventList == true) {
-    m_EventListEnergy.pop_front();
-    m_EventListPosition.pop_front();
-    m_EventListDirection.pop_front();
-    m_EventListPolarization.pop_front();
-    m_EventListTime.pop_front();
-    m_EventListParticleType.pop_front();
-    m_EventListVolumeName.pop_front();
+    m_EventList.pop_front();
     m_EventListSize--;
   }
 
@@ -1711,57 +1705,24 @@ bool MCSource::AddToEventList(double Energy,
 
   //cout<<"Size: "<<m_EventListTime.size()<<endl;
 
-  unsigned int Max = 10000000;
+  const unsigned int Max = 10000000;
   if (m_EventListSize >= Max) {
-    mout<<"Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventListTime.back()/s<<" sec)"<<endl;
-    m_EventListEnergy.pop_back();
-    m_EventListPosition.pop_back();
-    m_EventListDirection.pop_back();
-    m_EventListPolarization.pop_back();
-    m_EventListTime.pop_back();
-    m_EventListParticleType.pop_back();
-    m_EventListVolumeName.pop_back();
+    mout<<"Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back().m_Time/s<<" sec)"<<endl;
+    m_EventList.pop_back();
     m_EventListSize--;
   }
 
-  // Find the position where to add the event
-  // Since we have bidirectional iterators, we cannot just add an offset to them
-  list<double>::iterator EnergyIter;
-  list<G4ThreeVector>::iterator PositionIter;
-  list<G4ThreeVector>::iterator DirectionIter;
-  list<G4ThreeVector>::iterator PolarizationIter;
-  list<double>::iterator TimeIter;
-  list<G4ParticleDefinition*>::iterator ParticleTypeIter;
-  list<MString>::iterator VolumeNameIter;
-  for (EnergyIter = m_EventListEnergy.begin(), 
-         PositionIter = m_EventListPosition.begin(), 
-         DirectionIter = m_EventListDirection.begin(), 
-         PolarizationIter = m_EventListPolarization.begin(), 
-         TimeIter = m_EventListTime.begin(), 
-         ParticleTypeIter = m_EventListParticleType.begin(),
-         VolumeNameIter = m_EventListVolumeName.begin(); 
-       TimeIter != m_EventListTime.end(); 
-       ++EnergyIter, ++PositionIter, ++DirectionIter, ++PolarizationIter, ++TimeIter, ++ParticleTypeIter, ++VolumeNameIter) {
-    if (Time < *TimeIter) {
-      m_EventListEnergy.insert(EnergyIter, Energy);
-      m_EventListPosition.insert(PositionIter, Position);
-      m_EventListDirection.insert(DirectionIter, Direction);
-      m_EventListPolarization.insert(PolarizationIter, Polarization);
-      m_EventListTime.insert(TimeIter, Time);
-      m_EventListParticleType.insert(ParticleTypeIter, ParticleType);
-      m_EventListVolumeName.insert(VolumeNameIter, VolumeName);
-      m_EventListSize++;
-      return true;
-    }
-  }
-
-  m_EventListEnergy.push_back(Energy);
-  m_EventListPosition.push_back(Position);
-  m_EventListDirection.push_back(Direction);
-  m_EventListPolarization.push_back(Polarization);
-  m_EventListTime.push_back(Time);
-  m_EventListParticleType.push_back(ParticleType);
-  m_EventListVolumeName.push_back(VolumeName);
+  MEventListEntry Entry;
+  Entry.m_Energy = Energy;
+  Entry.m_Position = Position;
+  Entry.m_Direction = Direction;
+  Entry.m_Polarization = Polarization;
+  Entry.m_Time = Time;
+  Entry.m_ParticleType = ParticleType;
+  Entry.m_VolumeName = VolumeName;
+  
+  deque<MEventListEntry>::iterator I = lower_bound(m_EventList.begin(), m_EventList.end(), Entry);
+  m_EventList.insert(I, Entry);
   m_EventListSize++;
 
   return true;
@@ -1800,7 +1761,7 @@ bool MCSource::CalculateNextEmission(double Time, double Scale)
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
-      NextEmission = m_EventListTime.front() - Time;
+      NextEmission = m_EventList.front().m_Time - Time;
     } else {
       NextEmission = numeric_limits<double>::max();
     }
@@ -1902,9 +1863,9 @@ bool MCSource::GenerateParticle(G4GeneralParticleSource* ParticleGun)
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
-      //cout<<"Setting particle (from list): "<<m_EventListParticleType.front()->GetParticleName()<<endl;
-      ParticleGun->SetParticleDefinition(m_EventListParticleType.front());
-      m_ParticleType = MCSteppingAction::GetParticleId(m_EventListParticleType.front()->GetParticleName());
+      //cout<<"Setting particle (from list): "<<m_EventList.front().m_ParticleType->GetParticleName()<<endl;
+      ParticleGun->SetParticleDefinition(m_EventList.front().m_ParticleType);
+      m_ParticleType = MCSteppingAction::GetParticleId(m_EventList.front().m_ParticleType->GetParticleName());
       return true;
     } else {
       return false;
@@ -2233,7 +2194,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
-      m_Energy = m_EventListEnergy.front();
+      m_Energy = m_EventList.front().m_Energy;
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEnergyDisType("Mono");
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEmin(0*keV);
       ParticleGun->GetCurrentSource()->GetEneDist()->SetEmax(1E30*keV);
@@ -2359,8 +2320,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_EventListPosition.front());      
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_EventListDirection.front());
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_EventList.front().m_Position);      
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_EventList.front().m_Direction);
       return true;
     } else {
       return false;
@@ -2854,7 +2815,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
 {
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
-      Gun->SetParticlePolarization(m_EventListPolarization.front());
+      Gun->SetParticlePolarization(m_EventList.front().m_Polarization);
       return true;
     } else {
       return false;

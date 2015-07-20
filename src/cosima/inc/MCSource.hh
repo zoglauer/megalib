@@ -38,6 +38,7 @@
 // Standard libs:
 #include <vector>
 #include <list>
+#include <deque>
 using namespace std;
 
 // Forward declarations:
@@ -107,7 +108,7 @@ public:
   /// Return true if this is a build up event list
   bool IsBuildUpEventList() const { return m_IsBuildUpEventList; }
   /// Return true if this is an event list
-  unsigned int SizeEventList() const { return m_EventListTime.size(); }
+  unsigned int SizeEventList() const { return m_EventList.size(); }
 
   /// Return true, if the coordinate system could be set correctly
   bool SetCoordinateSystem(const int& CoordinateSystem);
@@ -224,10 +225,10 @@ public:
                       G4ParticleDefinition* ParticleType, MString VolumeName);
 
   /// Return the next particle type in the event list
-  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventListParticleType.front() : 0; }
+  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList.front().m_ParticleType : 0; }
 
   /// Return the next volume in the event list
-  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventListVolumeName.front() : ""; }
+  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList.front().m_VolumeName : ""; }
 
 
   /// Set the isotope count - promotes this source to an isotope count
@@ -518,9 +519,6 @@ public:
   static const int c_Omega;
 
 
-
-
-
   // protected methods:
 protected:
   /// Upgrade the position parameters and do some sanity checks
@@ -569,20 +567,23 @@ private:
   bool m_IsEventList;
   /// True if the data originates from an event list of build up simulations
   bool m_IsBuildUpEventList;
-  /// Energies in the list
-  list<double> m_EventListEnergy; 
-  /// Positions in the list
-  list<G4ThreeVector> m_EventListPosition; 
-  /// Positions in the list
-  list<G4ThreeVector> m_EventListDirection; 
-  /// Polarization in the list
-  list<G4ThreeVector> m_EventListPolarization; 
-  /// Polarization in the list
-  list<G4ParticleDefinition*> m_EventListParticleType; 
-  /// Volume name in the list
-  list<MString> m_EventListVolumeName; 
-  /// Start times in the list
-  list<double> m_EventListTime; 
+  
+  /// Local class representing one event list entry
+  class MEventListEntry {
+  public:
+    double m_Energy;
+    G4ThreeVector m_Position;
+    G4ThreeVector m_Direction;
+    G4ThreeVector m_Polarization;
+    G4ParticleDefinition* m_ParticleType;
+    MString m_VolumeName;
+    double m_Time;
+    
+    bool operator <(const MEventListEntry A) const { return this->m_Time < A.m_Time; }
+  };
+  
+  /// The event list (i.e. deque)
+  deque<MEventListEntry> m_EventList;
   /// Size of the event list (list::size() is slow...)
   unsigned int m_EventListSize; 
 
