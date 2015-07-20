@@ -63,13 +63,13 @@ $(OBJ_FILES): $(LB)/%.o: src/%.cxx inc/%.h $(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -Iinc -c -o $@ $<
 	
-$(DEP_FILES): $(LB)/%.d: src/%.cxx $(IN)/%.h
-	@echo "Creating dependencies for $(subst src/,,$<) ..."
-	@set -e; rm -f $@; $(CXX) -M $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
+#$(DEP_FILES): $(LB)/%.d: src/%.cxx $(IN)/%.h
+#	@echo "Creating dependencies for $(subst src/,,$<) ..."
+#	@set -e; rm -f $@; $(CXX) -M $(CXXFLAGS) $< > $@.$$$$; sed -e 's|.*:|$(LB)/$*.o:|' -e 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; rm -f $@.$$$$
 
-ifneq ($(MAKECMDGOALS),clean)
--include $(DEP_FILES)
-endif 
+#ifneq ($(MAKECMDGOALS),clean)
+#-include $(DEP_FILES)
+#endif 
 
 #
 #----------------------------------------------------------------
