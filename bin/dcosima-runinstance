@@ -149,15 +149,46 @@ echo " "
 
 # Check if we have a global directory defined in the configuration file, if yes we will use that one
 echo "* Checking for remote global directory..."
-MASTERDIR=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^directory; fi;"`
+#MASTERDIR=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^directory; fi;"`
+MASTERDIR=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<'ENDSSH'
+COUNT=`grep -c ^directory ~/.dcosima.cfg`
+if [ ${COUNT} -eq 1 ]; then
+  grep ^directory ~/.dcosima.cfg
+fi
+ENDSSH
+)
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to read remote global directory"
   exit 1
 fi
 if [ "${MASTERDIR}" != "" ]; then
   MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
-  echo "  --> new master directory: $MASTERDIR"
 fi
+echo "  --> Master directory: ${MASTERDIR}"
+
+# Check if we have a nice level defined in the configuration file, if yes we will use that one
+echo "* Checking for nice level..."
+NICELEVEL=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<'ENDSSH'
+COUNT=`grep -c ^nice ~/.dcosima.cfg`
+if [ ${COUNT} -eq 1 ]; then
+  grep ^nice ~/.dcosima.cfg
+fi
+ENDSSH
+)
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to read remote nice level"
+  exit 1
+fi
+if [ "${NICELEVEL}" != "" ]; then
+  NICELEVEL=`echo ${NICELEVEL} | awk '{ print $2 }'`
+  if [[ ! ${NICELEVEL} =~ ^[0-9]+$ ]]; then 
+    echo "WARNING: Cannot parse nice level. Assuming 0.";
+    NICELEVEL="0"
+  fi
+else
+  NICELEVEL="0"
+fi
+echo "  --> Nice level: ${NICELEVEL}"
 
 # Make global directory
 echo " * Testing/making remote global directory..." 
@@ -198,7 +229,7 @@ rm -r ${TMPDIR}
 
 # Start the simulation:
 echo " * Starting simulations..."
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCE} > /dev/null 2>&1 &"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations"
   exit 1
