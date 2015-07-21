@@ -41,22 +41,26 @@ class MString
 {
   // public interface:
  public:
+  //! Deafult constructor
   MString() {};
-  //MString(const TString& S) { m_String = S.Data(); }
+  // Copy constructor
+  MString(const MString& String) : m_String(String.m_String) {}
+  // Move constructor
+  MString(MString&& String) : m_String(move(String.m_String)) {} 
   MString(const string& S) { m_String = S; }
   MString(const ostringstream& S) { m_String = S.str(); }
   MString(const char* S) { m_String = S; }
   MString(const char S) { m_String = S; }
-  MString(const MString& String) { m_String = String.m_String; }
   virtual ~MString() {}
 
+  // Move
+  MString& operator=(MString&& String) { m_String = move(String.m_String); return *this; }
   
   // Assignment: 
-  
+  MString& operator=(const MString& S) { m_String = S.m_String; return *this; }
   MString& operator=(char S) { m_String = S; return *this; }
   MString& operator=(const char* S) { m_String = S; return *this; }
   //MString& operator=(const TString& S) { m_String = S; return *this; }
-  MString& operator=(const MString& S) { m_String = S.m_String; return *this; }
   MString& operator=(const string& S) { m_String = S; return *this; }
 
   //MString& Format(const char* Format, ...);
