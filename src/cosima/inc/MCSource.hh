@@ -225,10 +225,10 @@ public:
                       G4ParticleDefinition* ParticleType, MString VolumeName);
 
   /// Return the next particle type in the event list
-  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList.front().m_ParticleType : 0; }
+  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleType : 0; }
 
   /// Return the next volume in the event list
-  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList.front().m_VolumeName : ""; }
+  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList[0]->m_VolumeName : ""; }
 
 
   /// Set the isotope count - promotes this source to an isotope count
@@ -583,7 +583,7 @@ private:
   };
   
   /// The event list (i.e. deque)
-  deque<MEventListEntry> m_EventList;
+  deque<MEventListEntry*> m_EventList;
   /// Size of the event list (list::size() is slow...)
   unsigned int m_EventListSize; 
 
