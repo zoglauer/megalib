@@ -434,12 +434,10 @@ bool MFileEvents::OpenNextFile(const MString& Line)
 
   // If the original file was zipped, we are now in a temporary directory
   // and most likely cannot find the file
-  if (m_WasZipped == true) {
-    FileName = MFile::GetDirectoryName(m_ZippedFileName) + MString("/") + gSystem->BaseName(FileName) + MString(".gz");
-  } else {
-    FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + gSystem->BaseName(FileName);
+  FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  if (m_WasZipped == true && FileName.EndsWith(".gz") == false) {
+    FileName += ".gz";
   }
-
   ExpandFileName(FileName);
 
   // Temporarily store the progress info:
@@ -628,10 +626,9 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
   
   // If the original file was zipped, we are now in a temporary directory
   // and most likely cannot find the file
-  if (m_WasZipped == true) {
-    FileName = MFile::GetDirectoryName(m_ZippedFileName) + MString("/") + FileName + MString(".gz");
-  } else {
-    FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  if (m_WasZipped == true && FileName.EndsWith(".gz") == false) {
+    FileName += ".gz";
   }
 
   ExpandFileName(FileName);
