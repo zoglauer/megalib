@@ -250,7 +250,7 @@ rm /tmp/mcosima.head
 echo " " >> ${ConcatFileName}
     
 for (( i=1; i <= ${INSTANCES}; i+=1 )); do
-  echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
+  echo "IN ${Base}.p1.inc${i}.id1.sim" >> ${ConcatFileName}
 done
     
 echo "EN" >> ${ConcatFileName}
