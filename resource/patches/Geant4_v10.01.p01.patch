@@ -12,7 +12,7 @@ diff -rupN geant4_v10.01.p01/geant4.10.01.p01-source/source/processes/electromag
 +   }
 +   
 +   if (Energy < atomicShell->BindingEnergy()) {
-+     G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
++     //G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
 +      
 +     // Isotropic angular distribution for the outcoming e-
 +     G4double newcosTh = 1.-2.*G4UniformRand();

@@ -12,7 +12,7 @@ diff -rupN geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/electromag
 +  }
 +  
 +  if (Energy < atomicShell->BindingEnergy()) {
-+    G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
++    //G4cout<<"Creating dummy electron with: "<<(atomicShell->BindingEnergy() - Energy)/keV <<G4endl;
 +     
 +    // Isotropic angular distribution for the outcoming e-
 +    G4double newcosTh = 1.-2.*G4UniformRand();
@@ -47,7 +47,7 @@ diff -rupN geant4_v10.00.p04/geant4.10.00.p04-source/source/processes/hadronic/m
 -    lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2 - dtransition->GetBondEnergy());
 +    //_vSN = dtransition->GetOrbitNumber();   
 +    //_electronO.RemoveElectron(_vSN);
-+    G4cout<<"AZ: Fixed energy of electron"<<G4endl;
++    //G4cout<<"AZ: Fixed energy of electron"<<G4endl;
 +    lv += G4LorentzVector(0.0,0.0,0.0,CLHEP::electron_mass_c2);
    }
  
