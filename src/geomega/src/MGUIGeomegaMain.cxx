@@ -80,6 +80,7 @@ void MGUIGeomegaMain::Create()
   m_MenuAnalysis->AddEntry("Scan setup file", c_Scan);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("View geometry", c_View);
+  m_MenuAnalysis->AddEntry("Raytrace geometry", c_Raytrace);
   m_MenuAnalysis->AddSeparator();
   m_MenuAnalysis->AddEntry("Calculate masses", c_Masses);
   m_MenuAnalysis->AddEntry("Determine detector resolutions", c_Resolutions);
@@ -168,6 +169,10 @@ bool MGUIGeomegaMain::ProcessMessage(long Message, long Parameter1,
 
       case c_View:
         m_Interface->ViewGeometry();
+        break;
+
+      case c_Raytrace:
+        m_Interface->RaytraceGeometry();
         break;
 
       case c_Intersect:

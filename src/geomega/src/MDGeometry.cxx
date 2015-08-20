@@ -3954,7 +3954,7 @@ bool MDGeometry::NameExists(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::DrawGeometry(TCanvas* Canvas)
+bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
 {
   // The geometry must have been loaded previously
   // You cannot display 2 geometries at once!
@@ -3994,13 +3994,18 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas)
   // m_Geometry->CloseGeometry(); // we do not close the geometry,
   m_Geometry->SetMultiThread(true);
   m_Geometry->SetVisLevel(1000);
-  m_Geometry->SetNsegments(2*m_Geometry->GetNsegments());
+  m_Geometry->SetNsegments(4*m_Geometry->GetNsegments());
   m_Geometry->SetVisDensity(-1.0);
   //m_Geometry->Voxelize("ALL");
 
   // Make sure we use the correct geometry for interactions
   gGeoManager = m_Geometry;
-  if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw("ogle");
+  if (Mode.ToLower() == "raytrace") {
+    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Raytrace();
+  } else {
+    if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw(Mode);
+  }
+     
   if (m_Geometry->GetListOfNavigators() == nullptr) {
     m_Geometry->AddNavigator();
   }

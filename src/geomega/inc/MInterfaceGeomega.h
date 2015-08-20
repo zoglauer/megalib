@@ -59,6 +59,7 @@ class MInterfaceGeomega : public MInterface
   
   bool ReadGeometry();
   void ViewGeometry();
+  void RaytraceGeometry();
   void TestIntersections();
   void CalculateMasses();
   void GetResolutions();

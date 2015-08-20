@@ -80,6 +80,7 @@ class MGUIGeomegaMain : public MGUIMain
 
   enum ButtonIDs { c_Scan = c_LastMainButtonID, 
                    c_View, 
+                   c_Raytrace, 
                    c_Start,
                    c_Intersect, 
                    c_Masses, 

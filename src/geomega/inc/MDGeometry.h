@@ -62,7 +62,7 @@ class MDGeometry
   
   //! Draws the geometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
-  virtual bool DrawGeometry(TCanvas *Canvas = 0);
+  virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
   bool WriteGeant3Files();
   bool WriteMGeantFiles(MString FilePrefix = "", bool StoreIAs = false, bool StoreVetoes = true);
   bool TestIntersections();

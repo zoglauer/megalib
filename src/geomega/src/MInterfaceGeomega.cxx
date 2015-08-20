@@ -335,7 +335,25 @@ void MInterfaceGeomega::ViewGeometry()
     }
   }
   
-  m_Geometry->DrawGeometry();
+  m_Geometry->DrawGeometry(nullptr, "ogle");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceGeomega::RaytraceGeometry()
+{
+  // Create a display of the geometry
+
+  if (m_Geometry->IsScanned() == false ||
+    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+    if (ReadGeometry() == false) {
+      return;
+    }
+  }
+  
+  m_Geometry->DrawGeometry(nullptr, "raytrace");
 }
 
 
