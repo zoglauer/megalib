@@ -20,6 +20,7 @@ commandhelp() {
   echo "Options:"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
+  echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
   echo "  --zip: Compress the output files."
   echo "  --help: Show this help."
   echo ""
@@ -46,6 +47,7 @@ done
 # Default options:
 SOURCE=""
 INSTANCES="1"
+PREFIX="Run"
 ZIP="FALSE"
 CFG=~/.dcosima.cfg
 
@@ -56,6 +58,8 @@ for C in "${CMD[@]}"; do
     SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-p*=* ]]; then
+    PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
@@ -81,6 +85,15 @@ if [ "${SOURCE}" != "" ]; then
 else
   echo " "
   echo "ERROR: You need to give source file for simulations"
+  commandhelp
+  exit 1
+fi
+
+if [ "${PREFIX}" != "" ]; then
+  echo " * Prefix to the output directory: ${PREFIX}"
+else
+  echo " "
+  echo "ERROR: You need to give a prefix to the output directory"
   commandhelp
   exit 1
 fi
@@ -127,7 +140,7 @@ AVAILABLE=0
 RUNID=${RANDOM}${RANDOM}${RANDOM}
 
 # Make the local directory where we store the data
-LOCALDIR="Run_ID${RUNID}"
+LOCALDIR="${PREFIX}_ID${RUNID}"
 mkdir ${LOCALDIR}
 
 # preparation for rsync instance launch
@@ -162,7 +175,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     if [[ ${ALLOWED} -gt 0 ]]; then
       LAUNCHED=$(( ${LAUNCHED} + 1 ))
       echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-      dcosima-runinstance --source=${SOURCE} --runid=${RUNID} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
+      dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
       STARTED=1
     fi
     if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
@@ -194,7 +207,7 @@ echo "Create a concatenation file"
 Base=`cat ${SOURCE} | grep -E "\.FileName|\.Filename|\.filename" | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
 
 # Switch to the directory where all the data lands:
-cd Run_ID${RUNID}
+cd ${LOCALDIR}
 
 echo "Creating concatenation file for simulation \"${Base}\""
 ConcatFileName="${Base}.p1.sim" 
@@ -271,8 +284,8 @@ wait ${RSYNCPID}
 
 echo "All processes have finied and all data has been synced. Now deleting the remote data..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  echo " * Deleting ${MASTERDIR}/Run_ID${RUNID} on ${REMOTEHOST[$m]}"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${MASTERDIR}/Run_ID${RUNID};"
+  echo " * Deleting ${MASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${MASTERDIR}/${LOCALDIR};"
 done
 
 echo " " 
