@@ -56,14 +56,33 @@ done
 echo " "
 echo " "
 echo "Available instances:"
-ALL="0"
+ALLALLOWED="0"
+ALLPOSSIBLE="0"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  AllowedInstances=`ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
-  ALL=$(( ${ALL} + ${AllowedInstances} ))
-  echo " * On machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}: ${AllowedInstances}"
+  ALLOWED=`ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
+  ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
+  
+  REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
+  POSSIBLE=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Failed to read remote instances"
+    exit 1
+  fi
+  if [ "${POSSIBLE}" != "" ]; then
+    POSSIBLE=`echo ${POSSIBLE} | awk '{ print $2 }'`
+    if [[ ! ${POSSIBLE} =~ ^[0-9]+$ ]]; then 
+      echo "WARNING: Cannot parse remote instances level. Assuming 0.";
+      POSSIBLE="0"
+    fi
+  else
+    POSSIBLE="0"
+  fi
+  ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
+  
+  echo " * On machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: ${ALLOWED} / ${POSSIBLE}"
 done
 echo " "
-echo "Total number of instances: ${ALL}"
+echo "Total number of instances: ${ALLALLOWED} / ${ALLPOSSIBLE}"
 echo " "
 
 exit 0
