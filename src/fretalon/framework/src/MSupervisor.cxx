@@ -57,6 +57,18 @@ ClassImp(MSupervisor)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MSupervisor* MSupervisor::GetSupervisor()
+{
+  // Get the singleton
+  
+  static MSupervisor Instance;
+  return &Instance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MSupervisor::MSupervisor()
 {
   // Construct an instance of MSupervisor

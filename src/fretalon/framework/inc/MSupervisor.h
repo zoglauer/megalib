@@ -36,14 +36,13 @@ class MGUIExpoSupervisor;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The dsupervisor class implemented as a singleton 
 class MSupervisor
 {
-  // public interface:
+  //! public interface:
  public:
   //! Default constructor
-  MSupervisor();
-  //! Default destructor
-  virtual ~MSupervisor();
+  static MSupervisor* GetSupervisor();
 
   //! Reset all data
   void Clear();
@@ -63,7 +62,7 @@ class MSupervisor
   unsigned int GetNAvailableModules() { return m_AvailableModules.size(); }
   //! Return the available modules at position i --- no error checks are performed  
   MModule* GetAvailableModule(unsigned int i);
-  //! Return the modules at position i in the current sequence --- no error checks are performed  
+  //! Return the modules with the given name or a nullptr in case there is none --- no error checks are performed  
   MModule* GetAvailableModule(MString Name);
 
   //! Return the number of modules in the current sequence
@@ -135,10 +134,17 @@ class MSupervisor
   //! Validate the sequence of possible modules
   bool Validate();
 
+  
   // private methods:
  private:
-
-
+  // Default constructor
+  MSupervisor();
+  //! Default destructor
+  ~MSupervisor();
+  // No copy constructor
+  MSupervisor(MSupervisor const&) = delete;
+  // No assignment operator
+  void operator=(MSupervisor const&) = delete;
 
   // protected members:
  protected:
