@@ -301,7 +301,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     } 
     // The end of file keyword
     else if (Line[0] == 'E' && Line[1] == 'N') {
-      // What ever we decide to do next, first read the foorter in continue mode
+      // What ever we decide to do next, first read the footer in continue mode
       ReadFooter(true);
       
       if (m_IsFirstEvent == false) {
