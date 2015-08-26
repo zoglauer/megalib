@@ -174,7 +174,7 @@ MSimHT* MCScintillatorHit::GetCalibrated()
  */
 void MCScintillatorHit::Print()
 {
-  mout<<"Hit in scintillator at ("
+  mout<<"Hit in scintillator \""<<m_Name<<"\" at ("
       <<m_Position.getX()/cm<<", "
       <<m_Position.getY()/cm<<", "
       <<m_Position.getZ()/cm<<") "
