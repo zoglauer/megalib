@@ -131,6 +131,17 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
                       &m_Position[2], 
                       &m_Energy) == 5) {
       m_IsValid = true;
+    } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
+                      &m_Detector,
+                      &m_Position[0], 
+                      &m_Position[1], 
+                      &m_Position[2], 
+                      &m_Energy, 
+                      &m_PositionResolution[0], 
+                      &m_PositionResolution[1], 
+                      &m_PositionResolution[2], 
+                      &m_EnergyResolution) == 9) {
+      m_IsValid = true;
     } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;OK\n",
                       &m_Detector,
                       &m_Position[0], 
