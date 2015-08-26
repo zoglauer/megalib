@@ -147,7 +147,7 @@ class MRESE
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
   virtual bool IsValid();
-  virtual void SetValid(bool IsValid) { m_IsValid = IsValid; }
+  virtual void SetValid(bool Valid) { m_IsValid = Valid; }
 
 
   static const int c_Unknown;
