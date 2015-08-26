@@ -108,8 +108,6 @@ void MFile::Reset()
 
   m_IsOpen = false;
 
-  m_FileLength = 0;
-
   // m_Progress = 0; // Already managed by initial close!
   m_ProgressLevel = 0;
   m_OwnProgress = true;
@@ -122,6 +120,9 @@ void MFile::Reset()
 
   m_FileLength = 0;
   m_HasFileLength = false;
+
+  m_UncompressedFileLength = 0;
+  m_HasUncompressedFileLength = false;
   
   // The maximum allowed file length
   m_MaxFileLength = numeric_limits<streamsize>::max()/100*95;
@@ -311,6 +312,9 @@ bool MFile::Open(MString FileName, unsigned int Way)
 
   m_FileLength = 0;
   m_HasFileLength = false;
+
+  m_UncompressedFileLength = 0;
+  m_HasUncompressedFileLength = false;
   
   m_FileName = FileName;
   if (m_FileName == "") {
