@@ -1718,7 +1718,14 @@ MString MDDetector::ToString() const
   }
   out<<endl;
   out<<"   energy resolution type: "<<m_EnergyResolutionType<<endl;
-
+  if (HasNamedDetectors() == true) {
+    out<<"   with "<<GetNNamedDetectors()<<" named detectors: ";
+    for (unsigned int d = 0; d < m_NamedDetectors.size(); ++d) {
+      out<<m_NamedDetectors[d]->GetName()<<" ";
+    }
+    out<<endl;
+	}
+  
   return out.str().c_str();  
 }
 
