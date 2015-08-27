@@ -259,7 +259,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //  mout<<"Loading geometry file: "<<FileName<<endl;
   //}
 
-  int Stage = 1;
+  int Stage = 0;
   MTimer Timer;
   double TimeLimit = 10;
   bool FoundDepreciated = false;
@@ -294,8 +294,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   m_CrossSectionFileDirectory += "/auxiliary";
 
   
-  mdebug<<"Started scanning of geometry... This may take a while..."<<endl;
-
+  if (g_Verbosity >= c_Info) {
+    mout<<"Started scanning of geometry... This may take a while..."<<endl;
+  }
 
   MDMaterial* M = 0;
   MDMaterial* MCopy = 0;
@@ -375,7 +376,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (reading of file(s)) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -544,7 +545,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing constant) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -625,7 +626,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating vectors) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -821,7 +822,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating for loops) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -843,7 +844,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 //   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating random numbers) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -908,7 +909,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (evaluating if clauses) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -1417,7 +1418,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
   
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing primary keywords) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -1503,7 +1504,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
  
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing \"Copies\") finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -3215,7 +3216,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
  
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing all properties) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -3321,7 +3322,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   m_WorldVolume->ResetCloneTemplateFlags();
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (generating clones) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -3763,7 +3764,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (validation & post-processing) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
@@ -3778,13 +3779,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   m_GeometryScanned = true;
 
   ++Stage;
-  if (Timer.ElapsedTime() > TimeLimit) {
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (volume tree optimization) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+ }
+
+  if (g_Verbosity >= c_Info) { 
+    mout<<"Geometry "<<m_FileName<<" successfully scanned within "<<Timer.ElapsedTime()<<"s"<<endl;
+    mout<<"It contains "<<GetNVolumes()<<" volumes"<<endl;
   }
-
-  mdebug<<"Geometry "<<m_FileName<<" successfully scanned within "<<Timer.ElapsedTime()<<"s"<<endl;
-  mdebug<<"It contains "<<GetNVolumes()<<" volumes"<<endl;
-
+  
   if (FoundDepreciated == true) {
     mgui<<"Your geometry contains depreciated information (see console output for details)."<<endl;
     mgui<<"Please update it now to the latest conventions!"<<show;
@@ -3973,7 +3976,8 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
     m_GeoView = 0;
   }
 
-  mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
+  //mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
+  
   // Only draw the new windows if there are volumes to be drawn:
   if (m_WorldVolume->GetNVisibleVolumes() == 0) {
     mgui<<"There are no visible volumes in your geometry!"<<warn;
@@ -4011,8 +4015,8 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
   m_Geometry->SetCurrentNavigator(0);
 
-  if (Timer.ElapsedTime() > TimerLimit) {
-    mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<"s"<<endl;
+  if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimerLimit) {
+    mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<" seconds."<<endl;
   }
 
   return true;
@@ -5012,67 +5016,36 @@ bool MDGeometry::ShortNameExists(MString Name)
 {
   // Check all lists if "Name" is already listed 
 
-  MString ObjectName;
-  MString ShortName;
-  MString OriginalMGeantShortName;
-  MString ShortNameDivisionX;
-  MString ShortNameDivisionY;
-  MString ShortNameDivisionZ;
-
-  Name.ToLower();
-
-  // Test volumes
   for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    ObjectName = m_VolumeList[i]->GetName();
-    ObjectName.ToLower();
-    ShortName = m_VolumeList[i]->GetShortName();
-    ShortName.ToLower();
-
-    if (Name == ObjectName ||
-        Name == ShortName) {
+    if (Name.AreIdentical(m_VolumeList[i]->GetName(), true) == true ||
+        Name.AreIdentical(m_VolumeList[i]->GetShortName(), true) == true) {
       return true;
     }
   }
-
+  
   // Test materials
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    ObjectName = m_MaterialList[i]->GetName();
-    ObjectName.ToLower();
-    ShortName = m_MaterialList[i]->GetShortName();
-    ShortName.ToLower();
-    OriginalMGeantShortName = m_MaterialList[i]->GetOriginalMGeantShortName();
-    OriginalMGeantShortName.ToLower();
-
-    if (Name == ObjectName ||
-        Name == ShortName ||
-        Name == OriginalMGeantShortName) {
+    if (Name.AreIdentical(m_MaterialList[i]->GetName(), true) == true || 
+        Name.AreIdentical(m_MaterialList[i]->GetShortName(), true) == true || 
+        Name.AreIdentical(m_MaterialList[i]->GetOriginalMGeantShortName(), true) == true) {
       return true;
     }
   }
-
+  
   // Test detectors
   for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    ObjectName = m_DetectorList[i]->GetName();
-    ObjectName.ToLower();
-    ShortNameDivisionX = m_DetectorList[i]->GetShortNameDivisionX();
-    ShortNameDivisionX.ToLower();
-    ShortNameDivisionY = m_DetectorList[i]->GetShortNameDivisionY();
-    ShortNameDivisionY.ToLower();
-    ShortNameDivisionZ = m_DetectorList[i]->GetShortNameDivisionZ();
-    ShortNameDivisionZ.ToLower();
-    if (Name == ObjectName || 
-        Name == ShortNameDivisionX ||
-        Name == ShortNameDivisionY ||
-        Name == ShortNameDivisionZ) {
+    if (Name.AreIdentical(m_DetectorList[i]->GetName(), true) == true || 
+        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionX(), true) == true || 
+        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionY(), true) == true || 
+        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionZ(), true) == true) {
       return true;
     }
   }
+  
 
   // Test triggers
   for (unsigned int i = 0; i < GetNTriggers(); i++) {
-    ObjectName = m_TriggerList[i]->GetName();
-    ObjectName.ToLower();
-    if (Name == ObjectName) {
+   if (Name.AreIdentical(m_TriggerList[i]->GetName(), true) == true) {
       return true;
     }
   }

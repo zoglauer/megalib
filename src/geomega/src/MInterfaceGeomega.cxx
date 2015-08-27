@@ -118,6 +118,8 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"                      values anymore !!!!!"<<endl;
   Usage<<"      -r --reveal <name>:"<<endl;
   Usage<<"             Only show this volume and all other volumes given with this option"<<endl;
+  Usage<<"      -v --verbosity <integer>:"<<endl;
+  Usage<<"             The higher the integer, the higher the verbosity..."<<endl;
   Usage<<"      -h --help:"<<endl;
   Usage<<"             You know the answer..."<<endl;
   Usage<<endl;
@@ -179,8 +181,11 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Do not use the gui"<<endl;
       m_UseGui = false;
       gROOT->SetBatch(true);
+    } else if (Option == "--verbosity" || Option == "-v") {
+      g_Verbosity = atoi(argv[++i]);
+      cout<<"Command-line parser: Using verbosity level "<<g_Verbosity<<endl;
     } else if (Option == "--debug" || Option == "-d") {
-      if (g_Verbosity < 2) g_Verbosity = 2;
+      if (g_Verbosity < c_Warning) g_Verbosity = c_Warning;
       cout<<"Command-line parser: Use debug mode"<<endl;
     } else if (Option == "--configuration" || Option == "-c") {
       m_Data->Read(argv[++i]);
