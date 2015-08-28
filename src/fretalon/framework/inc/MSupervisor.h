@@ -102,10 +102,16 @@ class MSupervisor
   //! Show the expo view
   void View();
   
-  //! Set the interrupt which will end the analysis
-  void SetInterrupt(bool Flag = true);
+  //! Set the soft interrupt status for ending the analysis
+  void SetSoftInterrupt(bool Flag = true);
+  //! Get the soft interrupt status for ending the analysis
+  bool GetSoftInterrupt() { return m_SoftInterrupt; }
+  //! Set the hard interrupt status for ending the analysis
+  void SetHardInterrupt(bool Flag = true);
+  //! Get the hard interrupt status for ending the analysis
+  bool GetHardInterrupt() { return m_HardInterrupt; }
   
-  //! Set the interrupt which will end the analysis
+  //! Choose if to use multi-threading
   void UseMultiThreading(bool Flag = true) { m_UseMultiThreading = Flag; }
 
   //! Set the program name
@@ -174,8 +180,10 @@ class MSupervisor
   MGUIExpoSupervisor* m_ExpoSupervisor;
   
 
-  //! The interrupt flag - the analysis will stop when this flag is set
-  bool m_Interrupt;
+  //! The soft interrupt flag --- graciously stops the analysis, by finishing all started events
+  bool m_SoftInterrupt;
+  //! The hard interrupt flag --- kills the analysis immediately
+  bool m_HardInterrupt;
   //! The terminate flag - should always be set together with the interrupt flag
   //! After the analysis is stopped by the interupt flag, this flag will terminate the 
   //! program

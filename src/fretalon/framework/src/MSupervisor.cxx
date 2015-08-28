@@ -73,7 +73,8 @@ MSupervisor::MSupervisor()
 {
   // Construct an instance of MSupervisor
 
-  m_Interrupt = false;
+  m_SoftInterrupt = false;
+  m_HardInterrupt = false;
   m_Terminate = false;
   
   m_UseMultiThreading = false;
@@ -550,10 +551,22 @@ bool MSupervisor::LoadGeometry()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSupervisor::SetInterrupt(bool Flag) 
+void MSupervisor::SetSoftInterrupt(bool Flag) 
 { 
   // Set the interrupt which will break the analysis
-  m_Interrupt = Flag; 
+  m_SoftInterrupt = Flag; 
+  if (m_SoftInterrupt == false) m_HardInterrupt = false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSupervisor::SetHardInterrupt(bool Flag) 
+{ 
+  // Set the interrupt which will break the analysis
+  m_HardInterrupt = Flag; 
+  if (m_HardInterrupt == true) m_SoftInterrupt = true;
 }
 
 
@@ -585,7 +598,8 @@ bool MSupervisor::Analyze()
   // Start with saving the data:
   Save(m_ConfigurationFileName);
 
-  m_Interrupt = false;
+  m_SoftInterrupt = false;
+  m_HardInterrupt = false;
   
   // Start a global timer:
   MTimer Timer;
@@ -612,7 +626,7 @@ bool MSupervisor::Analyze()
     GetModule(m)->UseMultiThreading(m_UseMultiThreading);
     GetModule(m)->ClearQueues(); // Just in case a module did not call Finalize...
     if (GetModule(m)->Initialize() == false) {
-      if (m_Interrupt == true) {
+      if (m_SoftInterrupt == true) {
         break;
       }
       mout<<"Initialization of module "<<GetModule(m)->GetName()<<" failed"<<endl;
@@ -683,7 +697,9 @@ bool MSupervisor::Analyze()
   
   while (true) {
 
-    if (m_Interrupt == true) {
+    if (m_HardInterrupt == true) break;
+    
+    if (m_SoftInterrupt == true) {
       DoShutdown = true;
       // Each start module gets the interrupt signal:
       for (unsigned int m = 0; m < Modules.size(); ++m) {
@@ -820,7 +836,7 @@ bool MSupervisor::Analyze()
   m_ExpoCombinedViewer->OnUpdate();
   
   cout<<endl;
-  if (m_Interrupt == true) {
+  if (m_SoftInterrupt == true) {
     cout<<"Nuclearizer: Analysis INTERRUPTED after "<<Timer.ElapsedTime()<<"s"<<endl;
   } else {
     cout<<"Nuclearizer: Analysis finished in "<<Timer.ElapsedTime()<<"s"<<endl;
@@ -886,7 +902,8 @@ void MSupervisor::Exit()
   // Prepare to exit the application
   
   if (m_IsAnalysisRunning == true) {
-    m_Interrupt = true;
+    m_SoftInterrupt = true;
+    m_HardInterrupt = true;
     m_Terminate = true;
   } else {
     Terminate();

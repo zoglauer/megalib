@@ -45,7 +45,7 @@ class MAssembly
   bool ParseCommandLine(int argc, char** argv);
   
   //! Called when hit Control-C: Set the interrupt which will end the analysis in the supervisor
-  void SetInterrupt(bool Flag = true) { m_Supervisor->SetInterrupt(Flag); }
+  void SetInterrupt(bool Flag = true) { m_Supervisor->SetHardInterrupt(Flag); }
 
   // Module types:
   static const int c_EventLoader              =  1;

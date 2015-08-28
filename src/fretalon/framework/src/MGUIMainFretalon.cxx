@@ -75,6 +75,7 @@ MGUIMainFretalon::MGUIMainFretalon(MSupervisor* Supervisor)
   m_PicturePath = "";
   m_SubTitle = "No sub title set!";
   m_LeadAuthor = "No lead author";
+
 }
 
 
@@ -212,7 +213,7 @@ void MGUIMainFretalon::Create()
   TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
   StopButton->Associate(this);
   TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20*FontScaler, 0, 0, 0);
-  ButtonFrame->AddFrame(StopButton, StopButtonLayout);
+  ButtonFrame->AddFrame(StopButton, StopButtonLayout);  
   
   // Give this element the default size of its content:
   Resize(GetDefaultWidth(), GetDefaultHeight()); 
@@ -312,10 +313,10 @@ bool MGUIMainFretalon::HandleKey(Event_t* Event)
 
 
 bool MGUIMainFretalon::ProcessMessage(long Message, long Parameter1, 
-                                        long Parameter2)
+                                      long Parameter2)
 {
   // Process the messages for this application
-
+  
   bool Status = true;
 
   switch (GET_MSG(Message)) {
@@ -473,7 +474,11 @@ bool MGUIMainFretalon::OnStop()
 {
   if (OnApply() == false) return false;
 
-  m_Supervisor->SetInterrupt();
+  if (m_Supervisor->GetSoftInterrupt() == true) {
+    m_Supervisor->SetHardInterrupt();
+  } else {
+    m_Supervisor->SetSoftInterrupt();
+  }
 
   return true;
 }
