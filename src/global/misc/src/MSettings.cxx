@@ -179,8 +179,9 @@ bool MSettings::Write(MString FileName)
   WriteXml(Document);
 
   // Store the module content
+  MFile::ExpandFileName(FileName);
   Document->Save(FileName);
-
+  
   delete Document;
 
   return true;
