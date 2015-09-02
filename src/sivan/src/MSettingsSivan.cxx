@@ -48,7 +48,7 @@ MSettingsSivan::MSettingsSivan(bool AutoLoad) : MSettings("SivanConfigurationFil
 {
   // default constructor
 
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".sivan.cfg"));
+  m_DefaultSettingsFileName = "~/.sivan.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
 
   

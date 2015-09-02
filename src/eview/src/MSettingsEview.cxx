@@ -50,7 +50,7 @@ MSettingsEview::MSettingsEview(bool AutoLoad) : MSettings("EviewConfigurationFil
 {
   // default constructor
 
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".eview.cfg"));
+  m_DefaultSettingsFileName = "~/.eview.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
 
   

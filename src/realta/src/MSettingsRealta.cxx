@@ -48,7 +48,7 @@ MSettingsRealta::MSettingsRealta(bool AutoLoad) : MSettings("RealtaConfiguration
 {
   // Default constructor
   
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".realta.cfg"));
+  m_DefaultSettingsFileName = "~/.realta.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
   
   m_HostName = "localhost";

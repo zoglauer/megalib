@@ -31,6 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MFile.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,7 +49,7 @@ MSettingsGeomega::MSettingsGeomega(bool AutoLoad) : MSettings("GeomegaConfigurat
 {
   // default constructor
 
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".geomega.cfg"));
+  m_DefaultSettingsFileName = "~/.geomega.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
 
   

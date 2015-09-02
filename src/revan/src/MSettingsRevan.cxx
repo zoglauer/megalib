@@ -47,7 +47,7 @@ ClassImp(MSettingsRevan)
 MSettingsRevan::MSettingsRevan(bool AutoLoad) : MSettings("RevanConfigurationFile"), MSettingsSpectralOptions()
 {
   // default constructor
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".revan.cfg"));
+  m_DefaultSettingsFileName = "~/.revan.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
 
   // Options for exporting the spectrum

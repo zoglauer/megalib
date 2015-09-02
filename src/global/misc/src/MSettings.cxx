@@ -95,6 +95,8 @@ bool MSettings::Read(MString FileName)
     m_SettingsFileName = FileName;
   }
 
+  MFile::ExpandFileName(m_SettingsFileName);
+  
   // Read the first line, if it begins with "<" we have an xml file
   ifstream in;
   in.open(m_SettingsFileName);

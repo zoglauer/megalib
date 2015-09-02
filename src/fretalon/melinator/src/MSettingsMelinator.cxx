@@ -49,7 +49,7 @@ ClassImp(MSettingsMelinator)
 //! The default constructor
 MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConfigurationFile")
 {
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".melinator.cfg"));
+  m_DefaultSettingsFileName = "~/.melinator.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
   
   m_HistogramMin = 0;
