@@ -240,7 +240,7 @@ bool MFile::ProgramExists(MString Program)
   Path = gSystem->Which(gSystem->Getenv("PATH"), Program);
 
   if (Path != 0) {
-    delete Path;
+    delete [] Path;
     return true;
   }
 
