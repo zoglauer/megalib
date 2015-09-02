@@ -71,13 +71,16 @@ MModuleReadOutAssemblyQueues::~MModuleReadOutAssemblyQueues()
 void MModuleReadOutAssemblyQueues::Clear()
 {
   // Clear the queues
-  // TODO: Think about if we need to clean anything...
 
   lock_guard<mutex> IncomingLock(m_IncomingEventsMutex);
   lock_guard<mutex> OutgoingLock(m_OutgoingEventsMutex);
 
+  for (MReadOutAssembly* ROA: m_IncomingEvents) delete ROA;
   m_IncomingEvents.clear();
+  
+  for (MReadOutAssembly* ROA: m_OutgoingEvents) delete ROA;
   m_OutgoingEvents.clear();
+
   m_SortedQueue = false;
 }
 
