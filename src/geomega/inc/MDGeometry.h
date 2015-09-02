@@ -234,9 +234,7 @@ class MDGeometry
 
   vector<int> m_NDetectorTypes; // How many different detectors of this type exist?
 
-	TObjArray* m_IncludeList;     // A list of all already included files
-
-  TObjArray* m_NodeList;        // A list of all nodes, needed for displaying the geometry          
+	vector<MString> m_IncludeList;     // A list of all already included files
 
   MString m_Name;               // Name of the geometry
   MString m_Version;            // Version of the geometry

@@ -205,7 +205,8 @@ class MDVolume
   bool Scale(const double Scale);
   //! Correctly remove all virtual volumes from the volume tree
   //! The return value is for internal purposes only!
-  bool RemoveVirtualVolumes();
+  //! The vector contains a list of all newly generated volumes
+  bool RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes);
   //! Optimized the arrangement of the volume true, for the search of hits in sensitive detectors
   void OptimizeVolumeTree();
 

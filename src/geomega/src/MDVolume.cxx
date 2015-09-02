@@ -134,8 +134,6 @@ MDVolume::MDVolume(MString Name, MString ShortName)
 MDVolume::~MDVolume()
 {
   // We only delete a few things here, most is done in MDGeometry:
-
-  // Destructor is missing....
 }
 
 
@@ -1591,7 +1589,7 @@ bool MDVolume::ValidateIntersections()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::RemoveVirtualVolumes()
+bool MDVolume::RemoveVirtualVolumes(vector<MDVolume*>& NewVolumes)
 {
   // Recursively remove virtual volumes 
   // (1) Links daughters to mother
@@ -1625,6 +1623,7 @@ bool MDVolume::RemoveVirtualVolumes()
       // If this virtual volume is a clone, then we also have to clone its daughters
       if (IsClone() == true) {
         Volume = (*Daughters)->Clone(m_Name);
+        NewVolumes.push_back(Volume);
       } else {
         Volume = (*Daughters); //->Clone(m_Name);
       }
@@ -1669,7 +1668,7 @@ bool MDVolume::RemoveVirtualVolumes()
     vector<MDVolume*>::iterator Daughters;
     for (Daughters = m_Daughters.begin(); Daughters != m_Daughters.end(); ++Daughters) {
       //cout<<int(*Daughters)<<":"<<GetNDaughters()<<":"<<m_Name<<endl;
-      if ((*Daughters)->RemoveVirtualVolumes() == true) {
+      if ((*Daughters)->RemoveVirtualVolumes(NewVolumes) == true) {
         // We have an erase --- so we really unfortunately have to start from the beginning
         // because we cannot catch where the erase happened...
         //cout<<"Restart:"<<m_Daughters.size()<<endl;
@@ -1693,10 +1692,6 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
   // Do not draw it, if it has no mother volume ...
   if (m_Mother == 0 && m_WorldVolume == false) return;
 
-  TGeoTranslation T(m_Position[0], m_Position[1], m_Position[2]);
-  TGeoRotation R(m_Name, m_Theta1, m_Phi1, m_Theta2, m_Phi2, m_Theta3, m_Phi3);
-  TGeoCombiTrans* C = new TGeoCombiTrans(T, R);
-  
   TGeoMedium* Medium = m_Material->GetRootMedium();
   TGeoShape* Shape = m_Shape->GetRootShape();
   TGeoVolume* Volume = new TGeoVolume(m_Name, Shape, Medium);
@@ -1713,6 +1708,10 @@ void MDVolume::CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother)
     Manager->SetTopVolume(Volume);
     //Manager->SetTopVisible(true);
   } else {
+    TGeoTranslation T(m_Position[0], m_Position[1], m_Position[2]);
+    TGeoRotation R(m_Name, m_Theta1, m_Phi1, m_Theta2, m_Phi2, m_Theta3, m_Phi3);
+    TGeoCombiTrans* C = new TGeoCombiTrans(T, R); // delete by ROOT 
+     
     Mother->AddNode(Volume, 1, C); 
   }
   

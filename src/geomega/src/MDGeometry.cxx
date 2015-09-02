@@ -106,11 +106,8 @@ MDGeometry::MDGeometry()
   m_DoSanityChecks = true;
   m_ComplexER = true;
 
-  m_NodeList = new TObjArray();
-  m_IncludeList = new TObjArray();
-
   m_Name = "\"Geometry, which was not worth a name...\"" ;
-  m_Version = "0.0.0.0";
+  m_Version = "0.0";
   m_SphereRadius = DBL_MAX;
   m_SpherePosition = MVector(DBL_MAX, DBL_MAX, DBL_MAX);
   m_DistanceToSphereCenter = DBL_MAX;
@@ -141,6 +138,7 @@ MDGeometry::~MDGeometry()
   // default destructor
   
   Reset();
+  
   delete m_TriggerUnit;
   delete m_System;
 }
@@ -197,8 +195,7 @@ void MDGeometry::Reset()
   m_WorldVolume = 0;
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
 
-  m_IncludeList->Delete();
-  m_NodeList->Delete();
+  m_IncludeList.clear();
   
   if (m_GeoView != 0) {
     if (gROOT->FindObject("MainCanvasGeomega") != 0) {
@@ -208,10 +205,12 @@ void MDGeometry::Reset()
   }
 
   // Create a new geometry
-  // BUG: In case we are multi-threaded and some one interact with the geometry
+  // BUG: In case we are multi-threaded and someone interacts with the geometry
   //      before the gGeoManager is reset during new, we will get a seg-fault!
-  gGeoManager = 0;
-  delete m_Geometry;
+  if (gGeoManager != nullptr) {
+    gGeoManager = 0;
+    delete m_Geometry;
+  }
   m_Geometry = new TGeoManager("Give it a good name", "MissingName");
   
   delete m_System;
@@ -3344,8 +3343,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     m_WorldVolume->VirtualizeNonDetectorVolumes();
   }
 
-  m_WorldVolume->RemoveVirtualVolumes();
-
+  vector<MDVolume*> NewVolumes;
+  m_WorldVolume->RemoveVirtualVolumes(NewVolumes);
+  for (MDVolume* V: NewVolumes) AddVolume(V);
+  
   // mimp<<"Error if there are not positioned volumes --> otherwise GetRandomPosition() fails"<<endl;
 
   if (m_WorldVolume->Validate() == false) {
@@ -5682,7 +5683,7 @@ void MDGeometry::AddInclude(MString FileName)
   // Add the name of an included file
 
   if (IsIncluded(FileName) == false) {
-    m_IncludeList->AddLast(new TObjString(FileName));
+    m_IncludeList.push_back(FileName);
   }
 }
 
@@ -5694,8 +5695,8 @@ bool MDGeometry::IsIncluded(MString FileName)
 {
   // Check if the file has already been included
 
-  for (int i = 0; i < GetNIncludes(); i++) {
-    if (dynamic_cast<TObjString*>(m_IncludeList->At(i))->GetString().CompareTo(FileName) == 0) {
+  for (unsigned int i = 0; i < m_IncludeList.size(); ++i) {
+    if (m_IncludeList[i] == FileName) {
       return true;
     }
   }
@@ -5711,7 +5712,7 @@ int MDGeometry::GetNIncludes()
 {
   // Get the number of included files:
 
-  return m_IncludeList->GetLast()+1;
+  return m_IncludeList.size();
 }
 
 
