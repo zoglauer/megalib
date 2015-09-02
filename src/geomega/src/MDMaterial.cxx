@@ -130,6 +130,8 @@ MDMaterial::~MDMaterial()
     delete m_Components[c];
   }
   m_Components.clear();
+  
+  // delete m_GeoMedium; // ROOT deletes the ones it uses, but we do not know which ones here...
 }
 
  
