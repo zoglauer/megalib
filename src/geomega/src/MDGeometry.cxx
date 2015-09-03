@@ -209,6 +209,7 @@ void MDGeometry::Reset()
   //      before the gGeoManager is reset during new, we will get a seg-fault!
   if (gGeoManager != nullptr) {
     gGeoManager = 0;
+    m_Geometry->ClearNavigators();
     delete m_Geometry;
   }
   m_Geometry = new TGeoManager("Give it a good name", "MissingName");
@@ -3996,8 +3997,8 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
 
 
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
-  // m_Geometry->CloseGeometry(); // we do not close the geometry,
-  m_Geometry->SetMultiThread(true);
+  //m_Geometry->CloseGeometry(); // we do not close the geometry,
+  //m_Geometry->SetMultiThread(true); // This crashes it...
   m_Geometry->SetVisLevel(1000);
   m_Geometry->SetNsegments(4*m_Geometry->GetNsegments());
   m_Geometry->SetVisDensity(-1.0);
@@ -4010,11 +4011,11 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   } else {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw(Mode);
   }
-     
+  
   if (m_Geometry->GetListOfNavigators() == nullptr) {
     m_Geometry->AddNavigator();
   }
-  m_Geometry->SetCurrentNavigator(0);
+  m_Geometry->SetCurrentNavigator(0); // current is the first navigator?
 
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimerLimit) {
     mout<<"Geometry drawn within "<<Timer.ElapsedTime()<<" seconds."<<endl;
