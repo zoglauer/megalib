@@ -1317,12 +1317,6 @@ bool MDVolume::CopyDataToClones()
 bool MDVolume::Validate()
 {
   // Test if everything is ok
-  
-  if (this == 0) {
-    mout<<"   ***  Error  ***  in volume "<<m_Name<<endl;
-    mout<<"Never mind... I do not exist..."<<endl;
-    return false;
-  }
 
   // Do we have a shape?
   if (m_Shape == 0) {
