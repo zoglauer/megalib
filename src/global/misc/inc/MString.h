@@ -161,6 +161,12 @@ class MString
   void RemoveInPlace(size_t Start, size_t Size) { m_String.erase(Start, Size); }
   //! Remove all characters from Start with the given length and return the new string
   MString& Remove(size_t Start, size_t Size) { m_String.erase(Start, Size); return *this; }
+  //! Remove the last N characters from the string and return the new string
+  //! If the string is smaller than Last, remove everything
+  void RemoveLastInPlace(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); }
+  //! Remove the last N characters from the string and return the new string
+  //! If the string is smaller than Last, remove everything
+  MString& RemoveLast(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); return *this; }
 
   //! Replace the characters starting at Start with Size with the string S
   void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { m_String.replace(Start, Size, S.m_String); }
