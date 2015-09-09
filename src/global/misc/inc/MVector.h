@@ -101,13 +101,13 @@ public:
   //! Return false if one of the elements is identical
   bool operator!=(const MVector&) const;
 
-  // Special operator required by Cosima... (basically don't use it for anything else..)
+  //! Less operator
   bool operator<(const MVector&) const;
 
-  // Add W to this vector
+  //! Add W to this vector
   MVector& operator+=(const MVector& W) { m_X += W.m_X; m_Y += W.m_Y; m_Z += W.m_Z; return *this; }
 
-  // Subtract V from this vector
+  //! Subtract V from this vector
   MVector& operator-=(const MVector& V) { m_X -= V.m_X; m_Y -= V.m_Y; m_Z -= V.m_Z; return *this; }
 
   //! Returns a new vector, which is the negative of this one
@@ -198,24 +198,20 @@ public:
 // Very important ;-)
 std::ostream& operator<<(std::ostream& os, const MVector& Vector);
 
-// Addition
+//! Addition
 MVector operator+ (const MVector& V, const MVector& W);
-// Subtraction
+//! Subtraction
 MVector operator- (const MVector& V, const MVector& W);
-// Dot-product multiplication
+//! Dot-product multiplication
 double operator* (const MVector& V, const MVector& W);
-// Multiplication with scalar from right
+//! Multiplication with scalar from right
 MVector operator* (const MVector& V, double S);
-// Divide with scalar from right
+//! Divide with scalar from right
 MVector operator/ (const MVector& V, double S);
-// Multiplication with scalar from left
+//! Multiplication with scalar from left
 MVector operator* (double S, const MVector& V);
 //! Allow rotations with ROOT matrices --> replace by own rotation class...
 MVector operator* (const TMatrix& M, const MVector& V);
-
-
-
-
 
 
 

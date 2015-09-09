@@ -150,18 +150,18 @@ bool MVector::operator!= (const MVector& V) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MVector::operator< (const MVector& V) const 
+bool MVector::operator<(const MVector& V) const 
 {
-  // Special operator required by Cosima...
-
+  // The less operator
+  
   if (V.m_X > m_X) return true;
   else if (V.m_X < m_X) return false;
   else {
     if (V.m_Y > m_Y) return true;
     else if (V.m_Y < m_Y) return false;
     else {
-      if (V.m_Z >= m_Z) return true;
-      else if (V.m_Z < m_Z) return false;
+      if (V.m_Z > m_Z) return true;
+      else return false;
     }
   }
 
@@ -393,7 +393,7 @@ MVector operator* (const TMatrix& M, const MVector& V)
                  M(1,0)*V.m_X + M(1,1)*V.m_Y + M(1,2)*V.m_Z,
                  M(2,0)*V.m_X + M(2,1)*V.m_Y + M(2,2)*V.m_Z);
 }
-
+  
 
 ////////////////////////////////////////////////////////////////////////////////
 
