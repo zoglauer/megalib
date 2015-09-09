@@ -385,6 +385,28 @@ void MGUIECBList::Add(MString CBLabel, int Selected)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MGUIECBList::Add(MString CBLabel, bool Selected)
+{
+  // Add a Checkbutton to the GUI element
+  
+  TGCheckButton *CB = new TGCheckButton(GetContainer(), CBLabel, m_CBList->GetLast()+1);
+  (Selected == false) ? CB->SetState(kButtonUp) : CB->SetState(kButtonDown);
+  CB->Associate(this);
+  if (m_Associate != 0) {
+    CB->Associate(m_Associate);
+  }
+  CB->SetWrapLength(m_WrapLength);
+  m_CBList->AddLast(CB);
+
+  m_NamesList->AddLast(new TObjString(CBLabel));
+  
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MGUIECBList::SetEnabled(bool flag)
 {
   m_IsEnabled = flag;

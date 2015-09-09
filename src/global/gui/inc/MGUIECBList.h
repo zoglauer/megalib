@@ -62,6 +62,7 @@ class MGUIECBList : public TGCanvas
   int GetSelectedBitEncoded();
   int GetNEntries() { return m_CBList->GetSize(); }
   void Add(MString CBLabel, int Selected = 0);
+  void Add(MString CBLabel, bool Selected);
   void Create();
 
   void SelectAll();
