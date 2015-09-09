@@ -493,29 +493,30 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
   // The vertex is at this point a (non-ambiguous) track or a single (clustered) 
   // hit followed by at least two layers with two hits per layer:
 
-  mdebug<<"Search vertex"<<endl;
+  mdebug<<"Searching for a pair vertex"<<endl;
 
   MRawEventList *List = 0;
   bool OnlyHitInLayer = false;
+  unsigned int MaximumLayerJump = 2;
   //MRESE* RESE = 0;
 
   
+  // Create a list of RESEs dorted by depth in tracker
   vector<MRESE*> ReseList;
   for (int h = 0; h < RE->GetNRESEs(); h++) {
     ReseList.push_back(RE->GetRESEAt(h));
   }
-  //ReseList.sort(CompareRESEByZ());
-	sort(ReseList.begin(), ReseList.end(), CompareRESEByZ());
+  sort(ReseList.begin(), ReseList.end(), CompareRESEByZ());
 
-  mdebug<<"RESElist: "<<endl;
+  mdebug<<"RESE's sorted by depth: "<<endl;
   vector<MRESE*>::iterator Iterator1;
   vector<MRESE*>::iterator Iterator2;
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
     if (IsInTracker(*Iterator1) == false) continue;
-    mdebug<<(*Iterator1)->GetPosition().Z()<<endl;
+    mdebug<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
   }
 
-  // 
+  // For each of the RESE's in the list check if it could be the first of the vertex
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
     if (IsInTracker(*Iterator1) == false) continue;
 
@@ -533,6 +534,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     mdebug<<"Search vertex: Only hit in layer:"<<endl;
     mdebug<<(*Iterator1)->ToString()<<endl;
 
+    // We only have one hit:
     vector<int> NBelow(m_NLayersForVertexSearch, 0);
     vector<int> NAbove(m_NLayersForVertexSearch, 0);
 
@@ -555,8 +557,9 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     MRESE* Vertex = 0;
     int VertexDirection = 0;
 
-    int NLGETwo = 0; // number of layers with hits greater equal 2
-    int NLGEOne = 0; // number of layers with hits greater equal 2
+    unsigned int NLGE = 0;    // number of layers hit 
+    unsigned int NLGETwo = 0; // number of layers with hits greater or equal 2
+    unsigned int NLGEOne = 0; // number of layers with exact one hit
 
     mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: "
           <<NAbove[1]<<" "<<NAbove[2]<<" "<<NAbove[3]<<" "<<NAbove[4]<<" "<<NAbove[5]<<endl;
@@ -566,13 +569,16 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     // Check for vertex below
     if (NAbove[1] == 0) {
       NLGETwo = 0;
-      NLGEOne = 0;
+      NLGEOne = 1; // We count the first one too...
+      NLGE = 1; // We count the first one two...
       
       for (unsigned int d = 1; d < m_NLayersForVertexSearch; ++d) {
-        if (NBelow[d] >= 1) NLGEOne++;
+        if (NBelow[d] >= 1) NLGE++;
+        if (NBelow[d] == 1) NLGEOne++;
         if (NBelow[d] >= 2) NLGETwo++;        
       }
-      if (NLGETwo >= 2 && NLGEOne >= 1) {
+      mdebug<<"Vertec statistics (max: "<<m_NLayersForVertexSearch<<"): layers=:"<<NLGE<<" with one hit: "<<NLGEOne<<" 2 or more: "<<NLGETwo<<endl; 
+      if (NLGE >= m_NLayersForVertexSearch-MaximumLayerJump && NLGETwo >= 2 && NLGEOne >= 1) {
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
