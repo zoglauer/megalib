@@ -42,7 +42,7 @@ using namespace std;
 #include "MGUIOptionsGeneral.h"
 #include "MGUIExportSpectrum.h"
 #include "MGUISpectralAnalyzer.h"
-
+#include "MGUIReconstructedSpectrum.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -100,19 +100,21 @@ void MGUIRevanMain::Create()
   m_MenuBar->AddPopup("Reconstruction", m_MenuReconstruction, m_MenuBarItemLayoutLeft);
 
   m_MenuApplications = new TGPopupMenu(fClient->GetRoot());
+  m_MenuApplications->AddLabel("Spectra");
+  m_MenuApplications->AddEntry("Generate spectra", c_Spectrum);
   m_MenuApplications->AddEntry("Export initial energy spectrum", c_ExportSpectrum);
-  m_MenuApplications->AddSeparator();
-  m_MenuApplications->AddEntry("Show trigger statistics", c_TriggerStatistics);
-  m_MenuApplications->AddSeparator();
-  m_MenuApplications->AddEntry("Initial event statistics", c_InitialEventStatistics);
   m_MenuApplications->AddEntry("Initial energy spectrum", c_EnergyInitial);
-
-
-  //! spec analyzer
-  m_MenuApplications->AddEntry("Spectral analyzer (experimental)", c_SpectralAnalyzer);
-
   m_MenuApplications->AddEntry("Energy spectrum Before/After analysis", c_EnergyDistribution);
+  m_MenuApplications->AddEntry("Spectral analyzer (experimental)", c_SpectralAnalyzer);
+  m_MenuApplications->AddSeparator();
+  m_MenuApplications->AddLabel("Statistics");
+  m_MenuApplications->AddEntry("Show trigger statistics", c_TriggerStatistics);
+  m_MenuApplications->AddEntry("Initial event statistics", c_InitialEventStatistics);
+  m_MenuApplications->AddSeparator();
+  m_MenuApplications->AddLabel("Timing");
   m_MenuApplications->AddEntry("Time between events", c_Coincidence);
+  m_MenuApplications->AddSeparator();
+  m_MenuApplications->AddLabel("Miscellaneous");
   m_MenuApplications->AddEntry("Energy per cluster per detector type", c_HitStatistics);
   m_MenuApplications->AddEntry("Energy per central track element", c_EnergyPerCentralTrackElement);
   m_MenuApplications->AddEntry("Spatial hit distribution", c_SpatialHitDistribution);
@@ -123,13 +125,9 @@ void MGUIRevanMain::Create()
   m_MenuApplications->AddEntry("Cluster distribution by detector type after reconstruction", c_DetectorTypeClusterDistributionAfter);
   m_MenuApplications->AddEntry("Hit distribution by detector type before reconstruction", c_DetectorTypeHitDistributionBefore);
   m_MenuApplications->AddEntry("Hit distribution by detector type after reconstruction", c_DetectorTypeHitDistributionAfter);
-  // m_MenuApplications->AddSeparator();
-  // m_MenuApplications->AddEntry("Beam path", c_BeamPath);
-  // m_MenuApplications->AddEntry("Polarization", c_Polarization);
-  // m_MenuApplications->AddSeparator();
-  // m_MenuApplications->AddEntry("Do not hit this button!", c_Test);
+
   m_MenuApplications->Associate(this);
-  m_MenuBar->AddPopup("Applications", m_MenuApplications, m_MenuBarItemLayoutLeft);
+  m_MenuBar->AddPopup("Analysis", m_MenuApplications, m_MenuBarItemLayoutLeft);
 
   // Only add the info here at the end
   m_MenuBar->AddPopup("Info", m_MenuInfo, m_MenuBarItemLayoutRight);
@@ -241,12 +239,17 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
         Launch();
         break;
 
+      case c_Spectrum:
+        new MGUIReconstructedSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);        
+        if (OKPressed == true) {
+          m_Interface->GenerateSpectra();
+        }
+        break;
+
       case c_ExportSpectrum:
         new MGUIExportSpectrum(gClient->GetRoot(), this, m_Data, OKPressed);        
         if (OKPressed == true) {
           m_Interface->ExportSpectrum();
-        } else {
-          cout<<"No OK"<<endl;
         }
         break;
 

@@ -57,6 +57,24 @@ MSettingsRevan::MSettingsRevan(bool AutoLoad) : MSettings("RevanConfigurationFil
   m_ExportSpectrumMax = 1000.0;
   m_ExportSpectrumFileName = "Export.dat";
   
+  // Options for displaying the spectrum
+  m_SpectrumBefore = true;
+  m_SpectrumAfter = false;
+  
+  m_SpectrumSortByInstrument = true;
+  m_SpectrumSortByDetectorType = false;
+  m_SpectrumSortByDetector = false;
+  
+  m_SpectrumCombine = true;
+  
+  m_SpectrumOutputToScreen = true;
+  m_SpectrumOutputToFile = false;
+  
+  m_SpectrumBins = 100;
+  m_SpectrumLog = false;
+  m_SpectrumMin = 0.0;
+  m_SpectrumMax = 1000.0;  
+  
   if (AutoLoad == true) {
     Read();
   }
@@ -90,6 +108,23 @@ bool MSettingsRevan::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "ExportSpectrumMax", m_ExportSpectrumMax);
   new MXmlNode(Node, "ExportSpectrumFileName", MSettings::CleanPath(m_ExportSpectrumFileName));
 
+  new MXmlNode(Node, "SpectrumBefore)", m_SpectrumBefore);
+  new MXmlNode(Node, "SpectrumAfter", m_SpectrumAfter);
+  
+  new MXmlNode(Node, "SpectrumSortByInstrument", m_SpectrumSortByInstrument);
+  new MXmlNode(Node, "SpectrumSortByDetectorType", m_SpectrumSortByDetectorType);
+  new MXmlNode(Node, "SpectrumSortByDetector", m_SpectrumSortByDetector);
+  
+  new MXmlNode(Node, "SpectrumCombine", m_SpectrumCombine);
+  
+  new MXmlNode(Node, "SpectrumOutputToScreen", m_SpectrumOutputToScreen);
+  new MXmlNode(Node, "SpectrumOutputToFile", m_SpectrumOutputToFile);
+
+  new MXmlNode(Node, "SpectrumBins", m_SpectrumBins);
+  new MXmlNode(Node, "SpectrumLog", m_SpectrumLog);
+  new MXmlNode(Node, "SpectrumMin", m_SpectrumMin);
+  new MXmlNode(Node, "SpectrumMax", m_SpectrumMax);
+
   return true;
 }
 
@@ -121,6 +156,48 @@ bool MSettingsRevan::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("ExportSpectrumFileName")) != 0) {
     m_ExportSpectrumFileName = aNode->GetValueAsString();
+  }
+
+  
+  if ((aNode = Node->GetNode("SpectrumBefore")) != 0) {
+    m_SpectrumBefore = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumAfter")) != 0) {
+    m_SpectrumAfter = aNode->GetValueAsBoolean();
+  }
+  
+  if ((aNode = Node->GetNode("SpectrumSortByInstrument")) != 0) {
+    m_SpectrumSortByInstrument = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumSortByDetectorType")) != 0) {
+    m_SpectrumSortByDetectorType = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumSortByDetector")) != 0) {
+    m_SpectrumSortByDetector = aNode->GetValueAsBoolean();
+  }
+  
+  if ((aNode = Node->GetNode("SpectrumOutputToScreen")) != 0) {
+    m_SpectrumOutputToScreen = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumOutputToFile")) != 0) {
+    m_SpectrumOutputToFile = aNode->GetValueAsBoolean();
+  }
+  
+  if ((aNode = Node->GetNode("SpectrumCombine")) != 0) {
+    m_SpectrumCombine = aNode->GetValueAsBoolean();
+  }
+  
+  if ((aNode = Node->GetNode("SpectrumBins")) != 0) {
+    m_SpectrumBins = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("SpectrumLog")) != 0) {
+    m_SpectrumLog = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumMin")) != 0) {
+    m_SpectrumMin = aNode->GetValueAsDouble();
+  }
+  if ((aNode = Node->GetNode("SpectrumMax")) != 0) {
+    m_SpectrumMax = aNode->GetValueAsDouble();
   }
 
   return true;

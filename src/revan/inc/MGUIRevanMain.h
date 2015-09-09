@@ -81,6 +81,7 @@ class MGUIRevanMain : public MGUIMain
     c_OptionsSequencing, 
     c_OptionsDecay, 
     c_Start, 
+    c_Spectrum,
     c_ExportSpectrum,
     c_SpectralAnalyzer,
     c_Coincidence,

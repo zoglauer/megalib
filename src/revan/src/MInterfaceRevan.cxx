@@ -425,6 +425,335 @@ void MInterfaceRevan::AnalyzeEvents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceRevan::GenerateSpectra()
+{
+  // Export the initial energy spectrum
+
+  if (IsInitialized() == false) return;
+
+  bool xLog = m_Data->GetSpectrumLog();
+  const int xNBins = m_Data->GetSpectrumBins();
+  double xMin = m_Data->GetSpectrumMin();
+  double xMax = m_Data->GetSpectrumMax();
+
+  double* xBins = CreateAxisBins(xMin, xMax, xNBins, xLog);
+
+  bool BeforeReconstruction = m_Data->GetSpectrumBefore();
+  bool AfterReconstruction = m_Data->GetSpectrumAfter();
+  
+  bool ByInstrument = m_Data->GetSpectrumSortByInstrument();
+  bool ByDetectorType = m_Data->GetSpectrumSortByDetectorType();
+  bool ByDetector = m_Data->GetSpectrumSortByDetector();
+  
+  bool Combine = m_Data->GetSpectrumCombine();
+  
+  bool OutputScreen = m_Data->GetSpectrumOutputToScreen();
+  bool OutputFile = m_Data->GetSpectrumOutputToFile();
+  
+  vector<TH1D*> AllSpectra;
+  
+  
+  // Step 1: Let's create all the histograms:
+  TH1D* SpectrumBeforeByInstrument = nullptr;
+  map<int, TH1D*> SpectrumBeforeByDetectorType;
+  map<MVector, TH1D*> SpectrumBeforeByDetector;
+  if (BeforeReconstruction == true) {
+    if (ByInstrument == true) {
+      if (Combine == true) {
+        SpectrumBeforeByInstrument = new TH1D("SpectrumCobinedBeforeByInstrument", "Event spectrum before reconstruction for the whole instrument", xNBins, xBins);
+      } else {
+        SpectrumBeforeByInstrument = new TH1D("HitSpectrumBeforeByInstrument", "Hit spectrum before reconstruction for the whole instrument", xNBins, xBins);        
+      }
+      AllSpectra.push_back(SpectrumBeforeByInstrument);
+    }
+    if (ByDetectorType == true) {
+      // Generated on the fly
+    }
+    if (ByDetector == true) {
+      // Generated on the fly      
+    }
+  }
+  
+  TH1D* SpectrumAfterByInstrument = nullptr;
+  map<int, TH1D*> SpectrumAfterByDetectorType;
+  map<MVector, TH1D*> SpectrumAfterByDetector;
+  if (AfterReconstruction == true) {
+    if (ByInstrument == true) {
+      if (Combine == true) {
+        SpectrumAfterByInstrument = new TH1D("SpectrumCombinedAfterByInstrument", "Event spectrum after reconstruction for the whole instrument", xNBins, xBins);
+      } else {
+        SpectrumAfterByInstrument = new TH1D("HitSpectrumAfterByInstrument", "Hit spectrum after reconstruction for the whole instrument", xNBins, xBins);        
+      }
+      AllSpectra.push_back(SpectrumAfterByInstrument);
+    }
+    if (ByDetectorType == true) {
+      // Generated on the fly      
+    }
+    if (ByDetector == true) {
+      // Generated on the fly
+    }    
+  }
+  
+  
+  // Step 2: Let's fill all the histograms:
+
+  MRawEventAnalyzer Analyzer;
+  Analyzer.SetGeometry(m_Geometry);
+  if (Analyzer.SetInputModeFile(m_Data->GetCurrentFileName()) == false) return;
+  
+  SetGuiData(Analyzer);
+  Analyzer.SetTotalEnergyMin(xMin);
+  Analyzer.SetTotalEnergyMax(xMax);
+  if (Analyzer.PreAnalysis() == false) return;
+
+  unsigned int ReturnCode;
+  do {
+    ReturnCode = Analyzer.AnalyzeEvent();
+    
+    if (ReturnCode == MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile || 
+        ReturnCode == MRawEventAnalyzer::c_AnalysisSavingEventFailed) break;
+    
+    MRERawEvent* Before = Analyzer.GetInitialRawEvent();
+    MRERawEvent* After = Analyzer.GetOptimumEvent();
+    
+    // BEFORE :
+    if (BeforeReconstruction == true && Before != nullptr) {
+      
+      if (ByInstrument == true) {
+        if (Combine == true) {
+          SpectrumBeforeByInstrument->Fill(Before->GetEnergy());
+        } else {
+          for (int r = 0; r < Before->GetNRESEs(); ++r) {
+            SpectrumBeforeByInstrument->Fill(Before->GetRESEAt(r)->GetEnergy());
+          }
+        }
+      }
+      
+      if (ByDetectorType == true) {
+        if (Combine == true) {
+          map<int, double> EnergyBeforeByDetectorType;
+          for (int r = 0; r < Before->GetNRESEs(); ++r) {
+            EnergyBeforeByDetectorType[Before->GetRESEAt(r)->GetDetector()] += Before->GetRESEAt(r)->GetEnergy();
+          }
+          for (auto E: EnergyBeforeByDetectorType) {
+            if (SpectrumBeforeByDetectorType[E.first] == nullptr) {
+              TH1D* H = new TH1D(MString("SpectrumBeforeCombinedByDetectorType_") + E.first, 
+                                 MString("Spectrum before reconstruction for detector type ") + E.first + MString(" (individual hits of the events have been combined)"), xNBins, xBins);
+              SpectrumBeforeByDetectorType[E.first] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumBeforeByDetectorType[E.first]->Fill(E.second);
+          }        
+        } else {
+          for (int r = 0; r < Before->GetNRESEs(); ++r) {
+            int DetectorType = Before->GetRESEAt(r)->GetDetector();
+            if (SpectrumBeforeByDetectorType[DetectorType] == nullptr) {
+              TH1D* H = new TH1D(MString("HitSpectrumBeforeByDetectorType_") + DetectorType, 
+                                 MString("Spectrum for individual hits before reconstruction for detector type ") + DetectorType, xNBins, xBins);
+              SpectrumBeforeByDetectorType[DetectorType] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumBeforeByDetectorType[DetectorType]->Fill(Before->GetRESEAt(r)->GetEnergy());
+          }
+        }
+      }
+      
+      if (ByDetector == true) {
+        if (Combine == true) {
+          map<MVector, double> EnergyBeforeByDetector;
+          for (int r = 0; r < Before->GetNRESEs(); ++r) {
+            MVector Position = Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetShape()->GetUniquePosition();
+            Position = Before->GetRESEAt(r)->GetVolumeSequence()->GetPositionInFirstVolume(Position, Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume());
+            EnergyBeforeByDetector[Position] += Before->GetRESEAt(r)->GetEnergy();
+          }
+          for (auto E: EnergyBeforeByDetector) {
+            MVector Pos = E.first;
+            if (SpectrumBeforeByDetector[E.first] == nullptr) {
+              TH1D* H = new TH1D(MString("SpectrumBeforeCombinedByDetector_") + Pos.ToString(), 
+                                MString("Spectrum before reconstruction for detector at position ") + Pos.ToString() + MString(" (individual hits of the events have been combined)"),  xNBins, xBins);
+              SpectrumBeforeByDetector[E.first] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumBeforeByDetector[E.first]->Fill(E.second);
+          }
+        } else {
+          for (int r = 0; r < Before->GetNRESEs(); ++r) {
+            MVector Position = Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetShape()->GetUniquePosition();
+            Position = Before->GetRESEAt(r)->GetVolumeSequence()->GetPositionInFirstVolume(Position, Before->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume());
+            if (SpectrumBeforeByDetector[Position] == nullptr) {
+              TH1D* H = new TH1D(MString("HitSpectrumBeforeByDetector_") + Position.ToString(), 
+                                MString("Spectrum for individual hits before reconstruction for detector at position ") + Position.ToString(),  xNBins, xBins);
+              SpectrumBeforeByDetector[Position] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumBeforeByDetector[Position]->Fill(Before->GetRESEAt(r)->GetEnergy());
+          }
+        }
+      } // By detector
+    } // BEFORE
+    
+    
+    
+    // AFTER
+    if (AfterReconstruction == true && After != nullptr) {
+      
+      if (ByInstrument == true) {
+        if (Combine == true) {
+          SpectrumAfterByInstrument->Fill(After->GetEnergy());
+        } else {
+          for (int r = 0; r < After->GetNRESEs(); ++r) {
+            SpectrumAfterByInstrument->Fill(After->GetRESEAt(r)->GetEnergy());
+          }
+        }
+      }
+      
+      if (ByDetectorType == true) {
+        if (Combine == true) {
+          map<int, double> EnergyAfterByDetectorType;
+          for (int r = 0; r < After->GetNRESEs(); ++r) {
+            EnergyAfterByDetectorType[After->GetRESEAt(r)->GetDetector()] += After->GetRESEAt(r)->GetEnergy();
+          }
+          for (auto E: EnergyAfterByDetectorType) {
+            if (SpectrumAfterByDetectorType[E.first] == nullptr) {
+              TH1D* H = new TH1D(MString("SpectrumAfterCombinedByDetectorType_") + E.first, 
+                                 MString("Spectrum after reconstruction for detector type ") + E.first + MString(" (individual hits of the events have been combined)"), xNBins, xBins);
+              SpectrumAfterByDetectorType[E.first] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumAfterByDetectorType[E.first]->Fill(E.second);
+            if (E.second > 2000) {
+              cout<<E.second<<endl;
+              cout<<After->ToString()<<endl;
+            }
+          }        
+        } else {
+          for (int r = 0; r < After->GetNRESEs(); ++r) {
+            int DetectorType = After->GetRESEAt(r)->GetDetector();
+            if (SpectrumAfterByDetectorType[DetectorType] == nullptr) {
+              TH1D* H = new TH1D(MString("HitSpectrumAfterByDetectorType_") + DetectorType, 
+                                 MString("Spectrum for individual hits after reconstruction for detector type ") + DetectorType, xNBins, xBins);
+              SpectrumAfterByDetectorType[DetectorType] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumAfterByDetectorType[DetectorType]->Fill(After->GetRESEAt(r)->GetEnergy());
+          }
+        }      
+      }
+      
+      if (ByDetector == true) {
+        if (Combine == true) {
+          map<MVector, double> EnergyAfterByDetector;
+          for (int r = 0; r < After->GetNRESEs(); ++r) {
+            MVector Position = After->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetShape()->GetUniquePosition();
+            Position = After->GetRESEAt(r)->GetVolumeSequence()->GetPositionInFirstVolume(Position, After->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume());
+            EnergyAfterByDetector[Position] += After->GetRESEAt(r)->GetEnergy();
+          }
+          for (auto E: EnergyAfterByDetector) {
+            MVector Pos = E.first;
+            if (SpectrumAfterByDetector[E.first] == nullptr) {
+              TH1D* H = new TH1D(MString("SpectrumAfterCombinedByDetector_") + Pos.ToString(), 
+                                MString("Spectrum after reconstruction for detector at position ") + Pos.ToString() + MString(" (individual hits of the events have been combined)"),  xNBins, xBins);
+              SpectrumAfterByDetector[E.first] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumAfterByDetector[E.first]->Fill(E.second);
+          }
+        } else {
+          for (int r = 0; r < After->GetNRESEs(); ++r) {
+            MVector Position = After->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume()->GetShape()->GetUniquePosition();
+            Position = After->GetRESEAt(r)->GetVolumeSequence()->GetPositionInFirstVolume(Position, After->GetRESEAt(r)->GetVolumeSequence()->GetDeepestVolume());
+            if (SpectrumAfterByDetector[Position] == nullptr) {
+              TH1D* H = new TH1D(MString("HitSpectrumAfterByDetector_") + Position.ToString(), 
+                                MString("Spectrum for individual hits after reconstruction for detector at position ") + Position.ToString(),  xNBins, xBins);
+              SpectrumAfterByDetector[Position] = H;
+              AllSpectra.push_back(H);
+            }
+            SpectrumAfterByDetector[Position]->Fill(After->GetRESEAt(r)->GetEnergy());
+          }
+        }
+      } // By detector
+    } // AFTER
+    
+  } while (true);
+
+  if (Analyzer.PostAnalysis() == false) return;
+  
+  
+  // Step 3: Nicen it!
+  
+  for (TH1D* Hist: AllSpectra) {
+    Hist->SetBit(kCanDelete);
+    Hist->SetStats(false);
+    Hist->SetFillColor(8);
+    Hist->GetXaxis()->SetTitle("Energy [keV]");
+    Hist->GetYaxis()->SetTitle("counts/keV"); 
+  }
+  
+   
+  // Step 4: Dump it!
+
+  if (OutputScreen == true) {
+    int c = 0;
+    const int MaxCanvases = 100;
+    for (TH1D* Hist: AllSpectra) {
+      if (++c > MaxCanvases) {
+        mgui<<"We only display up to "<<MaxCanvases<<" individual spectra"<<info;
+        break;
+      }
+      
+      TCanvas* C = new TCanvas();
+      C->cd();
+      if (xLog == true) C->SetLogx();
+      Hist->Draw();
+      C->Update();
+    }
+  }
+  
+  if (OutputFile == true) {
+    for (TH1D* Hist: AllSpectra) {
+      MString FileName = m_Data->GetCurrentFileName();
+      if (FileName.EndsWith(".gz")) {
+        FileName.RemoveLast(3); 
+      }
+      if (FileName.EndsWith(".sim")) {
+        FileName.RemoveLast(4); 
+      }
+      if (FileName.EndsWith(".evta")) {
+        FileName.RemoveLast(5); 
+      }
+      FileName += "_";
+      FileName += Hist->GetName();
+      FileName += ".dat";
+      
+      ofstream out(FileName);
+      out<<"# "<<Hist->GetTitle()<<endl;
+      out<<"# File: "<<m_Data->GetCurrentFileName()<<endl;
+      out<<"# SE marks the start of the data, EN the end - everything else might change"<<endl;
+      out<<"# The first row is the low edge of the bin, the second the counts in this bin"<<endl;
+      out<<"# The last data line before the EN is the high edge of the last bin, followed by a \"-\""<<endl;
+      out<<endl;
+      out<<"SE"<<endl;
+      for (int b = 1; b <= Hist->GetNbinsX() + 1; ++b) {
+        if (b <= Hist->GetNbinsX()) {
+          out<<Hist->GetBinLowEdge(b)<<"  "<<Hist->GetBinContent(b)<<endl;
+        } else {
+          out<<Hist->GetBinLowEdge(b-1) + Hist->GetBinWidth(b-1)<<"   -"<<endl;
+        }
+      }
+      out<<"EN"<<endl;
+      out<<endl;
+      out<<"# end"<<endl;
+      out.close();
+    }
+  }
+
+  delete [] xBins;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceRevan::ExportSpectrum()
 {
   // Export the initial energy spectrum

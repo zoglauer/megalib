@@ -26,6 +26,7 @@ GOBJS = $(LB)/MInterfaceRevan.o \
 				$(LB)/MGUIOptionsCSR.o \
 				$(LB)/MGUIOptionsDecay.o \
 				$(LB)/MGUIExportSpectrum.o \
+				$(LB)/MGUIReconstructedSpectrum.o \
 
 LOBJS = $(LB)/MGeometryRevan.o \
 				$(LB)/MRawEventList.o \

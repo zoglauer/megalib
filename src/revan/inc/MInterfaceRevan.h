@@ -58,6 +58,10 @@ class MInterfaceRevan : public MInterface
 
   void AnalyzeEvents();
 
+  //! Generate a spectra based on a wide set of parameters
+  void GenerateSpectra();
+  
+  //! Export the spectrum 
   void ExportSpectrum();
 
   //! The spectral analyzer
