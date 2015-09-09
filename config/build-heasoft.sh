@@ -110,7 +110,7 @@ else
   echo "Looking for latest HEASoft version on the HEASoft website"
   
   # Now check root repository for the given version:
-  TARBALL=`curl ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "src.tar.gz$"`
+  TARBALL=`curl ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "[0-9]src.tar.gz$"`
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable HEASoft tar ball at the HEASoft website"
     exit 1
@@ -119,7 +119,7 @@ else
   
   # Check if it already exists locally
   REQUIREDOWNLOAD="true"
-  if [ -f ${TARBALL} ]; then
+  if [ -f "${TARBALL}" ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
     SAMESIZE=`curl --head ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/${TARBALL}`
