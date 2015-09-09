@@ -91,7 +91,7 @@ MSupervisor::MSupervisor()
   m_ExpoCombinedViewer = nullptr;
   m_ExpoSupervisor = nullptr;
   
-  m_ConfigurationFileName = gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg");
+  m_ConfigurationFileName = "~/.fretalon.cfg";
 
   // All the rest:
 }
@@ -436,6 +436,7 @@ bool MSupervisor::Load(MString FileName)
   Clear();
 
   if (FileName == "") FileName = m_ConfigurationFileName;
+  MFile::ExpandFileName(FileName);
   
   // Create a XML document describing the data:
   MXmlDocument* Document = new MXmlDocument();
@@ -512,6 +513,7 @@ bool MSupervisor::Save(MString FileName)
   }
 
   // Store the module content
+  MFile::ExpandFileName(FileName);
   Document->Save(FileName);
 
   delete Document;
