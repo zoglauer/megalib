@@ -1,0 +1,293 @@
+{
+   ROOT: Fonts
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   fun:XML_ParseBuffer
+   fun:FcConfigParseAndLoad
+   fun:FcConfigParseAndLoad
+}
+
+{
+   MEGAlib: MString append
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSs6appendERKSs
+   fun:_ZN7MStringpLERKS_
+}
+
+{
+   ROOT: Fonts
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   fun:FcFontRenderPrepare
+   fun:FcFontMatch
+   fun:XftFontMatch
+   fun:XftFontOpenXlfd
+   fun:_ZN8TGX11TTF13LoadQueryFontEPKc
+   fun:_ZNK8TGClient13GetFontByNameEPKcb
+   fun:_ZN10TGFontPool13GetNativeFontEPKcb
+   fun:_ZN10TGFontPool7GetFontEPKcb
+}
+
+{
+   MEGAlib: MString assign
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs6assignERKSs
+   fun:_ZN7MStringaSERKS_
+}
+
+{
+   MEGAlib: MString - reserve
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSspLEc
+   fun:_ZN7MStringpLEc
+}
+
+{
+   ROOT: Fonts
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:realloc
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   fun:FcFontRenderPrepare
+   fun:FcFontMatch
+   fun:XftFontMatch
+   fun:XftFontOpenXlfd
+   fun:_ZN8TGX11TTF13LoadQueryFontEPKc
+   fun:_ZNK8TGClient13GetFontByNameEPKcb
+   fun:_ZN10TGFontPool13GetNativeFontEPKcb
+   fun:_ZN10TGFontPool7GetFontEPKcb
+   fun:_ZN14TGResourcePoolC1EP8TGClient
+}
+
+{
+   MEGAlib: MString - substr
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
+   fun:_ZNSsC1ERKSsmm
+   fun:_ZNKSs6substrEmm
+   fun:_ZNK7MString12GetSubStringEjj
+}
+
+{
+   ROOT: Fonts
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   fun:FcPatternAddDouble
+   obj:/usr/lib/x86_64-linux-gnu/libXft.so.2.3.1
+   obj:/usr/lib/x86_64-linux-gnu/libXft.so.2.3.1
+   obj:/usr/lib/x86_64-linux-gnu/libXft.so.2.3.1
+   obj:/usr/lib/x86_64-linux-gnu/libXft.so.2.3.1
+   fun:XftDefaultHasRender
+   fun:XftDefaultSubstitute
+   fun:XftFontMatch
+   fun:XftFontOpenXlfd
+}
+
+{
+   MEGAlib: MString assign
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs6assignERKSs
+   fun:_ZN7MStringaSERKS_
+}
+
+{
+   MEGAlib: String - append
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSs6appendEPKcm
+   fun:_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_EOS6_PKS3_
+   fun:_ZplRK7MStringPKc
+}
+
+{
+   MEGAlib: MString - assign
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs6assignERKSs
+   fun:_ZN7MStringaSERKS_
+}
+
+{
+   MEGAlib: MDMaterial - ROOTMedium bug
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN8TStorage11ObjectAllocEm
+   fun:_ZN7TObjectnwEm
+   fun:_ZN10MDMaterial13GetRootMediumEv
+}
+
+{
+   ROOT: TClass
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znam
+   fun:_ZN7TString7ReplaceEiiPKci
+   fun:_ZN6TNamed7SetNameEPKc
+   fun:_ZN10TBaseClassC1EPvP6TClass
+   fun:_ZN5TCint23CreateListOfBaseClassesEP6TClass
+}
+
+{
+   Some initialization
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:G__add_setup_func
+   fun:G__pragma
+   fun:G__exec_statement
+   fun:G__loadfile
+   fun:G__include_file
+   fun:G__exec_statement
+   fun:G__define_struct
+   fun:G__exec_statement
+}
+
+{
+   ROOT: TQObject issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znam
+   fun:_ZN7TString7ReplaceEiiPKci
+   fun:_ZN6TNamed7SetNameEPKc
+   fun:_ZN10TBaseClassC1EPvP6TClass
+   fun:_ZN5TCint23CreateListOfBaseClassesEP6TClass
+   fun:_ZN6TClass14GetListOfBasesEv
+   fun:_ZN8TQObject23CollectClassSignalListsER5TListP6TClass
+}
+
+
+{
+   ROOT UI Issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znam
+   fun:_ZN7TString4InitEii
+   fun:_ZN7TStringC1EPKc
+   fun:_ZN6TClassC1EPKcsRKSt9type_infoP16TVirtualIsAProxyPFvPvR16TMemberInspectorES1_S1_iib
+   fun:_ZN7TQClassC1EPKcsRKSt9type_infoP16TVirtualIsAProxyPFvPvR16TMemberInspectorES1_S1_ii
+   fun:_ZNK4ROOT20TQObjectInitBehavior11CreateClassEPKcsRKSt9type_infoP16TVirtualIsAProxyPFvPvR16TMemberInspectorES2_S2_ii
+   fun:_ZN4ROOT17TGenericClassInfo8GetClassEv
+}
+
+{
+   MEGAlib: Unknown issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
+   fun:_ZNKSt19basic_ostringstreamIcSt11char_traitsIcESaIcEE3strEv
+   fun:_ZN8MDVolume16IsDetectorVolumeEv
+   fun:_ZN8MDVolume5CloneE7MString
+   fun:_ZN8MDVolume20RemoveVirtualVolumesERSt6vectorIPS_SaIS1_EE
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

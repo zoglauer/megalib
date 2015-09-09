@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This is just a caller for valgrind with a set of options
+
+# Store command line and add it to valgrind ourselves
+CMD=( "$@" )
+
+OPTIONS="-v --leak-check=full --track-origins=yes --suppressions=$ROOTSYS/etc/valgrind-root.supp --suppressions=$MEGALIB/config/valgrind.supp"
+for i in "${CMD[@]}"; do
+  OPTIONS="${OPTIONS} ${i}"
+done
+
+valgrind ${OPTIONS}
+
+exit 1;
