@@ -884,6 +884,7 @@ bool MImager::Analyze(bool CalculateResponse)
   // Return if no iterations have to be performed
   if (m_EM->IsStopCriterionFullfilled() == true) {
     mout<<endl;
+    delete Image;
     return true;
   }  
 
@@ -940,6 +941,8 @@ bool MImager::Analyze(bool CalculateResponse)
 
   // end iteration part
 
+  delete Image;
+  
   return true;
 }
 
