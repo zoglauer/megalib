@@ -86,7 +86,9 @@ MEarthHorizon::MEarthHorizon()
 //   m_ComptonResponse = CR;
 //   m_ValidComptonResponse = true;
 
-  mimp<<"Pair-response ignored in earth horizon test!"<<show;
+  if (g_Verbosity >= c_Info) {
+    mout<<"Pair-response still ignored in earth-horizon test!"<<endl;
+  }
 }
 
 
