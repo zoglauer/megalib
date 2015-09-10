@@ -562,6 +562,8 @@ void MGUIRealtaMain::OnLoad()
   Info.fFileTypes = (const char **) Types;
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
   
+  delete [] Types;
+  
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Settings->Read(Info.fFilename);
@@ -592,6 +594,8 @@ void MGUIRealtaMain::OnSave()
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
+  
+  delete [] Types;
   
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {

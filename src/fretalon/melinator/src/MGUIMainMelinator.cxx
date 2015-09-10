@@ -1252,6 +1252,8 @@ bool MGUIMelinatorMain::OnSaveAs()
   Info.fIniDir = StrDup(gSystem->DirName(m_Settings->GetSaveAsFileName()));
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
   
+  delete [] Types;
+  
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Settings->SetSaveAsFileName(MString(Info.fFilename));
@@ -1621,6 +1623,8 @@ bool MGUIMelinatorMain::OnLoadConfiguration()
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
+  
+  delete [] Types;
   
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {

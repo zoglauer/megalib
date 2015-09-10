@@ -353,6 +353,8 @@ void MGUISivanMain::Open()
   Info.fIniDir = StrDup(gSystem->DirName(m_Data->GetCurrentFileName()));
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
   
+  delete [] Types;
+  
   // Get the filename ...
   if ((char *) Info.fFilename != 0) {
     m_Data->SetCurrentFileName(MString(Info.fFilename));

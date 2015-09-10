@@ -662,11 +662,8 @@ void MGUIMimrecMain::Open()
     m_Data->SetCurrentFileName(MString(Info.fFilename));
     UpdateConfiguration();
   } 
-  // ... or return when cancel has been pressed
-  else {
-    return;
-  }
 
+  delete [] Types;
 
   return;
 }

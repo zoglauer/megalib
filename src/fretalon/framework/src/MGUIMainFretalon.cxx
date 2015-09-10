@@ -534,7 +534,6 @@ bool MGUIMainFretalon::OnLoadConfiguration()
   Types[2] = 0;
   Types[3] = 0;
 
-
   TGFileInfo Info;
   Info.fFileTypes = (const char **) Types;
   new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
@@ -546,6 +545,8 @@ bool MGUIMainFretalon::OnLoadConfiguration()
     UpdateModules();
   } 
 
+  delete [] Types;
+  
   return true;
 }
 
@@ -576,6 +577,8 @@ bool MGUIMainFretalon::OnSaveConfiguration()
     m_Supervisor->Save(MString(Info.fFilename));
   } 
 
+  delete [] Types;
+  
   return true;
 }
 

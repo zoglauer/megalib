@@ -422,6 +422,8 @@ bool MGUIMain::ShowLoadConfigurationDialog()
     m_BaseInterface->LoadConfiguration(MString(Info.fFilename));
   } 
 
+  delete [] Types;
+  
   return true;
 }
 
@@ -483,6 +485,8 @@ bool MGUIMain::ShowSaveConfigurationDialog()
   if ((char *) Info.fFilename != 0) {
     m_BaseInterface->SaveConfiguration(MString(Info.fFilename));
   } 
+  
+  delete [] Types;
 
   return true;
 }

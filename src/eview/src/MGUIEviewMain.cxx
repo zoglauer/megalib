@@ -685,6 +685,8 @@ bool MGUIEviewMain::Open(MString FileName)
     Info.fFileTypes = (const char **) Types;
     new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &Info);
     
+    delete [] Types;
+    
     // Get the filename ...
     if ((char *) Info.fFilename != 0) {
       FileName = MString((char *) Info.fFilename);
