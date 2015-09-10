@@ -1,23 +1,5 @@
 {
-   ROOT: Fonts
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:malloc
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
-   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
-   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
-   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
-   fun:XML_ParseBuffer
-   fun:FcConfigParseAndLoad
-   fun:FcConfigParseAndLoad
-}
-
-{
-   MEGAlib: MString append
+   MEGAlib: MString - append
    Memcheck:Leak
    match-leak-kinds: possible
    fun:_Znwm
@@ -29,24 +11,45 @@
 }
 
 {
-   ROOT: Fonts
+   MEGAlib: MString - append
    Memcheck:Leak
-   match-leak-kinds: definite
-   fun:realloc
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
-   fun:FcFontRenderPrepare
-   fun:FcFontMatch
-   fun:XftFontMatch
-   fun:XftFontOpenXlfd
-   fun:_ZN8TGX11TTF13LoadQueryFontEPKc
-   fun:_ZNK8TGClient13GetFontByNameEPKcb
-   fun:_ZN10TGFontPool13GetNativeFontEPKcb
-   fun:_ZN10TGFontPool7GetFontEPKcb
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSs6appendEPKcm
+   fun:_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_EOS6_PKS3_
+   fun:_ZplRK7MStringPKc
 }
 
 {
-   MEGAlib: MString assign
+   MEGAlib: MString - append
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSs6appendEPKcm
+   fun:_ZN7MStringpLEPKc
+}
+
+{
+   MEGAlib: MString - append
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
+   fun:_ZNSs7reserveEm
+   fun:_ZNSs6appendERKSs
+   fun:_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_EOS6_S7_
+   fun:_ZplRK7MStringS1_
+}
+
+{
+   MEGAlib: MString - assign
    Memcheck:Leak
    match-leak-kinds: possible
    fun:_Znwm
@@ -69,6 +72,68 @@
 }
 
 {
+   MEGAlib: MString - substr
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
+   fun:_ZNSsC1ERKSsmm
+   fun:_ZNKSs6substrEmm
+   fun:_ZNK7MString12GetSubStringEjj
+}
+
+{
+   MEGAlib: MString - ToLower
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs9_M_mutateEmmm
+   fun:_ZNSs12_M_leak_hardEv
+   fun:_ZNSsixEm
+   fun:_ZN7MString14ToLowerInPlaceEv
+}
+
+{
+   MEGAlib: MStream issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
+   fun:_ZNKSt19basic_ostringstreamIcSt11char_traitsIcESaIcEE3strEv
+}
+
+{
+   MEGAlib: MDMaterial - Unavoidable ROOTMedium bug
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN8TStorage11ObjectAllocEm
+   fun:_ZN7TObjectnwEm
+   fun:_ZN10MDMaterial13GetRootMediumEv
+}
+
+{
+   ROOT: Fonts
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/usr/lib/x86_64-linux-gnu/libfontconfig.so.1.8.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   obj:/lib/x86_64-linux-gnu/libexpat.so.1.6.0
+   fun:XML_ParseBuffer
+   fun:FcConfigParseAndLoad
+   fun:FcConfigParseAndLoad
+}
+
+{
    ROOT: Fonts
    Memcheck:Leak
    match-leak-kinds: definite
@@ -83,19 +148,6 @@
    fun:_ZNK8TGClient13GetFontByNameEPKcb
    fun:_ZN10TGFontPool13GetNativeFontEPKcb
    fun:_ZN10TGFontPool7GetFontEPKcb
-   fun:_ZN14TGResourcePoolC1EP8TGClient
-}
-
-{
-   MEGAlib: MString - substr
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
-   fun:_ZNSsC1ERKSsmm
-   fun:_ZNKSs6substrEmm
-   fun:_ZNK7MString12GetSubStringEjj
 }
 
 {
@@ -117,51 +169,6 @@
 }
 
 {
-   MEGAlib: MString assign
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
-   fun:_ZNSs6assignERKSs
-   fun:_ZN7MStringaSERKS_
-}
-
-{
-   MEGAlib: String - append
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
-   fun:_ZNSs7reserveEm
-   fun:_ZNSs6appendEPKcm
-   fun:_ZStplIcSt11char_traitsIcESaIcEESbIT_T0_T1_EOS6_PKS3_
-   fun:_ZplRK7MStringPKc
-}
-
-{
-   MEGAlib: MString - assign
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs4_Rep8_M_cloneERKSaIcEm
-   fun:_ZNSs6assignERKSs
-   fun:_ZN7MStringaSERKS_
-}
-
-{
-   MEGAlib: MDMaterial - ROOTMedium bug
-   Memcheck:Leak
-   match-leak-kinds: definite
-   fun:_Znwm
-   fun:_ZN8TStorage11ObjectAllocEm
-   fun:_ZN7TObjectnwEm
-   fun:_ZN10MDMaterial13GetRootMediumEv
-}
-
-{
    ROOT: TClass
    Memcheck:Leak
    match-leak-kinds: possible
@@ -170,24 +177,6 @@
    fun:_ZN6TNamed7SetNameEPKc
    fun:_ZN10TBaseClassC1EPvP6TClass
    fun:_ZN5TCint23CreateListOfBaseClassesEP6TClass
-}
-
-{
-   Some initialization
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:_Znwm
-   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
-   fun:_ZNSsC1EPKcRKSaIcE
-   fun:G__add_setup_func
-   fun:G__pragma
-   fun:G__exec_statement
-   fun:G__loadfile
-   fun:G__include_file
-   fun:G__exec_statement
-   fun:G__define_struct
-   fun:G__exec_statement
 }
 
 {
@@ -218,21 +207,146 @@
 }
 
 {
-   MEGAlib: Unknown issue
+   ROOT: HistPainter
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN8TStorage11ObjectAllocEm
+   fun:_ZN7TObjectnwEm
+   fun:_ZN8ROOTDictL16new_THistPainterEPv
+   fun:_ZNK6TClass3NewENS_8ENewTypeE
+   fun:_ZN19TVirtualHistPainter11HistPainterEP3TH1
+   fun:_ZN3TH110GetPainterEPKc
+   fun:_ZN3TH15PaintEPKc
+   fun:_ZN4TPad13PaintModifiedEv
+   fun:_ZN7TCanvas6UpdateEv
+   fun:_ZN13MImageSpheric7DisplayEP7TCanvas
+   fun:_ZN7MImager7AnalyzeEb
+}
+
+{
+   ROOT: TGAxis not automatically deleted
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN8TStorage11ObjectAllocEm
+   fun:_ZN7TObjectnwEm
+   fun:_ZN13MImageSpheric7DisplayEP7TCanvas
+}
+
+{
+   ROOT: TGMenuBar cleanup issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN8TStorage11ObjectAllocEm
+   fun:_ZN9TGMenuBar6LayoutEv
+   fun:_ZN7TGFrame10MoveResizeEiijj
+   fun:_ZN16TGVerticalLayout6LayoutEv
+   fun:_ZN7TGFrame6ResizeEjj
+   fun:_ZN11TRootCanvas10ShowEditorEb
+   fun:_ZN11TRootCanvasC1EP7TCanvasPKciijj
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_Z6StrDupPKc
+   fun:_ZN11TUnixSystem14ExpandPathNameEPKc
+   fun:_ZN15TGFileContainer15ChangeDirectoryEPKc
+   fun:_ZN12TGFileDialogC1EPK8TGWindowS2_15EFileDialogModeP10TGFileInfo
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_Z6StrDupPKc
+   fun:_ZN12TGFSComboBoxC1EPK8TGWindowijm
+   fun:_ZN12TGFileDialogC1EPK8TGWindowS2_15EFileDialogModeP10TGFileInfo
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_Z6StrDupPKc
+   fun:_ZN11TUnixSystem14ExpandPathNameEPKc
+   fun:_ZN12TGFileDialog14ProcessMessageElll
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_Z6StrDupPKc
+   fun:_ZN7TSystem14ConcatFileNameEPKcS1_
+   fun:_ZN12TGFileDialog14ProcessMessageElll
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_Z6StrDupPKc
+   fun:_ZN11TUnixSystem14ExpandPathNameEPKc
+   fun:_ZN15TGFileContainer15ChangeDirectoryEPKc
+   fun:_ZN12TGFileDialog14ProcessMessageElll
+}
+
+{
+   ROOT: TGFileDialog issue
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znam
+   fun:_ZN12TGFSComboBoxC1EPK8TGWindowijm
+   fun:_ZN12TGFileDialogC1EPK8TGWindowS2_15EFileDialogModeP10TGFileInfo
+}
+
+{
+   ROOT: TFormula issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znam
+   fun:_ZN8TFormula7CompileEPKc
+   fun:_ZN8TFormulaC1EPKcS1_
+   fun:_ZN3TF1C1EPKcS1_dd
+}
+
+{
+   ROOT: TFormula issue
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znam
+   fun:_ZN8TFormula8OptimizeEv
+   fun:_ZN8TFormula7CompileEPKc
+   fun:_ZN8TFormulaC1EPKcS1_
+   fun:_ZN3TF1C1EPKcS1_dd
+}
+
+{
+   Unknown: Initialization issue
    Memcheck:Leak
    match-leak-kinds: possible
    fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
-   fun:_ZNSs12_S_constructIPcEES0_T_S1_RKSaIcESt20forward_iterator_tag
-   fun:_ZNKSt19basic_ostringstreamIcSt11char_traitsIcESaIcEE3strEv
-   fun:_ZN8MDVolume16IsDetectorVolumeEv
-   fun:_ZN8MDVolume5CloneE7MString
-   fun:_ZN8MDVolume20RemoveVirtualVolumesERSt6vectorIPS_SaIS1_EE
+   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:G__add_setup_func
+   fun:G__pragma
+   fun:G__exec_statement
+   fun:G__loadfile
+   fun:G__include_file
+   fun:G__exec_statement
+   fun:G__define_struct
+   fun:G__exec_statement
 }
-
-
-
-
 
 
 
