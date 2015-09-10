@@ -37,6 +37,8 @@ General:
 + Capability to change font size for Retina displays
 + Capability to read and write gzip'ed files via zlib library
 + MTimer is now thread reentrant
++ Gnuzillion antique memory leaks fixed
++ New mvalgrind frontend for simplified memory issue debugging
 
 Cosima:
 + Support for Geant4 10.0 (enables meta-stable states, but multi-threading 
@@ -72,6 +74,7 @@ Reponse:
 + Improved binned Compton imaging response creation
   
 Revan:
++ New multi-purpose spectral generator
 
 Mimrec:
 
