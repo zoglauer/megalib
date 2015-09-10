@@ -55,7 +55,7 @@ MSettingsMimrec::MSettingsMimrec(bool AutoLoad) : MSettings("MimrecConfiguration
 {
   // default constructor
 
-  m_DefaultSettingsFileName = MString(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".mimrec.cfg"));
+  m_DefaultSettingsFileName = "~/.mimrec.cfg";
   m_SettingsFileName = m_DefaultSettingsFileName;
 
 
