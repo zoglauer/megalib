@@ -79,14 +79,12 @@ void MGUIOptionsCoincidence::Create()
   // We start with a name and an icon...
   SetWindowName("Options for clustering");  
 
-  TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
-
   if (m_Data->GetCoincidenceAlgorithm() == MRawEventAnalyzer::c_CoincidenceAlgoWindow) {
     AddSubTitle("Options for coincidence search using a time window:"); 
     
     m_Window = new MGUIEEntry(this, "Time window [s]:", false, m_Data->GetCoincidenceWindow(), true, 0.0);
+    TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
     AddFrame(m_Window, EntryLayout);
-
   } else {
     AddSubTitle("You deselected coincidence search!");     
   }
