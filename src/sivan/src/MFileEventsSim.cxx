@@ -112,6 +112,9 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
   massert(m_Geo != 0);
 
   m_IncludeFileUsed = false;
+  if (m_IncludeFile != 0) {
+    delete m_IncludeFile; 
+  }
   m_IncludeFile = new MFileEventsSim();
   dynamic_cast<MFileEventsSim*>(m_IncludeFile)->SetGeometry(m_Geo);
   m_IncludeFile->SetIsIncludeFile(true);
