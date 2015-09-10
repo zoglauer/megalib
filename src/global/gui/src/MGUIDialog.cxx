@@ -89,7 +89,6 @@ MGUIDialog::MGUIDialog(const TGWindow* Root, const TGWindow* Parent, unsigned in
   m_ButtonsAdded = false;
 
   m_SubTitleGraphics = 0;
-  m_SubTitleLabel = 0;
   m_SubTitleFirstLayout = 0;
   m_SubTitleMiddleLayout = 0;
   m_SubTitleLastLayout = 0;
@@ -105,7 +104,7 @@ MGUIDialog::MGUIDialog(const TGWindow* Root, const TGWindow* Parent, unsigned in
   m_CancelButton = 0;
   m_ApplyButton = 0;
 
-  m_LeftButtonLayout = 0;
+  //m_LeftButtonLayout = 0;
   m_RightButtonLayout = 0;
     
   m_ButtonFrame = 0;
@@ -115,7 +114,7 @@ MGUIDialog::MGUIDialog(const TGWindow* Root, const TGWindow* Parent, unsigned in
   m_ItalicFont = MGUIDefaults::GetInstance()->GetItalicMediumFont()->GetFontStruct();
   m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
   
-	// Catch four keys: Esc, Ret, Ent, a
+  // Catch four keys: Esc, Ret, Ent, a
 //   BindKey(this, gVirtualX->KeysymToKeycode(kKey_a), kAnyModifier);
 //   BindKey(this, gVirtualX->KeysymToKeycode(kKey_A), kAnyModifier);
   BindKey(this, gVirtualX->KeysymToKeycode(kKey_Escape), kAnyModifier);
@@ -134,7 +133,6 @@ MGUIDialog::~MGUIDialog()
   // Backward Compatibility:
   if (MustCleanup() == kNoCleanup) {
     delete m_SubTitleGraphics;
-    delete m_SubTitleLabel;
     delete m_SubTitleFirstLayout;
     delete m_SubTitleMiddleLayout;
     delete m_SubTitleLastLayout;
@@ -151,7 +149,7 @@ MGUIDialog::~MGUIDialog()
     delete m_CancelButton;
     delete m_ApplyButton;
     
-    delete m_LeftButtonLayout;
+    //delete m_LeftButtonLayout;
     delete m_RightButtonLayout;
     
     delete m_ButtonFrame;
@@ -200,11 +198,11 @@ bool MGUIDialog::HandleKey(Event_t *event)
     OnCancel();
     break;
   case kKey_Return:
-	case kKey_Enter:
+  case kKey_Enter:
     OnOk();
     break;
-	case kKey_a:
-	case kKey_A:
+  case kKey_a:
+  case kKey_A:
     OnApply();
     break;
   default:
@@ -375,11 +373,11 @@ void MGUIDialog::AddSubTitle(const char *Format, ...)
   // Add a label to the top of the window:
 
   va_list args;
-	va_start(args, Format);
-	char SubTitle[1024];
-	vsprintf(SubTitle, Format, args);
-	AddSubTitle(MString(SubTitle));
-	va_end(args);
+  va_start(args, Format);
+  char SubTitle[1024];
+  vsprintf(SubTitle, Format, args);
+  AddSubTitle(MString(SubTitle));
+  va_end(args);
 }
 
 
@@ -397,18 +395,7 @@ void MGUIDialog::AddSubTitle(MString SubTitle)
       new TGLayoutHints(kLHintsExpandX, 10, 10, 10, 30);
     AddFrame(m_LabelFrame, m_LabelFrameLayout);
     
-    m_SubTitleLabel = new TObjArray();
-    m_SubTitleFirstLayout =
-      new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 5, 1);
-    m_SubTitleMiddleLayout =
-      new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 1, 1);
-    m_SubTitleLastLayout =
-      new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 1, 5);
-    m_SubTitleOnlyLayout =
-      new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 5, 5);
     
-    bool First = true;
-    int LabelIndex = 0;
     MString SubString;
     
     // (start a new line for each "\n")
@@ -418,15 +405,18 @@ void MGUIDialog::AddSubTitle(MString SubTitle)
       MString S = SubString.Remove(SubString.First('\n'), SubString.Length() - (SubString.First('\n')));
       TGLabel* Label = new TGLabel(m_LabelFrame, new TGString(S));
       Label->SetTextFont(m_EmphasizedFont);
-      m_SubTitleLabel->AddAt(Label, LabelIndex++);
+      m_SubTitleLabels.push_back(Label);
 
-      if (First == true) {
-        m_LabelFrame->AddFrame((TGLabel *) m_SubTitleLabel->At(LabelIndex-1), 
-                               m_SubTitleFirstLayout);
-        First = false;
+      if (m_SubTitleLabels.size() == 1) {
+        if (m_SubTitleFirstLayout == 0) {
+          m_SubTitleFirstLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 5, 1);
+        }
+        m_LabelFrame->AddFrame(m_SubTitleLabels.back(), m_SubTitleFirstLayout);
       } else {
-        m_LabelFrame->AddFrame((TGLabel *) m_SubTitleLabel->At(LabelIndex-1), 
-                               m_SubTitleMiddleLayout);
+        if (m_SubTitleMiddleLayout == 0) {
+          m_SubTitleMiddleLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 1, 1);
+        }
+        m_LabelFrame->AddFrame(m_SubTitleLabels.back(), m_SubTitleMiddleLayout);
       }
       
       SubTitle.Replace(0, SubTitle.First('\n')+1, "");
@@ -434,14 +424,14 @@ void MGUIDialog::AddSubTitle(MString SubTitle)
   
     TGLabel* Label = new TGLabel(m_LabelFrame, new TGString(SubTitle));
     Label->SetTextFont(m_EmphasizedFont);
-    m_SubTitleLabel->AddAt(Label, LabelIndex++);
+    m_SubTitleLabels.push_back(Label);
 
-    if (First == true) {
-      m_LabelFrame->AddFrame((TGLabel *) m_SubTitleLabel->At(LabelIndex-1), 
-                             m_SubTitleOnlyLayout);
+    if (m_SubTitleLabels.size() == 1) {
+      m_SubTitleOnlyLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 5, 5);
+      m_LabelFrame->AddFrame(m_SubTitleLabels.back(), m_SubTitleOnlyLayout);
     } else {
-      m_LabelFrame->AddFrame((TGLabel *) m_SubTitleLabel->At(LabelIndex-1), 
-                             m_SubTitleLastLayout);
+      m_SubTitleLastLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 20, 20, 1, 5);
+      m_LabelFrame->AddFrame(m_SubTitleLabels.back(), m_SubTitleLastLayout);
     }
   } else {
     merr<<"SubTitle has already been added!"<<show;
@@ -462,49 +452,45 @@ void MGUIDialog::AddButtons(int Buttons, bool Centered, int TopOffset)
 
   if (m_ButtonsAdded == true) {
     merr<<"The OK- and Cancel-button are already added!"<<show;
-		return;
+    return;
   }
 
-	m_ButtonTypes = Buttons;
+  m_ButtonTypes = Buttons;
 
-	// Frame around the buttons:
-	m_ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-	m_ButtonFrameLayout = 
-		new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
-											5, 5, TopOffset, 8);
-	AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
-	
-	// All layouts:
-	if (Centered == true) {
-		m_LeftButtonLayout = 
-			new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 5, 5, 0, 0);
-		m_RightButtonLayout = 
-			new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5, 5, 0, 0);
-	} else {
-		m_LeftButtonLayout = 
-			new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 0, 0);
-		m_RightButtonLayout = 
-			new TGLayoutHints(kLHintsTop | kLHintsRight, 5, 5, 0, 0);
-	}
+  // Frame around the buttons:
+  m_ButtonFrame = new TGHorizontalFrame(this, 150, 25);
+  m_ButtonFrameLayout = 
+    new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
+                      5, 5, TopOffset, 8);
+  AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
+  
+  // All layouts:
+  if (Centered == true) {
+    //m_LeftButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 5, 5, 0, 0);
+    m_RightButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 5, 5, 0, 0);
+  } else {
+    //m_LeftButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 5, 5, 0, 0);
+    m_RightButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight, 5, 5, 0, 0);
+  }
 
 
-	if (m_ButtonTypes & c_Ok) {
-		m_OKButton = new TGTextButton(m_ButtonFrame, "      OK      ", e_Ok); 
-		m_OKButton->Associate(this);
-		m_ButtonFrame->AddFrame(m_OKButton, m_RightButtonLayout);
-	}	
+  if (m_ButtonTypes & c_Ok) {
+    m_OKButton = new TGTextButton(m_ButtonFrame, "      OK      ", e_Ok); 
+    m_OKButton->Associate(this);
+    m_ButtonFrame->AddFrame(m_OKButton, m_RightButtonLayout);
+  } 
 
-	if (m_ButtonTypes & c_Cancel) {
-		m_CancelButton = new TGTextButton(m_ButtonFrame, "   Cancel   ", e_Cancel); 
-		m_CancelButton->Associate(this);
-		m_ButtonFrame->AddFrame(m_CancelButton, m_RightButtonLayout);
-	}
+  if (m_ButtonTypes & c_Cancel) {
+    m_CancelButton = new TGTextButton(m_ButtonFrame, "   Cancel   ", e_Cancel); 
+    m_CancelButton->Associate(this);
+    m_ButtonFrame->AddFrame(m_CancelButton, m_RightButtonLayout);
+  }
 
-	if (m_ButtonTypes & c_Apply) {
-		m_ApplyButton = new TGTextButton(m_ButtonFrame, "   Apply   ", e_Apply); 
-		m_ApplyButton->Associate(this);
-		m_ButtonFrame->AddFrame(m_ApplyButton, m_RightButtonLayout);
-	}
+  if (m_ButtonTypes & c_Apply) {
+    m_ApplyButton = new TGTextButton(m_ButtonFrame, "   Apply   ", e_Apply); 
+    m_ApplyButton->Associate(this);
+    m_ButtonFrame->AddFrame(m_ApplyButton, m_RightButtonLayout);
+  }
 
   m_ButtonsAdded = true;
 
@@ -519,15 +505,15 @@ bool MGUIDialog::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -535,7 +521,7 @@ bool MGUIDialog::ProcessMessage(long Message, long Parameter1, long Parameter2)
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       default:
@@ -559,14 +545,14 @@ bool MGUIDialog::ProcessMessage(long Message, long Parameter1, long Parameter2)
 
 bool MGUIDialog::OnOk()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	if (OnApply() == true) {
-		CloseWindow();
-		return true;
-	}
-	
-	return false;
+  if (OnApply() == true) {
+    CloseWindow();
+    return true;
+  }
+  
+  return false;
 }
 
 
@@ -575,11 +561,11 @@ bool MGUIDialog::OnOk()
 
 bool MGUIDialog::OnCancel()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	CloseWindow();
+  CloseWindow();
 
-	return true;
+  return true;
 }
 
 
@@ -588,11 +574,11 @@ bool MGUIDialog::OnCancel()
 
 bool MGUIDialog::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	// Add here...
+  // Add here...
 
-	return true;
+  return true;
 }
 
 

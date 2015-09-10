@@ -16,18 +16,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// Standard libs:
+#include <vector>
+using namespace std;
+
 // ROOT libs:
 #include <TROOT.h>
 #include <TVirtualX.h>
 #include <TGWindow.h>
-#include <TObjArray.h>
 #include <TGFrame.h>
 #include <TGButton.h>
-#include <MString.h>
 #include <TGClient.h>
+#include <TGLabel.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 
 // Forward declarations:
 
@@ -154,8 +158,8 @@ class MGUIDialog : public TGTransientFrame
   TGLayoutHints* m_SubTitleLastLayout;
   //! Layout of the subtitles
   TGLayoutHints* m_SubTitleOnlyLayout;
-  //! Array of the subtitle rows
-  TObjArray* m_SubTitleLabel;
+  //! Vector of the subtitle rows
+  vector<TGLabel*> m_SubTitleLabels;
   //! True, if a subtitle has been added
   bool m_SubTitleAdded;
 
