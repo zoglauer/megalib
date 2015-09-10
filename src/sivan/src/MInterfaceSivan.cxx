@@ -771,8 +771,14 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
   cout<<endl;
   cout<<endl;
 
+  delete Compton;
+  delete Pair;
+  
   EventFile->Close();
+  delete EventFile;
+  
   PhysFile->Close();
+  delete PhysFile;
 }
 
 
