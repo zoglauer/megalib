@@ -236,7 +236,15 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   m_RawEvents->DeleteAll();
   delete m_RawEvents;
 
+  delete m_InitialRawEvent;
+
   delete m_EventStore;
+  
+  delete m_Coincidence;
+  delete m_Clusterizer;
+  delete m_Tracker;
+  delete m_CSR;
+  delete m_Decay;
 }
 
 
