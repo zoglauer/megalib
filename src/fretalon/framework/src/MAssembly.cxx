@@ -48,6 +48,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MString.h"
 #include "MTimer.h"
+#include "MFile.h"
 #include "MGUIExpoCombinedViewer.h"
 #include "MGUIMainFretalon.h"
 #include "MReadOutAssembly.h"
@@ -79,7 +80,9 @@ MAssembly::MAssembly()
   
   m_Supervisor = MSupervisor::GetSupervisor();
   
-  m_Supervisor->SetConfigurationFileName(gSystem->ConcatFileName(gSystem->HomeDirectory(), ".fretalon.cfg"));
+  MString ConfigurationFileName = "~/.fretalon.cfg";
+  MFile::ExpandFileName(ConfigurationFileName);
+  m_Supervisor->SetConfigurationFileName(ConfigurationFileName);
   
   m_Supervisor->AddAvailableModule(new MModuleLoaderRoa());  
   m_Supervisor->AddAvailableModule(new MModuleTransmitterRealta());
