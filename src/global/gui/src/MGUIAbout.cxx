@@ -117,16 +117,8 @@ void MGUIAbout::Create()
   TGCompositeFrame* BugsFrame = 0;
   TGCompositeFrame* DisclaimerFrame = 0;
 
-
   TGLayoutHints* LabelLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 10, 2);
-  TGLayoutHints* MasterReferenceLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 2);
-  TGLayoutHints* ReferenceLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 15, 2);
-  TGLayoutHints* ReferenceTextLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 2, 2);
   TGLayoutHints* TextLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 2, 5);
-  TGLayoutHints* ReferenceTopicLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 10);
-  TGLayoutHints* LastReferenceTopicLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 30);
-  TGLayoutHints* VersionLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 0, 10);
-  TGLayoutHints* TitleLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 30, 30, 20, 15);
 
 
   // The about frame:
@@ -149,6 +141,7 @@ void MGUIAbout::Create()
     }
     
     TGHorizontalFrame* m_IconFrame = new TGHorizontalFrame(AboutFrame, 100, 100);
+    TGLayoutHints* TitleLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 30, 30, 20, 15);
     AboutFrame->AddFrame(m_IconFrame, TitleLayout);
    
     TGIcon* m_Icon = new TGIcon(m_IconFrame, m_IconPicture, m_IconPicture->GetWidth(), 
@@ -161,12 +154,14 @@ void MGUIAbout::Create()
     TGGC* m_Graphics = new TGGC(TGLabel::GetDefaultGC());
     m_Graphics->SetFont(gVirtualX->GetFontHandle(LabelFont));
     TGLabel* m_Title = new TGLabel(AboutFrame, new TGString(m_ProgramName), m_Graphics->GetGC(), LabelFont);
+    TGLayoutHints* TitleLayout = new TGLayoutHints(kLHintsCenterX | kLHintsExpandX | kLHintsTop, 30, 30, 20, 15);
     AboutFrame->AddFrame(m_Title, TitleLayout);
   }
 
   ostringstream v;
   v<<"Part of MEGAlib version "<<g_VersionString;
   MGUIEText* m_VersionText = new MGUIEText(AboutFrame, v.str().c_str(), MGUIEText::c_Centered);
+  TGLayoutHints* VersionLayout = new TGLayoutHints(kLHintsExpandX, 30, 30, 0, 10);
   AboutFrame->AddFrame(m_VersionText, VersionLayout);
 
 
@@ -216,10 +211,12 @@ void MGUIAbout::Create()
   if (m_ShowReferencesTab == true) {
     ReferencesFrame = MainTab->AddTab("References");
   
+    TGLayoutHints* ReferenceTextLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 2, 2);
     if (m_MasterReference != "") {
       TGLabel* MasterReferenceLabel = new TGLabel(ReferencesFrame, "Main MEGAlib reference:");
       MasterReferenceLabel->SetTextFont(m_EmphasizedFont);
       MasterReferenceLabel->SetWrapLength(TabWidth);
+      TGLayoutHints* MasterReferenceLabelLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 30, 2);
       ReferencesFrame->AddFrame(MasterReferenceLabel, MasterReferenceLabelLayout);
       TGLabel* MasterReferenceText = new TGLabel(ReferencesFrame, m_MasterReference);
       MasterReferenceText->SetWrapLength(TabWidth);
@@ -243,7 +240,10 @@ void MGUIAbout::Create()
         }
       }
       m_ReferencesLabel->SetWrapLength(TabWidth);
+      TGLayoutHints* ReferenceLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 15, 2);
       ReferencesFrame->AddFrame(m_ReferencesLabel, ReferenceLayout);
+      
+      TGLayoutHints* ReferenceTopicLayout = 0;
       for (unsigned int r = 0; r < m_References.size(); ++r) {
         TGLabel* Reference = new TGLabel(ReferencesFrame, m_References[r]);
         Reference->SetWrapLength(TabWidth);
@@ -252,8 +252,12 @@ void MGUIAbout::Create()
         ReferenceTopic->SetWrapLength(TabWidth);
         ReferenceTopic->SetTextFont(m_ItalicFont);
         if (r == m_References.size()-1) {
+          TGLayoutHints* LastReferenceTopicLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 30);
           ReferencesFrame->AddFrame(ReferenceTopic, LastReferenceTopicLayout);
         } else {
+          if (ReferenceTopicLayout == 0) {
+            ReferenceTopicLayout = new TGLayoutHints(kLHintsLeft, 30, 30, 0, 10);
+          }
           ReferencesFrame->AddFrame(ReferenceTopic, ReferenceTopicLayout);
         }
       }
