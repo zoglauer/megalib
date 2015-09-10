@@ -70,7 +70,12 @@ MGUIEFileSelector::MGUIEFileSelector(const TGWindow* Parent, MString Label,
 
   m_Label = Label;
   m_FileName = FileName;
-  m_FileTypes = 0;
+  m_FileTypes = new const char*[4];
+  m_FileTypes[0] = "All files";
+  m_FileTypes[1] = "*";
+  m_FileTypes[2] = 0;
+  m_FileTypes[3] = 0;
+  m_NFileTypes = 0;
 
   Create();
 }
@@ -96,6 +101,12 @@ MGUIEFileSelector::~MGUIEFileSelector()
     delete m_InputFrame;
     delete m_InputFrameLayout;
   }
+  
+  // We do only delete the first 2*m_NFileTypes. The ones added in the constructor have not been created by new!
+  for (unsigned int f = 0; f < 2*m_NFileTypes; ++f) {
+    delete [] m_FileTypes[f];
+  }
+  delete [] m_FileTypes;
 }
 
 
@@ -171,51 +182,30 @@ void MGUIEFileSelector::SetFileName(MString FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIEFileSelector::SetFileTypes(const char **FileTypes)
-{
-  // Set the filetypes
-
-  m_FileTypes = FileTypes;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MGUIEFileSelector::SetFileType(MString Name, MString Suffix)
 {
-  // Set one filetype
-
-  int NTypes;
-  const char** Types;
-
-  if (m_FileTypes == 0) {
-    Types = new const char*[6];
-    Types[0] = StrDup(Name.Data());
-    Types[1] = StrDup(Suffix.Data());
-    Types[2] = "All files";
-    Types[3] = "*";
-    Types[4] = 0;
-    Types[5] = 0;
-    delete [] m_FileTypes;
-    m_FileTypes = Types;
-  } else {
-    for (NTypes = 0; m_FileTypes[NTypes] != 0; NTypes += 2);
-    NTypes += 2; // To account for the zeros
-
-    Types = new const char*[NTypes+2];
-    for (int i = 0; i < NTypes; i++) {
-      Types[i] = m_FileTypes[i];
-    }
-    Types[NTypes-4] = StrDup(Name.Data());
-    Types[NTypes-3] = StrDup(Suffix.Data());
-    Types[NTypes-2] = "All files";
-    Types[NTypes-1] = "*";
-    Types[NTypes+0] = 0;
-    Types[NTypes+1] = 0;
-    delete [] m_FileTypes;
-    m_FileTypes = Types;
+  // Add a new file type to the back of the list
+  
+  ++m_NFileTypes;
+  const char** Types = new const char*[4 + 2*m_NFileTypes]; 
+ 
+  // Copy the old added content
+  for (unsigned int f = 0; f < 2*(m_NFileTypes-1); ++f) {
+    Types[f] = m_FileTypes[f];
   }
+
+  // Add the new content
+  Types[2*m_NFileTypes-2] = StrDup(Name.Data());
+  Types[2*m_NFileTypes-1] = StrDup(Suffix.Data());
+  
+  // Add the bottom (all files)
+  for (unsigned int f = 2*m_NFileTypes; f < 4 + 2*m_NFileTypes; ++f) {
+    Types[f] = m_FileTypes[f-2];
+  }
+  
+  // Cleanup and copy
+  delete [] m_FileTypes; // Although we have a char** we do not want to delete the strings, since we copies them! 
+  m_FileTypes = Types;
 }
 
 

@@ -44,7 +44,7 @@ class MGUIEFileSelector : public MGUIElement
 
   void SetFileName(MString Name);
   void SetFileType(MString Name, MString Suffix);
-  void SetFileTypes(const char** FileTypes);
+  //void SetFileTypes(const char** FileTypes);
   void SetEnabled(bool flag);
 
   MString GetFileName();
@@ -61,8 +61,11 @@ class MGUIEFileSelector : public MGUIElement
 
   // private members:
  private:
+  //! The file types in the ROOT compatible char** format
   const char** m_FileTypes;
-
+  //! The number of file types added
+  unsigned int m_NFileTypes;
+  
   MString m_Label;
   MString m_FileName;
 
