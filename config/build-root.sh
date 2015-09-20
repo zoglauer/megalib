@@ -6,9 +6,9 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
-CONFIGUREOPTIONS="--gminimal --enable-asimage --enable-xft --enable-opengl --enable-mathmore --enable-minuit2 --enable-explicitlink --enable-rpath --enable-soversion"
+CONFIGUREOPTIONS="-DCMAKE_INSTALL_PREFIX=.. -Dgminimal=on -Dasimage=on -Dxft=on -Dopengl=on -Dmathmore=on -Dminuit2=on -Dexplicitlink=on -Drpath=on -Dsoversion=on"
 # In case you have trouble with anything related to freetype, try to comment in this option
-# CONFIGUREOPTIONS="${CONFIGUREOPTIONS} --enable-builtin-freetype"
+# CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -Dbuiltin-freetype=on"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
@@ -139,7 +139,7 @@ if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
 elif ( [[ ${DEBUG} == on ]] || [[ ${DEBUG} == y* ]] || [[ ${DEBUG} == nor* ]] ); then
   DEBUG="normal"
   DEBUGSTRING="_debug"
-  DEBUGOPTIONS="--build=debug"
+  DEBUGOPTIONS="-DCMAKE_BUILD_TYPE=Debug"
   echo " * Using debugging code"
 else
   echo "ERROR: Unknown debugging code selection: ${DEBUG}"
@@ -248,6 +248,8 @@ else
 fi
 
 ROOTDIR=root_v${VER}${DEBUGSTRING}
+ROOTSOURCEDIR=root_v${VER}${DEBUGSTRING}-source
+ROOTBUILDDIR=root_v${VER}${DEBUGSTRING}-build
 
 echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
@@ -291,18 +293,17 @@ if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
   exit 1
 fi
-mv ${ROOTTOPDIR}/* .
-mv ${ROOTTOPDIR}/.??* .
-rmdir ${ROOTTOPDIR}
-
+mv ${ROOTTOPDIR} ${ROOTSOURCEDIR}
+mkdir ${ROOTBUILDDIR}
+cd ${ROOTBUILDDIR}
 
 
 echo "Configuring..."
 export ROOTSYS=${ROOTDIR}
 export LD_LIBRARY_PATH=""
-sh configure ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}
+cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
-  echo "ERROR: Something went wrong configuring ROOT!"
+  echo "ERROR: Something went wrong configuring (cmake'ing) ROOT!"
   exit 1
 fi
 
@@ -333,7 +334,17 @@ fi
 
 
 
+echo "Installing..."
+make install
+if [ "$?" != "0" ]; then
+  echo "ERROR: Something went wrong while installing Geant4!"
+  exit 1
+fi
+
+
+
 echo "Store our success story..."
+cd ..
 rm -f COMPILE_SUCCESSFUL
 echo "${CONFIGUREOPTIONS}" >> COMPILE_SUCCESSFUL
 echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
