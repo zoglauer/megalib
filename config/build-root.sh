@@ -5,10 +5,30 @@
 #
 # Please see the MEGAlib software license and documentation for more informations.
 
+# Install path realtive to the build path --- simply one up in this script
+CONFIGUREOPTIONS=" -DCMAKE_INSTALL_PREFIX=.."
+# We want a minimal system and enable what we really need:
+CONFIGUREOPTIONS+=" -Dgminimal=ON"
+# Open GL -- needed by geomega
+CONFIGUREOPTIONS+=" -Dopengl=ON"
+# Mathmore -- needed for fitting, e.g. ARMs"
+CONFIGUREOPTIONS+=" -Dmathmore=ON"
+# Minuit2 -- needed for parallel fitting with melinator
+CONFIGUREOPTIONS+=" -Dminuit2=ON"
+# XFT -- needed for smoothed fonts
+CONFIGUREOPTIONS+=" -Dxft=ON"
+# Afterimage -- support to draw images in pads and save as png, etc.
+CONFIGUREOPTIONS+=" -Dasimage=ON"
+# Stuff for linking, paths in so files, versioning etc
+CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 
-CONFIGUREOPTIONS="-DCMAKE_INSTALL_PREFIX=.. -Dgminimal=on -Dasimage=on -Dxft=on -Dopengl=on -Dmathmore=on -Dminuit2=on -Dexplicitlink=on -Drpath=on -Dsoversion=on"
 # In case you have trouble with anything related to freetype, try to comment in this option
-# CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -Dbuiltin-freetype=on"
+# CONFIGUREOPTIONS=+" -Dbuiltin-freetype=on"
+
+# Switching off things we do not need right now but which are on by default
+CONFIGUREOPTIONS+=" -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dxrootd=OFF"
+
+# The compiler
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
 
@@ -301,6 +321,7 @@ cd ${ROOTBUILDDIR}
 echo "Configuring..."
 export ROOTSYS=${ROOTDIR}
 export LD_LIBRARY_PATH=""
+echo "Configure options: ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}"
 cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) ROOT!"
