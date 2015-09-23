@@ -61,6 +61,14 @@ confhelp() {
   echo " "
 }
 
+issuereport() {
+  echo " "
+  echo "       Please take a look if you find the issue here (look at open and closed issues):"
+  echo "       https://github.com/zoglauer/megalib/issues"
+  echo "       If not add your problem and write me an email!"
+  echo " "
+}
+
 
 # Part 2:
 # A first round of sanity checks
@@ -732,6 +740,7 @@ else
     else
       echo " "
       echo "ERROR: Something went wrong during the ROOT setup."
+      issuereport
       exit 1
     fi
   fi
@@ -781,6 +790,7 @@ else
     else
       echo " "
       echo "ERROR: Something went wrong during the Geant4 setup."
+      issuereport
       exit 1
     fi
   fi
@@ -811,6 +821,7 @@ bash configure --os=${OS} --debug=${DEBUG} --opt=${OPT} --updates=${UPDATES}
 if [ "$?" != "0" ]; then
   echo " "
   echo "ERROR: Something went wrong during MEGAlib configuration"
+  issuereport
   exit 1
 fi
 
@@ -820,6 +831,7 @@ echo "Compiling MEGAlib..."
 make -j${MAXTHREADS}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong while compiling MEGAlib!"
+  issuereport
   exit 1
 fi
 
