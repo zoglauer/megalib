@@ -94,6 +94,10 @@ cd ${DIRECTORY}
 INITIALWAIT=0
 MAXINITIALWAIT=300
 
+LASTWAIT=0
+MAXLASTWAIT=120
+
+
 echo ""
 echo "Starting..."
 
@@ -102,6 +106,7 @@ while true; do
   echo "dcosima-rsync: Waiting for 20 seconds for more data to be simulated..." 
   sleep 20
   INITIALWAIT=$((INITIALWAIT + 20))
+  LASTWAIT=$((LASTWAIT + 20))
   
   if [ ! -f dcosima-rsync.cfg ]; then
     echo "ERROR: we must have a dcosima-rsync.cfg file. Make sure it exists before you start dcosima-rsync! Terminating!"
@@ -121,9 +126,10 @@ while true; do
   MODIFIED=0
   ALLINCLUDED=0
   SUM=0
-  SIMFILECOUNT=`ls -1 *.sim* 2>/dev/null | wc -l`
+  NEWSUM=0
+  SIMFILECOUNT=`ls -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
   if [ ${SIMFILECOUNT} != 0 ]; then
-    SUM=`du -cb *.sim* | tail -n 1 | awk '{ print $1 }'`
+    SUM=`du -cb *.p*.inc*.id*.sim* | tail -n 1 | awk '{ print $1 }'`
   fi
   for (( m=0; m<=$(( ${#RSYNCS[*]} -1 )); m++ )); do
     #echo "psync: Checking ${RSYNCS[$m]}"
@@ -138,32 +144,35 @@ while true; do
     fi  
   done  
 
-  NEWSUM=`du -cb *.sim* | tail -n 1 | awk '{ print $1 }'`
-  
+  SIMFILECOUNT=`ls -1 *.p*.inc*.id*.sim* 2>/dev/null | wc -l`
+  if [ ${SIMFILECOUNT} != 0 ]; then
+    NEWSUM=`du -cb *.p*.inc*.id*.sim* | tail -n 1 | awk '{ print $1 }'`
+  fi
   
   if [ "${NEWSUM}" == "0" ]; then
-    if [ "${SIMFILECOUNT}" -gt 0 ]; then
-      echo "dcosima-rsync: Waiting for the first data..."
-      MODIFIED=1    
-    else 
-      if [ "${INITIALWAIT}" -gt "${MAXINITIALWAIT}" ]; then
-        echo "dcosima-rsync: Did not get any data for ${INITIALWAIT} seconds! Terminating!"
-        exit
-      else
-        echo "dcosima-rsync: Did not yet get any data... waiting..."
-        MODIFIED=1
-      fi
+    if [ "${INITIALWAIT}" -ge "${MAXINITIALWAIT}" ]; then
+      echo "dcosima-rsync: Did not get any data for ${INITIALWAIT} seconds! Terminating!"
+      MODIFIED=0
+    else
+      echo "dcosima-rsync: Did not yet get any data (already waiting ${INITIALWAIT} seconds)... waiting longer..."
+      MODIFIED=1
     fi
   else 
     if [ "${NEWSUM}" != "${SUM}" ]; then
-      echo "dcosima-rsync: Downloaded more data, since the total file size before (${SUM} Bytes) and after (${NEWSUM} Bytes) differ."
+      echo "dcosima-rsync: Downloaded more data (file size before: ${SUM} Bytes and after: ${NEWSUM} Bytes)"
       MODIFIED=1
+      LASTWAIT=0
     elif [ "${NEWSUM}" == "${SUM}" ]; then
-      if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
-        echo "dcosima-rsync: Waiting for the last file to finish..."
-        MODIFIED=1
+      echo "dcosima-rsync: No new data since ${LASTWAIT} seconds..."
+      if [ "${LASTWAIT}" -ge "${MAXLASTWAIT}" ]; then
+        echo "dcosima-rsync: No more new data since ${LASTWAIT} seconds! Assuming we are done!"
+        MODIFIED=0
       else
-        echo "dcosima-rsync: Waiting for more data..."
+        if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
+          echo "dcosima-rsync: Waiting for the last file to finish..."
+        else
+          echo "dcosima-rsync: Waiting for more data (${SIMFILECOUNT} of ${INSTANCES} sim files are here)..."
+        fi
         MODIFIED=1
       fi
     fi

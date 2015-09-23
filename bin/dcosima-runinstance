@@ -16,7 +16,6 @@ commandhelp() {
   echo ""
   echo "Options:"
   echo "  --source=[file name]: The cosima source file name"
-  echo "  --masterdir=[directory name]: In which directory to store the data"
   echo "  --rundir=[directory name]: Unique directory where to store the files"
   echo "  --instanceid=[number]: ID of this run instance"
   echo "  --rsynccfg=[file name]: Fil;e where to store the rsync parameters"
@@ -54,7 +53,6 @@ REMOTEPORT=""
 SOURCE=""
 RUNDIR=""
 INSTANCEID=""
-MASTERDIR=""
 ZIP="FALSE"
 CFG="~/.dcosima.cfg"
 
@@ -70,9 +68,6 @@ for C in "${CMD[@]}"; do
     RUNDIR=`echo ${C} | awk -F"=" '{ print $2 }'` 
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCEID=`echo ${C} | awk -F"=" '{ print $2 }'` 
-  elif [[ ${C} == *-m*=* ]]; then
-    MASTERDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
-    eval MASTERDIR=${MASTERDIR}
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
@@ -124,14 +119,6 @@ if [ "${INSTANCEID}" == "" ]; then
 fi
 
 
-if [ "${MASTERDIR}" == "" ]; then
-  echo " "
-  echo "ERROR: You need to give a directory"
-  exit 1
-fi
-echo " * Directory: ${DIRECTORY}"
-
-
 eval CFG=${CFG}
 if [[ -f ${CFG} ]]; then
   echo " * Configuration file: ${CFG}"
@@ -152,13 +139,15 @@ echo "* Checking for remote global directory..."
 REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
 MASTERDIR=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
-  echo "ERROR: Failed to read remote global directory"
+  echo "ERROR: Failed to read the remote master directory to store the simulations"
+  echo "       Make sure you have a directory in the remote .dcosima.cfg file"
   exit 1
 fi
-if [ "${MASTERDIR}" != "" ]; then
-  MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
-else 
-  MASTERDIR="dcosima"
+MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
+if [ "${MASTERDIR}" == "" ]; then
+  echo "ERROR: Failed to read the remote master directory to store the simulations"
+  echo "       Make sure you have a directory in the remote .dcosima.cfg file"
+  exit 1
 fi
 echo "  --> Master directory: ${MASTERDIR}"
 

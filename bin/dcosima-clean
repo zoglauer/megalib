@@ -40,20 +40,6 @@ done
 CFG=~/.dcosima.cfg
 MEGALIBPATH="Science/Software"
 
-# Find the master simulation directory
-MASTERDIR=( `cat ${CFG} | grep "^directory" | gawk '{ print $2 }'` )
-if [[ "${MASTERDIR}" == "" ]]; then
-  MASTERDIR="dcosima"
-fi
-if [[ ${MASTERDIR} == /* ]]; then
-  echo "ERROR: The simulation directory can not be an absolute path! Using default path dcosima"
-  MASTERDIR="dcosima"
-fi
-if [[ ${MASTERDIR} == .* ]]; then
-  echo "ERROR: The simulation directory must sit in the users main directory! Using default path dcosima"
-  MASTERDIR="dcosima"
-fi
-
 # Read configuration file and extract machines
 MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
 REMOTEUSER=( )
@@ -71,8 +57,20 @@ done
 
 # Create the install paths on all machines
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  echo "Cleaning ${MASTERDIR} on ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${MASTERDIR} ]]; then rm -rf ${MASTERDIR}/Run_ID*; fi; exit 0;"
+  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+  REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Failed to read remote master directory"
+    continue
+  fi
+  REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
+  if [ "${REMOTEMASTERDIR}" == "" ]; then
+    echo "ERROR: Failed to read remote master directory"
+    continue
+  fi
+ 
+  echo "Cleaning ${REMOTEMASTERDIR} on ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}..."
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${REMOTEMASTERDIR} ]]; then rm -rf ${REMOTEMASTERDIR}/*_ID*; fi; exit 0;"
 done
 
 

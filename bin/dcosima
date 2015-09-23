@@ -119,20 +119,6 @@ fi
 # The md5 checksum of the configuration file to tell if it changed - initialize empty
 CFGMD5=""
 
-# Find the master simulation directory
-MASTERDIR=( `cat ${CFG} | grep "^directory" | gawk '{ print $2 }'` )
-if [[ "${MASTERDIR}" == "" ]]; then
-  MASTERDIR="dcosima"
-fi
-if [[ ${MASTERDIR} == /* ]]; then
-  echo "ERROR: The simulation directory can not be an absolute path! Using default path dcosima"
-  MASTERDIR="dcosima"
-fi
-if [[ ${MASTERDIR} == .* ]]; then
-  echo "ERROR: The simulation directory must sit in the users main directory! Using default path dcosima"
-  MASTERDIR="dcosima"
-fi
-
 echo " "
 echo "Starting runs:"
 LAUNCHED=0
@@ -157,17 +143,55 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     echo " "
     echo "Reading remote machines setup:"
     MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    REMOTEUSER=( )
+    REMOTEHOST=( )
+    REMOTEPORT=( )
     for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-      REMOTEUSER=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
-      REMOTEHOST=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
-      REMOTEPORT=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-      echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER}, address: ${REMOTEHOST}, port: ${REMOTEPORT})"
+      REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+      REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+      REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+      echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
     done
     CFGMD5=`md5sum ${CFG}`
   fi
 
+  # Verify the machines:
+  AVAILABLEMACHINES=0
+  for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+    REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+    REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+    if [ "$?" != "0" ]; then
+      echo " "
+      echo "ERROR: Failed to read remote master directory on ${MACHINES[$m]} --- excluding remote machine"
+      MACHINES[$m]=""
+      continue
+    fi
+    REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
+    if [ "${REMOTEMASTERDIR}" == "" ]; then
+      echo " "
+      echo "ERROR: No remote master directory on ${MACHINES[$m]} --- excluding remote machine"
+      MACHINES[$m]=""
+      continue
+    fi
+    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+  done
+  # If we have NO machines available, we quit...
+  if [ ${AVAILABLEMACHINES} -eq 0 ]; then
+    echo " "
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..."
+    exit 0;
+  fi
+  
+  
   STARTED=0
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+    
+    # Exclude failed machines
+    if [ "${MACHINES[$m]}" == "" ]; then
+      continue
+    fi
+    
+    # Prepare the launch
     ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
     echo " "
     echo "Preparing for next launch:"
@@ -175,10 +199,11 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     if [[ ${ALLOWED} -gt 0 ]]; then
       LAUNCHED=$(( ${LAUNCHED} + 1 ))
       echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-      dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} --masterdir=${MASTERDIR} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
+      dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
       STARTED=1
     fi
     if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
+      
   done
   
   if [[ ${STARTED} -eq 0 ]]; then
@@ -284,8 +309,21 @@ wait ${RSYNCPID}
 
 echo "All processes have finied and all data has been synced. Now deleting the remote data..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  echo " * Deleting ${MASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${MASTERDIR}/${LOCALDIR};"
+  echo " * Deleting ${REMOTEMASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}"
+
+  REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
+  REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Failed to read remote master directory"
+    continue
+  fi
+  REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
+  if [ "${REMOTEMASTERDIR}" == "" ]; then
+    echo "ERROR: No remote master directory -- cannot delete anything!"
+    continue
+  fi
+ 
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
 done
 
 echo " " 
