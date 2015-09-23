@@ -23,10 +23,17 @@ CONFIGUREOPTIONS+=" -Dasimage=ON"
 CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 
 # In case you have trouble with anything related to freetype, try to comment in this option
-# CONFIGUREOPTIONS=+" -Dbuiltin-freetype=on"
+# CONFIGUREOPTIONS=+" -Dbuiltin-freetype=ON"
+
+# In case you get strange error messages concerning jpeg, png, tiff
+# CONFIGUREOPTIONS+=" -Dasimage=OFF -Dastiff=OFF -Dbuiltin_afterimage=OFF"
+
+# In case you have trouble with zlib (gz... something error messages)
+# CONFIGUREOPTIONS+=" -Dbuiltin_zlib=ON -Dbuiltin_lzma=ON"
+
 
 # Switching off things we do not need right now but which are on by default
-CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dxrootd=OFF"
+CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dxrootd=OFF"
 
 # The compiler
 COMPILEROPTIONS=`gcc --version | head -n 1`
