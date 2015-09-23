@@ -157,6 +157,8 @@ if [ "$?" != "0" ]; then
 fi
 if [ "${MASTERDIR}" != "" ]; then
   MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
+else 
+  MASTERDIR="dcosima"
 fi
 echo "  --> Master directory: ${MASTERDIR}"
 
@@ -182,7 +184,7 @@ echo "  --> Nice level: ${NICELEVEL}"
 
 
 # Make global directory
-echo " * Testing/making remote global directory..." 
+echo " * Testing/making remote global directory \"${MASTERDIR}\"..." 
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi; exit 0;"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to create remote global directory"
