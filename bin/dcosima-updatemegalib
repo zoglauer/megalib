@@ -52,25 +52,37 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
   REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-  echo " * Found remote machine ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}) in configuration file"
+   
+  # Do a quick test if the machine is available:
+  REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
+    continue
+  fi  
+  
+  echo " * Machine ${REMOTENAME[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): FOUND"
 done
 
 # Create the install paths on all machines
+echo "Step 1: Creating install paths..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MEGALIBPATH} ]]; then mkdir -p ${MEGALIBPATH}; fi; exit 0;"
 done
 
 # Download the latest setup file
+echo "Step 1: Downloading the latest setup file..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
 done
 
 # Run the setup file
+echo "Step 1: Run the setup file..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard"
 done
 
 # Add the path to .bash_local, if it is not yet there
+echo "Step 1: Setting up the environment..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # unfortunately we have to hard code the MEGAlib path here since we have to use ''
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'

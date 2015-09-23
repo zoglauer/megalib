@@ -150,7 +150,6 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
       REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
       REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-      echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
     done
     CFGMD5=`md5sum ${CFG}`
   fi
@@ -158,23 +157,51 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   # Verify the machines:
   AVAILABLEMACHINES=0
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  
+    # Do a quick test if the machine is availble:
+    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
+      MACHINES[$m]=""
+      continue
+    fi  
+      
+    # Check that cosima is installed
+    AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
+    if [ "${AVAILABLE}" != "" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Cosima not found!"
+      MACHINES[$m]=""
+      continue
+    fi
+ 
+    # Check if we have a configuration file
+    CONFIGFILE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo "NO"; else echo "YES"; fi;"`
+    if [ "$?" != "0" ] || [ ${CONFIGFILE} != "YES" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): No dcosima configuration file found! Add one with at least the keywords instances and directory!"
+      MACHINES[$m]=""
+      continue
+    fi
+  
+    # Check if we have a master directory
     REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
     REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
     if [ "$?" != "0" ]; then
-      echo " "
-      echo "ERROR: Failed to read remote master directory on ${MACHINES[$m]} --- excluding remote machine"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to read master directory!"
       MACHINES[$m]=""
       continue
     fi
     REMOTEMASTERDIR=`echo ${REMOTEMASTERDIR} | awk '{ print $2 }'`
     if [ "${REMOTEMASTERDIR}" == "" ]; then
-      echo " "
-      echo "ERROR: No remote master directory on ${MACHINES[$m]} --- excluding remote machine"
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to read master directory!"
       MACHINES[$m]=""
       continue
     fi
+    
+    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER}, address: ${REMOTEHOST}, port: ${REMOTEPORT})"  
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    
   done
+  
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
     echo " "
@@ -205,6 +232,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
       
   done
+  
   
   if [[ ${STARTED} -eq 0 ]]; then
     echo ""

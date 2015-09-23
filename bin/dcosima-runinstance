@@ -130,8 +130,41 @@ else
 fi
 echo " "
 
-echo "Preparing for launch:"
+
+
+echo "Preparing for launch ${INSTANCEID}:"
 echo " " 
+
+
+# Check if the host is available:
+echo "* Checking if host is available..."
+REMOTECOMMAND='hostname'
+HOST=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
+if [ "$?" != "0" ]; then
+  echo "ERROR: Failed to access the host"
+  exit 1
+fi
+echo "  --> Host ${HOST} is accessible"
+
+
+# Check if cosima is available:
+echo "* Checking if host has cosima installed..."
+AVAILABLE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; type cosima > /dev/null" 2>&1`
+if [ "${AVAILABLE}" != "" ]; then
+  echo "ERROR: Cosima not found!"
+  exit 1
+fi
+echo "  --> Cosima found on machine"
+
+
+# Check if we have a configuration file
+echo "* Checking if host has a dcosima configuration file"
+CONFIGFILE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dcosima.cfg ]]; then exit 1; fi; exit 0;"`
+if [ "$?" != "0" ]; then
+  echo "ERROR: dcosima configuration file not found"
+  exit 1
+fi
+echo "  --> Cosima configuration file found"
 
 
 # Check if we have a global directory defined in the configuration file, if yes we will use that one
