@@ -218,6 +218,9 @@ if [[ "${HERE}" != "${HERE% *}" ]]; then
   exit 1
 fi
 
+if [ "${MEGALIBPATH}" != "" ]; then
+  MEGALIBPATH=`readlink -f ${MEGALIBPATH}`
+fi
 if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
   echo "ERROR: MEGAlib needs to be installed in a path without spaces,"
   echo "       but you chose: \"${MEGALIBPATH}\""
@@ -225,13 +228,19 @@ if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
 fi
 echo " * Using this path to MEGAlib: ${MEGALIBPATH}"
 
+if [ "${EXTERNALPATH}" != "" ]; then
+  EXTERNALPATH=`readlink -f ${EXTERNALPATH}`
+fi
 if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
   echo "ERROR: The external software needs to be installed in a path without spaces,"
   echo "       but you chose: \"${EXTERNALPATH}\""
   exit 1
 fi
-echo " * Using this path to install ROOT and Geant4: ${EXTERNALPATH}"
+echo " * Using this path to install external software (ROOT, Geant4): ${EXTERNALPATH}"
 
+if [ "${ROOTPATH}" != "" ]; then
+  ROOTPATH=`readlink -f ${ROOTPATH}`
+fi
 if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
   echo "ERROR: ROOT needs to be installed in a path without spaces,"
   echo "       but you chose: \"${ROOTPATH}\""
@@ -243,6 +252,9 @@ else
   echo " * Using the installation of ROOT: ${ROOTPATH}"
 fi
 
+if [ "${GEANT4PATH}" != "" ]; then
+  GEANT4PATH=`readlink -f ${GEANT4PATH}`
+fi
 if [[ "${GEANT4PATH}" != "${GEANT4PATH% *}" ]]; then
   echo "ERROR: Geant4 needs to be installed in a path without spaces,"
   echo "       but you chose: \"${GEANT4PATH}\""
