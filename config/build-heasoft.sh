@@ -153,11 +153,11 @@ echo "Checking for old installation..."
 if [ -d heasoft_v${VER} ]; then
   cd heasoft_v${VER}
   if [ -f COMPILE_SUCCESSFUL ]; then
-    SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -- "${CONFIGUREOPTIONS}"`
+    SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
       echo "The old installation used different compilation options..."
     fi
-    SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -- "${COMPILEROPTIONS}"`
+    SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${COMPILEROPTIONS}"`
     if [ "${SAMECOMPILER}" == "" ]; then
       echo "The old installation used a different compiler..."
     fi

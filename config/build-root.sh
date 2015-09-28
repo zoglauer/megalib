@@ -282,11 +282,11 @@ echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
   cd ${ROOTDIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
-    SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -- "${CONFIGUREOPTIONS}"`
+    SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
       echo "The old installation used different compilation options..."
     fi
-    SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -- "${COMPILEROPTIONS}"`
+    SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${COMPILEROPTIONS}"`
     if [ "${SAMECOMPILER}" == "" ]; then
       echo "The old installation used a different compiler..."
     fi
@@ -301,6 +301,7 @@ if [ -d ${ROOTDIR} ]; then
   fi
     
   echo "Old installation is either incompatible or incomplete. Removing ${ROOTDIR}"
+  
   cd ..
   if echo "${ROOTDIR}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
