@@ -69,6 +69,9 @@ issuereport() {
   echo " "
 }
 
+absolutefilename() {
+  echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+}
 
 # Part 2:
 # A first round of sanity checks
@@ -163,6 +166,8 @@ if [ "${MEGALIBPATH}" == "" ]; then
   fi
 fi
 
+echo "M: ${MEGALIBPATH}"
+
 if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
   echo " * Loading old options as default --- they will be overwritten by your command line options!"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
@@ -227,7 +232,7 @@ if [[ "${HERE}" != "${HERE% *}" ]]; then
 fi
 
 if [ "${MEGALIBPATH}" != "" ]; then
-  MEGALIBPATH=`readlink -f ${MEGALIBPATH}`
+  MEGALIBPATH=`absolutefilename ${MEGALIBPATH}`
 fi
 if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
   echo "ERROR: MEGAlib needs to be installed in a path without spaces,"
@@ -237,7 +242,7 @@ fi
 echo " * Using this path to MEGAlib: ${MEGALIBPATH}"
 
 if [ "${EXTERNALPATH}" != "" ]; then
-  EXTERNALPATH=`readlink -f ${EXTERNALPATH}`
+  EXTERNALPATH=`absolutefilename ${EXTERNALPATH}`
 fi
 if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
   echo "ERROR: The external software needs to be installed in a path without spaces,"
@@ -247,7 +252,7 @@ fi
 echo " * Using this path to install external software (ROOT, Geant4): ${EXTERNALPATH}"
 
 if [ "${ROOTPATH}" != "" ]; then
-  ROOTPATH=`readlink -f ${ROOTPATH}`
+  ROOTPATH=`absolutefilename ${ROOTPATH}`
 fi
 if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
   echo "ERROR: ROOT needs to be installed in a path without spaces,"
@@ -261,7 +266,7 @@ else
 fi
 
 if [ "${GEANT4PATH}" != "" ]; then
-  GEANT4PATH=`readlink -f ${GEANT4PATH}`
+  GEANT4PATH=`absolutefilename ${GEANT4PATH}`
 fi
 if [[ "${GEANT4PATH}" != "${GEANT4PATH% *}" ]]; then
   echo "ERROR: Geant4 needs to be installed in a path without spaces,"
