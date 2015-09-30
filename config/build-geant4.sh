@@ -44,6 +44,9 @@ confhelp() {
   echo "--maxthreads=[integer >=1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
+  echo "--patch=[yes or no (default no)]"
+  echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -69,9 +72,11 @@ done
 TARBALL=""
 ENVFILE=""
 MAXTHREADS=1024
+PATCH="off"
 DEBUG="off"
 DEBUGSTRING=""
 DEBUGOPTIONS=""
+PATCH="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -84,6 +89,8 @@ for C in ${CMD}; do
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-d*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-p*=* ]]; then
+    PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -133,6 +140,7 @@ else
   echo " * Using this maximum number of threads: ${MAXTHREADS}"
 fi
 
+DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
   DEBUG="off"
   DEBUGSTRING=""
@@ -147,6 +155,20 @@ else
   echo "ERROR: Unknown debugging code selection: ${DEBUG}"
   confhelp
   exit 0
+fi
+
+PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${PATCH} == of* ]] || [[ ${PATCH} == n* ]] ); then
+  PATCH="off"
+  echo " * Don't apply MEGAlib internal ROOT and Geant4 patches"
+elif ( [[ ${PATCH} == on ]] || [[ ${PATCH} == y* ]] ); then
+  PATCH="on"
+  echo " * Apply MEGAlib internal ROOT and Geant4 patches"
+else
+  echo " "
+  echo "ERROR: Unknown option for updates: ${PATCH}"
+  confhelp
+  exit 1
 fi
 
 
@@ -231,10 +253,13 @@ else
   echo "Version of Geant4 is: ${VER}"
 fi
 
+GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
+GEANT4SOURCEDIR=geant4_v${VER}${DEBUGSTRING}-source
+GEANT4BUILDDIR=geant4_v${VER}${DEBUGSTRING}-build
+
 
 
 echo "Checking for old installation..."
-GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
 if [ -d ${GEANT4DIR} ]; then
   cd ${GEANT4DIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
@@ -274,25 +299,34 @@ if ( [[ ${TARBALL} == *.tgz ]] || [[ ${TARBALL} == *.tar.gz ]] ); then
 elif [[ $1 == *.tar ]] ; then
     tar xvf ${TARBALL} > /dev/null
 else
-    echo "Error: File has unknown suffix: $1 (known: tgz, tar.gz, tar)"
+    echo "ERROR: File has unknown suffix: $1 (known: tgz, tar.gz, tar)"
     exit 1
 fi
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the Geant4 tarball!"
   exit 1
 fi
-mv geant4.${VER} geant4.${VER}-source
 mkdir ${GEANT4DIR}
 cd ${GEANT4DIR}
-mv ../geant4.${VER}-source .
-mkdir geant4.${VER}-build
-cd geant4.${VER}-build
+mv ../geant4.${VER} ${GEANT4SOURCEDIR}
+mkdir ${GEANT4BUILDDIR}
 
+
+
+echo "Patching..."
+PATCHAPPLIED="No patch applied"
+if [ -f "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" ]; then
+  patch -p1 < ${MEGALIB}/resource/patches/${GEANT4DIR}.patch
+  PATCHAPPLIED="Patches applied"
+  echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4DIR}.patch"
+fi
 
 
 echo "Configuring ..."
+cd ${GEANT4BUILDDIR}
 export LD_LIBRARY_PATH=""
-cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../geant4.${VER}-source
+echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}"
+cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${GEANT4SOURCEDIR}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) Geant4!"
   exit 1
@@ -333,11 +367,21 @@ if [ "$?" != "0" ]; then
 fi
 
 
+
 echo "Store our success story..."
 cd ..
 rm -f COMPILE_SUCCESSFUL
+echo "Geant4 compilation & installation successful" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Configure options:" >> COMPILE_SUCCESSFUL
 echo "${CONFIGUREOPTIONS}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Compile options:" >> COMPILE_SUCCESSFUL
 echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Patch application status:" >> COMPILE_SUCCESSFUL
+echo "${PATCHAPPLIED}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
 
 
 

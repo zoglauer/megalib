@@ -43,6 +43,9 @@ confhelp() {
   echo "--maxthreads=[integer >=1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
+  echo "--patch=[yes or no (default no)]"
+  echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
+  echo " "
   echo "Options for MEGAlib compilation:"
   echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
   echo "    Compilation optimization for MEGAlib: Default is normal."
@@ -130,6 +133,8 @@ OS=`uname -s`
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
+PATCH="off"
+
 MAXTHREADS=1;
 if ( `test -f /usr/sbin/sysctl` ); then
   MAXTHREADS=`sysctl -n hw.logicalcpu_max`
@@ -166,8 +171,6 @@ if [ "${MEGALIBPATH}" == "" ]; then
   fi
 fi
 
-echo "M: ${MEGALIBPATH}"
-
 if [ -f "${MEGALIBPATH}/config/SetupOptions.txt" ]; then
   echo " * Loading old options as default --- they will be overwritten by your command line options!"
   OLDCMD=`cat ${MEGALIBPATH}/config/SetupOptions.txt`
@@ -197,6 +200,8 @@ for C in "${CMD[@]}"; do
     UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-comp*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-p*=* ]]; then
+    PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-ma*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
@@ -220,6 +225,7 @@ OPT=`echo ${OPT} | tr '[:upper:]' '[:lower:]'`
 DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
 UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
+PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
 
 
 # Provide feed back and perform error checks:
@@ -394,6 +400,20 @@ elif ( [[ ${UPDATES} == on ]] || [[ ${UPDATES} == y* ]] ); then
 else
   echo " "
   echo "ERROR: Unknown option for updates: ${UPDATES}"
+  confhelp
+  exit 1
+fi
+
+
+if ( [[ ${PATCH} == of* ]] || [[ ${PATCH} == n* ]] ); then
+  PATCH="off"
+  echo " * Don't apply MEGAlib internal ROOT and Geant4 patches"
+elif ( [[ ${PATCH} == on ]] || [[ ${PATCH} == y* ]] ); then
+  PATCH="on"
+  echo " * Apply MEGAlib internal ROOT and Geant4 patches"
+else
+  echo " "
+  echo "ERROR: Unknown option for updates: ${PATCH}"
   confhelp
   exit 1
 fi
@@ -735,7 +755,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
+  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -785,7 +805,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
-  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
+  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then

@@ -33,7 +33,7 @@ CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 
 
 # Switching off things we do not need right now but which are on by default
-CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dxrootd=OFF"
+CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dssl=OFF -Dxrootd=OFF"
 
 # The compiler
 COMPILEROPTIONS=`gcc --version | head -n 1`
@@ -67,6 +67,9 @@ confhelp() {
   echo "--maxthreads=[integer >=1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
+  echo "--patch=[yes or no (default no)]"
+  echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
+  echo " "
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -95,6 +98,7 @@ MAXTHREADS=1024
 DEBUG="off"
 DEBUGSTRING=""
 DEBUGOPTIONS=""
+PATCH="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -106,6 +110,8 @@ for C in ${CMD}; do
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-d*=* ]]; then
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-p*=* ]]; then
+    PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -158,6 +164,7 @@ else
 fi
 
 
+DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${DEBUG} == of* ]] || [[ ${DEBUG} == no ]] ); then
   DEBUG="off"
   DEBUGSTRING=""
@@ -173,6 +180,22 @@ else
   confhelp
   exit 0
 fi
+
+
+PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${PATCH} == of* ]] || [[ ${PATCH} == n* ]] ); then
+  PATCH="off"
+  echo " * Don't apply MEGAlib internal ROOT and Geant4 patches"
+elif ( [[ ${PATCH} == on ]] || [[ ${PATCH} == y* ]] ); then
+  PATCH="on"
+  echo " * Apply MEGAlib internal ROOT and Geant4 patches"
+else
+  echo " "
+  echo "ERROR: Unknown option for updates: ${PATCH}"
+  confhelp
+  exit 1
+fi
+
 
 
 echo " "
@@ -323,13 +346,23 @@ if [ "$?" != "0" ]; then
 fi
 mv ${ROOTTOPDIR} ${ROOTSOURCEDIR}
 mkdir ${ROOTBUILDDIR}
-cd ${ROOTBUILDDIR}
+
+
+
+echo "Patching..."
+PATCHAPPLIED="No patch applied"
+if [ -f "${MEGALIB}/resource/patches/${ROOTDIR}.patch" ]; then
+  patch -p1 < ${MEGALIB}/resource/patches/${ROOTDIR}.patch
+  PATCHAPPLIED="Patches applied"
+  echo "Applied patch: ${MEGALIB}/resource/patches/${ROOTDIR}.patch"
+fi
 
 
 echo "Configuring..."
+cd ${ROOTBUILDDIR}
 export ROOTSYS=${ROOTDIR}
 export LD_LIBRARY_PATH=""
-echo "Configure options: ${CONFIGUREOPTIONS} ${DEBUGOPTIONS}"
+echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}"
 cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring (cmake'ing) ROOT!"
@@ -375,8 +408,17 @@ fi
 echo "Store our success story..."
 cd ..
 rm -f COMPILE_SUCCESSFUL
+echo "ROOT compilation & installation successful" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Configure options:" >> COMPILE_SUCCESSFUL
 echo "${CONFIGUREOPTIONS}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Compile options:" >> COMPILE_SUCCESSFUL
 echo "${COMPILEROPTIONS}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
+echo "* Patch application status:" >> COMPILE_SUCCESSFUL
+echo "${PATCHAPPLIED}" >> COMPILE_SUCCESSFUL
+echo " " >> COMPILE_SUCCESSFUL
 
 
 
