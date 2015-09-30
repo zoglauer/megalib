@@ -78,7 +78,7 @@ done
 # Run the setup file
 echo "Step 1: Run the setup file..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on"
 done
 
 # Add the path to .bash_local, if it is not yet there
