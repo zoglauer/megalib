@@ -6,7 +6,7 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 # Install path realtive to the build path --- simply one up in this script
-CONFIGUREOPTIONS=" -DCMAKE_INSTALL_PREFIX=.."
+CONFIGUREOPTIONS="-DCMAKE_INSTALL_PREFIX=.."
 # We want a minimal system and enable what we really need:
 CONFIGUREOPTIONS+=" -Dgminimal=ON"
 # Open GL -- needed by geomega
@@ -23,7 +23,7 @@ CONFIGUREOPTIONS+=" -Dasimage=ON"
 CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 
 # In case you have trouble with anything related to freetype, try to comment in this option
-# CONFIGUREOPTIONS=+" -Dbuiltin-freetype=ON"
+# CONFIGUREOPTIONS+=" -Dbuiltin-freetype=ON"
 
 # In case you get strange error messages concerning jpeg, png, tiff
 # CONFIGUREOPTIONS+=" -Dasimage=OFF -Dastiff=OFF -Dbuiltin_afterimage=OFF"
@@ -297,6 +297,8 @@ else
   echo "Version of ROOT is: ${VER}"
 fi
 
+
+
 ROOTDIR=root_v${VER}${DEBUGSTRING}
 ROOTSOURCEDIR=root_v${VER}${DEBUGSTRING}-source
 ROOTBUILDDIR=root_v${VER}${DEBUGSTRING}-build
@@ -305,15 +307,48 @@ echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
   cd ${ROOTDIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
+  
     SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
       echo "The old installation used different compilation options..."
     fi
+    
     SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${COMPILEROPTIONS}"`
     if [ "${SAMECOMPILER}" == "" ]; then
       echo "The old installation used a different compiler..."
     fi
-    if ( [ "${SAMEOPTIONS}" != "" ] && [ "${SAMECOMPILER}" != "" ] ); then
+    
+    SAMEPATCH=""
+    PATCHPRESENT="no"
+    if [ -f "${MEGALIB}/resource/patches/${ROOTDIR}.patch" ]; then
+      PATCHPRESENT="yes"
+      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${ROOTDIR}.patch" | awk -F" " '{ print $1 }'`
+    fi
+    PATCHSTATUS=`cat COMPILE_SUCCESSFUL | grep -- "^Patch"`
+    if [[ ${PATCHSTATUS} == Patch\ applied* ]]; then
+      PATCHMD5=`echo ${PATCHSTATUS} | awk -F" " '{ print $3 }'`
+    fi
+    
+    if [[ ${PATCH} == on ]]; then
+      if [[ ${PATCHPRESENT} == yes ]] && [[ ${PATCHSTATUS} == Patch\ applied* ]] && [[ ${PATCHPRESENTMD5} == ${PATCHMD5} ]]; then
+        SAMEPATCH="YES"; 
+      elif [[ ${PATCHPRESENT} == no ]] && [[ ${PATCHSTATUS} == Patch\ not\ applied* ]]; then
+        SAMEPATCH="YES"; 
+      else
+        echo "The old installation didn't use the same patch..."  
+        SAMEPATCH=""
+      fi
+    elif [[ ${PATCH} == off ]]; then
+      if [[ ${PATCHSTATUS} == Patch\ not\ applied* ]] || [[ -z ${PATCHSTATUS}  ]]; then    # last one means empty
+        SAMEPATCH="YES"; 
+      else
+        echo "The old installation used a patch, but now we don't want any..."  
+        SAMEPATCH=""
+      fi
+    fi
+    
+    
+    if ( [ "${SAMEOPTIONS}" != "" ] && [ "${SAMECOMPILER}" != "" ] && [ "${SAMEPATCH}" != "" ] ); then
       echo "Your already have a usable ROOT version installed!"
       if [ "${ENVFILE}" != "" ]; then
         echo "Storing the ROOT directory in the MEGAlib source script..."
@@ -323,7 +358,7 @@ if [ -d ${ROOTDIR} ]; then
     fi
   fi
     
-  echo "Old installation is either incompatible or incomplete. Removing ${ROOTDIR}"
+  echo "Old installation is either incompatible or incomplete. Removing ${ROOTDIR}..."
   
   cd ..
   if echo "${ROOTDIR}" | grep -E '[ "]' >/dev/null; then
@@ -350,10 +385,10 @@ mkdir ${ROOTBUILDDIR}
 
 
 echo "Patching..."
-PATCHAPPLIED="No patch applied"
+PATCHAPPLIED="Patch not applied"
 if [ -f "${MEGALIB}/resource/patches/${ROOTDIR}.patch" ]; then
   patch -p1 < ${MEGALIB}/resource/patches/${ROOTDIR}.patch
-  PATCHAPPLIED="Patches applied"
+  PATCHAPPLIED="Patch applied ${PATCHPRESENTMD5}"
   echo "Applied patch: ${MEGALIB}/resource/patches/${ROOTDIR}.patch"
 fi
 

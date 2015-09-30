@@ -253,25 +253,58 @@ else
   echo "Version of Geant4 is: ${VER}"
 fi
 
+
+
 GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
 GEANT4SOURCEDIR=geant4_v${VER}${DEBUGSTRING}-source
 GEANT4BUILDDIR=geant4_v${VER}${DEBUGSTRING}-build
-
-
 
 echo "Checking for old installation..."
 if [ -d ${GEANT4DIR} ]; then
   cd ${GEANT4DIR}
   if [ -f COMPILE_SUCCESSFUL ]; then
+  
     SAMEOPTIONS=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${CONFIGUREOPTIONS}"`
     if [ "${SAMEOPTIONS}" == "" ]; then
       echo "The old installation used different compilation options..."
     fi
+
     SAMECOMPILER=`cat COMPILE_SUCCESSFUL | grep -F -x -- "${COMPILEROPTIONS}"`
     if [ "${SAMECOMPILER}" == "" ]; then
       echo "The old installation used a different compiler..."
     fi
-    if ( [ "${SAMEOPTIONS}" != "" ] && [ "${SAMECOMPILER}" != "" ] ); then
+    
+    SAMEPATCH=""
+    PATCHPRESENT="no"
+    if [ -f "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" ]; then
+      PATCHPRESENT="yes"
+      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" | awk -F" " '{ print $1 }'`
+    fi
+    PATCHSTATUS=`cat COMPILE_SUCCESSFUL | grep -- "^Patch"`
+    if [[ ${PATCHSTATUS} == Patch\ applied* ]]; then
+      PATCHMD5=`echo ${PATCHSTATUS} | awk -F" " '{ print $3 }'`
+    fi
+    
+    if [[ ${PATCH} == on ]]; then
+      if [[ ${PATCHPRESENT} == yes ]] && [[ ${PATCHSTATUS} == Patch\ applied* ]] && [[ ${PATCHPRESENTMD5} == ${PATCHMD5} ]]; then
+        SAMEPATCH="YES"; 
+      elif [[ ${PATCHPRESENT} == no ]] && [[ ${PATCHSTATUS} == Patch\ not\ applied* ]]; then
+        SAMEPATCH="YES"; 
+      else
+        echo "The old installation didn't use the same patch..."  
+        SAMEPATCH=""
+      fi
+    elif [[ ${PATCH} == off ]]; then
+      if [[ ${PATCHSTATUS} == Patch\ not\ applied* ]] || [[ -z ${PATCHSTATUS}  ]]; then    # last one means empty
+        SAMEPATCH="YES"; 
+      else
+        echo "The old installation used a patch, but now we don't want any..."  
+        SAMEPATCH=""
+      fi
+    fi
+    
+    
+    if ( [ "${SAMEOPTIONS}" != "" ] && [ "${SAMECOMPILER}" != "" ] && [ "${SAMEPATCH}" != "" ] ); then
       echo "Your already have a usable Geant4 version installed!"
       if [ "${ENVFILE}" != "" ]; then
         echo "Storing the Geant4 directory in the MEGAlib source script..."
@@ -280,8 +313,8 @@ if [ -d ${GEANT4DIR} ]; then
       exit 0
     fi
   fi
-    
-  echo "Old installation is either incompatible or incomplete. Removing ${GEANT4DIR}"
+  
+  echo "Old installation is either incompatible or incomplete. Removing ${GEANT4DIR}..."
   cd ..
   if echo "${GEANT4DIR}" | grep -E '[ "]' >/dev/null; then
     echo "ERROR: Feeding my paranoia of having a \"rm -r\" in a script:"
@@ -314,10 +347,10 @@ mkdir ${GEANT4BUILDDIR}
 
 
 echo "Patching..."
-PATCHAPPLIED="No patch applied"
+PATCHAPPLIED="Patch not applied"
 if [ -f "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" ]; then
   patch -p1 < ${MEGALIB}/resource/patches/${GEANT4DIR}.patch
-  PATCHAPPLIED="Patches applied"
+  PATCHAPPLIED="Patch applied ${PATCHPRESENTMD5}"
   echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4DIR}.patch"
 fi
 
