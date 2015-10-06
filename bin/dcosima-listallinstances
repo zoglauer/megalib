@@ -70,14 +70,14 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Check if cosima is installed
   AVAILABLE=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: Cosmia not installed"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): Cosmia not installed"
     continue
   fi
 
   # Check how many instances are allowed
   ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): NOT ACCESSIBLE"
     continue
   fi  
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
@@ -86,7 +86,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
   POSSIBLE=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: Failed to read instances"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): Failed to read instances"
     continue
   fi
   if [ "${POSSIBLE}" != "" ]; then
@@ -100,7 +100,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
   
-  echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: ${ALLOWED} / ${POSSIBLE}"
+  echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): ${ALLOWED} / ${POSSIBLE}"
 done
 echo " "
 echo "Total number of instances: ${ALLALLOWED} / ${ALLPOSSIBLE}"
