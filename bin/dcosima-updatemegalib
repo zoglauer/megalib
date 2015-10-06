@@ -15,7 +15,8 @@ commandhelp() {
   echo "Usage: dcosima-getinstances [options]";
   echo ""
   echo "Options:"
-  echo "  --help: Show this help."
+  echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dcosima.cfg"
+  echo "  --help                    : Show this help"
   echo ""
   echo "";
   echo "Example: "
@@ -26,10 +27,13 @@ commandhelp() {
 
 # Store command line as array
 CMD=( "$@" )
+SINGLEMACHINE=""
 
 # Check for help
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-h* ]]; then
+  if [[ ${C} == *-m*=* ]]; then
+    SINGLEMACHINE=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
     exit 0
@@ -41,52 +45,100 @@ CFG=~/.dcosima.cfg
 MEGALIBPATH="Science/Software" # Attention hard coded else where!
 
 # Read configuration file and extract machines
-MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+if [ "${SINGLEMACHINE}" == "" ]; then
+  MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+else 
+  MACHINES=( "${SINGLEMACHINE}" )
+fi
 REMOTEUSER=( )
 REMOTEHOST=( )
 REMOTEPORT=( )
+REMOTENAME=( )
 
 echo " "
 echo "Remote machines setup:"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+
   REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
   REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-   
+ 
   # Do a quick test if the machine is available:
   REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
+    MACHINES[$m]=""
     continue
   fi  
-  
+
   echo " * Machine ${REMOTENAME[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): FOUND"
+
 done
+
 
 # Create the install paths on all machines
-echo "Step 1: Creating install paths..."
+FAILEDLIST=""
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+
+  if [ "${MACHINES[$m]}" == "" ]; then
+    FAILEDLIST="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]} ${FAILEDLIST}"
+    continue;
+  fi
+
+  echo " "
+  echo " "
+  echo " "
+  echo " "
+  echo "Updating ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+
+  echo " "
+  echo "Step 1: Creating install paths..."
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MEGALIBPATH} ]]; then mkdir -p ${MEGALIBPATH}; fi; exit 0;"
-done
-
-# Download the latest setup file
-echo "Step 1: Downloading the latest setup file..."
-for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Unable to create the install paths on ${REMOTENAME[$m]}"
+    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
+    continue
+  fi
+  
+  echo " "
+  echo "Step 2: Downloading the latest setup file..."
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
-done
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Unable to download the latest setup file on ${REMOTENAME[$m]}"
+    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
+    continue
+  fi
 
-# Run the setup file
-echo "Step 1: Run the setup file..."
-for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  echo " "
+  echo "Step 3: Running the setup file..."
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on"
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Unable to run the setup file on ${REMOTENAME[$m]}"
+    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
+    continue
+  fi
+
+  echo " "
+  echo "Step 4: Setting up the environment..."
+  # Unfortunately we have to hard code the MEGAlib path here since we have to use ''
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'  
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Unable to setp up the environment on ${REMOTENAME[$m]}"
+    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
+    continue
+  fi
+
+  # Step 5: perform a test simulation
+  
+  echo "Installation went well on ${REMOTENAME[$m]}"
+  
 done
 
-# Add the path to .bash_local, if it is not yet there
-echo "Step 1: Setting up the environment..."
-for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  # unfortunately we have to hard code the MEGAlib path here since we have to use ''
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'
-done
+if [ "${FAILEDLIST}" != "" ]; then
+  echo " "
+  echo "ERROR: The setup failed on ${FAILEDLIST}"
+  echo " "
+fi
 
 
 exit 0
