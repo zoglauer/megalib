@@ -8,7 +8,7 @@
 # Install path realtive to the build path --- simply one up in this script
 CONFIGUREOPTIONS="-DCMAKE_INSTALL_PREFIX=.."
 # We want a minimal system and enable what we really need:
-CONFIGUREOPTIONS+=" -Dgminimal=ON"
+#CONFIGUREOPTIONS+=" -Dgminimal=ON"
 # Open GL -- needed by geomega
 CONFIGUREOPTIONS+=" -Dopengl=ON"
 # Mathmore -- needed for fitting, e.g. ARMs"
