@@ -55,7 +55,7 @@ diff -rupN geant4_v10.00.p04/geant4_v10.00.p04-source/source/processes/hadronic/
 diff -rupN geant4_v10.00.p04/geant4_v10.00.p04-source/cmake/Modules/Geant4MakeRules_cxx.cmake geant4_v10.00.p04_fixed/geant4_v10.00.p04-source/cmake/Modules/Geant4MakeRules_cxx.cmake
 --- geant4_v10.00.p04/geant4_v10.00.p04-source/cmake/Modules/Geant4MakeRules_cxx.cmake	2015-10-08 23:16:16.000000000 -0700
 +++ geant4_v10.00.p04_fixed/geant4_v10.00.p04-source/cmake/Modules/Geant4MakeRules_cxx.cmake	2015-10-08 23:14:22.000000000 -0700
-@@ -82,7 +82,6 @@ function(__configure_cxxstd_clang)
+@@ -82,6 +82,7 @@ function(__configure_cxxstd_clang)
    if(APPLE AND "${_clangcxx_version}" MATCHES ".*Apple LLVM version.*")
      string(REGEX REPLACE ".*based on LLVM ([0-9]\\.[0-9]+)..svn.*" "\\1" _clangcxx_version ${_clangcxx_version})
    endif()
@@ -63,4 +63,3 @@ diff -rupN geant4_v10.00.p04/geant4_v10.00.p04-source/cmake/Modules/Geant4MakeRu
    message(STATUS "Clang version : ${_clangcxx_version}")
  
    if(_clangcxx_version VERSION_LESS 2.9)
-
