@@ -5,7 +5,6 @@
 #
 # Please see the MEGAlib software license and documentation for more informations.
 
-
 help() {
   echo ""
   echo "MEGAlib program/library existance check script"
@@ -22,13 +21,14 @@ if [ $# -lt 2 ] ; then
   exit 0;
 fi
 
+
 FileType=$1
 Program=$2
-Folders=""
+Folders=()
 if [ "${FileType}" == "exe" ]; then
-  Folders=(`echo $PATH | tr ':' ' '`)
+  Folders=( `echo $PATH | tr ':' ' '` )
 elif [ "${FileType}" == "lib" ]; then
-  Folders=(`echo $LD_LIBRARY_PATH $DYLD_LIBRARY_PATH | tr ':' ' '`)
+  Folders=( `echo ${LD_LIBRARY_PATH} ${DYLD_LIBRARY_PATH} | tr ':' ' '` )
 else 
   echo ""
   echo "Error: You must specify the type of object as \"lib\" or \"exe\"";
@@ -36,8 +36,19 @@ else
   exit 0;
 fi
 
+
+# On El Capitan ${LD_LIBRARY_PATH} is not transfered to subshells, thus protect
+if [ "${FileType}" == "exe" ] && [ "${PATH}" == "" ]; then
+  exit 1;
+fi
+if [ "${FileType}" == "lib" ] && [ "${LD_LIBRARY_PATH}" == "" ]; then
+  exit 1;
+fi
+
+
 Found=0
 for folder in ${Folders[@]}; do
+  #echo "Checking folder: ${folder}" 
   if (`test ! -d ${folder}`); then continue; fi
   cd ${folder}
   for file in `ls`; do
@@ -51,6 +62,7 @@ for folder in ${Folders[@]}; do
       fi
     fi
     if [ "${FileType}" == "lib" ]; then 
+      #echo "Looking for ${Program}.[a,so,dylib]"
       if ( [ "${file}" == "${Program}.a" ] || [ "${file}" == "${Program}.so" ] || [ "${file}" == "${Program}.dylib" ] ); then
          #echo "Found: ${file} == ${Program} in ${folder}"
          if ( `test -r ${file}` ); then      
@@ -65,6 +77,8 @@ for folder in ${Folders[@]}; do
     break;
   fi
 done
+
+#echo "Return code: ${Found}"
 
 exit ${Found};
 
