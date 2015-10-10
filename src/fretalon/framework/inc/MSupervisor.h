@@ -143,13 +143,13 @@ class MSupervisor
   
   // private methods:
  private:
-  // Default constructor
+  //! Default constructor
   MSupervisor();
   //! Default destructor
   ~MSupervisor();
-  // No copy constructor
+  //! No copy constructor
   MSupervisor(MSupervisor const&) = delete;
-  // No assignment operator
+  //! No assignment operator
   void operator=(MSupervisor const&) = delete;
 
   // protected members:
