@@ -1,0 +1,19 @@
+diff -rupN root_v5.34.34/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm root_v5.34.34_patched/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm
+--- root_v5.34.34/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm	2015-10-02 07:27:51.000000000 -0700
++++ root_v5.34.34_patched/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm	2015-10-11 09:06:38.000000000 -0700
+@@ -1769,13 +1769,11 @@ void print_mask_info(ULong_t mask)
+ //______________________________________________________________________________
+ - (void) updateTrackingAreas
+ {
+-   if (!fID)
+-      return;
++   [super updateTrackingAreas];
+ 
+-   if (NSIsEmptyRect([self visibleRect]))
++   if (!fID)
+       return;
+ 
+-   
+    const Util::AutoreleasePool pool;
+ 
+    if (NSArray *trackingArray = [self trackingAreas]) {
