@@ -8,6 +8,9 @@ Version 2.29/2.30
 
 *** IMPORTANT - PLEASE READ:
 
++ El Capitan / Xcode 7.x users: Run the setup script with the additional option
+  --patch=yes to apply a set of necessary patches to ROOT and Geant4
+  
 + Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new
   MRotation class
   --> If something seems wrong with your rotations email me
@@ -33,6 +36,7 @@ Version 2.29/2.30
 *** Significant new features & improvements:
 
 General:
++ Added automatic patch system to the build system
 + A compiler with C++11 support is now required - all current Mac and Linux
   compiler should do, e.g. g++ 4.8 and higher and Apple compiler 6.0
   and higher. The setup script will test for the compiler.
