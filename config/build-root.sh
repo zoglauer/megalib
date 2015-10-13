@@ -81,12 +81,6 @@ for C in ${CMD}; do
     echo ""
     confhelp
     exit 0
-  else
-    echo ""
-    echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"$0 --help\" for a list of options"
-    echo " "
-    exit 1
   fi
 done
 
