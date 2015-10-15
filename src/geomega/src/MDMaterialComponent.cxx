@@ -174,8 +174,8 @@ void MDMaterialComponent::SetWeight(double Weight)
   // What it is is controled via the type
 
   if (Weight <= 0) {
-    mout<<"   ***  Error  *** "<<endl;
-    mout<<"You have a component with a non-positive weighting factor!"<<endl;
+    mout<<"   ***  Warning  ***  in component "<<ToString()<<endl;
+    mout<<"You have a material component with a non-positive weighting factor!"<<endl;
     m_Weight = 0;
   } else {
     m_Weight = Weight;
@@ -273,10 +273,16 @@ MString MDMaterialComponent::ToString() const
   // Return string with the content of this instance
 
   ostringstream out;
-  if (m_Type == c_ByAtoms) {
-    out<<"A="<<m_A<<", Z="<<m_Z<<", atoms="<<m_Weight;
+  if (HasNaturalIsotopeComposition()) {
+    out<<"Z="<<m_Z<<" (A=natural composition), ";
   } else {
-    out<<"A="<<m_A<<", Z="<<m_Z<<", mass fraction="<<m_Weight;
+    out<<"Z="<<m_Z<<", A="<<m_A<<", ";
+  }
+  
+  if (m_Type == c_ByAtoms) {
+    out<<"atoms="<<m_Weight;
+  } else {
+    out<<"mass fraction="<<m_Weight;
   }
 
   return out.str().c_str();  
