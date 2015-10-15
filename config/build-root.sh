@@ -439,7 +439,7 @@ fi
 echo "Installing..."
 make install
 if [ "$?" != "0" ]; then
-  echo "ERROR: Something went wrong while installing Geant4!"
+  echo "ERROR: Something went wrong while installing ROOT!"
   exit 1
 fi
 
