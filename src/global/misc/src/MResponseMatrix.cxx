@@ -247,8 +247,10 @@ bool MResponseMatrix::Read(MString FileName)
   // Read the data from file directly into this matrix
 
   MTimer Timer;
-  mdebug<<"Started reading file \""<<FileName<<"\" ... This way take a while ..."<<endl;
-
+  if (g_Verbosity == c_Chatty) {
+    mout<<"Started reading file \""<<FileName<<"\" ... This way take a while ..."<<endl;
+  }
+  
   MFileResponse Parser;
   if (Parser.Open(FileName) == false) return false;
 
@@ -263,8 +265,10 @@ bool MResponseMatrix::Read(MString FileName)
 
   Ok = ReadSpecific(Parser, Type, Version);
 
-  mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()
-        <<" entries read in "<<Timer.ElapsedTime()<<" sec"<<endl;
+  if (g_Verbosity == c_Chatty) {  
+    mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()
+          <<" entries read in "<<Timer.ElapsedTime()<<" sec"<<endl;
+  }
   Parser.Close();
 
   return Ok;
