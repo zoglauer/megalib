@@ -261,7 +261,7 @@ class MPhysicalEvent
   double m_OIEnergy;
 
   //! Store the read lines for delayed parsing
-  vector<MString> m_Lines; // string fatser than MString, vector faster than list
+  vector<MString> m_Lines; 
 
   // private members:
  private:
