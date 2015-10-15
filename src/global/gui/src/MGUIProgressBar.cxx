@@ -399,7 +399,7 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
       }
       gSystem->ProcessEvents();
 
-      // Allow some adjustabel updating 
+      // Allow some adjustable updating 
       if (Intermediate.GetElapsed() > 0.1) {
         m_UpdateFrequency = 0.1*Intermediate.GetElapsed();
         if (m_UpdateFrequency > 0.02) m_UpdateFrequency = 0.02;
