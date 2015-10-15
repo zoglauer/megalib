@@ -83,11 +83,9 @@ void MGUIEReadOutElementView::Create()
   // Create the GUI element
   
   UnmapWindow();
-  m_Container->RemoveAll();
   
-  for (unsigned int c = 0; c < m_ROEButtons.size(); ++c) {
-    delete m_ROEButtons[c];
-  }
+  m_Container->RemoveAll();
+  // RemoveAll also deletes the m_ROEButtons, thus just clear
   m_ROEButtons.clear();
   
   TGLayoutHints* ButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 0, 15, 0, 0);

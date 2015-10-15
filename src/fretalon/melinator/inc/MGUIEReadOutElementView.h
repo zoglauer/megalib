@@ -80,7 +80,7 @@ class MGUIEReadOutElementView : public TGCanvas
   TGWindow* m_Parent; 
   //! The window we are associated with
   TGWindow* m_Associate;
-  //! The coantiner in which all elements are created
+  //! The container in which all elements are created
   TGCompositeFrame* m_Container;
   
   //! A list of read out elements
