@@ -70,6 +70,8 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   virtual unsigned int NPar() const { return 0; }
   //! Return the number of fit parameters 
   unsigned int GetNParameters() const { return NPar(); }
+  //! Return the fit parameter or 0 in case of error 
+  double GetParameter(unsigned int p) const { if (p >= m_ROOTParameters.size()) return 0; return m_ROOTParameters[p]; }
   
   //! Return true, if the fit is up-to-date
   bool IsFitUpToDate() const { return m_IsFitUpToDate; }

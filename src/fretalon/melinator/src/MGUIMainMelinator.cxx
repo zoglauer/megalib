@@ -269,6 +269,7 @@ void MGUIMelinatorMain::Create()
   BinningValueFrame->AddFrame(HistogramBinningModeValueIntroLabel, HistogramBinningModeValueIntroLabelLayout);
   
   m_HistogramBinningModeValue = new TGNumberEntry(BinningValueFrame, m_Settings->GetHistogramBinningModeValue());
+  m_HistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   BinningValueFrame->AddFrame(m_HistogramBinningModeValue, TopLeftLayout);
   
   m_HistogramBinningModeValueLabel = new TGLabel(BinningValueFrame, "To be determined later");
@@ -337,6 +338,7 @@ void MGUIMelinatorMain::Create()
   PeakBinningValueFrame->AddFrame(PeakHistogramBinningModeValueIntroLabel, PeakHistogramBinningModeValueIntroLabelLayout);
   
   m_PeakHistogramBinningModeValue = new TGNumberEntry(PeakBinningValueFrame, m_Settings->GetPeakHistogramBinningModeValue());
+  m_PeakHistogramBinningModeValue->SetLimits(TGNumberFormat::kNELLimitMinMax, 1, 1000000); 
   PeakBinningValueFrame->AddFrame(m_PeakHistogramBinningModeValue, TopLeftLayout);
   
   m_PeakHistogramBinningModeValueLabel = new TGLabel(PeakBinningValueFrame, "To be determined later");
@@ -922,11 +924,11 @@ bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
 bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
 {    
   if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak) {
-    m_PeakParametrizationOptions->RemoveAll();
+    m_PeakParametrizationOptions->RemoveAll(); // Deletes everyting too 
   } else if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodSmoothedPeak) {
-    m_PeakParametrizationOptions->RemoveAll();
+    m_PeakParametrizationOptions->RemoveAll(); // Deletes everyting too 
   } else if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodFittedPeak) { 
-    m_PeakParametrizationOptions->RemoveAll();
+    m_PeakParametrizationOptions->RemoveAll(); // Deletes everyting too 
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
     unsigned int Height = 0;
@@ -1016,9 +1018,9 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
 bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int ID)
 {    
   if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise) {
-    m_CalibrationModelDeterminationOptions->RemoveAll();
+    m_CalibrationModelDeterminationOptions->RemoveAll(); // Deletes everyting too 
   } else if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
-    m_CalibrationModelDeterminationOptions->RemoveAll();
+    m_CalibrationModelDeterminationOptions->RemoveAll(); // Deletes everyting too 
     
     double FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
     
@@ -1053,7 +1055,7 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     FittingModelFrame->AddFrame(m_CalibrationModelDeterminationMethodFittingModel, TopRightLayout);
 
   } else if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelBestFit) { 
-    m_CalibrationModelDeterminationOptions->RemoveAll();
+    m_CalibrationModelDeterminationOptions->RemoveAll(); // Deletes everyting too 
   }
 
   MapSubwindows();

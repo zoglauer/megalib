@@ -126,7 +126,7 @@ void MGUILoadCalibration::Create()
                                   "",
                                   CalibrationFiles[f]);
     FileName->SetFileType("Calib file", "*.roa");
-    FileName->SetFileType("Calib file", "*.dat");
+    FileName->SetFileType("Calib file", "*.roa.gz");
     //FileName->ChangeOptions(kFixedWidth);
     //FileName->SetWidth(m_FontScaler*500);
     CalibrationFrame->AddFrame(FileName, FileSelectorLayout);
@@ -238,22 +238,39 @@ void MGUILoadCalibration::AddIsotopes(TGComboBox* ComboBox, MString Selected)
 //! Action after the Apply or OK button has been pressed.
 bool MGUILoadCalibration::OnApply()
 {
+  // First check if each file has at least one isotope set
+  for (unsigned int f = 0; f < m_FileNames.size(); ++f) {
+    if (m_FileNames[f]->GetFileName() != "") {
+      bool FoundOne = false;
+      for (unsigned int i = 0; i< m_Isotopes[f].size(); ++i) {
+        if (MString(dynamic_cast<TGTextLBEntry*>(m_Isotopes[f][i]->GetSelectedEntry())->GetText()->GetString()) != "None") {
+          FoundOne = true;
+          break;
+        }
+      }
+      if (FoundOne == false) {
+        mgui<<"You must give at least one isotope per file for entry "<<f+1<<show;
+        return false;
+      }
+    }
+  }
+  
+  
+  // Now set the data
   vector<MString> CalibrationFiles;
   vector<unsigned int> CalibrationGroupIDs;
   vector<vector<MString>> CalibrationIsotopes;
   
-  for (auto FileName: m_FileNames) {
-    CalibrationFiles.push_back(FileName->GetFileName()); 
-  }
-  for (auto IsotopeVector: m_Isotopes) {
-    CalibrationIsotopes.push_back(vector<MString>());
-    for (auto Isotope: IsotopeVector) {
-      MString Text = dynamic_cast<TGTextLBEntry*>(Isotope->GetSelectedEntry())->GetText()->GetString();
-      CalibrationIsotopes.back().push_back(Text);
+  for (unsigned int f = 0; f < m_FileNames.size(); ++f) {
+    if (m_FileNames[f]->GetFileName() != "") {
+      CalibrationFiles.push_back(m_FileNames[f]->GetFileName()); 
+      CalibrationIsotopes.push_back(vector<MString>());
+      for (auto Isotope: m_Isotopes[f]) {
+        MString Text = dynamic_cast<TGTextLBEntry*>(Isotope->GetSelectedEntry())->GetText()->GetString();
+        CalibrationIsotopes.back().push_back(Text);
+      }
+      CalibrationGroupIDs.push_back(m_GroupIDs[f]->GetAsInt());
     }
-  }
-  for (auto GroupID: m_GroupIDs) {
-    CalibrationGroupIDs.push_back(GroupID->GetAsInt());
   }
  
   m_Settings->SetAllCalibrationFiles(CalibrationFiles, CalibrationGroupIDs, CalibrationIsotopes);

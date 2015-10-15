@@ -21,6 +21,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 // ROOT libs:
@@ -135,8 +136,14 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {
-      Results.push_back(Models[m]->Fit(Points));
-      if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": "<<Results.back()<<endl;
+      double Result = Models[m]->Fit(Points);
+      if (Result > 0 && isfinite(Result)) {
+        Results.push_back(Models[m]->Fit(Points));
+        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Good fit! (chi-square="<<Results.back()<<")"<<endl;
+      } else {
+        Results.push_back(numeric_limits<double>::max());
+        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Bad fit!"<<endl;        
+      }
     }
     
     vector<double>::iterator MinI;

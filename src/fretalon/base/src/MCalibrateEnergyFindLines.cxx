@@ -151,7 +151,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       // We have found a zero passage, i.e. a peak
       // Let's handle it
       
-      if (g_Verbosity >= c_Chatty) cout<<endl<<"Start"<<endl;
+      if (g_Verbosity >= c_Chatty) cout<<endl<<"Zero passage found at "<<FirstDerivation->GetBinLowEdge(b+1)<<" - Start"<<endl;
       
       // ignore the first peak as background rollover or noise
       if (Start == true) {
@@ -164,7 +164,10 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       }
 
       // Ignore the last bin: 
-      if (b+1 == FirstDerivation->GetNbinsX()) continue;
+      if (b+1 == FirstDerivation->GetNbinsX()) {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - peak is near last bin ignoring ..."<<endl;
+        continue;
+      }
         
       // Create a peak
       MCalibrationSpectralPoint P;

@@ -29,6 +29,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! The two modes for the energy assignment:
+enum class MCalibrateEnergyAssignEnergyModes { e_LinearZeroCrossing, e_Linear };
+
 //! A class to calibrate the lines in a spectrum
 class MCalibrateEnergyAssignEnergies : public MCalibrateEnergy
 {
@@ -39,11 +42,18 @@ class MCalibrateEnergyAssignEnergies : public MCalibrateEnergy
   //! Default destuctor 
   virtual ~MCalibrateEnergyAssignEnergies();
   
+  //! Set the mode 
+  void SetMode(MCalibrateEnergyAssignEnergyModes Mode) { m_Mode = Mode; }
+  
   //! Perform the calibration
   virtual bool Calibrate();
   
   // protected methods:
  protected:
+  //! Perform the actual calibration assuming the calibration is approximate linear with zero crossing 
+  virtual bool CalibrateLinearZeroCrossing();
+  //! Perform the actual calibration assuming the calibration is approximate linear 
+  virtual bool CalibrateLinear();
   
   // private methods:
  private:
@@ -53,6 +63,8 @@ class MCalibrateEnergyAssignEnergies : public MCalibrateEnergy
 
   // private members:
  private:
+   //! The mode
+   MCalibrateEnergyAssignEnergyModes m_Mode;
 
 #ifdef ___CINT___
  public:

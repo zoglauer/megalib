@@ -233,14 +233,9 @@ void MGUIMainFretalon::UpdateModules()
 {
   // Remove all existing modules:
 
-  m_ModuleFrame->RemoveAll();
+  m_ModuleFrame->RemoveAll();  // Deletes everyting too, especially the m_Modules.
   m_ModuleFrame->Resize();
-  for (unsigned int m = m_Modules.size()-1; m < m_Modules.size(); --m) {
-    //m_ModuleFrame->RemoveFrame(m_Modules[m]);
-    //m_Modules[m]->UnmapWindow();
-    delete m_Modules[m];
-  }
-  m_Modules.clear();
+  m_Modules.clear(); // Modules itself already deleted via m_ModuleFrame->RemoveAll()
 
   for (unsigned int m = 0; m < m_Supervisor->GetNModules(); ++m) {
     MGUIEModule* GuiModule = new MGUIEModule(m_ModuleFrame, m, m_Supervisor->GetModule(m));
