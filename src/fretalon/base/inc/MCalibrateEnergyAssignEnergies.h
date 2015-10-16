@@ -66,6 +66,7 @@ class MCalibrateEnergyAssignEnergies : public MCalibrateEnergy
    //! The mode
    MCalibrateEnergyAssignEnergyModes m_Mode;
 
+   
 #ifdef ___CINT___
  public:
   ClassDef(MCalibrateEnergyAssignEnergies, 0) // no description

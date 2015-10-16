@@ -152,7 +152,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
 
   ROOT::Fit::Fitter TheFitter; 
   TheFitter.Config().SetMinimizer("Minuit2");
-  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
+  if (g_Verbosity >= c_Chatty) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
   
   TheFitter.SetFunction(*this);
   InitializeFitParameters(TheFitter);
@@ -193,7 +193,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
     return m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
   }  
   
-  return numeric_limits<double>::max()/1000;
+  return numeric_limits<double>::max();
 }
 
 

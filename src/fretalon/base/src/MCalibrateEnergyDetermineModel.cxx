@@ -137,7 +137,7 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {
       double Result = Models[m]->Fit(Points);
-      if (Result > 0 && isfinite(Result)) {
+      if (Result > 0 && isfinite(Result) && Result < numeric_limits<double>::max()) {
         Results.push_back(Models[m]->Fit(Points));
         if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Good fit! (chi-square="<<Results.back()<<")"<<endl;
       } else {
