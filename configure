@@ -354,8 +354,8 @@ elif ( [ "$HEASOFT" != "" ] && [ -d $HEASOFT ] ); then
   HEADir=$HEASOFT
 fi
 
-if ( [ "$HEADir" != "" ] ); then
-  if ( [ -f $HEADir/lib/libcfitsio.* ] ); then 
+if ( [ "${HEADir}" != "" ] ); then
+  if ( [ -f ${HEADir}/lib/libcfitsio.a ] || [ -f ${HEADir}/lib/libcfitsio.so ] ); then 
     echo "Found HEAsoft: $HEADir";
     HEAsoftFound=0
   else
