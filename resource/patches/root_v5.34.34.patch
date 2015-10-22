@@ -1,4 +1,3 @@
-diff -rupN root_v5.34.34/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm root_v5.34.34_patched/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm
 --- root_v5.34.34/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm	2015-10-02 07:27:51.000000000 -0700
 +++ root_v5.34.34_patched/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm	2015-10-11 09:06:38.000000000 -0700
 @@ -1769,13 +1769,11 @@ void print_mask_info(ULong_t mask)
@@ -17,3 +16,77 @@ diff -rupN root_v5.34.34/root_v5.34.34-source/graf2d/cocoa/src/QuartzWindow.mm r
     const Util::AutoreleasePool pool;
  
     if (NSArray *trackingArray = [self trackingAreas]) {
+--- root_v5.34.34/root_v5.34.34-source/graf2d/x11ttf/src/TGX11TTF.cxx	2015-06-23 08:56:20.000000000 -0700
++++ root_v5.34.34_patched/root_v5.34.34/graf2d/x11ttf/src/TGX11TTF.cxx	2015-10-22 12:47:25.343530185 -0700
+@@ -24,6 +24,8 @@
+ //////////////////////////////////////////////////////////////////////////
+ 
+ #include <stdlib.h>
++#include <iostream>
++using namespace std;
+ 
+ #include "TGX11TTF.h"
+ #include "TClass.h"
+@@ -55,7 +57,9 @@ public:
+ 
+    ~TXftFontData()
+    {
+-      if (fXftFont) XftFontClose((Display*)gVirtualX->GetDisplay(), fXftFont);
++      if (References() == 1) {
++        if (fXftFont) XftFontClose((Display*)gVirtualX->GetDisplay(), fXftFont);
++      }
+    }
+ };
+ 
+@@ -79,7 +83,7 @@ public:
+ 
+       while ((d = (TXftFontData*) next())) {
+          if (d->fXftFont == (XftFont *)font) {
+-            return d;
++           return d;
+          }
+       }
+       return 0;
+@@ -100,12 +104,23 @@ public:
+ 
+    void AddFont(TXftFontData *data)
+    {
++      // Loop over all existing TXftFontData, if we already have one with the same font data, set the reference counter of this one 
++      // beyond 1 so it does delete the font pointer
++      TIter next(fList);
++      TXftFontData *d = 0;
++
++      while ((d = (TXftFontData*) next())) {
++         if (d->fXftFont == data->fXftFont) {
++           data->AddReference();
++         }
++      }   
++   
+       fList->Add(data);
+    }
+ 
+    void FreeFont(TXftFontData *data)
+    {
+-      if (data->RemoveReference() > 0)  return;
++      //if (data->RemoveReference() > 0)  return;
+       fList->Remove(data);
+       delete data;
+    }
+@@ -581,7 +596,8 @@ FontStruct_t TGX11TTF::LoadQueryFont(con
+ 
+    // already loaded
+    if (data) {
+-      data->AddReference();
++      // Why would we add a reference? We only add a reference when we create a new TXftFontData using the same font
++      //data->AddReference();
+       return (FontStruct_t)data->fXftFont;
+    }
+ 
+@@ -619,6 +635,7 @@ void TGX11TTF::DeleteGC(GContext_t gc)
+       return;
+    }
+ 
++
+    TXftFontData *gcdata = fXftFontHash->FindByGC(gc);
+    if (gcdata) fXftFontHash->FreeFont(gcdata);
+    TGX11::DeleteGC(gc);

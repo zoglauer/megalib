@@ -18,3 +18,14 @@ ln -s geant4_v10.00.p04_patched geant4_v10.00.p04
 (5)
 Done! ... there is no need to recompile MEGAlib
 
+
+To create a patch:
+
+(1)
+For example
+diff -rupN root_v5.34.32/root_v5.34.32-source root_v5.34.32_patched/root_v5.34.32-source
+
+(2)
+Append it to an existing one if there is any
+
+
