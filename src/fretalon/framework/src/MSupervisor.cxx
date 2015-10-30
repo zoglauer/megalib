@@ -199,7 +199,7 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(unsigned int Position)
     }
   }
 
-  //cout<<"Assembling possbile modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
+  //cout<<"Assembling possible modules for position: "<<Position<<" --> "<<Previous.size()<<endl;
 
   return ReturnPossibleVolumes(Previous);
 }
@@ -275,6 +275,23 @@ vector<MModule*> MSupervisor::ReturnPossibleVolumes(vector<MModule*>& Previous)
     }
 
 
+    // If any of the existing modules has it is as sort predecessor requirement, ignore it.
+    if (Passed == true) {
+      bool SoftPredecessor = false;
+      for (unsigned int p = 0; p < Previous.size(); ++p) {
+        for (unsigned int at = 0; at < m_AvailableModules[i]->GetNModuleTypes(); ++at) {
+          if (Previous[p]->IsSoftPreceedingModule(m_AvailableModules[i]->GetModuleType(at)) == true) {
+            SoftPredecessor = true;
+            break;
+          }
+        }
+      }
+      if (SoftPredecessor == true) {
+        //mout<<"Failed module type already is soft predecessor requirement for another module"<<endl;
+        Passed = false;
+      }
+    }
+    
     // (4) If any of the modules which can follow are already in the list, also ignore it
 //     if (Passed == true) {
 //       bool AlreadyInList = false;
@@ -362,19 +379,42 @@ bool MSupervisor::Validate()
   }
 
   // (2) Make sure all predecessor requirements are fulfilled
-  vector<uint64_t> PredecessorTypes;
+  vector<uint64_t> PredecessorTypes; // This stores the modules which came before m
   for (unsigned int m = 0; m < m_Modules.size(); ++m) {
     for (unsigned int t = 0; t < m_Modules[m]->GetNPreceedingModuleTypes(); ++t) {
+      // (a) Check if a required predecessor is in the existing predecessor list 
       bool Found = false;
       for (unsigned int p = 0; p < PredecessorTypes.size(); ++p) {
         if (PredecessorTypes[p] == m_Modules[m]->GetPreceedingModuleType(t)) {
           Found = true;
         }
       }
+      // (b) is not check if it is a hard or soft requirement
       if (Found == false) {
-        mout<<"Predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
-        if (m < ValidUntil) {
-          ValidUntil = m;
+        // if it is a hard requirement than we have to quit
+        if (m_Modules[m]->GetPreceedingModuleHardRequirement(t) == true) {
+          mout<<"Hard predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
+          if (m < ValidUntil) {
+            ValidUntil = m;
+          }
+          break;
+        }
+        // if it is just a soft requirement, make sure it does not show up in the rest of the list
+        else {
+          bool FoundAfter = false;
+          for (unsigned int m2 = m+1; m2 < m_Modules.size(); ++m2) {
+            if (m_Modules[m2]->ProvidesModuleType(m_Modules[m]->GetPreceedingModuleType(t)) == true) {
+              FoundAfter = true;
+              break;
+            }
+          }
+          if (FoundAfter == true) {
+            mout<<"Soft predecessor requirements for module "<<m_Modules[m]->GetName()<<" are not fullfilled"<<endl;
+            if (m < ValidUntil) {
+              ValidUntil = m;
+            }
+            break;            
+          }
         }
         break;
       }

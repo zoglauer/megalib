@@ -119,6 +119,42 @@ bool MModule::FullfillsRequirements(MReadOutAssembly* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if this module is a hard predecessor
+bool MModule::IsHardPreceedingModule(uint64_t Type) const
+{
+  for (unsigned int i = 0; i < GetNPreceedingModuleTypes(); ++i) {
+    if (GetPreceedingModuleType(i) == Type) {
+      if (GetPreceedingModuleHardRequirement(i) == true) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if this module is a soft predecessor
+bool MModule::IsSoftPreceedingModule(uint64_t Type) const
+{
+  for (unsigned int i = 0; i < GetNPreceedingModuleTypes(); ++i) {
+    if (GetPreceedingModuleType(i) == Type) {
+      if (GetPreceedingModuleHardRequirement(i) == false) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MModule::ClearQueues() 
 { 
   //! Clear the queues

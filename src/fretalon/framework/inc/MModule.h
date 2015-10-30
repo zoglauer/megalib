@@ -21,6 +21,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <algorithm>
 using namespace std;
 
 // ROOT libs:
@@ -70,19 +71,27 @@ class MModule
   
   
   //! Return the number of the preceeding modules
-  unsigned int GetNPreceedingModuleTypes() { return m_PreceedingModules.size(); }
+  unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
   //! Return the preceeding module at position i (no error checks performed)
-  uint64_t GetPreceedingModuleType(unsigned int i) { return m_PreceedingModules.at(i); }
-
+  uint64_t GetPreceedingModuleType(unsigned int i) const { return m_PreceedingModules.at(i); }
+  //! Return the preceeding module at position i (no error checks performed)
+  uint64_t GetPreceedingModuleHardRequirement(unsigned int i) const { return m_PreceedingModulesHardRequirement.at(i); }
+  //! Return true if this module is a hard predecessor
+  bool IsHardPreceedingModule(uint64_t Type) const;
+  //! Return true if this module is a soft predecessor
+  bool IsSoftPreceedingModule(uint64_t Type) const;
+  
   //! Return the number of module types
-  unsigned int GetNModuleTypes() { return m_Modules.size(); }
+  unsigned int GetNModuleTypes() const { return m_Modules.size(); }
   //! Return the module type at position i (no error checks performed)
-  uint64_t GetModuleType(unsigned int i) { return m_Modules.at(i); }
-
+  uint64_t GetModuleType(unsigned int i) const { return m_Modules.at(i); }
+  //! Return true if this module provides the given type
+  bool ProvidesModuleType(uint64_t Type) const { return (find(m_Modules.begin(), m_Modules.end(), Type) != m_Modules.end()); }
+  
   //! Return the number of the succeeding modules
-  unsigned int GetNSucceedingModuleTypes() { return m_SucceedingModules.size(); }
+  unsigned int GetNSucceedingModuleTypes() const { return m_SucceedingModules.size(); }
   //! Return the succeeding module at position i (no error checks performed)
-  uint64_t GetSucceedingModuleType(unsigned int i) { return m_SucceedingModules.at(i); }
+  uint64_t GetSucceedingModuleType(unsigned int i) const { return m_SucceedingModules.at(i); }
 
   //! Return true, if the read-out assembly fullfills the preeceding modules requirements
   bool FullfillsRequirements(MReadOutAssembly* Event);
@@ -181,12 +190,13 @@ class MModule
   void SetName(MString Name) { m_Name = Name; }
 
   //! Set which modules are assumed to be already performed
-  void AddPreceedingModuleType(int Type) { m_PreceedingModules.push_back(Type); }
+  //! If soft is set then only if the module is present at all require it to be done before
+  void AddPreceedingModuleType(uint64_t  Type, bool HardRequirement = true) { m_PreceedingModules.push_back(Type); m_PreceedingModulesHardRequirement.push_back(HardRequirement); }
   //! Add which type of module this is, e.g. c_EnergyCalibration
   //! This option ca be called twice to set two tasks of this modules!
-  void AddModuleType(int Type) { m_Modules.push_back(Type); };
+  void AddModuleType(uint64_t  Type) { m_Modules.push_back(Type); }
   //! Set which modules are expected to follow this one
-  void AddSucceedingModuleType(int Type) { m_SucceedingModules.push_back(Type); };
+  void AddSucceedingModuleType(uint64_t  Type) { m_SucceedingModules.push_back(Type); }
 
   //! Get the value of the processing timer -- thread safe
   double GetTimer();
@@ -215,6 +225,8 @@ class MModule
 
   //! List of preceeding modules
   vector<uint64_t> m_PreceedingModules;
+  //! List of preceeding modules being a soft or hard requirement
+  vector<bool> m_PreceedingModulesHardRequirement;
   //! List of succeeding modules
   vector<uint64_t> m_SucceedingModules;
   //! List of types of this modules
