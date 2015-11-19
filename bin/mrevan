@@ -1,0 +1,169 @@
+#! /bin/bash
+
+help() {
+  echo ""
+  echo "mrevan - script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Options:";
+  echo "    -m <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
+  echo "    -n <nice>:      The nice level as an integer (default: 0)"
+  echo "    -c <file name>: Revan configuration file name"
+  echo "    -f <file name>: Long list of sim files"
+  echo "";
+  echo "Example:";
+  echo "    mrevan -c Revan.cfg -m 12 -f RunTest*.sim";
+  echo "";
+  echo "This script runs multiple revan sessions in parallel"
+  echo "";
+}
+
+if [ $# -eq 0 ]; then
+    echo "Error: This script requires one or more input parameter, not $#"
+    exit -1;
+fi
+
+CMD=( "$@" )
+
+THREADS=1
+NICELEVEL=0
+CFG=""
+FILES=""
+
+# Find the default number of threads
+if ( `test -f /usr/sbin/sysctl` ); then
+  THREADS=`sysctl -n hw.logicalcpu_max`
+elif ( `test -f /proc/cpuinfo` ); then 
+  THREADS=`grep processor /proc/cpuinfo | wc -l`
+fi
+
+# Check if revan exists
+if (`test -f ${MEGAlib}/bin/revan`); then
+  echo " "
+  echo "ERROR: The revan executable does not exist. Try to (re-)compile MEGAlib."
+  echo " "
+  exit 1;
+fi
+
+
+while [ $# -gt 0 ] ; do
+  case $1 in
+  -h|--help) 
+    help; 
+    exit 0;;
+  -t)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -t need an argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    THREADS=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -c)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -c needs an argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    CFG=$1;
+    #echo "Using ${Threads} threads";
+    ;;
+  -n)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -n needs an argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    NICELEVEL=$1;
+    #echo "Using nice level ${Nice}";
+    ;;
+  -f)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -f needs at least one argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    while [ $# -ne 0 ]; do
+      FILES+=" "$1;
+      shift;
+    done
+    ;;
+  *)
+    ;;
+  esac
+
+  shift
+done
+
+
+if echo ${THREADS} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind threads must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+
+if echo ${NICE} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind nice must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+if [[ ! -f ${CFG} ]]; then
+  echo " "
+  echo "Error: You need to provide an existing revan configuration file"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
+echo " "
+echo "Launching mcosima"
+echo " "
+echo "Number of threads to use:  ${THREADS}" 
+echo "Nice level:                ${NICELEVEL}" 
+echo "Revan configuration file:  ${CFG}" 
+echo "Sim files:                 ${FILES}"
+
+
+# Now run, revan RUN!
+for SIMFILE in ${FILES}; do
+  mdelay revan ${THREADS}
+  echo "Launching revan for file ${SIMFILE}"
+  nohup nice -n ${NICELEVEL} revan -c ${CFG} -a -n -f ${SIMFILE} > /dev/null &
+done
+
+
+# We always wait until all revan runs have finished
+echo "Waiting till all revan runs have finished..."
+wait
+
+# Create a concatenation file
+mtraconcatter ${FILES//.sim/.tra}
+
+exit 0;
