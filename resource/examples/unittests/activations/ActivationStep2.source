@@ -1,0 +1,19 @@
+# Template Run for Step 2 of activation simulation: 
+# Calculate the activation
+
+# You should not run tis instance via mcosima!!
+
+Version 1
+Geometry Activation.geo.setup
+DetectorTimeConstant 0.000005
+
+# Physics parameters
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+
+# The activation calculation
+Activator A
+A.IsotopeProductionFile Isotopes.dat
+A.ActivationMode ConstantIrradiation 1
+A.ActivationFile Activation.dat
+

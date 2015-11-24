@@ -1,0 +1,30 @@
+# Source file for Shells unit test
+
+Version 1
+Geometry Activation.geo.setup
+DetectorTimeConstant 0.000005
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListHD                        qgsp-bic-hp
+PhysicsListEMActivateFluorescence    false
+DecayMode                            ActivationBuildup
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  init-only
+DiscretizeHits                       true
+
+DefaultRange 0.1
+
+
+Run Step1
+Step1.FileName ActivationStep1
+Step1.Triggers 1
+Step1.IsotopeProductionFile Isotopes
+
+Step1.Source Step1Source
+Step1Source.ParticleType 4
+Step1Source.Beam FarFieldAreaSource 0.0 180.0 0.0 360.0
+Step1Source.Spectrum Mono 1
+Step1Source.Flux 1

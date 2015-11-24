@@ -1,0 +1,34 @@
+# Template Run for Step 2 of activation simulation: 
+# Calculate the activation
+
+# You can run this instance via mcosima
+
+# Global parameters:
+Version 1
+Geometry Activation.geo.setup
+DetectorTimeConstant 0.000005
+
+
+# Physics parameters
+PhysicsListEM                      Livermore
+PhysicsListHD                      qgsp-bic-hp
+DecayMode                          ActivationDelayedDecay
+
+
+# Storage parameters
+StoreCalibrated                      true
+StoreSimulationInfo                  init-only
+DiscretizeHits                       true
+
+
+# Particle range cuts:
+DefaultRangeCut     0.1
+
+
+# The decay run
+Run ActivationStep3
+ActivationStep3.FileName ActivationStep3
+ActivationStep3.Triggers 1
+
+ActivationStep3.ActivationSources Activation.dat
+
