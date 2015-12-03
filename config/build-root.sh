@@ -303,10 +303,10 @@ else
 fi
 
 
-
+ROOTCORE=root_v${VER}
 ROOTDIR=root_v${VER}${DEBUGSTRING}
-ROOTSOURCEDIR=root_v${VER}${DEBUGSTRING}-source
-ROOTBUILDDIR=root_v${VER}${DEBUGSTRING}-build
+ROOTSOURCEDIR=root_v${VER}-source
+ROOTBUILDDIR=root_v${VER}-build
 
 echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
@@ -325,9 +325,9 @@ if [ -d ${ROOTDIR} ]; then
     
     SAMEPATCH=""
     PATCHPRESENT="no"
-    if [ -f "${MEGALIB}/resource/patches/${ROOTDIR}.patch" ]; then
+    if [ -f "${MEGALIB}/resource/patches/${ROOTCORE}.patch" ]; then
       PATCHPRESENT="yes"
-      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${ROOTDIR}.patch" | awk -F" " '{ print $1 }'`
+      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${ROOTCORE}.patch" | awk -F" " '{ print $1 }'`
     fi
     PATCHSTATUS=`cat COMPILE_SUCCESSFUL | grep -- "^Patch"`
     if [[ ${PATCHSTATUS} == Patch\ applied* ]]; then
@@ -389,13 +389,17 @@ mkdir ${ROOTBUILDDIR}
 
 
 
-echo "Patching..."
 PATCHAPPLIED="Patch not applied"
-if [ -f "${MEGALIB}/resource/patches/${ROOTDIR}.patch" ]; then
-  patch -p1 < ${MEGALIB}/resource/patches/${ROOTDIR}.patch
-  PATCHAPPLIED="Patch applied ${PATCHPRESENTMD5}"
-  echo "Applied patch: ${MEGALIB}/resource/patches/${ROOTDIR}.patch"
+if [[ ${PATCH} == on ]]; then
+  echo "Patching..."
+  if [ -f "${MEGALIB}/resource/patches/${ROOTCORE}.patch" ]; then
+    patch -p1 < ${MEGALIB}/resource/patches/${ROOTCORE}.patch
+    PATCHMD5=`md5sum "${MEGALIB}/resource/patches/${ROOTCORE}.patch" | awk -F" " '{ print $1 }'`
+    PATCHAPPLIED="Patch applied ${PATCHMD5}"
+    echo "Applied patch: ${MEGALIB}/resource/patches/${ROOTCORE}.patch"
+  fi
 fi
+
 
 
 echo "Configuring..."

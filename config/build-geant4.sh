@@ -255,9 +255,10 @@ fi
 
 
 
+GEANT4CORE=geant4_v${VER}
 GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
-GEANT4SOURCEDIR=geant4_v${VER}${DEBUGSTRING}-source
-GEANT4BUILDDIR=geant4_v${VER}${DEBUGSTRING}-build
+GEANT4SOURCEDIR=geant4_v${VER}-source
+GEANT4BUILDDIR=geant4_v${VER}-build
 
 echo "Checking for old installation..."
 if [ -d ${GEANT4DIR} ]; then
@@ -276,9 +277,9 @@ if [ -d ${GEANT4DIR} ]; then
     
     SAMEPATCH=""
     PATCHPRESENT="no"
-    if [ -f "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" ]; then
+    if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
       PATCHPRESENT="yes"
-      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" | awk -F" " '{ print $1 }'`
+      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $1 }'`
     fi
     PATCHSTATUS=`cat COMPILE_SUCCESSFUL | grep -- "^Patch"`
     if [[ ${PATCHSTATUS} == Patch\ applied* ]]; then
@@ -346,13 +347,17 @@ mkdir ${GEANT4BUILDDIR}
 
 
 
-echo "Patching..."
 PATCHAPPLIED="Patch not applied"
-if [ -f "${MEGALIB}/resource/patches/${GEANT4DIR}.patch" ]; then
-  patch -p1 < ${MEGALIB}/resource/patches/${GEANT4DIR}.patch
-  PATCHAPPLIED="Patch applied ${PATCHPRESENTMD5}"
-  echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4DIR}.patch"
+if [[ ${PATCH} == on ]]; then
+  echo "Patching..."
+  if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
+    patch -p1 < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
+    PATCHMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $1 }'`
+    PATCHAPPLIED="Patch applied ${PATCHMD5}"
+    echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4CORE}.patch"
+  fi
 fi
+
 
 
 echo "Configuring ..."
