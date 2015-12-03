@@ -18,7 +18,7 @@ help() {
 }
 
 if [ $# -ne 2 ]; then
-    echo "Error: This script requires two input parameters"
+    echo "Error: This script requires two input parameters, the program name and the maximum instances"
     exit -1;
 fi
 
