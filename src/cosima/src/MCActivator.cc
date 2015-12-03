@@ -182,7 +182,7 @@ bool MCActivator::LoadCountsFiles()
   cout<<m_Rates<<endl;
   cout<<"*** NEW"<<endl;
   
-  m_Rates.Save("Merged.dat");
+  //m_Rates.Save("Merged.dat");
 
   cout<<"Total time: "<<m_Rates.GetTime()/s<<" sec"<<endl;
   m_Rates.Scale(1.0/TotalTime);
