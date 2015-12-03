@@ -1285,7 +1285,10 @@ void MDDetector::SetDetectorVolume(MDVolume* Volume)
   // Set the volume which represents this detector
 
   m_DetectorVolume = Volume;
-  Volume->SetIsDetectorVolume(this); // Was commented out during named detectors introduction
+  // The volume needs to know the original detector not the named one
+  if (m_IsNamedDetector == false) {
+    Volume->SetIsDetectorVolume(this);
+  }
 }
 
 
