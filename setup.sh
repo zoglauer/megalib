@@ -9,6 +9,8 @@
 # Part 1:
 # Helper functions
 
+TIMESTART=$(date +%s)
+
 confhelp() {
   echo ""
   echo "Setup script for MEGAlib"
@@ -865,6 +867,11 @@ mv ${ENVFILE} bin/source-megalib.sh
 echo "Storing last good options"
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
 echo "--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES}  --patch=${PATCH}" >> ${MEGALIBDIR}/config/SetupOptions.txt
+
+TIMEEND=$(date +%s)
+TIMEDIFF=$(( ${TIMEEND} - ${TIMESTART} ))
+echo " "
+echo "Finished! Execution duration: ${TIMEDIFF} seconds"
 
 echo " "
 echo " " 
