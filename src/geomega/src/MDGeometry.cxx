@@ -4000,7 +4000,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   //m_Geometry->CloseGeometry(); // we do not close the geometry,
   //m_Geometry->SetMultiThread(true); // This crashes it...
   m_Geometry->SetVisLevel(1000);
-  m_Geometry->SetNsegments(4*m_Geometry->GetNsegments());
+  m_Geometry->SetNsegments(40);
   m_Geometry->SetVisDensity(-1.0);
   //m_Geometry->Voxelize("ALL");
 
