@@ -143,6 +143,28 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     echo " "
     echo "Reading remote machines setup:"
     MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    PRIORITIES=( `cat ${CFG} | grep "^machine" | gawk '{ print $3 }'` )
+   
+    if [[ ${#PRIORITIES[*]} < ${#MACHINES[*]} ]]; then
+      PRIORITIES=( )
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        PRIORITIES=( ${PRIORITIES[@]} "1" )
+      done
+    fi
+    
+    for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
+      if (( ${PRIORITIES[$m]} < 1 )); then
+        echo "Error: The highest (= smallest number) allowed machine priority is 1"
+        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        exit 1
+      fi
+      if (( ${PRIORITIES[$m]} > 5 )); then
+        echo "Error: The lowest (= highest number) allowed machine priority is 5"
+        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        exit 1
+      fi
+    done
+
     REMOTEUSER=( )
     REMOTEHOST=( )
     REMOTEPORT=( )
@@ -152,10 +174,17 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
     done
     CFGMD5=`md5sum ${CFG}`
+    
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )"
+    done
   fi
 
+  
   # Verify the machines:
   AVAILABLEMACHINES=0
+  echo " " 
+  echo "Verifying available machines: "
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
     # Do a quick test if the machine is availble:
@@ -197,7 +226,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       continue
     fi
     
-    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPOR[$m]})"  
+    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
   done
@@ -211,26 +240,34 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   
   
   STARTED=0
-  for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+  for P in `seq 1 5`; do
+    STARTED=0
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
     
-    # Exclude failed machines
-    if [ "${MACHINES[$m]}" == "" ]; then
-      continue
-    fi
+      # Exclude failed machines
+      if [ "${MACHINES[$m]}" == "" ]; then
+        continue
+      fi
     
-    # Prepare the launch
-    ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
-    echo " "
-    echo "Preparing for next launch:"
-    echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
-    if [[ ${ALLOWED} -gt 0 ]]; then
-      LAUNCHED=$(( ${LAUNCHED} + 1 ))
-      echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-      dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
-      STARTED=1
-    fi
-    if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
+      # Prepare the launch
+      ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
+      echo " "
+      echo "Preparing for next launch:"
+      echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+      if [[ ${ALLOWED} -gt 0 ]]; then
+        LAUNCHED=$(( ${LAUNCHED} + 1 ))
+        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
+        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
+        STARTED=1
+      fi
+      if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
       
+    done
+    # If we start events at this priority we stop and restart --- we want to fill this priority level first
+    if (( ${STARTED} > 0 )); then
+      break
+    fi
   done
   
   
