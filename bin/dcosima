@@ -197,7 +197,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       continue
     fi
     
-    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER}, address: ${REMOTEHOST}, port: ${REMOTEPORT})"  
+    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPOR[$m]})"  
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
   done

@@ -50,7 +50,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
   REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
-  #echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER}, address: ${REMOTEHOST}, port: ${REMOTEPORT})"
+  echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
 done
 
 echo " "
@@ -63,21 +63,21 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Do a quick test if the machine is available:
   REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
     continue
   fi  
 
   # Check if cosima is installed
   AVAILABLE=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): Cosmia not installed"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Cosmia not installed"
     continue
   fi
 
   # Check how many instances are allowed
   ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): NOT ACCESSIBLE"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
     continue
   fi  
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
@@ -86,7 +86,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
   POSSIBLE=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): Failed to read instances"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Failed to read instances"
     continue
   fi
   if [ "${POSSIBLE}" != "" ]; then
@@ -100,7 +100,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
   
-  echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}): ${ALLOWED} / ${POSSIBLE}"
+  echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): ${ALLOWED} / ${POSSIBLE}"
 done
 echo " "
 echo "Total number of instances: ${ALLALLOWED} / ${ALLPOSSIBLE}"
