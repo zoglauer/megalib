@@ -94,15 +94,19 @@ if [[ ${OUTPUT} != "" ]]; then
   echo "The following machines have no running MEGAlib version installed:"
   echo "  ${OUTPUT}"
   exit 1
-else 
+else
+  VERSIONLOG="${REMOTENAME[0]}: ${GITVERSION[0]}\n"
   INITIALGITVERSION=${GITVERSION[0]}
   IDENTICAL="yes"
   for (( m=1; m<=$(( ${#GITVERSION[*]} -1 )); m++ )); do
+    VERSIONLOG+="${REMOTENAME[$m]}: ${GITVERSION[$m]}\n"
     if [[ ${INITIALGITVERSION} != ${GITVERSION[$m]} ]]; then
       IDENTICAL="no"
     fi
   done
   
+  echo -e ${VERSIONLOG} | column -t -c 2 -s' '
+  echo " "
   if [[ ${IDENTICAL} == "no" ]]; then
     echo "Not all machines run the same version of MEGAlib. Update MEGAlib!"
     exit 1
