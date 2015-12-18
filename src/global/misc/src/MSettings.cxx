@@ -219,7 +219,7 @@ bool MSettings::WriteXml(MXmlNode* Node)
   //! Writes all data to an XML tree
   
   new MXmlNode(Node, "Version", m_Version);
-  new MXmlNode(Node, "MEGAlibVersion", m_MEGAlibVersion);
+  new MXmlNode(Node, "MEGAlibVersion", g_Version);
 
   MSettingsBasicFiles::WriteXml(Node); 
   
