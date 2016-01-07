@@ -56,6 +56,9 @@ class MGUIEReadOutElementView : public TGCanvas
   //! Add a new read-out element
   void Add(const MReadOutElement& ROE, unsigned int ID) { m_ROEs.push_back(ROE.Clone()); m_ROEIDs.push_back(ID); }
   
+  //! Set the quality of an element
+  void SetQuality(const MReadOutElement& ROE, double Quality);
+  
   //! Associate the button click to this window
   void Associate(TGWindow* Associate);
   //! Process all button, etc. messages
@@ -92,6 +95,8 @@ class MGUIEReadOutElementView : public TGCanvas
   //! A list of read out element GUI's
   vector<MGUIEReadOutElement*> m_ROEButtons;
   
+  //! Element height
+  double m_ROEButtonHeight;
   
 #ifdef ___CINT___
  public:

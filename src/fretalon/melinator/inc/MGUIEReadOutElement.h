@@ -43,6 +43,12 @@ class MGUIEReadOutElement : public TGTransientFrame
   //! Default destructor
   virtual ~MGUIEReadOutElement();
 
+  //! Get the read-out element
+  const MReadOutElement& GetReadOutElement() const { return m_ROE; }
+  
+  //! Set a quality factor representing the background color of the element
+  void SetQuality(double Quality);
+  
   //! Associate the button click to this window
   void Associate(const TGWindow* W) { m_TextButton->Associate(W); }
   
@@ -55,15 +61,20 @@ class MGUIEReadOutElement : public TGTransientFrame
 
   // private members:
  private:
-	//! The readout element
-	const MReadOutElement& m_ROE;
+  //! The readout element
+  const MReadOutElement& m_ROE;
   //! The unique ID of the associated text button
   unsigned int m_ID;
   
   //! The text button
   TGTextButton* m_TextButton;
 
-
+  //! Quality factor
+  double m_Quality;
+  
+  //! The default background color
+  Pixel_t m_DefaultBackgroundColor;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MGUIEReadOutElement, 0) // no description

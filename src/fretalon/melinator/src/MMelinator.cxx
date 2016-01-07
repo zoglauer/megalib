@@ -788,6 +788,23 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//! Return the calibration fit quality
+double MMelinator::GetCalibrationQuality(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+
+  double FitValue = 0;
+  if (C != nullptr && C->HasModel() == true) {
+    FitValue = C->GetModel().GetFitQuality();
+  }
+  
+  return FitValue;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 
 //! Draw the calibration into the Canvas for the given Collection
 void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)

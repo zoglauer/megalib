@@ -46,6 +46,8 @@ MGUIEReadOutElementView::MGUIEReadOutElementView(const TGWindow* Parent) :
 {
   m_Parent = (TGWindow *) Parent;
 
+  SetScrolling(kCanvasScrollVertical);
+  
   // Since we do not create the element in the constructor, 
   // we have initialze some pointers:
   m_Container = new TGCompositeFrame(GetViewPort(), 50, 50);
@@ -92,10 +94,12 @@ void MGUIEReadOutElementView::Create()
   for (unsigned int c = 0; c < m_ROEs.size(); ++c) {
     MGUIEReadOutElement* ROEButton = new MGUIEReadOutElement(m_Container, *m_ROEs[c], m_ROEIDs[c]);
     ROEButton->Associate(m_Associate);
+    //ROEButton->SetQuality(4);
     m_Container->AddFrame(ROEButton, ButtonLayout);
     m_ROEButtons.push_back(ROEButton);
+    m_ROEButtonHeight = ROEButton->GetDefaultHeight();
   }
-
+ 
   // Give this element the default size of its content:
   Resize(m_Container->GetDefaultWidth(), m_Container->GetDefaultHeight()); 
   
@@ -105,14 +109,29 @@ void MGUIEReadOutElementView::Create()
   
   return;
 }
+  
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the quality of an element
+void MGUIEReadOutElementView::SetQuality(const MReadOutElement& ROE, double Quality)
+{
+  for (unsigned int b = 0; b < m_ROEButtons.size(); ++b) {
+    if (m_ROEButtons[b]->GetReadOutElement() == ROE) {
+      m_ROEButtons[b]->SetQuality(Quality);
+      break;
+    }
+  }
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Process the messages for this UI, mainly the scollbar moves:
-bool MGUIEReadOutElementView::ProcessMessage(long Message, long Parameter1, 
-                                  long Parameter2)
+bool MGUIEReadOutElementView::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
@@ -120,8 +139,15 @@ bool MGUIEReadOutElementView::ProcessMessage(long Message, long Parameter1,
   case kC_VSCROLL:
     switch (GET_SUBMSG(Message)) {
     case kSB_SLIDERPOS:
-      // Scroll the viewport to the new position (vertical)
-      GetViewPort()->SetVPos(-Parameter1);
+      // Scroll the viewport to the new position (vertical) - make sure it is in steps of the button size
+      {
+        long Scroll = Parameter1;
+        if (Scroll < m_Container->GetDefaultHeight() - m_ROEButtonHeight - GetDefaultHeight()) {
+          Scroll = ((long) (Parameter1 / m_ROEButtonHeight)) * m_ROEButtonHeight;
+        }
+        GetViewPort()->SetVPos(-Scroll);
+        if (Scroll != Parameter1) SetVsbPosition(Scroll);
+      }
       break;
     default:
       break;

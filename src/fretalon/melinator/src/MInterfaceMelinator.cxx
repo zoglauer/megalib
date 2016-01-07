@@ -174,7 +174,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   }
   
   // Now parse all high level options
-  m_Gui = new MGUIMelinatorMain(this, m_Data);
+  m_Gui = new MGUIMainMelinator(this, m_Data);
   m_Gui->Create();
 
   // Now some automatic things done after the GUI is up

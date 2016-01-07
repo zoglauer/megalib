@@ -128,6 +128,9 @@ class MMelinator
 
   //! Given an existing calibration for the collection, do a reassignment of energies and determination of the model
   bool ReCalibrateModel(unsigned int Collection);
+
+  //! Return the calibration quality
+  double GetCalibrationQuality(unsigned int Collection);
   
   //! Remove all collection which don't have positive data entries
   //void RemoveCollectionsWithNoPositiveEntries() { m_Store.RemoveCollectionsWithNoPositiveEntries(); }

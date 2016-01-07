@@ -30,7 +30,7 @@ using namespace std;
 #include "MMelinator.h"
 
 // Forwards declarations:
-class MGUIMelinatorMain;
+class MGUIMainMelinator;
 class MSettingsMelinator;
 
 
@@ -80,7 +80,7 @@ class MInterfaceMelinator : public MInterface
   // private members:
  private:
   //! The graphical usr interface
-  MGUIMelinatorMain* m_Gui;
+  MGUIMainMelinator* m_Gui;
 
   //! The store for all user data of the GUI:
   MSettingsMelinator* m_Data;

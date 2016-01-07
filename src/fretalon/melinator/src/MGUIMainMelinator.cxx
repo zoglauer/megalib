@@ -1,5 +1,5 @@
 /*
-* MGUIMelinatorMain.cxx
+* MGUIMainMelinator.cxx
 *
 *
 * Copyright (C) by Andreas Zoglauer.
@@ -59,14 +59,14 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MGUIMelinatorMain)
+ClassImp(MGUIMainMelinator)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIMelinatorMain::MGUIMelinatorMain(MInterfaceMelinator* Interface,
+MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
                                      MSettingsMelinator* Settings)
   : TGMainFrame(gClient->GetRoot(), 1200, 700, kVerticalFrame),
     m_Interface(Interface), m_Settings(Settings)
@@ -92,7 +92,7 @@ MGUIMelinatorMain::MGUIMelinatorMain(MInterfaceMelinator* Interface,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIMelinatorMain::~MGUIMelinatorMain()
+MGUIMainMelinator::~MGUIMainMelinator()
 {
   // Deep Cleanup automatically deletes all used GUI elements
 }
@@ -101,7 +101,7 @@ MGUIMelinatorMain::~MGUIMelinatorMain()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIMelinatorMain::Create()
+void MGUIMainMelinator::Create()
 {
   // Create the main window
 
@@ -131,6 +131,7 @@ void MGUIMelinatorMain::Create()
   TGLayoutHints* GroupLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 2, 2, 5, 5);
   
   // We have three main columns - the control column on the left, data column in the center, and selection on the right 
+
   
   // The columns
   TGLayoutHints* ColumnsLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0, 0, 0, 0);
@@ -490,8 +491,7 @@ void MGUIMelinatorMain::Create()
   FitWithDiagnosticsButton->SetMargins(FontScaler*5, FontScaler*5);
   CanvasControl->AddFrame(FitWithDiagnosticsButton, ButtonLayout);
 
-  
-  m_SpectrumCanvas = new TRootEmbeddedCanvas("SpectrumCanvas", MainDataView, 100, 100);
+  m_SpectrumCanvas = new MGUIEReadOutUnitsCanvas(this, "SpectrumCanvas", MainDataView);
   MainDataView->AddFrame(m_SpectrumCanvas, CanvasLayout);
   
  
@@ -551,7 +551,7 @@ void MGUIMelinatorMain::Create()
   TGLayoutHints* ResultsLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
   ResultsControl->AddFrame(m_ResultsHistogramLabel, ResultsLabelLayout);
 
-  m_ResultsCanvas = new TRootEmbeddedCanvas("ResultsCanvas", ResultsView, 100, 100);
+  m_ResultsCanvas = new MGUIEReadOutUnitsCanvas(this, "ResultsCanvas", ResultsView);
   ResultsView->AddFrame(m_ResultsCanvas, CanvasLayout);
   
   
@@ -592,7 +592,7 @@ void MGUIMelinatorMain::Create()
 
 
 //! Create the selection GUI element
-void MGUIMelinatorMain::CreateSelection()
+void MGUIMainMelinator::CreateSelection()
 {
   m_MainSelectionCanvas->Clear();
   
@@ -614,7 +614,7 @@ void MGUIMelinatorMain::CreateSelection()
 
 
 //! Handle all key presses
-bool MGUIMelinatorMain::HandleKey(Event_t* Event)
+bool MGUIMainMelinator::HandleKey(Event_t* Event)
 {
   // Here we handle all keys...
 
@@ -663,7 +663,7 @@ bool MGUIMelinatorMain::HandleKey(Event_t* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::ProcessMessage(long Message, long Parameter1, long Parameter2)
+bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this application
 
@@ -827,7 +827,7 @@ bool MGUIMelinatorMain::ProcessMessage(long Message, long Parameter1, long Param
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIMelinatorMain::CloseWindow()
+void MGUIMainMelinator::CloseWindow()
 {
   // Call exit for controlled good-bye
 
@@ -839,7 +839,7 @@ void MGUIMelinatorMain::CloseWindow()
 
 
 //! Update the setting with the GUI data
-bool MGUIMelinatorMain::Update()
+bool MGUIMainMelinator::Update()
 {
   m_Settings->SetHistogramMin(m_HistogramRangeMin->GetNumber());
   m_Settings->SetHistogramMax(m_HistogramRangeMax->GetNumber());
@@ -881,7 +881,7 @@ bool MGUIMelinatorMain::Update()
 
 
 //! Close the applictaion
-bool MGUIMelinatorMain::OnExit()
+bool MGUIMainMelinator::OnExit()
 {
   Update();
   m_Settings->Write(); // Update alreday writes, but it is logical that we write here too so keep it
@@ -897,7 +897,7 @@ bool MGUIMelinatorMain::OnExit()
 
 
 //! Switch the histogram binning mode
-bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
+bool MGUIMainMelinator::OnSwitchHistogramBinningMode(unsigned int ID)
 {  
   if (ID == MMelinator::c_HistogramBinningModeFixedNumberOfBins) {
     m_HistogramBinningModeValueLabel->SetText("  bins");
@@ -921,7 +921,7 @@ bool MGUIMelinatorMain::OnSwitchHistogramBinningMode(unsigned int ID)
 
 
 //! Switch the histogram binning mode
-bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
+bool MGUIMainMelinator::OnSwitchPeakParametrizationMode(unsigned int ID)
 {    
   if (ID == MCalibrateEnergyFindLines::c_PeakParametrizationMethodBayesianBlockPeak) {
     m_PeakParametrizationOptions->RemoveAll(); // Deletes everyting too 
@@ -1015,7 +1015,7 @@ bool MGUIMelinatorMain::OnSwitchPeakParametrizationMode(unsigned int ID)
 
 
 //! Switch the histogram binning mode
-bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int ID)
+bool MGUIMainMelinator::OnSwitchCalibrationModelDeterminationMode(unsigned int ID)
 {    
   if (ID == MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise) {
     m_CalibrationModelDeterminationOptions->RemoveAll(); // Deletes everyting too 
@@ -1070,7 +1070,7 @@ bool MGUIMelinatorMain::OnSwitchCalibrationModelDeterminationMode(unsigned int I
 
 
 //! Switch the histogram binning mode
-bool MGUIMelinatorMain::OnSwitchPeakHistogramBinningMode(unsigned int ID)
+bool MGUIMainMelinator::OnSwitchPeakHistogramBinningMode(unsigned int ID)
 {  
   if (ID == MMelinator::c_HistogramBinningModeFixedNumberOfBins) {
     m_PeakHistogramBinningModeValueLabel->SetText("  bins");
@@ -1094,7 +1094,7 @@ bool MGUIMelinatorMain::OnSwitchPeakHistogramBinningMode(unsigned int ID)
 
 
 //! Toggle the log display of the histogram x-axis
-bool MGUIMelinatorMain::OnXAxis(bool IsLog)
+bool MGUIMainMelinator::OnXAxis(bool IsLog)
 {
   if (IsLog) {
     m_SpectrumCanvas->GetCanvas()->SetLogx(1);
@@ -1111,7 +1111,7 @@ bool MGUIMelinatorMain::OnXAxis(bool IsLog)
 
 
 //! Toggle the log display of the histogram y-axis
-bool MGUIMelinatorMain::OnYAxis(bool IsLog)
+bool MGUIMainMelinator::OnYAxis(bool IsLog)
 {
   if (IsLog) {
     /*
@@ -1155,7 +1155,7 @@ bool MGUIMelinatorMain::OnYAxis(bool IsLog)
 
 
 //! Choose the calibration files and isotopes
-bool MGUIMelinatorMain::OnChooseCalibrationFiles()
+bool MGUIMainMelinator::OnChooseCalibrationFiles()
 {
   new MGUILoadCalibration(gClient->GetRoot(), this, m_Settings);
   
@@ -1166,7 +1166,7 @@ bool MGUIMelinatorMain::OnChooseCalibrationFiles()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::OnLoadLast()
+bool MGUIMainMelinator::OnLoadLast()
 {
   // Closes the application
    
@@ -1228,7 +1228,7 @@ bool MGUIMelinatorMain::OnLoadLast()
 
 
 //! Actions when the save button has been pressed
-bool MGUIMelinatorMain::OnSave()
+bool MGUIMainMelinator::OnSave()
 {  
   m_Melinator.Save(m_Settings->GetSaveAsFileName());
 
@@ -1240,7 +1240,7 @@ bool MGUIMelinatorMain::OnSave()
 
 
 //! Actions when the save as button has been pressed
-bool MGUIMelinatorMain::OnSaveAs()
+bool MGUIMainMelinator::OnSaveAs()
 {
   const char** Types = new const char*[4];
   Types[0] = "Energy calibration file";
@@ -1269,7 +1269,7 @@ bool MGUIMelinatorMain::OnSaveAs()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::OnLoad()
+bool MGUIMainMelinator::OnLoad()
 {  
   return false;
 }
@@ -1279,7 +1279,7 @@ bool MGUIMelinatorMain::OnLoad()
 
 
 //! Action when one of the ROE buttons was pressed
-bool MGUIMelinatorMain::OnSwitchCollection(unsigned int Collection)
+bool MGUIMainMelinator::OnSwitchCollection(unsigned int Collection)
 {
   if (Collection < m_Melinator.GetNumberOfCollections()) { 
     m_ActiveCollection = Collection;
@@ -1294,7 +1294,7 @@ bool MGUIMelinatorMain::OnSwitchCollection(unsigned int Collection)
 
 
 //! Action when the next button has been pressed
-bool MGUIMelinatorMain::OnNext()
+bool MGUIMainMelinator::OnNext()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()-1) { 
     m_ActiveCollection++;
@@ -1309,7 +1309,7 @@ bool MGUIMelinatorMain::OnNext()
 
 
 //! Action when the back button has been pressed
-bool MGUIMelinatorMain::OnBack()
+bool MGUIMainMelinator::OnBack()
 {
   if (m_ActiveCollection > 0) { 
     m_ActiveCollection--;
@@ -1324,7 +1324,7 @@ bool MGUIMelinatorMain::OnBack()
 
 
 //! Actions when the next fit button has been pressed
-bool MGUIMelinatorMain::OnNextFit()
+bool MGUIMainMelinator::OnNextFit()
 {
   if (m_ActiveLineFit < m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection)-1) {
     m_ActiveLineFit++;
@@ -1338,7 +1338,7 @@ bool MGUIMelinatorMain::OnNextFit()
 
 
 //! Actions when the previous fit button has been pressed
-bool MGUIMelinatorMain::OnPreviousFit()
+bool MGUIMainMelinator::OnPreviousFit()
 {
   if (m_ActiveLineFit > 0) { 
     m_ActiveLineFit--;
@@ -1352,7 +1352,7 @@ bool MGUIMelinatorMain::OnPreviousFit()
 
 
 //! Actions when the toggle-line button has been pressed
-bool MGUIMelinatorMain::OnToggleFit()
+bool MGUIMainMelinator::OnToggleFit()
 {
   // Toggle line
   MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, m_ActiveLineFit);
@@ -1371,7 +1371,7 @@ bool MGUIMelinatorMain::OnToggleFit()
 
 
 //! Update the histogram with the latest settings
-bool MGUIMelinatorMain::OnUpdateHistogram()
+bool MGUIMainMelinator::OnUpdateHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
     UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
@@ -1384,7 +1384,7 @@ bool MGUIMelinatorMain::OnUpdateHistogram()
 
 
 //! Update the peakhistogram with the latest settings
-bool MGUIMelinatorMain::OnUpdatePeakHistogram()
+bool MGUIMainMelinator::OnUpdatePeakHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
     UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
@@ -1398,7 +1398,7 @@ bool MGUIMelinatorMain::OnUpdatePeakHistogram()
 
 
 //! Update all graphs
-bool MGUIMelinatorMain::UpdateDisplay(unsigned int Collection, unsigned int Line)
+bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line)
 {
   UpdateCollection(Collection, Line);
   UpdateLineFit(Collection, Line);
@@ -1412,7 +1412,7 @@ bool MGUIMelinatorMain::UpdateDisplay(unsigned int Collection, unsigned int Line
 
 
 //! Set the active collection and put it to the screen
-void MGUIMelinatorMain::UpdateCollection(unsigned int Collection, unsigned int Line)
+void MGUIMainMelinator::UpdateCollection(unsigned int Collection, unsigned int Line)
 {
   Update();
   
@@ -1459,7 +1459,7 @@ void MGUIMelinatorMain::UpdateCollection(unsigned int Collection, unsigned int L
 
 
 //! Update the line fit
-void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line)
+void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line)
 {  
   unsigned int NumberOfCalibrationSpectralPoints = 
     m_Melinator.GetNumberOfCalibrationSpectralPoints(Collection);
@@ -1517,7 +1517,7 @@ void MGUIMelinatorMain::UpdateLineFit(unsigned int Collection, unsigned int Line
 
 
 //! Update the calibration
-void MGUIMelinatorMain::UpdateCalibration(unsigned int Collection) 
+void MGUIMainMelinator::UpdateCalibration(unsigned int Collection) 
 {
   m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection);
   
@@ -1531,6 +1531,70 @@ void MGUIMelinatorMain::UpdateCalibration(unsigned int Collection)
     m_ResultsHistogramLabel->SetText("Calibration model: interpolation");
     Layout();
   }
+  
+  // Update the calibration also updates the coloring of the buttons:
+  
+  // Get
+  vector<double> FitQualities;
+  for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+    double FitQuality = m_Melinator.GetCalibrationQuality(i);
+    FitQualities.push_back(FitQuality);
+  }
+  
+  // Mean & Standrad Dev:
+  double LowerCutOff = 0;
+  double UpperCutOff = 100000;
+  
+  long GoodEntries = 0;
+  double Mean = 0;
+  for (double Value:  FitQualities) {
+    if (Value > LowerCutOff && Value < UpperCutOff) {
+      Mean += Value;
+      GoodEntries++;
+    }
+  }
+  if (GoodEntries > 0) {
+    Mean /= GoodEntries;
+    
+    double StandardDeviation = 0;
+    for (double Value:  FitQualities) {
+      if (Value > LowerCutOff && Value < UpperCutOff) {
+        StandardDeviation += pow(Value - Mean, 2);
+      }
+    }
+    StandardDeviation = sqrt(StandardDeviation/GoodEntries);
+  
+    if (StandardDeviation > 0) {
+      // Now set the colors:
+      for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), m_Melinator.GetCalibrationQuality(i)/StandardDeviation);
+      }
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Switch to the line near the given rou
+void MGUIMainMelinator::SwitchToLine(double ROUs)
+{
+  unsigned int Lines = m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection);
+  if (Lines == 0) return;
+  
+  unsigned int Clostest = 0;
+  double MinDistance = numeric_limits<double>::max(); 
+  
+  for (unsigned int p = 0; p < Lines; ++p) {
+    MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, p);
+    if (fabs(P.GetPeak() - ROUs) < MinDistance) {
+      Clostest = p;
+      MinDistance = fabs(P.GetPeak() - ROUs);
+    }
+  }
+  
+  UpdateDisplay(m_ActiveCollection, Clostest);
 }
 
 
@@ -1538,7 +1602,7 @@ void MGUIMelinatorMain::UpdateCalibration(unsigned int Collection)
 
 
 //! Fit the current histogram
-bool MGUIMelinatorMain::OnFit()
+bool MGUIMainMelinator::OnFit()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
@@ -1563,7 +1627,7 @@ bool MGUIMelinatorMain::OnFit()
 
 
 //! Fit the current histogram
-bool MGUIMelinatorMain::OnFitWithDiagnostics()
+bool MGUIMainMelinator::OnFitWithDiagnostics()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
@@ -1588,7 +1652,7 @@ bool MGUIMelinatorMain::OnFitWithDiagnostics()
 
 
 //! Fit the current histogram
-bool MGUIMelinatorMain::OnFitAll()
+bool MGUIMainMelinator::OnFitAll()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
     m_Melinator.SetPeakParametrizationMethod(m_PeakParametrizationMethod->GetSelected());
@@ -1613,7 +1677,7 @@ bool MGUIMelinatorMain::OnFitAll()
 
 
 //! Load a configuration file from disk
-bool MGUIMelinatorMain::OnLoadConfiguration()
+bool MGUIMainMelinator::OnLoadConfiguration()
 {
   const char** Types = new const char*[4];
   Types[0] = "Configuration file";
@@ -1640,7 +1704,7 @@ bool MGUIMelinatorMain::OnLoadConfiguration()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::OnSaveConfiguration()
+bool MGUIMainMelinator::OnSaveConfiguration()
 {
   // Save a configuration file...
 
@@ -1668,7 +1732,7 @@ bool MGUIMelinatorMain::OnSaveConfiguration()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::OnGeometry()
+bool MGUIMainMelinator::OnGeometry()
 {
   // Show the geometry dialog
   // Returns the geometry file name
@@ -1690,7 +1754,7 @@ bool MGUIMelinatorMain::OnGeometry()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIMelinatorMain::OnAbout()
+bool MGUIMainMelinator::OnAbout()
 {
   // Launch the about dialog
 
@@ -1711,5 +1775,5 @@ bool MGUIMelinatorMain::OnAbout()
 }
 
 
-// MGUIMelinatorMain: the end...
+// MGUIMainMelinator: the end...
 ////////////////////////////////////////////////////////////////////////////////

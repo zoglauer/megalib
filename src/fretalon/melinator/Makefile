@@ -22,6 +22,7 @@ GOBJS = \
 $(LB)/MGUIMainMelinator.o \
 $(LB)/MGUIEReadOutElement.o \
 $(LB)/MGUIEReadOutElementView.o \
+$(LB)/MGUIEReadOutUnitsCanvas.o \
 $(LB)/MGUILoadCalibration.o \
 $(LB)/MInterfaceMelinator.o \
 

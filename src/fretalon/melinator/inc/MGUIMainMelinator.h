@@ -1,5 +1,5 @@
 /*
-* MGUIMelinatorMain.h
+* MGUIMainMelinator.h
 *
 * Copyright (C) by Andreas Zoglauer.
 * All rights reserved.
@@ -9,8 +9,8 @@
 */
 
 
-#ifndef __MGUIMelinatorMain__
-#define __MGUIMelinatorMain__
+#ifndef __MGUIMainMelinator__
+#define __MGUIMainMelinator__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,6 +39,7 @@ using namespace std;
 #include "MMelinator.h"
 #include "MGUIEReadOutElement.h"
 #include "MGUIEReadOutElementView.h"
+#include "MGUIEReadOutUnitsCanvas.h"
 
 // Forward declarations:
 class MGUIEFileSelector;
@@ -46,14 +47,14 @@ class MGUIEFileSelector;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIMelinatorMain : public TGMainFrame
+class MGUIMainMelinator : public TGMainFrame
 {
   // Public members:
 public:
   //! Default constructor
-  MGUIMelinatorMain(MInterfaceMelinator* Interface, MSettingsMelinator* Settings);
+  MGUIMainMelinator(MInterfaceMelinator* Interface, MSettingsMelinator* Settings);
   //! Default destructor
-  virtual ~MGUIMelinatorMain();
+  virtual ~MGUIMainMelinator();
 
   //! Create the GUI
   virtual void Create();
@@ -64,7 +65,10 @@ public:
 
   //! Handle some keys
   bool HandleKey(Event_t* Event);
-
+  
+  //! Switch to the line near the given rou
+  void SwitchToLine(double ROUs);
+  
   //! Actions when the load last button has been pressed
   virtual bool OnLoadLast();
   //! Parmetrize all data
@@ -161,7 +165,7 @@ private:
   //! The back button
   TGTextButton* m_BackButton;
   //! The view of the spectrum
-  TRootEmbeddedCanvas* m_SpectrumCanvas;
+  MGUIEReadOutUnitsCanvas* m_SpectrumCanvas;
   
   //! The label of the fit view
   TGLabel* m_FitHistogramLabel;
@@ -177,7 +181,7 @@ private:
   //! The label of the results view
   TGLabel* m_ResultsHistogramLabel;
   //! The view of the fit
-  TRootEmbeddedCanvas* m_ResultsCanvas;
+  MGUIEReadOutUnitsCanvas* m_ResultsCanvas;
   
   
   //! Entry representing the minimum of the histogram
@@ -231,8 +235,6 @@ private:
    
   //! The canvas displaying the selection including scroll bars
   MGUIEReadOutElementView* m_MainSelectionCanvas;
-  //! All the read-out element GUI's
-  vector<MGUIEReadOutElement*> m_ROEButtons;
   
   
   // IDs:
@@ -276,7 +278,7 @@ private:
 
 #ifdef ___CINT___
 public:
-  ClassDef(MGUIMelinatorMain, 0) // main window of the Melinator GUI
+  ClassDef(MGUIMainMelinator, 0) // main window of the Melinator GUI
 #endif
 
 };

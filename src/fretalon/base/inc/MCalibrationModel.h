@@ -82,6 +82,9 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   //! Get value - return 0 if the fit doesn't exist
   double GetFitValue(double Value) const;
   
+  //! Get the fit quality
+  double GetFitQuality() const { return m_FitQuality; }
+  
   //! Mimic ROOT Draw functionality
   void Draw(MString Options = "");
 
@@ -120,6 +123,8 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   bool m_IsFitUpToDate;
   //! The short keyword of this model, e.g. poly1
   MString m_Keyword;
+  //! The fit quality
+  double m_FitQuality;
   
   //! The parameters for the ROOT fitting
   vector<double> m_ROOTParameters;

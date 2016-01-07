@@ -44,7 +44,7 @@ ClassImp(MCalibrationModel)
 
 
 //! Default constructor
-MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Keyword("none")
+MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
 {
 }
 
@@ -89,6 +89,7 @@ MCalibrationModel& MCalibrationModel::operator= (const MCalibrationModel& Calibr
     
   m_IsFitUpToDate = CalibrationModel.m_IsFitUpToDate;
   m_Keyword = CalibrationModel.m_Keyword;
+  m_FitQuality = CalibrationModel.m_FitQuality;
 
   m_ROOTParameters = CalibrationModel.m_ROOTParameters;
   
@@ -130,6 +131,8 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
     if (g_Verbosity >= c_Error) cout<<"Error: We have more fit parameters ("<<NPar()<<") than data points ("<<Points.size()<<")!"<<endl;
     return -1;
   }
+  
+  m_FitQuality = numeric_limits<double>::max()/1000;
   
   // Clean up the old fit:
   TThread::Lock();
@@ -192,10 +195,10 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
     }
 
-    return m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+    m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
   }  
   
-  return numeric_limits<double>::max()/1000;
+  return m_FitQuality;
 }
 
 
