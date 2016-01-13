@@ -397,15 +397,24 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
     long Counter = 0;
     long NewCounter = 0;
     while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
+      // Since we do energy calibration, exclude everything with more than the number of good hits
+      if (Sequence.HasIdenticalReadOutElementTypes() == true) {
+        if (Sequence.GetNumberOfReadOuts() > 0 && 
+            Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
+          continue;
+        }
+      }
+      
       Store.Add(Sequence, 0);
         
+      if (m_ThreadShouldTerminate[ThreadID] == true) break;
+
       ++NewCounter;
       if (++Counter%10000 == 0) {
         double Pos = Reader.GetFilePosition();
         if (Pos > 0) {
           m_CalibrationFileLoadingProgress[ID] = Pos; 
         }
-        if (m_ThreadShouldTerminate[ThreadID] == true) break;
         
         // Check that we still have enough memory left:
         //cout<<"Check: "<<sizeof(Sequence)*NewCounter<<":"<<160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections()<<":"<<m_NLinesToConsider<<":"<<m_Store.GetNumberOfReadOutCollections()<<endl;
