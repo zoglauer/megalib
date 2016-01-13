@@ -223,6 +223,8 @@ private:
   //! For fitting: Peak-shape model
   TGComboBox* m_PeakParametrizationMethodFittingPeakShapeModel;
   
+  //! Assume the calibration goes through 0 or not
+  TGCheckButton* m_CalibrationModelZeroCrossing;
   //! Choose the calibration model determination method
   TGComboBox* m_CalibrationModelDeterminationMethod;
   //! Options frame for the calibration model determination
@@ -256,14 +258,15 @@ private:
   static const int c_NextFit                    =  16;
   static const int c_PreviousFit                =  17;
   static const int c_ToggleFit                  =  18;
-  static const int c_PeakParametrizationMethod  =  19;
-  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  20;
-  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  21;
-  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  22;
-  static const int c_CalibrationModelDeterminationMethod              =  23;
-  static const int c_CalibrationModelDeterminationMethodFittingModel  =  24;
-  static const int c_Save                       =  25;
-  static const int c_SaveAs                     =  26;
+  static const int c_PeakParametrizationMethod                        =  50;
+  static const int c_PeakParametrizationMethodFittingBackgroundModel  =  51;
+  static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  52;
+  static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  53;
+  static const int c_CalibrationModelZeroCrossing                     =  70;
+  static const int c_CalibrationModelDeterminationMethod              =  71;
+  static const int c_CalibrationModelDeterminationMethodFittingModel  =  72;
+  static const int c_Save                       =  80;
+  static const int c_SaveAs                     =  81;
   static const int c_Remove                     = 400;
   static const int c_Options                    = 500;
   static const int c_Change                     = 600;

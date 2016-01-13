@@ -70,14 +70,14 @@ class MSettingsMelinator : public MSettings
   //! Set the binning mode value: Depending on the binning mode, either bins, cts/bin, or prior
   void SetHistogramBinningModeValue(double HistogramBinningModeValue) { m_HistogramBinningModeValue = HistogramBinningModeValue; }
 
-  //! Get a flag indictaing the x-axis is displayed logarithmic
+  //! Get a flag indicating the x-axis is displayed logarithmic
   bool GetHistogramLogX() const { return m_HistogramLogX; }
-  //! Set a flag indictaing the x-axis is displayed logarithmic
+  //! Set a flag indicating the x-axis is displayed logarithmic
   void SetHistogramLogX(bool HistogramLogX) { m_HistogramLogX = HistogramLogX; }
 
-  //! Get a flag indictaing the y-axis is displayed logarithmic
+  //! Get a flag indicating the y-axis is displayed logarithmic
   bool GetHistogramLogY() const { return m_HistogramLogY; }
-  //! Set a flag indictaing the y-axis is displayed logarithmic
+  //! Set a flag indicating the y-axis is displayed logarithmic
   void SetHistogramLogY(bool HistogramLogY) { m_HistogramLogY = HistogramLogY; }
   
   
@@ -111,6 +111,10 @@ class MSettingsMelinator : public MSettings
   void SetPeakParametrizationMethodFittingPeakShapeModel(unsigned int Model) { m_PeakParametrizationMethodFittingPeakShapeModel = Model; } 
 
   
+  //! Get a flag indicating if we should assume the calibration model will cross close to 0
+  bool GetCalibrationModelZeroCrossing() const { return m_CalibrationModelZeroCrossing; }
+  //! Set a flag indicating if we should assume the calibration model will cross close to 0
+  void SetCalibrationModelZeroCrossing(bool CalibrationModelZeroCrossing) { m_CalibrationModelZeroCrossing = CalibrationModelZeroCrossing; }
   //! Get the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   unsigned int GetCalibrationModelDeterminationMethod() const { return m_CalibrationModelDeterminationMethod; }
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
@@ -175,6 +179,8 @@ class MSettingsMelinator : public MSettings
   //! The peak-shape model for peak fitting
   unsigned int m_PeakParametrizationMethodFittingPeakShapeModel;
   
+  //! Flag indicating if we should assume the calibration model will cross close to 0
+  bool m_CalibrationModelZeroCrossing;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
   //! Fitting model of the calibration model determination method

@@ -238,12 +238,16 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       if (CountsPerBin*Width < MinimumPeakCounts) {
         if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;
         continue;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough counts per bin: "<<CountsPerBin*Width<<" (min: "<<MinimumPeakCounts<<")"<<endl;        
       }
       P.SetCounts(CountsPerBin*Width);
         
       if (Height < MinimumHeight) {
         if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Peak height to small: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;
         continue;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Peak heigh enough: "<<Height<<" (min: "<<MinimumHeight<<")"<<endl;        
       }
         
         
@@ -255,6 +259,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
            (Minimum < -0.0075 && Maximum > +0.0025)))) {
         if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Derivative peak not strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;
         continue;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Derivative peak strong enough: "<<FirstDerivation->GetBinContent(MaximumBin)<<" and "<<FirstDerivation->GetBinContent(MinimumBin)<<endl;        
       }
 
       // First round of edges:
@@ -297,6 +303,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
         if (PeakBin < FirstPeakMinimumBinID) {
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: First peak must be at least "<<FirstPeakMinimumBinID<<" bins away from start, and not only "<<PeakBin<<endl;
           continue;          
+        } else {
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: First peak is at least "<<FirstPeakMinimumBinID<<" bins away from start: "<<PeakBin<<endl;          
         }
       }
       
@@ -337,8 +345,10 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       // If the left peak-to-valley is less than 50% (=ComptonEdgeThreshold) of the right peak-to-valley 
       // then we probably have a Compton edge or another bad peak
       if (Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin) < ComptonEdgeThreshold * (Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin))) {
-        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - rejectd: The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is less than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): We might have a Compton edge or other bad peak"<<endl;
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is less than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): We might have a Compton edge or other bad peak"<<endl;
         continue;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: The left peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(LeftLimitBin)<<") is at least than "<<100*ComptonEdgeThreshold<<"% of the right peak-to-valley ("<<Data->GetBinContent(PeakBin) - Data->GetBinContent(RightLimitBin)<<"): Unlikely we have a Compton edge or other bad peak"<<endl;        
       }
       
       // Check if we have enough counts
@@ -352,12 +362,16 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
         if (Excess < FirstPeakMinimumPeakCounts) {
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts for a first peak: "<<Excess<<endl;
           continue;
-        }         
+        } else {
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough peak counts for a first peak: "<<Excess<<endl;          
+        }
       } else {
         if (Excess < MinimumPeakCounts) {
           if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Rejected: Not enough peak counts: "<<Excess<<endl;
           continue;
-        } 
+        } else {          
+          if (g_Verbosity >= c_Info) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Passed: Enough peak counts: "<<Excess<<endl;
+       }
       }
       if (g_Verbosity >= c_Chatty) cout<<FirstDerivation->GetBinLowEdge(b+1)<<" - Estimated peak counts: "<<Excess<<endl;
       
@@ -541,6 +555,8 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;  
         P.IsGood(false);
         continue;
+      } else {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;          
       }
       
   
@@ -561,7 +577,7 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
   // Another sanity check:
   // Calculate the median FWHM
   // If one peak is at least 3x the average, then exclude it
-  if (g_Verbosity >= c_Chatty) cout<<"Sanity check: median FWHM"<<endl;
+  if (g_Verbosity >= c_Info) cout<<"Sanity check: median FWHM"<<endl;
   double MedianExclusionFactor = 2.5;
   vector<double> FWHMes;
   for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
@@ -574,9 +590,11 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
   
   if (FWHMes.size() > 1) {
     size_t midIndex = FWHMes.size()/2;
+    if (FWHMes.size() % 2 == 0) midIndex -= 1; // If we have an even number /2 would give us the one above the median, so choose the one below the median, since we prefer smaller peaks...
+    
     nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
     double Median = FWHMes[midIndex]; 
-    if (g_Verbosity >= c_Chatty) cout<<"Median FWHM: "<<Median<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Median FWHM: "<<Median<<endl;
     
     for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
       for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
@@ -584,14 +602,14 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
         MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(rg, sp);
         if (P.GetFWHM() > MedianExclusionFactor*Median) {
           P.IsGood(false);
-          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
         } else {
-          if (g_Verbosity >= c_Chatty) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+          if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
         }
       }
     }
   } else {
-    if (g_Verbosity >= c_Chatty) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
+    if (g_Verbosity >= c_Info) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
   
   // At this point we erase all bad spectral points

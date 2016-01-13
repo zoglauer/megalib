@@ -30,6 +30,7 @@
 #include "MCalibrationStore.h"
 #include "MCalibrationSpectralPoint.h"
 #include "MCalibrationModel.h"
+#include "MCalibrateEnergyAssignEnergies.h"
 
 // Forward declarations:
 
@@ -78,6 +79,8 @@ class MMelinator
     m_PeakParametrizationMethodFittedPeakEnergyLossModel = EnergyLossModel; 
     m_PeakParametrizationMethodFittedPeakPeakShapeModel = PeakShapeModel; }
   
+  //! Set if the the calibration model should assume a (close to) zero crossing
+  void SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes Method) { m_CalibrationModelEnergyAssignmentMethod = Method; }
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
   //! Set the fitting model options for the calibration model determination method
@@ -216,7 +219,9 @@ class MMelinator
   unsigned int m_PeakParametrizationMethodFittedPeakEnergyLossModel; 
   //! The peak shape model for peak fitting
   unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
- 
+  
+  //! The energy assignment method
+  MCalibrateEnergyAssignEnergyModes m_CalibrationModelEnergyAssignmentMethod;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
   //! Fitting model of the calibration model determination method

@@ -225,6 +225,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
   
   // Inventory:
   if (g_Verbosity >= c_Info) {
+    cout<<"Current line inventory: "<<endl;
     for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
       for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
         if (m_Results.GetSpectralPoint(r, p).IsGood() == false) {

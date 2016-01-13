@@ -93,6 +93,7 @@ MMelinator::MMelinator()
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone;
   m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
   
+  m_CalibrationModelEnergyAssignmentMethod = MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing;
   m_CalibrationModelDeterminationMethod = MCalibrateEnergyDetermineModel::c_CalibrationModelStepWise;
   
   m_NThreads = thread::hardware_concurrency();
@@ -1147,6 +1148,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
   
   // Step 2: Assign the energies
   MCalibrateEnergyAssignEnergies AssignEnergies;
+  AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
   AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
   AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
@@ -1205,6 +1207,7 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
   
   // Step A: Assign the energies
   MCalibrateEnergyAssignEnergies AssignEnergies;
+  AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
   AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
   for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
     //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);

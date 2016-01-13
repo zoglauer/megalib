@@ -406,9 +406,15 @@ void MGUIMainMelinator::Create()
   TGGroupFrame* CalibrationModel = new TGGroupFrame(ControlColumn, "Calibration model options", kVerticalFrame);
   ControlColumn->AddFrame(CalibrationModel, GroupLayout);
 
+  m_CalibrationModelZeroCrossing = new TGCheckButton(CalibrationModel, "Energy assignment only: Assume the calibration crosses (0, 0)", c_CalibrationModelZeroCrossing);
+  m_CalibrationModelZeroCrossing->Associate(this);
+  m_CalibrationModelZeroCrossing->SetWrapLength(FontScaler*200);
+  m_CalibrationModelZeroCrossing->SetState(m_Settings->GetCalibrationModelZeroCrossing() ? kButtonDown : kButtonUp);
+  CalibrationModel->AddFrame(m_CalibrationModelZeroCrossing, TopLeftLayout);
+
   TGHorizontalFrame* CalibrationModelDeterminationFrame = new TGHorizontalFrame(CalibrationModel);
   CalibrationModel->AddFrame(CalibrationModelDeterminationFrame, TopLeftLayout);
-
+  
   TGLabel* CalibrationModelDeterminationLabel = new TGLabel(CalibrationModelDeterminationFrame, "Method: ");
   CalibrationModelDeterminationLabel->ChangeOptions(kFixedWidth);
   CalibrationModelDeterminationLabel->SetTextJustify(kTextLeft);
@@ -865,6 +871,7 @@ bool MGUIMainMelinator::Update()
     m_Settings->SetPeakParametrizationMethodFittingPeakShapeModel(m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
   }
   
+  m_Settings->SetCalibrationModelZeroCrossing(m_CalibrationModelZeroCrossing->GetState() == kButtonDown ? true : false);
   m_Settings->SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
   if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
     m_Settings->SetCalibrationModelDeterminationMethodFittingModel(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
@@ -1623,6 +1630,11 @@ bool MGUIMainMelinator::OnFit()
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
     
+    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
+    } else {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
+    }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
@@ -1648,6 +1660,11 @@ bool MGUIMainMelinator::OnFitWithDiagnostics()
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
 
+    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
+    } else {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
+    }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());
@@ -1673,6 +1690,11 @@ bool MGUIMainMelinator::OnFitAll()
       m_Melinator.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittingBackgroundModel->GetSelected(), m_PeakParametrizationMethodFittingEnergyLossModel->GetSelected(), m_PeakParametrizationMethodFittingPeakShapeModel->GetSelected());
     }
 
+    if (m_CalibrationModelZeroCrossing->GetState() == kButtonDown) {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_LinearZeroCrossing);
+    } else {
+      m_Melinator.SetCalibrationModelEnergyAssignmentMethod(MCalibrateEnergyAssignEnergyModes::e_Linear);      
+    }
     m_Melinator.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod->GetSelected());
     if (m_CalibrationModelDeterminationMethod->GetSelected() == MCalibrateEnergyDetermineModel::c_CalibrationModelFit) {
       m_Melinator.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel->GetSelected());

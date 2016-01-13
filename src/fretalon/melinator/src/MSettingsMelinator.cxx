@@ -68,6 +68,7 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_PeakParametrizationMethodFittingEnergyLossModel = 0;
   m_PeakParametrizationMethodFittingPeakShapeModel = 1;
 
+  m_CalibrationModelZeroCrossing = true;
   m_CalibrationModelDeterminationMethod = 0;
   m_CalibrationModelDeterminationMethodFittingModel = 3;
   
@@ -156,6 +157,7 @@ bool MSettingsMelinator::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "PeakParametrizationMethodFittingEnergyLossModel", m_PeakParametrizationMethodFittingEnergyLossModel);
   new MXmlNode(Node, "PeakParametrizationMethodFittingPeakShapeModel", m_PeakParametrizationMethodFittingPeakShapeModel);
 
+  new MXmlNode(Node, "CalibrationModelZeroCrossing", m_CalibrationModelZeroCrossing);
   new MXmlNode(Node, "CalibrationModelDeterminationMethod", m_CalibrationModelDeterminationMethod);
   new MXmlNode(Node, "CalibrationModelDeterminationMethodFittingModel", m_CalibrationModelDeterminationMethodFittingModel);
   
@@ -246,6 +248,9 @@ bool MSettingsMelinator::ReadXml(MXmlNode* Node)
     m_PeakParametrizationMethodFittingPeakShapeModel = aNode->GetValueAsUnsignedInt();
   }
 
+  if ((aNode = Node->GetNode("CalibrationModelZeroCrossing")) != 0) {
+    m_CalibrationModelZeroCrossing = aNode->GetValueAsBoolean();
+  }
   if ((aNode = Node->GetNode("CalibrationModelDeterminationMethod")) != 0) {
     m_CalibrationModelDeterminationMethod = aNode->GetValueAsUnsignedInt();
   }
