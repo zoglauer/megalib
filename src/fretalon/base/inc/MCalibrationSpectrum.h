@@ -63,6 +63,9 @@ class MCalibrationSpectrum : public MCalibration
   //! If it or the read-out data group does not exist return an MExceptionIndexOutOfBounds exception
   MCalibrationSpectralPoint& GetSpectralPoint(unsigned int ROG, unsigned int Point);
   
+  //! Remove a point - the check if they are indentical is soly based on the peak position.
+  void RemoveAllBadSpectralPoints();
+  
   //! Get a list of all unique spectral points in this spectrum
   vector<MCalibrationSpectralPoint> GetUniquePoints();
   

@@ -415,6 +415,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       if (g_Verbosity >= c_Chatty) cout<<"FWHM: "<<P.GetFWHM()<<endl;
       
       
+      
       /*
       
       // Make sure the outer bins are not too large:
@@ -517,12 +518,16 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
       double ChiSquareLimit = 2.0;
       double AverageDeviationLimit = 0.05;
       MCalibrationFit& Fit = P.GetFit();
+      
+      // Do we have a good fit at all
       bool IsGood = Fit.Fit(*FitData, P.GetLowEdge(), P.GetHighEdge());
       if (IsGood == false) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The line could not be fit good enough."<<endl;
         P.IsGood(false);
         continue;
       }
+      
+      // Check fit quality
       if (Fit.GetReducedChisquare() > ChiSquareLimit && Fit.GetAverageDeviation() > AverageDeviationLimit) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Bad chisquare "<<Fit.GetReducedChisquare()<<" (with limit "<<ChiSquareLimit<<") and average deviation between fit and data ("<<100*Fit.GetAverageDeviation()<<"% vs. a limit of "<<100*AverageDeviationLimit<<"%)"<<endl;
         P.IsGood(false);
@@ -531,13 +536,15 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Good chi square: "<<Fit.GetReducedChisquare()<<" (compare to an average deviation of "<<100*Fit.GetAverageDeviation()<<"%)"<<endl;
       }
       
+      // No peaks on increasing edges
       if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge())) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;  
         P.IsGood(false);
         continue;
       }
       
-      
+  
+      // Good for now
       P.SetPeak(Fit.GetPeak());
       P.SetFWHM(Fit.GetFWHM());
       if (m_DiagnosticsMode == true) {
@@ -569,7 +576,7 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     size_t midIndex = FWHMes.size()/2;
     nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
     double Median = FWHMes[midIndex]; 
-    if (g_Verbosity >= c_Info) cout<<"Median FWHM: "<<Median<<endl;
+    if (g_Verbosity >= c_Chatty) cout<<"Median FWHM: "<<Median<<endl;
     
     for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
       for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
@@ -579,14 +586,18 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
           P.IsGood(false);
           if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
         } else {
-          if (g_Verbosity >= c_Info) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+          if (g_Verbosity >= c_Chatty) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
         }
       }
     }
   } else {
     if (g_Verbosity >= c_Chatty) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
-        
+  
+  // At this point we erase all bad spectral points
+  m_Results.RemoveAllBadSpectralPoints();
+  
+  
   return true;
 }
 

@@ -140,7 +140,25 @@ MCalibrationSpectralPoint& MCalibrationSpectrum::GetSpectralPoint(unsigned int R
   // Might crash, but will never reach this point unless exceptions are turned off
   return m_SpectralPoints[0][0];
 }
-  
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Remove a point - the check if they are indentical is soly based on the peak position.
+void MCalibrationSpectrum::RemoveAllBadSpectralPoints()
+{
+  for (unsigned int rogs = 0; rogs < m_SpectralPoints.size(); ++rogs) {
+    for (auto Iter = m_SpectralPoints[rogs].begin(); Iter != m_SpectralPoints[rogs].end(); ) {
+      if ((*Iter).IsGood() == false) {
+        Iter = m_SpectralPoints[rogs].erase(Iter);
+      } else {
+        ++Iter; 
+      }
+    }
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
