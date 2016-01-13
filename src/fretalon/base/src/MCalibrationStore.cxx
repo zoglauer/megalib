@@ -90,6 +90,22 @@ void MCalibrationStore::Add(const MReadOutElement& ROE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Remove the calibration of the read-out element and replace it by a dummy one
+void MCalibrationStore::Remove(const MReadOutElement& ROE)
+{
+  for (unsigned int r = 0; r < m_ROEs.size(); ++r) {
+    if (*(m_ROEs[r]) == ROE) {
+      delete m_Calibrations[r];
+      m_Calibrations[r] = new MCalibration();
+      break;
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Add a new read-out element and calibration, if the read-out element exits, then replace the calibration
 void MCalibrationStore::Add(const MReadOutElement& ROE, const MCalibration& Calibration)
 {

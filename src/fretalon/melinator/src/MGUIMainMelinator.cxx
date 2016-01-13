@@ -1354,9 +1354,22 @@ bool MGUIMainMelinator::OnPreviousFit()
 //! Actions when the toggle-line button has been pressed
 bool MGUIMainMelinator::OnToggleFit()
 {
-  // Toggle line
-  MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, m_ActiveLineFit);
-  P.IsGood(!P.IsGood());
+  // Special - if all are off, we turn on all
+  unsigned int NGoodPoints = 0;
+  for (unsigned int p = 0; p < m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection); ++p) {
+    if (m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, p).IsGood() == true) {
+      ++NGoodPoints;
+    }
+  }
+  if (NGoodPoints == 0) {
+    for (unsigned int p = 0; p < m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection); ++p) {
+      m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, p).IsGood(true);
+    }    
+  } else {
+    // Toggle line
+    MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, m_ActiveLineFit);
+    P.IsGood(!P.IsGood());
+  }
   
   // Redo fit!
   m_Melinator.ReCalibrateModel(m_ActiveCollection);

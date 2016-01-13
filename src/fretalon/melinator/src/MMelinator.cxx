@@ -1123,6 +1123,7 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
 bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
 {
   MReadOutCollection& C = GetCollection(Collection);
+  m_CalibrationStore.Remove(C.GetReadOutElement());
   
   unsigned int Verbosity = g_Verbosity;
   if (ShowDiagnostics == true) g_Verbosity = c_Info;
@@ -1213,6 +1214,7 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
   
   if (AssignEnergies.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    m_CalibrationStore.Remove(C.GetReadOutElement());
     return false;
   }
   
@@ -1230,6 +1232,7 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
   
   if (DetermineModel.Calibrate() == false) {
     cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+    m_CalibrationStore.Remove(C.GetReadOutElement());
     return false;
   }
   

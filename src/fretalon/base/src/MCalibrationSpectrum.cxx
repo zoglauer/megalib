@@ -247,6 +247,18 @@ void MCalibrationSpectrum::SetModel(MCalibrationModel& Model)
   delete m_Model;
   m_Model = Model.Clone();
 }
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Remove the model
+void MCalibrationSpectrum::RemoveModel()
+{
+  delete m_Model;
+  m_Model = 0;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

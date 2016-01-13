@@ -47,6 +47,9 @@ class MCalibrationStore
   //! Add a new read-out element and a dummy calibration, if the read-out element exist, do nothing
   void Add(const MReadOutElement& ROE);
 
+  //! Remove the calibration of the ROE and replace it by a dummy one
+  void Remove(const MReadOutElement& ROE);
+
   //! Add a new read-out element and calibration, if the read-out element exits, then replace the calibration
   void Add(const MReadOutElement& ROE, const MCalibration& Calibration);
   

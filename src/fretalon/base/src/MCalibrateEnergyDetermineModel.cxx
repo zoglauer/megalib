@@ -76,9 +76,15 @@ MCalibrateEnergyDetermineModel::~MCalibrateEnergyDetermineModel()
 //! Perform the calibration
 bool MCalibrateEnergyDetermineModel::Calibrate()
 {
+  // Clean up the results:
+  m_Results.RemoveModel();
+  
   // Assemble the unique lines:
   vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
-  if (Points.size() < 2) return true;
+  if (Points.size() < 2) {
+    cout<<"Not enough points to determine a calibration model"<<endl;  
+    return true;
+  }
   
   if (m_CalibrationModelDeterminationMethod == c_CalibrationModelStepWise) {
     // we are already done since this is used during peak finding 
