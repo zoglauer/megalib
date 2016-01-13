@@ -415,7 +415,6 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
       if (g_Verbosity >= c_Chatty) cout<<"FWHM: "<<P.GetFWHM()<<endl;
       
       
-      
       /*
       
       // Make sure the outer bins are not too large:
@@ -531,6 +530,14 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
       } else {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Good chi square: "<<Fit.GetReducedChisquare()<<" (compare to an average deviation of "<<100*Fit.GetAverageDeviation()<<"%)"<<endl;
       }
+      
+      if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge())) {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;  
+        P.IsGood(false);
+        continue;
+      }
+      
+      
       P.SetPeak(Fit.GetPeak());
       P.SetFWHM(Fit.GetFWHM());
       if (m_DiagnosticsMode == true) {
@@ -562,7 +569,7 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
     size_t midIndex = FWHMes.size()/2;
     nth_element(FWHMes.begin(), FWHMes.begin() + midIndex, FWHMes.end());
     double Median = FWHMes[midIndex]; 
-    if (g_Verbosity >= c_Chatty) cout<<"Median FWHM: "<<Median<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Median FWHM: "<<Median<<endl;
     
     for (unsigned int rg = 0; rg < m_Results.GetNumberOfReadOutDataGroups(); ++rg) {
       for (unsigned int sp = 0; sp < m_Results.GetNumberOfSpectralPoints(rg); ++sp) {
@@ -572,14 +579,14 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
           P.IsGood(false);
           if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - rejected: Excluding peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;
         } else {
-          if (g_Verbosity >= c_Chatty) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
+          if (g_Verbosity >= c_Info) cout<<"Good peak - FWHM test: Keeping peak at "<<P.GetPeak()<<" since FWHM ("<<P.GetFWHM()<<") is more than "<<MedianExclusionFactor<<"x the median ("<<Median<<")"<<endl;          
         }
       }
     }
   } else {
     if (g_Verbosity >= c_Chatty) cout<<"Not enough FWHMes found for FWHM sanity check!"<<endl; 
   }
-  
+        
   return true;
 }
 

@@ -59,6 +59,10 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
   virtual bool IsOfType(const MString& String) const;
   //! Return the type of this read-out element
   virtual MString GetType() const;
+  
+  //! Return the minimum number of hits which compose a good hit
+  //! I.e. for a double strip it is two (n and p side), otherwise it is usually 1
+  virtual unsigned int GetMinimumNumberOfReadOutsForGoodInteraction() const { return 2; }
 
   //! Set the strip type (x/y)
   void IsPositiveStrip(bool IsPositiveStrip) { m_IsPositiveStrip = IsPositiveStrip; }

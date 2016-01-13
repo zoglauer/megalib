@@ -70,6 +70,9 @@ class MReadOutSequence
   //! Get a specific read-outs
   const MReadOut& GetReadOut(unsigned int R) const;
   
+  //! Return true if all read-out elements are of the same type
+  bool HasIdenticalReadOutElementTypes() const;
+  
   //! Dump a string
   virtual MString ToString() const;
   

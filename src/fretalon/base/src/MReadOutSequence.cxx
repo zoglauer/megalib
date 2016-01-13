@@ -105,6 +105,25 @@ unsigned int MReadOutSequence::FindReadOut(const MReadOutElement& ROE) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if all read-out elements are of the same type
+bool MReadOutSequence::HasIdenticalReadOutElementTypes() const
+{
+  if (m_ReadOuts.size() == 0) return false;
+  if (m_ReadOuts.size() == 1) return true;
+  
+  for (unsigned int i = 1; i < m_ReadOuts.size(); ++i) {
+    if (m_ReadOuts[i].GetReadOutElement().AreOfSameType(m_ReadOuts[0].GetReadOutElement()) == false) {
+      return false;
+    }
+  }
+  
+  return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Convert to a string
 MString MReadOutSequence::ToString() const
 {

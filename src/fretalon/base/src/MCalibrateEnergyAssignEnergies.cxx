@@ -222,7 +222,21 @@ bool MCalibrateEnergyAssignEnergies::Calibrate()
 bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
 { 
   if (g_Verbosity >= c_Info) cout<<endl<<"Assigning energies via linear method"<<endl;
-    
+  
+  // Inventory:
+  if (g_Verbosity >= c_Info) {
+    for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
+      for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+        if (m_Results.GetSpectralPoint(r, p).IsGood() == false) {
+          cout<<"Excluded: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+        } else {
+          cout<<"Included: "<<m_Results.GetSpectralPoint(r, p)<<endl;
+        }
+      }
+    }
+  }
+      
+      
   // Create a list of spectral points
   vector<SetOfMatches> SetsOfMatches;
   
@@ -266,14 +280,23 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
           SetOfMatches NewSet = OldSet;
           bool AllIncreasing = true;
           for (unsigned int m = 0; m < SubSet.m_Matches.size(); ++m) {
-            if ((AllIncreasing = NewSet.AddWithTest(SubSet.m_Matches[m])) == false) break;
+            if ((AllIncreasing = NewSet.AddWithTest(SubSet.m_Matches[m])) == false) {
+               break;
+            }
           }
           if (AllIncreasing == true) {
             NewSetsOfMatches.push_back(NewSet);
+            //cout<<"Increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl; 
+          } else {
+            //cout<<"Not increasing: "<<OldSet.ToString()<<" with "<<SubSet.ToString()<<endl; 
           }
         }
       }
-      SetsOfMatches = NewSetsOfMatches;
+      if (NewSetsOfMatches.size() != 0) {
+        SetsOfMatches = NewSetsOfMatches;
+      } else {
+        cout<<"Error something went wrong with the latest sets of matches since we would now have less matches (old: "<<SetsOfMatches.size()<<"  new: "<<NewSetsOfMatches.size()<<") ... Excluding a ton of lines"<<endl; 
+      }
     } else {
       for (auto SubSet: SubSetsOfMatches) {
         SetOfMatches NewSet;
@@ -292,7 +315,10 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
   }
   
   
-  if (g_Verbosity >= c_Info) cout<<"Investigating "<<SetsOfMatches.size()<<" peak-line combos..."<<endl;
+  if (g_Verbosity >= c_Info) {
+    cout<<"Investigating "<<SetsOfMatches.size()<<" peak-line combos..."<<endl;
+    for (auto S: SetsOfMatches) cout<<S.ToString()<<endl;
+  }
   if (SetsOfMatches.size() == 0) return false;
   
   // Calculate the quality factor:

@@ -265,6 +265,20 @@ void MCalibrationFit::SetFitParameters(ROOT::Fit::Fitter& Fitter, TH1D& Hist, do
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get a value at the given x
+double MCalibrationFit::Evaluate(double X) const
+{
+  if (m_Fit != 0 && m_IsFitUpToDate == true) {
+    return m_Fit->Eval(X);
+  }
+  
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Mimic ROOT Draw functionality
 void MCalibrationFit::Draw(MString Options)
 {

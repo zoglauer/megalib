@@ -59,6 +59,12 @@ class MReadOutElement
   virtual bool IsOfType(const MString& String) const;
   //! Return the type of this read-out element
   virtual MString GetType() const;
+  //! Return true if this read-out element is of the same type as the given one
+  virtual bool AreOfSameType(const MReadOutElement& ROE) const { return GetType().AreIdentical(ROE.GetType()); }
+  
+  //! Return the minimum number of hits which compose a good hit
+  //! I.e. for a double strip it is two (n and p side), otherwise it is usually 1
+  virtual unsigned int GetMinimumNumberOfReadOutsForGoodInteraction() const { return 1; }
   
   //! Set the detector ID
   void SetDetectorID(unsigned int DetectorID) { m_DetectorID = DetectorID; }

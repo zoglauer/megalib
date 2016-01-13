@@ -304,11 +304,10 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
         Error = true;
       }
     } else if (Line[0] == 'U' && Line[1] == 'H') {
-      T.Analyze(Line, false);
+      T.AnalyzeFast(Line);
         
       m_ROE->Parse(T, 1);
       m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
-  
       
       //cout<<"Combined: "<<m_ROD->ToString()<<" vs. "<<m_ROD->GetCombinedType()<<endl;
       

@@ -73,10 +73,13 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   //! Get the FWHM
   virtual double GetFWHM() const { return -1.0; }
   
+  //! Get a value at the given x
+  virtual double Evaluate(double X) const;
+  
   //! Get the reduced chi square
   double GetReducedChisquare() const { return IsFitUpToDate() ? m_Fit->GetChisquare()/m_Fit->GetNDF() : 0; }
   
-  //! Get the average deviation between fir and histogram in percent
+  //! Get the average deviation between fit and histogram in percent
   double GetAverageDeviation() const { return m_AverageDeviation; }
   
   //! Mimic ROOT Draw functionality
