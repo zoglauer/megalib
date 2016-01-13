@@ -223,6 +223,10 @@ class MFile
   //! The maximum allowed file length
   streamsize m_MaxFileLength;
   
+  //! A frequently used buffer
+  char* m_ReadLineBuffer;
+  //! The length of the frquently used read-line buffer
+  unsigned long m_ReadLineBufferLength;
   
 
 #ifdef ___CINT___

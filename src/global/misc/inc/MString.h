@@ -50,6 +50,8 @@ class MString
   MString(const string& S) { m_String = S; }
   MString(const ostringstream& S) { m_String = S.str(); }
   MString(const char* S) { m_String = S; }
+  //! Copy first n characters of S
+  MString(const char* S, unsigned int N) { m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
   MString(const char S) { m_String = S; }
   virtual ~MString() {}
 

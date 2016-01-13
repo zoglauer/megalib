@@ -68,6 +68,7 @@ MFile::MFile()
   m_Progress = 0;  
   m_ZipFile = 0;
   m_IsOpen = false;
+  m_ReadLineBufferLength = 0;
 
   Reset();
 }
@@ -407,7 +408,12 @@ bool MFile::Close()
   m_IsOpen = false;
 
   ShowProgress(false);
-
+  
+  if (m_ReadLineBufferLength != 0) {
+    delete [] m_ReadLineBuffer;
+    m_ReadLineBufferLength = 0;
+  }
+  
   return true;
 }
 
@@ -623,25 +629,30 @@ bool MFile::ReadLine(MString& String)
   String.Clear();
   
   if (m_WasZipped == true) {
-    unsigned int Length = 1000;
-    char* Buffer = new char[Length];
+    if (m_ReadLineBufferLength == 0) {
+      m_ReadLineBufferLength = 1000;
+      m_ReadLineBuffer = new char[m_ReadLineBufferLength];
+    }
     char* Return = 0;
     
     do {
-      Buffer[0] = '\0';
-      Return = gzgets(m_ZipFile, Buffer, Length-1);
+      m_ReadLineBuffer[0] = '\0';
+      Return = gzgets(m_ZipFile, m_ReadLineBuffer, m_ReadLineBufferLength-1);
       if (Return == Z_NULL) {
         if (gzeof(m_ZipFile) == 0) {
           int ErrorCode;
           cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
-        delete [] Buffer;
         return false;
       }
       String.Append(Return);
-    } while (strlen(Return) == Length-2);
-    String.RemoveAll('\n');
-    delete [] Buffer;
+    } while (strlen(Return) == m_ReadLineBufferLength-2);
+    
+    // Remove any returns:
+    if (String.GetStringRef().back() == '\n') {
+      String.StripBackInPlace('\n');  
+    }
+    // Slower: String.RemoveAll('\n');
   } else {
     String.ReadLine(m_File);
   }

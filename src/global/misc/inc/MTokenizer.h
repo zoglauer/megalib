@@ -59,7 +59,10 @@ class MTokenizer
   //! are split in the two tokens "Sphere" and "Source", otherwise it is one token 
   void AllowComposed(const bool Composed);
 
-  //! Split the text into tokens
+  //! Split the text into tokens - this assumes we just have space separated tokens, no math mode, no ".", etc.
+  bool AnalyzeFast(MString Text);
+
+  //! Split the text into tokens - this includes all the bells and whistles, math mode, combined tokens with "." etc 
   bool Analyze(MString Text, const bool AllowMaths = true);
   //! Same as Analyse
   bool Analyse(MString Text, const bool AllowMaths = true) { return Analyze(Text, AllowMaths); }
