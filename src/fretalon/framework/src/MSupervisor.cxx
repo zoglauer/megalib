@@ -859,6 +859,36 @@ bool MSupervisor::Analyze()
       }
     } // UI updates and spwan checks
     
+    // If the last module is more than X events behind the first and we have reached the maximum amount of instances, we slow everything down...
+    if (m_UseMultiThreading == true) {
+      long Behind = 0;
+      for (unsigned int s = 0; s < Modules.back().size(); ++s) {
+        Behind -= Modules.back()[s]->GetNumberOfAnalyzedEvents();
+      }
+      for (unsigned int s = 0; s < Modules.front().size(); ++s) {
+        Behind += Modules.front()[s]->GetNumberOfAnalyzedEvents();
+      }
+      bool ReachedMax = false;
+      for (unsigned int m = 0; m < Modules.size(); ++m) {
+        if (Modules[m].size() == MaxInstances) {
+          ReachedMax = true;
+          break;
+        }
+      }
+      if (Behind > 200000 && ReachedMax == true) {
+        for (unsigned int s = 0; s < Modules.front().size(); ++s) {
+          Modules.front()[s]->Pause(true);
+        }
+      } else {
+        for (unsigned int s = 0; s < Modules.front().size(); ++s) {
+          if (Modules.front()[s]->IsPaused() == true) {
+            Modules.front()[s]->Pause(false);
+          }
+        }
+      }
+    }
+    
+    
     // If there were no events --- sleep a bit
     if (m_UseMultiThreading == true && HasMoreEvents == false) {
       gSystem->Sleep(10); 

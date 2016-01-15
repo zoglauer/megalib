@@ -68,6 +68,8 @@ MModule::MModule()
   
   m_IsStartModule = false;
   
+  m_IsPaused = false;
+  
   m_IsOK = true;
   m_IsReady = true;
   m_IsFinished = false;
@@ -214,6 +216,7 @@ MReadOutAssembly* MModule::GetAnalyzedReadOutAssembly()
 
 bool MModule::Initialize()
 {
+  m_IsPaused = false;
   m_IsOK = true;
   m_IsFinished = false;
   m_NAnalyzedEvents = 0;
@@ -258,7 +261,7 @@ void MModule::AnalysisLoop()
   
   while (m_Interrupt == false) {
     
-    if (DoSingleAnalysis() == false) {
+    if (m_IsPaused == true || DoSingleAnalysis() == false) {
       MTimer SleepTimer;
       gSystem->Sleep(20);
       m_SleepTime += SleepTimer.GetElapsed(); // Sleep() is not perfectly accurate...

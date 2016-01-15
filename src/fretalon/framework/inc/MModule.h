@@ -129,6 +129,11 @@ class MModule
   //! Has to be overwritten in derived class
   virtual bool AnalyzeEvent(MReadOutAssembly* Event) = 0;
 
+  //! Pause the module
+  void Pause(bool PauseModule = true) { m_IsPaused = PauseModule; }
+  //! Return true if the module is paused
+  bool IsPaused() const { return m_IsPaused; }
+  
   //! Clear the queues
   void ClearQueues();
 
@@ -251,6 +256,9 @@ class MModule
   bool m_IsOK;
   //! True, if the module is finished (e.g. cannot read any more events)
   bool m_IsFinished;
+  
+  //! True if the module is paused
+  bool m_IsPaused;
   
   //! Interrupt whatever it is doing and break
   bool m_Interrupt;
