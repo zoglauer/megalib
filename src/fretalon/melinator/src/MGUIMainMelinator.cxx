@@ -1561,7 +1561,7 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
     FitQualities.push_back(FitQuality);
   }
   
-  // Mean & Standrad Dev:
+  // Mean & Standard deviation:
   double LowerCutOff = 0;
   double UpperCutOff = 100000;
   
@@ -1587,6 +1587,7 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
     if (StandardDeviation > 0) {
       // Now set the colors:
       for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+        //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<m_Melinator.GetCalibrationQuality(i)<<"/"<<StandardDeviation<<endl;
         m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), m_Melinator.GetCalibrationQuality(i)/StandardDeviation);
       }
     }
@@ -1603,18 +1604,18 @@ void MGUIMainMelinator::SwitchToLine(double ROUs)
   unsigned int Lines = m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection);
   if (Lines == 0) return;
   
-  unsigned int Clostest = 0;
+  unsigned int Closest = 0;
   double MinDistance = numeric_limits<double>::max(); 
   
   for (unsigned int p = 0; p < Lines; ++p) {
     MCalibrationSpectralPoint& P = m_Melinator.GetCalibrationSpectralPoint(m_ActiveCollection, p);
     if (fabs(P.GetPeak() - ROUs) < MinDistance) {
-      Clostest = p;
+      Closest = p;
       MinDistance = fabs(P.GetPeak() - ROUs);
     }
   }
   
-  UpdateDisplay(m_ActiveCollection, Clostest);
+  UpdateDisplay(m_ActiveCollection, Closest);
 }
 
 
