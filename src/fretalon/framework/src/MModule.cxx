@@ -68,6 +68,7 @@ MModule::MModule()
   
   m_IsStartModule = false;
   
+  m_AllowPausing = true;
   m_IsPaused = false;
   
   m_IsOK = true;

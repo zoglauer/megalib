@@ -726,7 +726,7 @@ bool MSupervisor::Analyze()
   long NumberOfUIUpdates = 0;
   
   // Number of instances per module
-  unsigned int MaxInstances = thread::hardware_concurrency();
+  unsigned int MaxInstances = thread::hardware_concurrency() / 2;
   if (MaxInstances < 2) MaxInstances = 2;
   
   // Create a local list of the modules
@@ -814,7 +814,7 @@ bool MSupervisor::Analyze()
           for (unsigned int s = 0; s < Modules[m].size(); ++s) {
             Now += Modules[m][s]->GetNumberOfAnalyzedEvents();
           }
-          if (Now + 50000*Modules[m].size() < 0.8*Last) { // I know...
+          if (Now + 40000*Modules[m].size() < Last) { // I know...
             if (Modules[m][0]->AllowsMultipleInstances() == true && Modules[m].size() < MaxInstances) {
               MModule* M = Modules[m][0]->Clone();
               MXmlNode* Node = Modules[m][0]->CreateXmlConfiguration();
@@ -859,6 +859,7 @@ bool MSupervisor::Analyze()
       }
     } // UI updates and spwan checks
     
+    
     // If the last module is more than X events behind the first and we have reached the maximum amount of instances, we slow everything down...
     if (m_UseMultiThreading == true) {
       long Behind = 0;
@@ -877,7 +878,9 @@ bool MSupervisor::Analyze()
       }
       if (Behind > 200000 && ReachedMax == true) {
         for (unsigned int s = 0; s < Modules.front().size(); ++s) {
-          Modules.front()[s]->Pause(true);
+          if (Modules.front()[s]->AllowPausing() == true) {
+            Modules.front()[s]->Pause(true);
+          }
         }
       } else {
         for (unsigned int s = 0; s < Modules.front().size(); ++s) {
