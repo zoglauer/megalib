@@ -22,6 +22,11 @@ if [ $? -ne 0 ]; then
     echo "ERROR: curl must be installed"
     exit 1
 fi 
+type openssl >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: openssl must be installed"
+    exit 1
+fi 
 
 
 confhelp() {
@@ -279,7 +284,7 @@ if [ -d ${GEANT4DIR} ]; then
     PATCHPRESENT="no"
     if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
       PATCHPRESENT="yes"
-      PATCHPRESENTMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $1 }'`
+      PATCHPRESENTMD5=`openssl md5 "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $2 }'`
     fi
     PATCHSTATUS=`cat COMPILE_SUCCESSFUL | grep -- "^Patch"`
     if [[ ${PATCHSTATUS} == Patch\ applied* ]]; then
@@ -352,7 +357,7 @@ if [[ ${PATCH} == on ]]; then
   echo "Patching..."
   if [ -f "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" ]; then
     patch -p1 < ${MEGALIB}/resource/patches/${GEANT4CORE}.patch
-    PATCHMD5=`md5sum "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $1 }'`
+    PATCHMD5=`openssl md5 "${MEGALIB}/resource/patches/${GEANT4CORE}.patch" | awk -F" " '{ print $2 }'`
     PATCHAPPLIED="Patch applied ${PATCHMD5}"
     echo "Applied patch: ${MEGALIB}/resource/patches/${GEANT4CORE}.patch"
   fi
