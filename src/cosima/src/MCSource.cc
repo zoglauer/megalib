@@ -909,7 +909,7 @@ string MCSource::GetBeamTypeAsString() const
     Name = "FarFieldPointSource";
     break;
   case c_FarFieldArea:
-    Name = "FarFieldPointSource";
+    Name = "FarFieldAreaSource";
     break;
   case c_FarFieldGaussian:
     Name = "FarFieldGaussian";
