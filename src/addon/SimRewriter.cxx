@@ -193,6 +193,8 @@ bool SimRewriter::Analyze()
   // Load geometry:
   MDGeometryQuest* Geometry = new MDGeometryQuest();
   if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
+    Geometry->ActivateNoising(false);
+    Geometry->SetGlobalFailureRate(0.0);
     cout<<"Geometry "<<Geometry->GetName()<<" loaded!"<<endl;
   } else {
     cout<<"Unable to load geometry "<<Geometry->GetName()<<" - Aborting!"<<endl;
