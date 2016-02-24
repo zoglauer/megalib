@@ -85,6 +85,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MBinnerFixedNumberOfBins.o \
 	$(LB)/MBinnerFixedCountsPerBin.o \
 	$(LB)/MBinnerBayesianBlocks.o \
+	$(LB)/MBinnerFISBEL.o \
 	$(LB)/MXmlData.o \
 	$(LB)/MXmlNode.o \
 	$(LB)/MXmlAttribute.o \

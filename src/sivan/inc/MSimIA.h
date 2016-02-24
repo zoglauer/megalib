@@ -181,7 +181,7 @@ class MSimIA
   //! The ID of the detector type
   int m_DetectorType;
   
-  //! The interactio ID
+  //! The interaction ID
   int m_ID;
   //! The ID of the interaction wich generated the main partcile of this interaction
   int m_OriginID;

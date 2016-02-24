@@ -218,6 +218,8 @@ public:
                  double EnergyParam7 = c_Invalid);
   /// Return true, if the file containing the spectrum could be set correctly
   bool SetEnergy(MString FileName); 
+  /// Return the specific energy parameter 
+  double GetEnergyParameter(unsigned int i);
 
   /// Set an entry of the event list
   bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 

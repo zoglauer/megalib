@@ -106,6 +106,8 @@ private:
 
   /// List of watched volumes
   vector<MString> m_WatchedVolumes;
+  /// List of watched volumes with attached "Log"
+  vector<MString> m_WatchedVolumesLog;
 
   /// List of black absorbers
   vector<MString> m_BlackAbsorbers;

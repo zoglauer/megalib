@@ -119,16 +119,16 @@ void MBinnerBayesianBlocks::Histogram()
     }
     Edges.push_back(Max);
   }
-  //cout<<"Edges:"<<endl;
-  //Print(Edges);
+  cout<<"Edges:"<<endl;
+  Print(Edges);
 
   // Step 3: Create Block length:
   vector<float> BlockLength;
   for (unsigned int i = 0; i < Edges.size(); ++i) {
     BlockLength.push_back(Edges.back() - Edges[i]);
   }
-  //cout<<"Block length:"<<endl;
-  //Print(BlockLength);
+  cout<<"Block length:"<<endl;
+  Print(BlockLength);
   
   // Step 4: Prepare for iterations
   vector<float> CountsPerBin(Size, 0);
@@ -141,8 +141,8 @@ void MBinnerBayesianBlocks::Histogram()
       }
     }
   }
-  //cout<<"Counts:"<<endl;
-  //Print(CountsPerBin);
+  cout<<"Counts:"<<endl;
+  Print(CountsPerBin);
   
   vector<float> Best(Size, 0.0);
   vector<unsigned int> Last(Size, 0);
@@ -205,13 +205,16 @@ void MBinnerBayesianBlocks::Histogram()
     }
     CurrentIndex = Last[CurrentIndex - 1];
   }
-  //cout<<"All Change points: "<<endl;
-  //Print(ChangePoints);
-  //cout<<"Minimum index: "<<ChangePointsIndex<<endl;
+  cout<<"All Change points: "<<endl;
+  Print(ChangePoints);
+  cout<<"Minimum index: "<<ChangePointsIndex<<endl;
   
   for (unsigned int i = ChangePointsIndex; i < Size; ++i) {
     m_BinEdges.push_back(Edges[ChangePoints[i]]);
   }  
+
+  cout<<"Bin edges before sanity checks: "<<endl;
+  Print(m_BinEdges);
   
   // Step 7: Do some sanity checks:
   if (m_UseBinning == false) {
@@ -239,8 +242,12 @@ void MBinnerBayesianBlocks::Histogram()
       //}
     }
   }
-    
+
+  cout<<"Bin edges after 1. sanity checks: "<<endl;
+  Print(m_BinEdges);
+  
   // Step 8: Finally fill the data array
+  /* Old
   m_BinnedData.resize(m_BinEdges.size()+1, 0);
   for (list<MBinnedData>::iterator I = m_Values.begin(); I != m_Values.end(); ++I) {
     for (unsigned int e = 0; e < m_BinEdges.size(); ++e) {
@@ -251,14 +258,27 @@ void MBinnerBayesianBlocks::Histogram()
         break;
       }
     }
-  }    
+  }
+  */
+  m_BinnedData.resize(m_BinEdges.size()-1, 0);
+  for (list<MBinnedData>::iterator I = m_Values.begin(); I != m_Values.end(); ++I) {
+    vector<double>::iterator I2 = lower_bound(m_BinEdges.begin(), m_BinEdges.end(), (*I).m_AxisValue);
+    if (I2 != m_BinEdges.begin() && I2 != m_BinEdges.end()) {
+      m_BinnedData[I2 - m_BinEdges.begin()] += (*I).m_DataValue;
+    }
+  }
 
+  cout<<"Bin edges ..."<<endl; 
+  Print(m_BinEdges);
+  cout<<"... and content"<<endl;
+  Print(m_BinnedData);
+  
   // Step 9: Reject bins with less than X elements
   if (m_MinimumCountsPerBin > 0) {
     for (unsigned int e = 0; e < m_BinEdges.size()-1; ++e) {
-      //cout<<"Content: "<<m_BinnedData[e]<<" going from "<<m_BinEdges[e]<<" - "<<m_BinEdges[e+1]<<endl;
+      cout<<"Content: "<<m_BinnedData[e]<<" going from "<<m_BinEdges[e]<<" - "<<m_BinEdges[e+1]<<endl;
       if (m_BinnedData[e] < m_MinimumCountsPerBin && e < m_BinEdges.size() - 1) {
-        //cout<<"Erasing..."<<endl;
+        cout<<"Erasing..."<<endl;
         // Move higher content down and erase bins
         m_BinnedData[e] += m_BinnedData[e+1];
         m_BinnedData.erase(m_BinnedData.begin()+e+1);
@@ -268,6 +288,8 @@ void MBinnerBayesianBlocks::Histogram()
     }
   }
   
+  cout<<"Bin edges after 3. sanity checks: "<<endl;
+  Print(m_BinEdges);
   
   m_IsModified = false;
 }

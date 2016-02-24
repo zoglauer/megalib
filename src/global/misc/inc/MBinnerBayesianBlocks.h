@@ -67,8 +67,28 @@ class MBinnerBayesianBlocks : public MBinner
   
   // private methods:
  private:
+  //! Some quick print method for a vector of floats
+  void Print(vector<float>& Array) {
+    for (unsigned int i = 0; i < Array.size(); ++i) {
+      cout<<i<<":"<<Array[i]<<"  ";
+    }
+    cout<<endl;
+  }
+  //! Some quick print method for a vector of doubles
+  void Print(vector<double>& Array) {
+    for (unsigned int i = 0; i < Array.size(); ++i) {
+      cout<<i<<":"<<Array[i]<<"  ";
+    }
+    cout<<endl;
+  }
 
-
+  //! Some quick print method for a vector of unsigned ints
+  void Print(vector<unsigned int>& Array) {
+    for (unsigned int i = 0; i < Array.size(); ++i) {
+      cout<<i<<":"<<Array[i]<<"  ";
+    }
+    cout<<endl; 
+  }
 
   // protected members:
  protected:

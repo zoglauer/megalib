@@ -59,7 +59,9 @@ public:
   /// Interrupt and stop the run after the next event
   bool Interrupt();
 
-
+  /// Get the parameter file
+  MCParameterFile& GetParameterFile() { return m_RunParameters; }
+  
   // protected methods:
 protected:
   /// Parse the command line

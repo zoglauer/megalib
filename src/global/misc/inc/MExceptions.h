@@ -34,6 +34,53 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! This exception is thrown when a parmeter is out of range and 
+//! the error cannot be reconvered gracefully
+class MExceptionParameterOutOfRange : public exception
+{
+public:
+  //! Default constructor
+  MExceptionParameterOutOfRange() : m_IsEmpty(true), m_Value(0), m_Minimum(0), m_Maximum(0), m_Name("") {
+    abort();
+  }
+  //! Constructor giving the minium array index, its size, and the accessing index to the array 
+  MExceptionParameterOutOfRange(double Value, double Min, double Max, MString Name) {
+    abort();
+    SetMinSizeIndex(Value, Min, Max, Name);
+  }
+  //! Default destructor
+  ~MExceptionParameterOutOfRange() throw() {}
+  //! Set the data minimum array index, its size, and the accessing index to the array
+  void SetMinSizeIndex(double Value, double Min, double Max, MString Name) {
+    m_Value = Value; m_Minimum = Min; m_Maximum = Max; m_Name = Name; m_IsEmpty = false;
+  }
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_IsEmpty == false) {
+      ostringstream stream;
+      stream<<"Parameter \""<<m_Name<<"\" out of range - allowed: ["<<m_Minimum<<".."<<m_Maximum<<"] - you have: "<<m_Value<<endl;
+      return stream.str().c_str();
+    } else {
+      return "Index out of bounds!"; 
+    }
+  }
+
+private:
+  //! True if SetValueMinMaxName() has never been called
+  bool m_IsEmpty;
+  //! The current value
+  double m_Value;
+  //! The minimum value
+  double m_Minimum;
+  //! The maximum value
+  double m_Maximum;
+  //! The name of the parameter
+  MString m_Name;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 //! This exception is thrown when an index is out-of-bounds and 
 //! the error cannot be recovered gracefully
@@ -51,7 +98,7 @@ public:
   }
   //! Default destructor
   ~MExceptionIndexOutOfBounds() throw() {}
-  //! Set the data minium array index, its size, and the accessing index to the array
+  //! Set the data minimum array index, its size, and the accessing index to the array
   void SetMinSizeIndex(unsigned int Min, unsigned int Size, unsigned int Index) {
     m_Min = Min; m_Size = Size; m_Index = Index; m_IsEmpty = false;
   }
@@ -96,7 +143,7 @@ public:
   }
   //! Default destructor
   ~MExceptionObjectDoesNotExist() throw() {}
-  //! Set the data minium array index, its size, and the accessing index in the array
+  //! Set the data minimum array index, its size, and the accessing index in the array
   void SetName(const MString& Name) { m_Name = Name; }
   //! The error message
   virtual const char* what() const throw() {
@@ -140,7 +187,7 @@ public:
   }
   //! Default destructor
   ~MExceptionUnknownMode() throw() {}
-  //! Set the data minium array index, its size, and the accessing index in the array
+  //! Set a name for the unknown mode
   void SetName(const MString& Mode) { m_Mode = Mode; }
   //! The error message
   virtual const char* what() const throw() {
@@ -164,6 +211,51 @@ private:
   MString m_Type;
   //! The mode which is unknown
   MString m_Mode;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an index is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionNeverReachThatLineOfCode : public exception
+{
+public:
+  //! Default constructor
+  MExceptionNeverReachThatLineOfCode() : m_IsEmpty(true) {
+    abort();
+  }
+  //! Standard constructor
+  MExceptionNeverReachThatLineOfCode(const MString& Description) : m_IsEmpty(false), m_Description(Description) {
+    abort();
+  }
+  //! Default destructor
+  ~MExceptionNeverReachThatLineOfCode() throw() {}
+  //! Set a name for the unknown mode
+  void SetDescription(const MString& Description) { m_Description = Description; m_IsEmpty = false; }
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_IsEmpty == false) {
+      ostringstream stream;
+      if (m_Description == "") {
+        stream<<"We should have never reached that line of code: "<<endl;
+        stream<<m_Description<<endl;
+      } else {
+        stream<<"We should have never reached that line of code!"<<endl;        
+      }
+      return stream.str().c_str();
+    } else {
+      return "We should have never reached that line of code!"; 
+    }
+  }
+
+private:
+  //! True if SetName() has never been called
+  bool m_IsEmpty;
+  //! The description of what went wrong
+  MString m_Description;
+
 };
 
 

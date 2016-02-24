@@ -1490,6 +1490,32 @@ bool MCSource::SetEnergy(MString FileName)
 
 
 /******************************************************************************
+ * Return the specific energy parameter
+ */
+double MCSource::GetEnergyParameter(unsigned int i)
+{
+  if (i == 1) { 
+    return m_EnergyParam1;
+  } else if (i == 2) { 
+    return m_EnergyParam2;
+  } else if (i == 3) { 
+    return m_EnergyParam3;
+  } else if (i == 4) { 
+    return m_EnergyParam4;
+  } else if (i == 5) { 
+    return m_EnergyParam5;
+  } else if (i == 6) { 
+    return m_EnergyParam6;
+  } else if (i == 7) { 
+    return m_EnergyParam7;
+  } else {
+    mout<<m_Name<<": Energy parameter out of range "<<i<<endl;
+    return false;
+  }
+}
+
+
+/******************************************************************************
  * Return true, if the flux could be set correctly
  */
 bool MCSource::SetFlux(const double& Flux) 

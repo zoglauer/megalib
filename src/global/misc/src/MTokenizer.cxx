@@ -498,6 +498,58 @@ vector<float> MTokenizer::GetTokenAtAsFloatVector(const unsigned int i) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+vector<int> MTokenizer::GetTokenAtAsIntVector(const unsigned int i) const
+{
+  // Return all tokens from position i to end as integer array
+
+  vector<int> A;
+  if (i < m_Tokens.size()) {
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
+      A.push_back(GetTokenAtAsInt(j));
+    }
+    return A;
+  } else {
+    mlog<<"vector<int> MTokenizer::GetTokenAtAsIntVector(int i): "<<endl;
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+    } else {
+      mlog<<"The Tokenizer is empty!"<<endl;
+    }
+    return A;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(const unsigned int i) const
+{
+  // Return all tokens from position i to end as integer array
+
+  vector<unsigned int> A;
+  if (i < m_Tokens.size()) {
+    for (unsigned int j = i; j < m_Tokens.size(); ++j) {
+      A.push_back(GetTokenAtAsUnsignedInt(j));
+    }
+    return A;
+  } else {
+    mlog<<"vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(int i): "<<endl;
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+    } else {
+      mlog<<"The Tokenizer is empty!"<<endl;
+    }
+    return A;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
 {
   // Return the token at position i as boolean

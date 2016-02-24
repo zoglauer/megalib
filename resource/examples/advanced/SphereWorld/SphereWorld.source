@@ -1,0 +1,29 @@
+
+Version         1
+Geometry        SphereWorld.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  all
+StoreScientific                      true 6
+StoreSimulationInfoIonization        false
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       false
+StoreSimulationInfoWatchedVolumes    Sphere
+
+BlackAbsorber                        BlackAbsorber
+
+DefaultRange    0.5
+
+Run MySim
+#MySim.FileName            InfiniteAir
+MySim.NEvents              1000000000
+
+MySim.Source MonoPS
+MonoPS.ParticleType        1
+MonoPS.Beam                ConeBeam 0.0 0.0 0.0 0.0 0.0 1.0  90.0
+MonoPS.Spectrum            Mono 662
+MonoPS.Flux                1

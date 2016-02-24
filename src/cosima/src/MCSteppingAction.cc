@@ -93,6 +93,10 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_StoreIonization = RunParameters.StoreSimulationInfoIonization();
 
   m_WatchedVolumes = RunParameters.GetStoreSimulationInfoWatchedVolumes();
+  m_WatchedVolumesLog.clear();
+  for (auto S: m_WatchedVolumes) {
+    m_WatchedVolumesLog.push_back(S + "Log");
+  }
 
   m_BlackAbsorbers = RunParameters.GetBlackAbsorbers();
 
@@ -1163,15 +1167,19 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         bool FoundInPre = false;
         bool FoundInPost = false;
         
-        for (int h = 0; h < Step->GetPreStepPoint()->GetTouchable()->GetHistoryDepth(); ++h) {
-          if (Step->GetPreStepPoint()->GetTouchable()->GetVolume(h)->GetName().c_str() == m_WatchedVolumes[w]) {
+        const G4VTouchable* Touchable = Step->GetPreStepPoint()->GetTouchable();
+        for (int h = 0; h < Touchable->GetHistoryDepth(); ++h) {
+          if (Touchable->GetVolume(h)->GetLogicalVolume()->GetName().c_str() == m_WatchedVolumesLog[w] ||
+              Touchable->GetVolume(h)->GetName().c_str() == m_WatchedVolumes[w]) {
             FoundInPre = true;
             break;
           }
         }
         
-        for (int h = 0; h < Step->GetPostStepPoint()->GetTouchable()->GetHistoryDepth(); ++h) {
-          if (Step->GetPostStepPoint()->GetTouchable()->GetVolume(h)->GetName().c_str() == m_WatchedVolumes[w]) {
+        Touchable = Step->GetPostStepPoint()->GetTouchable();
+        for (int h = 0; h < Touchable->GetHistoryDepth(); ++h) {
+          if (Touchable->GetVolume(h)->GetLogicalVolume()->GetName().c_str() == m_WatchedVolumesLog[w] ||
+              Touchable->GetVolume(h)->GetName().c_str() == m_WatchedVolumes[w]) {
             FoundInPost = true;
             break;
           }

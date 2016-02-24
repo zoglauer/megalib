@@ -108,6 +108,10 @@ class MTokenizer
   vector<double> GetTokenAtAsDoubleVector(const unsigned int i) const;
   //! Return the token AT AND AFTER i as vector of floats --- return empty array in case of error
   vector<float> GetTokenAtAsFloatVector(const unsigned int i) const;
+  //! Return the token AT AND AFTER i as vector of ints --- return empty array in case of error
+  vector<int> GetTokenAtAsIntVector(const unsigned int i) const;
+  //! Return the token AT AND AFTER i as vector of ints --- return empty array in case of error
+  vector<unsigned int> GetTokenAtAsUnsignedIntVector(const unsigned int i) const;
 
   //! Evaluate the math functions in the given string
   static bool EvaluateMaths(MString& Token);
