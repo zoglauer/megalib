@@ -31,6 +31,8 @@ PRG3       := cellmerger
 PRG3_MAIN  := CellMerger.cxx
 PRG4       := feeder
 PRG4_MAIN  := Feeder.cxx
+PRG5       := cubesplitter
+PRG5_MAIN  := CubeSplitter.cxx
 
 G4_CFLAGS  := $(shell geant4-config --cflags)
 G4_LIBS    := $(shell geant4-config --libs)
@@ -47,7 +49,7 @@ CXXFLAGS += -I$(IN)
 # Commands:
 #
 
-all: $(PRG1) $(PRG2) $(PRG3) $(PRG4)
+all: $(PRG1) $(PRG2) $(PRG3) $(PRG4) $(PRG5)
 
 
 #----------------------------------------------------------------
@@ -69,6 +71,10 @@ $(PRG3): $(PRG3_MAIN)
 $(PRG4): $(PRG4_MAIN)
 	@echo "Compiling and linking $(PRG4) ..."
 	@$(LD) $(CXXFLAGS) $(LDFLAGS) $(PRG4_MAIN) $(MLIBS) $(GLIBS) $(LIBS) $(G4_LIBS) -o $(BN)/$(PRG4)
+
+$(PRG5): $(PRG5_MAIN)
+	@echo "Compiling and linking $(PRG5) ..."
+	@$(LD) $(CXXFLAGS) $(LDFLAGS) $(PRG5_MAIN) $(MLIBS) $(GLIBS) $(LIBS) $(G4_LIBS) -o $(BN)/$(PRG5)
 
 
 #

@@ -7,6 +7,9 @@ void CreateSphereWorld()
   double m_GapHeight = (cell_MaxHeight - cell_MinHeight) / (cell_NBinsHeight - 1);
   double m_GapDistance = (cell_MaxDistance - cell_MinDistance) / (cell_NBinsDistance - 1);
   
+  double GroundSourceDistance = 100;
+  double GroundHalfDepth = 100;
+  
   ofstream out;
   out.open("SphereWorld.geo.setup");
 
@@ -17,21 +20,42 @@ void CreateSphereWorld()
   out<<"Air.ComponentByMass             N  0.7556"<<endl;
   out<<"Air.ComponentByMass             O  0.2315"<<endl;
   out<<"Air.ComponentByMass             Ar 0.0129 "<<endl;
-
+  
+  out<<"Material Concrete"<<endl;
+  out<<"Concrete.Density                     2.3"<<endl;
+  out<<"Concrete.ComponentByMass             H  0.022100"<<endl;
+  out<<"Concrete.ComponentByMass             C  0.002484"<<endl;
+  out<<"Concrete.ComponentByMass             O  0.574930"<<endl;
+  out<<"Concrete.ComponentByMass             Na 0.015208"<<endl;
+  out<<"Concrete.ComponentByMass             Mg 0.001266"<<endl;
+  out<<"Concrete.ComponentByMass             Al 0.019953"<<endl;
+  out<<"Concrete.ComponentByMass             Si 0.304627"<<endl;
+  out<<"Concrete.ComponentByMass             K  0.010045"<<endl;
+  out<<"Concrete.ComponentByMass             Ca 0.042951"<<endl;
+  out<<"Concrete.ComponentByMass             Fe 0.006436"<<endl;
+ 
   out<<"Volume World"<<endl;
   out<<"World.Material Air"<<endl;
-  out<<"World.Shape BOX "<<2*cell_MaxDistance<<" "<<2*cell_MaxDistance<<" "<<2*cell_MaxDistance<<endl;
+  out<<"World.Shape BOX "<<5*cell_MaxDistance<<" "<<5*cell_MaxDistance<<" "<<5*cell_MaxDistance<<endl;
   out<<"World.Position 0 0 0"<<endl;
   out<<"World.Mother 0"<<endl;
+ 
+  out<<"Volume Ground"<<endl;
+  out<<"Ground.Material Concrete"<<endl;
+  out<<"Ground.Visibility 1"<<endl;
+  out<<"Ground.Shape BOX "<<5*cell_MaxDistance<<" "<<5*cell_MaxDistance<<" "<<GroundHalfDepth<<endl;
+  out<<"Ground.Position 0 0 "<< - GroundSourceDistance - GroundHalfDepth<<endl;
+  out<<"Ground.Mother World"<<endl;
   
   out<<"Volume Sphere"<<endl;
   out<<"Sphere.Material Air"<<endl;
   out<<"Sphere.Shape Sphere 0.0 "<<cell_Radius<<endl;
-  out<<"Sphere.Visibility 1"<<endl;
+  out<<"Sphere.Visibility 0"<<endl;
   out<<"Sphere.Color 2"<<endl;
   
   out<<"Volume Plane"<<endl; 
   out<<"Plane.Material Air"<<endl;
+  out<<"Plane.Visibility 1"<<endl;
   out<<"Plane.Shape TUBS 0.0 { "<<cell_MaxDistance<<" + "<<cell_Radius<<" } "<<cell_Radius<<endl;
   out<<"Plane.Visibility 0"<<endl;
   out<<"Plane.Color 3"<<endl;

@@ -432,17 +432,17 @@ public:
     if (Combined == true) {
       ostringstream FileName;
       FileName<<Prefix<<".dat.gz";
-          
-      ofstream out;
-      out.open(FileName.str());
-      if (out.is_open() == false) return;
+      
+      MFile File;
+      File.Open(FileName, MFile::c_Write);
       
       for (int h = 0; h < cell_NBinsHeight; ++h) {
         for (int d = 0; d < cell_NBinsDistance; ++d) {
-          out<<m_DataCells[h][d].ToString(m_StartedEvents);
+          File.Write(m_DataCells[h][d].ToString(m_StartedEvents));
         }
       }
-      out.close();
+      File.Close();
+
     } else {
       for (int h = 0; h < cell_NBinsHeight; ++h) {
         for (int d = 0; d < cell_NBinsDistance; ++d) {

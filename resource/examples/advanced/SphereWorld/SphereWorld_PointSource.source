@@ -1,6 +1,6 @@
 
 Version         1
-Geometry        SphereWorld.geo.setup
+Geometry        ${MEGALIB}/resource/examples/advanced/SphereWorld/SphereWorld.geo.setup
 
 # Physics list
 PhysicsListEM                        Livermore
@@ -19,7 +19,7 @@ BlackAbsorber                        BlackAbsorber
 DefaultRange    0.5
 
 Run MySim
-MySim.FileName            InfiniteAir
+#MySim.FileName            InfiniteAir
 MySim.NEvents              1000000000
 
 MySim.Source MonoPS
