@@ -23,7 +23,7 @@ To create a patch:
 
 (1)
 For example
-diff -rupN root_v5.34.32/root_v5.34.32-source root_v5.34.32_patched/root_v5.34.32-source
+diff -rupN root_v5.34.32_unpatched/root_v5.34.32-source root_v5.34.32_patched/root_v5.34.32-source
 
 (2)
 Append it to an existing one if there is any
