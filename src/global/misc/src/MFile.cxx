@@ -338,7 +338,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
     } else {
-      m_ZipFile = gzopen(m_FileName, "wb");
+      m_ZipFile = gzopen(m_FileName, "wb4"); // Compression level 4 seems to be the best balance between speed and compression for MEGAlib files on Ubuntu 14.04
     }
     if (m_ZipFile == NULL) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
