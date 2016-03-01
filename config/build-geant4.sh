@@ -14,18 +14,27 @@ COMPILEROPTIONS=`gcc --version | head -n 1`
 # Check if some of the frequently used software is installed:
 type cmake >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "ERROR: cmake must be installed"
+  echo "ERROR: cmake must be installed"
+  exit 1
+else 
+  VER=`cmake --version | grep ^cmake`
+  VER=${VER#cmake version }; 
+  OLDIFS=${IFS}; IFS='.'; Tokens=( ${VER} ); IFS=${OLDIFS}; 
+  VERSION=$(( 10000*${Tokens[0]} + 100*${Tokens[1]} + ${Tokens[2]} )); 
+  if (( ${VERSION} < 30300 )); then 
+    echo "ERROR: the version of cmake needs to be at least 3.3 and not ${VER}"
     exit 1
-fi 
+  fi
+fi
 type curl >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "ERROR: curl must be installed"
-    exit 1
+  echo "ERROR: curl must be installed"
+  exit 1
 fi 
 type openssl >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "ERROR: openssl must be installed"
-    exit 1
+  echo "ERROR: openssl must be installed"
+  exit 1
 fi 
 
 
