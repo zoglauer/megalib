@@ -56,7 +56,7 @@
 #include "G4IonConstructor.hh"
 #include "G4UAtomicDeexcitation.hh"
 #include "G4LossTableManager.hh"  
-
+#include "G4NuclideTable.hh"
 
 // MEGAlib:
 #include "MStreams.h"
@@ -220,10 +220,10 @@ void MCPhysicsList::ConstructProcess()
   D->SetAuger(true);
   D->SetPIXE(true);
 
+  G4NuclideTable::GetInstance()->SetLevelTolerance(100*eV);
+  G4NuclideTable::GetInstance()->SetThresholdOfHalfLife(0.0001*ns);
   
-  
-  
-  
+
   
   
   /* unnecessary as of Geant4 9.6
