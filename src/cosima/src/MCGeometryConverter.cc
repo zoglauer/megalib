@@ -120,10 +120,10 @@ bool MCGeometryConverter::Convert(G4String OutputfileName)
   fout<<endl;
   fout<<"# Logical volume descriptions: "<<endl;
   
-  G4LogicalVolumeStore* L = G4LogicalVolumeStore::GetInstance();
+  G4LogicalVolumeStore* LVS = G4LogicalVolumeStore::GetInstance();
   
-  for (unsigned int i = 0; i < L->size(); ++i) {
-    G4LogicalVolume* V = L->at(i);
+  for (unsigned int i = 0; i < LVS->size(); ++i) {
+    G4LogicalVolume* V = LVS->at(i);
     G4String Name = CreateUniqueName(V);
     fout<<"Volume "<<Name<<endl;
     fout<<Name<<".Material "<<m_UniqueMaterialNames[V->GetMaterial()]<<endl;

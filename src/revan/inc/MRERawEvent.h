@@ -284,6 +284,9 @@ class MRERawEvent : public MRESE
   //! External bad event String
   MString m_ExternalBadEventString;
 
+  //! Comments in the event
+  vector<MString> m_Comments;
+  
   //! If true, a pointing in galactic coordinates is present 
   bool m_HasGalacticPointing;
   //! The rotation around the X axis

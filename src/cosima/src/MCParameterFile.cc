@@ -147,7 +147,7 @@ bool MCParameterFile::Parse()
         m_RunList.back().SetName(T->GetTokenAt(1));
         mdebug<<"Adding run "<<T->GetTokenAt(1)<<endl;
       } else {
-        Typo(i, "Can not parse Run token correctly!");
+        Typo(i, "Cannot parse Run token correctly!");
         return false;
       }
     } else if (T->IsTokenAt(0, "Activator", true) == true) {
@@ -157,7 +157,7 @@ bool MCParameterFile::Parse()
         m_ActivatorList.back().SetName(T->GetTokenAt(1));
         mdebug<<"Adding activator "<<T->GetTokenAt(1)<<endl;
       } else {
-        Typo(i, "Can not parse Activator token correctly!");
+        Typo(i, "Cannot parse Activator token correctly!");
         return false;
       }
     } else if (T->IsTokenAt(0, "Geometry", true) == true) {
@@ -171,7 +171,7 @@ bool MCParameterFile::Parse()
         m_GeometryFileName = FileName;
         mdebug<<"Using geometry: "<<m_GeometryFileName<<endl;
       } else {
-        Typo(i, "Can not parse token GeometryFile correctly:"
+        Typo(i, "Cannot parse token GeometryFile correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -180,7 +180,7 @@ bool MCParameterFile::Parse()
         m_DetectorTimeConstant = T->GetTokenAtAsDouble(1)*s;
         mdebug<<"Using detector time constant: "<<m_DetectorTimeConstant<<endl;
       } else {
-        Typo(i, "Can not parse token DetectorTimeConstant correctly:"
+        Typo(i, "Cannot parse token DetectorTimeConstant correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -191,7 +191,7 @@ bool MCParameterFile::Parse()
         m_OverlapCheckTolerance = T->GetTokenAtAsDouble(2)*cm;
         mdebug<<"Performing overlap check (Points:"<<m_OverlapCheckResolution<<", Tolerance: "<<m_OverlapCheckTolerance<<"cm)"<<endl;
       } else {
-        Typo(i, "Can not parse token CheckForOverlaps correctly:"
+        Typo(i, "Cannot parse token CheckForOverlaps correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -203,7 +203,7 @@ bool MCParameterFile::Parse()
         m_CrossSectionFileDirectory = FileName;
         mdebug<<"Creating cross section files ("<<m_CrossSectionFileDirectory<<")"<<endl;
       } else {
-        Typo(i, "Can not parse token CreateCrossSectionFiles correctly:"
+        Typo(i, "Cannot parse token CreateCrossSectionFiles correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -212,7 +212,7 @@ bool MCParameterFile::Parse()
         m_DefaultRangeCut = T->GetTokenAtAsDouble(1)*cm;
         mdebug<<"using default range cut "<<T->GetTokenAt(1)<<endl;
       } else {
-        Typo(i, "Can not parse DefaultRangeCut token correctly!");
+        Typo(i, "Cannot parse DefaultRangeCut token correctly!");
         return false;
       }
     } else if (T->IsTokenAt(0, "Region", true) == true) {
@@ -222,7 +222,7 @@ bool MCParameterFile::Parse()
         m_RegionList.back().SetName(T->GetTokenAt(1));
         mdebug<<"Adding region "<<T->GetTokenAt(1)<<endl;
       } else {
-        Typo(i, "Can not parse Region token correctly!");
+        Typo(i, "Cannot parse Region token correctly!");
         return false;
       }
     } else if (T->IsTokenAt(0, "Package", true) == true) {
@@ -233,12 +233,12 @@ bool MCParameterFile::Parse()
         if (m_PhysicsListEM >= MCPhysicsList::c_EMMin && m_PhysicsListEM <= MCPhysicsList::c_EMMax) {
           mout<<"Using Package: "<<m_PhysicsListEM<<endl;
         } else {
-          Typo(i, "Can not parse token Package correctly:"
+          Typo(i, "Cannot parse token Package correctly:"
                " Unknown package ID!");
           return false;
         }
       } else {
-        Typo(i, "Can not parse token Package correctly:"
+        Typo(i, "Cannot parse token Package correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -262,13 +262,13 @@ bool MCParameterFile::Parse()
         } else if (Type == "penelope") {
           m_PhysicsListEM = MCPhysicsList::c_EMPenelope;
         } else {
-          Typo(i, "Can not parse token PhysicsListEM correctly:"
+          Typo(i, "Cannot parse token PhysicsListEM correctly:"
                " Unknown package string (Usage: e.g. \"PhysicsListEM Livermore\"");
           return false;
         }
         mdebug<<"Using EM-Package: "<<m_PhysicsListEM<<endl;
       } else {
-        Typo(i, "Can not parse token PhysicsListEM correctly:"
+        Typo(i, "Cannot parse token PhysicsListEM correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -289,13 +289,13 @@ bool MCParameterFile::Parse()
         } else if (Type == "qgsp-inclxx-hp") {
           m_PhysicsListHD = MCPhysicsList::c_HDQGSP_INCLXX_HP;
         } else {
-          Typo(i, "Can not parse token PhysicsListHD correctly:"
+          Typo(i, "Cannot parse token PhysicsListHD correctly:"
                " Unknown package string (Usage: e.g. \"PhysicsListHD qgsp-bic-hp\"");
           return false;
         }
         mdebug<<"Using HD-Package: "<<m_PhysicsListHD<<endl;
       } else {
-        Typo(i, "Can not parse token PhysicsListHD correctly:"
+        Typo(i, "Cannot parse token PhysicsListHD correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -317,12 +317,12 @@ bool MCParameterFile::Parse()
         } else if  (Mode == "activationdelayeddecay") {
           m_DecayMode = c_DecayModeActivationDelayedDecay;
         } else {
-          Typo(i, "Can not parse token DecayMode correctly:"
+          Typo(i, "Cannot parse token DecayMode correctly:"
                " Unknown Decay mode!");
           return false;
         }
       } else {
-        Typo(i, "Can not parse token DecayMode correctly:"
+        Typo(i, "Cannot parse token DecayMode correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -331,7 +331,7 @@ bool MCParameterFile::Parse()
         m_StoreCalibrated = T->GetTokenAtAsBoolean(1);
         mdebug<<"Storing calibrated: "<<((m_StoreCalibrated == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token StoreCalibrated correctly:"
+        Typo(i, "Cannot parse token StoreCalibrated correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -340,7 +340,7 @@ bool MCParameterFile::Parse()
         m_StoreSimulationInfoVersion = T->GetTokenAtAsInt(1);
         mdebug<<"Using the following output version of simulation information: "<<m_StoreSimulationInfoVersion<<endl;
       } else {
-        Typo(i, "Can not parse token StoreSimulationInfoVersion correctly:"
+        Typo(i, "Cannot parse token StoreSimulationInfoVersion correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -357,13 +357,13 @@ bool MCParameterFile::Parse()
         } else if (Type == "no" || Type == "none" || Type == "false") {
           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoNone;
         } else {
-          Typo(i, "Can not parse token StoreSimulationInfo"
+          Typo(i, "Cannot parse token StoreSimulationInfo"
                " Unknown package string (Usage: e.g. \"StoreSimulationInfo all\"");
           return false;
         }
         mdebug<<"Storing simulation info: "<<m_StoreSimulationInfo<<endl;
       } else {
-        Typo(i, "Can not parse token StoreSimulationInfo correctly:"
+        Typo(i, "Cannot parse token StoreSimulationInfo correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -375,7 +375,7 @@ bool MCParameterFile::Parse()
         }
         mdebug<<"Storing simulation info of ionization: "<<((m_StoreSimulationInfoIonization == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token StoreSimulationInfoIonization correctly:"
+        Typo(i, "Cannot parse token StoreSimulationInfoIonization correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -387,7 +387,7 @@ bool MCParameterFile::Parse()
           mdebug<<"Watching volume: "<<m_StoreSimulationInfoWatchedVolumes.back()<<endl;
         }
       } else {
-        Typo(i, "Can not parse token StoreSimulationWatchedVolumes correctly:"
+        Typo(i, "Cannot parse token StoreSimulationWatchedVolumes correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -402,7 +402,7 @@ bool MCParameterFile::Parse()
         }
         mdebug<<"Storing simulation info in scientific format: "<<((m_StoreScientific == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token StoreSimulationInfoScientific correctly:"
+        Typo(i, "Cannot parse token StoreSimulationInfoScientific correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -412,7 +412,7 @@ bool MCParameterFile::Parse()
         m_StoreOnlyTriggeredEvents = T->GetTokenAtAsBoolean(1);
         mdebug<<"Storing only triggered events: "<<((m_StoreOnlyTriggeredEvents == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token StoreOnlyTriggeredEvents correctly:"
+        Typo(i, "Cannot parse token StoreOnlyTriggeredEvents correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -421,7 +421,7 @@ bool MCParameterFile::Parse()
         m_StoreOneHitPerEvent = T->GetTokenAtAsBoolean(1);
         mdebug<<"Storing one hit per event: "<<((m_StoreOneHitPerEvent == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token StoreOneHitPerEvent:"
+        Typo(i, "Cannot parse token StoreOneHitPerEvent:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -430,7 +430,7 @@ bool MCParameterFile::Parse()
         m_DiscretizeHits = T->GetTokenAtAsBoolean(1);
         mdebug<<"Discretizing hits: "<<((m_DiscretizeHits == true) ? "true" : "false")<<endl;
       } else {
-        Typo(i, "Can not parse token DiscretizeHits correctly:"
+        Typo(i, "Cannot parse token DiscretizeHits correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -441,7 +441,7 @@ bool MCParameterFile::Parse()
           mdebug<<"Adding black absorber: "<<m_BlackAbsorbers.back()<<endl;
         }
       } else {
-        Typo(i, "Can not parse token BlackAbsorber correctly:"
+        Typo(i, "Cannot parse token BlackAbsorber correctly:"
              " Number of tokens is not correct!");
         return false;
       }
@@ -459,7 +459,7 @@ bool MCParameterFile::Parse()
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm);
           StartAreaParameters.push_back(MCSource::c_Invalid);
         } else {
-          Typo(i, "Can not parse token StartArea Sphere correctly:"
+          Typo(i, "Cannot parse token StartArea Sphere correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -476,12 +476,12 @@ bool MCParameterFile::Parse()
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm);
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(9)*cm);
         } else {
-          Typo(i, "Can not parse token StartArea Tube correctly:"
+          Typo(i, "Cannot parse token StartArea Tube correctly:"
                " Number of tokens is not correct!");
           return false;
         }
       } else {
-        Typo(i, "Can not parse token StartArea correctly:"
+        Typo(i, "Cannot parse token StartArea correctly:"
              " Neither keyword Sphere nor Tube found at position 2!");
         return false;
       }
@@ -512,11 +512,11 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting volume name "<<T->GetTokenAtAsString(2)<<" for region "
                   <<Region->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Region.Volume correctly");
+            Typo(i, "Cannot parse token Region.Volume correctly");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token Region.Volume correctly:"
+          Typo(i, "Cannot parse token Region.Volume correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -528,11 +528,11 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting range cut "<<T->GetTokenAtAsDouble(2)<<" cm for region "
                   <<Region->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Region.RangeCut correctly");
+            Typo(i, "Cannot parse token Region.RangeCut correctly");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token Region.RangeCut correctly:"
+          Typo(i, "Cannot parse token Region.RangeCut correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -557,17 +557,17 @@ bool MCParameterFile::Parse()
               mdebug<<"Setting isotope production file "<<FileName<<" for activator "
                     <<Activator->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token IsotopeProductionFile correctly:"
+              Typo(i, "Cannot parse token IsotopeProductionFile correctly:"
                    " Adding counts file failed");
               return false;             
             }
           } else {
-            Typo(i, "Can not parse token IsotopeProductionFile correctly:"
+            Typo(i, "Cannot parse token IsotopeProductionFile correctly:"
                  " File does not exist - since multiple can be defined and missing one is a non-issue, I will ignore this for the time being...");
             //return false;             
           }
         } else {
-          Typo(i, "Can not parse token IsotopeProductionFile correctly:"
+          Typo(i, "Cannot parse token IsotopeProductionFile correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -579,12 +579,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting activation file "<<T->GetTokenAfterAsString(2)<<" for activator "
                   <<Activator->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token ActivationFile correctly:"
+            Typo(i, "Cannot parse token ActivationFile correctly:"
                  " Adding counts file failed");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token ActivationFile correctly:"
+          Typo(i, "Cannot parse token ActivationFile correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -596,12 +596,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting activation file "<<T->GetTokenAfterAsString(2)<<" for activator "
                   <<Activator->GetName()<<" in isotope count mode"<<endl;
           } else {
-            Typo(i, "Can not parse token IsotopeCountFile correctly:"
+            Typo(i, "Cannot parse token IsotopeCountFile correctly:"
                  " Adding counts file failed");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token IsotopeCountFile correctly:"
+          Typo(i, "Cannot parse token IsotopeCountFile correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -643,7 +643,7 @@ bool MCParameterFile::Parse()
 //               mdebug<<"Set constant irradiation (activation time "<<T->GetTokenAtAsDouble(2)<<" sec) for activator "
 //                     <<Activator->GetName()<<endl;
 //             } else {
-//               Typo(i, "Can not parse token ActivationTime correctly"
+//               Typo(i, "Cannot parse token ActivationTime correctly"
 //                    "");
 //               return false;             
 //             }
@@ -680,12 +680,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting duration "<<T->GetTokenAtAsDouble(2)<<" for run "
                   <<Run->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Duration correctly:"
+            Typo(i, "Cannot parse token Duration correctly:"
                  " Number not positive?");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token Duration correctly:"
+          Typo(i, "Cannot parse token Duration correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -701,11 +701,11 @@ bool MCParameterFile::Parse()
               return false;             
             }
           } else {
-            Typo(i, "Can not parse token FileName correctly!");
+            Typo(i, "Cannot parse token FileName correctly!");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token FileName correctly:"
+          Typo(i, "Cannot parse token FileName correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -714,7 +714,7 @@ bool MCParameterFile::Parse()
           Run->SetTcpIpHostName(T->GetTokenAtAsString(2));
           Run->SetTcpIpPort(T->GetTokenAtAsUnsignedInt(3));
         } else {
-          Typo(i, "Can not parse token TcpIp correctly:"
+          Typo(i, "Cannot parse token TcpIp correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -728,12 +728,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting number of triggers "
                   <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Triggers correctly:"
+            Typo(i, "Cannot parse token Triggers correctly:"
                  " Number not positive?");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token Triggers correctly:"
+          Typo(i, "Cannot parse token Triggers correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -747,12 +747,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting number of events "
                   <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Events correctly:"
+            Typo(i, "Cannot parse token Events correctly:"
                  " Number not positive?");
             return false;             
           }
         } else {
-          Typo(i, "Can not parse token Events correctly:"
+          Typo(i, "Cannot parse token Events correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -761,7 +761,7 @@ bool MCParameterFile::Parse()
           MString Name = T->GetTokenAfterAsString(2);
           Run->SetIsotopeStoreFileName(Name);
         } else {
-          Typo(i, "Can not parse token IsotopeProductionFile correctly:"
+          Typo(i, "Cannot parse token IsotopeProductionFile correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -787,7 +787,7 @@ bool MCParameterFile::Parse()
             return false;
           }
         } else {
-          Typo(i, "Can not parse Source token correctly!");
+          Typo(i, "Cannot parse Source token correctly!");
           return false;
         }
       }
@@ -803,11 +803,11 @@ bool MCParameterFile::Parse()
               Run->AddSource(List[so], false);
             }
           } else {
-            Typo(i, "Can not load ActivationSources file token correctly!");
+            Typo(i, "Cannot load ActivationSources file token correctly!");
             return false;
           }
         } else {
-          Typo(i, "Can not parse ActivationSources token correctly!");
+          Typo(i, "Cannot parse ActivationSources token correctly!");
           return false;
         }
       }
@@ -823,11 +823,11 @@ bool MCParameterFile::Parse()
               Run->AddSource(List[so], false);
             }
           } else {
-            Typo(i, "Can not load IsotopeCountSources file token correctly!");
+            Typo(i, "Cannot load IsotopeCountSources file token correctly!");
             return false;
           }
         } else {
-          Typo(i, "Can not parse IsotopeCountSources token correctly!");
+          Typo(i, "Cannot parse IsotopeCountSources token correctly!");
           return false;
         }
       }
@@ -841,7 +841,7 @@ bool MCParameterFile::Parse()
 
 
 
-  // Step 4: Primary Source parameters
+  // Step 4: Ultimate source parameters
   for (i = 0; i < GetNLines(); ++i) {
     MTokenizer* T = GetTokenizerAt(i);
 
@@ -849,6 +849,37 @@ bool MCParameterFile::Parse()
 
     // Source parameters:
     if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
+      if (T->IsTokenAt(1, "EventList", true) == true) {
+        if (T->GetNTokens() == 3) {
+          if (Source->AddToEventList(T->GetTokenAtAsString(2)) == false) {
+            Typo(i, "Unable to add event list!");
+            return false;
+          }
+        } else {
+          Typo(i, "Cannot parse token SpectralType correctly: Number of tokens is not correct!");
+          return false;
+        }
+      }
+    }
+  }
+      
+      
+  // Step 5: Primary source parameters
+  for (i = 0; i < GetNLines(); ++i) {
+    MTokenizer* T = GetTokenizerAt(i);
+
+    if (T->GetNTokens() == 0) continue;
+
+    // Source parameters:
+    if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
+      
+      if (Source->IsEventList() == true) {
+        if (T->IsTokenAt(1, "EventList", true) == false) {
+          Typo(i, "This source is an event list and cannot have any other parameters!");
+          return false;
+        }
+      }
+      
       //cout<<"Checking run: "<<Run->GetName()<<endl;
       if (T->IsTokenAt(1, "SpectralType", true) == true) {
         mout<<"Depreciated: SpectralType"<<endl
@@ -862,12 +893,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting spectral type "<<T->GetTokenAtAsInt(2)
                   <<" for source "<<Source->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token SpectralType correctly:"
+            Typo(i, "Cannot parse token SpectralType correctly:"
                  " Unknown spectral type!");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token SpectralType correctly:"
+          Typo(i, "Cannot parse token SpectralType correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -883,12 +914,12 @@ bool MCParameterFile::Parse()
                 mdebug<<"Setting energy "<<T->GetTokenAtAsDouble(3)*keV
                       <<"keV for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - mono correctly:"
+                Typo(i, "Cannot parse token Spectrum - mono correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - mono correctly:"
+              Typo(i, "Cannot parse token Spectrum - mono correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -902,12 +933,12 @@ bool MCParameterFile::Parse()
                       <<" keV and max = "<<T->GetTokenAtAsDouble(4)
                       <<"keV for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - linear correctly:"
+                Typo(i, "Cannot parse token Spectrum - linear correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - linear correctly:"
+              Typo(i, "Cannot parse token Spectrum - linear correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -923,12 +954,12 @@ bool MCParameterFile::Parse()
                       <<" keV and alpha = "<<T->GetTokenAtAsDouble(5)
                       <<" keV for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - power law correctly:"
+                Typo(i, "Cannot parse token Spectrum - power law correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - power law correctly:"
+              Typo(i, "Cannot parse token Spectrum - power law correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -948,12 +979,12 @@ bool MCParameterFile::Parse()
                       <<" and  alpha high = "<<T->GetTokenAtAsDouble(7)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - broken power law correctly:"
+                Typo(i, "Cannot parse token Spectrum - broken power law correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - broken power law correctly:"
+              Typo(i, "Cannot parse token Spectrum - broken power law correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -969,12 +1000,12 @@ bool MCParameterFile::Parse()
                       <<" sigma cut-off = "<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - Gaussian correctly:"
+                Typo(i, "Cannot parse token Spectrum - Gaussian correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - Gaussian correctly:"
+              Typo(i, "Cannot parse token Spectrum - Gaussian correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -990,12 +1021,12 @@ bool MCParameterFile::Parse()
                       <<" temperature = "<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - thermal bremsstrahlung correctly:"
+                Typo(i, "Cannot parse token Spectrum - thermal bremsstrahlung correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - thermal bremsstrahlung correctly:"
+              Typo(i, "Cannot parse token Spectrum - thermal bremsstrahlung correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -1011,12 +1042,12 @@ bool MCParameterFile::Parse()
                       <<" temperature = "<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - black body correctly:"
+                Typo(i, "Cannot parse token Spectrum - black body correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - black body correctly:"
+              Typo(i, "Cannot parse token Spectrum - black body correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -1036,12 +1067,12 @@ bool MCParameterFile::Parse()
                       <<" E0 = "<<T->GetTokenAtAsDouble(7)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Spectrum - band function correctly:"
+                Typo(i, "Cannot parse token Spectrum - band function correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Spectrum - band function correctly:"
+              Typo(i, "Cannot parse token Spectrum - band function correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -1052,18 +1083,18 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(3);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token Spectrum - file correctly:"
+                Typo(i, "Cannot parse token Spectrum - file correctly:"
                      " File not found!");
                 return false;
               }
               if (Source->SetEnergy(FileName) == false) {
-                Typo(i, "Can not parse token Spectrum - file correctly:"
+                Typo(i, "Cannot parse token Spectrum - file correctly:"
                      " Unable to initialize spectrum");
                 return false;
               }
               mdebug<<"Using spectrum: "<<Type<<endl;
             } else {
-              Typo(i, "Can not parse token Spectrum - file correctly:"
+              Typo(i, "Cannot parse token Spectrum - file correctly:"
                    " Number of tokens must be larger than 3!");
               return false;
             }
@@ -1074,19 +1105,19 @@ bool MCParameterFile::Parse()
               // nothing else to be done, the rest happens in the beam
               mdebug<<"Using spectrum: "<<Type<<endl;
             } else {
-              Typo(i, "Can not parse token Spectrum - normalizedenergybeamfluxfunction correctly:"
+              Typo(i, "Cannot parse token Spectrum - normalizedenergybeamfluxfunction correctly:"
                    " Number of tokens must be equal to 3!");
               cout<<"Tokens: "<<T->GetNTokens()<<endl;
               return false;
             }
           }
           else {
-            Typo(i, MString("Can not parse token Spectrum correctly: Unknown spectral type: ") + Type);
+            Typo(i, MString("Cannot parse token Spectrum correctly: Unknown spectral type: ") + Type);
             return false;
           }
           // End different spectra
         } else {
-          Typo(i, "Can not parse token \"Spectrum\" correctly:"
+          Typo(i, "Cannot parse token \"Spectrum\" correctly:"
                " Number of tokens must be larger than 3!");
           return false;
         }
@@ -1104,12 +1135,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(4)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - far field point source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field point source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - far field point source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - far field point source\" correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -1128,12 +1159,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - far field area source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - far field area source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
                    " Number of tokens is not correct (!= 8)!");
               return false;
             }
@@ -1145,18 +1176,18 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(3);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - far field file zenith dependent\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
                      " File not found!");
                 return false;
               }
               if (Source->SetPosition(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - far field file zenith dependent\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
                      " Unable to initialize beam");
                 return false;
               }
               mdebug<<"Using beam: "<<Type<<endl;
             } else {
-              Typo(i, "Can not parse token \"Beam - far field file zenith dependent\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
                    " Number of tokens must be larger than 3!");
               return false;
             }
@@ -1168,18 +1199,18 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(3);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - far field normalized energy beam flux function\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " File not found!");
                 return false;
               }
               if (Source->SetNormalizedEnergyBeamFluxFunction(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - far field normalized energy beam flux function\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " Unable to initialize beam");
                 return false;
               }
               mdebug<<"Using beam: "<<Type<<endl;
             } else {
-              Typo(i, "Can not parse token \"Beam - far field normalized energy beam flux function\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                    " Number of tokens must be larger than 3!");
               return false;
             }
@@ -1196,12 +1227,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - point source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - point source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - point source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - point source\" correctly:"
                    " Number of tokens is not correct (!= 6)!");
               return false;
             }
@@ -1218,12 +1249,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - restricted point source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - restricted point source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - restricted point source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - restricted point source\" correctly:"
                    " Number of tokens is not correct (!= 6)!");
               return false;
             }
@@ -1246,12 +1277,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - line source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - line source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - line source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - line source\" correctly:"
                    " Number of tokens is not correct (!= 9)!");
               return false;
             }
@@ -1274,12 +1305,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - restricted line source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - restricted line source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - restricted line source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - restricted line source\" correctly:"
                    " Number of tokens is not correct (!= 9)!");
               return false;
             }
@@ -1302,12 +1333,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - box source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - box source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - box source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - box source\" correctly:"
                    " Number of tokens is not correct (!= 9)!");
               return false;
             }
@@ -1330,12 +1361,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - sphere source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - sphere source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - sphere source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - sphere source\" correctly:"
                    " Number of tokens is not correct (!= 9)!");
               return false;
             }
@@ -1368,12 +1399,12 @@ bool MCParameterFile::Parse()
                       <<" to "<<T->GetTokenAtAsDouble(13)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - disk source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - disk source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - disk source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - disk source\" correctly:"
                    " Number of tokens is not correct (!= 14)!");
               return false;
             }
@@ -1398,12 +1429,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - homogeneous beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - homogeneous beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - homogeneous beam\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - homogeneous beam\" correctly:"
                    " Number of tokens is not correct (!= 10)!");
               return false;
             }
@@ -1415,7 +1446,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(9);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - radial profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - radial profile beam\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1434,12 +1465,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - radial profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - radial profile beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - radial profile beam\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - radial profile beam\" correctly:"
                    " Number of tokens is not correct (!= 10)!");
               return false;
             }
@@ -1455,7 +1486,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(9);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - map profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1475,7 +1506,7 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - map profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
@@ -1485,7 +1516,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - map profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1506,12 +1537,12 @@ bool MCParameterFile::Parse()
                       <<" and z-axis rotation  "<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - map profile beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - map profile beam\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
                    " Number of tokens is not correct (!= 10)!");
               return false;
             }
@@ -1523,7 +1554,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - diffraction point source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - diffraction point source\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1544,12 +1575,12 @@ bool MCParameterFile::Parse()
                       <<" and z-axis rotation  "<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - diffraction point source\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - diffraction point source\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - diffraction point source\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - diffraction point source\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1561,7 +1592,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"Beam - diffraction point source k space\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1582,12 +1613,12 @@ bool MCParameterFile::Parse()
                       <<" and z-axis rotation  "<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - diffraction point source k space\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - diffraction point source k space\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1612,12 +1643,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - cone beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - cone beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - cone beam\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - cone beam\" correctly:"
                    " Number of tokens is not correct (!= 10)!");
               return false;
             }
@@ -1643,12 +1674,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - gaussian cone beam\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - gaussian cone beam\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1675,12 +1706,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - illuminated disk\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - illuminated disk\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - illuminated disk\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - illuminated disk\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1707,12 +1738,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - illuminated box\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - illuminated box\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - illuminated box\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - illuminated box\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1724,7 +1755,7 @@ bool MCParameterFile::Parse()
               MString FileName = T->GetTokenAfterAsString(10);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
-                Typo(i, "Can not parse token \"flat map\" correctly:"
+                Typo(i, "Cannot parse token \"flat map\" correctly:"
                      " File not found!");
                 return false;
               }
@@ -1745,12 +1776,12 @@ bool MCParameterFile::Parse()
                       <<" and z-axis rotation  "<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"flat map\" correctly:"
+                Typo(i, "Cannot parse token \"flat map\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"flat map\" correctly:"
+              Typo(i, "Cannot parse token \"flat map\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
               return false;
             }
@@ -1766,22 +1797,22 @@ bool MCParameterFile::Parse()
                 mdebug<<"Setting start volume "<<T->GetTokenAtAsString(3)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token \"Beam - volume\" correctly:"
+                Typo(i, "Cannot parse token \"Beam - volume\" correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token \"Beam - volume\" correctly:"
+              Typo(i, "Cannot parse token \"Beam - volume\" correctly:"
                    " Number of tokens is not correct (!= 4)!");
               return false;
             }
           }  
           else {
-            Typo(i, MString("Can not parse token \"Beam\" correctly: Unknown beam type: ") + Type);
+            Typo(i, MString("Cannot parse token \"Beam\" correctly: Unknown beam type: ") + Type);
             return false;
           }
         } else {
-          Typo(i, "Can not parse token \"Beam\" correctly:"
+          Typo(i, "Cannot parse token \"Beam\" correctly:"
                " Number of tokens must be larger than 3!");
           return false;
         }
@@ -1791,12 +1822,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting particle type "<<Source->GetParticleType()
                   <<" for source "<<Source->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token ParticleTyp correctly:"
+            Typo(i, "Cannot parse token ParticleTyp correctly:"
                  " ?? Perhaps the value is non-positive ??");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token ParticleTyp correctly:"
+          Typo(i, "Cannot parse token ParticleTyp correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -1816,7 +1847,7 @@ bool MCParameterFile::Parse()
                                         T->GetTokenAtAsDouble(4),
                                         T->GetTokenAtAsDouble(5));
               } else {
-                Typo(i, "Can not parse token \"Polarization true\" correctly: Number of tokens is too small!");
+                Typo(i, "Cannot parse token \"Polarization true\" correctly: Number of tokens is too small!");
                 return false;
               }
             } else {
@@ -1835,7 +1866,7 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(5),
                                       T->GetTokenAtAsDouble(6));
             } else {
-              Typo(i, "Can not parse token \"Polarization absolute\" correctly: Number of tokens is not correct!");
+              Typo(i, "Cannot parse token \"Polarization absolute\" correctly: Number of tokens is not correct!");
               return false;
             }
           } else if (Type == "relativex") {
@@ -1844,7 +1875,7 @@ bool MCParameterFile::Parse()
               Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
               Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
             } else {
-              Typo(i, "Can not parse token \"Polarization RelativeX\" correctly: Number of tokens is not correct!");
+              Typo(i, "Cannot parse token \"Polarization RelativeX\" correctly: Number of tokens is not correct!");
               return false;
             }
           } else if (Type == "relativey") {
@@ -1853,7 +1884,7 @@ bool MCParameterFile::Parse()
               Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
               Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
             } else {
-              Typo(i, "Can not parse token \"Polarization RelativeY\" correctly: Number of tokens is not correct!");
+              Typo(i, "Cannot parse token \"Polarization RelativeY\" correctly: Number of tokens is not correct!");
               return false;
             }
           } else if (Type == "relativez") {
@@ -1862,7 +1893,7 @@ bool MCParameterFile::Parse()
               Source->SetPolarizationDegree(T->GetTokenAtAsDouble(3));
               Source->SetPolarization(T->GetTokenAtAsDouble(4)*deg);
             } else {
-              Typo(i, "Can not parse token \"Polarization RelativeZ\" correctly: Number of tokens is not correct!");
+              Typo(i, "Cannot parse token \"Polarization RelativeZ\" correctly: Number of tokens is not correct!");
               return false;
             }
           } else {
@@ -1870,7 +1901,7 @@ bool MCParameterFile::Parse()
             return false;
           }
         } else {
-          Typo(i, "Can not parse token Polarization correctly: Number of tokens is too small!");
+          Typo(i, "Cannot parse token Polarization correctly: Number of tokens is too small!");
           return false;
         }
       } else if (T->IsTokenAt(1, "Successor", true) == true) {
@@ -1884,11 +1915,11 @@ bool MCParameterFile::Parse()
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Successor correctly");
+            Typo(i, "Cannot parse token Successor correctly");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token Successor correctly:"
+          Typo(i, "Cannot parse token Successor correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -1898,28 +1929,47 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting is successor "<<Source->IsSuccessor()
                   <<" for source "<<Source->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token IsSuccessor correctly");
+            Typo(i, "Cannot parse token IsSuccessor correctly");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token IsSuccessor correctly:"
+          Typo(i, "Cannot parse token IsSuccessor correctly:"
                " Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "LightCurve", true) == true) {
-        if (T->GetNTokens() >= 4) {
-          if (Source->SetLightCurve(T->GetTokenAtAsDouble(2), 
-                                    T->GetTokenAtAsDouble(3), 
-                                    T->GetTokenAtAsDoubleVector(4)) == true) {
-            mdebug<<"Setting LightCurve for source "<<Source->GetName()<<endl;
+        if (T->GetNTokens() > 3) {
+          MString Type = T->GetTokenAtAsString(2);
+          Type.ToLower();
+          if (Type == "file") {
+            if (T->GetNTokens() >= 5) {
+              MString FileName = T->GetTokenAfterAsString(4);
+              MFile::ExpandFileName(FileName);
+              if (MFile::FileExists(FileName) == false) {
+                Typo(i, "File does not exist!");
+                return false;          
+              }
+              Source->SetLightCurveType(MCSource::c_LightCurveFile);
+              if (Source->SetLightCurve(FileName, 
+                                        T->GetTokenAtAsBoolean(3)) == true) {
+                mdebug<<"Setting LightCurve for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token LightCurve correctly. Setting failed.");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token LightCurve - file correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } else if (Type == "flat" || Type == "none") {
+            Source->SetLightCurveType(MCSource::c_LightCurveFlat);
           } else {
-            Typo(i, "Can not parse token LightCurve correctly:"
-                 " ?? Perhaps the value is non-positive ??");
+            Typo(i, "Unknown light curve type!");
+            cout<<"Type: "<<Type<<endl;
             return false;
           }
         } else {
-          Typo(i, "Can not parse token LightCurve correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Cannot parse token LightCurve - file correctly: Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
@@ -1928,12 +1978,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting total energy flux "<<T->GetTokenAtAsDouble(2)
                   <<" MeV/cm2 for source "<<Source->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token TotalEnergyFlux correctly:"
+            Typo(i, "Cannot parse token TotalEnergyFlux correctly:"
                  " ?? Perhaps the value is non-positive ??");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token TotalEnergyFlux correctly:"
+          Typo(i, "Cannot parse token TotalEnergyFlux correctly:"
                " Number of tokens is not correct!");
           return false;
         }
@@ -1941,6 +1991,7 @@ bool MCParameterFile::Parse()
       } else if (T->IsTokenAt(1, "Energy", true) == true) {
       } else if (T->IsTokenAt(1, "Intensity", true) == true) {
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
+      } else if (T->IsTokenAt(1, "EventList", true) == true) {
       } else {      
         Typo(i, MString("Unknown keyword: ") + T->GetTokenAt(1));
         return false;
@@ -1978,12 +2029,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2001,12 +2052,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(7)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct (!= 8)!");
               return false;
             }
@@ -2028,12 +2079,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2055,12 +2106,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2082,12 +2133,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2111,12 +2162,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2134,12 +2185,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(6)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2165,12 +2216,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2195,12 +2246,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(9)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2227,12 +2278,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2259,12 +2310,12 @@ bool MCParameterFile::Parse()
                       <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Can not parse token Position correctly:"
+                Typo(i, "Cannot parse token Position correctly:"
                      " Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Can not parse token Position correctly:"
+              Typo(i, "Cannot parse token Position correctly:"
                    " Number of tokens is not correct!");
               return false;
             }
@@ -2289,12 +2340,12 @@ bool MCParameterFile::Parse()
               mdebug<<"Setting energy "<<T->GetTokenAtAsDouble(2)*keV
                     <<"keV for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy correctly:"
+              Typo(i, "Cannot parse token Energy correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy correctly:"
+            Typo(i, "Cannot parse token Energy correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2306,12 +2357,12 @@ bool MCParameterFile::Parse()
                     <<" keV and max = "<<T->GetTokenAtAsDouble(3)
                     <<"keV for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy correctly:"
+              Typo(i, "Cannot parse token Energy correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy correctly:"
+            Typo(i, "Cannot parse token Energy correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2325,12 +2376,12 @@ bool MCParameterFile::Parse()
                     <<" keV and alpha = "<<T->GetTokenAtAsDouble(4)
                     <<"keV for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - power law correctly:"
+              Typo(i, "Cannot parse token Energy - power law correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - power law correctly:"
+            Typo(i, "Cannot parse token Energy - power law correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2348,12 +2399,12 @@ bool MCParameterFile::Parse()
                     <<" and  alpha high = "<<T->GetTokenAtAsDouble(6)
                     <<"for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - broken power law correctly:"
+              Typo(i, "Cannot parse token Energy - broken power law correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - broken power law correctly:"
+            Typo(i, "Cannot parse token Energy - broken power law correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2367,12 +2418,12 @@ bool MCParameterFile::Parse()
                     <<" sigma cut-off = "<<T->GetTokenAtAsDouble(4)
                     <<"for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - Gaussian correctly:"
+              Typo(i, "Cannot parse token Energy - Gaussian correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - Gaussian correctly:"
+            Typo(i, "Cannot parse token Energy - Gaussian correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2386,12 +2437,12 @@ bool MCParameterFile::Parse()
                     <<" temperature = "<<T->GetTokenAtAsDouble(4)
                     <<"for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+              Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+            Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2405,12 +2456,12 @@ bool MCParameterFile::Parse()
                     <<" temperature = "<<T->GetTokenAtAsDouble(4)
                     <<"for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+              Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+            Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2428,12 +2479,12 @@ bool MCParameterFile::Parse()
                     <<" E0 = "<<T->GetTokenAtAsDouble(6)
                     <<"for source "<<Source->GetName()<<endl;
             } else {
-              Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+              Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                    " Content not reasonable");
               return false;
             }
           } else {
-            Typo(i, "Can not parse token Energy - thermal bremsstrahlung correctly:"
+            Typo(i, "Cannot parse token Energy - thermal bremsstrahlung correctly:"
                  " Number of tokens is not correct!");
             return false;
           }
@@ -2467,12 +2518,12 @@ bool MCParameterFile::Parse()
             mdebug<<"Setting average total flux "<<T->GetTokenAtAsDouble(2)
                   <<" gamma/sec[/cm2] for source "<<Source->GetName()<<endl;
           } else {
-            Typo(i, "Can not parse token Flux correctly:"
+            Typo(i, "Cannot parse token Flux correctly:"
                  " ?? Perhaps the value is non-positive ??");
             return false;
           }
         } else {
-          Typo(i, "Can not parse token Flux correctly:"
+          Typo(i, "Cannot parse token Flux correctly:"
                " Number of tokens is not correct!");
           return false;
         }

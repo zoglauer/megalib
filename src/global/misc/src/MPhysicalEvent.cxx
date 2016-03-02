@@ -329,6 +329,7 @@ bool MPhysicalEvent::Assimilate(MPhysicalEvent* E)
   m_Decay = E->m_Decay;
   m_Bad = E->m_Bad;
   m_BadString = E->m_BadString;
+  m_Comments = E->m_Comments;
 
   return true;
 }
@@ -381,6 +382,7 @@ void MPhysicalEvent::Reset()
   m_OIEnergy = g_DoubleNotDefined;
 
   m_Lines.clear();
+  m_Comments.clear();
 }
 
 
@@ -428,7 +430,23 @@ MVector MPhysicalEvent::GetOrigin() const
   return g_VectorNotDefined;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+MString MPhysicalEvent::GetComment(unsigned int i)
+{
+  //! Get the specific comment
+
+  if (i < m_Comments.size()) {
+    return m_Comments[i]; 
+  }
+  
+  mout<<"Error: Index for comment out of bounds"<<endl;
+  
+  return "";
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -491,6 +509,9 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
     }
     if (m_OIPosition != g_VectorNotDefined && m_OIDirection != g_VectorNotDefined && m_OIPolarization != g_VectorNotDefined) {
       S<<"OI "<<m_OIPosition.X()<<" "<<m_OIPosition.Y()<<" "<<m_OIPosition.Z()<<" "<<m_OIDirection.X()<<" "<<m_OIDirection.Y()<<" "<<m_OIDirection.Z()<<" "<<m_OIPolarization.X()<<" "<<m_OIPolarization.Y()<<" "<<m_OIPolarization.Z()<<" "<<m_OIEnergy<<endl;
+    }
+    for (unsigned int c = 0; c < m_Comments.size(); ++c) {
+      S<<"CC "<<m_Comments[c]<<endl; 
     }
     
     File.Write(S);
@@ -710,6 +731,21 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     */
 
     m_Bad = true;
+  } else if (Line[0] == 'C' && Line[1] == 'C') {
+    MString Comment = Line;
+    Comment = Comment.Remove(0, 3);
+    Comment = Comment.ReplaceAll("\n", "");
+    m_Comments.push_back(Comment);
+
+    /*
+    m_BadString.erase(0, 3);
+    while (true) {
+      const int pos = m_BadString.find("\n");
+      if (pos==-1) break;
+      m_BadString.replace(pos, 1, "");
+    }
+    */
+
   } else if (Line[0] == 'O' && Line[1] == 'I') {
     if (Fast == true) {
       char* p;

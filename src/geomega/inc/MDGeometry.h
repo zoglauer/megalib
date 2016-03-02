@@ -69,6 +69,9 @@ class MDGeometry
   void DumpInformation();
   void CalculateMasses();
 
+  //! Set whether to ignore short names (short names are required for Geant3/MGGPOD)
+  void IgnoreShortNames(bool Ignore) { m_IgnoreShortNames = Ignore; }
+  
   //! Check for overlaps using the ROOT overlap checker
   bool CheckOverlaps();
   //! Add a preferred visible volume --- if any is given, only those will be shown
@@ -246,9 +249,12 @@ class MDGeometry
   bool m_GeometryScanned;     // true if the geometry has been scanned successfully 
   bool m_ShowVolumes; // if false, no volumes are shown except those with a visibility higher than 1
   int m_DefaultColor; // if positive, this color is applied to all volumes
-  bool m_IgnoreShortNames; // if true, no short names are created
+
+  //! Ignore short names (which are only needed for Geant3/MGGPOD conversion)
+  bool m_IgnoreShortNames;
   bool m_DoSanityChecks; //
   bool m_ComplexER; //
+  
   //! If true, all volumes which are not detector volumes are virtualized
   bool m_VirtualizeNonDetectorVolumes;
 
@@ -267,6 +273,10 @@ class MDGeometry
   list<MDVolume*> m_LastVolumes;
   unsigned int m_LastVolumePosition;
 
+  //! The random number generator for GetRandomPositionInVolume
+  TRandom3 m_RandomPositionInVolumeRNG;
+  
+  
 #ifdef ___CINT___
  public:
   ClassDef(MDGeometry, 0) // no description

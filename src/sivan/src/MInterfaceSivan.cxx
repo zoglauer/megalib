@@ -5786,8 +5786,8 @@ void MInterfaceSivan::EnergyPerNucleus()
   EMax = TMath::Ceil(EMax);
   if (EMin < 0) EMin = 1;
 
-  //EMin = 0;
-  //EMax = 400;
+  EMin = 0;
+  EMax = 300;
   
   mout<<endl;
   mout<<"Setting dimensions to:"<<endl;
@@ -5796,7 +5796,7 @@ void MInterfaceSivan::EnergyPerNucleus()
 
   bool IsLog = false;
   if (EMax/EMin > 100) IsLog = true;
-  //IsLog = false;
+  IsLog = false;
   int ENBins = 300;
   double* EBins = CreateAxisBins(EMin, EMax, ENBins, IsLog);
 
