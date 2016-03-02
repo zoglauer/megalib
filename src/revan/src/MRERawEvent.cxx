@@ -228,6 +228,8 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   m_GoodEvent = RE->m_GoodEvent;
   
   m_CoincidenceWindow = RE->m_CoincidenceWindow;
+  
+  m_Comments = RE->m_Comments;
 }
 
 
@@ -314,6 +316,7 @@ void MRERawEvent::Init()
   m_Decay = false;
 
   m_Measurements.clear();
+  m_Comments.clear();
   
   m_CoincidenceWindow.Set(0);
 }
@@ -1143,7 +1146,9 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       MREAMStartInformation* Start = dynamic_cast<MREAMStartInformation*>(m_Measurements[m]);
       m_Event->SetOIInformation(Start->GetPosition(), Start->GetDirection(), Start->GetPolarization(), Start->GetEnergy());
     }
-
+  }
+  for (unsigned int c = 0; c < m_Comments.size(); ++c) {
+    m_Event->AddComment(m_Comments[c]); 
   }
 
   m_Event->Validate();
@@ -1168,6 +1173,9 @@ MString MRERawEvent::ToEvtaString(const int Precision, const int Version)
   }
   for (unsigned int i = 0; i < GetNREAMs(); ++i) {
     out<<GetREAMAt(i)->ToEvtaString(Precision, Version);
+  }
+  for (unsigned int i = 0; i < m_Comments.size(); ++i) {
+    out<<m_Comments[i]<<endl;
   }
 
   return out.str().c_str();
@@ -1678,6 +1686,12 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     m_ExternalBadEventString = m_ExternalBadEventString.Remove(0, 3);
     m_ExternalBadEventString = m_ExternalBadEventString.ReplaceAll("\n", "");
     m_ExternalBadEventFlag = true;
+  } else if (Line[0] == 'C' && Line[1] == 'C') {
+    // A comment
+    MString Comment = Line;
+    Comment = Comment.Remove(0, 3);
+    Comment = Comment.ReplaceAll("\n", "");
+    m_Comments.push_back(Comment);
   } else if (Line[0] == 'X' && Line[1] == 'E') {
     // Store the total energy deposit in a drift chamber
     double Energy = 0;

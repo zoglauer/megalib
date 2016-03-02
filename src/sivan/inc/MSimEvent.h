@@ -137,10 +137,17 @@ class MSimEvent
 
   //! Add a bad event flag
   bool AddBD(const MString& Flag);
-  //! Get the number of stored passive material summary information
+  //! Get the number of stored bad event flags
   unsigned int GetNBDs();
   //! Get a bad event flag
   MString GetBDAt(unsigned int);
+
+  //! Add a comment
+  bool AddCC(const MString& Comment);
+  //! Get the number of stored comments
+  unsigned int GetNCCs();
+  //! Get a comment
+  MString GetCCAt(unsigned int);
 
   // Some constants indicating what to store
 
@@ -352,6 +359,8 @@ class MSimEvent
   vector<MSimPM*> m_PMs;   
   //! Array of bad event flags
   vector<MString> m_BDs;   
+  //! Array of bad event flags
+  vector<MString> m_CCs;   
 
   //! Event ID
   unsigned int m_NEvent;

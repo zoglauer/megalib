@@ -33,6 +33,10 @@ confhelp() {
   echo "--release=[rel or dev]"
   echo "    Choose between release or development version."
   echo " "
+  echo "--keep-megalib-as-is"
+  echo "    Do not update the MEGAlib from a repository, just recompile it."
+  echo "    You need to set \"--megalib-path\"!"
+  echo " "
   echo "--external-path=[path - default: \"directory given by --megalib-path\"\external]"
   echo "    Directory where to install the required version of ROOT and Geant4."
   echo " "
@@ -125,6 +129,7 @@ echo " "
 
 # Default options:
 MEGALIBPATH=""
+KEEPMEGALIBASIS="off"
 REPOSITORY="git"
 RELEASE="rel"
 EXTERNALPATH=""
@@ -134,7 +139,7 @@ OS=`uname -s`
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
-PATCH="off"
+PATCH="on"
 
 MAXTHREADS=1;
 if ( `test -f /usr/sbin/sysctl` ); then
@@ -205,6 +210,8 @@ for C in "${CMD[@]}"; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-ma*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-k* ]]; then
+    KEEPMEGALIBASIS="on"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -247,6 +254,12 @@ if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
   exit 1
 fi
 echo " * Using this path to MEGAlib: ${MEGALIBPATH}"
+
+if [ "${KEEPMEGALIBASIS}" == "on" ]; then
+  echo " * Keeping the existing MEGAlib installation, just recompile."
+else
+  echo " * Updating MEGAlib to the latest version"
+fi
 
 if [ "${EXTERNALPATH}" != "" ]; then
   EXTERNALPATH=`absolutefilename ${EXTERNALPATH}`
@@ -440,149 +453,160 @@ if [ -d $MEGALIBPATH ]; then
     exit 1
   fi
 
-  OLDREPOSITORY="none"
-  if [ -d CVS ]; then
-    OLDREPOSITORY="cvs"
-  elif [ -d .svn ]; then
-    OLDREPOSITORY="svn"
-  elif [ -d .git ]; then
-    OLDREPOSITORY="git"
-  else
-    echo " "
-    echo "ERROR: We have a MEGAlib directory at \"${MEGALIBPATH}\" but it has not been checked out from any repository."
-    exit 1
-  fi
-
-  if  [ "${OLDREPOSITORY}" != "${REPOSITORY}" ]; then
-    echo " "
-    echo "ERROR: You want to update an existing version of MEGAlib checked out from ${OLDREPOSITORY} with ${REPOSITORY}... an impossible task..."
-    exit 1    
-  fi
-
-  echo "Making a backup of your old source code - just in case..."
-  BACKUP=SourceCodeBackupDuringMEGAlibSetup.`date +'%d%m%y.%H%M%S'`.tgz
-  tar cfz ${BACKUP} src
-  if [ "$?" != "0" ]; then
-    echo " "
-    echo "ERROR: Something went wrong during backing up your source code."
-    exit 1
-  fi
-  if [ ! -d "backup" ]; then
-    mkdir backup
-  fi
-  mv ${BACKUP} backup
-
-
-  if [ "${REPOSITORY}" == "svn" ]; then
-    if [ "${RELEASE}" == "dev" ]; then
-      echo "Switching to latest development version of MEGAlib in the svn repository..."
-      svn switch svn://thetis/MEGAlibRepository/MEGAlib/trunk
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to switch to the latest development version in svn"
-        exit 1
-      fi
-      svn update
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to update the svn repository"
-        exit 1
-      fi
-   else
-      echo "Switching to latest release version of MEGAlib in the svn repository......"
-      # Find the branch with the highest version, switch and to it
-      Branch=`svn list svn://thetis/MEGAlibRepository/MEGAlib/branches | grep MEGAlib_v | sort -n | tail -n 1`
-      # and switch to this branch:
-      svn switch svn://thetis/MEGAlibRepository/MEGAlib/branches/${Branch}
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to switch to the latest release branch in svn"
-        exit 1
-      fi
-      svn update
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to the svn repository"
-        exit 1
-      fi
-    fi
-  elif [ "${REPOSITORY}" == "cvs" ]; then
-    if [ "${RELEASE}" == "dev" ]; then
-      echo "Switching to latest development version of MEGAlib in the cvs repository..."
-      cvs -d :pserver:anonymous@cvs.mpe.mpg.de:/home/zoglauer/Repository update -A -d 
-      if [ "$?" != "0" ]; then
-        echo " "
-        echo "ERROR: Unable to switch to the latest development version in cvs"
-        exit 1
-      fi
+  if [ "${KEEPMEGALIBASIS}" == "off" ]; then
+    OLDREPOSITORY="none"
+    if [ -d CVS ]; then
+      OLDREPOSITORY="cvs"
+    elif [ -d .svn ]; then
+      OLDREPOSITORY="svn"
+    elif [ -d .git ]; then
+      OLDREPOSITORY="git"
     else
-      echo "Switching to latest release version of MEGAlib in the cvs repository......"
+      echo " "
+      echo "ERROR: We have a MEGAlib directory at \"${MEGALIBPATH}\" but it has not been checked out from any repository."
+      exit 1
+    fi
+
+    if  [ "${OLDREPOSITORY}" != "${REPOSITORY}" ]; then
+      echo " "
+      echo "ERROR: You want to update an existing version of MEGAlib checked out from ${OLDREPOSITORY} with ${REPOSITORY}... an impossible task..."
+      exit 1    
+    fi
+
+    echo "Making a backup of your old source code - just in case..."
+    BACKUP=SourceCodeBackupDuringMEGAlibSetup.`date +'%d%m%y.%H%M%S'`.tgz
+    tar cfz ${BACKUP} src
+    if [ "$?" != "0" ]; then
+      echo " "
+      echo "ERROR: Something went wrong during backing up your source code."
+      exit 1
+    fi
+    if [ ! -d "backup" ]; then
+      mkdir backup
+    fi
+    mv ${BACKUP} backup
+
+
+    if [ "${REPOSITORY}" == "svn" ]; then
+      if [ "${RELEASE}" == "dev" ]; then
+        echo "Switching to latest development version of MEGAlib in the svn repository..."
+        svn switch svn://thetis/MEGAlibRepository/MEGAlib/trunk
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to switch to the latest development version in svn"
+          exit 1
+        fi
+        svn update
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to update the svn repository"
+          exit 1
+        fi
+      else
+        echo "Switching to latest release version of MEGAlib in the svn repository......"
+        # Find the branch with the highest version, switch and to it
+        Branch=`svn list svn://thetis/MEGAlibRepository/MEGAlib/branches | grep MEGAlib_v | sort -n | tail -n 1`
+        # and switch to this branch:
+        svn switch svn://thetis/MEGAlibRepository/MEGAlib/branches/${Branch}
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to switch to the latest release branch in svn"
+          exit 1
+        fi
+        svn update
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to the svn repository"
+          exit 1
+        fi
+      fi
+    elif [ "${REPOSITORY}" == "cvs" ]; then
+      if [ "${RELEASE}" == "dev" ]; then
+        echo "Switching to latest development version of MEGAlib in the cvs repository..."
+        cvs -d :pserver:anonymous@cvs.mpe.mpg.de:/home/zoglauer/Repository update -A -d 
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to switch to the latest development version in cvs"
+          exit 1
+        fi
+      else
+        echo "Switching to latest release version of MEGAlib in the cvs repository......"
+        cd ${MEGALIBPATH}
+        Branch=`cvs status -v config/Version.txt | grep MEGAlib_  | awk -F" " '{ print $1 }' | sort -n | tail -n 1`
+        cvs update -r ${Branch} -d
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to update the cvs repository to the latest release branch"
+          exit 1
+        fi
+        cd ${STARTPATH}
+      fi
+    elif [ "${REPOSITORY}" == "git" ]; then
       cd ${MEGALIBPATH}
-      Branch=`cvs status -v config/Version.txt | grep MEGAlib_  | awk -F" " '{ print $1 }' | sort -n | tail -n 1`
-      cvs update -r ${Branch} -d
+
+      echo "Getting all the latest changes from the repository..."
+      git fetch origin
       if [ "$?" != "0" ]; then
         echo " "
-        echo "ERROR: Unable to update the cvs repository to the latest release branch"
+        echo "ERROR: Unable to fetch the latest versions from the repository"
         exit 1
       fi
+
+      CurrentBranch=`git rev-parse --abbrev-ref HEAD`
+      echo "Current branch: ${CurrentBranch}"
+
+      if [ "${RELEASE}" == "dev" ]; then
+        if [ "${CurrentBranch}" != "master" ]; then
+          echo "Switching to the latest development version of MEGAlib in the git repository..."
+          git checkout master
+          if [ "$?" != "0" ]; then
+            echo " "
+            echo "ERROR: Unable to switch to the latest development version in git"
+            exit 1
+          fi
+        fi
+      else
+        Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+        if [ "${CurrentBranch}" != "${Branch}" ]; then
+          echo "Switching to latest release version of MEGAlib from the git repository..."
+          git checkout ${Branch}
+          if [ "$?" != "0" ]; then
+            echo " "
+            echo "ERROR: Unable to update the git repository to the latest release branch"
+            exit 1
+          fi
+        fi
+      fi
+      echo "Fast forwarding to the head"
+      git pull origin
+      if [ "$?" != "0" ]; then
+        echo " "
+        echo "ERROR: Unable to fast forward to the head"
+        exit 1
+      fi
+
       cd ${STARTPATH}
     fi
-  elif [ "${REPOSITORY}" == "git" ]; then
-    cd ${MEGALIBPATH}
-
-    echo "Getting all the latest changes from the repository..."
-    git fetch origin
     if [ "$?" != "0" ]; then
       echo " "
-      echo "ERROR: Unable to fetch the latest versions from the repository"
+      echo "ERROR: Something went wrong during updating the repository."
       exit 1
     fi
 
-    CurrentBranch=`git rev-parse --abbrev-ref HEAD`
-    echo "Current branch: ${CurrentBranch}"
-
-    if [ "${RELEASE}" == "dev" ]; then
-      if [ "${CurrentBranch}" != "master" ]; then
-        echo "Switching to the latest development version of MEGAlib in the git repository..."
-        git checkout master
-        if [ "$?" != "0" ]; then
-          echo " "
-          echo "ERROR: Unable to switch to the latest development version in git"
-          exit 1
-        fi
-      fi
-    else
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
-      if [ "${CurrentBranch}" != "${Branch}" ]; then
-        echo "Switching to latest release version of MEGAlib from the git repository..."
-        git checkout ${Branch}
-        if [ "$?" != "0" ]; then
-          echo " "
-          echo "ERROR: Unable to update the git repository to the latest release branch"
-          exit 1
-        fi
-      fi
-    fi
-    echo "Fast forwarding to the head"
-    git pull origin
-    if [ "$?" != "0" ]; then
-      echo " "
-      echo "ERROR: Unable to fast forward to the head"
-      exit 1
-    fi
-
-    cd ${STARTPATH}
-  fi
-  if [ "$?" != "0" ]; then
     echo " "
-    echo "ERROR: Something went wrong during updating the repository."
-    exit 1
+    echo "SUCCESS: Updated MEGAlib!"
+  else
+    echo " "
+    echo "SUCCESS: Keeping MEGAlib as is!"
   fi
-
-  echo " "
-  echo "SUCCESS: Updated MEGAlib!"
 else
   # MEGAlib does not exist - download it
+
+  if [ "${KEEPMEGALIBASIS}" == "on" ]; then
+    echo " "
+    echo "ERROR: You wanted to keep the MEGAlib installation as is, but you do need one, i.e. you do need to give its path"
+    exit 1
+  fi
 
   if [ "${REPOSITORY}" == "svn" ]; then
     echo "Using svn to checkout MEGAlib..."

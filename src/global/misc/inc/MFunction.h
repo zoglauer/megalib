@@ -97,6 +97,10 @@ class MFunction
   //! Get the maximum y-value
   double GetYMax() const;
 
+  //! Find the x value starting from Start which would be achieved after integrating until Integral
+  //! If we go beyond x_max, x_max is returned if we are not cyclic, otherwise we continue at x_0
+  double FindX(double XStart, double Integral, bool Cyclic);
+  
   //! ID representing an unknown interpolation
   static const unsigned int c_InterpolationUnknown;
   //! ID representing a constant interpolation

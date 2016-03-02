@@ -1,5 +1,5 @@
 /* 
- * SimRewriter.cxx
+ * EventListAnalyzer.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -37,37 +37,34 @@ using namespace std;
 #include "MDDetector.h"
 #include "MFileEventsSim.h"
 #include "MDVolumeSequence.h"
-#include "MSimEvent.h"
-#include "MSimHT.h"
+#include "MPhysicalEvent.h"
+#include "MComptonEvent.h"
+#include "MFileEventsTra.h"
 
 /******************************************************************************/
 
-class SimRewriter
+class EventListAnalyzer
 {
 public:
-  /// Default constructor
-  SimRewriter();
-  /// Default destructor
-  ~SimRewriter();
+  //! Default constructor
+  EventListAnalyzer();
+  //! Default destructor
+  ~EventListAnalyzer();
   
-  /// Parse the command line
+  //! Parse the command line
   bool ParseCommandLine(int argc, char** argv);
-  /// Analyze whatever needs to be analyzed...
+  //! Analyze whatever needs to be analyzed...
   bool Analyze();
-  /// Analyze the event, return true if it has to be writen to file
-  bool AnalyzeEvent(MSimEvent* Event);
-  /// Interrupt the analysis
+  //! Interrupt the analysis
   void Interrupt() { m_Interrupt = true; }
 
 private:
-  /// True, if the analysis needs to be interrupted
+  //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
 
-  /// Simulation file name
+  //! Simulation file name
   MString m_FileName;
-  /// Output file name
-  MString m_OutputFileName;
-  /// Geometry file name
+  //! Geometry file name
   MString m_GeometryFileName;
 };
 
@@ -77,16 +74,17 @@ private:
 /******************************************************************************
  * Default constructor
  */
-SimRewriter::SimRewriter() : m_Interrupt(false)
+EventListAnalyzer::EventListAnalyzer() : m_Interrupt(false)
 {
   gStyle->SetPalette(1, 0);
+  //gROOT->SetBatch(true);
 }
 
 
 /******************************************************************************
  * Default destructor
  */
-SimRewriter::~SimRewriter()
+EventListAnalyzer::~EventListAnalyzer()
 {
   // Intentionally left blank
 }
@@ -95,14 +93,13 @@ SimRewriter::~SimRewriter()
 /******************************************************************************
  * Parse the command line
  */
-bool SimRewriter::ParseCommandLine(int argc, char** argv)
+bool EventListAnalyzer::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
-  Usage<<"  Usage: SimRewriter <options>"<<endl;
+  Usage<<"  Usage: EventListAnalyzer <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -f:   simulation file name"<<endl;
-  Usage<<"         -o:   output simulation file name"<<endl;
+  Usage<<"         -f:   tra file name"<<endl;
   Usage<<"         -g:   geometry file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -144,9 +141,6 @@ bool SimRewriter::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
-    } else if (Option == "-o") {
-      m_OutputFileName = argv[++i];
-      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
     } else if (Option == "-g") {
       m_GeometryFileName = argv[++i];
       cout<<"Accepting file name: "<<m_GeometryFileName<<endl;
@@ -158,7 +152,7 @@ bool SimRewriter::ParseCommandLine(int argc, char** argv)
   }
 
   if (m_FileName == "") {
-    cout<<"Error: Need a simulation file name!"<<endl;
+    cout<<"Error: Need a tracked events file name!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -169,14 +163,8 @@ bool SimRewriter::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (m_FileName.EndsWith(".sim") == true) {
-    if (m_OutputFileName == "") {
-      m_OutputFileName = m_FileName;
-      m_OutputFileName.Replace(m_FileName.Length()-4, 4, ".mod.sim");
-      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
-    }    
-  } else {
-    cout<<"Error: Need a simulation file name, not a "<<m_FileName<<" file "<<endl;
+  if (m_FileName.EndsWith(".tra") == false) {
+    cout<<"Error: Need a tracked events file name, not a "<<m_FileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -188,7 +176,7 @@ bool SimRewriter::ParseCommandLine(int argc, char** argv)
 /******************************************************************************
  * Do whatever analysis is necessary
  */
-bool SimRewriter::Analyze()
+bool EventListAnalyzer::Analyze()
 {
   // Load geometry:
   MDGeometryQuest* Geometry = new MDGeometryQuest();
@@ -199,69 +187,81 @@ bool SimRewriter::Analyze()
     return false;
   }  
 
-  MFileEventsSim* Reader = new MFileEventsSim(Geometry);
+  MFileEventsTra* Reader = new MFileEventsTra();
   if (Reader->Open(m_FileName) == false) {
-    cout<<"Unable to open sim file "<<m_FileName<<" - Aborting!"<<endl; 
-    return false;
+    mout<<"Unable to open file "<<m_FileName<<". Aborting!"<<endl;
   }
   Reader->ShowProgress();
-  
-  // cout<<"Opened file "<<SiReader.GetFileName()<<" created with MEGAlib version: "<<SiReader.GetMEGAlibVersion()<<endl;
-  // cout<<"Triggered events: "<<SiReader.GetNEvents(false)<<" --- Observation time: "<<SiReader.GetObservationTime()<<" sec  --  simulated events: "<<SiReader.GetSimulatedEvents()<<endl;
 
-  // Open output file:
-  MFileEventsSim* Writer = new MFileEventsSim(Geometry);
-  if (Writer->Open(m_OutputFileName, MFile::c_Write) == false) {
-    cout<<"Unable to open output file!"<<endl;
-    return false;
-  }
-   
-  Writer->SetGeometryFileName(m_GeometryFileName);
-  Writer->SetVersion(25);
-  Writer->WriteHeader();
+  TH1D* Hist = new TH1D("Relative scatter direction", "Relative scatter direction", 9, 0, 180);
+  Hist->SetXTitle("Angle [deg]");
+  Hist->SetYTitle("cts");
+  Hist->SetMinimum(0);
 
-  MSimEvent* Event = 0;
-  while ((Event = Reader->GetNextEvent(false)) != 0) {
+  MPhysicalEvent* Event;
+  MComptonEvent* ComptonEvent;
+  while ((Event = Reader->GetNextEvent()) != 0) { 
+    // Hitting Ctrl-C raises this flag
     if (m_Interrupt == true) return false;
-    if (AnalyzeEvent(Event) == true) {
-      Writer->AddEvent(Event);      
+    
+    if (Event->Ei() < 500) {
+      delete Event;
+      continue;
     }
+    
+    if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+
+      for (unsigned int c = 0; c < ComptonEvent->GetNComments(); ++c) {
+        if (ComptonEvent->GetComment(c).BeginsWith("Absorber") == true) {
+          // ToDo: we should be able to do some sanity checks if we got the correct first hit 
+          //       since the possible positions are restricted by the start position, and the scatterer 
+          
+          // Scatter direction of the upper gamma ray
+          MTokenizer T;
+          T.Analyze(ComptonEvent->GetComment(c));
+          MVector UpperScatterDir(T.GetTokenAtAsDouble(1), T.GetTokenAtAsDouble(2), 0);
+          
+          MVector LowerScatterDir = (ComptonEvent->C2() - ComptonEvent->C1());
+          LowerScatterDir[2] = 0;
+          
+          Hist->Fill(UpperScatterDir.Angle(LowerScatterDir)*c_Deg);
+          
+          /*
+          // The origin of the gammas is at 0, 0, 0, so the direction of the inital gamma ray is:
+          MVector LowerInitialDir = ComptonEvent->C1();
+         
+          // The angle we are interested in is the angle between the lower scattered gamma ray and 
+          // the plane spanned by the direction of the initial lower gamma ray the scatter direction 
+          // of the upper gamma ray
+          
+          double Angle = (ComptonEvent->C2() - ComptonEvent->C1()).Angle(LowerInitialDir.Cross(UpperScatterDir));
+          Hist->Fill(Angle*c_Deg);
+          */
+        }
+      }
+    }
+
     delete Event;
   }
+  
+  TCanvas* Canvas = new TCanvas();
+  Canvas->cd();
+  Hist->Draw();
+  Canvas->Update();
 
-  cout<<"Observation time: "<<Reader->GetObservationTime()<<" sec  --  simulated events: "<<Reader->GetSimulatedEvents()<<endl;
-
-  Reader->Close();
+  // Some cleanup
   delete Reader;
-  
-  Writer->CloseEventList();
-  Writer->Close();
-  delete Writer;
-  
   delete Geometry;
 
-  return true;
-}
-
-
-/******************************************************************************
- * Analyze the event, return true if it has to be writen to file
- */
-bool SimRewriter::AnalyzeEvent(MSimEvent* Event)
-{
-  // Add your code here
-  // Return true if the event should be written to file
-
-  // Example:
-  // if (Event.GetVeto() == true) return false;
-
+  
   return true;
 }
 
 
 /******************************************************************************/
 
-SimRewriter* g_Prg = 0;
+EventListAnalyzer* g_Prg = 0;
 int g_NInterrupts = 2;
 
 /******************************************************************************/
@@ -300,9 +300,9 @@ int main(int argc, char** argv)
   // Initialize global MEGAlib variables, especially mgui, etc.
   MGlobal::Initialize();
 
-  TApplication SimRewriterApp("SimRewriterApp", 0, 0);
+  TApplication EventListAnalyzerApp("EventListAnalyzerApp", 0, 0);
 
-  g_Prg = new SimRewriter();
+  g_Prg = new EventListAnalyzer();
 
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     cerr<<"Error during parsing of command line!"<<endl;
@@ -313,7 +313,9 @@ int main(int argc, char** argv)
     return -2;
   } 
 
-  //SimRewriterApp.Run();
+  if (gROOT->IsBatch() == false) {
+    EventListAnalyzerApp.Run();
+  }
 
   cout<<"Program exited normally!"<<endl;
 

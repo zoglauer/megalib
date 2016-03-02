@@ -322,6 +322,8 @@ bool MInterfaceGeomega::SaveConfiguration(MString FileName)
 
 bool MInterfaceGeomega::ReadGeometry()
 {
+  // We do not ignore short names here since we might generate Geant3/MGGPOD files
+  m_Geometry->IgnoreShortNames(false);
   return m_Geometry->ScanSetupFile(m_Data->GetCurrentFileName());
 }
 

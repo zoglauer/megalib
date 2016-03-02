@@ -23,6 +23,7 @@
 #include "MCRunManager.hh"
 #include "MCPrimaryGeneratorAction.hh"
 #include "MCSD.hh"
+#include "MCSource.hh"
 
 // Geant4:
 #include "G4SystemOfUnits.hh"
@@ -275,7 +276,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
            ss > (int) fpSteppingManager->GetSecondary()->size()-1 - 
              GeneratedSecondaries; --ss) {
         G4Track* TrackA = (*fpSteppingManager->GetSecondary())[ss];
-        if (GetParticleId(TrackA->GetDefinition()) > 1000) {
+        if (GetParticleType(TrackA->GetDefinition()) > 1000) {
           mout<<"Found radioactive particle, which has decayed: "<<Track->GetDefinition()->GetParticleName()<<"(=target or projectile) to "<<TrackA->GetDefinition()->GetParticleName()<<endl;
         }
       }
@@ -335,7 +336,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              Track->GetMomentumDirection(),
                              Track->GetPolarization(),
                              Track->GetKineticEnergy(),
-                             GetParticleId(TrackA->GetDefinition()),
+                             GetParticleType(TrackA->GetDefinition()),
                              TrackA->GetMomentumDirection(),
                              TrackA->GetPolarization(),
                              TrackA->GetKineticEnergy());
@@ -374,7 +375,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            G4ThreeVector(0.0, 0.0, 0.0),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            0.0,
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            TrackA->GetKineticEnergy());
@@ -404,11 +405,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            TrackA->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            0.0,
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            TrackA->GetPolarization(),
                            TrackA->GetKineticEnergy());
@@ -429,7 +430,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            Track->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            Track->GetMomentumDirection(),
                            Track->GetPolarization(),
                            Track->GetKineticEnergy(),
@@ -455,11 +456,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPreStepPoint()),
                              Time,
                              TrackA->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Track->GetMomentumDirection(),
                              Track->GetPolarization(),
                              Track->GetKineticEnergy(),
-                             GetParticleId(TrackA->GetDefinition()),
+                             GetParticleType(TrackA->GetDefinition()),
                              TrackA->GetMomentumDirection(),
                              TrackA->GetPolarization(),
                              TrackA->GetKineticEnergy());
@@ -543,7 +544,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              G4ThreeVector(0.0, 0.0, 0.0),
                              G4ThreeVector(0.0, 0.0, 0.0),
                              0.0,
-                             GetParticleId(TrackA->GetDefinition()),
+                             GetParticleType(TrackA->GetDefinition()),
                              TrackA->GetMomentumDirection(),
                              TrackA->GetPolarization(),
                              TrackA->GetKineticEnergy());
@@ -575,13 +576,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            Track->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            Track->GetMomentumDirection(),
                            Track->GetPolarization(),
                            Track->GetKineticEnergy(),
                            //TrackA->GetDefinition()->GetExcitationEnergy(),
                            //((MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[") == true) ? dynamic_cast<G4Ions*>(TrackA->GetDefinition())->GetExcitationEnergy() : 0.0),
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            TrackA->GetPolarization(),
                            TrackA->GetKineticEnergy());
@@ -598,7 +599,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                           GetDetectorId(Step->GetPreStepPoint()),
                           Time,
                           Track->GetPosition(),
-                          GetParticleId(Track->GetDefinition()),
+                          GetParticleType(Track->GetDefinition()),
                           Track->GetMomentumDirection(),
                           Track->GetPolarization(),
                           Track->GetKineticEnergy(),
@@ -625,13 +626,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                             GetDetectorId(Step->GetPreStepPoint()),
                             Time,
                             Track->GetPosition(),
-                            GetParticleId(Track->GetDefinition()),
+                            GetParticleType(Track->GetDefinition()),
                             Track->GetMomentumDirection(),
                             Track->GetPolarization(),
                             Track->GetKineticEnergy(),
                             //TrackA->GetDefinition()->GetExcitationEnergy(),
                             //((MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[") == true) ? dynamic_cast<G4Ions*>(TrackA->GetDefinition())->GetExcitationEnergy() : 0.0),
-                            GetParticleId(TrackA->GetDefinition()),
+                            GetParticleType(TrackA->GetDefinition()),
                             TrackA->GetMomentumDirection(),
                             TrackA->GetPolarization(),
                             TrackA->GetKineticEnergy());
@@ -663,13 +664,13 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            Track->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            Track->GetMomentumDirection(),
                            Track->GetPolarization(),
                            Track->GetKineticEnergy(),
                            //TrackA->GetDefinition()->GetExcitationEnergy(),
                            //((MString(Track->GetDefinition()->GetParticleName().c_str()).Contains("[") == true) ? dynamic_cast<G4Ions*>(TrackA->GetDefinition())->GetExcitationEnergy() : 0.0),
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            TrackA->GetPolarization(),
                            TrackA->GetKineticEnergy());
@@ -702,11 +703,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            TrackA->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            0.0,
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            TrackA->GetPolarization(),
                            TrackA->GetKineticEnergy());
@@ -716,7 +717,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
       // There always has to be a generated secondary, since something decays into something else
       // "19" doesn't generate secondaries in Geant4... 
-      if (GeneratedSecondaries == 0 && GetParticleId(Track->GetDefinition()) != 19) {
+      if (GeneratedSecondaries == 0 && GetParticleType(Track->GetDefinition()) != 19) {
         mout<<"The the decay of "<<Track->GetDefinition()->GetParticleName()<<" didn't generate secondaries! Either your thresholds for generating secondaires are too high or a simulation issue occurred!"<<endl;
       }
 
@@ -739,11 +740,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            TrackA->GetPosition(),
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            G4ThreeVector(0.0, 0.0, 0.0),
                            0.0,
-                           GetParticleId(TrackA->GetDefinition()),
+                           GetParticleType(TrackA->GetDefinition()),
                            TrackA->GetMomentumDirection(),
                            TrackA->GetPolarization(),
                            TrackA->GetKineticEnergy());
@@ -780,7 +781,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
         if (m_ParticleOriginIsBuildUpSource == true) {
           if (((MCTrackInformation*) Track->GetUserInformation())->GetOriginId() <= int(m_InitialParticles.size())) {
             for (unsigned int i = 0; i < m_InitialParticles.size(); ++i) {
-              if (GetParticleId(Track->GetDefinition()) == m_InitialParticles[i]) {
+              if (GetParticleType(Track->GetDefinition()) == m_InitialParticles[i]) {
                 IsInitialParticleFromBuildUpSource = true;
                 break;
               }
@@ -907,7 +908,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           // Take care of secondaries below the threshold, 
           // for which no new track is generated:
           
-          //mout<<"Keeping isotope: "<<GetParticleId(Track->GetDefinition())<<endl;
+          //mout<<"Keeping isotope: "<<GetParticleType(Track->GetDefinition())<<endl;
           
           // There always has to be a generated secondary, since we generate a new nucleus
           //if (GeneratedSecondaries == 0) {
@@ -938,12 +939,12 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                                GetDetectorId(Step->GetPreStepPoint()),
                                TrackA->GetGlobalTime()/second,
                                TrackA->GetPosition(),
-                               GetParticleId(Track->GetDefinition()),
+                               GetParticleType(Track->GetDefinition()),
                                G4ThreeVector(0.0, 0.0, 0.0),
                                G4ThreeVector(0.0, 0.0, 0.0),
                                //dynamic_cast<G4Ions*>(Track->GetDefinition())->GetExcitationEnergy(),
                                0.0,
-                               GetParticleId(TrackA->GetDefinition()),
+                               GetParticleType(TrackA->GetDefinition()),
                                TrackA->GetMomentumDirection(),
                                TrackA->GetPolarization(),
                                TrackA->GetKineticEnergy());
@@ -1008,7 +1009,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                            GetDetectorId(Step->GetPreStepPoint()),
                            Time,
                            Track->GetPosition(), // This is the Step->GetPostStepPoint()
-                           GetParticleId(Track->GetDefinition()),
+                           GetParticleType(Track->GetDefinition()),
                            Track->GetMomentumDirection(),
                            Track->GetPolarization(),
                            Track->GetKineticEnergy(),
@@ -1038,11 +1039,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPreStepPoint()),
                              Time,
                              TrackA->GetPosition(), // This is the Step->GetPostStepPoint()
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Track->GetMomentumDirection(),
                              Track->GetPolarization(),
                              Track->GetKineticEnergy(),
-                             GetParticleId(TrackA->GetDefinition()),
+                             GetParticleType(TrackA->GetDefinition()),
                              TrackA->GetMomentumDirection(),
                              TrackA->GetPolarization(), 
                              TrackA->GetKineticEnergy());
@@ -1069,7 +1070,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPreStepPoint()),
                              Time,
                              Track->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Track->GetMomentumDirection(),
                              Track->GetPolarization(),
                              Track->GetKineticEnergy(),
@@ -1097,11 +1098,11 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPreStepPoint()),
                              Time,
                              TrackA->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Track->GetMomentumDirection(),
                              Track->GetPolarization(),
                              Track->GetKineticEnergy(),
-                             GetParticleId(TrackA->GetDefinition()),
+                             GetParticleType(TrackA->GetDefinition()),
                              TrackA->GetMomentumDirection(),
                              TrackA->GetPolarization(), 
                              TrackA->GetKineticEnergy());
@@ -1147,7 +1148,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                          GetDetectorId(Step->GetPreStepPoint()),
                          Time,
                          Track->GetPosition(),
-                         GetParticleId(Track->GetDefinition()),
+                         GetParticleType(Track->GetDefinition()),
                          Track->GetMomentumDirection(),
                          Track->GetPolarization(),
                          Track->GetKineticEnergy(),
@@ -1195,7 +1196,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPostStepPoint()),
                              Time,
                              Step->GetPostStepPoint()->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Step->GetPostStepPoint()->GetMomentumDirection(),
                              Step->GetPostStepPoint()->GetPolarization(),
                              Step->GetPostStepPoint()->GetKineticEnergy(),
@@ -1215,7 +1216,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPreStepPoint()),
                              Time,
                              Step->GetPostStepPoint()->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Step->GetPostStepPoint()->GetMomentumDirection(),
                              Step->GetPostStepPoint()->GetPolarization(),
                              Step->GetPostStepPoint()->GetKineticEnergy(),
@@ -1260,7 +1261,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              GetDetectorId(Step->GetPostStepPoint()),
                              Time,
                              Step->GetPostStepPoint()->GetPosition(),
-                             GetParticleId(Track->GetDefinition()),
+                             GetParticleType(Track->GetDefinition()),
                              Step->GetPostStepPoint()->GetMomentumDirection(),
                              Step->GetPostStepPoint()->GetPolarization(),
                              Step->GetPostStepPoint()->GetKineticEnergy(),
@@ -1362,11 +1363,9 @@ int MCSteppingAction::GetProcessId(const G4String& Name)
   
 
 /******************************************************************************
- * If during the step a Compton or pair process happend in the primary track,
- * the process information (positions, direction, energies) are transmitted 
- * to the event action class, for later file output
+ * Return the Cosima particle type ID from the particle name
  */
-int MCSteppingAction::GetParticleId(G4String Name)
+int MCSteppingAction::GetParticleType(G4String Name)
 {
   if (Name == "gamma") {
     return MCSource::c_Gamma;
@@ -1557,11 +1556,9 @@ int MCSteppingAction::GetParticleId(G4String Name)
 
 
 /******************************************************************************
- * If during the step a Compton or pair process happend in the primary track,
- * the process information (positions, direction, energies) are transmitted 
- * to the event action class, for later file output
+ * Return the cosima particle type ID from the particle definition
  */
-int MCSteppingAction::GetParticleId(G4ParticleDefinition* Definition)
+int MCSteppingAction::GetParticleType(G4ParticleDefinition* Definition)
 {
   if (Definition == G4Gamma::Definition()) {
     return MCSource::c_Gamma;
@@ -1723,6 +1720,128 @@ int MCSteppingAction::GetParticleId(G4ParticleDefinition* Definition)
   }
 }
 
+
+/******************************************************************************
+ * Returns the Geant4 particle definition from a MEGAlib particle ID
+ */
+G4ParticleDefinition* MCSteppingAction::GetParticleDefinition(int ID, double Excitation)
+{
+  G4ParticleDefinition* ParticleDefinition = nullptr;
+  
+  // Check for ions first
+  if (ID > 1000) {
+    G4ParticleDefinition* Ion = 0;
+    G4IonTable* Table = G4IonTable::GetIonTable();
+    int AtomicNumber = int(ID/1000);
+    int AtomicMass = ID - int(ID/1000)*1000;
+    Ion = Table->GetIon(AtomicNumber, AtomicMass, Excitation);
+    if (Ion == 0) {
+      merr<<"Particle type not yet implemented!"<<endl;
+      ParticleDefinition = nullptr;
+    } else {
+      ParticleDefinition = Ion;
+    }
+  } else if (ID == MCSource::c_Gamma) {
+    ParticleDefinition = G4Gamma::Gamma();
+  } else if (ID == MCSource::c_Positron) {
+    ParticleDefinition = G4Positron::Positron();
+  } else if (ID == MCSource::c_Electron) {
+    ParticleDefinition = G4Electron::Electron();
+  } else if (ID == MCSource::c_Proton) {
+    ParticleDefinition = G4Proton::Proton();
+  } else if (ID == MCSource::c_AntiProton) {
+    ParticleDefinition = G4AntiProton::AntiProton();
+  } else if (ID == MCSource::c_Neutron) {
+    ParticleDefinition = G4Neutron::Neutron();
+  } else if (ID == MCSource::c_AntiNeutron) {
+    ParticleDefinition = G4AntiNeutron::AntiNeutron();
+  } else if (ID == MCSource::c_MuonPlus) {
+    ParticleDefinition = G4MuonPlus::MuonPlus();
+  } else if (ID == MCSource::c_MuonMinus) {
+    ParticleDefinition = G4MuonMinus::MuonMinus();
+  } else if (ID == MCSource::c_TauonPlus) {
+    ParticleDefinition = G4TauPlus::TauPlus();
+  } else if (ID == MCSource::c_TauonMinus) {
+    ParticleDefinition = G4TauMinus::TauMinus();
+  } else if (ID == MCSource::c_ElectronNeutrino) {
+    ParticleDefinition = G4NeutrinoE::NeutrinoE();
+  } else if (ID == MCSource::c_AntiElectronNeutrino) {
+    ParticleDefinition = G4AntiNeutrinoE::AntiNeutrinoE();
+  } else if (ID == MCSource::c_MuonNeutrino) {
+    ParticleDefinition = G4NeutrinoMu::NeutrinoMu();
+  } else if (ID == MCSource::c_AntiMuonNeutrino) {
+    ParticleDefinition = G4AntiNeutrinoMu::AntiNeutrinoMu();
+  } else if (ID == MCSource::c_TauonNeutrino) {
+    ParticleDefinition = G4NeutrinoTau::NeutrinoTau();
+  } else if (ID == MCSource::c_AntiTauonNeutrino) {
+    ParticleDefinition = G4AntiNeutrinoTau::AntiNeutrinoTau();
+  } else if (ID == MCSource::c_Deuteron) {
+    ParticleDefinition = G4Deuteron::Deuteron();
+  } else if (ID == MCSource::c_Triton) {
+    ParticleDefinition = G4Triton::Triton();
+  } else if (ID == MCSource::c_He3) {
+    ParticleDefinition = G4He3::He3();
+  } else if (ID == MCSource::c_Alpha) {
+    ParticleDefinition = G4Alpha::Alpha();
+  } else if (ID == MCSource::c_GenericIon) {
+    ParticleDefinition = G4GenericIon::GenericIon();
+  } else if (ID == MCSource::c_PiPlus) {
+    ParticleDefinition = G4PionPlus::PionPlus();
+  } else if (ID == MCSource::c_PiZero) {
+    ParticleDefinition = G4PionZero::PionZero();
+  } else if (ID == MCSource::c_PiMinus) {
+    ParticleDefinition = G4PionMinus::PionMinus();
+  } else if (ID == MCSource::c_Eta) {
+    ParticleDefinition = G4Eta::Eta();
+  } else if (ID == MCSource::c_EtaPrime) {
+    ParticleDefinition = G4EtaPrime::EtaPrime();
+  } else if (ID == MCSource::c_KaonPlus) {
+    ParticleDefinition = G4KaonPlus::KaonPlus();
+  } else if (ID == MCSource::c_KaonZero) {
+    ParticleDefinition = G4KaonZero::KaonZero();
+  } else if (ID == MCSource::c_AntiKaonZero) {
+    ParticleDefinition = G4AntiKaonZero::AntiKaonZero();
+  } else if (ID == MCSource::c_KaonZeroS) {
+    ParticleDefinition = G4KaonZeroShort::KaonZeroShort();
+  } else if (ID == MCSource::c_KaonZeroL) {
+    ParticleDefinition = G4KaonZeroLong::KaonZeroLong();
+  } else if (ID == MCSource::c_KaonMinus) {
+    ParticleDefinition = G4KaonMinus::KaonMinus();
+  } else if (ID == MCSource::c_Lambda) {
+    ParticleDefinition = G4Lambda::Lambda();
+  } else if (ID == MCSource::c_AntiLambda) {
+    ParticleDefinition = G4AntiLambda::AntiLambda();
+  } else if (ID == MCSource::c_SigmaPlus) {
+    ParticleDefinition = G4SigmaPlus::SigmaPlus();
+  } else if (ID == MCSource::c_AntiSigmaPlus) {
+    ParticleDefinition = G4AntiSigmaPlus::AntiSigmaPlus();
+  } else if (ID == MCSource::c_SigmaZero) {
+    ParticleDefinition = G4SigmaZero::SigmaZero();
+  } else if (ID == MCSource::c_AntiSigmaZero) {
+    ParticleDefinition = G4AntiSigmaZero::AntiSigmaZero();
+  } else if (ID == MCSource::c_SigmaMinus) {
+    ParticleDefinition = G4SigmaMinus::SigmaMinus();
+  } else if (ID == MCSource::c_AntiSigmaMinus) {
+    ParticleDefinition = G4AntiSigmaMinus::AntiSigmaMinus();
+  } else if (ID == MCSource::c_XiZero) {
+    ParticleDefinition = G4XiZero::XiZero();
+  } else if (ID == MCSource::c_AntiXiZero) {
+    ParticleDefinition = G4AntiXiZero::AntiXiZero();
+  } else if (ID == MCSource::c_XiMinus) {
+    ParticleDefinition = G4XiMinus::XiMinus();
+  } else if (ID == MCSource::c_AntiXiMinus) {  
+    ParticleDefinition = G4AntiXiMinus::AntiXiMinus();
+  } else if (ID == MCSource::c_OmegaMinus) {
+    ParticleDefinition = G4OmegaMinus::OmegaMinus();
+  } else if (ID == MCSource::c_AntiOmegaMinus) {
+    ParticleDefinition = G4AntiOmegaMinus::AntiOmegaMinus();
+  } else {   
+    ParticleDefinition = nullptr;
+    merr<<"Particle type not yet implemented: "<<ID<<endl;
+  }
+
+  return ParticleDefinition;
+}
 
 
 /******************************************************************************

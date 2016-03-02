@@ -102,7 +102,7 @@ MDGeometry::MDGeometry()
   m_StartVolume = "";
   m_ShowVolumes = true;
   m_DefaultColor = -1;
-  m_IgnoreShortNames = false;
+  m_IgnoreShortNames = true;
   m_DoSanityChecks = true;
   m_ComplexER = true;
 
@@ -217,7 +217,7 @@ void MDGeometry::Reset()
   delete m_System;
   m_System = new MDSystem("NoName");
 
-  m_IgnoreShortNames = false;
+  m_IgnoreShortNames = true;
   m_DoSanityChecks = true;
   m_ComplexER = true;
   m_VirtualizeNonDetectorVolumes = false;
@@ -6084,7 +6084,7 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   }
   //cout<<"Total: "<<Total<<endl;
   
-  int Random = gRandom->Integer(Total);
+  int Random = m_RandomPositionInVolumeRNG.Integer(Total);
 
   //cout<<"Random: "<<Random<<endl;
 

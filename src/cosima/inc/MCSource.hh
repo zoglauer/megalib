@@ -109,7 +109,19 @@ public:
   bool IsBuildUpEventList() const { return m_IsBuildUpEventList; }
   /// Return true if this is an event list
   unsigned int SizeEventList() const { return m_EventList.size(); }
+  /// Set an entry of the event list
+  bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
+                      G4ThreeVector Polarization, double Time, 
+                      G4ParticleDefinition* ParticleType, MString VolumeName);
+  /// Set entries of the event list from file
+  bool AddToEventList(MString FileName);
+  /// Return the next particle type in the event list
+  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleDefinition : nullptr; }
+  /// Return the next volume in the event list
+  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList[0]->m_VolumeName : ""; }
 
+  
+  
   /// Return true, if the coordinate system could be set correctly
   bool SetCoordinateSystem(const int& CoordinateSystem);
   /// Return the coordinate system type
@@ -150,8 +162,13 @@ public:
   /// Return the total energy flux
   double GetTotalEnergyFlux() const { return m_TotalEnergyFlux; } 
 
-  /// Return true, if the total energy flux (energy/cm^2) could be set correctly
-  bool SetLightCurve(const double& BinWidth, const double& Offset, const vector<double> Curve);
+  /// Return true, if the light curve type could be set correctly
+  bool SetLightCurveType(const int& LightCurveType);
+  /// Return the light curve type
+  int GetLightCurveType() const { return m_LightCurveType; }
+
+  /// Return true, if the light curve could be set correctly
+  bool SetLightCurve(const MString& FileName, const bool& Repeats);
 
   
   /// Set the polarization type
@@ -220,17 +237,6 @@ public:
   bool SetEnergy(MString FileName); 
   /// Return the specific energy parameter 
   double GetEnergyParameter(unsigned int i);
-
-  /// Set an entry of the event list
-  bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
-                      G4ThreeVector Polarization, double Time, 
-                      G4ParticleDefinition* ParticleType, MString VolumeName);
-
-  /// Return the next particle type in the event list
-  G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleType : 0; }
-
-  /// Return the next volume in the event list
-  MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList[0]->m_VolumeName : ""; }
 
 
   /// Set the isotope count - promotes this source to an isotope count
@@ -316,6 +322,12 @@ public:
   static const int c_StartAreaSphere;
   /// Id of a tubical start area 
   static const int c_StartAreaTube;
+
+
+  /// Id of a flat light curve, i.e. light curve not used 
+  static const int c_LightCurveFlat;
+  /// Id of a file based light curve
+  static const int c_LightCurveFile;
 
 
   /// Id of a point like source in spherical coordinates
@@ -531,6 +543,8 @@ protected:
   bool UpgradeEnergy();
   /// Upgrade the energy parameters and do some sanity checks
   bool UpgradeFlux();
+  /// Upgrade the energy parameters and do some sanity checks
+  bool UpgradeLightCurve();
   /// Shape of black body emission (Temperature in keV)
   double BlackBody(double Energy, double Temperature) const; 
   /// Shape of a Band function
@@ -573,11 +587,15 @@ private:
   /// Local class representing one event list entry
   class MEventListEntry {
   public:
+    long m_ID;
     double m_Energy;
     G4ThreeVector m_Position;
     G4ThreeVector m_Direction;
     G4ThreeVector m_Polarization;
-    G4ParticleDefinition* m_ParticleType;
+    int m_ParticleType;
+    double m_ParticleExcitation;
+    G4ParticleDefinition* m_ParticleDefinition;
+    bool m_IsSuccessor;
     MString m_VolumeName;
     double m_Time;
     
@@ -610,6 +628,8 @@ private:
   int m_BeamType;
   /// Id of the particle type
   int m_ParticleType;
+  /// Id of the particle type
+  int m_LightCurveType;
 
   /// The last calculated energy
   double m_Energy;
@@ -650,13 +670,13 @@ private:
   double m_TotalEnergyFlux;
 
   /// The light curve
-  vector<double> m_LightCurve;
-  /// Bin width of the light curve in seconds
-  double m_BinWidthLightCurve;
-  /// Time to start of the light curve in seconds
-  double m_LightCurveOffset;
-  /// Number of events to simulate per light curve content bin
-  double m_NEventsPerLightCurveContent;
+  MFunction m_LightCurveFunction;
+  /// True if the light curve is repeating (i.e. pulsar vs. GRB)
+  bool m_IsRepeatingLightCurve;
+  /// The current light curve cycle
+  unsigned int m_LightCurveCycle;
+  /// The current light curve integration value
+  double m_LightCurveIntegration;
 
   
   /// The polarization type

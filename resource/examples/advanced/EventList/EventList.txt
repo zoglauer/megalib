@@ -1,0 +1,32 @@
+Event list example
+
+This example shows how to
+(1) Use a cosima event list
+(2) Funnel information via comments through the pipeline
+(3) Set a polarization experiment
+
+To run the example, do the following:
+
+(1) Start with compiling everything
+make
+
+(2) Create the event list
+root
+.L EventListCreator.C++
+EventListCreator(true); // if the polarization of both gammas should be identical
+EventListCreator(false); // if the polarization of both gammas should be different
+.q
+
+(3) Run the simulation
+cosima EventList_SamePol.source
+
+(4) Convert the sim file
+    This removes this hits from the two scintillators but kepps the interaction info in the absorber
+    as a comment for later processing 
+EventListSimCleaner -f EventList_SamePol.inc1.id1.sim -g EventListGeometryCosima.geo.setup -o EventList_SamePol.sim
+
+(5) Run revan over the new file -- use the "ForRevan" geometry, since scatter and absorber detector are removed
+revan -f EventList_SamePol.sim -g EventListGeometryRevan.geo.setup -c EventList.revan.cfg -a
+
+(6) Run the analyzer over it
+EventListAnalyzer -f EventList_SamePol.tra -g EventListGeometryRevan.geo.setup

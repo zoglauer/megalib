@@ -286,7 +286,7 @@ bool MCRun::AddToBuildUpEventList(double Energy,
 
 
 /******************************************************************************
- * Add an element to the radioactive particle stor
+ * Add an element to the radioactive particle store
  */
 void MCRun::AddIsotope(G4Ions* Particle, G4TouchableHistory* Hist)
 {
@@ -741,7 +741,7 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
   MCRunManager::GetMCRunManager()->GetSteppingAction()->PrepareForNextEvent();
   MCRunManager::GetMCRunManager()->GetSteppingAction()->SetInitialParticles(InitialParticleTypes);
   MCRunManager::GetMCRunManager()->GetSteppingAction()->SetParticleOriginIsBuildUpSource(IsBuildUpSource);
-
+  
   // We do not need those functions any more....
   m_NSimulatedEvents++;
   m_NGeneratedParticles += NGeneratedParticles;

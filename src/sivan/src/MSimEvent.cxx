@@ -320,6 +320,19 @@ bool MSimEvent::AddBD(const MString& BD)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSimEvent::AddCC(const MString& CC)
+{
+  // Add a comment
+  
+  m_CCs.push_back(CC);
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MSimEvent::SetGeometry(MDGeometryQuest* Geo)
 {
   m_Geometry = Geo;
@@ -418,6 +431,10 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
         m_BDs.push_back(s);
       }
     }
+  }
+  // Add comment
+  else if (LineBuffer[0] == 'C' && LineBuffer[1] == 'C') {
+    m_CCs.push_back(LineBuffer.GetSubString(3)); // Don't safe the inital "CC " 
   }
   // Add total detector energy:
   else if (LineBuffer[0] == 'X' && LineBuffer[1] == 'E') {
@@ -2381,12 +2398,40 @@ unsigned int MSimEvent::GetNBDs()
 
 MString MSimEvent::GetBDAt(unsigned int i)
 {
-  // return PM number i
+  // return BD number i
 
   if (i < m_BDs.size()) {
     return m_BDs[i];
   } else {
     merr<<"Event "<<m_NEvent<<": BD index ("<<i<<") out of bounds! Max: "<<GetNBDs()<<endl;
+    massert(false);
+    return "";
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MSimEvent::GetNCCs()
+{
+  // Return the number of comments
+
+  return m_CCs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MSimEvent::GetCCAt(unsigned int i)
+{
+  // Return Comment number i
+
+  if (i < m_CCs.size()) {
+    return m_CCs[i];
+  } else {
+    merr<<"Event "<<m_NEvent<<": CC index ("<<i<<") out of bounds! Max: "<<GetNCCs()<<endl;
     massert(false);
     return "";
   }
@@ -2975,6 +3020,7 @@ void MSimEvent::Reset()
   m_GRs.clear();  
   m_PMs.clear();  
   m_BDs.clear();
+  m_CCs.clear();
 
   m_TotalDetectorEnergy.clear();
 
@@ -3079,7 +3125,13 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
       for (unsigned int i = 0; i < GetNPMs(); ++i) {
         out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version);
       }
+      
+      // Comments
+      for (unsigned int c = 0; c < m_CCs.size(); ++c) {
+        out<<"CC "<<m_CCs[c]<<endl; 
+      }
     }
+
 
     if (WhatToStore == c_StoreSimulationInfoAll ||
         WhatToStore == c_StoreSimulationInfoInitOnly) {

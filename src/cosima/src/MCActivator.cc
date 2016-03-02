@@ -340,7 +340,7 @@ bool MCActivator::CalculateEquilibriumRates()
                     if (DetermineHalfLife(ParticleDef, HalfLife, ExcitationEnergy, false) == true) {
                       vector<MCActivatorParticle> ABranch = Tree[b];
                       MCActivatorParticle NewParticle;
-                      NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleId(ParticleDef->GetParticleName()), 
+                      NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(ParticleDef->GetParticleName()), 
                                                   ExcitationEnergy);
                       if (Tree[b].back().GetBranchingRatio()* Channel->GetBR() > 1.01) {
                         mout<<"Error (DecayLoop): Branching ratio of "<<Tree[b].back().GetName()<<" larger than one: "<<Tree[b].back().GetBranchingRatio()* Channel->GetBR()<<endl;
@@ -351,7 +351,7 @@ bool MCActivator::CalculateEquilibriumRates()
                       NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()* Channel->GetBR());
                       NewParticle.SetHalfLife(HalfLife);
                       
-                      //cout<<"ID: "<<MCSteppingAction::GetParticleId(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
+                      //cout<<"ID: "<<MCSteppingAction::GetParticleType(Nucleus->GetParticleName())<<":"<<Nucleus->GetExcitationEnergy()<<endl;
                       ABranch.push_back(NewParticle);
                       AdditionalTrees.push_back(ABranch);
                       NewBranchAdded = true;
@@ -463,7 +463,7 @@ bool MCActivator::CalculateEquilibriumRates()
                     
                     
                     MCActivatorParticle NewParticle;
-                    NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleId(Nucleus->GetParticleName()), 
+                    NewParticle.SetIDAndExcitation(MCSteppingAction::GetParticleType(Nucleus->GetParticleName()), 
                                                 NewLevelEnergy);
                     NewParticle.SetBranchingRatio(Tree[b].back().GetBranchingRatio()*NuclearLevel->GammaProbabilities()[h]);
                     NewParticle.SetProductionRate(Tree[b].back().GetProductionRate()*NuclearLevel->GammaProbabilities()[h]);

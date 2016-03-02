@@ -595,7 +595,8 @@ double MFunction::Evaluate(double x) const
     }
     
     if (std::isnan(y)) { // std:: is required here due to multiple definitions
-      merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<show;
+      merr<<"Interpolation error for interpolation type "<<m_InterpolationType<<": y is NaN!"<<endl;;
+      merr<<"   m="<<m<<"  t="<<t<<"  x1="<<x1<<"  y1="<<y1<<"  x2="<<x2<<"  y2="<<y2<<show;
     }
 
     return y;
@@ -637,7 +638,7 @@ double MFunction::Integrate(double XMin, double XMax) const
 
   int BinMin = 0;
   if (XMin > m_X.front()) {
-    BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMin)) - m_X.begin();
+    BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
@@ -675,7 +676,7 @@ double MFunction::Integrate(double XMin, double XMax) const
 //     }
 //     BinMax = int(lower)+1;
   }
-
+  
   double Integral = 0.0;
   if (m_InterpolationType == c_InterpolationConstant) {
     Integral = (XMax - XMin) * m_Y[0];
@@ -1099,6 +1100,122 @@ double MFunction::GetYMax() const
   }
 
   return Max;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MFunction::FindX(double XStart, double Integral, bool Cyclic)
+{
+  //! Find the x value starting from Start which would be achieved after integrating for "Integral"
+  //! If we go beyond x_max, x_max is returned if we are not cyclic, otherwise we continue at x_0
+
+  //cout<<"XStart: "<<XStart<<"  Integral: "<<Integral<<endl;
+  
+  double Modulo = 0;
+  if (Cyclic == true) {
+    // Project XStart into the frame of this function
+    double Front = m_X.front();
+    double Back = m_X.back();
+    
+    if (XStart < Front) {
+      Modulo = double(int((Front - XStart)/(Back-Front)) + 1) * (Back - Front);
+    } else if (XStart > Back) {
+      Modulo = -double(int((XStart - Back)/(Back-Front)) + 1) * (Back - Front);
+    }
+  }
+
+  double X = XStart + Modulo;
+
+  // Find the bin X is in: 
+  if (X < m_X.front()) {
+    //merr<<"XStart ("<<XStart<<") smaller than minimum x-value ("<<m_X.front()<<") --- starting at minimum x-value"<<endl;
+    X = m_X.front();
+  }
+  if (X > m_X.back()) {
+    //merr<<"XStart ("<<XStart<<") larger than maximum x-value ("<<m_X.back()<<") --- starting at minimum x-value"<<endl;
+    X = m_X.front();
+  }
+
+  // Step 1: Go from bin to bin until we find an upper limit bin, where iIntegral > I
+
+  unsigned int BinStart = 0;
+  if (X > m_X.front()) {
+    BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
+  }
+
+  //cout<<"x: "<<X<<" Bin start: "<<BinStart<<endl;
+  
+  unsigned int NewUpperBin = BinStart;
+  double tIntegral = 0.0;
+  double iIntegral = 0.0;
+  do {
+    NewUpperBin++;
+    tIntegral = Integrate(X, m_X[NewUpperBin]);
+    //cout<<"Int from "<<X<<" to "<<m_X[NewUpperBin]<<": "<<tIntegral<<" (total: "<<iIntegral<<")"<<endl;
+    if (iIntegral + tIntegral < Integral) {
+      X = m_X[NewUpperBin];
+      iIntegral += tIntegral;
+    } else {
+      //cout<<"Found it"<<endl;
+      break;
+    }
+    if (X == m_X.back()) {
+      if (Cyclic == false) {
+        break;
+      } else {
+        X = 0;
+        NewUpperBin = 0;
+        Modulo -= m_X.back() - m_X.front();
+        cout<<"New Modulo (while): "<<Modulo<<endl;
+      }
+    }
+  } while (true);
+  
+  // Non-cyclic exit case
+  if (X == m_X.back() && iIntegral < Integral) return numeric_limits<double>::max();
+  
+  //cout<<"UpperBin: "<<NewUpperBin<<endl;
+  
+  // Step 2: Interpolate --- only linear at the moment --- within the given bin to find the right x-value
+  
+  double m = (m_Y[NewUpperBin-1] - m_Y[NewUpperBin]) / (m_X[NewUpperBin-1] - m_X[NewUpperBin]);
+  double t = m_Y[NewUpperBin] - m*m_X[NewUpperBin];
+  
+  //cout<<"m: "<<m<<" t: "<<t<<endl;
+  
+  double x1 = 0; 
+  double x2 = 0;
+  
+  if (m != 0) {
+    double a = 0.5*m;
+    double b = t;
+    double c = -((Integral-iIntegral) + 0.5*m*X*X + t*X);
+  
+    x1 = (-b-sqrt(b*b-4*a*c))/(2*a);
+    x2 = (-b+sqrt(b*b-4*a*c))/(2*a);
+  } else {
+    x1 = X + (Integral-iIntegral)/t; // t cannot be null here other wise we would have jumped the bin...
+    x2 = numeric_limits<double>::max();
+  }
+  //cout<<"x1: "<<x1<<" x2: "<<x2<<endl;
+  
+  if (x1 >= m_X[NewUpperBin-1] && x1 <= m_X[NewUpperBin] && (x2 < m_X[NewUpperBin-1] || x2 > m_X[NewUpperBin])) {
+    //mout<<"x="<<x1<<endl;
+    X = x1;
+  } else if (x2 >= m_X[NewUpperBin-1] && x2 <= m_X[NewUpperBin] && (x1 < m_X[NewUpperBin-1] || x1 > m_X[NewUpperBin])) {
+    //mout<<"x="<<x2<<endl;
+    X = x2; 
+  } else if ((x2 < m_X[NewUpperBin-1] || x2 > m_X[NewUpperBin]) && (x1 < m_X[NewUpperBin-1] || x1 > m_X[NewUpperBin])) {
+    merr<<"FindX: Both possible results are outside choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;
+  } else {
+    merr<<"FindX: Both possible results are within choosen bin ["<<m_X[NewUpperBin-1]<<"-"<<m_X[NewUpperBin]<<"]: x1="<<x1<<" x2="<<x2<<endl;    
+  }
+  
+  //cout<<"XStart: "<<XStart<<" X: "<<X<<" modulo: "<<Modulo<<endl;
+  
+  return X - Modulo;
 }
 
 

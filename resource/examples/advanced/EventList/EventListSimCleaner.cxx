@@ -193,6 +193,8 @@ bool SimRewriter::Analyze()
   // Load geometry:
   MDGeometryQuest* Geometry = new MDGeometryQuest();
   if (Geometry->ScanSetupFile(m_GeometryFileName) == true) {
+    Geometry->ActivateNoising(false);
+    Geometry->SetGlobalFailureRate(0.0);
     cout<<"Geometry "<<Geometry->GetName()<<" loaded!"<<endl;
   } else {
     cout<<"Unable to load geometry "<<Geometry->GetName()<<" - Aborting!"<<endl;
@@ -206,9 +208,6 @@ bool SimRewriter::Analyze()
   }
   Reader->ShowProgress();
   
-  // cout<<"Opened file "<<SiReader.GetFileName()<<" created with MEGAlib version: "<<SiReader.GetMEGAlibVersion()<<endl;
-  // cout<<"Triggered events: "<<SiReader.GetNEvents(false)<<" --- Observation time: "<<SiReader.GetObservationTime()<<" sec  --  simulated events: "<<SiReader.GetSimulatedEvents()<<endl;
-
   // Open output file:
   MFileEventsSim* Writer = new MFileEventsSim(Geometry);
   if (Writer->Open(m_OutputFileName, MFile::c_Write) == false) {
@@ -223,9 +222,32 @@ bool SimRewriter::Analyze()
   MSimEvent* Event = 0;
   while ((Event = Reader->GetNextEvent(false)) != 0) {
     if (m_Interrupt == true) return false;
-    if (AnalyzeEvent(Event) == true) {
-      Writer->AddEvent(Event);      
-    }
+    
+    for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
+      MSimHT* H = Event->GetHTAt(h);
+      if (H->GetDetector() == 4) {
+        MDVolumeSequence VS = Geometry->GetVolumeSequence(H->GetPosition());
+        if (VS.GetDetector() != 0) {
+          if (VS.GetDetector()->GetName() == "ScatterDetector") {
+            // Remove scatterer
+            Event->RemoveHT(H);
+            delete H;
+            --h;
+          } else if (VS.GetDetector()->GetName() == "AbsorberDetector") {
+            ostringstream out;
+            out<<"Absorber "<<H->GetPosition()[0]<<" "<<H->GetPosition()[1]<<" "<<H->GetPosition()[2];
+            Event->AddCC(out.str());
+            // Remove it
+            Event->RemoveHT(H);
+            delete H;
+            --h;
+          }
+        }
+      }
+    }    
+    
+    Writer->AddEvent(Event);      
+   
     delete Event;
   }
 
@@ -252,8 +274,7 @@ bool SimRewriter::AnalyzeEvent(MSimEvent* Event)
   // Add your code here
   // Return true if the event should be written to file
 
-  // Example:
-  // if (Event.GetVeto() == true) return false;
+
 
   return true;
 }

@@ -169,6 +169,14 @@ class MPhysicalEvent
   //! Return a string indicating why this event is bad
   MString GetBadString() const { return m_BadString; }
 
+  //! Add a comment
+  void AddComment(MString& Comment) { m_Comments.push_back(Comment); }
+  //! Get the number of comments
+  unsigned int GetNComments() const { return m_Comments.size(); }
+  //! Get the specific comment
+  MString GetComment(unsigned int i);
+  
+  
   //! Set the OI information
   void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
   //! Get the OI position information
@@ -236,7 +244,7 @@ class MPhysicalEvent
   //! The event ID
   unsigned int m_Id;
 
-  // True if this event has been passed all tests..
+  //! True if this event has been passed all tests..
   bool m_IsGoodEvent; 
   //! To be removed...
   bool m_AllHitsGood;
@@ -248,6 +256,9 @@ class MPhysicalEvent
   //! String giving the reason this event is qualified as bad
   MString m_BadString;
 
+  //! A set of comments store with the event
+  vector<MString> m_Comments;
+  
   //! The time walk between D1 and D2 in the MEGA detector
   int m_TimeWalk;
 

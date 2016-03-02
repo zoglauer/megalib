@@ -149,11 +149,13 @@ void MCVisManager::RegisterGraphicsSystems()
   RegisterGraphicsSystem (new G4VRML2File);
 #endif
 
+  /*
   if (fVerbose > 0) {
     mout<<"You have successfully chosen to use the"
       " following graphics systems:"<<endl;
-    PrintAvailableGraphicsSystems ();
+    PrintAvailableGraphicsSystems(G4VisManager::quiet);
   }
+  */
 }
 
 #endif

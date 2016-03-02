@@ -60,13 +60,16 @@ public:
   /// Reset the number of generated particles
   void SetDecayMode(int DecayMode) { m_DecayMode = DecayMode; }
 
-  /// Returns the MEGAlib internal particle Id (partly identical with G3)
+  /// Returns the MEGAlib internal particle type (partly identical with G3)
   /// This is definitely not the right place for this information
-  static int GetParticleId(G4String Name);
+  static int GetParticleType(G4String Name);
 
-  /// Returns the MEGAlib internal particle Id (partly identical with G3)
+  /// Returns the MEGAlib internal particle type (partly identical with G3)
   /// This is definitely not the right place for this information
-  static int GetParticleId(G4ParticleDefinition* Definition);
+  static int GetParticleType(G4ParticleDefinition* Definition);
+
+  /// Returns the Geant4 particle definition from a MEGAlib particle ID
+  static G4ParticleDefinition* GetParticleDefinition(int ID, double Excitation);
 
   /// Process ID flags
   static const int c_ProcessIDCompton;

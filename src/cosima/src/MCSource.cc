@@ -69,6 +69,9 @@ const int MCSource::c_StartAreaUnknown                             = 0;
 const int MCSource::c_StartAreaSphere                              = 1;
 const int MCSource::c_StartAreaTube                                = 2;
 
+const int MCSource::c_LightCurveFlat                               = 1;
+const int MCSource::c_LightCurveFile                               = 2;
+
 const int MCSource::c_FarField                                     = 1;
 const int MCSource::c_NearField                                    = 2;
 
@@ -217,7 +220,6 @@ void MCSource::Initialize()
   m_NextEmission = 0;
 
   m_NGeneratedParticles = 0;
-  m_NEventsPerLightCurveContent = 0;
 
   m_StartAreaType = c_StartAreaUnknown;
   m_StartAreaAverageArea = 0.0;
@@ -228,6 +230,7 @@ void MCSource::Initialize()
   m_SpectralType = c_Invalid;
   m_BeamType = c_Invalid;
   m_ParticleType = c_Invalid;
+  m_LightCurveType = c_LightCurveFlat; // We have a default here since usually no light curve is given
   m_ParticleExcitation = 0.0;
   m_ParticleDefinition = 0;
 
@@ -250,9 +253,9 @@ void MCSource::Initialize()
 
   m_TotalEnergyFlux = c_Invalid;
   
-  m_BinWidthLightCurve = c_Invalid;
-  m_LightCurveOffset = c_Invalid;
-  m_NEventsPerLightCurveContent = c_Invalid;
+  m_IsRepeatingLightCurve = false;
+  m_LightCurveCycle = 0;
+  m_LightCurveIntegration = 0.0;
 
   m_PolarizationType = c_PolarizationNone;
   m_PolarizationParam1 = c_Invalid;
@@ -307,7 +310,7 @@ bool MCSource::GenerateSkippedEvents(MCSource* Source)
       Source->m_IsEventList == false && 
       m_EventListSize > 0) {
     
-    if (Source->m_ParticleDefinition == m_EventList[0]->m_ParticleType && 
+    if (Source->m_ParticleDefinition == m_EventList[0]->m_ParticleDefinition && 
         Source->m_Volume == m_EventList[0]->m_VolumeName) {
       Source->NEventsToSkip(1);
       //cout<<m_Name<<": Setting one event to skip: "<<Source->m_NEventsToSkip<<" in "<<Source->m_Name<<endl;
@@ -357,6 +360,13 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
     delete m_EventList[0];
     m_EventList.pop_front();
     m_EventListSize--;
+    if (m_EventListSize > 0 && m_EventList[0]->m_IsSuccessor == true) {
+      m_IsSuccessor = true;
+      m_Successor = m_Name;
+    } else {
+      m_IsSuccessor = false;
+      m_Successor = "";      
+    }
   }
 
   ++m_NGeneratedParticles;
@@ -473,6 +483,8 @@ bool MCSource::SetStartAreaParameters(double StartAreaParam1,
   UpgradePosition();
   // and the flux normalization
   UpgradeFlux();
+  // and the light curve information
+  UpgradeLightCurve();
 
   return true;
 }
@@ -925,6 +937,25 @@ string MCSource::GetBeamTypeAsString() const
   }
 
   return Name;
+}
+
+
+/******************************************************************************
+ *  Return true, if the particle type could be set correctly
+ */
+bool MCSource::SetLightCurveType(const int& LightCurveType)
+{
+  switch (LightCurveType) {
+  case c_LightCurveFlat:
+  case c_LightCurveFile:
+    m_LightCurveType = LightCurveType;
+    return true;
+  default:
+    mout<<m_Name<<": Unknown light curve type: "<<LightCurveType<<endl;
+    return false;
+  }
+
+  return true;
 }
 
 
@@ -1536,7 +1567,7 @@ bool MCSource::SetFlux(const double& Flux)
 
 
 /******************************************************************************
- * Return true, if the intensity could be set correctly
+ * Return true, if the enhanced flux calculations could be performed
  */
 bool MCSource::UpgradeFlux() 
 { 
@@ -1583,11 +1614,13 @@ bool MCSource::UpgradeFlux()
     }
   }
 
-  if (m_Flux <= 0 && m_StartAreaType != c_StartAreaUnknown && m_IsSuccessor == false) {
+  if (m_Flux <= 0 && m_StartAreaType != c_StartAreaUnknown && m_IsSuccessor == false && m_IsEventList == false) {
     mout<<m_Name<<": We do not have a positive flux ("<<m_Flux<<")... Reason unknown... aborting..."<<endl;
     abort();
     return false;
   }
+
+  UpgradeLightCurve();
 
   return true;
 }
@@ -1606,33 +1639,62 @@ bool MCSource::SetTotalEnergyFlux(const double& TotalEnergyFlux)
   return false;
 }
 
-   
-/******************************************************************************
- *  Return true, if the total energy flux (energy/cm^2) could be set correctly
- */
-bool MCSource::SetLightCurve(const double& BinWidth, const double& Offset, 
-                             const vector<double> Curve) 
-{
-  double Content = 0.0;
-  for (unsigned int i = 0; i < Curve.size(); ++i) {
-    Content += Curve[i];
-  }
 
-  if (Content > 0 && BinWidth > 0 && Curve.size() > 0 && Offset >= 0) {
-    m_BinWidthLightCurve = BinWidth;
-    m_LightCurveOffset = Offset;
-    m_LightCurve = Curve; 
+/******************************************************************************
+ * Return true, if the light curve could be set correctly
+ */
+bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
+{
+  if (m_LightCurveType == c_LightCurveFile) {
+    if (m_LightCurveFunction.Set(FileName, "DP") == false) {
+      mout<<m_Name<<": LightCurveFile: Unable to load light curve!"<<endl;
+      return false;
+    }
+    
+    if (m_LightCurveFunction.GetSize() < 2) {
+      mout<<m_Name<<": At least two entries in the file are required!"<<endl;
+      return false;
+    }
+    
+    // Scale the time axis with Geant4's times
+    cout<<"Light curve x-axis scaled with: "<<second<<endl;
+    m_LightCurveFunction.ScaleX(second);
+    
     m_IsFluxVariable = true;
-    m_NEventsPerLightCurveContent = 0;
-    return true;
+    m_IsRepeatingLightCurve = Repeats;
   } else {
+    mout<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
     return false;
-  } 
+  }
+  
+  return true;
 }
 
 
 
 /******************************************************************************
+ * Return true, if the enhanced light curve calculations could be performed
+ */
+bool MCSource::UpgradeLightCurve()
+{
+  if (m_LightCurveType == c_LightCurveFile) {
+    // Make sure the y-value is the flux in particles/second
+    
+    cout<<"Lightcurve integration: "<<m_LightCurveFunction.Integrate()<<endl;
+    cout<<"Flux: "<<m_Flux*second<<" ph/s"<<endl;
+    if (m_Flux > 0 && m_LightCurveFunction.Integrate() > 0) {
+      m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate());
+    }
+    cout<<"Final light-curve integration: "<<m_LightCurveFunction.Integrate()<<endl;
+  }
+  
+  return true;
+}
+
+
+/******************************************************************************
+ * Set the polarization, the first parameter indicates, if the vector is
+ * in absolute coordinates (true) or relative to the flight direction (false)
  *  Return true, if the particle type could be set correctly
  */
 bool MCSource::SetPolarizationType(const int& PolarizationType)
@@ -1719,6 +1781,64 @@ void MCSource::SetPolarizationDegree(const double& Degree)
   }
 }
 
+/******************************************************************************
+ * Set entries of the event list from file
+ */
+bool MCSource::AddToEventList(MString FileName)
+{
+  const unsigned int Max = 10000000;
+
+  ifstream in;
+  in.open(FileName);
+  
+  if (in.is_open() == false) {
+    mout<<m_Name<<": Unable to open file "<<FileName<<endl;
+    return false; 
+  }
+  
+  MTokenizer Tokens;
+  MString Line;
+  while (in.good() == true) {
+    Line.ReadLine(in);
+    Tokens.Analyze(Line, false);
+    if (Tokens.GetNTokens() == 0) continue;
+    
+    if (Tokens.GetNTokens() != 15) {
+      mout<<m_Name<<": We have "<<Tokens.GetNTokens()<<" instead of the expected 15 tokens"<<endl; 
+      cout<<Tokens.GetText()<<endl;
+      return false;
+    }
+          
+    MEventListEntry* Entry = new MEventListEntry;
+    Entry->m_ID = Tokens.GetTokenAtAsInt(0);
+    Entry->m_IsSuccessor = Tokens.GetTokenAtAsBoolean(1);
+    Entry->m_Energy = Tokens.GetTokenAtAsDouble(14)*keV;
+    Entry->m_Position = G4ThreeVector(Tokens.GetTokenAtAsDouble(5)*cm, Tokens.GetTokenAtAsDouble(6)*cm, Tokens.GetTokenAtAsDouble(7)*cm);
+    Entry->m_Direction = G4ThreeVector(Tokens.GetTokenAtAsDouble(8), Tokens.GetTokenAtAsDouble(9), Tokens.GetTokenAtAsDouble(10));
+    Entry->m_Polarization = G4ThreeVector(Tokens.GetTokenAtAsDouble(11), Tokens.GetTokenAtAsDouble(12), Tokens.GetTokenAtAsDouble(13));
+    Entry->m_Time = Tokens.GetTokenAtAsDouble(4)*second;
+    Entry->m_ParticleType = Tokens.GetTokenAtAsInt(2);
+    Entry->m_ParticleExcitation = Tokens.GetTokenAtAsInt(3);
+    Entry->m_ParticleDefinition = nullptr;
+    Entry->m_VolumeName = "";
+    
+    m_EventList.push_back(Entry);
+    m_EventListSize++; 
+    
+    if (m_EventListSize > Max) {
+      mout<<m_Name<<": Event list is too large (exeeds "<<Max<<")."<<endl;
+      in.close();
+      return false;
+    }
+  }
+  
+  in.close();
+  
+  m_IsEventList = true;
+  
+  return true;
+}
+
 
 /******************************************************************************
  * Set an entry of the event list
@@ -1728,7 +1848,7 @@ bool MCSource::AddToEventList(double Energy,
                               G4ThreeVector Direction, 
                               G4ThreeVector Polarization, 
                               double Time,  
-                              G4ParticleDefinition* ParticleType, 
+                              G4ParticleDefinition* ParticleDefinition, 
                               MString VolumeName)
 {
   // If this gets really slow we might use a set here at one point in time...
@@ -1737,22 +1857,25 @@ bool MCSource::AddToEventList(double Energy,
 
   const unsigned int Max = 10000000;
   if (m_EventListSize >= Max) {
-    mout<<"Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;
+    mout<<m_Name<<": Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;
     delete m_EventList[0];
     m_EventList.pop_back();
     m_EventListSize--;
   }
 
   MEventListEntry* Entry = new MEventListEntry;
+  Entry->m_IsSuccessor = false;
   Entry->m_Energy = Energy;
   Entry->m_Position = Position;
   Entry->m_Direction = Direction;
   Entry->m_Polarization = Polarization;
   Entry->m_Time = Time;
-  Entry->m_ParticleType = ParticleType;
+  Entry->m_ParticleDefinition = ParticleDefinition;
+  Entry->m_ParticleExcitation = 0;
+  Entry->m_ParticleType = 0;
   Entry->m_VolumeName = VolumeName;
   
-  deque<MEventListEntry*>::iterator I = lower_bound(m_EventList.begin(), m_EventList.end(), Entry, [](MEventListEntry* L, MEventListEntry* R ) { return L->m_Time < R->m_Time; });
+  deque<MEventListEntry*>::iterator I = lower_bound(m_EventList.begin(), m_EventList.end(), Entry, [](MEventListEntry* Left, MEventListEntry* Right) { return Left->m_Time < Right->m_Time; });
   m_EventList.insert(I, Entry);
   m_EventListSize++;
 
@@ -1785,10 +1908,9 @@ bool MCSource::SetIsotopeCount(double IsotopeCount)
  * Return the time to the next photon emission of this source:
  * The error in this routine is <= Scale
  */
-bool MCSource::CalculateNextEmission(double Time, double Scale)
+bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
 {
   double NextEmission = 0;
-  double MinimumTime = numeric_limits<double>::max();
 
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
@@ -1819,64 +1941,21 @@ bool MCSource::CalculateNextEmission(double Time, double Scale)
     //  NextEmission += MinimumTime;
     //} while (CLHEP::RandFlat::shoot(1) > Scale);
   } else {
-    massert(m_LightCurve.size() > 0);
-    massert(m_BinWidthLightCurve > 0);
-    massert(m_TotalEnergyFlux > 0);
-
-    if (m_NEventsPerLightCurveContent <= 0) {
-      // Initialize:
-      double NLightCurveContentBins = 0;
-      for (unsigned int i = 0; i < m_LightCurve.size(); ++i) {
-        NLightCurveContentBins += m_LightCurve[i];
-      }
-      //cout<<"Mean= "<<GetMeanEnergy()<<" Cont="<<NLightCurveContentBins<<endl;
-      m_NEventsPerLightCurveContent = 
-        m_TotalEnergyFlux / (GetMeanEnergy() * NLightCurveContentBins);
-    }
-    //cout<<"m_NEventsPerLightCurveContent: "<<m_NEventsPerLightCurveContent<<endl;
-    
-    if (Time < m_LightCurveOffset) {
-      NextEmission += m_LightCurveOffset - Time;
-    }
-    bool Found = false;
-    for (unsigned int t = (unsigned int) ((Time-m_LightCurveOffset+NextEmission)/m_BinWidthLightCurve); 
-         t < m_LightCurve.size(); ++t) {
-      //cout<<"Time: "<<Time<<"   t/tmax "<<t<<"/"<<m_LightCurve.size()<<endl;
-      Found = false;
-      // Remaining time in this light curve bin:
-      double Progress = 1 - ((Time-m_LightCurveOffset+NextEmission)/m_BinWidthLightCurve - 
-                             (int) ((Time-m_LightCurveOffset+NextEmission)/m_BinWidthLightCurve));
-      //cout<<"Progress:"<<Progress<<endl;
-      // Remaining events in this light curve bin:
-      double Events = m_BinWidthLightCurve*m_LightCurve[t]*m_NEventsPerLightCurveContent*Progress*
-        m_StartAreaParam1*m_StartAreaParam1*c_Pi;
-      //cout<<"Start sphere: "<<m_StartAreaParam1*m_StartAreaParam1*c_Pi<<endl;
-      //cout<<"Remaining events for light curve bin "<<t<<":"<<Events<<endl;
-      // Number of required steps:
-      int Steps = (int) (Events/Scale + 1);
-      //cout<<"Steps:"<<Steps<<endl;
-      // The time of one step:
-      if (Steps > 0) {
-        MinimumTime = Progress*m_BinWidthLightCurve/Steps;
-        for (int st = 0; st < Steps; ++st) {
-          //cout<<"Step : "<<s<<endl;
-          NextEmission += MinimumTime;
-          if (CLHEP::RandFlat::shoot(1) < Scale) {
-            Found = true;
-            //cout<<"Found!"<<endl;
-            break;
-          }
-        }
-        if (Found == true) {
-          break;
-        }
+    if (m_LightCurveType == c_LightCurveFile) {
+      double dIntegral = CLHEP::RandExponential::shoot(1.0/GetFlux());
+      //cout<<"dIntegral: "<<dIntegral<<endl;
+      NextEmission = m_LightCurveFunction.FindX(m_NextEmission, dIntegral, m_IsRepeatingLightCurve);
+      if (m_IsRepeatingLightCurve == false && NextEmission >= m_LightCurveFunction.GetXMax()) {
+        m_IsActive = false;
+        NextEmission = numeric_limits<double>::max();
+        mout<<m_Name<<": light-curve data exceeded."<<endl;
+        return true;
       } else {
-        NextEmission += Progress*m_BinWidthLightCurve;
+        //cout<<"Next emission: "<<NextEmission<<":"<<dIntegral<<endl;
+        NextEmission -= Time; // For compatibility with the rest...
       }
-    }
-    if (Found == false) {
-      m_IsActive = false;
-      NextEmission = numeric_limits<double>::max();
+    } else if (m_LightCurveType == c_LightCurveFlat) {
+      mout<<m_Name<<": A flat light curve should not be handled here..."<<endl;
     }
   }
 
@@ -1895,15 +1974,25 @@ bool MCSource::GenerateParticle(G4GeneralParticleSource* ParticleGun)
   if (m_IsEventList == true) {
     if (m_EventListSize > 0) {
       //cout<<"Setting particle (from list): "<<m_EventList[0]->m_ParticleType->GetParticleName()<<endl;
-      ParticleGun->SetParticleDefinition(m_EventList[0]->m_ParticleType);
-      m_ParticleType = MCSteppingAction::GetParticleId(m_EventList[0]->m_ParticleType->GetParticleName());
+      if (m_EventList[0]->m_ParticleDefinition == nullptr) {
+         m_EventList[0]->m_ParticleDefinition = MCSteppingAction::GetParticleDefinition(m_EventList[0]->m_ParticleType, m_EventList[0]->m_ParticleExcitation);
+      }
+      if (m_EventList[0]->m_ParticleType == 0) {
+        m_EventList[0]->m_ParticleType = MCSteppingAction::GetParticleType(m_EventList[0]->m_ParticleDefinition->GetParticleName());
+      }
+       
+      ParticleGun->SetParticleDefinition(m_EventList[0]->m_ParticleDefinition);
+      m_ParticleDefinition = m_EventList[0]->m_ParticleDefinition;
+      m_ParticleExcitation = 0.0;
+      m_ParticleType = m_EventList[0]->m_ParticleType;
+      
       return true;
     } else {
       return false;
     }
   }
 
-  if (m_ParticleDefinition != 0) {
+  if (m_ParticleDefinition != nullptr) {
     //cout<<"Setting particle: "<<m_ParticleDefinition->GetParticleName()<<endl;
     ParticleGun->SetParticleDefinition(m_ParticleDefinition);
   } else {
@@ -1929,186 +2018,8 @@ bool MCSource::GenerateParticleDefinition()
     m_ParticleDefinition = 0;
   }
 
-  // Check for 
-  int Type = m_ParticleType;
-  if (Type > 1000) {
-    G4ParticleDefinition* Ion = 0;
-    G4IonTable* Table = G4IonTable::GetIonTable();
-    int AtomicNumber = int(Type/1000);
-    int AtomicMass = Type - int(Type/1000)*1000;
-    Ion = Table->GetIon(AtomicNumber, AtomicMass, m_ParticleExcitation);
-    if (Ion == 0) {
-      merr<<"Particle type not yet implemented!"<<endl;
-      m_ParticleDefinition = 0;
-      Ret = false;
-    } else {
-      m_ParticleDefinition = Ion;
-    }
-  } else {
-    switch (Type) {
-    case c_Gamma:
-      m_ParticleDefinition = G4Gamma::Gamma();
-      break;
-
-    case c_Positron:
-      m_ParticleDefinition = G4Positron::Positron();
-      break;
-    case c_Electron:
-      m_ParticleDefinition = G4Electron::Electron();
-      break;
-      
-    case c_Proton:
-      m_ParticleDefinition = G4Proton::Proton();
-      break;
-    case c_AntiProton:
-      m_ParticleDefinition = G4AntiProton::AntiProton();
-      break;
-    case c_Neutron:
-      m_ParticleDefinition = G4Neutron::Neutron();
-    break;
-    case c_AntiNeutron:
-      m_ParticleDefinition = G4AntiNeutron::AntiNeutron();
-      break;
-      
-    case c_MuonPlus:
-      m_ParticleDefinition = G4MuonPlus::MuonPlus();
-      break;
-    case c_MuonMinus:
-      m_ParticleDefinition = G4MuonMinus::MuonMinus();
-      break;
-    case c_TauonPlus:
-      m_ParticleDefinition = G4TauPlus::TauPlus();
-      break;
-    case c_TauonMinus:
-      m_ParticleDefinition = G4TauMinus::TauMinus();
-      break;
-      
-    case c_ElectronNeutrino:
-      m_ParticleDefinition = G4NeutrinoE::NeutrinoE();
-      break;
-    case c_AntiElectronNeutrino:
-      m_ParticleDefinition = G4AntiNeutrinoE::AntiNeutrinoE();
-      break;
-    case c_MuonNeutrino:
-      m_ParticleDefinition = G4NeutrinoMu::NeutrinoMu();
-      break;
-    case c_AntiMuonNeutrino:
-      m_ParticleDefinition = G4AntiNeutrinoMu::AntiNeutrinoMu();
-      break;
-    case c_TauonNeutrino:
-      m_ParticleDefinition = G4NeutrinoTau::NeutrinoTau();
-      break;
-    case c_AntiTauonNeutrino:
-      m_ParticleDefinition = G4AntiNeutrinoTau::AntiNeutrinoTau();
-      break;
-
-    case c_Deuteron:
-      m_ParticleDefinition = G4Deuteron::Deuteron();
-      break;
-    case c_Triton:
-      m_ParticleDefinition = G4Triton::Triton();
-      break;
-    case c_He3:
-      m_ParticleDefinition = G4He3::He3();
-      break;
-    case c_Alpha:
-      m_ParticleDefinition = G4Alpha::Alpha();
-      break;
-
-    case c_GenericIon:
-      m_ParticleDefinition = G4GenericIon::GenericIon();
-      break;
-      
-    case c_PiPlus:
-      m_ParticleDefinition = G4PionPlus::PionPlus();
-      break;
-    case c_PiZero:
-      m_ParticleDefinition = G4PionZero::PionZero();
-      break;
-    case c_PiMinus:
-      m_ParticleDefinition = G4PionMinus::PionMinus();
-      break;
-    case c_Eta:
-      m_ParticleDefinition = G4Eta::Eta();
-      break;
-    case c_EtaPrime:
-      m_ParticleDefinition = G4EtaPrime::EtaPrime();
-      break;
-
-    case c_KaonPlus:
-      m_ParticleDefinition = G4KaonPlus::KaonPlus();
-      break;
-    case c_KaonZero:
-      m_ParticleDefinition = G4KaonZero::KaonZero();
-      break;
-    case c_AntiKaonZero:
-      m_ParticleDefinition = G4AntiKaonZero::AntiKaonZero();
-      break;
-    case c_KaonZeroS:
-      m_ParticleDefinition = G4KaonZeroShort::KaonZeroShort();
-      break;
-    case c_KaonZeroL:
-      m_ParticleDefinition = G4KaonZeroLong::KaonZeroLong();
-      break;
-    case c_KaonMinus:
-      m_ParticleDefinition = G4KaonMinus::KaonMinus();
-      break;
-
-    case c_Lambda:
-      m_ParticleDefinition = G4Lambda::Lambda();
-      break;
-    case c_AntiLambda:
-      m_ParticleDefinition = G4AntiLambda::AntiLambda();
-      break;
-
-    case c_SigmaPlus:
-      m_ParticleDefinition = G4SigmaPlus::SigmaPlus();
-      break;
-    case c_AntiSigmaPlus:
-      m_ParticleDefinition = G4AntiSigmaPlus::AntiSigmaPlus();
-      break;
-    case c_SigmaZero:
-      m_ParticleDefinition = G4SigmaZero::SigmaZero();
-      break;
-    case c_AntiSigmaZero:
-      m_ParticleDefinition = G4AntiSigmaZero::AntiSigmaZero();
-      break;
-    case c_SigmaMinus:
-      m_ParticleDefinition = G4SigmaMinus::SigmaMinus();
-      break;
-    case c_AntiSigmaMinus:
-      m_ParticleDefinition = G4AntiSigmaMinus::AntiSigmaMinus();
-      break;
-
-    case c_XiZero:
-      m_ParticleDefinition = G4XiZero::XiZero();
-      break;
-    case c_AntiXiZero:
-      m_ParticleDefinition = G4AntiXiZero::AntiXiZero();
-      break;
-    case c_XiMinus:
-      m_ParticleDefinition = G4XiMinus::XiMinus();
-      break;
-    case c_AntiXiMinus:  
-      m_ParticleDefinition = G4AntiXiMinus::AntiXiMinus();
-      break;
-
-    case c_OmegaMinus:
-      m_ParticleDefinition = G4OmegaMinus::OmegaMinus();
-      break;
-    case c_AntiOmegaMinus:
-      m_ParticleDefinition = G4AntiOmegaMinus::AntiOmegaMinus();
-      break;
-      
-    default:
-      m_ParticleDefinition = 0;
-      merr<<"Particle type not yet implemented: "<<Type<<endl;
-      Ret = false;
-      break;
-    }
-  }
-  
-  if (Ret == false) return false;
+  m_ParticleDefinition = MCSteppingAction::GetParticleDefinition(m_ParticleType, m_ParticleExcitation);
+  if (m_ParticleDefinition == nullptr) return false;
   
   m_HalfLife = 0;
   double Exitation = 0;
