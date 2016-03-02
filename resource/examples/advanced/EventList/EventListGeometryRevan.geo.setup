@@ -1,0 +1,11 @@
+
+Include EventListGeometryBase.geo
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByChannel true
+ActiveDetectorTrigger.Detector GStrip 1
+
+

@@ -1,0 +1,29 @@
+
+Include EventListGeometryBase.geo
+
+
+Scintillator   ScatterDetector
+ScatterDetector.SensitiveVolume Scatterer
+ScatterDetector.TriggerThreshold 20
+ScatterDetector.NoiseThresholdEqualsTriggerThreshold true
+ScatterDetector.EnergyResolution Gaus 20 20 5
+ScatterDetector.EnergyResolution Gaus 200 20 10
+ScatterDetector.EnergyResolution Gaus 2000 20 20
+
+Scintillator   AbsorberDetector
+AbsorberDetector.SensitiveVolume Absorber
+AbsorberDetector.TriggerThreshold 20
+AbsorberDetector.NoiseThresholdEqualsTriggerThreshold true
+AbsorberDetector.EnergyResolution Gaus 20 20 5
+AbsorberDetector.EnergyResolution Gaus 200 20 10
+AbsorberDetector.EnergyResolution Gaus 2000 20 20
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByChannel true
+ActiveDetectorTrigger.Detector GStrip 1
+ActiveDetectorTrigger.Detector ScatterDetector 1
+ActiveDetectorTrigger.Detector AbsorberDetector 1
+
