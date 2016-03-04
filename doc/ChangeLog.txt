@@ -8,8 +8,17 @@ Version 2.29/2.30
 
 *** IMPORTANT - PLEASE READ:
 
-+ El Capitan / Xcode 7.x users: Run the setup script with the additional option
-  --patch=yes to apply a set of necessary patches to ROOT and Geant4
++ El Capitan / Xcode 7.x users: Run the setup script with the additional 
+  option --patch=yes to apply a set of necessary patches to ROOT and Geant4
+
++ Serious activation simulation issue:
+  This version of MEGAlib works with Geant4 10.0. However, there are some 
+  known issues in Geant4 10.0 and 10.1 which generate either missing of fake
+  lines. These issues have been resolved in Geant4 10.2. However, test 
+  simulation with the TGRS example still show more discrepancies than back 
+  with my originally hacked Geant4 9.1 version.
+  Thus for activation simulations, either use an old version of MEGAlib or
+  a newer one (2.31 and higher).
   
 + Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new
   MRotation class
@@ -49,6 +58,13 @@ General:
   script
 
 Cosima:
++ This version of MEGAlib works with Geant4 10.0. However, there are some 
+  known issues in Geant4 10.0 and 10.1 which generate either missing of fake
+  lines. These issues have been resolved in Geant4 10.2. However, test 
+  simulations with the TGRS example still show more discrepancies than back 
+  with my originally hacked Geant4 9.1 version.
+  Thus for activation simulations, either use an old version of MEGAlib or
+  a newer one (2.31 and higher).
 + Support for Geant4 10.0 (enables meta-stable states, but multi-threading 
   is not yet supported)
 + Support for Geant4 10.1 --- however, you have to add "101" manually to the 
