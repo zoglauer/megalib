@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 using namespace std;
 
   
@@ -328,6 +329,19 @@ public:
     m_StartedEvents = 0;
   }
   
+  void SetName(string Name) { m_Name = Name; }
+  
+  void Set(double Radius, double MinHeight, double MaxHeight, int NBinsHeight, 
+           double MinDistance, double MaxDistance, int NBinsDistance) {
+    m_Radius = Radius;
+    m_MinHeight = MinHeight;
+    m_MaxHeight = MaxHeight;
+    m_NBinsHeight = NBinsHeight;
+    m_MinDistance = MinDistance;
+    m_MaxDistance = MaxDistance;
+    m_NBinsDistance = NBinsDistance;
+  }
+  
   //! Initialize the data cubes
   void Initialize(double Energy) {
     CreateDataCube(Energy);
@@ -338,16 +352,24 @@ public:
   
   //! Create the data cubes
   void CreateDataCube(double Energy) {
-    m_GapHeight = (cell_MaxHeight - cell_MinHeight)/(cell_NBinsHeight - 1);
-    m_GapDistance = (cell_MaxDistance - cell_MinDistance)/(cell_NBinsDistance - 1);
+    if (m_NBinsHeight > 1) {
+      m_GapHeight = (m_MaxHeight - m_MinHeight)/(m_NBinsHeight - 1);
+    } else {
+      m_GapHeight = 2*m_Radius;
+    }
+    if (m_NBinsDistance > 1) {
+      m_GapDistance = (m_MaxDistance - m_MinDistance)/(m_NBinsDistance - 1);
+    } else {
+      m_GapDistance = 2*m_Radius; 
+    }
     
-    m_DataCells = vector<vector<DataCell>>(cell_NBinsHeight, vector<DataCell>(cell_NBinsDistance));
+    m_DataCells = vector<vector<DataCell>>(m_NBinsHeight, vector<DataCell>(m_NBinsDistance));
 
     m_NIntegrationSpheres.push_back(1);
-    for (int d = 1; d < cell_NBinsDistance; ++d) {
+    for (int d = 1; d < m_NBinsDistance; ++d) {
       double TorusRadius = d*m_GapDistance;
       double Circumfence = 2* TorusRadius * c_Pi;
-      int Spheres = Circumfence / (2*cell_Radius);
+      int Spheres = Circumfence / (2*m_Radius);
       Spheres -= 1; // Safety to avoid micro-overlaps
       if (Spheres <= 0) Spheres = 1;
       m_NIntegrationSpheres.push_back(Spheres);
@@ -355,11 +377,11 @@ public:
     }
 
     
-    for (int h = 0; h < cell_NBinsHeight; ++h) {
-      for (int d = 0; d < cell_NBinsDistance; ++d) {
+    for (int h = 0; h < m_NBinsHeight; ++h) {
+      for (int d = 0; d < m_NBinsDistance; ++d) {
         m_DataCells[h][d].SetNBins(m_NSkyBins, m_NEnergyBins);
-        m_DataCells[h][d].SetHeight(cell_MinHeight + h*m_GapHeight, h);
-        m_DataCells[h][d].SetDistance(cell_MinDistance + d*m_GapDistance, d);
+        m_DataCells[h][d].SetHeight(m_MinHeight + h*m_GapHeight, h);
+        m_DataCells[h][d].SetDistance(m_MinDistance + d*m_GapDistance, d);
         m_DataCells[h][d].SetNIntegrationSpheres(m_NIntegrationSpheres[d]);
         m_DataCells[h][d].Create(Energy);
       }
@@ -370,18 +392,19 @@ public:
   void Add(MVector Position, MVector Direction, double Energy) {
     
     // Find the torus
-    int hBin = int((Position.GetZ() - cell_MinHeight)/m_GapHeight + 0.5);
-    double Radius = sqrt(pow(Position.GetX(), 2) + pow(Position.GetY(), 2));
+    int hBin = lround((Position.GetZ() - m_MinHeight)/m_GapHeight);
     
-    int dBin = int((Radius - cell_MinDistance)/m_GapDistance + 0.5);
-
-    if (hBin < 0 || hBin >= cell_NBinsHeight) {
-      //cout<<Position.GetZ()<<":"<<cell_MinHeight<<":"<<m_GapHeight<<endl;
-      cout<<"Error: Did not find correct height: bin="<<hBin<<endl;
+    //cout<<"Info ("<<m_Name<<"): "<<Position.GetZ()<<":"<<m_MinHeight<<":"<<m_GapHeight<<":"<<hBin<<endl;    
+    if (hBin < 0 || hBin >= m_NBinsHeight) {
+      //cout<<Position.GetZ()<<":"<<m_MinHeight<<":"<<m_GapHeight<<endl;
+      //cout<<"Error ("<<m_Name<<"): Did not find correct height: bin="<<hBin<<endl;
       return;
     }
-    if (dBin < 0 || dBin >= cell_NBinsDistance) {
-      cout<<"Error: Did not find correct distance: bin="<<dBin<<endl;
+    
+    double Radius = sqrt(pow(Position.GetX(), 2) + pow(Position.GetY(), 2));    
+    int dBin = lround((Radius - m_MinDistance)/m_GapDistance);
+    if (dBin < 0 || dBin >= m_NBinsDistance) {
+      //cout<<"Error ("<<m_Name<<"): Did not find correct distance: bin="<<dBin<<endl;
       return;
     }
     
@@ -392,11 +415,11 @@ public:
     // Find the sphere
     int aBin = 0;
     double GapAngle = 0;
-    if (Radius > cell_Radius && m_NIntegrationSpheres[dBin] > 1) {
+    if (Radius > m_Radius && m_NIntegrationSpheres[dBin] > 1) {
       // Normal case
       GapAngle = 2*TMath::Pi() / m_NIntegrationSpheres[dBin];
 
-      aBin = int((Angle - 0)/GapAngle + 0.5);
+      aBin = lround((Angle - 0)/GapAngle);
       if (aBin == m_NIntegrationSpheres[dBin]) aBin = 0;
       
       //cout<<aBin<<":"<<Angle<<":"<<GapAngle<<":"<<m_NIntegrationSpheres[dBin]<<":"<<dBin<<endl;
@@ -436,16 +459,16 @@ public:
       MFile File;
       File.Open(FileName, MFile::c_Write);
       
-      for (int h = 0; h < cell_NBinsHeight; ++h) {
-        for (int d = 0; d < cell_NBinsDistance; ++d) {
+      for (int h = 0; h < m_NBinsHeight; ++h) {
+        for (int d = 0; d < m_NBinsDistance; ++d) {
           File.Write(m_DataCells[h][d].ToString(m_StartedEvents));
         }
       }
       File.Close();
 
     } else {
-      for (int h = 0; h < cell_NBinsHeight; ++h) {
-        for (int d = 0; d < cell_NBinsDistance; ++d) {
+      for (int h = 0; h < m_NBinsHeight; ++h) {
+        for (int d = 0; d < m_NBinsDistance; ++d) {
           ostringstream FileName;
           FileName<<Prefix<<"_Height_"<<h<<"_Distance_"<<d<<".dat.gz";
           m_DataCells[h][d].Save(FileName.str(), m_StartedEvents);
@@ -456,6 +479,19 @@ public:
    
   
 private:
+  string m_Name;
+  
+  double m_Radius;
+ 
+  double m_MinHeight;
+  double m_MaxHeight;
+  int m_NBinsHeight; 
+   
+  double m_MinDistance;
+  double m_MaxDistance;
+  int m_NBinsDistance;
+  
+  
   double m_GapHeight;
   double m_GapDistance;
     
@@ -486,7 +522,14 @@ public:
   }
   
   void Initialize(double Energy) {
+    m_DataCube.SetName("Normal");
+    m_DataCube.Set(cell_Radius, cell_MinHeight, cell_MaxHeight, cell_NBinsHeight, 
+                   cell_MinDistance, cell_MaxDistance, cell_NBinsDistance);
     m_DataCube.Initialize(Energy); 
+    m_AuxDataCube.SetName("Aux");
+    m_AuxDataCube.Set(auxcell_Radius, auxcell_MinHeight, auxcell_MaxHeight, auxcell_NBinsHeight, 
+                      auxcell_MinDistance, auxcell_MaxDistance, auxcell_NBinsDistance);
+    m_AuxDataCube.Initialize(Energy); 
   }
   
   void Add(MSimEvent* Event) {
@@ -495,6 +538,7 @@ public:
       if (IA->GetProcess() == "ENTR" && IA->GetMotherParticleID() == 1) {
         //cout<<"Adding: "<<IA->GetMotherEnergy()<<endl;
         m_DataCube.Add(IA->GetPosition(), -IA->GetMotherDirection(), IA->GetMotherEnergy());
+        m_AuxDataCube.Add(IA->GetPosition(), -IA->GetMotherDirection(), IA->GetMotherEnergy());
         /*
         cout<<-IA->GetMotherDirection().Theta()*c_Deg + 90<<endl;
         if (-IA->GetMotherDirection().Theta()*c_Deg + 90 < -50) {
@@ -504,6 +548,7 @@ public:
       }
     }
     m_DataCube.SetStartedEvents(Event->GetSimulationEventID());
+    m_AuxDataCube.SetStartedEvents(Event->GetSimulationEventID());
     if (Event->GetSimulationEventID() % 500000 == 0) Save();
   }
   
@@ -511,11 +556,16 @@ public:
     ostringstream out;
     out<<"DataCube_ID_"<<m_ID;
     m_DataCube.Save(out.str(), true);     
+    ostringstream auxout;
+    auxout<<"AuxDataCube_ID_"<<m_ID;
+    m_AuxDataCube.Save(auxout.str(), true);     
   }
   
 private:
-  //! 
+  //! The standard data cube
   DataCube m_DataCube;
+  //! The auxillary data cube
+  DataCube m_AuxDataCube;
   //! Unique ID 
   MString m_ID;
 };

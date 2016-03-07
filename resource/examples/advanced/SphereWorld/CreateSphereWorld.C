@@ -42,7 +42,7 @@ void CreateSphereWorld()
  
   out<<"Volume Ground"<<endl;
   out<<"Ground.Material Concrete"<<endl;
-  out<<"Ground.Visibility 1"<<endl;
+  out<<"Ground.Visibility 0"<<endl;
   out<<"Ground.Shape BOX "<<5*cell_MaxDistance<<" "<<5*cell_MaxDistance<<" "<<GroundHalfDepth<<endl;
   out<<"Ground.Position 0 0 "<< - GroundSourceDistance - GroundHalfDepth<<endl;
   out<<"Ground.Mother World"<<endl;
@@ -101,6 +101,73 @@ void CreateSphereWorld()
     out<<"Plane_"<<h<<".Position 0 0 "<<cell_MinHeight + h*m_GapHeight<<endl;
     out<<"Plane_"<<h<<".Mother World"<<endl;
   }
+  
+ 
+  double m_AuxGapHeight = 0.0;
+  if (auxcell_NBinsHeight > 1) {
+    m_AuxGapHeight = (auxcell_MaxHeight - auxcell_MinHeight) / (auxcell_NBinsHeight - 1);
+  }
+  double m_AuxGapDistance = 0.0;
+  if (auxcell_NBinsDistance > 1) {
+    m_AuxGapDistance = (auxcell_MaxDistance - auxcell_MinDistance) / (auxcell_NBinsDistance - 1);
+  }
+  
+  out<<"Volume AuxSphere"<<endl;
+  out<<"AuxSphere.Material Air"<<endl;
+  out<<"AuxSphere.Shape Sphere 0.0 "<<auxcell_Radius<<endl;
+  out<<"AuxSphere.Visibility 1"<<endl;
+  out<<"AuxSphere.Color 2"<<endl;
+
+  out<<"Volume AuxPlane"<<endl; 
+  out<<"AuxPlane.Material Air"<<endl;
+  out<<"AuxPlane.Visibility 1"<<endl;
+  out<<"AuxPlane.Shape TUBS 0.0 { "<<auxcell_MaxDistance<<" + "<<auxcell_Radius<<" } "<<auxcell_Radius<<endl;
+  out<<"AuxPlane.Visibility 0"<<endl;
+  out<<"AuxPlane.Color 3"<<endl;
+  
+  
+  for (unsigned int d = 0; d < auxcell_NBinsDistance; ++d) {
+    double TorusRadius = d*m_AuxGapDistance;
+    out<<"Volume AuxAlmostTorus_"<<d<<endl; 
+    out<<"AuxAlmostTorus_"<<d<<".Material Air"<<endl;
+    if (d == 0) {
+      out<<"AuxAlmostTorus_"<<d<<".Shape TUBS "<<0<<"  "<<auxcell_Radius<<" "<<auxcell_Radius<<endl;      
+    } else {
+      out<<"AuxAlmostTorus_"<<d<<".Shape TUBS "<<TorusRadius - auxcell_Radius<<"  "<<TorusRadius + auxcell_Radius<<" "<<auxcell_Radius<<endl;
+    }
+    out<<"AuxAlmostTorus_"<<d<<".Visibility 0"<<endl;
+    out<<"AuxAlmostTorus_"<<d<<".Color 4"<<endl;
+    out<<"AuxAlmostTorus_"<<d<<".Position 0 0 0"<<endl;
+    out<<"AuxAlmostTorus_"<<d<<".Mother AuxPlane"<<endl;
+    
+    double Radius = 2* TorusRadius * TMath::Pi();
+    int Spheres = Radius / (2*auxcell_Radius);
+    Spheres -= 1; // Safety to avoid overlaps
+    if (Spheres < 1) Spheres = 1;
+    cout<<"Auxillary pheres at d="<<d<<": "<<Spheres<<endl;
+    // Now the test spheres
+    if (d == 0) {
+      out<<"AuxSphere.Copy AuxSphere_0_0"<<endl;
+      out<<"AuxSphere_0_0.Position 0 0 0"<<endl;
+      out<<"AuxSphere_0_0.Mother AuxAlmostTorus_0"<<endl;
+    } else {
+      for (unsigned int s = 0; s < Spheres; ++s) {
+        //if (s != 0) continue;
+        if (cell_LineOnly == true && s > 0) continue;
+        double Angle = s * 2.0 * TMath::Pi()/Spheres;
+        out<<"AuxSphere.Copy AuxSphere_"<<d<<"_"<<s<<endl;
+        out<<"AuxSphere_"<<d<<"_"<<s<<".Position "<<TorusRadius * cos(Angle)<<" "<<TorusRadius * sin(Angle)<<" 0"<<endl;
+        out<<"AuxSphere_"<<d<<"_"<<s<<".Mother AuxAlmostTorus_"<<d<<endl;
+      }
+    } 
+  }
+  
+  for (unsigned int h = 0; h < auxcell_NBinsHeight; ++h) {
+    out<<"AuxPlane.Copy AuxPlane_"<<h<<endl;
+    out<<"AuxPlane_"<<h<<".Position 0 0 "<<auxcell_MinHeight + h*m_AuxGapHeight<<endl;
+    out<<"AuxPlane_"<<h<<".Mother World"<<endl;
+  }
+  
   
   out.close();
 }

@@ -23,7 +23,7 @@ World.Position 0 0 0
 World.Mother 0
 Volume Ground
 Ground.Material Concrete
-Ground.Visibility 1
+Ground.Visibility 0
 Ground.Shape BOX 100000 100000 100
 Ground.Position 0 0 -200
 Ground.Mother World
@@ -4059,59 +4059,4087 @@ Plane.Copy Plane_0
 Plane_0.Position 0 0 2000
 Plane_0.Mother World
 Plane.Copy Plane_1
-Plane_1.Position 0 0 2947.37
+Plane_1.Position 0 0 3000
 Plane_1.Mother World
 Plane.Copy Plane_2
-Plane_2.Position 0 0 3894.74
+Plane_2.Position 0 0 4000
 Plane_2.Mother World
 Plane.Copy Plane_3
-Plane_3.Position 0 0 4842.11
+Plane_3.Position 0 0 5000
 Plane_3.Mother World
 Plane.Copy Plane_4
-Plane_4.Position 0 0 5789.47
+Plane_4.Position 0 0 6000
 Plane_4.Mother World
 Plane.Copy Plane_5
-Plane_5.Position 0 0 6736.84
+Plane_5.Position 0 0 7000
 Plane_5.Mother World
 Plane.Copy Plane_6
-Plane_6.Position 0 0 7684.21
+Plane_6.Position 0 0 8000
 Plane_6.Mother World
 Plane.Copy Plane_7
-Plane_7.Position 0 0 8631.58
+Plane_7.Position 0 0 9000
 Plane_7.Mother World
 Plane.Copy Plane_8
-Plane_8.Position 0 0 9578.95
+Plane_8.Position 0 0 10000
 Plane_8.Mother World
 Plane.Copy Plane_9
-Plane_9.Position 0 0 10526.3
+Plane_9.Position 0 0 11000
 Plane_9.Mother World
 Plane.Copy Plane_10
-Plane_10.Position 0 0 11473.7
+Plane_10.Position 0 0 12000
 Plane_10.Mother World
 Plane.Copy Plane_11
-Plane_11.Position 0 0 12421.1
+Plane_11.Position 0 0 13000
 Plane_11.Mother World
 Plane.Copy Plane_12
-Plane_12.Position 0 0 13368.4
+Plane_12.Position 0 0 14000
 Plane_12.Mother World
 Plane.Copy Plane_13
-Plane_13.Position 0 0 14315.8
+Plane_13.Position 0 0 15000
 Plane_13.Mother World
 Plane.Copy Plane_14
-Plane_14.Position 0 0 15263.2
+Plane_14.Position 0 0 16000
 Plane_14.Mother World
 Plane.Copy Plane_15
-Plane_15.Position 0 0 16210.5
+Plane_15.Position 0 0 17000
 Plane_15.Mother World
 Plane.Copy Plane_16
-Plane_16.Position 0 0 17157.9
+Plane_16.Position 0 0 18000
 Plane_16.Mother World
 Plane.Copy Plane_17
-Plane_17.Position 0 0 18105.3
+Plane_17.Position 0 0 19000
 Plane_17.Mother World
 Plane.Copy Plane_18
-Plane_18.Position 0 0 19052.6
+Plane_18.Position 0 0 20000
 Plane_18.Mother World
-Plane.Copy Plane_19
-Plane_19.Position 0 0 20000
-Plane_19.Mother World
+Volume AuxSphere
+AuxSphere.Material Air
+AuxSphere.Shape Sphere 0.0 75
+AuxSphere.Visibility 1
+AuxSphere.Color 2
+Volume AuxPlane
+AuxPlane.Material Air
+AuxPlane.Visibility 1
+AuxPlane.Shape TUBS 0.0 { 3000 + 75 } 75
+AuxPlane.Visibility 0
+AuxPlane.Color 3
+Volume AuxAlmostTorus_0
+AuxAlmostTorus_0.Material Air
+AuxAlmostTorus_0.Shape TUBS 0  75 75
+AuxAlmostTorus_0.Visibility 0
+AuxAlmostTorus_0.Color 4
+AuxAlmostTorus_0.Position 0 0 0
+AuxAlmostTorus_0.Mother AuxPlane
+AuxSphere.Copy AuxSphere_0_0
+AuxSphere_0_0.Position 0 0 0
+AuxSphere_0_0.Mother AuxAlmostTorus_0
+Volume AuxAlmostTorus_1
+AuxAlmostTorus_1.Material Air
+AuxAlmostTorus_1.Shape TUBS 75  225 75
+AuxAlmostTorus_1.Visibility 0
+AuxAlmostTorus_1.Color 4
+AuxAlmostTorus_1.Position 0 0 0
+AuxAlmostTorus_1.Mother AuxPlane
+AuxSphere.Copy AuxSphere_1_0
+AuxSphere_1_0.Position 150 0 0
+AuxSphere_1_0.Mother AuxAlmostTorus_1
+AuxSphere.Copy AuxSphere_1_1
+AuxSphere_1_1.Position 46.3525 142.658 0
+AuxSphere_1_1.Mother AuxAlmostTorus_1
+AuxSphere.Copy AuxSphere_1_2
+AuxSphere_1_2.Position -121.353 88.1678 0
+AuxSphere_1_2.Mother AuxAlmostTorus_1
+AuxSphere.Copy AuxSphere_1_3
+AuxSphere_1_3.Position -121.353 -88.1678 0
+AuxSphere_1_3.Mother AuxAlmostTorus_1
+AuxSphere.Copy AuxSphere_1_4
+AuxSphere_1_4.Position 46.3525 -142.658 0
+AuxSphere_1_4.Mother AuxAlmostTorus_1
+Volume AuxAlmostTorus_2
+AuxAlmostTorus_2.Material Air
+AuxAlmostTorus_2.Shape TUBS 225  375 75
+AuxAlmostTorus_2.Visibility 0
+AuxAlmostTorus_2.Color 4
+AuxAlmostTorus_2.Position 0 0 0
+AuxAlmostTorus_2.Mother AuxPlane
+AuxSphere.Copy AuxSphere_2_0
+AuxSphere_2_0.Position 300 0 0
+AuxSphere_2_0.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_1
+AuxSphere_2_1.Position 252.376 162.192 0
+AuxSphere_2_1.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_2
+AuxSphere_2_2.Position 124.625 272.89 0
+AuxSphere_2_2.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_3
+AuxSphere_2_3.Position -42.6945 296.946 0
+AuxSphere_2_3.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_4
+AuxSphere_2_4.Position -196.458 226.725 0
+AuxSphere_2_4.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_5
+AuxSphere_2_5.Position -287.848 84.5198 0
+AuxSphere_2_5.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_6
+AuxSphere_2_6.Position -287.848 -84.5198 0
+AuxSphere_2_6.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_7
+AuxSphere_2_7.Position -196.458 -226.725 0
+AuxSphere_2_7.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_8
+AuxSphere_2_8.Position -42.6945 -296.946 0
+AuxSphere_2_8.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_9
+AuxSphere_2_9.Position 124.625 -272.89 0
+AuxSphere_2_9.Mother AuxAlmostTorus_2
+AuxSphere.Copy AuxSphere_2_10
+AuxSphere_2_10.Position 252.376 -162.192 0
+AuxSphere_2_10.Mother AuxAlmostTorus_2
+Volume AuxAlmostTorus_3
+AuxAlmostTorus_3.Material Air
+AuxAlmostTorus_3.Shape TUBS 375  525 75
+AuxAlmostTorus_3.Visibility 0
+AuxAlmostTorus_3.Color 4
+AuxAlmostTorus_3.Position 0 0 0
+AuxAlmostTorus_3.Mother AuxPlane
+AuxSphere.Copy AuxSphere_3_0
+AuxSphere_3_0.Position 450 0 0
+AuxSphere_3_0.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_1
+AuxSphere_3_1.Position 419.613 162.559 0
+AuxSphere_3_1.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_2
+AuxSphere_3_2.Position 332.554 303.163 0
+AuxSphere_3_2.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_3
+AuxSphere_3_3.Position 200.582 402.823 0
+AuxSphere_3_3.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_4
+AuxSphere_3_4.Position 41.5208 448.08 0
+AuxSphere_3_4.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_5
+AuxSphere_3_5.Position -123.148 432.822 0
+AuxSphere_3_5.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_6
+AuxSphere_3_6.Position -271.186 359.108 0
+AuxSphere_3_6.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_7
+AuxSphere_3_7.Position -382.598 236.894 0
+AuxSphere_3_7.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_8
+AuxSphere_3_8.Position -442.338 82.6873 0
+AuxSphere_3_8.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_9
+AuxSphere_3_9.Position -442.338 -82.6873 0
+AuxSphere_3_9.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_10
+AuxSphere_3_10.Position -382.598 -236.894 0
+AuxSphere_3_10.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_11
+AuxSphere_3_11.Position -271.186 -359.108 0
+AuxSphere_3_11.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_12
+AuxSphere_3_12.Position -123.148 -432.822 0
+AuxSphere_3_12.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_13
+AuxSphere_3_13.Position 41.5208 -448.08 0
+AuxSphere_3_13.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_14
+AuxSphere_3_14.Position 200.582 -402.823 0
+AuxSphere_3_14.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_15
+AuxSphere_3_15.Position 332.554 -303.163 0
+AuxSphere_3_15.Mother AuxAlmostTorus_3
+AuxSphere.Copy AuxSphere_3_16
+AuxSphere_3_16.Position 419.613 -162.559 0
+AuxSphere_3_16.Mother AuxAlmostTorus_3
+Volume AuxAlmostTorus_4
+AuxAlmostTorus_4.Material Air
+AuxAlmostTorus_4.Shape TUBS 525  675 75
+AuxAlmostTorus_4.Visibility 0
+AuxAlmostTorus_4.Color 4
+AuxAlmostTorus_4.Position 0 0 0
+AuxAlmostTorus_4.Mother AuxPlane
+AuxSphere.Copy AuxSphere_4_0
+AuxSphere_4_0.Position 600 0 0
+AuxSphere_4_0.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_1
+AuxSphere_4_1.Position 579.555 155.291 0
+AuxSphere_4_1.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_2
+AuxSphere_4_2.Position 519.615 300 0
+AuxSphere_4_2.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_3
+AuxSphere_4_3.Position 424.264 424.264 0
+AuxSphere_4_3.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_4
+AuxSphere_4_4.Position 300 519.615 0
+AuxSphere_4_4.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_5
+AuxSphere_4_5.Position 155.291 579.555 0
+AuxSphere_4_5.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_6
+AuxSphere_4_6.Position 3.67394e-14 600 0
+AuxSphere_4_6.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_7
+AuxSphere_4_7.Position -155.291 579.555 0
+AuxSphere_4_7.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_8
+AuxSphere_4_8.Position -300 519.615 0
+AuxSphere_4_8.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_9
+AuxSphere_4_9.Position -424.264 424.264 0
+AuxSphere_4_9.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_10
+AuxSphere_4_10.Position -519.615 300 0
+AuxSphere_4_10.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_11
+AuxSphere_4_11.Position -579.555 155.291 0
+AuxSphere_4_11.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_12
+AuxSphere_4_12.Position -600 7.34788e-14 0
+AuxSphere_4_12.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_13
+AuxSphere_4_13.Position -579.555 -155.291 0
+AuxSphere_4_13.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_14
+AuxSphere_4_14.Position -519.615 -300 0
+AuxSphere_4_14.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_15
+AuxSphere_4_15.Position -424.264 -424.264 0
+AuxSphere_4_15.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_16
+AuxSphere_4_16.Position -300 -519.615 0
+AuxSphere_4_16.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_17
+AuxSphere_4_17.Position -155.291 -579.555 0
+AuxSphere_4_17.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_18
+AuxSphere_4_18.Position -1.10218e-13 -600 0
+AuxSphere_4_18.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_19
+AuxSphere_4_19.Position 155.291 -579.555 0
+AuxSphere_4_19.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_20
+AuxSphere_4_20.Position 300 -519.615 0
+AuxSphere_4_20.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_21
+AuxSphere_4_21.Position 424.264 -424.264 0
+AuxSphere_4_21.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_22
+AuxSphere_4_22.Position 519.615 -300 0
+AuxSphere_4_22.Mother AuxAlmostTorus_4
+AuxSphere.Copy AuxSphere_4_23
+AuxSphere_4_23.Position 579.555 -155.291 0
+AuxSphere_4_23.Mother AuxAlmostTorus_4
+Volume AuxAlmostTorus_5
+AuxAlmostTorus_5.Material Air
+AuxAlmostTorus_5.Shape TUBS 675  825 75
+AuxAlmostTorus_5.Visibility 0
+AuxAlmostTorus_5.Color 4
+AuxAlmostTorus_5.Position 0 0 0
+AuxAlmostTorus_5.Mother AuxPlane
+AuxSphere.Copy AuxSphere_5_0
+AuxSphere_5_0.Position 750 0 0
+AuxSphere_5_0.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_1
+AuxSphere_5_1.Position 733.611 155.934 0
+AuxSphere_5_1.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_2
+AuxSphere_5_2.Position 685.159 305.052 0
+AuxSphere_5_2.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_3
+AuxSphere_5_3.Position 606.763 440.839 0
+AuxSphere_5_3.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_4
+AuxSphere_5_4.Position 501.848 557.359 0
+AuxSphere_5_4.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_5
+AuxSphere_5_5.Position 375 649.519 0
+AuxSphere_5_5.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_6
+AuxSphere_5_6.Position 231.763 713.292 0
+AuxSphere_5_6.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_7
+AuxSphere_5_7.Position 78.3963 745.891 0
+AuxSphere_5_7.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_8
+AuxSphere_5_8.Position -78.3963 745.891 0
+AuxSphere_5_8.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_9
+AuxSphere_5_9.Position -231.763 713.292 0
+AuxSphere_5_9.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_10
+AuxSphere_5_10.Position -375 649.519 0
+AuxSphere_5_10.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_11
+AuxSphere_5_11.Position -501.848 557.359 0
+AuxSphere_5_11.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_12
+AuxSphere_5_12.Position -606.763 440.839 0
+AuxSphere_5_12.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_13
+AuxSphere_5_13.Position -685.159 305.052 0
+AuxSphere_5_13.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_14
+AuxSphere_5_14.Position -733.611 155.934 0
+AuxSphere_5_14.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_15
+AuxSphere_5_15.Position -750 4.24915e-13 0
+AuxSphere_5_15.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_16
+AuxSphere_5_16.Position -733.611 -155.934 0
+AuxSphere_5_16.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_17
+AuxSphere_5_17.Position -685.159 -305.052 0
+AuxSphere_5_17.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_18
+AuxSphere_5_18.Position -606.763 -440.839 0
+AuxSphere_5_18.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_19
+AuxSphere_5_19.Position -501.848 -557.359 0
+AuxSphere_5_19.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_20
+AuxSphere_5_20.Position -375 -649.519 0
+AuxSphere_5_20.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_21
+AuxSphere_5_21.Position -231.763 -713.292 0
+AuxSphere_5_21.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_22
+AuxSphere_5_22.Position -78.3963 -745.891 0
+AuxSphere_5_22.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_23
+AuxSphere_5_23.Position 78.3963 -745.891 0
+AuxSphere_5_23.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_24
+AuxSphere_5_24.Position 231.763 -713.292 0
+AuxSphere_5_24.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_25
+AuxSphere_5_25.Position 375 -649.519 0
+AuxSphere_5_25.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_26
+AuxSphere_5_26.Position 501.848 -557.359 0
+AuxSphere_5_26.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_27
+AuxSphere_5_27.Position 606.763 -440.839 0
+AuxSphere_5_27.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_28
+AuxSphere_5_28.Position 685.159 -305.052 0
+AuxSphere_5_28.Mother AuxAlmostTorus_5
+AuxSphere.Copy AuxSphere_5_29
+AuxSphere_5_29.Position 733.611 -155.934 0
+AuxSphere_5_29.Mother AuxAlmostTorus_5
+Volume AuxAlmostTorus_6
+AuxAlmostTorus_6.Material Air
+AuxAlmostTorus_6.Shape TUBS 825  975 75
+AuxAlmostTorus_6.Visibility 0
+AuxAlmostTorus_6.Color 4
+AuxAlmostTorus_6.Position 0 0 0
+AuxAlmostTorus_6.Mother AuxPlane
+AuxSphere.Copy AuxSphere_6_0
+AuxSphere_6_0.Position 900 0 0
+AuxSphere_6_0.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_1
+AuxSphere_6_1.Position 886.327 156.283 0
+AuxSphere_6_1.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_2
+AuxSphere_6_2.Position 845.723 307.818 0
+AuxSphere_6_2.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_3
+AuxSphere_6_3.Position 779.423 450 0
+AuxSphere_6_3.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_4
+AuxSphere_6_4.Position 689.44 578.509 0
+AuxSphere_6_4.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_5
+AuxSphere_6_5.Position 578.509 689.44 0
+AuxSphere_6_5.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_6
+AuxSphere_6_6.Position 450 779.423 0
+AuxSphere_6_6.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_7
+AuxSphere_6_7.Position 307.818 845.723 0
+AuxSphere_6_7.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_8
+AuxSphere_6_8.Position 156.283 886.327 0
+AuxSphere_6_8.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_9
+AuxSphere_6_9.Position 5.51091e-14 900 0
+AuxSphere_6_9.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_10
+AuxSphere_6_10.Position -156.283 886.327 0
+AuxSphere_6_10.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_11
+AuxSphere_6_11.Position -307.818 845.723 0
+AuxSphere_6_11.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_12
+AuxSphere_6_12.Position -450 779.423 0
+AuxSphere_6_12.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_13
+AuxSphere_6_13.Position -578.509 689.44 0
+AuxSphere_6_13.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_14
+AuxSphere_6_14.Position -689.44 578.509 0
+AuxSphere_6_14.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_15
+AuxSphere_6_15.Position -779.423 450 0
+AuxSphere_6_15.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_16
+AuxSphere_6_16.Position -845.723 307.818 0
+AuxSphere_6_16.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_17
+AuxSphere_6_17.Position -886.327 156.283 0
+AuxSphere_6_17.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_18
+AuxSphere_6_18.Position -900 1.10218e-13 0
+AuxSphere_6_18.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_19
+AuxSphere_6_19.Position -886.327 -156.283 0
+AuxSphere_6_19.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_20
+AuxSphere_6_20.Position -845.723 -307.818 0
+AuxSphere_6_20.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_21
+AuxSphere_6_21.Position -779.423 -450 0
+AuxSphere_6_21.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_22
+AuxSphere_6_22.Position -689.44 -578.509 0
+AuxSphere_6_22.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_23
+AuxSphere_6_23.Position -578.509 -689.44 0
+AuxSphere_6_23.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_24
+AuxSphere_6_24.Position -450 -779.423 0
+AuxSphere_6_24.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_25
+AuxSphere_6_25.Position -307.818 -845.723 0
+AuxSphere_6_25.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_26
+AuxSphere_6_26.Position -156.283 -886.327 0
+AuxSphere_6_26.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_27
+AuxSphere_6_27.Position -1.65327e-13 -900 0
+AuxSphere_6_27.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_28
+AuxSphere_6_28.Position 156.283 -886.327 0
+AuxSphere_6_28.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_29
+AuxSphere_6_29.Position 307.818 -845.723 0
+AuxSphere_6_29.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_30
+AuxSphere_6_30.Position 450 -779.423 0
+AuxSphere_6_30.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_31
+AuxSphere_6_31.Position 578.509 -689.44 0
+AuxSphere_6_31.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_32
+AuxSphere_6_32.Position 689.44 -578.509 0
+AuxSphere_6_32.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_33
+AuxSphere_6_33.Position 779.423 -450 0
+AuxSphere_6_33.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_34
+AuxSphere_6_34.Position 845.723 -307.818 0
+AuxSphere_6_34.Mother AuxAlmostTorus_6
+AuxSphere.Copy AuxSphere_6_35
+AuxSphere_6_35.Position 886.327 -156.283 0
+AuxSphere_6_35.Mother AuxAlmostTorus_6
+Volume AuxAlmostTorus_7
+AuxAlmostTorus_7.Material Air
+AuxAlmostTorus_7.Shape TUBS 975  1125 75
+AuxAlmostTorus_7.Visibility 0
+AuxAlmostTorus_7.Color 4
+AuxAlmostTorus_7.Position 0 0 0
+AuxAlmostTorus_7.Mother AuxPlane
+AuxSphere.Copy AuxSphere_7_0
+AuxSphere_7_0.Position 1050 0 0
+AuxSphere_7_0.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_1
+AuxSphere_7_1.Position 1038.27 156.494 0
+AuxSphere_7_1.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_2
+AuxSphere_7_2.Position 1003.35 309.493 0
+AuxSphere_7_2.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_3
+AuxSphere_7_3.Position 946.017 455.578 0
+AuxSphere_7_3.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_4
+AuxSphere_7_4.Position 867.551 591.486 0
+AuxSphere_7_4.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_5
+AuxSphere_7_5.Position 769.704 714.181 0
+AuxSphere_7_5.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_6
+AuxSphere_7_6.Position 654.664 820.923 0
+AuxSphere_7_6.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_7
+AuxSphere_7_7.Position 525 909.327 0
+AuxSphere_7_7.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_8
+AuxSphere_7_8.Position 383.608 977.417 0
+AuxSphere_7_8.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_9
+AuxSphere_7_9.Position 233.647 1023.67 0
+AuxSphere_7_9.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_10
+AuxSphere_7_10.Position 78.4666 1047.06 0
+AuxSphere_7_10.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_11
+AuxSphere_7_11.Position -78.4666 1047.06 0
+AuxSphere_7_11.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_12
+AuxSphere_7_12.Position -233.647 1023.67 0
+AuxSphere_7_12.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_13
+AuxSphere_7_13.Position -383.608 977.417 0
+AuxSphere_7_13.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_14
+AuxSphere_7_14.Position -525 909.327 0
+AuxSphere_7_14.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_15
+AuxSphere_7_15.Position -654.664 820.923 0
+AuxSphere_7_15.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_16
+AuxSphere_7_16.Position -769.704 714.181 0
+AuxSphere_7_16.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_17
+AuxSphere_7_17.Position -867.551 591.486 0
+AuxSphere_7_17.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_18
+AuxSphere_7_18.Position -946.017 455.578 0
+AuxSphere_7_18.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_19
+AuxSphere_7_19.Position -1003.35 309.493 0
+AuxSphere_7_19.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_20
+AuxSphere_7_20.Position -1038.27 156.494 0
+AuxSphere_7_20.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_21
+AuxSphere_7_21.Position -1050 1.28588e-13 0
+AuxSphere_7_21.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_22
+AuxSphere_7_22.Position -1038.27 -156.494 0
+AuxSphere_7_22.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_23
+AuxSphere_7_23.Position -1003.35 -309.493 0
+AuxSphere_7_23.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_24
+AuxSphere_7_24.Position -946.017 -455.578 0
+AuxSphere_7_24.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_25
+AuxSphere_7_25.Position -867.551 -591.486 0
+AuxSphere_7_25.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_26
+AuxSphere_7_26.Position -769.704 -714.181 0
+AuxSphere_7_26.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_27
+AuxSphere_7_27.Position -654.664 -820.923 0
+AuxSphere_7_27.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_28
+AuxSphere_7_28.Position -525 -909.327 0
+AuxSphere_7_28.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_29
+AuxSphere_7_29.Position -383.608 -977.417 0
+AuxSphere_7_29.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_30
+AuxSphere_7_30.Position -233.647 -1023.67 0
+AuxSphere_7_30.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_31
+AuxSphere_7_31.Position -78.4666 -1047.06 0
+AuxSphere_7_31.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_32
+AuxSphere_7_32.Position 78.4666 -1047.06 0
+AuxSphere_7_32.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_33
+AuxSphere_7_33.Position 233.647 -1023.67 0
+AuxSphere_7_33.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_34
+AuxSphere_7_34.Position 383.608 -977.417 0
+AuxSphere_7_34.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_35
+AuxSphere_7_35.Position 525 -909.327 0
+AuxSphere_7_35.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_36
+AuxSphere_7_36.Position 654.664 -820.923 0
+AuxSphere_7_36.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_37
+AuxSphere_7_37.Position 769.704 -714.181 0
+AuxSphere_7_37.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_38
+AuxSphere_7_38.Position 867.551 -591.486 0
+AuxSphere_7_38.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_39
+AuxSphere_7_39.Position 946.017 -455.578 0
+AuxSphere_7_39.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_40
+AuxSphere_7_40.Position 1003.35 -309.493 0
+AuxSphere_7_40.Mother AuxAlmostTorus_7
+AuxSphere.Copy AuxSphere_7_41
+AuxSphere_7_41.Position 1038.27 -156.494 0
+AuxSphere_7_41.Mother AuxAlmostTorus_7
+Volume AuxAlmostTorus_8
+AuxAlmostTorus_8.Material Air
+AuxAlmostTorus_8.Shape TUBS 1125  1275 75
+AuxAlmostTorus_8.Visibility 0
+AuxAlmostTorus_8.Color 4
+AuxAlmostTorus_8.Position 0 0 0
+AuxAlmostTorus_8.Mother AuxPlane
+AuxSphere.Copy AuxSphere_8_0
+AuxSphere_8_0.Position 1200 0 0
+AuxSphere_8_0.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_1
+AuxSphere_8_1.Position 1190.15 153.453 0
+AuxSphere_8_1.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_2
+AuxSphere_8_2.Position 1160.75 304.386 0
+AuxSphere_8_2.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_3
+AuxSphere_8_3.Position 1112.3 450.32 0
+AuxSphere_8_3.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_4
+AuxSphere_8_4.Position 1045.58 588.861 0
+AuxSphere_8_4.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_5
+AuxSphere_8_5.Position 961.696 717.733 0
+AuxSphere_8_5.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_6
+AuxSphere_8_6.Position 862.019 834.819 0
+AuxSphere_8_6.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_7
+AuxSphere_8_7.Position 748.188 938.198 0
+AuxSphere_8_7.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_8
+AuxSphere_8_8.Position 622.071 1026.17 0
+AuxSphere_8_8.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_9
+AuxSphere_8_9.Position 485.74 1097.3 0
+AuxSphere_8_9.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_10
+AuxSphere_8_10.Position 341.433 1150.4 0
+AuxSphere_8_10.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_11
+AuxSphere_8_11.Position 191.52 1184.62 0
+AuxSphere_8_11.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_12
+AuxSphere_8_12.Position 38.4619 1199.38 0
+AuxSphere_8_12.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_13
+AuxSphere_8_13.Position -115.228 1194.45 0
+AuxSphere_8_13.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_14
+AuxSphere_8_14.Position -267.025 1169.91 0
+AuxSphere_8_14.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_15
+AuxSphere_8_15.Position -414.438 1126.16 0
+AuxSphere_8_15.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_16
+AuxSphere_8_16.Position -555.046 1063.92 0
+AuxSphere_8_16.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_17
+AuxSphere_8_17.Position -686.54 984.207 0
+AuxSphere_8_17.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_18
+AuxSphere_8_18.Position -806.761 888.334 0
+AuxSphere_8_18.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_19
+AuxSphere_8_19.Position -913.735 777.874 0
+AuxSphere_8_19.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_20
+AuxSphere_8_20.Position -1005.71 654.642 0
+AuxSphere_8_20.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_21
+AuxSphere_8_21.Position -1081.16 520.66 0
+AuxSphere_8_21.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_22
+AuxSphere_8_22.Position -1138.87 378.13 0
+AuxSphere_8_22.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_23
+AuxSphere_8_23.Position -1177.87 229.39 0
+AuxSphere_8_23.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_24
+AuxSphere_8_24.Position -1197.53 76.8843 0
+AuxSphere_8_24.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_25
+AuxSphere_8_25.Position -1197.53 -76.8843 0
+AuxSphere_8_25.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_26
+AuxSphere_8_26.Position -1177.87 -229.39 0
+AuxSphere_8_26.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_27
+AuxSphere_8_27.Position -1138.87 -378.13 0
+AuxSphere_8_27.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_28
+AuxSphere_8_28.Position -1081.16 -520.66 0
+AuxSphere_8_28.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_29
+AuxSphere_8_29.Position -1005.71 -654.642 0
+AuxSphere_8_29.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_30
+AuxSphere_8_30.Position -913.735 -777.874 0
+AuxSphere_8_30.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_31
+AuxSphere_8_31.Position -806.761 -888.334 0
+AuxSphere_8_31.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_32
+AuxSphere_8_32.Position -686.54 -984.207 0
+AuxSphere_8_32.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_33
+AuxSphere_8_33.Position -555.046 -1063.92 0
+AuxSphere_8_33.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_34
+AuxSphere_8_34.Position -414.438 -1126.16 0
+AuxSphere_8_34.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_35
+AuxSphere_8_35.Position -267.025 -1169.91 0
+AuxSphere_8_35.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_36
+AuxSphere_8_36.Position -115.228 -1194.45 0
+AuxSphere_8_36.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_37
+AuxSphere_8_37.Position 38.4619 -1199.38 0
+AuxSphere_8_37.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_38
+AuxSphere_8_38.Position 191.52 -1184.62 0
+AuxSphere_8_38.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_39
+AuxSphere_8_39.Position 341.433 -1150.4 0
+AuxSphere_8_39.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_40
+AuxSphere_8_40.Position 485.74 -1097.3 0
+AuxSphere_8_40.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_41
+AuxSphere_8_41.Position 622.071 -1026.17 0
+AuxSphere_8_41.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_42
+AuxSphere_8_42.Position 748.188 -938.198 0
+AuxSphere_8_42.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_43
+AuxSphere_8_43.Position 862.019 -834.819 0
+AuxSphere_8_43.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_44
+AuxSphere_8_44.Position 961.696 -717.733 0
+AuxSphere_8_44.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_45
+AuxSphere_8_45.Position 1045.58 -588.861 0
+AuxSphere_8_45.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_46
+AuxSphere_8_46.Position 1112.3 -450.32 0
+AuxSphere_8_46.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_47
+AuxSphere_8_47.Position 1160.75 -304.386 0
+AuxSphere_8_47.Mother AuxAlmostTorus_8
+AuxSphere.Copy AuxSphere_8_48
+AuxSphere_8_48.Position 1190.15 -153.453 0
+AuxSphere_8_48.Mother AuxAlmostTorus_8
+Volume AuxAlmostTorus_9
+AuxAlmostTorus_9.Material Air
+AuxAlmostTorus_9.Shape TUBS 1275  1425 75
+AuxAlmostTorus_9.Visibility 0
+AuxAlmostTorus_9.Color 4
+AuxAlmostTorus_9.Position 0 0 0
+AuxAlmostTorus_9.Mother AuxPlane
+AuxSphere.Copy AuxSphere_9_0
+AuxSphere_9_0.Position 1350 0 0
+AuxSphere_9_0.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_1
+AuxSphere_9_1.Position 1341.2 153.888 0
+AuxSphere_9_1.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_2
+AuxSphere_9_2.Position 1314.92 305.771 0
+AuxSphere_9_2.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_3
+AuxSphere_9_3.Position 1271.49 453.667 0
+AuxSphere_9_3.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_4
+AuxSphere_9_4.Position 1211.49 595.648 0
+AuxSphere_9_4.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_5
+AuxSphere_9_5.Position 1135.69 729.865 0
+AuxSphere_9_5.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_6
+AuxSphere_9_6.Position 1045.09 854.567 0
+AuxSphere_9_6.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_7
+AuxSphere_9_7.Position 940.866 968.128 0
+AuxSphere_9_7.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_8
+AuxSphere_9_8.Position 824.375 1069.07 0
+AuxSphere_9_8.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_9
+AuxSphere_9_9.Position 697.137 1156.07 0
+AuxSphere_9_9.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_10
+AuxSphere_9_10.Position 560.81 1228 0
+AuxSphere_9_10.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_11
+AuxSphere_9_11.Position 417.173 1283.93 0
+AuxSphere_9_11.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_12
+AuxSphere_9_12.Position 268.097 1323.11 0
+AuxSphere_9_12.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_13
+AuxSphere_9_13.Position 115.526 1345.05 0
+AuxSphere_9_13.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_14
+AuxSphere_9_14.Position -38.5507 1349.45 0
+AuxSphere_9_14.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_15
+AuxSphere_9_15.Position -192.125 1336.26 0
+AuxSphere_9_15.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_16
+AuxSphere_9_16.Position -343.195 1305.65 0
+AuxSphere_9_16.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_17
+AuxSphere_9_17.Position -489.79 1258.02 0
+AuxSphere_9_17.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_18
+AuxSphere_9_18.Position -630.001 1193.98 0
+AuxSphere_9_18.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_19
+AuxSphere_9_19.Position -761.998 1114.39 0
+AuxSphere_9_19.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_20
+AuxSphere_9_20.Position -884.062 1020.26 0
+AuxSphere_9_20.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_21
+AuxSphere_9_21.Position -994.601 912.836 0
+AuxSphere_9_21.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_22
+AuxSphere_9_22.Position -1092.17 793.51 0
+AuxSphere_9_22.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_23
+AuxSphere_9_23.Position -1175.51 663.839 0
+AuxSphere_9_23.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_24
+AuxSphere_9_24.Position -1243.52 525.515 0
+AuxSphere_9_24.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_25
+AuxSphere_9_25.Position -1295.32 380.339 0
+AuxSphere_9_25.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_26
+AuxSphere_9_26.Position -1330.23 230.205 0
+AuxSphere_9_26.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_27
+AuxSphere_9_27.Position -1347.8 77.0699 0
+AuxSphere_9_27.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_28
+AuxSphere_9_28.Position -1347.8 -77.0699 0
+AuxSphere_9_28.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_29
+AuxSphere_9_29.Position -1330.23 -230.205 0
+AuxSphere_9_29.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_30
+AuxSphere_9_30.Position -1295.32 -380.339 0
+AuxSphere_9_30.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_31
+AuxSphere_9_31.Position -1243.52 -525.515 0
+AuxSphere_9_31.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_32
+AuxSphere_9_32.Position -1175.51 -663.839 0
+AuxSphere_9_32.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_33
+AuxSphere_9_33.Position -1092.17 -793.51 0
+AuxSphere_9_33.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_34
+AuxSphere_9_34.Position -994.601 -912.836 0
+AuxSphere_9_34.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_35
+AuxSphere_9_35.Position -884.062 -1020.26 0
+AuxSphere_9_35.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_36
+AuxSphere_9_36.Position -761.998 -1114.39 0
+AuxSphere_9_36.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_37
+AuxSphere_9_37.Position -630.001 -1193.98 0
+AuxSphere_9_37.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_38
+AuxSphere_9_38.Position -489.79 -1258.02 0
+AuxSphere_9_38.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_39
+AuxSphere_9_39.Position -343.195 -1305.65 0
+AuxSphere_9_39.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_40
+AuxSphere_9_40.Position -192.125 -1336.26 0
+AuxSphere_9_40.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_41
+AuxSphere_9_41.Position -38.5507 -1349.45 0
+AuxSphere_9_41.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_42
+AuxSphere_9_42.Position 115.526 -1345.05 0
+AuxSphere_9_42.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_43
+AuxSphere_9_43.Position 268.097 -1323.11 0
+AuxSphere_9_43.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_44
+AuxSphere_9_44.Position 417.173 -1283.93 0
+AuxSphere_9_44.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_45
+AuxSphere_9_45.Position 560.81 -1228 0
+AuxSphere_9_45.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_46
+AuxSphere_9_46.Position 697.137 -1156.07 0
+AuxSphere_9_46.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_47
+AuxSphere_9_47.Position 824.375 -1069.07 0
+AuxSphere_9_47.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_48
+AuxSphere_9_48.Position 940.866 -968.128 0
+AuxSphere_9_48.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_49
+AuxSphere_9_49.Position 1045.09 -854.567 0
+AuxSphere_9_49.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_50
+AuxSphere_9_50.Position 1135.69 -729.865 0
+AuxSphere_9_50.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_51
+AuxSphere_9_51.Position 1211.49 -595.648 0
+AuxSphere_9_51.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_52
+AuxSphere_9_52.Position 1271.49 -453.667 0
+AuxSphere_9_52.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_53
+AuxSphere_9_53.Position 1314.92 -305.771 0
+AuxSphere_9_53.Mother AuxAlmostTorus_9
+AuxSphere.Copy AuxSphere_9_54
+AuxSphere_9_54.Position 1341.2 -153.888 0
+AuxSphere_9_54.Mother AuxAlmostTorus_9
+Volume AuxAlmostTorus_10
+AuxAlmostTorus_10.Material Air
+AuxAlmostTorus_10.Shape TUBS 1425  1575 75
+AuxAlmostTorus_10.Visibility 0
+AuxAlmostTorus_10.Color 4
+AuxAlmostTorus_10.Position 0 0 0
+AuxAlmostTorus_10.Mother AuxPlane
+AuxSphere.Copy AuxSphere_10_0
+AuxSphere_10_0.Position 1500 0 0
+AuxSphere_10_0.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_1
+AuxSphere_10_1.Position 1492.05 154.231 0
+AuxSphere_10_1.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_2
+AuxSphere_10_2.Position 1468.28 306.828 0
+AuxSphere_10_2.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_3
+AuxSphere_10_3.Position 1428.95 456.172 0
+AuxSphere_10_3.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_4
+AuxSphere_10_4.Position 1374.48 600.681 0
+AuxSphere_10_4.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_5
+AuxSphere_10_5.Position 1305.43 738.822 0
+AuxSphere_10_5.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_6
+AuxSphere_10_6.Position 1222.54 869.132 0
+AuxSphere_10_6.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_7
+AuxSphere_10_7.Position 1126.7 990.228 0
+AuxSphere_10_7.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_8
+AuxSphere_10_8.Position 1018.91 1100.83 0
+AuxSphere_10_8.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_9
+AuxSphere_10_9.Position 900.321 1199.76 0
+AuxSphere_10_9.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_10
+AuxSphere_10_10.Position 772.189 1285.97 0
+AuxSphere_10_10.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_11
+AuxSphere_10_11.Position 635.872 1358.55 0
+AuxSphere_10_11.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_12
+AuxSphere_10_12.Position 492.814 1416.73 0
+AuxSphere_10_12.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_13
+AuxSphere_10_13.Position 344.532 1459.9 0
+AuxSphere_10_13.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_14
+AuxSphere_10_14.Position 192.598 1487.58 0
+AuxSphere_10_14.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_15
+AuxSphere_10_15.Position 38.6219 1499.5 0
+AuxSphere_10_15.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_16
+AuxSphere_10_16.Position -115.763 1495.53 0
+AuxSphere_10_16.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_17
+AuxSphere_10_17.Position -268.921 1475.7 0
+AuxSphere_10_17.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_18
+AuxSphere_10_18.Position -419.228 1440.22 0
+AuxSphere_10_18.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_19
+AuxSphere_10_19.Position -565.092 1389.49 0
+AuxSphere_10_19.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_20
+AuxSphere_10_20.Position -704.965 1324.02 0
+AuxSphere_10_20.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_21
+AuxSphere_10_21.Position -837.366 1244.52 0
+AuxSphere_10_21.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_22
+AuxSphere_10_22.Position -960.89 1151.82 0
+AuxSphere_10_22.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_23
+AuxSphere_10_23.Position -1074.23 1046.92 0
+AuxSphere_10_23.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_24
+AuxSphere_10_24.Position -1176.18 930.914 0
+AuxSphere_10_24.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_25
+AuxSphere_10_25.Position -1265.66 805.044 0
+AuxSphere_10_25.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_26
+AuxSphere_10_26.Position -1341.73 670.641 0
+AuxSphere_10_26.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_27
+AuxSphere_10_27.Position -1403.58 529.128 0
+AuxSphere_10_27.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_28
+AuxSphere_10_28.Position -1450.54 382.007 0
+AuxSphere_10_28.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_29
+AuxSphere_10_29.Position -1482.13 230.836 0
+AuxSphere_10_29.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_30
+AuxSphere_10_30.Position -1498.01 77.2181 0
+AuxSphere_10_30.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_31
+AuxSphere_10_31.Position -1498.01 -77.2181 0
+AuxSphere_10_31.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_32
+AuxSphere_10_32.Position -1482.13 -230.836 0
+AuxSphere_10_32.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_33
+AuxSphere_10_33.Position -1450.54 -382.007 0
+AuxSphere_10_33.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_34
+AuxSphere_10_34.Position -1403.58 -529.128 0
+AuxSphere_10_34.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_35
+AuxSphere_10_35.Position -1341.73 -670.641 0
+AuxSphere_10_35.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_36
+AuxSphere_10_36.Position -1265.66 -805.044 0
+AuxSphere_10_36.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_37
+AuxSphere_10_37.Position -1176.18 -930.914 0
+AuxSphere_10_37.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_38
+AuxSphere_10_38.Position -1074.23 -1046.92 0
+AuxSphere_10_38.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_39
+AuxSphere_10_39.Position -960.89 -1151.82 0
+AuxSphere_10_39.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_40
+AuxSphere_10_40.Position -837.366 -1244.52 0
+AuxSphere_10_40.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_41
+AuxSphere_10_41.Position -704.965 -1324.02 0
+AuxSphere_10_41.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_42
+AuxSphere_10_42.Position -565.092 -1389.49 0
+AuxSphere_10_42.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_43
+AuxSphere_10_43.Position -419.228 -1440.22 0
+AuxSphere_10_43.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_44
+AuxSphere_10_44.Position -268.921 -1475.7 0
+AuxSphere_10_44.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_45
+AuxSphere_10_45.Position -115.763 -1495.53 0
+AuxSphere_10_45.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_46
+AuxSphere_10_46.Position 38.6219 -1499.5 0
+AuxSphere_10_46.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_47
+AuxSphere_10_47.Position 192.598 -1487.58 0
+AuxSphere_10_47.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_48
+AuxSphere_10_48.Position 344.532 -1459.9 0
+AuxSphere_10_48.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_49
+AuxSphere_10_49.Position 492.814 -1416.73 0
+AuxSphere_10_49.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_50
+AuxSphere_10_50.Position 635.872 -1358.55 0
+AuxSphere_10_50.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_51
+AuxSphere_10_51.Position 772.189 -1285.97 0
+AuxSphere_10_51.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_52
+AuxSphere_10_52.Position 900.321 -1199.76 0
+AuxSphere_10_52.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_53
+AuxSphere_10_53.Position 1018.91 -1100.83 0
+AuxSphere_10_53.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_54
+AuxSphere_10_54.Position 1126.7 -990.228 0
+AuxSphere_10_54.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_55
+AuxSphere_10_55.Position 1222.54 -869.132 0
+AuxSphere_10_55.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_56
+AuxSphere_10_56.Position 1305.43 -738.822 0
+AuxSphere_10_56.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_57
+AuxSphere_10_57.Position 1374.48 -600.681 0
+AuxSphere_10_57.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_58
+AuxSphere_10_58.Position 1428.95 -456.172 0
+AuxSphere_10_58.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_59
+AuxSphere_10_59.Position 1468.28 -306.828 0
+AuxSphere_10_59.Mother AuxAlmostTorus_10
+AuxSphere.Copy AuxSphere_10_60
+AuxSphere_10_60.Position 1492.05 -154.231 0
+AuxSphere_10_60.Mother AuxAlmostTorus_10
+Volume AuxAlmostTorus_11
+AuxAlmostTorus_11.Material Air
+AuxAlmostTorus_11.Shape TUBS 1575  1725 75
+AuxAlmostTorus_11.Visibility 0
+AuxAlmostTorus_11.Color 4
+AuxAlmostTorus_11.Position 0 0 0
+AuxAlmostTorus_11.Mother AuxPlane
+AuxSphere.Copy AuxSphere_11_0
+AuxSphere_11_0.Position 1650 0 0
+AuxSphere_11_0.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_1
+AuxSphere_11_1.Position 1642.96 152.243 0
+AuxSphere_11_1.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_2
+AuxSphere_11_2.Position 1621.91 303.187 0
+AuxSphere_11_2.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_3
+AuxSphere_11_3.Position 1587.01 451.544 0
+AuxSphere_11_3.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_4
+AuxSphere_11_4.Position 1538.58 596.049 0
+AuxSphere_11_4.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_5
+AuxSphere_11_5.Position 1477.02 735.468 0
+AuxSphere_11_5.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_6
+AuxSphere_11_6.Position 1402.86 868.613 0
+AuxSphere_11_6.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_7
+AuxSphere_11_7.Position 1316.73 994.347 0
+AuxSphere_11_7.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_8
+AuxSphere_11_8.Position 1219.36 1111.6 0
+AuxSphere_11_8.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_9
+AuxSphere_11_9.Position 1111.6 1219.36 0
+AuxSphere_11_9.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_10
+AuxSphere_11_10.Position 994.347 1316.73 0
+AuxSphere_11_10.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_11
+AuxSphere_11_11.Position 868.613 1402.86 0
+AuxSphere_11_11.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_12
+AuxSphere_11_12.Position 735.468 1477.02 0
+AuxSphere_11_12.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_13
+AuxSphere_11_13.Position 596.049 1538.58 0
+AuxSphere_11_13.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_14
+AuxSphere_11_14.Position 451.544 1587.01 0
+AuxSphere_11_14.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_15
+AuxSphere_11_15.Position 303.187 1621.91 0
+AuxSphere_11_15.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_16
+AuxSphere_11_16.Position 152.243 1642.96 0
+AuxSphere_11_16.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_17
+AuxSphere_11_17.Position 1.01033e-13 1650 0
+AuxSphere_11_17.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_18
+AuxSphere_11_18.Position -152.243 1642.96 0
+AuxSphere_11_18.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_19
+AuxSphere_11_19.Position -303.187 1621.91 0
+AuxSphere_11_19.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_20
+AuxSphere_11_20.Position -451.544 1587.01 0
+AuxSphere_11_20.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_21
+AuxSphere_11_21.Position -596.049 1538.58 0
+AuxSphere_11_21.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_22
+AuxSphere_11_22.Position -735.468 1477.02 0
+AuxSphere_11_22.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_23
+AuxSphere_11_23.Position -868.613 1402.86 0
+AuxSphere_11_23.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_24
+AuxSphere_11_24.Position -994.347 1316.73 0
+AuxSphere_11_24.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_25
+AuxSphere_11_25.Position -1111.6 1219.36 0
+AuxSphere_11_25.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_26
+AuxSphere_11_26.Position -1219.36 1111.6 0
+AuxSphere_11_26.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_27
+AuxSphere_11_27.Position -1316.73 994.347 0
+AuxSphere_11_27.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_28
+AuxSphere_11_28.Position -1402.86 868.613 0
+AuxSphere_11_28.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_29
+AuxSphere_11_29.Position -1477.02 735.468 0
+AuxSphere_11_29.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_30
+AuxSphere_11_30.Position -1538.58 596.049 0
+AuxSphere_11_30.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_31
+AuxSphere_11_31.Position -1587.01 451.544 0
+AuxSphere_11_31.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_32
+AuxSphere_11_32.Position -1621.91 303.187 0
+AuxSphere_11_32.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_33
+AuxSphere_11_33.Position -1642.96 152.243 0
+AuxSphere_11_33.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_34
+AuxSphere_11_34.Position -1650 2.02067e-13 0
+AuxSphere_11_34.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_35
+AuxSphere_11_35.Position -1642.96 -152.243 0
+AuxSphere_11_35.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_36
+AuxSphere_11_36.Position -1621.91 -303.187 0
+AuxSphere_11_36.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_37
+AuxSphere_11_37.Position -1587.01 -451.544 0
+AuxSphere_11_37.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_38
+AuxSphere_11_38.Position -1538.58 -596.049 0
+AuxSphere_11_38.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_39
+AuxSphere_11_39.Position -1477.02 -735.468 0
+AuxSphere_11_39.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_40
+AuxSphere_11_40.Position -1402.86 -868.613 0
+AuxSphere_11_40.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_41
+AuxSphere_11_41.Position -1316.73 -994.347 0
+AuxSphere_11_41.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_42
+AuxSphere_11_42.Position -1219.36 -1111.6 0
+AuxSphere_11_42.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_43
+AuxSphere_11_43.Position -1111.6 -1219.36 0
+AuxSphere_11_43.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_44
+AuxSphere_11_44.Position -994.347 -1316.73 0
+AuxSphere_11_44.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_45
+AuxSphere_11_45.Position -868.613 -1402.86 0
+AuxSphere_11_45.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_46
+AuxSphere_11_46.Position -735.468 -1477.02 0
+AuxSphere_11_46.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_47
+AuxSphere_11_47.Position -596.049 -1538.58 0
+AuxSphere_11_47.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_48
+AuxSphere_11_48.Position -451.544 -1587.01 0
+AuxSphere_11_48.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_49
+AuxSphere_11_49.Position -303.187 -1621.91 0
+AuxSphere_11_49.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_50
+AuxSphere_11_50.Position -152.243 -1642.96 0
+AuxSphere_11_50.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_51
+AuxSphere_11_51.Position -3.031e-13 -1650 0
+AuxSphere_11_51.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_52
+AuxSphere_11_52.Position 152.243 -1642.96 0
+AuxSphere_11_52.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_53
+AuxSphere_11_53.Position 303.187 -1621.91 0
+AuxSphere_11_53.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_54
+AuxSphere_11_54.Position 451.544 -1587.01 0
+AuxSphere_11_54.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_55
+AuxSphere_11_55.Position 596.049 -1538.58 0
+AuxSphere_11_55.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_56
+AuxSphere_11_56.Position 735.468 -1477.02 0
+AuxSphere_11_56.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_57
+AuxSphere_11_57.Position 868.613 -1402.86 0
+AuxSphere_11_57.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_58
+AuxSphere_11_58.Position 994.347 -1316.73 0
+AuxSphere_11_58.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_59
+AuxSphere_11_59.Position 1111.6 -1219.36 0
+AuxSphere_11_59.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_60
+AuxSphere_11_60.Position 1219.36 -1111.6 0
+AuxSphere_11_60.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_61
+AuxSphere_11_61.Position 1316.73 -994.347 0
+AuxSphere_11_61.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_62
+AuxSphere_11_62.Position 1402.86 -868.613 0
+AuxSphere_11_62.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_63
+AuxSphere_11_63.Position 1477.02 -735.468 0
+AuxSphere_11_63.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_64
+AuxSphere_11_64.Position 1538.58 -596.049 0
+AuxSphere_11_64.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_65
+AuxSphere_11_65.Position 1587.01 -451.544 0
+AuxSphere_11_65.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_66
+AuxSphere_11_66.Position 1621.91 -303.187 0
+AuxSphere_11_66.Mother AuxAlmostTorus_11
+AuxSphere.Copy AuxSphere_11_67
+AuxSphere_11_67.Position 1642.96 -152.243 0
+AuxSphere_11_67.Mother AuxAlmostTorus_11
+Volume AuxAlmostTorus_12
+AuxAlmostTorus_12.Material Air
+AuxAlmostTorus_12.Shape TUBS 1725  1875 75
+AuxAlmostTorus_12.Visibility 0
+AuxAlmostTorus_12.Color 4
+AuxAlmostTorus_12.Position 0 0 0
+AuxAlmostTorus_12.Mother AuxPlane
+AuxSphere.Copy AuxSphere_12_0
+AuxSphere_12_0.Position 1800 0 0
+AuxSphere_12_0.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_1
+AuxSphere_12_1.Position 1793.52 152.651 0
+AuxSphere_12_1.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_2
+AuxSphere_12_2.Position 1774.11 304.201 0
+AuxSphere_12_2.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_3
+AuxSphere_12_3.Position 1741.92 453.561 0
+AuxSphere_12_3.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_4
+AuxSphere_12_4.Position 1697.18 599.652 0
+AuxSphere_12_4.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_5
+AuxSphere_12_5.Position 1640.21 741.422 0
+AuxSphere_12_5.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_6
+AuxSphere_12_6.Position 1571.43 877.851 0
+AuxSphere_12_6.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_7
+AuxSphere_12_7.Position 1491.32 1007.95 0
+AuxSphere_12_7.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_8
+AuxSphere_12_8.Position 1400.46 1130.8 0
+AuxSphere_12_8.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_9
+AuxSphere_12_9.Position 1299.52 1245.49 0
+AuxSphere_12_9.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_10
+AuxSphere_12_10.Position 1189.21 1351.21 0
+AuxSphere_12_10.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_11
+AuxSphere_12_11.Position 1070.34 1447.19 0
+AuxSphere_12_11.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_12
+AuxSphere_12_12.Position 943.753 1532.75 0
+AuxSphere_12_12.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_13
+AuxSphere_12_13.Position 810.367 1607.27 0
+AuxSphere_12_13.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_14
+AuxSphere_12_14.Position 671.142 1670.2 0
+AuxSphere_12_14.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_15
+AuxSphere_12_15.Position 527.081 1721.1 0
+AuxSphere_12_15.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_16
+AuxSphere_12_16.Position 379.223 1759.6 0
+AuxSphere_12_16.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_17
+AuxSphere_12_17.Position 228.632 1785.42 0
+AuxSphere_12_17.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_18
+AuxSphere_12_18.Position 76.3942 1798.38 0
+AuxSphere_12_18.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_19
+AuxSphere_12_19.Position -76.3942 1798.38 0
+AuxSphere_12_19.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_20
+AuxSphere_12_20.Position -228.632 1785.42 0
+AuxSphere_12_20.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_21
+AuxSphere_12_21.Position -379.223 1759.6 0
+AuxSphere_12_21.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_22
+AuxSphere_12_22.Position -527.081 1721.1 0
+AuxSphere_12_22.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_23
+AuxSphere_12_23.Position -671.142 1670.2 0
+AuxSphere_12_23.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_24
+AuxSphere_12_24.Position -810.367 1607.27 0
+AuxSphere_12_24.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_25
+AuxSphere_12_25.Position -943.753 1532.75 0
+AuxSphere_12_25.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_26
+AuxSphere_12_26.Position -1070.34 1447.19 0
+AuxSphere_12_26.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_27
+AuxSphere_12_27.Position -1189.21 1351.21 0
+AuxSphere_12_27.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_28
+AuxSphere_12_28.Position -1299.52 1245.49 0
+AuxSphere_12_28.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_29
+AuxSphere_12_29.Position -1400.46 1130.8 0
+AuxSphere_12_29.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_30
+AuxSphere_12_30.Position -1491.32 1007.95 0
+AuxSphere_12_30.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_31
+AuxSphere_12_31.Position -1571.43 877.851 0
+AuxSphere_12_31.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_32
+AuxSphere_12_32.Position -1640.21 741.422 0
+AuxSphere_12_32.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_33
+AuxSphere_12_33.Position -1697.18 599.652 0
+AuxSphere_12_33.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_34
+AuxSphere_12_34.Position -1741.92 453.561 0
+AuxSphere_12_34.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_35
+AuxSphere_12_35.Position -1774.11 304.201 0
+AuxSphere_12_35.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_36
+AuxSphere_12_36.Position -1793.52 152.651 0
+AuxSphere_12_36.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_37
+AuxSphere_12_37.Position -1800 2.20436e-13 0
+AuxSphere_12_37.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_38
+AuxSphere_12_38.Position -1793.52 -152.651 0
+AuxSphere_12_38.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_39
+AuxSphere_12_39.Position -1774.11 -304.201 0
+AuxSphere_12_39.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_40
+AuxSphere_12_40.Position -1741.92 -453.561 0
+AuxSphere_12_40.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_41
+AuxSphere_12_41.Position -1697.18 -599.652 0
+AuxSphere_12_41.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_42
+AuxSphere_12_42.Position -1640.21 -741.422 0
+AuxSphere_12_42.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_43
+AuxSphere_12_43.Position -1571.43 -877.851 0
+AuxSphere_12_43.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_44
+AuxSphere_12_44.Position -1491.32 -1007.95 0
+AuxSphere_12_44.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_45
+AuxSphere_12_45.Position -1400.46 -1130.8 0
+AuxSphere_12_45.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_46
+AuxSphere_12_46.Position -1299.52 -1245.49 0
+AuxSphere_12_46.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_47
+AuxSphere_12_47.Position -1189.21 -1351.21 0
+AuxSphere_12_47.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_48
+AuxSphere_12_48.Position -1070.34 -1447.19 0
+AuxSphere_12_48.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_49
+AuxSphere_12_49.Position -943.753 -1532.75 0
+AuxSphere_12_49.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_50
+AuxSphere_12_50.Position -810.367 -1607.27 0
+AuxSphere_12_50.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_51
+AuxSphere_12_51.Position -671.142 -1670.2 0
+AuxSphere_12_51.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_52
+AuxSphere_12_52.Position -527.081 -1721.1 0
+AuxSphere_12_52.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_53
+AuxSphere_12_53.Position -379.223 -1759.6 0
+AuxSphere_12_53.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_54
+AuxSphere_12_54.Position -228.632 -1785.42 0
+AuxSphere_12_54.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_55
+AuxSphere_12_55.Position -76.3942 -1798.38 0
+AuxSphere_12_55.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_56
+AuxSphere_12_56.Position 76.3942 -1798.38 0
+AuxSphere_12_56.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_57
+AuxSphere_12_57.Position 228.632 -1785.42 0
+AuxSphere_12_57.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_58
+AuxSphere_12_58.Position 379.223 -1759.6 0
+AuxSphere_12_58.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_59
+AuxSphere_12_59.Position 527.081 -1721.1 0
+AuxSphere_12_59.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_60
+AuxSphere_12_60.Position 671.142 -1670.2 0
+AuxSphere_12_60.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_61
+AuxSphere_12_61.Position 810.367 -1607.27 0
+AuxSphere_12_61.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_62
+AuxSphere_12_62.Position 943.753 -1532.75 0
+AuxSphere_12_62.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_63
+AuxSphere_12_63.Position 1070.34 -1447.19 0
+AuxSphere_12_63.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_64
+AuxSphere_12_64.Position 1189.21 -1351.21 0
+AuxSphere_12_64.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_65
+AuxSphere_12_65.Position 1299.52 -1245.49 0
+AuxSphere_12_65.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_66
+AuxSphere_12_66.Position 1400.46 -1130.8 0
+AuxSphere_12_66.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_67
+AuxSphere_12_67.Position 1491.32 -1007.95 0
+AuxSphere_12_67.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_68
+AuxSphere_12_68.Position 1571.43 -877.851 0
+AuxSphere_12_68.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_69
+AuxSphere_12_69.Position 1640.21 -741.422 0
+AuxSphere_12_69.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_70
+AuxSphere_12_70.Position 1697.18 -599.652 0
+AuxSphere_12_70.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_71
+AuxSphere_12_71.Position 1741.92 -453.561 0
+AuxSphere_12_71.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_72
+AuxSphere_12_72.Position 1774.11 -304.201 0
+AuxSphere_12_72.Mother AuxAlmostTorus_12
+AuxSphere.Copy AuxSphere_12_73
+AuxSphere_12_73.Position 1793.52 -152.651 0
+AuxSphere_12_73.Mother AuxAlmostTorus_12
+Volume AuxAlmostTorus_13
+AuxAlmostTorus_13.Material Air
+AuxAlmostTorus_13.Shape TUBS 1875  2025 75
+AuxAlmostTorus_13.Visibility 0
+AuxAlmostTorus_13.Color 4
+AuxAlmostTorus_13.Position 0 0 0
+AuxAlmostTorus_13.Mother AuxPlane
+AuxSphere.Copy AuxSphere_13_0
+AuxSphere_13_0.Position 1950 0 0
+AuxSphere_13_0.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_1
+AuxSphere_13_1.Position 1943.99 152.995 0
+AuxSphere_13_1.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_2
+AuxSphere_13_2.Position 1925.99 305.047 0
+AuxSphere_13_2.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_3
+AuxSphere_13_3.Position 1896.12 455.218 0
+AuxSphere_13_3.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_4
+AuxSphere_13_4.Position 1854.56 602.583 0
+AuxSphere_13_4.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_5
+AuxSphere_13_5.Position 1801.57 746.233 0
+AuxSphere_13_5.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_6
+AuxSphere_13_6.Position 1737.46 885.281 0
+AuxSphere_13_6.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_7
+AuxSphere_13_7.Position 1662.65 1018.87 0
+AuxSphere_13_7.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_8
+AuxSphere_13_8.Position 1577.58 1146.18 0
+AuxSphere_13_8.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_9
+AuxSphere_13_9.Position 1482.79 1266.42 0
+AuxSphere_13_9.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_10
+AuxSphere_13_10.Position 1378.86 1378.86 0
+AuxSphere_13_10.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_11
+AuxSphere_13_11.Position 1266.42 1482.79 0
+AuxSphere_13_11.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_12
+AuxSphere_13_12.Position 1146.18 1577.58 0
+AuxSphere_13_12.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_13
+AuxSphere_13_13.Position 1018.87 1662.65 0
+AuxSphere_13_13.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_14
+AuxSphere_13_14.Position 885.281 1737.46 0
+AuxSphere_13_14.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_15
+AuxSphere_13_15.Position 746.233 1801.57 0
+AuxSphere_13_15.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_16
+AuxSphere_13_16.Position 602.583 1854.56 0
+AuxSphere_13_16.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_17
+AuxSphere_13_17.Position 455.218 1896.12 0
+AuxSphere_13_17.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_18
+AuxSphere_13_18.Position 305.047 1925.99 0
+AuxSphere_13_18.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_19
+AuxSphere_13_19.Position 152.995 1943.99 0
+AuxSphere_13_19.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_20
+AuxSphere_13_20.Position 1.19403e-13 1950 0
+AuxSphere_13_20.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_21
+AuxSphere_13_21.Position -152.995 1943.99 0
+AuxSphere_13_21.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_22
+AuxSphere_13_22.Position -305.047 1925.99 0
+AuxSphere_13_22.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_23
+AuxSphere_13_23.Position -455.218 1896.12 0
+AuxSphere_13_23.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_24
+AuxSphere_13_24.Position -602.583 1854.56 0
+AuxSphere_13_24.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_25
+AuxSphere_13_25.Position -746.233 1801.57 0
+AuxSphere_13_25.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_26
+AuxSphere_13_26.Position -885.281 1737.46 0
+AuxSphere_13_26.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_27
+AuxSphere_13_27.Position -1018.87 1662.65 0
+AuxSphere_13_27.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_28
+AuxSphere_13_28.Position -1146.18 1577.58 0
+AuxSphere_13_28.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_29
+AuxSphere_13_29.Position -1266.42 1482.79 0
+AuxSphere_13_29.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_30
+AuxSphere_13_30.Position -1378.86 1378.86 0
+AuxSphere_13_30.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_31
+AuxSphere_13_31.Position -1482.79 1266.42 0
+AuxSphere_13_31.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_32
+AuxSphere_13_32.Position -1577.58 1146.18 0
+AuxSphere_13_32.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_33
+AuxSphere_13_33.Position -1662.65 1018.87 0
+AuxSphere_13_33.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_34
+AuxSphere_13_34.Position -1737.46 885.281 0
+AuxSphere_13_34.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_35
+AuxSphere_13_35.Position -1801.57 746.233 0
+AuxSphere_13_35.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_36
+AuxSphere_13_36.Position -1854.56 602.583 0
+AuxSphere_13_36.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_37
+AuxSphere_13_37.Position -1896.12 455.218 0
+AuxSphere_13_37.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_38
+AuxSphere_13_38.Position -1925.99 305.047 0
+AuxSphere_13_38.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_39
+AuxSphere_13_39.Position -1943.99 152.995 0
+AuxSphere_13_39.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_40
+AuxSphere_13_40.Position -1950 2.38806e-13 0
+AuxSphere_13_40.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_41
+AuxSphere_13_41.Position -1943.99 -152.995 0
+AuxSphere_13_41.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_42
+AuxSphere_13_42.Position -1925.99 -305.047 0
+AuxSphere_13_42.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_43
+AuxSphere_13_43.Position -1896.12 -455.218 0
+AuxSphere_13_43.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_44
+AuxSphere_13_44.Position -1854.56 -602.583 0
+AuxSphere_13_44.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_45
+AuxSphere_13_45.Position -1801.57 -746.233 0
+AuxSphere_13_45.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_46
+AuxSphere_13_46.Position -1737.46 -885.281 0
+AuxSphere_13_46.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_47
+AuxSphere_13_47.Position -1662.65 -1018.87 0
+AuxSphere_13_47.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_48
+AuxSphere_13_48.Position -1577.58 -1146.18 0
+AuxSphere_13_48.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_49
+AuxSphere_13_49.Position -1482.79 -1266.42 0
+AuxSphere_13_49.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_50
+AuxSphere_13_50.Position -1378.86 -1378.86 0
+AuxSphere_13_50.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_51
+AuxSphere_13_51.Position -1266.42 -1482.79 0
+AuxSphere_13_51.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_52
+AuxSphere_13_52.Position -1146.18 -1577.58 0
+AuxSphere_13_52.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_53
+AuxSphere_13_53.Position -1018.87 -1662.65 0
+AuxSphere_13_53.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_54
+AuxSphere_13_54.Position -885.281 -1737.46 0
+AuxSphere_13_54.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_55
+AuxSphere_13_55.Position -746.233 -1801.57 0
+AuxSphere_13_55.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_56
+AuxSphere_13_56.Position -602.583 -1854.56 0
+AuxSphere_13_56.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_57
+AuxSphere_13_57.Position -455.218 -1896.12 0
+AuxSphere_13_57.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_58
+AuxSphere_13_58.Position -305.047 -1925.99 0
+AuxSphere_13_58.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_59
+AuxSphere_13_59.Position -152.995 -1943.99 0
+AuxSphere_13_59.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_60
+AuxSphere_13_60.Position -3.58209e-13 -1950 0
+AuxSphere_13_60.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_61
+AuxSphere_13_61.Position 152.995 -1943.99 0
+AuxSphere_13_61.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_62
+AuxSphere_13_62.Position 305.047 -1925.99 0
+AuxSphere_13_62.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_63
+AuxSphere_13_63.Position 455.218 -1896.12 0
+AuxSphere_13_63.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_64
+AuxSphere_13_64.Position 602.583 -1854.56 0
+AuxSphere_13_64.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_65
+AuxSphere_13_65.Position 746.233 -1801.57 0
+AuxSphere_13_65.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_66
+AuxSphere_13_66.Position 885.281 -1737.46 0
+AuxSphere_13_66.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_67
+AuxSphere_13_67.Position 1018.87 -1662.65 0
+AuxSphere_13_67.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_68
+AuxSphere_13_68.Position 1146.18 -1577.58 0
+AuxSphere_13_68.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_69
+AuxSphere_13_69.Position 1266.42 -1482.79 0
+AuxSphere_13_69.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_70
+AuxSphere_13_70.Position 1378.86 -1378.86 0
+AuxSphere_13_70.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_71
+AuxSphere_13_71.Position 1482.79 -1266.42 0
+AuxSphere_13_71.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_72
+AuxSphere_13_72.Position 1577.58 -1146.18 0
+AuxSphere_13_72.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_73
+AuxSphere_13_73.Position 1662.65 -1018.87 0
+AuxSphere_13_73.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_74
+AuxSphere_13_74.Position 1737.46 -885.281 0
+AuxSphere_13_74.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_75
+AuxSphere_13_75.Position 1801.57 -746.233 0
+AuxSphere_13_75.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_76
+AuxSphere_13_76.Position 1854.56 -602.583 0
+AuxSphere_13_76.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_77
+AuxSphere_13_77.Position 1896.12 -455.218 0
+AuxSphere_13_77.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_78
+AuxSphere_13_78.Position 1925.99 -305.047 0
+AuxSphere_13_78.Mother AuxAlmostTorus_13
+AuxSphere.Copy AuxSphere_13_79
+AuxSphere_13_79.Position 1943.99 -152.995 0
+AuxSphere_13_79.Mother AuxAlmostTorus_13
+Volume AuxAlmostTorus_14
+AuxAlmostTorus_14.Material Air
+AuxAlmostTorus_14.Shape TUBS 2025  2175 75
+AuxAlmostTorus_14.Visibility 0
+AuxAlmostTorus_14.Color 4
+AuxAlmostTorus_14.Position 0 0 0
+AuxAlmostTorus_14.Mother AuxPlane
+AuxSphere.Copy AuxSphere_14_0
+AuxSphere_14_0.Position 2100 0 0
+AuxSphere_14_0.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_1
+AuxSphere_14_1.Position 2094.4 153.29 0
+AuxSphere_14_1.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_2
+AuxSphere_14_2.Position 2077.62 305.762 0
+AuxSphere_14_2.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_3
+AuxSphere_14_3.Position 2049.76 456.603 0
+AuxSphere_14_3.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_4
+AuxSphere_14_4.Position 2010.96 605.008 0
+AuxSphere_14_4.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_5
+AuxSphere_14_5.Position 1961.43 750.185 0
+AuxSphere_14_5.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_6
+AuxSphere_14_6.Position 1901.44 891.359 0
+AuxSphere_14_6.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_7
+AuxSphere_14_7.Position 1831.3 1027.78 0
+AuxSphere_14_7.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_8
+AuxSphere_14_8.Position 1751.4 1158.71 0
+AuxSphere_14_8.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_9
+AuxSphere_14_9.Position 1662.14 1283.46 0
+AuxSphere_14_9.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_10
+AuxSphere_14_10.Position 1564.02 1401.37 0
+AuxSphere_14_10.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_11
+AuxSphere_14_11.Position 1457.56 1511.8 0
+AuxSphere_14_11.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_12
+AuxSphere_14_12.Position 1343.31 1614.16 0
+AuxSphere_14_12.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_13
+AuxSphere_14_13.Position 1221.9 1707.91 0
+AuxSphere_14_13.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_14
+AuxSphere_14_14.Position 1093.97 1792.55 0
+AuxSphere_14_14.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_15
+AuxSphere_14_15.Position 960.209 1867.62 0
+AuxSphere_14_15.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_16
+AuxSphere_14_16.Position 821.32 1932.73 0
+AuxSphere_14_16.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_17
+AuxSphere_14_17.Position 678.049 1987.52 0
+AuxSphere_14_17.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_18
+AuxSphere_14_18.Position 531.16 2031.72 0
+AuxSphere_14_18.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_19
+AuxSphere_14_19.Position 381.437 2065.07 0
+AuxSphere_14_19.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_20
+AuxSphere_14_20.Position 229.68 2087.4 0
+AuxSphere_14_20.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_21
+AuxSphere_14_21.Position 76.6962 2098.6 0
+AuxSphere_14_21.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_22
+AuxSphere_14_22.Position -76.6962 2098.6 0
+AuxSphere_14_22.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_23
+AuxSphere_14_23.Position -229.68 2087.4 0
+AuxSphere_14_23.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_24
+AuxSphere_14_24.Position -381.437 2065.07 0
+AuxSphere_14_24.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_25
+AuxSphere_14_25.Position -531.16 2031.72 0
+AuxSphere_14_25.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_26
+AuxSphere_14_26.Position -678.049 1987.52 0
+AuxSphere_14_26.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_27
+AuxSphere_14_27.Position -821.32 1932.73 0
+AuxSphere_14_27.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_28
+AuxSphere_14_28.Position -960.209 1867.62 0
+AuxSphere_14_28.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_29
+AuxSphere_14_29.Position -1093.97 1792.55 0
+AuxSphere_14_29.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_30
+AuxSphere_14_30.Position -1221.9 1707.91 0
+AuxSphere_14_30.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_31
+AuxSphere_14_31.Position -1343.31 1614.16 0
+AuxSphere_14_31.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_32
+AuxSphere_14_32.Position -1457.56 1511.8 0
+AuxSphere_14_32.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_33
+AuxSphere_14_33.Position -1564.02 1401.37 0
+AuxSphere_14_33.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_34
+AuxSphere_14_34.Position -1662.14 1283.46 0
+AuxSphere_14_34.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_35
+AuxSphere_14_35.Position -1751.4 1158.71 0
+AuxSphere_14_35.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_36
+AuxSphere_14_36.Position -1831.3 1027.78 0
+AuxSphere_14_36.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_37
+AuxSphere_14_37.Position -1901.44 891.359 0
+AuxSphere_14_37.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_38
+AuxSphere_14_38.Position -1961.43 750.185 0
+AuxSphere_14_38.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_39
+AuxSphere_14_39.Position -2010.96 605.008 0
+AuxSphere_14_39.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_40
+AuxSphere_14_40.Position -2049.76 456.603 0
+AuxSphere_14_40.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_41
+AuxSphere_14_41.Position -2077.62 305.762 0
+AuxSphere_14_41.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_42
+AuxSphere_14_42.Position -2094.4 153.29 0
+AuxSphere_14_42.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_43
+AuxSphere_14_43.Position -2100 2.57176e-13 0
+AuxSphere_14_43.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_44
+AuxSphere_14_44.Position -2094.4 -153.29 0
+AuxSphere_14_44.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_45
+AuxSphere_14_45.Position -2077.62 -305.762 0
+AuxSphere_14_45.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_46
+AuxSphere_14_46.Position -2049.76 -456.603 0
+AuxSphere_14_46.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_47
+AuxSphere_14_47.Position -2010.96 -605.008 0
+AuxSphere_14_47.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_48
+AuxSphere_14_48.Position -1961.43 -750.185 0
+AuxSphere_14_48.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_49
+AuxSphere_14_49.Position -1901.44 -891.359 0
+AuxSphere_14_49.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_50
+AuxSphere_14_50.Position -1831.3 -1027.78 0
+AuxSphere_14_50.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_51
+AuxSphere_14_51.Position -1751.4 -1158.71 0
+AuxSphere_14_51.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_52
+AuxSphere_14_52.Position -1662.14 -1283.46 0
+AuxSphere_14_52.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_53
+AuxSphere_14_53.Position -1564.02 -1401.37 0
+AuxSphere_14_53.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_54
+AuxSphere_14_54.Position -1457.56 -1511.8 0
+AuxSphere_14_54.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_55
+AuxSphere_14_55.Position -1343.31 -1614.16 0
+AuxSphere_14_55.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_56
+AuxSphere_14_56.Position -1221.9 -1707.91 0
+AuxSphere_14_56.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_57
+AuxSphere_14_57.Position -1093.97 -1792.55 0
+AuxSphere_14_57.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_58
+AuxSphere_14_58.Position -960.209 -1867.62 0
+AuxSphere_14_58.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_59
+AuxSphere_14_59.Position -821.32 -1932.73 0
+AuxSphere_14_59.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_60
+AuxSphere_14_60.Position -678.049 -1987.52 0
+AuxSphere_14_60.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_61
+AuxSphere_14_61.Position -531.16 -2031.72 0
+AuxSphere_14_61.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_62
+AuxSphere_14_62.Position -381.437 -2065.07 0
+AuxSphere_14_62.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_63
+AuxSphere_14_63.Position -229.68 -2087.4 0
+AuxSphere_14_63.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_64
+AuxSphere_14_64.Position -76.6962 -2098.6 0
+AuxSphere_14_64.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_65
+AuxSphere_14_65.Position 76.6962 -2098.6 0
+AuxSphere_14_65.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_66
+AuxSphere_14_66.Position 229.68 -2087.4 0
+AuxSphere_14_66.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_67
+AuxSphere_14_67.Position 381.437 -2065.07 0
+AuxSphere_14_67.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_68
+AuxSphere_14_68.Position 531.16 -2031.72 0
+AuxSphere_14_68.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_69
+AuxSphere_14_69.Position 678.049 -1987.52 0
+AuxSphere_14_69.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_70
+AuxSphere_14_70.Position 821.32 -1932.73 0
+AuxSphere_14_70.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_71
+AuxSphere_14_71.Position 960.209 -1867.62 0
+AuxSphere_14_71.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_72
+AuxSphere_14_72.Position 1093.97 -1792.55 0
+AuxSphere_14_72.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_73
+AuxSphere_14_73.Position 1221.9 -1707.91 0
+AuxSphere_14_73.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_74
+AuxSphere_14_74.Position 1343.31 -1614.16 0
+AuxSphere_14_74.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_75
+AuxSphere_14_75.Position 1457.56 -1511.8 0
+AuxSphere_14_75.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_76
+AuxSphere_14_76.Position 1564.02 -1401.37 0
+AuxSphere_14_76.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_77
+AuxSphere_14_77.Position 1662.14 -1283.46 0
+AuxSphere_14_77.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_78
+AuxSphere_14_78.Position 1751.4 -1158.71 0
+AuxSphere_14_78.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_79
+AuxSphere_14_79.Position 1831.3 -1027.78 0
+AuxSphere_14_79.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_80
+AuxSphere_14_80.Position 1901.44 -891.359 0
+AuxSphere_14_80.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_81
+AuxSphere_14_81.Position 1961.43 -750.185 0
+AuxSphere_14_81.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_82
+AuxSphere_14_82.Position 2010.96 -605.008 0
+AuxSphere_14_82.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_83
+AuxSphere_14_83.Position 2049.76 -456.603 0
+AuxSphere_14_83.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_84
+AuxSphere_14_84.Position 2077.62 -305.762 0
+AuxSphere_14_84.Mother AuxAlmostTorus_14
+AuxSphere.Copy AuxSphere_14_85
+AuxSphere_14_85.Position 2094.4 -153.29 0
+AuxSphere_14_85.Mother AuxAlmostTorus_14
+Volume AuxAlmostTorus_15
+AuxAlmostTorus_15.Material Air
+AuxAlmostTorus_15.Shape TUBS 2175  2325 75
+AuxAlmostTorus_15.Visibility 0
+AuxAlmostTorus_15.Color 4
+AuxAlmostTorus_15.Position 0 0 0
+AuxAlmostTorus_15.Mother AuxPlane
+AuxSphere.Copy AuxSphere_15_0
+AuxSphere_15_0.Position 2250 0 0
+AuxSphere_15_0.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_1
+AuxSphere_15_1.Position 2244.87 151.897 0
+AuxSphere_15_1.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_2
+AuxSphere_15_2.Position 2229.49 303.101 0
+AuxSphere_15_2.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_3
+AuxSphere_15_3.Position 2203.94 452.922 0
+AuxSphere_15_3.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_4
+AuxSphere_15_4.Position 2168.34 600.676 0
+AuxSphere_15_4.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_5
+AuxSphere_15_5.Position 2122.84 745.69 0
+AuxSphere_15_5.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_6
+AuxSphere_15_6.Position 2067.66 887.301 0
+AuxSphere_15_6.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_7
+AuxSphere_15_7.Position 2003.04 1024.86 0
+AuxSphere_15_7.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_8
+AuxSphere_15_8.Position 1929.28 1157.75 0
+AuxSphere_15_8.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_9
+AuxSphere_15_9.Position 1846.72 1285.35 0
+AuxSphere_15_9.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_10
+AuxSphere_15_10.Position 1755.73 1407.09 0
+AuxSphere_15_10.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_11
+AuxSphere_15_11.Position 1656.73 1522.41 0
+AuxSphere_15_11.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_12
+AuxSphere_15_12.Position 1550.18 1630.78 0
+AuxSphere_15_12.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_13
+AuxSphere_15_13.Position 1436.55 1731.72 0
+AuxSphere_15_13.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_14
+AuxSphere_15_14.Position 1316.36 1824.75 0
+AuxSphere_15_14.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_15
+AuxSphere_15_15.Position 1190.17 1909.45 0
+AuxSphere_15_15.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_16
+AuxSphere_15_16.Position 1058.55 1985.44 0
+AuxSphere_15_16.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_17
+AuxSphere_15_17.Position 922.096 2052.37 0
+AuxSphere_15_17.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_18
+AuxSphere_15_18.Position 781.437 2109.94 0
+AuxSphere_15_18.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_19
+AuxSphere_15_19.Position 637.212 2157.88 0
+AuxSphere_15_19.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_20
+AuxSphere_15_20.Position 490.081 2195.98 0
+AuxSphere_15_20.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_21
+AuxSphere_15_21.Position 340.712 2224.05 0
+AuxSphere_15_21.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_22
+AuxSphere_15_22.Position 189.79 2241.98 0
+AuxSphere_15_22.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_23
+AuxSphere_15_23.Position 38.0013 2249.68 0
+AuxSphere_15_23.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_24
+AuxSphere_15_24.Position -113.961 2247.11 0
+AuxSphere_15_24.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_25
+AuxSphere_15_25.Position -265.403 2234.29 0
+AuxSphere_15_25.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_26
+AuxSphere_15_26.Position -415.634 2211.28 0
+AuxSphere_15_26.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_27
+AuxSphere_15_27.Position -563.968 2178.17 0
+AuxSphere_15_27.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_28
+AuxSphere_15_28.Position -709.73 2135.13 0
+AuxSphere_15_28.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_29
+AuxSphere_15_29.Position -852.252 2082.35 0
+AuxSphere_15_29.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_30
+AuxSphere_15_30.Position -990.887 2020.06 0
+AuxSphere_15_30.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_31
+AuxSphere_15_31.Position -1125 1948.56 0
+AuxSphere_15_31.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_32
+AuxSphere_15_32.Position -1253.98 1868.16 0
+AuxSphere_15_32.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_33
+AuxSphere_15_33.Position -1377.24 1779.25 0
+AuxSphere_15_33.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_34
+AuxSphere_15_34.Position -1494.21 1682.21 0
+AuxSphere_15_34.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_35
+AuxSphere_15_35.Position -1604.37 1577.5 0
+AuxSphere_15_35.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_36
+AuxSphere_15_36.Position -1707.21 1465.59 0
+AuxSphere_15_36.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_37
+AuxSphere_15_37.Position -1802.25 1346.99 0
+AuxSphere_15_37.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_38
+AuxSphere_15_38.Position -1889.08 1222.25 0
+AuxSphere_15_38.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_39
+AuxSphere_15_39.Position -1967.28 1091.93 0
+AuxSphere_15_39.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_40
+AuxSphere_15_40.Position -2036.51 956.628 0
+AuxSphere_15_40.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_41
+AuxSphere_15_41.Position -2096.44 816.961 0
+AuxSphere_15_41.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_42
+AuxSphere_15_42.Position -2146.81 673.567 0
+AuxSphere_15_42.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_43
+AuxSphere_15_43.Position -2187.39 527.1 0
+AuxSphere_15_43.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_44
+AuxSphere_15_44.Position -2217.98 378.227 0
+AuxSphere_15_44.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_45
+AuxSphere_15_45.Position -2238.46 227.629 0
+AuxSphere_15_45.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_46
+AuxSphere_15_46.Position -2248.72 75.9918 0
+AuxSphere_15_46.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_47
+AuxSphere_15_47.Position -2248.72 -75.9918 0
+AuxSphere_15_47.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_48
+AuxSphere_15_48.Position -2238.46 -227.629 0
+AuxSphere_15_48.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_49
+AuxSphere_15_49.Position -2217.98 -378.227 0
+AuxSphere_15_49.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_50
+AuxSphere_15_50.Position -2187.39 -527.1 0
+AuxSphere_15_50.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_51
+AuxSphere_15_51.Position -2146.81 -673.567 0
+AuxSphere_15_51.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_52
+AuxSphere_15_52.Position -2096.44 -816.961 0
+AuxSphere_15_52.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_53
+AuxSphere_15_53.Position -2036.51 -956.628 0
+AuxSphere_15_53.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_54
+AuxSphere_15_54.Position -1967.28 -1091.93 0
+AuxSphere_15_54.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_55
+AuxSphere_15_55.Position -1889.08 -1222.25 0
+AuxSphere_15_55.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_56
+AuxSphere_15_56.Position -1802.25 -1346.99 0
+AuxSphere_15_56.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_57
+AuxSphere_15_57.Position -1707.21 -1465.59 0
+AuxSphere_15_57.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_58
+AuxSphere_15_58.Position -1604.37 -1577.5 0
+AuxSphere_15_58.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_59
+AuxSphere_15_59.Position -1494.21 -1682.21 0
+AuxSphere_15_59.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_60
+AuxSphere_15_60.Position -1377.24 -1779.25 0
+AuxSphere_15_60.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_61
+AuxSphere_15_61.Position -1253.98 -1868.16 0
+AuxSphere_15_61.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_62
+AuxSphere_15_62.Position -1125 -1948.56 0
+AuxSphere_15_62.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_63
+AuxSphere_15_63.Position -990.887 -2020.06 0
+AuxSphere_15_63.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_64
+AuxSphere_15_64.Position -852.252 -2082.35 0
+AuxSphere_15_64.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_65
+AuxSphere_15_65.Position -709.73 -2135.13 0
+AuxSphere_15_65.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_66
+AuxSphere_15_66.Position -563.968 -2178.17 0
+AuxSphere_15_66.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_67
+AuxSphere_15_67.Position -415.634 -2211.28 0
+AuxSphere_15_67.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_68
+AuxSphere_15_68.Position -265.403 -2234.29 0
+AuxSphere_15_68.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_69
+AuxSphere_15_69.Position -113.961 -2247.11 0
+AuxSphere_15_69.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_70
+AuxSphere_15_70.Position 38.0013 -2249.68 0
+AuxSphere_15_70.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_71
+AuxSphere_15_71.Position 189.79 -2241.98 0
+AuxSphere_15_71.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_72
+AuxSphere_15_72.Position 340.712 -2224.05 0
+AuxSphere_15_72.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_73
+AuxSphere_15_73.Position 490.081 -2195.98 0
+AuxSphere_15_73.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_74
+AuxSphere_15_74.Position 637.212 -2157.88 0
+AuxSphere_15_74.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_75
+AuxSphere_15_75.Position 781.437 -2109.94 0
+AuxSphere_15_75.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_76
+AuxSphere_15_76.Position 922.096 -2052.37 0
+AuxSphere_15_76.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_77
+AuxSphere_15_77.Position 1058.55 -1985.44 0
+AuxSphere_15_77.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_78
+AuxSphere_15_78.Position 1190.17 -1909.45 0
+AuxSphere_15_78.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_79
+AuxSphere_15_79.Position 1316.36 -1824.75 0
+AuxSphere_15_79.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_80
+AuxSphere_15_80.Position 1436.55 -1731.72 0
+AuxSphere_15_80.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_81
+AuxSphere_15_81.Position 1550.18 -1630.78 0
+AuxSphere_15_81.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_82
+AuxSphere_15_82.Position 1656.73 -1522.41 0
+AuxSphere_15_82.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_83
+AuxSphere_15_83.Position 1755.73 -1407.09 0
+AuxSphere_15_83.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_84
+AuxSphere_15_84.Position 1846.72 -1285.35 0
+AuxSphere_15_84.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_85
+AuxSphere_15_85.Position 1929.28 -1157.75 0
+AuxSphere_15_85.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_86
+AuxSphere_15_86.Position 2003.04 -1024.86 0
+AuxSphere_15_86.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_87
+AuxSphere_15_87.Position 2067.66 -887.301 0
+AuxSphere_15_87.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_88
+AuxSphere_15_88.Position 2122.84 -745.69 0
+AuxSphere_15_88.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_89
+AuxSphere_15_89.Position 2168.34 -600.676 0
+AuxSphere_15_89.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_90
+AuxSphere_15_90.Position 2203.94 -452.922 0
+AuxSphere_15_90.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_91
+AuxSphere_15_91.Position 2229.49 -303.101 0
+AuxSphere_15_91.Mother AuxAlmostTorus_15
+AuxSphere.Copy AuxSphere_15_92
+AuxSphere_15_92.Position 2244.87 -151.897 0
+AuxSphere_15_92.Mother AuxAlmostTorus_15
+Volume AuxAlmostTorus_16
+AuxAlmostTorus_16.Material Air
+AuxAlmostTorus_16.Shape TUBS 2325  2475 75
+AuxAlmostTorus_16.Visibility 0
+AuxAlmostTorus_16.Color 4
+AuxAlmostTorus_16.Position 0 0 0
+AuxAlmostTorus_16.Mother AuxPlane
+AuxSphere.Copy AuxSphere_16_0
+AuxSphere_16_0.Position 2400 0 0
+AuxSphere_16_0.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_1
+AuxSphere_16_1.Position 2395.17 152.217 0
+AuxSphere_16_1.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_2
+AuxSphere_16_2.Position 2380.69 303.822 0
+AuxSphere_16_2.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_3
+AuxSphere_16_3.Position 2356.63 454.203 0
+AuxSphere_16_3.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_4
+AuxSphere_16_4.Position 2323.08 602.755 0
+AuxSphere_16_4.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_5
+AuxSphere_16_5.Position 2280.17 748.88 0
+AuxSphere_16_5.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_6
+AuxSphere_16_6.Position 2228.08 891.99 0
+AuxSphere_16_6.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_7
+AuxSphere_16_7.Position 2167.02 1031.51 0
+AuxSphere_16_7.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_8
+AuxSphere_16_8.Position 2097.24 1166.87 0
+AuxSphere_16_8.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_9
+AuxSphere_16_9.Position 2019.01 1297.54 0
+AuxSphere_16_9.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_10
+AuxSphere_16_10.Position 1932.65 1422.98 0
+AuxSphere_16_10.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_11
+AuxSphere_16_11.Position 1838.51 1542.69 0
+AuxSphere_16_11.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_12
+AuxSphere_16_12.Position 1736.96 1656.19 0
+AuxSphere_16_12.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_13
+AuxSphere_16_13.Position 1628.42 1763.02 0
+AuxSphere_16_13.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_14
+AuxSphere_16_14.Position 1513.33 1862.75 0
+AuxSphere_16_14.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_15
+AuxSphere_16_15.Position 1392.14 1954.98 0
+AuxSphere_16_15.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_16
+AuxSphere_16_16.Position 1265.34 2039.34 0
+AuxSphere_16_16.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_17
+AuxSphere_16_17.Position 1133.45 2115.49 0
+AuxSphere_16_17.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_18
+AuxSphere_16_18.Position 996.996 2183.12 0
+AuxSphere_16_18.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_19
+AuxSphere_16_19.Position 856.527 2241.95 0
+AuxSphere_16_19.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_20
+AuxSphere_16_20.Position 712.609 2291.77 0
+AuxSphere_16_20.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_21
+AuxSphere_16_21.Position 565.821 2332.35 0
+AuxSphere_16_21.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_22
+AuxSphere_16_22.Position 416.756 2363.54 0
+AuxSphere_16_22.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_23
+AuxSphere_16_23.Position 266.012 2385.21 0
+AuxSphere_16_23.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_24
+AuxSphere_16_24.Position 114.197 2397.28 0
+AuxSphere_16_24.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_25
+AuxSphere_16_25.Position -38.0783 2399.7 0
+AuxSphere_16_25.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_26
+AuxSphere_16_26.Position -190.2 2392.45 0
+AuxSphere_16_26.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_27
+AuxSphere_16_27.Position -341.556 2375.57 0
+AuxSphere_16_27.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_28
+AuxSphere_16_28.Position -491.536 2349.13 0
+AuxSphere_16_28.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_29
+AuxSphere_16_29.Position -639.537 2313.22 0
+AuxSphere_16_29.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_30
+AuxSphere_16_30.Position -784.963 2268 0
+AuxSphere_16_30.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_31
+AuxSphere_16_31.Position -927.228 2213.65 0
+AuxSphere_16_31.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_32
+AuxSphere_16_32.Position -1065.76 2150.39 0
+AuxSphere_16_32.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_33
+AuxSphere_16_33.Position -1200 2078.46 0
+AuxSphere_16_33.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_34
+AuxSphere_16_34.Position -1329.41 1998.17 0
+AuxSphere_16_34.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_35
+AuxSphere_16_35.Position -1453.46 1909.83 0
+AuxSphere_16_35.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_36
+AuxSphere_16_36.Position -1571.67 1813.8 0
+AuxSphere_16_36.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_37
+AuxSphere_16_37.Position -1683.54 1710.47 0
+AuxSphere_16_37.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_38
+AuxSphere_16_38.Position -1788.63 1600.25 0
+AuxSphere_16_38.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_39
+AuxSphere_16_39.Position -1886.53 1483.58 0
+AuxSphere_16_39.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_40
+AuxSphere_16_40.Position -1976.82 1360.94 0
+AuxSphere_16_40.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_41
+AuxSphere_16_41.Position -2059.16 1232.83 0
+AuxSphere_16_41.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_42
+AuxSphere_16_42.Position -2133.21 1099.74 0
+AuxSphere_16_42.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_43
+AuxSphere_16_43.Position -2198.66 962.233 0
+AuxSphere_16_43.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_44
+AuxSphere_16_44.Position -2255.26 820.848 0
+AuxSphere_16_44.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_45
+AuxSphere_16_45.Position -2302.78 676.158 0
+AuxSphere_16_45.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_46
+AuxSphere_16_46.Position -2341.03 528.745 0
+AuxSphere_16_46.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_47
+AuxSphere_16_47.Position -2369.85 379.203 0
+AuxSphere_16_47.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_48
+AuxSphere_16_48.Position -2389.13 228.135 0
+AuxSphere_16_48.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_49
+AuxSphere_16_49.Position -2398.79 76.147 0
+AuxSphere_16_49.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_50
+AuxSphere_16_50.Position -2398.79 -76.147 0
+AuxSphere_16_50.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_51
+AuxSphere_16_51.Position -2389.13 -228.135 0
+AuxSphere_16_51.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_52
+AuxSphere_16_52.Position -2369.85 -379.203 0
+AuxSphere_16_52.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_53
+AuxSphere_16_53.Position -2341.03 -528.745 0
+AuxSphere_16_53.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_54
+AuxSphere_16_54.Position -2302.78 -676.158 0
+AuxSphere_16_54.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_55
+AuxSphere_16_55.Position -2255.26 -820.848 0
+AuxSphere_16_55.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_56
+AuxSphere_16_56.Position -2198.66 -962.233 0
+AuxSphere_16_56.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_57
+AuxSphere_16_57.Position -2133.21 -1099.74 0
+AuxSphere_16_57.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_58
+AuxSphere_16_58.Position -2059.16 -1232.83 0
+AuxSphere_16_58.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_59
+AuxSphere_16_59.Position -1976.82 -1360.94 0
+AuxSphere_16_59.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_60
+AuxSphere_16_60.Position -1886.53 -1483.58 0
+AuxSphere_16_60.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_61
+AuxSphere_16_61.Position -1788.63 -1600.25 0
+AuxSphere_16_61.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_62
+AuxSphere_16_62.Position -1683.54 -1710.47 0
+AuxSphere_16_62.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_63
+AuxSphere_16_63.Position -1571.67 -1813.8 0
+AuxSphere_16_63.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_64
+AuxSphere_16_64.Position -1453.46 -1909.83 0
+AuxSphere_16_64.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_65
+AuxSphere_16_65.Position -1329.41 -1998.17 0
+AuxSphere_16_65.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_66
+AuxSphere_16_66.Position -1200 -2078.46 0
+AuxSphere_16_66.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_67
+AuxSphere_16_67.Position -1065.76 -2150.39 0
+AuxSphere_16_67.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_68
+AuxSphere_16_68.Position -927.228 -2213.65 0
+AuxSphere_16_68.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_69
+AuxSphere_16_69.Position -784.963 -2268 0
+AuxSphere_16_69.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_70
+AuxSphere_16_70.Position -639.537 -2313.22 0
+AuxSphere_16_70.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_71
+AuxSphere_16_71.Position -491.536 -2349.13 0
+AuxSphere_16_71.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_72
+AuxSphere_16_72.Position -341.556 -2375.57 0
+AuxSphere_16_72.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_73
+AuxSphere_16_73.Position -190.2 -2392.45 0
+AuxSphere_16_73.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_74
+AuxSphere_16_74.Position -38.0783 -2399.7 0
+AuxSphere_16_74.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_75
+AuxSphere_16_75.Position 114.197 -2397.28 0
+AuxSphere_16_75.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_76
+AuxSphere_16_76.Position 266.012 -2385.21 0
+AuxSphere_16_76.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_77
+AuxSphere_16_77.Position 416.756 -2363.54 0
+AuxSphere_16_77.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_78
+AuxSphere_16_78.Position 565.821 -2332.35 0
+AuxSphere_16_78.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_79
+AuxSphere_16_79.Position 712.609 -2291.77 0
+AuxSphere_16_79.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_80
+AuxSphere_16_80.Position 856.527 -2241.95 0
+AuxSphere_16_80.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_81
+AuxSphere_16_81.Position 996.996 -2183.12 0
+AuxSphere_16_81.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_82
+AuxSphere_16_82.Position 1133.45 -2115.49 0
+AuxSphere_16_82.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_83
+AuxSphere_16_83.Position 1265.34 -2039.34 0
+AuxSphere_16_83.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_84
+AuxSphere_16_84.Position 1392.14 -1954.98 0
+AuxSphere_16_84.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_85
+AuxSphere_16_85.Position 1513.33 -1862.75 0
+AuxSphere_16_85.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_86
+AuxSphere_16_86.Position 1628.42 -1763.02 0
+AuxSphere_16_86.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_87
+AuxSphere_16_87.Position 1736.96 -1656.19 0
+AuxSphere_16_87.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_88
+AuxSphere_16_88.Position 1838.51 -1542.69 0
+AuxSphere_16_88.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_89
+AuxSphere_16_89.Position 1932.65 -1422.98 0
+AuxSphere_16_89.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_90
+AuxSphere_16_90.Position 2019.01 -1297.54 0
+AuxSphere_16_90.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_91
+AuxSphere_16_91.Position 2097.24 -1166.87 0
+AuxSphere_16_91.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_92
+AuxSphere_16_92.Position 2167.02 -1031.51 0
+AuxSphere_16_92.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_93
+AuxSphere_16_93.Position 2228.08 -891.99 0
+AuxSphere_16_93.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_94
+AuxSphere_16_94.Position 2280.17 -748.88 0
+AuxSphere_16_94.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_95
+AuxSphere_16_95.Position 2323.08 -602.755 0
+AuxSphere_16_95.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_96
+AuxSphere_16_96.Position 2356.63 -454.203 0
+AuxSphere_16_96.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_97
+AuxSphere_16_97.Position 2380.69 -303.822 0
+AuxSphere_16_97.Mother AuxAlmostTorus_16
+AuxSphere.Copy AuxSphere_16_98
+AuxSphere_16_98.Position 2395.17 -152.217 0
+AuxSphere_16_98.Mother AuxAlmostTorus_16
+Volume AuxAlmostTorus_17
+AuxAlmostTorus_17.Material Air
+AuxAlmostTorus_17.Shape TUBS 2475  2625 75
+AuxAlmostTorus_17.Visibility 0
+AuxAlmostTorus_17.Color 4
+AuxAlmostTorus_17.Position 0 0 0
+AuxAlmostTorus_17.Mother AuxPlane
+AuxSphere.Copy AuxSphere_17_0
+AuxSphere_17_0.Position 2550 0 0
+AuxSphere_17_0.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_1
+AuxSphere_17_1.Position 2545.44 152.501 0
+AuxSphere_17_1.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_2
+AuxSphere_17_2.Position 2531.76 304.455 0
+AuxSphere_17_2.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_3
+AuxSphere_17_3.Position 2509.02 455.32 0
+AuxSphere_17_3.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_4
+AuxSphere_17_4.Position 2477.3 604.555 0
+AuxSphere_17_4.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_5
+AuxSphere_17_5.Position 2436.71 751.626 0
+AuxSphere_17_5.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_6
+AuxSphere_17_6.Position 2387.4 896.006 0
+AuxSphere_17_6.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_7
+AuxSphere_17_7.Position 2329.54 1037.18 0
+AuxSphere_17_7.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_8
+AuxSphere_17_8.Position 2263.34 1174.64 0
+AuxSphere_17_8.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_9
+AuxSphere_17_9.Position 2189.04 1307.89 0
+AuxSphere_17_9.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_10
+AuxSphere_17_10.Position 2106.91 1436.47 0
+AuxSphere_17_10.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_11
+AuxSphere_17_11.Position 2017.23 1559.9 0
+AuxSphere_17_11.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_12
+AuxSphere_17_12.Position 1920.33 1677.74 0
+AuxSphere_17_12.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_13
+AuxSphere_17_13.Position 1816.56 1789.58 0
+AuxSphere_17_13.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_14
+AuxSphere_17_14.Position 1706.28 1895.02 0
+AuxSphere_17_14.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_15
+AuxSphere_17_15.Position 1589.9 1993.67 0
+AuxSphere_17_15.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_16
+AuxSphere_17_16.Position 1467.82 2085.18 0
+AuxSphere_17_16.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_17
+AuxSphere_17_17.Position 1340.49 2169.23 0
+AuxSphere_17_17.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_18
+AuxSphere_17_18.Position 1208.37 2245.52 0
+AuxSphere_17_18.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_19
+AuxSphere_17_19.Position 1071.91 2313.76 0
+AuxSphere_17_19.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_20
+AuxSphere_17_20.Position 931.62 2373.73 0
+AuxSphere_17_20.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_21
+AuxSphere_17_21.Position 787.993 2425.19 0
+AuxSphere_17_21.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_22
+AuxSphere_17_22.Position 641.546 2467.98 0
+AuxSphere_17_22.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_23
+AuxSphere_17_23.Position 492.803 2501.93 0
+AuxSphere_17_23.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_24
+AuxSphere_17_24.Position 342.295 2526.92 0
+AuxSphere_17_24.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_25
+AuxSphere_17_25.Position 190.562 2542.87 0
+AuxSphere_17_25.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_26
+AuxSphere_17_26.Position 38.1465 2549.71 0
+AuxSphere_17_26.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_27
+AuxSphere_17_27.Position -114.405 2547.43 0
+AuxSphere_17_27.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_28
+AuxSphere_17_28.Position -266.548 2536.03 0
+AuxSphere_17_28.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_29
+AuxSphere_17_29.Position -417.736 2515.55 0
+AuxSphere_17_29.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_30
+AuxSphere_17_30.Position -567.428 2486.07 0
+AuxSphere_17_30.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_31
+AuxSphere_17_31.Position -715.09 2447.68 0
+AuxSphere_17_31.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_32
+AuxSphere_17_32.Position -860.191 2400.54 0
+AuxSphere_17_32.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_33
+AuxSphere_17_33.Position -1002.21 2344.8 0
+AuxSphere_17_33.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_34
+AuxSphere_17_34.Position -1140.65 2280.66 0
+AuxSphere_17_34.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_35
+AuxSphere_17_35.Position -1275 2208.36 0
+AuxSphere_17_35.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_36
+AuxSphere_17_36.Position -1404.79 2128.16 0
+AuxSphere_17_36.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_37
+AuxSphere_17_37.Position -1529.55 2040.34 0
+AuxSphere_17_37.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_38
+AuxSphere_17_38.Position -1648.83 1945.22 0
+AuxSphere_17_38.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_39
+AuxSphere_17_39.Position -1762.21 1843.13 0
+AuxSphere_17_39.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_40
+AuxSphere_17_40.Position -1869.28 1734.44 0
+AuxSphere_17_40.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_41
+AuxSphere_17_41.Position -1969.66 1619.55 0
+AuxSphere_17_41.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_42
+AuxSphere_17_42.Position -2062.99 1498.85 0
+AuxSphere_17_42.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_43
+AuxSphere_17_43.Position -2148.94 1372.79 0
+AuxSphere_17_43.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_44
+AuxSphere_17_44.Position -2227.19 1241.82 0
+AuxSphere_17_44.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_45
+AuxSphere_17_45.Position -2297.47 1106.4 0
+AuxSphere_17_45.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_46
+AuxSphere_17_46.Position -2359.53 967.025 0
+AuxSphere_17_46.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_47
+AuxSphere_17_47.Position -2413.13 824.185 0
+AuxSphere_17_47.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_48
+AuxSphere_17_48.Position -2458.11 678.394 0
+AuxSphere_17_48.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_49
+AuxSphere_17_49.Position -2494.28 530.175 0
+AuxSphere_17_49.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_50
+AuxSphere_17_50.Position -2521.52 380.058 0
+AuxSphere_17_50.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_51
+AuxSphere_17_51.Position -2539.73 228.58 0
+AuxSphere_17_51.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_52
+AuxSphere_17_52.Position -2548.86 76.2844 0
+AuxSphere_17_52.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_53
+AuxSphere_17_53.Position -2548.86 -76.2844 0
+AuxSphere_17_53.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_54
+AuxSphere_17_54.Position -2539.73 -228.58 0
+AuxSphere_17_54.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_55
+AuxSphere_17_55.Position -2521.52 -380.058 0
+AuxSphere_17_55.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_56
+AuxSphere_17_56.Position -2494.28 -530.175 0
+AuxSphere_17_56.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_57
+AuxSphere_17_57.Position -2458.11 -678.394 0
+AuxSphere_17_57.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_58
+AuxSphere_17_58.Position -2413.13 -824.185 0
+AuxSphere_17_58.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_59
+AuxSphere_17_59.Position -2359.53 -967.025 0
+AuxSphere_17_59.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_60
+AuxSphere_17_60.Position -2297.47 -1106.4 0
+AuxSphere_17_60.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_61
+AuxSphere_17_61.Position -2227.19 -1241.82 0
+AuxSphere_17_61.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_62
+AuxSphere_17_62.Position -2148.94 -1372.79 0
+AuxSphere_17_62.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_63
+AuxSphere_17_63.Position -2062.99 -1498.85 0
+AuxSphere_17_63.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_64
+AuxSphere_17_64.Position -1969.66 -1619.55 0
+AuxSphere_17_64.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_65
+AuxSphere_17_65.Position -1869.28 -1734.44 0
+AuxSphere_17_65.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_66
+AuxSphere_17_66.Position -1762.21 -1843.13 0
+AuxSphere_17_66.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_67
+AuxSphere_17_67.Position -1648.83 -1945.22 0
+AuxSphere_17_67.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_68
+AuxSphere_17_68.Position -1529.55 -2040.34 0
+AuxSphere_17_68.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_69
+AuxSphere_17_69.Position -1404.79 -2128.16 0
+AuxSphere_17_69.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_70
+AuxSphere_17_70.Position -1275 -2208.36 0
+AuxSphere_17_70.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_71
+AuxSphere_17_71.Position -1140.65 -2280.66 0
+AuxSphere_17_71.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_72
+AuxSphere_17_72.Position -1002.21 -2344.8 0
+AuxSphere_17_72.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_73
+AuxSphere_17_73.Position -860.191 -2400.54 0
+AuxSphere_17_73.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_74
+AuxSphere_17_74.Position -715.09 -2447.68 0
+AuxSphere_17_74.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_75
+AuxSphere_17_75.Position -567.428 -2486.07 0
+AuxSphere_17_75.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_76
+AuxSphere_17_76.Position -417.736 -2515.55 0
+AuxSphere_17_76.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_77
+AuxSphere_17_77.Position -266.548 -2536.03 0
+AuxSphere_17_77.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_78
+AuxSphere_17_78.Position -114.405 -2547.43 0
+AuxSphere_17_78.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_79
+AuxSphere_17_79.Position 38.1465 -2549.71 0
+AuxSphere_17_79.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_80
+AuxSphere_17_80.Position 190.562 -2542.87 0
+AuxSphere_17_80.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_81
+AuxSphere_17_81.Position 342.295 -2526.92 0
+AuxSphere_17_81.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_82
+AuxSphere_17_82.Position 492.803 -2501.93 0
+AuxSphere_17_82.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_83
+AuxSphere_17_83.Position 641.546 -2467.98 0
+AuxSphere_17_83.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_84
+AuxSphere_17_84.Position 787.993 -2425.19 0
+AuxSphere_17_84.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_85
+AuxSphere_17_85.Position 931.62 -2373.73 0
+AuxSphere_17_85.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_86
+AuxSphere_17_86.Position 1071.91 -2313.76 0
+AuxSphere_17_86.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_87
+AuxSphere_17_87.Position 1208.37 -2245.52 0
+AuxSphere_17_87.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_88
+AuxSphere_17_88.Position 1340.49 -2169.23 0
+AuxSphere_17_88.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_89
+AuxSphere_17_89.Position 1467.82 -2085.18 0
+AuxSphere_17_89.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_90
+AuxSphere_17_90.Position 1589.9 -1993.67 0
+AuxSphere_17_90.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_91
+AuxSphere_17_91.Position 1706.28 -1895.02 0
+AuxSphere_17_91.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_92
+AuxSphere_17_92.Position 1816.56 -1789.58 0
+AuxSphere_17_92.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_93
+AuxSphere_17_93.Position 1920.33 -1677.74 0
+AuxSphere_17_93.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_94
+AuxSphere_17_94.Position 2017.23 -1559.9 0
+AuxSphere_17_94.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_95
+AuxSphere_17_95.Position 2106.91 -1436.47 0
+AuxSphere_17_95.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_96
+AuxSphere_17_96.Position 2189.04 -1307.89 0
+AuxSphere_17_96.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_97
+AuxSphere_17_97.Position 2263.34 -1174.64 0
+AuxSphere_17_97.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_98
+AuxSphere_17_98.Position 2329.54 -1037.18 0
+AuxSphere_17_98.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_99
+AuxSphere_17_99.Position 2387.4 -896.006 0
+AuxSphere_17_99.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_100
+AuxSphere_17_100.Position 2436.71 -751.626 0
+AuxSphere_17_100.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_101
+AuxSphere_17_101.Position 2477.3 -604.555 0
+AuxSphere_17_101.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_102
+AuxSphere_17_102.Position 2509.02 -455.32 0
+AuxSphere_17_102.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_103
+AuxSphere_17_103.Position 2531.76 -304.455 0
+AuxSphere_17_103.Mother AuxAlmostTorus_17
+AuxSphere.Copy AuxSphere_17_104
+AuxSphere_17_104.Position 2545.44 -152.501 0
+AuxSphere_17_104.Mother AuxAlmostTorus_17
+Volume AuxAlmostTorus_18
+AuxAlmostTorus_18.Material Air
+AuxAlmostTorus_18.Shape TUBS 2625  2775 75
+AuxAlmostTorus_18.Visibility 0
+AuxAlmostTorus_18.Color 4
+AuxAlmostTorus_18.Position 0 0 0
+AuxAlmostTorus_18.Mother AuxPlane
+AuxSphere.Copy AuxSphere_18_0
+AuxSphere_18_0.Position 2700 0 0
+AuxSphere_18_0.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_1
+AuxSphere_18_1.Position 2695.75 151.39 0
+AuxSphere_18_1.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_2
+AuxSphere_18_2.Position 2683.02 302.304 0
+AuxSphere_18_2.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_3
+AuxSphere_18_3.Position 2661.85 452.267 0
+AuxSphere_18_3.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_4
+AuxSphere_18_4.Position 2632.31 600.807 0
+AuxSphere_18_4.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_5
+AuxSphere_18_5.Position 2594.48 747.456 0
+AuxSphere_18_5.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_6
+AuxSphere_18_6.Position 2548.48 891.753 0
+AuxSphere_18_6.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_7
+AuxSphere_18_7.Position 2494.47 1033.25 0
+AuxSphere_18_7.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_8
+AuxSphere_18_8.Position 2432.62 1171.49 0
+AuxSphere_18_8.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_9
+AuxSphere_18_9.Position 2363.1 1306.04 0
+AuxSphere_18_9.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_10
+AuxSphere_18_10.Position 2286.16 1436.49 0
+AuxSphere_18_10.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_11
+AuxSphere_18_11.Position 2202.01 1562.41 0
+AuxSphere_18_11.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_12
+AuxSphere_18_12.Position 2110.95 1683.42 0
+AuxSphere_18_12.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_13
+AuxSphere_18_13.Position 2013.23 1799.14 0
+AuxSphere_18_13.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_14
+AuxSphere_18_14.Position 1909.19 1909.19 0
+AuxSphere_18_14.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_15
+AuxSphere_18_15.Position 1799.14 2013.23 0
+AuxSphere_18_15.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_16
+AuxSphere_18_16.Position 1683.42 2110.95 0
+AuxSphere_18_16.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_17
+AuxSphere_18_17.Position 1562.41 2202.01 0
+AuxSphere_18_17.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_18
+AuxSphere_18_18.Position 1436.49 2286.16 0
+AuxSphere_18_18.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_19
+AuxSphere_18_19.Position 1306.04 2363.1 0
+AuxSphere_18_19.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_20
+AuxSphere_18_20.Position 1171.49 2432.62 0
+AuxSphere_18_20.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_21
+AuxSphere_18_21.Position 1033.25 2494.47 0
+AuxSphere_18_21.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_22
+AuxSphere_18_22.Position 891.753 2548.48 0
+AuxSphere_18_22.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_23
+AuxSphere_18_23.Position 747.456 2594.48 0
+AuxSphere_18_23.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_24
+AuxSphere_18_24.Position 600.807 2632.31 0
+AuxSphere_18_24.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_25
+AuxSphere_18_25.Position 452.267 2661.85 0
+AuxSphere_18_25.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_26
+AuxSphere_18_26.Position 302.304 2683.02 0
+AuxSphere_18_26.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_27
+AuxSphere_18_27.Position 151.39 2695.75 0
+AuxSphere_18_27.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_28
+AuxSphere_18_28.Position 1.65327e-13 2700 0
+AuxSphere_18_28.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_29
+AuxSphere_18_29.Position -151.39 2695.75 0
+AuxSphere_18_29.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_30
+AuxSphere_18_30.Position -302.304 2683.02 0
+AuxSphere_18_30.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_31
+AuxSphere_18_31.Position -452.267 2661.85 0
+AuxSphere_18_31.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_32
+AuxSphere_18_32.Position -600.807 2632.31 0
+AuxSphere_18_32.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_33
+AuxSphere_18_33.Position -747.456 2594.48 0
+AuxSphere_18_33.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_34
+AuxSphere_18_34.Position -891.753 2548.48 0
+AuxSphere_18_34.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_35
+AuxSphere_18_35.Position -1033.25 2494.47 0
+AuxSphere_18_35.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_36
+AuxSphere_18_36.Position -1171.49 2432.62 0
+AuxSphere_18_36.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_37
+AuxSphere_18_37.Position -1306.04 2363.1 0
+AuxSphere_18_37.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_38
+AuxSphere_18_38.Position -1436.49 2286.16 0
+AuxSphere_18_38.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_39
+AuxSphere_18_39.Position -1562.41 2202.01 0
+AuxSphere_18_39.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_40
+AuxSphere_18_40.Position -1683.42 2110.95 0
+AuxSphere_18_40.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_41
+AuxSphere_18_41.Position -1799.14 2013.23 0
+AuxSphere_18_41.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_42
+AuxSphere_18_42.Position -1909.19 1909.19 0
+AuxSphere_18_42.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_43
+AuxSphere_18_43.Position -2013.23 1799.14 0
+AuxSphere_18_43.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_44
+AuxSphere_18_44.Position -2110.95 1683.42 0
+AuxSphere_18_44.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_45
+AuxSphere_18_45.Position -2202.01 1562.41 0
+AuxSphere_18_45.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_46
+AuxSphere_18_46.Position -2286.16 1436.49 0
+AuxSphere_18_46.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_47
+AuxSphere_18_47.Position -2363.1 1306.04 0
+AuxSphere_18_47.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_48
+AuxSphere_18_48.Position -2432.62 1171.49 0
+AuxSphere_18_48.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_49
+AuxSphere_18_49.Position -2494.47 1033.25 0
+AuxSphere_18_49.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_50
+AuxSphere_18_50.Position -2548.48 891.753 0
+AuxSphere_18_50.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_51
+AuxSphere_18_51.Position -2594.48 747.456 0
+AuxSphere_18_51.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_52
+AuxSphere_18_52.Position -2632.31 600.807 0
+AuxSphere_18_52.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_53
+AuxSphere_18_53.Position -2661.85 452.267 0
+AuxSphere_18_53.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_54
+AuxSphere_18_54.Position -2683.02 302.304 0
+AuxSphere_18_54.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_55
+AuxSphere_18_55.Position -2695.75 151.39 0
+AuxSphere_18_55.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_56
+AuxSphere_18_56.Position -2700 3.30655e-13 0
+AuxSphere_18_56.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_57
+AuxSphere_18_57.Position -2695.75 -151.39 0
+AuxSphere_18_57.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_58
+AuxSphere_18_58.Position -2683.02 -302.304 0
+AuxSphere_18_58.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_59
+AuxSphere_18_59.Position -2661.85 -452.267 0
+AuxSphere_18_59.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_60
+AuxSphere_18_60.Position -2632.31 -600.807 0
+AuxSphere_18_60.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_61
+AuxSphere_18_61.Position -2594.48 -747.456 0
+AuxSphere_18_61.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_62
+AuxSphere_18_62.Position -2548.48 -891.753 0
+AuxSphere_18_62.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_63
+AuxSphere_18_63.Position -2494.47 -1033.25 0
+AuxSphere_18_63.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_64
+AuxSphere_18_64.Position -2432.62 -1171.49 0
+AuxSphere_18_64.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_65
+AuxSphere_18_65.Position -2363.1 -1306.04 0
+AuxSphere_18_65.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_66
+AuxSphere_18_66.Position -2286.16 -1436.49 0
+AuxSphere_18_66.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_67
+AuxSphere_18_67.Position -2202.01 -1562.41 0
+AuxSphere_18_67.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_68
+AuxSphere_18_68.Position -2110.95 -1683.42 0
+AuxSphere_18_68.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_69
+AuxSphere_18_69.Position -2013.23 -1799.14 0
+AuxSphere_18_69.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_70
+AuxSphere_18_70.Position -1909.19 -1909.19 0
+AuxSphere_18_70.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_71
+AuxSphere_18_71.Position -1799.14 -2013.23 0
+AuxSphere_18_71.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_72
+AuxSphere_18_72.Position -1683.42 -2110.95 0
+AuxSphere_18_72.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_73
+AuxSphere_18_73.Position -1562.41 -2202.01 0
+AuxSphere_18_73.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_74
+AuxSphere_18_74.Position -1436.49 -2286.16 0
+AuxSphere_18_74.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_75
+AuxSphere_18_75.Position -1306.04 -2363.1 0
+AuxSphere_18_75.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_76
+AuxSphere_18_76.Position -1171.49 -2432.62 0
+AuxSphere_18_76.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_77
+AuxSphere_18_77.Position -1033.25 -2494.47 0
+AuxSphere_18_77.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_78
+AuxSphere_18_78.Position -891.753 -2548.48 0
+AuxSphere_18_78.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_79
+AuxSphere_18_79.Position -747.456 -2594.48 0
+AuxSphere_18_79.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_80
+AuxSphere_18_80.Position -600.807 -2632.31 0
+AuxSphere_18_80.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_81
+AuxSphere_18_81.Position -452.267 -2661.85 0
+AuxSphere_18_81.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_82
+AuxSphere_18_82.Position -302.304 -2683.02 0
+AuxSphere_18_82.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_83
+AuxSphere_18_83.Position -151.39 -2695.75 0
+AuxSphere_18_83.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_84
+AuxSphere_18_84.Position -4.95982e-13 -2700 0
+AuxSphere_18_84.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_85
+AuxSphere_18_85.Position 151.39 -2695.75 0
+AuxSphere_18_85.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_86
+AuxSphere_18_86.Position 302.304 -2683.02 0
+AuxSphere_18_86.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_87
+AuxSphere_18_87.Position 452.267 -2661.85 0
+AuxSphere_18_87.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_88
+AuxSphere_18_88.Position 600.807 -2632.31 0
+AuxSphere_18_88.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_89
+AuxSphere_18_89.Position 747.456 -2594.48 0
+AuxSphere_18_89.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_90
+AuxSphere_18_90.Position 891.753 -2548.48 0
+AuxSphere_18_90.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_91
+AuxSphere_18_91.Position 1033.25 -2494.47 0
+AuxSphere_18_91.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_92
+AuxSphere_18_92.Position 1171.49 -2432.62 0
+AuxSphere_18_92.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_93
+AuxSphere_18_93.Position 1306.04 -2363.1 0
+AuxSphere_18_93.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_94
+AuxSphere_18_94.Position 1436.49 -2286.16 0
+AuxSphere_18_94.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_95
+AuxSphere_18_95.Position 1562.41 -2202.01 0
+AuxSphere_18_95.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_96
+AuxSphere_18_96.Position 1683.42 -2110.95 0
+AuxSphere_18_96.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_97
+AuxSphere_18_97.Position 1799.14 -2013.23 0
+AuxSphere_18_97.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_98
+AuxSphere_18_98.Position 1909.19 -1909.19 0
+AuxSphere_18_98.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_99
+AuxSphere_18_99.Position 2013.23 -1799.14 0
+AuxSphere_18_99.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_100
+AuxSphere_18_100.Position 2110.95 -1683.42 0
+AuxSphere_18_100.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_101
+AuxSphere_18_101.Position 2202.01 -1562.41 0
+AuxSphere_18_101.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_102
+AuxSphere_18_102.Position 2286.16 -1436.49 0
+AuxSphere_18_102.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_103
+AuxSphere_18_103.Position 2363.1 -1306.04 0
+AuxSphere_18_103.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_104
+AuxSphere_18_104.Position 2432.62 -1171.49 0
+AuxSphere_18_104.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_105
+AuxSphere_18_105.Position 2494.47 -1033.25 0
+AuxSphere_18_105.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_106
+AuxSphere_18_106.Position 2548.48 -891.753 0
+AuxSphere_18_106.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_107
+AuxSphere_18_107.Position 2594.48 -747.456 0
+AuxSphere_18_107.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_108
+AuxSphere_18_108.Position 2632.31 -600.807 0
+AuxSphere_18_108.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_109
+AuxSphere_18_109.Position 2661.85 -452.267 0
+AuxSphere_18_109.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_110
+AuxSphere_18_110.Position 2683.02 -302.304 0
+AuxSphere_18_110.Mother AuxAlmostTorus_18
+AuxSphere.Copy AuxSphere_18_111
+AuxSphere_18_111.Position 2695.75 -151.39 0
+AuxSphere_18_111.Mother AuxAlmostTorus_18
+Volume AuxAlmostTorus_19
+AuxAlmostTorus_19.Material Air
+AuxAlmostTorus_19.Shape TUBS 2775  2925 75
+AuxAlmostTorus_19.Visibility 0
+AuxAlmostTorus_19.Color 4
+AuxAlmostTorus_19.Position 0 0 0
+AuxAlmostTorus_19.Mother AuxPlane
+AuxSphere.Copy AuxSphere_19_0
+AuxSphere_19_0.Position 2850 0 0
+AuxSphere_19_0.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_1
+AuxSphere_19_1.Position 2845.96 151.683 0
+AuxSphere_19_1.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_2
+AuxSphere_19_2.Position 2833.85 302.936 0
+AuxSphere_19_2.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_3
+AuxSphere_19_3.Position 2813.71 453.331 0
+AuxSphere_19_3.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_4
+AuxSphere_19_4.Position 2785.6 602.44 0
+AuxSphere_19_4.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_5
+AuxSphere_19_5.Position 2749.59 749.842 0
+AuxSphere_19_5.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_6
+AuxSphere_19_6.Position 2705.78 895.119 0
+AuxSphere_19_6.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_7
+AuxSphere_19_7.Position 2654.31 1037.86 0
+AuxSphere_19_7.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_8
+AuxSphere_19_8.Position 2595.31 1177.65 0
+AuxSphere_19_8.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_9
+AuxSphere_19_9.Position 2528.95 1314.11 0
+AuxSphere_19_9.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_10
+AuxSphere_19_10.Position 2455.43 1446.85 0
+AuxSphere_19_10.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_11
+AuxSphere_19_11.Position 2374.94 1575.48 0
+AuxSphere_19_11.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_12
+AuxSphere_19_12.Position 2287.73 1699.65 0
+AuxSphere_19_12.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_13
+AuxSphere_19_13.Position 2194.03 1819 0
+AuxSphere_19_13.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_14
+AuxSphere_19_14.Position 2094.11 1933.19 0
+AuxSphere_19_14.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_15
+AuxSphere_19_15.Position 1988.25 2041.9 0
+AuxSphere_19_15.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_16
+AuxSphere_19_16.Position 1876.76 2144.83 0
+AuxSphere_19_16.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_17
+AuxSphere_19_17.Position 1759.95 2241.67 0
+AuxSphere_19_17.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_18
+AuxSphere_19_18.Position 1638.14 2332.16 0
+AuxSphere_19_18.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_19
+AuxSphere_19_19.Position 1511.7 2416.04 0
+AuxSphere_19_19.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_20
+AuxSphere_19_20.Position 1380.97 2493.07 0
+AuxSphere_19_20.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_21
+AuxSphere_19_21.Position 1246.33 2563.04 0
+AuxSphere_19_21.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_22
+AuxSphere_19_22.Position 1108.15 2625.74 0
+AuxSphere_19_22.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_23
+AuxSphere_19_23.Position 966.831 2681 0
+AuxSphere_19_23.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_24
+AuxSphere_19_24.Position 822.772 2728.65 0
+AuxSphere_19_24.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_25
+AuxSphere_19_25.Position 676.381 2768.58 0
+AuxSphere_19_25.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_26
+AuxSphere_19_26.Position 528.073 2800.65 0
+AuxSphere_19_26.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_27
+AuxSphere_19_27.Position 378.268 2824.79 0
+AuxSphere_19_27.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_28
+AuxSphere_19_28.Position 227.39 2840.91 0
+AuxSphere_19_28.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_29
+AuxSphere_19_29.Position 75.8685 2848.99 0
+AuxSphere_19_29.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_30
+AuxSphere_19_30.Position -75.8685 2848.99 0
+AuxSphere_19_30.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_31
+AuxSphere_19_31.Position -227.39 2840.91 0
+AuxSphere_19_31.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_32
+AuxSphere_19_32.Position -378.268 2824.79 0
+AuxSphere_19_32.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_33
+AuxSphere_19_33.Position -528.073 2800.65 0
+AuxSphere_19_33.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_34
+AuxSphere_19_34.Position -676.381 2768.58 0
+AuxSphere_19_34.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_35
+AuxSphere_19_35.Position -822.772 2728.65 0
+AuxSphere_19_35.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_36
+AuxSphere_19_36.Position -966.831 2681 0
+AuxSphere_19_36.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_37
+AuxSphere_19_37.Position -1108.15 2625.74 0
+AuxSphere_19_37.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_38
+AuxSphere_19_38.Position -1246.33 2563.04 0
+AuxSphere_19_38.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_39
+AuxSphere_19_39.Position -1380.97 2493.07 0
+AuxSphere_19_39.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_40
+AuxSphere_19_40.Position -1511.7 2416.04 0
+AuxSphere_19_40.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_41
+AuxSphere_19_41.Position -1638.14 2332.16 0
+AuxSphere_19_41.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_42
+AuxSphere_19_42.Position -1759.95 2241.67 0
+AuxSphere_19_42.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_43
+AuxSphere_19_43.Position -1876.76 2144.83 0
+AuxSphere_19_43.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_44
+AuxSphere_19_44.Position -1988.25 2041.9 0
+AuxSphere_19_44.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_45
+AuxSphere_19_45.Position -2094.11 1933.19 0
+AuxSphere_19_45.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_46
+AuxSphere_19_46.Position -2194.03 1819 0
+AuxSphere_19_46.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_47
+AuxSphere_19_47.Position -2287.73 1699.65 0
+AuxSphere_19_47.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_48
+AuxSphere_19_48.Position -2374.94 1575.48 0
+AuxSphere_19_48.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_49
+AuxSphere_19_49.Position -2455.43 1446.85 0
+AuxSphere_19_49.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_50
+AuxSphere_19_50.Position -2528.95 1314.11 0
+AuxSphere_19_50.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_51
+AuxSphere_19_51.Position -2595.31 1177.65 0
+AuxSphere_19_51.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_52
+AuxSphere_19_52.Position -2654.31 1037.86 0
+AuxSphere_19_52.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_53
+AuxSphere_19_53.Position -2705.78 895.119 0
+AuxSphere_19_53.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_54
+AuxSphere_19_54.Position -2749.59 749.842 0
+AuxSphere_19_54.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_55
+AuxSphere_19_55.Position -2785.6 602.44 0
+AuxSphere_19_55.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_56
+AuxSphere_19_56.Position -2813.71 453.331 0
+AuxSphere_19_56.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_57
+AuxSphere_19_57.Position -2833.85 302.936 0
+AuxSphere_19_57.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_58
+AuxSphere_19_58.Position -2845.96 151.683 0
+AuxSphere_19_58.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_59
+AuxSphere_19_59.Position -2850 3.49024e-13 0
+AuxSphere_19_59.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_60
+AuxSphere_19_60.Position -2845.96 -151.683 0
+AuxSphere_19_60.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_61
+AuxSphere_19_61.Position -2833.85 -302.936 0
+AuxSphere_19_61.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_62
+AuxSphere_19_62.Position -2813.71 -453.331 0
+AuxSphere_19_62.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_63
+AuxSphere_19_63.Position -2785.6 -602.44 0
+AuxSphere_19_63.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_64
+AuxSphere_19_64.Position -2749.59 -749.842 0
+AuxSphere_19_64.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_65
+AuxSphere_19_65.Position -2705.78 -895.119 0
+AuxSphere_19_65.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_66
+AuxSphere_19_66.Position -2654.31 -1037.86 0
+AuxSphere_19_66.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_67
+AuxSphere_19_67.Position -2595.31 -1177.65 0
+AuxSphere_19_67.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_68
+AuxSphere_19_68.Position -2528.95 -1314.11 0
+AuxSphere_19_68.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_69
+AuxSphere_19_69.Position -2455.43 -1446.85 0
+AuxSphere_19_69.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_70
+AuxSphere_19_70.Position -2374.94 -1575.48 0
+AuxSphere_19_70.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_71
+AuxSphere_19_71.Position -2287.73 -1699.65 0
+AuxSphere_19_71.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_72
+AuxSphere_19_72.Position -2194.03 -1819 0
+AuxSphere_19_72.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_73
+AuxSphere_19_73.Position -2094.11 -1933.19 0
+AuxSphere_19_73.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_74
+AuxSphere_19_74.Position -1988.25 -2041.9 0
+AuxSphere_19_74.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_75
+AuxSphere_19_75.Position -1876.76 -2144.83 0
+AuxSphere_19_75.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_76
+AuxSphere_19_76.Position -1759.95 -2241.67 0
+AuxSphere_19_76.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_77
+AuxSphere_19_77.Position -1638.14 -2332.16 0
+AuxSphere_19_77.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_78
+AuxSphere_19_78.Position -1511.7 -2416.04 0
+AuxSphere_19_78.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_79
+AuxSphere_19_79.Position -1380.97 -2493.07 0
+AuxSphere_19_79.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_80
+AuxSphere_19_80.Position -1246.33 -2563.04 0
+AuxSphere_19_80.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_81
+AuxSphere_19_81.Position -1108.15 -2625.74 0
+AuxSphere_19_81.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_82
+AuxSphere_19_82.Position -966.831 -2681 0
+AuxSphere_19_82.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_83
+AuxSphere_19_83.Position -822.772 -2728.65 0
+AuxSphere_19_83.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_84
+AuxSphere_19_84.Position -676.381 -2768.58 0
+AuxSphere_19_84.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_85
+AuxSphere_19_85.Position -528.073 -2800.65 0
+AuxSphere_19_85.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_86
+AuxSphere_19_86.Position -378.268 -2824.79 0
+AuxSphere_19_86.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_87
+AuxSphere_19_87.Position -227.39 -2840.91 0
+AuxSphere_19_87.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_88
+AuxSphere_19_88.Position -75.8685 -2848.99 0
+AuxSphere_19_88.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_89
+AuxSphere_19_89.Position 75.8685 -2848.99 0
+AuxSphere_19_89.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_90
+AuxSphere_19_90.Position 227.39 -2840.91 0
+AuxSphere_19_90.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_91
+AuxSphere_19_91.Position 378.268 -2824.79 0
+AuxSphere_19_91.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_92
+AuxSphere_19_92.Position 528.073 -2800.65 0
+AuxSphere_19_92.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_93
+AuxSphere_19_93.Position 676.381 -2768.58 0
+AuxSphere_19_93.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_94
+AuxSphere_19_94.Position 822.772 -2728.65 0
+AuxSphere_19_94.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_95
+AuxSphere_19_95.Position 966.831 -2681 0
+AuxSphere_19_95.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_96
+AuxSphere_19_96.Position 1108.15 -2625.74 0
+AuxSphere_19_96.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_97
+AuxSphere_19_97.Position 1246.33 -2563.04 0
+AuxSphere_19_97.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_98
+AuxSphere_19_98.Position 1380.97 -2493.07 0
+AuxSphere_19_98.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_99
+AuxSphere_19_99.Position 1511.7 -2416.04 0
+AuxSphere_19_99.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_100
+AuxSphere_19_100.Position 1638.14 -2332.16 0
+AuxSphere_19_100.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_101
+AuxSphere_19_101.Position 1759.95 -2241.67 0
+AuxSphere_19_101.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_102
+AuxSphere_19_102.Position 1876.76 -2144.83 0
+AuxSphere_19_102.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_103
+AuxSphere_19_103.Position 1988.25 -2041.9 0
+AuxSphere_19_103.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_104
+AuxSphere_19_104.Position 2094.11 -1933.19 0
+AuxSphere_19_104.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_105
+AuxSphere_19_105.Position 2194.03 -1819 0
+AuxSphere_19_105.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_106
+AuxSphere_19_106.Position 2287.73 -1699.65 0
+AuxSphere_19_106.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_107
+AuxSphere_19_107.Position 2374.94 -1575.48 0
+AuxSphere_19_107.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_108
+AuxSphere_19_108.Position 2455.43 -1446.85 0
+AuxSphere_19_108.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_109
+AuxSphere_19_109.Position 2528.95 -1314.11 0
+AuxSphere_19_109.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_110
+AuxSphere_19_110.Position 2595.31 -1177.65 0
+AuxSphere_19_110.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_111
+AuxSphere_19_111.Position 2654.31 -1037.86 0
+AuxSphere_19_111.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_112
+AuxSphere_19_112.Position 2705.78 -895.119 0
+AuxSphere_19_112.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_113
+AuxSphere_19_113.Position 2749.59 -749.842 0
+AuxSphere_19_113.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_114
+AuxSphere_19_114.Position 2785.6 -602.44 0
+AuxSphere_19_114.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_115
+AuxSphere_19_115.Position 2813.71 -453.331 0
+AuxSphere_19_115.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_116
+AuxSphere_19_116.Position 2833.85 -302.936 0
+AuxSphere_19_116.Mother AuxAlmostTorus_19
+AuxSphere.Copy AuxSphere_19_117
+AuxSphere_19_117.Position 2845.96 -151.683 0
+AuxSphere_19_117.Mother AuxAlmostTorus_19
+Volume AuxAlmostTorus_20
+AuxAlmostTorus_20.Material Air
+AuxAlmostTorus_20.Shape TUBS 2925  3075 75
+AuxAlmostTorus_20.Visibility 0
+AuxAlmostTorus_20.Color 4
+AuxAlmostTorus_20.Position 0 0 0
+AuxAlmostTorus_20.Mother AuxPlane
+AuxSphere.Copy AuxSphere_20_0
+AuxSphere_20_0.Position 3000 0 0
+AuxSphere_20_0.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_1
+AuxSphere_20_1.Position 2996.15 151.948 0
+AuxSphere_20_1.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_2
+AuxSphere_20_2.Position 2984.61 303.505 0
+AuxSphere_20_2.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_3
+AuxSphere_20_3.Position 2965.4 454.283 0
+AuxSphere_20_3.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_4
+AuxSphere_20_4.Position 2938.59 603.896 0
+AuxSphere_20_4.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_5
+AuxSphere_20_5.Position 2904.23 751.958 0
+AuxSphere_20_5.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_6
+AuxSphere_20_6.Position 2862.42 898.089 0
+AuxSphere_20_6.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_7
+AuxSphere_20_7.Position 2813.26 1041.92 0
+AuxSphere_20_7.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_8
+AuxSphere_20_8.Position 2756.87 1183.07 0
+AuxSphere_20_8.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_9
+AuxSphere_20_9.Position 2693.41 1321.18 0
+AuxSphere_20_9.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_10
+AuxSphere_20_10.Position 2623.04 1455.91 0
+AuxSphere_20_10.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_11
+AuxSphere_20_11.Position 2545.93 1586.89 0
+AuxSphere_20_11.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_12
+AuxSphere_20_12.Position 2462.29 1713.8 0
+AuxSphere_20_12.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_13
+AuxSphere_20_13.Position 2372.33 1836.32 0
+AuxSphere_20_13.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_14
+AuxSphere_20_14.Position 2276.27 1954.12 0
+AuxSphere_20_14.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_15
+AuxSphere_20_15.Position 2174.38 2066.9 0
+AuxSphere_20_15.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_16
+AuxSphere_20_16.Position 2066.9 2174.38 0
+AuxSphere_20_16.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_17
+AuxSphere_20_17.Position 1954.12 2276.27 0
+AuxSphere_20_17.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_18
+AuxSphere_20_18.Position 1836.32 2372.33 0
+AuxSphere_20_18.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_19
+AuxSphere_20_19.Position 1713.8 2462.29 0
+AuxSphere_20_19.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_20
+AuxSphere_20_20.Position 1586.89 2545.93 0
+AuxSphere_20_20.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_21
+AuxSphere_20_21.Position 1455.91 2623.04 0
+AuxSphere_20_21.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_22
+AuxSphere_20_22.Position 1321.18 2693.41 0
+AuxSphere_20_22.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_23
+AuxSphere_20_23.Position 1183.07 2756.87 0
+AuxSphere_20_23.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_24
+AuxSphere_20_24.Position 1041.92 2813.26 0
+AuxSphere_20_24.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_25
+AuxSphere_20_25.Position 898.089 2862.42 0
+AuxSphere_20_25.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_26
+AuxSphere_20_26.Position 751.958 2904.23 0
+AuxSphere_20_26.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_27
+AuxSphere_20_27.Position 603.896 2938.59 0
+AuxSphere_20_27.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_28
+AuxSphere_20_28.Position 454.283 2965.4 0
+AuxSphere_20_28.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_29
+AuxSphere_20_29.Position 303.505 2984.61 0
+AuxSphere_20_29.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_30
+AuxSphere_20_30.Position 151.948 2996.15 0
+AuxSphere_20_30.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_31
+AuxSphere_20_31.Position 1.83697e-13 3000 0
+AuxSphere_20_31.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_32
+AuxSphere_20_32.Position -151.948 2996.15 0
+AuxSphere_20_32.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_33
+AuxSphere_20_33.Position -303.505 2984.61 0
+AuxSphere_20_33.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_34
+AuxSphere_20_34.Position -454.283 2965.4 0
+AuxSphere_20_34.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_35
+AuxSphere_20_35.Position -603.896 2938.59 0
+AuxSphere_20_35.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_36
+AuxSphere_20_36.Position -751.958 2904.23 0
+AuxSphere_20_36.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_37
+AuxSphere_20_37.Position -898.089 2862.42 0
+AuxSphere_20_37.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_38
+AuxSphere_20_38.Position -1041.92 2813.26 0
+AuxSphere_20_38.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_39
+AuxSphere_20_39.Position -1183.07 2756.87 0
+AuxSphere_20_39.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_40
+AuxSphere_20_40.Position -1321.18 2693.41 0
+AuxSphere_20_40.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_41
+AuxSphere_20_41.Position -1455.91 2623.04 0
+AuxSphere_20_41.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_42
+AuxSphere_20_42.Position -1586.89 2545.93 0
+AuxSphere_20_42.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_43
+AuxSphere_20_43.Position -1713.8 2462.29 0
+AuxSphere_20_43.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_44
+AuxSphere_20_44.Position -1836.32 2372.33 0
+AuxSphere_20_44.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_45
+AuxSphere_20_45.Position -1954.12 2276.27 0
+AuxSphere_20_45.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_46
+AuxSphere_20_46.Position -2066.9 2174.38 0
+AuxSphere_20_46.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_47
+AuxSphere_20_47.Position -2174.38 2066.9 0
+AuxSphere_20_47.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_48
+AuxSphere_20_48.Position -2276.27 1954.12 0
+AuxSphere_20_48.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_49
+AuxSphere_20_49.Position -2372.33 1836.32 0
+AuxSphere_20_49.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_50
+AuxSphere_20_50.Position -2462.29 1713.8 0
+AuxSphere_20_50.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_51
+AuxSphere_20_51.Position -2545.93 1586.89 0
+AuxSphere_20_51.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_52
+AuxSphere_20_52.Position -2623.04 1455.91 0
+AuxSphere_20_52.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_53
+AuxSphere_20_53.Position -2693.41 1321.18 0
+AuxSphere_20_53.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_54
+AuxSphere_20_54.Position -2756.87 1183.07 0
+AuxSphere_20_54.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_55
+AuxSphere_20_55.Position -2813.26 1041.92 0
+AuxSphere_20_55.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_56
+AuxSphere_20_56.Position -2862.42 898.089 0
+AuxSphere_20_56.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_57
+AuxSphere_20_57.Position -2904.23 751.958 0
+AuxSphere_20_57.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_58
+AuxSphere_20_58.Position -2938.59 603.896 0
+AuxSphere_20_58.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_59
+AuxSphere_20_59.Position -2965.4 454.283 0
+AuxSphere_20_59.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_60
+AuxSphere_20_60.Position -2984.61 303.505 0
+AuxSphere_20_60.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_61
+AuxSphere_20_61.Position -2996.15 151.948 0
+AuxSphere_20_61.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_62
+AuxSphere_20_62.Position -3000 3.67394e-13 0
+AuxSphere_20_62.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_63
+AuxSphere_20_63.Position -2996.15 -151.948 0
+AuxSphere_20_63.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_64
+AuxSphere_20_64.Position -2984.61 -303.505 0
+AuxSphere_20_64.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_65
+AuxSphere_20_65.Position -2965.4 -454.283 0
+AuxSphere_20_65.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_66
+AuxSphere_20_66.Position -2938.59 -603.896 0
+AuxSphere_20_66.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_67
+AuxSphere_20_67.Position -2904.23 -751.958 0
+AuxSphere_20_67.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_68
+AuxSphere_20_68.Position -2862.42 -898.089 0
+AuxSphere_20_68.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_69
+AuxSphere_20_69.Position -2813.26 -1041.92 0
+AuxSphere_20_69.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_70
+AuxSphere_20_70.Position -2756.87 -1183.07 0
+AuxSphere_20_70.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_71
+AuxSphere_20_71.Position -2693.41 -1321.18 0
+AuxSphere_20_71.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_72
+AuxSphere_20_72.Position -2623.04 -1455.91 0
+AuxSphere_20_72.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_73
+AuxSphere_20_73.Position -2545.93 -1586.89 0
+AuxSphere_20_73.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_74
+AuxSphere_20_74.Position -2462.29 -1713.8 0
+AuxSphere_20_74.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_75
+AuxSphere_20_75.Position -2372.33 -1836.32 0
+AuxSphere_20_75.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_76
+AuxSphere_20_76.Position -2276.27 -1954.12 0
+AuxSphere_20_76.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_77
+AuxSphere_20_77.Position -2174.38 -2066.9 0
+AuxSphere_20_77.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_78
+AuxSphere_20_78.Position -2066.9 -2174.38 0
+AuxSphere_20_78.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_79
+AuxSphere_20_79.Position -1954.12 -2276.27 0
+AuxSphere_20_79.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_80
+AuxSphere_20_80.Position -1836.32 -2372.33 0
+AuxSphere_20_80.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_81
+AuxSphere_20_81.Position -1713.8 -2462.29 0
+AuxSphere_20_81.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_82
+AuxSphere_20_82.Position -1586.89 -2545.93 0
+AuxSphere_20_82.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_83
+AuxSphere_20_83.Position -1455.91 -2623.04 0
+AuxSphere_20_83.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_84
+AuxSphere_20_84.Position -1321.18 -2693.41 0
+AuxSphere_20_84.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_85
+AuxSphere_20_85.Position -1183.07 -2756.87 0
+AuxSphere_20_85.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_86
+AuxSphere_20_86.Position -1041.92 -2813.26 0
+AuxSphere_20_86.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_87
+AuxSphere_20_87.Position -898.089 -2862.42 0
+AuxSphere_20_87.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_88
+AuxSphere_20_88.Position -751.958 -2904.23 0
+AuxSphere_20_88.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_89
+AuxSphere_20_89.Position -603.896 -2938.59 0
+AuxSphere_20_89.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_90
+AuxSphere_20_90.Position -454.283 -2965.4 0
+AuxSphere_20_90.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_91
+AuxSphere_20_91.Position -303.505 -2984.61 0
+AuxSphere_20_91.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_92
+AuxSphere_20_92.Position -151.948 -2996.15 0
+AuxSphere_20_92.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_93
+AuxSphere_20_93.Position -5.51091e-13 -3000 0
+AuxSphere_20_93.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_94
+AuxSphere_20_94.Position 151.948 -2996.15 0
+AuxSphere_20_94.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_95
+AuxSphere_20_95.Position 303.505 -2984.61 0
+AuxSphere_20_95.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_96
+AuxSphere_20_96.Position 454.283 -2965.4 0
+AuxSphere_20_96.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_97
+AuxSphere_20_97.Position 603.896 -2938.59 0
+AuxSphere_20_97.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_98
+AuxSphere_20_98.Position 751.958 -2904.23 0
+AuxSphere_20_98.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_99
+AuxSphere_20_99.Position 898.089 -2862.42 0
+AuxSphere_20_99.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_100
+AuxSphere_20_100.Position 1041.92 -2813.26 0
+AuxSphere_20_100.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_101
+AuxSphere_20_101.Position 1183.07 -2756.87 0
+AuxSphere_20_101.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_102
+AuxSphere_20_102.Position 1321.18 -2693.41 0
+AuxSphere_20_102.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_103
+AuxSphere_20_103.Position 1455.91 -2623.04 0
+AuxSphere_20_103.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_104
+AuxSphere_20_104.Position 1586.89 -2545.93 0
+AuxSphere_20_104.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_105
+AuxSphere_20_105.Position 1713.8 -2462.29 0
+AuxSphere_20_105.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_106
+AuxSphere_20_106.Position 1836.32 -2372.33 0
+AuxSphere_20_106.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_107
+AuxSphere_20_107.Position 1954.12 -2276.27 0
+AuxSphere_20_107.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_108
+AuxSphere_20_108.Position 2066.9 -2174.38 0
+AuxSphere_20_108.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_109
+AuxSphere_20_109.Position 2174.38 -2066.9 0
+AuxSphere_20_109.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_110
+AuxSphere_20_110.Position 2276.27 -1954.12 0
+AuxSphere_20_110.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_111
+AuxSphere_20_111.Position 2372.33 -1836.32 0
+AuxSphere_20_111.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_112
+AuxSphere_20_112.Position 2462.29 -1713.8 0
+AuxSphere_20_112.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_113
+AuxSphere_20_113.Position 2545.93 -1586.89 0
+AuxSphere_20_113.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_114
+AuxSphere_20_114.Position 2623.04 -1455.91 0
+AuxSphere_20_114.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_115
+AuxSphere_20_115.Position 2693.41 -1321.18 0
+AuxSphere_20_115.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_116
+AuxSphere_20_116.Position 2756.87 -1183.07 0
+AuxSphere_20_116.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_117
+AuxSphere_20_117.Position 2813.26 -1041.92 0
+AuxSphere_20_117.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_118
+AuxSphere_20_118.Position 2862.42 -898.089 0
+AuxSphere_20_118.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_119
+AuxSphere_20_119.Position 2904.23 -751.958 0
+AuxSphere_20_119.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_120
+AuxSphere_20_120.Position 2938.59 -603.896 0
+AuxSphere_20_120.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_121
+AuxSphere_20_121.Position 2965.4 -454.283 0
+AuxSphere_20_121.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_122
+AuxSphere_20_122.Position 2984.61 -303.505 0
+AuxSphere_20_122.Mother AuxAlmostTorus_20
+AuxSphere.Copy AuxSphere_20_123
+AuxSphere_20_123.Position 2996.15 -151.948 0
+AuxSphere_20_123.Mother AuxAlmostTorus_20
+AuxPlane.Copy AuxPlane_0
+AuxPlane_0.Position 0 0 750
+AuxPlane_0.Mother World
