@@ -71,7 +71,7 @@ confhelp() {
   echo "--environment-script=[file name of new environment script]"
   echo "    File in which the ROOT path is stored. This is used by the MEGAlib setup script" 
   echo " "
-  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "--debug=[off/no, on/yes]"
   echo "    Default is on."
   echo " "
   echo "--maxthreads=[integer >=1]"
