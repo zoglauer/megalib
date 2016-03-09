@@ -48,7 +48,7 @@ confhelp() {
   echo "--patch=[yes or no (default no)]"
   echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
   echo " "
-  echo "--debug=[off/no, on/yes, strong/hard]"
+  echo "--debug=[off/no, on/yes]"
   echo "    Debugging options for ROOT, Geant4 & MEGAlib (Default is on for MEGAlib, but off for ROOT and Geant4)"
   echo " "
   echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
