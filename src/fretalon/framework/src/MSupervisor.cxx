@@ -860,23 +860,24 @@ bool MSupervisor::Analyze()
     } // UI updates and spwan checks
     
     
-    // If the last module is more than X events behind the first and we have reached the maximum amount of instances, we slow everything down...
+    // If any module is behind more than MaxBehind the one before and has reached its maximum number of
+    // instances, we slow the first modules down
+    int MaxBehind = 200000;
     if (m_UseMultiThreading == true) {
-      long Behind = 0;
-      for (unsigned int s = 0; s < Modules.back().size(); ++s) {
-        Behind -= Modules.back()[s]->GetNumberOfAnalyzedEvents();
-      }
-      for (unsigned int s = 0; s < Modules.front().size(); ++s) {
-        Behind += Modules.front()[s]->GetNumberOfAnalyzedEvents();
-      }
-      bool ReachedMax = false;
-      for (unsigned int m = 0; m < Modules.size(); ++m) {
-        if (Modules[m].size() == MaxInstances) {
-          ReachedMax = true;
-          break;
+      bool Pause = false;
+      for (unsigned int m = 0; m < Modules.size()-1; ++m) {
+        long Behind = 0;
+        for (unsigned int s = 0; s < Modules[m+1].size(); ++s) {
+          Behind -= Modules[m+1][s]->GetNumberOfAnalyzedEvents();
+        }
+        for (unsigned int s = 0; s < Modules[m].size(); ++s) {
+          Behind += Modules[m][s]->GetNumberOfAnalyzedEvents();
+        }
+        if ((Modules[m+1].size() == MaxInstances || Modules[m+1][0]->AllowsMultipleInstances() == false) && Behind > MaxBehind) {
+          Pause = true;
         }
       }
-      if (Behind > 200000 && ReachedMax == true) {
+      if (Pause == true) {
         for (unsigned int s = 0; s < Modules.front().size(); ++s) {
           if (Modules.front()[s]->AllowPausing() == true) {
             Modules.front()[s]->Pause(true);
@@ -888,7 +889,7 @@ bool MSupervisor::Analyze()
             Modules.front()[s]->Pause(false);
           }
         }
-      }
+      }      
     }
     
     
