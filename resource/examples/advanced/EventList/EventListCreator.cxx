@@ -315,7 +315,7 @@ int main(int argc, char** argv)
   // signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
-  MGlobal::Initialize("Standalone", "a standalone example program");
+  MGlobal::Initialize();
 
   TApplication EventListCreatorApp("EventListCreatorApp", 0, 0);
 

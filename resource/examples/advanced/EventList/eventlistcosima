@@ -11,16 +11,19 @@ ISOTROPIC=""
 VERBOSITY=""
 SEED=""
 PARALLEL=""
+OUTPUT=""
 
 # Overwrite default options with user options:
 for ((i=0; i < ${#CMD[*]}; i++)); do
-  echo "${CMD[i]}"
   if [[ ${CMD[i]} == -r ]]; then
     RANDOMPOL="-r"
   elif [[ ${CMD[i]} == -i ]]; then
     ISOTROPIC="-i"
   elif [[ ${CMD[i]} == -v ]]; then
     VERBOSITY="-v ${CMD[i+1]}"
+    i=$(( i+1 ))
+  elif [[ ${CMD[i]} == -o ]]; then
+    OUTPUT="${CMD[i+1]}"
     i=$(( i+1 ))
   elif [[ ${CMD[i]} == -s ]]; then
     SEED="-s ${CMD[i+1]}"
@@ -41,19 +44,23 @@ done
 
 EVENTLIST="EventList_${ID}.dat"
 EVENTSOURCE="EventList_${ID}.source"
-EVENTSIM="EventList"
-if [[ ${ISOTROPIC} == -i ]]; then
-  EVENTSIM+="_iso"
-else
-  EVENTSIM+="_beam"
-fi
-if [[ ${RANDOMPOL} == -r ]]; then
-  EVENTSIM+="_randompol"
-else
-  EVENTSIM+="_samepol"
+if [[ $OUTPOUT == "" ]]; then
+  EVENTSIM="EventList"
+  if [[ ${ISOTROPIC} == -i ]]; then
+    EVENTSIM+="_iso"
+  else
+    EVENTSIM+="_beam"
+  fi
+  if [[ ${RANDOMPOL} == -r ]]; then
+    EVENTSIM+="_randompol"
+  else
+    EVENTSIM+="_samepol"
+  fi
+else 
+  EVENTSIM=${OUTPUT}
 fi
 
-EventListCreator -o ${EVENTLIST} ${EVENTS}
+EventListCreator -o ${EVENTLIST} ${EVENTS} ${RANDOMPOL} ${ISOTROPIC}
 
 cat EventList_Base.source >> ${EVENTSOURCE}
 echo "SpaceSim.FileName    ${EVENTSIM}"  >> ${EVENTSOURCE}

@@ -33,6 +33,7 @@ CMD=
 PRG1=EventListCreator
 PRG2=EventListSimCleaner
 PRG3=EventListAnalyzer
+PRG4=EventListFirstLook
 
 # Basic directories
 TOP = $(MEGALIB)
@@ -46,6 +47,7 @@ CT  = $(TOP)/cint
 MPRG1=$(subst .cxx,,$(PRG1))
 MPRG2=$(subst .cxx,,$(PRG2))
 MPRG3=$(subst .cxx,,$(PRG3))
+MPRG4=$(subst .cxx,,$(PRG4))
 
 MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
 
@@ -63,16 +65,20 @@ CXXFLAGS += -I$(IN)
 # Commands:
 
 
-all: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3)
+all: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3) $(BN)/$(MPRG4)
 
 
-only: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3)
+only: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3) $(BN)/$(MPRG4)
 
 clean:
 	rm -f $(LB)/$(MPRG1).o
 	rm -f $(BN)/$(MPRG1)
 	rm -f $(LB)/$(MPRG2).o
 	rm -f $(BN)/$(MPRG2)
+	rm -f $(LB)/$(MPRG3).o
+	rm -f $(BN)/$(MPRG3)
+	rm -f $(LB)/$(MPRG4).o
+	rm -f $(BN)/$(MPRG4)
 
 
 #-------------------------------------------------------------------------------
@@ -103,6 +109,15 @@ $(BN)/$(MPRG3): $(LB)/$(MPRG3).o
 $(LB)/$(MPRG3).o: $(MPRG3).cxx
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 	@echo "Program $(MPRG3) successfully compiled..."
+
+	
+$(BN)/$(MPRG4): $(LB)/$(MPRG4).o
+	@$(LD) $(LDFLAGS) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
+	@echo "Program $(MPRG4) successfully linked... and starting..."
+
+$(LB)/$(MPRG4).o: $(MPRG4).cxx
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@echo "Program $(MPRG4) successfully compiled..."
 
 #
 #-------------------------------------------------------------------------------

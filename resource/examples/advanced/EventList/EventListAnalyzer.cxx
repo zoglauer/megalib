@@ -62,8 +62,10 @@ private:
   //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
 
-  //! Simulation file name
-  MString m_FileName;
+  //! Simulation file name - polarized
+  MString m_PolarizedFileName;
+  //! Simulation file name - unpolarized
+  MString m_UnpolarizedFileName;
   //! Geometry file name
   MString m_GeometryFileName;
 };
@@ -99,7 +101,8 @@ bool EventListAnalyzer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: EventListAnalyzer <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -f:   tra file name"<<endl;
+  Usage<<"         -p:   tra file name - polarized data"<<endl;
+  Usage<<"         -u:   tra file name - unpolarized data (optional)"<<endl;
   Usage<<"         -g:   geometry file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -138,9 +141,12 @@ bool EventListAnalyzer::ParseCommandLine(int argc, char** argv)
     //}
 
     // Then fulfill the options:
-    if (Option == "-f") {
-      m_FileName = argv[++i];
-      cout<<"Accepting file name: "<<m_FileName<<endl;
+    if (Option == "-p") {
+      m_PolarizedFileName = argv[++i];
+      cout<<"Accepting file name: "<<m_PolarizedFileName<<endl;
+    } else if (Option == "-u") {
+      m_UnpolarizedFileName = argv[++i];
+      cout<<"Accepting file name: "<<m_UnpolarizedFileName<<endl;
     } else if (Option == "-g") {
       m_GeometryFileName = argv[++i];
       cout<<"Accepting file name: "<<m_GeometryFileName<<endl;
@@ -151,7 +157,7 @@ bool EventListAnalyzer::ParseCommandLine(int argc, char** argv)
     }
   }
 
-  if (m_FileName == "") {
+  if (m_PolarizedFileName == "") {
     cout<<"Error: Need a tracked events file name!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
@@ -163,8 +169,8 @@ bool EventListAnalyzer::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (m_FileName.EndsWith(".tra") == false) {
-    cout<<"Error: Need a tracked events file name, not a "<<m_FileName<<" file "<<endl;
+  if (m_PolarizedFileName.EndsWith(".tra") == false) {
+    cout<<"Error: Need a tracked events file name, not a "<<m_PolarizedFileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -187,20 +193,21 @@ bool EventListAnalyzer::Analyze()
     return false;
   }  
 
-  MFileEventsTra* Reader = new MFileEventsTra();
-  if (Reader->Open(m_FileName) == false) {
-    mout<<"Unable to open file "<<m_FileName<<". Aborting!"<<endl;
+  MFileEventsTra* PolarizedReader = new MFileEventsTra();
+  if (PolarizedReader->Open(m_PolarizedFileName) == false) {
+    mout<<"Unable to open file "<<m_PolarizedFileName<<". Aborting!"<<endl;
   }
-  Reader->ShowProgress();
+  PolarizedReader->ShowProgress();
 
-  TH1D* Hist = new TH1D("Relative scatter direction", "Relative scatter direction", 9, 0, 180);
-  Hist->SetXTitle("Angle [deg]");
-  Hist->SetYTitle("cts");
-  Hist->SetMinimum(0);
+  int NBins = 7;
+  TH1D* HistPol = new TH1D("Relative scatter direction - polarized", "Relative scatter direction - polarized", NBins, 0, 180);
+  HistPol->SetXTitle("Angle [deg]");
+  HistPol->SetYTitle("cts");
+  HistPol->SetMinimum(0);
 
   MPhysicalEvent* Event;
   MComptonEvent* ComptonEvent;
-  while ((Event = Reader->GetNextEvent()) != 0) { 
+  while ((Event = PolarizedReader->GetNextEvent()) != 0) { 
     // Hitting Ctrl-C raises this flag
     if (m_Interrupt == true) return false;
     
@@ -225,33 +232,91 @@ bool EventListAnalyzer::Analyze()
           MVector LowerScatterDir = (ComptonEvent->C2() - ComptonEvent->C1());
           LowerScatterDir[2] = 0;
           
-          Hist->Fill(UpperScatterDir.Angle(LowerScatterDir)*c_Deg);
+          HistPol->Fill(UpperScatterDir.Angle(LowerScatterDir)*c_Deg);
           
-          /*
-          // The origin of the gammas is at 0, 0, 0, so the direction of the inital gamma ray is:
-          MVector LowerInitialDir = ComptonEvent->C1();
-         
-          // The angle we are interested in is the angle between the lower scattered gamma ray and 
-          // the plane spanned by the direction of the initial lower gamma ray the scatter direction 
-          // of the upper gamma ray
-          
-          double Angle = (ComptonEvent->C2() - ComptonEvent->C1()).Angle(LowerInitialDir.Cross(UpperScatterDir));
-          Hist->Fill(Angle*c_Deg);
-          */
         }
       }
     }
 
     delete Event;
   }
-  
+  // Some cleanup
+  delete PolarizedReader;
+ 
   TCanvas* Canvas = new TCanvas();
   Canvas->cd();
-  Hist->Draw();
+  HistPol->DrawCopy();
   Canvas->Update();
 
-  // Some cleanup
-  delete Reader;
+
+  if (m_UnpolarizedFileName != "") {
+    TH1D* HistUnpol = new TH1D("Relative scatter direction - unpolarized", "Relative scatter direction - unpolarized", NBins, 0, 180);
+    HistUnpol->SetXTitle("Angle [deg]");
+    HistUnpol->SetYTitle("cts");
+    HistUnpol->SetMinimum(0);
+
+    MFileEventsTra* UnpolarizedReader = new MFileEventsTra();
+    if (UnpolarizedReader->Open(m_UnpolarizedFileName) == false) {
+      mout<<"Unable to open file "<<m_UnpolarizedFileName<<". Aborting!"<<endl;
+    }
+    UnpolarizedReader->ShowProgress();
+
+    MPhysicalEvent* Event;
+    MComptonEvent* ComptonEvent;
+    while ((Event = UnpolarizedReader->GetNextEvent()) != 0) { 
+      // Hitting Ctrl-C raises this flag
+      if (m_Interrupt == true) return false;
+    
+      if (Event->Ei() < 500) {
+        delete Event;
+        continue;
+      }
+    
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+
+        for (unsigned int c = 0; c < ComptonEvent->GetNComments(); ++c) {
+          if (ComptonEvent->GetComment(c).BeginsWith("Absorber") == true) {
+            // ToDo: we should be able to do some sanity checks if we got the correct first hit 
+            //       since the possible positions are restricted by the start position, and the scatterer 
+          
+            // Scatter direction of the upper gamma ray
+            MTokenizer T;
+            T.Analyze(ComptonEvent->GetComment(c));
+            MVector UpperScatterDir(T.GetTokenAtAsDouble(1), T.GetTokenAtAsDouble(2), 0);
+          
+            MVector LowerScatterDir = (ComptonEvent->C2() - ComptonEvent->C1());
+            LowerScatterDir[2] = 0;
+          
+            HistUnpol->Fill(UpperScatterDir.Angle(LowerScatterDir)*c_Deg);
+          
+          }
+        }
+      }
+
+      delete Event;
+    }
+    delete UnpolarizedReader;
+  
+    TH1D* HistCorrected = new TH1D("Corrected", "Corrected", NBins, 0, 180);
+    HistCorrected->SetXTitle("Angle [deg]");
+    HistCorrected->SetYTitle("cts - corrected");
+
+    HistPol->Scale(1.0/HistPol->Integral());
+    HistUnpol->Scale(1.0/HistUnpol->Integral());
+
+    for (int b = 1; b <= NBins; ++b) {
+      HistCorrected->SetBinContent(b, HistPol->GetBinContent(b)/HistUnpol->GetBinContent(b));
+    }
+    HistCorrected->Scale(1.0/HistCorrected->GetMaximum());
+    HistCorrected->SetMinimum(0);
+
+    TCanvas* CanvasCorr = new TCanvas();
+    CanvasCorr->cd();
+    HistCorrected->DrawCopy();
+    CanvasCorr->Update();
+  }
+
   delete Geometry;
 
   
