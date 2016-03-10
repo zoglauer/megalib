@@ -1,24 +1,5 @@
-# Example run for Cosima
-# A Crab-like source in the zenith on cosmic and albedo photon background
+Include EventList_Base.source
 
-
-Version         1
-Geometry        EventListGeometryCosima.geo.setup
-
-# Physics list
-PhysicsListEM                        LivermorePol
-
-# Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
-
-
-Run SpaceSim
-SpaceSim.FileName         EventList_RandomPol
-SpaceSim.NEvents          10000000
-
-SpaceSim.Source MySource
-MySource.EventList EventList_356keV_RandomPol.dat
+SpaceSim.FileName    EventList_RandomPol
+MySource.EventList   EventList_511keV_RandomPol.dat
 

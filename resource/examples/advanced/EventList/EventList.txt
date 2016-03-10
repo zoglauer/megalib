@@ -2,8 +2,8 @@ Event list example
 
 This example shows how to
 (1) Use a cosima event list
-(2) Funnel information via comments through the pipeline
-(3) Set a polarization experiment
+(2) Funnel additional information via comments through the pipeline
+(3) Set up a polarization experiment
 
 To run the example, do the following:
 
@@ -11,14 +11,12 @@ To run the example, do the following:
 make
 
 (2) Create the event list
-root
-.L EventListCreator.C++
-EventListCreator(true); // if the polarization of both gammas should be identical
-EventListCreator(false); // if the polarization of both gammas should be different
-.q
+EventListCreator -o EventList_511keV_SamePol.dat -e 10000 
+EventListCreator -o EventList_511keV_RandomPol.dat -e 10000 -r
 
 (3) Run the simulation
 cosima EventList_SamePol.source
+cosima EventList_RandomPol.source
 
 (4) Convert the sim file
     This removes this hits from the two scintillators but kepps the interaction info in the absorber

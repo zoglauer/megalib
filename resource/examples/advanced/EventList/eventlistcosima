@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# This script creates a new event list and starts cosima with it so you can use it with mcosima
+ 
+# Store command line as array
+CMD=( "$@" )
+
+EVENTS=""
+RANDOMPOL=""
+ISOTROPIC=""
+VERBOSITY=""
+SEED=""
+PARALLEL=""
+
+# Overwrite default options with user options:
+for ((i=0; i < ${#CMD[*]}; i++)); do
+  echo "${CMD[i]}"
+  if [[ ${CMD[i]} == -r ]]; then
+    RANDOMPOL="-r"
+  elif [[ ${CMD[i]} == -i ]]; then
+    ISOTROPIC="-i"
+  elif [[ ${CMD[i]} == -v ]]; then
+    VERBOSITY="-v ${CMD[i+1]}"
+    i=$(( i+1 ))
+  elif [[ ${CMD[i]} == -s ]]; then
+    SEED="-s ${CMD[i+1]}"
+    i=$(( i+1 ))
+  elif [[ ${CMD[i]} == -p ]]; then
+    PARALLEL="-p ${CMD[i+1]}"
+    i=$(( i+1 ))
+  elif [[ ${CMD[i]} == -e ]]; then
+    EVENTS="-e ${CMD[i+1]}"
+    i=$(( i+1 ))
+  fi
+done
+
+ID=""
+for i in {1..10}; do 
+  ID+=$(( RANDOM%10 ))
+done
+
+EVENTLIST="EventList_${ID}.dat"
+EVENTSOURCE="EventList_${ID}.source"
+EVENTSIM="EventList"
+if [[ ${ISOTROPIC} == -i ]]; then
+  EVENTSIM+="_iso"
+else
+  EVENTSIM+="_beam"
+fi
+if [[ ${RANDOMPOL} == -r ]]; then
+  EVENTSIM+="_randompol"
+else
+  EVENTSIM+="_samepol"
+fi
+
+EventListCreator -o ${EVENTLIST} ${EVENTS}
+
+cat EventList_Base.source >> ${EVENTSOURCE}
+echo "SpaceSim.FileName    ${EVENTSIM}"  >> ${EVENTSOURCE}
+echo "MySource.EventList   ${EVENTLIST}"  >> ${EVENTSOURCE}
+
+cosima ${PARALLEL} ${VERBOSITY} ${SEED} ${EVENTSOURCE}
+
+rm ${EVENTLIST}
+rm ${EVENTSOURCE}
+
+

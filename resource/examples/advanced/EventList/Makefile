@@ -30,8 +30,9 @@
 
 SHELL=/bin/sh
 CMD=
-PRG1=EventListSimCleaner
-PRG2=EventListAnalyzer
+PRG1=EventListCreator
+PRG2=EventListSimCleaner
+PRG3=EventListAnalyzer
 
 # Basic directories
 TOP = $(MEGALIB)
@@ -44,6 +45,7 @@ CT  = $(TOP)/cint
 
 MPRG1=$(subst .cxx,,$(PRG1))
 MPRG2=$(subst .cxx,,$(PRG2))
+MPRG3=$(subst .cxx,,$(PRG3))
 
 MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
 
@@ -61,10 +63,10 @@ CXXFLAGS += -I$(IN)
 # Commands:
 
 
-all: $(BN)/$(MPRG1) $(BN)/$(MPRG2)
+all: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3)
 
 
-only: $(BN)/$(MPRG1) $(BN)/$(MPRG2)
+only: $(BN)/$(MPRG1) $(BN)/$(MPRG2) $(BN)/$(MPRG3)
 
 clean:
 	rm -f $(LB)/$(MPRG1).o
@@ -80,19 +82,27 @@ $(BN)/$(MPRG1): $(LB)/$(MPRG1).o
 	@$(LD) $(LDFLAGS) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
 	@echo "Program $(MPRG1) successfully linked... and starting..."
 
-
 $(LB)/$(MPRG1).o: $(MPRG1).cxx
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 	@echo "Program $(MPRG1) successfully compiled..."
 
+	
 $(BN)/$(MPRG2): $(LB)/$(MPRG2).o
 	@$(LD) $(LDFLAGS) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
 	@echo "Program $(MPRG2) successfully linked... and starting..."
 
-
 $(LB)/$(MPRG2).o: $(MPRG2).cxx
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 	@echo "Program $(MPRG2) successfully compiled..."
+
+	
+$(BN)/$(MPRG3): $(LB)/$(MPRG3).o
+	@$(LD) $(LDFLAGS) $< $(MLIBS) $(GLIBS) $(LIBS) -o $@
+	@echo "Program $(MPRG3) successfully linked... and starting..."
+
+$(LB)/$(MPRG3).o: $(MPRG3).cxx
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@echo "Program $(MPRG3) successfully compiled..."
 
 #
 #-------------------------------------------------------------------------------

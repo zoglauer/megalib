@@ -1,0 +1,26 @@
+# Base file
+
+# Missing is:
+# SpaceSim.FileName    EventList_RandomPol
+# MySource.EventList   EventList_511keV_RandomPol.dat
+
+
+Version         1
+Geometry        EventListGeometryCosima.geo.setup
+
+# Physics list
+PhysicsListEM                        LivermorePol
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+Run SpaceSim
+SpaceSim.NEvents          10000000
+
+SpaceSim.Source MySource
+
+

@@ -38,6 +38,7 @@ Max=${Threads}
 Nice=0;
 Wait="no"
 Zip="no"
+ExecuteString="cosima"
 Executable="cosima"
 
 # Check if executable exists
@@ -109,7 +110,8 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     Found=1;
-    Executable=$1;
+    ExecuteString=$1
+    Executable=`echo $1 | awk -F" " '{ print $1 }'`
     echo "Using executable ${Executable}";
     ;;
   -n)
@@ -247,14 +249,14 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   mdelay ${Executable} ${Max}
   echo "Launching number ${i}/${Threads}"
   Random=`od -vAn -N4 -tu4 < /dev/urandom`
-  Cmd="nice -n ${Nice} ${Executable} -v 0 -s ${Random} -p ${ThreadsID}"
+  Cmd="nice -n ${Nice} ${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID}"
   if [[ "${Zip}" == "yes" ]]; then
     Cmd="${Cmd} -z"
   fi
   Cmd="${Cmd} ${Source}"
-  #echo "Starting ${Cmd}"
-  #${Cmd} >> Dump.txt
-  nohup ${Cmd} > /dev/null &
+  echo "Starting ${Cmd}"
+  ${Cmd} >> Dump.txt
+  #nohup ${Cmd} > /dev/null &
   Pids[${#Pids[*]}]=$!
   #Pids="$Pids $! "
   if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
