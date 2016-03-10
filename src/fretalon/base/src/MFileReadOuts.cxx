@@ -157,11 +157,19 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   }
   MFile::Rewind();
   
-  // Create the read-out elements and data to fill
-  if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
-    cout<<"No read-out element of type "<<ReadOutElementFormat<<" is registered!"<<endl;
+  if (ReadOutElementFormat == "" || ReadOutDataFormat == "") {
+    cout<<"No read-out element type / data format found in the file!"<<endl;
+    Close();
     return false;
   }
+  
+  // Create the read-out elements and data to fill
+  if ((m_ROE = MFretalonRegistry::Instance().GetReadOutElement(ReadOutElementFormat)) == 0) {
+    cout<<"No read-out element of type \""<<ReadOutElementFormat<<"\" is registered!"<<endl;
+    Close();
+    return false;
+  }
+  
   // Assemble the ROD
   vector<MString> RODNames;
   int Minus = ReadOutDataFormat.Tokenize("-").size();
@@ -194,7 +202,8 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   // Now do the sanity checks:
   if (m_FileType != "dat" && m_FileType != "roa") {
     mout<<"Error while opening file "<<m_FileName<<": "<<endl;
-    mout<<"The file type must be \"dat\" or \"roa\" (case is ignored) - you have \""<<m_FileType<<"\""<<endl;              
+    mout<<"The file type must be \"dat\" or \"roa\" (case is ignored) - you have \""<<m_FileType<<"\""<<endl; 
+    Close();
     Error = true;
     return false;
   }
@@ -237,13 +246,17 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
 {
   // Return next single event from file... or 0 if there are no more.
   
+  if (IsOpen() == false) {
+    return false; 
+  }
+  
   ROS.Clear();
   
   bool Error = false;
   MString Line;
   
   if (UpdateProgress(50) == false) {
-    return 0;
+    return false;
   }
 
   // If we have an include file, we get the event from it!
@@ -305,7 +318,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
       }
     } else if (Line[0] == 'U' && Line[1] == 'H') {
       T.AnalyzeFast(Line);
-        
+      
       m_ROE->Parse(T, 1);
       m_ROD->Parse(T, 1 + m_ROE->GetNumberOfParsableElements());
       
