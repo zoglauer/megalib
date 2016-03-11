@@ -22,7 +22,7 @@ if [ $# -ne 2 ]; then
     exit -1;
 fi
 
-ProgramName=$1
+ProgramName=`basename $1`
 MaxRunningInstances=$2
 RunningInstances=65536
 
