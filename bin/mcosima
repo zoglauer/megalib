@@ -254,9 +254,9 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
     Cmd="${Cmd} -z"
   fi
   Cmd="${Cmd} ${Source}"
-  echo "Starting ${Cmd}"
-  ${Cmd} >> Dump.txt
-  #nohup ${Cmd} > /dev/null &
+  #echo "Starting ${Cmd}"
+  #${Cmd} >> Dump.txt
+  nohup ${Cmd} > /dev/null &
   Pids[${#Pids[*]}]=$!
   #Pids="$Pids $! "
   if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
