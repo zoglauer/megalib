@@ -29,6 +29,7 @@
 // Standard libs:
 #include <iostream>
 #include <exception>
+#include <new>
 using namespace std;
 
 // ROOT libs:
@@ -50,7 +51,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
   // Let's try to catch all exceptions...
-  //try {
+  try {
     // Initialize global MEGAlib variables, especially mgui, etc.
     MGlobal::Initialize();
 
@@ -62,7 +63,6 @@ int main(int argc, char** argv)
     } else {
       AppMelinator->Run();
     }
-    /*
   } catch (exception& e) {
     cout<<endl;
     cout<<"Unfortunately an unrecoverable error occured either in MEGAlib or ROOT..."<<endl; 
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     cout<<endl;
     return 1;
   }
-  */
+  
   return 0;
 }
 

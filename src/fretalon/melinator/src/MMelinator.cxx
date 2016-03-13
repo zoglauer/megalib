@@ -44,6 +44,7 @@ using namespace std;
 #include "TGraph.h"
 #include "TGaxis.h"
 #include "TGraphErrors.h"
+#include "TSystem.h"
 
 // MEGAlib libs:
 #include "MFile.h"
@@ -372,81 +373,94 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
   
   m_ThreadIsInitialized[ThreadID] = true;
   
-  while (true) {
-    TThread::Lock();
-    unsigned int ID = m_ThreadNextItem;
-    ++m_ThreadNextItem;
-    TThread::UnLock();
-    
-    if (ID >= m_CalibrationFileNames.size()) break;
-    
-    MFileReadOuts Reader;
-    if (Reader.Open(m_CalibrationFileNames[ID]) == false) {
-      return false;
-    }
-    
-    unsigned int GroupID = m_GroupIDs[ID];
-    
-    // Cannot show progress this way 
-    // Reader.ShowProgress();
-    // Reader.SetProgressTitle("Melinator: Loading", MString("Loading ") + MFile::GetBaseName(m_CalibrationFileNames[ID]) + MString(" ..."));
-
-    MReadOutStore Store;
-    Store.AddReadOutDataGroup("Dummy");
-    
-    MReadOutSequence Sequence;
-    long Counter = 0;
-    long NewCounter = 0;
-    while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
-      // Since we do energy calibration, exclude everything with more than the number of good hits
-      if (Sequence.HasIdenticalReadOutElementTypes() == true) {
-        if (Sequence.GetNumberOfReadOuts() > 0 && 
+  // We are likely to run out of memory so catch some bad_alloc exceptions
+  try {
+    while (true) {
+      TThread::Lock();
+      unsigned int ID = m_ThreadNextItem;
+      ++m_ThreadNextItem;
+      TThread::UnLock();
+      
+      if (ID >= m_CalibrationFileNames.size()) break;
+      
+      MFileReadOuts Reader;
+      if (Reader.Open(m_CalibrationFileNames[ID]) == false) {
+        return false;
+      }
+      
+      unsigned int GroupID = m_GroupIDs[ID];
+      
+      // Cannot show progress this way 
+      // Reader.ShowProgress();
+      // Reader.SetProgressTitle("Melinator: Loading", MString("Loading ") + MFile::GetBaseName(m_CalibrationFileNames[ID]) + MString(" ..."));
+      
+      MReadOutStore Store;
+      Store.AddReadOutDataGroup("Dummy");
+      
+      MReadOutSequence Sequence;
+      long Counter = 0;
+      long NewCounter = 0;
+      while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
+        // Since we do energy calibration, exclude everything with more than the number of good hits
+        if (Sequence.HasIdenticalReadOutElementTypes() == true) {
+          if (Sequence.GetNumberOfReadOuts() > 0 && 
             Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
-          continue;
-        }
-      }
-      
-      Store.Add(Sequence, 0);
-        
-      if (m_ThreadShouldTerminate[ThreadID] == true) break;
-
-      ++NewCounter;
-      if (++Counter%10000 == 0) {
-        double Pos = Reader.GetFilePosition();
-        if (Pos > 0) {
-          m_CalibrationFileLoadingProgress[ID] = Pos; 
+            continue;
+            }
         }
         
-        // Check that we still have enough memory left:
-        //cout<<"Check: "<<sizeof(Sequence)*NewCounter<<":"<<160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections()<<":"<<m_NLinesToConsider<<":"<<m_Store.GetNumberOfReadOutCollections()<<endl;
-        unsigned long Reserve = 5000000 + sizeof(Sequence)*NewCounter + 160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections();
-        char* Memory = new(nothrow) char[Reserve];
-        if (Memory == 0) {
-          if (g_Verbosity >= c_Warning) cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
-          break;
-        } else {
-          delete [] Memory;
-        }
-      
-        //cout<<GroupID<<": "<<Counter<<endl;
-        if (Counter == 10000 || Counter % 100000 == 0) { 
-          if (TThread::TryLock() == 0) {
-            m_Store.Move(Store, GroupID);
-            TThread::UnLock();
-            NewCounter = 0;
+        Store.Add(Sequence, 0);
+        
+        if (m_ThreadShouldTerminate[ThreadID] == true) break;
+        
+        ++NewCounter;
+        if (++Counter%10000 == 0) {
+          double Pos = Reader.GetFilePosition();
+          if (Pos > 0) {
+            m_CalibrationFileLoadingProgress[ID] = Pos; 
           }
-       }
+          
+          
+          // Check that we still have enough memory left:
+          //cout<<"Check: "<<sizeof(Sequence)*NewCounter<<":"<<160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections()<<":"<<m_NLinesToConsider<<":"<<m_Store.GetNumberOfReadOutCollections()<<endl;
+          unsigned long Reserve = 5000000 + sizeof(Sequence)*NewCounter + 160000*m_NLinesToConsider*m_Store.GetNumberOfReadOutCollections();
+          char* Memory = new(nothrow) char[Reserve];
+          if (Memory == 0) {
+            if (g_Verbosity >= c_Warning) cout<<"Cannot reserve "<<sizeof(char)*Reserve<<" bytes --> Close to out of memory... Stopping to read more events..."<<endl;
+            break;
+          } else {
+            delete [] Memory;
+          }
+        
+          
+          //cout<<GroupID<<": "<<Counter<<endl;
+          if (Counter == 10000 || Counter % 100000 == 0) { 
+            if (TThread::TryLock() == 0) {
+              m_Store.Move(Store, GroupID);
+              TThread::UnLock();
+              NewCounter = 0;
+            }
+          }
+        }
       }
+      Reader.Close();
+      
+      TThread::Lock();
+      m_Store.Move(Store, GroupID);
+      TThread::UnLock();
+      
+      m_CalibrationFileLoadingProgress[ID] = numeric_limits<double>::max(); 
     }
-    Reader.Close();
-    
-    TThread::Lock();
-    m_Store.Move(Store, GroupID);
-    TThread::UnLock();
-    
-    m_CalibrationFileLoadingProgress[ID] = numeric_limits<double>::max(); 
+  } catch (bad_alloc&) {
+    ProcInfo_t Info;
+    gSystem->GetProcInfo(&Info);
+    cout<<endl;
+    cout<<"We are out of memory... "<<endl;
+    cout<<"Melinator used "<<(double) (Info.fMemResident)/1024/1024<<"GB before the crash"<<endl;
+    cout<<endl;
+    abort();
   }
-
+  
   m_ThreadIsFinished[ThreadID] = true;
 
   if (g_Verbosity >= c_Info) cout<<"Parallel loading thread #"<<ThreadID<<" has finished"<<endl;
@@ -1123,73 +1137,84 @@ bool MMelinator::CalibrateParallel(unsigned int ThreadID)
 //! Perform the calibration of the given collection
 bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
 {
-  MReadOutCollection& C = GetCollection(Collection);
-  m_CalibrationStore.Remove(C.GetReadOutElement());
-  
-  unsigned int Verbosity = g_Verbosity;
-  if (ShowDiagnostics == true) g_Verbosity = c_Info;
-  
-  // Step 1: find the lines
-  MCalibrateEnergyFindLines FindLines;
-  FindLines.SetDiagnosticsMode(ShowDiagnostics);
-  FindLines.SetRange(m_HistogramMin, m_HistogramMax);
-  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-  }
-  FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
-  FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
-  
-  if (FindLines.Calibrate() == false) {
-    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+  // We are likely to run out of memory so catch some bad_alloc exceptions
+  try {
+    MReadOutCollection& C = GetCollection(Collection);
+    m_CalibrationStore.Remove(C.GetReadOutElement());
+    
+    unsigned int Verbosity = g_Verbosity;
+    if (ShowDiagnostics == true) g_Verbosity = c_Info;
+    
+    // Step 1: find the lines
+    MCalibrateEnergyFindLines FindLines;
+    FindLines.SetDiagnosticsMode(ShowDiagnostics);
+    FindLines.SetRange(m_HistogramMin, m_HistogramMax);
+    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+      FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    }
+    FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
+    FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+    
+    if (FindLines.Calibrate() == false) {
+      cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+      g_Verbosity = Verbosity;
+      return false;
+    }
+    
+    
+    // Step 2: Assign the energies
+    MCalibrateEnergyAssignEnergies AssignEnergies;
+    AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
+    AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
+    AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
+    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+      //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+      AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    }
+    AssignEnergies.SetCalibrationResult(FindLines.GetCalibrationResult());
+    
+    if (AssignEnergies.Calibrate() == false) {
+      cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+      g_Verbosity = Verbosity;
+      return false;
+    }
+    
+    
+    // Step 3: Determine model
+    MCalibrateEnergyDetermineModel DetermineModel;
+    DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
+    DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
+    for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
+      //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+      AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
+    }
+    DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
+    DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+    DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
+    
+    if (DetermineModel.Calibrate() == false) {
+      cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
+      g_Verbosity = Verbosity;
+      return false;
+    }
+    
+    
+    
+    // Step 4: Set the result in the store
+    TThread::Lock(); // <-- this function can be called from the thread so we have to protect it!
+    m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
+    TThread::UnLock();
+    
     g_Verbosity = Verbosity;
-    return false;
+  } catch (bad_alloc&) {
+    ProcInfo_t Info;
+    gSystem->GetProcInfo(&Info);
+    cout<<endl;
+    cout<<"We are out of memory... "<<endl;
+    cout<<"Melinator used "<<(double) (Info.fMemResident)/1024/1024<<"GB before the crash"<<endl;
+    cout<<endl;
+    abort();
   }
-  
-  
-  // Step 2: Assign the energies
-  MCalibrateEnergyAssignEnergies AssignEnergies;
-  AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
-  AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
-  AssignEnergies.SetRange(m_HistogramMin, m_HistogramMax);
-  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-  }
-  AssignEnergies.SetCalibrationResult(FindLines.GetCalibrationResult());
-  
-  if (AssignEnergies.Calibrate() == false) {
-    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
-    g_Verbosity = Verbosity;
-    return false;
-  }
-  
-  
-  // Step 3: Determine model
-  MCalibrateEnergyDetermineModel DetermineModel;
-  DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
-  DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
-  for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
-    //AssignEnergies.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-    AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
-  }
-  DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-  DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
-  DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
-  
-  if (DetermineModel.Calibrate() == false) {
-    cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
-    g_Verbosity = Verbosity;
-    return false;
-  }
-  
-  
-  
-  // Step 4: Set the result in the store
-  TThread::Lock(); // <-- this function can be called from the thread so we have to protect it!
-  m_CalibrationStore.Add(C.GetReadOutElement(), DetermineModel.GetCalibrationResult());
-  TThread::UnLock();
-  
-  g_Verbosity = Verbosity;
   
   return true;
 }
