@@ -51,13 +51,13 @@ int main(int argc, char** argv)
   // Initialize global MEGAlib variables, especially mgui, etc.
   MGlobal::Initialize("Mimrec", "MEGAlib image reconstruction (and more)");
 
-	TApplication* AppMimrec = new TApplication("Mimrec", 0, 0);
+  TApplication AppMimrec("Mimrec", 0, 0);
 
-	MInterfaceMimrec Mimrec;
+  MInterfaceMimrec Mimrec;
   if (Mimrec.ParseCommandLine(argc, argv) == false) {
     return 0;
   } else {
-    AppMimrec->Run();
+    AppMimrec.Run();
   }  
 
   return 0;
