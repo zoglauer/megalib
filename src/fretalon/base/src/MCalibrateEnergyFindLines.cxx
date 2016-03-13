@@ -541,6 +541,18 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
         continue;
       }
       
+      // Check for catastrophic errors
+      if (!isfinite(Fit.GetReducedChisquare())) {
+        if (g_Verbosity >= c_Error) cout<<P.GetPeak()<<" - Rejected: Chi-square is either nan or inf! Something is wrong with your fit!!"<<endl;
+        P.IsGood(false);
+        continue;
+      }
+      if (!isfinite(Fit.GetAverageDeviation())) {
+        if (g_Verbosity >= c_Error) cout<<P.GetPeak()<<" - Rejected: Average deviation is either nan or inf! Something is wrong with your fit!!"<<endl;
+        P.IsGood(false);
+        continue;
+      }
+      
       // Check fit quality
       if (Fit.GetReducedChisquare() > ChiSquareLimit && Fit.GetAverageDeviation() > AverageDeviationLimit) {
         if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: Bad chisquare "<<Fit.GetReducedChisquare()<<" (with limit "<<ChiSquareLimit<<") and average deviation between fit and data ("<<100*Fit.GetAverageDeviation()<<"% vs. a limit of "<<100*AverageDeviationLimit<<"%)"<<endl;
@@ -551,12 +563,13 @@ bool MCalibrateEnergyFindLines::FitPeaks(unsigned int ROGID)
       }
       
       // No peaks on increasing edges
-      if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge())) {
-        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;  
+      if (Fit.Evaluate(P.GetLowEdge()) < 0.8*Fit.Evaluate(P.GetHighEdge()) &&
+          Fit.Evaluate(P.GetHighEdge()) > 3.0) {
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Rejected: The peak sits on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is less than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" and right has at least an 3 count average)"<<endl;  
         P.IsGood(false);
         continue;
       } else {
-        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<")"<<endl;          
+        if (g_Verbosity >= c_Info) cout<<P.GetPeak()<<" - Passed: The peak sits NOT on a strong increasing incline (left "<<Fit.Evaluate(P.GetLowEdge())<<" is more than 80% of right "<<Fit.Evaluate(P.GetHighEdge())<<" or right has less than a 3 count average)"<<endl;          
       }
       
   
