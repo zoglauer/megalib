@@ -105,6 +105,8 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   static const unsigned int c_EnergyLossModelNone = 0;
   //! Energy loss model: Gaussian-convolved delta function
   static const unsigned int c_EnergyLossModelGaussianConvolvedDeltaFunction = 1;
+  //! Energy loss model: Gaussian-convolved delta function
+  static const unsigned int c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay = 2;
   
   // This is a bit unfortunate here, but a list of all available peak fitting algos helps a lot
   //! Peak shape: None

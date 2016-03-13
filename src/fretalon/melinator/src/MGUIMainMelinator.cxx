@@ -976,7 +976,7 @@ bool MGUIMainMelinator::OnSwitchPeakParametrizationMode(unsigned int ID)
 
     m_PeakParametrizationMethodFittingEnergyLossModel = new TGComboBox(EnergyLossModelFrame, c_PeakParametrizationMethodFittingEnergyLossModel);
     m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("None", MCalibrationFit::c_EnergyLossModelNone);
-    m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("Gauss. Conv. Delta Function", MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction);
+    m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("Delta (gauss convolved)", MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunction);   m_PeakParametrizationMethodFittingEnergyLossModel->AddEntry("Delta (gaus+exp convolved)", MCalibrationFit::c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay);
     m_PeakParametrizationMethodFittingEnergyLossModel->Select(m_Settings->GetPeakParametrizationMethodFittingEnergyLossModel());
     m_PeakParametrizationMethodFittingEnergyLossModel->Associate(this);
     m_PeakParametrizationMethodFittingEnergyLossModel->SetHeight(FontScaler*24);
