@@ -135,12 +135,14 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             You know the answer..."<<endl;
   Usage<<endl;
   Usage<<"    High level functions:"<<endl;
+  Usage<<"      -o --output:"<<endl;
+  Usage<<"             For -i, -s and -a: Save the generated histogram."<<endl;
   Usage<<"      -i --image:"<<endl;
-  Usage<<"             Create an image"<<endl;
+  Usage<<"             Create an image. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -s --spectrum:"<<endl;
-  Usage<<"             Create a spectrum"<<endl;
+  Usage<<"             Create a spectrum. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -a --arm-gamma:"<<endl;
-  Usage<<"             Create an arm"<<endl;
+  Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -e --event-selections:"<<endl;
   Usage<<"             Dump event selections"<<endl;
   Usage<<"         --standard-analysis-spherical <energy [keV]> <theta [deg]> <phi [deg]>"<<endl;
@@ -179,6 +181,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     // Single argument
     if (Option == "-g" || Option == "--geometry" || 
         Option == "-c" || Option == "--configuration" ||
+        Option == "-o" || Option == "--output" ||
         Option == "-f" || Option == "--filename") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i]<<" needs a second argument!"<<endl;
@@ -212,6 +215,9 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--configuration" || Option == "-c") {
       m_Data->Read(argv[++i]);
       cout<<"Command-line parser: Use configuration file "<<m_Data->GetSettingsFileName()<<endl;
+    } else if (Option == "--output" || Option == "-o") {
+      m_OutputFileName = argv[++i];
+      cout<<"Command-line parser: Use this output file name "<<m_OutputFileName<<endl;
     }
   }
 
@@ -660,6 +666,13 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
   } else {
     if (m_Imager->GetNImages() > 0) {
       m_Imager->GetImage(m_Imager->GetNImages() - 1)->Display();
+    }
+  }
+
+  if (m_OutputFileName.IsEmpty() == false) {
+    if (m_Imager->GetNImages() > 0) {
+      m_Imager->GetImage(m_Imager->GetNImages() - 1)->Display();
+      m_Imager->GetImage(m_Imager->GetNImages() - 1)->SaveAs(m_OutputFileName);
     }
   }
 
@@ -1217,6 +1230,9 @@ void MInterfaceMimrec::ARMGamma()
   Hist->Draw("HIST SAME");
   Canvas->Modified();
   Canvas->Update();
+  if (m_OutputFileName.IsEmpty() == false) {
+    Canvas->SaveAs(m_OutputFileName);
+  }
   
   // Calculate FWHM and its uncertainty using the confidence intervals
   double FWHM = GetFWHM(Fit, -180, 180);
@@ -3633,6 +3649,9 @@ void MInterfaceMimrec::EnergySpectra()
   Hist->SetMinimum(0);
   Hist->Draw();
   Canvas->Update(); 
+  if (m_OutputFileName.IsEmpty() == false) {
+    Canvas->SaveAs(m_OutputFileName);
+	}
 
   cout<<endl;
   cout<<"Energy spectrum - some additional statistics:"<<endl;

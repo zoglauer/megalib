@@ -188,6 +188,8 @@ private:
 
 	MImage *m_IImage;
 
+	// In automatic mode, save the canvas to this file
+  MString m_OutputFileName;
 
 #ifdef ___CINT___
  public:
