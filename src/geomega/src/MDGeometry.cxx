@@ -108,9 +108,11 @@ MDGeometry::MDGeometry()
 
   m_Name = "\"Geometry, which was not worth a name...\"" ;
   m_Version = "0.0";
-  m_SphereRadius = DBL_MAX;
-  m_SpherePosition = MVector(DBL_MAX, DBL_MAX, DBL_MAX);
-  m_DistanceToSphereCenter = DBL_MAX;
+  
+  m_SurroundingSphereRadius = g_DoubleNotDefined;
+  m_SurroundingSpherePosition = g_VectorNotDefined;
+  m_SurroundingSphereDistance = g_DoubleNotDefined;
+  m_SurroundingSphereShow = false;
   
   m_GeoView = 0;
   m_Geometry = 0;
@@ -127,6 +129,8 @@ MDGeometry::MDGeometry()
   gGeoManager = 0;
   // ... before 
   m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
+  
+  m_LaunchedByGeomega = false;
 }
 
 
@@ -204,6 +208,13 @@ void MDGeometry::Reset()
     m_GeoView = 0;
   }
 
+  m_Name = "";
+  
+  m_SurroundingSphereRadius = g_DoubleNotDefined;
+  m_SurroundingSpherePosition = g_VectorNotDefined;
+  m_SurroundingSphereDistance = g_DoubleNotDefined;
+  m_SurroundingSphereShow = false;
+
   // Create a new geometry
   // BUG: In case we are multi-threaded and someone interacts with the geometry
   //      before the gGeoManager is reset during new, we will get a seg-fault!
@@ -217,7 +228,7 @@ void MDGeometry::Reset()
   delete m_System;
   m_System = new MDSystem("NoName");
 
-  m_IgnoreShortNames = true;
+  m_IgnoreShortNames = true; // This should NOT be reset...
   m_DoSanityChecks = true;
   m_ComplexER = true;
   m_VirtualizeNonDetectorVolumes = false;
@@ -1016,16 +1027,28 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
 
-      m_SphereRadius = Tokenizer.GetTokenAtAsDouble(1);
-      m_SpherePosition = MVector(Tokenizer.GetTokenAtAsDouble(2), 
+      m_SurroundingSphereRadius = Tokenizer.GetTokenAtAsDouble(1);
+      m_SurroundingSpherePosition = MVector(Tokenizer.GetTokenAtAsDouble(2), 
                                  Tokenizer.GetTokenAtAsDouble(3), 
                                  Tokenizer.GetTokenAtAsDouble(4));
-      m_DistanceToSphereCenter = Tokenizer.GetTokenAtAsDouble(5);
+      m_SurroundingSphereDistance = Tokenizer.GetTokenAtAsDouble(5);
 
-      if (m_SphereRadius != m_DistanceToSphereCenter) {
+      if (m_SurroundingSphereRadius != m_SurroundingSphereDistance) {
         Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
         return false;
       }
+      
+      continue;
+    }
+
+    // Show the surrounding sphere 
+    else if (Tokenizer.IsTokenAt(0, "ShowSurroundingSphere") == true) {
+      if (Tokenizer.GetNTokens() != 2) {
+        Typo("Line must contain two values: ShowSurroundingSphere true/false");
+        return false;
+      }
+
+      m_ShowSurroundSphere = Tokenizer.GetTokenAtAsBoolean(1);
       
       continue;
     }
@@ -1412,7 +1435,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Now we can do some basic evaluation of the input:
 
-  if (m_SphereRadius == DBL_MAX) {
+  if (m_SurroundingSphereRadius == DBL_MAX) {
     Typo("You have to define a surrounding sphere!");
     return false;
   }
@@ -3246,6 +3269,33 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     return false;
   }
   
+  // Test if the surrounding sphere should be shown
+  if (m_ShowSurroundSphere == true && m_LaunchedByGeomega == true) {
+    MString MaterialName = "SurroundingSphereVolumeMaterial";
+    MDMaterial* SuperDense = new MDMaterial(MaterialName, 
+                                 CreateShortName(MaterialName),
+                                 CreateShortName(MaterialName, 19, false, true));
+    MDMaterialComponent* SuperDenseComponent = 
+      new MDMaterialComponent(MDMaterialComponent::c_NaturalComposition, 82, 1, MDMaterialComponent::c_ByAtoms);
+    SuperDense->SetComponent(SuperDenseComponent);
+    SuperDense->SetDensity(10000.0);
+    
+    MDShapeSPHE* Shape = new MDShapeSPHE("SurroundingSphereVolumeShape");
+    Shape->Set(m_SurroundingSphereRadius-0.01, m_SurroundingSphereRadius+0.01);
+    
+    MDVolume* Sphere = new MDVolume("SurroundingSphereVolume");
+    Sphere->SetMother(m_WorldVolume);
+    Sphere->SetMaterial(SuperDense);
+    Sphere->SetShape(Shape);
+    Sphere->SetPosition(m_SurroundingSpherePosition);
+    Sphere->SetVisibility(1);
+    
+    AddVolume(Sphere);
+    AddMaterial(SuperDense);
+    AddShape(Shape);
+  }
+  
+  
   //
   if (ShowOnlySensitiveVolumes == true) {
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -4303,11 +4353,11 @@ bool MDGeometry::WriteGeant3Files()
   Text<<"      MDIST = "<<MinDist<<endl;
   Text<<endl;
 
-  Text<<"      SPHR = "<<m_SphereRadius<<endl;
-  Text<<"      SPHX = "<<m_SpherePosition.X()<<endl;
-  Text<<"      SPHY = "<<m_SpherePosition.Y()<<endl;
-  Text<<"      SPHZ = "<<m_SpherePosition.Z()<<endl;
-  Text<<"      SPHD = "<<m_DistanceToSphereCenter<<endl;
+  Text<<"      SPHR = "<<m_SurroundingSphereRadius<<endl;
+  Text<<"      SPHX = "<<m_SurroundingSpherePosition.X()<<endl;
+  Text<<"      SPHY = "<<m_SurroundingSpherePosition.Y()<<endl;
+  Text<<"      SPHZ = "<<m_SurroundingSpherePosition.Z()<<endl;
+  Text<<"      SPHD = "<<m_SurroundingSphereDistance<<endl;
 
   Text<<endl;
   Text<<"      RETURN"<<endl;
@@ -5786,7 +5836,7 @@ MString MDGeometry::GetFileName()
 
 double MDGeometry::GetStartSphereRadius() const 
 {
-  return m_SphereRadius;
+  return m_SurroundingSphereRadius;
 }
 
 
@@ -5795,7 +5845,7 @@ double MDGeometry::GetStartSphereRadius() const
 
 double MDGeometry::GetStartSphereDistance() const
 {
-  return m_DistanceToSphereCenter;
+  return m_SurroundingSphereDistance;
 }
 
 
@@ -5804,7 +5854,7 @@ double MDGeometry::GetStartSphereDistance() const
 
 MVector MDGeometry::GetStartSpherePosition() const
 {
-  return m_SpherePosition;
+  return m_SurroundingSpherePosition;
 }
 
 

@@ -292,6 +292,13 @@ Steel_18_8.ComponentByMass      Ni   0.09
 Steel_18_8.ComponentByMass      C    0.013 
 Steel_18_8.ComponentByMass      Fe   0.717   
 
+
+// This is the surround volume material -- it will ruin all simulations if turned on
+// So we make sure it is noticed!
+Material SurroundingSphereVolumeMaterial
+SurroundingSphereVolumeMaterial.Density           10000.0
+SurroundingSphereVolumeMaterial.ComponentByAtoms  Pb 1
+
 // Values of Tin from the internet:
 Material Tin
 Tin.Density                     7.29

@@ -31,6 +31,9 @@ Sivan:
 Fretalon:
 
 Geomega:
++ New option to show the surrounding sphere (ShowSurroundingsphere true)
+  This will only be displayed in geomega, but does not show up in any
+  other program
   
 Reponse:
   

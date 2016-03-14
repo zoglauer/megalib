@@ -63,6 +63,7 @@ class MDGeometry
   //! Draws the geometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
+  
   bool WriteGeant3Files();
   bool WriteMGeantFiles(MString FilePrefix = "", bool StoreIAs = false, bool StoreVetoes = true);
   bool TestIntersections();
@@ -71,6 +72,10 @@ class MDGeometry
 
   //! Set whether to ignore short names (short names are required for Geant3/MGGPOD)
   void IgnoreShortNames(bool Ignore) { m_IgnoreShortNames = Ignore; }
+
+  //! This flag tells us we are within geomega, this enables a few options, which are not
+  //! available in the normal library mode, e.g. view the surrounding sphere
+  void LaunchedByGeomega() { m_LaunchedByGeomega = true; } 
   
   //! Check for overlaps using the ROOT overlap checker
   bool CheckOverlaps();
@@ -235,17 +240,26 @@ class MDGeometry
   //! A map of all constants and their companions
   map<MString, MString> m_ConstantMap;
 
-  vector<int> m_NDetectorTypes; // How many different detectors of this type exist?
+  //! The different detector types
+  vector<int> m_NDetectorTypes; 
 
-	vector<MString> m_IncludeList;     // A list of all already included files
+  //! A list of all already included files
+  vector<MString> m_IncludeList;     
 
-  MString m_Name;               // Name of the geometry
-  MString m_Version;            // Version of the geometry
+  //! Name of the geometry
+  MString m_Name;
+  //! Version of the geometry
+  MString m_Version;
 
-  MVector m_SpherePosition;    // Center of the surrounding sphere of the geometry
-  double m_SphereRadius;      // Radius of the surrounding sphere of the geometry
-  double m_DistanceToSphereCenter;   // Distance of the tangential plane to the center of the sphere
-
+  //! Center of the surrounding sphere of the geometry
+  MVector m_SurroundingSpherePosition;
+  //! Radius of the surrounding sphere of the geometry
+  double m_SurroundingSphereRadius;
+  //! Distance of the tangential plane to the center of the sphere
+  double m_SurroundingSphereDistance;
+  //! True if the surrounding sphere should be shown
+  bool m_SurroundingSphereShow;
+  
   bool m_GeometryScanned;     // true if the geometry has been scanned successfully 
   bool m_ShowVolumes; // if false, no volumes are shown except those with a visibility higher than 1
   int m_DefaultColor; // if positive, this color is applied to all volumes
@@ -268,6 +282,14 @@ class MDGeometry
   //! the detector:
   double m_DetectorSearchTolerance;
 
+  //! A flag indicating the geometry has been launched by geomega, this enables a few additional options
+  //! which should never, ever be called in library mode, e.g. adding the surrounding sphere
+  bool m_LaunchedByGeomega;
+  
+  //! A flag indicating the surrounding sphere should be shown, it is only shown in geomega, not when we
+  //! are in library mode.
+  bool m_ShowSurroundSphere;
+  
   // private members:
  private:
   list<MDVolume*> m_LastVolumes;
