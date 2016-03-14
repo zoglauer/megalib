@@ -2011,11 +2011,12 @@ bool MCSource::GenerateParticleDefinition()
 {
   bool Ret = true;
 
-  if (m_ParticleDefinition != 0) return true;
+  if (m_ParticleDefinition != nullptr) return true;
 
   if (m_IsEventList == true) {
     // We already have a particle definiton
-    m_ParticleDefinition = 0;
+    m_ParticleDefinition = nullptr;
+    return true;
   }
 
   m_ParticleDefinition = MCSteppingAction::GetParticleDefinition(m_ParticleType, m_ParticleExcitation);
