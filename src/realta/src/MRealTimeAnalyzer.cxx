@@ -1217,15 +1217,17 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
   // Set the response type:
   if (m_Settings->GetResponseType() == 0) {
     Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
-                                  m_Settings->GetFitParameterComptonLongSphere(),
-                                  m_Settings->GetFitParameterPair(),
-                                  m_Settings->GetGauss1DCutOff(),
-                                  m_Settings->GetUseAbsorptions());
+                                m_Settings->GetFitParameterComptonLongSphere(),
+                                m_Settings->GetFitParameterPair(),
+                                m_Settings->GetGauss1DCutOff(),
+                                m_Settings->GetUseAbsorptions());
   } else if (m_Settings->GetResponseType() == 1) {
+    Imager->SetResponseGaussianByUncertainties();
+  } else if (m_Settings->GetResponseType() == 2) {
     Imager->SetResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
                                        m_Settings->GetFitParameterComptonLongSphere());
      
-  } else if (m_Settings->GetResponseType() == 2) {
+  } else if (m_Settings->GetResponseType() == 3) {
     if (Imager->SetResponsePRM(m_Settings->GetImagingResponseComptonTransversalFileName(),
                                  m_Settings->GetImagingResponseComptonLongitudinalFileName(),
                                  m_Settings->GetImagingResponsePairRadialFileName()) == false) {
@@ -1544,7 +1546,7 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
       }
       Event++;
     }
-    //cout<<"Events: "<<NEvents<<endl;
+    //cout<<"Events in histogramming: "<<NEvents<<endl;
 
     // Normalize the histograms
     for (int b = 1; b <= InternalCountRate->GetXaxis()->GetNbins(); ++b) {
@@ -1562,7 +1564,7 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     if (m_StopThreads == true) break;
 
     // The deconvolution part:
-    vector<MImage*> Images = Imager->Deconvolve(Backprojections);
+     vector<MImage*> Images = Imager->Deconvolve(Backprojections);
 
 
     // Now update everything:
