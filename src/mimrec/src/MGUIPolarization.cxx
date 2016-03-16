@@ -143,7 +143,6 @@ bool MGUIPolarization::OnApply()
 
   // First test the data
   if (m_Theta->IsDouble(-90, 90) == false || 
-      m_Phi->IsDouble(0, 180) == false ||
       m_Phi->IsDouble(0, 360) == false) {
     return false;
   }
