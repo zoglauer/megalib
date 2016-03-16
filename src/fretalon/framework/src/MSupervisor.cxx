@@ -656,10 +656,12 @@ bool MSupervisor::Analyze()
   // Initialize the modules:
   if (GetNModules() == 0) {
     if (g_Verbosity >= c_Error) mout<<"Error: No modules"<<endl;
+    m_IsAnalysisRunning = false;
     return false;
   }
   if (GetNModules() == 1 && GetModule(0)->IsStartModule() == false) {
     if (g_Verbosity >= c_Error) mout<<"Error: The first module must either load or generate the events"<<endl;
+    m_IsAnalysisRunning = false;
     return false;
   }
   for (unsigned int m = 0; m < GetNModules(); ++m) {

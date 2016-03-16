@@ -95,6 +95,8 @@ class MSupervisor
   
   //! Analyze the data - single-threaded or multi-threaded mode
   bool Analyze();
+  //! Return true if the analysis is running
+  bool IsAnalysisisRunning() const { return m_IsAnalysisRunning; }
   
   //! Exit the application - if multi-threaded prepare to exit after all threads have exited
   void Exit();
