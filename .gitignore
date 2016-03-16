@@ -44,6 +44,12 @@ nuclearizer
 pnGraphs
 SiStack
 BDStatistics
+CrossTalkOffsets
+EnergyResolutionCalibration
+IsotopeFileSplitter
+depth_calibration
+depth_calibration2
+depth_scan_calibrator
 
 
 #config directory:
