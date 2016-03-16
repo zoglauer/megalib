@@ -90,6 +90,8 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
   // If an error occures during reading the string, the hit is marked as
   // m_IsValid = false
 
+  if (Version < 0) Version = 21;
+  
   m_SubElementType = MRESE::c_Hit;
   m_IsValid = true;
 
@@ -156,7 +158,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
     } else {
       m_IsValid = false;
       m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read event:"<<endl
+      merr<<"Unable to read event (version: "<<Version<<"):"<<endl
           <<HitString<<endl;
     }
   } else if (Version == 4) { // MEGA Duke evta file:
@@ -184,7 +186,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
     } else {
       m_IsValid = false;
       m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read HT:"<<endl
+      merr<<"Unable to read HT (version: "<<Version<<"):"<<endl
           <<HitString<<endl;
     }
   } else { // old evta and sim...
@@ -203,7 +205,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
     } else {
       m_IsValid = false;
       m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read event:"<<endl
+      merr<<"Unable to read event (version: "<<Version<<"):"<<endl
           <<HitString<<endl;
     }
   }
