@@ -133,13 +133,7 @@ if [ "${DEBUGGER}" == "gdb" ]; then
   rm ${TMP}
 elif [ "${DEBUGGER}" == "lldb" ]; then
   echo "Starting lldb...";
-  TMP=`mktemp /tmp/megalibdebugger.XXXXXXXX`
-  # no longer working: echo "break set -E c++" >> ${TMP}
-  echo "break set -n __cxa_throw" >> ${TMP}
-  # also nolonger working: echo "process handle SIGPIPE -n true -p true -s false" >> ${TMP}
-  echo "run" >> ${TMP}
-  lldb -s ${TMP} -f ${program} -- ${args}
-  rm ${TMP}
+  lldb -o "break set -n __cxa_throw" -o "process launch" -f ${program} -- ${args}
 fi
 
 exit 0;
