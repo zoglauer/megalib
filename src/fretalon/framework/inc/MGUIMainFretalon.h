@@ -119,6 +119,13 @@ private:
   //! The layout of an module
   TGLayoutHints* m_ModuleLayout;
   
+  //! The start button
+  TGTextButton* m_StartButton;
+  //! The view button
+  TGTextButton* m_ViewButton;
+  //! The stop button
+  TGTextButton* m_StopButton;
+  
   //! List of the modules
   vector<MGUIEModule*> m_Modules;
 

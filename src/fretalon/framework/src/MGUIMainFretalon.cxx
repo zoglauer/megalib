@@ -200,20 +200,22 @@ void MGUIMainFretalon::Create()
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself
-  TGTextButton*	StartButton = new TGTextButton(ButtonFrame, "Start", c_Start); 
-  StartButton->Associate(this);
-  TGLayoutHints* StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40*FontScaler, 0, 0, 0);
-  ButtonFrame->AddFrame(StartButton, StartButtonLayout);
+  m_StartButton = new TGTextButton(ButtonFrame, "Start Calibration", c_Start); 
+  m_StartButton->Associate(this);
+  TGLayoutHints* m_StartButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 40*FontScaler, 0, 0, 0);
+  ButtonFrame->AddFrame(m_StartButton, m_StartButtonLayout);
   
-  TGTextButton* ViewButton = new TGTextButton(ButtonFrame, "     View     ", c_View); 
-  ViewButton->Associate(this);
+  m_ViewButton = new TGTextButton(ButtonFrame, "     View     ", c_View); 
+  m_ViewButton->Associate(this);
+  m_ViewButton->SetEnabled(false);
   TGLayoutHints* ViewButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
-  ButtonFrame->AddFrame(ViewButton, ViewButtonLayout);
+  ButtonFrame->AddFrame(m_ViewButton, ViewButtonLayout);
   
-  TGTextButton* StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
-  StopButton->Associate(this);
-  TGLayoutHints* StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20*FontScaler, 0, 0, 0);
-  ButtonFrame->AddFrame(StopButton, StopButtonLayout);  
+  m_StopButton = new TGTextButton(ButtonFrame, "     Stop     ", c_Stop); 
+  m_StopButton->Associate(this);
+  m_StopButton->SetEnabled(false);
+  TGLayoutHints* m_StopButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 20*FontScaler, 0, 0, 0);
+  ButtonFrame->AddFrame(m_StopButton, m_StopButtonLayout);  
   
   // Give this element the default size of its content:
   Resize(GetDefaultWidth(), GetDefaultHeight()); 
@@ -456,8 +458,19 @@ bool MGUIMainFretalon::OnStart()
 {
   if (OnApply() == false) return false;
 
+  m_StartButton->SetText("Calibration is running");
+  m_StartButton->SetEnabled(false);
+  m_ViewButton->SetEnabled(true);
+  m_StopButton->SetEnabled(true);
+  gSystem->ProcessEvents();
+  
   m_Supervisor->Analyze();
-
+  
+  m_StartButton->SetText("Start Calibration");
+  m_StartButton->SetEnabled(true);
+  m_StopButton->SetEnabled(false);
+  // The view will never get disabled again
+  
   return true;
 }
 
