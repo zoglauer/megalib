@@ -126,6 +126,7 @@ MTransceiverTcpIpBinary::~MTransceiverTcpIpBinary()
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -150,6 +151,7 @@ void MTransceiverTcpIpBinary::ClearBuffers()
 
   m_ReceiveMutex.UnLock();
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -210,6 +212,7 @@ bool MTransceiverTcpIpBinary::Disconnect(bool WaitForDisconnection, double TimeO
   }
 
   // Clean up:
+  // TODO: Why not clear buffers
   m_PacketsToSend.clear();
   m_NPacketsToSend = 0;
   m_NBytesToSend = 0;
@@ -245,6 +248,8 @@ void MTransceiverTcpIpBinary::StartTransceiving()
     // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
+  
+  if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<" ("<<m_Host<<":"<<m_Port<<"): Transceiver thread running"<<endl;
 }
 
 
@@ -409,6 +414,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
 
     SleepAllowed = true;
     
+    // Some initial sanity checks
     if (m_IsConnected == true) {
       m_TimeSinceLastConnection.Reset();
       
@@ -426,6 +432,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
         m_IsServer = false;
       }
     }
+    
     
     // Step 0:
     // Check if the thread should be stopped (and this the connection)
@@ -452,8 +459,8 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
     
     if (m_IsConnected == false) {
       if (m_WishConnection == true && m_AutomaticReconnection == true) {
+        
         // Try to (re-) connect as client:
-
         if (m_WishClient == true) {
           int Level = gErrorIgnoreLevel;
           gErrorIgnoreLevel = kFatal;
@@ -530,6 +537,7 @@ void MTransceiverTcpIpBinary::TransceiverLoop()
       continue; // Back to start
     }
 
+    
     // Step 3: 
     // Receive data
       

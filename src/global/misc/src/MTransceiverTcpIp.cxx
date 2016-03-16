@@ -89,16 +89,22 @@ MTransceiverTcpIp::MTransceiverTcpIp(MString Name, MString Host, unsigned int Po
   
   m_NReceivedStrings = 0; 
   m_NSentStrings = 0;
+ 
+  m_NResets = 0;
 
   m_MaxBufferSize = numeric_limits<unsigned int>::max();
 
   m_IsConnected = false;
   m_WishConnection = false;
   m_IsServer = false;
-  
+  m_WishServer = true;
+  m_WishClient = true;
+
   m_IsThreadRunning = false;
 
   m_TransceiverThread = 0;
+   
+  m_Verbosity = 2;
 }
 
 
@@ -110,11 +116,34 @@ MTransceiverTcpIp::~MTransceiverTcpIp()
   // Delete this instance of MTransceiverTcpIp
 
   if (m_IsConnected == true) {
-    Disconnect(true, 60);
+    Disconnect();
   }
   if (m_TransceiverThread != 0) {
     StopTransceiving();  
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MTransceiverTcpIp::ClearBuffers() 
+{
+  //! Clear the send and receive buffers
+
+  m_SendMutex.Lock();
+  
+  m_StringsToSend.clear();
+  m_NStringsToSend = 0;
+  
+  m_SendMutex.UnLock();
+  
+  m_ReceiveMutex.Lock();
+
+  m_StringsToReceive.clear();
+  m_NStringsToReceive = 0;
+
+  m_ReceiveMutex.UnLock();
 }
 
 
@@ -126,27 +155,27 @@ bool MTransceiverTcpIp::Connect(bool WaitForConnection, double TimeOut)
   // Connect to the given host.
   
   if (m_IsConnected == true) return true;
-  
   m_WishConnection = true;
+  
   if (m_IsThreadRunning == false) {
     StartTransceiving();
   }
     
   if (WaitForConnection == true) {
-    cout<<"Transceiver "<<m_Name<<": Waiting for connection to "<<m_Host<<":"<<m_Port<<endl; 
+    if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Waiting for connection to "<<m_Host<<":"<<m_Port<<endl; 
     MTimer Passed;
     while (Passed.GetElapsed() <= TimeOut && m_IsConnected == false) {
       gSystem->Sleep(10);
     }
     if (m_IsConnected == false) {
       StopTransceiving();
-      cout<<"Transceiver "<<m_Name<<": Connection to "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection to "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
       return false;
     }
-    cout<<"Transceiver "<<m_Name<<": Connected to "<<m_Host<<":"<<m_Port<<endl; 
+    if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connected to "<<m_Host<<":"<<m_Port<<endl; 
   }
 
-return true;
+  return true;
 }
 
 
@@ -162,19 +191,22 @@ bool MTransceiverTcpIp::Disconnect(bool WaitForDisconnection, double TimeOut)
 
   if (m_IsConnected == true) {
     if (WaitForDisconnection == true) {
-      cout<<"Transceiver "<<m_Name<<": Waiting disconnection!"<<endl;
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Waiting disconnection!"<<endl;
       MTimer Passed;
       while (Passed.GetElapsed() <= TimeOut && m_IsConnected == true) {
         gSystem->Sleep(10);
       }
       if (m_IsConnected == true) {
-        cout<<"Transceiver "<<m_Name<<": Disconnection from "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
+        if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Disconnection from "<<m_Host<<":"<<m_Port<<" failed!"<<endl;
         return false;
       }
-      cout<<"Transceiver "<<m_Name<<": Disconnected from "<<m_Host<<":"<<m_Port<<endl;
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Disconnected from "<<m_Host<<":"<<m_Port<<endl;
     }
   }
 
+  // Clean up:
+  ClearBuffers();
+  
   return true;
 }
 
@@ -206,7 +238,7 @@ void MTransceiverTcpIp::StartTransceiving()
     // Never do this in a thread! gSystem->ProcessEvents();
     gSystem->Sleep(10);
   }
-  //cout<<"Receiver thread running!"<<endl;    
+  if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Transceiver thread running!"<<endl;    
 }
 
 
@@ -236,6 +268,7 @@ bool MTransceiverTcpIp::Send(const MString& String)
   // Now put the events into a list
 
   m_SendMutex.Lock();
+  
   // Add it to the end of the queue
   m_StringsToSend.push_back(MString(String.Data())); // make sure we don't use the string copy mechanism    
   m_NStringsToSend++;
@@ -246,9 +279,10 @@ bool MTransceiverTcpIp::Send(const MString& String)
     m_NLostStrings++;
     m_NStringsToSend--;
     if (m_NLostStrings == 1 || m_NLostStrings == 10 || m_NLostStrings == 100 || m_NLostStrings == 1000 ||  m_NLostStrings == 10000 || m_NLostStrings % 100000 == 0) { 
-      cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
+      if (m_Verbosity >= 2) cout<<"Transceiver "<<m_Name<<": Error: Buffer overflow: Packets/Events have been lost (total loss: "<<m_NLostStrings<<")"<<endl;
     }
   }
+  
   m_SendMutex.UnLock();
   
   return true;
@@ -286,6 +320,8 @@ void MTransceiverTcpIp::TransceiverLoop()
   // Since thread safety is a problem, this code is not object oriented but
   // Spaghetti style...
 
+  if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": thread running!"<<endl;    
+
   m_IsThreadRunning = true;
 
   int Status = 0;
@@ -303,7 +339,7 @@ void MTransceiverTcpIp::TransceiverLoop()
   MString RawMessage;
   MString Message;
  
-  int SleepAmount = 50;
+  int SleepAmount = 20;
   
   while (true) {
     // This is the main loop of the thread. It consists of five parts:
@@ -315,14 +351,37 @@ void MTransceiverTcpIp::TransceiverLoop()
 
     SleepAllowed = true;
     
+    // Some initial sanity checks
+    if (m_IsConnected == true) {
+      m_TimeSinceLastConnection.Reset();
+      
+      if (Socket->IsValid() == false || Socket->TestBit(TSocket::kBrokenConn)) {
+        if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Found a broken connection... Resetting!"<<endl;
+        
+        if (Socket != 0) {
+          Socket->Close("force");
+          delete Socket;
+          Socket = 0;
+          ++m_NResets;
+        }
+        
+        m_IsConnected = false;
+        m_IsServer = false;
+      }
+    }
+    
+    
     // Step 0:
     // Check if the thread should be stopped (and this the connection)
     
     if (m_StopThread == true) {
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Stopping thread...!"<<endl;
+
       if (Socket != 0) {
         Socket->Close("force");
         delete Socket;
         Socket = 0;
+        ++m_NResets;
       }
 
       m_IsConnected = false;
@@ -335,25 +394,44 @@ void MTransceiverTcpIp::TransceiverLoop()
     // Step 1: 
     // Connect if not connected and a connection is wished
     
+    
     if (m_IsConnected == false) {
       if (m_WishConnection == true) {
-        // Try to (re-) connect as client:
-
-        int Level = gErrorIgnoreLevel;
-        gErrorIgnoreLevel = kFatal;
-        Socket = new TSocket(m_Host, m_Port); //, 10000000);
-        gErrorIgnoreLevel = Level;
         
+        // Try to (re-) connect as client:
+        if (m_WishClient == true) {
+          int Level = gErrorIgnoreLevel;
+          gErrorIgnoreLevel = kFatal;
+          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
+          Socket = new TSocket(m_Host, m_Port); //, 10000000);
+          m_SocketMutex.UnLock();
+          gErrorIgnoreLevel = Level;
+          
+          if (Socket->IsValid() == true) {
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as client!"<<endl;
+            Socket->SetOption(kNoBlock, 1);
+            m_IsServer = false;
+            m_IsConnected = true;
+          } else {
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as client..."<<endl;
+            Socket->Close("force");
+            delete Socket;
+            Socket = 0;
+            ++m_NResets;
+            if (m_WishServer == false) {
+              gSystem->Sleep(SleepAmount);
+              continue;
+            }
+          }
+        }
+          
         // If we where unable to connect as client try as server:
-        if (Socket->IsValid() == false) {
-          //cout<<"Transceiver "<<m_Name<<": Unable to connect as client... trying as server..."<<endl;
-          
-          Socket->Close("force");
-          delete Socket;
-          Socket = 0;
-          
+        if (m_WishServer == true && m_IsConnected == false) {
+
+          m_SocketMutex.Lock(); // socket initilization is not reentrant as of 5.34.22 (bu bug report is submitted)!
           ServerSocket = new TServerSocket(m_Port, true, 10000000);
           ServerSocket->SetOption(kNoBlock,1);
+          m_SocketMutex.UnLock();
 
           // Wait for a client to connect - we add a random amount to make sure that two instances of this class can connect at same point in time
           gSystem->Sleep(10*SleepAmount + gRandom->Integer(10*SleepAmount));
@@ -365,22 +443,16 @@ void MTransceiverTcpIp::TransceiverLoop()
 
           if (long(Socket) > 0) {
             Socket->SetOption(kNoBlock, 1);
-            // cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Connection established as server!"<<endl;
             m_IsServer = true;
-            m_IsConnected = true;
+            m_IsConnected = true;  
           } else {
             Socket = 0; // Since it can be negative... yes...
-            // cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying as client... stand by..."<<endl;
+            if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": Unable to connect as server, trying again later..."<<endl;
+            gSystem->Sleep(SleepAmount);
             continue;
           }
         } 
-        // If we have been able to connect as client...
-        else {
-          // cout<<"Transceiver "<<m_Name<<": Connection established as client!"<<endl;
-          Socket->SetOption(kNoBlock, 1);
-          m_IsServer = false;
-          m_IsConnected = true;
-        }
       } 
       // Case: We are not connected and do not want to be connected... SLEEP!
       else {
@@ -390,15 +462,19 @@ void MTransceiverTcpIp::TransceiverLoop()
     }
     // If we are connected but wish disconnection
     else if (m_IsConnected == true && m_WishConnection == false) {
+      if (m_Verbosity >= 3) cout<<"Transceiver "<<m_Name<<": No longer wishing connection..."<<endl;
+
       Socket->Close("force");
       delete Socket;
       Socket = 0;
+      ++m_NResets;
 
       m_IsConnected = false;
       m_IsServer = false;
       
       continue; // Back to start
     }
+
 
     // Step 3: 
     // Receive data

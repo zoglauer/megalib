@@ -31,6 +31,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MTransceiver.h"
+#include "MTimer.h"
 
 // Forward declarations:
 
@@ -63,6 +64,10 @@ class MTransceiverTcpIp
   //! Get the name of the transceiver
   MString GetName() const { return m_Name; }
 
+  //! Set the verbosity of the debug output
+  //! (0: quiet, 1: errors, 2: errors & warnings (default), 3: errors, warnings & info)
+  void SetVerbosity(unsigned int Verbosity) { m_Verbosity = Verbosity; }
+
   //! Set the host name
   void SetHost(MString Host) { m_Host = Host; }
   //! Get the host name
@@ -72,6 +77,14 @@ class MTransceiverTcpIp
   void SetPort(unsigned int Port) { m_Port = Port; }
   //! Get the port on the host
   unsigned int GetPort() { return m_Port; }
+  
+  //! Clear the send and receive buffers
+  void ClearBuffers();
+  
+  //! Request this connection to be a client
+  void RequestClient(bool Client = true) { m_WishClient = Client; if (m_WishClient) m_WishServer = false; } 
+  //! Request this connection to be a server
+  void RequestServer(bool Server = true) { m_WishServer = Server; if (m_WishServer) m_WishClient = false; } 
   
   //! Connect. If wait for connection is true, and we ran into time-out, return false, otherwise always true 
   bool Connect(bool WaitForConnection = false, double TimeOut = 60);
@@ -95,6 +108,14 @@ class MTransceiverTcpIp
   unsigned int GetNStringsToSend() const { return m_NStringsToSend; }
   //! Get the number of events still to be receive (i.e. which are in the receive buffer)
   unsigned int GetNStringsToReceive() const { return m_NStringsToReceive; }
+
+  //! Get the number of sent bytes
+  unsigned long GetNSentStrings() const { return m_NSentStrings; }
+  //! Get the number of receives bytes
+  unsigned long GetNReceivedStrings() const { return m_NReceivedStrings; }
+
+  //! Get the number of resets
+  unsigned long GetNResets() const { return m_NResets; }
 
   //! The (multithreaded) transceiver loop
   void TransceiverLoop();
@@ -137,6 +158,12 @@ class MTransceiverTcpIp
   //! The transceiving mode: 
   unsigned int m_Mode;
 
+  //! The verbosity (0: quiet, 1: errors, 2: errors & warnings (default), 3: errors, warnings & info)
+  unsigned int m_Verbosity;
+
+  //! The time of the last connection
+  MTimer m_TimeSinceLastConnection;
+
   //! The thread where the receiving and transmitting happens
   TThread *m_TransceiverThread;     
   //! Unique Id for the thread...
@@ -145,6 +172,8 @@ class MTransceiverTcpIp
   bool m_StopThread;
   //! Flag indicating that the thread is running
   bool m_IsThreadRunning;
+  //! Mutex to prevent multiple socket initializations
+  TMutex m_SocketMutex;
 
   
   //! List of objects still waiting for sending
@@ -172,10 +201,18 @@ class MTransceiverTcpIp
   //! Counter for the number of lost strings due to buffer overflow
   unsigned int m_NLostStrings;
 
+  //! Counter for the resets
+  unsigned long m_NResets;
+  
   //! True if a connection is established
   bool m_IsConnected;
   //! True if this tranceiver tries to connect
   bool m_WishConnection;
+  
+  //! True if this connection is intended as server
+  bool m_WishServer;
+  //! True if this connection is intended as client
+  bool m_WishClient;
 
   //! True if this is a server
   bool m_IsServer;
