@@ -52,11 +52,8 @@ MModuleTransmitterRealta::MModuleTransmitterRealta() : MModule()
   // Construct an instance of MModuleTransmitterRealta
 
   // Set all modules, which *have to be* done before this module
-  AddPreceedingModuleType(MAssembly::c_EventLoader);
   AddPreceedingModuleType(MAssembly::c_EnergyCalibration);
-  AddPreceedingModuleType(MAssembly::c_StripPairing);
-  AddPreceedingModuleType(MAssembly::c_DepthCorrection);
-
+  AddPreceedingModuleType(MAssembly::c_PositionDetermiation);
   
   // Set all types this modules handles
   AddModuleType(MAssembly::c_EventTransmitter);
@@ -102,8 +99,11 @@ bool MModuleTransmitterRealta::Initialize()
   delete m_Transmitter;
   m_Transmitter = new MTransceiverTcpIp("Realta-Transmitter", m_HostName, m_HostPort, MTransceiverTcpIp::c_ModeRawEventList);
   m_Transmitter->SetMaximumBufferSize(100000); // This is events so need to be low!
-  //m_Transmitter->SetVerbosity(3);
+  m_Transmitter->SetVerbosity(2);
+  m_Transmitter->RequestServer();
   m_Transmitter->Connect();
+  
+  //cout<<"Connecting to realta..."<<endl;
   
   return MModule::Initialize();
 }
