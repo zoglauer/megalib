@@ -493,6 +493,8 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
 
     
   MTransceiverTcpIp Transceiver("Realta", m_Settings->GetHostName(), m_Settings->GetPort(), m_Settings->GetTransceiverMode());
+  Transceiver.SetVerbosity(2);
+  Transceiver.RequestClient(true);
   
   // The geometry initialization is not reentrant, this we say it's running only here
   cout<<"Reading and initialization thread started..."<<endl<<flush;
@@ -598,7 +600,7 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
       
       // Split message into lines
       vector<MString> Tokens = Message.Tokenize("\n");
-      //cout<<"Message size: "<<Message.Length()<<endl;
+      // cout<<"Message size: "<<Message.Length()<<endl;
       //if (Tokens.size() > 0) cout<<"Last message: "<<Tokens.back()<<endl;
 
       // Save the events directly to file -- remove all EN's
