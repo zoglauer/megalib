@@ -406,63 +406,63 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
         
       case c_ResponseArmGamma:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGamma();
         }
         break;
         
       case c_ResponseArmComparison:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMResponseComparison();
         }
         break;
         
       case c_ResponseArmGammaVsCompton:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsCompton();
         }
         break;
         
       case c_ResponseArmGammaVsDistance:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsDistance();
         }
         break;
         
       case c_ResponseArmGammaVsComptonProbability:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsComptonProbability();
         }
         break;
         
       case c_ResponseArmGammaVsClusteringProbability:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsClusteringProbability();
         }
         break;
         
       case c_ResponseSPDVsTrackQualityFactor:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->SPDVsTrackQualityFactor();
         }
         break;
         
       case c_ResponseSPDVsTotalScatterAngleDeviation:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->SPDVsTotalScatterAngleDeviation();
         }
         break;
         
       case c_ResponseEnergyVsComptonProbability:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ENERGY, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
         if (OKPressed == true) {
           m_Interface->EnergyVsComptonProbability();
         }
@@ -473,28 +473,28 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseComptonProbabilityWithARMSelection:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ComptonProbabilityWithARMSelection();
         }
         break;
 
       case c_ResponseSpdElectron:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->SPDElectron();
         }
         break;
 
       case c_ResponseSpdElectronVsCompton:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->SPDElectronVsCompton();
         }
         break;
 
       case c_ResponseArmElectron:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMElectron();
         }
@@ -505,7 +505,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseSpectrum:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ENERGY, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
         if (OKPressed == true) {
           m_Interface->EnergySpectra();
         }
@@ -556,14 +556,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseAzimuthalComptonScatterAngle:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->AzimuthalComptonScatterAngle();
         }
         break;
 
       case c_ResponseAzimuthalElectronScatterAngle:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_ELECTRON, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMElectron, OKPressed);
         if (OKPressed == true) {
           m_Interface->AzimuthalElectronScatterAngle();
         }
@@ -592,14 +592,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseAngularResolutionPair:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->AngularResolutionPairs();
         }
         break;
 
       case c_ResponseAngularResolutionVsQualityFactorPair:
-        new MGUIARM(gClient->GetRoot(), this, m_Data, MARMTYPE_GAMMA, OKPressed);
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->AngularResolutionVsQualityFactorPair();
         }

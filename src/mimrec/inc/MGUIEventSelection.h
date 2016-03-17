@@ -141,7 +141,7 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEEntry* m_EHCAngle;
   int m_EHCSelected;
 
-  enum ButtenIds { c_Compton = 140, 
+  enum ButtonIDs { c_Compton = 140, 
                    c_ComptonUntracked,
                    c_ComptonTracked, 
                    c_Pair, 

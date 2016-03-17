@@ -57,23 +57,31 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   double GetPolarizationArmCut() const { return m_PolarizationArmCut; }
   void SetPolarizationArmCut(double PolarizationArmCut) { m_PolarizationArmCut = PolarizationArmCut; }
 
-  // Test positions for ARM's etc
+  // Test positions for ARM's etc.
+  
+  bool GetTPUse() const { return m_TPUse; }
+  void SetTPUse(bool TPUse) { m_TPUse = TPUse; } 
+  
   double GetTPTheta() const { return m_TPTheta; }
   void SetTPTheta(double TPTheta) { m_TPTheta = TPTheta; }
   double GetTPPhi() const { return m_TPPhi; }
   void SetTPPhi(double TPPhi) { m_TPPhi = TPPhi; }
+  
   double GetTPGalLongitude() const { return m_TPGalLongitude; }
   void SetTPGalLongitude(double TPGalLongitude) { m_TPGalLongitude = TPGalLongitude; }
   double GetTPGalLatitude() const { return m_TPGalLatitude; }
   void SetTPGalLatitude(double TPGalLatitude) { m_TPGalLatitude = TPGalLatitude; }
+  
   double GetTPX() const { return m_TPX; }
   void SetTPX(double TPX) { m_TPX = TPX; }
   double GetTPY() const { return m_TPY; }
   void SetTPY(double TPY) { m_TPY = TPY; }
   double GetTPZ() const { return m_TPZ; }
   void SetTPZ(double TPZ) { m_TPZ = TPZ; }
+  
   double GetTPDistanceTrans() const { return m_TPDistanceTrans; }
   void SetTPDistanceTrans(double TPDistanceTrans) { m_TPDistanceTrans = TPDistanceTrans; }
+  
   double GetTPDistanceLong() const { return m_TPDistanceLong; }
   void SetTPDistanceLong(double TPDistanceLong) { m_TPDistanceLong = TPDistanceLong; }
 
@@ -103,6 +111,7 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
 
 
   // Test positions for ARM's etc.
+  bool m_TPUse;
   double m_TPTheta;
   double m_TPPhi;
   double m_TPGalLongitude;

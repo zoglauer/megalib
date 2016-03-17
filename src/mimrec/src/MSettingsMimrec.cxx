@@ -60,6 +60,7 @@ MSettingsMimrec::MSettingsMimrec(bool AutoLoad) : MSettings("MimrecConfiguration
 
 
   // Test positions for ARM's etc.
+  m_TPUse = false;
   m_TPTheta = 0;
   m_TPPhi = 180;
   m_TPGalLongitude = 0;
@@ -118,6 +119,7 @@ bool MSettingsMimrec::WriteXml(MXmlNode* Node)
 
   // Menu ARM Gamma
   aNode = new MXmlNode(Node, "TestPositions");
+  new MXmlNode(aNode, "Use", m_TPUse);
   bNode = new MXmlNode(aNode, "CoordinateSystemSpherical");
   new MXmlNode(bNode, "Theta", m_TPTheta);
   new MXmlNode(bNode, "Phi", m_TPPhi);
@@ -166,6 +168,9 @@ bool MSettingsMimrec::ReadXml(MXmlNode* Node)
 
 
   if ((aNode = Node->GetNode("TestPositions")) != 0) {
+    if ((bNode = aNode->GetNode("Use")) != 0) {
+      m_TPUse = bNode->GetValueAsBoolean();
+    }
     if ((bNode = aNode->GetNode("CoordinateSystemSpherical")) != 0) {
       if ((cNode = bNode->GetNode("Theta")) != 0) {
         m_TPTheta = cNode->GetValueAsDouble();

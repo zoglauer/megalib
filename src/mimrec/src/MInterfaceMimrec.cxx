@@ -3528,6 +3528,7 @@ void MInterfaceMimrec::EnergySpectra()
   int NBins = m_Data->GetHistBinsSpectrum();
   double Disk = m_Data->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
+  bool UseTestPosition = m_Data->GetTPUse();
 
   int InsideWindow = 0;
   int OutsideWindow = 0;
@@ -3559,7 +3560,7 @@ void MInterfaceMimrec::EnergySpectra()
       continue;
     }
 
-    if (Disk > 0) {
+    if (UseTestPosition == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition))*c_Deg < Disk) {
           InsideWindow++;
