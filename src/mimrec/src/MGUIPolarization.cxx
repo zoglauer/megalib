@@ -25,6 +25,7 @@
 
 // Include the header:
 #include "MGUIPolarization.h"
+#include "MGUIDefaults.h"
 
 // Standard libs:
 
@@ -79,30 +80,32 @@ void MGUIPolarization::Create()
 {
   // Create the main window
 
+  double Scaler = MGUIDefaults::GetInstance()->GetFontScaler();
+  
   // We start with a name and an icon...
   SetWindowName("Polarization");  
   AddSubTitle("Analyze the polarization of an azimuthal scatter distribution"); 
 
-  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
+  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*Scaler, 20*Scaler, 5*Scaler, 0*Scaler);
 
   m_PolarizationFile = 
     new MGUIEFileSelector(this,
-                          "File containing polarized data:",
+                          "File containing the polarized data:",
                           m_Data->GetCurrentFileName());
   m_PolarizationFile->SetFileType("TRA", "*.tra");
   AddFrame(m_PolarizationFile, SingleLayout);
 
   m_BackgroundFile = 
     new MGUIEFileSelector(this,
-                          "File containing unpolarized data:",
+                          "File containing unpolarized data for geometry correction:",
                           m_Data->GetPolarizationBackgroundFileName());
   m_BackgroundFile->SetFileType("TRA", "*.tra");
   AddFrame(m_BackgroundFile, SingleLayout);
 
-	TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200, 150);
+	TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200*Scaler, 150*Scaler);
 	TGLayoutHints* ButtonFrameLayout = 
 		new TGLayoutHints(kLHintsTop | kLHintsCenterX, 
-											5, 5, 30, 8);
+											5*Scaler, 5*Scaler, 30*Scaler, 8*Scaler);
 	AddFrame(ButtonFrame, ButtonFrameLayout);
   
 
@@ -118,6 +121,10 @@ void MGUIPolarization::Create()
   m_Bins = new MGUIEEntry(ButtonFrame, "Bins:", false, m_Data->GetHistBinsPolarization());
   ButtonFrame->AddFrame(m_Bins, SingleLayout);
 
+  TGLabel* Comment = new TGLabel(this, "Remark: The zero angle of the azimuthal scatter angle distribution will be always in the direction of the given phi angle.");
+  Comment->SetWrapLength(400*Scaler);
+  AddFrame(Comment, SingleLayout);
+  
   AddButtons();
 
   PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
