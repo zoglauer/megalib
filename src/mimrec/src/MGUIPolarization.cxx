@@ -142,8 +142,8 @@ bool MGUIPolarization::OnApply()
 	// The Apply button has been pressed
 
   // First test the data
-  if (m_Theta->IsDouble(-90, 90) == false || 
-      m_Phi->IsDouble(0, 360) == false) {
+  if (m_Theta->IsDouble(0, 180) == false || 
+      m_Phi->IsDouble(-360, 360) == false) {
     return false;
   }
   
