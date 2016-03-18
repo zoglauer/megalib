@@ -286,10 +286,6 @@ class MDGeometry
   //! which should never, ever be called in library mode, e.g. adding the surrounding sphere
   bool m_LaunchedByGeomega;
   
-  //! A flag indicating the surrounding sphere should be shown, it is only shown in geomega, not when we
-  //! are in library mode.
-  bool m_ShowSurroundSphere;
-  
   // private members:
  private:
   list<MDVolume*> m_LastVolumes;

@@ -1048,7 +1048,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
 
-      m_ShowSurroundSphere = Tokenizer.GetTokenAtAsBoolean(1);
+      m_SurroundingSphereShow = Tokenizer.GetTokenAtAsBoolean(1);
       
       continue;
     }
@@ -3270,7 +3270,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
   
   // Test if the surrounding sphere should be shown
-  if (m_ShowSurroundSphere == true && m_LaunchedByGeomega == true) {
+  if (m_SurroundingSphereShow == true && m_LaunchedByGeomega == true) {
     MString MaterialName = "SurroundingSphereVolumeMaterial";
     MDMaterial* SuperDense = new MDMaterial(MaterialName, 
                                  CreateShortName(MaterialName),
