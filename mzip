@@ -1,0 +1,29 @@
+#! /bin/bash
+
+
+help() {
+  echo ""
+  echo "mzip - recursive gzip'ping script for MEGAlib";
+  echo "(C) by Andreas Zoglauer"
+  echo "";
+  echo "Usage:";
+  echo "    mzip";
+  echo "";
+  echo "Example:";
+  echo "    mzip";
+  echo "";
+  echo "This script walks down the current directory and gzip's all files MEGAlib can read gzip'ped."
+  echo "Currently is compresses roa, evta, sim, tra, and fits files" 
+  echo "";
+}
+
+FILEFORMATS="sim tra evta roa fits"
+
+for SUFFIX in ${FILEFORMATS}; do
+  echo "Looking for and compresing ${SUFFIX} files..."
+  for FILE in `find . -name "*.${SUFFIX}"`; do 
+    gzip -v -4 ${FILE} 
+  done
+done
+
+exit 0;
