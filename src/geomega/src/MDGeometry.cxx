@@ -6207,7 +6207,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   mout<<"-------- Cosima output start --------"<<endl;
   MString WorkingDirectory = gSystem->WorkingDirectory();
   gSystem->ChangeDirectory(gSystem->TempDirectory());
-  gSystem->Exec(MString("cosima ") + FileName);
+  gSystem->Exec(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString("\""));
   gSystem->Exec(MString("rm -f DelMe.*.sim ") + FileName);
   gSystem->ChangeDirectory(WorkingDirectory);
   mout<<"-------- Cosima output stop ---------"<<endl;
