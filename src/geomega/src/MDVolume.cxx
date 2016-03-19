@@ -598,8 +598,6 @@ bool MDVolume::IsDetectorVolume()
 {
   // If the volume represents a dector return true
 
-  mdep<<"Don't use this function --- doesn't seem to work --- delete later"<<endl;
-
   return m_IsDetectorVolume;
 }
 
