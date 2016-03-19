@@ -474,25 +474,27 @@ fi
 OPTIONS=""
 
 if [[ ${OPT} == normal ]]; then
-  OPTIONS="${OPTIONS} -O -DNDEBUG"
+  OPTIONS+=" -O -DNDEBUG"
 elif  [[ $OPT == strong ]]; then
   if [[ ${COMP} == gcc ]]; then 
-    OPTIONS="${OPTIONS} -O3 -mtune=native -fno-strict-aliasing -DNDEBUG"
+    OPTIONS+=" -O3 -mtune=native -fno-strict-aliasing -DNDEBUG"
   else 
-    OPTIONS=${OPTIONS}"-O2 -DNDEBUG"
+    OPTIONS+=" -O2 -DNDEBUG"
   fi
 fi
 
 G4DEBUG="G4DEBUG = 0"
-if [[ ${DEBUG} == normal ]]; then
+if [[ ${DEBUG} == normal ]] || [[ ${DEBUG} == strong ]]; then
   G4DEBUG="G4DEBUG = 1"
-  OPTIONS="${OPTIONS} -g"
-elif  [[ ${DEBUG} == strong ]]; then
-  G4DEBUG="G4DEBUG = 1"
-  OPTIONS="${OPTIONS} -g -DDEBUG1"
+  OPTIONS+=" -g"
+  if  [[ ${DEBUG} == strong ]]; then
+    OPTIONS+=" -DDEBUG1"
+  fi
+  if [[ ${COMP} == gcc ]]; then
+    OPTIONS+=" -fstack-protector-all"
+  fi
 fi
                 
- 
 
 
 # Dump the options
@@ -501,7 +503,7 @@ rm -f config/Makefile.options
 if ([ "${OPTIONS}" != "" ]); then
   echo ""
   echo "Adding the following compiler optimizations: "
-  echo "OPT = ${OPTIONS}"
+  echo "OPT =${OPTIONS}"
   if ( [ $Geant4Found -eq 0 ] ); then 
     echo "$G4DEBUG"
   fi
