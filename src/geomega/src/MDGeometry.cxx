@@ -302,7 +302,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
-  m_CrossSectionFileDirectory += "/auxiliary";
+  m_CrossSectionFileDirectory += "/absorptions";
 
   
   if (g_Verbosity >= c_Info) {
@@ -1157,13 +1157,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
 
-      m_CrossSectionFileDirectory = Tokenizer.GetTokenAtAsString(1);
-      MFile::ExpandFileName(m_CrossSectionFileDirectory);
+      // We have to use TString
+      TString Name = Tokenizer.GetTokenAtAsString(1).Data();
+      gSystem->ExpandPathName(Name);
+ 
+      if (gSystem->IsAbsoluteFileName(Name) == false) {
+        Name.Prepend("/");
+        Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
-      if (gSystem->IsAbsoluteFileName(m_CrossSectionFileDirectory) == false) {
-        m_CrossSectionFileDirectory = 
-          MString(MFile::GetDirectoryName(m_FileName)) + "/" + m_CrossSectionFileDirectory;
+        gSystem->ExpandPathName(Name);
       }
+      
+      m_CrossSectionFileDirectory = Name;
       
       continue;
     }
