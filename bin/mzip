@@ -14,16 +14,26 @@ help() {
   echo "";
   echo "This script walks down the current directory and gzip's all files MEGAlib can read gzip'ped."
   echo "Currently is compresses roa, evta, sim, tra, and fits files" 
+  echo "If the parallel gzip'ing tool pigz is installed it will be used instead of gzip"
   echo "";
 }
 
 FILEFORMATS="sim tra evta roa fits"
+TOOL="gzip"
+
+type pigz >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  TOOL="pigz"
+  echo "Using pigz instead of gzip for compression"
+  echo ""
+fi 
 
 for SUFFIX in ${FILEFORMATS}; do
-  echo "Looking for and compresing ${SUFFIX} files..."
+  echo "Looking for and compressing ${SUFFIX} files..."
   for FILE in `find . -name "*.${SUFFIX}"`; do 
-    gzip -v -4 ${FILE} 
+    nice -19 ${TOOL} -v -4 ${FILE} 
   done
+  echo ""
 done
 
 exit 0;
