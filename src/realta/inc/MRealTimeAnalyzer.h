@@ -197,6 +197,8 @@ class MRealTimeAnalyzer
   double m_HistogrammingThreadCpuUsage;
   //! The ID of the last histogrammed event
   unsigned int m_HistogrammingThreadLastEventID;
+  //! The ID of the first histogrammed event
+  unsigned int m_HistogrammingThreadFirstEventID;
 
   //! The thread where the identification happens
   TThread* m_IdentificationThread;
@@ -206,6 +208,8 @@ class MRealTimeAnalyzer
   double m_IdentificationThreadCpuUsage;
   //! The ID of the last identification event
   unsigned int m_IdentificationThreadLastEventID;
+  //! The ID of the last identification event
+  unsigned int m_IdentificationThreadFirstEventID;
 
   
   //! Unique Id for all the threads...

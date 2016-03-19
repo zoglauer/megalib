@@ -175,11 +175,13 @@ MRealTimeAnalyzer::MRealTimeAnalyzer()
   m_IsHistogrammingThreadRunning = false;
   m_HistogrammingThreadCpuUsage = 0.0;
   m_HistogrammingThreadLastEventID = 0;
+  m_HistogrammingThreadFirstEventID = 0;
 
   m_IdentificationThread = 0;
   m_IsIdentificationThreadRunning = false;
   m_IdentificationThreadCpuUsage = 0.0;
   m_IdentificationThreadLastEventID = 0;
+  m_IdentificationThreadFirstEventID = 0;
 
   m_StopThreads = false;
   m_IsAnalysisRunning = false;
@@ -657,12 +659,11 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
         }
         
         // If we have events, check the time timing 
-        
         if (m_Events.empty() == false && (
               RE->GetEventTime() > m_Events.front()->GetTime() + 5*InitializationCutOff ||
               RE->GetEventTime() < (*InitIter)->GetTime())
             ) {
-          cout<<"Time jump for event "<<RE->GetEventID()<<": T="<<RE->GetEventTime()<<" vs. T="<<m_Events.front()->GetTime()<<" in youngest event vs. T="<<(*InitIter)->GetTime()<<" of oldest event"<<endl;
+          cout<<"Time jump for event "<<RE->GetEventID()<<": T="<<RE->GetEventTime()<<" vs. T="<<m_Events.front()->GetTime()<<" in the front of our list and T="<<(*InitIter)->GetTime()<<" of last initialized event"<<endl;
           ++NContinuousTimeJumps;
           if (NContinuousTimeJumps < MaxNContinuousTimeJumps) {
             cout<<"Only "<<NContinuousTimeJumps<<" continuous time jumps: Ignoring event!"<<endl;
@@ -726,21 +727,19 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
               (*InitIter)->IsInitialized(true);
               InitIter++;
             }
-            (*InitIter)->IsInitialized(true); // Initilize front to have a true restart, nothing which comes before this event is accepted! The code below about initialization will be ignored!
-          
+             
             RestartInitilization = false;
           }
       
-          if (Event != 0) {
+          if (Event != 0) { // we deleted it previously...
             m_TransmissionThreadLastEventID = Event->GetID();
           }
       
-          // Finally we anounce that the event can be used:
+          // Finally we announce that the event can be used:
           MTime Front = m_Events.front()->GetTime();
           //cout<<"Front ID: "<<m_Events.front()->GetID()<<" is init: "<<((m_Events.front()->IsInitialized() == true) ? "true" : "false")<<":"<<(*InitIter)->GetID()<<endl;
           while ((Front - (*InitIter)->GetTime()).GetAsSeconds() > InitializationCutOff) {
             (*InitIter)->IsInitialized(true);
-            //cout<<"Initializing: "<<(*InitIter)->GetID()<<endl;
             if ((*InitIter) == m_Events.front()) break; // Make sure we never go beyond the first event!
             InitIter++;
           }
@@ -1492,13 +1491,17 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
     //cout<<"Histogramming..."<<endl;
 
-    //cout<<"Going to event horizon from "<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<"... latest time="<<LatestTime<<endl;
-    while (EventHorizon != m_Events.rend() && (*EventHorizon)->IsReconstructed() == true) {
+    //cout<<"Going to event horizon from "<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<endl;
+    do {
+      list<MRealTimeEvent*>::reverse_iterator Next = EventHorizon;
+      ++Next;
+      if (Next == m_Events.rend()) break;
+      if ((*Next)->IsReconstructed() == false) break;
       ++EventHorizon;
-    }
-    // Move one back - because the last one is either the end or not reconstructed:
-    --EventHorizon;
+    } while (true);
+    //cout<<"New event horizon: ID="<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<endl;
 
+    
     // Check if we really have more new data:
     if (m_HistogrammingThreadLastEventID == (*EventHorizon)->GetID() && EventHorizon != m_Events.rbegin()) {
       //cout<<"Continue: No new data"<<endl;
@@ -1566,6 +1569,11 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
 
 
     // Now update everything:
+    if (Event != m_Events.end()) {
+      m_HistogrammingThreadFirstEventID = (*Event)->GetID();
+    } else {
+      m_HistogrammingThreadFirstEventID = m_Events.back()->GetID();
+    }
     m_HistogrammingThreadLastEventID = (*EventHorizon)->GetID();
 
     m_CountRate->Reset();
@@ -1621,13 +1629,14 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
     while (Event != m_Events.end()) {
       MRealTimeEvent* DelMe = (*Event);
       unsigned int ID = DelMe->GetID();
-      // Attention: This is not atomic, but shouldn't cause any too server problems...
-      //cout<<ID<<":"<<m_ImagingThreadLastEventID<<":"<<m_ReconstructionThreadLastEventID<<":"<<m_CoincidenceThreadLastEventID<<":"<<m_TransmissionThreadLastEventID<<":"<<m_IdentificationThreadLastEventID<<endl;
-      if (ID >= m_ImagingThreadLastEventID || 
+      // Attention: This is not atomic, but shouldn't cause any too severe problems...
+      cout<<ID<<":"<<m_ImagingThreadLastEventID<<":"<<m_ReconstructionThreadLastEventID<<":"<<m_CoincidenceThreadLastEventID<<":"<<m_TransmissionThreadLastEventID<<":"<<m_IdentificationThreadLastEventID<<endl;
+      if (ID >= m_TransmissionThreadLastEventID || 
+          ID >= m_CoincidenceThreadLastEventID ||   
           ID >= m_ReconstructionThreadLastEventID || 
-          ID >= m_CoincidenceThreadLastEventID || 
-          ID >= m_TransmissionThreadLastEventID || 
-          ID >= m_IdentificationThreadLastEventID) {
+          ID >= m_ImagingThreadLastEventID || 
+          ID >= m_HistogrammingThreadFirstEventID ||
+          ID >= m_IdentificationThreadFirstEventID) {
         break;
       }
       Event = m_Events.erase(Event);
@@ -1763,13 +1772,17 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
 
     //cout<<"Identification..."<<endl;
 
-    //cout<<"Going to event horizon from "<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<"... latest time="<<LatestTime<<endl;
-    while (EventHorizon != m_Events.rend() && (*EventHorizon)->IsReconstructed() == true) {
+    //cout<<"Going to event horizon from ID="<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<endl;
+    do {
+      list<MRealTimeEvent*>::reverse_iterator Next = EventHorizon;
+      ++Next;
+      if (Next == m_Events.rend()) break;
+      if ((*Next)->IsReconstructed() == false) break;
       ++EventHorizon;
-    }
-    // Move one back - because the last one is either the end or not reconstructed:
-    --EventHorizon;
+    } while (true);
+    //cout<<"At event horizon: ID="<<(*EventHorizon)->GetID()<<", t="<<(*EventHorizon)->GetTime()<<", recon:"<<((*EventHorizon)->IsReconstructed() ? "true" : "false")<<endl;
 
+    
     // Check if we really have more new data:
     if (m_IdentificationThreadLastEventID == (*EventHorizon)->GetID() && EventHorizon != m_Events.rbegin()) {
       //cout<<"Continue: No new data"<<endl;
@@ -1795,8 +1808,14 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
 
       Event++;
     }
+    
    
     // Now update everything:
+    if (Event != m_Events.end()) {
+      m_IdentificationThreadFirstEventID = (*Event)->GetID();
+    } else {
+      m_IdentificationThreadFirstEventID = m_Events.back()->GetID();
+    }
     m_IdentificationThreadLastEventID = (*EventHorizon)->GetID();
 
     if (m_StopThreads == true) break;
