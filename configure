@@ -490,7 +490,7 @@ if [[ ${DEBUG} == normal ]] || [[ ${DEBUG} == strong ]]; then
   if  [[ ${DEBUG} == strong ]]; then
     OPTIONS+=" -DDEBUG1"
   fi
-  if [[ ${COMP} == gcc ]]; then
+  if [[ ${COMP} == gcc ]] && [[ ${OS} == linux ]]; then
     OPTIONS+=" -fstack-protector-all"
   fi
 fi
