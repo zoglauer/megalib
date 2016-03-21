@@ -24,6 +24,7 @@ PRGSX = \
 	$(BN)/SimRewriter \
 	$(BN)/SimCombiner \
 	$(BN)/SimRandomCoincidence \
+	$(BN)/TraAnalyzer \
 	$(BN)/DecayAnalyzer \
 	$(BN)/BackgroundMixer \
 	$(BN)/SimpleComptonImaging \

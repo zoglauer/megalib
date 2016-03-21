@@ -165,7 +165,7 @@ bool TraAnalyzer::ParseCommandLine(int argc, char** argv)
   }
 
   if (m_FileName.EndsWith(".tra") == false) {
-    cout<<"Error: Need a simulation file name, not a "<<m_FileName<<" file "<<endl;
+    cout<<"Error: Need a tra file name, not a "<<m_FileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -191,6 +191,7 @@ bool TraAnalyzer::Analyze()
   MFileEventsTra* Reader = new MFileEventsTra();
   if (Reader->Open(m_FileName) == false) {
     mout<<"Unable to open file "<<m_FileName<<". Aborting!"<<endl;
+    return false;
   }
   Reader->ShowProgress();
 
