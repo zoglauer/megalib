@@ -63,6 +63,7 @@ using namespace std;
 #include "MUnidentifiableEvent.h"
 #include "MSpectralAnalyzer.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -134,6 +135,16 @@ void* StartIdentificationThread(void* Analysis)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void* StartCleanUpThread(void* Analysis)
+{
+  ((MRealTimeAnalyzer *) Analysis)->OneCleanUpLoop();
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 int MRealTimeAnalyzer::m_ThreadId = 0;
 
 
@@ -183,17 +194,22 @@ MRealTimeAnalyzer::MRealTimeAnalyzer()
   m_IdentificationThreadLastEventID = 0;
   m_IdentificationThreadFirstEventID = 0;
 
+  m_CleanUpThread = 0;
+  m_IsCleanUpThreadRunning = false;
+  m_CleanUpThreadCpuUsage = 0.0;
+  m_CleanUpThreadLastEventID = 0;
+
   m_StopThreads = false;
   m_IsAnalysisRunning = false;
   m_IsInitializing = false;
   m_IsConnected = false;
   m_DoDisconnect = false;
   
-  m_Spectrum = 0;
-  m_CountRate = 0;
-  m_Image = 0;
+  m_Spectrum = nullptr;
+  m_CountRate = nullptr;
+  m_Image = nullptr;
   
-  m_Settings = 0;
+  m_Settings = nullptr;
 }
 
 
@@ -253,6 +269,13 @@ void MRealTimeAnalyzer::StartAnalysis()
   m_IsImagingThreadRunning = false;
   m_IsHistogrammingThreadRunning = false;
   m_IsIdentificationThreadRunning = false;
+  m_IsCleanUpThreadRunning = false;
+  
+  m_TransmissionGeometry = nullptr;
+  m_CoincidenceGeometry = nullptr;
+  m_ReconstructionGeometry = nullptr;
+  m_ImagingGeometry = nullptr;
+  m_IdentificationGeometry = nullptr;
   
   if (m_TransmissionThread == 0) {
     m_ThreadId++;
@@ -361,6 +384,24 @@ void MRealTimeAnalyzer::StartAnalysis()
       //gSystem->ProcessEvents();
     }
   }
+
+  if (m_CleanUpThread == 0) {
+    m_ThreadId++;
+    MString Name  = "CleanUpThread ";
+    Name += m_ThreadId;
+
+    m_CleanUpThread =
+      new TThread(Name,
+                  (void(*) (void *)) &StartCleanUpThread,
+                  (void*) this);
+    m_CleanUpThread->SetPriority(TThread::kHighPriority);
+    m_CleanUpThread->Run();
+
+    while (m_IsCleanUpThreadRunning == false) {
+      gSystem->Sleep(10);
+      //gSystem->ProcessEvents();
+    }
+  }
   
   m_IsAnalysisRunning = true;
   m_IsInitializing = false;
@@ -387,7 +428,8 @@ void MRealTimeAnalyzer::StopAnalysis()
          m_IsReconstructionThreadRunning == true || 
          m_IsImagingThreadRunning == true || 
          m_IsHistogrammingThreadRunning == true ||
-         m_IsIdentificationThreadRunning == true) {
+         m_IsIdentificationThreadRunning == true ||
+         m_IsCleanUpThreadRunning == true) {
     gSystem->Sleep(200);
     if (m_IsInitializing == true) cout<<"Waiting for initalization to finish"<<endl;
     if (m_IsTransmissionThreadRunning == true) cout<<"Waiting for Transmission thread"<<endl;
@@ -396,23 +438,28 @@ void MRealTimeAnalyzer::StopAnalysis()
     if (m_IsImagingThreadRunning == true) cout<<"Waiting for imaging thread"<<endl;
     if (m_IsHistogrammingThreadRunning == true) cout<<"Waiting for histogramming thread"<<endl;
     if (m_IsIdentificationThreadRunning == true) cout<<"Waiting for identification thread"<<endl;
+    if (m_IsCleanUpThreadRunning == true) cout<<"Waiting for cleanup thread"<<endl;
  }
   
   if (m_TransmissionThread != 0) m_TransmissionThread->Kill();
   m_TransmissionThread = 0;
   m_IsTransmissionThreadRunning = false;
+  delete m_TransmissionGeometry;
   
   if (m_CoincidenceThread != 0) m_CoincidenceThread->Kill();
   m_CoincidenceThread = 0;
   m_IsCoincidenceThreadRunning = false;
+  delete m_CoincidenceGeometry;
   
   if (m_ReconstructionThread != 0) m_ReconstructionThread->Kill();
   m_ReconstructionThread = 0;
   m_IsReconstructionThreadRunning = false;
+  delete m_ReconstructionGeometry;
   
   if (m_ImagingThread != 0) m_ImagingThread->Kill();
   m_ImagingThread = 0;
   m_IsImagingThreadRunning = false;
+  delete m_ImagingGeometry;
 
   if (m_HistogrammingThread != 0) m_HistogrammingThread->Kill();
   m_HistogrammingThread = 0;
@@ -421,6 +468,11 @@ void MRealTimeAnalyzer::StopAnalysis()
   if (m_IdentificationThread != 0) m_IdentificationThread->Kill();
   m_IdentificationThread = 0;
   m_IsIdentificationThreadRunning = false;
+  delete m_IdentificationGeometry;
+
+  if (m_CleanUpThread != 0) m_CleanUpThread->Kill();
+  m_CleanUpThread = 0;
+  m_IsCleanUpThreadRunning = false;
 
   m_IsAnalysisRunning = false;
     
@@ -486,10 +538,10 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
   //! The transmission loop
 
   // Load geometry:
-  MGeometryRevan* Geometry = new MGeometryRevan();
+  m_TransmissionGeometry = new MGeometryRevan();
 
-  if (Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+  if (m_TransmissionGeometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_TransmissionGeometry->GetName()<<" failed!!"<<endl;
     return;
   }  
 
@@ -620,7 +672,7 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
           if (Tokens[i].BeginsWith("HT") == true) {
             if (Tokens[i].BeginsWith("HTsim") == true) {
               Noising = new MERNoising();
-              Noising->SetGeometry(Geometry);
+              Noising->SetGeometry(m_TransmissionGeometry);
               Noising->PreAnalysis();
               cout<<"Activate noising of input events"<<endl;
             } else {
@@ -641,7 +693,7 @@ void MRealTimeAnalyzer::OneTransmissionLoop()
         }
       }
       while (StartIndex < Tokens.size()) {
-        MRERawEvent* RE = new MRERawEvent(Geometry); 
+        MRERawEvent* RE = new MRERawEvent(m_TransmissionGeometry); 
         for (unsigned int i = StartIndex; i < Tokens.size(); ++i) {
           if (Tokens[i] == "SE" || Tokens[i] == "EN" ) {
             StartIndex = i+1;
@@ -786,16 +838,16 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
   bool DoCoincidence = m_Settings->GetDoCoincidence();
   
   // Load geometry:
-  MGeometryRevan* Geometry = new MGeometryRevan();
+  m_CoincidenceGeometry = new MGeometryRevan();
 
-  if (Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+  if (m_CoincidenceGeometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_CoincidenceGeometry->GetName()<<" failed!!"<<endl;
     return;
   }  
 
   // Initialize the raw event analyzer for HEMI:
   MRawEventAnalyzer* RawEventAnalyzer = new MRawEventAnalyzer();
-  RawEventAnalyzer->SetGeometry(Geometry);
+  RawEventAnalyzer->SetGeometry(m_CoincidenceGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
   RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
@@ -955,10 +1007,10 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
 
 
   // Load geometry:
-  MGeometryRevan* Geometry = new MGeometryRevan();
+  m_ReconstructionGeometry = new MGeometryRevan();
 
-  if (Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+  if (m_ReconstructionGeometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_ReconstructionGeometry->GetName()<<" failed!!"<<endl;
     return;
   }  
 
@@ -989,7 +1041,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
 
   // Initialize the raw event analyzer for HEMI:
   MRawEventAnalyzer* RawEventAnalyzer = new MRawEventAnalyzer();
-  RawEventAnalyzer->SetGeometry(Geometry);
+  RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
   RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
@@ -1138,7 +1190,9 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
   if (SaveEvents == true) {
     File.Close();
   }
-      
+  
+  delete RawEventAnalyzer;
+  
   m_IsReconstructionThreadRunning = false;
     
   cout<<"Reconstruction thread finished!"<<endl;
@@ -1152,16 +1206,16 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
 {
   
   // Load geometry:
-  MDGeometryQuest* Geometry = new MDGeometryQuest();
+  m_ImagingGeometry = new MDGeometryQuest();
 
-  if (Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+  if (m_ImagingGeometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_ImagingGeometry->GetName()<<" failed!!"<<endl;
     return 0;
   }  
 
   MImagerExternallyManaged* Imager = 
     new MImagerExternallyManaged(m_Settings->GetCoordinateSystem());
-  Imager->SetGeometry(Geometry);
+  Imager->SetGeometry(m_ImagingGeometry);
   Imager->UseGUI(false);  
     
   // Maths:
@@ -1379,8 +1433,10 @@ void MRealTimeAnalyzer::OneImagingLoop()
     EventIter++;
   }
 
-  m_IsImagingThreadRunning = false;
+  delete Imager;
   
+  m_IsImagingThreadRunning = false;
+ 
   cout<<"Imaging thread finished"<<endl;
 }
 
@@ -1589,11 +1645,10 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
       m_Spectrum->SetBinContent(b, InternalSpectrum->GetBinContent(b));
     }
 
-
-    m_Image = 0;
-    delete m_Image;
+    // m_Image = 0; 
+    // delete m_Image;
     //m_Image = dynamic_cast<MImageSpheric*>(Images.back());
-    m_Image = Images.back();
+    m_Image = shared_ptr<MImage>(Images.back());
     if (Images.size() > 1) {
       for (unsigned int i = 0; i < Images.size() - 1; ++i) {
         delete Images[i];
@@ -1624,28 +1679,12 @@ void MRealTimeAnalyzer::OneHistogrammingLoop()
       NapTimer.Reset();
       NapTime = 0.0;
     }
+    
     if (m_StopThreads == true) break;
-
-
-    // Only here at the end are we allowed to shrink the array:
-    while (Event != m_Events.end()) {
-      MRealTimeEvent* DelMe = (*Event);
-      unsigned int ID = DelMe->GetID();
-      // Attention: This is not atomic, but shouldn't cause any too severe problems...
-      cout<<ID<<":"<<m_ImagingThreadLastEventID<<":"<<m_ReconstructionThreadLastEventID<<":"<<m_CoincidenceThreadLastEventID<<":"<<m_TransmissionThreadLastEventID<<":"<<m_IdentificationThreadLastEventID<<endl;
-      if (ID >= m_TransmissionThreadLastEventID || 
-          ID >= m_CoincidenceThreadLastEventID ||   
-          ID >= m_ReconstructionThreadLastEventID || 
-          ID >= m_ImagingThreadLastEventID || 
-          ID >= m_HistogrammingThreadFirstEventID ||
-          ID >= m_IdentificationThreadFirstEventID) {
-        break;
-      }
-      Event = m_Events.erase(Event);
-      delete DelMe;
-    }
   }
 
+  delete Imager;
+  
   m_IsHistogrammingThreadRunning = false;
 
   cout<<"Histogramming thread finished"<<endl;
@@ -1677,9 +1716,9 @@ vector<MQualifiedIsotope> MRealTimeAnalyzer::GetIsotopes()
 void MRealTimeAnalyzer::OneIdentificationLoop()
 {
   // First set up the geometry
-  MDGeometryQuest* Geometry = new MDGeometryQuest();
-  if (Geometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
-    cout<<"Loading of geometry "<<Geometry->GetName()<<" failed!!"<<endl;
+  m_IdentificationGeometry = new MDGeometryQuest();
+  if (m_IdentificationGeometry->ScanSetupFile(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Loading of geometry "<<m_IdentificationGeometry->GetName()<<" failed!!"<<endl;
     return;
   }
 
@@ -1709,7 +1748,7 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
   S.SetBatch(true);
   
   // Fill the initial histogram:
-  S.SetGeometry(Geometry);
+  S.SetGeometry(m_IdentificationGeometry);
   S.SetSpectrum(1000, Emin, Emax, 2);
 
   // Peak search parameters:
@@ -1840,6 +1879,78 @@ void MRealTimeAnalyzer::OneIdentificationLoop()
 
   cout<<"Identification thread finished"<<endl;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRealTimeAnalyzer::OneCleanUpLoop()
+{
+  // Do the clean up
+
+  cout<<"Cleanup thread started..."<<endl<<flush;
+  m_IsCleanUpThreadRunning = true;
+
+  list<MRealTimeEvent*>::reverse_iterator EventIter;
+  while (m_Events.empty() && m_StopThreads == false) {
+    gSystem->Sleep(10);
+  }
+  EventIter = m_Events.rbegin();
+  
+  MTimer NapTimer;
+  double NapAmount = 100;
+  double NapTime = 0;
+  
+  MRealTimeEvent* Event = 0;
+  while (m_StopThreads == false) {
+    
+    list<MRealTimeEvent*>::iterator DeleteIter = m_Events.end();
+    EventIter = m_Events.rbegin();
+    while (EventIter != m_Events.rend()) {
+      unsigned int ID = (*EventIter)->GetID();
+      // Attention: This is not atomic, but shouldn't cause any too severe problems...
+      if (ID >= m_TransmissionThreadLastEventID || 
+          ID >= m_CoincidenceThreadLastEventID ||   
+          ID >= m_ReconstructionThreadLastEventID || 
+          ID >= m_ImagingThreadLastEventID || 
+          ID >= m_HistogrammingThreadFirstEventID ||
+          ID >= m_IdentificationThreadFirstEventID) {
+        break;
+      }
+      DeleteIter = --(EventIter.base()); // One cannot erase from a reverse iterator, this is the trick how to do it
+      ++EventIter;
+    }
+    
+    if (DeleteIter != m_Events.end()) {
+      m_CleanUpThreadLastEventID = (*DeleteIter)->GetID();
+      while (DeleteIter != m_Events.end()) {
+        Event = *DeleteIter;
+        //cout<<"Deleting:"<<Event->GetID()<<" Boundaries: T="<<m_TransmissionThreadLastEventID<<" C="<<m_CoincidenceThreadLastEventID<<" R="<<m_ReconstructionThreadLastEventID<<" I="<<m_ImagingThreadLastEventID<<" ID="<<m_IdentificationThreadFirstEventID<<" H="<<m_HistogrammingThreadFirstEventID<<" C="<<m_CleanUpThreadLastEventID<<endl;
+        DeleteIter = m_Events.erase(DeleteIter); 
+        delete Event;
+      }
+    }
+ 
+    //cout<<"CleanUp thread: Waiting for more events falling off the cliff..."<<endl;
+    if (m_StopThreads == true) break;
+    gSystem->Sleep((unsigned int) NapAmount);
+    NapTime += NapAmount/1000.0;
+     if (NapTimer.GetElapsed() > 5.0) {
+      m_CleanUpThreadCpuUsage = (1.0 - NapTime/NapTimer.GetElapsed());
+      if (m_CleanUpThreadCpuUsage < 0.0) m_CleanUpThreadCpuUsage = 0.0;
+      if (m_CleanUpThreadCpuUsage > 1.0) m_CleanUpThreadCpuUsage = 1.0;
+      NapTimer.Reset();
+      NapTime = 0.0;
+    }
+    if (m_StopThreads == true) break;
+  }
+      
+  m_IsCleanUpThreadRunning = false;
+    
+  cout<<"Cleanup thread finished!"<<endl;
+}
+
+
 
 
 

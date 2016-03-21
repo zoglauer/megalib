@@ -123,6 +123,8 @@ class MGUIRealtaMain : public TGMainFrame
   TGLabel* m_HistogrammingThreadCpuUsage;
   //! The CPU usage of the identification thread
   TGLabel* m_IdentificationThreadCpuUsage;
+  //! The CPU usage of the identification thread
+  TGLabel* m_CleanUpThreadCpuUsage;
 
   //! The ID of the last handled event of the transmission thread
   TGLabel* m_TransmissionThreadLastEventID;
@@ -136,6 +138,8 @@ class MGUIRealtaMain : public TGMainFrame
   TGLabel* m_HistogrammingThreadLastEventID;
   //! The ID of the last handled event of the identification thread
   TGLabel* m_IdentificationThreadLastEventID;
+  //! The ID of the last handled event of the identification thread
+  TGLabel* m_CleanUpThreadLastEventID;
   
   
   //! The analysis thread

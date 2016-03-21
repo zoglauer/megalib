@@ -31,6 +31,7 @@
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
+#include <memory>
 using namespace std;
 
 // ROOT libs:
@@ -76,6 +77,7 @@ using namespace std;
 #include "MGUISpectralAnalyzer.h"
 
 #include "MSettingsMimrec.h"
+#include "MImage.h"
 #include "MImage2D.h"
 #include "MImageSpheric.h"
 #include "MBPData.h"
@@ -313,29 +315,35 @@ void MGUIRealtaMain::Create()
   TGLabel* HistogrammingThreadCpuUsageLabel = new TGLabel(ThreadLabelsFrame, "Histograms:");
   ThreadLabelsFrame->AddFrame(HistogrammingThreadCpuUsageLabel, UsageLabelLayout);
 
+  TGLabel* CleanUpThreadCpuUsageLabel = new TGLabel(ThreadLabelsFrame, "Cleanup:");
+  ThreadLabelsFrame->AddFrame(CleanUpThreadCpuUsageLabel, UsageLabelLayout);
+
   
   // Usage
   TGVerticalFrame* ThreadUsageFrame = new TGVerticalFrame(ThreadsFrame, 100, 30); //, kRaisedFrame);
   TGLayoutHints* ThreadUsageFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 1, 1, 1, 1);
   ThreadsFrame->AddFrame(ThreadUsageFrame, ThreadUsageFrameLayout);
 
-  m_TransmissionThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_TransmissionThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_TransmissionThreadCpuUsage, UsageLayout);
 
-  m_CoincidenceThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_CoincidenceThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_CoincidenceThreadCpuUsage, UsageLayout);
 
-  m_ReconstructionThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_ReconstructionThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_ReconstructionThreadCpuUsage, UsageLayout);
 
-  m_ImagingThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_ImagingThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_ImagingThreadCpuUsage, UsageLayout);
 
-  m_IdentificationThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_IdentificationThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_IdentificationThreadCpuUsage, UsageLayout);
 
-  m_HistogrammingThreadCpuUsage = new TGLabel(ThreadUsageFrame, "LD: 0.0 %    ");
+  m_HistogrammingThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
   ThreadUsageFrame->AddFrame(m_HistogrammingThreadCpuUsage, UsageLayout);
+
+  m_CleanUpThreadCpuUsage = new TGLabel(ThreadUsageFrame, "CPU: 0.0 %    ");
+  ThreadUsageFrame->AddFrame(m_CleanUpThreadCpuUsage, UsageLayout);
 
   
   // IDs
@@ -360,6 +368,9 @@ void MGUIRealtaMain::Create()
 
   m_HistogrammingThreadLastEventID = new TGLabel(ThreadEventIDFrame, "ID: 0          ");
   ThreadEventIDFrame->AddFrame(m_HistogrammingThreadLastEventID, UsageLayout);
+
+  m_CleanUpThreadLastEventID = new TGLabel(ThreadEventIDFrame, "ID: 0          ");
+  ThreadEventIDFrame->AddFrame(m_CleanUpThreadLastEventID, UsageLayout);
 
   
  
@@ -745,7 +756,7 @@ void MGUIRealtaMain::DoControlLoop()
       usage<<setprecision(1)<<fixed;
       
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetTransmissionThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetTransmissionThreadCpuUsage()<<" %";
       if (MString(m_TransmissionThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_TransmissionThreadCpuUsage->SetText(usage.str().c_str());
       }
@@ -757,7 +768,7 @@ void MGUIRealtaMain::DoControlLoop()
       }
       
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetCoincidenceThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetCoincidenceThreadCpuUsage()<<" %";
       if (MString(m_CoincidenceThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_CoincidenceThreadCpuUsage->SetText(usage.str().c_str());
       }
@@ -769,7 +780,7 @@ void MGUIRealtaMain::DoControlLoop()
       }
       
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetReconstructionThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetReconstructionThreadCpuUsage()<<" %";
       if (MString(m_ReconstructionThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_ReconstructionThreadCpuUsage->SetText(usage.str().c_str());
       }
@@ -781,7 +792,7 @@ void MGUIRealtaMain::DoControlLoop()
       }
 
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetImagingThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetImagingThreadCpuUsage()<<" %";
       if (MString(m_ImagingThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_ImagingThreadCpuUsage->SetText(usage.str().c_str());
       }
@@ -790,6 +801,18 @@ void MGUIRealtaMain::DoControlLoop()
       usage<<"ID: "<<m_Analyzer->GetImagingThreadLastEventID();
       if (MString(m_ImagingThreadLastEventID->GetText()->Data()) != usage.str().c_str()) {
         m_ImagingThreadLastEventID->SetText(usage.str().c_str());
+      }
+
+      usage.str("");
+      usage<<"CPU: "<<100*m_Analyzer->GetCleanUpThreadCpuUsage()<<" %";
+      if (MString(m_CleanUpThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
+        m_CleanUpThreadCpuUsage->SetText(usage.str().c_str());
+      }
+
+      usage.str("");
+      usage<<"ID: "<<m_Analyzer->GetCleanUpThreadLastEventID();
+      if (MString(m_CleanUpThreadLastEventID->GetText()->Data()) != usage.str().c_str()) {
+        m_CleanUpThreadLastEventID->SetText(usage.str().c_str());
       }
       
       MString ConnectionString;
@@ -885,7 +908,8 @@ void MGUIRealtaMain::DoControlLoop()
       }
       
       gSystem->ProcessEvents();
-      if (m_Analyzer->GetImage() != 0) {
+      shared_ptr<MImage> Image = m_Analyzer->GetImage();
+      if (Image != nullptr) {
         // The whole thing here is to prevent a crash when we are interacting with the canvas during an draw
         TIter Next(m_ImageCanvas->GetCanvas()->GetListOfPrimitives());
         bool FoundInteraction = false;
@@ -897,7 +921,7 @@ void MGUIRealtaMain::DoControlLoop()
         }
         if (FoundInteraction == false) {
           m_ImageCanvas->GetCanvas()->cd();
-          m_Analyzer->GetImage()->Display(m_ImageCanvas->GetCanvas());
+          Image->Display(m_ImageCanvas->GetCanvas());
           m_ImageCanvas->GetCanvas()->Update();
           AnImageShown = true;
         }
@@ -908,7 +932,7 @@ void MGUIRealtaMain::DoControlLoop()
       usage<<setprecision(1)<<fixed;
 
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetHistogrammingThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetHistogrammingThreadCpuUsage()<<" %";
       if (MString(m_HistogrammingThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_HistogrammingThreadCpuUsage->SetText(usage.str().c_str());
       }
@@ -920,7 +944,7 @@ void MGUIRealtaMain::DoControlLoop()
       }
 
       usage.str("");
-      usage<<"LD: "<<100*m_Analyzer->GetIdentificationThreadCpuUsage()<<" %";
+      usage<<"CPU: "<<100*m_Analyzer->GetIdentificationThreadCpuUsage()<<" %";
       if (MString(m_IdentificationThreadCpuUsage->GetText()->Data()) != usage.str().c_str()) {
         m_IdentificationThreadCpuUsage->SetText(usage.str().c_str());
       }
