@@ -26,6 +26,7 @@ SimAnalyzer
 SimCombiner
 SimRandomCoincidence
 SimpleComptonImaging
+TraAnalyzer
 eventtransmitter
 modifiedcosima
 quickparse
