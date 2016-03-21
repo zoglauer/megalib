@@ -264,6 +264,7 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
   }
   delete Progress;
 
+  delete Image;
   
   IterationTimer.Pause();
   //mout<<"Performed "<<CurrentIteration<<" iterations in "<<IterationTimer.GetElapsed()<<" seconds ("<<CurrentIteration/IterationTimer.GetElapsed()<<" iterations/second)"<<endl;
