@@ -19,6 +19,7 @@
 // Standard libs:
 #include <list>
 #include <vector>
+#include <memory>
 using namespace std;
 
 // ROOT libs:
@@ -47,6 +48,7 @@ void* StartReconstructionThread(void* Analysis);
 void* StartImagingThread(void* Analysis);
 void* StartHistogrammingThread(void* Analysis);
 void* StartIdentificationThread(void* Analysis);
+void* StartCleanUpThread(void* Analysis);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -91,13 +93,15 @@ class MRealTimeAnalyzer
   void OneHistogrammingLoop();
   //! The infinite identification loop
   void OneIdentificationLoop();
+  //! The infinite clean up loop
+  void OneCleanUpLoop();
   
   //! Get count rate historgram
   TH1D* GetCountRateHistogram() { return m_CountRate; }
   //! Get spectrum historgram
   TH1D* GetSpectrumHistogram() { return m_Spectrum; }
   //! Get image
-  MImage* GetImage() { return m_Image; }
+  shared_ptr<MImage> GetImage() { return m_Image; }
   //! Get a COPY of the isotope list
   vector<MQualifiedIsotope> GetIsotopes();
   //! Get the current list of the minima of the energy windows
@@ -120,6 +124,8 @@ class MRealTimeAnalyzer
   double GetHistogrammingThreadCpuUsage() { return m_HistogrammingThreadCpuUsage; }
   //! Get the identification thread CPU usage...
   double GetIdentificationThreadCpuUsage() { return m_IdentificationThreadCpuUsage; }
+  //! Get the clean up thread CPU usage...
+  double GetCleanUpThreadCpuUsage() { return m_CleanUpThreadCpuUsage; }
   
   //! Get the ID of the last event handled in the transmission thread...
   unsigned int GetTransmissionThreadLastEventID() { return m_TransmissionThreadLastEventID; }
@@ -133,6 +139,8 @@ class MRealTimeAnalyzer
   unsigned int GetHistogrammingThreadLastEventID() { return m_HistogrammingThreadLastEventID; }
   //! Get the ID of the last event handled in the identification thread...
   unsigned int GetIdentificationThreadLastEventID() { return m_IdentificationThreadLastEventID; }
+  //! Get the ID of the last event handled in the clean up thread...
+  unsigned int GetCleanUpThreadLastEventID() { return m_CleanUpThreadLastEventID; }
   
   // protected methods:
  protected:
@@ -161,6 +169,8 @@ class MRealTimeAnalyzer
   double m_TransmissionThreadCpuUsage;
   //! The ID of the last transmitted event 
   unsigned int m_TransmissionThreadLastEventID;
+  //! The geometry for the transmission thread
+  MGeometryRevan* m_TransmissionGeometry;
   
   //! The thread where the coincidence finding happens
   TThread* m_CoincidenceThread;     
@@ -170,6 +180,8 @@ class MRealTimeAnalyzer
   double m_CoincidenceThreadCpuUsage;
   //! The ID of the last coincident event 
   unsigned int m_CoincidenceThreadLastEventID;
+  //! The geometry for the transmission thread
+  MGeometryRevan* m_CoincidenceGeometry;
   
   //! The thread where the event reconstruction happens
   TThread* m_ReconstructionThread;     
@@ -179,6 +191,8 @@ class MRealTimeAnalyzer
   double m_ReconstructionThreadCpuUsage;
   //! The ID of the last reconstructed event 
   unsigned int m_ReconstructionThreadLastEventID;
+  //! The geometry for the transmission thread
+  MGeometryRevan* m_ReconstructionGeometry;
   
   //! The thread where the backprojection happens
   TThread* m_ImagingThread;
@@ -188,6 +202,8 @@ class MRealTimeAnalyzer
   double m_ImagingThreadCpuUsage;
   //! The ID of the last imaged event 
   unsigned int m_ImagingThreadLastEventID;
+  //! The geometry for the transmission thread
+  MDGeometryQuest* m_ImagingGeometry;
 
   //! The thread where the histogramming happens
   TThread* m_HistogrammingThread;
@@ -210,6 +226,17 @@ class MRealTimeAnalyzer
   unsigned int m_IdentificationThreadLastEventID;
   //! The ID of the last identification event
   unsigned int m_IdentificationThreadFirstEventID;
+  //! The geometry for the transmission thread
+  MDGeometryQuest* m_IdentificationGeometry;
+
+  //! The thread where the identification happens
+  TThread* m_CleanUpThread;
+  //! True if the identification thread is in its execution loop
+  bool m_IsCleanUpThreadRunning;
+  //! The CPU usage of the identification thread
+  double m_CleanUpThreadCpuUsage;
+  //! The ID of the last identification event
+  unsigned int m_CleanUpThreadLastEventID;
 
   
   //! Unique Id for all the threads...
@@ -246,7 +273,7 @@ class MRealTimeAnalyzer
   //! The current spectrum histogram
   TH1D* m_Spectrum;
   //! The current image
-  MImage* m_Image;
+  shared_ptr<MImage> m_Image;
   
   //! The current list of the minima of the energy windows
   vector<double> m_SpectrumMin;
