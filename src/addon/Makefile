@@ -31,6 +31,7 @@ PRGSX = \
 	$(BN)/ExternalDataAnalysisExample \
 	$(BN)/ShowHistograms \
 	$(BN)/Revoxelizer \
+	$(BN)/IsotopeFileSplitter \
 
 FITS = $(BN)/ConvertMGGPOD
 
