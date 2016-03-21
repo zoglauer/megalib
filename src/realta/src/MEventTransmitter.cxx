@@ -80,6 +80,8 @@ private:
   int m_Port;
   /// The name of the host
   MString m_Host;
+  /// The speed factor
+  double m_Speed;
 };
 
 /******************************************************************************/
@@ -88,7 +90,7 @@ private:
 /******************************************************************************
  * Default constructor
  */
-MEventTransmitter::MEventTransmitter() : m_Interrupt(false), m_Port(9090), m_Host("localhost")
+MEventTransmitter::MEventTransmitter() : m_Interrupt(false), m_Port(9090), m_Host("localhost"), m_Speed(1)
 {
   gStyle->SetPalette(1, 0);
 }
@@ -116,6 +118,7 @@ bool MEventTransmitter::ParseCommandLine(int argc, char** argv)
   Usage<<"         -g:   geometry file name"<<endl;
   Usage<<"         -p:   port"<<endl;
   Usage<<"         -d:   destination host"<<endl;
+  Usage<<"         -s:   speed up / slow down factor"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -170,6 +173,9 @@ bool MEventTransmitter::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-d") {
       m_Host = argv[++i];
       cout<<"Accepting host: "<<m_Host<<endl;
+    } else if (Option == "-s") {
+      m_Speed = atof(argv[++i]);
+      cout<<"Accepting speed up / slow down factor: "<<m_Speed<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -258,7 +264,7 @@ bool MEventTransmitter::Analyze()
         SiEvent = dynamic_cast<MFileEventsSim*>(Readers[ReaderID])->GetNextEvent(false);
         if (SiEvent == 0) {
           Readers[ReaderID]->Rewind();
-          ObservationTime += Readers[ReaderID]->GetObservationTime();
+          ObservationTime += Readers[ReaderID]->GetObservationTime()*1.0/m_Speed;
           ReaderID++;
           if (ReaderID >= Readers.size()) ReaderID = 0; 
           cout<<"Switching to file: "<<Readers[ReaderID]->GetFileName()<<endl;
@@ -270,7 +276,8 @@ bool MEventTransmitter::Analyze()
         }
         ++ID;
         SiEvent->SetID(ID);
-        SiEvent->SetTime(SiEvent->GetTime() + ObservationTime);
+        SiEvent->SetTime(SiEvent->GetTime()*1.0/m_Speed + ObservationTime);
+        
         double TimeDifference = SiEvent->GetTime().GetAsSeconds() - Timer.GetElapsed();
         if (TimeDifference > 0) gSystem->Sleep(int(1000*TimeDifference));
     
@@ -281,7 +288,7 @@ bool MEventTransmitter::Analyze()
         ReEvent = dynamic_cast<MFileEventsEvta*>(Readers[ReaderID])->GetNextEvent();
         if (ReEvent == 0) {
           Readers[ReaderID]->Rewind();
-          ObservationTime += Readers[ReaderID]->GetObservationTime();
+          ObservationTime += Readers[ReaderID]->GetObservationTime()*1.0/m_Speed;
           ReaderID++;
           if (ReaderID >= Readers.size()) ReaderID = 0; 
           cout<<"Switching to file: "<<Readers[ReaderID]->GetFileName()<<endl;
@@ -293,11 +300,12 @@ bool MEventTransmitter::Analyze()
         }
         ++ID;
         if (IsFirst == true) {
-          FirstTime = ReEvent->GetEventTime();
+          FirstTime = ReEvent->GetEventTime()*1.0/m_Speed;
           IsFirst = false;
         }
         ReEvent->SetEventId(ID);
-        ReEvent->SetEventTime(ReEvent->GetEventTime() + ObservationTime - FirstTime);
+        ReEvent->SetEventTime(ReEvent->GetEventTime()*1.0/m_Speed + ObservationTime - FirstTime);
+        cout<<"ID: "<<ReEvent->GetEventId()<<"  Time: "<<ReEvent->GetEventTime().GetAsSeconds()<<endl<<flush;
         
         double TimeDifference = ReEvent->GetEventTime().GetAsSeconds() - Timer.GetElapsed();
         if (TimeDifference > 0 && TimeDifference < 2) {
