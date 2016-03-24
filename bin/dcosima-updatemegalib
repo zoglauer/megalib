@@ -101,7 +101,16 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   
   echo " "
-  echo "Step 2: Downloading the latest setup file..."
+  echo "Step 2: Stashing any potential changes..."
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}/MEGAlib; git stash save"
+  if [ "$?" != "0" ]; then
+    echo "ERROR: Unable to stash any potential changes to MEGAlib on ${REMOTENAME[$m]}"
+    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
+    continue
+  fi
+  
+  echo " "
+  echo "Step 3: Downloading the latest setup file..."
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to download the latest setup file on ${REMOTENAME[$m]}"
@@ -110,7 +119,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   echo " "
-  echo "Step 3: Running the setup file..."
+  echo "Step 4: Running the setup file..."
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on"
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to run the setup file on ${REMOTENAME[$m]}"
@@ -119,7 +128,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   echo " "
-  echo "Step 4: Setting up the environment..."
+  echo "Step 5: Setting up the environment..."
   # Unfortunately we have to hard code the MEGAlib path here since we have to use ''
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'  
   if [ "$?" != "0" ]; then
