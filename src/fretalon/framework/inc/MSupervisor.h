@@ -62,8 +62,10 @@ class MSupervisor
   unsigned int GetNAvailableModules() { return m_AvailableModules.size(); }
   //! Return the available modules at position i --- no error checks are performed  
   MModule* GetAvailableModule(unsigned int i);
-  //! Return the modules with the given name or a nullptr in case there is none --- no error checks are performed  
-  MModule* GetAvailableModule(MString Name);
+  //! Return the module with the given name OR XML tag or a nullptr in case there is none --- no error checks are performed  
+  MModule* GetAvailableModuleByName(MString Name);
+  //! Return the module with the given XML tag or a nullptr in case there is none --- no error checks are performed  
+  MModule* GetAvailableModuleByXmlTag(MString XmlTag);
 
   //! Return the number of modules in the current sequence
   unsigned int GetNModules() { return m_Modules.size(); }

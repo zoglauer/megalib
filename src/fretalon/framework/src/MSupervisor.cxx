@@ -173,12 +173,29 @@ MModule* MSupervisor::GetAvailableModule(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MModule* MSupervisor::GetAvailableModule(MString Name) 
+MModule* MSupervisor::GetAvailableModuleByName(MString Name) 
 { 
   //! Return the modules at position i in the current sequence --- no error checks are performed  
 
   for (unsigned int m = 0; m < m_AvailableModules.size(); ++m) {
     if (m_AvailableModules[m]->GetName() == Name) {
+      return m_AvailableModules[m];
+    }
+  }
+
+  return nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MModule* MSupervisor::GetAvailableModuleByXmlTag(MString XmlTag) 
+{ 
+  //! Return the modules at position i in the current sequence --- no error checks are performed  
+
+  for (unsigned int m = 0; m < m_AvailableModules.size(); ++m) {
+    if (m_AvailableModules[m]->GetXmlTag() == XmlTag) {
       return m_AvailableModules[m];
     }
   }
@@ -484,7 +501,7 @@ bool MSupervisor::Load(MString FileName)
 
   int Version = 1;
   MXmlNode* VersionNode = Document->GetNode("Version");
-  if (VersionNode != 0) {
+  if (VersionNode != nullptr) {
     Version = VersionNode->GetValueAsInt();
   }
   if (Version != 1) {
@@ -494,8 +511,9 @@ bool MSupervisor::Load(MString FileName)
   MXmlNode* ModuleSequence = Document->GetNode("ModuleSequence");
   if (ModuleSequence != 0) {
     for (unsigned int m = 0; m < ModuleSequence->GetNNodes(); ++m) {
-      MModule* M = GetAvailableModule(ModuleSequence->GetNode(m)->GetValue());
-      if (M != 0) {
+      MModule* M = GetAvailableModuleByXmlTag(ModuleSequence->GetNode(m)->GetValue());
+      if (M == nullptr) M = GetAvailableModuleByName(ModuleSequence->GetNode(m)->GetValue());  // for compatibility with old format
+      if (M != nullptr) {
         m_Modules.push_back(M);
       } else {
         mout<<"Error: Cannot find a module with name: "<<ModuleSequence->GetNode(m)->GetValue()<<endl;
@@ -504,15 +522,15 @@ bool MSupervisor::Load(MString FileName)
   }
 
   MXmlNode* GeometryFileName = Document->GetNode("GeometryFileName");
-  if (GeometryFileName != 0) {
+  if (GeometryFileName != nullptr) {
     m_GeometryFileName = GeometryFileName->GetValue();
   }
 
   MXmlNode* ModuleOptions = Document->GetNode("ModuleOptions");
-  if (ModuleOptions != 0) {
+  if (ModuleOptions != nullptr) {
     for (unsigned int a = 0; a < m_AvailableModules.size(); ++a) {
       MXmlNode* ModuleNode = ModuleOptions->GetNode(m_AvailableModules[a]->GetXmlTag());
-      if (ModuleNode != 0) {
+      if (ModuleNode != nullptr) {
         m_AvailableModules[a]->ReadXmlConfiguration(ModuleNode);
       }
     }
@@ -540,7 +558,7 @@ bool MSupervisor::Save(MString FileName)
   MXmlNode* ModuleSequence = new MXmlNode(Document, "ModuleSequence");
   // Store the module sequence
   for (unsigned int m = 0; m < m_Modules.size(); ++m) {
-    new MXmlNode(ModuleSequence, "ModuleSequenceItem", m_Modules[m]->GetName());
+    new MXmlNode(ModuleSequence, "ModuleSequenceItem", m_Modules[m]->GetXmlTag());
   }
 
   // Store the file names

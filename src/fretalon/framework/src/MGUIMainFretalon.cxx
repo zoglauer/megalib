@@ -170,7 +170,7 @@ void MGUIMainFretalon::Create()
 
   TGLabel* SubTitle = new TGLabel(this, m_SubTitle);
   SubTitle->SetTextFont(ItalicFont);
-  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 0, 12*FontScaler);
+  TGLayoutHints* SubTitleLayout = new TGLayoutHints(kLHintsTop | kLHintsCenterX | kLHintsExpandX, 0, 0, 5*FontScaler, 12*FontScaler);
   AddFrame(SubTitle, SubTitleLayout);
 
   
