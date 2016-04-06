@@ -439,39 +439,44 @@ void MRealTimeAnalyzer::StopAnalysis()
     if (m_IsHistogrammingThreadRunning == true) cout<<"Waiting for histogramming thread"<<endl;
     if (m_IsIdentificationThreadRunning == true) cout<<"Waiting for identification thread"<<endl;
     if (m_IsCleanUpThreadRunning == true) cout<<"Waiting for cleanup thread"<<endl;
- }
+  }
   
-  if (m_TransmissionThread != 0) m_TransmissionThread->Kill();
-  m_TransmissionThread = 0;
+  if (m_TransmissionThread != nullptr) m_TransmissionThread->Kill();
+  m_TransmissionThread = nullptr;
   m_IsTransmissionThreadRunning = false;
   delete m_TransmissionGeometry;
+  m_TransmissionGeometry = nullptr;
   
-  if (m_CoincidenceThread != 0) m_CoincidenceThread->Kill();
-  m_CoincidenceThread = 0;
+  if (m_CoincidenceThread != nullptr) m_CoincidenceThread->Kill();
+  m_CoincidenceThread = nullptr;
   m_IsCoincidenceThreadRunning = false;
   delete m_CoincidenceGeometry;
+  m_CoincidenceGeometry = nullptr;
   
-  if (m_ReconstructionThread != 0) m_ReconstructionThread->Kill();
-  m_ReconstructionThread = 0;
+  if (m_ReconstructionThread != nullptr) m_ReconstructionThread->Kill();
+  m_ReconstructionThread = nullptr;
   m_IsReconstructionThreadRunning = false;
   delete m_ReconstructionGeometry;
+  m_ReconstructionGeometry = nullptr;
   
-  if (m_ImagingThread != 0) m_ImagingThread->Kill();
-  m_ImagingThread = 0;
+  if (m_ImagingThread != nullptr) m_ImagingThread->Kill();
+  m_ImagingThread = nullptr;
   m_IsImagingThreadRunning = false;
   delete m_ImagingGeometry;
+  m_ImagingGeometry = nullptr;
 
-  if (m_HistogrammingThread != 0) m_HistogrammingThread->Kill();
-  m_HistogrammingThread = 0;
+  if (m_HistogrammingThread != nullptr) m_HistogrammingThread->Kill();
+  m_HistogrammingThread = nullptr;
   m_IsHistogrammingThreadRunning = false;
 
-  if (m_IdentificationThread != 0) m_IdentificationThread->Kill();
-  m_IdentificationThread = 0;
+  if (m_IdentificationThread != nullptr) m_IdentificationThread->Kill();
+  m_IdentificationThread = nullptr;
   m_IsIdentificationThreadRunning = false;
   delete m_IdentificationGeometry;
+  m_IdentificationGeometry = nullptr;
 
-  if (m_CleanUpThread != 0) m_CleanUpThread->Kill();
-  m_CleanUpThread = 0;
+  if (m_CleanUpThread != nullptr) m_CleanUpThread->Kill();
+  m_CleanUpThread = nullptr;
   m_IsCleanUpThreadRunning = false;
 
   m_IsAnalysisRunning = false;
