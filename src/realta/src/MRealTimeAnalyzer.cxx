@@ -162,39 +162,44 @@ MRealTimeAnalyzer::MRealTimeAnalyzer()
   
   m_GeometryFileName = "$(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup";
   
-  m_TransmissionThread = 0;
+  m_TransmissionThread = nullptr;
   m_IsTransmissionThreadRunning = false;
   m_TransmissionThreadCpuUsage = 0.0;
-  m_TransmissionThreadLastEventID = 0;
-  
-  m_CoincidenceThread = 0;
+  m_TransmissionThreadLastEventID = 0;  
+  m_TransmissionGeometry = nullptr;
+   
+  m_CoincidenceThread = nullptr;
   m_IsCoincidenceThreadRunning = false;
   m_CoincidenceThreadCpuUsage = 0.0;
   m_CoincidenceThreadLastEventID = 0;
+  m_CoincidenceGeometry = nullptr;
   
-  m_ReconstructionThread = 0;
+  m_ReconstructionThread = nullptr;
   m_IsReconstructionThreadRunning = false;
   m_ReconstructionThreadCpuUsage = 0.0;
   m_ReconstructionThreadLastEventID = 0;
+  m_ReconstructionGeometry = nullptr;
   
-  m_ImagingThread = 0;
+  m_ImagingThread = nullptr;
   m_IsImagingThreadRunning = false;
   m_ImagingThreadCpuUsage = 0.0;
   m_ImagingThreadLastEventID = 0;
+  m_ImagingGeometry = nullptr;
 
-  m_HistogrammingThread = 0;
+  m_HistogrammingThread = nullptr;
   m_IsHistogrammingThreadRunning = false;
   m_HistogrammingThreadCpuUsage = 0.0;
   m_HistogrammingThreadLastEventID = 0;
   m_HistogrammingThreadFirstEventID = 0;
 
-  m_IdentificationThread = 0;
+  m_IdentificationThread = nullptr;
   m_IsIdentificationThreadRunning = false;
   m_IdentificationThreadCpuUsage = 0.0;
   m_IdentificationThreadLastEventID = 0;
   m_IdentificationThreadFirstEventID = 0;
+  m_IdentificationGeometry = nullptr;
 
-  m_CleanUpThread = 0;
+  m_CleanUpThread = nullptr;
   m_IsCleanUpThreadRunning = false;
   m_CleanUpThreadCpuUsage = 0.0;
   m_CleanUpThreadLastEventID = 0;
