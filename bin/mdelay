@@ -9,8 +9,9 @@ help() {
   echo "Usage:";
   echo "    mdelay [program name] [maximum number of instances]";
   echo "";
-  echo "Example:";
+  echo "Examples:";
   echo "    mdelay cosima 4";
+  echo "    mdelay \"bash myscript.sh\" 2ll";
   echo "";
   echo "This script makes sure that not more than the given number of instances"
   echo "are running on this machine."
@@ -22,17 +23,26 @@ if [ $# -ne 2 ]; then
     exit -1;
 fi
 
-ProgramName=`basename $1`
+ProgramName=`echo $1 | awk -F" " '{ print $1 }'`
+ProgramName=`basename ${ProgramName}`
+ProgramCommands=`echo $1 | awk -F" " '{for (i=2; i<=NF; i++) print $i}'`
+Program="${ProgramName} ${ProgramCommands}"
 MaxRunningInstances=$2
 RunningInstances=65536
 
 while [ ${RunningInstances} -ge ${MaxRunningInstances} ]; do
-  RunningInstances=`ps -Ac | grep " ${ProgramName}" | wc -l | sed 's/^ *//g'`
+  # Some tniy explanations:
+  # -A prints all users, 
+  # -f list full command line so that program name can be something like bash mine.sh, 
+  # [ ] prevent the listing of the grep itself
+  # We exclude this process itself in the listing
+  # sed -> don't remember
+  RunningInstances=`ps -Af | grep "[ ]${Program}" | grep -v "mdelay" | wc -l | sed 's/^ *//g'`
   if [ ${RunningInstances} -eq 0 ]; then 
     exit 0;
   fi
   if [ ${RunningInstances} -ge ${MaxRunningInstances} ]; then
-    echo "Waiting for a free slot: Running ${RunningInstances} of ${MaxRunningInstances} allowed instances of ${ProgramName}"
+    echo "Waiting for a free slot: Running ${RunningInstances} of ${MaxRunningInstances} allowed instances of ${Program}"
     sleep 5;
   fi
 done
