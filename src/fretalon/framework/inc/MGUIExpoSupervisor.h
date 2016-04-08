@@ -31,6 +31,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MTime.h"
 #include "MGUIERBList.h"
 
 // NuSTAR libs
@@ -78,6 +79,9 @@ class MGUIExpoSupervisor : public MGUIExpo
   //! Set the running instances of the given module
   void SetInstances(unsigned int ModuleID, unsigned int Instances);
 
+  //! Set the time the youngest event started processing
+  void SetLastProcessingTime(MTime& Time);
+
   // protected methods:
  protected:
 
@@ -87,6 +91,8 @@ class MGUIExpoSupervisor : public MGUIExpo
 
   // private members:
  private:
+  //! The time the youngest event started processing
+  MTime m_LastProcessingTime;
   //! The name of the displayed module
   vector<MString> m_ModuleNames;
   //! The processed counts in the modules
@@ -102,8 +108,8 @@ class MGUIExpoSupervisor : public MGUIExpo
   vector<TGLabel*> m_LabelProcessingTime;
   //! The labels containing the processed event info
   vector<TGLabel*> m_LabelInstances;
-
-  
+  //! Label containing the last processing time
+  TGLabel* m_LastProcessingTimeLabel;
   
 #ifdef ___CINT___
  public:

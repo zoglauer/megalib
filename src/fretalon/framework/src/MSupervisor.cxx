@@ -744,6 +744,7 @@ bool MSupervisor::Analyze()
   long NPasses = 0;
   MTimer LastUIUpdate;
   long NumberOfUIUpdates = 0;
+  MTime TimeAssemblyExitedStartModule(0);
   
   // Number of instances per module
   unsigned int MaxInstances = thread::hardware_concurrency() / 2;
@@ -796,6 +797,9 @@ bool MSupervisor::Analyze()
           M->DoSingleAnalysis(); 
         }
         if (M->HasAnalyzedReadOutAssemblies() == true) {
+          if (m == 0) {
+            TimeAssemblyExitedStartModule.Now();
+          }
           MReadOutAssembly* ROA = M->GetAnalyzedReadOutAssembly();
           if (ROA->IsFilteredOut() == true) {
             //cout<<"ROA "<<ROA->GetID()<<" has been filterered out"<<endl;
@@ -867,6 +871,7 @@ bool MSupervisor::Analyze()
         m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
         m_ExpoSupervisor->SetInstances(m, Modules[m].size());
       }
+      m_ExpoSupervisor->SetLastProcessingTime(TimeAssemblyExitedStartModule);
         
       // Update the UI
       // Little trick: Start with frequent updates after 1 sec, 2 sec, 3 sec, 4 sec

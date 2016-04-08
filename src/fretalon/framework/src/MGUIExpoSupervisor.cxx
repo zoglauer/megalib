@@ -52,6 +52,8 @@ MGUIExpoSupervisor::MGUIExpoSupervisor(MModule* Module) : MGUIExpo(Module)
 
   // Set the new title of the tab here:
   m_TabTitle = "Supervisor";
+  m_LastProcessingTime.Set(0);
+  m_LastProcessingTimeLabel = nullptr;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -74,6 +76,8 @@ void MGUIExpoSupervisor::Reset()
 {
   //! Reset the data in the UI
 
+  m_LastProcessingTime.Set(0);
+  
   m_ModuleNames.clear();
   m_ModuleProcessedEvents.clear();
   m_ModuleProcessingTime.clear();
@@ -137,6 +141,15 @@ void MGUIExpoSupervisor::SetInstances(unsigned int ModuleID, unsigned int Instan
   m_ModuleInstances[ModuleID] = Instances; 
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the time the youngest event started processing
+void MGUIExpoSupervisor::SetLastProcessingTime(MTime& Time) 
+{ 
+  m_LastProcessingTime = Time;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -229,7 +242,11 @@ void MGUIExpoSupervisor::Create()
     m_LabelInstances.push_back(LabelInstances);
   }
 
-  
+  MString TimeText = "The latest read-out assembly started processing at:      Actually... it did not yet start processing...";
+  m_LastProcessingTimeLabel = new TGLabel(this, TimeText); 
+  TGLayoutHints* LastProcessingTimeLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 20, 20, 20, 20);
+  AddFrame(m_LastProcessingTimeLabel, LastProcessingTimeLabelLayout);
+
   m_IsCreated = true;
 }
 
@@ -253,6 +270,16 @@ void MGUIExpoSupervisor::Update()
     ostringstream iout;
     iout<<m_ModuleInstances[i];
     m_LabelInstances[i]->SetText(iout.str().c_str());
+  }
+  
+  if (m_LastProcessingTimeLabel != nullptr) {
+    MString Text = "The latest read-out assembly started processing at:      ";
+    if (m_LastProcessingTime != 0) {
+      Text += m_LastProcessingTime.GetSQLString();
+    } else {
+      Text += "Actually... it did not yet start processing...";
+    }
+    m_LastProcessingTimeLabel->SetText(Text);  
   }
 }
 
