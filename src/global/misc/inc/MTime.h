@@ -33,17 +33,30 @@ class MTime
 {
   // public interface:
  public:
+  //! Default constructor, set the time to NOW
   MTime();
+  //! Extracts the time from a string -- depreciated! -- don't use since there vis no error catching done! 
 	explicit MTime(MString SQLString, int Format);
+  //! Set the time as two long integers -- the time is counted since Epoch
   MTime(long int LinuxTime, long int NanoSeconds = 0);
+  //! Set the time as two intergers -- the time is counted since Epoch
   MTime(int LinuxTime, int NanoSeconds = 0);
+  //! Set the time as two unsigned intergers -- the time is counted since Epoch
   MTime(unsigned int LinuxTime, unsigned int NanoSeconds = 0);
+  //! Set the time elements (years, days, etc) individually
   MTime(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
         unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
+  //! Set the time as a double -- the time is counted since Epoch
   MTime(double Time);
+  //! Copy constructor
+  MTime(const MTime& Time);
+  
+  //! Default destructor
   virtual ~MTime();
 
 
+  // TODO: Some of these function return false by default! Before next alpha release switch it!
+  
   bool Now();
   bool Set(unsigned int m_Year, unsigned int m_Month, unsigned int m_Day, unsigned int m_Hour = 0, 
              unsigned int m_Minute = 0, unsigned int m_Second = 0, unsigned int m_NanoSecond = 0);
@@ -60,20 +73,26 @@ class MTime
   //! Fast version with minimal error checks and rather unsafe...
   bool Set(const char* Line);
 
-  unsigned int GetNanoSeconds();
-  unsigned int GetSeconds();
-  unsigned int GetMinutes();
-  unsigned int GetHours();
-  double GetAsDouble() const;
+  // Access the fields:
   
-  //! Return the days since the epoch 1970-01-01
-  //! Quick emergency hack (absolute number was unnecessary) --- thus never really tested...
-  unsigned int GetDaysSinceEpoch();
-
+  //! Get the nanoseconds in the time
+  unsigned int GetNanoSeconds();
+  //! Get the seconds in the time
+  unsigned int GetSeconds();
+  //! Get the minutes in the time
+  unsigned int GetMinutes();
+  //! Get the hours in the time
+  unsigned int GetHours();
+  //! Get the days in the time
   unsigned int GetDays();
+  //! Get the months in the time
   unsigned int GetMonths();
+  //! Get the years in the time
   unsigned int GetYears();
 
+
+  // The operators
+  
   MTime& operator=(const MTime& Time);
   MTime& operator*=(const double& Const);
   MTime& operator+=(const MTime& Time);
@@ -89,22 +108,40 @@ class MTime
   bool operator>(const MTime& Time);
   bool operator<(const MTime& Time);
 
-  double GetElapsedSeconds();
+  
+  // Conversions
 
-  //! Get the seconds since epoch (should be renamed: GetSecondsSinceEpoch())
+  // Convert into a double 
+  double GetAsDouble() const;
+  //! Return the days since the epoch 1970-01-01
+  unsigned int GetDaysSinceEpoch();
+  //! Get the seconds since epoch in double format (should be renamed: GetSecondsSinceEpoch())
   double GetAsSeconds() const;
   //! Get as years in the form 2008.45345 
   double GetAsYears();
+  //! Return the seconds since epoch
 	long int GetAsSystemSeconds();
+  //! Convert into Julian days
   double GetAsJulianDay();
 
+  // Return in Format: 76751347.238477
   MString GetString();
+  // Return in Format: 15.05.2002 13:15:23:123456789
   MString GetUTCString();
+  // Return in Format: 1997-01-15 20:16:28
   MString GetSQLString();
+  // Return in Format: 1997-01-15_20:16:28
   MString GetSQLUString();
+  // Return in Format: 19970115_201628
   MString GetShortString();
+  // Return in Format: 1164864276.623883519
   MString GetLongIntsString() const;
 
+  
+  //! Get the time between NOW and the stored time in seconds as double 
+  double GetElapsedSeconds();
+
+	//! Busy wait loop --- Historic remnant from MEGAlyze --- should not be really here...
   static int BusyWait(int musec);
 
   enum Format { FormatLowerLimit = 0, Short, UTC, SQL, SQLU, LongInts, MEGAlib, FormatUpperLimit };
