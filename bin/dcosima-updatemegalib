@@ -120,7 +120,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
   echo " "
   echo "Step 4: Running the setup file..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on"
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to run the setup file on ${REMOTENAME[$m]}"
     FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
