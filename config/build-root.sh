@@ -78,7 +78,10 @@ confhelp() {
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
   echo "--patch=[yes or no (default no)]"
-  echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
+  echo "    Apply MEGAlib internal (!) ROOT patches, if there are any for this version."
+  echo " "
+  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "    Remove intermediate build files"
   echo " "
   echo "--help or -h"
   echo "    Show this help."
@@ -109,6 +112,7 @@ DEBUG="off"
 DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
+CLEANUP="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -122,6 +126,8 @@ for C in ${CMD}; do
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-cl*=* ]]; then
+    CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -206,6 +212,19 @@ else
   exit 1
 fi
 
+CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${CLEANUP} == of* ]] || [[ ${CLEANUP} == n* ]] ); then
+  CLEANUP="off"
+  echo " * Don't clean up intermediate build files"
+elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
+  CLEANUP="on"
+  echo " * Clean up intermediate build files"
+else
+  echo " "
+  echo "ERROR: Unknown option for clean up: ${CLEANUP}"
+  confhelp
+  exit 1
+fi
 
 
 echo " "
@@ -254,10 +273,19 @@ else
   fi
   echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on the ROOT website --- sometimes this takes a few minutes..."
   
-  # Now check root repository for the given version:
-  TARBALL=`curl ftp://root.cern.ch/root/ -sl | grep "^root_v${WANTEDVERSION}" | grep "source.tar.gz$" | sort | tail -n 1`
-  if [ "${TARBALL}" == "" ]; then
-    echo "ERROR: Unable to find suitable ROOT tar ball at the ROOT website"
+  # Now check root repository for the selected version:
+  TARBALL=""
+  for s in `seq -w 00 2 98`; do
+    TESTTARBALL="root_v${WANTEDVERSION}.${s}.source.tar.gz"
+    echo "Trying to find ${TESTTARBALL}..."
+    EXISTS=`curl -s --head https://root.cern.ch/download/${TESTTARBALL} | grep gzip`
+    if [ "${EXISTS}" == "" ]; then
+      break
+    fi
+    TARBALL=${TESTTARBALL}
+  done
+  if [[ -z ${TARBALL} ]]; then
+    echo "ERROR: Unable to find a suitable ROOT tar ball"
     exit 1
   fi
   echo "Using ROOT tar ball ${TARBALL}"
@@ -267,7 +295,7 @@ else
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl --head ftp://root.cern.ch/root/${TARBALL}`
+    SAMESIZE=`curl -s --head https://root.cern.ch/download/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
@@ -280,7 +308,8 @@ else
   fi
   
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
-    curl -O ftp://root.cern.ch/root/${TARBALL}
+    echo "Downloading ${TARBALL}"
+    curl -O https://root.cern.ch/download/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the ROOT website!"
       exit 1
@@ -310,8 +339,8 @@ fi
 
 ROOTCORE=root_v${VER}
 ROOTDIR=root_v${VER}${DEBUGSTRING}
-ROOTSOURCEDIR=root_v${VER}-source
-ROOTBUILDDIR=root_v${VER}-build
+ROOTSOURCEDIR=root_v${VER}-source   # Attention: the cleanup checks this name pattern before removing it 
+ROOTBUILDDIR=root_v${VER}-build     # Attention: the cleanup checks this name pattern before removing it 
 
 echo "Checking for old installation..."
 if [ -d ${ROOTDIR} ]; then
@@ -452,10 +481,34 @@ if [ "$?" != "0" ]; then
   exit 1
 fi
 
+# Done. Switch to main ROOT directory
+cd ..
+
+if [[ ${CLEANUP} == on ]]; then
+  echo "Cleaning up ..."
+  # Just a sanity check before our remove...
+  if [[ ${ROOTBUILDDIR} == root_v*-build ]]; then 
+    rm -rf ${ROOTBUILDDIR}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to remove buuld directory!"
+      exit 1
+    fi
+  else
+    echo "INFO: Not cleaning up the build directory, because it is not named as expected: ${ROOTBUILDDIR}"
+  fi
+  if [[ ${ROOTSOURCEDIR} == root_v*-source ]]; then 
+    rm -rf ${ROOTSOURCEDIR}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to remove source directory!"
+      exit 1
+    fi
+  else
+    echo "INFO: Not cleaning up the source directory, because it is not named as expected: ${ROOTSOURCEDIR}"
+  fi
+fi
 
 
 echo "Store our success story..."
-cd ..
 rm -f COMPILE_SUCCESSFUL
 echo "ROOT compilation & installation successful" >> COMPILE_SUCCESSFUL
 echo " " >> COMPILE_SUCCESSFUL
