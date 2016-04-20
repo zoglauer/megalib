@@ -254,6 +254,12 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
   // if an error occurs, return a negative number
   // if Min=Max, then ignore these values
 
+  if (Max == Min) {
+    cout<<"Error in MInterface::GetFWHM: Max == Min"<<endl;
+    cout<<"Returning numeric_limits<double>::max()"<<endl;
+    return numeric_limits<double>::max();
+  }
+  
   double x, xmin, xmax;
   double xHighest = 0;
   double yHighest = 0;
@@ -294,25 +300,32 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
 
   // Step Two: determine left border
   // NSteps /= 2;
-  xStep = (xHighest - Min)/NSteps;
-  // Step One: determine the maximum:
-  // Stage a:
-  xmin = Min;
-  xmax = xHighest;
-  for (x = xmax; x >= xmin; x -= xStep) {
-    if (Function->Eval(x) < 0.5*yHighest) {
-      // Stage b:
-      xmin = x;
-      xmax = x + xStep;
-      xStep /= NSteps;
-      FWHMmin = 0.5*(xmax+xmin);
-      for (x = xmin; x < xmax; x += xStep) {
-        if (Function->Eval(x) >= 0.5*yHighest) {
-          FWHMmin = x;
-          break;
+  
+  if (xHighest == Min) {
+    cout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
+    return numeric_limits<double>::max();    
+  } else {
+    xStep = (xHighest - Min)/NSteps;
+  
+    // Step One: determine the maximum:
+    // Stage a:
+    xmin = Min;
+    xmax = xHighest;
+    for (x = xmax; x >= xmin; x -= xStep) {
+      if (Function->Eval(x) < 0.5*yHighest) {
+        // Stage b:
+        xmin = x;
+        xmax = x + xStep;
+        xStep /= NSteps;
+        FWHMmin = 0.5*(xmax+xmin);
+        for (x = xmin; x < xmax; x += xStep) {
+          if (Function->Eval(x) >= 0.5*yHighest) {
+            FWHMmin = x;
+            break;
+          }
         }
+        break;
       }
-      break;
     }
   }
 
@@ -320,25 +333,30 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
 
 
   // Step three: determine right border
-  xStep = (Max - xHighest)/NSteps;
-  // Step One: determine the maximum:
-  // Stage a:
-  xmin = xHighest;
-  xmax = Max;
-  for (x = xmin; x <= xmax; x += xStep) {
-    if (Function->Eval(x) < 0.5*yHighest) {
-      // Stage b:
-      xmax = x;
-      xmin = x - xStep;
-      xStep /= NSteps;
-      FWHMmax = 0.5*(xmax+xmin);
-      for (x = xmax; x > xmin; x -= xStep) {
-        if (Function->Eval(x) >= 0.5*yHighest) {
-          FWHMmax = x;
-          break;
+  if (xHighest == Max) {
+    cout<<"Error in MInterface::GetFWHM: The FWHM is not within the range you have given"<<endl;
+    return numeric_limits<double>::max();    
+  } else {
+    xStep = (Max - xHighest)/NSteps;
+    // Step One: determine the maximum:
+    // Stage a:
+    xmin = xHighest;
+    xmax = Max;
+    for (x = xmin; x <= xmax; x += xStep) {
+      if (Function->Eval(x) < 0.5*yHighest) {
+        // Stage b:
+        xmax = x;
+        xmin = x - xStep;
+        xStep /= NSteps;
+        FWHMmax = 0.5*(xmax+xmin);
+        for (x = xmax; x > xmin; x -= xStep) {
+          if (Function->Eval(x) >= 0.5*yHighest) {
+            FWHMmax = x;
+            break;
+          }
         }
+        break;
       }
-      break;
     }
   }
 
