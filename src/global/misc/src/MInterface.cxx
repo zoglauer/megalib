@@ -306,6 +306,7 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
     return numeric_limits<double>::max();    
   } else {
     xStep = (xHighest - Min)/NSteps;
+    if (xStep < 0.00001) xStep = 0.00001; 
   
     // Step One: determine the maximum:
     // Stage a:
@@ -338,6 +339,7 @@ double MInterface::GetFWHM(TF1* Function, double Min, double Max)
     return numeric_limits<double>::max();    
   } else {
     xStep = (Max - xHighest)/NSteps;
+    if (xStep < 0.00001) xStep = 0.00001; 
     // Step One: determine the maximum:
     // Stage a:
     xmin = xHighest;
