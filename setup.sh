@@ -51,6 +51,9 @@ confhelp() {
   echo "--debug=[off/no, on/yes]"
   echo "    Debugging options for ROOT, Geant4 & MEGAlib (Default is on for MEGAlib, but off for ROOT and Geant4)"
   echo " "
+  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "    Remove intermediate build files"
+  echo " "
   echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
   echo "    Compilation optimization for MEGAlib ONLY (Default is normal)"
   echo " "
@@ -135,6 +138,7 @@ OPT="normal"
 DEBUG="off"
 UPDATES="off"
 PATCH="off"
+CLEANUP="off"
 
 MAXTHREADS=1;
 if ( `test -f /usr/sbin/sysctl` ); then
@@ -199,8 +203,10 @@ for C in "${CMD[@]}"; do
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-u*=* ]]; then
     UPDATES=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-comp*=* ]]; then
+  elif [[ ${C} == *-co*=* ]]; then
     COMP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-cl*=* ]]; then
+    CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-ma*=* ]]; then
@@ -227,6 +233,7 @@ DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
 UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
 PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
+CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
 
 
 # Provide feed back and perform error checks:
@@ -414,7 +421,21 @@ elif ( [[ ${PATCH} == on ]] || [[ ${PATCH} == y* ]] ); then
   echo " * Apply MEGAlib internal ROOT and Geant4 patches"
 else
   echo " "
-  echo "ERROR: Unknown option for updates: ${PATCH}"
+  echo "ERROR: Unknown option for patch: ${PATCH}"
+  confhelp
+  exit 1
+fi
+
+
+if ( [[ ${CLEANUP} == of* ]] || [[ ${CLEANUP} == n* ]] ); then
+  CLEANUP="off"
+  echo " * Don't clean up intermediate build files"
+elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
+  CLEANUP="on"
+  echo " * Clean up intermediate build files"
+else
+  echo " "
+  echo "ERROR: Unknown option for clean up: ${CLEANUP}"
   confhelp
   exit 1
 fi
@@ -756,7 +777,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
+  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -806,7 +827,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
-  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS}
+  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -866,7 +887,7 @@ mv ${ENVFILE} bin/source-megalib.sh
 
 echo "Storing last good options"
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
-echo "--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES}  --patch=${PATCH}" >> ${MEGALIBDIR}/config/SetupOptions.txt
+echo "--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES}  --patch=${PATCH} --cleanup=${CLEANUP}" >> ${MEGALIBDIR}/config/SetupOptions.txt
 
 TIMEEND=$(date +%s)
 TIMEDIFF=$(( ${TIMEEND} - ${TIMESTART} ))

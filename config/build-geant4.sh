@@ -50,7 +50,10 @@ confhelp() {
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
   echo "--patch=[yes or no (default no)]"
-  echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
+  echo "    Apply MEGAlib internal (!) Geant4 patches, if there are any."
+  echo " "
+  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "    Remove intermediate build files"
   echo " "
   echo "--help or -h"
   echo "    Show this help."
@@ -82,6 +85,7 @@ DEBUG="off"
 DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
+CLEANUP="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -96,6 +100,8 @@ for C in ${CMD}; do
     DEBUG=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-cl*=* ]]; then
+    CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -176,8 +182,24 @@ else
   exit 1
 fi
 
+CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${CLEANUP} == of* ]] || [[ ${CLEANUP} == n* ]] ); then
+  CLEANUP="off"
+  echo " * Don't clean up intermediate build files"
+elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
+  CLEANUP="on"
+  echo " * Clean up intermediate build files"
+else
+  echo " "
+  echo "ERROR: Unknown option for clean up: ${CLEANUP}"
+  confhelp
+  exit 1
+fi
 
 
+
+echo " "
+echo " " 
 echo "Getting Geant4..."
 VER=""
 
@@ -262,8 +284,8 @@ fi
 
 GEANT4CORE=geant4_v${VER}
 GEANT4DIR=geant4_v${VER}${DEBUGSTRING}
-GEANT4SOURCEDIR=geant4_v${VER}-source
-GEANT4BUILDDIR=geant4_v${VER}-build
+GEANT4SOURCEDIR=geant4_v${VER}-source   # Attention: the cleanup checks this name pattern before removing it
+GEANT4BUILDDIR=geant4_v${VER}-build     # Attention: the cleanup checks this name pattern before removing it
 
 echo "Checking for old installation..."
 if [ -d ${GEANT4DIR} ]; then
@@ -411,8 +433,36 @@ fi
 
 
 
-echo "Store our success story..."
+# Done. Switch to main GEANT4 directory
 cd ..
+
+
+
+if [[ ${CLEANUP} == on ]]; then
+  echo "Cleaning up ..."
+  # Just a sanity check before our remove...
+  if [[ ${GEANT4BUILDDIR} == geant4_v*-build ]]; then 
+    rm -rf ${GEANT4BUILDDIR}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to remove buuld directory!"
+      exit 1
+    fi
+  else
+    echo "INFO: Not cleaning up the build directory, because it is not named as expected: ${GEANT4BUILDDIR}"
+  fi
+  if [[ ${GEANT4SOURCEDIR} == geant4_v*-source ]]; then 
+    rm -rf ${GEANT4SOURCEDIR}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to remove source directory!"
+      exit 1
+    fi
+  else
+    echo "INFO: Not cleaning up the source directory, because it is not named as expected: ${GEANT4SOURCEDIR}"
+  fi
+fi
+
+
+echo "Store our success story..."
 rm -f COMPILE_SUCCESSFUL
 echo "Geant4 compilation & installation successful" >> COMPILE_SUCCESSFUL
 echo " " >> COMPILE_SUCCESSFUL
