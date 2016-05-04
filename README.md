@@ -23,7 +23,7 @@ bash setup.sh
 This script will first download, compile, and install MEGAlib's own version of ROOT and Geant4, and then compile MEGAlib. In the end it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib
 
 ```
-. bin\source-megalib.sh
+. bin/source-megalib.sh
 ```
 
 
