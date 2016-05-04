@@ -12,7 +12,7 @@ For a more complete list of features and more documentation please visit the [ME
 
 ## Installation
 
-# The short version of the MEGAlib setup
+### The short version of the MEGAlib setup
 
 ```
 git clone https://github.com/zoglauer/megalib MEGAlib
@@ -27,6 +27,6 @@ This script will first download, compile, and install MEGAlib's own version of R
 ```
 
 
-# The long version of the MEGAlib setup
+### The long version of the MEGAlib setup
 
 Please consult [MEGAlib's homepage](http://megalibtoolkit.com).
