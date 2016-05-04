@@ -6,7 +6,7 @@ The Medium Energy Gamma-ray Astronomy library (MEGAlib) is a set of software too
 
 MEGAlib contains a geometry and detector description tool for the detailed modeling of different detector types and characteristics, and provides an easy to use simulation program based on Geant4. For different Compton telescope detector types (electron tracking, multiple Compton or time of flight based) specialized Compton event reconstruction algorithms are implemented in different approaches (Chi-square and Bayesian). The high level data analysis tools allow to calculate response matrices, perform image deconvolution (specialized in list-mode-likelihood-based Compton image reconstruction), determine detector resolutions and sensitivities, retrieve spectra, determine polarization modulations, etc.
 
-For a more complete list of features and more documentation please visit the [MEGAlib's homepage](http://megalibtoolkit.com).
+For a more complete list of features and more documentation please visit [MEGAlib's homepage](http://megalibtoolkit.com).
 
 
 
@@ -22,7 +22,7 @@ cd MEGAlib
 bash setup.sh --release=dev --patch=yes --clean=yes
 ```
 
-This script will first download, compile, and install MEGAlib's own version of ROOT and Geant4, and then compile MEGAlib. In the end, it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib
+This script will first download, patch, compile, and install MEGAlib's own version of [ROOT](http://root.cern.ch) and [Geant4](http://geant4.cern.ch), and then compile MEGAlib. In the end, it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib
 
 ```
 . bin/source-megalib.sh
