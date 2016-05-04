@@ -14,7 +14,7 @@ For a more complete list of features and more documentation please visit the [ME
 
 ### The short version of the MEGAlib setup
 
-You can install the latest development version of MEGAlib with the follwoing commands - in case you want the latest realse instead of the development version, remove "--release=dev".
+You can install the latest development version of MEGAlib with the following commands - in case you want the latest release instead of the development version, remove "--release=dev".
 
 ```
 git clone https://github.com/zoglauer/megalib MEGAlib
