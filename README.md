@@ -33,5 +33,5 @@ To update MEGAlib in the future, just call "bash setup.sh" again.
 
 ### The long version of the MEGAlib setup
 
-Please consult [MEGAlib's homepage](http://megalibtoolkit.com).
+Please consult [the setup page on MEGAlib's homepage](http://megalibtoolkit.com/setup).
 
