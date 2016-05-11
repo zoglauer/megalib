@@ -62,6 +62,11 @@ public:
   /// Retrieve the production cut for the region
   double GetRangeCut() const { return m_RangeCut; }
 
+  /// Set the flag to cut all secondaries
+  bool SetCutAllSecondaries(const bool CutAllAllSecondaries) { m_CutAllAllSecondaries = CutAllAllSecondaries; return true; }
+  /// Retrieve the flag to cut all secondaries
+  bool GetCutAllSecondaries() const { return m_CutAllAllSecondaries; }
+
   // protected methods:
 protected:
   
@@ -78,7 +83,8 @@ private:
   MString m_VolumeName;
   /// The production cut for the region
   double m_RangeCut;
-
+  /// Flag to indicate if all secondaries should be cut
+  bool m_CutAllAllSecondaries;
 };
 
 #endif

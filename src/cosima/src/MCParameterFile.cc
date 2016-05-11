@@ -536,6 +536,21 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
+      }
+      else if (T->IsTokenAt(1, "CutAllSecondaries", true) == true) {
+        if (T->GetNTokens() == 3) {
+          // ToDo: Check if source already exists:
+          if (Region->SetCutAllSecondaries(T->GetTokenAtAsBoolean(2)) == true) {
+            mdebug<<"Setting flag to cut all secondaries "<<(T->GetTokenAtAsBoolean(2) ? "true" : "false")<<" for region "<<Region->GetName()<<endl;
+          } else {
+            Typo(i, "Cannot parse token Region.CutAllSecondaries correctly");
+            return false;             
+          }
+        } else {
+          Typo(i, "Cannot parse token Region.CutAllSecondaries correctly:"
+               " Number of tokens is not correct!");
+          return false;
+        }
       }       
     }
   }

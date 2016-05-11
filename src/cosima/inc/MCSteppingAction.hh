@@ -152,6 +152,10 @@ private:
   unsigned long long m_KnownProcessCounter;
   /// A global process update counter
   unsigned long long m_KnownProcessUpdateCounter;
+  
+  /// List of the available regions
+  vector<MCRegion> m_Regions;
+  
 };
 
 #endif

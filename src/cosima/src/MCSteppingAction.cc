@@ -105,6 +105,7 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
 
   m_DetectorTimeConstant = RunParameters.GetDetectorTimeConstant();
   
+  m_Regions = RunParameters.GetRegionList();
   
   m_KnownProcess.push_back("polarLowEnCompt"); m_KnownProcessID.push_back(c_ProcessIDCompton);
   m_KnownProcess.push_back("PenCompton"); m_KnownProcessID.push_back(c_ProcessIDCompton);
@@ -240,9 +241,12 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     m_NSecondaries = 0;
     m_TrackId = Track->GetTrackID();
   }
-  int GeneratedSecondaries = fpSteppingManager->GetSecondary()->size() - m_NSecondaries;
+  int GeneratedSecondaries = 0;
+  if ((int) fpSteppingManager->GetSecondary()->size() > m_NSecondaries) {
+    GeneratedSecondaries = fpSteppingManager->GetSecondary()->size() - m_NSecondaries;
+  }
   m_NSecondaries = fpSteppingManager->GetSecondary()->size();
-
+  
   MCEventAction* EventAction = (MCEventAction *) (G4EventManager::GetEventManager()->GetUserEventAction());
  
   double Time = Step->GetPostStepPoint()->GetGlobalTime()/second;
@@ -470,9 +474,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 
     } else if (ProcessID == c_ProcessIDRayleigh) {
 
-      // Noo secondary should have been generated
+      // No secondary should have been generated
       if (GeneratedSecondaries != 0) {
-        merr<<"Rayleigh scattering generated a secondary!!!"<<show;
+        merr<<"Rayleigh scattering generated "<<GeneratedSecondaries<<" secondaries!"<<show;
       }
 
       m_InteractionId++;
@@ -1132,7 +1136,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
           fpSteppingManager->GetSecondary()->at(se)->SetUserInformation(Info);
         }
       }
-		} // All processes
+    } // All processes
   } 
 
   // Check if the particle escapes the world volume:
@@ -1277,6 +1281,21 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     }
   }
 
+  // Check region - cut all secondaries
+  G4Region* Region = Step->GetPreStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetRegion();
+  for (auto& R: m_Regions) {
+    if (R.GetName() == Region->GetName().c_str()) {
+      if (R.GetCutAllSecondaries() == true) {
+        if (GeneratedSecondaries > 0) {
+          for (int se = (int) fpSteppingManager->GetSecondary()->size() - GeneratedSecondaries; 
+             se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
+            fpSteppingManager->GetSecondary()->at(se)->SetTrackStatus(fStopAndKill);
+          }
+        }
+      }
+    }
+  }
+  
   // For all sensitive detectors post process the hits:
   // This code is identical to the call in G4SteppingManager!
   if (Step->GetPreStepPoint()->GetPhysicalVolume() != 0 && 

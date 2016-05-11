@@ -31,7 +31,7 @@
  * Standard constructor
  */
 MCRegion::MCRegion(const MString& Name) : 
-  m_Name(Name), m_VolumeName(g_StringNotDefined), m_RangeCut(g_DoubleNotDefined)
+  m_Name(Name), m_VolumeName(g_StringNotDefined), m_RangeCut(g_DoubleNotDefined), m_CutAllAllSecondaries(false)
 {
   // Intentionally left blank
 }
