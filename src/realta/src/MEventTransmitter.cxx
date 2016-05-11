@@ -225,6 +225,9 @@ bool MEventTransmitter::Analyze()
   
   // Set up the transceiver and connect:
   MTransceiverTcpIp* Transceiver = new MTransceiverTcpIp("A transceiver", m_Host, m_Port, MTransceiverTcpIp::c_ModeRawEventList);
+  Transceiver->SetMaximumBufferSize(100000); // This is events so need to be low!
+  Transceiver->SetVerbosity(2);
+  Transceiver->RequestServer();
   Transceiver->Connect();
 
   MTimer Wait;
