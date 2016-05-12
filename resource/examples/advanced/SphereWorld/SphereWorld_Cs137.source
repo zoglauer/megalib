@@ -1,0 +1,29 @@
+
+Version         1
+Geometry        ${MEGALIB}/resource/examples/advanced/SphereWorld/SphereWorld_Cs137.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  all
+StoreScientific                      true 6
+StoreSimulationInfoIonization        false
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       false
+StoreSimulationInfoWatchedVolumes    Sphere AuxSphere
+
+DefaultRange    0.5
+
+Run MySim
+#MySim.FileName            InfiniteAir
+MySim.NEvents              1000000000
+
+
+MySim.Source Source_Cs137_3
+Source_Cs137_3.ParticleType    1
+Source_Cs137_3.Beam            Volume Active
+Source_Cs137_3.Spectrum        Mono 661.6 
+Source_Cs137_3.Flux            111000000
+

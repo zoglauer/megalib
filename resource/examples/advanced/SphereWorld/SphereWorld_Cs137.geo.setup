@@ -1,0 +1,51 @@
+
+Include ${MEGALIB}/resource/examples/advanced/SphereWorld/SphereWorld.geo.setup
+
+Material Alu6061
+Alu6061.Density               2.6989
+Alu6061.ComponentByMass       Si   0.0060
+Alu6061.ComponentByMass       Fe   0.0070
+Alu6061.ComponentByMass       Cu   0.0030
+Alu6061.ComponentByMass       Mn   0.0015
+Alu6061.ComponentByMass       Mg   0.0100
+Alu6061.ComponentByMass       Cr   0.0020
+Alu6061.ComponentByMass       Zn   0.0025
+Alu6061.ComponentByMass       Ti   0.0015
+Alu6061.ComponentByMass       Al   0.9665
+
+Material CaesiumCloride
+CaesiumCloride.Density 3.988
+CaesiumCloride.Component Cs 1
+CaesiumCloride.Component Cl 1
+
+Material Steel_18_8
+Steel_18_8.Density              7.87
+Steel_18_8.ComponentByMass      Cr   0.18
+Steel_18_8.ComponentByMass      Ni   0.09
+Steel_18_8.ComponentByMass      C    0.013
+Steel_18_8.ComponentByMass      Fe   0.717
+
+Constant Offset 763.74
+
+Volume SteelContainer
+SteelContainer.Material Steel_18_8
+SteelContainer.Visibility 1
+SteelContainer.Shape TUBE 0.0 0.3 0.3
+SteelContainer.Position 0 0 { -669.925 + Offset }
+SteelContainer.Mother World
+
+Volume Active
+Active.Material CaesiumCloride
+Active.Visibility 1
+Active.Color 7
+Active.Shape TUBE 0 0.2 0.2
+Active.Position 0 0 0
+Active.Mother SteelContainer
+
+Volume Cart
+Cart.Material Alu6061
+Cart.Visibility 1
+Cart.Shape BOX 60 60 0.25
+Cart.Position 0 0 { -695.325 + Offset }
+Cart.Mother World
+
