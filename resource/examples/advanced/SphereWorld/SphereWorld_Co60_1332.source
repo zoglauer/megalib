@@ -1,0 +1,30 @@
+
+Version         1
+Geometry        ${MEGALIB}/resource/examples/advanced/SphereWorld/SphereWorld_Co60.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  all
+StoreScientific                      true 6
+StoreSimulationInfoIonization        false
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       false
+StoreSimulationInfoWatchedVolumes    Sphere AuxSphere
+
+BlackAbsorber                        BlackAbsorber
+
+DefaultRange    0.5
+
+Run MySim
+#MySim.FileName            InfiniteAir
+MySim.NEvents              1000000000
+
+MySim.Source Source_1332_0
+Source_1332_0.ParticleType    1
+Source_1332_0.Beam            Volume ActiveRod
+Source_1332_0.Spectrum        Mono 1332.501 
+Source_1332_0.Flux            108040000
+

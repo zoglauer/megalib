@@ -1,0 +1,62 @@
+
+Include ${MEGALIB}/resource/examples/advanced/SphereWorld/SphereWorld.geo.setup
+
+Material Alu6061
+Alu6061.Density               2.6989
+Alu6061.ComponentByMass       Si   0.0060
+Alu6061.ComponentByMass       Fe   0.0070
+Alu6061.ComponentByMass       Cu   0.0030
+Alu6061.ComponentByMass       Mn   0.0015
+Alu6061.ComponentByMass       Mg   0.0100
+Alu6061.ComponentByMass       Cr   0.0020
+Alu6061.ComponentByMass       Zn   0.0025
+Alu6061.ComponentByMass       Ti   0.0015
+Alu6061.ComponentByMass       Al   0.9665
+
+
+Material Cobalt
+Cobalt.Density 8.9
+Cobalt.Component Co 1
+
+Constant Offset 790.225
+
+Constant RodRadius 0.75
+Constant RodLength 20
+Constant ActiveRodLength 4
+Constant ActiveDepth 0.25
+
+Volume Rod
+Rod.Material Cobalt
+Rod.Visibility 1
+Rod.Shape TUBE 0.0 { RodRadius } { 0.5 * RodLength } 
+Rod.Position 0 0 { -671.81 + Offset }
+Rod.Mother World
+
+Shape TUBE UpperRod
+UpperRod.Parameters 0.0 RodRadius { 0.5*ActiveRodLength }
+
+Shape TUBE InactiveRod
+InactiveRod.Parameters 0.0 { RodRadius - ActiveDepth }  { 0.5*(ActiveRodLength - ActiveDepth) } 
+
+Orientation InactiveRodOrientation
+InactiveRodOrientation.Position 0 0 { -0.5*ActiveDepth }
+InactiveRodOrientation.Rotation 0 0 0
+
+Shape Subtraction ActiveRodShape
+ActiveRodShape.Parameters UpperRod InactiveRod InactiveRodOrientation
+
+Volume ActiveRod
+ActiveRod.Material Cobalt
+ActiveRod.Visibility 1
+ActiveRod.Color 7
+ActiveRod.Shape ActiveRodShape
+ActiveRod.Position 0 0 { 0.5*(RodLength - ActiveRodLength)}
+ActiveRod.Mother Rod
+
+Volume Cart
+Cart.Material Alu6061
+Cart.Visibility 1
+Cart.Shape BOX 60 60 0.25
+Cart.Position 0 0 { -721.81 + Offset }
+Cart.Mother World
+
