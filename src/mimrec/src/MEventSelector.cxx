@@ -27,6 +27,7 @@
 #include "MEventSelector.h"
 
 // Standard libs:
+#include <iostream>
 #include <sstream>
 #include <limits>
 using namespace std;
@@ -435,7 +436,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   if (Event->IsGoodEvent() == false && m_UseFlaggedAsBad == false) {
     m_NRejectedIsGood++;
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Event flagged \"not good\"!"<<endl;
+      cout<<"ID "<<Event->GetId()<<": Event flagged \"not good\"!"<<endl;
     }
     Return = false;
   }
@@ -522,12 +523,12 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
           Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
-          mout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
           for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
             if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
               if (DumpOutput == true) {
-                mout<<"ID "<<Event->GetId()<<": Wrong start detector: "
+                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "
                     <<m_ExcludedDetectors[e]<<endl;
               }
               m_NRejectedStartDetector++;
@@ -553,7 +554,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       !(Event->Ei() >= m_FourthTotalEnergyMin && 
         Event->Ei() <= m_FourthTotalEnergyMax)) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Total energy out of range: "
+      cout<<"ID "<<Event->GetId()<<": Total energy out of range: "
           <<m_FirstTotalEnergyMin<<"<"<<Event->Ei()<<"<"<<m_FirstTotalEnergyMax<<" && "
           <<m_SecondTotalEnergyMin<<"<"<<Event->Ei()<<"<"<<m_SecondTotalEnergyMax<<" && "
           <<m_ThirdTotalEnergyMin<<"<"<<Event->Ei()<<"<"<<m_ThirdTotalEnergyMax<<" && "
@@ -564,7 +565,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   }
   if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Time out of range: "
+      cout<<"ID "<<Event->GetId()<<": Time out of range: "
           <<m_TimeMin<<"<"<<Event->GetTime().GetString()<<"<"<<m_TimeMax<<endl;
     }
     m_NRejectedTime++;
@@ -573,7 +574,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Time-walk out of range: "
+      cout<<"ID "<<Event->GetId()<<": Time-walk out of range: "
           <<m_TimeWalkMin<<"<"<<Event->GetTimeWalk()<<"<"<<m_TimeWalkMax<<endl;
     }
     m_NRejectedTimeWalk++;
@@ -582,7 +583,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   if (Event->GetId() < m_EventIdMin || 
       Event->GetId() > m_EventIdMax) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Not within event ID selection: "
+      cout<<"ID "<<Event->GetId()<<": Not within event ID selection: "
           <<m_EventIdMin<<"<"<<Event->GetId()<<"<"<<m_EventIdMax<<"!"<<endl;
     }      
     m_NRejectedEventId++;
@@ -590,14 +591,14 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   }
   if (Event->IsDecay() == true && m_UseDecays == false) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Decay!"<<endl;
+      cout<<"ID "<<Event->GetId()<<": Decay!"<<endl;
     }      
     m_NRejectedUseDecays++;
     Return = false;
   }
   if (Event->IsBad() == true && m_UseFlaggedAsBad == false) {
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": Flagged as bad!"<<endl;
+      cout<<"ID "<<Event->GetId()<<": Flagged as bad!"<<endl;
     }      
     m_NRejectedUseFlaggedAsBad++;
     Return = false;
@@ -613,7 +614,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       
       if (Radius > m_BeamRadius || Depth > m_BeamDepth) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Not within beam selection: "
+          cout<<"ID "<<Event->GetId()<<": Not within beam selection: "
               <<0<<"<"<<Radius<<"<"<<m_BeamRadius<<" or "<<0<<"<"<<Depth<<"<"<<m_BeamDepth<<endl;
         }      
         m_NRejectedBeam++;
@@ -636,35 +637,35 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
     if (C->IsKinematicsOK() == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Flag \"Not good\" due to kinematics!"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Flag \"Not good\" due to kinematics!"<<endl;
       }
       // no counting here!
     }
 
     if (m_UseComptons == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted Compton"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted Compton"<<endl;
       }
       m_NRejectedUseComptons++;
       Return = false;
     }
     if (C->HasTrack() == true && m_UseTrackedComptons == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted tracked Compton"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted tracked Compton"<<endl;
       }
       m_NRejectedUseTrackedComptons++;
       Return = false;
     }
     if (C->HasTrack() == false && m_UseNotTrackedComptons == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted not tracked Compton"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted not tracked Compton"<<endl;
       }      
       m_NRejectedUseNotTrackedComptons++;
       Return = false;
     }
     if (C->Eg() < m_GammaEnergyMin || C->Eg() > m_GammaEnergyMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Gamma energy out of range: "
+        cout<<"ID "<<Event->GetId()<<": Gamma energy out of range: "
             <<m_GammaEnergyMin<<"<"<<C->Eg()<<"<"<<m_GammaEnergyMax<<endl;
       }
       m_NRejectedGammaEnergy++;
@@ -672,7 +673,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     }
     if (C->Ee() < m_ElectronEnergyMin || C->Ee() > m_ElectronEnergyMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Electron energy out of range: "
+        cout<<"ID "<<Event->GetId()<<": Electron energy out of range: "
             <<m_ElectronEnergyMin<<"<"<<C->Ee()<<"<"<<m_ElectronEnergyMax<<endl;
       }
       m_NRejectedElectronEnergy++;
@@ -681,7 +682,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->Phi()*c_Deg < m_ComptonAngleMin || 
         C->Phi()*c_Deg > m_ComptonAngleMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Compton angle out of range: "
+        cout<<"ID "<<Event->GetId()<<": Compton angle out of range: "
             <<m_ComptonAngleMin<<"<"<<C->Phi()*c_Deg<<"<"
             <<m_ComptonAngleMax<<endl;
       }      
@@ -691,7 +692,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->LeverArm() < m_LeverArmMin || 
         C->LeverArm() > m_LeverArmMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within lever arm selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within lever arm selection: "
             <<C->LeverArm()<<" cm!"<<endl;
       }      
       m_NRejectedLeverArm++;
@@ -700,7 +701,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if ((C->C1() - C->C2()).Mag() < m_FirstLeverArmMin || 
         (C->C1() - C->C2()).Mag() > m_FirstLeverArmMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within first lever arm selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within first lever arm selection: "
             <<(C->C1() - C->C2()).Mag()<<" cm!"<<endl;
       }      
       m_NRejectedFirstLeverArm++;
@@ -709,7 +710,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->SequenceLength() < m_SequenceLengthMin || 
         C->SequenceLength() > m_SequenceLengthMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within Compton sequence length selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within Compton sequence length selection: "
             <<m_SequenceLengthMin<<" !< "<<C->SequenceLength()<<" !< "<<m_SequenceLengthMax<<" Compton interactions!"<<endl;
       }      
       m_NRejectedSequenceLength++;
@@ -718,7 +719,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->TrackLength() < m_TrackLengthMin || 
         C->TrackLength() > m_TrackLengthMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within Track sequence length selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within Track sequence length selection: "
             <<m_TrackLengthMin<<" !< "<<C->TrackLength()<<" !< "<<m_TrackLengthMax<<" Compton interactions!"<<endl;
       }      
       m_NRejectedTrackLength++;
@@ -727,7 +728,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->ClusteringQualityFactor() < m_ClusteringQualityFactorMin ||
         C->ClusteringQualityFactor() > m_ClusteringQualityFactorMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within Clustering quality factor selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within Clustering quality factor selection: "
             <<m_ClusteringQualityFactorMin<<"<"<<C->ClusteringQualityFactor()<<"<"<<m_ClusteringQualityFactorMax<<endl;
       }      
       m_NRejectedClusteringQualityFactor++;
@@ -736,7 +737,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->ComptonQualityFactor1() < m_ComptonQualityFactorMin ||
         C->ComptonQualityFactor1() > m_ComptonQualityFactorMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within Compton quality factor selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within Compton quality factor selection: "
             <<m_ComptonQualityFactorMin<<"<"<<C->ComptonQualityFactor1()<<"<"<<m_ComptonQualityFactorMax<<endl;
       }      
       m_NRejectedComptonQualityFactor++;
@@ -745,7 +746,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->TrackQualityFactor1() < m_TrackQualityFactorMin || 
         C->TrackQualityFactor1() > m_TrackQualityFactorMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within track quality factor selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within track quality factor selection: "
             <<m_TrackQualityFactorMin<<"<"<<C->TrackQualityFactor1()<<"<"<<m_TrackQualityFactorMax<<endl;
       }      
       m_NRejectedTrackQualityFactor++;
@@ -755,7 +756,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->CoincidenceWindow() < m_CoincidenceWindowMin || 
         C->CoincidenceWindow() > m_CoincidenceWindowMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Not within coincidence window selection: "
+        cout<<"ID "<<Event->GetId()<<": Not within coincidence window selection: "
             <<m_CoincidenceWindowMin<<"<"<<C->CoincidenceWindow()<<"<"<<m_CoincidenceWindowMax<<endl;
       }      
       m_NRejectedCoincidenceWindow++;
@@ -765,7 +766,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (C->TrackLength() > 1) {
       if (fabs(C->DeltaTheta())*c_Deg > m_ThetaDeviationMax) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Theta difference too large: "
+          cout<<"ID "<<Event->GetId()<<": Theta difference too large: "
               <<fabs(C->DeltaTheta())*c_Deg<<" > "<<m_ThetaDeviationMax<<endl;
         }
         m_NRejectedThetaDeviationMax++;
@@ -776,7 +777,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (Event->IsGoodEvent() == true) {
       if (m_EarthHorizon.IsEventFromEarth(Event, DumpOutput) == true) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
+          cout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
         }      
         m_NRejectedEarthHorizonCut++;
         Return = false;
@@ -789,7 +790,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
           fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
+          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
               <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition))*c_Deg<<" < "<<m_ARMMax<<endl;
         }      
         m_NRejectedARM++;
@@ -799,7 +800,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
         if (fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg < m_SPDMin || 
             fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg > m_SPDMax) {
           if (DumpOutput == true) {
-            mout<<"ID "<<Event->GetId()<<": Not within SPD cut around "<<m_SourcePosition<<": "
+            cout<<"ID "<<Event->GetId()<<": Not within SPD cut around "<<m_SourcePosition<<": "
                 <<m_SPDMax<<" < "<<fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg<<" < "<<m_SPDMax<<endl;
           }      
           m_NRejectedSPD++;
@@ -815,7 +816,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
     if (m_UsePairs == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted Pair!"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted Pair!"<<endl;
       }
       m_NRejectedUsePairs++;
       Return = false;
@@ -823,7 +824,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (Pair->GetOpeningAngle()*c_Deg < m_OpeningAnglePairMin || 
         Pair->GetOpeningAngle()*c_Deg > m_OpeningAnglePairMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()
+        cout<<"ID "<<Event->GetId()
             <<": Not within opening angle selection selection: "
             <<Pair->GetOpeningAngle()*c_Deg<<" deg!"<<endl;
       }
@@ -833,7 +834,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (Pair->GetInitialEnergyDeposit() < m_InitialEnergyDepositPairMin || 
         Pair->GetInitialEnergyDeposit() > m_InitialEnergyDepositPairMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()
+        cout<<"ID "<<Event->GetId()
             <<": Not within initial energy deposit selection: "
             <<Pair->GetInitialEnergyDeposit()<<" keV!"<<endl;
       }
@@ -843,7 +844,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (Pair->GetTrackQualityFactor() < m_PairQualityFactorMin || 
         Pair->GetTrackQualityFactor() > m_PairQualityFactorMax) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()
+        cout<<"ID "<<Event->GetId()
             <<": Not within pair quality factor: "
             <<Pair->GetTrackQualityFactor()<<"!"<<endl;
       }
@@ -853,7 +854,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (Event->IsGoodEvent() == true) {
       if (m_EarthHorizon.IsEventFromEarth(Event, DumpOutput) == true) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
+          cout<<"ID "<<Event->GetId()<<": Not within earth horizon cut "<<endl;
         }      
         m_NRejectedEarthHorizonCut++;
         Return = false;
@@ -863,7 +864,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
           fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
+          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
               <<m_ARMMin<<" < "<<fabs(Pair->GetARMGamma(m_SourcePosition))<<" < "<<m_ARMMax<<endl;
         }      
         m_NRejectedARM++;
@@ -878,7 +879,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
     if (m_UsePhotos == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted photoeffect event!"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted photoeffect event!"<<endl;
       }
       m_NRejectedUsePhotos++;
       Return = false;
@@ -892,20 +893,20 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
     if (m_UseUnidentifiables == false) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Unwanted unidentifiable event!"<<endl;
+        cout<<"ID "<<Event->GetId()<<": Unwanted unidentifiable event!"<<endl;
       }
       m_NRejectedUseUnidentifiables++;
       Return = false;
     }
   } else {
-    mout<<"Unknown event type: "<<Event->GetType()<<endl;
+    cout<<"Unknown event type: "<<Event->GetType()<<endl;
     Return = false;
   }
 
   if (Return == true) {
     m_NAccepted++;
     if (DumpOutput == true) {
-      mout<<"ID "<<Event->GetId()<<": ok              <-------------------"<<endl;
+      cout<<"ID "<<Event->GetId()<<": ok              <-------------------"<<endl;
     }
   }
 
@@ -1076,7 +1077,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
     return false;
   } else {
-    mout<<"Unknown event type: "<<Event->GetType()<<endl;
+    cout<<"Unknown event type: "<<Event->GetType()<<endl;
     return false;
   }
 
@@ -1123,7 +1124,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
           Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
-          mout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
           for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
             if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
