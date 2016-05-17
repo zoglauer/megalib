@@ -66,8 +66,8 @@ class MDShapeUnion : public MDShape
   int GetGeant3NumberOfParameters() { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return 0; }
   MString GetMGeantDATA(MString) { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return ""; }
 
-  
-  
+
+
   //! Return the augend (first number)
   MDShape* GetAugend() const { return m_SubShapes[0]; }
   //! Return the addend (second number)
