@@ -66,7 +66,7 @@ class MDShape
   virtual MString GetGeomega() const = 0;
   virtual MString GetType();
 
-	virtual vector<MVector> CreateSurfacePattern(const unsigned int Detail = 0) const;
+  virtual vector<MVector> CreateSurfacePattern(const unsigned int Detail = 0) const;
   virtual bool IsInside(const MVector& Pos, const double Tolerance = 0, const bool PreferOutside = false);
   virtual double DistanceInsideOut(const MVector& Pos, const MVector& Dir, double Tolerance = 0);
   virtual double DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double Tolerance = 0);
@@ -85,7 +85,7 @@ class MDShape
   //! Return the number of subshapes
   unsigned int GetNSubShapes() { return m_SubShapes.size(); }
   
-  //! Return a specific subshape - if there are no subshapes or if i is out of bound return 0
+  //! Return a specific subshape - if there are no subshapes or if it is out of bound return 0
   MDShape* GetSubShape(unsigned int i);
   
   void SetColor(int Color);
