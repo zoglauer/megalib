@@ -1780,7 +1780,8 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
 {
   // Return true if the volume is part of the volume tree
   
-  if (m_Name == Name) return true;
+  if (m_Name.AreIdentical(Name)) return true;
+  
   if (IncludeTemplates == true) {
     MString NameThis;
     if (IsClone() == true) {
@@ -1789,7 +1790,7 @@ bool MDVolume::ContainsVolume(const MString& Name, bool IncludeTemplates)
       NameThis = GetName();
     }
 
-    if (NameThis == Name) {
+    if (NameThis.AreIdentical(Name)) {
       return true;
     }
   }
@@ -2289,7 +2290,7 @@ bool MDVolume::GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& Tr
 
   bool Found = false;
   int NPlacements = 0;
-  if (NameSearched == NameThis) {
+  if (NameSearched.AreIdentical(NameThis)) {
     NPlacements = 1;
     Placements[TreeDepth] = 1;
     Found = true;

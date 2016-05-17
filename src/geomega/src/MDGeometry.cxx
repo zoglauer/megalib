@@ -244,6 +244,10 @@ void MDGeometry::Reset()
   MDDetector::ResetIDs();
   MDMaterial::ResetIDs();
 
+  m_LastFoundVolume_GetRandomPositionInVolume = nullptr;
+  //! The last found placements in GetRandomPositionInVolume
+  m_LastFoundPlacements_GetRandomPositionInVolume.clear();
+  
   m_GeometryScanned = false;
 }
 
@@ -6063,7 +6067,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
     out<<"     --> No suitable volume found!"<<endl;
 
     // Only print the warning if we did not find anything
-    mout<<out.str()<<endl;
+    cout<<out.str()<<endl; // cout instead of mout...
   }
   
   return VS;
@@ -6111,8 +6115,14 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
     return g_VectorNotDefined;
   }
 
-  MDVolume* Volume = GetVolume(Name);
-
+  MDVolume* Volume = nullptr;
+  if (m_LastFoundVolume_GetRandomPositionInVolume != nullptr &&
+      m_LastFoundVolume_GetRandomPositionInVolume->GetName() == Name) {
+    Volume = m_LastFoundVolume_GetRandomPositionInVolume;
+  } else {
+    Volume = GetVolume(Name);
+  }
+  
   if (Volume == 0) {
     merr<<"No volume of this name exists: "<<Name<<endl;
     return g_VectorNotDefined;
@@ -6127,8 +6137,13 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   // First find out how many placements we have:
   vector<int> Placements;
   int TreeDepth = -1;
-  m_WorldVolume->GetNPlacements(Volume, Placements, TreeDepth);
-
+  if (m_LastFoundVolume_GetRandomPositionInVolume != nullptr &&
+      m_LastFoundVolume_GetRandomPositionInVolume->GetName() == Name) {
+    Placements = m_LastFoundPlacements_GetRandomPositionInVolume;
+  } else {
+    m_WorldVolume->GetNPlacements(Volume, Placements, TreeDepth);
+  }
+  
   int Total = 1;
   //cout<<"Placements"<<endl;
   for (unsigned int i = 0; i < Placements.size(); ++i) {
@@ -6161,11 +6176,18 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   //}
  
   TreeDepth = -1;
-
   MVector Pos = m_WorldVolume->GetRandomPositionInVolume(Volume, NewPlacements, TreeDepth);
 
   //cout<<Pos<<endl;
 
+  if (m_LastFoundVolume_GetRandomPositionInVolume != nullptr &&
+      m_LastFoundVolume_GetRandomPositionInVolume->GetName() == Name) {
+    // Nothing if identical
+  } else {
+    m_LastFoundVolume_GetRandomPositionInVolume = Volume;
+    m_LastFoundPlacements_GetRandomPositionInVolume = Placements;
+  }
+  
   return Pos;
 }
 

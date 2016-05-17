@@ -294,6 +294,11 @@ class MDGeometry
   //! The random number generator for GetRandomPositionInVolume
   TRandom3 m_RandomPositionInVolumeRNG;
   
+  //! The last found volume in GetRandomPositionInVolume
+  MDVolume* m_LastFoundVolume_GetRandomPositionInVolume;
+  //! The last found placements in GetRandomPositionInVolume
+  vector<int> m_LastFoundPlacements_GetRandomPositionInVolume;
+  
   
 #ifdef ___CINT___
  public:
