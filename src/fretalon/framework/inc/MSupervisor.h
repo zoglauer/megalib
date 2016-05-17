@@ -118,6 +118,8 @@ class MSupervisor
   //! Choose if to use multi-threading
   void UseMultiThreading(bool Flag = true) { m_UseMultiThreading = Flag; }
 
+  //! Use the UI
+  void UseUI(bool UIUse) { m_UIUse = UIUse; }
   //! Set the program name
   void SetUIProgramName(const MString& ProgramName) { m_UIProgramName = ProgramName; }
   //! Set the UI Picture file name, and an alternative text if the picture could not be loaded
@@ -199,6 +201,8 @@ class MSupervisor
   //! True if the analysis is currently underway
   bool m_IsAnalysisRunning;
   
+  //! Use the UI
+  bool m_UIUse;
   //! The program name
   MString m_UIProgramName;
   //! The path to the picture in the GUI

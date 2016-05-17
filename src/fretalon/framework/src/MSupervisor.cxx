@@ -80,6 +80,7 @@ MSupervisor::MSupervisor()
   m_UseMultiThreading = false;
   m_IsAnalysisRunning = false;
 
+  m_UIUse = true;
   m_UIProgramName = "Unnamed program";
   m_UIPicturePath = "";
   m_UISubTitle = "No sub title set!";
@@ -699,38 +700,40 @@ bool MSupervisor::Analyze()
   
   
   // Create the expo viewer:
-  if (m_ExpoCombinedViewer == nullptr) {
-    m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
-    m_ExpoCombinedViewer->Create();
-  }
-  m_ExpoCombinedViewer->RemoveExpos();
-
   int NExpos = 0;
-
-  delete m_ExpoSupervisor;
-  m_ExpoSupervisor = new MGUIExpoSupervisor();   
-  m_ExpoCombinedViewer->AddExpo(m_ExpoSupervisor);
-  ++NExpos;
-
-  for (unsigned int m = 0; m < GetNModules(); ++m) {
-    if (GetModule(m)->HasExpos() == true) {
-      m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
-      ++NExpos;
+  if (m_UIUse == true) {
+    if (m_ExpoCombinedViewer == nullptr) {
+      m_ExpoCombinedViewer = new MGUIExpoCombinedViewer();
+      m_ExpoCombinedViewer->Create();
     }
-  }
-  m_ExpoCombinedViewer->OnReset();
+    m_ExpoCombinedViewer->RemoveExpos();
+
+
+    delete m_ExpoSupervisor;
+    m_ExpoSupervisor = new MGUIExpoSupervisor();   
+    m_ExpoCombinedViewer->AddExpo(m_ExpoSupervisor);
+    ++NExpos;
+
+    for (unsigned int m = 0; m < GetNModules(); ++m) {
+      if (GetModule(m)->HasExpos() == true) {
+        m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
+        ++NExpos;
+      }
+    }
+    m_ExpoCombinedViewer->OnReset();
   
-  m_ExpoSupervisor->Reset();
-  m_ExpoSupervisor->SetNModules(GetNModules());
-  for (unsigned int m = 0; m < GetNModules(); ++m) {
-    m_ExpoSupervisor->SetModuleName(m, GetModule(m)->GetName());
-  }
+    m_ExpoSupervisor->Reset();
+    m_ExpoSupervisor->SetNModules(GetNModules());
+    for (unsigned int m = 0; m < GetNModules(); ++m) {
+      m_ExpoSupervisor->SetModuleName(m, GetModule(m)->GetName());
+    }
     
-  m_ExpoCombinedViewer->ShowExpos();
-  if (NExpos == 0) {
-    gSystem->ProcessEvents();
-    m_ExpoCombinedViewer->CloseWindow(); 
-    gSystem->ProcessEvents();
+    m_ExpoCombinedViewer->ShowExpos();
+    if (NExpos == 0) {
+      gSystem->ProcessEvents();
+      m_ExpoCombinedViewer->CloseWindow(); 
+      gSystem->ProcessEvents();
+    }
   }
   
   
@@ -860,27 +863,29 @@ bool MSupervisor::Analyze()
       }
 
       // Update the processing time:
-      for (unsigned int m = 0; m < Modules.size(); ++m) {
-        long ProcessedEvents = 0;
-        double ProcessingTime = 0;
-        for (unsigned int s = 0; s < Modules[m].size(); ++s) {
-          ProcessedEvents += Modules[m][s]->GetNumberOfAnalyzedEvents();
-          ProcessingTime += Modules[m][s]->GetProcessingTime();
+      if (m_UIUse == true) {
+        for (unsigned int m = 0; m < Modules.size(); ++m) {
+          long ProcessedEvents = 0;
+          double ProcessingTime = 0;
+          for (unsigned int s = 0; s < Modules[m].size(); ++s) {
+            ProcessedEvents += Modules[m][s]->GetNumberOfAnalyzedEvents();
+            ProcessingTime += Modules[m][s]->GetProcessingTime();
+          }
+          m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
+          m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
+          m_ExpoSupervisor->SetInstances(m, Modules[m].size());
         }
-        m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
-        m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
-        m_ExpoSupervisor->SetInstances(m, Modules[m].size());
-      }
-      m_ExpoSupervisor->SetLastProcessingTime(TimeAssemblyExitedStartModule);
+        m_ExpoSupervisor->SetLastProcessingTime(TimeAssemblyExitedStartModule);
         
-      // Update the UI
-      // Little trick: Start with frequent updates after 1 sec, 2 sec, 3 sec, 4 sec
-      // and then after each 5 seconds have past
-      double UIElapsed = LastUIUpdate.GetElapsed();
-      if (UIElapsed > 5.0 || UIElapsed > NumberOfUIUpdates) { 
-        m_ExpoCombinedViewer->OnUpdate();
-        LastUIUpdate.Reset();
-        ++NumberOfUIUpdates;
+        // Update the UI
+        // Little trick: Start with frequent updates after 1 sec, 2 sec, 3 sec, 4 sec
+        // and then after each 5 seconds have past
+        double UIElapsed = LastUIUpdate.GetElapsed();
+        if (UIElapsed > 5.0 || UIElapsed > NumberOfUIUpdates) { 
+          m_ExpoCombinedViewer->OnUpdate();
+          LastUIUpdate.Reset();
+          ++NumberOfUIUpdates;
+        }
       }
     } // UI updates and spwan checks
     
@@ -934,7 +939,9 @@ bool MSupervisor::Analyze()
     }
   }
 
-  m_ExpoCombinedViewer->OnUpdate();
+  if (m_UIUse == true) {
+    m_ExpoCombinedViewer->OnUpdate();
+  }
   
   cout<<endl;
   if (m_SoftInterrupt == true) {
@@ -958,10 +965,12 @@ bool MSupervisor::Analyze()
       ProcessingTime += Modules[m][s]->GetProcessingTime();
       SleepingTime += Modules[m][s]->GetSleepingTime();
     }
-    m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
-    m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
-    m_ExpoSupervisor->SetInstances(m, Modules[m].size());
-
+    if (m_UIUse == true) {
+      m_ExpoSupervisor->SetProcessedEvents(m, ProcessedEvents);
+      m_ExpoSupervisor->SetProcessingTime(m, ProcessingTime);
+      m_ExpoSupervisor->SetInstances(m, Modules[m].size());
+    }
+    
     cout<<"Spent "<<ProcessingTime<<" sec analyzing ";
     cout<<"(vs. "<<SleepingTime<<" sec sleeping) ";
     cout<<"in module \""<<Modules[m][0]->GetName()<<"\" ";
@@ -972,7 +981,9 @@ bool MSupervisor::Analyze()
   //}
 
   // A final UI update:
-  m_ExpoCombinedViewer->OnUpdate();
+  if (m_UIUse == true) {
+    m_ExpoCombinedViewer->OnUpdate();
+  }
   
   m_IsAnalysisRunning = false;
 
