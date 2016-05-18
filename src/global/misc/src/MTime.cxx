@@ -955,7 +955,7 @@ MTime MTime::operator-(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator!=(const MTime& T)
+bool MTime::operator!=(const MTime& T) const
 {
   return ((m_Seconds != T.m_Seconds) && (m_NanoSeconds != T.m_NanoSeconds));
 }
@@ -964,7 +964,7 @@ bool MTime::operator!=(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator==(const MTime& T)
+bool MTime::operator==(const MTime& T) const
 {
   return ((m_Seconds == T.m_Seconds) && (m_NanoSeconds == T.m_NanoSeconds));
 }
@@ -973,7 +973,7 @@ bool MTime::operator==(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator>=(const MTime& T)
+bool MTime::operator>=(const MTime& T) const
 {
   return (m_Seconds > T.m_Seconds || (m_Seconds == T.m_Seconds && m_NanoSeconds >= T.m_NanoSeconds));
 }
@@ -982,7 +982,7 @@ bool MTime::operator>=(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator<=(const MTime& T)
+bool MTime::operator<=(const MTime& T) const
 {
   return (m_Seconds < T.m_Seconds || (m_Seconds == T.m_Seconds && m_NanoSeconds <= T.m_NanoSeconds));
 }
@@ -991,7 +991,7 @@ bool MTime::operator<=(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator>(const MTime& T)
+bool MTime::operator>(const MTime& T) const
 {
   return (m_Seconds > T.m_Seconds || (m_Seconds == T.m_Seconds && m_NanoSeconds > T.m_NanoSeconds));
 }
@@ -1000,7 +1000,7 @@ bool MTime::operator>(const MTime& T)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MTime::operator<(const MTime& T)
+bool MTime::operator<(const MTime& T) const
 {
   return (m_Seconds < T.m_Seconds || (m_Seconds == T.m_Seconds && m_NanoSeconds < T.m_NanoSeconds));
 }

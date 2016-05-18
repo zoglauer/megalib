@@ -136,7 +136,7 @@ void MGUIETransceiver::Create()
   AddFrame(m_Host, m_EntryLayout);
 
   // The Port field
-  m_Port  = new MGUIEEntry(this, "Port:", false, m_Transceiver->GetPort(), true, 0);
+  m_Port  = new MGUIEEntry(this, "Port:", false, m_Transceiver->GetPort(), true, 0l);
   m_Port->SetEntryFieldSize(200);
   m_Port->Associate(this, e_Port);
   AddFrame(m_Port, m_EntryLayout);
@@ -304,7 +304,7 @@ MString MGUIETransceiver::GetHostName()
 void MGUIETransceiver::SetPort(unsigned int Port)
 {
   m_Transceiver->SetPort(Port);
-  m_Port->SetValue((int) Port);
+  m_Port->SetValue((long) Port);
 }
 
 
@@ -313,7 +313,7 @@ void MGUIETransceiver::SetPort(unsigned int Port)
 
 unsigned int MGUIETransceiver::GetPort()
 {
-  return m_Port->GetAsInt();
+  return (unsigned int) m_Port->GetAsInt();
 }
 
 

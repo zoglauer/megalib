@@ -554,7 +554,6 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
 {
   // Return the token at position i as boolean
 
-
   if (i < m_Tokens.size()) {
     MString Token = m_Tokens[i];
     Token.ToLower();
@@ -573,6 +572,30 @@ bool MTokenizer::GetTokenAtAsBoolean(const unsigned int i) const
       mlog<<"The Tokenizer is empty!"<<endl;
     }
     return false;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MTokenizer::GetTokenAtAsTime(const unsigned int i) const
+{
+  //! Return the token at i as MTime --- return MTime(0) in case of error
+
+  if (i < m_Tokens.size()) {
+    MTime Time;
+    Time.Set(m_Tokens[i]);
+    return Time;
+  } else {
+    mlog<<"bool MTokenizer::GetTokenAtAsTime(const unsigned int i): "<<endl;
+    if (m_Tokens.size() > 0) {
+      mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
+      mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
+    } else {
+      mlog<<"The Tokenizer is empty!"<<endl;
+    }
+    return MTime(0);
   }
 }
 

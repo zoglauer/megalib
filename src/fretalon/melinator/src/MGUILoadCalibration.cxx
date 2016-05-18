@@ -193,7 +193,7 @@ bool MGUILoadCalibration::ProcessMessage(long Message, long Parameter1,
       if (Parameter1 % 100 == 99) {
         int ID = (Parameter1 - 10099) / 100;
         m_FileNames[ID]->SetFileName("");
-        m_GroupIDs[ID]->SetValue(0);
+        m_GroupIDs[ID]->SetValue(0l);
         for (unsigned int i = 0; i < m_Isotopes[ID].size(); ++i) {
           m_Isotopes[ID][i]->Select(0);
         }

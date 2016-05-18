@@ -59,7 +59,7 @@ MXmlNode::MXmlNode() : MXmlData()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name) : MXmlData(Name)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name) : MXmlData(Name)
 {
   //! Constructor
 
@@ -72,7 +72,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name) : MXmlData(Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, MString Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MString& Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -85,7 +85,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, MString Value) : MXmlData
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, int Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -98,7 +98,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, int Value) : MXmlData(Nam
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, long Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -111,7 +111,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, long Value) : MXmlData(Na
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, unsigned int Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -124,7 +124,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, unsigned int Value) : MXm
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, double Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -137,7 +137,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, double Value) : MXmlData(
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, bool Value) : MXmlData(Name, Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, bool Value) : MXmlData(Name, Value)
 {
   //! Constructor
 
@@ -150,7 +150,20 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, bool Value) : MXmlData(Na
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, MVector Value)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value) : MXmlData(Name, Value)
+{
+  //! Constructor
+
+  if (MotherNode != 0) {
+    MotherNode->AddNode(this);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value)
 {
   //! Constructor
 
@@ -170,7 +183,7 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, MVector Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, int ValueMin, int ValueMax)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int ValueMax)
 {
   //! Constructor
 
@@ -191,13 +204,12 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, int ValueMin, int ValueMa
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, long ValueMin, long ValueMax)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, long ValueMax)
 {
   //! Constructor
 
   MString Temp;
 
-  m_Name = Name;
   m_Name = Name;
   
   ostringstream out;
@@ -213,18 +225,38 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, long ValueMin, long Value
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode::MXmlNode(MXmlNode* MotherNode, MString Name, double ValueMin, double ValueMax)
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, double ValueMax)
 {
   //! Constructor
 
   MString Temp;
 
-  m_Name = Name;
   m_Name = Name;
   
   ostringstream out;
   out.precision(15);
   out<<"<Min>"<<ValueMin<<"</Min><Max>"<<ValueMax<<"</Max>";
+  m_Value = out.str();
+  
+  if (MotherNode != 0) {
+    MotherNode->AddNode(this);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& ValueMin, const MTime& ValueMax)
+{
+  //! Constructor
+
+  MString Temp;
+
+  m_Name = Name;
+  
+  ostringstream out;
+  out<<"<Min>"<<ValueMin.GetLongIntsString()<<"</Min><Max>"<<ValueMax.GetLongIntsString()<<"</Max>";
   m_Value = out.str();
   
   if (MotherNode != 0) {
@@ -279,7 +311,7 @@ MXmlNode* MXmlNode::GetNode(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlNode* MXmlNode::GetNode(MString Name)
+MXmlNode* MXmlNode::GetNode(const MString& Name)
 {
   //! Return a node
 
@@ -321,7 +353,7 @@ MXmlAttribute* MXmlNode::GetAttribute(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlAttribute* MXmlNode::GetAttribute(MString Name)
+MXmlAttribute* MXmlNode::GetAttribute(const MString& Name)
 {
   //! Return a attribute
 
@@ -472,6 +504,42 @@ double MXmlNode::GetMaxValueAsDouble() const
   if (m_Nodes.size() == 2) {
     if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
       return m_Nodes[1]->GetValueAsDouble();
+    }
+  }
+
+  mout<<"Xml: Value error in node \""<<m_Name<<"\" --- Value is not a min/max node!"<<endl;
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MXmlNode::GetMinValueAsTime() const
+{
+  //! Return the value of the node as time
+
+  if (m_Nodes.size() == 2) {
+    if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
+      return m_Nodes[0]->GetValueAsTime();
+    }
+  }
+
+  mout<<"Xml: Value error in node \""<<m_Name<<"\" --- Value is not a min/max node!"<<endl;
+  return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MTime MXmlNode::GetMaxValueAsTime() const
+{
+  //! Return the value of the node as double
+
+  if (m_Nodes.size() == 2) {
+    if (m_Nodes[0]->GetName() == "Min" && m_Nodes[1]->GetName() == "Max") {
+      return m_Nodes[1]->GetValueAsTime();
     }
   }
 

@@ -4543,16 +4543,6 @@ void MInterfaceMimrec::TimeDistribution()
   MPhysicalEvent* Event = 0;
   if (InitializeEventloader() == false) return;
 
-  TH1D* Hist = 
-    new TH1D("Time", "Time", NBins, 
-             m_Data->GetTimeRangeMin(), m_Data->GetTimeRangeMax());
-  Hist->SetBit(kCanDelete);
-  Hist->SetXTitle("time [s]");
-  Hist->SetYTitle("counts");
-  Hist->SetStats(false);
-  Hist->SetFillColor(8);
-  Hist->SetMinimum(0);
-
   double MinTime = numeric_limits<double>::max();
   double MaxTime = 0;
 
@@ -4568,12 +4558,9 @@ void MInterfaceMimrec::TimeDistribution()
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEvent(Event) == true) {
-      Hist->Fill(Event->GetTime().GetAsDouble());
-    }    
-    // Only accept Comptons within the selected ranges... 
-    if (NoTimeWindowSelector.IsQualifiedEvent(Event) == true) {
       TimeList.push_back(Event->GetTime().GetAsDouble());
     }    
+
     delete Event;
   }
   m_EventFile->Close();
@@ -4581,19 +4568,9 @@ void MInterfaceMimrec::TimeDistribution()
   mout<<"Minimum time: "<<setprecision(20)<<MinTime<<endl;
   mout<<"Maximum time: "<<setprecision(20)<<MaxTime<<setprecision(6)<<endl;
 
-  if (Hist->GetIntegral() == 0) {
-    mgui<<"No events passed the event selections"<<info;
-    return;
-  }
-
-  TCanvas* Canvas = new TCanvas("Time", "Time", 800, 600);
-  Canvas->cd();
-  Hist->Draw();
-  Canvas->Update();
-
 
   TH1D* HistOptimized = 
-    new TH1D("TimeOptimized", "Time (optimized time window without the cuts in the event selector)", NBins, 
+    new TH1D("TimeOptimized", "Light curve", NBins, 
              MinTime, MaxTime);
   HistOptimized->SetBit(kCanDelete);
   HistOptimized->SetXTitle("time [s]");
@@ -4606,7 +4583,7 @@ void MInterfaceMimrec::TimeDistribution()
     HistOptimized->Fill(TimeList[i]);
   }
 
-  TCanvas* CanvasOptimized = new TCanvas("TimeOptimized", "Time (optimized time window)", 800, 600);
+  TCanvas* CanvasOptimized = new TCanvas("TimeOptimized", "Light curve", 800, 600);
   CanvasOptimized->cd();
   HistOptimized->Draw();
   CanvasOptimized->Update();

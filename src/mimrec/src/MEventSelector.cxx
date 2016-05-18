@@ -70,8 +70,12 @@ MEventSelector::MEventSelector()
   m_ThirdTotalEnergyMax = numeric_limits<double>::max();
   m_FourthTotalEnergyMin = 0;
   m_FourthTotalEnergyMax = numeric_limits<double>::max();
-  m_TimeMin = 0;
-  m_TimeMax = numeric_limits<double>::max();
+  
+  m_TimeUseFile = false;
+  m_TimeMin.Set(0);
+  m_TimeMax.Set(2000000000);
+  m_TimeFile = "";
+  
   m_TimeWalkMin = -numeric_limits<double>::max();
   m_TimeWalkMax = numeric_limits<double>::max();
 
@@ -183,9 +187,13 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_ThirdTotalEnergyMax = EventSelector.m_ThirdTotalEnergyMax;              
   m_FourthTotalEnergyMin = EventSelector.m_FourthTotalEnergyMin;              
   m_FourthTotalEnergyMax = EventSelector.m_FourthTotalEnergyMax;              
-                                                                               
+  
+  m_TimeUseFile = EventSelector.m_TimeUseFile;
   m_TimeMin = EventSelector.m_TimeMin;                           
-  m_TimeMax = EventSelector.m_TimeMax;                           
+  m_TimeMax = EventSelector.m_TimeMax;
+  m_TimeFile = EventSelector.m_TimeFile;
+  m_TimeGTI = EventSelector.m_TimeGTI;
+  
   m_TimeWalkMin = EventSelector.m_TimeWalkMin;                       
   m_TimeWalkMax = EventSelector.m_TimeWalkMax;                       
                                                                                
@@ -340,7 +348,11 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetSecondTotalEnergy(S->GetSecondEnergyRangeMin(), S->GetSecondEnergyRangeMax());
   SetThirdTotalEnergy(S->GetThirdEnergyRangeMin(), S->GetThirdEnergyRangeMax());
   SetFourthTotalEnergy(S->GetFourthEnergyRangeMin(), S->GetFourthEnergyRangeMax());
+  
+  SetTimeUseFile(S->GetTimeUseFile());
   SetTime(S->GetTimeRangeMin(), S->GetTimeRangeMax());
+  SetTimeFile(S->GetTimeFile());
+  
   SetTimeWalk(S->GetTimeWalkRangeMin(), S->GetTimeWalkRangeMax());
 
   UseUnidentifiables(S->GetEventTypeUnidentifiable());
@@ -478,8 +490,12 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 //     }
 //   } 
 
-
-
+  /*
+  cout<<Event->GetGalacticPointingZAxisLongitude()*c_Deg<<endl;
+  if (fabs(Event->GetGalacticPointingZAxisLongitude()*c_Deg) > 60) {
+    Return = false; 
+  }
+  */
   
 //   bool UseSideD2 = true;
 //   bool UseBottomD2 = true;
@@ -563,13 +579,23 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     m_NRejectedTotalEnergy++;
     Return = false;
   }
-  if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
-    if (DumpOutput == true) {
-      cout<<"ID "<<Event->GetId()<<": Time out of range: "
-          <<m_TimeMin<<"<"<<Event->GetTime().GetString()<<"<"<<m_TimeMax<<endl;
+  
+  if (m_TimeUseFile == true) {
+    if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Time not in GTI: "<<Event->GetTime().GetString()<<endl;
+      }
+      m_NRejectedTime++;
+      Return = false;
     }
-    m_NRejectedTime++;
-    Return = false;
+  } else{
+    if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Time out of range: "<<m_TimeMin<<"<"<<Event->GetTime().GetString()<<"<"<<m_TimeMax<<endl;
+      }
+      m_NRejectedTime++;
+      Return = false;
+    }
   }
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
@@ -1081,8 +1107,14 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     return false;
   }
 
-  if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
-    return false;
+  if (m_TimeUseFile == true) {
+    if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
+      return false; 
+    }
+  } else {
+    if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
+      return false;
+    }
   }
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
@@ -1295,7 +1327,33 @@ void MEventSelector::SetFourthTotalEnergy(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetTime(double Min, double Max)
+void MEventSelector::SetTimeUseFile(bool TimeUseFile)
+{
+  m_TimeUseFile = TimeUseFile;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetTimeFile(MString TimeFile)
+{
+  m_TimeFile = TimeFile;
+  
+  m_TimeGTI.Reset(true);
+  
+  if (MFile::Exists(m_TimeFile) == true) {
+    if (m_TimeGTI.Load(m_TimeFile) == false) {
+      cout<<"Error: Unable to load GTI file! Using all open one!"<<endl;
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetTime(const MTime& Min, const MTime& Max)
 {
   // Set the range of time
 

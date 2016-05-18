@@ -57,7 +57,7 @@ class MGUIEventSelection : public MGUIDialog
  protected:
   virtual void Create();
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // private methods:
@@ -89,9 +89,16 @@ class MGUIEventSelection : public MGUIDialog
 
   TGCheckButton* m_BadCB;
 
+  MGUIEMinMaxEntry* m_EventId;
+  
+  TGRadioButton* m_GTIEntryRB;
+  MGUIEEntry* m_MinTimeEntry; 
+  MGUIEEntry* m_MaxTimeEntry; 
+  TGRadioButton* m_GTIFileRB;
+  MGUIEFileSelector* m_GTIFile;
+  
   TGListBox* m_DetectorList;
 
-  MGUIEMinMaxEntry* m_EventId;
   MGUIEMinMaxEntry* m_TrackLength;
   MGUIEMinMaxEntry* m_SequenceLength;
   MGUIEMinMaxEntry* m_ClusteringQualityFactor;
@@ -107,7 +114,7 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEMinMaxEntry* m_ComptonAngle;
   MGUIEMinMaxEntry* m_FirstIADistance;
   MGUIEMinMaxEntry* m_IADistance;
-  MGUIEMinMaxEntry* m_Time;
+
   MGUIEMinMaxEntry* m_TimeWalk;
   MGUIEMinMaxEntry* m_OpeningAnglePair;
   MGUIEMinMaxEntry* m_InitialEnergyDepositPair;
@@ -149,6 +156,8 @@ class MGUIEventSelection : public MGUIDialog
                    c_Unidentifiable, 
                    c_Decay,
                    c_Bad,
+                   c_GTIEntry,
+                   c_GTIFile,
                    c_Detectors, 
                    c_EHCNone, 
                    c_EHCIntersection, 

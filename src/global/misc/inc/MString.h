@@ -53,6 +53,14 @@ class MString
   //! Copy first n characters of S
   MString(const char* S, unsigned int N) { m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
   MString(const char S) { m_String = S; }
+  MString(const short i) { operator+=(i); }
+  MString(const unsigned short i) { operator+=(i); }
+  MString(const int i) { operator+=(i); }
+  MString(const unsigned int i) { operator+=(i); }
+  MString(const long i) { operator+=(i); }
+  MString(const unsigned long i) { operator+=(i); }
+  MString(const float i) { operator+=(i); }
+  MString(const double i) { operator+=(i); }
   virtual ~MString() {}
 
   // Move

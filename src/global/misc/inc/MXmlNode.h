@@ -40,27 +40,31 @@ class MXmlNode : public MXmlData
   //! Default constructor
   MXmlNode();
   //! Constructor -- no values
-  MXmlNode(MXmlNode* MotherNode, MString Name);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name);
   //! Constructor -- content is string
-  MXmlNode(MXmlNode* MotherNode, MString Name, MString Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, const MString& Value);
   //! Constructor -- content is integer
-  MXmlNode(MXmlNode* MotherNode, MString Name, int Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, int Value);
   //! Constructor -- content is long
-  MXmlNode(MXmlNode* MotherNode, MString Name, long Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value);
   //! Constructor -- content is unsigned integer
-  MXmlNode(MXmlNode* MotherNode, MString Name, unsigned int Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value);
   //! Constructor -- content is double
-  MXmlNode(MXmlNode* MotherNode, MString Name, double Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value);
   //! Constructor -- content is a vector
-  MXmlNode(MXmlNode* MotherNode, MString Name, MVector Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, MVector Value);
+  //! Constructor -- content is a time
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& Value);
   //! Constructor -- content is a boolean
-  MXmlNode(MXmlNode* MotherNode, MString Name, bool Value);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, bool Value);
   //! Constructor -- content is an integer min/max-value
-  MXmlNode(MXmlNode* MotherNode, MString Name, int ValueMin, int ValueMax);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, int ValueMin, int ValueMax);
   //! Constructor -- content is a long min/max-value
-  MXmlNode(MXmlNode* MotherNode, MString Name, long ValueMin, long ValueMax);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, long ValueMin, long ValueMax);
   //! Constructor content is a double min/max-value
-  MXmlNode(MXmlNode* MotherNode, MString Name, double ValueMin, double ValueMax);
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, double ValueMin, double ValueMax);
+  //! Constructor content is a time min/max-value
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, const MTime& ValueMin, const MTime& ValueMax);
   //! Default destructor
   virtual ~MXmlNode();
 
@@ -81,6 +85,10 @@ class MXmlNode : public MXmlData
   double GetMinValueAsDouble() const;
   //! Return the maximum value of the node as double
   double GetMaxValueAsDouble() const;
+  //! Return the minimum value of the node as time
+  MTime GetMinValueAsTime() const;
+  //! Return the maximum value of the node as time
+  MTime GetMaxValueAsTime() const;
 
 
   //! Return the number of nodes
@@ -88,7 +96,7 @@ class MXmlNode : public MXmlData
   //! Return a given node
   MXmlNode* GetNode(unsigned int i);
   //! Return a given node
-  MXmlNode* GetNode(MString Name);
+  MXmlNode* GetNode(const MString& Name);
   //! Add a node
   void AddNode(MXmlNode* Node);
 
@@ -98,7 +106,7 @@ class MXmlNode : public MXmlData
   //! Return a given attribute
   MXmlAttribute* GetAttribute(unsigned int i);
   //! Return a given attribute
-  MXmlAttribute* GetAttribute(MString Name);
+  MXmlAttribute* GetAttribute(const MString& Name);
   //! Add a attribute
   void AddAttribute(MXmlAttribute* Attribute);
 

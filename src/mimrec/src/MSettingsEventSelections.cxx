@@ -139,9 +139,11 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_DistanceRangeMin = 0;
   m_DistanceRangeMax = numeric_limits<int>::max();
 
-  m_TimeRangeMin = 0.0;
-  m_TimeRangeMax = double(numeric_limits<int>::max());
-
+  m_TimeUseFile = false;
+  m_TimeRangeMin.Set(0.0);
+  m_TimeRangeMax.Set(2000000000.0);
+  m_TimeFile = "";
+  
   m_TimeWalkRangeMin = -1000;
   m_TimeWalkRangeMax = numeric_limits<int>::max();
 
@@ -205,6 +207,11 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "FlaggedAsBad", m_FlaggedAsBad);
 
   new MXmlNode(aNode, "EventID", m_EventIdRangeMin, m_EventIdRangeMax);
+
+  new MXmlNode(aNode, "TimeUseFile", m_TimeUseFile);
+  new MXmlNode(aNode, "Time", m_TimeRangeMin, m_TimeRangeMax);
+  new MXmlNode(aNode, "TimeFile", m_TimeFile);
+
   new MXmlNode(aNode, "TrackLength", m_TrackLengthRangeMin, m_TrackLengthRangeMax);
   new MXmlNode(aNode, "SequenceLength", m_SequenceLengthRangeMin, m_SequenceLengthRangeMax);
   new MXmlNode(aNode, "ClusteringQualityFactor", m_ClusteringQualityFactorRangeMin, m_ClusteringQualityFactorRangeMax);
@@ -221,7 +228,6 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "ThetaDeviationMax", m_ThetaDeviationMax);
   new MXmlNode(aNode, "FirstDistance", m_FirstDistanceRangeMin, m_FirstDistanceRangeMax);
   new MXmlNode(aNode, "AnyDistanceRange", m_DistanceRangeMin, m_DistanceRangeMax);
-  new MXmlNode(aNode, "Time", m_TimeRangeMin, m_TimeRangeMax);
   new MXmlNode(aNode, "TimeWalk", m_TimeWalkRangeMin, m_TimeWalkRangeMax);
   new MXmlNode(aNode, "CoincidenceWindow", m_CoincidenceWindowRangeMin, m_CoincidenceWindowRangeMax);
   new MXmlNode(aNode, "OpeningAnglePair", m_OpeningAnglePairMin, m_OpeningAnglePairMax);
@@ -308,10 +314,23 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("FlaggedAsBad")) != 0) {
       m_FlaggedAsBad = bNode->GetValueAsInt();
     }
+    
     if ((bNode = aNode->GetNode("EventID")) != 0) {
       m_EventIdRangeMin = bNode->GetMinValueAsLong();
       m_EventIdRangeMax = bNode->GetMaxValueAsLong();
     }
+    
+    if ((bNode = aNode->GetNode("TimeUseFile")) != 0) {
+      m_TimeUseFile = bNode->GetValueAsBoolean();
+    }
+    if ((bNode = aNode->GetNode("Time")) != 0) {
+      m_TimeRangeMin = bNode->GetMinValueAsTime();
+      m_TimeRangeMax = bNode->GetMaxValueAsTime();
+    }
+    if ((bNode = aNode->GetNode("TimeFile")) != 0) {
+      m_TimeFile = bNode->GetValueAsString();
+    }
+    
     if ((bNode = aNode->GetNode("TrackLength")) != 0) {
       m_TrackLengthRangeMin = bNode->GetMinValueAsInt();
       m_TrackLengthRangeMax = bNode->GetMaxValueAsInt();
@@ -370,10 +389,6 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("AnyDistanceRange")) != 0) {
       m_DistanceRangeMin = bNode->GetMinValueAsDouble();
       m_DistanceRangeMax = bNode->GetMaxValueAsDouble();
-    }
-    if ((bNode = aNode->GetNode("Time")) != 0) {
-      m_TimeRangeMin = bNode->GetMinValueAsDouble();
-      m_TimeRangeMax = bNode->GetMaxValueAsDouble();
     }
     if ((bNode = aNode->GetNode("TimeWalk")) != 0) {
       m_TimeWalkRangeMin = bNode->GetMinValueAsDouble();

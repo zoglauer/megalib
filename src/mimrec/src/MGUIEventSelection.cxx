@@ -79,6 +79,7 @@ void MGUIEventSelection::Create()
   // Create the main window
 
   int FieldSize = m_FontScaler*95;
+  int LargeFieldSize = m_FontScaler*140;
   int LeftGap = m_FontScaler*65;
   int RightGap = m_FontScaler*65;
 
@@ -178,29 +179,60 @@ void MGUIEventSelection::Create()
 
   // General Frame
 
+  // ID
   m_EventId = new MGUIEMinMaxEntry(GeneralFrame,
                                    MString("Event ID window:"),
                                    false,
                                    MString("Minimum ID: "),
                                    MString("Maximum ID: "),
-                                   double(m_GUIData->GetEventIdRangeMin()), 
-                                   double(m_GUIData->GetEventIdRangeMax()), 
-                                   true, 0.0);
+                                   m_GUIData->GetEventIdRangeMin(), 
+                                   m_GUIData->GetEventIdRangeMax(), 
+                                   true, 0l);
   m_EventId->SetEntryFieldSize(FieldSize);
   GeneralFrame->AddFrame(m_EventId, MinMaxFirstLayout);
 
-  m_Time = new MGUIEMinMaxEntry(GeneralFrame,
-                                MString("Detection time window of the event:"),
-                                false,
-                                MString("Minimum [sec in system time]: "),
-                                MString("Maximum [sec in system time]: "),
-                                m_GUIData->GetTimeRangeMin(), 
-                                m_GUIData->GetTimeRangeMax(), 
-                                true, 0.0);
-  m_Time->SetEntryFieldSize(FieldSize);
-  GeneralFrame->AddFrame(m_Time, MinMaxLayout);
+  
+  // GTI
+  TGLabel* LabelTimes = new TGLabel(GeneralFrame, "Good time interval");
+  TGLayoutHints* LabelTimesLayout =
+    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);  
+  GeneralFrame->AddFrame(LabelTimes, LabelTimesLayout);
+    
+  m_GTIEntryRB = new TGRadioButton(GeneralFrame, "Set a single GTI directly", c_GTIEntry);
+  m_GTIEntryRB->Associate(this);
+  TGLayoutHints* GTIEntryRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap + 10*m_FontScaler, RightGap, 5*m_FontScaler, 2*m_FontScaler);
+  GeneralFrame->AddFrame(m_GTIEntryRB, GTIEntryRBLayout);
+  
+  m_MinTimeEntry = new MGUIEEntry(GeneralFrame, "Minimum [sec]:", false, m_GUIData->GetTimeRangeMin().GetLongIntsString());
+  m_MinTimeEntry->SetEntryFieldSize(LargeFieldSize);
+  TGLayoutHints* TimeEntryLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, LeftGap + 21*m_FontScaler, RightGap, 0, 2*m_FontScaler);
+  GeneralFrame->AddFrame(m_MinTimeEntry, TimeEntryLayout);
+  m_MaxTimeEntry = new MGUIEEntry(GeneralFrame, "Maximum [sec]:", false, m_GUIData->GetTimeRangeMax().GetLongIntsString());
+  m_MaxTimeEntry->SetEntryFieldSize(LargeFieldSize);
+  GeneralFrame->AddFrame(m_MaxTimeEntry, TimeEntryLayout);
+  
+  m_GTIFileRB = new TGRadioButton(GeneralFrame, "Read the GTIs from file", c_GTIFile);
+  m_GTIFileRB->Associate(this);
+  TGLayoutHints* GTIFileRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap + 10*m_FontScaler, RightGap, 5*m_FontScaler, 2*m_FontScaler);
+  GeneralFrame->AddFrame(m_GTIFileRB, GTIFileRBLayout);
+  
+  m_GTIFile = new MGUIEFileSelector(GeneralFrame, "", m_GUIData->GetTimeFile());
+  m_GTIFile->SetFileType("GTI file", "*.gti");
+  GeneralFrame->AddFrame(m_GTIFile, TimeEntryLayout);
 
+  if (m_GUIData->GetTimeUseFile() == false) {
+    m_GTIEntryRB->SetState(kButtonDown);
+    m_GTIFileRB->SetState(kButtonUp);
+    m_GTIFile->SetEnabled(false);
+  } else {
+    m_GTIEntryRB->SetState(kButtonUp);
+    m_GTIFileRB->SetState(kButtonDown);
+    m_MinTimeEntry->SetEnabled(false);
+    m_MaxTimeEntry->SetEnabled(false);
+  }
+  
 
+  // Detectors
   TGLabel* LabelDetectors = 
     new TGLabel(GeneralFrame, new TGString("Select detectors in which the first interaction is *NOT* allowed to have happend:"));
   TGLayoutHints* LabelDetectorsLayout =
@@ -232,10 +264,11 @@ void MGUIEventSelection::Create()
 
 
   
+  
   // Energies Frame
 
   m_FirstTotalEnergy = new MGUIEMinMaxEntry(EnergiesFrame,
-                                            MString("First energy window on total energy of incident gamma-ray:"), 
+                                            MString("First energy window on total energy of incident gamma ray:"), 
                                             false,
                                             MString("Minimum energy [keV]: "),
                                             MString("Maximum energy [keV]: "),
@@ -246,7 +279,7 @@ void MGUIEventSelection::Create()
   EnergiesFrame->AddFrame(m_FirstTotalEnergy, MinMaxFirstLayout);
 
   m_SecondTotalEnergy = new MGUIEMinMaxEntry(EnergiesFrame,
-                                             MString("Second energy window on total energy of incident gamma-ray:"), 
+                                             MString("Second energy window on total energy of incident gamma ray:"), 
                                              false,
                                              MString("Minimum energy [keV]: "),
                                              MString("Maximum energy [keV]: "),
@@ -257,7 +290,7 @@ void MGUIEventSelection::Create()
   EnergiesFrame->AddFrame(m_SecondTotalEnergy, MinMaxLayout);
 
   m_ThirdTotalEnergy = new MGUIEMinMaxEntry(EnergiesFrame,
-                                            MString("Third energy window on total energy of incident gamma-ray:"), 
+                                            MString("Third energy window on total energy of incident gamma ray:"), 
                                             false,
                                             MString("Minimum energy [keV]: "),
                                             MString("Maximum energy [keV]: "),
@@ -268,7 +301,7 @@ void MGUIEventSelection::Create()
   EnergiesFrame->AddFrame(m_ThirdTotalEnergy, MinMaxLayout);
 
   m_FourthTotalEnergy = new MGUIEMinMaxEntry(EnergiesFrame,
-                                             MString("Fourth energy window on total energy of incident gamma-ray:"), 
+                                             MString("Fourth energy window on total energy of incident gamma ray:"), 
                                              false,
                                              MString("Minimum energy [keV]: "),
                                              MString("Maximum energy [keV]: "),
@@ -282,7 +315,7 @@ void MGUIEventSelection::Create()
   // Compton frame:
 
   m_GammaEnergy = new MGUIEMinMaxEntry(ComptonEAFrame,
-                                       MString("Energy range of scattered gamma-ray:"),
+                                       MString("Energy range of scattered gamma ray:"),
                                        false,
                                        MString("Minimum energy [keV]: "),
                                        MString("Maximum energy [keV]: "),
@@ -377,8 +410,7 @@ void MGUIEventSelection::Create()
                                                    MString("Clustering quality factor:"),
                                                    false,
                                                    MString("Minimum: "),
-                                                   MString("Maximum: "),
-                                                   m_GUIData->GetClusteringQualityFactorRangeMin(), 
+                                                   MString("Maximum: "),                                                     m_GUIData->GetClusteringQualityFactorRangeMin(), 
                                                    m_GUIData->GetClusteringQualityFactorRangeMax(), 
                                                    true, 0.0);
   m_ClusteringQualityFactor->SetEntryFieldSize(FieldSize);
@@ -708,7 +740,7 @@ void MGUIEventSelection::Create()
   
 
   // Finally bring it to the screen
-  FinalizeCreate(GetDefaultWidth(), GetDefaultHeight()+10, false);
+  FinalizeCreate(GetDefaultWidth(), GetDefaultHeight()+40, false);
 
   return;
 }
@@ -723,13 +755,37 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
   // Process the messages for this application
   //cout<<"Messages: "<<Message<<", "<<Parameter1<<", "<<Parameter2<<endl;
 
-	bool Status = true;
+  bool Status = true;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_RADIOBUTTON:
-      if (Parameter1 >= c_EHCNone && Parameter1 <= c_EHCProbability) {
+      if (Parameter1 == c_GTIEntry) {
+        if (m_GTIEntryRB->GetState() == kButtonUp) {
+          m_GTIFileRB->SetState(kButtonDown);
+          m_MinTimeEntry->SetEnabled(false);
+          m_MaxTimeEntry->SetEnabled(false);
+          m_GTIFile->SetEnabled(true);
+        } else{
+          m_GTIFileRB->SetState(kButtonUp);
+          m_MinTimeEntry->SetEnabled(true);
+          m_MaxTimeEntry->SetEnabled(true);
+          m_GTIFile->SetEnabled(false);
+        }
+      } else if (Parameter1 == c_GTIFile) {
+        if (m_GTIFileRB->GetState() == kButtonUp) {
+          m_GTIEntryRB->SetState(kButtonDown);
+          m_MinTimeEntry->SetEnabled(true);
+          m_MaxTimeEntry->SetEnabled(true);
+          m_GTIFile->SetEnabled(false);
+        } else {
+          m_GTIEntryRB->SetState(kButtonUp);
+          m_MinTimeEntry->SetEnabled(false);
+          m_MaxTimeEntry->SetEnabled(false);
+          m_GTIFile->SetEnabled(true);
+        }
+      } else if (Parameter1 >= c_EHCNone && Parameter1 <= c_EHCProbability) {
         m_EHCSelected = Parameter1;
         if (c_EHCNone == Parameter1) {
           m_EHCRBNone->SetState(kButtonDown);
@@ -759,7 +815,7 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
           m_EHCProbability->SetEnabled(false);
           m_EHCProbabilityFile->SetEnabled(false);
         }
-	    } else if (Parameter1 >= c_UseGalacticPointSource && 
+      } else if (Parameter1 >= c_UseGalacticPointSource && 
                  Parameter1 <= c_UseCartesianPointSource) {
         if (m_UsePointSource->GetState() == kButtonUp) {
           m_UsePointSource->SetState(kButtonUp);
@@ -891,11 +947,11 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
       switch (Parameter1) {
       case e_Ok:
         Status = OnOk();
-	      break;
+        break;
 
-	    case e_Cancel:
+      case e_Cancel:
         Status = OnCancel();
-	      break;  
+        break;  
         
       default:
         break;
@@ -944,8 +1000,8 @@ bool MGUIEventSelection::OnApply()
                  "Tracked and/or not-tracked Compton-events", kMBIconStop, kMBOk);
     return false;
   }
-  if (m_EventId->CheckRange(0.0, numeric_limits<double>::max(), 
-                            0.0, double(numeric_limits<long>::max()), false) == false) return false;
+  if (m_EventId->CheckRange(0l, numeric_limits<long>::max(), 
+                            0l, numeric_limits<long>::max(), false) == false) return false;
   if (m_TrackLength->CheckRange(1, numeric_limits<int>::max(), 
                                 1, numeric_limits<int>::max(), false) == false) return false;
   if (m_SequenceLength->CheckRange(2, numeric_limits<int>::max(), 
@@ -975,8 +1031,12 @@ bool MGUIEventSelection::OnApply()
                                     0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_IADistance->CheckRange(0.0, numeric_limits<double>::max(), 
                                0.0, numeric_limits<double>::max(), true) == false) return false;
-  if (m_Time->CheckRange(0.0, numeric_limits<double>::max(), 
-                         0.0, numeric_limits<double>::max(), true) == false) return false;
+  double MinTime = m_MinTimeEntry->GetAsString().ToDouble();
+  double MaxTime = m_MaxTimeEntry->GetAsString().ToDouble();
+  if (MinTime >= MaxTime) {
+    mgui<<"The minimum time is larger or equal the maximum time"<<error;     
+    return false;
+  }
   if (m_GUIData->GetSpecialMode() == true) {
     if (m_TimeWalk->CheckRange(-numeric_limits<double>::max(), numeric_limits<double>::max(), 
                                -numeric_limits<double>::max(), numeric_limits<double>::max(), true) == false) return false;
@@ -1021,10 +1081,26 @@ bool MGUIEventSelection::OnApply()
   if (m_GUIData->GetFlaggedAsBad() != ((m_BadCB->GetState() == kButtonDown) ? true : false)) m_GUIData->SetFlaggedAsBad((m_BadCB->GetState() == kButtonDown) ? true : false);  
 
   if (m_EventId->IsModified() == true) {
-    m_GUIData->SetEventIdRangeMin(long(m_EventId->GetMinValueDouble()));
-    m_GUIData->SetEventIdRangeMax(long(m_EventId->GetMaxValueDouble()));
+    m_GUIData->SetEventIdRangeMin(long(m_EventId->GetMinValueInt()));
+    m_GUIData->SetEventIdRangeMax(long(m_EventId->GetMaxValueInt()));
   }
 
+
+  if (m_GUIData->GetTimeUseFile() != (m_GTIFileRB->GetState() == kButtonDown ? true : false)) {
+    m_GUIData->SetTimeUseFile(m_GTIFileRB->GetState() == kButtonDown ? true : false);
+  }
+  if (m_MinTimeEntry->IsModified() == true) {
+    m_GUIData->SetTimeRangeMin(m_MinTimeEntry->GetAsString().ToDouble());
+  }
+  if (m_MaxTimeEntry->IsModified() == true) {
+    m_GUIData->SetTimeRangeMax(m_MaxTimeEntry->GetAsString().ToDouble());
+  }  
+  if (m_GTIFile->GetFileName() != m_GUIData->GetTimeFile()) {
+    m_GUIData->SetTimeFile(m_GTIFile->GetFileName());
+  }
+  
+  
+  
   if (m_TrackLength->IsModified() == true) {
     m_GUIData->SetTrackLengthRangeMin(m_TrackLength->GetMinValueInt());
     m_GUIData->SetTrackLengthRangeMax(m_TrackLength->GetMaxValueInt());
@@ -1173,11 +1249,6 @@ bool MGUIEventSelection::OnApply()
     m_GUIData->SetDistanceRangeMax(m_IADistance->GetMaxValue());
   }
 
-  if (m_Time->IsModified() == true) {
-    m_GUIData->SetTimeRangeMin(m_Time->GetMinValue());
-    m_GUIData->SetTimeRangeMax(m_Time->GetMaxValue());
-  }
-
   if (m_GUIData->GetSpecialMode() == true) {
     if (m_TimeWalk->IsModified() == true) {
       m_GUIData->SetTimeWalkRangeMin(m_TimeWalk->GetMinValue());
@@ -1229,7 +1300,7 @@ bool MGUIEventSelection::OnApply()
 
   m_GUIData->SetEventSelectorTab(m_MainTab->GetCurrent());
 
-	return true;
+  return true;
 }
 
 

@@ -49,10 +49,13 @@ class MGUIEEntryList : public MGUIElement
 
   bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
-  void Add(MString Label, int Value = 0, bool Limits = false, 
-					 int Min = INT_MIN, int Max = INT_MAX);
+  void Add(MString Label, int Value = 0, bool Limits = false, int Min = -numeric_limits<int>::max(), int Max = numeric_limits<int>::max()) {
+    Add(Label, (long) Value, Limits, (long) Min, (long) Max); 
+  }
+  void Add(MString Label, long Value = 0, bool Limits = false, 
+           long Min = -numeric_limits<long>::max(), long Max = numeric_limits<long>::max());
   void Add(MString Label, double Value = 0.0, bool Limits = false, 
-					 double Min = -1.0*DBL_MAX, double Max = DBL_MAX);
+           double Min = -1.0*numeric_limits<double>::max(), double Max = numeric_limits<double>::max());
   void Add(MString Label, MString Value = "");
 
   void Create();
@@ -61,22 +64,25 @@ class MGUIEEntryList : public MGUIElement
   bool IsModified();
 
   //! True if this element is enabled
-	virtual void SetEnabled(bool Enabled = true);
+  virtual void SetEnabled(bool Enabled = true);
 
   //! Set the wrap length of all text
-	virtual void SetWrapLength(int WrapLength);
+  virtual void SetWrapLength(int WrapLength);
 
   int GetNEntrys();
 
-  bool IsInt(int Entry = -1, int Min = -INT_MAX, int Max = INT_MAX);
-  bool IsDouble(int Entry = -1, double Min = -DBL_MAX, double Max = DBL_MAX);
+  bool IsInt(int Entry = -1, int Min = -numeric_limits<int>::max(), int Max = numeric_limits<int>::max()) {
+    return IsInt(Entry, (long) Min, (long) Max); 
+  }
+  bool IsInt(int Entry = -1, long Min = -numeric_limits<long>::max(), long Max = numeric_limits<long>::max());
+  bool IsDouble(int Entry = -1, double Min = -numeric_limits<double>::max(), double Max = numeric_limits<double>::max());
 
   MString GetAsString(int Entry);
-  int GetAsInt(int Entry);
+  long GetAsInt(int Entry);
   double GetAsDouble(int Entry);
 
   void SetValue(int Entry, double Value);
-  void SetValue(int Entry, int Value);
+  void SetValue(int Entry, long Value);
   void SetValue(int Entry, MString Value);
 
   void SetEntryFieldSize(int Size = 70);

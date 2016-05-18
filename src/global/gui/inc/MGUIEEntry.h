@@ -57,10 +57,13 @@ class MGUIEEntry : public MGUIElement
  public:
   MGUIEEntry(const TGWindow* Parent, MString Label, bool Emphasize, 
              double Value = 0.0, bool Limits = true, 
-             double Min = -numeric_limits<double>::max(), double Max = numeric_limits<double>::max()); 
+             double Min = -numeric_limits<double>::max()/2, double Max = numeric_limits<double>::max()/2); 
   MGUIEEntry(const TGWindow* Parent, MString Label, bool Emphasize, 
              int Value = 0, bool Limits = true, 
-             int Min = -numeric_limits<int>::max(), int Max = numeric_limits<int>::max()); 
+             int Min = -numeric_limits<int>::max()/2, int Max = numeric_limits<int>::max()/2); 
+  MGUIEEntry(const TGWindow* Parent, MString Label, bool Emphasize, 
+             long Value = 0, bool Limits = true, 
+             long Min = -numeric_limits<long>::max()/2, long Max = numeric_limits<long>::max()/2); 
   MGUIEEntry(const TGWindow* Parent, MString Label, bool Emphasize, MString Value = " "); 
   virtual ~MGUIEEntry();
 
@@ -74,18 +77,18 @@ class MGUIEEntry : public MGUIElement
   bool ProcessMessage(long Message, long Parameter1, long Parameter2);
 
   void SetEntryFieldSize(int Size = 70);
-	virtual void SetEnabled(bool flag = true);
+  virtual void SetEnabled(bool flag = true);
 
-  bool IsInt(int Min = -numeric_limits<int>::max(), int Max = numeric_limits<int>::max());
+  bool IsInt(long Min = -numeric_limits<long>::max(), long Max = numeric_limits<long>::max());
   bool IsDouble(double Min = -numeric_limits<double>::max(), double Max = numeric_limits<double>::max());
 
   MString GetAsString();
-  int GetAsInt();
+  long GetAsInt();
   double GetAsDouble();
 
   void SetValue(double Value);
-  void SetValue(int Value);
-  void SetValue(unsigned int Value);
+  void SetValue(long Value);
+  void SetValue(unsigned long Value);
   void SetValue(MString Value);
 
   // private methods:

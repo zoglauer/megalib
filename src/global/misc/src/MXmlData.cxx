@@ -60,7 +60,7 @@ MXmlData::MXmlData()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name)
+MXmlData::MXmlData(const MString& Name)
 {
   //! Constructor
 
@@ -72,7 +72,7 @@ MXmlData::MXmlData(MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, MString Value)
+MXmlData::MXmlData(const MString& Name, const MString& Value)
 {
   //! Constructor
 
@@ -84,7 +84,19 @@ MXmlData::MXmlData(MString Name, MString Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, int Value)
+MXmlData::MXmlData(const MString& Name, const MTime& Value)
+{
+  //! Constructor
+
+  m_Name = Name;
+  m_Value = Value.GetLongIntsString();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlData::MXmlData(const MString& Name, int Value)
 {
   //! Constructor
 
@@ -98,7 +110,7 @@ MXmlData::MXmlData(MString Name, int Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, long Value)
+MXmlData::MXmlData(const MString& Name, long Value)
 {
   //! Constructor
 
@@ -112,7 +124,7 @@ MXmlData::MXmlData(MString Name, long Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, unsigned int Value)
+MXmlData::MXmlData(const MString& Name, unsigned int Value)
 {
   //! Constructor
 
@@ -126,7 +138,7 @@ MXmlData::MXmlData(MString Name, unsigned int Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, double Value)
+MXmlData::MXmlData(const MString& Name, double Value)
 {
   //! Constructor
 
@@ -141,7 +153,7 @@ MXmlData::MXmlData(MString Name, double Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MXmlData::MXmlData(MString Name, bool Value)
+MXmlData::MXmlData(const MString& Name, bool Value)
 {
   //! Constructor
 

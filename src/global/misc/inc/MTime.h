@@ -101,12 +101,12 @@ class MTime
   MTime operator-(const MTime& Time);
   MTime operator*(const double& v);
   MTime operator/(const double& v);
-  bool operator!=(const MTime& Time);
-  bool operator==(const MTime& Time);
-  bool operator>=(const MTime& Time);
-  bool operator<=(const MTime& Time);
-  bool operator>(const MTime& Time);
-  bool operator<(const MTime& Time);
+  bool operator!=(const MTime& Time) const;
+  bool operator==(const MTime& Time) const;
+  bool operator>=(const MTime& Time) const;
+  bool operator<=(const MTime& Time) const;
+  bool operator>(const MTime& Time) const;
+  bool operator<(const MTime& Time) const;
 
   
   // Conversions
@@ -120,7 +120,7 @@ class MTime
   //! Get as years in the form 2008.45345 
   double GetAsYears();
   //! Return the seconds since epoch
-	long int GetAsSystemSeconds();
+  long int GetAsSystemSeconds();
   //! Convert into Julian days
   double GetAsJulianDay();
 

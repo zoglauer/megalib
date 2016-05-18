@@ -222,7 +222,7 @@ bool MGUIEEntryList::ProcessMessage(long Message, long Parameter1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIEEntryList::Add(MString Label, int Value, bool Limits, int Min, int Max)
+void MGUIEEntryList::Add(MString Label, long Value, bool Limits, long Min, long Max)
 {
   MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value, Limits, Min, Max);
   Entry->SetEntryFieldSize(m_Size);
@@ -282,7 +282,7 @@ int MGUIEEntryList::GetNEntrys()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIEEntryList::IsInt(int Entry, int Min, int Max)
+bool MGUIEEntryList::IsInt(int Entry, long Min, long Max)
 {
   //
 
@@ -297,7 +297,7 @@ bool MGUIEEntryList::IsInt(int Entry, int Min, int Max)
   }
 
   if (Entry < 0 || Entry >= GetNEntrys()) {
-    Error("bool MGUIEEntryList::IsInt(int Entry, int Min, int Max)",
+    Error("bool MGUIEEntryList::IsInt(int Entry, long Min, long Max)",
           "Index out of bounds!");
     return false;
   }
@@ -353,11 +353,11 @@ MString MGUIEEntryList::GetAsString(int Entry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MGUIEEntryList::GetAsInt(int Entry)
+long MGUIEEntryList::GetAsInt(int Entry)
 {
   //
   if (Entry < 0 || Entry >= GetNEntrys()) {
-    Error("int MGUIEEntryList::GetAsInt(int Entry)",
+    Error("long MGUIEEntryList::GetAsInt(int Entry)",
           "Index out of bounds!");
     return 0;
   }
@@ -401,10 +401,10 @@ void MGUIEEntryList::SetValue(int Entry, double Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIEEntryList::SetValue(int Entry, int Value)
+void MGUIEEntryList::SetValue(int Entry, long Value)
 {
   if (Entry < 0 || Entry >= GetNEntrys()) {
-    Error("MGUIEEntryList::SetValue(int Value)",
+    Error("MGUIEEntryList::SetValue(long Value)",
           "Index out of bounds!");
     return;
   }

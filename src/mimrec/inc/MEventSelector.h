@@ -25,6 +25,8 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MString.h"
+#include "MTime.h"
+#include "MGTI.h"
 #include "MPhysicalEvent.h"
 #include "MEarthHorizon.h"
 #include "MDGeometryQuest.h"
@@ -51,7 +53,7 @@ class MEventSelector
   const MEventSelector& operator=(const MEventSelector& EventSelector);
 
   //! Reset the STATISTICS data only
-	void Reset();
+  void Reset();
 
   //! Retrieve the relevant setting from the settings class
   void SetSettings(MSettingsEventSelections* S);
@@ -80,13 +82,19 @@ class MEventSelector
   void ApplyThirdTotalEnergy(MEventSelector& E) { E.SetThirdTotalEnergy(m_ThirdTotalEnergyMin, m_ThirdTotalEnergyMax); }
   void SetFourthTotalEnergy(double Min = 0, double Max = 1e+20);
   void ApplyFourthTotalEnergy(MEventSelector& E) { E.SetFourthTotalEnergy(m_FourthTotalEnergyMin, m_FourthTotalEnergyMax); }
-  void SetTime(double Min, double Max);
-  void ApplyTime(MEventSelector& E) { E.SetTime(m_TimeMin, m_TimeMax); }
   void SetTimeWalk(double Min, double Max);
   void ApplyTimeWalk(MEventSelector& E) { E.SetTime(m_TimeWalkMin, m_TimeWalkMax); }
   void SetExcludedDetectors(vector<MString> ExcludedDetectors);
   void ApplyExcludedDetectors(MEventSelector& E) { E.SetExcludedDetectors(m_ExcludedDetectors); }
 
+  void SetTimeUseFile(bool TimeUseFile);
+  void ApplyTimeUseFile(MEventSelector& E) { E.SetTimeUseFile(m_TimeUseFile); }
+  void SetTime(const MTime& Min, const MTime& Max);
+  void ApplyTime(MEventSelector& E) { E.SetTime(m_TimeMin, m_TimeMax); }
+  void SetTimeFile(MString TimeFile);
+  void ApplyTimeFile(MEventSelector& E) { E.SetTimeFile(m_TimeFile); }
+  
+  
   void SetSourceWindow(bool Use, MVector SourcePosition = MVector(0, 0, 0));
   void ApplySourceWindow(MEventSelector& E) { E.SetSourceWindow(m_UseSource, m_SourcePosition); }
   void SetSourceARM(double ARMMin = 0.0, double ARMMax = 180.0);
@@ -192,8 +200,12 @@ class MEventSelector
   double m_FourthTotalEnergyMin;
   double m_FourthTotalEnergyMax;
 
-  double m_TimeMin;
-  double m_TimeMax;
+  bool m_TimeUseFile;
+  MTime m_TimeMin;
+  MTime m_TimeMax;
+  MString m_TimeFile;
+  MGTI m_TimeGTI;
+  
   double m_TimeWalkMin;
   double m_TimeWalkMax;
 

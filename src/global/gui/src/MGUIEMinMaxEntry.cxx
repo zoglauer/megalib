@@ -50,20 +50,20 @@ ClassImp(MGUIEMinMaxEntry)
 
 
 MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize,
-																		 double MinValue, double MaxValue, 
-																		 bool Limits, double Min, double Max) :
+                                   double MinValue, double MaxValue, 
+                                   bool Limits, double Min, double Max) :
   MGUIElement(Parent, kHorizontalFrame)
 {
   // Creates a frame containing two entry-boxes 
 
   m_Label = Label;
-	m_IsEmphasized = Emphasize;
+  m_IsEmphasized = Emphasize;
   m_MinValue = MinValue;
   m_MaxValue = MaxValue;
 
-	m_Limits = Limits;
-	m_Min = Min;
-	m_Max = Max;
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
   
   m_Type = e_Double;
 
@@ -77,24 +77,24 @@ MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool E
 
 
 MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize, 
-																	 MString MinLabel, MString MaxLabel, 
+                                   MString MinLabel, MString MaxLabel, 
                                    double MinValue, double MaxValue,
-																	 bool Limits, double Min, double Max) :
+                                   bool Limits, double Min, double Max) :
   MGUIElement(Parent)
 {
   // Creates a frame containing two entry-boxes 
 
   m_Label = Label;
-	m_IsEmphasized = Emphasize;
+  m_IsEmphasized = Emphasize;
 
   m_MinLabel = MinLabel;
   m_MaxLabel = MaxLabel;
   m_MinValue = MinValue;
   m_MaxValue = MaxValue;
 
-	m_Limits = Limits;
-	m_Min = Min;
-	m_Max = Max;
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
   
   m_Type = e_Double;
 
@@ -108,20 +108,20 @@ MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool E
 
 
 MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize,
-                                   int MinValue, int MaxValue, 
-                                   bool Limits, int Min, int Max) :
+                                  int MinValue, int MaxValue, 
+                                  bool Limits, int Min, int Max) :
   MGUIElement(Parent, kHorizontalFrame)
 {
   // Creates a frame containing two entry-boxes 
 
   m_Label = Label;
-	m_IsEmphasized = Emphasize;
+  m_IsEmphasized = Emphasize;
   m_MinValue = MinValue;
   m_MaxValue = MaxValue;
 
-	m_Limits = Limits;
-	m_Min = Min;
-	m_Max = Max;
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
   
   m_Type = e_Integer;
 
@@ -135,32 +135,90 @@ MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool E
 
 
 MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize, 
-																	 MString MinLabel, MString MaxLabel, 
+                                   MString MinLabel, MString MaxLabel, 
                                    int MinValue, int MaxValue,
-																	 bool Limits, int Min, int Max) :
-  MGUIElement(Parent)
+                                   bool Limits, int Min, int Max) :
+                                   MGUIElement(Parent)
 {
   // Creates a frame containing two entry-boxes 
-
+  
   m_Label = Label;
-	m_IsEmphasized = Emphasize;
-
+  m_IsEmphasized = Emphasize;
+  
   m_MinLabel = MinLabel;
   m_MaxLabel = MaxLabel;
   m_MinValue = MinValue;
   m_MaxValue = MaxValue;
+  
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
+  
+  m_Type = e_Integer;
+  
+  Init();
+  
+  Create(3);
+}
 
-	m_Limits = Limits;
-	m_Min = Min;
-	m_Max = Max;
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize,
+                                  long MinValue, long MaxValue, 
+                                  bool Limits, long Min, long Max) :
+  MGUIElement(Parent, kHorizontalFrame)
+{
+  // Creates a frame containing two entry-boxes 
+
+  m_Label = Label;
+  m_IsEmphasized = Emphasize;
+  m_MinValue = MinValue;
+  m_MaxValue = MaxValue;
+
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
   
   m_Type = e_Integer;
 
   Init();
 
-  Create(3);
+  Create(1);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MGUIEMinMaxEntry::MGUIEMinMaxEntry(const TGWindow *Parent, MString Label, bool Emphasize, 
+                                   MString MinLabel, MString MaxLabel, 
+                                   long MinValue, long MaxValue,
+                                   bool Limits, long Min, long Max) :
+                                   MGUIElement(Parent)
+{
+  // Creates a frame containing two entry-boxes 
+  
+  m_Label = Label;
+  m_IsEmphasized = Emphasize;
+  
+  m_MinLabel = MinLabel;
+  m_MaxLabel = MaxLabel;
+  m_MinValue = MinValue;
+  m_MaxValue = MaxValue;
+  
+  m_Limits = Limits;
+  m_Min = Min;
+  m_Max = Max;
+  
+  m_Type = e_Integer;
+  
+  Init();
+  
+  Create(3);
+}
+                                   
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -207,32 +265,31 @@ void MGUIEMinMaxEntry::Create(int Mode)
   if (m_IsEmphasized == true) {
     m_TextLabel->SetTextFont(m_EmphasizedFont);
   }    
-  m_TextLabelLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 20, 3, 4);
+  m_TextLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0*m_FontScaler, 20*m_FontScaler, 3*m_FontScaler, 4*m_FontScaler);
   AddFrame(m_TextLabel, m_TextLabelLayout);
   
-	if (Mode == 1) {
-		m_EntryLayout =	new TGLayoutHints(kLHintsRight | kLHintsTop, 5, 0, 0, 0);
-	} else {
-		m_EntryLayout =	new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 0, 0, 2);
-	}
-
+  if (Mode == 1) {
+    m_EntryLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 5*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+  } else {
+    m_EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler, 2*m_FontScaler);
+  }
+  
   if (m_Type == e_Integer) {
-    m_MaxEntry = new MGUIEEntry(this, m_MaxLabel, false, int(m_MaxValue), m_Limits, int(m_Min), int(m_Max));
-    m_MinEntry = new MGUIEEntry(this, m_MinLabel, false, int(m_MinValue), m_Limits, int(m_Min), int(m_Max));
+    m_MaxEntry = new MGUIEEntry(this, m_MaxLabel, false, long(m_MaxValue), m_Limits, long(m_Min), long(m_Max));
+    m_MinEntry = new MGUIEEntry(this, m_MinLabel, false, long(m_MinValue), m_Limits, long(m_Min), long(m_Max));
   } else {
     m_MaxEntry = new MGUIEEntry(this, m_MaxLabel, false, m_MaxValue, m_Limits, m_Min, m_Max);
     m_MinEntry = new MGUIEEntry(this, m_MinLabel, false, m_MinValue, m_Limits, m_Min, m_Max);
   }
-
-	if (Mode == 1) {
-		AddFrame(m_MaxEntry, m_EntryLayout);
-		AddFrame(m_MinEntry, m_EntryLayout);
-	} else {
-		AddFrame(m_MinEntry, m_EntryLayout);
-		AddFrame(m_MaxEntry, m_EntryLayout);
-	}
-
+  
+  if (Mode == 1) {
+    AddFrame(m_MaxEntry, m_EntryLayout);
+    AddFrame(m_MinEntry, m_EntryLayout);
+  } else {
+    AddFrame(m_MinEntry, m_EntryLayout);
+    AddFrame(m_MaxEntry, m_EntryLayout);
+  }
+  
   return;
 }
 
@@ -284,7 +341,7 @@ double MGUIEMinMaxEntry::GetMaxValueDouble()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MGUIEMinMaxEntry::GetMinValueInt()
+long MGUIEMinMaxEntry::GetMinValueInt()
 {
   // 
 
@@ -299,7 +356,7 @@ int MGUIEMinMaxEntry::GetMinValueInt()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MGUIEMinMaxEntry::GetMaxValueInt()
+long MGUIEMinMaxEntry::GetMaxValueInt()
 {
   //
 
@@ -325,60 +382,60 @@ bool MGUIEMinMaxEntry::CheckRange(double MinMin, double MinMax,
 
   if (m_MinEntry->GetAsDouble() < MinMin) {
     S<<"Error in first input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MinEntry->GetAsDouble()<<") is below its minimum value ("<<MinMin<<")";
+    <<"Value ("<<m_MinEntry->GetAsDouble()<<") is below its minimum value ("<<MinMin<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MinEntry->GetAsDouble() > MinMax) {
     S<<"Error in first input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MinEntry->GetAsDouble()<<") is above its maximum value ("<<MinMax<<")";
+    <<"Value ("<<m_MinEntry->GetAsDouble()<<") is above its maximum value ("<<MinMax<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MaxEntry->GetAsDouble() < MaxMin) {
     S<<"Error in second input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MaxEntry->GetAsDouble()<<") is below its minimum value ("<<MaxMin<<")";
+    <<"Value ("<<m_MaxEntry->GetAsDouble()<<") is below its minimum value ("<<MaxMin<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MaxEntry->GetAsDouble() > MaxMax) {
     S<<"Error in second input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MaxEntry->GetAsDouble()<<") is above its maximum value ("<<MaxMax<<")";
+    <<"Value ("<<m_MaxEntry->GetAsDouble()<<") is above its maximum value ("<<MaxMax<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MinEntry->GetAsDouble() > m_MaxEntry->GetAsDouble()) {
     S<<"Error in \""<<m_Label<<"\""<<endl
-     <<"The minmum value (first one) is larger than the maximum value (second one)!";
+    <<"The minmum value (first one) is larger than the maximum value (second one)!";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (MinMustBeSmaller == true) {
     if (m_MinEntry->GetAsDouble() == m_MaxEntry->GetAsDouble()) {
       S<<"Error in \""<<m_Label<<"\""<<endl
-       <<"The minmum value (first one) is equal to the maximum value (second one)!";
+      <<"The minmum value (first one) is equal to the maximum value (second one)!";
       new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                   S.str().c_str(), 
-                   kMBIconStop, kMBOk);
+                  S.str().c_str(), 
+                  kMBIconStop, kMBOk);
       return false;
     }
   }
-	
+      
 
   return true;
 }
@@ -387,8 +444,8 @@ bool MGUIEMinMaxEntry::CheckRange(double MinMin, double MinMax,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIEMinMaxEntry::CheckRange(int MinMin, int MinMax, 
-                                  int MaxMin, int MaxMax, 
+bool MGUIEMinMaxEntry::CheckRange(long MinMin, long MinMax, 
+                                  long MaxMin, long MaxMax, 
                                   bool MinMustBeSmaller)
 {
   // Check if the input-field contain numbers, and that they are within [Min;Max]
@@ -398,60 +455,60 @@ bool MGUIEMinMaxEntry::CheckRange(int MinMin, int MinMax,
 
   if (m_MinEntry->GetAsInt() < MinMin) {
     S<<"Error in first input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MinEntry->GetAsInt()<<") is below its minimum value ("<<MinMin<<")";
+    <<"Value ("<<m_MinEntry->GetAsInt()<<") is below its minimum value ("<<MinMin<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MinEntry->GetAsInt() > MinMax) {
     S<<"Error in first input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MinEntry->GetAsInt()<<") is above its maximum value ("<<MinMax<<")";
+    <<"Value ("<<m_MinEntry->GetAsInt()<<") is above its maximum value ("<<MinMax<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MaxEntry->GetAsInt() < MaxMin) {
     S<<"Error in second input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MaxEntry->GetAsInt()<<") is below its minimum value ("<<MaxMin<<")";
+    <<"Value ("<<m_MaxEntry->GetAsInt()<<") is below its minimum value ("<<MaxMin<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MaxEntry->GetAsInt() > MaxMax) {
     S<<"Error in second input field of \""<<m_Label<<"\""<<endl
-     <<"Value ("<<m_MaxEntry->GetAsInt()<<") is above its maximum value ("<<MaxMax<<")";
+    <<"Value ("<<m_MaxEntry->GetAsInt()<<") is above its maximum value ("<<MaxMax<<")";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
 
   if (m_MinEntry->GetAsInt() > m_MaxEntry->GetAsInt()) {
     S<<"Error in \""<<m_Label<<"\""<<endl
-     <<"The minmum value (first one) is larger than the maximum value (second one)!";
+    <<"The minmum value (first one) is larger than the maximum value (second one)!";
     new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                 S.str().c_str(), 
-                 kMBIconStop, kMBOk);
+                S.str().c_str(), 
+                kMBIconStop, kMBOk);
     return false;
   }
   
   if (MinMustBeSmaller == true) {
     if (m_MinEntry->GetAsInt() == m_MaxEntry->GetAsInt()) {
       S<<"Error in \""<<m_Label<<"\""<<endl
-       <<"The minmum value (first one) is equal to the maximum value (second one)!";
+      <<"The minmum value (first one) is equal to the maximum value (second one)!";
       new TGMsgBox(gClient->GetRoot(), GetParent(), "Type error", 
-                   S.str().c_str(), 
-                   kMBIconStop, kMBOk);
+                  S.str().c_str(), 
+                  kMBIconStop, kMBOk);
       return false;
     }
   }
-	
+      
 
   return true;
 }
@@ -476,8 +533,8 @@ void MGUIEMinMaxEntry::SetEntryFieldSize(int Size)
 
 void MGUIEMinMaxEntry::SetEnabled(bool flag)
 {
-	m_IsEnabled = flag;
-	
+      m_IsEnabled = flag;
+      
   m_MinEntry->SetEnabled(m_IsEnabled);
   m_MaxEntry->SetEnabled(m_IsEnabled);
 }

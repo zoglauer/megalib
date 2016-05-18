@@ -73,6 +73,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MVector.o \
 	$(LB)/MRotation.o \
 	$(LB)/MPrelude.o \
+	$(LB)/MGTI.o \
 	$(LB)/MTime.o \
 	$(LB)/MTimer.o \
 	$(LB)/MIsotope.o \

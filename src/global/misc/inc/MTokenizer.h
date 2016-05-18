@@ -17,13 +17,13 @@
 
 
 // ROOT libs:
-#include <MString.h>
 #include <TArrayI.h>
 #include <TArrayD.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
-
+#include "MString.h"
+#include "MTime.h"
 // Standard libs:
 #include <cstdlib>
 #include <vector>
@@ -100,6 +100,8 @@ class MTokenizer
   unsigned long GetTokenAtAsUnsignedLong(const unsigned int i) const;
   //! Return the token at i as double --- return FALSE in case of error
   bool GetTokenAtAsBoolean(const unsigned int i) const;
+  //! Return the token at i as MTime --- return MTime(0) in case of error
+  MTime GetTokenAtAsTime(const unsigned int i) const;
   //! Return the token AT AND AFTER i as ROOT TArrayI --- return 0 in case of error
   TArrayI GetTokenAtAsIntArray(const unsigned int i) const;
   //! Return the token AT AND AFTER i as ROOT TArrayD --- return 0 in case of error

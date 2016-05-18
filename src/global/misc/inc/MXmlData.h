@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MTime.h"
 
 // Forward declarations:
 
@@ -38,19 +39,21 @@ class MXmlData
   //! Default constructor
   MXmlData();
   //! Constructor -- no values
-  MXmlData(MString Name);
+  MXmlData(const MString& Name);
   //! Constructor -- content is string
-  MXmlData(MString Name, MString Value);
+  MXmlData(const MString& Name, const MString& Value);
+  //! Constructor -- content is a time
+  MXmlData(const MString& Name, const MTime& Value);
   //! Constructor -- content is integer
-  MXmlData(MString Name, int Value);
+  MXmlData(const MString& Name, int Value);
   //! Constructor -- content is long
-  MXmlData(MString Name, long Value);
+  MXmlData(const MString& Name, long Value);
   //! Constructor -- content is unsigned integer
-  MXmlData(MString Name, unsigned int Value);
+  MXmlData(const MString& Name, unsigned int Value);
   //! Constructor -- content is double
-  MXmlData(MString Name, double Value);
+  MXmlData(const MString& Name, double Value);
   //! Constructor -- content is a boolean
-  MXmlData(MString Name, bool Value);
+  MXmlData(const MString& Name, bool Value);
   //! Default destructor
   virtual ~MXmlData();
 
@@ -58,17 +61,19 @@ class MXmlData
   virtual void Clear();
 
   //! Set the name of the node
-  void SetName(MString Name) { m_Name = Name; }
+  void SetName(const MString& Name) { m_Name = Name; }
   //! Get the name of the node
   MString GetName() const { return m_Name; }
 
   //! Set the value of the node
-  void SetValue(MString Value) { m_Value = Value; }
+  void SetValue(const MString& Value) { m_Value = Value; }
   //! Return the value of the node
   MString GetValue() const { return m_Value; }
 
   //! Return the value of the node
   MString GetValueAsString() const { return m_Value; }
+  //! Return the value of the node as time
+  MTime GetValueAsTime() const { MTime T(0); T.Set(m_Value); return T; }
   //! Return the value of the node as int
   int GetValueAsInt() const { return atoi(m_Value); }
   //! Return the value of the node as long

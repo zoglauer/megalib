@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MTime.h"
 #include "MSettings.h"
 #include "MPointSource.h"
 
@@ -263,13 +264,19 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetFirstDistanceRangeMax() { return m_FirstDistanceRangeMax; }
   void SetFirstDistanceRangeMax(double FirstDistanceRangeMax) { m_FirstDistanceRangeMax = FirstDistanceRangeMax; m_EventSelectionModified = true; }
 
+  bool GetTimeUseFile() const { return m_TimeUseFile; }
+  void SetTimeUseFile(bool TimeUseFile) { m_TimeUseFile = TimeUseFile; m_EventSelectionModified = true; }
 
-  double GetTimeRangeMin() const { return m_TimeRangeMin; }
-  void SetTimeRangeMin(double TimeRangeMin) { m_TimeRangeMin = TimeRangeMin; m_EventSelectionModified = true; }
+  MTime GetTimeRangeMin() const { return m_TimeRangeMin; }
+  void SetTimeRangeMin(MTime TimeRangeMin) { m_TimeRangeMin = TimeRangeMin; m_EventSelectionModified = true; }
 
-  double GetTimeRangeMax() const { return m_TimeRangeMax; }
-  void SetTimeRangeMax(double TimeRangeMax) { m_TimeRangeMax = TimeRangeMax; m_EventSelectionModified = true; }
+  MTime GetTimeRangeMax() const { return m_TimeRangeMax; }
+  void SetTimeRangeMax(MTime TimeRangeMax) { m_TimeRangeMax = TimeRangeMax; m_EventSelectionModified = true; }
 
+  MString GetTimeFile() const { return m_TimeFile; }
+  void SetTimeFile(MString TimeFile) { m_TimeFile = TimeFile; m_EventSelectionModified = true; }
+  
+  
   double GetTimeWalkRangeMin() const { return m_TimeWalkRangeMin; }
   void SetTimeWalkRangeMin(double TimeWalkRangeMin) { m_TimeWalkRangeMin = TimeWalkRangeMin; m_EventSelectionModified = true; }
 
@@ -319,6 +326,11 @@ class MSettingsEventSelections : public MSettingsInterface
   long m_EventIdRangeMin;
   long m_EventIdRangeMax;
 
+  bool m_TimeUseFile;
+  MTime m_TimeRangeMin;
+  MTime m_TimeRangeMax;
+  MString m_TimeFile;
+  
   int m_EventSelectorTab;
 
   int m_TrackLengthRangeMin;
@@ -364,9 +376,6 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double m_DistanceRangeMin;
   double m_DistanceRangeMax;
-
-  double m_TimeRangeMin;
-  double m_TimeRangeMax;
 
   double m_TimeWalkRangeMin;
   double m_TimeWalkRangeMax;
