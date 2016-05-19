@@ -1194,8 +1194,8 @@ bool MGUIEventSelection::OnApply()
   }
 
   if (m_SourceGalactic->IsModified() == true) {
-    m_GUIData->SetSourceLongitude(m_SourceSpheric->GetAsDouble(0));
-    m_GUIData->SetSourceLatitude(m_SourceSpheric->GetAsDouble(1));
+    m_GUIData->SetSourceLongitude(m_SourceGalactic->GetAsDouble(0));
+    m_GUIData->SetSourceLatitude(m_SourceGalactic->GetAsDouble(1));
   }
 
   if (m_SourceSpheric->IsModified() == true) {
