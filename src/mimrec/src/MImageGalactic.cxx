@@ -169,7 +169,7 @@ void MImageGalactic::Display(TCanvas* Canvas)
 
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
-    Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 600, 600);
+    Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, int(900.0/m_xNBins*m_yNBins));
   } else {
     if (MString(Canvas->GetTitle()).IsEmpty() == false) {
       m_CanvasTitle = Canvas->GetTitle();
@@ -307,10 +307,15 @@ void MImageGalactic::AddNamedSources()
     B = PSS.GetPointSourceAt(i).GetLatitude();
     //cout<<m_xMin<<":"<<L<<":"<<m_xMax<<endl;
     //cout<<m_yMin<<":"<<B<<":"<<m_yMax<<endl;
-    //cout<<PSS.GetPointSourceAt(i)<<endl;
+    //cout<<PSS.GetPointSourceAt(i)<<":"<<PSS.GetPointSourceAt(i).GetName()<<endl;
+    if (L > 180) L -= 360;
+    //cout<<"Long: "<<L<<":"<<m_xMin<<":"<<m_xMax<<" --- Lat: "<<B<<":"<<m_yMin<<":"<<m_yMax<<endl;
     if (L >= m_xMin && L <= m_xMax && B >= m_yMin && B <= m_yMax) {
       //xT = ((L-m_xMin)/(m_xMax-m_xMin))*0.8+0.095;
       //yT = ((B-m_yMin)/(m_yMax-m_yMin))*0.8+0.1;
+      
+      //cout<<"Drawing "<<PSS.GetPointSourceAt(i).GetName()<<" at "<<xT<<":"<<yT<<endl;
+      
       xT = (m_xMax+m_xMin) - L;
       yT = B;
 
