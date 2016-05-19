@@ -451,10 +451,10 @@ bool MTime::Set(const MString& String, unsigned int I)
   MTokenizer T('.', true);
   T.Analyze(NewString);
   if (T.GetNTokens() == 1) {
-    Seconds = T.GetTokenAtAsInt(0);
+    Seconds = T.GetTokenAtAsLong(0);
   } else if (T.GetNTokens() == 2) {
-    Seconds = T.GetTokenAtAsInt(0);
-    NanoSeconds = T.GetTokenAtAsInt(1);
+    Seconds = T.GetTokenAtAsLong(0);
+    NanoSeconds = T.GetTokenAtAsLong(1);
     // Find digits:
     int Digits = T.GetTokenAt(1).Length();
     if (Digits < 9) {
