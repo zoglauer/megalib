@@ -143,6 +143,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Create a spectrum. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -a --arm-gamma:"<<endl;
   Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"      -l --light-curve:"<<endl;
+  Usage<<"             Create a light curve. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -e --event-selections:"<<endl;
   Usage<<"             Dump event selections"<<endl;
   Usage<<"         --standard-analysis-spherical <energy [keV]> <theta [deg]> <phi [deg]>"<<endl;
@@ -280,6 +282,11 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Generating ARM gamma..."<<endl;  
       // m_Data->SetStoreImages(true);
       ARMGamma();
+      return KeepAlive;
+    } else if (Option == "--light-curve" || Option == "-l") {
+      cout<<"Command-line parser: Generating Light curve..."<<endl;  
+      // m_Data->SetStoreImages(true);
+      TimeDistribution();
       return KeepAlive;
     } else if (Option == "--standard-analysis-spherical") {
       double Energy = atof(argv[++i]);
@@ -3652,7 +3659,7 @@ void MInterfaceMimrec::EnergySpectra()
   Canvas->Update(); 
   if (m_OutputFileName.IsEmpty() == false) {
     Canvas->SaveAs(m_OutputFileName);
-	}
+  }
 
   cout<<endl;
   cout<<"Energy spectrum - some additional statistics:"<<endl;
@@ -4538,7 +4545,7 @@ void MInterfaceMimrec::TimeDistribution()
 {
   // Time distribution in the data-set
 
-  int NBins = 1000;
+  unsigned int NBins = 1000;
 
   MPhysicalEvent* Event = 0;
   if (InitializeEventloader() == false) return;
@@ -4551,14 +4558,15 @@ void MInterfaceMimrec::TimeDistribution()
   NoTimeWindowSelector.SetTime(0, numeric_limits<double>::max());
 
   // First check on the size of the histogram:
+  unsigned long NEvents = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
-
-    if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
-    if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEvent(Event) == true) {
+      if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
+      if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
       TimeList.push_back(Event->GetTime().GetAsDouble());
+      NEvents++;
     }    
 
     delete Event;
@@ -4568,17 +4576,19 @@ void MInterfaceMimrec::TimeDistribution()
   mout<<"Minimum time: "<<setprecision(20)<<MinTime<<endl;
   mout<<"Maximum time: "<<setprecision(20)<<MaxTime<<setprecision(6)<<endl;
 
-
-  TH1D* HistOptimized = 
-    new TH1D("TimeOptimized", "Light curve", NBins, 
-             MinTime, MaxTime);
+  if (NEvents/10 < NBins) NBins = NEvents/10;
+  if (NBins < 10) NBins = 10;
+  
+  
+  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve", NBins, MinTime, MaxTime);
   HistOptimized->SetBit(kCanDelete);
   HistOptimized->SetXTitle("time [s]");
   HistOptimized->SetYTitle("counts");
   HistOptimized->SetStats(false);
   HistOptimized->SetFillColor(8);
   HistOptimized->SetMinimum(0);
-
+  HistOptimized->GetXaxis()->SetNdivisions(509);
+  
   for (unsigned int i = 0; i < TimeList.size(); ++i) {
     HistOptimized->Fill(TimeList[i]);
   }
@@ -4587,7 +4597,9 @@ void MInterfaceMimrec::TimeDistribution()
   CanvasOptimized->cd();
   HistOptimized->Draw();
   CanvasOptimized->Update();
-
+  if (m_OutputFileName.IsEmpty() == false) {
+    CanvasOptimized->SaveAs(m_OutputFileName);
+  }
 
   return; 
 }
