@@ -213,8 +213,8 @@ bool MPointSource::ParseLine(MString DataScat, unsigned int Version)
         m_SpectralType = c_SpectrumMono;
         m_Radius = c_RadiusOfPointSource;
         
-        m_Longitude = Tokenizer.GetTokenAtAsDouble(2);
-        m_Latitude = Tokenizer.GetTokenAtAsDouble(3);
+        m_Latitude = Tokenizer.GetTokenAtAsDouble(2);
+        m_Longitude = Tokenizer.GetTokenAtAsDouble(3);
         m_Flux = Tokenizer.GetTokenAtAsDouble(4); 
         m_Name = Tokenizer.GetTokenAfterAsString(5);
       } else {
@@ -304,8 +304,8 @@ bool MPointSource::ParseLine(MString DataScat, unsigned int Version)
     }
     m_ExtensionType = c_ExtensionDiskLike;
 
-    m_Longitude = Tokenizer.GetTokenAtAsDouble(1);
-    m_Latitude = Tokenizer.GetTokenAtAsDouble(2);
+    m_Latitude = Tokenizer.GetTokenAtAsDouble(1);
+    m_Longitude = Tokenizer.GetTokenAtAsDouble(2);
     m_Radius = Tokenizer.GetTokenAtAsDouble(3); 
     m_Flux = Tokenizer.GetTokenAtAsDouble(4); 
     m_Name = Tokenizer.GetTokenAfterAsString(5);
