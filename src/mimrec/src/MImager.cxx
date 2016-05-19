@@ -891,16 +891,21 @@ bool MImager::Analyze(bool CalculateResponse)
   MTimer IterationTimer;
   
   // Now iterate...
-  MGUIProgressBar* Progress = new MGUIProgressBar();
-  Progress->SetTitles("Progress", "Progress of deconvolution iterations");
-  Progress->SetMinMax(0, m_EM->GetMaxNIterations());
+  MGUIProgressBar* Progress = nullptr;
+  if (gROOT->IsBatch() == false) {
+    Progress = new MGUIProgressBar();
+    Progress->SetTitles("Progress", "Progress of deconvolution iterations");
+    Progress->SetMinMax(0, m_EM->GetMaxNIterations());
+  }
   int CurrentIteration = 0;
   while (true) {
     m_EM->DoOneIteration();
     ++CurrentIteration;
-    Progress->SetValue(CurrentIteration);
     
-    gSystem->ProcessEvents();
+    if (gROOT->IsBatch() == false) {
+      Progress->SetValue(CurrentIteration);
+      gSystem->ProcessEvents();
+    }
     
     ostringstream Title;
     Title<<"Image - iteration: "<<CurrentIteration;
@@ -915,7 +920,8 @@ bool MImager::Analyze(bool CalculateResponse)
     }
     m_Images.push_back(Image->Clone());
    
-    if (m_EM->IsStopCriterionFullfilled() == true || Progress->TestCancel() == true) {
+    if (m_EM->IsStopCriterionFullfilled() == true || 
+        (gROOT->IsBatch() == false && Progress->TestCancel() == true)) {
       break;
     }
   }
