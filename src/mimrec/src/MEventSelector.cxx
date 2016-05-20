@@ -491,8 +491,9 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 //   } 
 
   /*
-  cout<<Event->GetGalacticPointingZAxisLongitude()*c_Deg<<endl;
-  if (fabs(Event->GetGalacticPointingZAxisLongitude()*c_Deg) > 60) {
+  MVector GalacticCenter;
+  GalacticCenter.SetMagThetaPhi(1.0, 90*c_Rad, 0*c_Rad);
+  if (GalacticCenter.Angle(Event->GetGalacticPointingZAxis()) > 50*c_Rad) {
     Return = false; 
   }
   */
