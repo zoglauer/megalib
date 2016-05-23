@@ -48,7 +48,7 @@ ClassImp(MGUIExpo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIExpo::MGUIExpo(MModule* Module) : TGCompositeFrame(gClient->GetRoot(), 320, 240)
+MGUIExpo::MGUIExpo(MModule* Module) : TGCompositeFrame(0, 320, 240)
 {
   // standard constructor
 
