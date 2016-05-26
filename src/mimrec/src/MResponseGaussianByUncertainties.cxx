@@ -52,6 +52,8 @@ MResponseGaussianByUncertainties::MResponseGaussianByUncertainties() : MResponse
 {
   // default constructor
 
+  m_Increase = 0.0;
+  
   // The default threshold is 2.5 sigmas:
   m_Threshold = 2.5;
 
@@ -92,7 +94,7 @@ bool MResponseGaussianByUncertainties::AnalyzeEvent(MPhysicalEvent* Event)
       cout<<"Error: This Compton event has no cone width!"<<endl;
       return false;
     }
-    dPhi += 0.25;
+    dPhi += m_Increase;
     SetGaussians(dPhi, 30, 2);
      
     return true;

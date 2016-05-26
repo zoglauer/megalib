@@ -75,6 +75,8 @@ class MSettingsImaging : public MSettingsInterface
   double GetGauss1DCutOff() const { return m_Gauss1DCutOff; }
   void SetGauss1DCutOff(double Gauss1DCutOff) { m_Gauss1DCutOff = Gauss1DCutOff; m_BackprojectionModified = true; }
 
+  double GetGaussianByUncertaintiesIncrease() const { return m_GaussianByUncertaintiesIncrease; }
+  void SetGaussianByUncertaintiesIncrease(double GaussianByUncertaintiesIncrease) { m_GaussianByUncertaintiesIncrease = GaussianByUncertaintiesIncrease; m_BackprojectionModified = true; }
 
   // Parameters for Partially-binned list-mode
   MString GetImagingResponseComptonLongitudinalFileName() const { return m_ImagingResponseComptonLongitudinalFileName; }
@@ -349,6 +351,7 @@ class MSettingsImaging : public MSettingsInterface
   double m_FitParameterPair;
   bool m_UseAbsorptions;
   double m_Gauss1DCutOff;
+  double m_GaussianByUncertaintiesIncrease;
 
   MString m_SensitivityFile;
   bool m_UseSensitivityFile;

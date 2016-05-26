@@ -36,6 +36,7 @@
 #include "MGUIEventSelection.h"
 #include "MGUIResponseSelection.h"
 #include "MGUIResponseParameterGauss1D.h"
+#include "MGUIResponseParameterGaussianByUncertainties.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
 #include "MGUISignificance.h"
@@ -150,7 +151,7 @@ void MGUIMimrecMain::Create()
   // The sub menu General
   TGPopupMenu* MenuGeneral = new TGPopupMenu(fClient->GetRoot());
   MenuGeneral->AddEntry("Energy spectra", c_ResponseSpectrum);
-  MenuGeneral->AddEntry("Time distribution", c_ResponseTime);
+  MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
   MenuGeneral->AddEntry("Pointing in galactic coordinates", c_ResponsePointingInGalacticCoordinates);  
   MenuGeneral->AddEntry("Horizon zenith in spherical coordinates", c_ResponseHorizonInSphericalDetectorCoordinates);  
@@ -209,7 +210,7 @@ void MGUIMimrecMain::Create()
   MenuResponse->AddLabel("General");
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Energy spectra", c_ResponseSpectrum);
-  MenuResponse->AddEntry("Time distribution", c_ResponseTime);
+  MenuResponse->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuResponse->AddPopup("All general options", MenuGeneral);
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Spectral analyzer", c_SpectralAnalyzer);
@@ -323,6 +324,8 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_FitParameter:
         if (m_Data->GetResponseType() == 0) {
           new MGUIResponseParameterGauss1D(gClient->GetRoot(), this, m_Data);
+        } else if (m_Data->GetResponseType() == 1) {
+          new MGUIResponseParameterGaussianByUncertainties(gClient->GetRoot(), this, m_Data);
         } else if (m_Data->GetResponseType() == 3) {
           new MGUIResponseParameterPRM(gClient->GetRoot(), this, m_Data);
         }
@@ -377,19 +380,19 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
 
       case c_ShowEventSelections:
         m_Interface->ShowEventSelections();
-				break;
+        break;
 
       case c_ShowEventSelectionsStepwise:
         m_Interface->ShowEventSelectionsStepwise();
-				break;
+        break;
 
       case c_ExtractEvents:
         m_Interface->ExtractEvents();
-				break;
+        break;
 
       case c_ThetaOriginDistribution:
         m_Interface->ThetaOriginDistribution();
-				break;
+        break;
         
       case c_SpectralAnalyzer:
         new MGUISpectralAnalyzer(gClient->GetRoot(), this, m_Data, &OKPressed);
@@ -520,7 +523,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseTime:
-        m_Interface->TimeDistribution();
+        m_Interface->LightCurve();
         break;
 
       case c_ResponseCoincidenceWindow:

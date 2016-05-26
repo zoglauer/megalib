@@ -51,7 +51,7 @@ class MImageGalactic : public MImage2D
   virtual void SetImageArray(double* Array);
 
   //! Display the histogram in the given canvas
-	virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = 0);
  
   // protected methods:
  protected:

@@ -47,13 +47,19 @@ class MImage3D : public MImage2D
   virtual MImage* Clone();
 
   //! Set the image array and redisplay it
-	virtual void SetImageArray(double* IA);
+  virtual void SetImageArray(double* IA);
 
   //! Set the z-Axis attributes
-	virtual void SetZAxis(MString zTitle, double zMin, double zMax, int zNBins);
+  virtual void SetZAxis(MString zTitle, double zMin, double zMax, int zNBins);
 
   //! Display the histogram in the given canvas
-	virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = 0);
+  
+  //! Get the dimensions of the histogram
+  virtual unsigned int GetDimensions() const { return 3; }
+  
+  //! Determine the maximum, the vector is filled up to the number of dimensions the histogram has
+  virtual void DetermineMaximum(double& MaxValue, vector<double>& Coordinate);
 
 
 
@@ -73,13 +79,13 @@ class MImage3D : public MImage2D
   // private members:
  private:
   //! Title of the z axis
-	MString m_zTitle;
+  MString m_zTitle;
   //! Minimum z value
-	double m_zMin;
+  double m_zMin;
   //! Maximum z value
-	double m_zMax;
+  double m_zMax;
   //! Number of z bins
-	int m_zNBins;
+  int m_zNBins;
 
   //! Projection in XY of the main 3D histogram
   TH1* m_HistXY;

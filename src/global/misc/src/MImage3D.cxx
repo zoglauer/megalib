@@ -317,5 +317,37 @@ void MImage3D::Display(TCanvas* Canvas)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
+void MImage3D::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
+{
+  MaxValue = 0;
+  double xMaxIndex = 0;
+  double yMaxIndex = 0;
+  double zMaxIndex = 0;
+  
+  for (int x = 0; x < m_xNBins; ++x) {
+    for (int y = 0; y < m_yNBins; ++y) {
+      for (int z = 0; z < m_zNBins; ++z) {
+        if (m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins] > MaxValue) {
+          MaxValue = m_IA[x + y*m_xNBins + z*m_xNBins*m_yNBins];
+          xMaxIndex = x;
+          yMaxIndex = y;
+          zMaxIndex = z;
+        }
+      }
+    }
+  }
+  
+  
+  Coordinate.clear();
+  Coordinate.push_back((xMaxIndex + 0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
+  Coordinate.push_back((yMaxIndex + 0.5) * (m_yMax-m_yMin)/m_yNBins + m_yMin);
+  Coordinate.push_back((zMaxIndex + 0.5) * (m_zMax-m_zMin)/m_zNBins + m_zMin);
+}
+
+
 // MImage3D.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

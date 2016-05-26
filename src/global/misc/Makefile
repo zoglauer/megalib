@@ -60,8 +60,9 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MTransceiverTcpIpBinary.o \
 	$(LB)/MTransceiverTcpIp.o \
 	$(LB)/MTransceiverUDP.o \
-	$(LB)/MComptonEvent.o \
+	$(LB)/MRotationInterface.o \
 	$(LB)/MPhysicalEvent.o \
+	$(LB)/MComptonEvent.o \
 	$(LB)/MMuonEvent.o \
 	$(LB)/MPhotoEvent.o \
 	$(LB)/MUnidentifiableEvent.o \

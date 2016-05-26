@@ -170,7 +170,7 @@ bool MResponseImagingBinnedMode::CreateResponse()
           if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
-            TMatrix Rotation = Compton->GetDetectorRotationMatrix();
+            MRotation Rotation = Compton->GetDetectorRotationMatrix();
 
             if (Compton->IsKinematicsOK() == false) continue;
             Phi = Compton->Phi()*c_Deg;

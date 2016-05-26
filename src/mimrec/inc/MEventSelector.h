@@ -268,6 +268,7 @@ class MEventSelector
 
   vector<MString> m_ExcludedDetectors;
 
+  int m_NAnalyzed;
   int m_NAccepted;
   int m_NRejectedIsGood;
   int m_NRejectedStartDetector;

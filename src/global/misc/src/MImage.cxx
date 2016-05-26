@@ -569,6 +569,46 @@ void MImage::DrawCopy()
   mimp<<"Not yet implemented"<<show;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MImage::GetAverage()
+{
+  //! Calculate the average
+
+  if (m_NEntries == 0) return 0;
+  
+  double Average = 0.0;
+  for (int e = 0; e < m_NEntries; ++e) {
+    Average += m_IA[e]; 
+  }
+  
+  return Average / m_NEntries;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the maximum and its coordiantes, the vector is filled up to the number of dimensions the histogram has
+void MImage::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
+{
+  MaxValue = 0;
+  double MaxIndex = 0;
+  
+  for (int e = 0; e < m_NEntries; ++e) {
+    if (m_IA[e] > MaxValue) {
+      MaxValue = m_IA[e];
+      MaxIndex = e;
+    }
+  }
+  
+  Coordinate.clear();
+  Coordinate.push_back((MaxIndex+0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 /*

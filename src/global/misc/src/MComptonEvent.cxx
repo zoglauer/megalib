@@ -268,6 +268,7 @@ MString MComptonEvent::ToString() const
 
   S<<endl;
   S<<"Compton event "<<m_Id<<":"<<endl;
+  S<<"  Time: "<<m_Time<<endl; 
   S<<"  Energy of scattered gamma-ray: "<<m_Eg<<" +- "<<m_dEg<<endl; 
   S<<"  Energy of recoil electron: "<<m_Ee<<" +- "<<m_dEe<<endl; 
   S<<"  Position of first Compton IA: "<<m_C1.X()<<", "<<m_C1.Y()<<", "<<m_C1.Z()<<endl;
@@ -429,7 +430,7 @@ double MComptonEvent::GetARMGamma(const MVector& Position) const
 
   // Rotate/translate the position into event coordinates
   MVector RotPosition = Position;
-  if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorInverseRotationMatrix()*RotPosition;
   if (m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
 
   return (m_C1 - m_C2).Angle(RotPosition - m_C1) - m_Phi;

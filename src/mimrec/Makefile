@@ -30,6 +30,7 @@ GOBJS     = $(LB)/MInterfaceMimrec.o \
 						$(LB)/MGUIMemory.o \
 						$(LB)/MGUIResponseParameterPRM.o \
 						$(LB)/MGUIResponseParameterGauss1D.o \
+						$(LB)/MGUIResponseParameterGaussianByUncertainties.o \
 						$(LB)/MGUIResponseSelection.o \
 						$(LB)/MGUIPolarization.o \
 
@@ -65,6 +66,7 @@ LOBJS     = $(LB)/MSettingsMimrec.o \
 						$(LB)/MSensitivity.o \
 						$(LB)/MEarthHorizon.o \
 						$(LB)/MStandardAnalysis.o \
+						$(LB)/MVariableSourceDetector.o \
 
 
 SGOBJ = $(LB)/libMimrecGui.$(DLL)\

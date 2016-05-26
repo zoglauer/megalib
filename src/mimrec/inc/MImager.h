@@ -89,7 +89,7 @@ class MImager
   //! Set the Gaussian response 
   void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, 
                            const double CutOff, const bool UseAbsorptions);
-  void SetResponseGaussianByUncertainties();
+  void SetResponseGaussianByUncertainties(double Increase);
   void SetResponseEnergyLeakage(const double Longitudinal, const double Transversal);
   //! Set response matrices
   bool SetResponsePRM(const MString& ComptonTrans, const MString& ComptonLong, const MString& Pair);
