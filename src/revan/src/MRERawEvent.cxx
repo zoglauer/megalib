@@ -94,7 +94,7 @@ const double MRERawEvent::c_NoScore = numeric_limits<double>::max()/3; // remove
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent() : MRESE()
+MRERawEvent::MRERawEvent() : MRESE(), MRotationInterface()
 {
   // Construct one MRERawEvent-object
 
@@ -105,7 +105,7 @@ MRERawEvent::MRERawEvent() : MRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE()
+MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE(), MRotationInterface()
 {
   // Construct one MRERawEvent-object
 
@@ -147,30 +147,18 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
     m_GalacticPointingXAxis = RE->m_GalacticPointingXAxis;
     m_GalacticPointingZAxis = RE->m_GalacticPointingZAxis;
     m_HasGalacticPointing = true;
-  } else {
-    m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasGalacticPointing = false; 
   }
 
   if (RE->m_HasDetectorRotation == true) { 
     m_DetectorRotationXAxis = RE->m_DetectorRotationXAxis;
     m_DetectorRotationZAxis = RE->m_DetectorRotationZAxis;
     m_HasDetectorRotation = true;  
-  } else {
-    m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
-    m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasDetectorRotation = false; 
   }
 
   if (RE->m_HasHorizonPointing == true) { 
     m_HorizonPointingXAxis = RE->m_HorizonPointingXAxis;
     m_HorizonPointingZAxis = RE->m_HorizonPointingZAxis;
     m_HasHorizonPointing = true; 
-  } else {
-    m_HorizonPointingXAxis = MVector(1.0, 0.0, 0.0);
-    m_HorizonPointingZAxis = MVector(0.0, 0.0, 1.0);
-    m_HasHorizonPointing = false; 
   }
 
 
@@ -271,6 +259,8 @@ void MRERawEvent::Init()
 {
   // Some initialisations equal for all constructors:
 
+  MRotationInterface::Reset();
+  
   m_Start = 0;
   m_Geo = 0;
   m_Event = 0;
@@ -279,7 +269,7 @@ void MRERawEvent::Init()
   m_ComptonQualityFactor1 = c_NoQualityFactor;
   m_ComptonQualityFactor2 = c_NoQualityFactor;
   m_TrackQualityFactor = c_NoQualityFactor;
-	m_PairQualityFactor = c_NoQualityFactor;
+  m_PairQualityFactor = c_NoQualityFactor;
 
   m_ElectronTrack = 0;
   m_PositronTrack = 0;
@@ -659,70 +649,6 @@ MString MRERawEvent::GetEventTypeAsString()
   } else {
     return "Unknown event";
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetGalacticPointingXAxis(const double Longitude, const double Latitude)
-{
-  m_HasGalacticPointing = true;
-  m_GalacticPointingXAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetGalacticPointingZAxis(const double Longitude, const double Latitude)
-{
-  m_HasGalacticPointing = true;
-  m_GalacticPointingZAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetHorizonPointingXAxis(const double Longitude, const double Latitude)
-{
-  m_HasHorizonPointing = true;
-  m_HorizonPointingXAxis.SetMagThetaPhi(1.0, Latitude*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetHorizonPointingZAxis(const double Longitude, const double Latitude)
-{
-  m_HasHorizonPointing = true;
-  m_HorizonPointingZAxis.SetMagThetaPhi(1.0, Latitude*c_Rad, Longitude*c_Rad);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetDetectorRotationXAxis(const MVector Rot)
-{
-  //
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationXAxis = Rot;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MRERawEvent::SetDetectorRotationZAxis(const MVector Rot)
-{
-  //
-
-  m_HasDetectorRotation = true;
-  m_DetectorRotationZAxis = Rot;
 }
 
 
@@ -1117,20 +1043,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
     }
   }
 
-  if (m_HasGalacticPointing == true) {
-    m_Event->SetGalacticPointingXAxis(m_GalacticPointingXAxis);
-    m_Event->SetGalacticPointingZAxis(m_GalacticPointingZAxis);
-  }
-  
-  if (m_HasDetectorRotation == true) {
-    m_Event->SetDetectorRotationXAxis(m_DetectorRotationXAxis);
-    m_Event->SetDetectorRotationZAxis(m_DetectorRotationZAxis);
-  }
-  
-  if (m_HasHorizonPointing == true) {
-    m_Event->SetHorizonPointingXAxis(m_HorizonPointingXAxis);
-    m_Event->SetHorizonPointingZAxis(m_HorizonPointingZAxis);
-  }
+  m_Event->Set(*dynamic_cast<MRotationInterface*>(this));
   
   m_Event->SetAllHitsGood(IsValid());
   m_Event->SetTime(m_EventTime);
@@ -1168,6 +1081,8 @@ MString MRERawEvent::ToEvtaString(const int Precision, const int Version)
   out<<"ID "<<m_EventID<<endl;
   out<<"TI "<<m_EventTime.GetLongIntsString()<<endl;
 
+  MRotationInterface::Stream(out);
+  
   for (int i = 0; i < GetNRESEs(); ++i) {
     out<<GetRESEAt(i)->ToEvtaString(Precision, Version);
   }

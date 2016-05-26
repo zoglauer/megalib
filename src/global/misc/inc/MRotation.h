@@ -50,11 +50,10 @@ class MRotation {
   // public interface:
 public:
   //! Default constructor --- creates a unity matrix
-  MRotation() { SetIdentity(); }
+  MRotation() : m_XX(1), m_XY(0), m_XZ(0), m_YX(0), m_YY(1), m_YZ(0), m_ZX(0), m_ZY(0), m_ZZ(1) {}
   //! Constructor --- set all elements individually
-  MRotation(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) { 
-    Set(XX, YX, ZX, XY, YY, ZY, XZ, YZ, ZZ); 
-  } 
+  MRotation(double XX, double YX, double ZX, double XY, double YY, double ZY, double XZ, double YZ, double ZZ) :
+    m_XX(XX), m_XY(XY), m_XZ(XZ), m_YX(YX), m_YY(YY), m_YZ(YZ), m_ZX(ZX), m_ZY(ZY), m_ZZ(ZZ) {} 
   //! Constructor --- rotate unity matrix by an angle (in rad) along a vector
   MRotation(double Angle, const MVector& Vector) { Set(Angle, Vector); } 
   //! Copy constructor

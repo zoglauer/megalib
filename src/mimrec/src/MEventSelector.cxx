@@ -254,6 +254,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_UseDecays = EventSelector.m_UseDecays;                         
   m_UseFlaggedAsBad = EventSelector.m_UseFlaggedAsBad;                         
 
+  m_NAnalyzed = EventSelector.m_NAnalyzed;                   
   m_NAccepted = EventSelector.m_NAccepted;                   
   m_NRejectedIsGood = EventSelector.m_NRejectedIsGood;                   
   m_NRejectedStartDetector = EventSelector.m_NRejectedStartDetector;     
@@ -299,6 +300,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
 
 void MEventSelector::Reset()
 {
+  m_NAnalyzed = 0;
   m_NAccepted = 0;
   m_NRejectedIsGood = 0;
   m_NRejectedStartDetector = 0;
@@ -433,9 +435,11 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
+  m_NAnalyzed++;
+  
   if (g_Verbosity > 1) DumpOutput = true;
 
-	bool Return = true;
+  bool Return = true;
 
 //   if (Event->AllHitsGood() == false) {
 //     if (DumpOutput == true) {
@@ -1754,6 +1758,8 @@ MString MEventSelector::ToString()
   s<<endl;
   s<<"ACCEPTED  ......................  "
    <<m_NAccepted<<endl;
+  s<<"ANALYZED  ......................  "
+   <<m_NAnalyzed<<endl;
 
   return s.str().c_str();
 }

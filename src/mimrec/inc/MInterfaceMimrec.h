@@ -119,7 +119,8 @@ class MInterfaceMimrec : public MInterface
   
   void InitialEnergyDeposit();
   void EnergyDistributionD2();
-  void TimeDistribution();
+  //! Show the light curve, i.e. distribution
+  void LightCurve();
   void CoincidenceWindowDistribution();
   void TimeWalkDistribution();
   void TimeWalkArmDistribution();

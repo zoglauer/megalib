@@ -35,6 +35,7 @@ using namespace std;
 #include "MPhysicalEvent.h"
 #include "MVector.h"
 #include "MStreams.h"
+#include "MRotationInterface.h"
 
 // Forward declarations:
 
@@ -42,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MSimEvent
+class MSimEvent : public MRotationInterface
 {
   // public interface:
  public:
@@ -403,7 +404,8 @@ class MSimEvent
   //! Number of ignored hits (energy below threshold, no detector)
   int m_NIgnoredHTs;
 
-
+  
+  
 #ifdef ___CINT___
  public:
   ClassDef(MSimEvent, 0)    // representation of a simulated event

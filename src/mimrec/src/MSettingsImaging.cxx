@@ -120,7 +120,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_FitParameterPair = 2;
   m_UseAbsorptions = false;
   m_Gauss1DCutOff = 2.5;
-
+  m_GaussianByUncertaintiesIncrease = 0.0;
 
   m_ImagingResponseComptonTransversalFileName = g_StringNotDefined;
   m_ImagingResponseComptonLongitudinalFileName = g_StringNotDefined;
@@ -201,6 +201,8 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ResponseParameter1DGaussianPair", m_FitParameterPair);
   new MXmlNode(bNode, "ResponseParameter1DUseAbsorptions", m_UseAbsorptions);
   new MXmlNode(bNode, "ResponseParameter1DGaussianCutOff", m_Gauss1DCutOff);
+
+  new MXmlNode(bNode, "ResponseParameter1DGaussianByUncertaintiesIncrease", m_GaussianByUncertaintiesIncrease);
 
   new MXmlNode(bNode, "ResponseParameterFilesComptonLong", CleanPath(m_ImagingResponseComptonLongitudinalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesComptonTrans", CleanPath(m_ImagingResponseComptonTransversalFileName));
@@ -323,6 +325,12 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       }
       if ((cNode = bNode->GetNode("ResponseParameter1DGaussianCutOff")) != 0) {
         m_Gauss1DCutOff = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("ResponseParameter1DGaussianCutOff")) != 0) {
+        m_Gauss1DCutOff = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("ResponseParameter1DGaussianByUncertaintiesIncrease")) != 0) {
+        m_GaussianByUncertaintiesIncrease = cNode->GetValueAsDouble();
       }
       if ((cNode = bNode->GetNode("ResponseParameterFilesComptonLong")) != 0) {
         m_ImagingResponseComptonLongitudinalFileName = cNode->GetValue();

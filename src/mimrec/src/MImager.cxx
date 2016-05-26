@@ -278,14 +278,16 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                         Settings->GetGauss1DCutOff(),
                         Settings->GetUseAbsorptions());
   } else if (Settings->GetResponseType() == 1) {
+    SetResponseGaussianByUncertainties(Settings->GetGaussianByUncertaintiesIncrease());
+  } else if (Settings->GetResponseType() == 2) {
     SetResponseEnergyLeakage(Settings->GetFitParameterComptonTransSphere(), 
                              Settings->GetFitParameterComptonLongSphere());
-      
-  } else if (Settings->GetResponseType() == 2) {
+     
+  } else if (Settings->GetResponseType() == 3) {
     if (SetResponsePRM(Settings->GetImagingResponseComptonTransversalFileName(),
                        Settings->GetImagingResponseComptonLongitudinalFileName(),
                        Settings->GetImagingResponsePairRadialFileName()) == false) {
-      mgui<<"Cannot set PRM response! Aborting imaging!"<<error;
+      merr<<"Cannot set PRM response! Aborting imaging!"<<show;
       return false;
     }
   } else {
@@ -408,12 +410,13 @@ void MImager::SetResponseGaussian(const double Transversal, const double Longitu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImager::SetResponseGaussianByUncertainties()
+void MImager::SetResponseGaussianByUncertainties(const double Increase)
 {
   // Set the Gaussian response parameters
 
   for (unsigned int t= 0; t < m_NThreads; ++t) {
     MResponseGaussianByUncertainties* Response = new MResponseGaussianByUncertainties();
+    Response->SetIncrease(Increase);
     Response->SetThreshold(2.5);
 
     m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));

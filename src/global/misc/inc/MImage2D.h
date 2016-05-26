@@ -50,13 +50,19 @@ class MImage2D : public MImage
   virtual MImage* Clone();
 
   //! Set the image array and redisplay it
-	virtual void SetImageArray(double* Array);
+  virtual void SetImageArray(double* Array);
 
   //! Set the y-Axis attributes
-	virtual void SetYAxis(MString yTitle, double yMin, double yMax, int yNBins);
+  virtual void SetYAxis(MString yTitle, double yMin, double yMax, int yNBins);
 
   //! Display the histogram in the given canvas
-	virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = 0);
+
+  //! Get the dimensions of the histogram
+  virtual unsigned int GetDimensions() const { return 2; }
+  
+  //! Determine the maximum, the vector is filled up to the number of dimensions the histogram has
+  virtual void DetermineMaximum(double& MaxValue, vector<double>& Coordinate);
 
   // protected methods:
  protected:
@@ -70,13 +76,13 @@ class MImage2D : public MImage
   // protected members:
  protected:
   //! Title of the y axis
-	MString m_yTitle;
+  MString m_yTitle;
   //! Minimum y value
-	double m_yMin;
+  double m_yMin;
   //! Maximum y value
-	double m_yMax;
+  double m_yMax;
   //! Number of y bins
-	int m_yNBins;
+  int m_yNBins;
 
 
   // private members:

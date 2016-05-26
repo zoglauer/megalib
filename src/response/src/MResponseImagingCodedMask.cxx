@@ -124,19 +124,18 @@ bool MResponseImagingCodedMask::CreateResponse()
             // First compute the y-Axis vector:
             MVector yAxis = zAxis.Cross(xAxis);
             
-            TMatrix CoordinateRotation;
-            CoordinateRotation.ResizeTo(3,3);
-            CoordinateRotation(0,0) = xAxis.X();
-            CoordinateRotation(1,0) = xAxis.Y();
-            CoordinateRotation(2,0) = xAxis.Z();
-            CoordinateRotation(0,1) = yAxis.X();
-            CoordinateRotation(1,1) = yAxis.Y();
-            CoordinateRotation(2,1) = yAxis.Z();
-            CoordinateRotation(0,2) = zAxis.X();
-            CoordinateRotation(1,2) = zAxis.Y();
-            CoordinateRotation(2,2) = zAxis.Z();
+            MRotation CoordinateRotation;
+            CoordinateRotation.SetXX(xAxis.X());
+            CoordinateRotation.SetYX(xAxis.Y());
+            CoordinateRotation.SetZX(xAxis.Z());
+            CoordinateRotation.SetXY(yAxis.X());
+            CoordinateRotation.SetYY(yAxis.Y());
+            CoordinateRotation.SetZY(yAxis.Z());
+            CoordinateRotation.SetXZ(zAxis.X());
+            CoordinateRotation.SetYZ(zAxis.Y());
+            CoordinateRotation.SetZZ(zAxis.Z());
 
-            TMatrix Rotation = Photo->GetDetectorRotationMatrix();
+            MRotation Rotation = Photo->GetDetectorRotationMatrix();
 
             // Now get the ideal origin:
             if (m_SiEvent->GetNIAs() > 0) {

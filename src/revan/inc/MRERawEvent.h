@@ -36,7 +36,7 @@ class MPhysicalEvent;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MRERawEvent : public MRESE
+class MRERawEvent : public MRESE, public MRotationInterface
 {
   // Public Interface:
  public:
@@ -103,21 +103,6 @@ class MRERawEvent : public MRESE
   int GetEventType();
   void SetEventType(int Type);
   MString GetEventTypeAsString();
-
-  //! Set the x-axis of the galactic coordinate system
-  void SetGalacticPointingXAxis(const double Longitude, const double Latitude);
-  //! Set the z-axis of the galactic coordinate system
-  void SetGalacticPointingZAxis(const double Longitude, const double Latitude);
-
-  //! Set the x-axis of the horizon coordinate system
-  void SetHorizonPointingXAxis(const double Longitude, const double Latitude);
-  //! Set the z-axis of the horizon coordinate system
-  void SetHorizonPointingZAxis(const double Longitude, const double Latitude);
-
-  //! Set the x-axis of the spheric coordinate system
-  void SetDetectorRotationXAxis(const MVector Rot);
-  //! Set the z-axis of the spheric coordinate system
-  void SetDetectorRotationZAxis(const MVector Rot);
 
   bool IsDecay() { return m_Decay; }
   void SetDecay(bool Flag = true) { m_Decay = Flag; }
@@ -287,27 +272,6 @@ class MRERawEvent : public MRESE
   //! Comments in the event
   vector<MString> m_Comments;
   
-  //! If true, a pointing in galactic coordinates is present 
-  bool m_HasGalacticPointing;
-  //! The rotation around the X axis
-  MVector m_GalacticPointingXAxis;
-  //! The rotation around the Z axis
-  MVector m_GalacticPointingZAxis;  
-  
-  //! If true, a detector rotation is present
-  bool m_HasDetectorRotation;
-  //! The rotation around the X axis
-  MVector m_DetectorRotationXAxis;
-  //! The rotation around the Z axis
-  MVector m_DetectorRotationZAxis;
-
-  //! If true, a horizon in detector coordinates is present
-  bool m_HasHorizonPointing;
-  //! Pointing of the detector in the horizon coordinate system - X axis
-  MVector m_HorizonPointingXAxis;
-  //! Pointing of the detector in the horizon coordinate system - Z axis
-  MVector m_HorizonPointingZAxis;
-
   //! Time walk between D1 and D2, if any
   int m_TimeWalk;
 

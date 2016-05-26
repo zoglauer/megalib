@@ -72,6 +72,9 @@ class MGUIEEntry : public MGUIElement
   //! Return true if the content has been modified 
   bool IsModified() { return m_IsModified; }
 
+  //! Set the wrap length of all text
+  virtual void SetWrapLength(int WrapLength);
+
 
   void Associate(TGCompositeFrame* w, int Id);
   bool ProcessMessage(long Message, long Parameter1, long Parameter2);

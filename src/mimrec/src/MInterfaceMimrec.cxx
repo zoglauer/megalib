@@ -72,7 +72,7 @@ using namespace std;
 #include "MResponseGaussianByUncertainties.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
-
+#include "MBinnerBayesianBlocks.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -286,7 +286,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--light-curve" || Option == "-l") {
       cout<<"Command-line parser: Generating Light curve..."<<endl;  
       // m_Data->SetStoreImages(true);
-      TimeDistribution();
+      LightCurve();
       return KeepAlive;
     } else if (Option == "--standard-analysis-spherical") {
       double Energy = atof(argv[++i]);
@@ -611,7 +611,7 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
                                     m_Data->GetGauss1DCutOff(),
                                     m_Data->GetUseAbsorptions());
     } else if (m_Data->GetResponseType() == 1) {
-      m_Imager->SetResponseGaussianByUncertainties();
+      m_Imager->SetResponseGaussianByUncertainties(m_Data->GetGaussianByUncertaintiesIncrease());
     } else if (m_Data->GetResponseType() == 2) {
       m_Imager->SetResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
                                          m_Data->GetFitParameterComptonLongSphere());
@@ -3558,6 +3558,12 @@ void MInterfaceMimrec::EnergySpectra()
 
   double EMeas = 0.0;
 
+  MBinnerBayesianBlocks Bayes;
+  Bayes.SetMinMax(xMin, xMax);
+  Bayes.SetMinimumBinWidth((xMax-xMin)/NBins);
+  Bayes.SetPrior(3); 
+
+ 
   // ... loop over all events and save a count in the belonging bin ...
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
@@ -3572,6 +3578,7 @@ void MInterfaceMimrec::EnergySpectra()
         if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
+          Bayes.Add(Event->GetEnergy(), 1);
           EMeas += Event->GetEnergy();
         } else {
           OutsideWindow++;
@@ -3580,6 +3587,7 @@ void MInterfaceMimrec::EnergySpectra()
         if (fabs(((MPairEvent*) Event)->GetARMGamma(TestPosition))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
+          Bayes.Add(Event->GetEnergy(), 1);
           EMeas += Event->GetEnergy();
         } else {
           OutsideWindow++;
@@ -3587,6 +3595,7 @@ void MInterfaceMimrec::EnergySpectra()
       }
     } else {
       Hist->Fill(Event->GetEnergy());
+      Bayes.Add(Event->GetEnergy(), 1);
       EMeas += Event->GetEnergy();
       InsideWindow++;
     }
@@ -3632,6 +3641,13 @@ void MInterfaceMimrec::EnergySpectra()
 //   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
 //     Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
 //   }
+  
+  TCanvas* Canvas2 = new TCanvas();
+  Canvas2->cd();
+  TH1D* HistBayes = Bayes.GetNormalizedHistogram("count rate", "Energy", "[keV]");
+  HistBayes->Draw();
+  Canvas2->Update();
+  
 
   TCanvas* Canvas = new TCanvas();
   Canvas->SetTitle("Spectrum canvas");
@@ -4541,7 +4557,7 @@ void MInterfaceMimrec::SequenceLengths()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MInterfaceMimrec::TimeDistribution()
+void MInterfaceMimrec::LightCurve()
 {
   // Time distribution in the data-set
 
@@ -4557,6 +4573,7 @@ void MInterfaceMimrec::TimeDistribution()
   MEventSelector NoTimeWindowSelector = *m_Selector;
   NoTimeWindowSelector.SetTime(0, numeric_limits<double>::max());
 
+  
   // First check on the size of the histogram:
   unsigned long NEvents = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
@@ -4573,16 +4590,33 @@ void MInterfaceMimrec::TimeDistribution()
   }
   m_EventFile->Close();
 
+  if (TimeList.empty() == true) {
+    mgui<<"Light curve: No events passed the event selections!"<<show; 
+    return;
+  }
+  
   mout<<"Minimum time: "<<setprecision(20)<<MinTime<<endl;
   mout<<"Maximum time: "<<setprecision(20)<<MaxTime<<setprecision(6)<<endl;
 
   if (NEvents/10 < NBins) NBins = NEvents/10;
   if (NBins < 10) NBins = 10;
   
+  // Find the common time between min and max
+  long min = (long) MinTime;
+  long max = (long) MaxTime;
   
-  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve", NBins, MinTime, MaxTime);
+  int Counter = 0;
+  do {
+    min /= 10;
+    max /= 10;
+    Counter++;
+  } while (min != max);
+  
+  int Subtract = min * pow(10, Counter);
+  
+  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve", NBins, MinTime - Subtract, MaxTime - Subtract);
   HistOptimized->SetBit(kCanDelete);
-  HistOptimized->SetXTitle("time [s]");
+  HistOptimized->SetXTitle(MString("Time [s] + ") + MString(Subtract) + " seconds");
   HistOptimized->SetYTitle("counts");
   HistOptimized->SetStats(false);
   HistOptimized->SetFillColor(8);
@@ -4590,7 +4624,7 @@ void MInterfaceMimrec::TimeDistribution()
   HistOptimized->GetXaxis()->SetNdivisions(509);
   
   for (unsigned int i = 0; i < TimeList.size(); ++i) {
-    HistOptimized->Fill(TimeList[i]);
+    HistOptimized->Fill(TimeList[i] - Subtract);
   }
 
   TCanvas* CanvasOptimized = new TCanvas("TimeOptimized", "Light curve", 800, 600);

@@ -32,6 +32,7 @@ PRGSX = \
 	$(BN)/ShowHistograms \
 	$(BN)/Revoxelizer \
 	$(BN)/IsotopeFileSplitter \
+	$(BN)/VariableSourceDetector \
 
 FITS = $(BN)/ConvertMGGPOD
 

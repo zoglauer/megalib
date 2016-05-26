@@ -652,6 +652,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
           mimp<<"Lever arm is wrong implemented!"<<show;
         }        
 
+        Compton->Set(*dynamic_cast<MRotationInterface*>(Event));        
         Compton->SetSequenceLength(2);
         Compton->SetId(Event->GetID());
         Compton->SetTime(Event->GetTime());
@@ -688,6 +689,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
           Pair->SetEnergyElectron(Event->GetRPEnergyElectron());
           Pair->SetEnergyPositron(Event->GetRPEnergyPositron());
           Pair->SetInitialEnergyDeposit(Event->GetRPInitialEnergyDeposit());
+          Pair->Set(*dynamic_cast<MRotationInterface*>(Event));
           PhysFile->AddEvent((MPhysicalEvent *) Pair);
         } else {
           Pair->SetId(Event->GetID());
@@ -699,6 +701,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
           Pair->SetEnergyPositron(Event->GetIPPositronEnergy());
           mimp<<"Ideal pair initial deposit is wrong!"<<endl;
           Pair->SetInitialEnergyDeposit(100.0);
+          Pair->Set(*dynamic_cast<MRotationInterface*>(Event));
           PhysFile->AddEvent((MPhysicalEvent *) Pair);
         }
         //PhysFile->AddEvent((MPhysicalEvent *) Pair);

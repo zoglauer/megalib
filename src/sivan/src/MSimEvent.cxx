@@ -500,7 +500,12 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
       delete DR;
     }
   }
-
+  // Add the coordinate system 
+  else if ((LineBuffer[0] == 'R' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z')) ||
+           (LineBuffer[0] == 'H' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z')) ||
+           (LineBuffer[0] == 'G' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z'))) {
+    MRotationInterface::ParseLine(LineBuffer);
+  }
   return Ret;
 }
 
@@ -3093,6 +3098,8 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
       }
       out<<endl;
     }
+    
+    MRotationInterface::Stream(out);
     
     if (WhatToStore == c_StoreSimulationInfoAll) {
       // The ED keyword (Total energy deposit in active material)
