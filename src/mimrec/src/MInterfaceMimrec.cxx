@@ -4637,7 +4637,7 @@ void MInterfaceMimrec::LightCurve()
   MBinnerBayesianBlocks Bayes;
   Bayes.SetMinMax(MinTime - Subtract, MaxTime - Subtract);
   Bayes.SetMinimumBinWidth((int) (std::max(1.0, 0.5*HistOptimized->GetBinWidth(1)) + 0.5));
-  Bayes.SetPrior(4); 
+  Bayes.SetPrior(5); 
     
   for (unsigned int i = 0; i < TimeList.size(); ++i) {
     Bayes.Add(TimeList[i] - Subtract, 1);
