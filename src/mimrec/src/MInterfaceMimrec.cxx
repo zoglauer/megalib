@@ -4614,11 +4614,12 @@ void MInterfaceMimrec::LightCurve()
   
   int Subtract = min * pow(10, Counter);
   
-  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve", NBins, MinTime - Subtract, MaxTime - Subtract);
+  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve  (red: bayesian block binning, ~4 sigma)", NBins, MinTime - Subtract, MaxTime - Subtract);
   HistOptimized->SetBit(kCanDelete);
   HistOptimized->SetXTitle(MString("Time [s] + ") + MString(Subtract) + " seconds");
-  HistOptimized->SetYTitle("counts");
+  HistOptimized->SetYTitle("counts/sec");
   HistOptimized->SetStats(false);
+  HistOptimized->SetLineColor(kBlack);
   HistOptimized->SetFillColor(8);
   HistOptimized->SetMinimum(0);
   HistOptimized->GetXaxis()->SetNdivisions(509);
@@ -4626,15 +4627,36 @@ void MInterfaceMimrec::LightCurve()
   for (unsigned int i = 0; i < TimeList.size(); ++i) {
     HistOptimized->Fill(TimeList[i] - Subtract);
   }
+  HistOptimized->Scale(1.0/HistOptimized->GetBinWidth(1));
 
   TCanvas* CanvasOptimized = new TCanvas("TimeOptimized", "Light curve", 800, 600);
   CanvasOptimized->cd();
   HistOptimized->Draw();
   CanvasOptimized->Update();
+
+  MBinnerBayesianBlocks Bayes;
+  Bayes.SetMinMax(MinTime - Subtract, MaxTime - Subtract);
+  Bayes.SetMinimumBinWidth(HistOptimized->GetBinWidth(1));
+  Bayes.SetPrior(4); 
+    
+  for (unsigned int i = 0; i < TimeList.size(); ++i) {
+    Bayes.Add(TimeList[i] - Subtract, 1);
+  }
+
+  TH1D* HistBayes = Bayes.GetNormalizedHistogram("Light curve (Bayesian blocks)", MString("Time + ") + MString(Subtract) + MString("[s]"), "counts/sec");
+  HistBayes->SetStats(false);
+  HistBayes->SetLineColor(kRed);
+  HistBayes->SetLineWidth(4.0);
+  HistBayes->SetMinimum(0);
+  HistBayes->GetXaxis()->SetNdivisions(509);
+  HistBayes->Draw("SAME");
+  CanvasOptimized->Update();
+  
   if (m_OutputFileName.IsEmpty() == false) {
     CanvasOptimized->SaveAs(m_OutputFileName);
   }
-
+  
+  
   return; 
 }
 
