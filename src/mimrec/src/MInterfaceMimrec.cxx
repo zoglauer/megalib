@@ -4614,7 +4614,7 @@ void MInterfaceMimrec::LightCurve()
   
   int Subtract = min * pow(10, Counter);
   
-  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve  (red: bayesian block binning, ~4 sigma)", NBins, MinTime - Subtract, MaxTime - Subtract);
+  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve  (red: bayesian block binning)", NBins, MinTime - Subtract, MaxTime - Subtract);
   HistOptimized->SetBit(kCanDelete);
   HistOptimized->SetXTitle(MString("Time [s] + ") + MString(Subtract) + " seconds");
   HistOptimized->SetYTitle("counts/sec");
@@ -4636,7 +4636,7 @@ void MInterfaceMimrec::LightCurve()
 
   MBinnerBayesianBlocks Bayes;
   Bayes.SetMinMax(MinTime - Subtract, MaxTime - Subtract);
-  Bayes.SetMinimumBinWidth(HistOptimized->GetBinWidth(1));
+  Bayes.SetMinimumBinWidth((int) (std::max(1.0, 0.5*HistOptimized->GetBinWidth(1)) + 0.5));
   Bayes.SetPrior(4); 
     
   for (unsigned int i = 0; i < TimeList.size(); ++i) {
