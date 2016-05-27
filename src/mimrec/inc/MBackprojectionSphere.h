@@ -35,7 +35,7 @@ class MBackprojectionSphere : public MBackprojection
   // public Interface:
  public:
   //! Default constructor
-  MBackprojectionSphere(int CoordinateSystem = MProjection::c_Spheric);
+  MBackprojectionSphere(MCoordinateSystem CoordianteSystem = MCoordinateSystem::c_Spheric);
   //! Default destructor
   virtual ~MBackprojectionSphere();
 

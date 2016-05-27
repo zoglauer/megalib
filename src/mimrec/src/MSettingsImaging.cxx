@@ -36,7 +36,6 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 #include "MEarthHorizon.h"
-#include "MProjection.h"
 #include "MLMLAlgorithms.h"
 
 
@@ -60,7 +59,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
 
   m_StoreImages = false;
 
-  m_CoordinateSystem = MProjection::c_Spheric;
+  m_CoordinateSystem = MCoordinateSystem::c_Spheric;
   m_LHAlgorithm = MLMLAlgorithms::c_ClassicEM;
   m_OSEMSubSets = 4;
   m_LHStopCriteria = MLMLAlgorithms::c_StopAfterIterations;
@@ -218,7 +217,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   // Menu Coordinate-system
   aNode = new MXmlNode(Node, "CoordinateSystem");
 
-  new MXmlNode(aNode, "Type", m_CoordinateSystem);
+  new MXmlNode(aNode, "Type", static_cast<int>(m_CoordinateSystem));
 
   // Menu Dimensions - Spherical
   new MXmlNode(aNode, "SphericalRotationAxisX", m_ImageRotationXAxis); 
@@ -353,7 +352,7 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
   
   if ((aNode = Node->GetNode("CoordinateSystem")) != 0) {
     if ((bNode = aNode->GetNode("Type")) != 0) {
-      m_CoordinateSystem = bNode->GetValueAsInt();
+      m_CoordinateSystem = static_cast<MCoordinateSystem>(bNode->GetValueAsInt());
     }
     if ((bNode = aNode->GetNode("SphericalRotationAxisX")) != 0) {
       m_ImageRotationXAxis = bNode->GetValueAsVector();

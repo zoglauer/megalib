@@ -210,6 +210,47 @@ void MRotationInterface::Stream(ostringstream& S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MRotationInterface::Validate()
+{
+  //! Check if the data is OK
+
+  if (m_HasGalacticPointing == true) {
+    if (m_GalacticPointingXAxis.Phi() < 0.000001 &&
+        m_GalacticPointingXAxis.Theta() < 0.000001 &&
+        m_GalacticPointingZAxis.Phi() < 0.000001 &&
+        m_GalacticPointingZAxis.Theta() < 0.000001) {
+      cout<<"Error: Event ("<<m_Id<<") has no valid galactic pointing"<<endl;
+      m_HasGalacticPointing = false;
+    }
+  }
+  
+  if (m_HasHorizonPointing == true) {
+    if (m_HorizonPointingXAxis.Phi() < 0.000001 &&
+        m_HorizonPointingXAxis.Theta() < 0.000001 &&
+        m_HorizonPointingZAxis.Phi() < 0.000001 &&
+        m_HorizonPointingZAxis.Theta() < 0.000001) {
+      cout<<"Error: Event ("<<m_Id<<") has no valid horizon pointing"<<endl;
+      m_HasHorizonPointing = false;
+    }
+  }
+  
+  if (m_HasDetectorRotation == true) {
+    if (m_DetectorRotationXAxis.Phi() < 0.000001 &&
+        m_DetectorRotationXAxis.Theta() < 0.000001 &&
+        m_DetectorRotationZAxis.Phi() < 0.000001 &&
+        m_DetectorRotationZAxis.Theta() < 0.000001) {
+      cout<<"Error: Event ("<<m_Id<<") has no valid detector rotation"<<endl;
+      m_HasDetectorRotation = false;
+    }
+  }
+  
+  return true;
+}
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRotationInterface::SetGalacticPointingXAxis(const double Longitude, const double Latitude)
 {
   // Set the X axis of the LEFT-handed galactic coordinate system:

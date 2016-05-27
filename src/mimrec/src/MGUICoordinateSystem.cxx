@@ -95,13 +95,13 @@ void MGUICoordinateSystem::Create()
   m_System->Add("Cartesian 2D");
   m_System->Add("Cartesian 3D");
   
-  if (m_GUIData->GetCoordinateSystem() == MProjection::c_Galactic) {
+  if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     m_System->SetSelected(0);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Spheric) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     m_System->SetSelected(1);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D) {
     m_System->SetSelected(2);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     m_System->SetSelected(3);
   } else {
     m_System->SetSelected(0);
@@ -125,13 +125,13 @@ bool MGUICoordinateSystem::OnApply()
 	// The Apply button has been pressed
 
   if (m_System->GetSelected() == 0) {
-    if (m_GUIData->GetCoordinateSystem() != MProjection::c_Galactic) m_GUIData->SetCoordinateSystem(MProjection::c_Galactic);
+    if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Galactic) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Galactic);
   } else if (m_System->GetSelected() == 1) {
-    if (m_GUIData->GetCoordinateSystem() != MProjection::c_Spheric) m_GUIData->SetCoordinateSystem(MProjection::c_Spheric);
+    if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Spheric) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Spheric);
   } else if (m_System->GetSelected() == 2) {
-    if (m_GUIData->GetCoordinateSystem() != MProjection::c_Cartesian2D) m_GUIData->SetCoordinateSystem(MProjection::c_Cartesian2D);
+    if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Cartesian2D) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian2D);
   } else if (m_System->GetSelected() == 3) {
-    if (m_GUIData->GetCoordinateSystem() != MProjection::c_Cartesian3D) m_GUIData->SetCoordinateSystem(MProjection::c_Cartesian3D);
+    if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Cartesian3D) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian3D);
   } 
 
   return true;

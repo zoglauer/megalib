@@ -34,7 +34,7 @@ class MBackprojection : public MProjection
   // Public Interface:
  public:
   // The default constructor
-  MBackprojection(int CoordinateSystem);
+  MBackprojection(MCoordinateSystem CoordianteSystem);
   // The default destructor
   virtual ~MBackprojection();
 

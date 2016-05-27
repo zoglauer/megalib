@@ -34,7 +34,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MProjection.h"
+#include "MCoordinateSystem.h"
 #include "MGUIEEntry.h"
 #include "MGUIDefaults.h"
 
@@ -140,7 +140,7 @@ void MGUIARM::Create()
     SelectorSubLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, (50+20)*Scaler, 50*Scaler, 2*Scaler, 2*Scaler);
   }
  
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     
     m_ThetaIsX = new MGUIEEntry(this, "Theta [deg]:", false, m_Settings->GetTPTheta());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -148,7 +148,7 @@ void MGUIARM::Create()
     AddFrame(m_PhiIsY, SelectorSubLayout);
 
     
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     
     m_ThetaIsX = new MGUIEEntry(this, "Latitude [deg]:", false, m_Settings->GetTPGalLatitude());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -156,8 +156,8 @@ void MGUIARM::Create()
     AddFrame(m_PhiIsY, SelectorSubLayout);
 
     
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 
     m_ThetaIsX = new MGUIEEntry(this, "x [cm]:", false, m_Settings->GetTPX());
     AddFrame(m_ThetaIsX, SelectorSubLayout);
@@ -239,20 +239,20 @@ bool MGUIARM::ProcessMessage(long Message, long Parameter1,
 bool MGUIARM::OnApply()
 {
   // First test the data (m_RadiusIsZ has not to be checked!)
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     if (m_ThetaIsX->IsDouble(0, 180) == false || 
         m_PhiIsY->IsDouble(-360, 360) == false || 
         m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     if (m_ThetaIsX->IsDouble(-90, 90) == false || 
         m_PhiIsY->IsDouble(-360, 360) == false || 
         m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     if (m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
@@ -263,14 +263,14 @@ bool MGUIARM::OnApply()
   }
   
   // Otherwise update the data:
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     m_Settings->SetTPTheta(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPPhi(m_PhiIsY->GetAsDouble());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     m_Settings->SetTPGalLatitude(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPGalLongitude(m_PhiIsY->GetAsDouble());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     m_Settings->SetTPX(m_ThetaIsX->GetAsDouble());
     m_Settings->SetTPY(m_PhiIsY->GetAsDouble());
     m_Settings->SetTPZ(m_RadiusIsZ->GetAsDouble());

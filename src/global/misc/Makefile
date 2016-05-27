@@ -14,6 +14,7 @@
 
 OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MAssert.o \
+	$(LB)/MCoordinateSystem.o \
 	$(LB)/MExceptions.o \
 	$(LB)/MResponseMatrix.o \
 	$(LB)/MResponseMatrixO1.o \

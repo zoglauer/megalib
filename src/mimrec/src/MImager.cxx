@@ -99,7 +99,7 @@ void MImager_CallThread(void* Address)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImager::MImager(int CoordinateSystem, unsigned int NThreads)
+MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
 {
   // Initialize the system-matrix:
   //
@@ -112,17 +112,17 @@ MImager::MImager(int CoordinateSystem, unsigned int NThreads)
   m_CoordinateSystem = CoordinateSystem;
   for (unsigned int t = 0; t < m_NThreads; ++t) {
     // Initialize the backprojection-class
-    if (m_CoordinateSystem == MProjection::c_Spheric || m_CoordinateSystem == MProjection::c_Galactic) {
+    if (m_CoordinateSystem == MCoordinateSystem::c_Spheric || m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere(m_CoordinateSystem)));
     }
-    else if (m_CoordinateSystem == MProjection::c_Cartesian2D || m_CoordinateSystem == MProjection::c_Cartesian3D) {
+    else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionCartesian(m_CoordinateSystem)));
     }
     else {
       mgui<<"Unknown coordinate system."<<endl;
       mgui<<"I will use a spherical coordinate system!"<<error;
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere()));   
-      m_CoordinateSystem = MProjection::c_Spheric;
+      m_CoordinateSystem = MCoordinateSystem::c_Spheric;
     }      
     m_Threads.push_back(0);
     m_ThreadIsInitialized.push_back(false);
@@ -202,17 +202,17 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   m_CoordinateSystem = Settings->GetCoordinateSystem();
   for (unsigned int t = 0; t < m_NThreads; ++t) {
     // Initialize the backprojection-class
-    if (m_CoordinateSystem == MProjection::c_Spheric || m_CoordinateSystem == MProjection::c_Galactic) {
+    if (m_CoordinateSystem == MCoordinateSystem::c_Spheric || m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere(m_CoordinateSystem)));
     }
-    else if (m_CoordinateSystem == MProjection::c_Cartesian2D || m_CoordinateSystem == MProjection::c_Cartesian3D) {
+    else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionCartesian(m_CoordinateSystem)));
     }
     else {
       mgui<<"Unknown coordinate system."<<endl;
       mgui<<"I will use a spherical coordinate system!"<<error;
       m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere()));   
-      m_CoordinateSystem = MProjection::c_Spheric;
+      m_CoordinateSystem = MCoordinateSystem::c_Spheric;
     }      
     m_Threads.push_back(0);
     m_ThreadIsInitialized.push_back(false);
@@ -224,7 +224,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   SetApproximatedMaths(Settings->GetApproximatedMaths());
     
   // Set the dimensions of the image
-  if (Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     SetViewport(Settings->GetPhiMin()*c_Rad,
                 Settings->GetPhiMax()*c_Rad, 
                 Settings->GetBinsPhi(),
@@ -236,7 +236,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                 1, 
                 Settings->GetImageRotationXAxis(), 
                 Settings->GetImageRotationZAxis());
-  } else if (Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     SetViewport(Settings->GetGalLongitudeMin()*c_Rad, 
                 Settings->GetGalLongitudeMax()*c_Rad, 
                 Settings->GetBinsGalLongitude(),
@@ -246,8 +246,8 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                 c_FarAway/10, 
                 c_FarAway, 
                 1);
-  } else if (Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D){
+  } else if (Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
     SetViewport(Settings->GetXMin(), 
                 Settings->GetXMax(), 
                 Settings->GetBinsX(),
@@ -703,7 +703,7 @@ bool MImager::Analyze(bool CalculateResponse)
   MImage* Image = 0;
   
   // Display first backprojection for the three different coordinate systems:
-  if (m_CoordinateSystem == MProjection::c_Spheric) {
+  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
     Image = new MImageSpheric("Image - Iteration: 0", 
                               m_EM->GetInitialImage(),
                               "Phi [deg]", 
@@ -717,7 +717,7 @@ bool MImager::Analyze(bool CalculateResponse)
                               m_Palette, 
                               m_DrawMode,
                               m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Galactic) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     Image = new MImageGalactic("Image - Iteration: 0", 
                                m_EM->GetInitialImage(), 
                                "Galactic Longitude [deg]", 
@@ -731,7 +731,7 @@ bool MImager::Analyze(bool CalculateResponse)
                                m_Palette, 
                                m_DrawMode,
                                m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian2D) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
     if (m_TwoDAxis == 0) {
       Image = new MImage2D("Image - Iteration: 0",
                            m_EM->GetInitialImage(),
@@ -775,7 +775,7 @@ bool MImager::Analyze(bool CalculateResponse)
                            m_DrawMode);
     }
 
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian3D) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
     Image = new MImage3D("Image - Iteration: 0",
                          m_EM->GetInitialImage(),
                          "x [cm]",

@@ -375,7 +375,7 @@ double MPairEvent::GetOpeningAngle() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MPairEvent::GetARMGamma(const MVector& Position) const
+double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) const
 {
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-Spitze with the 
@@ -385,7 +385,7 @@ double MPairEvent::GetARMGamma(const MVector& Position) const
   
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
   
   return m_IncomingGammaDirection.Angle(RotPosition - m_PairCreationIA);
 }
@@ -400,25 +400,25 @@ bool MPairEvent::Assimilate(char* LineBuffer)
 
   int i;
   double m_xPairCreationD1, m_yPairCreationD1, m_zPairCreationD1; 
-  double m_xFirstElectronDir, m_yFirstElectronDir, m_zFirstElectronDir;		      
+  double m_xFirstElectronDir, m_yFirstElectronDir, m_zFirstElectronDir;         
   double m_xSecondElectronDir, m_ySecondElectronDir, m_zSecondElectronDir;
 
   if (LineBuffer[0] == 'P') {
     i = sscanf(LineBuffer, 
-	       "P;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n", 
-	       &m_xPairCreationD1,
-	       &m_yPairCreationD1,
-	       &m_zPairCreationD1, 
-	       &m_xFirstElectronDir,
-	       &m_yFirstElectronDir,
-	       &m_zFirstElectronDir,		      
-	       &m_xSecondElectronDir,
-	       &m_ySecondElectronDir,
-	       &m_zSecondElectronDir,
-	       &m_EnergyElectron,
-	       &m_EnergyPositron,
-	       &m_EnergyErrorElectron,
-	       &m_EnergyErrorPositron);
+         "P;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n", 
+         &m_xPairCreationD1,
+         &m_yPairCreationD1,
+         &m_zPairCreationD1, 
+         &m_xFirstElectronDir,
+         &m_yFirstElectronDir,
+         &m_zFirstElectronDir,          
+         &m_xSecondElectronDir,
+         &m_ySecondElectronDir,
+         &m_zSecondElectronDir,
+         &m_EnergyElectron,
+         &m_EnergyPositron,
+         &m_EnergyErrorElectron,
+         &m_EnergyErrorPositron);
     if (i == 13) {
 
       SetPairCreationIA(MVector(m_xPairCreationD1, m_yPairCreationD1, m_zPairCreationD1));
@@ -564,11 +564,11 @@ MString MPairEvent::ToBasicString()
   char LineBuffer[1000];
 
   sprintf(LineBuffer, "P;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f;%f\n",
-	  m_PairCreationIA.X(), m_PairCreationIA.Y(), m_PairCreationIA.Z(), 
-	  m_ElectronDirection.X(), m_ElectronDirection.Y(), m_ElectronDirection.Z(), 
-	  m_PositronDirection.X(), m_PositronDirection.Y(), m_PositronDirection.Z(), 
-	  m_EnergyElectron, m_EnergyPositron, 
-	  m_EnergyErrorElectron, m_EnergyErrorPositron);
+    m_PairCreationIA.X(), m_PairCreationIA.Y(), m_PairCreationIA.Z(), 
+    m_ElectronDirection.X(), m_ElectronDirection.Y(), m_ElectronDirection.Z(), 
+    m_PositronDirection.X(), m_PositronDirection.Y(), m_PositronDirection.Z(), 
+    m_EnergyElectron, m_EnergyPositron, 
+    m_EnergyErrorElectron, m_EnergyErrorPositron);
 
   return MString(LineBuffer);
 }

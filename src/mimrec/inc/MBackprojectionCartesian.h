@@ -35,7 +35,7 @@ class MBackprojectionCartesian : public MBackprojection
   // public interface:
  public:
   //! Default constructor
-  MBackprojectionCartesian(int CoordinateSystem = MProjection::c_Cartesian2D);
+  MBackprojectionCartesian(MCoordinateSystem CoordinateSystem = MCoordinateSystem::c_Cartesian2D);
   //! Default destructor
   virtual ~MBackprojectionCartesian();
 

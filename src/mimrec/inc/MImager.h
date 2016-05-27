@@ -27,6 +27,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MVector.h"
 #include "MBPDataImage.h"
 #include "MBackprojection.h"
@@ -51,7 +52,7 @@ class MImager
   // Public Interface:
  public:
   //! Standard constructor
-  MImager(int CoordinateSystem, unsigned int NThreads = 1);
+  MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads = 1);
   //! Default destructor
   virtual ~MImager();
 
@@ -222,7 +223,7 @@ class MImager
   //! Number of bins (x*y*z) of the image
   int m_NBins;  
   //! The coordinate system
-  int m_CoordinateSystem;
+  MCoordinateSystem m_CoordinateSystem;
   //! Which of the axes is the 2D axis 
   int m_TwoDAxis;
 

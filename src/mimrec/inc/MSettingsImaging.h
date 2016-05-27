@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MSettings.h"
 #include "MPointSource.h"
 
@@ -92,8 +93,8 @@ class MSettingsImaging : public MSettingsInterface
 
   // Menu Coordinate-system
 
-  int GetCoordinateSystem() const { return m_CoordinateSystem; }
-  void SetCoordinateSystem(int CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
+  MCoordinateSystem GetCoordinateSystem() const { return m_CoordinateSystem; }
+  void SetCoordinateSystem(MCoordinateSystem CoordinateSystem) { m_CoordinateSystem = CoordinateSystem; m_BackprojectionModified = true; }
 
   // Menu Dimensions - spherical
   MVector GetImageRotationXAxis() const { return m_ImageRotationXAxis; }
@@ -271,7 +272,7 @@ class MSettingsImaging : public MSettingsInterface
   bool m_StoreImages;
 
   int m_ResponseType;
-  int m_CoordinateSystem;
+  MCoordinateSystem m_CoordinateSystem;
   unsigned int m_LHAlgorithm;
   unsigned int m_OSEMSubSets;
   unsigned int m_LHStopCriteria;

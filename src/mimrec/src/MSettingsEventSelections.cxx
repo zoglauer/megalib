@@ -108,7 +108,7 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_EHCAngle = 0;
 
   m_SourceUsePointSource = false;
-  m_SourceCoordinates = MProjection::c_Galactic;
+  m_SourceCoordinates = MCoordinateSystem::c_Galactic;
   m_SourcePhi = 0.0;
   m_SourceTheta = 0.0;
   m_SourceLongitude = 184.56;
@@ -243,7 +243,7 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
 
   bNode = new MXmlNode(aNode, "Source");  
   new MXmlNode(bNode, "UsePointSource", m_SourceUsePointSource);
-  new MXmlNode(bNode, "Coordinates", m_SourceCoordinates);
+  new MXmlNode(bNode, "Coordinates", static_cast<int>(m_SourceCoordinates));
   new MXmlNode(bNode, "Phi", m_SourcePhi); 
   new MXmlNode(bNode, "Theta", m_SourceTheta);
   new MXmlNode(bNode, "Longitude", m_SourceLongitude); 
@@ -433,7 +433,7 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
         m_SourceUsePointSource = cNode->GetValueAsBoolean();
       }
       if ((cNode = bNode->GetNode("Coordinates")) != 0) {
-        m_SourceCoordinates = cNode->GetValueAsInt();
+        m_SourceCoordinates = static_cast<MCoordinateSystem>(cNode->GetValueAsInt());
       }
       if ((cNode = bNode->GetNode("Phi")) != 0) {
         m_SourcePhi = cNode->GetValueAsDouble();

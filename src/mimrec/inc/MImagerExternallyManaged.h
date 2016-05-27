@@ -49,7 +49,7 @@ class MImagerExternallyManaged : public MImager
   // Public Interface:
  public:
   //! Standard constructor
-  MImagerExternallyManaged(int CoordinateSystem);
+  MImagerExternallyManaged(MCoordinateSystem CoordinateSystem);
   //! Default destructor
   virtual ~MImagerExternallyManaged();
 

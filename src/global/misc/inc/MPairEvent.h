@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
 
 
@@ -93,7 +94,7 @@ class MPairEvent : public MPhysicalEvent
   MString ToBasicString();
 
   bool MostProbableDirectionIncomingGamma();
-	double GetARMGamma(const MVector& Position) const;
+  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D) const;
 
 
   // protected methods:

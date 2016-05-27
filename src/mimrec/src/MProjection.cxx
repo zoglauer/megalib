@@ -50,28 +50,11 @@ ClassImp(MProjection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const int MProjection::c_Galactic    = 1;
-const int MProjection::c_Spheric     = 2;
-const int MProjection::c_Cartesian2D = 3;
-const int MProjection::c_Cartesian3D = 4;
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MProjection::MProjection(int CoordinateSystem)
+MProjection::MProjection(MCoordinateSystem CoordinateSystem)
 {
   // Initialize a MProjection
   
   m_CoordinateSystem = CoordinateSystem;
-  
-  if (m_CoordinateSystem != c_Galactic &&
-    m_CoordinateSystem != c_Spheric &&
-    m_CoordinateSystem != c_Cartesian2D &&
-    m_CoordinateSystem != c_Cartesian3D) {
-    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<endl;
-    merr<<"Brace for problems..."<<show; 
-  }
   
   m_Event = 0;
   m_C = 0;

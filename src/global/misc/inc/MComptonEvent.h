@@ -22,6 +22,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
 
 // Forward declarations:
@@ -185,12 +186,12 @@ class MComptonEvent : public MPhysicalEvent
   MTime CoincidenceWindow() const { return m_CoincidenceWindow; }
 
 
-  //! Return the Angular Resolution Measure value for the gamma cone for the given test position
-  double GetARMGamma(const MVector& Position) const;
-  //! Return the Angular Resolution Measure value for the electron cone for the given test position
-  double GetARMElectron(const MVector& Position) const;
-  //! Return the Scatter Plane Deviation value for the given test position
-  double GetSPDElectron(const MVector& Position) const;
+  //! Return the Angular Resolution Measure value for the gamma cone for the given test position in the given coordinate system
+  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D) const;
+  //! Return the Angular Resolution Measure value for the electron cone for the given test position in the given coordinate system
+  double GetARMElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D) const;
+  //! Return the Scatter Plane Deviation value for the given test position in the given coordinate system
+  double GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D) const;
 
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;

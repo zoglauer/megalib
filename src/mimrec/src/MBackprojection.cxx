@@ -60,7 +60,7 @@ ClassImp(MBackprojection)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojection::MBackprojection(int CoordinateSystem) : MProjection(CoordinateSystem)
+MBackprojection::MBackprojection(MCoordinateSystem CoordinateSystem) : MProjection(CoordinateSystem)
 {
   // Initialize one MBackprojection-object. This is the base class for all other
   // Backprojection classes, and provides some elemetary data:
@@ -148,7 +148,7 @@ void MBackprojection::Rotate(double &x, double &y, double &z)
     P = m_Event->GetDetectorRotationMatrix() * P;
   }
   // Apply the galactic pointing rotation to the event if we have galactic coordinates
-  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == c_Galactic) {
+  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     P = m_Event->GetGalacticPointingRotationMatrix() * P;
   }
     

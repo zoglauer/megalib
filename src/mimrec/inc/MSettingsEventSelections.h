@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MTime.h"
 #include "MSettings.h"
 #include "MPointSource.h"
@@ -184,8 +185,8 @@ class MSettingsEventSelections : public MSettingsInterface
   bool GetSourceUsePointSource() const { return m_SourceUsePointSource; }
   void SetSourceUsePointSource(bool SourceUsePointSource) { m_SourceUsePointSource = SourceUsePointSource; m_EventSelectionModified = true; }
 
-  int GetSourceCoordinates() const { return m_SourceCoordinates; }
-  void SetSourceCoordinates(int SourceCoordinates) { m_SourceCoordinates = SourceCoordinates; m_EventSelectionModified = true; }
+  MCoordinateSystem GetSourceCoordinates() const { return m_SourceCoordinates; }
+  void SetSourceCoordinates(MCoordinateSystem SourceCoordinates) { m_SourceCoordinates = SourceCoordinates; m_EventSelectionModified = true; }
   
   double GetSourcePhi() const { return m_SourcePhi; }
   void SetSourcePhi(double SourcePhi) { m_SourcePhi = SourcePhi; m_EventSelectionModified = true; }
@@ -410,7 +411,7 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_EHCAngle;
 
   bool m_SourceUsePointSource;
-  int m_SourceCoordinates;
+  MCoordinateSystem m_SourceCoordinates;
   double m_SourcePhi;
   double m_SourceTheta;
   double m_SourceLongitude;

@@ -52,7 +52,7 @@ ClassImp(MBackprojectionSphere)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionSphere::MBackprojectionSphere(int CoordinateSystem) : MBackprojection(CoordinateSystem)
+MBackprojectionSphere::MBackprojectionSphere(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
 {
   // Initialize a MBackprojectionSphere object
 
@@ -252,11 +252,11 @@ void MBackprojectionSphere::Rotate(double &x, double &y, double &z)
     P = m_Event->GetDetectorRotationMatrix() * P;
   }
   // Apply the galactic pointing rotation to the event if we have galactic coordinates
-  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == c_Galactic) {
+  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     P = m_Event->GetGalacticPointingRotationMatrix() * P;
   }
   // Apply the specific rotation in spherical coordinate systems
-  if (m_CoordinateSystem == c_Spheric) {
+  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
     P = m_Rotation * P;
   }
 

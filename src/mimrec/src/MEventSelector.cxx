@@ -43,7 +43,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MDVolumeSequence.h"
 #include "MDDetector.h"
-#include "MProjection.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -390,9 +390,9 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   // Set the source:
   if (S->GetSourceUsePointSource() == true) {
     MVector Pos;
-    if (S->GetSourceCoordinates() == MProjection::c_Galactic) {
+    if (S->GetSourceCoordinates() == MCoordinateSystem::c_Galactic) {
       Pos.SetMagThetaPhi(c_FarAway, (S->GetSourceLatitude()+90)*c_Rad, S->GetSourceLongitude()*c_Rad);
-    } else if (S->GetSourceCoordinates() == MProjection::c_Spheric) {
+    } else if (S->GetSourceCoordinates() == MCoordinateSystem::c_Spheric) {
       Pos.SetMagThetaPhi(c_FarAway, S->GetSourceTheta()*c_Rad, S->GetSourcePhi()*c_Rad);
     } else {
       Pos.SetXYZ(S->GetSourceX(), S->GetSourceY(), S->GetSourceZ());

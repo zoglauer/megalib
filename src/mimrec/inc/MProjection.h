@@ -20,6 +20,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
 #include "MPairEvent.h"
@@ -36,7 +37,7 @@ class MProjection
   // Public Interface:
  public:
   //! Default constructor
-  MProjection(int CoordinateSystem);
+  MProjection(MCoordinateSystem CoordianteSystem);
   //! Default destructor
   virtual ~MProjection();
 
@@ -46,16 +47,6 @@ class MProjection
   //! Assimilate the data of this event
   virtual bool Assimilate(MPhysicalEvent* Event);
 
-
-  // Projection coordinate systems:
-  //! ID of galactic coordinates
-  static const int c_Galactic;
-  //! ID of spheric coordinates
-  static const int c_Spheric;
-  //! ID of Cartesian coordinates 2D
-  static const int c_Cartesian2D;
-  //! ID of Cartesian coordinates 3D
-  static const int c_Cartesian3D;
 
   // protected methods:
  protected:
@@ -68,7 +59,7 @@ class MProjection
   // protected members:
  protected:
   //! The actual used coordinate system
-  int m_CoordinateSystem;
+  MCoordinateSystem m_CoordinateSystem;
    
    //! The current event
   MPhysicalEvent* m_Event;
