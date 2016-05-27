@@ -44,6 +44,7 @@ using namespace std;
 #include "MResponseSpectral.h"
 #include "MResponseImaging.h"
 #include "MResponseImagingARM.h"
+#include "MResponseImagingEfficiency.h"
 #include "MResponseImagingBinnedMode.h"
 #include "MResponseImagingCodedMask.h"
 #include "MResponseEarthHorizon.h"
@@ -124,6 +125,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"                                         il : list-mode imaging"<<endl;
   Usage<<"                                         ib : binned-mode imaging"<<endl;
   Usage<<"                                         ic : coded mask imaging"<<endl;
+  Usage<<"                                         ef : efficieny"<<endl;
   Usage<<"                                         e  : earth horizon"<<endl;
   Usage<<"                                         f  : first interaction position"<<endl;
   Usage<<"      -i  --max-id          int      do the analysis up to id"<<endl;
@@ -226,6 +228,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "e") {
         m_Mode = c_ModeEarthHorizon;
         cout<<"Choosing Earth Horizon mode"<<endl;
+      } else if (SubOption == "ef") {
+        m_Mode = c_ModeEfficiency;
+        cout<<"Choosing efficiency mode"<<endl;
       } else if (SubOption == "f") {
         m_Mode = c_ModeFirstInteractionPosition;
         cout<<"Choosing First Interaction Position mode"<<endl;
@@ -366,6 +371,27 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseImagingARM Response;
+    m_Creator = (&Response);
+    Response.SetSimulationFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    // Response.SetStartEventID(0);
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
+    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+ 
+    Response.CreateResponse();
+  } else if (m_Mode == c_ModeEfficiency) {
+    if (m_MimrecCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No mimrec configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+
+    MResponseImagingEfficiency Response;
     m_Creator = (&Response);
     Response.SetSimulationFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
