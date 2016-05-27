@@ -80,7 +80,7 @@ ClassImp(MImagerExternallyManaged)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImagerExternallyManaged::MImagerExternallyManaged(int CoordinateSystem) : MImager(CoordinateSystem, 1)
+MImagerExternallyManaged::MImagerExternallyManaged(MCoordinateSystem CoordinateSystem) : MImager(CoordinateSystem, 1)
 {
   m_UseGUI = true;
 }
@@ -126,7 +126,7 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
   MImage* Image = 0;
   
   // Display first backprojection for the three different coordinate systems:
-  if (m_CoordinateSystem == MProjection::c_Spheric) {
+  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
     Image = new MImageSpheric("Image - Iteration: 0", 
                               m_EM->GetInitialImage(),
                               "Phi [deg]", 
@@ -140,7 +140,7 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
                               m_Palette, 
                               m_DrawMode,
                               m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Galactic) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
     Image = new MImageGalactic("Image - Iteration: 0", 
                                m_EM->GetInitialImage(), 
                                "Longitude [deg]", 
@@ -154,7 +154,7 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
                                m_Palette, 
                                m_DrawMode,
                                m_SourceCatalog);
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian2D) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
     if (m_TwoDAxis == 0) {
       Image = new MImage2D("Image - Iteration: 0",
                            m_EM->GetInitialImage(),
@@ -198,7 +198,7 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
                            m_DrawMode);
     }
 
-  } else if (m_CoordinateSystem == MProjection::c_Cartesian3D) {
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
     Image = new MImage3D("Image - Iteration: 0",
                          m_EM->GetInitialImage(),
                          "x [cm]",

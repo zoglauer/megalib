@@ -44,6 +44,9 @@ class MRotationInterface
   //! Reset to default values
   void Reset();
   
+  //! Check if the data is OK
+  bool Validate();
+  
   //! Set all data
   void Set(MRotationInterface& RO);
   

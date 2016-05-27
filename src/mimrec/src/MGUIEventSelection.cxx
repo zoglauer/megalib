@@ -36,7 +36,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGUIEText.h"
-#include "MProjection.h"
+#include "MCoordinateSystem.h"
 
 #ifdef ___CINT___
 ClassImp(MGUIEventSelection)
@@ -612,9 +612,9 @@ void MGUIEventSelection::Create()
   SourceFrame->AddFrame(m_SPD, CoordinatesLayout);
 
   if (m_GUIData->GetSourceUsePointSource() == true) {
-    if (m_GUIData->GetSourceCoordinates() == MProjection::c_Galactic) {
+    if (m_GUIData->GetSourceCoordinates() == MCoordinateSystem::c_Galactic) {
       m_CoordinatesSelected = c_UseGalacticPointSource;
-    } else if (m_GUIData->GetSourceCoordinates() == MProjection::c_Spheric) {
+    } else if (m_GUIData->GetSourceCoordinates() == MCoordinateSystem::c_Spheric) {
       m_CoordinatesSelected = c_UseSphericPointSource;
     } else {
       m_CoordinatesSelected = c_UseCartesianPointSource;
@@ -644,9 +644,9 @@ void MGUIEventSelection::Create()
       m_SourceCartesian->SetEnabled(true);
     }
   } else {
-    if (m_GUIData->GetSourceCoordinates() == MProjection::c_Galactic) {
+    if (m_GUIData->GetSourceCoordinates() == MCoordinateSystem::c_Galactic) {
       m_CoordinatesSelected = c_UseGalacticPointSource;
-    } else if (m_GUIData->GetSourceCoordinates() == MProjection::c_Spheric) {
+    } else if (m_GUIData->GetSourceCoordinates() == MCoordinateSystem::c_Spheric) {
       m_CoordinatesSelected = c_UseSphericPointSource;
     } else {
       m_CoordinatesSelected = c_UseCartesianPointSource;
@@ -1186,11 +1186,11 @@ bool MGUIEventSelection::OnApply()
     m_GUIData->SetSourceUsePointSource((m_UsePointSource->GetState() == kButtonDown) ? true : false);
   }
   if (m_CoordinatesSelected == c_UseGalacticPointSource) {
-    if (m_GUIData->GetSourceCoordinates() != MProjection::c_Galactic) m_GUIData->SetSourceCoordinates(MProjection::c_Galactic);
+    if (m_GUIData->GetSourceCoordinates() != MCoordinateSystem::c_Galactic) m_GUIData->SetSourceCoordinates(MCoordinateSystem::c_Galactic);
   } else if (m_CoordinatesSelected == c_UseSphericPointSource) {
-    if (m_GUIData->GetSourceCoordinates() != MProjection::c_Spheric) m_GUIData->SetSourceCoordinates(MProjection::c_Spheric);
+    if (m_GUIData->GetSourceCoordinates() != MCoordinateSystem::c_Spheric) m_GUIData->SetSourceCoordinates(MCoordinateSystem::c_Spheric);
   } else {
-    if (m_GUIData->GetSourceCoordinates() != MProjection::c_Cartesian3D) m_GUIData->SetSourceCoordinates(MProjection::c_Cartesian3D);
+    if (m_GUIData->GetSourceCoordinates() != MCoordinateSystem::c_Cartesian3D) m_GUIData->SetSourceCoordinates(MCoordinateSystem::c_Cartesian3D);
   }
 
   if (m_SourceGalactic->IsModified() == true) {

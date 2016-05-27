@@ -33,7 +33,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
-#include "MProjection.h"
+#include "MCoordinateSystem.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +90,7 @@ void MGUIImageDimensions::Create()
   TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40, 20, 0, 20);
 
 
-  if (m_GUIData->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in spherical coordinates"); 
 
     m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
@@ -134,7 +134,7 @@ void MGUIImageDimensions::Create()
     
     m_PhiBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsPhi(), true, 1);
     AddFrame(m_PhiBins, BinLayout);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in galactic coordinates"); 
 
     m_LatitudeDimension = new MGUIEMinMaxEntry(this,
@@ -164,8 +164,8 @@ void MGUIImageDimensions::Create()
     
     m_LongitudeBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsGalLongitude(), true, 1);
     AddFrame(m_LongitudeBins, BinLayout);
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in Cartesian coordinates"); 
     m_XDimension = new MGUIEMinMaxEntry(this,
                                         MString("x-axis:"),
@@ -228,7 +228,7 @@ bool MGUIImageDimensions::OnApply()
 {
 	// The Apply button has been pressed
 
-  if (m_GUIData->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
 
     if (m_ThetaDimension->CheckRange(0.0, 180.0, 0.0, 180.0, true) == false) return false;
     if (m_PhiDimension->CheckRange(-360.0, 360.0, -360.0, 360.0, true) == false) return false;
@@ -280,7 +280,7 @@ bool MGUIImageDimensions::OnApply()
       m_GUIData->SetBinsPhi(m_PhiBins->GetAsInt());
     }
 
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
 
     if (m_LatitudeDimension->CheckRange(-90.0, 90.0, -90.0, 90.0, true) == false) return false;
     //if (m_LongitudeDimension->CheckRange(0.0, 360.0, 0.0, 360.0, true) == false) return false;
@@ -319,8 +319,8 @@ bool MGUIImageDimensions::OnApply()
     if (m_LongitudeBins->IsModified() == true) {
       m_GUIData->SetBinsGalLongitude(m_LongitudeBins->GetAsInt());
     }
-  } else if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 
     if (m_XDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
     if (m_YDimension->CheckRange(-100000.0, 100000.0, -100000.0, 100000000.0, true) == false) return false;
@@ -343,7 +343,7 @@ bool MGUIImageDimensions::OnApply()
       return false;
     }
 
-    if (m_GUIData->GetCoordinateSystem() == MProjection::c_Cartesian2D) {
+    if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D) {
       if (m_XBins->GetAsInt() != 1 && m_YBins->GetAsInt() != 1 && m_ZBins->GetAsInt() != 1) {
         int Return = 0;
         MString Text = "In 2D Cartesian coordinates at least one dimension must have a bin size of 1!\n";
@@ -351,7 +351,7 @@ bool MGUIImageDimensions::OnApply()
         new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(), 
                      "Warning", Text, kMBIconExclamation, kMBYes | kMBNo, &Return);
         if (Return == kMBYes) {
-          m_GUIData->SetCoordinateSystem(MProjection::c_Cartesian3D);
+          m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Cartesian3D);
         } else {
           return false;
         }

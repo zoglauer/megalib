@@ -62,7 +62,7 @@ using namespace std;
 #include "MDVolumeSequence.h"
 #include "MFitFunctions.h"
 #include "MLMLAlgorithms.h"
-#include "MProjection.h"
+#include "MCoordinateSystem.h"
 #include "MSpectralAnalyzer.h"
 #include "MPeak.h"
 #include "MIsotope.h"
@@ -429,12 +429,12 @@ MVector MInterfaceMimrec::GetTestPosition()
   MVector Test(0.0, 0.0, 1.0); 
 
   // Get the data of the ARM-"Test"-Position
-  if (m_Data->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     Test.SetMagThetaPhi(c_FarAway, m_Data->GetTPTheta()*c_Rad, m_Data->GetTPPhi()*c_Rad);
-  } else if (m_Data->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     Test.SetMagThetaPhi(c_FarAway, (m_Data->GetTPGalLatitude()+90)*c_Rad, m_Data->GetTPGalLongitude()*c_Rad);
-  } else if (m_Data->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Data->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     Test.SetXYZ(m_Data->GetTPX(), m_Data->GetTPY(), m_Data->GetTPZ());
   } else {
     merr<<"Unknown coordinate system ID: "<<m_Data->GetCoordinateSystem()<<fatal;
@@ -553,7 +553,7 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
     m_Imager->SetApproximatedMaths(m_Data->GetApproximatedMaths());
     
     // Set the dimensions of the image
-    if (m_Data->GetCoordinateSystem() == MProjection::c_Spheric) {
+    if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
       m_Imager->SetViewport(m_Data->GetPhiMin()*c_Rad, 
                             m_Data->GetPhiMax()*c_Rad, 
                             m_Data->GetBinsPhi(),
@@ -565,7 +565,7 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
                             1, 
                             m_Data->GetImageRotationXAxis(), 
                             m_Data->GetImageRotationZAxis());
-    } else if (m_Data->GetCoordinateSystem() == MProjection::c_Galactic) {
+    } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
       m_Imager->SetViewport(m_Data->GetGalLongitudeMin()*c_Rad, 
                             m_Data->GetGalLongitudeMax()*c_Rad, 
                             m_Data->GetBinsGalLongitude(),
@@ -575,8 +575,8 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
                             c_FarAway/10, 
                             c_FarAway, 
                             1);
-    } else if (m_Data->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-               m_Data->GetCoordinateSystem() == MProjection::c_Cartesian3D){
+    } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+               m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
       m_Imager->SetViewport(m_Data->GetXMin(), 
                             m_Data->GetXMax(), 
                             m_Data->GetBinsX(),
@@ -719,18 +719,18 @@ void MInterfaceMimrec::SpectralAnalyzer()
     if (m_Selector->IsQualifiedEvent(Event, true) == true) {
       S.FillSpectrum(Event->GetEnergy());
     }
-		
+    
     delete Event;
   } 
   
   
   // Set the GUI options
  
-	// peak search
+  // peak search
 
-	S.SetSignaltoNoiseRatio(m_Data->GetSpectralSignaltoNoiseRatio());
-	S.SetPoissonLimit(m_Data->GetSpectralPoissonLimit());
-	
+  S.SetSignaltoNoiseRatio(m_Data->GetSpectralSignaltoNoiseRatio());
+  S.SetPoissonLimit(m_Data->GetSpectralPoissonLimit());
+  
   // Isotope Selection
   S.SetIsotopeFileName(m_Data->GetSpectralIsotopeFileName());
   S.SetEnergyRange(m_Data->GetSpectralEnergyRange());
@@ -775,10 +775,10 @@ bool MInterfaceMimrec::InitializeEventloader(MString File)
 void MInterfaceMimrec::ShowEventSelections()
 {
   // Show how many events pass the event selections
-	
+  
   int NEvents = 0;
   int NGoodEvents = 0;
-	
+  
   // ... loop over all events and save a count in the belonging bin ...
   if (InitializeEventloader() == false) return;
 
@@ -789,10 +789,10 @@ void MInterfaceMimrec::ShowEventSelections()
     if (m_Selector->IsQualifiedEvent(Event, true) == true) {
       NGoodEvents++;
     }
-		
+    
     delete Event;
   } 
-	
+  
   cout<<endl;
   cout<<endl;
   cout<<"Event selections:"<<endl;
@@ -800,9 +800,9 @@ void MInterfaceMimrec::ShowEventSelections()
   cout<<"All events  .................... "<<NEvents<<endl;
   cout<<"Not rejected events  ........... "<<NGoodEvents<<endl;
   cout<<endl;
-	
+  
   cout<<m_Selector->ToString()<<endl;
-	
+  
   m_EventFile->Close();
 }
 
@@ -813,7 +813,7 @@ void MInterfaceMimrec::ShowEventSelections()
 void MInterfaceMimrec::ShowEventSelectionsStepwise()
 {
   // Show how many events pass the event selections
-	
+  
   // ... loop over all events and save a count in the belonging bin ...
   if (InitializeEventloader() == false) return;
 
@@ -938,7 +938,7 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
     }
     delete Event;
   } 
-		
+    
   m_EventFile->Close();
 
   cout<<endl;
@@ -970,7 +970,7 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
 void MInterfaceMimrec::ExtractEvents()
 {
   // Show how many events pass the event selections
-		
+    
   // ... loop over all events and save a count in the belonging bin ...
   if (InitializeEventloader() == false) return;
 
@@ -992,7 +992,7 @@ void MInterfaceMimrec::ExtractEvents()
     if (m_Selector->IsQualifiedEvent(Event) == true) {
       OutFile->AddEvent(Event);
     }
-		
+    
     delete Event;
   }
   m_EventFile->Close();
@@ -1008,7 +1008,7 @@ void MInterfaceMimrec::ExtractEvents()
 void MInterfaceMimrec::ThetaOriginDistribution()
 {
   // Show how many events pass the event selections
-	
+  
 
   TH1D* Hist = new TH1D("ThetaOriginDistribution", 
                         "Theta Origin Distribution", 90, 0, 180);
@@ -1019,7 +1019,7 @@ void MInterfaceMimrec::ThetaOriginDistribution()
   Hist->SetStats(false);
   Hist->SetFillColor(8);
 
-	
+  
   // ... loop over all events and save a count in the belonging bin ...
   if (InitializeEventloader() == false) return;
 
@@ -1107,7 +1107,7 @@ void MInterfaceMimrec::ARMGamma()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Value = ComptonEvent->GetARMGamma(TestPosition);
+        Value = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) {
           Inside++;
         }
@@ -1119,7 +1119,7 @@ void MInterfaceMimrec::ARMGamma()
 //       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
 //         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-//         Value = PairEvent->GetARMGamma(TestPosition);
+//         Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
 //         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
 //         Hist->Fill(Value*c_Deg);
 //         NEvents++;
@@ -1486,8 +1486,8 @@ void MInterfaceMimrec::DualARM()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        xValue = ComptonEvent->GetARMGamma(TestPosition);
-        yValue = ComptonEvent->GetSPDElectron(TestPosition);
+        xValue = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+        yValue = ComptonEvent->GetSPDElectron(TestPosition, m_Data->GetCoordinateSystem());
         if (xValue*c_Deg > -x1Max && xValue*c_Deg < x1Max &&
             yValue*c_Deg > -x2Max && yValue*c_Deg < x2Max) {
           NEventsInside++;
@@ -1599,7 +1599,7 @@ void MInterfaceMimrec::ARMResponseComparison()
     if (m_Selector->IsQualifiedEvent(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        double ARM = ComptonEvent->GetARMGamma(TestPosition)*c_Deg;
+        double ARM = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg;
         ARMHist->Fill(ARM, 1);
         Response->AnalyzeEvent(ComptonEvent);
         for (int b = 1; b <= ResponseHist->GetNbinsX(); ++b) {
@@ -1682,7 +1682,7 @@ void MInterfaceMimrec::AngularResolutionPairs()
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        Value = PairEvent->GetARMGamma(TestPosition);
+        Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
         Hist->Fill(Value*c_Deg);
         Hist2->Fill(Value*c_Deg, PairEvent->GetOpeningAngle()*c_Deg);
@@ -1813,7 +1813,7 @@ void MInterfaceMimrec::ARMGammaVsCompton()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition)*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->Phi()*c_Deg);
       } 
     }
@@ -1895,7 +1895,7 @@ void MInterfaceMimrec::ARMGammaVsDistance()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition)*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
                    (ComptonEvent->C2() - ComptonEvent->C1()).Mag());
       } 
     }
@@ -1960,103 +1960,103 @@ void MInterfaceMimrec::SignificanceMap()
   
   // Initalize the image size (x-axis)
   TH2D* Hist_CenterCounts = new TH2D("SignificanceMap_C", "Counts at each point within ARM cut", 
-			NBinsXAngle, XMin, XMax,
-			NBinsYAngle, YMin, YMax);
+      NBinsXAngle, XMin, XMax,
+      NBinsYAngle, YMin, YMax);
   Hist_CenterCounts->SetBit(kCanDelete);
   Hist_CenterCounts->SetXTitle("Galactic Longitude [#circ]");
   Hist_CenterCounts->SetYTitle("Galactic Latitude [#circ]");
   // Other histograms for counting
   // Center point and K test points
   TH2D* Hist_Center_0 = new TH2D("SignificanceMap_C_0", "Counts at center and 0 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_1 = new TH2D("SignificanceMap_C_1", "Counts at center and 1 test point", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_2 = new TH2D("SignificanceMap_C_2", "Counts at center and 2 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_3 = new TH2D("SignificanceMap_C_3", "Counts at center and 3 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_4 = new TH2D("SignificanceMap_C_4", "Counts at center and 4 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_5 = new TH2D("SignificanceMap_C_5", "Counts at center and 5 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_6 = new TH2D("SignificanceMap_C_6", "Counts at center and 6 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_7 = new TH2D("SignificanceMap_C_7", "Counts at center and 7 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   TH2D* Hist_Center_8 = new TH2D("SignificanceMap_C_8", "Counts at center and 8 test points", 
-				 NBinsXAngle, XMin, XMax,
-				 NBinsYAngle, YMin, YMax);
+         NBinsXAngle, XMin, XMax,
+         NBinsYAngle, YMin, YMax);
   // No center point, but at K test points
   TH2D* Hist_NoCenter_1 = new TH2D("SignificanceMap_NC_1", "Counts at 1 test point, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_2 = new TH2D("SignificanceMap_NC_2", "Counts at 2 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_3 = new TH2D("SignificanceMap_NC_3", "Counts at 3 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_4 = new TH2D("SignificanceMap_NC_4", "Counts at 4 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_5 = new TH2D("SignificanceMap_NC_5", "Counts at 5 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_6 = new TH2D("SignificanceMap_NC_6", "Counts at 6 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_7 = new TH2D("SignificanceMap_NC_7", "Counts at 7 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_NoCenter_8 = new TH2D("SignificanceMap_NC_8", "Counts at 8 test points, not at center", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   // Counts at each test point
   TH2D* Hist_Counts1 = new TH2D("SignificanceMap_Counts1", "Counts at test point 1", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts2 = new TH2D("SignificanceMap_Counts2", "Counts at test point 2", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts3 = new TH2D("SignificanceMap_Counts3", "Counts at test point 3", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts4 = new TH2D("SignificanceMap_Counts4", "Counts at test point 4", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts5 = new TH2D("SignificanceMap_Counts5", "Counts at test point 5", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts6 = new TH2D("SignificanceMap_Counts6", "Counts at test point 6", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts7 = new TH2D("SignificanceMap_Counts7", "Counts at test point 7", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Counts8 = new TH2D("SignificanceMap_Counts8", "Counts at test point 8", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   // Histograms for SNR calculation
   TH2D* Hist_Average = new TH2D("SignificanceMap_Average", "Average", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Excess = new TH2D("SignificanceMap_Excess", "Excess", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_Sigma = new TH2D("SignificanceMap_Sigma", "Sigma", 
-				   NBinsXAngle, XMin, XMax,
-				   NBinsYAngle, YMin, YMax);
+           NBinsXAngle, XMin, XMax,
+           NBinsYAngle, YMin, YMax);
   TH2D* Hist_SNR = new TH2D("SignificanceMap_SNR", "Signal-to-noise ratio", 
-			    NBinsXAngle, XMin, XMax,
-			    NBinsYAngle, YMin, YMax);
+          NBinsXAngle, XMin, XMax,
+          NBinsYAngle, YMin, YMax);
 
   MVector BinCenter, TestPoint1, TestPoint2, TestPoint3, TestPoint4,
     TestPoint5, TestPoint6, TestPoint7, TestPoint8;
@@ -2077,123 +2077,123 @@ void MInterfaceMimrec::SignificanceMap()
     if (m_Selector->IsQualifiedEvent(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-	// Go through each bin and record the counts
-	for (int i_X=0; i_X<NBinsXAngle; i_X++) {
-	  double L = XMin + dX*(double)i_X + dX/2.;
-	  for (int i_Y=0; i_Y<NBinsYAngle; i_Y++) {
-	    double B = YMin + dY*(double)i_Y + dY/2.;
-	    // add Compton events that fall within the Radius of the center of each bin
-	    BinCenter.SetMagThetaPhi(c_FarAway, (B+90)*c_Rad, L*c_Rad);
-	    // Fix these test points... just using simple formulae for now, should use rotations
-	    TestPoint1.SetMagThetaPhi(c_FarAway, (90+B+Distance)*c_Rad, (L         )*c_Rad);
-	    TestPoint2.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
-	    TestPoint3.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L-Distance)*c_Rad);
-	    TestPoint4.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
-	    TestPoint5.SetMagThetaPhi(c_FarAway, (90+B-Distance)*c_Rad, (L         )*c_Rad);
-	    TestPoint6.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
-	    TestPoint7.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L+Distance)*c_Rad);
-	    TestPoint8.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
-	    bool at_center = (fabs(ComptonEvent->GetARMGamma(BinCenter)*c_Deg)<=Radius);
-	    bool at_TP1 = (fabs(ComptonEvent->GetARMGamma(TestPoint1)*c_Deg)<=Radius);
-	    bool at_TP2 = (fabs(ComptonEvent->GetARMGamma(TestPoint2)*c_Deg)<=Radius);
-	    bool at_TP3 = (fabs(ComptonEvent->GetARMGamma(TestPoint3)*c_Deg)<=Radius);
-	    bool at_TP4 = (fabs(ComptonEvent->GetARMGamma(TestPoint4)*c_Deg)<=Radius);
-	    bool at_TP5 = (fabs(ComptonEvent->GetARMGamma(TestPoint5)*c_Deg)<=Radius);
-	    bool at_TP6 = (fabs(ComptonEvent->GetARMGamma(TestPoint6)*c_Deg)<=Radius);
-	    bool at_TP7 = (fabs(ComptonEvent->GetARMGamma(TestPoint7)*c_Deg)<=Radius);
-	    bool at_TP8 = (fabs(ComptonEvent->GetARMGamma(TestPoint8)*c_Deg)<=Radius);
-	    n_testpoints = 0;
-	    if (at_TP1) n_testpoints++;
-	    if (at_TP2) n_testpoints++;
-	    if (at_TP3) n_testpoints++;
-	    if (at_TP4) n_testpoints++;
-	    if (at_TP5) n_testpoints++;
-	    if (at_TP6) n_testpoints++;
-	    if (at_TP7) n_testpoints++;
-	    if (at_TP8) n_testpoints++;
-	    // Counts at center and test point
-	    if (at_center) {
-	      Hist_CenterCounts->Fill(L,B);
-	    }
-	    if (at_TP1) {
-	      Hist_Counts1->Fill(L,B);
-	    }
-	    if (at_TP2) {
-	      Hist_Counts2->Fill(L,B);
-	    }
-	    if (at_TP3) {
-	      Hist_Counts3->Fill(L,B);
-	    }
-	    if (at_TP4) {
-	      Hist_Counts4->Fill(L,B);
-	    }
-	    if (at_TP5) {
-	      Hist_Counts5->Fill(L,B);
-	    }
-	    if (at_TP6) {
-	      Hist_Counts6->Fill(L,B);
-	    }
-	    if (at_TP7) {
-	      Hist_Counts7->Fill(L,B);
-	    }
-	    if (at_TP8) {
-	      Hist_Counts8->Fill(L,B);
-	    }
-	    // Counts at center and K test points
-	    if (at_center && (n_testpoints==0)) {
-	      Hist_Center_0->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==1)) {
-	      Hist_Center_1->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==2)) {
-	      Hist_Center_2->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==3)) {
-	      Hist_Center_3->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==4)) {
-	      Hist_Center_4->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==5)) {
-	      Hist_Center_5->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==6)) {
-	      Hist_Center_6->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==7)) {
-	      Hist_Center_7->Fill(L,B);
-	    }
-	    if (at_center && (n_testpoints==8)) {
-	      Hist_Center_8->Fill(L,B);
-	    }
-	    // No counts at center, but at K test points
-	    if (!at_center && (n_testpoints==1)) {
-	      Hist_NoCenter_1->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==2)) {
-	      Hist_NoCenter_2->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==3)) {
-	      Hist_NoCenter_3->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==4)) {
-	      Hist_NoCenter_4->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==5)) {
-	      Hist_NoCenter_5->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==6)) {
-	      Hist_NoCenter_6->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==7)) {
-	      Hist_NoCenter_7->Fill(L,B);
-	    }
-	    if (!at_center && (n_testpoints==8)) {
-	      Hist_NoCenter_8->Fill(L,B);
-	    }
-	  }
-	}
+  // Go through each bin and record the counts
+  for (int i_X=0; i_X<NBinsXAngle; i_X++) {
+    double L = XMin + dX*(double)i_X + dX/2.;
+    for (int i_Y=0; i_Y<NBinsYAngle; i_Y++) {
+      double B = YMin + dY*(double)i_Y + dY/2.;
+      // add Compton events that fall within the Radius of the center of each bin
+      BinCenter.SetMagThetaPhi(c_FarAway, (B+90)*c_Rad, L*c_Rad);
+      // Fix these test points... just using simple formulae for now, should use rotations
+      TestPoint1.SetMagThetaPhi(c_FarAway, (90+B+Distance)*c_Rad, (L         )*c_Rad);
+      TestPoint2.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
+      TestPoint3.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L-Distance)*c_Rad);
+      TestPoint4.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
+      TestPoint5.SetMagThetaPhi(c_FarAway, (90+B-Distance)*c_Rad, (L         )*c_Rad);
+      TestPoint6.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
+      TestPoint7.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L+Distance)*c_Rad);
+      TestPoint8.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
+      bool at_center = (fabs(ComptonEvent->GetARMGamma(BinCenter, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP1 = (fabs(ComptonEvent->GetARMGamma(TestPoint1, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP2 = (fabs(ComptonEvent->GetARMGamma(TestPoint2, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP3 = (fabs(ComptonEvent->GetARMGamma(TestPoint3, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP4 = (fabs(ComptonEvent->GetARMGamma(TestPoint4, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP5 = (fabs(ComptonEvent->GetARMGamma(TestPoint5, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP6 = (fabs(ComptonEvent->GetARMGamma(TestPoint6, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP7 = (fabs(ComptonEvent->GetARMGamma(TestPoint7, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      bool at_TP8 = (fabs(ComptonEvent->GetARMGamma(TestPoint8, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
+      n_testpoints = 0;
+      if (at_TP1) n_testpoints++;
+      if (at_TP2) n_testpoints++;
+      if (at_TP3) n_testpoints++;
+      if (at_TP4) n_testpoints++;
+      if (at_TP5) n_testpoints++;
+      if (at_TP6) n_testpoints++;
+      if (at_TP7) n_testpoints++;
+      if (at_TP8) n_testpoints++;
+      // Counts at center and test point
+      if (at_center) {
+        Hist_CenterCounts->Fill(L,B);
+      }
+      if (at_TP1) {
+        Hist_Counts1->Fill(L,B);
+      }
+      if (at_TP2) {
+        Hist_Counts2->Fill(L,B);
+      }
+      if (at_TP3) {
+        Hist_Counts3->Fill(L,B);
+      }
+      if (at_TP4) {
+        Hist_Counts4->Fill(L,B);
+      }
+      if (at_TP5) {
+        Hist_Counts5->Fill(L,B);
+      }
+      if (at_TP6) {
+        Hist_Counts6->Fill(L,B);
+      }
+      if (at_TP7) {
+        Hist_Counts7->Fill(L,B);
+      }
+      if (at_TP8) {
+        Hist_Counts8->Fill(L,B);
+      }
+      // Counts at center and K test points
+      if (at_center && (n_testpoints==0)) {
+        Hist_Center_0->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==1)) {
+        Hist_Center_1->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==2)) {
+        Hist_Center_2->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==3)) {
+        Hist_Center_3->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==4)) {
+        Hist_Center_4->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==5)) {
+        Hist_Center_5->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==6)) {
+        Hist_Center_6->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==7)) {
+        Hist_Center_7->Fill(L,B);
+      }
+      if (at_center && (n_testpoints==8)) {
+        Hist_Center_8->Fill(L,B);
+      }
+      // No counts at center, but at K test points
+      if (!at_center && (n_testpoints==1)) {
+        Hist_NoCenter_1->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==2)) {
+        Hist_NoCenter_2->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==3)) {
+        Hist_NoCenter_3->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==4)) {
+        Hist_NoCenter_4->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==5)) {
+        Hist_NoCenter_5->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==6)) {
+        Hist_NoCenter_6->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==7)) {
+        Hist_NoCenter_7->Fill(L,B);
+      }
+      if (!at_center && (n_testpoints==8)) {
+        Hist_NoCenter_8->Fill(L,B);
+      }
+    }
+  }
       } 
     }
 
@@ -2213,13 +2213,13 @@ void MInterfaceMimrec::SignificanceMap()
     for (int i_Y=0; i_Y<=NBinsYAngle; i_Y++) {
       // calculate average of test points (average background counts)
       double avg = (1./8.)*( (double)Hist_Counts1->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts2->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts3->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts4->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts5->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts6->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts7->GetBinContent(i_X,i_Y)
-			    +(double)Hist_Counts8->GetBinContent(i_X,i_Y) );
+          +(double)Hist_Counts2->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts3->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts4->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts5->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts6->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts7->GetBinContent(i_X,i_Y)
+          +(double)Hist_Counts8->GetBinContent(i_X,i_Y) );
       Hist_Average->SetBinContent(i_X,i_Y,avg);
       // calculate excess counts
       double excess = Hist_CenterCounts->GetBinContent(i_X,i_Y)-avg;
@@ -2246,22 +2246,22 @@ void MInterfaceMimrec::SignificanceMap()
       double N_notC_7 = (double)Hist_NoCenter_7->GetBinContent(i_X,i_Y);
       double N_notC_8 = (double)Hist_NoCenter_8->GetBinContent(i_X,i_Y);
       double sigma2 = N_C_0
-	+ pow(1.-(1./8.),2)*N_C_1
-	+ pow(1.-(2./8.),2)*N_C_2
-	+ pow(1.-(3./8.),2)*N_C_3
-	+ pow(1.-(4./8.),2)*N_C_4
-	+ pow(1.-(5./8.),2)*N_C_5
-	+ pow(1.-(6./8.),2)*N_C_6
-	+ pow(1.-(7./8.),2)*N_C_7
-	+ pow(1.-(8./8.),2)*N_C_8
-	+ pow(1./8.,2)*N_notC_1
-	+ pow(2./8.,2)*N_notC_2
-	+ pow(3./8.,2)*N_notC_3
-	+ pow(4./8.,2)*N_notC_4
-	+ pow(5./8.,2)*N_notC_5
-	+ pow(6./8.,2)*N_notC_6
-	+ pow(7./8.,2)*N_notC_7
-	+ pow(8./8.,2)*N_notC_8;
+  + pow(1.-(1./8.),2)*N_C_1
+  + pow(1.-(2./8.),2)*N_C_2
+  + pow(1.-(3./8.),2)*N_C_3
+  + pow(1.-(4./8.),2)*N_C_4
+  + pow(1.-(5./8.),2)*N_C_5
+  + pow(1.-(6./8.),2)*N_C_6
+  + pow(1.-(7./8.),2)*N_C_7
+  + pow(1.-(8./8.),2)*N_C_8
+  + pow(1./8.,2)*N_notC_1
+  + pow(2./8.,2)*N_notC_2
+  + pow(3./8.,2)*N_notC_3
+  + pow(4./8.,2)*N_notC_4
+  + pow(5./8.,2)*N_notC_5
+  + pow(6./8.,2)*N_notC_6
+  + pow(7./8.,2)*N_notC_7
+  + pow(8./8.,2)*N_notC_8;
       sigma2 = sqrt(sigma2);
       mout << "Sigmas: 1= " << sigma1 << "  2= " << sigma2 << endl;
       // Choose one of the noise estimates
@@ -2666,7 +2666,7 @@ void MInterfaceMimrec::ComptonProbabilityWithARMSelection()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        ArmValue = ComptonEvent->GetARMGamma(TestPosition)*c_Deg;
+        ArmValue = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg;
         if (fabs(ArmValue) < Disk) {
           HistGood->Fill(ComptonEvent->ComptonQualityFactor1());
         } else {
@@ -2746,7 +2746,7 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition)*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->ComptonQualityFactor1());
       } 
     }
@@ -2822,7 +2822,7 @@ void MInterfaceMimrec::ARMGammaVsClusteringProbability()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition)*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->ClusteringQualityFactor());
       } 
     }
@@ -3020,7 +3020,7 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
   double x, y, z = 10000000.0;
   
   // Get the data of the ARM-"Test"-Position
-  if (m_Data->GetCoordinateSystem() == MProjection::c_Spheric) {  // spheric 
+  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {  // spheric 
     x = m_Data->GetTPTheta();
     y = m_Data->GetTPPhi();
 
@@ -3028,8 +3028,8 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
     // spherical, so transform it
     //MMath::GalacticToSpheric(x, y);
     MMath::SphericToCartesean(x, y, z);
-  } else if (m_Data->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Data->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     x = m_Data->GetTPX();
     y = m_Data->GetTPY();
     z = m_Data->GetTPZ();
@@ -3234,7 +3234,7 @@ void MInterfaceMimrec::SPDElectron()
       continue;
     }
 
-    Value = ComptonEvent->GetARMGamma(TestPosition);
+    Value = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
     if (Value*c_Deg < -SizeARMGamma || Value*c_Deg > SizeARMGamma) {
       cout<<"Out of ARMGamma! Ag="<<Value*c_Deg
           <<" As="<<ComptonEvent->GetSPDElectron(TestPosition)*c_Deg<<endl;
@@ -3391,7 +3391,7 @@ void MInterfaceMimrec::ARMElectron()
       continue;
     }
 
-    Value = ComptonEvent->GetARMElectron(TestPosition);
+    Value = ComptonEvent->GetARMElectron(TestPosition, m_Data->GetCoordinateSystem());
 
     if (Value*c_Deg < 70) {
       FromTop++;
@@ -3575,7 +3575,7 @@ void MInterfaceMimrec::EnergySpectra()
 
     if (UseTestPosition == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
-        if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition))*c_Deg < Disk) {
+        if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
           Bayes.Add(Event->GetEnergy(), 1);
@@ -3584,7 +3584,7 @@ void MInterfaceMimrec::EnergySpectra()
           OutsideWindow++;
         }
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
-        if (fabs(((MPairEvent*) Event)->GetARMGamma(TestPosition))*c_Deg < Disk) {
+        if (fabs(((MPairEvent*) Event)->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
           Bayes.Add(Event->GetEnergy(), 1);
@@ -3603,7 +3603,7 @@ void MInterfaceMimrec::EnergySpectra()
     delete Event;
   } 
   m_EventFile->Close();
-	
+  
 //   // %%%%%%%%%%%%%%%%%%%%%%%% Write Spectra as ASCII %%%%%%%%%%
 
 //   // Get the base file name of the tra file:
@@ -3620,13 +3620,13 @@ void MInterfaceMimrec::EnergySpectra()
 //     {
 //       ASCIIout << (Hist->GetBinLowEdge(b)) << " \t" ;
 //       if (b <= Hist->GetNbinsX()) 
-// 	{
-// 	  ASCIIout << (Hist->GetBinContent(b)) << endl;
-// 	} 
+//  {
+//    ASCIIout << (Hist->GetBinContent(b)) << endl;
+//  } 
 //       else 
-// 	{
-// 	  ASCIIout << "0.0 \n";
-// 	}
+//  {
+//    ASCIIout << "0.0 \n";
+//  }
       
 //     }
   
@@ -3869,10 +3869,10 @@ void MInterfaceMimrec::TimeWalkArmDistribution()
     if (m_Selector->IsQualifiedEvent(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        TWHist->Fill(Event->GetTimeWalk(), fabs(ComptonEvent->GetARMGamma(TestPosition))*c_Deg);
+        TWHist->Fill(Event->GetTimeWalk(), fabs(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg);
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
-        TWHist->Fill(Event->GetTimeWalk(), fabs(PairEvent->GetARMGamma(TestPosition))*c_Deg);
+        TWHist->Fill(Event->GetTimeWalk(), fabs(PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg);
       }
     }
 
@@ -4286,7 +4286,7 @@ void MInterfaceMimrec::EarthCenterDistance()
     if (m_Selector->IsQualifiedEvent(Event) == true &&
         Event->GetType() == MPhysicalEvent::c_Compton) {
       Compton = (MComptonEvent*) Event;
-      Hist->Fill(Compton->GetARMGamma(Position)*c_Deg);
+      Hist->Fill(Compton->GetARMGamma(Position, m_Data->GetCoordinateSystem())*c_Deg);
       NEvents++;
     }    
     delete Event;
@@ -4543,7 +4543,7 @@ void MInterfaceMimrec::SequenceLengths()
 
 //     delete Event;
 //   }
-	
+  
 //   // ... and display it.
 //   m_Display.DisplayHistogram("Measured energy distribution D2", "Energy [keV]", "Number of counts", 
 //                              EnergyArray, EnergyMin, EnergyMax, NBins);
@@ -4825,7 +4825,7 @@ void MInterfaceMimrec::LocationOfFirstIA()
 //   double x, y, z = 10000000.0, Disk;
   
 //   // Get the data of the ARM-"Test"-Position
-//   if (m_Data->GetCoordinateSystem() == MProjection::c_Spheric) {  // spheric 
+//   if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {  // spheric 
 //     x = m_Data->GetTPTheta();
 //     y = m_Data->GetTPPhi();
 //     Disk = 180;
@@ -4834,8 +4834,8 @@ void MInterfaceMimrec::LocationOfFirstIA()
 //     // spherical, so transform it
 //     MMath::GalacticToSpheric(x, y);
 //     MMath::SphericToCartesean(x, y, z);
-//   } else if (m_Data->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-//              m_Data->GetCoordinateSystem() == MProjection::c_Cartesian3D) {
+//   } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+//              m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 //     x = m_Data->GetTPX();
 //     y = m_Data->GetTPY();
 //     z = m_Data->GetTPZ();
@@ -4866,7 +4866,7 @@ void MInterfaceMimrec::LocationOfFirstIA()
 //     if (Event->GetType() == MPhysicalEvent::c_Compton) {
 //       ComptonEvent.Assimilate(Event);
 
-//       if (ComptonEvent.GetARMGamma(MVector(x, y, z))*c_Deg < 5) {
+//       if (ComptonEvent.GetARMGamma(MVector(x, y, z), m_Data->GetCoordinateSystem())*c_Deg < 5) {
 //         Dir = ComptonEvent.De();
 //         Bin = int ((Dir.Theta()*c_Deg + Disk)/BinWidth);
 //       }
@@ -4963,7 +4963,7 @@ void MInterfaceMimrec::Polarization()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -4978,7 +4978,7 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+        if (fabs(PairEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = PairEvent->GetElectronDirection() + 
             PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
@@ -5032,7 +5032,7 @@ void MInterfaceMimrec::Polarization()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -5046,7 +5046,7 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+        if (fabs(PairEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = PairEvent->GetElectronDirection() + 
             PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
@@ -5208,7 +5208,7 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
     if (m_Selector->IsQualifiedEvent(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        if (fabs(ComptonEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -5291,7 +5291,7 @@ void MInterfaceMimrec::AzimuthalElectronScatterAngle()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         if (ComptonEvent->HasTrack() == true) {
-          if (fabs(ComptonEvent->GetARMGamma(Origin))*c_Deg < ArmCut) {
+          if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
             MVector Plain = ComptonEvent->De();
             Plain.RotateZ(-Phi);
             Plain.RotateY(-Theta);
@@ -5417,7 +5417,7 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        Value = PairEvent->GetARMGamma(TestPosition);
+        Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
         Hist->Fill(Value*c_Deg, PairEvent->GetTrackQualityFactor());
         NEvents++;
@@ -5628,22 +5628,22 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   xyzHist->GetZaxis()->SetTitle("z [cm]");
 
   TH1D* xHist = new TH1D("SpacialHitDistributionX", 
-			 "Spacial hit distribution x", 
-			 MaxNBins, xMin, +xMax);
+       "Spacial hit distribution x", 
+       MaxNBins, xMin, +xMax);
   xHist->SetBit(kCanDelete);
   xHist->GetXaxis()->SetTitle("x [cm]");
   xHist->GetYaxis()->SetTitle("counts");
 
   TH1D* yHist = new TH1D("SpacialHitDistributionY", 
-			 "Spacial hit distribution y", 
-			 MaxNBins, yMin, +yMax);
+       "Spacial hit distribution y", 
+       MaxNBins, yMin, +yMax);
   yHist->SetBit(kCanDelete);
   yHist->GetXaxis()->SetTitle("y [cm]");
   yHist->GetYaxis()->SetTitle("counts");
 
   TH1D* zHist = new TH1D("SpacialHitDistributionZ", 
-			 "Spacial hit distribution z", 
-			 MaxNBins, zMin, +zMax);
+       "Spacial hit distribution z", 
+       MaxNBins, zMin, +zMax);
   zHist->SetBit(kCanDelete);
   zHist->GetXaxis()->SetTitle("z [cm]");
   zHist->GetYaxis()->SetTitle("counts");

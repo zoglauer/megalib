@@ -253,7 +253,7 @@ bool ExternalAnalysisPipelineExample::Initialize()
   m_HistEnergyAfter = new TH1D("HistAfter", "HistAfter", 100, 0, 2000);
   m_HistEnergyCompton = new TH1D("HistCompton", "HistCompton", 100, 0, 2000);
   
-  m_Imager = new MImagerExternallyManaged(MProjection::c_Spheric);
+  m_Imager = new MImagerExternallyManaged(MCoordinateSystem::c_Spheric);
   m_Imager->SetGeometry(m_Geometry);
     
   // Maths:

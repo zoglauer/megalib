@@ -1232,7 +1232,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
   Imager->SetApproximatedMaths(m_Settings->GetApproximatedMaths());
     
   // Set the dimensions of the image
-  if (m_Settings->GetCoordinateSystem() == MProjection::c_Spheric) {
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     Imager->SetViewport(m_Settings->GetPhiMin()*c_Rad, 
                           m_Settings->GetPhiMax()*c_Rad, 
                           m_Settings->GetBinsPhi(),
@@ -1244,7 +1244,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
                           1, 
                           m_Settings->GetImageRotationXAxis(), 
                           m_Settings->GetImageRotationZAxis());
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Galactic) {
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
     Imager->SetViewport(m_Settings->GetGalLongitudeMin()*c_Rad, 
                           m_Settings->GetGalLongitudeMax()*c_Rad, 
                           m_Settings->GetBinsGalLongitude(),
@@ -1254,8 +1254,8 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
                           c_FarAway/10, 
                           c_FarAway, 
                           1);
-  } else if (m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian2D ||
-             m_Settings->GetCoordinateSystem() == MProjection::c_Cartesian3D){
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
     Imager->SetViewport(m_Settings->GetXMin(), 
                           m_Settings->GetXMax(), 
                           m_Settings->GetBinsX(),

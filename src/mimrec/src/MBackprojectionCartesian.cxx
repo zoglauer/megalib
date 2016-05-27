@@ -46,7 +46,7 @@ ClassImp(MBackprojectionCartesian)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionCartesian::MBackprojectionCartesian(int CoordinateSystem) : MBackprojection(CoordinateSystem)
+MBackprojectionCartesian::MBackprojectionCartesian(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
 {
   // default constructor
 }

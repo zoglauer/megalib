@@ -58,7 +58,7 @@ class MPhysicalEvent : public MRotationInterface
   virtual bool ParseDelayed(bool Fast = false);
 
   //! Validate the event and calculate all high level data...
-  virtual bool Validate() { return false; };
+  virtual bool Validate();
 
   virtual void Reset();
 

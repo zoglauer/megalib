@@ -497,5 +497,18 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MPhysicalEvent::Validate() 
+{ 
+  //! Validate the event and calculate all high level data...
+  
+  MRotationInterface::Validate();
+  
+  return false; 
+}
+
+
 // MPhysicalEvent.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
