@@ -30,6 +30,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 				$(LB)/MResponseSpectral.o \
 				$(LB)/MResponseImaging.o \
 				$(LB)/MResponseImagingARM.o \
+				$(LB)/MResponseImagingEfficiency.o \
 				$(LB)/MResponseImagingBinnedMode.o \
 				$(LB)/MResponseImagingCodedMask.o \
 				$(LB)/MResponseEarthHorizon.o \

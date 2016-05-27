@@ -108,6 +108,7 @@ class MResponseCreator
   const static int c_ModeFirstInteractionPosition  = 9;
   const static int c_ModeSpectral                  = 10;
   const static int c_ModeARM                       = 11;
+  const static int c_ModeEfficiency                = 12;
 
 #ifdef ___CINT___
  public:
