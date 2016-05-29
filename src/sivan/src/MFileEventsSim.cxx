@@ -244,8 +244,10 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
   if (m_IncludeFileUsed == true) {
     MSimEvent* RE = ((MFileEventsSim*) m_IncludeFile)->GetNextEvent(Analyze);
     if (RE == 0) {
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
     } else {
       UpdateObservationTimes(RE);
       return RE;

@@ -657,6 +657,7 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
 {
   // Open an include file
 
+  if (IsCanceled() == true) return false;
   UpdateProgress();
 
   MTokenizer Tokens;
