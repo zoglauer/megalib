@@ -51,7 +51,7 @@ ClassImp(MComptonEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MComptonEvent::MComptonEvent()
+MComptonEvent::MComptonEvent() : MPhysicalEvent(), m_CoincidenceWindow(0)
 {
   // standard constructor
 
