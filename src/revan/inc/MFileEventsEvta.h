@@ -51,6 +51,8 @@ class MFileEventsEvta : public MFileEvents
 
   // protected methods:
  protected:
+  //! Update the observation times using the given event
+  void UpdateObservationTimes(MRERawEvent* Event);
   
 
   // private methods:

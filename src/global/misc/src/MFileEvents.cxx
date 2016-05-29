@@ -65,14 +65,20 @@ MFileEvents::MFileEvents() : MFile()
   m_NEvents = 0;
   m_ExtensionNumber = 0;
 
-  m_IncludeFile = 0;
+  m_IncludeFile = nullptr;
   m_IncludeFileUsed = false;
   m_IsIncludeFile = false;
 
   m_OriginalFileName = "";
 
+  m_HasStartObservationTime = false;
+  m_HasEndObservationTime = false;
+  
   m_ObservationTime = 0.0;
   m_HasObservationTime = false;
+  
+  m_NIncludeFiles = 0;
+  m_NOpenedIncludeFiles = 0;
 }
 
 
@@ -101,15 +107,24 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
   // If we are in read mode, we search for version, type, etc. information....
   // Since this function is time critical it is written partly in C
   if (Way == c_Read) {
-
     bool FoundVersion = false;
     bool FoundType = false;
     bool FoundGeometry = false;
     bool FoundMEGAlibVersion = false;
     bool FoundTB = false;
+    bool FoundIN = false;
 
+    m_HasStartObservationTime = false;
+    m_HasEndObservationTime = false;
+  
     m_ObservationTime = 0.0;
     m_HasObservationTime = false;
+  
+    m_NIncludeFiles = 0;
+    m_NOpenedIncludeFiles = 0;
+    
+    m_NIncludeFiles = 0;
+    m_NOpenedIncludeFiles = 0;
 
     int Lines = 0;
     int MaxLines = 100;
@@ -181,8 +196,15 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
             mout<<"Unable to read TB keyword"<<endl;              
           } else {
             m_StartObservationTime = Tokens.GetTokenAtAsDouble(1);
+            m_HasStartObservationTime = true;
             FoundTB = true;
           }
+        }
+      }
+      if (FoundIN == false) {
+        if (Line.BeginsWith("IN") == true) {
+          ++m_NIncludeFiles;
+          ++MaxLines;
         }
       }
     }
@@ -191,7 +213,7 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
 
   // Store the file name, since it might change when we go through a file tree via NF keyword
   m_OriginalFileName = m_FileName;
-
+  
   // Now rewind - don't use the local one, since it reopens the file...
   MFile::Rewind();
   
@@ -216,8 +238,10 @@ bool MFileEvents::ReadFooter(bool Continue)
   }
   
   MString Line;
+  int NLinesRead = 0;
   while (IsGood() == true) {
     ReadLine(Line);
+    NLinesRead++;
     if (Line.Length() < 2) continue;
 
     ParseFooter(Line);
@@ -263,6 +287,7 @@ bool MFileEvents::ParseFooter(const MString& Line)
       return false;
     } else {
       m_EndObservationTime = Tokens.GetTokenAtAsDouble(1);
+      m_HasEndObservationTime = true;
       m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
       m_HasObservationTime = true;
     }
@@ -298,7 +323,11 @@ bool MFileEvents::Rewind()
 MTime MFileEvents::GetObservationTime()
 { 
   if (m_HasObservationTime == false) {
-    ReadFooter();
+    if (m_HasStartObservationTime == true && m_HasEndObservationTime == true) {
+      m_ObservationTime = m_EndObservationTime - m_StartObservationTime;
+    } else {
+      ReadFooter();
+    }
   }
   
   return m_ObservationTime; 
@@ -609,6 +638,21 @@ bool MFileEvents::CreateIncludeFile()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MFileEvents::CloseIncludeFile()
+{
+  if (m_IncludeFile != nullptr && m_IncludeFile->IsOpen()) {
+    m_ObservationTime += m_IncludeFile->GetObservationTime();
+    m_HasObservationTime = true;
+    m_IncludeFile->Close();
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MFileEvents::OpenIncludeFile(const MString& Line)
 {
   // Open an include file
@@ -633,7 +677,7 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
 
   ExpandFileName(FileName);
 
-  m_IncludeFile->Close();
+  CloseIncludeFile(); // Updates also observation time
   m_IncludeFileUsed = true;
 
   if (m_IncludeFile->Open(FileName) == false) {
@@ -646,13 +690,9 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
     m_Progress->SetValue(0, m_ProgressLevel+1);
   }
   
-  m_ObservationTime += m_IncludeFile->GetObservationTime();
+  mout<<"Switched to file "<<FileName<<endl;
   
-  mout<<"Switched to "<<FileName;
-  if (m_IncludeFile->GetObservationTime() > 0) {
-    mout<<" and added "<<m_IncludeFile->GetObservationTime()<<" sec observation time.";
-  }
-  mout<<endl; 
+  ++m_NOpenedIncludeFiles;
   
   return true;
 }
@@ -746,6 +786,46 @@ int MFileEvents::GetNEvents(bool Count)
   Seek(CurrentPos);
   
   return Id;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
+{
+  // Update the Progress Dialog, if it is visible
+  // Return false, when "Cancel" has been pressed
+  
+  if (m_Canceled == true) return false;
+  if (m_Progress == 0 || GetFileLength() == (streampos) 0) return true;
+
+  if (++m_SkippedProgressUpdates < UpdatesToSkip) return true;
+  m_SkippedProgressUpdates = 0;
+  
+  TThread::Lock(); // GUI is not allowed to be accessed from multiple threads!
+  
+  double Value = 0;
+  if (m_NIncludeFiles > 0) {
+    if (m_NOpenedIncludeFiles > 0) {
+      Value = (double) (m_NOpenedIncludeFiles - 1) / (double) m_NIncludeFiles; 
+    }
+  } else {
+    Value = (double) GetFilePosition() / (double) GetFileLength();
+  }
+    
+  m_Progress->SetValue(Value, m_ProgressLevel);
+  gSystem->ProcessEvents();
+
+  TThread::UnLock();
+  
+  if (m_Progress->TestCancel() == true) {
+    ShowProgress(false);
+    m_Canceled = true;
+    return false;
+  }
+
+  return true;
 }
 
 
