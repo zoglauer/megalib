@@ -124,7 +124,9 @@ class MFile
   void SetProgressTitle(MString Main, MString Sub);
   //! Use another progress dialog GUI instead of this one
   void SetProgress(MGUIProgressBar* ProgressBar, int Level);
-
+  //! Return true if the cancel button has been pressed
+  bool IsCanceled() const { return m_Canceled; }
+  
   //! Return true if the file extensions are correct
   virtual bool CheckFileExtension(MString Extension);
 

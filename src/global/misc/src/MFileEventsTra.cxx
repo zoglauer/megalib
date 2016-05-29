@@ -339,8 +339,13 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
     if (Phys != nullptr) {
       return Phys;
     } else {
+      if (m_IncludeFile->IsCanceled() == true) {
+        m_Canceled = true; 
+      }
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+      
+      if (m_Canceled == true) return nullptr;
     }
   }
 

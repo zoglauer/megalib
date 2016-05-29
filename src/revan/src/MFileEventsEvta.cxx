@@ -179,8 +179,10 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
     MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
     if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
+      if (m_IncludeFile->IsCanceled() == true) m_Canceled = true;
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
+      if (m_Canceled == true) return nullptr;
     } else {
       UpdateObservationTimes(RE);
       return RE;
