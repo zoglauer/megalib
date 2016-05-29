@@ -214,6 +214,28 @@ long MFileEventsSim::GetSimulatedEvents()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MFileEventsSim::UpdateObservationTimes(MSimEvent* Event)
+{
+  //! Update the observation times using the given event
+  
+  // If the overall observation time has alreday been set, don't change anything
+  if (m_HasObservationTime == true) return;
+  
+  // Otherwise set everything
+  if (m_HasStartObservationTime == false) {
+    m_StartObservationTime = Event->GetTime();
+    m_HasStartObservationTime = true;
+  }
+  m_EndObservationTime = Event->GetTime();
+  m_HasEndObservationTime = true;
+  
+  // Do not set m_HasObservationTime
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 {
   // Return the next event... or 0 if it is the last one
@@ -225,6 +247,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
     } else {
+      UpdateObservationTimes(RE);
       return RE;
     }
   }
@@ -258,6 +281,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
         if (Analyze == true) {
           Event->Analyze();
         }
+        UpdateObservationTimes(Event);
         return Event;
       } else {
         m_IsFirstEvent = false;
@@ -274,6 +298,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
           Event->Analyze();
         }
         m_IsFirstEvent = true;
+        UpdateObservationTimes(Event);
         return Event;
       } 
     } 
@@ -295,6 +320,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
           Event = new MSimEvent();
           Event->SetGeometry(m_Geo);
         } else {
+          UpdateObservationTimes(Event);
           return Event;
         }
       } else {
@@ -312,6 +338,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
           Event->Analyze();
         }
         m_IsFirstEvent = true;
+        UpdateObservationTimes(Event);
         return Event;
       } 
     } 
@@ -324,6 +351,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 
   // That's a dirty little trick, but currently no case exits where a sim file has neither no IAs or no HTs...
   if (Event->GetNIAs() != 0 || Event->GetNHTs() != 0) {
+    UpdateObservationTimes(Event);
     return Event;
   }
 

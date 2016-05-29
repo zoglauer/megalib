@@ -41,6 +41,9 @@ class MFileEvents : public MFile
   //! The Open method has to be derived to initialize the include file:
   virtual bool Open(MString FileName, unsigned int Way = MFile::c_Read);
 
+  //! Update the progress dialog GUI -- allow to skip a certain amount of updates  
+  virtual bool UpdateProgress(unsigned int UpdatesToSkip = 0);
+
   //! Rewind to the beginning of the file
   virtual bool Rewind();
 
@@ -84,6 +87,9 @@ class MFileEvents : public MFile
 
   //! Open a file given by the "IN" keyword
   virtual bool OpenIncludeFile(const MString& Line);
+  //! Close the current include file
+  virtual bool CloseIncludeFile();
+  
   //! Create a file indicated by a "IN" keyword
   virtual bool CreateIncludeFile();
   //! Create a file name indicated suiting for the "IN" keyword
@@ -113,6 +119,11 @@ class MFileEvents : public MFile
   //! The number of events in this file
   int m_NEvents;
 
+  //! The number of include files in this file
+  int m_NIncludeFiles;
+  //! The number of opened include files 
+  int m_NOpenedIncludeFiles;
+  
   //! The used extension of the file when creating new ones via the NF extension
   int m_ExtensionNumber;
 
@@ -126,14 +137,20 @@ class MFileEvents : public MFile
   //! The original file name (different from m_FileName in case ofjumping from file to file via NF keyword)
   MString m_OriginalFileName;
  
+  //! Has a start observation time
+  bool m_HasStartObservationTime;
   //! The start of the observation time
   MTime m_StartObservationTime;
+  
+  //! Has end observation time
+  bool m_HasEndObservationTime;
   //! The end of the observation time
   MTime m_EndObservationTime;
-  //! The total observation time
-  MTime m_ObservationTime;
+  
   //! True if we have an observation time
   bool m_HasObservationTime;
+  //! The total observation time
+  MTime m_ObservationTime;
   
   // private members:
  private:

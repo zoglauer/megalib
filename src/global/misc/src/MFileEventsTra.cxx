@@ -293,6 +293,17 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
           m_DataSets.pop_front();
           m_NDataSets--;
           TThread::UnLock();
+          
+          // update the end of the observation time
+          if (m_HasObservationTime == false) {
+            if (m_HasStartObservationTime == false) {
+              m_StartObservationTime = P->GetTime();
+              m_HasStartObservationTime = true;
+            }
+            m_EndObservationTime = P->GetTime();
+            m_HasEndObservationTime = true;
+          }
+          
           return P;
         } 
       }
@@ -319,11 +330,11 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   // Return the next event... or 0 if it is the last one
   // So remember to test for more events!
 
-  MPhysicalEvent* Phys = 0;
+  MPhysicalEvent* Phys = nullptr;
 
   if (m_IncludeFileUsed == true) {
     Phys = ((MFileEventsTra*) m_IncludeFile)->GetNextEvent();
-    if (Phys != 0) {
+    if (Phys != nullptr) {
       return Phys;
     } else {
       m_IncludeFile->Close();
@@ -403,6 +414,11 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
     }
   }
 
+  // If this is the case, we have reached the end of the file
+  if (Phys == nullptr) {
+    ReadFooter(true); 
+  }
+  
   return Phys;
 }
 

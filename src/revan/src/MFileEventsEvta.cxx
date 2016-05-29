@@ -130,6 +130,28 @@ bool MFileEventsEvta::Close()
 
   return MFileEvents::Close();
 }
+  
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFileEventsEvta::UpdateObservationTimes(MRERawEvent* Event)
+{
+  //! Update the observation times using the given event
+  
+  // If the overall observation time has alreday been set, don't change anything
+  if (m_HasObservationTime == true) return;
+  
+  // Otherwise set everything
+  if (m_HasStartObservationTime == false) {
+    m_StartObservationTime = Event->GetTime();
+    m_HasStartObservationTime = true;
+  }
+  m_EndObservationTime = Event->GetTime();
+  m_HasEndObservationTime = true;
+  
+  // Do not set m_HasObservationTime
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,11 +177,12 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
     MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
-    if (RE == 0) {
+    if (RE == nullptr) {
       m_Noising->AddStatistics(dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetERNoising());
       m_IncludeFile->Close();
       m_IncludeFileUsed = false;
     } else {
+      UpdateObservationTimes(RE);
       return RE;
     }
   }
@@ -228,6 +251,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
         m_IsFirstEvent = false;
       } else {
         if (m_IsFirstEvent == false) {
+          UpdateObservationTimes(Event);
           return Event;
         } else {
           m_IsFirstEvent = false;
@@ -237,10 +261,11 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
 
 
     // Round 3:
-    if ((Line[0] == 'N' && Line[1] == 'F') ||
-        (Line[0] == 'S' && Line[1] == 'E') ||
-        (Line[0] == 'E' && Line[1] == 'N')) {
+    if ((Line[0] == 'S' && Line[1] == 'E')) {
       // Everything already handled!
+    } else if ((Line[0] == 'N' && Line[1] == 'F') ||
+               (Line[0] == 'E' && Line[1] == 'N')) {
+      ReadFooter(true);
     } else if (Line[0] == 'I' && Line[1] == 'N') {
       if (m_IncludeFileUsed == true) {
         MRERawEvent* RE = dynamic_cast<MFileEventsEvta*>(m_IncludeFile)->GetNextEvent();
@@ -249,6 +274,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
           m_IncludeFile->Close();
           m_IncludeFileUsed = false;
         } else {
+          UpdateObservationTimes(RE);
           return RE;
         }
       }
