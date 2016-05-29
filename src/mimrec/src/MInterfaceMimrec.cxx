@@ -753,9 +753,9 @@ bool MInterfaceMimrec::InitializeEventloader(MString File)
 
   if (m_EventFile != 0) delete m_EventFile;
   m_EventFile = new MFileEventsTra();
+  m_EventFile->SetFastFileParsing(m_Data->GetFastFileParsing());
   if (m_EventFile->Open(File) == false) return false;
   m_EventFile->ShowProgress(m_UseGui);
-  m_EventFile->SetFastFileParsing(m_Data->GetFastFileParsing());
   if (m_Data->GetNThreads() > 1) {
     m_EventFile->StartThread();
   }
