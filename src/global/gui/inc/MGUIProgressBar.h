@@ -120,6 +120,9 @@ class MGUIProgressBar : public MGUIDialog
   MTimer m_Timer;
 
   bool m_ConfirmCancel;
+  
+  //! The last estimates Duration in seconds;
+  double m_Duration;
 
 #ifdef ___CINT___
  public:

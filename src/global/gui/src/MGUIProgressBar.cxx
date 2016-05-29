@@ -100,6 +100,8 @@ MGUIProgressBar::MGUIProgressBar(const TGWindow* ParentWindow, const char* Title
 
   m_ConfirmCancel = false;
 
+  m_Duration = 0;  
+  
   Create();
 }
 
@@ -316,6 +318,8 @@ void MGUIProgressBar::Reset()
   m_Maximum = 1;
 
   m_IsFirstUpdate = true;
+  
+  m_Duration = 0.0;
 }
 
 
@@ -360,10 +364,18 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
       if (m_Timer.ElapsedTime() < 3.0 || m_Percentage[0] == 0) { 
         sprintf(c, "Time: estimating...");
       } else {
-        double Time = m_Timer.ElapsedTime() / m_Percentage[0];
+        // Update only on changes of level 0
+        if (Level == 0) {
+          m_Duration = m_Timer.ElapsedTime() / m_Percentage[0];
+        }
+        // Expect when the time has been exceeded:
+        if (m_Duration < m_Timer.ElapsedTime()) {
+          m_Duration = m_Timer.ElapsedTime();
+        }
         sprintf(c, "Time: %i:%02i/%i:%02i", 
                 int(m_Timer.ElapsedTime())/60, int(m_Timer.ElapsedTime())%60,
-                int(Time)/60, int(Time)%60);
+                int(m_Duration)/60, int(m_Duration)%60);
+        
       }
       m_InfoLabel->SetText(new TGString(c));
       
