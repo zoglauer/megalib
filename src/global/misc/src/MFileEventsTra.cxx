@@ -133,9 +133,11 @@ bool MFileEventsTra::Open(MString FileName, unsigned int Way)
   // Derived open which initializes the include file
 
   m_IncludeFileUsed = false;
-  m_IncludeFile = new MFileEventsTra();
-  m_IncludeFile->SetIsIncludeFile(true);
-
+  MFileEventsTra* I = new MFileEventsTra();
+  I->SetIsIncludeFile(true);
+  I->SetFastFileParsing(m_Fast);
+  m_IncludeFile = dynamic_cast<MFileEvents*>(I);
+  
   m_MoreEvents = true;
 
   return MFileEvents::Open(FileName, Way);
