@@ -192,12 +192,17 @@ void MBinnerBayesianBlocks::Histogram()
     Best[s] = Fits[Maximum];
   }
   
+  // Scargle's implementation breaks when Size == 1
   // Step 6: Find the change points:
   vector<unsigned int> ChangePoints(Size, 0);
   unsigned int ChangePointsIndex = Size;
   unsigned int CurrentIndex = Size;
   
   while (true) {
+    if (ChangePointsIndex == 0) {
+      cout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
+      break;
+    }
     ChangePointsIndex -= 1;
     ChangePoints[ChangePointsIndex] = CurrentIndex;
     if (CurrentIndex == 0) {
@@ -205,6 +210,27 @@ void MBinnerBayesianBlocks::Histogram()
     }
     CurrentIndex = Last[CurrentIndex - 1];
   }
+  
+
+  /*
+  // Step 6: Find the change points:
+  vector<unsigned int> ChangePoints(Size, 0);
+  unsigned int ChangePointsIndex = 0;
+  unsigned int CurrentIndex = Size;
+  
+  while (true) {
+    if (ChangePointsIndex == 0) {
+      cout<<"Error: Something went wrong with the change points during Baysian Block binning... We had to stop before fully done."<<endl;
+      break;
+    }
+    ChangePointsIndex -= 1;
+    ChangePoints[ChangePointsIndex] = CurrentIndex;
+    if (CurrentIndex == 0) {
+      break;
+    }
+    CurrentIndex = Last[CurrentIndex - 1];
+  */
+  
   //cout<<"All Change points: "<<endl;
   //Print(ChangePoints);
   //cout<<"Minimum index: "<<ChangePointsIndex<<endl;
