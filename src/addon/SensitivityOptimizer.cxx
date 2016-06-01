@@ -36,6 +36,7 @@ using namespace std;
 // MEGAlib
 #include "MGlobal.h"
 #include "MAssert.h"
+#include "MCoordinateSystem.h"
 #include "MStreams.h"
 #include "MMath.h"
 #include "MFile.h"
@@ -1772,7 +1773,7 @@ bool SensitivityOptimizer::Analyze()
                                   MMath::SphericToCartesean(xx, xy, xz);
                                   MVector Position(xx, xy, xz);
 
-                                  S.SetSourceWindow(true, Position);
+                                  S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                                   S.SetSourceARM(0, m_ARMorRadius[a]);
                                   S.SetSourceSPD(0, m_SPD[s]);
                                   S.SetBeamRadius(m_BRA[b]);
@@ -1872,7 +1873,7 @@ bool SensitivityOptimizer::Analyze()
                           MMath::SphericToCartesean(xx, xy, xz);
                           MVector Position(xx, xy, xz);
                           
-                          S.SetSourceWindow(true, Position);
+                          S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                           S.SetSourceARM(0, m_ARMorRadius[a]);
                           //S.SetSourceSPD(0, m_SPD[s]);
                           S.SetBeamRadius(m_BRA[b]);
@@ -1962,7 +1963,7 @@ bool SensitivityOptimizer::Analyze()
                           MMath::SphericToCartesean(xx, xy, xz);
                           MVector Position(xx, xy, xz);
                           
-                          S.SetSourceWindow(true, Position);
+                          S.SetSourceWindow(true, Position, MCoordinateSystem::c_Cartesian3D);
                           S.SetSourceARM(0, m_ARMorRadius[a]);
                           S.SetBeamRadius(m_BRA[b]);
                           S.SetBeamDepth(m_BDE[c]);

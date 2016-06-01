@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MCoordinateSystem.h"
 #include "MString.h"
 #include "MTime.h"
 #include "MGTI.h"
@@ -67,7 +68,9 @@ class MEventSelector
   //! In addition the test sequence is more optimally arranged
   //! This version does not fill the event selection statistics!
   bool IsQualifiedEventFast(MPhysicalEvent* P);
-  bool IsDirectionWithinARMWindow(MVector D);
+  //! Check if the direction is within the ARM window. 
+  //! Direction is relative to the source position of this selector
+  bool IsDirectionWithinARMWindow(MVector Direction);
 
   MString ToString();
 
@@ -95,8 +98,9 @@ class MEventSelector
   void ApplyTimeFile(MEventSelector& E) { E.SetTimeFile(m_TimeFile); }
   
   
-  void SetSourceWindow(bool Use, MVector SourcePosition = MVector(0, 0, 0));
-  void ApplySourceWindow(MEventSelector& E) { E.SetSourceWindow(m_UseSource, m_SourcePosition); }
+  void SetSourceWindow(bool Use) { m_UseSource = false; }
+  void SetSourceWindow(bool Use, MVector SourcePosition, MCoordinateSystem CS);
+  void ApplySourceWindow(MEventSelector& E) { E.SetSourceWindow(m_UseSource, m_SourcePosition, m_SourceCoordinateSystem); }
   void SetSourceARM(double ARMMin = 0.0, double ARMMax = 180.0);
   void ApplySourceARM(MEventSelector& E) { E.SetSourceARM(m_ARMMin, m_ARMMax); }
   void SetSourceSPD(double SPDMin = 0.0, double SPDMax = 180.0);
@@ -245,6 +249,7 @@ class MEventSelector
   
   bool m_UseSource;
   MVector m_SourcePosition;
+  MCoordinateSystem m_SourceCoordinateSystem;
   double m_ARMMin;
   double m_ARMMax;
   double m_SPDMin;

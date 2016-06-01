@@ -117,6 +117,7 @@ MEventSelector::MEventSelector()
 
   m_UseSource = false;
   m_SourcePosition = MVector(0, 0, c_FarAway);
+  m_SourceCoordinateSystem = MCoordinateSystem::c_Spheric;
   m_ARMMin = 0.0;
   m_ARMMax = 180.0;
   m_SPDMin = 0.0;
@@ -233,6 +234,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
                  
   m_UseSource = EventSelector.m_UseSource;
   m_SourcePosition = EventSelector.m_SourcePosition;
+  m_SourceCoordinateSystem = EventSelector.m_SourceCoordinateSystem;
   m_ARMMin = EventSelector.m_ARMMin;
   m_ARMMax = EventSelector.m_ARMMax;
   m_SPDMin = EventSelector.m_SPDMin;
@@ -397,7 +399,7 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
     } else {
       Pos.SetXYZ(S->GetSourceX(), S->GetSourceY(), S->GetSourceZ());
     }
-    SetSourceWindow(true, Pos);
+    SetSourceWindow(true, Pos, S->GetSourceCoordinates());
     SetSourceARM(S->GetSourceARMMin(), S->GetSourceARMMax());
     SetSourceSPD(S->GetSourceSPDMin(), S->GetSourceSPDMax());
   } else {
@@ -818,21 +820,21 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     if (m_UseSource == true) {
       //m_SourcePosition.SetMagThetaPhi(c_FarAway, (-5.78 + 90)*c_Rad, (184.56)*c_Rad);
 
-      if (fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin || 
+          fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
-              <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition))*c_Deg<<" < "<<m_ARMMax<<endl;
+              <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg<<" < "<<m_ARMMax<<endl;
         }      
         m_NRejectedARM++;
         Return = false;
       }
       if (C->TrackLength() > 1) {
-        if (fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg < m_SPDMin || 
-            fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg > m_SPDMax) {
+        if (fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg < m_SPDMin || 
+            fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg > m_SPDMax) {
           if (DumpOutput == true) {
             cout<<"ID "<<Event->GetId()<<": Not within SPD cut around "<<m_SourcePosition<<": "
-                <<m_SPDMax<<" < "<<fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg<<" < "<<m_SPDMax<<endl;
+                <<m_SPDMax<<" < "<<fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg<<" < "<<m_SPDMax<<endl;
           }      
           m_NRejectedSPD++;
           Return = false;
@@ -892,11 +894,11 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       }
     }
     if (m_UseSource == true) {
-      if (fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin || 
+          fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
           cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
-              <<m_ARMMin<<" < "<<fabs(Pair->GetARMGamma(m_SourcePosition))<<" < "<<m_ARMMax<<endl;
+              <<m_ARMMin<<" < "<<fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem))<<" < "<<m_ARMMax<<endl;
         }      
         m_NRejectedARM++;
         Return = false;
@@ -1049,13 +1051,13 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     }
 
     if (m_UseSource == true) {
-      if (fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(C->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin || 
+          fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         return false;
       }
       if (C->TrackLength() > 1) {
-        if (fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg < m_SPDMin || 
-            fabs(C->GetSPDElectron(m_SourcePosition))*c_Deg > m_SPDMax) {
+        if (fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg < m_SPDMin || 
+            fabs(C->GetSPDElectron(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg > m_SPDMax) {
           return false;
         }
       }
@@ -1087,8 +1089,8 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
     if (m_UseSource == true) {
-      if (fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) < m_ARMMin || 
-          fabs(Pair->GetARMGamma(m_SourcePosition)*c_Deg) > m_ARMMax) {
+      if (fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin || 
+          fabs(Pair->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         return false;
       }
     }
@@ -1225,10 +1227,11 @@ void MEventSelector::SetExcludedDetectors(vector<MString> ExcludedDetectors)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetSourceWindow(bool Use, MVector SourcePosition)
+void MEventSelector::SetSourceWindow(bool Use, MVector SourcePosition, MCoordinateSystem SourceCoordinateSystem)
 {
   m_UseSource = Use;
   m_SourcePosition = SourcePosition;
+  m_SourceCoordinateSystem = SourceCoordinateSystem;
 }
 
 
