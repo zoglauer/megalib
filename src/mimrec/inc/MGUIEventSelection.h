@@ -91,6 +91,7 @@ class MGUIEventSelection : public MGUIDialog
 
   MGUIEMinMaxEntry* m_EventId;
   
+  TGRadioButton* m_GTIAllRB;
   TGRadioButton* m_GTIEntryRB;
   MGUIEEntry* m_MinTimeEntry; 
   MGUIEEntry* m_MaxTimeEntry; 
@@ -124,7 +125,12 @@ class MGUIEventSelection : public MGUIDialog
   TGRadioButton* m_EHCRBNone;
   TGRadioButton* m_EHCRBIntersection;
   TGRadioButton* m_EHCRBProbability;
+  MGUIEFileSelector* m_EHCProbabilityFile;
+  MGUIEEntry* m_EHCProbability;
+  MGUIEEntry* m_EHCAngle;
+  int m_EHCSelected;
 
+  // Source frame
   TGCheckButton* m_UsePointSource;
   TGRadioButton* m_UseGalacticPointSource;
   MGUIEEntryList* m_SourceGalactic;
@@ -136,17 +142,25 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEMinMaxEntry* m_SPD;
   int m_CoordinatesSelected;
 
+  
+  // Pointing frame
+  TGRadioButton* m_UsePointingSelectionNone;
+  TGRadioButton* m_UsePointingSelectionPointSource;
+  MGUIEEntryList* m_PointingPointSourceLocation;
+  MGUIEEntry* m_PointingPointSourceRadius;
+  TGRadioButton* m_UsePointingSelectionBox;
+  MGUIEEntryList* m_PointingBoxLocation;
+  MGUIEEntry* m_PointingBoxExtentLatitude;
+  MGUIEEntry* m_PointingBoxExtentLongitude;
+  
+  
+  // Beam frame
   TGCheckButton* m_UseBeam;
   MGUIEEntryList* m_BeamStart;
   MGUIEEntryList* m_BeamFocalSpot;
   MGUIEEntry* m_BeamRadius;
   MGUIEEntry* m_BeamDepth;
 
-
-  MGUIEFileSelector* m_EHCProbabilityFile;
-  MGUIEEntry* m_EHCProbability;
-  MGUIEEntry* m_EHCAngle;
-  int m_EHCSelected;
 
   enum ButtonIDs { c_Compton = 140, 
                    c_ComptonUntracked,
@@ -156,6 +170,7 @@ class MGUIEventSelection : public MGUIDialog
                    c_Unidentifiable, 
                    c_Decay,
                    c_Bad,
+                   c_GTIAll,
                    c_GTIEntry,
                    c_GTIFile,
                    c_Detectors, 
@@ -166,6 +181,9 @@ class MGUIEventSelection : public MGUIDialog
                    c_UseGalacticPointSource,
                    c_UseSphericPointSource,
                    c_UseCartesianPointSource,
+                   c_UsePointingSelectionNone,
+                   c_UsePointingSelectionPointSource,
+                   c_UsePointingSelectionBox,
                    c_UseBeam };
 
 

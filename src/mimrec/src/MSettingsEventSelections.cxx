@@ -121,6 +121,15 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_SourceSPDMin = 0.0;
   m_SourceSPDMax = 180.0;
 
+  m_PointingSelectionType = 0;
+  m_PointingPointSourceLatitude = 0;
+  m_PointingPointSourceLongitude = 0;
+  m_PointingPointSourceRadius = 0;
+  m_PointingBoxLatitude = 0;
+  m_PointingBoxLongitude = 0;
+  m_PointingBoxExtentLatitude = 0;
+  m_PointingBoxExtentLongitude = 0;
+  
   m_BeamUse = false;
   m_BeamStartX = 0.0;
   m_BeamStartY = 0.0; 
@@ -139,7 +148,7 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_DistanceRangeMin = 0;
   m_DistanceRangeMax = numeric_limits<int>::max();
 
-  m_TimeUseFile = false;
+  m_TimeMode = 0;
   m_TimeRangeMin.Set(0.0);
   m_TimeRangeMax.Set(2000000000.0);
   m_TimeFile = "";
@@ -208,7 +217,7 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
 
   new MXmlNode(aNode, "EventID", m_EventIdRangeMin, m_EventIdRangeMax);
 
-  new MXmlNode(aNode, "TimeUseFile", m_TimeUseFile);
+  new MXmlNode(aNode, "TimeMode", m_TimeMode);
   new MXmlNode(aNode, "Time", m_TimeRangeMin, m_TimeRangeMax);
   new MXmlNode(aNode, "TimeFile", m_TimeFile);
 
@@ -254,6 +263,16 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ARM", m_SourceARMMin, m_SourceARMMax); 
   new MXmlNode(bNode, "SPD", m_SourceSPDMin, m_SourceSPDMax);
 
+  bNode = new MXmlNode(aNode, "Pointing");  
+  new MXmlNode(bNode, "PointingSelectionType", m_PointingSelectionType);
+  new MXmlNode(bNode, "PointingPointSourceLatitude", m_PointingPointSourceLatitude);
+  new MXmlNode(bNode, "PointingPointSourceLongitude", m_PointingPointSourceLongitude);
+  new MXmlNode(bNode, "PointingPointSourceRadius", m_PointingPointSourceRadius);
+  new MXmlNode(bNode, "PointingBoxLatitude", m_PointingBoxLatitude);
+  new MXmlNode(bNode, "PointingBoxLongitude", m_PointingBoxLongitude);
+  new MXmlNode(bNode, "PointingBoxExtentLatitude", m_PointingBoxExtentLatitude);
+  new MXmlNode(bNode, "PointingBoxExtentLongitude", m_PointingBoxExtentLongitude);
+  
   bNode = new MXmlNode(aNode, "Beam");
   new MXmlNode(bNode, "UseBeam", m_BeamUse);
   new MXmlNode(bNode, "StartX", m_BeamStartX); 
@@ -320,8 +339,8 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
       m_EventIdRangeMax = bNode->GetMaxValueAsLong();
     }
     
-    if ((bNode = aNode->GetNode("TimeUseFile")) != 0) {
-      m_TimeUseFile = bNode->GetValueAsBoolean();
+    if ((bNode = aNode->GetNode("TimeMode")) != 0) {
+      m_TimeMode = bNode->GetValueAsUnsignedInt();
     }
     if ((bNode = aNode->GetNode("Time")) != 0) {
       m_TimeRangeMin = bNode->GetMinValueAsTime();
@@ -465,7 +484,34 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
         m_SourceSPDMax = cNode->GetMaxValueAsDouble();
       }
     }
-
+  
+    if ((bNode = aNode->GetNode("Pointing")) != 0) {
+      if ((cNode = bNode->GetNode("PointingSelectionType")) != 0) {
+        m_PointingSelectionType = cNode->GetValueAsUnsignedInt();
+      }
+      if ((cNode = bNode->GetNode("PointingPointSourceLatitude")) != 0) {
+        m_PointingPointSourceLatitude = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingPointSourceLongitude")) != 0) {
+        m_PointingPointSourceLongitude = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingPointSourceRadius")) != 0) {
+        m_PointingPointSourceRadius = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingBoxLatitude")) != 0) {
+        m_PointingBoxLatitude = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingBoxLongitude")) != 0) {
+        m_PointingBoxLongitude = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingBoxExtentLatitude")) != 0) {
+        m_PointingBoxExtentLatitude = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("PointingBoxExtentLongitude")) != 0) {
+        m_PointingBoxExtentLongitude = cNode->GetValueAsDouble();
+      }
+    }
+      
     if ((bNode = aNode->GetNode("Beam")) != 0) {
       if ((cNode = bNode->GetNode("UseBeam")) != 0) {
         m_BeamUse = cNode->GetValueAsBoolean();

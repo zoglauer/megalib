@@ -90,8 +90,8 @@ class MEventSelector
   void SetExcludedDetectors(vector<MString> ExcludedDetectors);
   void ApplyExcludedDetectors(MEventSelector& E) { E.SetExcludedDetectors(m_ExcludedDetectors); }
 
-  void SetTimeUseFile(bool TimeUseFile);
-  void ApplyTimeUseFile(MEventSelector& E) { E.SetTimeUseFile(m_TimeUseFile); }
+  void SetTimeMode(unsigned int TimeMode);
+  void ApplyTimeMode(MEventSelector& E) { E.SetTimeMode(m_TimeMode); }
   void SetTime(const MTime& Min, const MTime& Max);
   void ApplyTime(MEventSelector& E) { E.SetTime(m_TimeMin, m_TimeMax); }
   void SetTimeFile(MString TimeFile);
@@ -106,6 +106,13 @@ class MEventSelector
   void SetSourceSPD(double SPDMin = 0.0, double SPDMax = 180.0);
   void ApplySourceSPD(MEventSelector& E) { E.SetSourceSPD(m_SPDMin, m_SPDMax); }
 
+  void SetPointingSelectionType(unsigned int Type);
+  void ApplyPointingSelectionType(MEventSelector& E) { E.SetPointingSelectionType(m_PointingSelectionType); }
+  void SetPointingSelectionPointSource(double Latitude, double Longitude, double Radius);
+  void ApplyPointingSelectionPointSource(MEventSelector& E) { E.SetPointingSelectionPointSource(m_PointingSelectionPointSourceLatitude, m_PointingSelectionPointSourceLongitude, m_PointingSelectionPointSourceRadius); }
+  void SetPointingSelectionBox(double Latitude, double Longitude, double LatitudeExtent, double LongitudeExtent);
+  void ApplyPointingSelectionBox(MEventSelector& E) { E.SetPointingSelectionBox(m_PointingSelectionBoxLatitude, m_PointingSelectionBoxLongitude, m_PointingSelectionBoxLatitudeExtent, m_PointingSelectionBoxLongitudeExtent); }
+  
   void SetBeam(bool Use, MVector BeamStart, MVector BeamFocalSpot);
   void ApplyBeam(MEventSelector& E) { E.SetBeam(m_UseBeam, m_BeamStart, m_BeamFocalSpot); }
   void SetBeamRadius(double Radius);  
@@ -204,7 +211,7 @@ class MEventSelector
   double m_FourthTotalEnergyMin;
   double m_FourthTotalEnergyMax;
 
-  bool m_TimeUseFile;
+  unsigned int m_TimeMode;
   MTime m_TimeMin;
   MTime m_TimeMax;
   MString m_TimeFile;
@@ -255,6 +262,16 @@ class MEventSelector
   double m_SPDMin;
   double m_SPDMax;
 
+  unsigned int m_PointingSelectionType;
+  double m_PointingSelectionPointSourceLatitude;
+  double m_PointingSelectionPointSourceLongitude;
+  double m_PointingSelectionPointSourceRadius;
+  double m_PointingSelectionBoxLatitude;
+  double m_PointingSelectionBoxLongitude;
+  double m_PointingSelectionBoxLatitudeExtent;
+  double m_PointingSelectionBoxLongitudeExtent;
+  
+  
   bool m_UseBeam;
   MVector m_BeamStart;
   MVector m_BeamFocalSpot;
@@ -306,6 +323,7 @@ class MEventSelector
   int m_NRejectedOpeningAnglePair;
   int m_NRejectedInitialEnergyDepositPair;
   int m_NRejectedPairQualityFactor;
+  int m_NRejectedPointing;
   int m_NRejectedARM;
   int m_NRejectedSPD;
   int m_NRejectedBeam;

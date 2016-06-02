@@ -71,7 +71,7 @@ MEventSelector::MEventSelector()
   m_FourthTotalEnergyMin = 0;
   m_FourthTotalEnergyMax = numeric_limits<double>::max();
   
-  m_TimeUseFile = false;
+  m_TimeMode = 0;
   m_TimeMin.Set(0);
   m_TimeMax.Set(2000000000);
   m_TimeFile = "";
@@ -122,6 +122,15 @@ MEventSelector::MEventSelector()
   m_ARMMax = 180.0;
   m_SPDMin = 0.0;
   m_SPDMax = 180.0;
+
+  m_PointingSelectionType = 0;
+  m_PointingSelectionPointSourceLatitude = 0;
+  m_PointingSelectionPointSourceLongitude = 0;
+  m_PointingSelectionPointSourceRadius = 20;
+  m_PointingSelectionBoxLatitude = 0;
+  m_PointingSelectionBoxLongitude = 0;
+  m_PointingSelectionBoxLatitudeExtent = 5;
+  m_PointingSelectionBoxLongitudeExtent = 30;
 
   m_UseBeam = false;
   m_BeamStart = MVector(0, 0, c_FarAway);
@@ -189,7 +198,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_FourthTotalEnergyMin = EventSelector.m_FourthTotalEnergyMin;              
   m_FourthTotalEnergyMax = EventSelector.m_FourthTotalEnergyMax;              
   
-  m_TimeUseFile = EventSelector.m_TimeUseFile;
+  m_TimeMode = EventSelector.m_TimeMode;
   m_TimeMin = EventSelector.m_TimeMin;                           
   m_TimeMax = EventSelector.m_TimeMax;
   m_TimeFile = EventSelector.m_TimeFile;
@@ -240,12 +249,22 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_SPDMin = EventSelector.m_SPDMin;
   m_SPDMax = EventSelector.m_SPDMax;
 
-  m_UseBeam  = EventSelector.m_UseBeam;
+  m_UseBeam = EventSelector.m_UseBeam;
   m_BeamStart = EventSelector.m_BeamStart;
   m_BeamFocalSpot = EventSelector.m_BeamFocalSpot;
   m_BeamRadius = EventSelector.m_BeamRadius;
   m_BeamDepth = EventSelector.m_BeamDepth;
-                    
+                   
+  m_PointingSelectionType = EventSelector.m_PointingSelectionType;
+  m_PointingSelectionPointSourceLatitude = EventSelector.m_PointingSelectionPointSourceLatitude;
+  m_PointingSelectionPointSourceLongitude = EventSelector.m_PointingSelectionPointSourceLongitude;
+  m_PointingSelectionPointSourceRadius = EventSelector.m_PointingSelectionPointSourceRadius;
+  m_PointingSelectionBoxLatitude = EventSelector.m_PointingSelectionBoxLatitude;
+  m_PointingSelectionBoxLongitude = EventSelector.m_PointingSelectionBoxLongitude;
+  m_PointingSelectionBoxLatitudeExtent = EventSelector.m_PointingSelectionBoxLatitudeExtent;
+  m_PointingSelectionBoxLongitudeExtent = EventSelector.m_PointingSelectionBoxLongitudeExtent;
+  
+  
   m_UsePhotos = EventSelector.m_UsePhotos;                         
   m_UsePairs = EventSelector.m_UsePairs;                          
   m_UseComptons = EventSelector.m_UseComptons;                       
@@ -289,6 +308,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedOpeningAnglePair = EventSelector.m_NRejectedOpeningAnglePair;              
   m_NRejectedInitialEnergyDepositPair = EventSelector.m_NRejectedInitialEnergyDepositPair;              
   m_NRejectedPairQualityFactor = EventSelector.m_NRejectedPairQualityFactor;              
+  m_NRejectedPointing = EventSelector.m_NRejectedPointing;
   m_NRejectedARM = EventSelector.m_NRejectedARM;
   m_NRejectedSPD = EventSelector.m_NRejectedSPD;
   m_NRejectedBeam = EventSelector.m_NRejectedBeam;              
@@ -335,6 +355,7 @@ void MEventSelector::Reset()
   m_NRejectedOpeningAnglePair = 0;
   m_NRejectedInitialEnergyDepositPair = 0;
   m_NRejectedPairQualityFactor = 0;
+  m_NRejectedPointing = 0;
   m_NRejectedARM = 0;
   m_NRejectedSPD = 0;
   m_NRejectedBeam = 0;
@@ -353,7 +374,7 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetThirdTotalEnergy(S->GetThirdEnergyRangeMin(), S->GetThirdEnergyRangeMax());
   SetFourthTotalEnergy(S->GetFourthEnergyRangeMin(), S->GetFourthEnergyRangeMax());
   
-  SetTimeUseFile(S->GetTimeUseFile());
+  SetTimeMode(S->GetTimeMode());
   SetTime(S->GetTimeRangeMin(), S->GetTimeRangeMax());
   SetTimeFile(S->GetTimeFile());
   
@@ -389,6 +410,11 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   }
   SetEarthHorizonCut(EH);
 
+  SetPointingSelectionType(S->GetPointingSelectionType());
+  SetPointingSelectionPointSource(S->GetPointingPointSourceLatitude(), S->GetPointingPointSourceLongitude(), S->GetPointingPointSourceRadius());
+  SetPointingSelectionBox(S->GetPointingBoxLatitude(), S->GetPointingBoxLongitude(), S->GetPointingBoxExtentLatitude(), S->GetPointingBoxExtentLongitude());
+  
+  
   // Set the source:
   if (S->GetSourceUsePointSource() == true) {
     MVector Pos;
@@ -587,7 +613,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     Return = false;
   }
   
-  if (m_TimeUseFile == true) {
+  if (m_TimeMode == 2) {
     if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Time not in GTI: "<<Event->GetTime().GetString()<<endl;
@@ -595,7 +621,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       m_NRejectedTime++;
       Return = false;
     }
-  } else{
+  } else if (m_TimeMode == 1) {
     if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
       if (DumpOutput == true) {
         cout<<"ID "<<Event->GetId()<<": Time out of range: "<<m_TimeMin<<"<"<<Event->GetTime().GetString()<<"<"<<m_TimeMax<<endl;
@@ -604,6 +630,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       Return = false;
     }
   }
+  
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
     if (DumpOutput == true) {
@@ -655,6 +682,40 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       }
     }
   }
+  
+  if (m_PointingSelectionType == 1) {
+    MVector Location;
+    Location.SetMagThetaPhi(1.0, (90 + m_PointingSelectionPointSourceLatitude)*c_Rad, m_PointingSelectionPointSourceLongitude*c_Rad);
+    if (Location.Angle(Event->GetGalacticPointingZAxis()) > m_PointingSelectionPointSourceRadius*c_Rad) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Not within pointing range: Radius "<<Location.Angle(Event->GetGalacticPointingZAxis())*c_Deg<<" > "<<m_PointingSelectionPointSourceRadius<<" deg from lat/long: "<<m_PointingSelectionPointSourceLatitude<<"/"<<m_PointingSelectionPointSourceLongitude<<endl;
+      }
+      m_NRejectedPointing++;
+      Return = false; 
+    }
+  } else if (m_PointingSelectionType == 2) {
+    double LatMin = m_PointingSelectionBoxLatitude - m_PointingSelectionBoxLatitudeExtent;
+    if (LatMin < -90) LatMin = -90; 
+    double LatMax = m_PointingSelectionBoxLatitude + m_PointingSelectionBoxLatitudeExtent;
+    if (LatMax > 90) LatMax = 90; 
+
+    double LongMin = m_PointingSelectionBoxLongitude - m_PointingSelectionBoxLongitudeExtent;
+    double LongMax = m_PointingSelectionBoxLongitude + m_PointingSelectionBoxLongitudeExtent;
+    
+    double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90;
+    double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
+    if (Long > 180) Long -= 360;
+    
+    if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Not within pointing range: Lat: "<<LatMin<<"<="<<Lat<<"<="<<LatMax<<" && "<<LongMin<<"<="<<Long<<"<="<<LongMax<<endl;
+      }
+      m_NRejectedPointing++;
+      Return = false;       
+    }
+  }
+  
+  
 
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
@@ -1114,15 +1175,18 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     return false;
   }
 
-  if (m_TimeUseFile == true) {
+  
+  if (m_TimeMode == 2) {
     if (m_TimeGTI.IsGood(Event->GetTime()) == false) {
-      return false; 
+      return false;
     }
-  } else {
+  } else if (m_TimeMode == 1) {
     if (Event->GetTime() < m_TimeMin || Event->GetTime() > m_TimeMax) {
       return false;
     }
   }
+   
+  
   if (Event->GetTimeWalk() < m_TimeWalkMin || 
       Event->GetTimeWalk() > m_TimeWalkMax) {
     return false;
@@ -1154,6 +1218,33 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
   }
+  
+  
+  if (m_PointingSelectionType == 1) {
+    MVector Location;
+    Location.SetMagThetaPhi(1.0, (90 + m_PointingSelectionPointSourceLatitude)*c_Rad, m_PointingSelectionPointSourceLongitude*c_Rad);
+    if (Location.Angle(Event->GetGalacticPointingZAxis()) > m_PointingSelectionPointSourceRadius*c_Rad) {
+      return false;
+    }
+  } else if (m_PointingSelectionType == 2) {
+    double LatMin = m_PointingSelectionBoxLatitude - m_PointingSelectionBoxLatitudeExtent;
+    if (LatMin < -90) LatMin = -90; 
+    double LatMax = m_PointingSelectionBoxLatitude + m_PointingSelectionBoxLatitudeExtent;
+    if (LatMax > 90) LatMax = 90; 
+
+    double LongMin = m_PointingSelectionBoxLongitude - m_PointingSelectionBoxLongitudeExtent;
+    double LongMax = m_PointingSelectionBoxLongitude + m_PointingSelectionBoxLongitudeExtent;
+    
+    double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90.0;
+    double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
+    if (Long < 0) Long += 360.0;
+    
+    if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
+      return false;
+    }
+  }
+  
+  
 
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
@@ -1335,9 +1426,9 @@ void MEventSelector::SetFourthTotalEnergy(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetTimeUseFile(bool TimeUseFile)
+void MEventSelector::SetTimeMode(unsigned int TimeMode)
 {
-  m_TimeUseFile = TimeUseFile;
+  m_TimeMode = TimeMode;
 }
 
 
@@ -1480,6 +1571,38 @@ void MEventSelector::SetEarthHorizonCut(const MEarthHorizon& EH)
 void MEventSelector::SetEarthHorizonCutAngle(double Angle) 
 { 
   m_EarthHorizon.SetEarthHorizon(MVector(0, 0, -1E20), Angle*c_Rad); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionType(unsigned int Type)
+{
+  m_PointingSelectionType = Type;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionPointSource(double Latitude, double Longitude, double Radius)
+{
+  m_PointingSelectionPointSourceLatitude = Latitude;
+  m_PointingSelectionPointSourceLongitude = Longitude;
+  m_PointingSelectionPointSourceRadius = Radius;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetPointingSelectionBox(double Latitude, double Longitude, double LatitudeExtent, double LongitudeExtent)
+{
+  m_PointingSelectionBoxLatitude = Latitude;
+  m_PointingSelectionBoxLongitude = Longitude;
+  m_PointingSelectionBoxLatitudeExtent = LatitudeExtent;
+  m_PointingSelectionBoxLongitudeExtent = LongitudeExtent;
 }
 
 
@@ -1726,6 +1849,8 @@ MString MEventSelector::ToString()
    <<m_NRejectedCoincidenceWindow<<endl;
   s<<"Earth-Horizon cut ..............  "
    <<m_NRejectedEarthHorizonCut<<endl;
+  s<<"Pointing .......................  "
+   <<m_NRejectedPointing<<endl;
   s<<"Max. theta deviation ...........  "
    <<m_NRejectedThetaDeviationMax<<endl;
   s<<"Max. ARM .......................  "
