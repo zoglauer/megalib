@@ -508,7 +508,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
       if (GeneratedSecondaries == 0) {
 
         m_InteractionId++;
-        //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+        // The photon may deposit a small bit of energy locally
+        // To aid the response generation, we add handle this energy as if it originated from the new electron track
+        ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
 
         EventAction->AddIA("PHOT", 
                            m_InteractionId,
@@ -531,7 +533,9 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
              se < (int) fpSteppingManager->GetSecondary()->size(); ++se) {
           
           m_InteractionId++;
-          //((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
+          // The photon may deposit a small bit of energy locally
+          // To aid the response generation, we add handle this energy as if it originated from the new electron track
+          ((MCTrackInformation*) Track->GetUserInformation())->SetId(m_InteractionId);
             
           G4Track* TrackA = (*fpSteppingManager->GetSecondary())[se];
           TrackA->SetUserInformation(new MCTrackInformation(m_InteractionId, m_InteractionId));
