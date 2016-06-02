@@ -1,6 +1,6 @@
 /******************************************************************************
  *                                                                            *
- * MCCosima.cc                                                                  *
+ * MCCosima.cc                                                                *
  *                                                                            *
  * Copyright (C) by Andreas Zoglauer.                                         *
  * All rights reserved.                                                       *
