@@ -82,6 +82,7 @@ void MGUIEventSelection::Create()
   int LargeFieldSize = m_FontScaler*140;
   int LeftGap = m_FontScaler*65;
   int RightGap = m_FontScaler*65;
+  int TopGap = m_FontScaler*20;
 
   // We start with a name and an icon...
   SetWindowName("Event selector");  
@@ -92,23 +93,24 @@ void MGUIEventSelection::Create()
   CreateBasics();
 
 
-  TGLayoutHints* MinMaxLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, LeftGap, RightGap, 10, 5);
-  TGLayoutHints* MinMaxFirstLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, LeftGap, RightGap, 20, 5);
-  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, LeftGap, RightGap, 10, 10);
+  TGLayoutHints* MinMaxLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop | kLHintsLeft, LeftGap, RightGap, 10, 5);
+  TGLayoutHints* MinMaxFirstLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop | kLHintsLeft, LeftGap, RightGap, TopGap, 5);
+  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop | kLHintsLeft, LeftGap, RightGap, 10, 10);
 
   m_MainTab = new TGTab(m_MainPanel, 300, 300);
   TGLayoutHints* MainTabLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 10, 10, 0, 0);
   m_MainPanel->AddFrame(m_MainTab, MainTabLayout);
 
-  TGCompositeFrame* EventTypeFrame = m_MainTab->AddTab("Event types");
-  TGCompositeFrame* GeneralFrame = m_MainTab->AddTab("General");
-  TGCompositeFrame* EnergiesFrame = m_MainTab->AddTab("Energies");
-  TGCompositeFrame* ComptonEAFrame = m_MainTab->AddTab("C: Energies/Angles");
-  TGCompositeFrame* ComptonDLFrame = m_MainTab->AddTab("C: Lengths");
-  TGCompositeFrame* ComptonQFrame = m_MainTab->AddTab("C: Quality");
-  TGCompositeFrame* ComptonEHCFrame = m_MainTab->AddTab("C: EHC");
-  TGCompositeFrame* PairFrame = m_MainTab->AddTab("Pair: All");
-  TGCompositeFrame* SourceFrame = m_MainTab->AddTab("Origins");
+  TGCompositeFrame* EventTypeFrame = m_MainTab->AddTab("Type & ID");
+  TGCompositeFrame* GeneralFrame = m_MainTab->AddTab("Time & Detector");
+  TGCompositeFrame* EnergiesFrame = m_MainTab->AddTab("Energy");
+  TGCompositeFrame* ComptonEAFrame = m_MainTab->AddTab("Scattering");
+  TGCompositeFrame* ComptonDLFrame = m_MainTab->AddTab("Lengths");
+  TGCompositeFrame* ComptonQFrame = m_MainTab->AddTab("Quality");
+  TGCompositeFrame* ComptonEHCFrame = m_MainTab->AddTab("Earth");
+  TGCompositeFrame* PairFrame = m_MainTab->AddTab("Pairs");
+  TGCompositeFrame* SourceFrame = m_MainTab->AddTab("Origin");
+  TGCompositeFrame* PointingFrame = m_MainTab->AddTab("Pointing");
   TGCompositeFrame* BeamFrame = m_MainTab->AddTab("Beam");
   TGCompositeFrame* SpecialFrame = 0;
   if (m_GUIData->GetSpecialMode() == true) {
@@ -117,11 +119,19 @@ void MGUIEventSelection::Create()
 
   m_MainTab->SetTab(m_GUIData->GetEventSelectorTab());
 
+  
+  // Event type frame
+  
   // Event and detector type frame:
   TGLabel* LabelEventSelection = new TGLabel(EventTypeFrame, new TGString("Choose from the following event types:"));
   TGLayoutHints* LabelEventSelectionLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
+    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, TopGap, 0);
   EventTypeFrame->AddFrame(LabelEventSelection, LabelEventSelectionLayout);
+
+  m_PhotoCB = new TGCheckButton(EventTypeFrame, "Single-site events (These will slow down imaging!)", c_Photo);
+  TGLayoutHints* PhotoCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
+  EventTypeFrame->AddFrame(m_PhotoCB, PhotoCBLayout);
+  m_PhotoCB->SetState((m_GUIData->GetEventTypePhoto() == 1) ?  kButtonDown : kButtonUp);
 
   m_ComptonCB = new TGCheckButton(EventTypeFrame, "Compton-scattering events:", c_Compton);
   TGLayoutHints* ComptonCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
@@ -154,33 +164,28 @@ void MGUIEventSelection::Create()
   EventTypeFrame->AddFrame(m_PairCB, PairCBLayout);
   m_PairCB->SetState((m_GUIData->GetEventTypePair() == 1) ?  kButtonDown : kButtonUp);
 
-  m_PhotoCB = new TGCheckButton(EventTypeFrame, "Photo-effect/Single-site events", c_Photo);
-  TGLayoutHints* PhotoCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
-  EventTypeFrame->AddFrame(m_PhotoCB, PhotoCBLayout);
-  m_PhotoCB->SetState((m_GUIData->GetEventTypePhoto() == 1) ?  kButtonDown : kButtonUp);
-
   m_UnidentifiableCB = new TGCheckButton(EventTypeFrame, "Unidentifiable events", c_Unidentifiable);
   TGLayoutHints* UnidentifiableCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_UnidentifiableCB, UnidentifiableCBLayout);
   m_UnidentifiableCB->SetState((m_GUIData->GetEventTypeUnidentifiable() == 1) ?  kButtonDown : kButtonUp);
-
-  m_DecayCB = new TGCheckButton(EventTypeFrame, "Use events where the \"Decay\" flag in set", c_Decay);
-  TGLayoutHints* DecayCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 15, 5);
-  EventTypeFrame->AddFrame(m_DecayCB, DecayCBLayout);
-  m_DecayCB->SetState((m_GUIData->GetEventTypeDecay() == 1) ?  kButtonDown : kButtonUp);
+  
+  
+  TGLabel* LabelSpecialEvents = new TGLabel(EventTypeFrame, new TGString("Choose, if events with these special flags should be used:"));
+  EventTypeFrame->AddFrame(LabelSpecialEvents, LabelEventSelectionLayout);
 
   m_BadCB = new TGCheckButton(EventTypeFrame, "Use events where the \"Bad\" flag in set", c_Bad);
-  TGLayoutHints* BadCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 20);
+  TGLayoutHints* BadCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_BadCB, BadCBLayout);
   m_BadCB->SetState((m_GUIData->GetFlaggedAsBad() == true) ?  kButtonDown : kButtonUp);
 
+  m_DecayCB = new TGCheckButton(EventTypeFrame, "Use events where the \"Decay\" flag in set", c_Decay);
+  TGLayoutHints* DecayCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
+  EventTypeFrame->AddFrame(m_DecayCB, DecayCBLayout);
+  m_DecayCB->SetState((m_GUIData->GetEventTypeDecay() == 1) ?  kButtonDown : kButtonUp);
 
-
-
-  // General Frame
 
   // ID
-  m_EventId = new MGUIEMinMaxEntry(GeneralFrame,
+  m_EventId = new MGUIEMinMaxEntry(EventTypeFrame,
                                    MString("Event ID window:"),
                                    false,
                                    MString("Minimum ID: "),
@@ -189,19 +194,28 @@ void MGUIEventSelection::Create()
                                    m_GUIData->GetEventIdRangeMax(), 
                                    true, 0l);
   m_EventId->SetEntryFieldSize(FieldSize);
-  GeneralFrame->AddFrame(m_EventId, MinMaxFirstLayout);
+  EventTypeFrame->AddFrame(m_EventId, MinMaxFirstLayout);
+
+
+
+  // General Frame
 
   
   // GTI
   TGLabel* LabelTimes = new TGLabel(GeneralFrame, "Good time interval");
   TGLayoutHints* LabelTimesLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);  
+    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, TopGap, 0);  
   GeneralFrame->AddFrame(LabelTimes, LabelTimesLayout);
+    
+  TGLayoutHints* GTIRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap + 10*m_FontScaler, RightGap, 5*m_FontScaler, 2*m_FontScaler);
+
+  m_GTIAllRB = new TGRadioButton(GeneralFrame, "Use all times", c_GTIAll);
+  m_GTIAllRB->Associate(this);
+  GeneralFrame->AddFrame(m_GTIAllRB, GTIRBLayout);
     
   m_GTIEntryRB = new TGRadioButton(GeneralFrame, "Set a single GTI directly", c_GTIEntry);
   m_GTIEntryRB->Associate(this);
-  TGLayoutHints* GTIEntryRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap + 10*m_FontScaler, RightGap, 5*m_FontScaler, 2*m_FontScaler);
-  GeneralFrame->AddFrame(m_GTIEntryRB, GTIEntryRBLayout);
+  GeneralFrame->AddFrame(m_GTIEntryRB, GTIRBLayout);
   
   m_MinTimeEntry = new MGUIEEntry(GeneralFrame, "Minimum [sec]:", false, m_GUIData->GetTimeRangeMin().GetLongIntsString());
   m_MinTimeEntry->SetEntryFieldSize(LargeFieldSize);
@@ -213,22 +227,33 @@ void MGUIEventSelection::Create()
   
   m_GTIFileRB = new TGRadioButton(GeneralFrame, "Read the GTIs from file", c_GTIFile);
   m_GTIFileRB->Associate(this);
-  TGLayoutHints* GTIFileRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap + 10*m_FontScaler, RightGap, 5*m_FontScaler, 2*m_FontScaler);
-  GeneralFrame->AddFrame(m_GTIFileRB, GTIFileRBLayout);
+  GeneralFrame->AddFrame(m_GTIFileRB, GTIRBLayout);
   
   m_GTIFile = new MGUIEFileSelector(GeneralFrame, "", m_GUIData->GetTimeFile());
   m_GTIFile->SetFileType("GTI file", "*.gti");
   GeneralFrame->AddFrame(m_GTIFile, TimeEntryLayout);
 
-  if (m_GUIData->GetTimeUseFile() == false) {
+  if (m_GUIData->GetTimeMode() == 1) {
+    m_GTIAllRB->SetState(kButtonUp);
     m_GTIEntryRB->SetState(kButtonDown);
     m_GTIFileRB->SetState(kButtonUp);
+    m_MinTimeEntry->SetEnabled(true);
+    m_MaxTimeEntry->SetEnabled(true);
     m_GTIFile->SetEnabled(false);
-  } else {
+  } else if (m_GUIData->GetTimeMode() == 2) {
+    m_GTIAllRB->SetState(kButtonUp);
     m_GTIEntryRB->SetState(kButtonUp);
     m_GTIFileRB->SetState(kButtonDown);
     m_MinTimeEntry->SetEnabled(false);
     m_MaxTimeEntry->SetEnabled(false);
+    m_GTIFile->SetEnabled(true);
+  } else {
+    m_GTIAllRB->SetState(kButtonDown);
+    m_GTIEntryRB->SetState(kButtonUp);
+    m_GTIFileRB->SetState(kButtonUp);
+    m_MinTimeEntry->SetEnabled(false);
+    m_MaxTimeEntry->SetEnabled(false);
+    m_GTIFile->SetEnabled(false);    
   }
   
 
@@ -312,8 +337,30 @@ void MGUIEventSelection::Create()
   EnergiesFrame->AddFrame(m_FourthTotalEnergy, MinMaxLayout);
 
 
+  
   // Compton frame:
 
+  m_ComptonAngle = new MGUIEMinMaxEntry(ComptonEAFrame,
+                                        MString("Range of Compton scatter angles:"),
+                                        false,
+                                        MString("Minimum angle [deg]: "),
+                                        MString("Maximum angle [deg]: "),
+                                        m_GUIData->GetComptonAngleRangeMin(), 
+                                        m_GUIData->GetComptonAngleRangeMax(), 
+                                        true, 0.0, 180.0);
+  m_ComptonAngle->SetEntryFieldSize(FieldSize);
+  ComptonEAFrame->AddFrame(m_ComptonAngle, MinMaxFirstLayout);
+
+  m_ThetaDeviationMax = 
+    new MGUIEEntry(ComptonEAFrame,
+                   MString("Maximum deviation of total scatter angles (energy vs. geo) [deg]:"),
+                   false,
+                   m_GUIData->GetThetaDeviationMax(),
+                   true, 0.0, 180.0);
+  m_ThetaDeviationMax->SetEntryFieldSize(FieldSize);
+  ComptonEAFrame->AddFrame(m_ThetaDeviationMax, SingleLayout);
+
+  
   m_GammaEnergy = new MGUIEMinMaxEntry(ComptonEAFrame,
                                        MString("Energy range of scattered gamma ray:"),
                                        false,
@@ -336,26 +383,8 @@ void MGUIEventSelection::Create()
   m_ElectronEnergy->SetEntryFieldSize(FieldSize);
   ComptonEAFrame->AddFrame(m_ElectronEnergy, MinMaxLayout);
 
-  m_ComptonAngle = new MGUIEMinMaxEntry(ComptonEAFrame,
-                                        MString("Range of Compton scatter angles:"),
-                                        false,
-                                        MString("Minimum angle [deg]: "),
-                                        MString("Maximum angle [deg]: "),
-                                        m_GUIData->GetComptonAngleRangeMin(), 
-                                        m_GUIData->GetComptonAngleRangeMax(), 
-                                        true, 0.0, 180.0);
-  m_ComptonAngle->SetEntryFieldSize(FieldSize);
-  ComptonEAFrame->AddFrame(m_ComptonAngle, MinMaxLayout);
-
-  m_ThetaDeviationMax = 
-    new MGUIEEntry(ComptonEAFrame,
-                   MString("Maximum deviation of total scatter angles (energy vs. geo) [deg]:"),
-                   false,
-                   m_GUIData->GetThetaDeviationMax(),
-                   true, 0.0, 180.0);
-  m_ThetaDeviationMax->SetEntryFieldSize(FieldSize);
-  ComptonEAFrame->AddFrame(m_ThetaDeviationMax, SingleLayout);
-
+  
+  
 
   // Compton 2 frame:
 
@@ -381,17 +410,6 @@ void MGUIEventSelection::Create()
   m_IADistance->SetEntryFieldSize(FieldSize);
   ComptonDLFrame->AddFrame(m_IADistance, MinMaxLayout);
 
-  m_TrackLength = new MGUIEMinMaxEntry(ComptonDLFrame,
-                                       MString("Length of (first) electron track in layers:"),
-                                       false,
-                                       MString("Minimum: "),
-                                       MString("Maximum: "),
-                                       m_GUIData->GetTrackLengthRangeMin(), 
-                                       m_GUIData->GetTrackLengthRangeMax(),
-                                       true, 0);
-  m_TrackLength->SetEntryFieldSize(FieldSize);
-  ComptonDLFrame->AddFrame(m_TrackLength, MinMaxLayout);
-
   m_SequenceLength = new MGUIEMinMaxEntry(ComptonDLFrame,
                                           MString("Length of Compton Sequence:"),
                                           false,
@@ -403,18 +421,19 @@ void MGUIEventSelection::Create()
   m_SequenceLength->SetEntryFieldSize(FieldSize);
   ComptonDLFrame->AddFrame(m_SequenceLength, MinMaxLayout);
 
+  m_TrackLength = new MGUIEMinMaxEntry(ComptonDLFrame,
+                                       MString("Length of (first) electron track in layers:"),
+                                       false,
+                                       MString("Minimum: "),
+                                       MString("Maximum: "),
+                                       m_GUIData->GetTrackLengthRangeMin(), 
+                                       m_GUIData->GetTrackLengthRangeMax(),
+                                       true, 0);
+  m_TrackLength->SetEntryFieldSize(FieldSize);
+  ComptonDLFrame->AddFrame(m_TrackLength, MinMaxLayout);
+
 
   // Compton frame - quality factors:
-
-  m_ClusteringQualityFactor = new MGUIEMinMaxEntry(ComptonQFrame,
-                                                   MString("Clustering quality factor:"),
-                                                   false,
-                                                   MString("Minimum: "),
-                                                   MString("Maximum: "),                                                     m_GUIData->GetClusteringQualityFactorRangeMin(), 
-                                                   m_GUIData->GetClusteringQualityFactorRangeMax(), 
-                                                   true, 0.0);
-  m_ClusteringQualityFactor->SetEntryFieldSize(FieldSize);
-  ComptonQFrame->AddFrame(m_ClusteringQualityFactor, MinMaxFirstLayout);
 
   m_ComptonQualityFactor = new MGUIEMinMaxEntry(ComptonQFrame,
                                              MString("Compton quality factor:"),
@@ -438,6 +457,16 @@ void MGUIEventSelection::Create()
   m_TrackQualityFactor->SetEntryFieldSize(FieldSize);
   ComptonQFrame->AddFrame(m_TrackQualityFactor, MinMaxLayout);
 
+  m_ClusteringQualityFactor = new MGUIEMinMaxEntry(ComptonQFrame,
+                                                   MString("Clustering quality factor:"),
+                                                   false,
+                                                   MString("Minimum: "),
+                                                   MString("Maximum: "),                                                     m_GUIData->GetClusteringQualityFactorRangeMin(), 
+                                                   m_GUIData->GetClusteringQualityFactorRangeMax(), 
+                                                   true, 0.0);
+  m_ClusteringQualityFactor->SetEntryFieldSize(FieldSize);
+  ComptonQFrame->AddFrame(m_ClusteringQualityFactor, MinMaxLayout);
+
   m_CoincidenceWindow = new MGUIEMinMaxEntry(ComptonQFrame,
                                              MString("Coincidence window:"),
                                              false,
@@ -456,7 +485,7 @@ void MGUIEventSelection::Create()
 
   TGLabel* LabelEHC = new TGLabel(ComptonEHCFrame, new TGString("Fixed Earth horizon cut (Earth in nadir):"));
   TGLayoutHints* LabelEHCLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
+    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, TopGap, 0);
   ComptonEHCFrame->AddFrame(LabelEHC, LabelEHCLayout);
 
   TGLayoutHints* ComptonRBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
@@ -544,6 +573,8 @@ void MGUIEventSelection::Create()
 
 
   // Source frame:
+  
+  
   m_UsePointSource = new TGCheckButton(SourceFrame, "Use selection on point source:", c_UsePointSource);
   SourceFrame->AddFrame(m_UsePointSource, MinMaxFirstLayout);
   m_UsePointSource->Associate(this);
@@ -661,9 +692,99 @@ void MGUIEventSelection::Create()
     m_SPD->SetEnabled(false);
   }
 
+  
+  // Pointing frame
+  
+  TGLabel* PointingSelectionLabel = new TGLabel(PointingFrame, "Use only pointings which are within the following selection:");
+  TGLayoutHints* PointingSelectionLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, LeftGap, RightGap, TopGap, 5);
+  PointingFrame->AddFrame(PointingSelectionLabel, PointingSelectionLabelLayout);
+  
+  m_UsePointingSelectionNone = new TGRadioButton(PointingFrame, "Do NOT use a pointing selection", c_UsePointingSelectionNone);
+  m_UsePointingSelectionNone->Associate(this);
+  PointingFrame->AddFrame(m_UsePointingSelectionNone, CoordinatesLayout);
 
+  m_UsePointingSelectionPointSource = new TGRadioButton(PointingFrame, "Disk around these coordinates:", c_UsePointingSelectionPointSource);
+  m_UsePointingSelectionPointSource->Associate(this);
+  PointingFrame->AddFrame(m_UsePointingSelectionPointSource, CoordinatesLayout);
+
+  m_PointingPointSourceLocation = new MGUIEEntryList(PointingFrame, "Center of disk (Latitude, Longitude) [deg]", MGUIEEntryList::c_SingleLine);
+  m_PointingPointSourceLocation->Add("", m_GUIData->GetPointingPointSourceLatitude(), kTRUE, -90.0, 90.0);
+  m_PointingPointSourceLocation->Add("", m_GUIData->GetPointingPointSourceLongitude(), kTRUE, -180.0, 360.0);
+  m_PointingPointSourceLocation->SetEntryFieldSize(FieldSize);
+  m_PointingPointSourceLocation->Create();
+  PointingFrame->AddFrame(m_PointingPointSourceLocation, SourceLayout);
+
+  m_PointingPointSourceRadius = 
+    new MGUIEEntry(PointingFrame,
+                   MString("Radius of disk [deg]:"),
+                   false,
+                   m_GUIData->GetPointingPointSourceRadius(),
+                   true, 0.0, 180.0);
+  m_PointingPointSourceRadius->SetEntryFieldSize(FieldSize);
+  PointingFrame->AddFrame(m_PointingPointSourceRadius, SourceLayout);
+
+  m_UsePointingSelectionBox = new TGRadioButton(PointingFrame, "Box with this center and extend:", c_UsePointingSelectionBox);
+  m_UsePointingSelectionBox->Associate(this);
+  PointingFrame->AddFrame(m_UsePointingSelectionBox, CoordinatesLayout);
+
+  m_PointingBoxLocation = new MGUIEEntryList(PointingFrame, "Center of box (Latitude, Longitude) [deg]", MGUIEEntryList::c_SingleLine);
+  m_PointingBoxLocation->Add("", m_GUIData->GetPointingBoxLatitude(), kTRUE, -90.0, 90.0);
+  m_PointingBoxLocation->Add("", m_GUIData->GetPointingBoxLongitude(), kTRUE, -180.0, 360.0);
+  m_PointingBoxLocation->SetEntryFieldSize(FieldSize);
+  m_PointingBoxLocation->Create();
+  PointingFrame->AddFrame(m_PointingBoxLocation, SourceLayout);
+
+  m_PointingBoxExtentLatitude = 
+    new MGUIEEntry(PointingFrame,
+                   MString("Extent in latitude (half) [deg]:"),
+                   false,
+                   m_GUIData->GetPointingBoxExtentLatitude(),
+                   true, 0.0, 180.0);
+  m_PointingBoxExtentLatitude->SetEntryFieldSize(FieldSize);
+  PointingFrame->AddFrame(m_PointingBoxExtentLatitude, SourceLayout);
+
+  m_PointingBoxExtentLongitude = 
+    new MGUIEEntry(PointingFrame,
+                   MString("Extent in longitude (half) [deg]:"),
+                   false,
+                   m_GUIData->GetPointingBoxExtentLongitude(),
+                   true, 0.0, 180.0);
+  m_PointingBoxExtentLongitude->SetEntryFieldSize(FieldSize);
+  PointingFrame->AddFrame(m_PointingBoxExtentLongitude, SourceLayout);
+  
+  if (m_GUIData->GetPointingSelectionType() == 1) {
+    m_UsePointingSelectionNone->SetState(kButtonUp);
+    m_UsePointingSelectionPointSource->SetState(kButtonDown);
+    m_UsePointingSelectionBox->SetState(kButtonUp);
+    m_PointingPointSourceLocation->SetEnabled(true);
+    m_PointingPointSourceRadius->SetEnabled(true);
+    m_PointingBoxLocation->SetEnabled(false);
+    m_PointingBoxExtentLatitude->SetEnabled(false);
+    m_PointingBoxExtentLongitude->SetEnabled(false);
+  } else if (m_GUIData->GetPointingSelectionType() == 2) {
+    m_UsePointingSelectionNone->SetState(kButtonUp);
+    m_UsePointingSelectionPointSource->SetState(kButtonUp);
+    m_UsePointingSelectionBox->SetState(kButtonDown);
+    m_PointingPointSourceLocation->SetEnabled(false);
+    m_PointingPointSourceRadius->SetEnabled(false);
+    m_PointingBoxLocation->SetEnabled(true);
+    m_PointingBoxExtentLatitude->SetEnabled(true);
+    m_PointingBoxExtentLongitude->SetEnabled(true);
+  } else {
+    m_UsePointingSelectionNone->SetState(kButtonDown);
+    m_UsePointingSelectionPointSource->SetState(kButtonUp);
+    m_UsePointingSelectionBox->SetState(kButtonUp);
+    m_PointingPointSourceLocation->SetEnabled(false);
+    m_PointingPointSourceRadius->SetEnabled(false);
+    m_PointingBoxLocation->SetEnabled(false);
+    m_PointingBoxExtentLatitude->SetEnabled(false);
+    m_PointingBoxExtentLongitude->SetEnabled(false);
+  }
+  
 
   // Beam frame
+  
+  
   m_UseBeam = new TGCheckButton(BeamFrame, "Use beam selection:", c_UseBeam);
   BeamFrame->AddFrame(m_UseBeam, MinMaxFirstLayout);
   m_UseBeam->Associate(this);
@@ -761,13 +882,21 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_RADIOBUTTON:
-      if (Parameter1 == c_GTIEntry) {
-        if (m_GTIEntryRB->GetState() == kButtonUp) {
-          m_GTIFileRB->SetState(kButtonDown);
+      if (Parameter1 == c_GTIAll) {
+        if (m_GTIAllRB->GetState() == kButtonUp) {
+          m_GTIAllRB->SetState(kButtonDown); 
+        } else {
+          m_GTIEntryRB->SetState(kButtonUp);
+          m_GTIFileRB->SetState(kButtonUp);
           m_MinTimeEntry->SetEnabled(false);
           m_MaxTimeEntry->SetEnabled(false);
-          m_GTIFile->SetEnabled(true);
-        } else{
+          m_GTIFile->SetEnabled(false);
+        }
+      } else if (Parameter1 == c_GTIEntry) {
+        if (m_GTIEntryRB->GetState() == kButtonUp) {
+          m_GTIEntryRB->SetState(kButtonDown); 
+        } else {
+          m_GTIAllRB->SetState(kButtonUp);
           m_GTIFileRB->SetState(kButtonUp);
           m_MinTimeEntry->SetEnabled(true);
           m_MaxTimeEntry->SetEnabled(true);
@@ -775,11 +904,9 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
         }
       } else if (Parameter1 == c_GTIFile) {
         if (m_GTIFileRB->GetState() == kButtonUp) {
-          m_GTIEntryRB->SetState(kButtonDown);
-          m_MinTimeEntry->SetEnabled(true);
-          m_MaxTimeEntry->SetEnabled(true);
-          m_GTIFile->SetEnabled(false);
+          m_GTIFileRB->SetState(kButtonDown); 
         } else {
+          m_GTIAllRB->SetState(kButtonUp);
           m_GTIEntryRB->SetState(kButtonUp);
           m_MinTimeEntry->SetEnabled(false);
           m_MaxTimeEntry->SetEnabled(false);
@@ -815,6 +942,46 @@ bool MGUIEventSelection::ProcessMessage(long Message, long Parameter1,
           m_EHCProbability->SetEnabled(false);
           m_EHCProbabilityFile->SetEnabled(false);
         }
+        
+      } else if (Parameter1 == c_UsePointingSelectionNone) {
+        if (m_UsePointingSelectionNone->GetState() == kButtonUp) {
+          m_UsePointingSelectionNone->SetState(kButtonDown); 
+        } else {
+          m_UsePointingSelectionPointSource->SetState(kButtonUp); 
+          m_UsePointingSelectionBox->SetState(kButtonUp); 
+          m_PointingPointSourceLocation->SetEnabled(false);
+          m_PointingPointSourceRadius->SetEnabled(false);
+          m_PointingBoxLocation->SetEnabled(false);
+          m_PointingBoxExtentLatitude->SetEnabled(false);
+          m_PointingBoxExtentLongitude->SetEnabled(false);
+        }
+        
+      } else if (Parameter1 == c_UsePointingSelectionPointSource) {
+        if (m_UsePointingSelectionPointSource->GetState() == kButtonUp) {
+          m_UsePointingSelectionPointSource->SetState(kButtonDown); 
+        } else {
+          m_UsePointingSelectionNone->SetState(kButtonUp); 
+          m_UsePointingSelectionBox->SetState(kButtonUp); 
+          m_PointingPointSourceLocation->SetEnabled(true);
+          m_PointingPointSourceRadius->SetEnabled(true);
+          m_PointingBoxLocation->SetEnabled(false);
+          m_PointingBoxExtentLatitude->SetEnabled(false);
+          m_PointingBoxExtentLongitude->SetEnabled(false);
+        }
+        
+      } else if (Parameter1 == c_UsePointingSelectionBox) {
+        if (m_UsePointingSelectionBox->GetState() == kButtonUp) {
+          m_UsePointingSelectionBox->SetState(kButtonDown); 
+        } else {
+          m_UsePointingSelectionNone->SetState(kButtonUp); 
+          m_UsePointingSelectionPointSource->SetState(kButtonUp); 
+          m_PointingPointSourceLocation->SetEnabled(false);
+          m_PointingPointSourceRadius->SetEnabled(false);
+          m_PointingBoxLocation->SetEnabled(true);
+          m_PointingBoxExtentLatitude->SetEnabled(true);
+          m_PointingBoxExtentLongitude->SetEnabled(true);
+        }
+        
       } else if (Parameter1 >= c_UseGalacticPointSource && 
                  Parameter1 <= c_UseCartesianPointSource) {
         if (m_UsePointSource->GetState() == kButtonUp) {
@@ -1086,9 +1253,20 @@ bool MGUIEventSelection::OnApply()
   }
 
 
-  if (m_GUIData->GetTimeUseFile() != (m_GTIFileRB->GetState() == kButtonDown ? true : false)) {
-    m_GUIData->SetTimeUseFile(m_GTIFileRB->GetState() == kButtonDown ? true : false);
+  if (m_GTIEntryRB->GetState() == kButtonDown) {
+    if (m_GUIData->GetTimeMode() != 1) {
+      m_GUIData->SetTimeMode(1);
+    }
+  } else if (m_GTIFileRB->GetState() == kButtonDown) {
+    if (m_GUIData->GetTimeMode() != 2) {
+      m_GUIData->SetTimeMode(2);
+    }
+  } else {
+    if (m_GUIData->GetTimeMode() != 0) {
+      m_GUIData->SetTimeMode(0);
+    }
   }
+  
   if (m_MinTimeEntry->IsModified() == true) {
     m_GUIData->SetTimeRangeMin(m_MinTimeEntry->GetAsString().ToDouble());
   }
@@ -1182,6 +1360,7 @@ bool MGUIEventSelection::OnApply()
     m_GUIData->SetThetaDeviationMax(m_ThetaDeviationMax->GetAsDouble());
   }
 
+  
   if (((m_UsePointSource->GetState() == kButtonDown) ? true : false) != m_GUIData->GetSourceUsePointSource()) {
     m_GUIData->SetSourceUsePointSource((m_UsePointSource->GetState() == kButtonDown) ? true : false);
   }
@@ -1218,6 +1397,40 @@ bool MGUIEventSelection::OnApply()
     m_GUIData->SetSourceSPDMax(m_SPD->GetMaxValue());
   }
 
+  if (m_UsePointingSelectionPointSource->GetState() == kButtonDown) {
+    if (m_GUIData->GetPointingSelectionType() != 1) {
+      m_GUIData->SetPointingSelectionType(1);
+    }
+  } else if (m_UsePointingSelectionBox->GetState() == kButtonDown) {
+    if (m_GUIData->GetPointingSelectionType() != 2) {
+      m_GUIData->SetPointingSelectionType(2);
+    }
+  } else {
+    if (m_GUIData->GetPointingSelectionType() != 0) {
+      m_GUIData->SetPointingSelectionType(0);
+    }
+  }
+  
+  if (m_PointingPointSourceLocation->IsModified() == true) {
+    m_GUIData->SetPointingPointSourceLatitude(m_PointingPointSourceLocation->GetAsDouble(0));
+    m_GUIData->SetPointingPointSourceLongitude(m_PointingPointSourceLocation->GetAsDouble(1));
+  }
+  if (m_PointingPointSourceRadius->IsModified() == true) {
+    m_GUIData->SetPointingPointSourceRadius(m_PointingPointSourceRadius->GetAsDouble());
+  }
+  if (m_PointingBoxLocation->IsModified() == true) {
+    m_GUIData->SetPointingBoxLatitude(m_PointingBoxLocation->GetAsDouble(0));
+    m_GUIData->SetPointingBoxLongitude(m_PointingBoxLocation->GetAsDouble(1));
+  }
+  if (m_PointingBoxExtentLatitude->IsModified() == true) {
+    m_GUIData->SetPointingBoxExtentLatitude(m_PointingBoxExtentLatitude->GetAsDouble());
+  }
+  if (m_PointingBoxExtentLongitude->IsModified() == true) {
+    m_GUIData->SetPointingBoxExtentLongitude(m_PointingBoxExtentLongitude->GetAsDouble());
+  }
+  
+  
+  
   if (m_GUIData->GetBeamUse() != ((m_UseBeam->GetState() == kButtonDown) ? true : false)) {
     m_GUIData->SetBeamUse((m_UseBeam->GetState() == kButtonDown) ? true : false);
   }

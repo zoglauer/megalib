@@ -164,6 +164,8 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetComptonAngleRangeMax() const { return m_ComptonAngleRangeMax; }
   void SetComptonAngleRangeMax(double ComptonAngleRangeMax) { m_ComptonAngleRangeMax = ComptonAngleRangeMax; m_EventSelectionModified = true; }
 
+  
+  
   double GetEHCAngle() const { return m_EHCAngle; }
   void SetEHCAngle(double EHCAngle) { m_EHCAngle = EHCAngle; m_EventSelectionModified = true; }
 
@@ -182,6 +184,8 @@ class MSettingsEventSelections : public MSettingsInterface
   int GetEHCType() const { return m_EHCType; }
   void SetEHCType(int EHCType) { m_EHCType = EHCType; m_EventSelectionModified = true; }
 
+  
+  
   bool GetSourceUsePointSource() const { return m_SourceUsePointSource; }
   void SetSourceUsePointSource(bool SourceUsePointSource) { m_SourceUsePointSource = SourceUsePointSource; m_EventSelectionModified = true; }
 
@@ -220,6 +224,33 @@ class MSettingsEventSelections : public MSettingsInterface
 
   double GetSourceSPDMax() const { return m_SourceSPDMax; }
   void SetSourceSPDMax(double SourceSPDMax) { m_SourceSPDMax = SourceSPDMax; m_EventSelectionModified = true; }
+  
+  
+  unsigned int GetPointingSelectionType() const {  return m_PointingSelectionType; }
+  void SetPointingSelectionType(unsigned int PointingSelectionType) { m_PointingSelectionType = PointingSelectionType; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceLongitude() const { return m_PointingPointSourceLongitude; }
+  void SetPointingPointSourceLongitude(double PointingPointSourceLongitude) { m_PointingPointSourceLongitude = PointingPointSourceLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceLatitude() const { return m_PointingPointSourceLatitude; }
+  void SetPointingPointSourceLatitude(double PointingPointSourceLatitude) { m_PointingPointSourceLatitude = PointingPointSourceLatitude; m_EventSelectionModified = true; }
+
+  double GetPointingPointSourceRadius() const { return m_PointingPointSourceRadius; }
+  void SetPointingPointSourceRadius(double PointingPointSourceRadius) { m_PointingPointSourceRadius = PointingPointSourceRadius; m_EventSelectionModified = true; }
+
+  double GetPointingBoxLongitude() const { return m_PointingBoxLongitude; }
+  void SetPointingBoxLongitude(double PointingBoxLongitude) { m_PointingBoxLongitude = PointingBoxLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxLatitude() const { return m_PointingBoxLatitude; }
+  void SetPointingBoxLatitude(double PointingBoxLatitude) { m_PointingBoxLatitude = PointingBoxLatitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxExtentLongitude() const { return m_PointingBoxExtentLongitude; }
+  void SetPointingBoxExtentLongitude(double PointingBoxExtentLongitude) { m_PointingBoxExtentLongitude = PointingBoxExtentLongitude; m_EventSelectionModified = true; }
+
+  double GetPointingBoxExtentLatitude() const { return m_PointingBoxExtentLatitude; }
+  void SetPointingBoxExtentLatitude(double PointingBoxExtentLatitude) { m_PointingBoxExtentLatitude = PointingBoxExtentLatitude; m_EventSelectionModified = true; }
+  
+  
   
   bool GetBeamUse() const { return m_BeamUse; }
   void SetBeamUse(bool BeamUse) { m_BeamUse = BeamUse; m_EventSelectionModified = true; }
@@ -265,8 +296,8 @@ class MSettingsEventSelections : public MSettingsInterface
   double GetFirstDistanceRangeMax() { return m_FirstDistanceRangeMax; }
   void SetFirstDistanceRangeMax(double FirstDistanceRangeMax) { m_FirstDistanceRangeMax = FirstDistanceRangeMax; m_EventSelectionModified = true; }
 
-  bool GetTimeUseFile() const { return m_TimeUseFile; }
-  void SetTimeUseFile(bool TimeUseFile) { m_TimeUseFile = TimeUseFile; m_EventSelectionModified = true; }
+  unsigned int GetTimeMode() const { return m_TimeMode; }
+  void SetTimeMode(unsigned int TimeMode) { m_TimeMode = TimeMode; m_EventSelectionModified = true; }
 
   MTime GetTimeRangeMin() const { return m_TimeRangeMin; }
   void SetTimeRangeMin(MTime TimeRangeMin) { m_TimeRangeMin = TimeRangeMin; m_EventSelectionModified = true; }
@@ -327,7 +358,7 @@ class MSettingsEventSelections : public MSettingsInterface
   long m_EventIdRangeMin;
   long m_EventIdRangeMax;
 
-  bool m_TimeUseFile;
+  unsigned int m_TimeMode;
   MTime m_TimeRangeMin;
   MTime m_TimeRangeMax;
   MString m_TimeFile;
@@ -424,6 +455,17 @@ class MSettingsEventSelections : public MSettingsInterface
   double m_SourceSPDMin;
   double m_SourceSPDMax;
 
+  
+  unsigned int m_PointingSelectionType;
+  double m_PointingPointSourceLatitude;
+  double m_PointingPointSourceLongitude;
+  double m_PointingPointSourceRadius;
+  double m_PointingBoxLatitude;
+  double m_PointingBoxLongitude;
+  double m_PointingBoxExtentLatitude;
+  double m_PointingBoxExtentLongitude;
+  
+  
   bool m_BeamUse;
   double m_BeamStartX;
   double m_BeamStartY; 
