@@ -327,6 +327,7 @@ class MEventSelector
   int m_NRejectedARM;
   int m_NRejectedSPD;
   int m_NRejectedBeam;
+  int m_NRejectedQuickHack;
 
   friend ostream& operator<<(ostream& os, MEventSelector& S);
 

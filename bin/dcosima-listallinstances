@@ -75,7 +75,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   # Check how many instances are allowed
-  ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-getinstances"`
+  ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-allowedinstances"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
     continue

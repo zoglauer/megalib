@@ -226,6 +226,20 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       continue
     fi
     
+    # Check if we have enough disk space free
+    DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${REMOTEMASTERDIR}; df -k . -P -T -BG | tail -n 1"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Unable to determine free disk space!"
+      MACHINES[$m]=""
+      continue
+    fi
+    DISKSPACE=$(echo ${DISKSPACE}  | awk '{ print $5 }' | sed 's/.$//' )
+    if (( ${DISKSPACE} < 50 )); then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Not enough free disk space (free: ${DISKSPACE} GB, required: 50 GB)"
+      MACHINES[$m]=""
+      continue
+    fi
+
     echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
@@ -251,7 +265,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       fi
     
       # Prepare the launch
-      ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
+      ALLOWED=`dcosima-allowedinstances --remote=${MACHINES[$m]}`
       echo " "
       echo "Preparing for next launch:"
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"

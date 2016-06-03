@@ -77,7 +77,7 @@ for C in "${CMD[@]}"; do
   else
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"dcosima-getinstances --help\" for a list of options"
+    echo "       See \"dcosima-runinstance --help\" for a list of options"
     exit 1
   fi
 done

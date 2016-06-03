@@ -3680,7 +3680,9 @@ void MInterfaceMimrec::EnergySpectra()
   cout<<endl;
   cout<<"Energy spectrum - some additional statistics:"<<endl;
   cout<<"Number of events:     "<<InsideWindow+OutsideWindow<<" (inside="<<InsideWindow<<", outside="<<OutsideWindow<<")"<<endl;
-  cout<<"Avg. measured energy: "<<EMeas/InsideWindow<<" keV"<<endl;
+  if (InsideWindow > 0) {
+    cout<<"Avg. measured energy: "<<EMeas/InsideWindow<<" keV"<<endl;
+  }
   cout<<endl;
 
   if (InsideWindow+OutsideWindow == 0) {
