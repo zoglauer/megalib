@@ -144,6 +144,7 @@ DEBUG="off"
 UPDATES="off"
 PATCH="on"
 CLEANUP="off"
+BRANCH=""
 
 MAXTHREADS=1;
 if ( `test -f /usr/sbin/sysctl` ); then
@@ -218,6 +219,8 @@ for C in "${CMD[@]}"; do
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-k* ]]; then
     KEEPMEGALIBASIS="on"
+  elif [[ ${C} == *-b* ]]; then
+    BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -266,6 +269,15 @@ if [ "${KEEPMEGALIBASIS}" == "on" ]; then
   echo " * Keeping the existing MEGAlib installation, just recompile."
 else
   echo " * Updating MEGAlib to the latest version"
+fi
+
+if [[ ${BRANCH} != "" ]]; then
+  if [[ ${REPOSITORY} == git ]]; then
+    echo " * Using MEGAlib git branch ${BRANCH}"
+  else
+    echo "ERROR: You can only select a branch when using the git repository."
+    exit 1
+  fi    
 fi
 
 if [ "${EXTERNALPATH}" != "" ]; then
@@ -455,6 +467,7 @@ fi
 
 
 
+
 echo " "
 echo "(2) Preparing the MEGAlib source code:"
 echo " "
@@ -576,28 +589,39 @@ if [ -d $MEGALIBPATH ]; then
       CurrentBranch=`git rev-parse --abbrev-ref HEAD`
       echo "Current branch: ${CurrentBranch}"
 
-      if [ "${RELEASE}" == "dev" ]; then
-        if [ "${CurrentBranch}" != "master" ]; then
-          echo "Switching to the latest development version of MEGAlib in the git repository..."
-          git checkout master
-          if [ "$?" != "0" ]; then
-            echo " "
-            echo "ERROR: Unable to switch to the latest development version in git"
-            exit 1
+      if [ "${BRANCH}" == "" ]; then
+        if [ "${RELEASE}" == "dev" ]; then
+          if [ "${CurrentBranch}" != "master" ]; then
+            echo "Switching to the latest development version of MEGAlib in the git repository..."
+            git checkout master
+            if [ "$?" != "0" ]; then
+              echo " "
+              echo "ERROR: Unable to switch to the latest development version in git"
+              exit 1
+            fi
+          fi
+        else
+          Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+          if [ "${CurrentBranch}" != "${Branch}" ]; then
+            echo "Switching to latest release version of MEGAlib from the git repository..."
+            git checkout ${Branch}
+            if [ "$?" != "0" ]; then
+              echo " "
+              echo "ERROR: Unable to update the git repository to the latest release branch"
+              exit 1
+            fi
           fi
         fi
       else
-        Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
-        if [ "${CurrentBranch}" != "${Branch}" ]; then
-          echo "Switching to latest release version of MEGAlib from the git repository..."
-          git checkout ${Branch}
-          if [ "$?" != "0" ]; then
-            echo " "
-            echo "ERROR: Unable to update the git repository to the latest release branch"
-            exit 1
-          fi
+        echo "Switching to user selected branch ${BRANCH}..."
+        git checkout ${BRANCH}
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to switch to user selected branch ${BRANCH}..."
+          exit 1
         fi
       fi
+      
       echo "Fast forwarding to the head"
       git pull origin
       if [ "$?" != "0" ]; then
@@ -687,22 +711,34 @@ else
       echo "ERROR: Unable to checkout the latest development version from git"
       exit 1
     fi
-    if [ "${RELEASE}" == "rel" ]; then
-      echo "Switching to latest release version of MEGAlib from the git repository..."
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
-      if ( [ "$?" != "0" ] || [ "${Branch}" == "" ] ); then
-        echo " "
-        echo "ERROR: Unable to find the latest release branch"
-        exit 1
+    if [[ ${BRANCH} == "" ]]; then
+      if [ "${RELEASE}" == "rel" ]; then
+        echo "Switching to latest release version of MEGAlib from the git repository..."
+        Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+        if ( [ "$?" != "0" ] || [ "${Branch}" == "" ] ); then
+          echo " "
+          echo "ERROR: Unable to find the latest release branch"
+          exit 1
+        fi
+        cd ${MEGALIBPATH}
+        git checkout ${Branch}
+        if [ "$?" != "0" ]; then
+          echo " "
+          echo "ERROR: Unable to update the git repository to the latest release branch"
+          exit 1
+        fi
+
+        cd ${STARTPATH}
       fi
+    else 
+      echo "Switching to branch ${BRANCH}..."
       cd ${MEGALIBPATH}
-      git checkout ${Branch}
+      git checkout ${BRANCH}
       if [ "$?" != "0" ]; then
         echo " "
-        echo "ERROR: Unable to update the git repository to the latest release branch"
+        echo "ERROR: Unable to update the git repository to branch ${BRANCH}"
         exit 1
       fi
-
 
       cd ${STARTPATH}
     fi
