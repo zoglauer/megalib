@@ -312,6 +312,7 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedARM = EventSelector.m_NRejectedARM;
   m_NRejectedSPD = EventSelector.m_NRejectedSPD;
   m_NRejectedBeam = EventSelector.m_NRejectedBeam;              
+  m_NRejectedQuickHack = EventSelector.m_NRejectedQuickHack;
 
   return (*this);
 }
@@ -359,6 +360,7 @@ void MEventSelector::Reset()
   m_NRejectedARM = 0;
   m_NRejectedSPD = 0;
   m_NRejectedBeam = 0;
+  m_NRejectedQuickHack = 0;
 }
 
  
@@ -526,6 +528,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
   MVector GalacticCenter;
   GalacticCenter.SetMagThetaPhi(1.0, 90*c_Rad, 0*c_Rad);
   if (GalacticCenter.Angle(Event->GetGalacticPointingZAxis()) > 50*c_Rad) {
+    m_NRejectedQuickHack++;
     Return = false; 
   }
   */
@@ -1883,6 +1886,10 @@ MString MEventSelector::ToString()
    <<m_NRejectedUseDecays<<endl;
   s<<"Use flagged as bad  ............  "
    <<m_NRejectedUseFlaggedAsBad<<endl;
+  if (m_NRejectedQuickHack > 0) {
+    s<<"Quick hack  ....................  "
+     <<m_NRejectedQuickHack<<endl;
+  }
   s<<endl;
   s<<"ACCEPTED  ......................  "
    <<m_NAccepted<<endl;
