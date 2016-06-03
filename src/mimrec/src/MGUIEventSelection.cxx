@@ -1204,6 +1204,10 @@ bool MGUIEventSelection::OnApply()
     mgui<<"The minimum time is larger or equal the maximum time"<<error;     
     return false;
   }
+  if (MinTime < 0) {
+    mgui<<"The minimum time is smaller than zero!"<<error;     
+    return false;    
+  }
   if (m_GUIData->GetSpecialMode() == true) {
     if (m_TimeWalk->CheckRange(-numeric_limits<double>::max(), numeric_limits<double>::max(), 
                                -numeric_limits<double>::max(), numeric_limits<double>::max(), true) == false) return false;
