@@ -12,7 +12,7 @@ commandhelp() {
   echo "dcosima-updatemegalib - update MEGAlib on the remote machines";
   echo "Copyright by Andreas Zoglauer"
   echo ""
-  echo "Usage: dcosima-getinstances [options]";
+  echo "Usage: dcosima-updatemegalib [options]";
   echo ""
   echo "Options:"
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dcosima.cfg"

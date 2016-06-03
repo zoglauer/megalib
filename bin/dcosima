@@ -265,7 +265,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       fi
     
       # Prepare the launch
-      ALLOWED=`dcosima-getinstances --remote=${MACHINES[$m]}`
+      ALLOWED=`dcosima-allowedinstances --remote=${MACHINES[$m]}`
       echo " "
       echo "Preparing for next launch:"
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
