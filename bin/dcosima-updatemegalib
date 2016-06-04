@@ -15,6 +15,7 @@ commandhelp() {
   echo "Usage: dcosima-updatemegalib [options]";
   echo ""
   echo "Options:"
+  echo "  --branch=name             : Use the given MEGAlib git branch (default it master)"
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dcosima.cfg"
   echo "  --help                    : Show this help"
   echo ""
@@ -28,11 +29,14 @@ commandhelp() {
 # Store command line as array
 CMD=( "$@" )
 SINGLEMACHINE=""
+BRANCH="master"
 
 # Check for help
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-m*=* ]]; then
     SINGLEMACHINE=`echo ${C} | awk -F"=" '{ print $2 }'` 
+  elif [[ ${C} == *-b*=* ]]; then
+    BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'` 
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -120,7 +124,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
   echo " "
   echo "Step 4: Running the setup file..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on --branch=${BRANCH}"
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to run the setup file on ${REMOTENAME[$m]}"
     FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
