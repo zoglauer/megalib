@@ -53,9 +53,14 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   #echo " * Found remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"
 done
 
+
 echo " "
-echo " "
-echo "Available instances:"
+echo "Gathering data... this might take a minute..."
+echo " " 
+
+
+OUTPUT=$"Instances: Available / Running / Allowed #\n"
+OUTPUT+=$" # \n"
 ALLALLOWED="0"
 ALLPOSSIBLE="0"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
@@ -74,14 +79,23 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi
 
-  # Check how many instances are allowed
+  # Check how many more instances are allowed
   ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-allowedinstances"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
     continue
-  fi  
+  fi
+	if (( ${ALLOWED} < 0 )); then ALLOWED=0; fi
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
   
+  # Check how many instances are running
+  RUNNING=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "ps -u ${REMOTEUSER[$m]} | grep '\ cosima' | wc -l | sed 's/^ *//g'"`
+	if [ "$?" != 0 ]; then
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
+		continue
+	fi
+	ALLRUNNING=$(( ${ALLRUNNING} + ${RUNNING} ))
+
   # Check how many instances are possible
   REMOTECOMMAND='COUNT=`grep -c ^instances ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^instances ~/.dcosima.cfg; fi;'
   POSSIBLE=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND})
@@ -100,10 +114,14 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
   ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
   
-  echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): ${ALLOWED} / ${POSSIBLE}"
+  OUTPUT+=$" * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}):# ${ALLOWED} #/# ${RUNNING} #/# ${POSSIBLE}\n"
 done
+
+OUTPUT+=$" # \n"
+OUTPUT+=$"Total number of instances:# ${ALLALLOWED} #/# ${ALLRUNNING} #/# ${ALLPOSSIBLE}\n"
+
 echo " "
-echo "Total number of instances: ${ALLALLOWED} / ${ALLPOSSIBLE}"
+echo -e "${OUTPUT}" | column -t -s'#'
 echo " "
 
 exit 0
