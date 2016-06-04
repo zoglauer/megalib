@@ -20,6 +20,7 @@
 #include "MVariableSourceDetector.h"
 
 // Standard libs:
+#include <algorithm>
 
 // ROOT libs:
 
