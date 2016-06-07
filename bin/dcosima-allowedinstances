@@ -109,10 +109,10 @@ if [ "${REMOTE}" == "" ]; then
     AllowedInstances=0; 
   else
     AllowedInstances=$(( ${MaximumInstances} - ${RunningInstances} - ${Load} ))  
-  fi 
+  fi
   if (( ${AllowedInstances} < 0 )); then AllowedInstances=0; fi
-	
-	#echo "Allowed: ${AllowedInstances}"    
+
+  #echo "Allowed: ${AllowedInstances}"    
 else
   #echo "Remote B"
   AllowedInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; dcosima-allowedinstances"` 
