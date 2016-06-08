@@ -18,6 +18,7 @@
 
 // Standard libs:
 #include <vector>
+#include <sstream>
 using namespace std;
 
 // MEGAlib libs:
@@ -52,6 +53,15 @@ class MResponseMatrix
   virtual bool Read(MString FileName);
   virtual bool Write(MString FileName, bool Stream = false) = 0;
 
+  // The number of simulated events which generated this response
+  void SetSimulatedEvents(long SimulatedEvents) { m_NumberOfSimulatedEvents = SimulatedEvents; }
+  // Get he number of simulated events which generated this response
+  long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
+  
+  //! The start area of far-field simulations
+  void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
+  double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
+  
   virtual unsigned long GetNBins() const = 0;
 
   virtual float GetAxisContent(unsigned int b, unsigned int order = 0) const = 0;
@@ -102,6 +112,10 @@ class MResponseMatrix
                      unsigned int a16 = c_UnusedAxis,
                      unsigned int a17 = c_UnusedAxis,
                      unsigned int a18 = c_UnusedAxis) const;
+                     
+                     
+  //! Write some basic header data to the file/stream 
+  void WriteHeader(ostringstream& out);
 
   // private methods:
  private:
@@ -120,6 +134,11 @@ class MResponseMatrix
 
   //! Order/Dimension of this response 
   unsigned int m_Order;
+  
+  //! Number of events simulated to generate this response
+  long m_NumberOfSimulatedEvents;
+  //! The start area of far-field simulations
+  double m_FarFieldStartArea;
 
   //! A hash value --- this value is not calculated but has to be set from outside or read in via file
   unsigned long m_Hash;

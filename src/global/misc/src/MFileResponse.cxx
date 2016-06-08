@@ -71,6 +71,8 @@ MFileResponse::MFileResponse() : MParser(' ', false)
   m_ValuesCentered = true;
   m_Name = g_StringNotDefined;
   m_Hash = 0;
+  m_NumberOfSimulatedEvents = 0;
+  m_FarFieldStartArea = 0;
 }
 
 
@@ -112,6 +114,10 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
         m_FileType = T.GetTokenAtAsString(1);
       } else if (T.GetTokenAt(0) == "NM") {
         m_Name = T.GetTokenAfterAsString(1);
+      } else if (T.GetTokenAt(0) == "TS") {
+        m_NumberOfSimulatedEvents = T.GetTokenAtAsLong(1);
+      } else if (T.GetTokenAt(0) == "SA") {
+        m_FarFieldStartArea = T.GetTokenAtAsDouble(1);
       } else if (T.GetTokenAt(0) == "HA") {
         m_Hash = T.GetTokenAtAsUnsignedLong(1);
       } else if (T.GetTokenAt(0) == "CE") {

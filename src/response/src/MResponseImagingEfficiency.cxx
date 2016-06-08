@@ -140,13 +140,25 @@ bool MResponseImagingEfficiency::CreateResponse()
 
   cout<<"Generating efficiency"<<endl;
 
-  vector<float> AxisPhi = CreateEquiDist(-180.0, 180.0, 4*360);
-  vector<float> AxisTheta = CreateEquiDist(0.0, 180.0, 4*180);
+  vector<float> AxisPhi = CreateEquiDist(-180.0, 180.0, 360);
+  vector<float> AxisTheta = CreateEquiDist(0.0, 180.0, 180);
 
-  MResponseMatrixO2 Efficiency("Efficiency", AxisPhi, AxisTheta);
-  Efficiency.SetAxisNames("#phi [deg]", "#theta [deg]");
+  MResponseMatrixO2 Efficiency1("Efficiency_rot90yaxis", AxisPhi, AxisTheta);
+  Efficiency1.SetAxisNames("#phi [deg]", "#theta [deg]");
+  Efficiency1.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
 
+  // A default rotation of the origin 
+  MRotation Rotation1(90.0 * c_Rad, MVector(0, 1, 0));
+  
+  MResponseMatrixO2 Efficiency2("Efficiency_rot90zaxis_rot90yaxis", AxisPhi, AxisTheta);
+  Efficiency2.SetAxisNames("#phi [deg]", "#theta [deg]");
+  Efficiency2.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
 
+  // A default rotation of the origin 
+  MRotation Rotation2(90.0 * c_Rad, MVector(0, 0, 1));
+  Rotation2 = MRotation(90.0 * c_Rad, MVector(0, 1, 0));
+  
+  
   MVector IdealOrigin;
 
   MRawEventList* REList = 0;
@@ -170,19 +182,28 @@ bool MResponseImagingEfficiency::CreateResponse()
             if (m_SiEvent->GetNIAs() > 0) {
               IdealOrigin = m_SiEvent->GetIAAt(0)->GetPosition();
 
-              // Phi response:
-              Efficiency.Add(IdealOrigin.Phi()*c_Deg, IdealOrigin.Theta()*c_Deg);
+              MVector IdealOrigin1 = Rotation1 * IdealOrigin;
+              Efficiency1.Add(IdealOrigin1.Phi()*c_Deg, IdealOrigin1.Theta()*c_Deg);
+
+              MVector IdealOrigin2 = Rotation2 * IdealOrigin;
+              Efficiency2.Add(IdealOrigin2.Phi()*c_Deg, IdealOrigin2.Theta()*c_Deg);
            }
           }
         }
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      Efficiency.Write(m_ResponseName + ".efficiency" + m_Suffix, true);
+      Efficiency1.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+      Efficiency2.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+      Efficiency1.Write(m_ResponseName + ".efficiency.90y" + m_Suffix, true);
+      Efficiency2.Write(m_ResponseName + ".efficiency.90z.90y" + m_Suffix, true);
     }
   }  
 
-  Efficiency.Write(m_ResponseName + ".efficiency" + m_Suffix, true);
+  Efficiency1.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  Efficiency2.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  Efficiency1.Write(m_ResponseName + ".efficiency.90y" + m_Suffix, true);
+  Efficiency2.Write(m_ResponseName + ".efficiency.90z.90y" + m_Suffix, true);
 
   return true;
 }

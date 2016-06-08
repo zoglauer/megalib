@@ -1380,12 +1380,7 @@ bool MResponseMatrixO11::Write(MString FileName, bool Stream)
   mdebug<<"Started writting file \""<<FileName<<"\" ... This way take a while ..."<<endl;
 
   ostringstream s;
-  s<<"# Response Matrix 11"<<endl;
-  s<<"Version 1"<<endl;
-  s<<endl;
-  s<<"NM "<<m_Name<<endl;
-  s<<endl;
-  s<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  WriteHeader(s);
   File.Write(s);
   
   unsigned int x1, x1_max = GetAxisBins(1); 

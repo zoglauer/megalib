@@ -60,7 +60,7 @@ const unsigned int MResponseMatrix::c_UnusedAxis = 98765432;
 
 
 MResponseMatrix::MResponseMatrix() : 
-  m_ValuesCentered(true), m_Name("None"), m_Order(0)
+  m_ValuesCentered(true), m_Name("None"), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0)
 {
   // default constructor
 }
@@ -70,7 +70,7 @@ MResponseMatrix::MResponseMatrix() :
 
 
 MResponseMatrix::MResponseMatrix(MString Name) : 
-  m_ValuesCentered(true), m_Name(Name), m_Order(0)
+  m_ValuesCentered(true), m_Name(Name), m_Order(0), m_NumberOfSimulatedEvents(0), m_FarFieldStartArea(0)
 {
   // default constructor
 }
@@ -238,6 +238,31 @@ int MResponseMatrix::FindBin(const vector<float>& Array, float Value) const
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Write some basic data to the file/stream 
+void MResponseMatrix::WriteHeader(ostringstream& out)
+{
+  out<<"# Response Matrix "<<m_Order<<endl;
+  out<<"Version 1"<<endl;
+  out<<endl;
+  out<<"# Name"<<endl;
+  out<<"NM "<<m_Name<<endl;
+  out<<endl;
+  out<<"# The order of the matrix"<<endl;
+  out<<"OD "<<m_Order<<endl;
+  out<<endl;
+  out<<"# The number of simulated events"<<endl;
+  out<<"TS "<<m_NumberOfSimulatedEvents<<endl;
+  out<<endl;
+  out<<"# The far-field start area (if zero a non-far-field simulation, or non-spherical start area was used)"<<endl;
+  out<<"SA "<<m_FarFieldStartArea<<endl;
+  out<<endl;
+  out<<"# Are the values centered?"<<endl;
+  out<<"CE "<<((m_ValuesCentered == true) ? "true" : "false")<<endl;
+  out<<endl;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -262,6 +287,8 @@ bool MResponseMatrix::Read(MString FileName)
   SetName(Parser.GetName());
   SetValuesCenteredFlag(Parser.AreValuesCentered());
   SetHash(Parser.GetHash());
+  SetSimulatedEvents(Parser.GetSimulatedEvents());
+  SetFarFieldStartArea(Parser.GetFarFieldStartArea());
 
   Ok = ReadSpecific(Parser, Type, Version);
 
