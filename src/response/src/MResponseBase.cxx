@@ -82,6 +82,9 @@ MResponseBase::MResponseBase()
   m_SiGeometry = 0;
   m_ReGeometry = 0;
 
+  m_NumberOfSimulatedEventsClosedFiles = 0;
+  m_NumberOfSimulatedEventsThisFile = 0;
+
   m_Interrupt = false;
   
   m_Suffix = ".rsp";
@@ -281,6 +284,15 @@ bool MResponseBase::InitializeNextMatchingEvent()
     }
   }
   
+  if (MoreEvents == true) {
+    if (m_SiEvent->GetSimulationEventID() < m_NumberOfSimulatedEventsThisFile) {
+      m_NumberOfSimulatedEventsClosedFiles = m_SiReader->GetSimulatedEvents();
+    }
+    m_NumberOfSimulatedEventsThisFile = m_SiEvent->GetSimulationEventID();
+  } else {
+    m_NumberOfSimulatedEventsClosedFiles = m_SiReader->GetSimulatedEvents();
+    m_NumberOfSimulatedEventsThisFile = 0;
+  }
   //mout<<"Response: Match Sivan ID="<<m_SivanEventID<<"  Revan ID="<<m_RevanEventID<<endl;
   
   return MoreEvents;  

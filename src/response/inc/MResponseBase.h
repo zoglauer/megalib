@@ -140,6 +140,11 @@ class MResponseBase
   //! The file suffix 
   MString m_Suffix;
   
+  //! The number of simulated events
+  long m_NumberOfSimulatedEventsClosedFiles;
+  //! The number of simulated events
+  long m_NumberOfSimulatedEventsThisFile;
+  
   //! Flag indicating that the only the initial IA is required
   bool m_OnlyINITRequired;
 
