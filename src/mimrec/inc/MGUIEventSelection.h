@@ -71,7 +71,7 @@ class MGUIEventSelection : public MGUIDialog
 
   // private members:
  private:
-  MSettingsEventSelections* m_GUIData;
+  MSettingsEventSelections* m_Settings;
   MDGeometryQuest* m_Geometry;
 
   int m_UseTracked;
