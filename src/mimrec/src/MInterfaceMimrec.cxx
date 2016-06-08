@@ -976,7 +976,11 @@ void MInterfaceMimrec::ExtractEvents()
 
   // Create a new tra file to which we can write the extracted events
   MString FileName = m_EventFile->GetFileName();
-  FileName = FileName.Remove(FileName.Length()-4, 4); // remove final tra
+  if (FileName.EndsWith(".tra")) {
+    FileName = FileName.Remove(FileName.Length()-4, 4); // remove final tra
+  } else if (FileName.EndsWith(".tra.gz")) {
+    FileName = FileName.Remove(FileName.Length()-7, 7); // remove final tra
+  }
   FileName += ".extracted.tra";
   MFileEventsTra* OutFile = new MFileEventsTra();
   OutFile->Open(FileName, MFile::c_Write);
