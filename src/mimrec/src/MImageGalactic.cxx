@@ -308,7 +308,7 @@ void MImageGalactic::AddNamedSources()
     //cout<<m_xMin<<":"<<L<<":"<<m_xMax<<endl;
     //cout<<m_yMin<<":"<<B<<":"<<m_yMax<<endl;
     //cout<<PSS.GetPointSourceAt(i)<<":"<<PSS.GetPointSourceAt(i).GetName()<<endl;
-    if (L > 180) L -= 360;
+    //if (L > 180) L -= 360;
     //cout<<"Long: "<<L<<":"<<m_xMin<<":"<<m_xMax<<" --- Lat: "<<B<<":"<<m_yMin<<":"<<m_yMax<<endl;
     if (L >= m_xMin && L <= m_xMax && B >= m_yMin && B <= m_yMax) {
       //xT = ((L-m_xMin)/(m_xMax-m_xMin))*0.8+0.095;
