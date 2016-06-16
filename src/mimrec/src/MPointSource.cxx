@@ -57,6 +57,7 @@ ClassImp(MPointSource)
 const unsigned int MPointSource::c_ExtensionPointLike = 1;
 const unsigned int MPointSource::c_ExtensionDiskLike  = 2;
 
+const unsigned int MPointSource::c_SpectrumUnknown               = 0;
 const unsigned int MPointSource::c_SpectrumMono                  = 1;
 const unsigned int MPointSource::c_SpectrumPowerLaw              = 2;
 const unsigned int MPointSource::c_SpectrumPowerLawExpCutoff     = 3;
@@ -71,6 +72,8 @@ const unsigned int MPointSource::c_ObjectFSRQ    = 4;
 const unsigned int MPointSource::c_ObjectPulsar  = 5;
 const unsigned int MPointSource::c_ObjectSNR     = 6;
 const unsigned int MPointSource::c_ObjectCloud   = 7;
+const unsigned int MPointSource::c_ObjectHMXB    = 8;
+const unsigned int MPointSource::c_ObjectLMXB    = 9;
 
 
 const double MPointSource::c_RadiusOfPointSource = 2.777e-4; // one arcsec
@@ -290,7 +293,21 @@ bool MPointSource::ParseLine(MString DataScat, unsigned int Version)
         return false;
       }
     } else if (Tokenizer.GetTokenAtAsString(1) == "U") {
-      mout<<"  PS unknown spectral type: "<<Tokenizer.GetTokenAtAsString(1)<<endl;
+      if (Tokenizer.GetNTokens() >= 7) {
+        m_ExtensionType = c_ExtensionPointLike;
+        m_SpectralType = c_SpectrumUnknown;
+        m_Radius = c_RadiusOfPointSource;
+
+        SetObjectType(Tokenizer.GetTokenAtAsString(2));
+        SetCoordinates(Tokenizer.GetTokenAtAsString(3), Tokenizer.GetTokenAtAsDouble(4), Tokenizer.GetTokenAtAsDouble(5));
+
+        m_Name = Tokenizer.GetTokenAfterAsString(6);
+      } else {
+        mout<<" *** ERROR ***"<<endl;
+        mout<<"  PS keyword must look like this: PS U <Type> GA <gal lat [deg]> <gal long [deg]> <name>"<<endl;
+        mout<<Tokenizer.ToString()<<endl;
+        return false;
+      }
     } else {
       mout<<" *** ERROR ***"<<endl;
       mout<<"  PS unknown sub type: "<<Tokenizer.GetTokenAtAsString(1)<<endl;
@@ -353,6 +370,10 @@ void MPointSource::SetObjectType(MString Object)
     m_ObjectType = c_ObjectSNR;
   } else if (Object == "cloud") {
     m_ObjectType = c_ObjectCloud;
+  } else if (Object == "hmxb") {
+    m_ObjectType = c_ObjectHMXB;
+  } else if (Object == "lmxb") {
+    m_ObjectType = c_ObjectLMXB;
   } else {
     m_ObjectType = c_ObjectUnknown;
   }
