@@ -75,7 +75,7 @@ bool MPointSourceSelector::Open(MString FileName, unsigned int)
 
 
   if (MFile::Open(FileName, c_Read) == false) {
-		mlog<<"MPointSourceSelector::Open: Unable to open file "<<FileName<<"."<<endl;
+    mlog<<"MPointSourceSelector::Open: Unable to open file "<<FileName<<"."<<endl;
     return false;
   }
 

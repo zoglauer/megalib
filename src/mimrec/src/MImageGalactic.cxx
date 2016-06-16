@@ -166,7 +166,7 @@ void MImageGalactic::SetImageArray(double* IA)
 void MImageGalactic::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
-
+ 
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, int(900.0/m_xNBins*m_yNBins));
@@ -299,16 +299,23 @@ void MImageGalactic::AddNamedSources()
   double xT, yT;
   unsigned int i;
 
-  double Distance = 0.5;
-  double Shadow = 0.0325;
+  double Distance = (m_yMax - m_yMin) / 100;
+  double Shadow = (m_yMax - m_yMin) / 1000;
 
+  float TextSize = 0.02f;
+  int TextAlign = 12;  
+  float MarkerSize = 0.6*TextSize;
+  int MarkerAlign = 22;
+  
   for (i = 0; i < PSS.GetNPointSources(); i++) {
     L = PSS.GetPointSourceAt(i).GetLongitude();
     B = PSS.GetPointSourceAt(i).GetLatitude();
     //cout<<m_xMin<<":"<<L<<":"<<m_xMax<<endl;
     //cout<<m_yMin<<":"<<B<<":"<<m_yMax<<endl;
     //cout<<PSS.GetPointSourceAt(i)<<":"<<PSS.GetPointSourceAt(i).GetName()<<endl;
-    //if (L > 180) L -= 360;
+    // Try to get it into the window
+    while (L > m_xMax) L -= 360;
+    while (L < m_xMin) L += 360;
     //cout<<"Long: "<<L<<":"<<m_xMin<<":"<<m_xMax<<" --- Lat: "<<B<<":"<<m_yMin<<":"<<m_yMax<<endl;
     if (L >= m_xMin && L <= m_xMax && B >= m_yMin && B <= m_yMax) {
       //xT = ((L-m_xMin)/(m_xMax-m_xMin))*0.8+0.095;
@@ -323,46 +330,81 @@ void MImageGalactic::AddNamedSources()
       TText* WhiteLowRight = new TText();
       //WhiteLowRight->SetTextFont(32);
       WhiteLowRight->SetTextColor(0);
-      WhiteLowRight->SetTextSize(0.025f);
-      WhiteLowRight->SetTextAlign(12);
+      WhiteLowRight->SetTextSize(TextSize);
+      WhiteLowRight->SetTextAlign(TextAlign);
       WhiteLowRight->DrawText(xT + Distance + Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
 
       TText* WhiteLowLeft = new TText();
       //WhiteLowLeft->SetTextFont(32);
       WhiteLowLeft->SetTextColor(0);
-      WhiteLowLeft->SetTextSize(0.025f);
-      WhiteLowLeft->SetTextAlign(12);
+      WhiteLowLeft->SetTextSize(TextSize);
+      WhiteLowLeft->SetTextAlign(TextAlign);
       WhiteLowLeft->DrawText(xT + Distance - Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
 
       TText* WhiteHighLeft = new TText();
       //WhiteHighLeft->SetTextFont(32);
       WhiteHighLeft->SetTextColor(0);
-      WhiteHighLeft->SetTextSize(0.025f);
-      WhiteHighLeft->SetTextAlign(12);
+      WhiteHighLeft->SetTextSize(TextSize);
+      WhiteHighLeft->SetTextAlign(TextAlign);
       WhiteHighLeft->DrawText(xT + Distance - Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
 
       TText* WhiteHighRight = new TText();
       //WhiteHighRight->SetTextFont(32);
       WhiteHighRight->SetTextColor(0);
-      WhiteHighRight->SetTextSize(0.025f);
-      WhiteHighRight->SetTextAlign(12);
+      WhiteHighRight->SetTextSize(TextSize);
+      WhiteHighRight->SetTextAlign(TextAlign);
       WhiteHighRight->DrawText(xT + Distance + Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
 
       TText* Black = new TText();
       //Black->SetTextFont(32);
       Black->SetTextColor(1);
-      Black->SetTextSize(0.025f);
-      Black->SetTextAlign(12);
+      Black->SetTextSize(TextSize);
+      Black->SetTextAlign(TextAlign);
       Black->DrawText(xT + Distance, yT + Distance, PSS.GetPointSourceAt(i).GetName());
+      
+      
+      
+      TText* MarkerWhiteLowRight = new TText();
+      //WhiteLowRight->SetTextFont(32);
+      MarkerWhiteLowRight->SetTextColor(0);
+      MarkerWhiteLowRight->SetTextSize(MarkerSize);
+      MarkerWhiteLowRight->SetTextAlign(MarkerAlign);
+      MarkerWhiteLowRight->DrawText(xT + Shadow, yT - Shadow, "x");
 
+      TText* MarkerWhiteLowLeft = new TText();
+      //WhiteLowLeft->SetTextFont(32);
+      MarkerWhiteLowLeft->SetTextColor(0);
+      MarkerWhiteLowLeft->SetTextSize(MarkerSize);
+      MarkerWhiteLowLeft->SetTextAlign(MarkerAlign);
+      MarkerWhiteLowLeft->DrawText(xT - Shadow, yT - Shadow, "x");
 
-      TMarker* MarkerWhite = new TMarker(xT, yT, 4);
-      MarkerWhite->SetMarkerSize(1.35f);
-      MarkerWhite->SetMarkerColor(0);
-      MarkerWhite->Draw();
+      TText* MarkerWhiteHighLeft = new TText();
+      //WhiteHighLeft->SetTextFont(32);
+      MarkerWhiteHighLeft->SetTextColor(0);
+      MarkerWhiteHighLeft->SetTextSize(MarkerSize);
+      MarkerWhiteHighLeft->SetTextAlign(MarkerAlign);
+      MarkerWhiteHighLeft->DrawText(xT - Shadow, yT + Shadow, "x");
 
-      TMarker* MarkerBlack = new TMarker(xT, yT, 2);
-      MarkerBlack->Draw();
+      TText* MarkerWhiteHighRight = new TText();
+      //WhiteHighRight->SetTextFont(32);
+      MarkerWhiteHighRight->SetTextColor(0);
+      MarkerWhiteHighRight->SetTextSize(MarkerSize);
+      MarkerWhiteHighRight->SetTextAlign(MarkerAlign);
+      MarkerWhiteHighRight->DrawText(xT + Shadow, yT + Shadow, "x");
+
+      TText* MarkerBlack = new TText();
+      //MarkerBlack->SetTextFont(32);
+      MarkerBlack->SetTextColor(1);
+      MarkerBlack->SetTextSize(MarkerSize);
+      MarkerBlack->SetTextAlign(MarkerAlign);
+      MarkerBlack->DrawText(xT, yT, "x");
+      
+      /*      
+      TMarker* Marker = new TMarker();
+      Marker->SetMarkerSize(2.0f);
+      Marker->SetMarkerStyle(2);
+      Marker->DrawMarker(xT, yT);
+      */
     }
   }
 
