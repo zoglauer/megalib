@@ -1040,7 +1040,7 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
     
       mout<<"Response matrix of order 2 with "<<GetAxisBins(axes[0])<<" entries:"<<endl;
       double Norm = 1;
-       for (unsigned int i1 = 0; i1 < GetAxisBins(axes[0]); ++i1) {
+      for (unsigned int i1 = 0; i1 < GetAxisBins(axes[0]); ++i1) {
         if (Normalize == true) {
           Norm = GetAxisContent(i1+1, axes[0])-GetAxisContent(i1, axes[0]);
           if (Norm != 0) {

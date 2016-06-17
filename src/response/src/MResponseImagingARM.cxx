@@ -157,8 +157,23 @@ bool MResponseImagingARM::CreateResponse()
     AxisPhiDiff.push_back(Axis[b]);
   }
 
-  MResponseMatrixO1 Phi("ARM", AxisPhiDiff);
-  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]");
+  vector<float> Energy = CreateEquiDist(0, 2500, 25);
+  vector<float> Distance;
+  Distance.push_back(0);
+  Distance.push_back(0.19);
+  Distance.push_back(0.39);
+  Distance.push_back(0.69);
+  Distance.push_back(0.99);
+  Distance.push_back(1.49);
+  Distance.push_back(1.99);
+  Distance.push_back(2.99);
+  Distance.push_back(4.99);
+  Distance.push_back(9.99);
+  Distance.push_back(19.99);
+  Distance.push_back(99.99);
+  
+  MResponseMatrixO3 Phi("AngularResolution", AxisPhiDiff, Energy, Distance);
+  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Energy [keV]", "Distance [cm]");
 
 
   double PhiDiff;
@@ -187,18 +202,18 @@ bool MResponseImagingARM::CreateResponse()
 
               // Phi response:
               PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
-              Phi.Add(PhiDiff);
+              Phi.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
            }
           }
         }
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
+      Phi.Write(m_ResponseName + ".angularresolution" + m_Suffix, true);
     }
   }  
 
-  Phi.Write(m_ResponseName + ".phi" + m_Suffix, true);
+  Phi.Write(m_ResponseName + ".angularresolution" + m_Suffix, true);
 
   return true;
 }
