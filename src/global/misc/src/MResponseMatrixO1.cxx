@@ -820,7 +820,7 @@ void MResponseMatrixO1::Show(bool Normalize)
   // Create a 1D ROOT histogram:
   
   if (GetNBins() > 0) {
-
+  
     TH1D* Hist = 0;
     float* Bins = new float[GetAxisBins(1)+1];
     for (unsigned int i = 0; i <= GetAxisBins(1); ++i) {
@@ -833,7 +833,7 @@ void MResponseMatrixO1::Show(bool Normalize)
     delete [] Bins;
     
     mout<<"Response matrix of order 1 with "<<GetNBins()<<" entries:"<<endl;
-      double Norm = 1;
+    double Norm = 1;
     for (unsigned int i1 = 0; i1 < GetAxisBins(1); ++i1) {
       if (Normalize == true) {
         Norm = GetAxisContent(i1+1, 1)-GetAxisContent(i1, 1);
@@ -846,7 +846,8 @@ void MResponseMatrixO1::Show(bool Normalize)
       Hist->SetBinContent(i1+1, GetBinContent(i1)*Norm);
     }
     
-    TCanvas* Canvas = new TCanvas("", m_Name + "_RM1C", 0, 0, 600, 600);
+    TCanvas* Canvas = new TCanvas();
+    Canvas->SetTitle(m_Name + "_RM1C");
     Canvas->cd();
     Hist->Draw();
     Canvas->Update();

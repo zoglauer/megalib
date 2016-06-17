@@ -1176,7 +1176,7 @@ bool MResponseManipulator::Show()
       //dynamic_cast<MResponseMatrixO10*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO10*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_Normalized);
     } else if (R->GetOrder() == 11) {
-      ///dynamic_cast<MResponseMatrixO11*>(R)->Smooth(m_NSmooths);
+      //dynamic_cast<MResponseMatrixO11*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO11*>(R)->Show(m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_Normalized);
     } else if (R->GetOrder() == 12) {
       //dynamic_cast<MResponseMatrixO12*>(R)->Smooth(m_NSmooths);
