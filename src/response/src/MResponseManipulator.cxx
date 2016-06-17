@@ -80,6 +80,7 @@ MResponseManipulator::MResponseManipulator() : m_Interrupt(false)
 {
   // Intentionally left blanck
 
+  m_Statistics = false;
   m_Append = false;
   m_Show = false;
   m_Divide = false;
@@ -242,25 +243,21 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Divide = true;
-      cout<<"Accepting file name for dividing: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file name for dividing: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-r") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Ratio = true;
-      cout<<"Accepting file name for ratio: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file name for ratio: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-p") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Probability = true;
-      cout<<"Accepting file name for probability: "
-          <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file name for probability: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-j") {
       m_Prefix = argv[++i];
       m_Join = true;
-      cout<<"Accepting file prefix for join: "
-          <<m_Prefix<<endl;
+      cout<<"Accepting file prefix for join: "<<m_Prefix<<endl;
     } else if (Option == "-s") {
       m_FileName = argv[++i];
       m_Statistics = true;
@@ -929,8 +926,6 @@ bool MResponseManipulator::Ratio()
 
   return true;
 }
-
-
 
 
 /******************************************************************************
