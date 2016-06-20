@@ -64,11 +64,11 @@ class MLMLClassicEM : public MLMLAlgorithms
   double* m_Ej;               
 
   //! Initial likelihood of the image
-	double m_InitialLikelihood; 
+  double m_InitialLikelihood; 
   //! Likelihood of the last iteration
-	double m_LastLikelihood;
+  double m_LastLikelihood;
   //! Likelihood of the current (finished) iteration
-	double m_CurrentLikelihood; 
+  double m_CurrentLikelihood; 
 
 
   // private members:

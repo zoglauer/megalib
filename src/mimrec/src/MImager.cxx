@@ -682,23 +682,25 @@ bool MImager::Analyze(bool CalculateResponse)
       return false;
     }
 
+    m_EventFile.ShowProgress(true);
     if (m_AnimationMode == c_AnimateBackprojections) {
       mgui<<"Animation information: "<<endl;
       mgui<<"Do not cancel the response file creation process or the times will be wrong!"<<endl;
       mgui<<"However, later you can stop the gif file generation by simply closing the image."<<info;
     }
     ComputeResponseSlices();
+    m_EventFile.ShowProgress(false);
+    gSystem->ProcessEvents();
   }
 
   if (GetNEvents() == 0) {
-    cout<<m_Selector.ToString()<<endl;
     mgui<<"Sorry! No events passed the event selections!"<<info;
     return false;
   }
-
+  
   // Set the response to the EM algorithm 
   m_EM->SetResponseSlices(m_BPEvents, m_NBins);
-
+  
   // Image display
   MImage* Image = 0;
   
@@ -796,7 +798,9 @@ bool MImager::Analyze(bool CalculateResponse)
     merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
     return false;
   }
+  Image->Display();
 
+  
   // Making a back projection movie hack:
   
   if (m_AnimationMode == c_AnimateBackprojections) { 
@@ -873,9 +877,6 @@ bool MImager::Analyze(bool CalculateResponse)
   }
 
 
-  Image->Display();
-
-
   // Store the images:
   for (unsigned int i = 0; i < m_Images.size(); ++i) {
     delete m_Images[i];
@@ -945,9 +946,11 @@ bool MImager::Analyze(bool CalculateResponse)
 
   
   IterationTimer.Pause();
-  mout<<"Performed "<<CurrentIteration<<" iterations in "<<IterationTimer.GetElapsed()<<" seconds ("<<CurrentIteration/IterationTimer.GetElapsed()<<" iterations/second)"<<endl;
+  if (CurrentIteration > 0) {
+    mout<<"Performed "<<CurrentIteration<<" iterations in "<<IterationTimer.GetElapsed()<<" seconds ("<<IterationTimer.GetElapsed()/CurrentIteration<<" seconds/iteration)"<<endl;
+  }
   mout<<endl;
-
+  
   // end iteration part
 
   delete Image;
@@ -975,12 +978,12 @@ bool MImager::ComputeResponseSlices()
 
   // Prepare data-storage:
 
-	// Stop the time ...
+  // Stop the time ...
   TTime time;
   time = gSystem->Now();
 
 
-	// Prepare the response calculation
+  // Prepare the response calculation
   for (unsigned int t = 0; t < m_NThreads; ++t) {
     m_BPs[t]->PrepareBackprojection();
   }
@@ -1112,7 +1115,7 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
     }
 
     /// IsQualified is NOT reentrant --- but the only thing modified are its counters, which we do not use here...
-    if (m_Selector.IsQualifiedEvent(Event) == true) {
+    if (m_Selector.IsQualifiedEventFast(Event) == true) {
       // Reinitialize the array keeping the events backprojection 
       // Memcopy is only faster if the parallism of modern CPUs cannot be used. With gcc -O3 this is fastest:
       //for (int i = 0; i < m_NBins; ++i) BackprojectionImage[i] = 0.0; 
@@ -1200,8 +1203,6 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
 
   return 0;
 }
-
-
 
 
 // MImager: the end...
