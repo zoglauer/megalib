@@ -56,8 +56,8 @@ MLMLClassicEM::MLMLClassicEM() : MLMLAlgorithms()
   m_Vi = 0;
   m_Ej = 0;
 
-	m_InitialLikelihood = 0;
-	m_LastLikelihood = 0;
+  m_InitialLikelihood = 0;
+  m_LastLikelihood = 0;
 }
 
 
@@ -138,16 +138,16 @@ bool MLMLClassicEM::DoOneIteration()
 
   m_NPerformedIterations++;
 
-	if (m_NPerformedIterations == 1) {
+  if (m_NPerformedIterations == 1) {
     m_InitialLikelihood = 0;
-		for (unsigned int i = 0; i < m_NBins; ++i) m_InitialLikelihood += m_Lj[i];
-		m_LastLikelihood = 1;
-		m_CurrentLikelihood = m_InitialLikelihood;
-	} else {
-		m_LastLikelihood = m_CurrentLikelihood;
-		m_CurrentLikelihood = 0;
-		for (unsigned int i = 0; i < m_NBins; ++i) m_CurrentLikelihood += m_Lj[i];
-	}
+    for (unsigned int i = 0; i < m_NBins; ++i) m_InitialLikelihood += m_Lj[i];
+    m_LastLikelihood = 1;
+    m_CurrentLikelihood = m_InitialLikelihood;
+  } else {
+    m_LastLikelihood = m_CurrentLikelihood;
+    m_CurrentLikelihood = 0;
+    for (unsigned int i = 0; i < m_NBins; ++i) m_CurrentLikelihood += m_Lj[i];
+  }
 
   return true;
 }

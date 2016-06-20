@@ -716,7 +716,7 @@ void MInterfaceMimrec::SpectralAnalyzer()
 
   MPhysicalEvent* Event = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
-    if (m_Selector->IsQualifiedEvent(Event, true) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       S.FillSpectrum(Event->GetEnergy());
     }
     
@@ -993,7 +993,7 @@ void MInterfaceMimrec::ExtractEvents()
 
   MPhysicalEvent* Event = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       OutFile->AddEvent(Event);
     }
     
@@ -1031,7 +1031,7 @@ void MInterfaceMimrec::ThetaOriginDistribution()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
     
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetOrigin() != g_VectorNotDefined) {
         if (Event->GetType() == MPhysicalEvent::c_Compton) {
           Hist->Fill(dynamic_cast<MComptonEvent*>(Event)->Di().Theta()*c_Deg);          
@@ -1107,7 +1107,7 @@ void MInterfaceMimrec::ARMGamma()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -1486,7 +1486,7 @@ void MInterfaceMimrec::DualARM()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -1600,7 +1600,7 @@ void MInterfaceMimrec::ARMResponseComparison()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         double ARM = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg;
@@ -1682,7 +1682,7 @@ void MInterfaceMimrec::AngularResolutionPairs()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
@@ -1813,7 +1813,7 @@ void MInterfaceMimrec::ARMGammaVsCompton()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -1895,7 +1895,7 @@ void MInterfaceMimrec::ARMGammaVsDistance()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2078,7 +2078,7 @@ void MInterfaceMimrec::SignificanceMap()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
   // Go through each bin and record the counts
@@ -2536,7 +2536,7 @@ void MInterfaceMimrec::SPDElectronVsCompton()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2666,7 +2666,7 @@ void MInterfaceMimrec::ComptonProbabilityWithARMSelection()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2746,7 +2746,7 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2822,7 +2822,7 @@ void MInterfaceMimrec::ARMGammaVsClusteringProbability()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2906,7 +2906,7 @@ void MInterfaceMimrec::SPDVsTrackQualityFactor()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -2979,7 +2979,7 @@ void MInterfaceMimrec::SPDVsTotalScatterAngleDeviation()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -3066,7 +3066,7 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -3136,7 +3136,7 @@ void MInterfaceMimrec::ComptonSequenceLengthVsComptonProbability()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         Compton = dynamic_cast<MComptonEvent*>(Event);
 
@@ -3222,7 +3222,7 @@ void MInterfaceMimrec::SPDElectron()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -3379,7 +3379,7 @@ void MInterfaceMimrec::ARMElectron()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -3572,7 +3572,7 @@ void MInterfaceMimrec::EnergySpectra()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -3690,7 +3690,7 @@ void MInterfaceMimrec::EnergySpectra()
   cout<<endl;
 
   if (InsideWindow+OutsideWindow == 0) {
-    cout<<m_Selector->ToString()<<endl;
+    mout<<"No events passed event selections. Use \"Show event selections\" in the mimrec UI to diagnose"<<show;
   }
 
 //   if (m_Data->GetStoreImages() == true) {
@@ -3736,7 +3736,7 @@ void MInterfaceMimrec::InitialEnergyDeposit()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -3783,7 +3783,7 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ScatterPlot->Fill(((MComptonEvent*) Event)->Eg(), ((MComptonEvent*) Event)->Ee(), 1);
       }
@@ -3825,7 +3825,7 @@ void MInterfaceMimrec::TimeWalkDistribution()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       TWHist->Fill(Event->GetTimeWalk());
     }
 
@@ -3872,7 +3872,7 @@ void MInterfaceMimrec::TimeWalkArmDistribution()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         TWHist->Fill(Event->GetTimeWalk(), fabs(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg);
@@ -3974,7 +3974,7 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -4095,7 +4095,7 @@ void MInterfaceMimrec::ClusteringQualityFactor()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -4161,7 +4161,7 @@ void MInterfaceMimrec::ComptonQualityFactor()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -4227,7 +4227,7 @@ void MInterfaceMimrec::TrackQualityFactor()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -4289,7 +4289,7 @@ void MInterfaceMimrec::EarthCenterDistance()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true &&
+    if (m_Selector->IsQualifiedEventFast(Event) == true &&
         Event->GetType() == MPhysicalEvent::c_Compton) {
       Compton = (MComptonEvent*) Event;
       Hist->Fill(Compton->GetARMGamma(Position, m_Data->GetCoordinateSystem())*c_Deg);
@@ -4355,7 +4355,7 @@ void MInterfaceMimrec::DistanceDistribution()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true &&
+    if (m_Selector->IsQualifiedEventFast(Event) == true &&
         Event->GetType() == MPhysicalEvent::c_Compton) {
       Compton = (MComptonEvent*) Event;
       FirstHist->Fill((Compton->C2()-Compton->C1()).Mag());
@@ -4437,7 +4437,7 @@ void MInterfaceMimrec::SequenceLengths()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true &&
+    if (m_Selector->IsQualifiedEventFast(Event) == true &&
         Event->GetType() == MPhysicalEvent::c_Compton) {
       Compton = (MComptonEvent*) Event;
       if (Compton->TrackLength() > MaxTrackLength) MaxTrackLength = Compton->TrackLength();
@@ -4532,7 +4532,7 @@ void MInterfaceMimrec::SequenceLengths()
 //   // ... loop over all events and save a count in the belonging bin ...
 //   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-//     if (m_Selector->IsQualifiedEvent(Event) == false) {
+//     if (m_Selector->IsQualifiedEventFast(Event) == false) {
 //       delete Event;
 //       continue;
 //     }
@@ -4585,7 +4585,7 @@ void MInterfaceMimrec::LightCurve()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
       if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
       TimeList.push_back(Event->GetTime().GetAsDouble());
@@ -4706,11 +4706,11 @@ void MInterfaceMimrec::CoincidenceWindowDistribution()
       if (ComptonEvent->CoincidenceWindow().GetAsDouble() > MaxTime) MaxTime = ComptonEvent->CoincidenceWindow().GetAsDouble();
 
       // Only accept Comptons within the selected ranges... 
-      if (m_Selector->IsQualifiedEvent(ComptonEvent) == true) {
+      if (m_Selector->IsQualifiedEventFast(ComptonEvent) == true) {
         Hist->Fill(ComptonEvent->CoincidenceWindow().GetAsDouble());
       }    
       // Only accept Comptons within the selected ranges... 
-      if (NoTimeWindowSelector.IsQualifiedEvent(ComptonEvent) == true) {
+      if (NoTimeWindowSelector.IsQualifiedEventFast(ComptonEvent) == true) {
         TimeList.push_back(ComptonEvent->CoincidenceWindow().GetAsDouble());
       }
     }
@@ -4784,7 +4784,7 @@ void MInterfaceMimrec::LocationOfFirstIA()
   MComptonEvent Compton;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-    if (m_Selector->IsQualifiedEvent(Event) == false) {
+    if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;
     }
@@ -4864,7 +4864,7 @@ void MInterfaceMimrec::LocationOfFirstIA()
 //   // ... loop over all events and save a count in the belonging bin ...
 //   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-//     if (m_Selector->IsQualifiedEvent(Event) == false) {
+//     if (m_Selector->IsQualifiedEventFast(Event) == false) {
 //       delete Event;
 //       continue;
 //     }
@@ -4965,7 +4965,7 @@ void MInterfaceMimrec::Polarization()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -5034,7 +5034,7 @@ void MInterfaceMimrec::Polarization()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -5211,7 +5211,7 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
@@ -5293,7 +5293,7 @@ void MInterfaceMimrec::AzimuthalElectronScatterAngle()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         if (ComptonEvent->HasTrack() == true) {
@@ -5363,7 +5363,7 @@ void MInterfaceMimrec::OpeningAnglePair()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
         Hist->Fill(PairEvent->GetOpeningAngle()*c_Deg);
@@ -5419,7 +5419,7 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
@@ -5482,7 +5482,7 @@ void MInterfaceMimrec::SelectIds()
   MPhysicalEvent* Event = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       fout<<"ID "<<Event->GetId()<<endl;
     }
 
@@ -5530,7 +5530,7 @@ void MInterfaceMimrec::InteractionDepth()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         D1->Fill(ComptonEvent->C1()[2]);
@@ -5598,7 +5598,7 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   MPhysicalEvent* Event = 0;
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetPosition() != g_VectorNotDefined) { // ???? !!!!
         Pos = Event->GetPosition();
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Pos);
@@ -5671,7 +5671,7 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetPosition() != g_VectorNotDefined) {
         Pos = Event->GetPosition();
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Pos);
@@ -5756,7 +5756,7 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept some events...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       int LongBin = int((Event->GetGalacticPointingZAxisLongitude()*c_Deg - LongMin)/LongBinSize);
       int LatBin = int((Event->GetGalacticPointingZAxisLatitude()*c_Deg + 90 - LatMin)/LatBinSize);
       Array[LongBin + LatBin*LongBins] += 1.0;
@@ -5813,7 +5813,7 @@ void MInterfaceMimrec::HorizonInSphericalDetectorCoordinates()
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept some events...
-    if (m_Selector->IsQualifiedEvent(Event) == true) {
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
       MVector Z = Event->GetHorizonPointingZAxis();
       double phi = Z.Phi()*c_Deg;
       while (phi < 0) phi += 360; 
