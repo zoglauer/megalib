@@ -5788,10 +5788,26 @@ MString MDGeometry::ToString()
 
   out<<endl<<"Description of geometry: "<<m_Name<<", version: "<<m_Version<<endl;
   
+  if (m_ShapeList.size() > 0) {
+    out<<endl<<endl<<"Description of individually defined shapes:"<<endl;
+    for (i = 0; i < m_ShapeList.size(); ++i) {
+      out<<m_ShapeList[i]->GetName()<<endl;
+      out<<m_ShapeList[i]->ToString()<<endl;
+    }
+  }
+  
+  if (m_OrientationList.size() > 0) {
+    out<<endl<<endl<<"Description of individually defined orientations:"<<endl;
+    for (i = 0; i < m_OrientationList.size(); ++i) {
+      out<<m_OrientationList[i]->GetName()<<endl;
+      out<<m_OrientationList[i]->ToString()<<endl;
+    }
+  }
+  
   out<<endl<<endl<<"Description of volumes:"<<endl;
   for (i = 0; i < m_VolumeList.size(); ++i) {
-    out<<m_VolumeList[i]->GetName()<<endl;;
-    out<<m_VolumeList[i]->ToString()<<endl;;
+    out<<m_VolumeList[i]->GetName()<<endl;
+    out<<m_VolumeList[i]->ToString()<<endl;
   }
   
   out<<endl<<endl<<"Description of volume-tree:"<<endl;

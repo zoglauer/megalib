@@ -1,0 +1,60 @@
+# Example showing how to make a union of three tubes:
+
+Name UnionOfTubes
+Version 1.0
+
+SurroundingSphere 30  0.0  0.0  0.0  30.0
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+#------------------------------------------------------------
+# Volume section:
+
+Volume World             
+World.Material Vacuum
+World.Visibility 0   
+World.Shape BRIK 5000. 5000. 5000.
+World.Mother 0
+
+
+# The shapes of the tubes
+Shape TUBE Tube1
+Tube1.Parameters 0 1.0 5.0
+
+Shape TUBE Tube2
+Tube2.Parameters 0 1.5 7.5
+
+Shape TUBE Tube3
+Tube3.Parameters 0 2.0 10.0
+
+# Orientations for the latter two
+Orientation Tube2Orientation
+Tube2Orientation.Position 0 0 0
+Tube2Orientation.Rotation 0 90 0
+
+Orientation Tube3Orientation
+Tube3Orientation.Position 0 0 0
+Tube3Orientation.Rotation 90 0 0
+
+# Create the unions
+Shape Union Tube12
+Tube12.Parameters Tube1 Tube2 Tube2Orientation
+
+Shape Union Tube123
+Tube123.Parameters Tube12 Tube3 Tube3Orientation
+
+# Create the volume
+Volume Volume123
+Volume123.Shape Tube123
+Volume123.Visibility 1
+Volume123.Color 3
+Volume123.Material Vacuum
+Volume123.Position 0 0 0
+Volume123.Mother World
+
+
+
+
+
+

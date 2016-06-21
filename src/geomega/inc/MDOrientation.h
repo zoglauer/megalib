@@ -88,6 +88,9 @@ class MDOrientation
   //! The if we have a rotation
   bool IsRotated() const;
 
+  //! Dump content into a string
+  MString ToString() const;
+  
   // protected methods:
  protected:
 

@@ -379,7 +379,16 @@ void MDOrientation::SetRotation(MRotation RotationMatrix, int RotID)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString MDOrientation::ToString() const
+{
+  //! Dump content into a string
 
+  ostringstream out;
+  
+  out<<"    Pos: "<<m_Position;
+  
+  return out.str();
+}
 
 
 // MDOrientation.cxx: the end...
