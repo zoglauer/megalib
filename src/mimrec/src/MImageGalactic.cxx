@@ -152,6 +152,12 @@ void MImageGalactic::SetImageArray(double* IA)
         }
       }
     }
+    
+    // Rescale to 1:
+    if (m_Histogram->GetMaximum() > 0) {
+      m_Histogram->Scale(1.0/m_Histogram->GetMaximum());
+    }
+    
     m_Histogram->Draw(m_DrawOptionString);
     AddNamedSources();
     if (m_XAxis != 0) m_XAxis->Draw();
@@ -197,11 +203,13 @@ void MImageGalactic::Display(TCanvas* Canvas)
 
     Hist->SetStats(false);
     Hist->GetYaxis()->SetTitle(m_yTitle);
-    Hist->GetYaxis()->SetTitleOffset(1.2f);
+    Hist->GetYaxis()->SetTitleOffset(1.5f);
     Hist->GetYaxis()->CenterTitle();
     Hist->GetYaxis()->SetTickLength(-0.02f);
     Hist->GetYaxis()->SetLabelOffset(0.02f);
     Hist->GetYaxis()->SetLabelSize(0.03f);
+    Hist->GetZaxis()->SetTitle("Intensity [a.u.]");
+    Hist->GetZaxis()->SetTitleOffset(1.2f);
 
     if ((int(m_yMax) - int(m_yMin)) % 60 == 0) {
       Hist->GetYaxis()->SetNdivisions(-606);
@@ -229,7 +237,11 @@ void MImageGalactic::Display(TCanvas* Canvas)
       }
     }
   }
-
+  
+  // Rescale to 1:
+  if (Hist->GetMaximum() > 0) {
+    Hist->Scale(1.0/Hist->GetMaximum());
+  }
 
   if (IsNew == true) {
     Hist->Draw(m_DrawOptionString);
@@ -257,7 +269,7 @@ void MImageGalactic::Display(TCanvas* Canvas)
     m_XAxis->SetTickSize(1.0f);
     m_XAxis->SetLabelOffset(-0.03f);
     m_XAxis->SetLabelSize(0.03f);
-    m_XAxis->SetTitleOffset(-1.25f);
+    m_XAxis->SetTitleOffset(-1.5f);
     
     // Remove the current axis
     Hist->GetXaxis()->SetLabelOffset(999.0f);
@@ -270,7 +282,7 @@ void MImageGalactic::Display(TCanvas* Canvas)
   }
   AddNamedSources();
   m_Canvas->Update();
-
+  
   return;
 }
 
