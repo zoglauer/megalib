@@ -76,11 +76,11 @@ bool MLMLOSEM::DoOneIteration()
   int MinNEventsPerSubset = 5000;
   unsigned int NSubSets = m_NSubSets;
   if (m_NEvents < MinNEventsPerSubset*NSubSets && NSubSets > 1) {
-    cout<<"You need at least "<<MinNEventsPerSubset<<" events per subset for the OS-EM algorithm."<<endl;
+    cout<<"OS-EM: You need at least "<<MinNEventsPerSubset<<" events per subset for the OS-EM algorithm."<<endl;
     NSubSets = m_NEvents/MinNEventsPerSubset;
     if (NSubSets == 0) NSubSets = 1;
-    cout<<"You have "<<m_NEvents<<" events, thus I use "<<NSubSets<<" subsets."<<endl;
   }
+  cout<<"OS-EM: You have "<<m_NEvents<<" events, thus I use "<<NSubSets<<" subsets."<<endl;
 
   for (unsigned int i = 0; i < m_NEvents; i++) m_Yi[i] = 0.0;
 
@@ -147,16 +147,16 @@ bool MLMLOSEM::DoOneIteration()
 
   m_NPerformedIterations++;
 
-	if (m_NPerformedIterations == 1) {
+  if (m_NPerformedIterations == 1) {
     m_InitialLikelihood = 0;
-		for (unsigned int i = 0; i < m_NBins; ++i) m_InitialLikelihood += m_Lj[i];
-		m_LastLikelihood = 1;
-		m_CurrentLikelihood = m_InitialLikelihood;
-	} else {
-		m_LastLikelihood = m_CurrentLikelihood;
-		m_CurrentLikelihood = 0;
-		for (unsigned int i = 0; i < m_NBins; ++i) m_CurrentLikelihood += m_Lj[i];
-	}
+    for (unsigned int i = 0; i < m_NBins; ++i) m_InitialLikelihood += m_Lj[i];
+    m_LastLikelihood = 1;
+    m_CurrentLikelihood = m_InitialLikelihood;
+  } else {
+    m_LastLikelihood = m_CurrentLikelihood;
+    m_CurrentLikelihood = 0;
+    for (unsigned int i = 0; i < m_NBins; ++i) m_CurrentLikelihood += m_Lj[i];
+  }
 
   return true;
 }
