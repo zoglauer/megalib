@@ -131,7 +131,7 @@ void MGUIImageOptions::Create()
   TGLayoutHints* SourceCatalogLayout = 
     new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
 
-  m_SourceCatalog = new MGUIEFileSelector(this, "Choose a source catalog for images in galactic coordinates (empty = use no catalog):", 
+  m_SourceCatalog = new MGUIEFileSelector(this, "Choose a source catalog for images in Galactic coordinates (empty = use no catalog):", 
                                           m_GUIData->GetImageSourceCatalog());
   m_SourceCatalog->SetFileType("MEGAlib source catalog", "*.scat");
   AddFrame(m_SourceCatalog, SourceCatalogLayout);

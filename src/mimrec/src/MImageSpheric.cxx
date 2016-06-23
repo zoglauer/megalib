@@ -152,7 +152,7 @@ void MImageSpheric::SetImageArray(double* IA)
       }
     }
     m_Histogram->Draw(m_DrawOptionString);
-    AddNamedSources();
+    //AddNamedSources();
     m_YAxis->Draw();
     m_Canvas->Update();
   }
@@ -264,7 +264,7 @@ void MImageSpheric::Display(TCanvas* Canvas)
   } else {
     m_YAxis->Draw();
   }
-  AddNamedSources();
+  //AddNamedSources();
   m_Canvas->Update();
 
   return;
