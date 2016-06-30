@@ -100,7 +100,6 @@ MDVolumeSequence::MDVolumeSequence(const MDVolumeSequence& V)
   m_PositionInSensitiveVolume = V.m_PositionInSensitiveVolume;
 
   m_ValidRotation = V.m_ValidRotation;
-
   m_RotMatrix = V.m_RotMatrix; 
 }
 
@@ -237,7 +236,7 @@ MDVolume* MDVolumeSequence::GetVolumeAt(unsigned int i) const
   
   merr<<"Index ("<<i<<") out of bounds (# volumes: "<<GetNVolumes()<<"). Returning zero pointer... Crash likely..."<<endl;
 
-  return 0;
+  return nullptr;
 }
 
 
@@ -246,7 +245,7 @@ MDVolume* MDVolumeSequence::GetVolumeAt(unsigned int i) const
 
 MDVolume* MDVolumeSequence::GetDeepestVolume() const
 {
-  if (GetNVolumes() == 0) return 0;
+  if (GetNVolumes() == 0) return nullptr;
 
   return m_Volumes[GetNVolumes()-1];
 }
@@ -335,7 +334,7 @@ MDDetector* MDVolumeSequence::GetDetector() const
 {
   // If a named detector exists returns the named detector otherwise the standard detector
 
-  if (m_NamedDetector != 0) return m_NamedDetector;
+  if (m_NamedDetector != nullptr) return m_NamedDetector;
   return m_Detector;
 }
 
@@ -369,7 +368,9 @@ MDGridPoint MDVolumeSequence::GetGridPoint() const
 {
   //
   
-  massert(m_Detector != 0);
+  if (GetDetector() == nullptr) {
+    return MDGridPoint(0, 0, 0, MDGridPoint::c_Unknown);
+  }
 
   return GetDetector()->GetGridPoint(m_PositionInDetector);
 }
@@ -380,7 +381,6 @@ MDGridPoint MDVolumeSequence::GetGridPoint() const
 
 void MDVolumeSequence::SetDetectorVolume(MDVolume* Volume)
 {
-  massert(Volume != 0);
   m_DetectorVolume = Volume;
 }
 
@@ -421,7 +421,6 @@ MVector MDVolumeSequence::GetPositionInSensitiveVolume() const
 
 void MDVolumeSequence::SetSensitiveVolume(MDVolume* Volume)
 {
-  massert(Volume != 0);
   m_SensitiveVolume = Volume;
 }
 
@@ -440,15 +439,31 @@ MDVolume* MDVolumeSequence::GetSensitiveVolume() const
 
 bool MDVolumeSequence::HasVolume(MString Name) const
 {
-  unsigned int i_max = m_Volumes.size();
-  for (unsigned int i = 0; i < i_max; i++) {
-    if (m_Volumes[i]->GetName() == Name) return true; 
+  //! Return true if the volume is in the sequence
+
+  for (MDVolume* V: m_Volumes) {
+    if (V->GetName() == Name) return true; 
   }
 
   return false;
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDVolumeSequence::HasVolume(MDVolume* Volume) const
+{
+  //! Return true if the volume is in the sequence
+
+  for (MDVolume* V: m_Volumes) {
+    if (V == Volume) return true;
+  }
+
+  return false; 
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -528,7 +543,7 @@ MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position,
   // Rotate "Position" from "Volume" to the first volume in the sequence
   // which is probably the world voluem...
 
-  massert(Volume != 0);
+  if (Volume == nullptr) return g_VectorNotDefined;
 
   // Find the volume...
   unsigned int p = numeric_limits<unsigned int>::max();
@@ -540,7 +555,7 @@ MVector MDVolumeSequence::GetPositionInFirstVolume(const MVector& Position,
     } 
   }
 
-  massert(p != numeric_limits<unsigned int>::max());
+  if (p == numeric_limits<unsigned int>::max()) return g_VectorNotDefined;
 
   MVector Pos = Position;
 
@@ -560,9 +575,8 @@ MRotation MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume) const
 {
   // Return the rotation of a volume in the first (the world) volume
 
-  mout<<"Untested"<<endl;
+  if (Volume == nullptr) return g_RotationNotDefined;
 
-  MRotation RotMatrix;
 
   // Find the volume...
   unsigned int p = numeric_limits<unsigned int>::max();
@@ -574,8 +588,9 @@ MRotation MDVolumeSequence::GetRotationInFirstVolume(MDVolume* Volume) const
     } 
   }
 
-  massert(p != numeric_limits<unsigned int>::max());
+  if (p == numeric_limits<unsigned int>::max()) return g_RotationNotDefined;
 
+  MRotation RotMatrix;
   for (unsigned int i = p; i <= p; --i) {
     RotMatrix *= m_Volumes[i]->GetInvRotationMatrix();
   }  
@@ -592,7 +607,7 @@ MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position, MDVolume*
   // Rotate "Position" from "Volume" to the first volume in the sequence
   // which is probably the world voluem...
 
-  massert(Volume != 0);
+  if (Volume == nullptr) return g_VectorNotDefined;
 
   // Find the volume...
   unsigned int p = numeric_limits<unsigned int>::max();
@@ -604,7 +619,7 @@ MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position, MDVolume*
     } 
   }
 
-  massert(p != numeric_limits<unsigned int>::max());
+  if (p == numeric_limits<unsigned int>::max()) return g_VectorNotDefined;
 
   // Then rotate&translate:
   MVector Pos = Position;
@@ -617,6 +632,24 @@ MVector MDVolumeSequence::GetPositionInVolume(const MVector& Position, MDVolume*
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MDVolumeSequence::GetUniqueWorldPositionOfDetector() const
+{
+  // Return a unique world position of the detector volume
+  // This position allows to distinguish different detectors even if they are clones/copies
+  // Return g_VectorNotDefined in case of error
+
+  if (m_Detector != nullptr && m_DetectorVolume != nullptr && HasVolume(m_DetectorVolume) == true) {
+    MVector Position = m_DetectorVolume->GetShape()->GetUniquePosition();
+    return GetPositionInFirstVolume(Position, m_DetectorVolume);
+  }
+
+  return g_VectorNotDefined;
+}  
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
