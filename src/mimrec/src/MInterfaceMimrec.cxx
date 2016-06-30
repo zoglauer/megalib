@@ -4586,10 +4586,14 @@ void MInterfaceMimrec::LightCurve()
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
-      if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
-      if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
-      TimeList.push_back(Event->GetTime().GetAsDouble());
-      NEvents++;
+      if (Event->GetTime().GetAsDouble() == 0) {
+        mout<<"Info - light curve: Ignoring all events with time zero"<<endl; 
+      } else {
+        if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
+        if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
+        TimeList.push_back(Event->GetTime().GetAsDouble());
+        NEvents++;
+      }
     }    
 
     delete Event;
