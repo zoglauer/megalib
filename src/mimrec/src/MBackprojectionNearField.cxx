@@ -1,5 +1,5 @@
 /*
- * MBackprojectionCartesian.cxx
+ * MBackprojectionNearField.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MBackprojectionCartesian
+// MBackprojectionNearField
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MBackprojectionCartesian.h"
+#include "MBackprojectionNearField.h"
 
 // Standard libs:
 #include <limits>
@@ -39,14 +39,14 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MBackprojectionCartesian)
+ClassImp(MBackprojectionNearField)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionCartesian::MBackprojectionCartesian(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
+MBackprojectionNearField::MBackprojectionNearField(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
 {
   // default constructor
 }
@@ -55,7 +55,7 @@ MBackprojectionCartesian::MBackprojectionCartesian(MCoordinateSystem CoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionCartesian::~MBackprojectionCartesian()
+MBackprojectionNearField::~MBackprojectionNearField()
 {
   // default destructor
 }
@@ -64,7 +64,7 @@ MBackprojectionCartesian::~MBackprojectionCartesian()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionCartesian::Assimilate(MPhysicalEvent* Event)
+bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
 {
   // Take over all the necessary event data and perform some elementary computations:
   // the compton angle, the cone axis, the most probable origin of the gamma ray, 
@@ -89,7 +89,7 @@ bool MBackprojectionCartesian::Assimilate(MPhysicalEvent* Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionCartesian::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
+void MBackprojectionNearField::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
                                                   double x2Min, double x2Max, int x2NBins, 
                                                   double x3Min, double x3Max, int x3NBins,
                                                   MVector xAxis, MVector zAxis)
@@ -107,13 +107,13 @@ void MBackprojectionCartesian::SetViewportDimensions(double x1Min, double x1Max,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionCartesian::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Take over all the necessary event data and perform some elementary computations:
   // the compton angle, the cone axis, the most probable origin of the gamma ray 
   // if possible, the center of the cone. 
 
-  if (MBackprojectionCartesian::Assimilate(Event) == false) return false;
+  if (MBackprojectionNearField::Assimilate(Event) == false) return false;
 
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
@@ -131,7 +131,7 @@ bool MBackprojectionCartesian::Backproject(MPhysicalEvent* Event, double* Image,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionCartesian::PrepareBackprojection()
+void MBackprojectionNearField::PrepareBackprojection()
 {
   // Now compute for all bins their center:
   m_xBinCenter = new double[m_x1NBins];
@@ -159,7 +159,7 @@ void MBackprojectionCartesian::PrepareBackprojection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionCartesian::BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
   // The event expands to a double-gausshaped banana
@@ -396,7 +396,7 @@ bool MBackprojectionCartesian::BackprojectionCompton(double* Image, int* Bins, i
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionCartesian::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
   // The event expands to a double-gausshaped banana
@@ -467,5 +467,5 @@ bool MBackprojectionCartesian::BackprojectionPair(double* Image, int* Bins, int&
 }
 
 
-// MBackprojectionCartesian.cxx: the end...
+// MBackprojectionNearField.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MBackprojectionSphereArea.h"
+#include "MBackprojectionFarFieldArea.h"
 #include "MBackprojectionCart2DArea.h"
 #include "MBackprojectionCart3DArea.h"
 #include "MResponseGaussian.h"
@@ -56,7 +56,7 @@ MPhysicalEventAnalyzer::MPhysicalEventAnalyzer(Int_t CoordinateSystem)
 
   // Initialize the backprojection-class
   if (CoordinateSystem == 0) {
-    m_BP = (MBackprojection *) new MBackprojectionSphereArea();
+    m_BP = (MBackprojection *) new MBackprojectionFarFieldArea();
   } else if (CoordinateSystem == 1) {
     m_BP = (MBackprojection *) new MBackprojectionCart2DArea();
   } else if (CoordinateSystem == 2) {

@@ -45,8 +45,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIProgressBar.h"
 #include "MBackprojection.h"
-#include "MBackprojectionSphere.h"
-#include "MBackprojectionCartesian.h"
+#include "MBackprojectionFarField.h"
+#include "MBackprojectionNearField.h"
 #include "MBPDataSparseImage.h"
 #include "MBPDataSparseImageOneByte.h"
 #include "MPhysicalEvent.h"
@@ -113,15 +113,15 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
   for (unsigned int t = 0; t < m_NThreads; ++t) {
     // Initialize the backprojection-class
     if (m_CoordinateSystem == MCoordinateSystem::c_Spheric || m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere(m_CoordinateSystem)));
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionFarField(m_CoordinateSystem)));
     }
     else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionCartesian(m_CoordinateSystem)));
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearField(m_CoordinateSystem)));
     }
     else {
       mgui<<"Unknown coordinate system."<<endl;
       mgui<<"I will use a spherical coordinate system!"<<error;
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere()));   
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionFarField()));   
       m_CoordinateSystem = MCoordinateSystem::c_Spheric;
     }      
     m_Threads.push_back(0);
@@ -203,15 +203,15 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   for (unsigned int t = 0; t < m_NThreads; ++t) {
     // Initialize the backprojection-class
     if (m_CoordinateSystem == MCoordinateSystem::c_Spheric || m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere(m_CoordinateSystem)));
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionFarField(m_CoordinateSystem)));
     }
     else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D || m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionCartesian(m_CoordinateSystem)));
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionNearField(m_CoordinateSystem)));
     }
     else {
       mgui<<"Unknown coordinate system."<<endl;
       mgui<<"I will use a spherical coordinate system!"<<error;
-      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionSphere()));   
+      m_BPs.push_back(dynamic_cast<MBackprojection*>(new MBackprojectionFarField()));   
       m_CoordinateSystem = MCoordinateSystem::c_Spheric;
     }      
     m_Threads.push_back(0);

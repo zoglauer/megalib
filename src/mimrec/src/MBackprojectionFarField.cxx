@@ -1,5 +1,5 @@
 /*
- * MBackprojectionSphere.cxx
+ * MBackprojectionFarField.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MBackprojectionSphere.cxx
+// MBackprojectionFarField.cxx
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MBackprojectionSphere.h"
+#include "MBackprojectionFarField.h"
 
 // Standard libs:
 #include <iostream>
@@ -45,16 +45,16 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MBackprojectionSphere)
+ClassImp(MBackprojectionFarField)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionSphere::MBackprojectionSphere(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
+MBackprojectionFarField::MBackprojectionFarField(MCoordinateSystem CoordinateSystem) : MBackprojection(CoordinateSystem)
 {
-  // Initialize a MBackprojectionSphere object
+  // Initialize a MBackprojectionFarField object
 
   m_x1BinCenter = 0;  
   m_x2BinCenter = 0;    
@@ -89,9 +89,9 @@ MBackprojectionSphere::MBackprojectionSphere(MCoordinateSystem CoordinateSystem)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MBackprojectionSphere::~MBackprojectionSphere()
+MBackprojectionFarField::~MBackprojectionFarField()
 {
-  // Delete a MBackprojectionSphere object
+  // Delete a MBackprojectionFarField object
 
   delete [] m_x1BinCenter;
   delete [] m_x2BinCenter;
@@ -107,7 +107,7 @@ MBackprojectionSphere::~MBackprojectionSphere()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionSphere::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
+void MBackprojectionFarField::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
                                                   double x2Min, double x2Max, int x2NBins, 
                                                   double x3Min, double x3Max, int x3NBins,
                                                   MVector xAxis, MVector zAxis)
@@ -184,7 +184,7 @@ void MBackprojectionSphere::SetViewportDimensions(double x1Min, double x1Max, in
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionSphere::PrepareBackprojection()
+void MBackprojectionFarField::PrepareBackprojection()
 {
   // Make some initial computations, compute the center of each bin, 
   // create an image with the sensitivities
@@ -224,7 +224,7 @@ void MBackprojectionSphere::PrepareBackprojection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::ConeCenter()
+bool MBackprojectionFarField::ConeCenter()
 {  
   // Calculate the center of the cone in sperical coordinates
   // Return true if this was successful
@@ -241,7 +241,7 @@ bool MBackprojectionSphere::ConeCenter()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionSphere::Rotate(double &x, double &y, double &z)
+void MBackprojectionFarField::Rotate(double &x, double &y, double &z)
 {
   // Rotate the reconstruction-coodinate system
 
@@ -269,7 +269,7 @@ void MBackprojectionSphere::Rotate(double &x, double &y, double &z)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionSphere::ToSpherical(double x, double y, double z, 
+void MBackprojectionFarField::ToSpherical(double x, double y, double z, 
                                         double &t, double &p, double &r)
 {
   // Transfer Cartesian Coordinates to Spherical
@@ -312,7 +312,7 @@ void MBackprojectionSphere::ToSpherical(double x, double y, double z,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionSphere::ToCartesean(double t, double p, double r, 
+void MBackprojectionFarField::ToCartesean(double t, double p, double r, 
                                         double &x, double &y, double &z)
 {
   // Transfer Spherical Coordinates to Cartesean
@@ -326,7 +326,7 @@ void MBackprojectionSphere::ToCartesean(double t, double p, double r,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::Assimilate(MPhysicalEvent *Event)
+bool MBackprojectionFarField::Assimilate(MPhysicalEvent *Event)
 {
   // Take over all the necessary event data and perform some elementary computations:
   // the compton angle, the cone axis, the most probable origin of the gamma ray, 
@@ -352,7 +352,7 @@ bool MBackprojectionSphere::Assimilate(MPhysicalEvent *Event)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Take over all the necessary event data and perform some elementary computations:
   // the compton angle, the cone axis, the most probable origin of the gamma ray 
@@ -377,7 +377,7 @@ bool MBackprojectionSphere::Backproject(MPhysicalEvent* Event, double* Image, in
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
   // The event expands to a double-gausshaped banana
@@ -445,9 +445,10 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
   // The minimum electron angle error
   //double EAngleError = fabs(AngleA - m_C->Phi());
 
-  double InvIntegral = 1.0/m_Response->GetComptonIntegral(Phi);
+  //double InvIntegral = 1.0/m_Response->GetComptonIntegral(Phi);
+  double InvIntegral = 1.0;
 
-  //cout<<"Integral calc: "<<1.0/Integral<<endl;
+  cout<<"Integral calc: "<<InvIntegral<<endl;
 
   //mimp<<"InvIntegral is only part of the response!"<<show;
 
@@ -817,7 +818,7 @@ bool MBackprojectionSphere::BackprojectionCompton(double* Image, int* Bins, int&
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::BackprojectionPhoto(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Backprojection of a photo events
 
@@ -895,7 +896,7 @@ bool MBackprojectionSphere::BackprojectionPhoto(double* Image, int* Bins, int& N
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionSphere::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+bool MBackprojectionFarField::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
   // The event expands to a double-gausshaped banana
@@ -957,5 +958,5 @@ bool MBackprojectionSphere::BackprojectionPair(double* Image, int* Bins, int& NU
 }
 
 
-// MBackprojectionSphere: the end...
+// MBackprojectionFarField: the end...
 ////////////////////////////////////////////////////////////////////////////////
