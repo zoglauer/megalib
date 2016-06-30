@@ -399,7 +399,7 @@ MVector operator* (const TMatrix& M, const MVector& V)
 
 
 bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C, 
-                       double Tolerance)
+                       double Tolerance) const
 {
   // Checks if this vector is in the plane spanned by the other three
 
@@ -441,7 +441,7 @@ bool MVector::Coplanar(const MVector& A, const MVector& B, const MVector& C,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MVector::DistanceToLine(const MVector& A, const MVector& B)
+double MVector::DistanceToLine(const MVector& A, const MVector& B) const
 {
   //! Calculate the distance of a line spanned by the given vectors with this point
 
@@ -453,7 +453,7 @@ double MVector::DistanceToLine(const MVector& A, const MVector& B)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MVector::ToString()
+MString MVector::ToString() const
 {
   //! Return a string of the content of this class
 
