@@ -63,7 +63,7 @@ using namespace std;
 #include "MRawEventAnalyzer.h"
 #include "MDGeometryQuest.h"
 #include "MComptonEvent.h"
-#include "MDGeometryQuest.h"
+#include "MDShapeBRIK.h"
 #include "MImage3D.h"
 #include "MGUIRevanMain.h"
 #include "MStreams.h"
@@ -995,6 +995,7 @@ void MInterfaceRevan::TriggerStatistics()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress();
 
@@ -1262,6 +1263,7 @@ void MInterfaceRevan::HitStatistics()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 
@@ -1358,6 +1360,7 @@ void MInterfaceRevan::HitStatistics()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 
@@ -1678,6 +1681,98 @@ void MInterfaceRevan::DetectorTypeHitDistribution(bool Before)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceRevan::DepthProfileByDetector()
+{
+  // View the hits in a 3D- and other plots:
+
+  if (IsInitialized() == false) return;
+
+  MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
+  if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
+    mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
+  }
+  Reader->ShowProgress(m_UseGui);
+
+  double MinTotalEnergy = m_Data->GetTotalEnergyMin();
+  double MaxTotalEnergy = m_Data->GetTotalEnergyMax();
+
+  // Since we do not know anything about the detectors we have to store the events by detector first:
+  
+  // Map the detector center to a vector of depths
+  map<MVector, vector<double>> Depths;
+  
+  // Step 1: Accumulate all hits:
+
+  MRERawEvent* RE = 0;
+  while ((RE = Reader->GetNextEvent()) != 0) {
+    
+    // Make sure the total energy is right:
+    double Total = 0;
+    for (int i = 0; i < RE->GetNRESEs(); ++i) {
+      Total += RE->GetRESEAt(i)->GetEnergy();
+    }
+    if (Total >= MinTotalEnergy && Total <= MaxTotalEnergy) { 
+      // Save positions and energies
+      for (int i = 0; i < RE->GetNRESEs(); ++i) {
+        MDVolumeSequence* V = RE->GetRESEAt(i)->GetVolumeSequence();
+        MVector Position = V->GetPositionInSensitiveVolume();
+        MVector DetectorPosition = V->GetUniqueWorldPositionOfDetector();
+        if (Position != g_VectorNotDefined && DetectorPosition != g_VectorNotDefined) {
+          Depths[DetectorPosition].push_back(Position.Z());
+        }
+      }
+    }
+    
+    delete RE;
+  }
+  
+  // Step 2: Show everything:
+  for (auto& Pair: Depths) {
+    MString Title;
+    double Min = numeric_limits<double>::max();
+    double Max = -numeric_limits<double>::max();
+    MDVolumeSequence VS = m_Geometry->GetVolumeSequence(Pair.first);
+    if (VS.GetDetector() != nullptr) {
+      Title = VS.GetDetector()->GetName();
+      MDVolume* V = VS.GetSensitiveVolume();
+      if (V != nullptr && V->GetShape()->GetType() == "BRIK") {
+        Min = -dynamic_cast<MDShapeBRIK*>(V->GetShape())->GetSizeZ();
+        Max = dynamic_cast<MDShapeBRIK*>(V->GetShape())->GetSizeZ();
+      } else {
+        for (double N: Pair.second) {
+          if (N < Min) Min = N;
+          if (N > Max) Max = N;
+        }         
+      }
+    } else {
+      Title = Pair.first.ToString();
+      for (double N: Pair.second) {
+        if (N < Min) Min = N;
+        if (N > Max) Max = N;
+      }
+    }
+    
+    TH1D* Hist = new TH1D(Title, Title, 100, Min, Max);
+    Hist->SetXTitle("Interaction depth [cm]");
+    Hist->SetYTitle("counts");
+    for (double N: Pair.second) {
+      Hist->Fill(N);    
+    }
+    
+    TCanvas* Canvas = new TCanvas();
+    Canvas->cd();
+    Hist->Draw();
+    Canvas->Update();
+  }
+  
+  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
 {
   // View the hits in a 3D- and other plots:
@@ -1687,6 +1782,7 @@ void MInterfaceRevan::SpatialDistribution(bool UseEnergy)
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 
@@ -1897,6 +1993,7 @@ void MInterfaceRevan::EnergyPerDetector()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 
@@ -2214,6 +2311,7 @@ void MInterfaceRevan::FindPolarization()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 
@@ -2404,6 +2502,7 @@ void MInterfaceRevan::FindBeamPath()
   MFileEventsEvta* Reader = new MFileEventsEvta(m_Geometry);
   if (Reader->Open(m_Data->GetCurrentFileName()) == false) {
     mout<<"Unable to open file "<<m_Data->GetCurrentFileName()<<". Aborting!"<<endl;
+    return;
   }
   Reader->ShowProgress(m_UseGui);
 

@@ -91,6 +91,7 @@ class MGUIRevanMain : public MGUIMain
     c_HitStatistics, 
     c_SpatialHitDistribution, 
     c_SpatialEnergyDistribution, 
+    c_DepthProfileByDetector,
     c_CSRTestStatistics,
     c_Polarization, 
     c_BeamPath,
