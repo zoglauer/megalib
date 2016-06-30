@@ -119,6 +119,7 @@ void MGUIRevanMain::Create()
   m_MenuApplications->AddEntry("Energy per central track element", c_EnergyPerCentralTrackElement);
   m_MenuApplications->AddEntry("Spatial hit distribution", c_SpatialHitDistribution);
   m_MenuApplications->AddEntry("Spatial energy distribution", c_SpatialEnergyDistribution);
+  m_MenuApplications->AddEntry("Depth profile by detector", c_DepthProfileByDetector);
   // m_MenuApplications->AddEntry("CSR Test statistics", c_CSRTestStatistics);
   m_MenuApplications->AddEntry("Number of clusters", c_NClusters);
   m_MenuApplications->AddEntry("Cluster distribution by detector type before reconstruction", c_DetectorTypeClusterDistributionBefore);
@@ -294,6 +295,10 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
 
       case c_SpatialEnergyDistribution:
         m_Interface->SpatialDistribution(true);
+        break;
+
+      case c_DepthProfileByDetector:
+        m_Interface->DepthProfileByDetector();
         break;
 
 //       case c_CSRTestStatistics:

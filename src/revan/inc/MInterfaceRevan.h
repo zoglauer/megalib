@@ -78,6 +78,9 @@ class MInterfaceRevan : public MInterface
   void HitStatistics();
   //! Show either the spacial distribution of energy or of the hits
   void SpatialDistribution(bool UseEnergy);
+  //! For each detector with a depth recognition (defined z-axis), show a depth profile
+  void DepthProfileByDetector();
+  
   void StartDistribution();
   //void ShowCSRTestStatistics();
   void EnergyPerDetector();
