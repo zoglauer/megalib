@@ -1,5 +1,5 @@
 /*
- * MBackprojectionCartesian.h
+ * MBackprojectionNearField.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MBackprojectionCartesian__
-#define __MBackprojectionCartesian__
+#ifndef __MBackprojectionNearField__
+#define __MBackprojectionNearField__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,14 +30,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MBackprojectionCartesian : public MBackprojection
+class MBackprojectionNearField : public MBackprojection
 {
   // public interface:
  public:
   //! Default constructor
-  MBackprojectionCartesian(MCoordinateSystem CoordinateSystem = MCoordinateSystem::c_Cartesian2D);
+  MBackprojectionNearField(MCoordinateSystem CoordinateSystem = MCoordinateSystem::c_Cartesian2D);
   //! Default destructor
-  virtual ~MBackprojectionCartesian();
+  virtual ~MBackprojectionNearField();
 
   //! Prepare all backprojections - must be called before the backprojections
   virtual void PrepareBackprojection();
@@ -83,7 +83,7 @@ class MBackprojectionCartesian : public MBackprojection
 
 #ifdef ___CINT___
  public:
-  ClassDef(MBackprojectionCartesian, 0) // no description
+  ClassDef(MBackprojectionNearField, 0) // no description
 #endif
 
 };

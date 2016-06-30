@@ -47,8 +47,8 @@ LOBJS     = $(LB)/MSettingsMimrec.o \
 						$(LB)/MImagerExternallyManaged.o \
 						$(LB)/MProjection.o \
 						$(LB)/MBackprojection.o \
-						$(LB)/MBackprojectionCartesian.o \
-						$(LB)/MBackprojectionSphere.o \
+						$(LB)/MBackprojectionFarField.o \
+						$(LB)/MBackprojectionNearField.o \
 						$(LB)/MEventSelector.o \
 						$(LB)/MLMLAlgorithms.o \
 						$(LB)/MLMLClassicEM.o \

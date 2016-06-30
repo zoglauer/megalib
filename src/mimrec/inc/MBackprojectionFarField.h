@@ -1,5 +1,5 @@
 /*
- * MBackprojectionSphere.h
+ * MBackprojectionFarField.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MBackprojectionSphere__
-#define __MBackprojectionSphere__
+#ifndef __MBackprojectionFarField__
+#define __MBackprojectionFarField__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,14 +30,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MBackprojectionSphere : public MBackprojection
+class MBackprojectionFarField : public MBackprojection
 {
   // public Interface:
  public:
   //! Default constructor
-  MBackprojectionSphere(MCoordinateSystem CoordianteSystem = MCoordinateSystem::c_Spheric);
+  MBackprojectionFarField(MCoordinateSystem CoordianteSystem = MCoordinateSystem::c_Spheric);
   //! Default destructor
-  virtual ~MBackprojectionSphere();
+  virtual ~MBackprojectionFarField();
 
   //! Prepare the backprojections
   virtual void PrepareBackprojection();
@@ -135,7 +135,7 @@ class MBackprojectionSphere : public MBackprojection
 
 #ifdef ___CINT___
  public:
-  ClassDef(MBackprojectionSphere, 0) // base class for all spherical reconstruction
+  ClassDef(MBackprojectionFarField, 0) // base class for all spherical reconstruction
 #endif
 
 };
