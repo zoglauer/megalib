@@ -163,10 +163,10 @@ public:
   void RotateY(double Angle); 
   //! Rotate around z-axis
   void RotateZ(double Angle); 
-	//! Rotate around Uz
-	void RotateReferenceFrame(const MVector& V);
+  //! Rotate around Uz
+  void RotateReferenceFrame(const MVector& V);
 
-	
+  
   //! Do a rotation via a TRotation --- needed by geomega (--> define simplified TRotation later if needed)
   MVector& operator *= (const TRotation & Rot);
 
@@ -174,13 +174,13 @@ public:
   // Section 6: Additional high-level functions
 
   //! Checks if this vector is in the plane spanned by the other three vectors
-  bool Coplanar(const MVector& A, const MVector& B, const MVector& C, double Tolerance = 1E-6);
+  bool Coplanar(const MVector& A, const MVector& B, const MVector& C, double Tolerance = 1E-6) const;
 
   //! Calculate the distance of a line spanned by the given vectors with this point
-  double DistanceToLine(const MVector& A, const MVector& B);
+  double DistanceToLine(const MVector& A, const MVector& B) const;
   
   //! Return a string of the content of this class
-  MString ToString();
+  MString ToString() const;
 
   // private - not private - for speed
 
