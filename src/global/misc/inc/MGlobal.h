@@ -87,6 +87,7 @@
 
 #include "MVector.h"
 #include "MString.h"
+#include "MRotation.h"
 
 // For compatibility with Windows:
 #ifdef _MSC_VER
@@ -109,6 +110,7 @@ extern const MString g_Homepage;
 
 extern const MString g_StringNotDefined;
 extern const MVector g_VectorNotDefined;
+extern const MRotation g_RotationNotDefined;
 extern const int g_IntNotDefined;
 extern const unsigned int g_UnsignedIntNotDefined;
 extern const double g_DoubleNotDefined;

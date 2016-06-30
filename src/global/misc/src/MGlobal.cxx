@@ -65,7 +65,7 @@ unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
 // Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2014"; 
+const MString g_CopyrightYear = "2016"; 
 const MString g_Homepage = "http://megalibtoolkit.com"; 
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
@@ -73,6 +73,15 @@ const MString g_StringNotDefined = "___NotDefined___";
 const MVector g_VectorNotDefined = MVector(numeric_limits<double>::max()/11, 
                                            numeric_limits<double>::max()/11, 
                                            numeric_limits<double>::max()/11);
+const MRotation g_RotationNotDefined = MRotation(numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11);
 const int g_IntNotDefined = numeric_limits<int>::max()-11;
 const unsigned int g_UnsignedIntNotDefined = numeric_limits<unsigned int>::max()-11;
 const double g_DoubleNotDefined = numeric_limits<double>::max()/11;
@@ -149,7 +158,10 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gStyle->SetCanvasBorderSize(0);
   gStyle->SetCanvasBorderMode(0);
   gStyle->SetCanvasColor(0);
-
+  
+  gStyle->SetHistMinimumZero(true);
+  gStyle->SetBit(kCanDelete);
+  gStyle->SetHistFillColor(8);
   gStyle->SetOptStat(0);
 
   // Change the region where the drawing starts in canvases:
@@ -161,7 +173,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   gStyle->SetLabelSize(0.03f, "XYZP");
   
-  gStyle->SetPalette(1, 0);
+  gStyle->SetPalette(kBird);
 
   // Ignore ROOT messages up to kInfo
   gErrorIgnoreLevel = kWarning;
