@@ -3130,7 +3130,7 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
       
       // Deposits in not sensitive material - detailed
       for (unsigned int i = 0; i < GetNPMs(); ++i) {
-        out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version);
+        out<<GetPMAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;;
       }
       
       // Comments
@@ -3147,14 +3147,14 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
             WhatToStore == c_StoreSimulationInfoInitOnly) {
           continue;
         }
-        out<<GetIAAt(i)->ToSimString(WhatToStore, Precision, Version);
+        out<<GetIAAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
       }
     }
     for (unsigned int i = 0; i < GetNHTs(); ++i) {
-      out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version);
+      out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
     }
     for (unsigned int i = 0; i < GetNGRs(); ++i) {
-      out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version);
+      out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
     }
     map<MVector, double>::iterator Iter;
     for (Iter = m_TotalDetectorEnergy.begin();
@@ -3164,11 +3164,11 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
     }
 
     for (unsigned int i = 0; i < GetNDRs(); ++i) {
-      out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version);
+      out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
     }
   }
 
-  return out.str().c_str();
+  return out;
 }
 
 
