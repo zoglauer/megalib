@@ -136,6 +136,7 @@ FRETALONLIBS = \
 	-lMelinatorGui \
 	-lMelinator \
 	-lFretalonBase \
+	-lSivan \
 	-lGeomega \
 	-lCommonGui \
 	-lCommonMisc \
@@ -145,7 +146,7 @@ fretalon: info fre
 melinator: info fre
 	@$(BN)/melinator $(CMD)
 
-fre: link glo geo
+fre: link glo geo siv
 	@$(MAKE) fre -C src
 
 clean_fretalon:

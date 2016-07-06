@@ -29,6 +29,7 @@
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
 #include "MReadOutDataTiming.h"
+#include "MReadOutDataOrigins.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,12 +46,15 @@ ClassImp(MFretalonRegistry)
 //! Default constructor
 MFretalonRegistry::MFretalonRegistry()
 {
+  // Register the default read-out elements
   m_ROEs.push_back(new MReadOutElement());
   m_ROEs.push_back(new MReadOutElementStrip());
   m_ROEs.push_back(new MReadOutElementDoubleStrip());
   
+  // Register the default read-out datas
   m_RODs.push_back(new MReadOutDataADCValue());
   m_RODs.push_back(new MReadOutDataTiming());
+  m_RODs.push_back(new MReadOutDataOrigins());
 }
 
 

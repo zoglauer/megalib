@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MTime.h"
 #include "MReadOut.h"
+#include "MReadOutSequence.h"
 
 // Forward declarations:
 
@@ -33,7 +34,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MReadOutAssembly
+class MReadOutAssembly : public MReadOutSequence
 {
   // public interface:
  public:
@@ -43,17 +44,7 @@ class MReadOutAssembly
   virtual ~MReadOutAssembly();
 
   //! Reset all data
-  void Clear();
-  
-  //! Set the ID of this event
-  void SetID(unsigned long ID) { m_ID = ID; }
-  //! Return the ID of this event
-  unsigned long GetID() const { return m_ID; }
-
-  //! Set and get the Time of this event
-  void SetTime(MTime Time) { m_Time = Time; }
-  //! Return the time this event has been obtained
-  MTime GetTime() const { return m_Time; }
+  virtual void Clear();
 
   //! Returns true if none of the "bad" or "incomplete" falgs has been set
   bool IsGood() const { return true; }
@@ -72,17 +63,9 @@ class MReadOutAssembly
   //! Return the analysis progress flag
   uint64_t GetAnalysisProgress() const { return m_AnalysisProgress; }
 
-  //! Return the number of read outs
-  unsigned int GetNReadOuts() const { return m_ReadOuts.size(); }
-  //! Return read out i - throws an exception of the index is not found
-  MReadOut& GetReadOut(unsigned int i);
-  //! Add a read out
-  void AddReadOut(MReadOut& ReadOut);
-  //! Remove a read out - does do nothing if the index is not found
-  void RemoveReadOut(unsigned int i);
 
   //! Parse some content from a line
-  bool Parse(MString& Line, int Version = 1);
+  virtual bool Parse(MString& Line, int Version = 1);
   
   //! Stream the content in MEGAlib's evta format 
   void StreamEvta(ostream& S);
@@ -103,20 +86,12 @@ class MReadOutAssembly
 
   // private members:
  private:
-  //! ID of this event
-  unsigned long m_ID;
-
-  //! The time of this event
-  MTime m_Time;
-
   //! The analysis progress 
   uint64_t m_AnalysisProgress;
   
   //! True if event has been filtered out
   bool m_FilteredOut;
 
-  //! The read-outs
-  vector<MReadOut*> m_ReadOuts;
   
 #ifdef ___CINT___
  public:

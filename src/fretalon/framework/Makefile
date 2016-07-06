@@ -59,7 +59,7 @@ $(SOBJ): $(OBJ_FILES)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(OBJ_FILES) $(GLIBS) $(LIBS) -o $(SOBJ)
 
-$(OBJ_FILES): $(LB)/%.o: src/%.cxx inc/%.h $(LB)/%.d
+$(OBJ_FILES): $(LB)/%.o: src/%.cxx inc/%.h #$(LB)/%.d
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -Iinc -c -o $@ $<
 	

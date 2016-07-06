@@ -46,7 +46,7 @@ ClassImp(MReadOutAssembly)*m_ReadOuts[i]
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOutAssembly::MReadOutAssembly() : m_Time(0)
+MReadOutAssembly::MReadOutAssembly() : MReadOutSequence()
 {
   // Construct an instance of MReadOutAssembly
   
@@ -78,42 +78,20 @@ void MReadOutAssembly::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MReadOut& MReadOutAssembly::GetReadOut(unsigned int i) 
-{ 
-  //! Return read out i
-
-  if (i < m_ReadOuts.size()) {
-    return *m_ReadOuts[i];
-  }
-  
-  throw MExceptionIndexOutOfBounds(0, m_ReadOuts.size(), i);
-
-  return *m_ReadOuts.at(0); // never reached so should never crash...
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void MReadOutAssembly::AddReadOut(MReadOut& ReadOut)
+bool MReadOutAssembly::Parse(MString& Line, int Version)
 {
-  //! Add a read out
+  // Returns true if something has been read (sucessful or not)
   
-  return m_ReadOuts.push_back(new MReadOut(ReadOut));
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MReadOutAssembly::RemoveReadOut(unsigned int i)
-{
-  //! Remove a read out
+  if (MReadOutSequence::Parse(Line) == true) return true;
   
-  if (i < m_ReadOuts.size()) {
-    vector<MReadOut*>::iterator it;
-    it = m_ReadOuts.begin()+i;
-    m_ReadOuts.erase(it);
-    delete (*it);
+  if (Line.BeginsWith("BD")) {
+    // set a bad flag
+    // too lazy RN to go thru each flag.  the following should do::
+    m_FilteredOut = true;
+    return true;
   }
+
+  return false;
 }
 
 
@@ -141,8 +119,8 @@ void MReadOutAssembly::StreamRoa(ostream& S, bool WithDescriptor)
   S<<"ID "<<m_ID<<endl;
   S<<"TI "<<m_Time<<endl;
   
-  for (auto RO: m_ReadOuts) {
-    S<<RO->ToParsableString(WithDescriptor)<<endl;
+  for (MReadOut& RO: m_ReadOuts) {
+    S<<RO.ToParsableString(WithDescriptor)<<endl;
   }
 }
   
