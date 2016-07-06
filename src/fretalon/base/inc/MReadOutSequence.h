@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MTime.h"
 #include "MReadOut.h"
+#include "MSimIA.h"
 
 // Forward declarations:
 
@@ -33,6 +34,8 @@
 
 //! A read-out sequence consisting of all the data collected during this sequence
 //! such as time, channel IDs and data, etc.
+//! This contains just the basic data - for adding user derived or additional data
+//! use the derived class MReadOutAssembly
 class MReadOutSequence
 {
   // public interface:
@@ -40,10 +43,14 @@ class MReadOutSequence
   //! Default constructor 
   MReadOutSequence();
   //! Default destructor
-  ~MReadOutSequence();
+  virtual ~MReadOutSequence();
 
   //! Remove all content
-  void Clear();
+  virtual void Clear();
+
+  //! Parse some content from a line - returns true if the line was handled - irrelevant if successfu
+  virtual bool Parse(MString& Line, int Version = 1);
+
   
   //! Set the ID of this sequence
   void SetID(unsigned long ID) { m_ID = ID; }
@@ -55,11 +62,6 @@ class MReadOutSequence
   //! Get the time
   MTime GetTime() const { return m_Time; }
   
-  //! Set the clock
-  void SetClock(unsigned long Clock) { m_Clock = Clock; }
-  //! Get the time
-  unsigned long GetClock() const { return m_Clock; }
-  
   //! Add a new read out
   void AddReadOut(const MReadOut& RO) { m_ReadOuts.push_back(RO); }
   //! Get the number of available read outs
@@ -67,12 +69,19 @@ class MReadOutSequence
   //! Find a read out with the given read-out element and return its position
   //! Return g_UnsignedIntNotDefined in case it is not found
   unsigned int FindReadOut(const MReadOutElement& ROE) const;
+  //! Remove a read out - does do nothing if the index is not found
+  void RemoveReadOut(unsigned int i);
   //! Get a specific read-outs
   const MReadOut& GetReadOut(unsigned int R) const;
   
   //! Return true if all read-out elements are of the same type
   bool HasIdenticalReadOutElementTypes() const;
   
+  //! Return the number of simulation interactions
+  unsigned int GetNSimIAs() const { return m_SimIAs.size(); }
+  //! Return simulation hit i
+  const MSimIA& GetSimIA(unsigned int i) const;
+
   //! Dump a string
   virtual MString ToString() const;
   
@@ -89,19 +98,19 @@ class MReadOutSequence
 
   // protected members:
  protected:
-
-
-  // private members:
- private:
-  //! All the read outs
-  vector<MReadOut> m_ReadOuts;
-
   //! The ID
   unsigned long m_ID;
   //! The time
   MTime m_Time;
-  //! A hardware clock
-  unsigned long m_Clock;
+
+  //! All the read outs
+  vector<MReadOut> m_ReadOuts;
+  //! All the (optional) simulation interaction informations
+  vector<MSimIA> m_SimIAs;
+
+
+  // private members:
+ private:
 
 
 #ifdef ___CINT___

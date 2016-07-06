@@ -22,6 +22,7 @@ $(LB)/MReadOutElementDoubleStrip.o \
 $(LB)/MReadOutData.o \
 $(LB)/MReadOutDataADCValue.o \
 $(LB)/MReadOutDataTiming.o \
+$(LB)/MReadOutDataOrigins.o \
 $(LB)/MReadOutSequence.o \
 $(LB)/MReadOutDataGroup.o \
 $(LB)/MReadOutCollection.o \

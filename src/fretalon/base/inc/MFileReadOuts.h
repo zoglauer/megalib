@@ -51,6 +51,7 @@ class MFileReadOuts : public MFileEvents
   //! If SelectedDetectorID >= 0 then restrict yourself to SelectedDetectorID
   bool ReadNext(MReadOutSequence& Sequence, int SelectedDetectorID = -1);
 
+  
   // protected methods:
  protected:
   //! Parse the special information at the end of file
