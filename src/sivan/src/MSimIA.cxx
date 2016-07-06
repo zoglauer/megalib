@@ -304,7 +304,7 @@ bool MSimIA::AddRawInput(MString LineBuffer, int Version)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MSimIA::ToString()
+MString MSimIA::ToString() const
 {
   ostringstream out;
 
@@ -325,14 +325,14 @@ MString MSimIA::ToString()
 
   out<<"ParentNucleus:                 "<<m_ParentNucleus<<endl;
 
-  return out.str().c_str();
+  return out;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision, const int Version)
+MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision, const int Version) const
 {
   // Convert this SimEvent to the original *.sim file format...
 
@@ -389,7 +389,7 @@ MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision
         <<setw(WidthDir)<<m_MotherParticleDirection[1]<<";"
         <<setw(WidthDir)<<m_MotherParticleDirection[2]<<";"
         <<setprecision(PrecisionEnergy)
-        <<setw(WidthEnergy)<<m_MotherParticleEnergy<<endl;  
+        <<setw(WidthEnergy)<<m_MotherParticleEnergy;  
    } 
   // The standard version given in MSimEvent::g_OutputVersion
   else {
@@ -422,10 +422,10 @@ MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision
         <<setw(WidthDir)<<m_SecondaryParticlePolarisation[1]<<";"
         <<setw(WidthDir)<<m_SecondaryParticlePolarisation[2]<<";"
         <<setprecision(PrecisionEnergy)
-        <<setw(WidthEnergy)<<m_SecondaryParticleEnergy<<endl;
+        <<setw(WidthEnergy)<<m_SecondaryParticleEnergy;
   }
 
-  return Text.str().c_str();
+  return Text;
 }
 
 

@@ -222,7 +222,7 @@ MString MSimHT::ToString() const
     out<<m_Origins[i]<<", ";
   }
 
-  return out.str().c_str();
+  return out;
 }
 
 
@@ -269,9 +269,8 @@ MString MSimHT::ToSimString(const int WhatToStore, const int ScientificPrecision
       S<<";"<<m_Origins[o];
     }
   }
-  S<<endl;
 
-  return S.str().c_str();
+  return S;
 }
 
 

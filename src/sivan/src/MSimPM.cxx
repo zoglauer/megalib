@@ -111,9 +111,9 @@ MString MSimPM::ToSimString(const int WhatToStore, const int ScientificPrecision
 
   S<<"PM "<<m_MaterialName<<" ";
   S<<setprecision(Precision);
-  S<<setw(WidthEnergy)<<m_Energy<<endl;
+  S<<setw(WidthEnergy)<<m_Energy;
 
-  return S.str().c_str();
+  return S;
 }
 
 

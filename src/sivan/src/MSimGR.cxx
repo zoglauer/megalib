@@ -141,9 +141,8 @@ MString MSimGR::ToSimString(const int WhatToStore, const int ScientificPrecision
   S<<setw(WidthPos)<<m_Position[1]<<";";
   S<<setw(WidthPos)<<m_Position[2]<<";";
   S<<setw(WidthEnergy)<<m_Energy;
-  S<<endl;
 
-  return S.str().c_str();
+  return S;
 }
 
 

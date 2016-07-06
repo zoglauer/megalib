@@ -116,9 +116,9 @@ class MSimIA
 
 
   //! Return a string compatible with the sim file format
-  MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25);
+  MString ToSimString(const int WhatToStore = 1, const int Precision = 0, const int Version = 25) const;
   //! Get the content of the class as a descriptive string
-  MString ToString();
+  MString ToString() const;
 
   //! Add a simple offset to all hit origins - needed when concatenating sim events
   void OffsetOrigins(int Offset);
