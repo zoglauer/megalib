@@ -46,7 +46,7 @@ done
 
 # Default options:
 CFG=~/.dcosima.cfg
-MEGALIBPATH="Science/Software" # Attention hard coded else where!
+MEGALIBPATH="~/Science/Software" # Attention hard coded else where!
 
 # Read configuration file and extract machines
 if [ "${SINGLEMACHINE}" == "" ]; then
@@ -80,78 +80,154 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 done
 
 
+# Create a temporary script which we will execute later
+SCRIPT=$(mktemp /tmp/dcosima-meglibupdate-script.XXXXXXXXXX)
+cat <<EOT >> ${SCRIPT}
+#/bin/bash
+
+# For testing
+#uname -a
+#sleep 10
+#echo "DCOSIMAERROR 1"
+#exit 1
+
+# Check if the MEGAlib path exits, if not create it
+if [[ ! -d ${MEGALIBPATH} ]]; then 
+  mkdir -p ${MEGALIBPATH}; 
+  if [ "\$?" != "0" ]; then
+    echo "DCOSIMAERROR 1"
+    exit 1
+  fi
+fi
+
+# If the MEGAlib dir exists and has a git repository, stash any changes 
+if [[ -d ${MEGALIBPATH}/MEGAlib ]]; then
+  cd ${MEGALIBPATH}/MEGAlib;
+  if [[ -d .git ]]; then
+    git stash save
+    if [ "\$?" != "0" ]; then
+      echo "DCOSIMAERROR 2"
+      exit 2
+    fi
+  fi
+fi
+
+# Download setup script
+cd ${MEGALIBPATH}; 
+curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh
+if [ "\$?" != "0" ]; then
+  echo "DCOSIMAERROR 3"
+  exit 3
+fi
+
+# Execute setup script
+bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on --branch=${BRANCH}
+if [ "\$?" != "0" ]; then
+  echo "DCOSIMAERROR 4"
+  exit 4
+fi
+
+# Setup environment
+SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; 
+HASIT=""; 
+if [[ -f ~/.bash_local ]]; then 
+  HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
+fi; 
+if [ "\${HASIT}" == "" ]; then 
+  echo \${SOURCE} >> ~/.bash_local; 
+fi
+source ~/Science/Software/MEGAlib/bin/source-megalib.sh
+if [ "\$?" != "0" ]; then
+  echo "DCOSIMAERROR 5"
+  exit 5
+fi
+
+# Run a quick test simulation
+m
+rm -rf RunTestHeaven.*.sim
+rm -rf RunTestSky.*.sim
+cosima
+if [ "\$?" != "0" ]; then
+  echo "DCOSIMAERROR 6"
+  exit 6
+fi
+if [[ ! -f RunTestHeaven.inc1.id1.sim ]] || [[ ! -f RunTestSky.inc1.id1.sim ]]; then 
+  echo "DCOSIMAERROR 6"
+  exit 6
+fi
+rm -rf RunTestHeaven.*.sim
+rm -rf RunTestSky.*.sim
+
+exit 0
+
+EOT
+
+echo " "
+echo "Kicking off update on "
+ 
 # Create the install paths on all machines
-FAILEDLIST=""
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
   if [ "${MACHINES[$m]}" == "" ]; then
-    FAILEDLIST="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]} ${FAILEDLIST}"
     continue;
   fi
 
-  echo " "
-  echo " "
-  echo " "
-  echo " "
-  echo "Updating ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
-
-  echo " "
-  echo "Step 1: Creating install paths..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MEGALIBPATH} ]]; then mkdir -p ${MEGALIBPATH}; fi; exit 0;"
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to create the install paths on ${REMOTENAME[$m]}"
-    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
-    continue
-  fi
-  
-  echo " "
-  echo "Step 2: Stashing any potential changes..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}/MEGAlib; git stash save"
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to stash any potential changes to MEGAlib on ${REMOTENAME[$m]}"
-    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
-    continue
-  fi
-  
-  echo " "
-  echo "Step 3: Downloading the latest setup file..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh"
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to download the latest setup file on ${REMOTENAME[$m]}"
-    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
-    continue
-  fi
-
-  echo " "
-  echo "Step 4: Running the setup file..."
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MEGALIBPATH}; bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on --branch=${BRANCH}"
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to run the setup file on ${REMOTENAME[$m]}"
-    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
-    continue
-  fi
-
-  echo " "
-  echo "Step 5: Setting up the environment..."
-  # Unfortunately we have to hard code the MEGAlib path here since we have to use ''
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'SOURCE="test -e ~/Science/Software/MEGAlib/bin/source-megalib.sh && . ~/Science/Software/MEGAlib/bin/source-megalib.sh"; HASIT=""; if [[ -f .bash_local ]]; then HASIT=$(grep "${SOURCE}" .bash_local); fi; if [ "${HASIT}" == "" ]; then echo ${SOURCE} >> .bash_local; fi'  
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to setp up the environment on ${REMOTENAME[$m]}"
-    FAILEDLIST="${REMOTENAME[$m]} ${FAILEDLIST}"
-    continue
-  fi
-
-  # Step 5: perform a test simulation
-  
-  echo "Installation went well on ${REMOTENAME[$m]}"
+  echo " * ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dcosima-${REMOTENAME[$m]}.log 2>&1 &
   
 done
 
-if [ "${FAILEDLIST}" != "" ]; then
-  echo " "
-  echo "ERROR: The setup failed on ${FAILEDLIST}"
-  echo " "
-fi
+echo " "
+echo "Waiting for all remote processes to finish..."
+wait
 
+rm -r ${SCRIPT}
+
+echo " "
+echo "Installation status: "
+
+# Create a failed list
+for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+
+  if [ "${MACHINES[$m]}" == "" ]; then
+    echo " * ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]} - ERROR: Unable to log in"
+    continue;
+  fi
+  
+  if grep -q "DCOSIMAERROR 1" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to create MEGAlib path. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  if grep -q "DCOSIMAERROR 2" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to stash the old MEGAlib version. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  if grep -q "DCOSIMAERROR 3" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to download the setup script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  if grep -q "DCOSIMAERROR 4" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: An error occurred while running the setup script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  if grep -q "DCOSIMAERROR 5" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]}: Unable to source the MEGAlib script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  if grep -q "DCOSIMAERROR 6" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]}: Unable to run test simulation. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+    continue;
+  fi
+  
+  # Only keep the ones with error messages
+  rm -rf /tmp/dcosima-${REMOTENAME[$m]}.log
+  
+  echo " * ${REMOTENAME[$m]} - SUCCESS"
+  
+done
+
+echo " "
+
+dcosima-checkmegalib
 
 exit 0
