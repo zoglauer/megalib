@@ -173,7 +173,8 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 
   gStyle->SetLabelSize(0.03f, "XYZP");
   
-  gStyle->SetPalette(kBird);
+  gStyle->SetPalette(1, 0);
+  //gStyle->SetPalette(kBird);
 
   // Ignore ROOT messages up to kInfo
   gErrorIgnoreLevel = kWarning;
