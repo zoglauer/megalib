@@ -71,6 +71,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_AdjacentLevel = 2;
   m_AdjacentSigma = -1;
 
+  m_PDFClusterizerBaseFileName = "";
+
   // Electron tracking
   m_DoTracking = true;
   m_SearchPairs = true;
@@ -159,6 +161,7 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "StandardClusterizerCenterIsReference", m_StandardClusterizerCenterIsReference);
   new MXmlNode(Node, "AdjacentSigma", m_AdjacentSigma);
   new MXmlNode(Node, "AdjacentLevel", m_AdjacentLevel);
+  new MXmlNode(Node, "PDFClusterizerBaseFileName", m_PDFClusterizerBaseFileName);
 
   new MXmlNode(Node, "DoTracking", m_DoTracking);
   new MXmlNode(Node, "SearchPairs", m_SearchPairs);
@@ -261,6 +264,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("AdjacentLevel")) != 0) {
     m_AdjacentLevel = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("PDFClusterizerBaseFileName")) != 0) {
+    m_PDFClusterizerBaseFileName = aNode->GetValueAsString();
   }
   if ((aNode = Node->GetNode("DoTracking")) != 0) {
     m_DoTracking = aNode->GetValueAsBoolean();

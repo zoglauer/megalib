@@ -136,6 +136,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
   int GetAdjacentLevel() const {
     return m_AdjacentLevel;
   }
+  
+  void SetPDFClusterizerBaseFileName(MString BaseFileName) {
+    m_PDFClusterizerBaseFileName = BaseFileName;
+  }
+  MString GetPDFClusterizerBaseFileName() const {
+    return m_PDFClusterizerBaseFileName;
+  }
 
   void SetDoTracking(bool Do) { m_DoTracking = Do; }
   bool GetDoTracking() { return m_DoTracking; }
@@ -270,6 +277,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   int m_AdjacentLevel;
   double m_AdjacentSigma;
+
+  MString m_PDFClusterizerBaseFileName;
 
   // Electron tracking:
   bool m_DoTracking;

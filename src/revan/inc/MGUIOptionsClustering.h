@@ -25,6 +25,7 @@
 #include "MSettingsEventReconstruction.h"
 #include "MGUIEEntryList.h"
 #include "MGUIEEntry.h"
+#include "MGUIEFileSelector.h"
 
 // Forward declarations:
 
@@ -44,7 +45,7 @@ class MGUIOptionsClustering : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:
@@ -66,6 +67,9 @@ class MGUIOptionsClustering : public MGUIDialog
 
   TGCheckButton* m_ReferencePoint;
 
+  MGUIEFileSelector* m_PDFClusterizerBaseFileName;
+  
+  
   enum ButtonIDs { e_ReferencePoint = 200};
 
 

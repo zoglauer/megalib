@@ -51,6 +51,7 @@ class MERClusterize : public MERConstruction
                              double MinDistanceD5, double MinDistanceD6,
                              double MinDistanceD7, double MinDistanceD8,
                              bool CenterIsReference);
+  virtual bool SetParameters(MString BaseResponseFileName);
   virtual bool Analyze(MRawEventList* List);
 
   virtual MString ToString(bool CoreOnly = false) const;
@@ -58,6 +59,7 @@ class MERClusterize : public MERConstruction
   static const int c_None = 0;
   static const int c_Distance = 1;
   static const int c_Level = 2;
+  static const int c_Response = 3;
 
   // protected methods:
  protected:
@@ -66,6 +68,7 @@ class MERClusterize : public MERConstruction
 
   void FindClusters(MRERawEvent* RE, double Distance, int Detector);
   void FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma, int Level, int Detector);
+  void FindClustersUsingPDF(MRERawEvent* RE);
 
   // private methods:
  private:
@@ -96,7 +99,12 @@ class MERClusterize : public MERConstruction
   // Instead of looking for the min distance to each subhit of the cluster, we only look at the center of the already existing cluster
   bool m_CenterIsReference;
 
-
+  //! PDF for two site clusters
+  MResponseMatrixO3 m_DualPDF;
+  //! PDF for all clusters
+  MResponseMatrixO2 m_AllPDF;
+  
+  
 #ifdef ___CINT___
  public:
   ClassDef(MERClusterize, 0) // no description

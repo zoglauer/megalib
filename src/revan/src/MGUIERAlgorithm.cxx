@@ -97,6 +97,7 @@ void MGUIERAlgorithm::Create()
   m_ClusteringList->Add("No clustering");
   m_ClusteringList->Add("Clustering by Distance");
   m_ClusteringList->Add("Clustering of adjacent voxels");
+  m_ClusteringList->Add("Clustering using probability density function");
   m_ClusteringList->SetSelected(m_Data->GetClusteringAlgorithm());
   m_ClusteringList->Create();
   AddFrame(m_ClusteringList, m_ListLayout);

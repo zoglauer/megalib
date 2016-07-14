@@ -253,7 +253,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Probability = true;
-      cout<<"Accepting file name for probability: "<<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
+      cout<<"Accepting file names for probability: "<<m_DividendFileName<<"/("<<m_DividendFileName<<"+"<<m_DivisorFileName<<")"<<endl;
     } else if (Option == "-j") {
       m_Prefix = argv[++i];
       m_Join = true;
@@ -468,8 +468,8 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
     }
   }
   if (m_Append == false && m_Show == false && m_Statistics == false && 
-      m_Divide == false && m_Ratio == false && m_Join == false) {
-    cout<<"Error: You must either append or divide or show a file or the statistics!"<<endl;
+      m_Divide == false && m_Ratio == false && m_Join == false && m_Probability == false) {
+    cout<<"Error: You must either append or join or divide or show a file or the statistics or create the ratio or propability function!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -940,7 +940,7 @@ bool MResponseManipulator::Probability()
   if (Nenner == 0) return false;
 
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
-    mout<<"Cannot append file, because they are of different order!"<<endl;
+    mout<<"Cannot calculate the probability, because the response files are of different order!"<<endl;
   } else {
     if (Zahler->GetOrder() == 1) {
       *dynamic_cast<MResponseMatrixO1*>(Nenner) += 

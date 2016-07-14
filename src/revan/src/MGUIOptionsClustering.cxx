@@ -130,9 +130,7 @@ void MGUIOptionsClustering::Create()
         m_Data->GetAdjacentLevel() == 5 ||
         m_Data->GetAdjacentLevel() == 8) {
       m_AdjacentLevel->Select(m_Data->GetAdjacentLevel());
-      cout<<"Sel: "<<m_Data->GetAdjacentLevel()<<endl;
     } else {
-      cout<<"Sel 1"<<endl;
       m_AdjacentLevel->Select(1);     
     }
     AddFrame(m_AdjacentLevel, EntryLayout);
@@ -142,6 +140,13 @@ void MGUIOptionsClustering::Create()
                      false,
                      m_Data->GetAdjacentSigma(), true, -10.0);
     AddFrame(m_AdjacentSigma, EntryLayout);
+  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoPDF) {
+    AddSubTitle("Options for clustering using a probability densitiy function:");
+    
+    m_PDFClusterizerBaseFileName = new MGUIEFileSelector(this, "File containing the data (XXX.dualseparable.yes.rsp):", 
+                                           m_Data->GetPDFClusterizerBaseFileName());
+    m_PDFClusterizerBaseFileName->SetFileType("response file", "*.dualseparable.yes.rsp");
+    AddFrame(m_PDFClusterizerBaseFileName, EntryLayout);      
   } else {
     AddSubTitle("You deselected clustering!");     
   }
@@ -164,7 +169,7 @@ void MGUIOptionsClustering::Create()
 
 bool MGUIOptionsClustering::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
     m_Data->SetStandardClusterizerMinDistanceD1(m_MinDistance->GetAsDouble(0));
@@ -183,9 +188,11 @@ bool MGUIOptionsClustering::OnApply()
   } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
     m_Data->SetAdjacentLevel(m_AdjacentLevel->GetSelected());
     m_Data->SetAdjacentSigma(m_AdjacentSigma->GetAsDouble());
+  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoPDF) {
+    m_Data->SetPDFClusterizerBaseFileName(m_PDFClusterizerBaseFileName->GetFileName());
   }
 
-	return true;
+  return true;
 }
 
 
