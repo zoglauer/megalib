@@ -86,6 +86,13 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Can not read the simulation directory in the .dcosima.cfg file"
     continue
   fi
+
+  # Create the directory if it does not yet exist...
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi"
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to create the simulation directory"
+    continue
+  fi
   
   # Check the disk space
   DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MASTERDIR}; df -k . -P -T -BG | tail -n 1"`
