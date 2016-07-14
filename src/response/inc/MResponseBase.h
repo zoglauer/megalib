@@ -56,6 +56,11 @@ class MResponseBase
   //! Set the response name (used for the file name suffix)
   void SetResponseName(const MString Name);
 
+  //! Set and verify the revan configuration file name
+  bool SetRevanConfigurationFileName(const MString FileName);
+  //! Set and verify the mimrec configuration file name
+  bool SetMimrecConfigurationFileName(const MString FileName);
+
   //! Set the ID for the start event
   void SetStartEventID(const unsigned int ID) { m_StartEventID = ID; }
   //! Set the maximum number of analyzed event
@@ -83,8 +88,8 @@ class MResponseBase
 
   //! Load the geometry, return 0 on failure
   MGeometryRevan* LoadGeometry(bool ActivateNoise, double GlobalFailureRate);
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile() = 0;
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles() = 0;
 
   //! Initialize the next sivan/revan matching event for response creation
   bool InitializeNextMatchingEvent();
@@ -128,6 +133,11 @@ class MResponseBase
   MString m_GeometryFileName;
   //! Name of the response
   MString m_ResponseName;
+
+  //! Revan configuration file name
+  MString m_RevanCfgFileName;
+  //! Mimrec configuration file name
+  MString m_MimrecCfgFileName;
 
   //! ID for the start event
   unsigned int m_StartEventID;

@@ -80,7 +80,7 @@ MResponseMultipleComptonLens::~MResponseMultipleComptonLens()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonLens::OpenSimulationFile()
+bool MResponseMultipleComptonLens::OpenFiles()
 {
   // Load the simulation file --- has to be called after the geometry is loaded
 
@@ -168,7 +168,7 @@ bool MResponseMultipleComptonLens::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   if (CreateMatrices() == false) return false;
 

@@ -123,24 +123,7 @@ MResponseTracking::~MResponseTracking()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseTracking::SetRevanConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_RevanCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseTracking::OpenSimulationFile()
+bool MResponseTracking::OpenFiles()
 {
   // Load the simulation file --- has to be called after the geometry is loaded
 
@@ -173,7 +156,7 @@ bool MResponseTracking::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   //cout<<"Trying to generate a pdf for track recognition - please stand by..."<<endl;
 

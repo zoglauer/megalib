@@ -77,24 +77,7 @@ MResponseClusteringDSS::~MResponseClusteringDSS()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseClusteringDSS::SetRevanConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_RevanCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseClusteringDSS::OpenSimulationFile()
+bool MResponseClusteringDSS::OpenFiles()
 {
   // Load the simulation file --- has to be called after the geometry is loaded
 
@@ -132,7 +115,7 @@ bool MResponseClusteringDSS::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   // create axis:
   vector<float> EnergyAxis;

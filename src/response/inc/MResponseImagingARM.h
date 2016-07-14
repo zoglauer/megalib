@@ -37,11 +37,6 @@ class MResponseImagingARM : public MResponseBase
   MResponseImagingARM();
   virtual ~MResponseImagingARM();
 
-  //! Set and verify the revan configuration file name
-  bool SetMimrecConfigurationFileName(const MString FileName);
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-
   //! Do all the response creation
   virtual bool CreateResponse();
 
@@ -50,8 +45,8 @@ class MResponseImagingARM : public MResponseBase
   //MResponseImagingARM() {};
   //MResponseImagingARM(const MResponseImagingARM& ResponseImagingARM) {};
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   // private methods:
  private:
@@ -62,10 +57,6 @@ class MResponseImagingARM : public MResponseBase
  protected:
 
 
-  //! Mimrec configuration file name
-  MString m_MimrecCfgFileName;
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
   // private members:
  private:
 

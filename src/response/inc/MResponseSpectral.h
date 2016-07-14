@@ -37,9 +37,6 @@ class MResponseSpectral : public MResponseBase
   MResponseSpectral();
   virtual ~MResponseSpectral();
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-
   //! Do all the response creation
   virtual bool CreateResponse();
 
@@ -48,8 +45,8 @@ class MResponseSpectral : public MResponseBase
   //MResponseSpectral() {};
   //MResponseSpectral(const MResponseSpectral& ResponseSpectral) {};
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   // private methods:
  private:
@@ -58,8 +55,6 @@ class MResponseSpectral : public MResponseBase
 
   // protected members:
  protected:
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
   
   // private members:
  private:

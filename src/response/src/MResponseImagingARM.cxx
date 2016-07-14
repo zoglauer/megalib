@@ -68,41 +68,7 @@ MResponseImagingARM::~MResponseImagingARM()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseImagingARM::SetMimrecConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_MimrecCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::SetRevanConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_RevanCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::OpenSimulationFile()
+bool MResponseImagingARM::OpenFiles()
 {
   // Load the simulation file --- has to be called after the geometry is loaded
 
@@ -136,7 +102,7 @@ bool MResponseImagingARM::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   cout<<"Generating imaging pdf"<<endl;
 

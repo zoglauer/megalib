@@ -154,6 +154,40 @@ void MResponseBase::SetResponseName(const MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MResponseBase::SetRevanConfigurationFileName(const MString FileName)
+{
+  // Set and verify the simulation file name
+
+  if (MFile::Exists(FileName) == false) {
+    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
+    return false;
+  }
+  m_RevanCfgFileName = FileName;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseBase::SetMimrecConfigurationFileName(const MString FileName)
+{
+  // Set and verify the simulation file name
+
+  if (MFile::Exists(FileName) == false) {
+    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
+    return false;
+  }
+  m_MimrecCfgFileName = FileName;
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MGeometryRevan* MResponseBase::LoadGeometry(bool ActivateNoise, double GlobalFailureRate)
 {
   MGeometryRevan* ReGeometry = new MGeometryRevan();
