@@ -72,7 +72,7 @@ done
 # Create the install paths on all machines
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo "Killing all cosima instances for user ${REMOTEUSER[$m]} on ${REMOTEHOST[$m]}..."
-  ssh -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "killall cosima; exit 0;"
+  ssh -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "killall -u ${REMOTEUSER[$m]} cosima; exit 0;"
 done
 
 
