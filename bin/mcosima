@@ -247,7 +247,7 @@ echo " "
 Pids=( )
 for (( i=1; i <= ${Threads}; i+=1 )); do
   mdelay ${Executable} ${Max}
-  echo "Launching number ${i}/${Threads}"
+  echo "Launching cosima run ${i}/${Threads}"
   Random=`od -vAn -N4 -tu4 < /dev/urandom`
   Cmd="nice -n ${Nice} ${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID}"
   if [[ "${Zip}" == "yes" ]]; then
@@ -259,10 +259,10 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup ${Cmd} > /dev/null &
   Pids[${#Pids[*]}]=$!
   #Pids="$Pids $! "
-  if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
-    echo "Sleeping for 5 seconds..."
-    sleep 5
-  fi
+  #if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
+  #  echo "Sleeping for 5 seconds..."
+  #  sleep 5
+  #fi
 done
 
 # Create a concatenation file
