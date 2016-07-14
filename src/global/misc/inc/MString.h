@@ -105,9 +105,9 @@ class MString
   size_t Length() const { return m_String.size(); }
   
   //! Return a substring
-  MString GetSubString(unsigned int Start, unsigned int Size) const { return m_String.substr(Start, Size); }
+  MString GetSubString(size_t Start, size_t Size) const { if (Start >= Length()) return ""; return m_String.substr(Start, Size); }
   //! Return a substring starting at start with the remaining length of the string
-  MString GetSubString(unsigned int Start) const { return m_String.substr(Start, m_String.size() - Start); }
+  MString GetSubString(size_t Start) const { if (Start >= Length()) return ""; return m_String.substr(Start, m_String.size() - Start); }
 
   //! Get position of last character or string::npos if none is found
   size_t Last(char c) const { return m_String.find_last_of(c); }
@@ -164,13 +164,13 @@ class MString
 
 
   //! Remove all characters from Start to the End
-  void RemoveInPlace(size_t Start) { m_String.erase(Start, Length() - Start); }
+  void RemoveInPlace(size_t Start) { if (Start >= Length()) return; m_String.erase(Start, Length() - Start); }
   //! Remove all characters from Start to the End and return the new string
-  MString& Remove(size_t Start) { m_String.erase(Start, Length() - Start); return *this; }
+  MString& Remove(size_t Start) { if (Start >= Length()) return *this; m_String.erase(Start, Length() - Start); return *this; }
   //! Remove all characters from Start with the given length
-  void RemoveInPlace(size_t Start, size_t Size) { m_String.erase(Start, Size); }
+  void RemoveInPlace(size_t Start, size_t Size) { if (Start >= Length()) return; m_String.erase(Start, Size); }
   //! Remove all characters from Start with the given length and return the new string
-  MString& Remove(size_t Start, size_t Size) { m_String.erase(Start, Size); return *this; }
+  MString& Remove(size_t Start, size_t Size) { if (Start >= Length()) return *this; m_String.erase(Start, Size); return *this; }
   //! Remove the last N characters from the string and return the new string
   //! If the string is smaller than Last, remove everything
   void RemoveLastInPlace(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); }
@@ -179,9 +179,9 @@ class MString
   MString& RemoveLast(size_t Size) { if (Length() < Size) Size = Length(); m_String.erase(Length() - Size, Size); return *this; }
 
   //! Replace the characters starting at Start with Size with the string S
-  void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { m_String.replace(Start, Size, S.m_String); }
+  void ReplaceInPlace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) return; m_String.replace(Start, Size, S.m_String); }
   //! Replace the characters starting at Start with Size with the string S and return the new string
-  MString& Replace(size_t Start, size_t Size, const MString& S) { m_String.replace(Start, Size, S.m_String); return *this; }
+  MString& Replace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) return *this; m_String.replace(Start, Size, S.m_String); return *this; }
 
   //! Replace all occurances of from with string
   void ReplaceAllInPlace(const MString& From, const MString& To); 
