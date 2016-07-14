@@ -624,9 +624,9 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
   bool AnyZipped = false;
   for (int i = 0; i <= Files->LastIndex(); ++i) {
     MString Name = Files->At(i)->GetName();
-    cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
-    if (Name.BeginsWith(Prefix) == true && (Name.EndsWith(Type) == true || Name.EndsWith(Type + ".gz") == true)) {
-      cout<<"ok"<<endl;
+    // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
+    if (Name.BeginsWith(Prefix) == true && (Name.EndsWith(Type) == true || Name.EndsWith(Type + ".gz") == true) && Name != Prefix + Type && Name != Prefix + Type + "gz") {
+      cout<<"Using "<<Name<<" (type: "<<Type<<")"<<endl;
       if (Name.EndsWith(".gz") == true) {
         AnyZipped = true;
       }
@@ -696,8 +696,6 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
         }
         delete Append;
       }
-    } else {
-      cout<<"not ok"<<endl;
     }
   }
 
@@ -707,7 +705,7 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
     First->Write(NewName, true);
     delete First;
   } else {
-    mout<<"No File has been opened!"<<endl;
+    mout<<"No files have been found for type: "<<Type<<endl;
   }
 
   return true;
@@ -743,6 +741,18 @@ bool MResponseManipulator::Join()
   FindFiles(m_Prefix, ".t.dual.good.rsp");
   FindFiles(m_Prefix, ".t.dual.bad.rsp");
   
+  FindFiles(m_Prefix, ".dualseparable.yes.rsp");
+  FindFiles(m_Prefix, ".dualseparable.no.rsp");
+  FindFiles(m_Prefix, ".allseparable.yes.rsp");
+  FindFiles(m_Prefix, ".allseparable.no.rsp");
+  
+  FindFiles(m_Prefix, ".energy.beforeeventreconstruction.rsp");
+  FindFiles(m_Prefix, ".energy.mimrecunselected.rsp");
+  FindFiles(m_Prefix, ".energy.mimrecselected.rsp");
+  FindFiles(m_Prefix, ".energyratio.beforeeventreconstruction.rsp");
+  FindFiles(m_Prefix, ".energyratio.mimrecunselected.rsp");
+  FindFiles(m_Prefix, ".energyratio.mimrecselected.rsp");
+ 
   return true;
 }
 
@@ -1201,8 +1211,6 @@ bool MResponseManipulator::Show()
     }
     delete R;
   }
-
-
 
   return true;
 }

@@ -46,8 +46,6 @@ class MResponseMultipleCompton : public MResponseBase
   MResponseMultipleCompton();
   virtual ~MResponseMultipleCompton();
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
   //! Set whether or not absorptions should be considered
   void SetDoAbsorptions(const bool Flag = true) { m_DoAbsorptions = Flag; }
 
@@ -65,8 +63,8 @@ class MResponseMultipleCompton : public MResponseBase
   //! Store the (soon to be) pdfs  
   virtual bool SaveMatrices();
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   bool IsTrackStart(MRESE& Start, MRESE& Central, double Energy);
   bool IsTrackStop(MRESE& Central, MRESE& Stop, double Energy);
@@ -118,8 +116,6 @@ class MResponseMultipleCompton : public MResponseBase
 
   // protected members:
  protected:
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
   //! Do or not to do absorptions
   bool m_DoAbsorptions;
   //! MaximumSequenceLength up to which absorptions are considered

@@ -118,7 +118,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -r  --response-name   file     response file name"<<endl;
   Usage<<"      -v  --verify                   verify"<<endl;
   Usage<<"      -m  --mode            char  m  the modes are: "<<endl;
-  Usage<<"                                         s  : spectral before reconstruction"<<endl;
+  Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
   Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"                                         t  : track"<<endl;
   Usage<<"                                         c  : compton"<<endl;

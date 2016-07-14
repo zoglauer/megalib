@@ -37,9 +37,6 @@ class MResponseTracking : public MResponseMultipleCompton
   MResponseTracking();
   virtual ~MResponseTracking();
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-
   //! Do all the response creation
   virtual bool CreateResponse();
 
@@ -49,8 +46,8 @@ class MResponseTracking : public MResponseMultipleCompton
   //MResponseTracking() {};
   //MResponseTracking(const MResponseTracking& ResponseTracking) {};
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   double CalculateAngleIn(MRESE& Start, MRESE& Central);
   double CalculateAngleOutPhi(MRESE& Start, MRESE& Central, MRESE& Stop);
@@ -67,8 +64,6 @@ class MResponseTracking : public MResponseMultipleCompton
 
   // private members:
  private:
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
 
 
 

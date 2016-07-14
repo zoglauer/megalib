@@ -69,41 +69,7 @@ MResponseFirstInteractionPosition::~MResponseFirstInteractionPosition()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseFirstInteractionPosition::SetMimrecConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_MimrecCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseFirstInteractionPosition::SetRevanConfigurationFileName(const MString FileName)
-{
-  // Set and verify the simulation file name
-
-  if (MFile::Exists(FileName) == false) {
-    mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
-    return false;
-  }
-  m_RevanCfgFileName = FileName;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseFirstInteractionPosition::OpenSimulationFile()
+bool MResponseFirstInteractionPosition::OpenFiles()
 {
   // Load the simulation file --- has to be called after the geometry is loaded
 
@@ -137,7 +103,7 @@ bool MResponseFirstInteractionPosition::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   cout<<"Generating first interaction position pdf"<<endl;
 

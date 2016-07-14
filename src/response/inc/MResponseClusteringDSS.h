@@ -37,9 +37,6 @@ class MResponseClusteringDSS : public MResponseBase
   MResponseClusteringDSS();
   virtual ~MResponseClusteringDSS();
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-
   //! Do all the response creation
   virtual bool CreateResponse();
 
@@ -49,8 +46,8 @@ class MResponseClusteringDSS : public MResponseBase
   //MResponseClusteringDSS() {};
   //MResponseClusteringDSS(const MResponseClusteringDSS& ResponseClusteringDSS) {};
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   //! Check if the first ID has the second one as ancestor
   bool HasAsAncestor(int ID, int AncestorID);
@@ -66,8 +63,6 @@ class MResponseClusteringDSS : public MResponseBase
 
   // private members:
  private:
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
 
 
 

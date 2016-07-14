@@ -82,7 +82,7 @@ bool MResponseImagingCodedMask::CreateResponse()
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
-  if (OpenSimulationFile() == false) return false;
+  if (OpenFiles() == false) return false;
 
   MSettingsMimrec MimrecCfg(false);
   MimrecCfg.Read(m_MimrecCfgFileName);

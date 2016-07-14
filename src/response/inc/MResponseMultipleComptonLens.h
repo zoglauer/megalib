@@ -56,8 +56,8 @@ class MResponseMultipleComptonLens : public MResponseMultipleCompton
   //! Store the (soon to be) pdfs  
   virtual bool SaveMatrices();
 
-  //! Load the simulation file:
-  virtual bool OpenSimulationFile();
+  //! Load the simulation file in revan and mimrec as well as the configuration files:
+  virtual bool OpenFiles();
 
   double CalculateConeLensDistance(MRESE& First, MRESE& Second, double Etot);
   double CalculateRadiusFromBeamCenter(MRESE& First);
