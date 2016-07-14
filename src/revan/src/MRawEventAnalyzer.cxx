@@ -82,6 +82,7 @@ const int MRawEventAnalyzer::c_CoincidenceAlgoWindow = 1;
 const int MRawEventAnalyzer::c_ClusteringAlgoNone     = 0;
 const int MRawEventAnalyzer::c_ClusteringAlgoDistance = 1;
 const int MRawEventAnalyzer::c_ClusteringAlgoAdjacent = 2;
+const int MRawEventAnalyzer::c_ClusteringAlgoPDF      = 3;
 
 const int MRawEventAnalyzer::c_TrackingAlgoNone            = 0;
 const int MRawEventAnalyzer::c_TrackingAlgoModifiedPearson = 1;
@@ -290,6 +291,8 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetAdjacentLevel(S->GetAdjacentLevel());
   SetAdjacentSigma(S->GetAdjacentSigma());
 
+  SetPDFClusterizer(S->GetPDFClusterizerBaseFileName());
+  
   // electron tracking
   SetSearchPairTracks(S->GetSearchPairs());
   SetSearchMIPTracks(S->GetSearchMIPs());
@@ -1027,6 +1030,11 @@ bool MRawEventAnalyzer::PreAnalysis()
                                        m_StandardClusterizerCenterIsReference) == false) {
         Return = false;
       }
+    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoPDF) {
+      m_Clusterizer = new MERClusterize();
+      if (m_Clusterizer->SetParameters(m_PDFClusterizerBaseFileName) == false) {
+        Return = false;
+      }
     } else {
       m_Clusterizer = new MERClusterize();
       if (m_Clusterizer->SetParameters(m_AdjacentLevel, m_AdjacentSigma) == false) {
@@ -1080,7 +1088,7 @@ bool MRawEventAnalyzer::PreAnalysis()
                                     m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
-		} else if (m_CSRAlgorithm == c_CSRAlgoBayesian) {
+    } else if (m_CSRAlgorithm == c_CSRAlgoBayesian) {
       m_CSR = new MERCSRBayesian();
       if (dynamic_cast<MERCSRBayesian*>(m_CSR)->SetParameters(m_BCTFileName, 
                                       m_Geometry, 
@@ -1100,25 +1108,25 @@ bool MRawEventAnalyzer::PreAnalysis()
 
     delete m_Tracker;
     m_Tracker = 0;
-		if (m_TrackingAlgorithm == c_TrackingAlgoModifiedPearson) {
+    if (m_TrackingAlgorithm == c_TrackingAlgoModifiedPearson) {
       m_Tracker = new MERTrack();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoPearson) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoPearson) {
       m_Tracker = new MERTrackPearson();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoRank) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoRank) {
       m_Tracker = new MERTrackRank();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoChiSquare) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoChiSquare) {
       m_Tracker = new MERTrackChiSquare();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoGas) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoGas) {
       m_Tracker = new MERTrackGas();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoDirectional) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoDirectional) {
       m_Tracker = new MERTrackDirectional();
-		} else if (m_TrackingAlgorithm == c_TrackingAlgoBayesian) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoBayesian) {
       m_Tracker = new MERTrackBayesian();
-			if (dynamic_cast<MERTrackBayesian*>(m_Tracker)->
+      if (dynamic_cast<MERTrackBayesian*>(m_Tracker)->
           SetSpecialParameters(m_BETFileName) == false) {
         Return = false;
       }
-		} else if (m_TrackingAlgorithm != c_TrackingAlgoNone) {
+    } else if (m_TrackingAlgorithm != c_TrackingAlgoNone) {
       Return = false;
     }
 
@@ -1138,7 +1146,7 @@ bool MRawEventAnalyzer::PreAnalysis()
 
     delete m_Decay;
     m_Decay = 0;
-		if (m_DecayAlgorithm == c_DecayAlgoStandard) {
+    if (m_DecayAlgorithm == c_DecayAlgoStandard) {
       m_Decay = new MERDecay();
       if (m_Decay->SetParameters(m_DecayFileName, m_DecayEnergy, m_DecayEnergyError) == false) {
         Return = false;

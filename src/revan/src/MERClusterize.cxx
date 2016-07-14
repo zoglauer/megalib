@@ -122,6 +122,67 @@ bool MERClusterize::SetParameters(double MinDistanceD1, double MinDistanceD2,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MERClusterize::SetParameters(MString BaseResponseFileName)
+{
+  if (BaseResponseFileName.IsEmpty()) {
+    merr<<"No file for Clustering based on PDF given."<<endl;
+    return false;
+  }
+  
+  MString Suffix = ".dualseparable.yes.rsp";
+  MString Prefix = BaseResponseFileName.Remove(BaseResponseFileName.Length()-Suffix.Length());
+
+  if (MFile::FileExists(Prefix + Suffix) == true) {
+    
+    MResponseMatrixO3 DualSeparableYes;
+    if (DualSeparableYes.Read(Prefix + ".dualseparable.yes.rsp") == false) {
+      merr<<"File \""<<Prefix + ".dualseparable.yes.rsp"<<"\" does not exist."<<endl;
+      return false;
+    }
+    
+    MResponseMatrixO3 DualSeparableNo;
+    if (DualSeparableYes.Read(Prefix + ".dualseparable.no.rsp") == false) {
+      merr<<"File \""<<Prefix + ".dualseparable.no.rsp"<<"\" does not exist."<<endl;
+      return false;
+    }
+
+    MResponseMatrixO2 AllSeparableYes;
+    if (AllSeparableYes.Read(Prefix + ".allseparable.yes.rsp") == false) {
+      merr<<"File \""<<Prefix + ".allseparable.yes.rsp"<<"\" does not exist."<<endl;
+      return false;
+    }
+
+    MResponseMatrixO2 AllSeparableNo;
+    if (AllSeparableNo.Read(Prefix + ".allseparable.no.rsp") == false) {
+      merr<<"File \""<<Prefix + ".allseparable.no.rsp"<<"\" does not exist."<<endl;
+      return false;
+    }
+    
+    
+    // Small hack since we have not defined + & / operator just += & /= ...
+    DualSeparableNo += DualSeparableYes;
+    DualSeparableYes /= DualSeparableNo;
+    m_DualPDF = DualSeparableYes;
+
+    AllSeparableNo += AllSeparableYes;
+    AllSeparableYes /= AllSeparableNo;
+    m_AllPDF = AllSeparableYes;
+    
+   m_Algorithm = c_Response;
+
+   return true;
+  } else {
+    merr<<"File \""<<Prefix + Suffix<<"\" does not exist."<<endl;
+    return false;
+  }
+    
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MERClusterize::Analyze(MRawEventList* List)
 {
   // Analyze the raw event...
@@ -146,6 +207,8 @@ bool MERClusterize::Analyze(MRawEventList* List)
       for (int d = MDDetector::c_MinDetector; d <= MDDetector::c_MaxDetector; ++d) {
         FindClustersInAdjacentVoxels(RE, m_Sigma, m_Level, d);
       }
+    } else if (m_Algorithm == c_Response) {
+      FindClustersUsingPDF(RE);
     }
   }
   
@@ -326,6 +389,63 @@ void MERClusterize::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma,
   return;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MERClusterize::FindClustersUsingPDF(MRERawEvent* RE) 
+{
+  // Step 1: Do a standard 8, no depth cut clustering - 
+  // that's what we have used for response generation
+  
+  for (int d = MDDetector::c_MinDetector; d <= MDDetector::c_MaxDetector; ++d) {
+    FindClustersInAdjacentVoxels(RE, -1, 2, d);
+  }
+  
+  // Step 2: Check is we have to split them up again using the PDF
+  
+  vector<MRECluster*> RemoveList;
+  for (int r = 0; r < RE->GetNRESEs(); ++r) {
+    if (RE->GetRESEAt(r)->GetType() == MRESE::c_Cluster) {
+      MRECluster* Cluster = dynamic_cast<MRECluster*>(RE->GetRESEAt(r));
+      int NRESEs = Cluster->GetNRESEs();
+      if (NRESEs == 2) {
+        // Calculate Depth difference in detector coordiantes
+        MVector PosInDet0 = Cluster->GetRESEAt(0)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        MVector PosInDet1 = Cluster->GetRESEAt(1)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        double DepthDifference = fabs(PosInDet0.Z() - PosInDet1.Z());
+
+        double PDF = 0;
+        if (Cluster->GetRESEAt(0)->GetEnergy() < Cluster->GetRESEAt(1)->GetEnergy()) {
+          PDF = m_DualPDF.Get(Cluster->GetRESEAt(0)->GetEnergy(), Cluster->GetRESEAt(1)->GetEnergy(), DepthDifference);
+        } else {
+          PDF = m_DualPDF.Get(Cluster->GetRESEAt(1)->GetEnergy(), Cluster->GetRESEAt(0)->GetEnergy(), DepthDifference);
+        }
+        if (PDF > 0.5) {
+          RemoveList.push_back(Cluster);
+        }
+      } else {
+        if (m_AllPDF.Get(Cluster->GetEnergy(), Cluster->GetNRESEs()) > 0.5) {
+          RemoveList.push_back(Cluster);
+        }
+      }
+    }
+  }
+  
+  // Step 3: Do the split up
+  
+  if (RemoveList.size() > 0) {
+    cout<<"Splitting some clusters again..."<<endl;
+    for (MRECluster* C: RemoveList) {
+      RE->RemoveRESE(C);
+      for (int r = 0; r < C->GetNRESEs(); ++r) {
+        RE->AddRESE(C->GetRESEAt(r)); 
+      }
+      delete C;
+    }
+    RE->CompressRESEs();
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

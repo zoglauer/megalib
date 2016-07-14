@@ -38,6 +38,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MResponseClusteringDSS.h"
 #include "MResponseMultipleCompton.h"
 #include "MResponseMultipleComptonLens.h"
 #include "MResponseFirstInteractionPosition.h"
@@ -118,6 +119,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -v  --verify                   verify"<<endl;
   Usage<<"      -m  --mode            char  m  the modes are: "<<endl;
   Usage<<"                                         s  : spectral before reconstruction"<<endl;
+  Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"                                         t  : track"<<endl;
   Usage<<"                                         c  : compton"<<endl;
   Usage<<"                                         l  : lens"<<endl;
@@ -204,6 +206,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       if (SubOption == "t") {
         m_Mode = c_ModeTracks;
         cout<<"Choosing track mode"<<endl;
+      } else if (SubOption == "cd") {
+        m_Mode = c_ModeClusteringDSS;
       } else if (SubOption == "c") {
         m_Mode = c_ModeComptons;
         cout<<"Choosing Compton mode"<<endl;
@@ -281,7 +285,22 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   }
 
   // Launch the different response generators:
-  if (m_Mode == c_ModeComptons) {
+  if (m_Mode == c_ModeClusteringDSS) {
+
+    MResponseClusteringDSS Response;
+    m_Creator = (&Response);
+
+    // 
+    Response.SetSimulationFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    // Response.SetStartEventID(0);
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+
+    Response.CreateResponse();
+  } else if (m_Mode == c_ModeComptons) {
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;

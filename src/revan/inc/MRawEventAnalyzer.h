@@ -129,6 +129,7 @@ class MRawEventAnalyzer
   static const int c_ClusteringAlgoNone;
   static const int c_ClusteringAlgoDistance;
   static const int c_ClusteringAlgoAdjacent;
+  static const int c_ClusteringAlgoPDF;
 
   //! Set the clustering algorithm: One of c_ClusteringAlgoNone, c_ClusteringAlgoDistance, c_ClusteringAlgoAdjacent;
   void SetClusteringAlgorithm(int ID) { m_ClusteringAlgorithm = ID; }
@@ -201,6 +202,10 @@ class MRawEventAnalyzer
   void SetAdjacentLevel(const int Value) { m_AdjacentLevel = Value; }
   void SetAdjacentSigma(const double Value) { m_AdjacentSigma = Value; }
 
+  void SetPDFClusterizer(MString BaseFileName) {
+    m_PDFClusterizerBaseFileName = BaseFileName;
+  }
+  
   // Options electron tracking:
   void SetDoTracking(bool Do) { m_DoTracking = Do; if (Do == false) m_TrackingAlgorithm = c_TrackingAlgoNone; }
   void SetSearchPairTracks(bool Search) { m_SearchPairTracks = Search; }
@@ -339,6 +344,8 @@ class MRawEventAnalyzer
 
   int m_AdjacentLevel;
   double m_AdjacentSigma;
+
+  MString m_PDFClusterizerBaseFileName;
 
   // Electron tracking:
   bool m_DoTracking;
