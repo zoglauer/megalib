@@ -77,10 +77,12 @@ echo "Output file name: ${NAME}.idXYZ"
 echo "Standard arguments: ${NEWCMD}"
 
 COUNTER=1
+COUNTERMAX=`echo ${FILES} | wc -w`
 for SINGLEFILE in ${FILES}; do
   OUT="${NAME}.${COUNTER}"
   mdelay responsecreator ${THREADS}
   responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+  echo "Started ${COUNTER} out of ${COUNTERMAX}"
   COUNTER=$(( ${COUNTER} + 1 ))
 done
 
