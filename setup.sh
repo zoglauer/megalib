@@ -965,7 +965,7 @@ echo "Storing last good options"
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
 SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP}"
 if [[ ${BRANCH} != "" ]]; then
-  SETUP+="--branch=${BRANCH}"
+  SETUP+=" --branch=${BRANCH}"
 fi
 
 echo "${SETUP}" >> ${MEGALIBDIR}/config/SetupOptions.txt
