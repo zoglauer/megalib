@@ -197,7 +197,13 @@ bool MFile::Exists(MString FileName)
   // Check if we can read something
   if (Length > 0) {
     char c;
-    in.get(c);
+    // We need a try catch in case something bad has gone wrong, e.g. we have directory, corrupt file...
+    try {
+      in.get(c);
+    } catch (...) {
+      in.close();
+      return false; 
+    }
     if (in.good() == false) {
       in.close();
       return false;
@@ -326,6 +332,15 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // Just in case: Expand file name:
   ExpandFileName(m_FileName);
 
+  // Check if it exists and is readable in case we read
+  if (Way == c_Read) {
+    if (Exists(m_FileName) == false) {
+      mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
+      return false;      
+    }
+  }
+  
+  
   // If the file is zipped we have to unzip it
   
   if (CheckFileExtension("gz") == true) {
@@ -649,7 +664,7 @@ bool MFile::ReadLine(MString& String)
     } while (strlen(Return) == m_ReadLineBufferLength-2);
     
     // Remove any returns:
-    if (String.GetStringRef().back() == '\n') {
+    if (String.Length() > 0 && String.GetStringRef().back() == '\n') {
       String.StripBackInPlace('\n');  
     }
     // Slower: String.RemoveAll('\n');
