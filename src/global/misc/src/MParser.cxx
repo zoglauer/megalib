@@ -78,7 +78,7 @@ bool MParser::Open(MString FileName, unsigned int Way)
   // Open the file and do the parsing
 
   if (MFile::Open(FileName, Way) == false) {
-		mlog<<"MParser: Unable to open file \""<<FileName<<"\"."<<endl;
+    mlog<<"MParser: Unable to open file \""<<FileName<<"\"."<<endl;
     return false;
   }
 
