@@ -155,7 +155,7 @@ MGUIHistogramData::~MGUIHistogramData()
   delete m_LabelLayout;
   delete m_MainLayout;
 
-	delete m_LabelGraphics;
+  delete m_LabelGraphics;
 }
 
 
@@ -174,7 +174,7 @@ void MGUIHistogramData::Create()
   }
 
   FontStruct_t LabelFont = 
-    gClient->GetFontByName("-*-helvetica-bold-r-*-*-12-*-*-*-*-*-iso8859-1");	
+    gClient->GetFontByName("-*-helvetica-bold-r-*-*-12-*-*-*-*-*-iso8859-1"); 
   m_LabelGraphics = new TGGC(TGLabel::GetDefaultGC());
   m_LabelGraphics->SetFont(gVirtualX->GetFontHandle(LabelFont));
 
@@ -342,7 +342,7 @@ bool MGUIHistogramData::OnOk()
   }
 
   m_OkPressed = true;
-	
+  
   UnmapWindow();
 
   return true;
@@ -355,10 +355,10 @@ bool MGUIHistogramData::OnOk()
 bool MGUIHistogramData::OnCancel()
 {
   m_OkPressed = false;
-	
+  
   UnmapWindow();
 
-	return true;
+  return true;
 }
 
 // MGUIHistogramData: the end...

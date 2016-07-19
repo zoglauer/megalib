@@ -77,10 +77,10 @@ MImage3D::MImage3D(MString Title, double* IA,
 {
   // standard constructor
 
-	m_NEntries = xNBins*yNBins*zNBins;
+  m_NEntries = xNBins*yNBins*zNBins;
 
-	SetZAxis(zTitle, zMin, zMax, zNBins);
-	SetImageArray(IA);
+  SetZAxis(zTitle, zMin, zMax, zNBins);
+  SetImageArray(IA);
 
   m_HistXY = 0;
   m_HistXZ = 0;
@@ -191,10 +191,10 @@ void MImage3D::SetZAxis(MString zTitle, double zMin, double zMax, int zNBins)
 {
   // Set z-Axis attributes
 
-	m_zTitle = zTitle;
-	m_zMin = zMin;
-	m_zMax = zMax;
-	m_zNBins = zNBins;
+  m_zTitle = zTitle;
+  m_zMin = zMin;
+  m_zMax = zMax;
+  m_zNBins = zNBins;
 }
 
 

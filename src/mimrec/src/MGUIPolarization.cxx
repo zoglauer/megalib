@@ -102,11 +102,11 @@ void MGUIPolarization::Create()
   m_BackgroundFile->SetFileType("TRA", "*.tra");
   AddFrame(m_BackgroundFile, SingleLayout);
 
-	TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200*Scaler, 150*Scaler);
-	TGLayoutHints* ButtonFrameLayout = 
-		new TGLayoutHints(kLHintsTop | kLHintsCenterX, 
-											5*Scaler, 5*Scaler, 30*Scaler, 8*Scaler);
-	AddFrame(ButtonFrame, ButtonFrameLayout);
+  TGVerticalFrame* ButtonFrame = new TGVerticalFrame(this, 200*Scaler, 150*Scaler);
+  TGLayoutHints* ButtonFrameLayout = 
+    new TGLayoutHints(kLHintsTop | kLHintsCenterX, 
+                      5*Scaler, 5*Scaler, 30*Scaler, 8*Scaler);
+  AddFrame(ButtonFrame, ButtonFrameLayout);
   
 
   m_Theta = new MGUIEEntry(ButtonFrame, "Theta [deg]:      ", false, m_Data->GetTPTheta());
@@ -146,7 +146,7 @@ void MGUIPolarization::Create()
 
 bool MGUIPolarization::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   // First test the data
   if (m_Theta->IsDouble(0, 180) == false || 
@@ -175,7 +175,7 @@ bool MGUIPolarization::OnApply()
 
   m_OkPressed = true;
 
-	return true;
+  return true;
 }
 
 

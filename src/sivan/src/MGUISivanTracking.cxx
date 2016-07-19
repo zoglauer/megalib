@@ -112,7 +112,7 @@ bool MGUISivanTracking::ProcessMessage(long msg, long param1, long)
 {
   // We handle two messages the Ok- and the Cancel-Button 
 
-	bool Status = true;
+  bool Status = true;
 
   int i;
   switch (GET_MSG(msg)) {
@@ -132,7 +132,7 @@ bool MGUISivanTracking::ProcessMessage(long msg, long param1, long)
     case kCM_BUTTON:
       switch(param1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -140,7 +140,7 @@ bool MGUISivanTracking::ProcessMessage(long msg, long param1, long)
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
 
       default:
@@ -162,11 +162,11 @@ bool MGUISivanTracking::ProcessMessage(long msg, long param1, long)
 
 bool MGUISivanTracking::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->SetRealism(m_Realism);
 
-	return true;
+  return true;
 }
 
 

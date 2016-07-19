@@ -124,50 +124,50 @@ bool ConvertMGeant::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "--geo" || Option == "--mat" || Option == "--med") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments_
-		//else if (Option == "-??") {
-		//	if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-		//		cout<<"Error: Option "<<argv[i][1]<<" needs two arguments argument!"<<endl;
-		//		cout<<Usage.str()<<endl;
-		//		return false;
-		//	}
-		//}
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments_
+    //else if (Option == "-??") {
+    //  if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //    cout<<"Error: Option "<<argv[i][1]<<" needs two arguments argument!"<<endl;
+    //    cout<<Usage.str()<<endl;
+    //    return false;
+    //  }
+    //}
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-med" || Option == "--med") {
       m_MedFileName = argv[++i];
-			cout<<"Accepting *.med file name: "<<m_MedFileName<<endl;
+      cout<<"Accepting *.med file name: "<<m_MedFileName<<endl;
     } else if (Option == "-mat" || Option == "--mat") {
       m_MatFileName = argv[++i];
-			cout<<"Accepting *.mat file name: "<<m_MatFileName<<endl;
+      cout<<"Accepting *.mat file name: "<<m_MatFileName<<endl;
     } else if (Option == "-geo" || Option == "--geo") {
       m_GeoFileName = argv[++i];
-			cout<<"Accepting *.geo file name: "<<m_GeoFileName<<endl;
+      cout<<"Accepting *.geo file name: "<<m_GeoFileName<<endl;
     } else if (Option == "-setup" || Option == "--setup") {
       m_SetupFileName = argv[++i];
-			cout<<"Accepting *.geo.setup file name: "<<m_SetupFileName<<endl;
+      cout<<"Accepting *.geo.setup file name: "<<m_SetupFileName<<endl;
     } else if (Option == "--keep-many") {
       m_KeepMany = true;
-			cout<<"Accepting to keep \"MANY\" keyword --- and risk errors in MEGAlib and Geant4!"<<endl;
+      cout<<"Accepting to keep \"MANY\" keyword --- and risk errors in MEGAlib and Geant4!"<<endl;
     } else if (Option == "--keep-comments") {
       m_KeepComments = true;
-			cout<<"Accepting to keep mgeant comments"<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+      cout<<"Accepting to keep mgeant comments"<<endl;
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_MedFileName == "" || m_MatFileName == "" || 

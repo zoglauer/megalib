@@ -187,7 +187,7 @@ double MERCSRBayesian::ComputeQualityFactor(vector<MRESE*>& Interactions)
   }
 
   unsigned int Size = Interactions.size();
-	float SizeF = float(Size);
+  float SizeF = float(Size);
 
   float Material;
   float Ratio = m_GoodBad.Get(1.5, SizeF)/m_GoodBad.Get(0.5, SizeF);

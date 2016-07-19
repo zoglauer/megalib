@@ -86,7 +86,7 @@ bool MXmlDocument::Load(MString FileName)
   } 
  
   string tmp;
-	while (getline(in, tmp)) {
+  while (getline(in, tmp)) {
     AllContent += tmp.c_str();
     AllContent += "\n";
   }

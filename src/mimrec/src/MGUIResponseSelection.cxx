@@ -112,7 +112,7 @@ void MGUIResponseSelection::Create()
 
 bool MGUIResponseSelection::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_ResponseChoice->GetSelected() != m_GUIData->GetResponseType()) {
     m_GUIData->SetResponseType(m_ResponseChoice->GetSelected());

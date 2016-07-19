@@ -330,11 +330,11 @@ bool ConvertMGGPOD::ParseCommandLine(int argc, char** argv)
     } 
     // Multiple arguments_
     else if (Option == "--energy-window") {
-    	if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-    		cout<<"Error: Option "<<argv[i][1]<<" needs two arguments argument!"<<endl;
-    		cout<<Usage.str()<<endl;
-    		return false;
-    	}
+      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
     }
 
     // Then fulfill the options:
@@ -472,7 +472,7 @@ bool ConvertMGGPOD::Analyze()
     hout<<"OF "<<m_FileName[f]<<endl;
     hout<<endl;
     m_SimFile->AddText(hout.str().c_str());
-	
+  
     
     // Initialize ACT extension
     int TypeAct = 0;
@@ -616,14 +616,14 @@ bool ConvertMGGPOD::Analyze()
         ia.SetDetectorType(-1);
         ia.SetProcess("INIT");
         ia.SetOriginID(-1);
-	
+  
         if (fits_read_col_int(InitFile, InitColNames["ITRA"], RowsInit, 1, 1, nullint, &valint, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
         }
         ia.SetID(valint);
         if (valint > MaxTrackId) MaxTrackId = valint;
-	
+  
         if (InitColNames["NTBEAM"] != 0) {
           if (fits_read_col_int(InitFile, InitColNames["NTBEAM"], RowsInit, 1, 1, nullint, &valint, &anynul, &status) ) {
             cerr<<"Column read failed!"<<endl;
@@ -637,25 +637,25 @@ bool ConvertMGGPOD::Analyze()
           break;
         }
         ia.SetSecondaryParticleID(valint);
-	
+  
         if (fits_read_col_dbl(InitFile, InitColNames["E0"], RowsInit, 1, 1, nulldbl, &valdbl, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
         }
         ia.SetSecondaryEnergy(valdbl);
-	
+  
         if (fits_read_col_dbl(InitFile, InitColNames["X"], RowsInit, 1, 1, nulldbl, &valdbl, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
         }
         Vec.SetX(valdbl);
-	
+  
         if (fits_read_col_dbl(InitFile, InitColNames["Y"], RowsInit, 1, 1, nulldbl, &valdbl, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
         }
         Vec.SetY(valdbl);
-	
+  
         if (fits_read_col_dbl(InitFile, InitColNames["Z"], RowsInit, 1, 1, nulldbl, &valdbl, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
@@ -674,7 +674,7 @@ bool ConvertMGGPOD::Analyze()
           break;
         }
         Vec.SetY(valdbl);
-	
+  
         if (fits_read_col_dbl(InitFile, InitColNames["PZ"], RowsInit, 1, 1, nulldbl, &valdbl, &anynul, &status) ) {
           cerr<<"Column read failed!"<<endl;
           break;
@@ -714,7 +714,7 @@ bool ConvertMGGPOD::Analyze()
           break;
         }
         ia.SetParentNucleus(valint);
-	
+  
         IAs.push_back(ia);
       }
       

@@ -123,7 +123,7 @@ void MGUIExportSpectrum::Create()
 
 bool MGUIExportSpectrum::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Log->GetState() == kButtonDown && m_Range->GetMinValue() == 0) {
     mgui<<"You have to use a minimum range larger than 0 for logarithmic binning"<<error;
@@ -137,7 +137,7 @@ bool MGUIExportSpectrum::OnApply()
 
   m_OKPressed = true;
 
-	return true;
+  return true;
 }
 
 

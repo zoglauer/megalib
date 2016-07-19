@@ -263,30 +263,30 @@ bool ResponseManipulator::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f" || Option == "-a" || Option  == "-j" || Option == "-s") {
-			if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs an argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Two arguments:
-		else if (Option == "-d" || Option == "-r") {
-			if (!((argc > i+2) && 
+      if (!((argc > i+1) && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0))){
+        cout<<"Error: Option "<<argv[i][1]<<" needs an argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Two arguments:
+    else if (Option == "-d" || Option == "-r") {
+      if (!((argc > i+2) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0))){
-				cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
+        cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
     }
     // Multiple arguments:
-// 		else if (Option == "-v") {
-// 			if (!((argc > i+10) && 
+//    else if (Option == "-v") {
+//      if (!((argc > i+10) && 
 //             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) &&
 //             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) &&
 //             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) &&
@@ -300,56 +300,56 @@ bool ResponseManipulator::ParseCommandLine(int argc, char** argv)
 //             (argv[i+11][0] != '-' || isalpha(argv[i+11][1]) == 0) &&
 //             (argv[i+12][0] != '-' || isalpha(argv[i+12][1]) == 0) &&
 //             (argv[i+13][0] != '-' || isalpha(argv[i+13][1]) == 0))){
-// 				cout<<"Error: Option "<<argv[i][1]<<" needs ten arguments!"<<endl;
-// 				cout<<Usage.str()<<endl;
-// 				return false;
-// 			}
-// 		}
+//        cout<<"Error: Option "<<argv[i][1]<<" needs ten arguments!"<<endl;
+//        cout<<Usage.str()<<endl;
+//        return false;
+//      }
+//    }
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-f") {
       m_FileName = argv[++i];
-			cout<<"Accepting file name: "<<m_FileName<<endl;
+      cout<<"Accepting file name: "<<m_FileName<<endl;
     } else if (Option == "-a") {
       m_AppendFileNames.push_back(argv[++i]);
       m_Append = true;
-			cout<<"Accepting file name for appending: "<<m_AppendFileNames.back()<<endl;
+      cout<<"Accepting file name for appending: "<<m_AppendFileNames.back()<<endl;
     } else if (Option == "-d") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Divide = true;
-			cout<<"Accepting file name for dividing: "
+      cout<<"Accepting file name for dividing: "
           <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-r") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Ratio = true;
-			cout<<"Accepting file name for ratio: "
+      cout<<"Accepting file name for ratio: "
           <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-p") {
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Probability = true;
-			cout<<"Accepting file name for probability: "
+      cout<<"Accepting file name for probability: "
           <<m_DividendFileName<<"/"<<m_DivisorFileName<<endl;
     } else if (Option == "-j") {
       m_Prefix = argv[++i];
       m_Join = true;
-			cout<<"Accepting file prefix for join: "
+      cout<<"Accepting file prefix for join: "
           <<m_Prefix<<endl;
     } else if (Option == "-s") {
       m_FileName = argv[++i];
       m_Statistics = true;
-			cout<<"Accepting show statistics for "<<m_FileName<<endl;
+      cout<<"Accepting show statistics for "<<m_FileName<<endl;
     } else if (Option == "-m") {
       m_NSmooths = atoi(argv[++i]);
-			cout<<"Accepting to smooth view "<<m_NSmooths<<" times"<<endl;
+      cout<<"Accepting to smooth view "<<m_NSmooths<<" times"<<endl;
     } else if (Option == "-n") {
       m_Normalized = true;
-			cout<<"Accepting view normalized "<<endl;
+      cout<<"Accepting view normalized "<<endl;
     } else if (Option == "-z") {
       m_Zero = true;
-			cout<<"Accepting view zeroed "<<endl;
+      cout<<"Accepting view zeroed "<<endl;
     } else if (Option == "-v") {
       m_FileName = argv[++i];
       string next;
@@ -532,11 +532,11 @@ bool ResponseManipulator::ParseCommandLine(int argc, char** argv)
           <<m_x3<<", "<<m_x4<<", "<<m_x5<<", "<<m_x6<<", "<<m_x7<<", "
           <<m_x8<<", "<<m_x9<<", "<<m_x10<<", "<<m_x11<<", "<<m_x12<<", "
           <<m_x13<<", "<<m_x14<<", "<<m_x15<<", "<<m_x16<<", "<<m_x17<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_Append == true || m_Show == true || m_Statistics == true) {
@@ -1306,7 +1306,7 @@ void CatchSignal(int a)
 int main(int argc, char** argv)
 {
   //void (*handler)(int);
-	//handler = CatchSignal;
+  //handler = CatchSignal;
   //(void) signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.

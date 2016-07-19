@@ -553,29 +553,29 @@ float MResponseMatrixO1::GetInterpolated(float x1, bool DoExtrapolate) const
       }
 
       // Interpolate:
-			return m_Values[Position] + (x1 - GetAxisBinCenter(Position))/
+      return m_Values[Position] + (x1 - GetAxisBinCenter(Position))/
           (GetAxisBinCenter(Position+1) - GetAxisBinCenter(Position))*
           (m_Values[Position+1] - m_Values[Position]);
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO1, x1);
+    int Position = FindBin(m_AxisO1, x1);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_Values.front();
-			}
-		} else if (Position >= int(m_AxisO1.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO1.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
-			} else {
-				return m_Values.back();
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_Values.front();
+      }
+    } else if (Position >= int(m_AxisO1.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO1.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
+      } else {
+        return m_Values.back();
+      }
+    }
     
     // Interpolate:
     return m_Values[Position] + (x1 - m_AxisO1[Position])/
@@ -886,16 +886,16 @@ void MResponseMatrixO1::Smooth(unsigned int Times)
 
 TGraph* MResponseMatrixO1::GenerateGraph()
 {
-	float* Bins = new float[m_AxisO1.size()];
-	float* Values = new float[m_AxisO1.size()];
-	for (unsigned int i = 0; i < m_AxisO1.size(); ++i) {
-		Bins[i] = m_AxisO1[i];
-		Values[i] = m_Values[i];
-	}
-	TGraph* DisplayGraph = new TGraph(m_AxisO1.size(), Bins, Values);
-	delete[] Bins;
-	delete[] Values;
-	return DisplayGraph;
+  float* Bins = new float[m_AxisO1.size()];
+  float* Values = new float[m_AxisO1.size()];
+  for (unsigned int i = 0; i < m_AxisO1.size(); ++i) {
+    Bins[i] = m_AxisO1[i];
+    Values[i] = m_Values[i];
+  }
+  TGraph* DisplayGraph = new TGraph(m_AxisO1.size(), Bins, Values);
+  delete[] Bins;
+  delete[] Values;
+  return DisplayGraph;
 }
 
 

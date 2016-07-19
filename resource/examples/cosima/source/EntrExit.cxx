@@ -121,38 +121,38 @@ bool EntrExit::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f" || Option == "-o") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments_
-		//else if (Option == "-??") {
-		//	if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-		//		cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
-		//		cout<<Usage.str()<<endl;
-		//		return false;
-		//	}
-		//}
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments_
+    //else if (Option == "-??") {
+    //  if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //    cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
+    //    cout<<Usage.str()<<endl;
+    //    return false;
+    //  }
+    //}
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-f") {
       m_FileName = argv[++i];
-			cout<<"Accepting file name: "<<m_FileName<<endl;
+      cout<<"Accepting file name: "<<m_FileName<<endl;
     } else if (Option == "-g") {
       m_GeoFileName = argv[++i];
-			cout<<"Accepting file name: "<<m_GeoFileName<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+      cout<<"Accepting file name: "<<m_GeoFileName<<endl;
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_FileName == "") {
@@ -260,7 +260,7 @@ void CatchSignal(int a)
 int main(int argc, char** argv)
 {
   //void (*handler)(int);
-	//handler = CatchSignal;
+  //handler = CatchSignal;
   //(void) signal(SIGINT, CatchSignal);
 
   // Initialize global MEGAlib variables, especially mgui, etc.

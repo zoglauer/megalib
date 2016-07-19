@@ -89,9 +89,9 @@ MImage::MImage()
 
   Init();
 
-	SetTitle("None");
-	SetImageArray((double *) 0);
-	SetXAxis("None", 0, 1, 1);
+  SetTitle("None");
+  SetImageArray((double *) 0);
+  SetXAxis("None", 0, 1, 1);
   SetSpectrum(0);
   SetDrawOption(c_COLCONT4Z);
 }
@@ -118,12 +118,12 @@ MImage::MImage(MString Title, double* IA,
   Init();
   m_NEntries = xNBins;
 
-	SetTitle(Title);
-	SetXAxis(xTitle, xMin, xMax, xNBins);
+  SetTitle(Title);
+  SetXAxis(xTitle, xMin, xMax, xNBins);
   SetSpectrum(Spectrum);
   SetDrawOption(DrawOption);
 
-	SetImageArray(IA);
+  SetImageArray(IA);
 }
 
 
@@ -196,7 +196,7 @@ void MImage::SetTitle(MString Title)
 {
   // Set the titel of the image
 
-	m_Title = Title;
+  m_Title = Title;
 
   if (m_Histogram != 0) {
     m_Histogram->SetTitle(m_Title);
@@ -262,10 +262,10 @@ void MImage::SetXAxis(MString xTitle, double xMin, double xMax, int xNBins)
 {
   // Set the data of the x-axis
 
-	m_xTitle = xTitle;
-	m_xMin = xMin;
-	m_xMax = xMax;
-	m_xNBins = xNBins;
+  m_xTitle = xTitle;
+  m_xMin = xMin;
+  m_xMax = xMax;
+  m_xNBins = xNBins;
 }
 
 
@@ -276,7 +276,7 @@ void MImage::SetSpectrum(int Spectrum)
 {
   // Set the spectrum of this image
 
-	m_Spectrum = Spectrum;  
+  m_Spectrum = Spectrum;  
 
   if (m_GlobalSpectrum == m_Spectrum) return;
   
@@ -638,50 +638,50 @@ void MImage::ExportCSV(MString FileName)
 /*
 void MImage::ExportFits()
 {
-	fitsfile *fptr;
-	
-	int status;
-	long exposure;
+  fitsfile *fptr;
+  
+  int status;
+  long exposure;
 
-	long naxis = 2;
-	long naxes[2];
-	naxes[0] = m_xNBins;
-	naxes[1] = m_yNBins;
-
-
-	status = 0;
-	fits_create_file(&fptr, "!testfile.fits", &status);
-	cout<<"1. "<<endl;
-	fits_report_error(stderr, status);
+  long naxis = 2;
+  long naxes[2];
+  naxes[0] = m_xNBins;
+  naxes[1] = m_yNBins;
 
 
-	fits_create_img(fptr, DOUBLE_IMG, naxis, naxes, &status);
-	cout<<"2. "<<endl;
-	fits_report_error(stderr, status);
+  status = 0;
+  fits_create_file(&fptr, "!testfile.fits", &status);
+  cout<<"1. "<<endl;
+  fits_report_error(stderr, status);
 
-	exposure = 1500;
 
-	fits_update_key(fptr, TLONG, m_Title, &exposure, "more text", &status);
-	cout<<"3. "<<endl;
-	fits_report_error(stderr, status);
+  fits_create_img(fptr, DOUBLE_IMG, naxis, naxes, &status);
+  cout<<"2. "<<endl;
+  fits_report_error(stderr, status);
 
-	double Image[m_NEntries];
+  exposure = 1500;
 
-	for (int i = 0; i < m_yNBins; i++)
+  fits_update_key(fptr, TLONG, m_Title, &exposure, "more text", &status);
+  cout<<"3. "<<endl;
+  fits_report_error(stderr, status);
+
+  double Image[m_NEntries];
+
+  for (int i = 0; i < m_yNBins; i++)
     for (int j = 0; j < m_xNBins; j++) {
-			Image[j + i*m_yNBins] = m_IA[j + (m_yNBins - i -1) * m_yNBins];
-		}
+      Image[j + i*m_yNBins] = m_IA[j + (m_yNBins - i -1) * m_yNBins];
+    }
 
-	fits_write_img(fptr, TDOUBLE, 1, m_NEntries, Image, &status);
-	cout<<"4. "<<endl;
-	fits_report_error(stderr, status);
+  fits_write_img(fptr, TDOUBLE, 1, m_NEntries, Image, &status);
+  cout<<"4. "<<endl;
+  fits_report_error(stderr, status);
 
-	fits_close_file(fptr, &status);
-	cout<<"5. "<<endl;
-	fits_report_error(stderr, status);
-	
-	fits_report_error(stderr, status);
-	cout<<status<<endl;
+  fits_close_file(fptr, &status);
+  cout<<"5. "<<endl;
+  fits_report_error(stderr, status);
+  
+  fits_report_error(stderr, status);
+  cout<<status<<endl;
 }
 */
 

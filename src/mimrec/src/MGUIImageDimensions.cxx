@@ -226,7 +226,7 @@ void MGUIImageDimensions::Create()
 
 bool MGUIImageDimensions::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
 
@@ -384,7 +384,7 @@ bool MGUIImageDimensions::OnApply()
 
   
 
-	return true;
+  return true;
 }
 
 

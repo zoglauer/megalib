@@ -776,7 +776,7 @@ bool ResponseGenerator::LoadEvents()
         if (m_SiEvent->GetNIAs() > 1 && m_SiEvent->GetIAAt(m_SiEvent->GetNIAs()-1)->GetType() != "TRNC") {
           
           IdSi = m_SiEvent->GetEventNumber();
-          Increase = false;	  
+          Increase = false;   
           mout<<"ReSi: SI found good solution (Id="<<m_SiEvent->GetEventNumber()<<")!"<<endl;
         } else {
           // Ignore this event...

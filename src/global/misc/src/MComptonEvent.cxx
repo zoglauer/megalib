@@ -377,7 +377,7 @@ double MComptonEvent::GetKleinNishinaNormalized(const double Ei, const double ph
 
   double result = GetKleinNishina(Ei, phi)/max;
   if (result > 1.0) result = 1.0;
-  if (result < 0.0) result = 0.0;		
+  if (result < 0.0) result = 0.0;   
 
   return result;
 }
@@ -1266,8 +1266,7 @@ double MComptonEvent::TA_Ee(double E2, double Alpha)
 
 double MComptonEvent::TA_E2(double Ee, double Alpha)
 {
-  return Ee*c_E0/(Ee-
-				  cos(Alpha)*sqrt(Ee*(Ee+2*c_E0)));
+  return Ee*c_E0/(Ee-cos(Alpha)*sqrt(Ee*(Ee+2*c_E0)));
 }
 
 
@@ -1296,8 +1295,8 @@ double MComptonEvent::TA_GradientE2(double Ee, double Alpha)
 
   return c_E0*c_E0*sin(Alpha)*(Ee+S*Cos)/
     (Ee*(Ee*S-3*Ee*Ee*Cos-6*Ee*Cos*c_E0+
-	 3*Cos*Cos*S*(Ee+2*c_E0) -
-	 Cos*Cos*Cos*(Ee*Ee + 4*Ee*c_E0+4*c_E0*c_E0)));
+    3*Cos*Cos*S*(Ee+2*c_E0) -
+    Cos*Cos*Cos*(Ee*Ee + 4*Ee*c_E0+4*c_E0*c_E0)));
 }
 
 

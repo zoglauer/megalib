@@ -59,8 +59,8 @@ MJulianDay::MJulianDay(bool Now)
   } else {
     // Initialize with the current date and time retrieved from the system:
     
-	long int Seconds = 0, NanoSeconds = 0; 
-	MSystem::GetTime(Seconds, NanoSeconds);
+  long int Seconds = 0, NanoSeconds = 0; 
+  MSystem::GetTime(Seconds, NanoSeconds);
 
     time_t tloc = (time_t) Seconds;  // There might be problems on 64 bit systems
 
@@ -258,82 +258,82 @@ bool MJulianDay::CalculateUTC(int& Year, int& Month, int& Day,
                                 int& Hour, int& Minute, int& Second, 
                                 int& NanoSecond)
 {
-	// lokale Konstanten
+  // lokale Konstanten
   // modified Julian Day gemäß XEphem-V3.1-Konventionen (entspricht 0.5 Jan 1900)
-	const unsigned long ulMJDOffset = 2415020;
+  const unsigned long ulMJDOffset = 2415020;
 
   // dynamische Variablen
-	double dMJD0h;							// modified JulianDay der vorangehenden Mitternacht
-	double d,f,i,a,b,ce,g;			// Variablen der XEphem-V3.1-Routine
-	double dHoursOfDay;					// vergangene Stunden seit Mitternacht;
+  double dMJD0h;              // modified JulianDay der vorangehenden Mitternacht
+  double d,f,i,a,b,ce,g;      // Variablen der XEphem-V3.1-Routine
+  double dHoursOfDay;         // vergangene Stunden seit Mitternacht;
 
-	// modified Julian Day (gemäß XEphem-Konventionen) der letzten vorangehenden Mitternacht bestimmen
-	if (m_Fraction >= 0.5) {
-		dMJD0h = ((double)m_Day - (double)ulMJDOffset) + 0.5;
-	} else {
-		dMJD0h = ((double)m_Day - (double)ulMJDOffset) - 0.5;
+  // modified Julian Day (gemäß XEphem-Konventionen) der letzten vorangehenden Mitternacht bestimmen
+  if (m_Fraction >= 0.5) {
+    dMJD0h = ((double)m_Day - (double)ulMJDOffset) + 0.5;
+  } else {
+    dMJD0h = ((double)m_Day - (double)ulMJDOffset) - 0.5;
   }
 
-	// Beginn der original XEphem-Routine
-	d = dMJD0h + 0.5;
-	i = floor(d);
-	f = d - i;
+  // Beginn der original XEphem-Routine
+  d = dMJD0h + 0.5;
+  i = floor(d);
+  f = d - i;
 
-	if(f == 1) {
-		f = 0;
-		i += 1;
-	}
+  if(f == 1) {
+    f = 0;
+    i += 1;
+  }
 
-	if(i > -115860.0) {
-		a = floor((i / 36524.25) + 0.9983573) + 14;
-		i += 1 + a - floor(a / 4.0);
-	}
+  if(i > -115860.0) {
+    a = floor((i / 36524.25) + 0.9983573) + 14;
+    i += 1 + a - floor(a / 4.0);
+  }
 
-	b = floor((i / 365.25) + 0.802601);
-	ce = i - floor((365.25 * b) + 0.750001) + 416;
-	g = floor(ce / 30.6001);
-	Day = (unsigned int) (ce - floor(30.6001 * g) + f);
+  b = floor((i / 365.25) + 0.802601);
+  ce = i - floor((365.25 * b) + 0.750001) + 416;
+  g = floor(ce / 30.6001);
+  Day = (unsigned int) (ce - floor(30.6001 * g) + f);
 
-	if(g > 13.5) {
-		Month = (unsigned int) (g - 13);
-	} else {
-		Month = (unsigned int) (g - 1);
+  if(g > 13.5) {
+    Month = (unsigned int) (g - 13);
+  } else {
+    Month = (unsigned int) (g - 1);
   }
 
   double tYear;
-	if(Month < 2.5) {
-		tYear = b + 1900;
-	} else {
-		tYear = b + 1899;
+  if(Month < 2.5) {
+    tYear = b + 1900;
+  } else {
+    tYear = b + 1899;
   }
 
-	if (tYear < 1) {
-		tYear -= 1;
+  if (tYear < 1) {
+    tYear -= 1;
   }
 
   Year = (int) tYear; 
 
-	// vergangene Stunden seit letzter Mitternacht bestimmen
-	if (m_Fraction >= 0.5) {
-		// es ist zwischen 0h und 12h
-		dHoursOfDay = (m_Fraction - 0.5) * 24.0;
-	} else {
-		// es ist zwischen 12h und 24h
-		dHoursOfDay = (m_Fraction + 0.5) * 24.0;
+  // vergangene Stunden seit letzter Mitternacht bestimmen
+  if (m_Fraction >= 0.5) {
+    // es ist zwischen 0h und 12h
+    dHoursOfDay = (m_Fraction - 0.5) * 24.0;
+  } else {
+    // es ist zwischen 12h und 24h
+    dHoursOfDay = (m_Fraction + 0.5) * 24.0;
   }
 
-	// ganze Stunden absplitten
-	Hour = (unsigned short) (dHoursOfDay);
+  // ganze Stunden absplitten
+  Hour = (unsigned short) (dHoursOfDay);
 
-	// ganze Minuten absplitten
-	Minute = (unsigned short) ((dHoursOfDay - (double) Hour) * 60.0);
+  // ganze Minuten absplitten
+  Minute = (unsigned short) ((dHoursOfDay - (double) Hour) * 60.0);
 
-	// verbleidende Sekunden bestimmen
+  // verbleidende Sekunden bestimmen
   double tSecond = ((dHoursOfDay - (double) Hour) * 60.0 - (double) Minute) * 60.0;
-	Second = (unsigned int) tSecond;
+  Second = (unsigned int) tSecond;
 
   tSecond -= Second;
-	NanoSecond = (unsigned int) (floor(tSecond * 1.0E9 + 0.5));
+  NanoSecond = (unsigned int) (floor(tSecond * 1.0E9 + 0.5));
 
   return true;
 }
@@ -359,18 +359,18 @@ void MJulianDay::Normalize()
   m_Day = floor(m_Day);
 
   if (m_Fraction >= 1.0)
-	{
-		m_Day += (long) m_Fraction;
-		m_Fraction -= (double)(long) m_Fraction;
-	}
- 	// auf Unterlauf prüfen
-	else if (m_Fraction < 0.0)
-	{
-		// Number anpassen
-		m_Day += (long) m_Fraction - 1;
-		// Fraction anpassen
-		m_Fraction += -(double)(long) m_Fraction + 1.0;
-	}
+  {
+    m_Day += (long) m_Fraction;
+    m_Fraction -= (double)(long) m_Fraction;
+  }
+  // auf Unterlauf prüfen
+  else if (m_Fraction < 0.0)
+  {
+    // Number anpassen
+    m_Day += (long) m_Fraction - 1;
+    // Fraction anpassen
+    m_Fraction += -(double)(long) m_Fraction + 1.0;
+  }
 }
 
 
@@ -386,8 +386,8 @@ MString MJulianDay::GetUTCString()
   int Year, Month, Day, Hour, Minute, Second, NanoSecond;
 
   CalculateUTC(Year, Month, Day, Hour, Minute, Second, NanoSecond);
-	// und in String schreiben
-	sprintf(Text, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
+  // und in String schreiben
+  sprintf(Text, "%02u.%02u.%04d %02u:%02u:%02u:%09u", 
           Day, Month, Year, Hour, Minute, Second, NanoSecond);
 
   //mlog<<m_Day<<":"<<m_Month<<":"<<m_Year<<":"<<m_Hour<<":"<<m_Minute<<":"<<m_Second<<":"<<m_MicroSecond<<endl;

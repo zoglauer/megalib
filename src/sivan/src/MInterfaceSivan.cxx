@@ -142,26 +142,26 @@ bool MInterfaceSivan::ParseCommandLine(int argc, char** argv)
 
   // First check if all options are ok:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// Single argument
+    // Single argument
     if (Option == "-g" || Option == "--geometry" ||
         Option == "-c" || Option == "--configuration" ||
          Option == "-f" || Option == "--filename") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		}		
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    }   
     // Double argument
 //     if (Option == "-c" || Option == "--calibrate") {
-// 			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-// 				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-// 				cout<<Usage.str()<<endl;
-// 				return false;
-// 			}
-// 		}
+//      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+//        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+//        cout<<Usage.str()<<endl;
+//        return false;
+//      }
+//    }
 
   }
     
@@ -350,7 +350,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
   int NTrackedEvents = 0;
 
   int NRetrievable = 0;
-	int NTriggers = 0;
+  int NTriggers = 0;
 
   int NRComptonEvents = 0;
   int NRPairEvents = 0;
@@ -434,11 +434,11 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
 
     //cout<<"Event: "<<Event->GetID()<<endl;
 
-		// Trigger condition: 3 separated hits:
-// 		if (Event->GetNTriggeredLayers() < 3) {
-// 			continue;
-// 		}
-		NTriggers++;
+    // Trigger condition: 3 separated hits:
+//    if (Event->GetNTriggeredLayers() < 3) {
+//      continue;
+//    }
+    NTriggers++;
 
     //cout<<"Clusters: "<<Event->GetAverageClusterSize(1)<<endl;
     
@@ -517,24 +517,24 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
 
 //       // Determine "D3-contained"ness
 //       if (Event->GetICFirstIADetector() == 3 && Event->GetICSecondIADetector() == 3 && Event->GetICThirdIADetector() == 3) {
-// 				// Check if the events are well separated:
-// 				if ((Event->GetIAAt(1)->GetPosition() - Event->GetIAAt(2)->GetPosition()).Mag() > 5 && 
-// 						(Event->GetIAAt(2)->GetPosition() - Event->GetIAAt(3)->GetPosition()).Mag() > 5) {
-// 					NTriplePlusD1++;
-// 				} else {
-// 					continue;
-// 				}
+//        // Check if the events are well separated:
+//        if ((Event->GetIAAt(1)->GetPosition() - Event->GetIAAt(2)->GetPosition()).Mag() > 5 && 
+//            (Event->GetIAAt(2)->GetPosition() - Event->GetIAAt(3)->GetPosition()).Mag() > 5) {
+//          NTriplePlusD1++;
+//        } else {
+//          continue;
+//        }
 //       } else {
-// 				continue;
-// 			}
+//        continue;
+//      }
 
 
 
       // Determine "D1-contained"ness
-			if (Event->GetICFirstIADetector() == 1 && Event->GetICSecondIADetector() == 1 && Event->GetICThirdIADetector() == 1) {
-				NTriplePlusD1++;
-				//cout<<Event->GetSimulationData()<<endl;
-			}	else if (Event->GetICFirstIADetector() == 1 && Event->GetICSecondIADetector() == 1) {
+      if (Event->GetICFirstIADetector() == 1 && Event->GetICSecondIADetector() == 1 && Event->GetICThirdIADetector() == 1) {
+        NTriplePlusD1++;
+        //cout<<Event->GetSimulationData()<<endl;
+      } else if (Event->GetICFirstIADetector() == 1 && Event->GetICSecondIADetector() == 1) {
         NDoubleD1++;
    
         // Check for track:
@@ -708,7 +708,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
       }
     } else {
       NRUnknownEvents++;
-			//cout<<"Not Compton - not pair..."<<endl;
+      //cout<<"Not Compton - not pair..."<<endl;
     }
   }
 
@@ -1436,7 +1436,7 @@ void MInterfaceSivan::EnergyLoss()
 //   //  ... and display it.
 //   MDisplay Display; 
 //   Display.DisplayHistogram("Input energy distribution", "Energy [keV]", "Number of counts", 
-// 														 EnergyArray, 1000, 10000, NBins);
+//                             EnergyArray, 1000, 10000, NBins);
 
 //   delete [] EnergyArray;
 // }
@@ -1859,34 +1859,34 @@ void MInterfaceSivan::EnergyPerVoxel()
   MString DetectorName = "";
   //double TotalEnergy = 662;
 
-	int NBins = 100;
+  int NBins = 100;
   double MinEnergy = 0.0; // keV
   double MaxEnergy = 3500.0; // keV
 
-	TH1D* VoxelD1 = new TH1D("Energy deposits in D1 strips", "Energy deposits in D1 STRIPS", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD1 = new TH1D("Energy deposits in D1 strips", "Energy deposits in D1 STRIPS", NBins, MinEnergy, MaxEnergy);
   VoxelD1->SetBit(kCanDelete);
-	TH1D* VoxelD2 = new TH1D("Energy deposits in D2 voxels", "Energy deposits in D2 voxel", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2 = new TH1D("Energy deposits in D2 voxels", "Energy deposits in D2 voxel", NBins, MinEnergy, MaxEnergy);
   VoxelD1->SetBit(kCanDelete);
 
-	TH1D* VoxelD2FullyAbsorbed = new TH1D("FullyAbsorbed", "FullyAbsorbed", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2FullyAbsorbed = new TH1D("FullyAbsorbed", "FullyAbsorbed", NBins, MinEnergy, MaxEnergy);
   VoxelD2FullyAbsorbed->SetBit(kCanDelete);
   VoxelD2FullyAbsorbed->SetStats(false);
-	TH1D* VoxelD2Photo = new TH1D("Photo", "Photo", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2Photo = new TH1D("Photo", "Photo", NBins, MinEnergy, MaxEnergy);
   VoxelD2Photo->SetBit(kCanDelete);
   VoxelD2Photo->SetStats(false);
-	TH1D* VoxelD2SingleScatter = new TH1D("SingleScatter", "SingleScatter", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2SingleScatter = new TH1D("SingleScatter", "SingleScatter", NBins, MinEnergy, MaxEnergy);
   VoxelD2SingleScatter->SetBit(kCanDelete);
   VoxelD2SingleScatter->SetStats(false);
-	TH1D* VoxelD2DoubleScatter = new TH1D("DoubleScatter", "DoubleScatter", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2DoubleScatter = new TH1D("DoubleScatter", "DoubleScatter", NBins, MinEnergy, MaxEnergy);
   VoxelD2DoubleScatter->SetBit(kCanDelete);
   VoxelD2DoubleScatter->SetStats(false);
-	TH1D* VoxelD2TripplePScatter = new TH1D("TripplePScatter", "TripplePScatter", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2TripplePScatter = new TH1D("TripplePScatter", "TripplePScatter", NBins, MinEnergy, MaxEnergy);
   VoxelD2TripplePScatter->SetBit(kCanDelete);
   VoxelD2TripplePScatter->SetStats(false);
-	TH1D* VoxelD2ScatteredIn = new TH1D("ScatteredIn", "ScatteredIn", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2ScatteredIn = new TH1D("ScatteredIn", "ScatteredIn", NBins, MinEnergy, MaxEnergy);
   VoxelD2ScatteredIn->SetBit(kCanDelete);
   VoxelD2ScatteredIn->SetStats(false);
-	TH1D* VoxelD2Rest = new TH1D("Rest", "Rest", NBins, MinEnergy, MaxEnergy);
+  TH1D* VoxelD2Rest = new TH1D("Rest", "Rest", NBins, MinEnergy, MaxEnergy);
   VoxelD2Rest->SetBit(kCanDelete);
   VoxelD2Rest->SetStats(false);
 
@@ -1936,10 +1936,10 @@ void MInterfaceSivan::EnergyPerVoxel()
               Event->GetHTAt(hh)->SetAddFlag(true);
             }
           }
-					VoxelD1->Fill(Energy, 1);
+          VoxelD1->Fill(Energy, 1);
           //cout<<"x: "<<x<<"  Energy: "<<Energy<<endl;
-				} else if (Hit->GetDetectorType() == 2) {
-					VoxelD2->Fill(Hit->GetEnergy(), 1);
+        } else if (Hit->GetDetectorType() == 2) {
+          VoxelD2->Fill(Hit->GetEnergy(), 1);
 
           if (Event->GetNIAs() >= 2) {
             bool ScatteredIn = false;
@@ -3441,7 +3441,7 @@ void MInterfaceSivan::HitsPerEnergy()
     int ND2 = 0;
     int ND3 = 0;
 
- 		for (unsigned int i = 0; i < Event->GetNHTs(); ++i) {
+    for (unsigned int i = 0; i < Event->GetNHTs(); ++i) {
       if (Event->GetHTAt(i)->GetDetectorType() == 1) {
         ND1++;
       } else if (Event->GetHTAt(i)->GetDetectorType() == 2) {
@@ -3981,7 +3981,7 @@ void MInterfaceSivan::SecondaryGenerationPattern()
       IA = Event->GetIAAt(h);
       if (IA->GetProcess() != "INIT" && IA->GetProcess() != "ESCP") {
         Pos = IA->GetPosition();
-	
+  
         // If the particle is not a nucleus (up to alpha is ok):
         if (IA->GetSecondaryParticleID() < 100 && IA->GetSecondaryEnergy() > EnergyThreshold) {
           TH3D* Hist = EmissionPatterns[IA->GetSecondaryParticleID()];
@@ -4598,15 +4598,15 @@ void MInterfaceSivan::LocationOfFirstDetectedInteraction()
   double yMax = -numeric_limits<double>::max();
   double zMax = -numeric_limits<double>::max();
   
-	MVector Pos;
+  MVector Pos;
   MSimEvent* Event;
   MSimHT* HT = 0;
   unsigned int MaxNHits = 0;
   mdebug<<"Testing dimensions of geometry..."<<endl;
   while ((Event = EventFile.GetNextEvent(false)) != 0) {
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
-			HT = Event->GetHTAt(h);
-			Pos = HT->GetPosition();
+      HT = Event->GetHTAt(h);
+      Pos = HT->GetPosition();
       if (Pos[0] > xMax) xMax = Pos[0];
       if (Pos[1] > yMax) yMax = Pos[1];
       if (Pos[2] > zMax) zMax = Pos[2];
@@ -4696,7 +4696,7 @@ void MInterfaceSivan::LocationOfFirstDetectedInteraction()
     }
     if (HTWithSmallestOrigin > -1) {
       xyPosition->Fill(Event->GetHTAt(HTWithSmallestOrigin)->GetPosition()[0],
-		       Event->GetHTAt(HTWithSmallestOrigin)->GetPosition()[1]);
+           Event->GetHTAt(HTWithSmallestOrigin)->GetPosition()[1]);
       zPosition->Fill(Event->GetHTAt(HTWithSmallestOrigin)->GetPosition()[2]);
 
       MDVolumeSequence* S = m_Geometry->GetVolumeSequencePointer(Event->GetHTAt(HTWithSmallestOrigin)->GetPosition());
@@ -4782,15 +4782,15 @@ void MInterfaceSivan::LocationsOfAllDetectedInteractions()
   double yMax = -numeric_limits<double>::max();
   double zMax = -numeric_limits<double>::max();
   
-	MVector Pos;
+  MVector Pos;
   MSimEvent* Event;
   MSimHT* HT = 0;
   int MaxNHits = 1000;
   mdebug<<"Testing dimensions of geometry..."<<endl;
   while ((Event = EventFile.GetNextEvent(false)) != 0) {
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
-			HT = Event->GetHTAt(h);
-			Pos = HT->GetPosition();
+      HT = Event->GetHTAt(h);
+      Pos = HT->GetPosition();
       if (Pos[0] > xMax) xMax = Pos[0];
       if (Pos[1] > yMax) yMax = Pos[1];
       if (Pos[2] > zMax) zMax = Pos[2];
@@ -4910,7 +4910,7 @@ void MInterfaceSivan::MissingInteractionsStatistics()
       IA = Event->GetIAAt(h);
       if (IA->GetProcess() != "INIT" && IA->GetProcess() != "ESCP") {
         Pos = IA->GetPosition();
-	
+  
         if (Pos[0] > xMax) xMax = Pos[0];
         if (Pos[1] > yMax) yMax = Pos[1];
         if (Pos[2] > zMax) zMax = Pos[2];

@@ -649,7 +649,7 @@ void MSimEvent::DetermineEventLocation()
 
 MVector MSimEvent::GetIPVertex()
 {
-	return GetIAAt(1)->GetPosition();
+  return GetIAAt(1)->GetPosition();
 }
 
 
@@ -658,7 +658,7 @@ MVector MSimEvent::GetIPVertex()
 
 MVector MSimEvent::GetIPElectronDir()
 {
-	return GetIAAt(1)->GetSecondaryDirection();
+  return GetIAAt(1)->GetSecondaryDirection();
 }
 
 
@@ -667,7 +667,7 @@ MVector MSimEvent::GetIPElectronDir()
 
 MVector MSimEvent::GetIPPositronDir()
 {
-	return GetIAAt(2)->GetSecondaryDirection();
+  return GetIAAt(2)->GetSecondaryDirection();
 }
 
 
@@ -676,7 +676,7 @@ MVector MSimEvent::GetIPPositronDir()
 
 double MSimEvent::GetIPElectronEnergy()
 {
-	return GetIAAt(1)->GetSecondaryEnergy();
+  return GetIAAt(1)->GetSecondaryEnergy();
 }
 
 
@@ -685,7 +685,7 @@ double MSimEvent::GetIPElectronEnergy()
 
 double MSimEvent::GetIPPositronEnergy()
 {
-	return GetIAAt(2)->GetSecondaryEnergy();
+  return GetIAAt(2)->GetSecondaryEnergy();
 }
 
 

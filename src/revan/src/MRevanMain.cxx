@@ -51,7 +51,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Revan", "real event analysis");
 
-	TApplication* AppRevan = new TApplication("Revan", 0, 0);
+  TApplication* AppRevan = new TApplication("Revan", 0, 0);
 
   MInterfaceRevan Revan;
   if (Revan.ParseCommandLine(argc, argv) == false) {

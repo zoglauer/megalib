@@ -125,7 +125,7 @@ bool MGUIResponseParameterPRM::OnApply()
     m_GUIData->SetImagingResponseComptonTransversalFileName(m_ComptonTransversalFile->GetFileName());
   }
 
-	return true;
+  return true;
 }
 
 

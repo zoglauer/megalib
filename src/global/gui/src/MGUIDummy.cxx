@@ -101,15 +101,15 @@ bool MGUIDummy::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -117,7 +117,7 @@ bool MGUIDummy::ProcessMessage(long Message, long Parameter1,
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       default:
@@ -141,14 +141,14 @@ bool MGUIDummy::ProcessMessage(long Message, long Parameter1,
 
 bool MGUIDummy::OnOk()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	if (OnApply() == true) {
-		CloseWindow();
-		return true;
-	}
-	
-	return false;
+  if (OnApply() == true) {
+    CloseWindow();
+    return true;
+  }
+  
+  return false;
 }
 
 
@@ -157,11 +157,11 @@ bool MGUIDummy::OnOk()
 
 bool MGUIDummy::OnCancel()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	CloseWindow();
+  CloseWindow();
 
-	return true;
+  return true;
 }
 
 
@@ -170,11 +170,11 @@ bool MGUIDummy::OnCancel()
 
 bool MGUIDummy::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
-	// Add here...
+  // Add here...
 
-	return true;
+  return true;
 }
 
 

@@ -196,7 +196,7 @@ void MGUIMainFretalon::Create()
   // Start & Exit buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 20*FontScaler, 20*FontScaler, 20*FontScaler, 10*FontScaler);
+  TGLayoutHints* ButtonFrameLayout =  new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 20*FontScaler, 20*FontScaler, 20*FontScaler, 10*FontScaler);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself

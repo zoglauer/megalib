@@ -31,12 +31,12 @@ using namespace std;
 void /*Zogy::*/AssertionFailed(const char* assertion, const char* file,
                            unsigned int line, const char* function)
 {
-	if (function != 0) {
+  if (function != 0) {
     cerr<<"Assertion failed in file "<<file<<" in function "<<function
         <<" at line "<<line<<":"<<endl;
-	} else {
+  } else {
     cerr<<"Assertion failed in file "<<file<<" at line "<<line<<":"<<endl;
-	}
+  }
   cerr<<"    Condition \""<<assertion<<"\" not fulfilled!   Aborting!"<<endl;
   abort();
 }

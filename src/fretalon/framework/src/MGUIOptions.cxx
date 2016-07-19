@@ -105,11 +105,11 @@ void MGUIOptions::PostCreate()
   // OK and cancel buttons
   // Frame around the buttons:
   TGHorizontalFrame* ButtonFrame = new TGHorizontalFrame(this, 150, 25);
-  TGLayoutHints* ButtonFrameLayout =	new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, m_FontScaler*20, 10);
+  TGLayoutHints* ButtonFrameLayout =  new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 10, 10, m_FontScaler*20, 10);
   AddFrame(ButtonFrame, ButtonFrameLayout);
   
   // The buttons itself
-  TGTextButton*	OKButton = new TGTextButton(ButtonFrame, "OK", e_Ok); 
+  TGTextButton* OKButton = new TGTextButton(ButtonFrame, "OK", e_Ok); 
   OKButton->Associate(this);
   TGLayoutHints* OKButtonLayout = new TGLayoutHints(kLHintsTop | kLHintsRight | kLHintsExpandX, 20, 0, 0, 0);
   ButtonFrame->AddFrame(OKButton, OKButtonLayout);

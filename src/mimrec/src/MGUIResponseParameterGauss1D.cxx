@@ -148,7 +148,7 @@ bool MGUIResponseParameterGauss1D::OnApply()
   }
 
   
-	return true;
+  return true;
 }
 
 

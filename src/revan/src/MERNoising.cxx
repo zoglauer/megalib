@@ -139,8 +139,8 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       dynamic_cast<MDDriftChamber*>(V->GetDetector())->NoiseLightEnergy(Energy);
       DCE->SetEnergy(Energy);
       DCE->SetEnergyResolution(dynamic_cast<MDDriftChamber*>(V->GetDetector())->GetLightEnergyResolution(Energy));
-	    ++Iter;
-	  } else if ((*Iter)->GetType() == MREAM::c_GuardringHit) {
+      ++Iter;
+    } else if ((*Iter)->GetType() == MREAM::c_GuardringHit) {
       MREAMGuardringHit* GR = dynamic_cast<MREAMGuardringHit*>(*Iter);
       double Energy = GR->GetEnergy();
       MDVolumeSequence* V = GR->GetVolumeSequence();

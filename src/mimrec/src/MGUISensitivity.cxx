@@ -106,7 +106,7 @@ void MGUISensitivity::Create()
 
 bool MGUISensitivity::OnApply()
 {
- 	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->SetSensitivityFile(m_FileSelector->GetFileName());
   if (m_FileSelector->GetFileName().CompareTo(MString("")) != 0) {

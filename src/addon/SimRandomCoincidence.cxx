@@ -228,38 +228,38 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
 
   // Now parse the command line options:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// First check if each option has sufficient arguments:
-		// Single argument
+    // First check if each option has sufficient arguments:
+    // Single argument
     if (Option == "-f" || Option == "-o" || Option == "-r" || Option == "-c" || Option == "-t" || Option == "-x") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		} 
-		// Multiple arguments_
-		else if (Option == "-ft") {
-			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    } 
+    // Multiple arguments_
+    else if (Option == "-ft") {
+      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs two arguments!"<<endl;
         cout<<Usage.str()<<endl;
-				return false;
-			}
-		}
-		// Multiple arguments_
-		else if (Option == "-fte") {
-			if (!((argc > i+3) && argv[i+1][0] != '-' && argv[i+2][0] != '-' && argv[i+3][0] != '-')){
+        return false;
+      }
+    }
+    // Multiple arguments_
+    else if (Option == "-fte") {
+      if (!((argc > i+3) && argv[i+1][0] != '-' && argv[i+2][0] != '-' && argv[i+3][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs three arguments!"<<endl;
         cout<<Usage.str()<<endl;
-				return false;
-			}
-		}
+        return false;
+      }
+    }
 
-		// Then fulfill the options:
+    // Then fulfill the options:
     if (Option == "-o") {
       m_OutputFileName = argv[++i];
-			cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
+      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
     } else if (Option == "-ft") {
       if (m_Events.size() != 0) {
         cout<<"Error: You are not allowed to mix -ft and -fte"<<endl;
@@ -310,7 +310,7 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;        
       }
-			cout<<"Accepting coincidence window: "<<m_TimeCoincidence<<endl;
+      cout<<"Accepting coincidence window: "<<m_TimeCoincidence<<endl;
     } else if (Option == "-t") {
       m_StopTime.Set(atof(argv[++i]), 0.0);
       if (m_StopTime.GetSeconds() <= 0 && m_StopTime.GetNanoSeconds() <= 0) {
@@ -318,7 +318,7 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;        
       }
-			cout<<"Accepting stop time: "<<m_StopTime<<endl;
+      cout<<"Accepting stop time: "<<m_StopTime<<endl;
     } else if (Option == "-r") {
       m_TimeReadout.Set(0, atoi(argv[++i]));
       if (m_TimeReadout.GetSeconds() > 1 || m_TimeReadout.GetNanoSeconds() == 0) {
@@ -326,7 +326,7 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;        
       }
-			cout<<"Accepting read out time: "<<m_TimeReadout<<endl;
+      cout<<"Accepting read out time: "<<m_TimeReadout<<endl;
     } else if (Option == "-x") {
       m_TimeReset.Set(0, atoi(argv[++i]));
       if (m_TimeReset.GetSeconds() > 1 || m_TimeReset.GetNanoSeconds() == 0) {
@@ -334,39 +334,39 @@ bool SimRandomCoincidence::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;        
       }
-			cout<<"Accepting read out time: "<<m_TimeReadout<<endl;
+      cout<<"Accepting read out time: "<<m_TimeReadout<<endl;
     } else if (Option == "-o") {
       m_OutputFileName = argv[++i];
-			cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
+      cout<<"Accepting output file name: "<<m_OutputFileName<<endl;
     } else if (Option == "-g") {
       m_GeoFileName = argv[++i];
-			cout<<"Accepting geometry file name: "<<m_GeoFileName<<endl;
+      cout<<"Accepting geometry file name: "<<m_GeoFileName<<endl;
     } else if (Option == "-s") {
       m_Seed = atoi(argv[++i]);
-			cout<<"Accepting geometry file name: "<<m_GeoFileName<<endl;
+      cout<<"Accepting geometry file name: "<<m_GeoFileName<<endl;
     } else if (Option == "-e") {
       CountEvents = true;
-			cout<<"Accepting count events"<<endl;
+      cout<<"Accepting count events"<<endl;
     } else if (Option == "-w") {
       m_CoincidencesOnly = true;
-			cout<<"Writing only coincidences to the file"<<endl;
+      cout<<"Writing only coincidences to the file"<<endl;
     } else if (Option == "-m") {
       m_Merge = true;
-			cout<<"Only merging files"<<endl;
+      cout<<"Only merging files"<<endl;
     } else if (Option == "-l") {
       m_LooseReadouts = true;
-			cout<<"Accepting loose events happening during read out"<<endl;
+      cout<<"Accepting loose events happening during read out"<<endl;
     } else if (Option == "-y") {
       m_Recycle = true;
-			cout<<"Accepting recycling events"<<endl;
+      cout<<"Accepting recycling events"<<endl;
     } else if (Option == "-d") {
       if (g_Verbosity < 2) g_Verbosity = 2;
-			cout<<"Entering debug mode..."<<endl;
-		} else {
-			cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
-			cout<<Usage.str()<<endl;
-			return false;
-		}
+      cout<<"Entering debug mode..."<<endl;
+    } else {
+      cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   if (m_FileNames.size() < 2) {

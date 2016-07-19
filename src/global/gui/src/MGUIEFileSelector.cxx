@@ -214,8 +214,8 @@ void MGUIEFileSelector::SetFileType(MString Name, MString Suffix)
 
 void MGUIEFileSelector::SetEnabled(bool flag)
 {
-	m_IsEnabled = flag;
-	
+  m_IsEnabled = flag;
+  
   m_Input->SetEnabled(m_IsEnabled);
 
   if (flag == true) {

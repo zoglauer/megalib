@@ -134,7 +134,7 @@ MStatusStream& MStatusStream::printf(const char* Format, ...)
 //
 //
 void MStatusStream::EndLine()
-{	
+{ 
   MStr::EndLine();
   if (m_ConnectStdOut == true) {
     cout<<str();

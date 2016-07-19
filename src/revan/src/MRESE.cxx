@@ -139,7 +139,7 @@ MRESE::MRESE(MRESE* RESE)
   m_ID = RESE->m_ID;
   m_IsValid = RESE->m_IsValid;
   m_AllowOverwrite = RESE->m_AllowOverwrite;
-	m_VolumeSequence = new MDVolumeSequence(*(RESE->m_VolumeSequence));
+  m_VolumeSequence = new MDVolumeSequence(*(RESE->m_VolumeSequence));
 
   m_RESEList = RESE->GetRESEList()->Duplicate();
   m_LinkList = new MRESEList();
@@ -704,12 +704,12 @@ void MRESE::AddRESE(MRESE* RESE)
   massert(this != 0);
 
   if (RESE != 0) {
-		if (GetNRESEs() == 0) {
+    if (GetNRESEs() == 0) {
       delete m_VolumeSequence;
-			m_VolumeSequence = new MDVolumeSequence(*(RESE->GetVolumeSequence()));
-		} else {
-			m_VolumeSequence->Join(*(RESE->GetVolumeSequence()));
-		}
+      m_VolumeSequence = new MDVolumeSequence(*(RESE->GetVolumeSequence()));
+    } else {
+      m_VolumeSequence->Join(*(RESE->GetVolumeSequence()));
+    }
     m_RESEList->AddRESE(RESE);
   }
 

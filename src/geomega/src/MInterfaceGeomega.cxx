@@ -162,15 +162,15 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
-    }		
+    }   
     // Double argument
     //     if (Option == "-c" || Option == "--calibrate") {
-    // 			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-    // 				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-    // 				cout<<Usage.str()<<endl;
-    // 				return false;
-    // 			}
-    // 		}
+    //      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+    //        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+    //        cout<<Usage.str()<<endl;
+    //        return false;
+    //      }
+    //    }
 
   }
     
@@ -492,7 +492,7 @@ void MInterfaceGeomega::DumpInformation()
     }
   }
 
-  m_Geometry->DumpInformation();	
+  m_Geometry->DumpInformation();  
 }
 
 

@@ -156,7 +156,7 @@ void MGUIImageOptions::Create()
 
 bool MGUIImageOptions::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Palette->GetSelected() != m_GUIData->GetImagePalette()) {
     m_GUIData->SetImagePalette(m_Palette->GetSelected());

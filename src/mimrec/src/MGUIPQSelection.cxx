@@ -113,13 +113,13 @@ void MGUIPQSelection::Create()
     new TGLayoutHints(kLHintsTop | kLHintsExpandX | kLHintsCenterX, 
                       10, 10, 10, 5);
   AddFrame(m_AddDeleteFrame, m_AddDeleteFrameLayout);
-	  
+    
   m_AddButton = new TGTextButton(m_AddDeleteFrame, "Add PQ", 1002); 
   m_AddButton->Associate(this);
   m_AddButtonLayout = 
     new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX, 10, 5, 0, 0);
   m_AddDeleteFrame->AddFrame(m_AddButton, m_AddButtonLayout);
-	  
+    
   m_ModifyButton = new TGTextButton(m_AddDeleteFrame, "Modify PQ", 1003); 
   m_ModifyButton->Associate(this);
   m_ModifyButtonLayout = 
@@ -171,7 +171,7 @@ void MGUIPQSelection::Create()
     new TGLayoutHints(kLHintsBottom | kLHintsExpandX | kLHintsCenterX, 
                       10, 10, 10, 8);
   AddFrame(m_ButtonFrame, m_ButtonFrameLayout);
-	  
+    
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", e_Cancel); 
   m_CancelButton->Associate(this);
   m_CancelButtonLayout = 
@@ -205,7 +205,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this application
 
-	bool Status = true;
+  bool Status = true;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
@@ -216,7 +216,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -224,7 +224,7 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       case 1002: // Add
@@ -267,12 +267,12 @@ bool MGUIPQSelection::ProcessMessage(long Message, long Parameter1,
 
 bool MGUIPQSelection::OnCancel()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->GetDeselectedPointSources()->Compress();
-	CloseWindow();
+  CloseWindow();
 
-	return true;
+  return true;
 }
 
 
@@ -281,12 +281,12 @@ bool MGUIPQSelection::OnCancel()
 
 bool MGUIPQSelection::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_GUIData->GetDeselectedPointSources()->Compress();
   m_GUIData->SetApplyDeselectedPointSources((m_UsePQsCB->GetState() == kButtonDown) ? 1 : 0);
 
-	return true;
+  return true;
 }
 
 

@@ -72,7 +72,7 @@ bool MFileDecay::Open(MString FileName, unsigned int Way)
   // Open the file and do the parsing
 
   if (MParser::Open(FileName, Way) == false) {
-		mlog<<"MFileDecay::Open: Unable to open file "<<FileName<<"."<<endl;
+    mlog<<"MFileDecay::Open: Unable to open file "<<FileName<<"."<<endl;
     return false;
   }
 

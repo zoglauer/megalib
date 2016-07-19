@@ -533,14 +533,14 @@ MString MDMaterial::GetMGeant() const
 
   // Z <= 100 is enforced by MDMaterialComponent!
   const char* elem[] = {"H ","He","Li","Be","B ","C ","N ","O ","F ","Ne","Na","Mg",
-		  "Al","Si","P ","S ","Cl","Ar","K ","Ca","Sc","Ti","V ","Cr",
-		  "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
-		  "Rb","Sr","Y ","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
-		  "In","Sn","Sb","Te","I ","Xe","Cs","Ba","La","Ce","Pr","Nd",
-		  "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
-		  "Ta","W ","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
-		  "At","Rn","Fr","Ra","Ac","Th","Pa","U ","Np","Pu","Am","Cm",
-		  "Bk","Cf","Es","Fm","Md","No","Lr"};
+      "Al","Si","P ","S ","Cl","Ar","K ","Ca","Sc","Ti","V ","Cr",
+      "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+      "Rb","Sr","Y ","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
+      "In","Sn","Sb","Te","I ","Xe","Cs","Ba","La","Ce","Pr","Nd",
+      "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
+      "Ta","W ","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
+      "At","Rn","Fr","Ra","Ac","Th","Pa","U ","Np","Pu","Am","Cm",
+      "Bk","Cf","Es","Fm","Md","No","Lr"};
 
   out<<endl<<"! "<<m_Name<<endl;
 
@@ -595,12 +595,12 @@ MString MDMaterial::GetMGeant() const
 
     // using the standard MGEANT MIXT (one isotope per component)
     //     out << "mixt " << m_ID+16 << "  MAT" << m_Name.Data() << "    "
-    // 	<< "-" << GetNComponents() << "  " << m_Density << endl;
+    //  << "-" << GetNComponents() << "  " << m_Density << endl;
     //     for (unsigned int i = 0; i < GetNComponents(); i++) {
     //       out << "                    "
-    // 	  << GetComponentAt(i)->GetA() << " "
-    // 	  << GetComponentAt(i)->GetZ() << " "
-    // 	  << GetComponentAt(i)->GetNAtoms() << endl;
+    //    << GetComponentAt(i)->GetA() << " "
+    //    << GetComponentAt(i)->GetZ() << " "
+    //    << GetComponentAt(i)->GetNAtoms() << endl;
     //     }   
     //     out << endl;
 
@@ -936,8 +936,8 @@ bool MDMaterial::Validate()
     Array.push_back(m_Components[m]->GetType());
   }
   double* a = new double[Array.size()];
-	copy(Array.begin(), Array.end(), a);
-	m_Hash = TString::Hash(a, Array.size()*sizeof(double));
+  copy(Array.begin(), Array.end(), a);
+  m_Hash = TString::Hash(a, Array.size()*sizeof(double));
   delete [] a;
 
 

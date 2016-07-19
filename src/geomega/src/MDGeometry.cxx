@@ -2464,7 +2464,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           D->SetOverflowSigma(Tokenizer.GetTokenAtAsDouble(3));
         } else {
           D->SetOverflowSigma(0.0);
-	}
+        }
       }
       // Check for energy loss maps
       else if (Tokenizer.IsTokenAt(1, "EnergyLossMap") == true) {

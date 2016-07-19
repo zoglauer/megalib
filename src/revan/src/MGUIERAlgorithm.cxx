@@ -173,7 +173,7 @@ void MGUIERAlgorithm::Create()
 
 bool MGUIERAlgorithm::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
   m_Data->SetClusteringAlgorithm(m_ClusteringList->GetSelected());
@@ -198,7 +198,7 @@ bool MGUIERAlgorithm::OnApply()
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());
   m_Data->SetDecayAlgorithm(0);
 
-	return true;
+  return true;
 }
 
 
