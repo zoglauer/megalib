@@ -107,13 +107,13 @@ void MGUIOptionsCoincidence::Create()
 
 bool MGUIOptionsCoincidence::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Data->GetCoincidenceAlgorithm() == MRawEventAnalyzer::c_CoincidenceAlgoWindow) {
     m_Data->SetCoincidenceWindow(m_Window->GetAsDouble());
   }
 
-	return true;
+  return true;
 }
 
 

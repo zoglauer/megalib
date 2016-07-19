@@ -227,7 +227,7 @@ bool MGUIOptionsCSR::ProcessMessage(long Message, long Parameter1, long Paramete
 
 bool MGUIOptionsCSR::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
   if (m_MaxNSingleHits->GetAsInt() > 8) {
     int Return = 0;
     MString Text = "A maximum number of interactions beyond 8 is rather unreasonable and consumes large amounts of memory!\n";
@@ -274,7 +274,7 @@ bool MGUIOptionsCSR::OnApply()
     m_Data->SetBayesianComptonFileName(m_BayesianFileSelector->GetFileName());
     m_Data->SetCSRMaxNHits(m_MaxNSingleHits->GetAsInt());
   }
-	return true;
+  return true;
 }
 
 

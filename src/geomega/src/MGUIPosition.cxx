@@ -118,7 +118,7 @@ void MGUIPosition::Create()
 
 bool MGUIPosition::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   MVector V;
   if (m_PositionString->GetAsString() != "") {
@@ -173,9 +173,9 @@ bool MGUIPosition::OnApply()
   
   m_Data->SetPosition(V);
 
-  m_OkPressed = true;	
+  m_OkPressed = true; 
 
-	return true;
+  return true;
 }
 
 

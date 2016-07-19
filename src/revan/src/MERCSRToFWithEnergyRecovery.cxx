@@ -324,9 +324,9 @@ void MERCSRToFWithEnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF
       else {
         mdebug<<"CSR-Rec (3): Kinematics ok!"<<endl;
         CQF_ER = 1; // "passed" energy test (per definition) with Chi-square = 0
-	
+  
         // The CQF_ER consists of three times the normalized cross-section
-	// VT: only two times the normalized cross sections
+        // VT: only two times the normalized cross sections
         double Ei = Eest;
         double Phi = MComptonEvent::ComputePhiViaEeEg(RESEs[0]->GetEnergy(), Ei - RESEs[0]->GetEnergy());
         CQF_ER *= MComptonEvent::GetKleinNishinaNormalized(Ei, Phi);
@@ -347,7 +347,7 @@ void MERCSRToFWithEnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF
       }
       
       //CQF_ER = c_CSRFailed;
-      //Eavg = 0.;	
+      //Eavg = 0.;  
     }
     mdebug<<"CSR-Rec (3): Final quality factor: "<<CQF_ER<<endl;
   }

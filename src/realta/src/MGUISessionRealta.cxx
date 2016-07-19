@@ -125,7 +125,7 @@ Bool_t MGUISessionRealta::ProcessMessage(Long_t Message, Long_t Parameter1, Long
     switch (GET_SUBMSG(Message)) {
     case kCM_BUTTON:
       switch (Parameter1) {
-	      
+        
       default:
         break;
       }

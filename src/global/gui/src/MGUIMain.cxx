@@ -85,7 +85,7 @@ void MGUIMain::Create()
   MFile::ExpandFileName(Path);
   SetIconPixmap(Path);
 
-  // In the beginning we build the menus and define their layout, ...	
+  // In the beginning we build the menus and define their layout, ... 
   m_MenuBarItemLayoutLeft = 
     new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   m_MenuBarItemLayoutRight = 

@@ -175,7 +175,7 @@ bool MMath::InRange(double x)
 
 
 double MMath::AngleBetweenTwoVectors(const double& u, const double& v, const double& w, 
-				      const double& x, const double& y, const double& z)
+              const double& x, const double& y, const double& z)
 {
   // Sollte niemand verwenden!!!!!!!!!
 

@@ -295,7 +295,7 @@ void TObjectReceiver::ReceiveLoop()
       Socket = ServerSocket->Accept();
       if ((Int_t) Socket > 0) {
         //Socket->SetOption(kNoBlock, 0);
-				cout<<"Connected!"<<endl;
+        cout<<"Connected!"<<endl;
         Connected = kTRUE;
       } else {
         Connected = kFALSE;

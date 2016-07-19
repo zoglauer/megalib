@@ -128,7 +128,7 @@ void MGUIProgressBar::SetTitles(const char* Title, const char* SubTitle)
   SetWindowName(m_Title);  
   m_SubTitleLabel->SetText(m_SubTitle);
 
-	MapSubwindows();
+  MapSubwindows();
   MapWindow();
   Layout();
 }
@@ -249,7 +249,7 @@ void MGUIProgressBar::Create()
 
   // Cancel and OK:
   m_ButtonFrame = new TGVerticalFrame(this, this->GetWidth()-m_FontScaler*40, m_FontScaler*25, kFixedSize);
-	  
+    
   m_CancelButton = new TGTextButton(m_ButtonFrame, "Cancel", 1); 
   m_CancelButton->Associate(this);
   m_CancelButtonLayout = 

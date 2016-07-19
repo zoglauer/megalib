@@ -147,7 +147,7 @@ void MGUIMemory::Create()
 
 bool MGUIMemory::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_GUIData->GetRAM() != m_MaxRAM->GetAsInt(0)) m_GUIData->SetRAM(m_MaxRAM->GetAsInt(0));
   if (m_GUIData->GetBytes() != m_Bytes->GetSelected()) m_GUIData->SetBytes(m_Bytes->GetSelected());

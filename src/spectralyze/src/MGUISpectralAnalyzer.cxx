@@ -101,8 +101,8 @@ void MGUISpectralAnalyzer::Create()
   TGCompositeFrame* IsotopeIDFrame = m_MainTab->AddTab("Isotope ID");
   
 
-  // Peak finder Frame	
-/*	m_HistBinsSpectralyzer =
+  // Peak finder Frame  
+/*  m_HistBinsSpectralyzer =
         new MGUIEEntry(PeakFinderFrame,
                    "Bins (default: 400):",
                    false,
@@ -141,20 +141,20 @@ void MGUISpectralAnalyzer::Create()
                    true, 1.0, 10.0);
   m_DeconvolutionLimit->SetEntryFieldSize(FieldSize);
   PeakSelectorFrame->AddFrame(m_DeconvolutionLimit, SingleLayout);
-*/	
+*/  
 
   
   // Isotope ID frame
   m_IsotopeFile = 
     new MGUIEFileSelector(IsotopeIDFrame,
-										MString("File containing isotope list for identification:"),
+                    MString("File containing isotope list for identification:"),
                     m_GUIData->GetSpectralIsotopeFileName());
   m_IsotopeFile->SetFileType("Isotope ID file", "*.isotopes");
   IsotopeIDFrame->AddFrame(m_IsotopeFile, SingleFirstLayout);
 
   m_EnergyWindow = 
-		new MGUIEEntry(IsotopeIDFrame,
-										"Energy match [sigma from peak]:",
+    new MGUIEEntry(IsotopeIDFrame,
+                    "Energy match [sigma from peak]:",
                     false,
                     m_GUIData->GetSpectralEnergyRange(), 
                     true, 0.0, 5.0);
@@ -182,7 +182,7 @@ bool MGUISpectralAnalyzer::ProcessMessage(long Message, long Parameter1,
   // Process the messages for this application
   //cout<<"Messages: "<<Message<<", "<<Parameter1<<", "<<Parameter2<<endl;
 
-	bool Status = true;
+  bool Status = true;
 
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
@@ -196,14 +196,14 @@ bool MGUISpectralAnalyzer::ProcessMessage(long Message, long Parameter1,
       switch (Parameter1) {
       case e_Ok:
         Status = OnOk();
-	      break;
+        break;
 
-	    case e_Cancel:
+      case e_Cancel:
         Status = OnCancel();
         if (m_OkPressed != 0) {
           *m_OkPressed = false;
         }
-	      break;  
+        break;  
         
       default:
         break;

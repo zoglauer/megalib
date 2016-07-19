@@ -1727,7 +1727,7 @@ MString MDDetector::ToString() const
       out<<m_NamedDetectors[d]->GetName()<<" ";
     }
     out<<endl;
-	}
+  }
   
   return out.str().c_str();  
 }

@@ -288,19 +288,19 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   if (m_NoiseActive == false) return;
 
-	// Test for failure:
-	if (gRandom->Rndm() < m_FailureRate) {
-		Energy = 0;
-		return;
-	}
+  // Test for failure:
+  if (gRandom->Rndm() < m_FailureRate) {
+    Energy = 0;
+    return;
+  }
 
   // Noise:
   ApplyEnergyResolution(Energy);
 
-	// Overflow:
+  // Overflow:
   ApplyOverflow(Energy);
 
-	// Noise threshold:
+  // Noise threshold:
   if (ApplyNoiseThreshold(Energy) == true) {
     return;
   }

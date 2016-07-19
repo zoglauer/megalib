@@ -142,15 +142,15 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
   ostringstream Usage;
   Usage<<endl;
   Usage<<"  Usage: Eview <options>"<<endl;
-	Usage<<"      -f --filename:"<<endl;
+  Usage<<"      -f --filename:"<<endl;
   Usage<<"             Load this simulation/data file"<<endl;
-	Usage<<"      -g --geometry:"<<endl;
+  Usage<<"      -g --geometry:"<<endl;
   Usage<<"             Load this geometry"<<endl;
-	Usage<<"      -v --volume:"<<endl;
+  Usage<<"      -v --volume:"<<endl;
   Usage<<"             Use this volume as master volume for geomega"<<endl;
-	Usage<<"      -c --revan-cfg:"<<endl;
+  Usage<<"      -c --revan-cfg:"<<endl;
   Usage<<"             Load this revan configuration file"<<endl;
-	Usage<<"      -d --debug:"<<endl;
+  Usage<<"      -d --debug:"<<endl;
   Usage<<"             Use debug mode"<<endl;
   Usage<<"      -h --help:"<<endl;
   Usage<<"             You know the answer..."<<endl;
@@ -172,41 +172,41 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
 
   // First check if all options are ok:
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
 
-		// Single argument
+    // Single argument
     if (Option == "-f" || Option == "--filename" ||
         Option == "-g" || Option == "--geometry" ||
         Option == "-v" || Option == "--volume" ||
         Option == "-c" || Option == "--revan-cfg") {
-			if (!((argc > i+1) && argv[i+1][0] != '-')){
-				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-				cout<<Usage.str()<<endl;
-				return false;
-			}
-		}		
+      if (!((argc > i+1) && argv[i+1][0] != '-')){
+        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+        cout<<Usage.str()<<endl;
+        return false;
+      }
+    }   
     // Double argument
 //     if (Option == "-c" || Option == "--calibrate") {
-// 			if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
-// 				cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
-// 				cout<<Usage<<endl;
-// 				return false;
-// 			}
-// 		}
+//      if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
+//        cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
+//        cout<<Usage<<endl;
+//        return false;
+//      }
+//    }
 
   }
   
 
   // Now parse all low level options
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
     if (Option == "--debug" || Option == "-d") {
-			if (g_Verbosity < 2) g_Verbosity = 2;
-			cout<<"Command-line parser: Use debug mode"<<endl;
-		} else if (Option == "--revan-cfg" || Option == "-c") {
+      if (g_Verbosity < 2) g_Verbosity = 2;
+      cout<<"Command-line parser: Use debug mode"<<endl;
+    } else if (Option == "--revan-cfg" || Option == "-c") {
       cout<<"Command-line parser: Reading revan configuration file"<<endl;
       m_Settings->Read(argv[++i]);
-		} 
+    } 
   }
 
 
@@ -217,7 +217,7 @@ bool MGUIEviewMain::ParseCommandLine(int argc, char** argv)
   MString VolName = "";
 
   for (int i = 1; i < argc; i++) {
-		Option = argv[i];
+    Option = argv[i];
     if (Option == "--filename" || Option == "-f") {
       FileName = argv[++i];
       m_Settings->SetCurrentFileName(FileName);
@@ -268,7 +268,7 @@ void MGUIEviewMain::Create()
   // We start with a name and an icon...
   SetWindowName("Eview - MEGA Event viewer");  
 
-  // In the beginning we build the menus and define their layout, ...	
+  // In the beginning we build the menus and define their layout, ... 
   m_MenuBarItemLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 0, 0);
   
   // We continue with the menu bar and its layout ...
@@ -1140,8 +1140,8 @@ void MGUIEviewMain::Next()
         if (m_Analyzer->GetOptimumEvent() != 0) {
           RE = m_Analyzer->GetOptimumEvent()->Duplicate();
         } else if (m_Settings->GetDisplayOnlyGoodEvents() == false) {
-					RE = m_Analyzer->GetInitialRawEvent()->Duplicate();
-				}
+          RE = m_Analyzer->GetInitialRawEvent()->Duplicate();
+        }
       }
     } else {
       if ((RE = m_Analyzer->GetNextInitialRawEventFromFile()) == 0) {
@@ -1325,7 +1325,7 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
         }
         LastTrackRESE = RESE;
       }
-			ColorLink += 2;
+      ColorLink += 2;
     } else if (RESE->GetType() == MRESE::c_Cluster) {
       ostringstream Name;
       Name<<"Hit "<<RESE->GetID()<<": "<<RESE->GetEnergy()<<" keV";

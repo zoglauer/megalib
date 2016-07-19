@@ -85,8 +85,8 @@ bool MGUIOptionsFileChooser::ProcessMessage(long Message, long Parameter1, long 
 {
   // Modify here if you have more buttons
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -114,11 +114,11 @@ bool MGUIOptionsFileChooser::ProcessMessage(long Message, long Parameter1, long 
 
 bool MGUIOptionsFileChooser::OnApply()
 {
-	// Modify this to store the data in the module!
+  // Modify this to store the data in the module!
 
   dynamic_cast<MModuleInterfaceFileName*>(m_Module)->SetFileName(m_FileSelector->GetFileName());
-	
-	return true;
+  
+  return true;
 }
 
 

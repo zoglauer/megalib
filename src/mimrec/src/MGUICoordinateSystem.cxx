@@ -122,7 +122,7 @@ void MGUICoordinateSystem::Create()
 
 bool MGUICoordinateSystem::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_System->GetSelected() == 0) {
     if (m_GUIData->GetCoordinateSystem() != MCoordinateSystem::c_Galactic) m_GUIData->SetCoordinateSystem(MCoordinateSystem::c_Galactic);

@@ -637,23 +637,23 @@ float MResponseMatrixO2::GetInterpolated(float x1, float x2, bool DoExtrapolate)
     }
   } else {
     // Get Position:
- 		int Position = FindBin(m_AxisO2, x2);
+    int Position = FindBin(m_AxisO2, x2);
 
     // Take care of boundaries:
-		if (Position < 0) {
-			if (DoExtrapolate == true) {
-				Position = 0; // extrapolate below lower edge
-			} else {
-				return m_AxesO1.front().GetInterpolated(x1, DoExtrapolate);
-			}
-		} else if (Position >= int(m_AxisO2.size()-1)) {
-			if (DoExtrapolate == true) {
-				Position = int(m_AxisO2.size()-2); // extrapolate above higher edge
-				// limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
-			} else {
-				return m_AxesO1.back().GetInterpolated(x1, DoExtrapolate);
-			}
-		}
+    if (Position < 0) {
+      if (DoExtrapolate == true) {
+        Position = 0; // extrapolate below lower edge
+      } else {
+        return m_AxesO1.front().GetInterpolated(x1, DoExtrapolate);
+      }
+    } else if (Position >= int(m_AxisO2.size()-1)) {
+      if (DoExtrapolate == true) {
+        Position = int(m_AxisO2.size()-2); // extrapolate above higher edge
+        // limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
+      } else {
+        return m_AxesO1.back().GetInterpolated(x1, DoExtrapolate);
+      }
+    }
     
     // Interpolate:
     return m_AxesO1[Position].GetInterpolated(x1, DoExtrapolate) + (x2 - m_AxisO2[Position])/

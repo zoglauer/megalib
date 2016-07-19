@@ -83,7 +83,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Response Creator", "a universal response generator for MEGAlib");
 
-	MResponseCreator* g_Prg = new MResponseCreator();
+  MResponseCreator* g_Prg = new MResponseCreator();
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     return 0;
   } 

@@ -87,7 +87,7 @@ void MGUISignificance::Create()
   SetWindowName("Significance map via distant test positions"); 
 
   AddSubTitle("Please enter the size of the radius around the test positions\n"
-	      "and the distance between source and test positions");
+        "and the distance between source and test positions");
 
   m_SelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 100, 100, 2, 2);
   
@@ -128,7 +128,7 @@ bool MGUISignificance::OnApply()
   m_GUIData->SetSignificanceMapRadius(m_Radius->GetAsDouble());
 
   m_OkPressed = true;
-	
+  
   return true;
 }
 

@@ -270,11 +270,11 @@ float MResponseGaussian::GaussExp(float x) {
   //if (x < 0.0f) abort(); // That's hard but this is highly optimized code for the caluclation of a gaussian...
 
 //   // Take care of negative values --- useless since we have the cut-off
-// 	bool IsNegative = false;
-// 	if (x < 0.0f) {
-// 		IsNegative = true;
-// 		x = -x;
-// 	}
+//  bool IsNegative = false;
+//  if (x < 0.0f) {
+//    IsNegative = true;
+//    x = -x;
+//  }
 
   // Cut-off at x == 10.4:
   if (x >= 10.4f) return 0.0f;
@@ -289,17 +289,17 @@ float MResponseGaussian::GaussExp(float x) {
   }
 
   // Now x is in the range for Abramowitz: 
-	x = 1 - x*(0.9998684f - x*(0.4982926f - x*(0.1595332f - x*(0.0293641f))));
+  x = 1 - x*(0.9998684f - x*(0.4982926f - x*(0.1595332f - x*(0.0293641f))));
 
   // Now unscale
-	while (Scaler != 0) {
-		--Scaler;
-		x = x*x;
-	}
+  while (Scaler != 0) {
+    --Scaler;
+    x = x*x;
+  }
 
-// 	if (IsNegative == true) {
-// 		return 1.0f / x;
-// 	}
+//  if (IsNegative == true) {
+//    return 1.0f / x;
+//  }
 
   return x;
 }

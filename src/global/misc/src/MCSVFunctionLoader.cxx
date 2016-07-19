@@ -124,8 +124,8 @@ bool MCSVFunctionLoader::Load()
   // Now load the values:
   while(fgets(LineBuffer, LineLength, File) != NULL)
     if(sscanf(LineBuffer, FormatString, 
-	      &m_X[counter], 
-	      &m_Y[counter]) == 2)
+        &m_X[counter], 
+        &m_Y[counter]) == 2)
       counter++;
  
   fclose(File);
@@ -174,7 +174,7 @@ double MCSVFunctionLoader::GetY(double x)
   int IndexPosition;
   double m, t;
 
-	//cout<<m_NEntries<<"!"<<m_X<<"!"<<x<<endl;
+  //cout<<m_NEntries<<"!"<<m_X<<"!"<<x<<endl;
   IndexPosition = (int) TMath::BinarySearch(m_NEntries, m_X, x);
   //Error("MCSVFunctionLoader::GetY()", "Something is missing!!");
 

@@ -242,7 +242,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
     EstimatedFirst = 0;
   }
 
-	//mdebug<<"Location of estimate first is D"<<RE->GetRESEAt(EstimatedFirst)->GetDetector()<<" with index "<<EstimatedFirst<<endl;
+  //mdebug<<"Location of estimate first is D"<<RE->GetRESEAt(EstimatedFirst)->GetDetector()<<" with index "<<EstimatedFirst<<endl;
 
   if (EstimatedFirst >= 0) {
     for (int i = 0; i < RE->GetNRESEs(); i++) {
@@ -257,12 +257,12 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
         } else {
           HasTrack = false;
         } 
-				//mdebug<<"Seq1 is in D"<<RE->GetRESEAt(i)->GetDetector()<<" with index "<<i<<endl;
+        //mdebug<<"Seq1 is in D"<<RE->GetRESEAt(i)->GetDetector()<<" with index "<<i<<endl;
       } else {
         HitSequence2 = i;
         EnergySequence2 = RE->GetRESEAt(i)->GetEnergy();
         PositionSequence2 = RE->GetRESEAt(i)->GetPosition();
-				//mdebug<<"Seq2 is in D"<<RE->GetRESEAt(i)->GetDetector()<<" with index "<<i<<endl;
+        //mdebug<<"Seq2 is in D"<<RE->GetRESEAt(i)->GetDetector()<<" with index "<<i<<endl;
       }
     }
   } else {
@@ -528,22 +528,22 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
       RE->SetStartPoint(RE->GetRESEAt(EstimatedFirst));
       
       if (HasTrack == true) {
-				bool DirectionTest = false;
-				if (EstimatedFirst == HitSequence1) {
-					DirectionTest = RE->TestElectronDirection(EnergySequence1, EnergySequence2);
-				} else {
-					DirectionTest = RE->TestElectronDirection(EnergySequence2, EnergySequence1);
-				}
-				if (DirectionTest == false) {
-					mdebug<<"CSR-CS - Dual hit: Electron direction test failed!"<<endl;
-					RE->SetRejectionReason(MRERawEvent::c_RejectionTrackNotValid);
-					IsGood = false;
-				}
+        bool DirectionTest = false;
+        if (EstimatedFirst == HitSequence1) {
+          DirectionTest = RE->TestElectronDirection(EnergySequence1, EnergySequence2);
+        } else {
+          DirectionTest = RE->TestElectronDirection(EnergySequence2, EnergySequence1);
+        }
+        if (DirectionTest == false) {
+          mdebug<<"CSR-CS - Dual hit: Electron direction test failed!"<<endl;
+          RE->SetRejectionReason(MRERawEvent::c_RejectionTrackNotValid);
+          IsGood = false;
+        }
       }
       
-			if (IsGood == true) {
-				mdebug<<"CSR-CS - Dual hit: Good Compton event"<<endl;
-				RE->SetEventType(MRERawEvent::c_ComptonEvent);
+      if (IsGood == true) {
+        mdebug<<"CSR-CS - Dual hit: Good Compton event"<<endl;
+        RE->SetEventType(MRERawEvent::c_ComptonEvent);
         if (m_TypeTestStatistics == c_TSSimple) {
           if (QualityFactor1 < 0) {
             RE->SetComptonQualityFactors(0, 1);
@@ -564,14 +564,14 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
             RE->SetComptonQualityFactors(QualityFactor1, QualityFactor2);
           }
         }     
-				RE->SetGoodEvent(true);
-			}
+        RE->SetGoodEvent(true);
+      }
     }
   }
 
-	if (IsGood == false) {
-		mdebug<<"CSR-CS - Dual hit: Bad Compton event"<<endl;				
-	}
+  if (IsGood == false) {
+    mdebug<<"CSR-CS - Dual hit: Bad Compton event"<<endl;       
+  }
 
   return;
 }

@@ -290,26 +290,26 @@ void MVector::RotateY(double Angle)
 
 void MVector::RotateReferenceFrame(const MVector& OriginalDir) 
 {
-	// Rotate to the new reference frame
-	
-	double a = OriginalDir.m_X;
-	double b = OriginalDir.m_Y;
-	double c = OriginalDir.m_Z;
-	double scalar = a*a + b*b;
+  // Rotate to the new reference frame
+  
+  double a = OriginalDir.m_X;
+  double b = OriginalDir.m_Y;
+  double c = OriginalDir.m_Z;
+  double scalar = a*a + b*b;
 
-	if (scalar != 0) {
-		scalar = sqrt(scalar);
-		double x = m_X;
-		double y = m_Y;
-		double z = m_Z;
-		m_X = (a*c*x - b*y + a*scalar*z)/scalar;
-		m_Y = (b*c*x + a*y + b*scalar*z)/scalar;
-		m_Z = (c*c*x -   x + c*scalar*z)/scalar;
-	} else if (c < 0.0) {
-		// Poles of the sphere 
-		m_X = -m_X; 
-		m_Z = -m_Z; 
-	}
+  if (scalar != 0) {
+    scalar = sqrt(scalar);
+    double x = m_X;
+    double y = m_Y;
+    double z = m_Z;
+    m_X = (a*c*x - b*y + a*scalar*z)/scalar;
+    m_Y = (b*c*x + a*y + b*scalar*z)/scalar;
+    m_Z = (c*c*x -   x + c*scalar*z)/scalar;
+  } else if (c < 0.0) {
+    // Poles of the sphere 
+    m_X = -m_X; 
+    m_Z = -m_Z; 
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

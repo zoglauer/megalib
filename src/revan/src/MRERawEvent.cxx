@@ -1432,11 +1432,11 @@ bool MRERawEvent::TestElectronDirection(double E1, double E2)
 //   if (GetStartPoint()->GetType() == MRESE::c_Track) {
 //     // Compute the scattered-photon-direction:
 //     GammaDir = (GetStartPoint()->GetLinkAt(0)->GetPosition() - 
-// 								GetStartPoint()->GetPosition()).Unit();
+//                GetStartPoint()->GetPosition()).Unit();
     
 //     // Compute the direction of the incoming gamma:
 //     Origin = ((-1)*(1.0/(E1+E2))*
-// 							(((MRETrack *) GetStartPoint())->GetDirection()*sqrt(E1*E1+2*E0*E1) + GammaDir*E2)).Unit();
+//              (((MRETrack *) GetStartPoint())->GetDirection()*sqrt(E1*E1+2*E0*E1) + GammaDir*E2)).Unit();
     
 //     if (Origin.Z() < 0) {
 //       mout<<"Electron test: Detector event!"<<endl;

@@ -43,7 +43,7 @@ MFPDataPoint::MFPDataPoint()
 
 
 MFPDataPoint::MFPDataPoint(double Psi, double Eta, 
-			   double Phi, double Theta)
+         double Phi, double Theta)
 {
   m_Psi = Psi;
   m_Eta = Eta;

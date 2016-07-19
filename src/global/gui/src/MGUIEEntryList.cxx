@@ -75,9 +75,9 @@ MGUIEEntryList::MGUIEEntryList(const TGWindow* Parent, MString Label, int Mode) 
 
   m_Label = Label;
 
-	m_EntryList = new TObjArray();
+  m_EntryList = new TObjArray();
 
-	m_Mode = Mode;
+  m_Mode = Mode;
   m_Size = m_FontScaler*85;
 
   m_TextLabel = 0;
@@ -89,7 +89,7 @@ MGUIEEntryList::MGUIEEntryList(const TGWindow* Parent, MString Label, int Mode) 
     ChangeOptions(kHorizontalFrame);
   } else {
     ChangeOptions(kVerticalFrame);
-	}
+  }
 }
 
 
@@ -129,18 +129,18 @@ void MGUIEEntryList::Create()
     AddFrame(m_TextLabel, m_TextLabelLayout);
   }
   
-	// Create the list of text entries:
-	if (m_Mode == c_SingleLine) {
-		m_EntryLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, m_FontScaler*5, 0, 0, 0);
-		for (i = m_EntryList->GetLast(); i >= 0; i--) {
+  // Create the list of text entries:
+  if (m_Mode == c_SingleLine) {
+    m_EntryLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, m_FontScaler*5, 0, 0, 0);
+    for (i = m_EntryList->GetLast(); i >= 0; i--) {
       AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
-		}
-	} else {
-		m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, m_FontScaler*20, 0, 2, 0);
-		for (i = 0; i < m_EntryList->GetLast()+1; i++) {
-			AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
-		}
-	}
+    }
+  } else {
+    m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, m_FontScaler*20, 0, 2, 0);
+    for (i = 0; i < m_EntryList->GetLast()+1; i++) {
+      AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
+    }
+  }
 
 
 
@@ -158,11 +158,11 @@ bool MGUIEEntryList::IsModified()
 {
   //! Return true if the content has been modified 
 
-	for (int i = m_EntryList->GetLast(); i >= 0; i--) {
-		if (((MGUIEEntry *) m_EntryList->At(i))->IsModified() == true) {
+  for (int i = m_EntryList->GetLast(); i >= 0; i--) {
+    if (((MGUIEEntry *) m_EntryList->At(i))->IsModified() == true) {
       return true;
     }
-	}
+  }
 
   return false;
 }
@@ -172,13 +172,13 @@ bool MGUIEEntryList::IsModified()
 
 void MGUIEEntryList::SetEnabled(bool Flag)
 {
-	// 
+  // 
 
-	m_IsEnabled = Flag;
+  m_IsEnabled = Flag;
 
-	for (int i = m_EntryList->GetLast(); i >= 0; i--) {
-		((MGUIEEntry *) m_EntryList->At(i))->SetEnabled(Flag);
-	}
+  for (int i = m_EntryList->GetLast(); i >= 0; i--) {
+    ((MGUIEEntry *) m_EntryList->At(i))->SetEnabled(Flag);
+  }
 }
 
 
@@ -227,7 +227,7 @@ void MGUIEEntryList::Add(MString Label, long Value, bool Limits, long Min, long 
   MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value, Limits, Min, Max);
   Entry->SetEntryFieldSize(m_Size);
 
-	m_EntryList->AddLast(Entry);
+  m_EntryList->AddLast(Entry);
 }
 
 
@@ -236,10 +236,10 @@ void MGUIEEntryList::Add(MString Label, long Value, bool Limits, long Min, long 
 
 void MGUIEEntryList::Add(MString Label, double Value, bool Limits, double Min, double Max)
 {
-	MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value, Limits, Min, Max);
+  MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value, Limits, Min, Max);
   Entry->SetEntryFieldSize(m_Size);
 
-	m_EntryList->AddLast(Entry);
+  m_EntryList->AddLast(Entry);
 }
 
 
@@ -248,10 +248,10 @@ void MGUIEEntryList::Add(MString Label, double Value, bool Limits, double Min, d
 
 void MGUIEEntryList::Add(MString Label, MString Value)
 {
-	MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value);
+  MGUIEEntry* Entry = new MGUIEEntry(this, Label, false, Value);
   Entry->SetEntryFieldSize(m_Size);
 
-	m_EntryList->AddLast(Entry);
+  m_EntryList->AddLast(Entry);
 }
 
 

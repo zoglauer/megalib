@@ -92,7 +92,7 @@ void MGUIDeconvolution::Create()
   TGLayoutHints* RBLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 40, 0, 2, 0);
 
   m_EM = new TGRadioButton(this, "Classic EM (expectation maximization)", c_ClassicEM);
-	m_EM->Associate(this);
+  m_EM->Associate(this);
   AddFrame(m_EM, RBLayout);
 
 
@@ -100,7 +100,7 @@ void MGUIDeconvolution::Create()
   AddFrame(OSEMFrame, m_RBFrameLayout);
 
   m_OSEM = new TGRadioButton(OSEMFrame, "OS-EM (ordered-subsets EM) with this number of subsets: ", c_OSEM);
-	m_OSEM->Associate(this);
+  m_OSEM->Associate(this);
   OSEMFrame->AddFrame(m_OSEM, m_RBLayout);
 
   m_SubSets = new MGUIEEntry(OSEMFrame, "", false, m_Data->GetOSEMSubSets(), true, 1);
@@ -128,7 +128,7 @@ void MGUIDeconvolution::Create()
   m_Iterations = new MGUIEEntry(m_RBIterationsFrame, "", false, m_Data->GetNIterations(), true, 0);
   m_RBIterationsFrame->AddFrame(m_Iterations, m_RBEntryLayout);
 
-	// ... stop criteria
+  // ... stop criteria
   m_RBIncreaseFrame = new TGCompositeFrame(this, 100, 100, kHorizontalFrame);
   AddFrame(m_RBIncreaseFrame, m_RBFrameLayout);
 
@@ -147,10 +147,10 @@ void MGUIDeconvolution::Create()
   }
 
   if (m_Data->GetLHStopCriteria() == MLMLAlgorithms::c_StopAfterIterations) {
-		ToggleRadioButtons(c_Iterations);
+    ToggleRadioButtons(c_Iterations);
   } else if (m_Data->GetLHStopCriteria() == MLMLAlgorithms::c_StopAfterLikelihoodIncrease) {
-		ToggleRadioButtons(c_Increase);
-	}
+    ToggleRadioButtons(c_Increase);
+  }
 
   AddButtons();
   PositionWindow(GetDefaultWidth(), GetDefaultHeight(), false);
@@ -173,8 +173,8 @@ bool MGUIDeconvolution::ProcessMessage(long Message, long Parameter1,
 {
   // Process the messages for this window
 
-	bool Status = true;
-	
+  bool Status = true;
+  
   switch (GET_MSG(Message)) {
   case kC_COMMAND:
     switch (GET_SUBMSG(Message)) {
@@ -184,7 +184,7 @@ bool MGUIDeconvolution::ProcessMessage(long Message, long Parameter1,
     case kCM_BUTTON:
       switch (Parameter1) {
       case e_Ok:
-				Status = OnOk();
+        Status = OnOk();
         break;
         
       case e_Cancel:
@@ -192,7 +192,7 @@ bool MGUIDeconvolution::ProcessMessage(long Message, long Parameter1,
         break;
 
       case e_Apply:
-				Status = OnApply();
+        Status = OnApply();
         break;
         
       default:
@@ -216,7 +216,7 @@ bool MGUIDeconvolution::ProcessMessage(long Message, long Parameter1,
 
 bool MGUIDeconvolution::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_EM->GetState() == kButtonDown) {
     if (m_Data->GetLHAlgorithm() != MLMLAlgorithms::c_ClassicEM) m_Data->SetLHAlgorithm(MLMLAlgorithms::c_ClassicEM);
@@ -229,11 +229,11 @@ bool MGUIDeconvolution::OnApply()
     m_Data->SetOSEMSubSets(m_SubSets->GetAsInt());
   }
 
-	if (m_RBIterations->GetState() == kButtonDown) {
-		if (m_Data->GetLHStopCriteria() != MLMLAlgorithms::c_StopAfterIterations) m_Data->SetLHStopCriteria(MLMLAlgorithms::c_StopAfterIterations);
-	} else if (m_RBIncrease->GetState() == kButtonDown) {
-		if (m_Data->GetLHStopCriteria() != MLMLAlgorithms::c_StopAfterLikelihoodIncrease) m_Data->SetLHStopCriteria(MLMLAlgorithms::c_StopAfterLikelihoodIncrease);
-	}
+  if (m_RBIterations->GetState() == kButtonDown) {
+    if (m_Data->GetLHStopCriteria() != MLMLAlgorithms::c_StopAfterIterations) m_Data->SetLHStopCriteria(MLMLAlgorithms::c_StopAfterIterations);
+  } else if (m_RBIncrease->GetState() == kButtonDown) {
+    if (m_Data->GetLHStopCriteria() != MLMLAlgorithms::c_StopAfterLikelihoodIncrease) m_Data->SetLHStopCriteria(MLMLAlgorithms::c_StopAfterLikelihoodIncrease);
+  }
 
   // We always set the data
   if (m_Iterations->IsModified() == true) {
@@ -243,7 +243,7 @@ bool MGUIDeconvolution::OnApply()
     m_Data->SetLHIncrease(m_Increase->GetAsDouble());
   }
 
-	return true;
+  return true;
 }
 
 

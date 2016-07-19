@@ -626,7 +626,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   Electron->AddRESE(RE->GetVertex());
   Electron->SetStartPoint(RE->GetVertex());
 
-	// problem virtual is not deleted!!!!
+  // problem virtual is not deleted!!!!
   MRESE* Virtual = 
     new MREHit(RE->GetVertex()->GetPosition(), 0, RE->GetVertex()->GetTime(),
                RE->GetVertex()->GetDetector(), 
@@ -635,7 +635,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
                RE->GetVertex()->GetTimeResolution());
   Positron->AddRESE(Virtual);
   Positron->SetStartPoint(Virtual);
-	Positron->SetVolumeSequence(new MDVolumeSequence(*(RE->GetVertex()->GetVolumeSequence())));
+  Positron->SetVolumeSequence(new MDVolumeSequence(*(RE->GetVertex()->GetVolumeSequence())));
 
   bool HaveElectronDirection = false;
   bool HavePositronDirection = false;
@@ -643,31 +643,31 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   // Now we have the vertex
   // Go up/down the track until we do not find hits any more and assign them 
   // to the tracks
-	int NTrials = 0;
+  int NTrials = 0;
   MRESEList List;
   do {
     // Search for hits in next layer, and store them in the list:
     List.RemoveAllRESEs();
     List.Compress();
 
-		NTrials = 0;
-		while (List.GetNRESEs() == 0 && NTrials < 10) { 
+    NTrials = 0;
+    while (List.GetNRESEs() == 0 && NTrials < 10) { 
       mdebug<<"Testing direction: "<<Direction<<endl;
-			NTrials++;
-			for (int r = 0; r < RE->GetNRESEs(); r++) {
-				if (IsInTracker(RE->GetRESEAt(r)) == false) continue;
+      NTrials++;
+      for (int r = 0; r < RE->GetNRESEs(); r++) {
+        if (IsInTracker(RE->GetRESEAt(r)) == false) continue;
 
-				if (m_Geometry->IsAbove(RE->GetVertex(), RE->GetRESEAt(r), Direction) == true) {
-					List.AddRESE(RE->GetRESEAt(r));
-				}      
-			}
-			mdebug<<"Distance: "<<abs(Direction)<<"  Entries: "<<List.GetNRESEs();
-			if (List.GetNRESEs() > 0) {
-				mdebug<<" z="<<List.GetRESEAt(0)->GetPosition().Z();
-			}
-			mdebug<<endl;
-			(Direction < 0) ? --Direction : ++Direction;
-		}
+        if (m_Geometry->IsAbove(RE->GetVertex(), RE->GetRESEAt(r), Direction) == true) {
+          List.AddRESE(RE->GetRESEAt(r));
+        }      
+      }
+      mdebug<<"Distance: "<<abs(Direction)<<"  Entries: "<<List.GetNRESEs();
+      if (List.GetNRESEs() > 0) {
+        mdebug<<" z="<<List.GetRESEAt(0)->GetPosition().Z();
+      }
+      mdebug<<endl;
+      (Direction < 0) ? --Direction : ++Direction;
+    }
 
     // Now search for the best combination:
     int BestEl = -1;
@@ -691,14 +691,14 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
             <<" p-angle: "<<Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - 
                                                                 Positron->GetStopPoint()->GetPosition())*c_Deg<<endl;
         
-				if (Electron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Electron->GetStopPoint()->GetPosition()) <
-						Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Positron->GetStopPoint()->GetPosition())) {
-					BestEl = 0;
-					BestPos = -1;
-				} else {
-					BestEl = -1;
-					BestPos = 0;
-				}
+        if (Electron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Electron->GetStopPoint()->GetPosition()) <
+            Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Positron->GetStopPoint()->GetPosition())) {
+          BestEl = 0;
+          BestPos = -1;
+        } else {
+          BestEl = -1;
+          BestPos = 0;
+        }
       }
     } else if (List.GetNRESEs() >= 2) {
 

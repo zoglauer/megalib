@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("MSpectralAnalyzer", "a spectral analyzer and isotope identifier for MEGAlib");
 
-	/*MSpectralAnalyzer* g_Prg =*/ new MSpectralAnalyzer();
+  /*MSpectralAnalyzer* g_Prg =*/ new MSpectralAnalyzer();
 
   cout<<"For the time being this is just a placeholder... Exiting..."<<endl;
   

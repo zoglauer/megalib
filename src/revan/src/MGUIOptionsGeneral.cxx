@@ -133,7 +133,7 @@ void MGUIOptionsGeneral::Create()
 
 bool MGUIOptionsGeneral::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_TotalEnergy->CheckRange(0.0, numeric_limits<double>::max(), 
                                 0.0, numeric_limits<double>::max(), true) == false) return false;
@@ -142,18 +142,18 @@ bool MGUIOptionsGeneral::OnApply()
   if (m_EventId->CheckRange(-1, numeric_limits<int>::max(), 
                             -1, numeric_limits<int>::max(), false) == false) return false;
 
-	m_Data->SetTotalEnergyMin(m_TotalEnergy->GetMinValue());
-	m_Data->SetTotalEnergyMax(m_TotalEnergy->GetMaxValue());
+  m_Data->SetTotalEnergyMin(m_TotalEnergy->GetMinValue());
+  m_Data->SetTotalEnergyMax(m_TotalEnergy->GetMaxValue());
 
-	m_Data->SetLeverArmMin(m_LeverArm->GetMinValue());
-	m_Data->SetLeverArmMax(m_LeverArm->GetMaxValue());
+  m_Data->SetLeverArmMin(m_LeverArm->GetMinValue());
+  m_Data->SetLeverArmMax(m_LeverArm->GetMaxValue());
 
-	m_Data->SetEventIdMin(m_EventId->GetMinValueInt());
-	m_Data->SetEventIdMax(m_EventId->GetMaxValueInt());
+  m_Data->SetEventIdMin(m_EventId->GetMinValueInt());
+  m_Data->SetEventIdMax(m_EventId->GetMaxValueInt());
 
   m_Data->SetRejectAllBadEvents(m_Options->GetSelected(0));
 
-	return true;
+  return true;
 }
 
 

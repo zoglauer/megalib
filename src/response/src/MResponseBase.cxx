@@ -285,7 +285,7 @@ bool MResponseBase::InitializeNextMatchingEvent()
             m_SivanLevel++; 
           }
           m_SivanEventID = m_SiEvent->GetID();
-          TryNextEvent = false;	  
+          TryNextEvent = false;   
           //mout<<"Response: Sivan found good event (Id="<<m_SiEvent->GetID()<<")!"<<endl;
         } else {
           // Ignore this event...

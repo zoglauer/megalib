@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Eview", "an event viewer");
 
-	TApplication* Eview = new TApplication("Eview", 0, 0);
+  TApplication* Eview = new TApplication("Eview", 0, 0);
 
   // Do we have a X up and running?
   if (gClient == 0 || gClient->GetRoot() == 0) {
@@ -56,7 +56,7 @@ int main(int argc, char** argv)
     return 0;
   }
 
-	MGUIEviewMain EviewMain(gClient->GetRoot(), gClient->GetRoot());
+  MGUIEviewMain EviewMain(gClient->GetRoot(), gClient->GetRoot());
   if (EviewMain.ParseCommandLine(argc, argv) == false) {
     return 1;
   } else {

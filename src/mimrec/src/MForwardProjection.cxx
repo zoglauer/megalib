@@ -52,7 +52,7 @@ MForwardProjection::~MForwardProjection()
 
 
 void MForwardProjection::SetSpaceBins(int NBinsPsi, int NBinsEta, 
-				      int NBinsPhi, int NBinsTheta)
+              int NBinsPhi, int NBinsTheta)
 {
   m_NBinsPsi = NBinsPsi;
   m_NBinsEta = NBinsEta; 
@@ -129,7 +129,7 @@ bool MForwardProjection::ForwardProject(MPhysicalEvent *Event, MFPDataPoint *Poi
   /*
 
   m_Maths.CarteseanToSpheric(m_xComptonAxis, m_yComptonAxis, m_zComptonAxis,
-			     Eta, Psi, Radius);
+           Eta, Psi, Radius);
 
   double m_xRotation = 0, m_yRotation = -Eta, m_zRotation = -Psi;
   double m_xx, m_xy, m_xz, m_yx, m_yy, m_yz, m_zx, m_zy, m_zz;
@@ -149,8 +149,8 @@ bool MForwardProjection::ForwardProject(MPhysicalEvent *Event, MFPDataPoint *Poi
   // Compute angle between electron and scattered gamma:
   double alpha = 
     m_Maths.AngleBetweenTwoVectors(m_xComptonAxis, m_yComptonAxis, m_zComptonAxis, 
-				    m_xElectronDirection, m_yElectronDirection, 
-				    m_zElectronDirection);
+            m_xElectronDirection, m_yElectronDirection, 
+            m_zElectronDirection);
 
   double xShortGamma, yShortGamma, zShortGamma;
   xShortGamma = m_xComptonAxis * cos(alpha);
@@ -172,16 +172,16 @@ bool MForwardProjection::ForwardProject(MPhysicalEvent *Event, MFPDataPoint *Poi
 
   // ... and finally compute the vectors phi angle...
   m_Maths.CarteseanToSpheric(Rotx, 
-			     Roty, 
-			     Rotz, 
-			     Eta, Psi, Radius);
+           Roty, 
+           Rotz, 
+           Eta, Psi, Radius);
 
   */
 
   /*
   Psi = m_Maths.AngleBetweenTwoVectors(m_C->m_xComptonAxis, m_C->m_yComptonAxis, m_C->m_zComptonAxis, 
-				       m_C->m_xElectronDirection, m_C->m_yElectronDirection, 
-				       m_C->m_zElectronDirection) - m_C->m_ComptonAngle;
+               m_C->m_xElectronDirection, m_C->m_yElectronDirection, 
+               m_C->m_zElectronDirection) - m_C->m_ComptonAngle;
 
 
   if (m_Maths.InRange(Psi) == false) return false;

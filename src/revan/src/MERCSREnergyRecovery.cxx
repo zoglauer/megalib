@@ -329,7 +329,7 @@ void MERCSREnergyRecovery::CalculateQF(vector<MRESE*>& RESEs, double& CQF, doubl
       }
       */
       CQF = c_CSRFailed;
-      Eavg = 0.;	
+      Eavg = 0.;  
     }
     mdebug<<"CSR-Rec (3): Final quality factor: "<<CQF<<endl;
   } 

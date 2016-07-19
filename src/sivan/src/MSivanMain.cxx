@@ -50,7 +50,7 @@ int main(int argc, char** argv)
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Sivan", "simulated event analysis");
 
-	TApplication* AppSivan = new TApplication("Sivan", 0, 0);
+  TApplication* AppSivan = new TApplication("Sivan", 0, 0);
 
   MInterfaceSivan Sivan;
   if (Sivan.ParseCommandLine(argc, argv) == false) {

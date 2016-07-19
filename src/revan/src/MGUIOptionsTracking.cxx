@@ -223,7 +223,7 @@ void MGUIOptionsTracking::Create()
 
 bool MGUIOptionsTracking::OnApply()
 {
-	// The Apply button has been pressed
+  // The Apply button has been pressed
 
   if (m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoModifiedPearson || 
       m_Data->GetTrackingAlgorithm() == MRawEventAnalyzer::c_TrackingAlgoPearson ||
@@ -265,7 +265,7 @@ bool MGUIOptionsTracking::OnApply()
 
   
   
-	return true;
+  return true;
 }
 
 
