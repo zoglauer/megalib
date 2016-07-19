@@ -59,17 +59,17 @@ class MGUIModuleSelector : public TGTransientFrame
   void Create();
 
   //! Actions when the OK button has been pressed
-	virtual bool OnOk();
+  virtual bool OnOk();
   //! Actions when the Cancel button has been pressed
-	virtual bool OnCancel();
+  virtual bool OnCancel();
   //! Actions when the Apply button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:
  protected:
 
-	enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
+  enum BasicButtonIDs { e_Ok = 1, e_Cancel, e_Apply };
 
   // private members:
  private:

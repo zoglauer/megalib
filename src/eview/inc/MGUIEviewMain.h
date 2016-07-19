@@ -26,7 +26,7 @@ using std::list;
 #include <TGButton.h>
 #include <TRootEmbeddedCanvas.h>
 #include <TCanvas.h>
-#include <TGMenu.h>				
+#include <TGMenu.h>       
 #include <TGIcon.h>
 #include <TGPicture.h>
 

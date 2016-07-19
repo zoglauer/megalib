@@ -42,12 +42,12 @@ class MGUIECBList : public TGCanvas
   MGUIECBList(const TGWindow *Parent, MString Label = "", bool Multiple = true);
   virtual ~MGUIECBList();
 
-	void SetMultiple(bool IsMultiple);
-	void SetEnabled(bool flag = true);
+  void SetMultiple(bool IsMultiple);
+  void SetEnabled(bool flag = true);
   bool IsEnabled() { return m_IsEnabled; }
 
   //! Set the wrap length of all text
-	virtual void SetWrapLength(int WrapLength);
+  virtual void SetWrapLength(int WrapLength);
 
   bool ProcessMessage(long Message, long Parameter1, long Parameter2);
   void Associate(TGWindow* Associate);
@@ -84,8 +84,8 @@ class MGUIECBList : public TGCanvas
  private:
   TGWindow *m_Parent;                       // parent frame
 
-	bool m_IsMultiple;                      // true, if multiple selections are allowed
-	bool m_IsEnabled;                       // true, if it is enabled
+  bool m_IsMultiple;                      // true, if multiple selections are allowed
+  bool m_IsEnabled;                       // true, if it is enabled
 
   TGLabel *m_TextLabel;                     // the label of the GUI element
   TGLayoutHints *m_TextLabelLayout;         // its layout

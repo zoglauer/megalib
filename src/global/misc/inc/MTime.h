@@ -36,7 +36,7 @@ class MTime
   //! Default constructor, set the time to NOW
   MTime();
   //! Extracts the time from a string -- depreciated! -- don't use since there vis no error catching done! 
-	explicit MTime(MString SQLString, int Format);
+  explicit MTime(MString SQLString, int Format);
   //! Set the time as two long integers -- the time is counted since Epoch
   MTime(long int LinuxTime, long int NanoSeconds = 0);
   //! Set the time as two intergers -- the time is counted since Epoch
@@ -141,7 +141,7 @@ class MTime
   //! Get the time between NOW and the stored time in seconds as double 
   double GetElapsedSeconds();
 
-	//! Busy wait loop --- Historic remnant from MEGAlyze --- should not be really here...
+  //! Busy wait loop --- Historic remnant from MEGAlyze --- should not be really here...
   static int BusyWait(int musec);
 
   enum Format { FormatLowerLimit = 0, Short, UTC, SQL, SQLU, LongInts, MEGAlib, FormatUpperLimit };

@@ -2283,7 +2283,7 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(7),
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9),
-		                      T->GetTokenAtAsDouble(10)*deg) == true) {
+                                      T->GetTokenAtAsDouble(10)*deg) == true) {
                 mdebug<<"Setting position "<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<"/"<<T->GetTokenAtAsDouble(6)

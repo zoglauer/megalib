@@ -148,7 +148,7 @@ class MDGeometry
   // Interface to all included files:
 
   void AddInclude(MString FileName);
-	bool IsIncluded(MString FileName);
+  bool IsIncluded(MString FileName);
   int GetNIncludes();
 
   void CreateNode(MDVolume *Volume);

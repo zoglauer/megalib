@@ -32,12 +32,12 @@
 
 #else // Not N(o)DEBUG, i.e. debugging activated!
 
-#define	__ZDSTRING(x)	#x
+#define __ZDSTRING(x) #x
 
 #define massert(expr) \
   (static_cast<void> ((expr) ? 0 : \
-		       (AssertionFailed (__ZDSTRING(expr), __FILE__, __LINE__, \
-				       __ZDASSERT_FUNCTION), 0)))
+           (AssertionFailed (__ZDSTRING(expr), __FILE__, __LINE__, \
+               __ZDASSERT_FUNCTION), 0)))
 
 // Version 2.4 and later of GCC define a magical variable `__PRETTY_FUNCTION__'
 // which contains the name of the function currently being defined.
@@ -45,9 +45,9 @@
 // C9x has a similar variable called __func__, but prefer the GCC one since
 // it demangles C++ function names.
 #  if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
-#   define __ZDASSERT_FUNCTION	__func__
+#   define __ZDASSERT_FUNCTION  __func__
 #  else
-#   define __ZDASSERT_FUNCTION	((const char *) 0)
+#   define __ZDASSERT_FUNCTION  ((const char *) 0)
 #  endif
 
 #endif // NDEBUG

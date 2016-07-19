@@ -46,7 +46,7 @@ class MMath : public TObject
   bool InRange(double x);
 
   double AngleBetweenTwoVectors(const double& u, const double& v, const double& w, 
-  		const double& x, const double& y, const double& z);
+      const double& x, const double& y, const double& z);
 
 
   // protected methods:

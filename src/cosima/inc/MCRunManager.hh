@@ -71,7 +71,7 @@ public:
   MCRun& GetCurrentRun() { return m_RunParameters.GetCurrentRun(); };
   
   /// Start all the action
-	virtual void StartBeam();
+  virtual void StartBeam();
   /// Abort all the action
   virtual void AbortRun(G4bool softAbort = false);
 

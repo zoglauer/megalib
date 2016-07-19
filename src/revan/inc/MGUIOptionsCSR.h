@@ -47,7 +47,7 @@ class MGUIOptionsCSR : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   virtual bool ProcessMessage(long msg, long param1, long param2);
   // private methods:

@@ -98,8 +98,8 @@ class MGUIHistogramData : public MGUIDialog
   // protected methods:
  protected:
 
-	bool OnOk();
-	bool OnCancel();
+  bool OnOk();
+  bool OnCancel();
 
 
   // private methods:
@@ -116,7 +116,7 @@ class MGUIHistogramData : public MGUIDialog
   MString m_Title;
   MString m_SubTitle;
 
-	TGGC* m_LabelGraphics;
+  TGGC* m_LabelGraphics;
 
   TGLayoutHints* m_LabelLayout;
   TGLayoutHints* m_MainLayout;

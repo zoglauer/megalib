@@ -82,9 +82,9 @@ class MInterfaceMimrec : public MInterface
   //! Create a significance map
   void SignificanceMap();
   
-	void ShowEventSelections();
-	void ShowEventSelectionsStepwise();
-	void ExtractEvents();
+  void ShowEventSelections();
+  void ShowEventSelectionsStepwise();
+  void ExtractEvents();
 
   void ThetaOriginDistribution();
 
@@ -169,12 +169,12 @@ private:
   double* m_Image;                     // Image after ML-iterations
 
   int m_NExecutedIterations;          // Number of performed iterations
-	int m_NEvents;
+  int m_NEvents;
 
-	bool m_ThreadAActive;
+  bool m_ThreadAActive;
 
-	int m_ThreadCounter;
-	int m_EventCounter;
+  int m_ThreadCounter;
+  int m_EventCounter;
 
   MFileEventsTra *m_EventFile;
   MEventSelector *m_Selector;
@@ -187,9 +187,9 @@ private:
 
   MMath m_Maths;
 
-	MImage *m_IImage;
+  MImage *m_IImage;
 
-	// In automatic mode, save the canvas to this file
+  // In automatic mode, save the canvas to this file
   MString m_OutputFileName;
 
 #ifdef ___CINT___

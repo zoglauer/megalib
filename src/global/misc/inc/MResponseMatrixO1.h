@@ -58,7 +58,7 @@ class MResponseMatrixO1 : public MResponseMatrix
   MResponseMatrixO1(MString Name, vector<float> xDim);
   virtual ~MResponseMatrixO1();
 
-	void Init();
+  void Init();
 
   bool operator==(const MResponseMatrixO1& ResponseMatrixO1);  
   MResponseMatrixO1& operator+=(const MResponseMatrixO1& ResponseMatrixO1);  
