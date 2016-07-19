@@ -72,7 +72,7 @@ class MJulianDay : public TObject
 
   MString GetUTCString();
 
-	static void BusyWait(int Microseconds);
+  static void BusyWait(int Microseconds);
 
 
   // protected methods:

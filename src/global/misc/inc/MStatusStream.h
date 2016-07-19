@@ -64,8 +64,8 @@ ostream& operator<<(ostream& os, MStatusStream& StatusStream);
 class MStatusStream : public MLog
 {
  public:
-	MStatusStream();
-	virtual ~MStatusStream() {};
+  MStatusStream();
+  virtual ~MStatusStream() {};
 
   bool Connect(TGLabel* Label);
   bool Disconnect(TGLabel* Label);
@@ -73,9 +73,9 @@ class MStatusStream : public MLog
   void ConnectStdOut();
   void DisconnectStdOut();
 
-	virtual void EndLine();
+  virtual void EndLine();
 
-	MStatusStream& printf(const char* Format, ...);
+  MStatusStream& printf(const char* Format, ...);
   MStatusStream& operator<<(char c)                 { m_Stream<<c; return (*this); } 
   MStatusStream& operator<<(unsigned char c)        { m_Stream<<c; return (*this); }
   MStatusStream& operator<<(signed char c)          { m_Stream<<c; return (*this); } 

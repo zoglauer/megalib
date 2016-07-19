@@ -2271,7 +2271,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     }
   }
 
-	if (m_CoordinateSystem == c_FarField) {
+  if (m_CoordinateSystem == c_FarField) {
     double Theta = 0.0;
     double Phi = 0.0;
     if (m_BeamType == c_FarFieldPoint || 

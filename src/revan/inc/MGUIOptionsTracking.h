@@ -47,7 +47,7 @@ class MGUIOptionsTracking : public MGUIDialog
   // protected methods:
  protected:
   virtual void Create();
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   // private methods:
  private:

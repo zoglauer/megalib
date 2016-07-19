@@ -55,8 +55,8 @@ class MGUIData
   MString GetGeometryFileName();
   bool SetGeometryFileName(MString FileName);
 
-	void SetMEGAlibVersion(unsigned int MEGAlibVersion) { m_MEGAlibVersion = MEGAlibVersion; }
-	unsigned int GetMEGAlibVersion() const { return m_MEGAlibVersion; }
+  void SetMEGAlibVersion(unsigned int MEGAlibVersion) { m_MEGAlibVersion = MEGAlibVersion; }
+  unsigned int GetMEGAlibVersion() const { return m_MEGAlibVersion; }
 
   unsigned int GetNFileHistories();
   MString GetFileHistoryAt(unsigned int i);

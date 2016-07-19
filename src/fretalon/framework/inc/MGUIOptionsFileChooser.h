@@ -66,7 +66,7 @@ class MGUIOptionsFileChooser : public MGUIOptions
  protected:
 
   //! Actions after the Apply or OK button has been pressed
-	virtual bool OnApply();
+  virtual bool OnApply();
 
 
   // protected members:

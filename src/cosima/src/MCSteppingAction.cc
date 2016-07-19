@@ -1277,7 +1277,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
                              G4ThreeVector(0.0, 0.0, 0.0),
                              G4ThreeVector(0.0, 0.0, 0.0), 
                              0.0);
-	
+  
           Track->SetTrackStatus(fStopAndKill);
 
         }

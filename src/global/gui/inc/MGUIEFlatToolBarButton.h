@@ -40,13 +40,13 @@ class MGUIEFlatToolBarButton : public TGPictureButton
   MGUIEFlatToolBarButton(const TGWindow* Parent, const TGPicture* Picture, int Id = -1);
   virtual ~MGUIEFlatToolBarButton();
 
-	virtual void SetFlat(const bool IsFlat = true);
-	virtual bool IsFlat() const;
+  virtual void SetFlat(const bool IsFlat = true);
+  virtual bool IsFlat() const;
 
-	virtual void SetState(EButtonState state, bool);
+  virtual void SetState(EButtonState state, bool);
 
-	virtual bool HandleCrossing(Event_t *event);
-	virtual bool HandleFocusChange(Event_t *event);
+  virtual bool HandleCrossing(Event_t *event);
+  virtual bool HandleFocusChange(Event_t *event);
 
   // protected methods:
  protected:
@@ -63,7 +63,7 @@ class MGUIEFlatToolBarButton : public TGPictureButton
 
   // private members:
  private:
-	bool m_Flat;
+  bool m_Flat;
 
 
 #ifdef ___CINT___

@@ -44,7 +44,7 @@ class MGUIDeconvolution : public MGUIDialog
  protected:
   virtual void Create();
   virtual bool ProcessMessage(long Message, long Parameter1, long Parameter2);
-	virtual bool OnApply();
+  virtual bool OnApply();
 
   void ToggleRadioButtons(int ID);
 
@@ -72,7 +72,7 @@ class MGUIDeconvolution : public MGUIDialog
   TGLayoutHints* m_RBEntryLayout;
   TGLayoutHints* m_RBFrameLayout;
 
-	TGCompositeFrame* m_RBIterationsFrame;
+  TGCompositeFrame* m_RBIterationsFrame;
   TGRadioButton* m_RBIterations;
   MGUIEEntry* m_Iterations;
 
@@ -81,7 +81,7 @@ class MGUIDeconvolution : public MGUIDialog
   MGUIEEntry* m_Increase;
 
 
-	enum ButtonIds { c_ClassicEM, c_OSEM, c_Iterations, c_Increase };
+  enum ButtonIds { c_ClassicEM, c_OSEM, c_Iterations, c_Increase };
 
 
 #ifdef ___CINT___

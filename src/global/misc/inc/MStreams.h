@@ -72,7 +72,7 @@ public:
 
   void ShowOnce() { TThread::Lock(); m_Streams->ShowOnce(); TThread::UnLock(); }
 
-	MStreams& printf(const char* Format, ...);
+  MStreams& printf(const char* Format, ...);
 
   // private members:
  private:

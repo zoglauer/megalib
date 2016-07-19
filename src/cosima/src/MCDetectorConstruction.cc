@@ -1149,11 +1149,11 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
     // If it is no copy then position it *only*
     // when it has a mother or is the root volume
     if (Volume->GetMother() !=  0 || Volume->IsWorldVolume() == true) {
- 			
+      
       Name = Volume->GetName() + "Log";
       if (Volume->IsWorldVolume() == false) {
         MotherName = Volume->GetMother()->GetName() + "Log";
-			}
+      }
 
       G4LogicalVolume* ThisLog = 0;
       G4LogicalVolume* MotherLog = 0;
@@ -1219,7 +1219,7 @@ bool MCDetectorConstruction::PositionVolumes(MDVolume* Volume)
       if (PositionVolumes(Volume->GetDaughterAt(i)) == false) return false;
     }
   }
-	
+  
   return true;
 }
 

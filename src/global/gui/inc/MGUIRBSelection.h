@@ -50,7 +50,7 @@ class MGUIRBSelection : public MGUIDialog
 
   // protected methods:
  protected:
-	bool OnOk();
+  bool OnOk();
 
   // private methods:
  private:

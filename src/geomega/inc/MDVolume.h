@@ -260,8 +260,8 @@ class MDVolume
   MString m_ShortName;         // 4 character Geant3 name of this volume
 
   bool m_WorldVolume;        // True if this is the world volume  
-	bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry
-	bool m_IsMany;             // True if the many flag is raised
+  bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry
+  bool m_IsMany;             // True if the many flag is raised
 
   MDVolume* m_Mother;          // Mother volume
   vector<MDVolume*> m_Daughters;      // Number of daughter volumes

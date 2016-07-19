@@ -43,7 +43,7 @@ class MGUIPosition : public MGUIDialog
   // protected methods:
  protected:
   void Create();
-	bool OnApply();
+  bool OnApply();
 
   // private methods:
  private:
@@ -61,8 +61,8 @@ class MGUIPosition : public MGUIDialog
   bool& m_OkPressed;
 
   TGLayoutHints* m_PositionLayout;
-	MGUIEEntryList* m_Position;
-	MGUIEEntry* m_PositionString;
+  MGUIEEntryList* m_Position;
+  MGUIEEntry* m_PositionString;
 
 
 #ifdef ___CINT___
