@@ -141,7 +141,7 @@ bool MERClusterize::SetParameters(MString BaseResponseFileName)
     }
     
     MResponseMatrixO3 DualSeparableNo;
-    if (DualSeparableYes.Read(Prefix + ".dualseparable.no.rsp") == false) {
+    if (DualSeparableNo.Read(Prefix + ".dualseparable.no.rsp") == false) {
       merr<<"File \""<<Prefix + ".dualseparable.no.rsp"<<"\" does not exist."<<endl;
       return false;
     }
@@ -168,9 +168,9 @@ bool MERClusterize::SetParameters(MString BaseResponseFileName)
     AllSeparableYes /= AllSeparableNo;
     m_AllPDF = AllSeparableYes;
     
-   m_Algorithm = c_Response;
+    m_Algorithm = c_Response;
 
-   return true;
+    return true;
   } else {
     merr<<"File \""<<Prefix + Suffix<<"\" does not exist."<<endl;
     return false;
@@ -435,7 +435,7 @@ void MERClusterize::FindClustersUsingPDF(MRERawEvent* RE)
   // Step 3: Do the split up
   
   if (RemoveList.size() > 0) {
-    cout<<"Splitting some clusters again..."<<endl;
+    mdebug<<"Splitting some clusters again..."<<endl;
     for (MRECluster* C: RemoveList) {
       RE->RemoveRESE(C);
       for (int r = 0; r < C->GetNRESEs(); ++r) {
