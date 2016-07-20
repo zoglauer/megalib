@@ -183,7 +183,7 @@ bool MResponseSpectral::CreateResponse()
       if (Event != nullptr) {
         EnergyUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
         EnergyRatioUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
+        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           EnergySelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
           EnergyRatioSelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
         }
