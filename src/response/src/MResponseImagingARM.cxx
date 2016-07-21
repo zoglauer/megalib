@@ -123,7 +123,8 @@ bool MResponseImagingARM::CreateResponse()
     AxisPhiDiff.push_back(Axis[b]);
   }
 
-  vector<float> Energy = CreateEquiDist(0, 5000, 50);
+  vector<float> Energy = CreateThresholdedLogDist(50, 10000, 50, 25);
+  
   vector<float> Distance;
   Distance.push_back(0);
   Distance.push_back(0.19);
@@ -138,12 +139,16 @@ bool MResponseImagingARM::CreateResponse()
   Distance.push_back(19.99);
   Distance.push_back(99.99);
   
-  MResponseMatrixO3 Phi("AngularResolution", AxisPhiDiff, Energy, Distance);
-  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
+  MResponseMatrixO3 Arm("AngularResolution)", AxisPhiDiff, Energy, Distance);
+  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
+  
+  MResponseMatrixO3 ArmPhotoPeak("AngularResolution (photo_peak)", AxisPhiDiff, Energy, Distance);
+  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
 
 
   double PhiDiff;
   MVector IdealOrigin;
+  double IdealEnergy;
 
   MRawEventList* REList = 0;
   MPhysicalEvent* Event = 0;
@@ -168,18 +173,29 @@ bool MResponseImagingARM::CreateResponse()
 
               // Phi response:
               PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
-              Phi.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
-           }
+              
+              //
+              Arm.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
+              
+              IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+              
+              if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
+                  IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
+                ArmPhotoPeak.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
+              }
+            }
           }
         }
       }    
     }
     if (++Counter % m_SaveAfter == 0) {
-      Phi.Write(m_ResponseName + ".angularresolution" + m_Suffix, true);
+      Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
+      ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
     }
   }  
 
-  Phi.Write(m_ResponseName + ".angularresolution" + m_Suffix, true);
+  Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
+  ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
 
   return true;
 }
