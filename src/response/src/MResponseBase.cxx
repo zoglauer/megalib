@@ -603,6 +603,58 @@ vector<float> MResponseBase::CreateLogDist(float Min, float Max, int Bins,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+vector<float> MResponseBase::CreateThresholdedLogDist(float Min, float Max, int Bins, float Threshold, 
+                                                      float MinBound, float MaxBound,
+                                                      float Offset, bool Inverted)
+{
+  // Create axis with bins in logaritmic distance
+
+  vector<float> Axis;
+
+  if (MinBound != c_NoBound) {
+    Axis.push_back(MinBound);
+  }
+
+  if (Min <= 0) {
+    merr<<"Minimum has to be positive, setting it to 1"<<endl;
+    Min = 1;
+  }
+  
+  if (Threshold >= (Max - Min)/Bins) {
+    merr<<"Threshold has to be smaller than: (Max - Min)/NBins. Setting it to this value -> bins will be equally spaced instead of logarithmically spaced."<<endl;
+    Threshold = (Max - Min)/Bins;
+  }
+  
+  Min = log(Min);
+  Max = log(Max - Bins*Threshold);
+  float Dist = (Max-Min)/(Bins);
+
+  for (int i = 0; i < Bins+1; ++i) {
+    Axis.push_back(exp(Min+i*Dist) + i*Threshold);
+  }
+
+  if (MaxBound != c_NoBound) {
+    Axis.push_back(MaxBound);
+  }
+
+  if (Inverted == true) {
+    vector<float> Temp = Axis;
+    for (unsigned int i = 1; i < Temp.size()-1; ++i) {
+      Axis[i] = Axis[i-1] + (Temp[Temp.size()-i]-Temp[Temp.size()-i-1]);
+    }
+  }
+
+  for (unsigned int i = 0; i < Axis.size(); ++i) {
+    Axis[i] += Offset;
+  }
+
+  return Axis;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 vector<float> MResponseBase::CreateEquiDist(float Min, float Max, int Bins, 
                                             float MinBound, float MaxBound,
                                             float Offset, bool Inverted)

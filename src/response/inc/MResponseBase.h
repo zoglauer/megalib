@@ -110,6 +110,12 @@ class MResponseBase
                               float MaxBound = c_NoBound,
                               float Offset = 0, bool Inverted = false);
 
+  //! Create a log axis with minimum bin size threshold for the response file
+  vector<float> CreateThresholdedLogDist(float Min, float Max, int Bins, float Threshold, 
+                                         float MinBound = c_NoBound, 
+                                         float MaxBound = c_NoBound,
+                                         float Offset = 0, bool Inverted = false);
+
   //! Create a standard axis for the response file
   vector<float> CreateEquiDist(float Min, float Max, int Bins, 
                                float MinBound = c_NoBound, 
