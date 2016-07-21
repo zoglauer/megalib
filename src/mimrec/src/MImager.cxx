@@ -698,6 +698,8 @@ bool MImager::Analyze(bool CalculateResponse)
     return false;
   }
   
+  mout<<"Preparing the first image... Please stand by..."<<endl;
+  
   // Set the response to the EM algorithm 
   m_EM->SetResponseSlices(m_BPEvents, m_NBins);
   
