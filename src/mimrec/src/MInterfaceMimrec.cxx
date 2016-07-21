@@ -137,6 +137,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"    High level functions:"<<endl;
   Usage<<"      -o --output:"<<endl;
   Usage<<"             For -i, -s and -a: Save the generated histogram."<<endl;
+  Usage<<"             For -x: Save the extracted events"<<endl;
   Usage<<"      -i --image:"<<endl;
   Usage<<"             Create an image. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -s --spectrum:"<<endl;
@@ -145,6 +146,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -l --light-curve:"<<endl;
   Usage<<"             Create a light curve. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"      -x --extract:"<<endl;
+  Usage<<"             Extract events using the given event selection to the file given by -o"<<endl;
   Usage<<"      -e --event-selections:"<<endl;
   Usage<<"             Dump event selections"<<endl;
   Usage<<"         --standard-analysis-spherical <energy [keV]> <theta [deg]> <phi [deg]>"<<endl;
@@ -287,6 +290,11 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Generating Light curve..."<<endl;  
       // m_Data->SetStoreImages(true);
       LightCurve();
+      return KeepAlive;
+    } else if (Option == "--extract" || Option == "-x") {
+      cout<<"Command-line parser: Extracting events..."<<endl;  
+      // m_Data->SetStoreImages(true);
+      ExtractEvents();
       return KeepAlive;
     } else if (Option == "--standard-analysis-spherical") {
       double Energy = atof(argv[++i]);
@@ -974,14 +982,18 @@ void MInterfaceMimrec::ExtractEvents()
   // ... loop over all events and save a count in the belonging bin ...
   if (InitializeEventloader() == false) return;
 
-  // Create a new tra file to which we can write the extracted events
-  MString FileName = m_EventFile->GetFileName();
-  if (FileName.EndsWith(".tra")) {
-    FileName = FileName.Remove(FileName.Length()-4, 4); // remove final tra
-  } else if (FileName.EndsWith(".tra.gz")) {
-    FileName = FileName.Remove(FileName.Length()-7, 7); // remove final tra
-  }
-  FileName += ".extracted.tra";
+  MString FileName = m_OutputFileName;
+  if (m_OutputFileName.IsEmpty() == true) {
+    // Create a new tra file to which we can write the extracted events
+    FileName = m_EventFile->GetFileName();
+    if (FileName.EndsWith(".tra")) {
+      FileName = FileName.Remove(FileName.Length()-4, 4); // remove final tra
+    } else if (FileName.EndsWith(".tra.gz")) {
+      FileName = FileName.Remove(FileName.Length()-7, 7); // remove final tra
+    }
+    FileName += ".extracted.tra";
+  } 
+  
   MFileEventsTra* OutFile = new MFileEventsTra();
   OutFile->Open(FileName, MFile::c_Write);
   if (OutFile->IsOpen() == false) {
