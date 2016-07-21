@@ -671,7 +671,9 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
   
   // If the original file was zipped, we are now in a temporary directory
   // and most likely cannot find the file
-  FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  if (FileName.BeginsWith("/") == false) {
+    FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
+  }
   if (m_WasZipped == true && FileName.EndsWith(".gz") == false) {
     FileName += ".gz";
   }
