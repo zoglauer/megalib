@@ -123,7 +123,7 @@ bool MResponseImagingARM::CreateResponse()
     AxisPhiDiff.push_back(Axis[b]);
   }
 
-  vector<float> Energy = CreateEquiDist(0, 2500, 25);
+  vector<float> Energy = CreateEquiDist(0, 5000, 50);
   vector<float> Distance;
   Distance.push_back(0);
   Distance.push_back(0.19);
@@ -139,7 +139,7 @@ bool MResponseImagingARM::CreateResponse()
   Distance.push_back(99.99);
   
   MResponseMatrixO3 Phi("AngularResolution", AxisPhiDiff, Energy, Distance);
-  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Energy [keV]", "Distance [cm]");
+  Phi.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
 
 
   double PhiDiff;
@@ -156,7 +156,7 @@ bool MResponseImagingARM::CreateResponse()
     if (REList->HasOptimumEvent() == true) {
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
+        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 

@@ -141,7 +141,7 @@ bool MResponseFirstInteractionPosition::CreateResponse()
     if (REList->HasOptimumEvent() == true) {
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event, true) == true) {
+        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
