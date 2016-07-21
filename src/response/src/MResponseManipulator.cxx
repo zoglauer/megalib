@@ -609,8 +609,9 @@ bool MResponseManipulator::Append()
 /******************************************************************************
  * Find Files:
  */
-bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
+bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
 {
+  // Get all files
   TSystemDirectory D(".", gSystem->pwd());
   TList* Files = D.GetListOfFiles();
   if (Files == 0) {
@@ -618,95 +619,117 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
     return false;
   }
 
-  MFileResponse File;
-  MResponseMatrix* First = 0;
-  MResponseMatrix* Append = 0;
-  bool AnyZipped = false;
+  
+  // Sort them
+  cout<<"Sorting files..."<<endl;
+  unsigned int Added = 0;
+  vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
   for (int i = 0; i <= Files->LastIndex(); ++i) {
     MString Name = Files->At(i)->GetName();
-    // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
-    if (Name.BeginsWith(Prefix) == true && (Name.EndsWith(Type) == true || Name.EndsWith(Type + ".gz") == true) && Name != Prefix + Type && Name != Prefix + Type + "gz") {
-      cout<<"Using "<<Name<<" (type: "<<Type<<")"<<endl;
-      if (Name.EndsWith(".gz") == true) {
-        AnyZipped = true;
-      }
-      if (First == 0) {
-        First = File.Read(Name);
-        massert(First != 0);
-      } else {
-        Append = File.Read(Name);
-        massert(Append != 0);
-        if (First->GetOrder() != Append->GetOrder()) {
-          mout<<"Cannot append file, because they are of different order!"<<endl;
-        } else {
-          if (First->GetOrder() == 1) {
-            *dynamic_cast<MResponseMatrixO1*>(First) += 
-              *dynamic_cast<MResponseMatrixO1*>(Append);
-          } else if (First->GetOrder() == 2) {
-            *dynamic_cast<MResponseMatrixO2*>(First) += 
-              *dynamic_cast<MResponseMatrixO2*>(Append);
-          } else if (First->GetOrder() == 3) {
-            *dynamic_cast<MResponseMatrixO3*>(First) += 
-              *dynamic_cast<MResponseMatrixO3*>(Append);
-          } else if (First->GetOrder() == 4) {
-            *dynamic_cast<MResponseMatrixO4*>(First) += 
-              *dynamic_cast<MResponseMatrixO4*>(Append);
-          } else if (First->GetOrder() == 5) {
-            *dynamic_cast<MResponseMatrixO5*>(First) += 
-              *dynamic_cast<MResponseMatrixO5*>(Append);
-          } else if (First->GetOrder() == 6) {
-            *dynamic_cast<MResponseMatrixO6*>(First) += 
-              *dynamic_cast<MResponseMatrixO6*>(Append);
-          } else if (First->GetOrder() == 7) {
-            *dynamic_cast<MResponseMatrixO7*>(First) += 
-              *dynamic_cast<MResponseMatrixO7*>(Append);
-          } else if (First->GetOrder() == 8) {
-            *dynamic_cast<MResponseMatrixO8*>(First) += 
-              *dynamic_cast<MResponseMatrixO8*>(Append);
-          } else if (First->GetOrder() == 9) {
-            *dynamic_cast<MResponseMatrixO9*>(First) += 
-              *dynamic_cast<MResponseMatrixO9*>(Append);
-          } else if (First->GetOrder() == 10) {
-            *dynamic_cast<MResponseMatrixO10*>(First) += 
-              *dynamic_cast<MResponseMatrixO10*>(Append);
-          } else if (First->GetOrder() == 11) {
-            *dynamic_cast<MResponseMatrixO11*>(First) += 
-              *dynamic_cast<MResponseMatrixO11*>(Append);
-          } else if (First->GetOrder() == 12) {
-            *dynamic_cast<MResponseMatrixO12*>(First) += 
-              *dynamic_cast<MResponseMatrixO12*>(Append);
-          } else if (First->GetOrder() == 13) {
-            *dynamic_cast<MResponseMatrixO13*>(First) += 
-              *dynamic_cast<MResponseMatrixO13*>(Append);
-          } else if (First->GetOrder() == 14) {
-            *dynamic_cast<MResponseMatrixO14*>(First) += 
-              *dynamic_cast<MResponseMatrixO14*>(Append);
-          } else if (First->GetOrder() == 15) {
-            *dynamic_cast<MResponseMatrixO15*>(First) += 
-              *dynamic_cast<MResponseMatrixO15*>(Append);
-          } else if (First->GetOrder() == 16) {
-            *dynamic_cast<MResponseMatrixO16*>(First) += 
-              *dynamic_cast<MResponseMatrixO16*>(Append);
-          } else if (First->GetOrder() == 17) {
-            *dynamic_cast<MResponseMatrixO17*>(First) += 
-              *dynamic_cast<MResponseMatrixO17*>(Append);
-          } else {
-            merr<<"Unsupported matrix order: "<<First->GetOrder()<<endl; 
-          }
-        }
-        delete Append;
+    if (Name.BeginsWith(Prefix) == false) continue;
+    for (unsigned int t = 0; t < Types.size(); ++t) {
+      // cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Type<<"\" (+ .gz)... ";
+      if ((Name.EndsWith(Types[t]) == true || Name.EndsWith(Types[t] + ".gz") == true) && Name != Prefix + Types[t] && Name != Prefix + Types[t] + ".gz") {
+        SortedFiles[t].push_back(Name);
+        ++Added;
       }
     }
   }
-
-  if (First != 0) {
-    MString NewName = Prefix + Type;
+  if (Added > 0) {
+    cout<<"Considering "<<Added<<" files..."<<endl;
+  } else {
+    cout<<"No files found to join..."<<endl;
+    return false;
+  }
+  
+  
+  // Append them
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    if (SortedFiles[t].size() == 0) {
+      cout<<"No files of type "<<Types[t]<<endl;
+      continue;
+    }
+    
+    bool AnyZipped = false;
+    if (SortedFiles[t][0].EndsWith(".gz") == true) {
+      AnyZipped = true;
+    }
+    MFileResponse File;
+    MResponseMatrix* First = File.Read(SortedFiles[t][0]);
+    
+    for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
+      MResponseMatrix* Append = File.Read(SortedFiles[t][f]);    
+      
+      if (First->GetOrder() != Append->GetOrder()) {
+        mout<<"Cannot append file, because they are of different order!"<<endl;
+      } else {
+        mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
+        if (First->GetOrder() == 1) {
+          *dynamic_cast<MResponseMatrixO1*>(First) += 
+          *dynamic_cast<MResponseMatrixO1*>(Append);
+        } else if (First->GetOrder() == 2) {
+          *dynamic_cast<MResponseMatrixO2*>(First) += 
+          *dynamic_cast<MResponseMatrixO2*>(Append);
+        } else if (First->GetOrder() == 3) {
+          *dynamic_cast<MResponseMatrixO3*>(First) += 
+          *dynamic_cast<MResponseMatrixO3*>(Append);
+        } else if (First->GetOrder() == 4) {
+          *dynamic_cast<MResponseMatrixO4*>(First) += 
+          *dynamic_cast<MResponseMatrixO4*>(Append);
+        } else if (First->GetOrder() == 5) {
+          *dynamic_cast<MResponseMatrixO5*>(First) += 
+          *dynamic_cast<MResponseMatrixO5*>(Append);
+        } else if (First->GetOrder() == 6) {
+          *dynamic_cast<MResponseMatrixO6*>(First) += 
+          *dynamic_cast<MResponseMatrixO6*>(Append);
+        } else if (First->GetOrder() == 7) {
+          *dynamic_cast<MResponseMatrixO7*>(First) += 
+          *dynamic_cast<MResponseMatrixO7*>(Append);
+        } else if (First->GetOrder() == 8) {
+          *dynamic_cast<MResponseMatrixO8*>(First) += 
+          *dynamic_cast<MResponseMatrixO8*>(Append);
+        } else if (First->GetOrder() == 9) {
+          *dynamic_cast<MResponseMatrixO9*>(First) += 
+          *dynamic_cast<MResponseMatrixO9*>(Append);
+        } else if (First->GetOrder() == 10) {
+          *dynamic_cast<MResponseMatrixO10*>(First) += 
+          *dynamic_cast<MResponseMatrixO10*>(Append);
+        } else if (First->GetOrder() == 11) {
+          *dynamic_cast<MResponseMatrixO11*>(First) += 
+          *dynamic_cast<MResponseMatrixO11*>(Append);
+        } else if (First->GetOrder() == 12) {
+          *dynamic_cast<MResponseMatrixO12*>(First) += 
+          *dynamic_cast<MResponseMatrixO12*>(Append);
+        } else if (First->GetOrder() == 13) {
+          *dynamic_cast<MResponseMatrixO13*>(First) += 
+          *dynamic_cast<MResponseMatrixO13*>(Append);
+        } else if (First->GetOrder() == 14) {
+          *dynamic_cast<MResponseMatrixO14*>(First) += 
+          *dynamic_cast<MResponseMatrixO14*>(Append);
+        } else if (First->GetOrder() == 15) {
+          *dynamic_cast<MResponseMatrixO15*>(First) += 
+          *dynamic_cast<MResponseMatrixO15*>(Append);
+        } else if (First->GetOrder() == 16) {
+          *dynamic_cast<MResponseMatrixO16*>(First) += 
+          *dynamic_cast<MResponseMatrixO16*>(Append);
+        } else if (First->GetOrder() == 17) {
+          *dynamic_cast<MResponseMatrixO17*>(First) += 
+          *dynamic_cast<MResponseMatrixO17*>(Append);
+        } else {
+          merr<<"Unsupported matrix order: "<<First->GetOrder()<<endl; 
+        }
+      }
+      delete Append;
+      
+    }
+    
+    MString NewName = Prefix + Types[t];
     if (AnyZipped == true) NewName += ".gz";
     First->Write(NewName, true);
-    delete First;
-  } else {
-    mout<<"No files have been found for type: "<<Type<<endl;
+    delete First;   
+  
   }
+  
 
   return true;
 }
@@ -717,42 +740,48 @@ bool MResponseManipulator::FindFiles(MString Prefix, MString Type)
  */
 bool MResponseManipulator::Join()
 {
-  FindFiles(m_Prefix, ".mc.goodbad.rsp");
-  FindFiles(m_Prefix, ".mc.dual.good.rsp");
-  FindFiles(m_Prefix, ".mc.dual.bad.rsp");
-  FindFiles(m_Prefix, ".mc.start.good.rsp");
-  FindFiles(m_Prefix, ".mc.start.bad.rsp");
-  FindFiles(m_Prefix, ".mc.track.good.rsp");
-  FindFiles(m_Prefix, ".mc.track.bad.rsp");
-  FindFiles(m_Prefix, ".mc.compton.good.rsp");
-  FindFiles(m_Prefix, ".mc.compton.bad.rsp");
-  FindFiles(m_Prefix, ".mc.comptondistance.good.rsp");
-  FindFiles(m_Prefix, ".mc.comptondistance.bad.rsp");
-  FindFiles(m_Prefix, ".mc.photodistance.good.rsp");
-  FindFiles(m_Prefix, ".mc.photodistance.bad.rsp");
+  vector<MString> Types;
+  
+  Types.push_back(".mc.goodbad.rsp");
+  Types.push_back(".mc.dual.good.rsp");
+  Types.push_back(".mc.dual.bad.rsp");
+  Types.push_back(".mc.start.good.rsp");
+  Types.push_back(".mc.start.bad.rsp");
+  Types.push_back(".mc.track.good.rsp");
+  Types.push_back(".mc.track.bad.rsp");
+  Types.push_back(".mc.compton.good.rsp");
+  Types.push_back(".mc.compton.bad.rsp");
+  Types.push_back(".mc.comptondistance.good.rsp");
+  Types.push_back(".mc.comptondistance.bad.rsp");
+  Types.push_back(".mc.photodistance.good.rsp");
+  Types.push_back(".mc.photodistance.bad.rsp");
 
-  FindFiles(m_Prefix, ".t.goodbad.rsp");
-  FindFiles(m_Prefix, ".t.central.good.rsp");
-  FindFiles(m_Prefix, ".t.central.bad.rsp");
-  FindFiles(m_Prefix, ".t.start.good.rsp");
-  FindFiles(m_Prefix, ".t.start.bad.rsp");
-  FindFiles(m_Prefix, ".t.stop.good.rsp");
-  FindFiles(m_Prefix, ".t.stop.bad.rsp");
-  FindFiles(m_Prefix, ".t.dual.good.rsp");
-  FindFiles(m_Prefix, ".t.dual.bad.rsp");
+  Types.push_back(".t.goodbad.rsp");
+  Types.push_back(".t.central.good.rsp");
+  Types.push_back(".t.central.bad.rsp");
+  Types.push_back(".t.start.good.rsp");
+  Types.push_back(".t.start.bad.rsp");
+  Types.push_back(".t.stop.good.rsp");
+  Types.push_back(".t.stop.bad.rsp");
+  Types.push_back(".t.dual.good.rsp");
+  Types.push_back(".t.dual.bad.rsp");
   
-  FindFiles(m_Prefix, ".dualseparable.yes.rsp");
-  FindFiles(m_Prefix, ".dualseparable.no.rsp");
-  FindFiles(m_Prefix, ".allseparable.yes.rsp");
-  FindFiles(m_Prefix, ".allseparable.no.rsp");
+  Types.push_back(".dualseparable.yes.rsp");
+  Types.push_back(".dualseparable.no.rsp");
+  Types.push_back(".allseparable.yes.rsp");
+  Types.push_back(".allseparable.no.rsp");
   
-  FindFiles(m_Prefix, ".energy.beforeeventreconstruction.rsp");
-  FindFiles(m_Prefix, ".energy.mimrecunselected.rsp");
-  FindFiles(m_Prefix, ".energy.mimrecselected.rsp");
-  FindFiles(m_Prefix, ".energyratio.beforeeventreconstruction.rsp");
-  FindFiles(m_Prefix, ".energyratio.mimrecunselected.rsp");
-  FindFiles(m_Prefix, ".energyratio.mimrecselected.rsp");
+  Types.push_back(".energy.beforeeventreconstruction.rsp");
+  Types.push_back(".energy.mimrecunselected.rsp");
+  Types.push_back(".energy.mimrecselected.rsp");
+  Types.push_back(".energyratio.beforeeventreconstruction.rsp");
+  Types.push_back(".energyratio.mimrecunselected.rsp");
+  Types.push_back(".energyratio.mimrecselected.rsp");
  
+  Types.push_back(".angularresolution.rsp");
+ 
+  FindFiles(m_Prefix, Types);
+  
   return true;
 }
 
