@@ -82,7 +82,7 @@ private:
   /// File name of the model
   MString m_ModelFileName;
   /// File name of the simulation
-  MString m_SimulationFileName;
+  vector<MString> m_SimulationFileNames;
   /// File name of the output file
   MString m_OutputFileName;
 };
@@ -117,9 +117,9 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: CompareHistograms <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -m:   model file name"<<endl;
-  Usage<<"         -s:   simulation file name"<<endl;
-  Usage<<"         -o:   output file name"<<endl;
+  Usage<<"         -m:   model root file name"<<endl;
+  Usage<<"         -s:   simulation root file name"<<endl;
+  Usage<<"         -o:   output root file name"<<endl;
   Usage<<"         -b:   batch mode"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -167,7 +167,7 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
       m_ModelFileName = argv[++i];
       //cout<<"Accepting model file name: "<<m_ModelFileName<<endl;
     } else if (Option == "-s") {
-      m_SimulationFileName = argv[++i];
+      m_SimulationFileNames.push_back(argv[++i]);
       //cout<<"Accepting simulation file name: "<<m_SimulationFileName<<endl;
     } else if (Option == "-o") {
       m_OutputFileName = argv[++i];
@@ -188,10 +188,17 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
     cout<<Usage.str()<<endl;
     return false;    
   }
-  if (m_SimulationFileName.IsEmpty() == true || m_SimulationFileName.EndsWith(".root") == false || MFile::Exists(m_SimulationFileName) == false) {
+  if (m_SimulationFileNames.size() == 0) {
     cout<<"Error: Cannot show a histrogram if you don't give a *.root file!"<<endl;
     cout<<Usage.str()<<endl;
     return false;    
+  }
+  for (MString S: m_SimulationFileNames) {
+    if (S.EndsWith(".root") == false || MFile::Exists(S) == false) {
+      cout<<"Error: Cannot show a histrogram if you don't give a *.root file!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
   }
 
   return true;
@@ -204,108 +211,123 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
 bool CompareHistograms::Analyze()
 {
   TH1* Model = GetHistogram(m_ModelFileName);
-  Model->SetLineColor(kRed);
+  Model->SetLineColor(kBlack);
+  Model->SetFillStyle(0);
   if (Model == 0) {
     cout<<"Error: Cannot show a histrogram if you don't give a *.root file!"<<endl;
     return false;    
   }
-  TH1* Simulation = GetHistogram(m_SimulationFileName); 
-  Simulation->SetLineColor(kBlue);
-  if (Simulation == 0) {
-    cout<<"Error: Cannot show a histrogram if you don't give a *.root file!"<<endl;
-    return false;    
-  }
-  if (Simulation->GetNbinsX() != Model->GetNbinsX()) {
-    cout<<"Error: The histograms don't have the same number of bins!"<<endl;
-    return false;    
+  
+  vector<int> Colors = { kRed, kBlue, kGreen + 2, kMagenta, kCyan + 2, kYellow + 2 };
+  vector<TH1*> Simulations;
+  for (unsigned int s = 0; s < m_SimulationFileNames.size() && s < Colors.size(); ++s) {
+    TH1* Simulation = GetHistogram(m_SimulationFileNames[s]); 
+    Simulation->SetLineColor(Colors[s]);
+    Simulation->SetFillStyle(0);
+    Simulation->SetTitle(m_SimulationFileNames[s]);
+    if (Simulation == 0) {
+      cout<<"Error: Cannot show a histrogram if you don't give a *.root file!"<<endl;
+      return false;    
+    }
+    if (Simulation->GetNbinsX() != Model->GetNbinsX()) {
+      cout<<"Error: The histograms don't have the same number of bins!"<<endl;
+      return false;    
+    }
+    Simulations.push_back(Simulation);
   }
   
-  double LargestSigmaDifference = 0;
-  double LargestPercentualDifference = 0;
-  int LargestDifferenceBin = 0;
-  double AvgSigmaDifference = 0;
-  int AvgSigmaDifferenceEntries = 0;
-  for (int bx = 1; bx <= Simulation->GetNbinsX(); ++bx) {
-    double Sim = Simulation->GetBinContent(bx);
-    double SimError = Simulation->GetBinError(bx);
-    double Mod = Model->GetBinContent(bx);
-    double ModError = Model->GetBinError(bx);
+  if (Simulations.size() > 0) {
     
-    
-    double fabsDiff = fabs(Sim-Mod);
-    double Diff = Sim-Mod;
-    //cout<<"Bin "<<bx<<": "<<Diff/SimError<<" vs. "<<Diff/ModError<<endl;
-    if (ModError > 0 && SimError > 0) {
-      if (fabsDiff/SimError < fabsDiff/ModError) {
-        AvgSigmaDifference += Diff/SimError;
-        if (LargestSigmaDifference < fabsDiff/SimError) {
-          LargestSigmaDifference = fabsDiff/SimError;
-          LargestPercentualDifference = fabsDiff/max(Sim, Mod);
-          LargestDifferenceBin = bx;
+    for (TH1* Simulation: Simulations) {
+      double LargestSigmaDifference = 0;
+      double LargestPercentualDifference = 0;
+      int LargestDifferenceBin = 0;
+      double AvgSigmaDifference = 0;
+      int AvgSigmaDifferenceEntries = 0;
+      for (int bx = 1; bx <= Simulation->GetNbinsX(); ++bx) {
+        double Sim = Simulation->GetBinContent(bx);
+        double SimError = Simulation->GetBinError(bx);
+        double Mod = Model->GetBinContent(bx);
+        double ModError = Model->GetBinError(bx);
+        
+        
+        double fabsDiff = fabs(Sim-Mod);
+        double Diff = Sim-Mod;
+        //cout<<"Bin "<<bx<<": "<<Diff/SimError<<" vs. "<<Diff/ModError<<endl;
+        if (ModError > 0 && SimError > 0) {
+          if (fabsDiff/SimError < fabsDiff/ModError) {
+            AvgSigmaDifference += Diff/SimError;
+            if (LargestSigmaDifference < fabsDiff/SimError) {
+              LargestSigmaDifference = fabsDiff/SimError;
+              LargestPercentualDifference = fabsDiff/max(Sim, Mod);
+              LargestDifferenceBin = bx;
+            }
+          } else {
+            AvgSigmaDifference += Diff/ModError;
+            if (LargestSigmaDifference < fabsDiff/ModError) {
+              LargestSigmaDifference = fabsDiff/ModError;
+              LargestPercentualDifference = fabsDiff/max(Sim, Mod);
+              LargestDifferenceBin = bx;
+            }
+          }
+          ++AvgSigmaDifferenceEntries;
+        } else if (ModError > 0) {
+          AvgSigmaDifference += Diff/ModError;
+          ++AvgSigmaDifferenceEntries;
+          if (LargestSigmaDifference < fabsDiff/ModError) {
+            LargestSigmaDifference = fabsDiff/ModError;
+            LargestPercentualDifference = fabsDiff/max(Sim, Mod);
+            LargestDifferenceBin = bx;
+          }
+        } else if (SimError > 0) {
+          AvgSigmaDifference += Diff/SimError;
+          ++AvgSigmaDifferenceEntries;
+          if (LargestSigmaDifference < fabsDiff/SimError) {
+            LargestSigmaDifference = fabsDiff/SimError;
+            LargestPercentualDifference = fabsDiff/max(Sim, Mod);
+            LargestDifferenceBin = bx;
+          }
         }
+      }
+      
+      // We are OK if
+      // AvgSigmaDifference/AvgSigmaDifferenceEntries < 1
+      // AND
+      // (
+      // LargestSigmaDifference < 3
+      // OR
+      // LargestSigmaDifference > 3 AND LargestPercentualDifference < 0.05
+      //)
+      
+      if (LargestSigmaDifference == 0) {
+        cout<<"OK - not comparable"<<endl;
+        return true;
+      }
+      
+      double KSTest = Model->KolmogorovTest(Simulation);
+      
+      if (KSTest > 0.02) {
+        cout<<"OK: ";
+        g_ReturnCode = 0;    
       } else {
-        AvgSigmaDifference += Diff/ModError;
-        if (LargestSigmaDifference < fabsDiff/ModError) {
-          LargestSigmaDifference = fabsDiff/ModError;
-          LargestPercentualDifference = fabsDiff/max(Sim, Mod);
-          LargestDifferenceBin = bx;
-        }
+        if (AvgSigmaDifference/AvgSigmaDifferenceEntries < 1 &&
+          (LargestSigmaDifference < 3 || (LargestSigmaDifference > 3 && LargestPercentualDifference < 0.05))) {
+          cout<<"OK: ";
+        g_ReturnCode = 0;
+          } else {
+            cout<<"!!!  ATTENTION: NOT IDENTICAL: ";
+            g_ReturnCode = 1;
+          }
       }
-      ++AvgSigmaDifferenceEntries;
-    } else if (ModError > 0) {
-      AvgSigmaDifference += Diff/ModError;
-      ++AvgSigmaDifferenceEntries;
-      if (LargestSigmaDifference < fabsDiff/ModError) {
-        LargestSigmaDifference = fabsDiff/ModError;
-        LargestPercentualDifference = fabsDiff/max(Sim, Mod);
-        LargestDifferenceBin = bx;
-      }
-    } else if (SimError > 0) {
-      AvgSigmaDifference += Diff/SimError;
-      ++AvgSigmaDifferenceEntries;
-      if (LargestSigmaDifference < fabsDiff/SimError) {
-        LargestSigmaDifference = fabsDiff/SimError;
-        LargestPercentualDifference = fabsDiff/max(Sim, Mod);
-        LargestDifferenceBin = bx;
-      }
-    }
-  }
-  
-  // We are OK if
-  // AvgSigmaDifference/AvgSigmaDifferenceEntries < 1
-  // AND
-  // (
-  // LargestSigmaDifference < 3
-  // OR
-  // LargestSigmaDifference > 3 AND LargestPercentualDifference < 0.05
-  //)
-  
-  if (LargestSigmaDifference == 0) {
-    cout<<"OK - not comparable"<<endl;
-    return true;
-  }
-  
-  double KSTest = Model->KolmogorovTest(Simulation);
-  
-  if (KSTest > 0.02) {
-    cout<<"OK: ";
-    g_ReturnCode = 0;    
-  } else {
-    if (AvgSigmaDifference/AvgSigmaDifferenceEntries < 1 &&
-        (LargestSigmaDifference < 3 || (LargestSigmaDifference > 3 && LargestPercentualDifference < 0.05))) {
-      cout<<"OK: ";
-      g_ReturnCode = 0;
-    } else {
-      cout<<"!!!  ATTENTION: NOT IDENTICAL: ";
-      g_ReturnCode = 1;
-    }
-  }
-  cout<<"  K-S-Test: "<<KSTest
+      cout<<"  K-S-Test: "<<KSTest
       <<"  Avgera. sigma diff: "<<AvgSigmaDifference/AvgSigmaDifferenceEntries
       <<"  Largest sigma diff: "<<LargestSigmaDifference
       <<" & largest %-ual diff: "<<100*LargestPercentualDifference
       <<"% in bin "<<LargestDifferenceBin<<endl;
-
+      
+    }
+  }
+  
   TCanvas* C = new TCanvas();
   C->cd();
   C->SetLeftMargin(0.15);
@@ -313,15 +335,22 @@ bool CompareHistograms::Analyze()
   C->SetTopMargin(0.15);
   C->SetBottomMargin(0.25);
 
+  double Max = Model->GetMaximum();
+  for (TH1* Simulation: Simulations) {
+    if (Simulation->GetMaximum() > Max) {
+      Max = Simulation->GetMaximum(); 
+    }
+  }
   
-  Model->SetMaximum(1.25*Model->GetMaximum());
-  Simulation->SetMaximum(1.25*Simulation->GetMaximum());
+  
+  Model->SetMaximum(1.25*Max);
+  for (TH1* Simulation: Simulations) Simulation->SetMaximum(1.25*Max);
   Model->Draw();
-  Simulation->Draw("SAME");
+  for (TH1* Simulation: Simulations) Simulation->Draw("SAME");
   
   TLegend* L = new TLegend(0.15,0.025,0.85,0.125);
   L->AddEntry(Model, m_ModelFileName);
-  L->AddEntry(Simulation, m_SimulationFileName);
+  for (TH1* Simulation: Simulations) L->AddEntry(Simulation);
   L->Draw();
   
   
