@@ -771,6 +771,8 @@ void MMelinator::DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned 
             MCalibrationSpectralPoint P = C->GetSpectralPoint(g, p);
 
             TH1D* Spectrum = CreateSpectrum("", Coll.GetReadOutDataGroup(g), P.GetLowEdge(), P.GetHighEdge(), HistogramBinningMode, HistogramBinningModeValue);
+            
+            Spectrum->SetFillStyle(0);
             //Spectrum->SetAxisRange(P.GetLowEdge(), P.GetHighEdge());
             Spectrum->SetMaximum(1.1*Spectrum->GetMaximum());
             
@@ -995,6 +997,7 @@ TH1D* MMelinator::CreateSpectrum(const MString& Title, MReadOutDataGroup& G, dou
   Histogram = Binner->GetNormalizedHistogram(Title, "read-out units", "counts / read-out unit");
   Histogram->SetBit(kCanDelete);
   Histogram->SetBit(TH1::kNoTitle); 
+  Histogram->SetFillStyle(0);
 
   delete Binner;
   
@@ -1285,6 +1288,16 @@ bool MMelinator::Save(MString FileName)
   }
   
   out<<"# Energy calibration file created with Melinator"<<endl;
+  out<<" "<<endl;
+  out<<"# Used files and isotopes:"<<endl;
+  for (unsigned int f = 0; f < m_CalibrationFileNames.size(); ++f) {
+    out<<"# File: \""<<m_CalibrationFileNames[f]<<"\" with isotopes: ";
+    for (unsigned int i = 0; i < m_Isotopes[f].size(); ++i) {
+      if (i != 0) out<<", ";
+      out<<m_Isotopes[f][i].ToString();
+    }
+    out<<endl;
+  }
   out<<" "<<endl;
   out<<"TYPE ECAL"<<endl;
   out<<" "<<endl;
