@@ -1744,10 +1744,18 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       return 2;
     }
 
-    MREHit* Hit = new MREHit(Line, Version);
+    MREHit* Hit = new MREHit();
+    if (Hit->ParseLine(Line, Version) == false) {
+      mout<<"Event "<<m_EventID<<": Unable to parse line:"<<endl;
+      mout<<Line<<endl;
+      m_IsValid = false;
+      delete Hit;
+      return 2;      
+    }
 
     // Add position and energy resolution, IF it has NOT been set during reading of the individual line:
-    if (Hit->GetEnergyResolution() == 0 && Hit->GetPositionResolution() == MVector(0, 0, 0) && Hit->GetTimeResolution() == 0) { 
+    if (Hit->HasFixedResolutions() == false) { 
+      cout<<"Calculating resolutions"<<endl;
       // Use the information from the geometry file:
       if (m_Geo != 0) {
         if (Hit->RetrieveResolutions(m_Geo) == false) {

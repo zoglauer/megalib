@@ -287,6 +287,7 @@ void MERClusterize::FindClusters(MRERawEvent* RE, double Distance, int Detector)
           RE->RemoveRESE(RE->GetRESEAt(h));
           RESE = RE->RemoveRESE(RE->GetRESEAt(l));
           RESE->DeleteAll();
+          delete RESE;
 
         } else {
           Fatal("MREClusterAnalyzer::AnalyzeEvent(MRERawEvent *RawEvent)",
@@ -371,7 +372,7 @@ void MERClusterize::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma,
           RE->RemoveRESE(RE->GetRESEAt(h)); // ?
           RESE = RE->RemoveRESE(RE->GetRESEAt(l));
           RESE->DeleteAll();
-          mimp<<"Why is RESE not deleted? It's the old cluster??"<<endl;
+          delete RESE;
 
         } else {
           Fatal("MREClusterAnalyzer::AnalyzeEvent(MRERawEvent *RawEvent)",
