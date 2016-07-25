@@ -161,7 +161,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   
   gStyle->SetHistMinimumZero(true);
   gStyle->SetBit(kCanDelete);
-  gStyle->SetHistFillColor(8);
+  //gStyle->SetHistFillColor(8);
   gStyle->SetOptStat(0);
 
   // Change the region where the drawing starts in canvases:
