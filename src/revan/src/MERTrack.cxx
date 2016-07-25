@@ -626,13 +626,10 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   Electron->AddRESE(RE->GetVertex());
   Electron->SetStartPoint(RE->GetVertex());
 
-  // problem virtual is not deleted!!!!
-  MRESE* Virtual = 
-    new MREHit(RE->GetVertex()->GetPosition(), 0, RE->GetVertex()->GetTime(),
-               RE->GetVertex()->GetDetector(), 
-               RE->GetVertex()->GetPositionResolution(), 
-               RE->GetVertex()->GetEnergyResolution(),
-               RE->GetVertex()->GetTimeResolution());
+  // TODO: Problem virtual is not deleted!!!!
+  MRESE* Virtual = RE->GetVertex()->Duplicate();
+  Virtual->SetEnergy(0); // TODO: the energies should be split evenly, between electron and positron 
+
   Positron->AddRESE(Virtual);
   Positron->SetStartPoint(Virtual);
   Positron->SetVolumeSequence(new MDVolumeSequence(*(RE->GetVertex()->GetVolumeSequence())));

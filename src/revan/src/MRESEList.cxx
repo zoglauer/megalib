@@ -122,11 +122,10 @@ void MRESEList::DeleteAll()
 
   //m_RESEList->Delete();
 
-  for (vector<MRESE*>::iterator Iter = m_RESEList.begin(); 
-       Iter != m_RESEList.end(); ++Iter) {
+  for (vector<MRESE*>::iterator Iter = m_RESEList.begin(); Iter != m_RESEList.end(); ++Iter) {
     if ((*Iter) != 0) {
       (*Iter)->DeleteAll();
-      // delete GetRESEAt(i);
+      delete (*Iter);
     }
   }
 }

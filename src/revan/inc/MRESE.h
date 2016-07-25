@@ -41,6 +41,9 @@ class MRESE
   MRESE(MVector Pos, double Energy, double Time, int Detector, 
         MVector ResPos, double ResEnergy, double ResTime);
   MRESE(MRESE* RESE);
+  
+  //! The destructor does NOT delete the included RESEs
+  //! If you want this behaviour, call DeleteAll() before calling delete
   virtual ~MRESE();
 
   static void ResetIDCounter();
@@ -132,7 +135,7 @@ class MRESE
   virtual void DeleteRESEAndCompress(int ID);
   virtual void CompressRESEs();
 
-  // miscellaneous
+  // delete all the RESEs which are part of this RESE
   virtual void DeleteAll();
 
   virtual double ComputeMinDistance(MRESE* RESE);
@@ -159,11 +162,13 @@ class MRESE
 
  protected:
   virtual void RecalculateResolutions();
+  
+  //! Initialize / Reset this RESE
+  void Reset();
 
-
+  
   // private interface:
  private:
-  void Init();
   MRESEList* GetRESEList();
   MRESEList* GetLinkList();
 

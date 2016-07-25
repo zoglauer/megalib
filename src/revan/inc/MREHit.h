@@ -34,13 +34,16 @@ class MREHit : public MRESE
 {
   // Public Interface:
  public:
+  //! Default constructor
   MREHit();
-  MREHit(MVector Pos, double Energy, double Time, int Detector, 
-         MVector PosRes, double EnergyRes, double TimeRes);
-  MREHit(MString HitString, int Version = 0);
+  //! "Copy" constructor
   MREHit(MREHit* Hit);
+  //! Default destructor
   virtual ~MREHit();
 
+  //! Parse a line
+  bool ParseLine(MString HitString, int Version = 0);
+  
   double ComputeMinDistance(MRESE *RESE);
   MVector ComputeMinDistanceVector(MRESE *RESE);
   bool AreAdjacent(MRESE* R, double Sigma = 3, int Level = 1);
@@ -53,6 +56,9 @@ class MREHit : public MRESE
 
   MREHit* Duplicate();
 
+  //! Return true if the resolutions have been set externally and cannot be changed
+  bool HasFixedResolutions() const { return m_FixedResolutions; } 
+  
   //! Retrieve the resolutions from the geometry
   bool RetrieveResolutions(MDGeometryQuest* Geometry);
   //! Noise the positions, energies and times (!!make sure to do this only for simulations and  only once!!)
@@ -60,6 +66,9 @@ class MREHit : public MRESE
 
   // private members:
  private:
+  //! Flag indicating the resolutions have been set externally
+  bool m_FixedResolutions;
+   
   
 #ifdef ___CINT___
  public:

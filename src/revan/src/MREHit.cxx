@@ -55,32 +55,14 @@ MREHit::MREHit() : MRESE()
 {
   m_SubElementType = MRESE::c_Hit;
   m_IsValid = true;
+  m_FixedResolutions = false;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MREHit::MREHit(MVector Position, double Energy, double Time, int Detector, 
-               MVector PositionRes, double EnergyRes, double TimeRes) :
-  MRESE(Position, Energy, Time, Detector, PositionRes, EnergyRes, TimeRes)
-{
-  // Constructs a hit with the values:
-  //
-  // Position:  Location of the hit 
-  // Energy:    deposited Energy
-  // Detector:  Number of the detector, where the hit took place 
-  //            (for more info see MRESE::SetDetector(int Detector))
-
-  m_SubElementType = MRESE::c_Hit;
-  m_IsValid = true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MREHit::MREHit(MString HitString, int Version) : MRESE()
+bool MREHit::ParseLine(MString HitString, int Version)
 {
   // Constructs a hit out of a String. The String must be of the form:
   //
@@ -90,11 +72,54 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
   // If an error occures during reading the string, the hit is marked as
   // m_IsValid = false
 
-  if (Version < 0) Version = 21;
+  Reset();
   
-  m_SubElementType = MRESE::c_Hit;
+  if (Version < 0) Version = 25;
+  
   m_IsValid = true;
+  m_FixedResolutions = false;
 
+  // Parse the two main file types first:
+  
+  // The default simulation file:
+  if (Version == 25 && HitString.BeginsWith("HTsim ")) {
+    if (sscanf(HitString, "HTsim %d;%lf;%lf;%lf;%lf;%lf\n", 
+               &m_Detector, 
+               &m_Position[0], 
+               &m_Position[1], 
+               &m_Position[2], 
+               &m_Energy, 
+               &m_Time) == 6) {
+      m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
+      m_EnergyResolution = 0.0;
+      m_TimeResolution = 0.0;
+      m_IsValid = true;
+      return true;
+    }
+  }
+  // The default evta file 
+  if (Version == 21 && HitString.BeginsWith("HT ")) {
+    if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
+               &m_Detector,
+               &m_Position[0], 
+               &m_Position[1], 
+               &m_Position[2], 
+               &m_Energy, 
+               &m_PositionResolution[0], 
+               &m_PositionResolution[1], 
+               &m_PositionResolution[2], 
+               &m_EnergyResolution) == 9) {
+      m_Time = 0;
+      m_TimeResolution = 0;
+      m_IsValid = true;
+      m_FixedResolutions = true;
+      return true;
+    }
+  }
+  
+  
+  // Now all the old stuff for compatibility:
+  
   if (Version == 1 || Version == 20) { 
     if (sscanf(HitString, "HTsim%d;%lf;%lf;%lf;%lf\n", 
                &m_Detector, 
@@ -144,6 +169,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
                       &m_PositionResolution[2], 
                       &m_EnergyResolution) == 9) {
       m_IsValid = true;
+      m_FixedResolutions = true;
     } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;OK\n",
                       &m_Detector,
                       &m_Position[0], 
@@ -155,6 +181,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
                       &m_PositionResolution[2], 
                       &m_EnergyResolution) == 9) {
       m_IsValid = true;
+      m_FixedResolutions = true;
     } else {
       m_IsValid = false;
       m_SubElementType = MRESE::c_Unknown;
@@ -174,6 +201,7 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
       m_Energy = T.GetTokenAtAsDouble(4);
       m_EnergyResolution = T.GetTokenAtAsDouble(9);
       m_IsValid = true;
+      m_FixedResolutions = true;
       if (T.GetTokenAt(5) != "OK") {
         if (T.GetTokenAt(5).Contains("OF") == true) {
           m_IsValid = false;
@@ -209,6 +237,8 @@ MREHit::MREHit(MString HitString, int Version) : MRESE()
           <<HitString<<endl;
     }
   }
+  
+  return m_IsValid;
 }
 
 
@@ -219,8 +249,9 @@ MREHit::MREHit(MREHit *Hit) : MRESE((MRESE *) Hit)
 {
   // Special copy-constructor
 
-  m_IsValid = Hit->IsValid();
+  m_IsValid = Hit->m_IsValid;
   m_SubElementType = MRESE::c_Hit;
+  m_FixedResolutions = Hit->m_FixedResolutions;
 } 
 
 
@@ -408,6 +439,9 @@ MREHit* MREHit::Duplicate()
 
 bool MREHit::RetrieveResolutions(MDGeometryQuest* Geometry)
 {
+  // Do not do anything if we have fixed resolutions
+  if (m_FixedResolutions == true) return true;
+  
   MDVolumeSequence* V = Geometry->GetVolumeSequencePointer(m_Position, true, true);
 
   // Check if we do have a resonable volume sequence:
