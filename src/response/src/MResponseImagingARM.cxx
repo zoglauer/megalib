@@ -37,7 +37,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MSettingsRevan.h"
 #include "MSettingsMimrec.h"
-
+#include "MResponseMatrixO4.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -104,46 +104,50 @@ bool MResponseImagingARM::CreateResponse()
 
   if (OpenFiles() == false) return false;
 
-  cout<<"Generating imaging pdf"<<endl;
+  cout<<"Generating imaging response"<<endl;
 
-  vector<float> AxisPhiDiff;
+  vector<float> PhiDiffAxis;
 
   vector<float> Axis; // = CreateLogDist(0.1, 180, 20);
-  for (float x = 0.25; x < 9.9; x += 0.25) Axis.push_back(x);
-  for (float x = 10; x < 19.9; x += 0.5) Axis.push_back(x);
-  for (float x = 20; x <= 179.9; x += 1) Axis.push_back(x);
+  for (float x = 0.25; x < 7.9; x += 0.25) Axis.push_back(x);
+  for (float x = 8.0; x < 14.9; x += 0.5) Axis.push_back(x);
+  for (float x = 15.0; x <= 29.9; x += 1) Axis.push_back(x);
+  for (float x = 30.0; x <= 89.9; x += 2) Axis.push_back(x);
+  for (float x = 90.0; x <= 179.9; x += 3) Axis.push_back(x);
   Axis.push_back(180.0);
 
   // Add Inverted:
   for (unsigned int b = Axis.size()-1; b < Axis.size(); --b) {
-    AxisPhiDiff.push_back(-Axis[b]);
+    PhiDiffAxis.push_back(-Axis[b]);
   }
-  AxisPhiDiff.push_back(0);
+  PhiDiffAxis.push_back(0);
   for (unsigned int b = 0; b < Axis.size(); ++b) {
-    AxisPhiDiff.push_back(Axis[b]);
+    PhiDiffAxis.push_back(Axis[b]);
   }
 
-  vector<float> Energy = CreateThresholdedLogDist(50, 10000, 50, 25);
+  vector<float> EnergyAxis = CreateThresholdedLogDist(50, 10000, 30, 25);
+
+  vector<float> PhiAxis = CreateEquiDist(0, 180, 9);
   
-  vector<float> Distance;
-  Distance.push_back(0);
-  Distance.push_back(0.19);
-  Distance.push_back(0.39);
-  Distance.push_back(0.69);
-  Distance.push_back(0.99);
-  Distance.push_back(1.49);
-  Distance.push_back(1.99);
-  Distance.push_back(2.99);
-  Distance.push_back(4.99);
-  Distance.push_back(9.99);
-  Distance.push_back(19.99);
-  Distance.push_back(99.99);
+  vector<float> DistanceAxis;
+  DistanceAxis.push_back(0);
+  DistanceAxis.push_back(0.19);
+  DistanceAxis.push_back(0.39);
+  DistanceAxis.push_back(0.69);
+  DistanceAxis.push_back(0.99);
+  DistanceAxis.push_back(1.49);
+  DistanceAxis.push_back(1.99);
+  DistanceAxis.push_back(2.99);
+  DistanceAxis.push_back(4.99);
+  DistanceAxis.push_back(7.99);
+  DistanceAxis.push_back(19.99);
+  DistanceAxis.push_back(99.99);
   
-  MResponseMatrixO3 Arm("AngularResolution)", AxisPhiDiff, Energy, Distance);
-  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
+  MResponseMatrixO4 Arm("AngularResolution)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis);
+  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]");
   
-  MResponseMatrixO3 ArmPhotoPeak("AngularResolution (photo_peak)", AxisPhiDiff, Energy, Distance);
-  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured energy [keV]", "Distance between first 2 interactions [cm]");
+  MResponseMatrixO4 ArmPhotoPeak("AngularResolution (photo_peak)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis);
+  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]");
 
 
   double PhiDiff;
@@ -155,17 +159,24 @@ bool MResponseImagingARM::CreateResponse()
   MComptonEvent* Compton = 0;
   
   int Counter = 0;
+  int NMatchedEvents = 0;
+  int NOptimumEvents = 0;
+  int NQualifiedComptonEvents = 0;
+  int NPhotoPeakEvents = 0;
   while (InitializeNextMatchingEvent() == true) {
+    ++NMatchedEvents;
     REList = m_ReReader->GetRawEventList();
 
     if (REList->HasOptimumEvent() == true) {
       Event = REList->GetOptimumEvent()->GetPhysicalEvent();
       if (Event != 0) {
+        ++NOptimumEvents;
         if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Compton) {
             Compton = (MComptonEvent*) Event;
 
             if (Compton->IsKinematicsOK() == false) continue;
+            ++NQualifiedComptonEvents;
             
             // Now get the ideal origin:
             if (m_SiEvent->GetNIAs() > 0) {
@@ -175,13 +186,14 @@ bool MResponseImagingARM::CreateResponse()
               PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
               
               //
-              Arm.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
+              Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm());
               
               IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
               
               if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
                   IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
-                ArmPhotoPeak.Add(PhiDiff, Compton->Ei(), Compton->LeverArm());
+                ++NPhotoPeakEvents;
+                ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm());
               }
             }
           }
@@ -197,6 +209,12 @@ bool MResponseImagingARM::CreateResponse()
   Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
   ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
 
+  cout<<"Statistics: "<<endl;
+  cout<<"# matched events:            "<<NMatchedEvents<<endl;
+  cout<<"# optimum events:            "<<NOptimumEvents<<endl;
+  cout<<"# qualified Compton events:  "<<NQualifiedComptonEvents<<endl;
+  cout<<"# photo peak events:         "<<NPhotoPeakEvents<<endl;
+  
   return true;
 }
 
