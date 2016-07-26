@@ -778,8 +778,9 @@ bool MResponseManipulator::Join()
   Types.push_back(".energyratio.mimrecunselected.rsp");
   Types.push_back(".energyratio.mimrecselected.rsp");
  
-  Types.push_back(".angularresolution.rsp");
- 
+  Types.push_back(".arm.allenergies.rsp");
+ 	Types.push_back(".arm.photopeak.rsp");
+
   FindFiles(m_Prefix, Types);
   
   return true;
