@@ -21,6 +21,7 @@ commandhelp() {
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
   echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
+  echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
   echo "  --zip: Compress the output files."
   echo "  --help: Show this help."
   echo ""
@@ -49,8 +50,13 @@ SOURCE=""
 INSTANCES="1"
 PREFIX="Run"
 ZIP="FALSE"
+CONTINUE=""
 CFG=~/.dcosima.cfg
 
+# The number of already launched runs
+LAUNCHED=0
+# The run ID
+RUNID=${RANDOM}${RANDOM}${RANDOM}
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -60,6 +66,8 @@ for C in "${CMD[@]}"; do
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-c*=* ]]; then
+    CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-h* ]]; then
@@ -80,7 +88,68 @@ echo ""
 echo "Chosen options:"
 
 
-if [ "${SOURCE}" != "" ]; then
+
+if [[ ${CONTINUE} != "" ]]; then
+  if [[ -d ${CONTINUE} ]]; then
+    # We have to determine the prefix, the RUNID, source, and the number of already lauched files
+    PREFIX=`echo ${CONTINUE} | awk -F"_ID" ' { print $1 }'`
+    if [[ ${PREFIX} == "" ]]; then
+      echo " "
+      echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run prefix"
+      commandhelp
+      exit 1
+    fi
+    
+    RUNID=`echo ${CONTINUE} | awk -F"_ID" ' { print $2 }'`
+    if [[ ${RUNID} == "" ]]; then
+      echo " "
+      echo "ERROR: I am not sure the run-continuation directory is a dcosima directory, since I was unable to find the run ID"
+      commandhelp
+      exit 1
+    fi
+    
+    HERE=`pwd`
+    cd ${CONTINUE}
+    
+    SOURCE=`ls *.source`
+    if [[ $( echo ${SOURCE} | wc -l ) !=  1 ]]; then
+      echo " "
+      echo "ERROR: I did not find exactly one source file: ${SOURCE}"
+      commandhelp
+      exit 1      
+    fi
+    SOURCE="${CONTINUE}/${SOURCE}"
+    
+    LAUNCHED="0"
+		FILENAMES=`ls *.p1.inc*.id1.sim*`; 
+		for NAME in ${FILENAMES}; do 
+			ID=`echo ${NAME} | awk -F"inc" '{ print $2 }' | awk -F".id" '{ print $1 }'`
+			if (( ${ID} > ${LAUNCHED} )); then 
+				LAUNCHED=${ID} 
+			fi
+		done 
+    if [[ ${LAUNCHED} == "0" ]]; then
+      echo " "
+      echo "ERROR: Did not find any simulation files"
+      commandhelp
+      exit 1          
+    fi
+    
+    if [[ $( ls *p1.inc*.id1.sim.gz ) != "" ]]; then 
+      ZIP="TRUE"
+    fi
+    
+    cd ${HERE}
+    
+  else 
+    echo " "
+    echo "ERROR: No simulation found with the directory ${CONTINUE} which I could continue"
+    commandhelp
+    exit 1  
+  fi
+fi
+  
+if [[ ${SOURCE} != "" ]]; then
   echo " * Source file: ${SOURCE}"
 else
   echo " "
@@ -89,7 +158,7 @@ else
   exit 1
 fi
 
-if [ "${PREFIX}" != "" ]; then
+if [[ ${PREFIX} != "" ]]; then
   echo " * Prefix to the output directory: ${PREFIX}"
 else
   echo " "
@@ -98,7 +167,7 @@ else
   exit 1
 fi
 
-if [ ${INSTANCES} -gt 0 ]; then
+if [[ ${INSTANCES} -gt 0 ]]; then
   echo " * Simulations instances: ${INSTANCES}"
 else
   echo " "
@@ -107,7 +176,7 @@ else
   exit 1
 fi
 
-if [ -f "${CFG}" ]; then
+if [[ -f "${CFG}" ]]; then
   echo " * Configuration file: ${CFG}"
 else 
   echo " "
@@ -121,13 +190,13 @@ CFGMD5=""
 
 echo " "
 echo "Starting runs:"
-LAUNCHED=0
 AVAILABLE=0
-RUNID=${RANDOM}${RANDOM}${RANDOM}
 
 # Make the local directory where we store the data
 LOCALDIR="${PREFIX}_ID${RUNID}"
-mkdir ${LOCALDIR}
+if [[ ${CONTINUE} == "" ]]; then
+  mkdir ${LOCALDIR}
+fi
 
 # preparation for rsync instance launch
 RSYNCCFG=${LOCALDIR}/dcosima-rsync.cfg
@@ -314,7 +383,8 @@ Base=`cat ${SOURCE} | grep -E "\.FileName|\.Filename|\.filename" | awk -F".FileN
 cd ${LOCALDIR}
 
 echo "Creating concatenation file for simulation \"${Base}\""
-ConcatFileName="${Base}.p1.sim" 
+ConcatFileName="${Base}.p1.sim"
+rm -f "${Base}.p1.sim*"
 
 FirstFileName="${Base}.p1.inc1.id1.sim"
 if [ "${ZIP}" == "TRUE" ]; then
@@ -328,6 +398,7 @@ while ( test ! -f ${FirstFileName} ); do
   echo "Waiting for the simulation file \"${FirstFileName}\" to appear ..."
 done
 
+TMPFILE=`mktemp /tmp/dcosima.XXXXXXXXXX`
 
 # Wait until the header is written and then dump the first 100 lines
 if [ ${ZIP} == "TRUE" ]; then
@@ -336,13 +407,13 @@ if [ ${ZIP} == "TRUE" ]; then
     sleep 1;
     echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
   done
-  gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > /tmp/mcosima.head
+  gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > ${TMPFILE}
 else
   while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
     sleep 20;
     echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
   done
-  head -n 100 ${FirstFileName} > /tmp/mcosima.head
+  head -n 100 ${FirstFileName} > ${TMPFILE}
 fi
 
 
@@ -361,8 +432,8 @@ do
   if ( [ "${FIRST}" != "#" ] && [ "${FIRST}" != "Seed" ] && [ "${FIRST}" != "TB" ] ); then
     echo "${LINE}" >> ${ConcatFileName}
   fi
-done < /tmp/mcosima.head
-rm /tmp/mcosima.head
+done < ${TMPFILE}
+rm ${TMPFILE}
 
 echo " " >> ${ConcatFileName}
     
@@ -375,7 +446,7 @@ echo " " >> ${ConcatFileName}
 
 # Zip the concatenation file if desired
 if [[ "${ZIP}" == "TRUE" ]]; then
-  gzip ${ConcatFileName}
+  gzip -f ${ConcatFileName}
   ConcatFileName="${ConcatFileName}.gz"
 fi
 
