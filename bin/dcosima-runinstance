@@ -105,7 +105,7 @@ if [ "${RUNDIR}" != "" ]; then
   echo " * Run directory: ${RUNDIR}"
 else
   echo " "
-  echo "ERROR: You need to give an unique run ID to setup the instance"
+  echo "ERROR: You need to give an unique directory from where to launch the simulations"
   commandhelp
   exit 1
 fi
@@ -247,7 +247,8 @@ rm -r ${TMPDIR}
 
 # Start the simulation:
 echo " * Starting simulations..."
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCE} > /dev/null 2>&1 &"
+SOURCEFILE=$( basename ${SOURCE} )
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations"
   exit 1
