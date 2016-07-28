@@ -812,6 +812,9 @@ double MFunction::GetRandom()
 
   // Check if we have to determine the cumulative function:
   if (m_Cumulative.size() == 0) {
+    if (m_Y.size() > 5000) {
+      mout<<"MFunction: Determining the cumulative function --- this can take a very long time, especially when MEGAlib was compiled in debug mode..."<<endl;
+    }
     m_Cumulative.push_back(0);
     for (unsigned int i = 1; i < m_Y.size(); ++i) {
       m_Cumulative.push_back(m_Cumulative.back() + Integrate(m_X[i-1], m_X[i]));
