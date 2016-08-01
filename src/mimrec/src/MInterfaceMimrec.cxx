@@ -5046,11 +5046,15 @@ void MInterfaceMimrec::Polarization()
   // Now restart the event-loader with the background file:
   if (InitializeEventloader(m_Data->GetPolarizationBackgroundFileName()) == false) return;
 
+  
+  MEventSelector SecondSelector(*m_Selector);
+  SecondSelector.SetTimeMode(0);
+  
   // ... loop over all events and save a count in the belonging bin ...
   while ((Event = m_EventFile->GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
-    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+    if (SecondSelector.IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
