@@ -248,7 +248,8 @@ rm -r ${TMPDIR}
 # Start the simulation:
 echo " * Starting simulations..."
 SOURCEFILE=$( basename ${SOURCE} )
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${RANDOM} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > /dev/null 2>&1 &"
+SEED=$((RANDOM%8 + 1)); for N in `seq 1 8`; do SEED="${Random}$(( RANDOM%10 ))"; done
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". ~/.bash_local; cd ${MASTERDIR}/${RUNDIR}; nohup nice -n ${NICELEVEL} cosima -p 1 -f ${INSTANCEID} -v 0 -s ${SEED} `if [[ ${ZIP} == TRUE ]]; then echo "-z"; fi` ${SOURCEFILE} > /dev/null 2>&1 &"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to start the simulations"
   exit 1
