@@ -223,14 +223,16 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     
     for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
       if (( ${PRIORITIES[$m]} < 1 )); then
-        echo "Error: The highest (= smallest number) allowed machine priority is 1"
-        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        exit 1
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 1."
+        PRIORITIES[$m]=1;
       fi
       if (( ${PRIORITIES[$m]} > 5 )); then
-        echo "Error: The lowest (= highest number) allowed machine priority is 5"
-        echo "       Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
-        exit 1
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 5."
+        PRIORITIES[$m]=5;
       fi
     done
 
