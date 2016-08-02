@@ -90,6 +90,7 @@ bool MResponseGaussianByUncertainties::AnalyzeEvent(MPhysicalEvent* Event)
     
     double dPhi = dynamic_cast<MComptonEvent*>(Event)->dPhi()*c_Deg;
     //if (dPhi > 15) dPhi = 15;
+    if (dPhi < 3.0) dPhi = 3.0; // COSI HACK
     if (dPhi == 0.0) {
       cout<<"Error: This Compton event has no cone width!"<<endl;
       return false;
