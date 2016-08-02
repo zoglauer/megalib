@@ -130,7 +130,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
     // Find some initial keywords - but read at least until first SE or IN:
     MString Line;
     while (IsGood() == true) {
-      ReadLine(Line);
+      if (ReadLine(Line) == false) break;
       
       if (Line.BeginsWith("SimulationStartAreaFarField") == true) {
         MTokenizer Tokens;
@@ -255,7 +255,7 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
 
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
 
     if (Line[0] == 'S' && Line[1] == 'E') {

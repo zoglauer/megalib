@@ -122,7 +122,7 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   while (IsGood() == true) {
     
     if (++Lines >= MaxLines) break;
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     
     if (FoundUF == false) {
       if (Line.BeginsWith("UF") == true) {
@@ -277,7 +277,7 @@ bool MFileReadOuts::ReadNext(MReadOutSequence& ROS, int SelectedDetectorID)
   
   // Read file line-by-line, returning 'Event' when it's read a complete, non-empty event.
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
           
     // Part 1: The event is completed.  Check to see if we're at the following "SE".

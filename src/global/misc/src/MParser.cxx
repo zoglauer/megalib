@@ -87,7 +87,7 @@ bool MParser::Open(MString FileName, unsigned int Way)
 
     MString Line;
     while (IsGood() == true) {
-      ReadLine(Line);
+      if (ReadLine(Line) == false) break;
       AddLine(Line);
     }
  
