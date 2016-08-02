@@ -354,7 +354,7 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
   // Read until we reach a CO or PA or <to be continued>
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
     
     if (Line[0] == 'E' && Line[1] == 'T') {

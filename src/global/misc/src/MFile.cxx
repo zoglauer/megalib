@@ -656,7 +656,8 @@ bool MFile::ReadLine(MString& String)
       if (Return == Z_NULL) {
         if (gzeof(m_ZipFile) == 0) {
           int ErrorCode;
-          cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
+          cout<<"Error reading compressed file: "<<endl;
+          cout<<"   "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
         return false;
       }

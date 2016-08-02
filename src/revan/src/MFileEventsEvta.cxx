@@ -172,7 +172,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   
 
   // This takes care of (SC0)
-  if (UpdateProgress() == false) return 0;
+  if (UpdateProgress() == false) return nullptr;
 
   // This takes care of (SC1)
   if (m_IncludeFileUsed == true) {
@@ -198,7 +198,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
 
   MString Line;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
 
     // Round 1: Take care of new files --- but do not yet read them or new events in them:
@@ -311,7 +311,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
   delete Event;
   ShowProgress(false);
 
-  return 0;
+  return nullptr;
 }
 
 

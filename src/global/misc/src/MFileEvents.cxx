@@ -132,8 +132,9 @@ bool MFileEvents::Open(MString FileName, unsigned int Way)
     MString Line;
     while (IsGood() == true) {
       if (++Lines >= MaxLines) break;
-      ReadLine(Line);
-      
+      if (ReadLine(Line) == false) {
+        break;
+      }
       if (FoundType == false) {
         if (Line.BeginsWith("Ty") == true || Line.BeginsWith("TY") == true) {
           MTokenizer Tokens;
@@ -240,7 +241,9 @@ bool MFileEvents::ReadFooter(bool Continue)
   MString Line;
   int NLinesRead = 0;
   while (IsGood() == true) {
-    ReadLine(Line);
+    if (ReadLine(Line) == false) {
+      break;
+    }
     NLinesRead++;
     if (Line.Length() < 2) continue;
 
@@ -726,7 +729,9 @@ int MFileEvents::GetNEvents(bool Count)
   if (Count == false) {
     MString Line;
     while (IsGood() == true) {
-      ReadLine(Line);
+      if (ReadLine(Line) == false) {
+        break;
+      }
       if (Line.Length() < 2) continue;
 
       if (Line[0] == 'S' && Line[1] == 'E') {
@@ -757,7 +762,9 @@ int MFileEvents::GetNEvents(bool Count)
 
     MString Line;
     while (IsGood() == true) {
-      ReadLine(Line);
+      if (ReadLine(Line) == false) {
+        break;
+      }
       if (Line[0] == 'S' && Line[1] == 'E') {
         Id++;
       } else if (Line[0] == 'I' && Line[1] == 'N') {
