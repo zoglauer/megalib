@@ -1755,7 +1755,6 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
 
     // Add position and energy resolution, IF it has NOT been set during reading of the individual line:
     if (Hit->HasFixedResolutions() == false) { 
-      cout<<"Calculating resolutions"<<endl;
       // Use the information from the geometry file:
       if (m_Geo != 0) {
         if (Hit->RetrieveResolutions(m_Geo) == false) {
