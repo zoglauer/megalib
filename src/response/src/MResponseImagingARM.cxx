@@ -37,7 +37,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MSettingsRevan.h"
 #include "MSettingsMimrec.h"
-#include "MResponseMatrixO4.h"
+#include "MResponseMatrixO5.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -125,7 +125,7 @@ bool MResponseImagingARM::CreateResponse()
     PhiDiffAxis.push_back(Axis[b]);
   }
 
-  vector<float> EnergyAxis = CreateThresholdedLogDist(50, 10000, 30, 25);
+  vector<float> EnergyAxis = CreateThresholdedLogDist(100, 10000, 20, 25);
 
   vector<float> PhiAxis = CreateEquiDist(0, 180, 9);
   
@@ -143,11 +143,16 @@ bool MResponseImagingARM::CreateResponse()
   DistanceAxis.push_back(19.99);
   DistanceAxis.push_back(99.99);
   
-  MResponseMatrixO4 Arm("AngularResolution)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis);
-  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]");
+  vector<float> InteractionsAxis;
+  InteractionsAxis.push_back(1.5);
+  InteractionsAxis.push_back(2.5);
+  InteractionsAxis.push_back(9.5);
   
-  MResponseMatrixO4 ArmPhotoPeak("AngularResolution (photo_peak)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis);
-  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]");
+  MResponseMatrixO5 Arm("Angular resolution (all energies)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
+  
+  MResponseMatrixO5 ArmPhotoPeak("Angular resolution (photo-peak)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
 
 
   double PhiDiff;
@@ -186,14 +191,14 @@ bool MResponseImagingARM::CreateResponse()
               PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
               
               //
-              Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm());
+              Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
               
               IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
               
               if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
                   IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
                 ++NPhotoPeakEvents;
-                ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm());
+                ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
               }
             }
           }
