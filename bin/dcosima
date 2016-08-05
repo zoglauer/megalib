@@ -257,7 +257,9 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   echo " " 
   echo "Verifying available machines: "
   for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-  
+    # Reset it in case it was deleted before:
+    MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+    
     # Do a quick test if the machine is availble:
     REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
@@ -338,7 +340,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       # Prepare the launch
       ALLOWED=`dcosima-allowedinstances --remote=${MACHINES[$m]}`
       echo " "
-      echo "Preparing for next launch:"
+      echo "Preparing for next launch with priority ${P}:"
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
