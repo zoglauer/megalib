@@ -168,12 +168,19 @@ while true; do
         echo "dcosima-rsync: No more new data since ${LASTWAIT} seconds! Assuming we are done!"
         MODIFIED=0
       else
-        if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
-          echo "dcosima-rsync: Waiting for the last file to finish..."
-        else
-          echo "dcosima-rsync: Waiting for more data (${SIMFILECOUNT} of ${INSTANCES} sim files are here)..."
+        # Check if something is still running - if not do a quick exit:
+        RUNNING=`dcosima-listallinstances | grep "Total number of instances" | awk -F/ '{ print $2 }'`; 
+        if (( ${RUNNING} == 0 )); then 
+          echo "dcosima-rsync: Nothing is running anymore..."
+          MODIFIED=0
+        else 
+          if [ "${SIMFILECOUNT}" == "${INSTANCES}" ]; then
+            echo "dcosima-rsync: Waiting for the last file to finish..."
+          else
+            echo "dcosima-rsync: Waiting for more data (${SIMFILECOUNT} of ${INSTANCES} sim files are here)..."
+          fi
+          MODIFIED=1
         fi
-        MODIFIED=1
       fi
     fi
   fi

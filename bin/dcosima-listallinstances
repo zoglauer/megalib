@@ -118,6 +118,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 done
 
 OUTPUT+=$" # \n"
+# Don't change this line, since it is used in dcosima-rsync in order to determine if something is still running...
 OUTPUT+=$"Total number of instances:# ${ALLALLOWED} #/# ${ALLRUNNING} #/# ${ALLPOSSIBLE}\n"
 
 echo " "
