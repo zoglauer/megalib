@@ -77,6 +77,8 @@ class MReadOutSequence
   //! Return true if all read-out elements are of the same type
   bool HasIdenticalReadOutElementTypes() const;
   
+  //! Add a sim IA
+  void AddSimIA(const MSimIA& IA) { m_SimIAs.push_back(IA); }
   //! Return the number of simulation interactions
   unsigned int GetNSimIAs() const { return m_SimIAs.size(); }
   //! Return simulation hit i
