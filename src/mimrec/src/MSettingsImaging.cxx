@@ -112,7 +112,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_AnimationFileName = "MyAnimated.gif";
   
   // Response
-  m_ResponseType = 0;
+  m_ResponseType = MResponseType::Gauss1D;
 
   m_FitParameterComptonLongSphere = 20;
   m_FitParameterComptonTransSphere = 2;
@@ -121,9 +121,11 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_Gauss1DCutOff = 2.5;
   m_GaussianByUncertaintiesIncrease = 0.0;
 
-  m_ImagingResponseComptonTransversalFileName = g_StringNotDefined;
-  m_ImagingResponseComptonLongitudinalFileName = g_StringNotDefined;
-  m_ImagingResponsePairRadialFileName = g_StringNotDefined;
+  m_ImagingResponseConeShapesFileName = "";
+  
+  m_ImagingResponseComptonTransversalFileName = "";
+  m_ImagingResponseComptonLongitudinalFileName = "";
+  m_ImagingResponsePairRadialFileName = "";
 
 
   // Memory management
@@ -192,7 +194,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "PenaltyAlpha", m_PenaltyAlpha);
 
   // Menu response selection:
-  new MXmlNode(bNode, "ResponseType", m_ResponseType);
+  new MXmlNode(bNode, "ResponseType", static_cast<int>(m_ResponseType));
 
   // Menu Fitparameter:
   new MXmlNode(bNode, "ResponseParameter1DGaussianComptonLong", m_FitParameterComptonLongSphere);
@@ -203,6 +205,8 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
 
   new MXmlNode(bNode, "ResponseParameter1DGaussianByUncertaintiesIncrease", m_GaussianByUncertaintiesIncrease);
 
+  new MXmlNode(bNode, "ResponseParameterConeShapes", m_ImagingResponseConeShapesFileName);
+  
   new MXmlNode(bNode, "ResponseParameterFilesComptonLong", CleanPath(m_ImagingResponseComptonLongitudinalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesComptonTrans", CleanPath(m_ImagingResponseComptonTransversalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesPair", CleanPath(m_ImagingResponsePairRadialFileName));
@@ -308,7 +312,7 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
         m_PenaltyAlpha = cNode->GetValueAsDouble();
       }
       if ((cNode = bNode->GetNode("ResponseType")) != 0) {
-        m_ResponseType = cNode->GetValueAsInt();
+        m_ResponseType = static_cast<MResponseType>(cNode->GetValueAsInt());
       }
       if ((cNode = bNode->GetNode("ResponseParameter1DGaussianComptonLong")) != 0) {
         m_FitParameterComptonLongSphere = cNode->GetValueAsDouble();
@@ -330,6 +334,9 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       }
       if ((cNode = bNode->GetNode("ResponseParameter1DGaussianByUncertaintiesIncrease")) != 0) {
         m_GaussianByUncertaintiesIncrease = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("ResponseParameterConeShapes")) != 0) {
+        m_ImagingResponseConeShapesFileName = cNode->GetValue();
       }
       if ((cNode = bNode->GetNode("ResponseParameterFilesComptonLong")) != 0) {
         m_ImagingResponseComptonLongitudinalFileName = cNode->GetValue();

@@ -981,7 +981,30 @@ bool MResponseMatrixO2::Write(MString FileName, bool Stream)
 
 void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
 {
-  // Create a 2d ROOT histogram:
+  TH1* Hist = GetHistogram(x1, x2, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO2::GetHistogram(float x1, float x2, bool Normalize)
+{
+  // Create a ROOT histogram:
   
   vector<unsigned int> axes;
   vector<unsigned int> values;
@@ -1052,12 +1075,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         Hist->SetBinContent(i1+1, GetBinContent(i1, axes[0], values[1], axes[1])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM2D1C");
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
-
+      return Hist;
+      
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
       float* xBins = new float[GetAxisBins(axes[0])+1];
@@ -1089,11 +1108,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM2D2C");
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+      return Hist;
+      
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
     }
@@ -1101,6 +1117,8 @@ void MResponseMatrixO2::Show(float x1, float x2, bool Normalize)
   } else {
     mout<<"Empty response matrix of order 2"<<endl;
   }
+  
+  return nullptr;
 }
 
 

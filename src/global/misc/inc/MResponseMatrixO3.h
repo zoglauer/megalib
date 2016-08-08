@@ -102,6 +102,11 @@ class MResponseMatrixO3 : public MResponseMatrix
 
   virtual void Smooth(unsigned int Times = 1);
 
+  //! Return as a histogram
+  TH1* GetHistogram(float x1 = c_ShowX, float x2 = c_ShowY, 
+                    float x3 = c_ShowZ, bool Normalized = true);
+
+  //! Show as a histogram
   void Show(float x1 = c_ShowX, float x2 = c_ShowY, 
             float x3 = c_ShowZ, bool Normalized = true);
 

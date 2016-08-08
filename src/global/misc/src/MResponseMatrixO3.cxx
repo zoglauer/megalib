@@ -1051,6 +1051,31 @@ bool MResponseMatrixO3::Write(MString FileName, bool Stream)
 
 void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
 {
+  TH1* Hist = GetHistogram(x1, x2, x3, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else if (dynamic_cast<TH3*>(Hist) != nullptr) {
+    Hist->Draw("box");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO3::GetHistogram(float x1, float x2, float x3, bool Normalize)
+{
   // Create a ROOT histogram:
   
   vector<unsigned int> axes;
@@ -1103,8 +1128,6 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
   }
 
 
-
-
   if (GetNBins() > 0) {
 
     if (NAxes == 1) {
@@ -1136,12 +1159,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
                                                 values[2], axes[2])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D1C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
+      return Hist;
 
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
@@ -1180,12 +1198,8 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
       
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D2C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+      return Hist;
+      
     } else if (NAxes == 3) {
       TH3D* Hist = 0;
       float* x1Bins = new float[GetAxisBins(axes[0])+1];
@@ -1233,12 +1247,7 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
         }
       }
 
-      TCanvas* Canvas = new TCanvas();
-      Canvas->SetTitle(m_Name + "_RM3D3C");
-      //Canvas->SetCanvasSize(600, 600);
-      Canvas->cd();
-      Hist->Draw("box");
-      Canvas->Update();
+      return Hist;
 
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
@@ -1247,6 +1256,8 @@ void MResponseMatrixO3::Show(float x1, float x2, float x3, bool Normalize)
   } else {
     mout<<"Empty response matrix of order 3"<<endl;
   }
+  
+  return nullptr;
 }
 
 

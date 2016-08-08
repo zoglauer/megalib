@@ -90,8 +90,12 @@ class MImager
   //! Set the Gaussian response 
   void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, 
                            const double CutOff, const bool UseAbsorptions);
+  //! Calculate the response using the known uncertainties of the event
   void SetResponseGaussianByUncertainties(double Increase);
+  //! Determine the response considering energy leakage
   void SetResponseEnergyLeakage(const double Longitudinal, const double Transversal);
+  //! Determine the response from simualted cone shapes
+  bool SetResponseConeShapes(const MString& FileName);
   //! Set response matrices
   bool SetResponsePRM(const MString& ComptonTrans, const MString& ComptonLong, const MString& Pair);
 

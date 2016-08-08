@@ -17,56 +17,59 @@ PRG = $(BN)/mimrec
 MOBJS     = $(LB)/MMimrecMain.o
 
 GOBJS     = $(LB)/MInterfaceMimrec.o \
-						$(LB)/MGUIMimrecMain.o \
-						$(LB)/MGUIHistogramData.o \
-						$(LB)/MGUIARM.o \
-						$(LB)/MGUIAnimation.o \
-						$(LB)/MGUICoordinateSystem.o \
-						$(LB)/MGUIEventSelection.o \
-						$(LB)/MGUIImageDimensions.o \
-						$(LB)/MGUIImageOptions.o \
-						$(LB)/MGUIDeconvolution.o \
-						$(LB)/MGUISignificance.o \
-						$(LB)/MGUIMemory.o \
-						$(LB)/MGUIResponseParameterPRM.o \
-						$(LB)/MGUIResponseParameterGauss1D.o \
-						$(LB)/MGUIResponseParameterGaussianByUncertainties.o \
-						$(LB)/MGUIResponseSelection.o \
-						$(LB)/MGUIPolarization.o \
+	$(LB)/MGUIMimrecMain.o \
+	$(LB)/MGUIHistogramData.o \
+	$(LB)/MGUIARM.o \
+	$(LB)/MGUIAnimation.o \
+	$(LB)/MGUICoordinateSystem.o \
+	$(LB)/MGUIEventSelection.o \
+	$(LB)/MGUIImageDimensions.o \
+	$(LB)/MGUIImageOptions.o \
+	$(LB)/MGUIDeconvolution.o \
+	$(LB)/MGUISignificance.o \
+	$(LB)/MGUIMemory.o \
+	$(LB)/MGUIResponseParameterPRM.o \
+	$(LB)/MGUIResponseParameterConeShapes.o \
+	$(LB)/MGUIResponseParameterGauss1D.o \
+	$(LB)/MGUIResponseParameterGaussianByUncertainties.o \
+	$(LB)/MGUIResponseSelection.o \
+	$(LB)/MGUIPolarization.o \
 
 
 LOBJS     = $(LB)/MSettingsMimrec.o \
-						$(LB)/MSettingsImaging.o \
-						$(LB)/MSettingsEventSelections.o \
-						$(LB)/MBPData.o \
-						$(LB)/MBPDataImage.o \
-						$(LB)/MBPDataImageOneByte.o \
-						$(LB)/MBPDataSparseImage.o \
-						$(LB)/MBPDataSparseImageOneByte.o \
-						$(LB)/MImager.o \
-						$(LB)/MImagerExternallyManaged.o \
-						$(LB)/MProjection.o \
-						$(LB)/MBackprojection.o \
-						$(LB)/MBackprojectionFarField.o \
-						$(LB)/MBackprojectionNearField.o \
-						$(LB)/MEventSelector.o \
-						$(LB)/MLMLAlgorithms.o \
-						$(LB)/MLMLClassicEM.o \
-						$(LB)/MLMLOSEM.o \
-						$(LB)/MPointSource.o \
-						$(LB)/MPointSourceList.o \
-						$(LB)/MPointSourceSelector.o \
-						$(LB)/MResponse.o \
-						$(LB)/MResponseEnergyLeakage.o \
-						$(LB)/MResponseGaussian.o \
-						$(LB)/MResponseGaussianByUncertainties.o \
-						$(LB)/MResponsePRM.o \
-						$(LB)/MImageGalactic.o \
-						$(LB)/MImageSpheric.o \
-						$(LB)/MSensitivity.o \
-						$(LB)/MEarthHorizon.o \
-						$(LB)/MStandardAnalysis.o \
-						$(LB)/MVariableSourceDetector.o \
+	$(LB)/MSettingsImaging.o \
+	$(LB)/MSettingsEventSelections.o \
+	$(LB)/MBPData.o \
+	$(LB)/MBPDataImage.o \
+	$(LB)/MBPDataImageOneByte.o \
+	$(LB)/MBPDataSparseImage.o \
+	$(LB)/MBPDataSparseImageOneByte.o \
+	$(LB)/MImager.o \
+	$(LB)/MImagerExternallyManaged.o \
+	$(LB)/MProjection.o \
+	$(LB)/MBackprojection.o \
+	$(LB)/MBackprojectionFarField.o \
+	$(LB)/MBackprojectionNearField.o \
+	$(LB)/MEventSelector.o \
+	$(LB)/MLMLAlgorithms.o \
+	$(LB)/MLMLClassicEM.o \
+	$(LB)/MLMLOSEM.o \
+	$(LB)/MPointSource.o \
+	$(LB)/MPointSourceList.o \
+	$(LB)/MPointSourceSelector.o \
+	$(LB)/MResponseType.o \
+	$(LB)/MResponse.o \
+	$(LB)/MResponseEnergyLeakage.o \
+	$(LB)/MResponseGaussian.o \
+	$(LB)/MResponseGaussianByUncertainties.o \
+	$(LB)/MResponseConeShapes.o \
+	$(LB)/MResponsePRM.o \
+	$(LB)/MImageGalactic.o \
+	$(LB)/MImageSpheric.o \
+	$(LB)/MSensitivity.o \
+	$(LB)/MEarthHorizon.o \
+	$(LB)/MStandardAnalysis.o \
+	$(LB)/MVariableSourceDetector.o \
 
 
 SGOBJ = $(LB)/libMimrecGui.$(DLL)\
@@ -84,18 +87,18 @@ lib: $(SLOBJ)
 gui: $(SGOBJ)
 
 link:
-		@$(LINK) $(shell pwd)/inc/*.h $(IN)
-		@rm -f $(IN)/LinkDef.h
+	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@rm -f $(IN)/LinkDef.h
 
 clean:
-		@rm -f src/*~
-		@rm -f src/\#*
-		@rm -f inc/*~
-		@rm -f inc/\#*
-		@rm -f *~
-		@rm -f \#*
-		@rm -f $(PRG)
-		@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(ROBJS) $(SGOBJ) $(SLOBJ) $(RCINT)
+	@rm -f src/*~
+	@rm -f src/\#*
+	@rm -f inc/*~
+	@rm -f inc/\#*
+	@rm -f *~
+	@rm -f \#*
+	@rm -f $(PRG)
+	@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(ROBJS) $(SGOBJ) $(SLOBJ) $(RCINT)
 
 #----------------------------------------------------------------
 # Dependencies:

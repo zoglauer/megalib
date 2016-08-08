@@ -37,6 +37,7 @@
 #include "MGUIResponseSelection.h"
 #include "MGUIResponseParameterGauss1D.h"
 #include "MGUIResponseParameterGaussianByUncertainties.h"
+#include "MGUIResponseParameterConeShapes.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
 #include "MGUISignificance.h"
@@ -322,11 +323,13 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_FitParameter:
-        if (m_Data->GetResponseType() == 0) {
+        if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
           new MGUIResponseParameterGauss1D(gClient->GetRoot(), this, m_Data);
-        } else if (m_Data->GetResponseType() == 1) {
+        } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
           new MGUIResponseParameterGaussianByUncertainties(gClient->GetRoot(), this, m_Data);
-        } else if (m_Data->GetResponseType() == 3) {
+        } else if (m_Data->GetResponseType() == MResponseType::ConeShapes) {
+          new MGUIResponseParameterConeShapes(gClient->GetRoot(), this, m_Data);
+        } else if (m_Data->GetResponseType() == MResponseType::PRM) {
           new MGUIResponseParameterPRM(gClient->GetRoot(), this, m_Data);
         }
         break;

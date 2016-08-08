@@ -96,6 +96,9 @@ class MResponseMatrixO2 : public MResponseMatrix
 
   virtual void Smooth(unsigned int Times = 1);
 
+  //! Return as a histogram
+  TH1* GetHistogram(float x1 = c_ShowX, float x2 = c_ShowY, bool Normalized = true);
+  //! Show as a histogram
   void Show(float x1 = c_ShowX, float x2 = c_ShowY, bool Normalized = true);
 
   // protected methods:

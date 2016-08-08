@@ -70,6 +70,7 @@ using namespace std;
 #include "MResponse.h"
 #include "MResponseGaussian.h"
 #include "MResponseGaussianByUncertainties.h"
+#include "MResponseConeShapes.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
 #include "MBinnerBayesianBlocks.h"
@@ -610,21 +611,25 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
     } else {
      m_Imager->SetAnimationMode(MImager::c_AnimateNothing); 
     }
-    
+
     // Set the response type:
-    if (m_Data->GetResponseType() == 0) {
+    if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
       m_Imager->SetResponseGaussian(m_Data->GetFitParameterComptonTransSphere(), 
                                     m_Data->GetFitParameterComptonLongSphere(),
                                     m_Data->GetFitParameterPair(),
                                     m_Data->GetGauss1DCutOff(),
                                     m_Data->GetUseAbsorptions());
-    } else if (m_Data->GetResponseType() == 1) {
+    } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
       m_Imager->SetResponseGaussianByUncertainties(m_Data->GetGaussianByUncertaintiesIncrease());
-    } else if (m_Data->GetResponseType() == 2) {
+    } else if (m_Data->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
       m_Imager->SetResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
-                                         m_Data->GetFitParameterComptonLongSphere());
-      
-    } else if (m_Data->GetResponseType() == 3) {
+                                         m_Data->GetFitParameterComptonLongSphere());     
+    } else if (m_Data->GetResponseType() == MResponseType::ConeShapes) {
+      if (m_Imager->SetResponseConeShapes(m_Data->GetImagingResponseConeShapesFileName()) == false) {
+        mgui<<"Cannot set cone-shapes response! Aborting imaging!"<<error;
+        return;
+      }     
+    } else if (m_Data->GetResponseType() == MResponseType::PRM) {
       if (m_Imager->SetResponsePRM(m_Data->GetImagingResponseComptonTransversalFileName(),
                                    m_Data->GetImagingResponseComptonLongitudinalFileName(),
                                    m_Data->GetImagingResponsePairRadialFileName()) == false) {
@@ -1560,23 +1565,30 @@ void MInterfaceMimrec::ARMResponseComparison()
   
   double ARMMax = m_Data->GetTPDistanceTrans();
   int ARMBins = m_Data->GetHistBinsARMGamma();
-
+  
   MResponse* Response = 0;
-  if (m_Data->GetResponseType() == 0) {
+  if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
     Response = new MResponseGaussian(m_Data->GetFitParameterComptonTransSphere(), 
                                      m_Data->GetFitParameterComptonLongSphere(),
                                      m_Data->GetFitParameterPair());
-  } else if (m_Data->GetResponseType() == 1) {
+  } else if (m_Data->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
     Response = new MResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
                                        m_Data->GetFitParameterComptonLongSphere());
-  } else if (m_Data->GetResponseType() == 2) {
+  } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
     Response = new MResponseGaussianByUncertainties();
-  } else if (m_Data->GetResponseType() == 3) {
+  } else if (m_Data->GetResponseType() == MResponseType::PRM) {
+    Response = new MResponseConeShapes();
+    if (dynamic_cast<MResponseConeShapes*>(Response)->LoadResponseFile(m_Data->GetImagingResponseConeShapesFileName()) == false) {
+      mgui<<"Unable to load response files!"<<endl;
+      delete Response;
+      return;
+    }
+  } else if (m_Data->GetResponseType() == MResponseType::PRM) {
     Response = new MResponsePRM();
     if (dynamic_cast<MResponsePRM*>(Response)->LoadResponseFiles(m_Data->GetImagingResponseComptonTransversalFileName(),
                                    m_Data->GetImagingResponseComptonLongitudinalFileName(),
                                    m_Data->GetImagingResponsePairRadialFileName()) == false) {
-      mgui<<"Unable to load responsefiles!"<<endl;
+      mgui<<"Unable to load response files!"<<endl;
       delete Response;
       return;
     }

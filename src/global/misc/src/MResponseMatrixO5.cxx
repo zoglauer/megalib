@@ -910,6 +910,51 @@ MResponseMatrixO5 MResponseMatrixO5::GetSumMatrixO5(unsigned int a1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MResponseMatrixO1 MResponseMatrixO5::GetSliceInterpolated(float x1, unsigned int order1,
+                                                          float x2, unsigned int order2,
+                                                          float x3, unsigned int order3,
+                                                          float x4, unsigned int order4)
+{
+  // Return a slice of order 1 in axis a1 of this matrix
+
+  massert(order1 >= 1 && order1 <= 5);
+  massert(order2 >= 1 && order2 <= 5);
+  massert(order3 >= 1 && order3 <= 5);
+  massert(order4 >= 1 && order4 <= 5);
+  //massert(x1 >= GetAxisContent(0, order1) && x1 <= GetAxisContent(GetAxisBins(order1)-1, order1));
+  //massert(x2 >= GetAxisContent(0, order2) && x2 <= GetAxisContent(GetAxisBins(order2)-1, order2));
+
+  unsigned int newaxis = 0;
+  vector<float> values;
+  for (unsigned int a = 1; a <= m_Order; ++a) {
+    if (a == order1) {
+      values.push_back(x1);
+    } else if (a == order2) {
+      values.push_back(x2);
+    } else if (a == order3) {
+      values.push_back(x3);
+    } else if (a == order4) {
+      values.push_back(x4);
+    } else {
+      values.push_back(0);
+      newaxis = a;
+    }
+  }
+
+  MResponseMatrixO1 M(GetAxis(newaxis));
+  
+  for (unsigned int i1 = 0; i1 < GetAxisBins(newaxis); ++i1) {
+    values[newaxis-1] = GetAxisBinCenter(i1, newaxis);
+    M.SetBinContent(i1, Get(values[0], values[1], values[2], values[3], values[4]));
+  }
+
+  return M;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MResponseMatrixO5::ReadSpecific(MFileResponse& Parser, 
                                      const MString& Type, 
                                      const int Version)
@@ -1144,8 +1189,32 @@ bool MResponseMatrixO5::Write(MString FileName, bool Stream)
 void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4, 
                              float x5, bool Normalize)
 {
-  // Create a 3d ROOT histogram:
-  
+  TH1* Hist = GetHistogram(x1, x2, x3, x4, x5, Normalize);
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  if (dynamic_cast<TH2*>(Hist) != nullptr) {
+    Hist->Draw("colz");
+  } else if (dynamic_cast<TH3*>(Hist) != nullptr) {
+    Hist->Draw("box");
+  } else {
+    Hist->Draw();
+  }
+  Canvas->Update();  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+TH1* MResponseMatrixO5::GetHistogram(float x1, float x2, float x3, float x4, 
+                                     float x5, bool Normalize)
+{
   vector<unsigned int> axes;
   vector<unsigned int> values;
   vector<bool> found(5, false);
@@ -1248,10 +1317,7 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
                                                 values[4], axes[4])*Norm);
       }
     
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM5C", m_Name + "_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw();
-      Canvas->Update();
+      return Hist;
 
     } else if (NAxes == 2) {
       TH2D* Hist = 0;
@@ -1291,11 +1357,9 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
                                                         values[4], axes[4])*Norm);
         }
       }
-      
-      TCanvas* Canvas = new TCanvas(m_Name+"_RM5C", m_Name+"_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw("colz");
-      Canvas->Update();
+    
+      return Hist;
+
     } else if (NAxes == 3) {
       TH3D* Hist = 0;
       float* x1Bins = new float[GetAxisBins(axes[0])+1];
@@ -1346,11 +1410,8 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
           }
         }
       }
-
-      TCanvas* Canvas = new TCanvas(m_Name + "_RM5C", m_Name + "_RM5C", 0, 0, 600, 600);
-      Canvas->cd();
-      Hist->Draw("box");
-      Canvas->Update();
+    
+      return Hist;
 
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
@@ -1359,6 +1420,8 @@ void MResponseMatrixO5::Show(float x1, float x2, float x3, float x4,
   } else {
     mout<<"Empty response matrix of order 5"<<endl;
   }
+  
+  return nullptr;
 }
 
 

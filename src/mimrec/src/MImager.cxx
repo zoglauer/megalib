@@ -57,6 +57,7 @@ using namespace std;
 #include "MResponse.h"
 #include "MResponseGaussian.h"
 #include "MResponseGaussianByUncertainties.h"
+#include "MResponseConeShapes.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
 #include "MSensitivity.h" 
@@ -271,19 +272,23 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   SetAnimationMode(MImager::c_AnimateNothing); 
     
   // Set the response type:
-  if (Settings->GetResponseType() == 0) {
+  if (Settings->GetResponseType() == MResponseType::Gauss1D) {
     SetResponseGaussian(Settings->GetFitParameterComptonTransSphere(), 
                         Settings->GetFitParameterComptonLongSphere(),
                         Settings->GetFitParameterPair(),
                         Settings->GetGauss1DCutOff(),
                         Settings->GetUseAbsorptions());
-  } else if (Settings->GetResponseType() == 1) {
+  } else if (Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
     SetResponseGaussianByUncertainties(Settings->GetGaussianByUncertaintiesIncrease());
-  } else if (Settings->GetResponseType() == 2) {
+  } else if (Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
     SetResponseEnergyLeakage(Settings->GetFitParameterComptonTransSphere(), 
                              Settings->GetFitParameterComptonLongSphere());
-     
-  } else if (Settings->GetResponseType() == 3) {
+  } else if (Settings->GetResponseType() == MResponseType::ConeShapes) {
+    if (SetResponseConeShapes(Settings->GetImagingResponseConeShapesFileName()) == false) {
+      merr<<"Cannot set \"cone-shapes\" response! Aborting imaging!"<<show;
+      return false;
+    }
+  } else if (Settings->GetResponseType() == MResponseType::PRM) {
     if (SetResponsePRM(Settings->GetImagingResponseComptonTransversalFileName(),
                        Settings->GetImagingResponseComptonLongitudinalFileName(),
                        Settings->GetImagingResponsePairRadialFileName()) == false) {
@@ -466,6 +471,27 @@ void MImager::UseAbsorptions(bool UseAbsorptions)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MImager::SetResponseConeShapes(const MString& FileName)
+{
+  // Set the response matrices
+
+  for (unsigned int t= 0; t < m_NThreads; ++t) {
+    MResponseConeShapes* Response = new MResponseConeShapes();
+    if (Response->LoadResponseFile(FileName) == false) {
+      mgui<<"Unable to load response file!"<<endl;
+      delete Response;
+      return false;
+    }
+    m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));
+  }
+
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MImager::SetResponsePRM(const MString& ComptonTrans, 
                                 const MString& ComptonLong, 
                                 const MString& PairRadial)
@@ -475,7 +501,7 @@ bool MImager::SetResponsePRM(const MString& ComptonTrans,
   for (unsigned int t= 0; t < m_NThreads; ++t) {
     MResponsePRM* Response = new MResponsePRM();
     if (Response->LoadResponseFiles(ComptonTrans, ComptonLong, PairRadial) == false) {
-      mgui<<"Unable to load responsefiles!"<<endl;
+      mgui<<"Unable to load response files!"<<endl;
       delete Response;
       return false;
     }

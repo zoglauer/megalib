@@ -1,5 +1,5 @@
 /*
- * MGUIResponseSelection.h
+ * MGUIResponseParameterConeShapes.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,48 +9,38 @@
  */
 
 
-#ifndef __MGUIResponseSelection__
-#define __MGUIResponseSelection__
+#ifndef __MGUIResponseParameterConeShapes__
+#define __MGUIResponseParameterConeShapes__
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // ROOT libs:
-#include <TGFrame.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIDialog.h"
 #include "MSettingsImaging.h"
-#include "MGUIERBList.h"
-#include "MResponseType.h"
+#include "MGUIEFileSelector.h"
 
 // Forward declarations:
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//! Default UI to select the response type
-class MGUIResponseSelection : public MGUIDialog
+
+class MGUIResponseParameterConeShapes : public MGUIDialog
 {
   // Public Interface:
  public:
-  //! Standard constructor
-  MGUIResponseSelection(const TGWindow* Parent, const TGWindow* Main, MSettingsImaging* Data = 0);
-  //! Default destructor
-  virtual ~MGUIResponseSelection();
+  MGUIResponseParameterConeShapes(const TGWindow* Parent, const TGWindow* Main, MSettingsImaging* Settings);
+  virtual ~MGUIResponseParameterConeShapes();
 
   // protected methods:
  protected:
-  //! Create the UI
   virtual void Create();
-  //! Apply the set data 
   virtual bool OnApply();
-
-  // private methods:
- private:
-
 
 
   // protected members:
@@ -59,15 +49,17 @@ class MGUIResponseSelection : public MGUIDialog
 
   // private members:
  private:
-  //! The settings store
+  //! The UI data
   MSettingsImaging* m_Settings;
-  //! A radiobutton list of the different response choices
-  MGUIERBList* m_ResponseChoice;
+
+  //! A file selector for the ARM response
+  MGUIEFileSelector* m_ARMFile;
+
 
 
 #ifdef ___CINT___
  public:
-  ClassDef(MGUIResponseSelection, 0)
+  ClassDef(MGUIResponseParameterConeShapes, 0)
 #endif
 
 };
