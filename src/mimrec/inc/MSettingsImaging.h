@@ -25,6 +25,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MCoordinateSystem.h"
+#include "MResponseType.h"
 #include "MSettings.h"
 #include "MPointSource.h"
 
@@ -55,8 +56,8 @@ class MSettingsImaging : public MSettingsInterface
 
   // Menu Response selection:
 
-  int GetResponseType() const { return m_ResponseType; }
-  void SetResponseType(int ResponseType) { m_ResponseType = ResponseType; m_BackprojectionModified = true; }
+  MResponseType GetResponseType() const { return m_ResponseType; }
+  void SetResponseType(MResponseType ResponseType) { m_ResponseType = ResponseType; m_BackprojectionModified = true; }
 
 
   // Menu Fitparameter for 1D Gauss approximation:
@@ -79,6 +80,11 @@ class MSettingsImaging : public MSettingsInterface
   double GetGaussianByUncertaintiesIncrease() const { return m_GaussianByUncertaintiesIncrease; }
   void SetGaussianByUncertaintiesIncrease(double GaussianByUncertaintiesIncrease) { m_GaussianByUncertaintiesIncrease = GaussianByUncertaintiesIncrease; m_BackprojectionModified = true; }
 
+  // Parameters for multi-D ARM shapes
+  MString GetImagingResponseConeShapesFileName() const { return m_ImagingResponseConeShapesFileName; }
+  void SetImagingResponseConeShapesFileName(MString ImagingResponseConeShapesFileName) { m_ImagingResponseConeShapesFileName = ImagingResponseConeShapesFileName; m_BackprojectionModified = true; }
+  
+  
   // Parameters for Partially-binned list-mode
   MString GetImagingResponseComptonLongitudinalFileName() const { return m_ImagingResponseComptonLongitudinalFileName; }
   void SetImagingResponseComptonLongitudinalFileName(MString ImagingResponseComptonLongitudinalFileName) { m_ImagingResponseComptonLongitudinalFileName = ImagingResponseComptonLongitudinalFileName; m_BackprojectionModified = true; }
@@ -271,8 +277,9 @@ class MSettingsImaging : public MSettingsInterface
   // Global stuff
   bool m_StoreImages;
 
-  int m_ResponseType;
+  MResponseType m_ResponseType;
   MCoordinateSystem m_CoordinateSystem;
+  
   unsigned int m_LHAlgorithm;
   unsigned int m_OSEMSubSets;
   unsigned int m_LHStopCriteria;
@@ -282,12 +289,6 @@ class MSettingsImaging : public MSettingsInterface
   unsigned int m_NIterations;
 
   
-  MString m_ImagingResponseComptonLongitudinalFileName;
-  MString m_ImagingResponseComptonTransversalFileName;
-  MString m_ImagingResponsePairRadialFileName;
-
-
-
   // Image dimensions spherical
   MVector m_ImageRotationXAxis;
   MVector m_ImageRotationZAxis;
@@ -353,6 +354,12 @@ class MSettingsImaging : public MSettingsInterface
   bool m_UseAbsorptions;
   double m_Gauss1DCutOff;
   double m_GaussianByUncertaintiesIncrease;
+
+  MString m_ImagingResponseComptonLongitudinalFileName;
+  MString m_ImagingResponseComptonTransversalFileName;
+  MString m_ImagingResponsePairRadialFileName;
+
+  MString m_ImagingResponseConeShapesFileName;
 
   MString m_SensitivityFile;
   bool m_UseSensitivityFile;

@@ -103,6 +103,9 @@ class MResponseMatrixO1 : public MResponseMatrix
 
   virtual void Smooth(unsigned int Times = 1);
 
+  //! Return a ROOT histogram
+  TH1* GetHistogram(bool Normalized = true);
+  //! Show as an image
   void Show(bool Normalized = true);
   TGraph* GenerateGraph();
 

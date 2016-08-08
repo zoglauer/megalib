@@ -45,12 +45,12 @@ ClassImp(MGUIResponseSelection)
 
 MGUIResponseSelection::MGUIResponseSelection(const TGWindow* Parent, 
                                              const TGWindow* Main, 
-                                             MSettingsImaging* Data)
+                                             MSettingsImaging* Settings)
   : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIResponseSelection and bring it to the screen
 
-  m_GUIData = Data;
+  m_Settings = Settings;
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
@@ -80,18 +80,28 @@ void MGUIResponseSelection::Create()
 
   AddSubTitle("Select the type of response you want to use"); 
 
-  m_ResponseChoiceLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20, 20, 0, 20);
+  TGLayoutHints* ResponseChoiceLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20, 20, 0, 20);
   
   m_ResponseChoice = new MGUIERBList(this, "Response types:");
   m_ResponseChoice->Add("Standard one parameter linear gaussian for photo-peak events (List-mode)");
   m_ResponseChoice->Add("Standard one parameter linear gaussian calculated by uncertainties (List-mode)");
   m_ResponseChoice->Add("Standard one parameter linear gaussian with limited energy measurement (List-mode)");
+  m_ResponseChoice->Add("Cone shapes determined by simulations -- handles only not-tracked Compton events (List-mode)");
   m_ResponseChoice->Add("Precalculated response matrices (List-mode)");
-  m_ResponseChoice->SetSelected(m_GUIData->GetResponseType());
+  if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
+    m_ResponseChoice->SetSelected(1);
+  } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
+    m_ResponseChoice->SetSelected(2);
+  } else if (m_Settings->GetResponseType() == MResponseType::ConeShapes) {
+    m_ResponseChoice->SetSelected(3);
+  } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
+    m_ResponseChoice->SetSelected(4);
+  } else {
+    m_ResponseChoice->SetSelected(0);
+  }
   m_ResponseChoice->Create();
   
-  AddFrame(m_ResponseChoice, m_ResponseChoiceLayout);
-    
+  AddFrame(m_ResponseChoice, ResponseChoiceLayout);
 
   AddButtons();
 
@@ -113,9 +123,22 @@ void MGUIResponseSelection::Create()
 bool MGUIResponseSelection::OnApply()
 {
   // The Apply button has been pressed
-
-  if (m_ResponseChoice->GetSelected() != m_GUIData->GetResponseType()) {
-    m_GUIData->SetResponseType(m_ResponseChoice->GetSelected());
+  
+  MResponseType Type;
+  if (m_ResponseChoice->GetSelected() == 1) {
+    Type = MResponseType::GaussByUncertainties;
+  } else if (m_ResponseChoice->GetSelected() == 2) {
+    Type = MResponseType::GaussByEnergyLeakage;
+  } else if (m_ResponseChoice->GetSelected() == 3) {
+    Type = MResponseType::ConeShapes;
+  } else if (m_ResponseChoice->GetSelected() == 4) {
+    Type = MResponseType::PRM;
+  } else {
+    Type = MResponseType::Gauss1D;
+  }
+  
+  if (Type != m_Settings->GetResponseType()) {
+    m_Settings->SetResponseType(Type);
   }
  
   return true;

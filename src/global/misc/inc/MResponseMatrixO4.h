@@ -102,8 +102,14 @@ class MResponseMatrixO4 : public MResponseMatrix
   virtual MResponseMatrixO4 GetSumMatrixO4(unsigned int a1, unsigned int a2, 
                                            unsigned int a3, unsigned int a4) const;
 
+  //! Return a slice of order 1 of this matrix (x1 is from axis a1)
+  virtual MResponseMatrixO1 GetSliceInterpolated(float x1, unsigned int a1, 
+                                                 float x2, unsigned int a2,
+                                                 float x3, unsigned int a3); 
+
   virtual bool Write(MString FileName, bool Stream = false);
 
+  TH1* GetHistogram(float x1, float x2, float x3, float x4, bool Normalized = true);
   void Show(float x1, float x2, float x3, float x4, bool Normalized = true);
 
   // protected methods:

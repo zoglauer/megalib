@@ -815,9 +815,11 @@ bool MResponseMatrixO1::Write(MString FileName, bool Stream)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixO1::Show(bool Normalize)
+TH1* MResponseMatrixO1::GetHistogram(bool Normalize)
 {
   // Create a 1D ROOT histogram:
+  
+  TH1* Histogram = nullptr;
   
   if (GetNBins() > 0) {
   
@@ -846,15 +848,34 @@ void MResponseMatrixO1::Show(bool Normalize)
       Hist->SetBinContent(i1+1, GetBinContent(i1)*Norm);
     }
     
-    TCanvas* Canvas = new TCanvas();
-    Canvas->SetTitle(m_Name + "_RM1C");
-    Canvas->cd();
-    Hist->Draw();
-    Canvas->Update();
+    Histogram = Hist;
 
   } else {
     mout<<"Empty response matrix of order 1"<<endl;
   }
+  
+  return Histogram;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMatrixO1::Show(bool Normalize)
+{
+  // Create a 1D ROOT histogram:
+  
+  TH1D* Hist = dynamic_cast<TH1D*>(GetHistogram(Normalize));
+  if (Hist == nullptr) {
+    mout<<"Unable to generate histogram"<<endl;
+    return;
+  }
+    
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle(m_Name);
+  Canvas->cd();
+  Hist->Draw();
+  Canvas->Update();
 }
 
 

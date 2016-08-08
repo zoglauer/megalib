@@ -69,6 +69,8 @@ using namespace std;
 #include "MGUIEventSelection.h"
 #include "MGUIResponseSelection.h"
 #include "MGUIResponseParameterGauss1D.h"
+#include "MGUIResponseParameterGaussianByUncertainties.h"
+#include "MGUIResponseParameterConeShapes.h"
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIMemory.h"
 #include "MGUIImageDimensions.h"
@@ -513,9 +515,13 @@ Bool_t MGUIRealtaMain::ProcessMessage(Long_t Message, Long_t Parameter1,
         break;
 
       case c_FitParameter:
-        if (m_Settings->GetResponseType() == 0) {
+        if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
           new MGUIResponseParameterGauss1D(gClient->GetRoot(), this, m_Settings);
-        } else {
+        } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
+          new MGUIResponseParameterGaussianByUncertainties(gClient->GetRoot(), this, m_Settings);
+        } else if (m_Settings->GetResponseType() == MResponseType::ConeShapes) {
+          new MGUIResponseParameterConeShapes(gClient->GetRoot(), this, m_Settings);
+        } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
           new MGUIResponseParameterPRM(gClient->GetRoot(), this, m_Settings);
         }
         break;

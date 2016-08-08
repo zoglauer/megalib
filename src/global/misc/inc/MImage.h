@@ -103,6 +103,7 @@ class MImage
   static const int c_WhiteRedBlack;
   static const int c_Thesis;
   static const int c_ThesisVarAtLow;
+  static const int c_Rainbow;
 
   static const int c_COL;
   static const int c_COLZ;

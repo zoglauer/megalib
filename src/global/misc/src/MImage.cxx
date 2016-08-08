@@ -71,6 +71,7 @@ const int MImage::c_Incendescent   = 6;
 const int MImage::c_WhiteRedBlack  = 7;
 const int MImage::c_Thesis         = 8;
 const int MImage::c_ThesisVarAtLow = 9;
+const int MImage::c_Rainbow        = 10;
 
 // The GUI relies on this sequence - don't modifier unless you modifiy MGUIImageOptions
 const int MImage::c_COL           = 0;
@@ -356,6 +357,8 @@ void MImage::SetSpectrum(int Spectrum)
     double Green[Number]   = { 1.00, 1.00, 0.50, 0.00, 0.00, 0.00 };
     double Blue[Number]    = { 1.00, 1.00, 0.50, 0.00, 0.00, 0.00 };
     TColor::CreateGradientColorTable(Number, Stops, Red, Green, Blue, 100);
+  } else if (m_Spectrum == c_Rainbow) {
+    gStyle->SetPalette(55, 0);
   } else {
     merr<<"Unknown draw palette option. Using default."<<show;
     gStyle->SetPalette(1, 0);
