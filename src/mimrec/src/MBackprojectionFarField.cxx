@@ -448,8 +448,6 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
   //double InvIntegral = 1.0/m_Response->GetComptonIntegral(Phi);
   double InvIntegral = 1.0;
 
-  cout<<"Integral calc: "<<InvIntegral<<endl;
-
   //mimp<<"InvIntegral is only part of the response!"<<show;
 
   /*
