@@ -117,6 +117,7 @@ bool MGTI::Load(const MString& FileName)
   
   
   for (unsigned int l = 0; l < P.GetNLines(); ++l) {
+    if (P.GetTokenizerAt(l)->GetNTokens() == 1 && P.GetTokenizerAt(l)->IsTokenAt(0, "EN") == true) break;
     if (P.GetTokenizerAt(l)->GetNTokens() != 3) continue;
     if (P.GetTokenizerAt(l)->IsTokenAt(0, "GT") == true) {
       m_GoodStart.push_back(P.GetTokenizerAt(l)->GetTokenAtAsTime(1));
