@@ -445,8 +445,8 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
   // The minimum electron angle error
   //double EAngleError = fabs(AngleA - m_C->Phi());
 
-  //double InvIntegral = 1.0/m_Response->GetComptonIntegral(Phi);
-  double InvIntegral = 1.0;
+  double InvIntegral = 1.0/m_Response->GetComptonIntegral(Phi);
+  //double InvIntegral = 1.0;
 
   //mimp<<"InvIntegral is only part of the response!"<<show;
 
