@@ -1,0 +1,34 @@
+# An atmosphere simulation
+
+Version         1
+Geometry        Atmosphere.BestCrabDay.geo
+
+# Physics list
+PhysicsListEM                        Livermore
+PhysicsListEMActivateFluorescence    false
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  init-only
+StoreSimulationInfoIonization        false
+StoreSimulationInfoWatchedVolumes    TestSphere
+StoreOnlyTriggeredEvents             false
+DiscretizeHits                       true
+
+DefaultRangeCut 100
+
+Run SpaceSim
+SpaceSim.FileName         Atmosphere_FanBeam
+SpaceSim.Triggers         1000000
+
+# Attention: Concerning the lower energy band:
+# The analysis is planned to be performed above 1 MeV.
+# Therfore you set the lower energy limit for the simulation, well below this limit, 
+# to avoid problems due to energy resolution limitations
+
+SpaceSim.Source Beam
+Beam.ParticleType           1
+Beam.Beam                   FanBeam 0 0 20000000   1 0 0   0 0 -1  10000000
+Beam.Spectrum               Linear 10 10000
+Beam.Flux                   1.0
+
