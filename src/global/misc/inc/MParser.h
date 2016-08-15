@@ -62,6 +62,8 @@ class MParser : public MFile
 
   //! READ-MODE ONLY: Return the tokenized lines
   MTokenizer* GetTokenizerAt(unsigned int Line);
+  //! READ-MODE ONLY: Return the line as text
+  MString GetLine(unsigned int Line);
 
   //! READ-MODE ONLY: Special!!
   //! Some derived classes do not read the whole file during Open()

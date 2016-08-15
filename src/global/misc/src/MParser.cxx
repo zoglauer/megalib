@@ -171,7 +171,30 @@ MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
   return m_Lines[LineNumber];
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+MString MParser::GetLine(unsigned int LineNumber)
+{
+  //! READ-MODE ONLY: Return the line as text
+
+  MString Line;
+  
+  if (m_Way != c_Read) {
+    merr<<"Only valid if file is in read-mode!"<<endl;
+    massert(m_Way == c_Read);
+    return 0;
+  }
+
+  if (LineNumber >= GetNLines()) {
+    merr<<"Index out of bounds"<<endl;
+    return 0;
+  }   
+  
+  return m_Lines[LineNumber]->GetText();
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
