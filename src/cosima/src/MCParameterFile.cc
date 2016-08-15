@@ -1680,13 +1680,15 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(8),
                                       T->GetTokenAtAsDouble(9)*deg,
                                       T->GetTokenAtAsDouble(10)*deg) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
+                mdebug<<"Setting position "
+                      <<T->GetTokenAtAsDouble(3)
                       <<"/"<<T->GetTokenAtAsDouble(4)
                       <<"/"<<T->GetTokenAtAsDouble(5)
                       <<"/"<<T->GetTokenAtAsDouble(6)
                       <<"/"<<T->GetTokenAtAsDouble(7)
                       <<"/"<<T->GetTokenAtAsDouble(8)
                       <<"/"<<T->GetTokenAtAsDouble(9)
+                      <<"/"<<T->GetTokenAtAsDouble(10)
                       <<" for source "<<Source->GetName()<<endl;
               } else {
                 Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
@@ -1696,6 +1698,44 @@ bool MCParameterFile::Parse()
             } else {
               Typo(i, "Cannot parse token \"Beam - gaussian cone beam\" correctly:"
                    " Number of tokens is not correct (!= 11)!");
+              return false;
+            }
+          }  
+          else if (Type == "fanbeam" || Type == "fb") {
+            if (T->GetNTokens() == 13) {
+              Source->SetBeamType(MCSource::c_NearField,
+                                  MCSource::c_NearFieldFanBeam);
+              // Pos, Dir1, Dir2, Radius
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*cm,
+                                      T->GetTokenAtAsDouble(4)*cm,
+                                      T->GetTokenAtAsDouble(5)*cm,
+                                      T->GetTokenAtAsDouble(6),
+                                      T->GetTokenAtAsDouble(7),
+                                      T->GetTokenAtAsDouble(8),
+                                      T->GetTokenAtAsDouble(9),
+                                      T->GetTokenAtAsDouble(10),
+                                      T->GetTokenAtAsDouble(11),
+                                      T->GetTokenAtAsDouble(12)*cm) == true) {
+                mdebug<<"Setting position (pos, dir1, dir2, radius) "
+                      <<T->GetTokenAtAsDouble(3)
+                      <<"/"<<T->GetTokenAtAsDouble(4)
+                      <<"/"<<T->GetTokenAtAsDouble(5)
+                      <<"/"<<T->GetTokenAtAsDouble(6)
+                      <<"/"<<T->GetTokenAtAsDouble(7)
+                      <<"/"<<T->GetTokenAtAsDouble(8)
+                      <<"/"<<T->GetTokenAtAsDouble(9)
+                      <<"/"<<T->GetTokenAtAsDouble(10)
+                      <<"/"<<T->GetTokenAtAsDouble(11)
+                      <<"/"<<T->GetTokenAtAsDouble(12)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - fan beam\" correctly:"
+                     " Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - fan beam\" correctly:"
+                   " Number of tokens is not correct (!= 13)!");
               return false;
             }
           }  

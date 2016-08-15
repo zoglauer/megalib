@@ -96,10 +96,11 @@ const int MCSource::c_NearFieldBeam1DProfile                       = 21;
 const int MCSource::c_NearFieldBeam2DProfile                       = 22;
 const int MCSource::c_NearFieldConeBeam                            = 23;
 const int MCSource::c_NearFieldConeBeamGauss                       = 24;
-const int MCSource::c_NearFieldIlluminatedDisk                     = 25;
-const int MCSource::c_NearFieldIlluminatedSquare                   = 26;
-const int MCSource::c_NearFieldVolume                              = 27;
-const int MCSource::c_NearFieldFlatMap                             = 28;
+const int MCSource::c_NearFieldFanBeam                             = 25;
+const int MCSource::c_NearFieldIlluminatedDisk                     = 26;
+const int MCSource::c_NearFieldIlluminatedSquare                   = 27;
+const int MCSource::c_NearFieldVolume                              = 28;
+const int MCSource::c_NearFieldFlatMap                             = 29;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -832,6 +833,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldBeam2DProfile:
   case c_NearFieldConeBeam:
   case c_NearFieldConeBeamGauss:
+  case c_NearFieldFanBeam:
   case c_NearFieldIlluminatedDisk:
   case c_NearFieldIlluminatedSquare:
   case c_NearFieldVolume:
@@ -905,6 +907,9 @@ string MCSource::GetBeamTypeAsString() const
   case c_NearFieldConeBeamGauss:
     Name = "GaussianConeBeam";
     break;
+  case c_NearFieldFanBeam:
+    Name = "FanBeam";
+    break;
   case c_NearFieldIlluminatedDisk:
     Name = "IlluminatedDisk";
     break;
@@ -973,7 +978,10 @@ bool MCSource::SetPosition(double PositionParam1,
                            double PositionParam8, 
                            double PositionParam9, 
                            double PositionParam10, 
-                           double PositionParam11)
+                           double PositionParam11,
+                           double PositionParam12,
+                           double PositionParam13,
+                           double PositionParam14)
 {
   m_PositionParam1 = PositionParam1;
   m_PositionParam2 = PositionParam2;
@@ -986,6 +994,9 @@ bool MCSource::SetPosition(double PositionParam1,
   m_PositionParam9 = PositionParam9;
   m_PositionParam10 = PositionParam10;
   m_PositionParam11 = PositionParam11;
+  m_PositionParam12 = PositionParam12;
+  m_PositionParam13 = PositionParam13;
+  m_PositionParam14 = PositionParam14;
 
   // Some sanity checks:
   if (m_BeamType == c_FarFieldPoint) {
@@ -1096,6 +1107,19 @@ bool MCSource::SetPosition(double PositionParam1,
     }
     if (m_PositionParam8 <= 0) {
       mout<<m_Name<<": The gaussian 1-sigma value must be larger than zero"<<endl;
+      return false;
+    }
+  } else if (m_BeamType == c_NearFieldFanBeam) {
+    if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
+      mout<<m_Name<<": The first direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam7 == 0 && m_PositionParam8 == 0 && m_PositionParam9 == 0) {
+      mout<<m_Name<<": The second direction must not be (0, 0, 0)"<<endl;
+      return false;
+    }
+    if (m_PositionParam10 < 0) {
+      mout<<m_Name<<": The beam width must be zero (point beam) or positive"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldIlluminatedDisk) {
@@ -1215,6 +1239,17 @@ bool MCSource::UpgradePosition()
     if (m_PositionTF1 != 0) delete m_PositionTF1;
     m_PositionTF1 = new TF1("CartesianConeBeamGauss", "exp(-(x*x)/(2.*[0]*[0])) * sin(x)", 0.0, m_PositionParam7);
     m_PositionTF1->SetParameter(0, m_PositionParam8);
+  }
+  else if (m_BeamType == c_NearFieldFanBeam) {
+    G4ThreeVector Dir1(m_PositionParam4, m_PositionParam5, m_PositionParam6);
+    G4ThreeVector Dir2(m_PositionParam7, m_PositionParam8, m_PositionParam9);
+    
+    m_PositionParam11 = Dir1.angle(Dir2);
+    
+    G4ThreeVector Norm = Dir1.cross(Dir2);
+    m_PositionParam12 = Norm.x();
+    m_PositionParam13 = Norm.y();
+    m_PositionParam14 = Norm.z();
   }
 
   return true;
@@ -2438,6 +2473,46 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
       Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
     } 
+
+    else if (m_BeamType == c_NearFieldFanBeam) {
+      
+      // Find an angle within the given angle between the given directions
+      double Angle = CLHEP::RandFlat::shoot() * m_PositionParam11;
+      
+      // Rotate the first vector around the normal vector by angle
+      m_Direction = G4ThreeVector(m_PositionParam4, m_PositionParam5, m_PositionParam6).rotate(Angle, G4ThreeVector(m_PositionParam12, m_PositionParam13, m_PositionParam14));
+      
+      // Find the start position on the start area
+      
+      // Create the circular beam
+      // First in z-y dimension
+      G4ThreeVector Temp;
+      G4double Radius = 0, Theta = 0, Phi = 0;
+
+      Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
+      Radius = m_PositionParam7*sqrt(CLHEP::RandFlat::shoot());
+      Temp[0] = Radius*cos(Phi);
+      Temp[1] = Radius*sin(Phi);
+      Temp[2] = 0.0;
+      
+      // Then rotate it into dir:
+      Theta = m_Direction.theta();
+      Phi = m_Direction.phi();
+
+      m_Position[0] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*cos(Phi) - Temp[1]*sin(Phi);
+      m_Position[1] = (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
+      m_Position[2] = -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);      
+      
+      // And translate by position
+      m_Position[0] += m_PositionParam1;
+      m_Position[1] += m_PositionParam2;
+      m_Position[2] += m_PositionParam3;
+      
+      // And now set everything
+      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
+      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
+    }
 
     else if (m_BeamType == c_NearFieldBeam ||
              m_BeamType == c_NearFieldBeam1DProfile ||

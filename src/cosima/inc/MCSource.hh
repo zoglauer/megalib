@@ -211,7 +211,10 @@ public:
                    double PositionParam8 = c_Invalid, 
                    double PositionParam9 = c_Invalid, 
                    double PositionParam10 = c_Invalid, 
-                   double PositionParam11 = c_Invalid);
+                   double PositionParam11 = c_Invalid,
+                   double PositionParam12 = c_Invalid,
+                   double PositionParam13 = c_Invalid,
+                   double PositionParam14 = c_Invalid);
   /// Return true, if the file containing the beam could be set correctly
   bool SetPosition(MString FileName);
   /// Return the specific position parameter 
@@ -371,6 +374,8 @@ public:
   /// Id of a divergent beam (with Gaussian intensity profile) 
   /// from a point in Cartesian coordinates
   static const int c_NearFieldConeBeamGauss;
+  /// Id of a fan beam with a beam width
+  static const int c_NearFieldFanBeam;
   /// Id of a illuminated disk 
   static const int c_NearFieldIlluminatedDisk;
   /// Id of a illuminated box
@@ -718,6 +723,12 @@ private:
   double m_PositionParam10;
   /// Parameter 11 of the position 
   double m_PositionParam11;
+  /// Parameter 11 of the position 
+  double m_PositionParam12;
+  /// Parameter 11 of the position 
+  double m_PositionParam13;
+  /// Parameter 11 of the position 
+  double m_PositionParam14;
 
   /// A volume as start position
   MString m_Volume;
