@@ -198,10 +198,17 @@ class MComptonEvent : public MPhysicalEvent
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;
 
+  //! Return the Klein Nishina value for the given incident photon energy and Compton scatter angle 
   static double GetKleinNishina(const double Ei, const double phi);
+  //! Unknown if this is correct...
   static double GetKleinNishinaNormalized(const double Ei, const double phi); // Normalized to Max = 1
+  //! Unknown if this is correct...
   static double GetKleinNishinaNormalizedByArea(const double Ei, const double phi);
 
+  //! Return a randomly sampled Compton scatter angle using the Klein-Nishina eqaution for the given
+  //! incidence photon energy (algorithm: Butcher & Messel: Nuc Phys 20(1960), 15)
+  static double GetRandomPhi(const double Ei);
+  
   //! Return the Compton scatter angle
   double PhiUncertainty(); // const;
 
