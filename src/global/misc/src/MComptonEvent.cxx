@@ -33,6 +33,7 @@ using namespace std;
 
 // ROOT libs:
 #include <TMath.h>
+#include <TRandom.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -413,6 +414,47 @@ double MComptonEvent::GetKleinNishinaNormalizedByArea(double Ei, double phi)
   }
 
   return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MComptonEvent::GetRandomPhi(const double Ei)
+{
+  // Return a randomly sampled Compton scatter angle using the Klein-Nishina eqaution for the given
+  // incidence photon energy (algorithm: Butcher & Messel: Nuc Phys 20(1960), 15)
+  
+  double Ei_m = Ei / c_E0;
+
+  double Epsilon = 0.0;
+  double EpsilonSquare = 0.0;
+  double OneMinusCosPhi = 0.0;
+  double SinPhiSquared = 0.0;
+
+  double Epsilon0 = 1.0/(1.0 + 2.0*Ei_m);
+  double Epsilon0Square = Epsilon0*Epsilon0;
+  double Alpha1 = -log(Epsilon0);
+  double Alpha2 = 0.5*(1.0 - Epsilon0Square);
+
+  double Reject = 0.0;
+
+  do {
+    if (Alpha1/(Alpha1 + Alpha2) > gRandom->Rndm()) {
+      Epsilon = exp(-Alpha1*gRandom->Rndm());
+      EpsilonSquare = Epsilon*Epsilon; 
+    } else {
+      EpsilonSquare = Epsilon0Square + (1.0 - Epsilon0Square)*gRandom->Rndm();
+      Epsilon = sqrt(EpsilonSquare);
+    }
+
+    OneMinusCosPhi = (1.0 - Epsilon)/(Epsilon*Ei_m);
+    SinPhiSquared = OneMinusCosPhi*(2.0 - OneMinusCosPhi);
+    Reject = 1.0 - Epsilon*SinPhiSquared/(1.0 + EpsilonSquare);
+
+  } while (Reject < gRandom->Rndm());
+ 
+  return acos(1.0 - OneMinusCosPhi);
 }
 
 
