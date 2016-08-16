@@ -191,6 +191,7 @@ void MImageSpheric::Display(TCanvas* Canvas)
   TH2D* Hist = 0;
   if (m_Histogram == 0) {
     Hist = new TH2D(m_CanvasTitle + "ImageSpheric" + m_IDCounter, m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax);
+    Hist->SetContour(50);
     m_Histogram = dynamic_cast<TH1*>(Hist);
 
     Hist->SetStats(false);
