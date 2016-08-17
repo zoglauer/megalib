@@ -259,10 +259,11 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup ${Cmd} > /dev/null &
   Pids[${#Pids[*]}]=$!
   #Pids="$Pids $! "
-  #if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
-  #  echo "Sleeping for 5 seconds..."
-  #  sleep 5
-  #fi
+  # We need to sleep for a little while so that cosima can determine which is the next file to use
+  if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
+    echo "Sleeping for 1 second to seperate the starts out a bit..."
+    sleep 1
+  fi
 done
 
 # Create a concatenation file
