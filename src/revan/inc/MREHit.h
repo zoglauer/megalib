@@ -59,6 +59,8 @@ class MREHit : public MRESE
   //! Return true if the resolutions have been set externally and cannot be changed
   bool HasFixedResolutions() const { return m_FixedResolutions; } 
   
+  //! Update the volume sequence
+  bool UpdateVolumeSequence(MDGeometryQuest* Geometry);
   //! Retrieve the resolutions from the geometry
   bool RetrieveResolutions(MDGeometryQuest* Geometry);
   //! Noise the positions, energies and times (!!make sure to do this only for simulations and  only once!!)

@@ -1760,7 +1760,15 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
         if (Hit->RetrieveResolutions(m_Geo) == false) {
           mout<<"Event "<<m_EventID<<": Unable to determine resolutions:"<<endl;
           mout<<Line<<endl;
-          Ret = 1; 
+          Ret = 1;
+        }
+      }
+    } else {
+      if (m_Geo != 0) {
+        if (Hit->UpdateVolumeSequence(m_Geo) == false) {
+          mout<<"Event "<<m_EventID<<": Unable to update volume sequence:"<<endl;
+          mout<<Line<<endl;
+          Ret = 1;
         }
       }
     }
