@@ -437,23 +437,43 @@ MREHit* MREHit::Duplicate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MREHit::RetrieveResolutions(MDGeometryQuest* Geometry)
+bool MREHit::UpdateVolumeSequence(MDGeometryQuest* Geometry)
 {
-  // Do not do anything if we have fixed resolutions
-  if (m_FixedResolutions == true) return true;
+  /* This optimization is for another day...
+  if (m_VolumeSequence != nullptr && 
+      m_VolumeSequence->GetNVolumes() > 0 &&
+      m_VolumeSequence->GetPosition(0) == m_Position) {
+    return true; 
+  }
+  */
   
   MDVolumeSequence* V = Geometry->GetVolumeSequencePointer(m_Position, true, true);
 
   // Check if we do have a resonable volume sequence:
   if (V->GetDetector() == 0) {
-    merr<<"Found volume sequence without detector!"<<show;
+    merr<<"MREHit::UpdateVolumeSequence: Found volume sequence without detector!"<<show;
     delete V;
     return false;
   } else {
     delete m_VolumeSequence;
     m_VolumeSequence = V;
-    Geometry->GetResolutions(m_Position, m_Energy, m_Time, *m_VolumeSequence, m_PositionResolution, m_EnergyResolution, m_TimeResolution);
   }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MREHit::RetrieveResolutions(MDGeometryQuest* Geometry)
+{
+  // Do not do anything if we have fixed resolutions
+  if (m_FixedResolutions == true) return true;
+  
+  if (UpdateVolumeSequence(Geometry) == false) return false;
+  
+  Geometry->GetResolutions(m_Position, m_Energy, m_Time, *m_VolumeSequence, m_PositionResolution, m_EnergyResolution, m_TimeResolution);
   
   return true;
 }
