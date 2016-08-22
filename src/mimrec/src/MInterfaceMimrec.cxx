@@ -137,8 +137,9 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"    High level functions:"<<endl;
   Usage<<"      -o --output:"<<endl;
-  Usage<<"             For -i, -s and -a: Save the generated histogram."<<endl;
+  Usage<<"             For --image, --spectrum, --light-curve, --distances, --scatter-angles, --sequence-length, and --arm-gamma: Save the generated histogram."<<endl;
   Usage<<"             For -x: Save the extracted events"<<endl;
+  Usage<<"             If multiple histograms are generated, additional modifiers will be added to the file name"<<endl; 
   Usage<<"      -i --image:"<<endl;
   Usage<<"             Create an image. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -s --spectrum:"<<endl;
@@ -147,6 +148,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -l --light-curve:"<<endl;
   Usage<<"             Create a light curve. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --interaction-distance:"<<endl;
+  Usage<<"             Create interaction distance plots. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --scatter-angles:"<<endl;
+  Usage<<"             Create the scatter-angle distributions. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"         --sequence-length:"<<endl;
+  Usage<<"             Create the sequence length plots. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -x --extract:"<<endl;
   Usage<<"             Extract events using the given event selection to the file given by -o"<<endl;
   Usage<<"      -e --event-selections:"<<endl;
@@ -279,22 +286,30 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     Option = argv[i];
     if (Option == "--spectrum" || Option == "-s") {
       cout<<"Command-line parser: Generating spectrum..."<<endl;  
-      // m_Data->SetStoreImages(true);
       EnergySpectra();
       return KeepAlive;
     } else if (Option == "--arm-gamma" || Option == "-a") {
       cout<<"Command-line parser: Generating ARM gamma..."<<endl;  
-      // m_Data->SetStoreImages(true);
       ARMGamma();
       return KeepAlive;
     } else if (Option == "--light-curve" || Option == "-l") {
       cout<<"Command-line parser: Generating Light curve..."<<endl;  
-      // m_Data->SetStoreImages(true);
       LightCurve();
+      return KeepAlive;
+    } else if (Option == "--scatter-angles") {
+      cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;  
+      ScatterAnglesDistribution();
+      return KeepAlive;
+    } else if (Option == "--interaction-distance") {
+      cout<<"Command-line parser: Generating interaction-distance plot..."<<endl;  
+      DistanceDistribution();
+      return KeepAlive;
+    } else if (Option == "--sequence-length") {
+      cout<<"Command-line parser: Generating Compton-sequence length plot..."<<endl;  
+      SequenceLengths();
       return KeepAlive;
     } else if (Option == "--extract" || Option == "-x") {
       cout<<"Command-line parser: Extracting events..."<<endl;  
-      // m_Data->SetStoreImages(true);
       ExtractEvents();
       return KeepAlive;
     } else if (Option == "--standard-analysis-spherical") {
@@ -4036,28 +4051,58 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
   m_EventFile->Close();
 
   if (NPhi > 0) {
-    mout<<"Average angles: "<<endl;
     mout<<endl;
-    mout<<"Phi:          "<<AvgPhi/NPhi<<"  (avg sine: "<<AvgSinPhi/NPhi<<")"<<endl;
-    mout<<"Theta:        "<<AvgTheta/NTheta<<endl;
-    mout<<"Epsilon:      "<<AvgEpsilon/NEpsilon<<endl;
-  
+    mout<<"Average scatter angles: "<<endl;
+    mout<<endl;
+    mout<<"  Compton scatter angle (phi):              "<<AvgPhi/NPhi<<" degree (avg sine: "<<AvgSinPhi/NPhi<<")"<<endl;
+    if (NTheta > 0 && NEpsilon > 0) {
+      mout<<"  Recoil-electron scatter angle (theta):    "<<AvgTheta/NTheta<<" degree"<<endl;
+      mout<<"  Total scatter angle (epsilon):            "<<AvgEpsilon/NEpsilon<<" degree"<<endl;
+    }
+    mout<<endl;
 
     TCanvas* PhiCanvas = new TCanvas("CanvasPhi", "Canvas of Compton scatter angle distribution", 800, 600);
     PhiHist->SetStats(false);
     PhiCanvas->cd();
     PhiHist->Draw();
-    
-    if (NTheta > 0) {
+    if (m_OutputFileName.IsEmpty() == false) {
+      MString Name = m_OutputFileName;
+      if (Name.Last('.') != string::npos) {
+        MString Suffix = Name.GetSubString(Name.Last('.'));
+        Name.RemoveInPlace(Name.Last('.'));
+        Name += MString(".phi") + Suffix;
+      }
+      PhiCanvas->SaveAs(Name);
+    }
+
+    if (NTheta > 0 && NEpsilon > 0) {
       TCanvas* EpsilonCanvas = new TCanvas("CanvasEpsilon", "Canvas of electron scatter angle distribution", 800, 600);
       EpsilonHist->SetStats(false);
       EpsilonCanvas->cd();
       EpsilonHist->Draw();
-      
+      if (m_OutputFileName.IsEmpty() == false) {
+        MString Name = m_OutputFileName;
+        if (Name.Last('.') != string::npos) {
+          MString Suffix = Name.GetSubString(Name.Last('.'));
+          Name.RemoveInPlace(Name.Last('.'));
+          Name += MString(".epsilon") + Suffix;
+        }
+        EpsilonCanvas->SaveAs(Name);
+      }
+    
       TCanvas* ThetaCanvas = new TCanvas("CanvasThetaViaEnergy", "Canvas of total scatter angle distribution (kin)", 800, 600);
       ThetaHist->SetStats(false);
       ThetaCanvas->cd();
       ThetaHist->Draw();
+      if (m_OutputFileName.IsEmpty() == false) {
+        MString Name = m_OutputFileName;
+        if (Name.Last('.') != string::npos) {
+          MString Suffix = Name.GetSubString(Name.Last('.'));
+          Name.RemoveInPlace(Name.Last('.'));
+          Name += MString(".theta") + Suffix;
+        }
+        ThetaCanvas->SaveAs(Name);
+      }
       
       TCanvas* ThetaGeoCanvas = new TCanvas("CanvasThetaViaGeo", "Canvas of total scatter angle distribution (geo)", 800, 600);
       ThetaGeoHist->SetStats(false);
@@ -4401,15 +4446,34 @@ void MInterfaceMimrec::DistanceDistribution()
   FirstCanvas->cd();
   FirstHist->Draw();
   FirstCanvas->Update();
+  if (m_OutputFileName.IsEmpty() == false) {
+    MString Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".firstiadistance") + Suffix;
+    }
+    FirstCanvas->SaveAs(Name);
+  }
 
   TCanvas* AnyCanvas = new TCanvas("AnyDistanceCanvas", "AnyDistanceCanvas", 800, 600);
   AnyCanvas->cd();
   AnyHist->Draw();
   AnyCanvas->Update();
+  if (m_OutputFileName.IsEmpty() == false) {
+    MString Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".anyiadistance") + Suffix;
+    }
+    AnyCanvas->SaveAs(Name);
+  }
 
-  mout<<"Mean distance between first and second hit: "<<FirstHist->GetMean()<<endl;
-  mout<<"Mean distance between any hit: "<<AnyHist->GetMean()<<endl;
-
+  mout<<endl;
+  mout<<"Mean distance between first and second hit: "<<FirstHist->GetMean()<<" cm"<<endl;
+  mout<<"Mean distance between any hit:              "<<AnyHist->GetMean()<<" cm"<<endl;
+  mout<<endl;
 
   return;
 }
@@ -4491,6 +4555,15 @@ void MInterfaceMimrec::SequenceLengths()
   TrackHist->SetAxisRange(0, MaxTrackLength);
   TrackHist->Draw("bar1");
   TrackCanvas->Update();
+  if (m_OutputFileName.IsEmpty() == false) {
+    MString Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".firsttrack") + Suffix;
+    }
+    TrackCanvas->SaveAs(Name);
+  } 
 
   TCanvas* ComptonCanvas = 
     new TCanvas("CanvasLengthComptonSequence", 
@@ -4499,7 +4572,16 @@ void MInterfaceMimrec::SequenceLengths()
   ComptonHist->SetAxisRange(0, MaxSequenceLength);
   ComptonHist->Draw("bar1");
   ComptonCanvas->Update();
-
+  if (m_OutputFileName.IsEmpty() == false) {
+    MString Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+       Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".compton") + Suffix;
+    }
+    ComptonCanvas->SaveAs(Name);
+  }
+  
   mout<<"Track lengths:"<<endl;
   int All = 0;
   for (int b = 1; b <= TrackHist->GetNbinsX() && b <= 15; ++b) {
