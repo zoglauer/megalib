@@ -5250,7 +5250,8 @@ void MInterfaceMimrec::Polarization()
   Corrected->Fit(Mod, "RQ");
 
   Corrected->SetFillColor(0);
-  Corrected->Draw("EHIST");
+  Corrected->Draw(); //"EHIST");
+  Mod->Draw("SAME");
   CorrectedCanvas->Update();
 
   double Modulation = fabs(Mod->GetParameter(1)/Mod->GetParameter(0));
