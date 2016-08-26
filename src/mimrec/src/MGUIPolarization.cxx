@@ -128,6 +128,9 @@ void MGUIPolarization::Create()
   AddFrame(Comment2, CommentLayout);
   TGLabel* Comment3 = new TGLabel(this, "(2) There is no time selection on the unpolarized data, since it is assumed it is aquired at different times or via simulations.");
   AddFrame(Comment3, CommentLayout);
+  TGLabel* Comment4 = new TGLabel(this, "(3) Uncertainty calculations do not consider low-count rate regimes");
+  AddFrame(Comment4, CommentLayout);
+
 
   //Comment->SetWrapLength(400*Scaler);
 
