@@ -5218,8 +5218,19 @@ void MInterfaceMimrec::Polarization()
   // The scaling is necessary, since we cannot assume that pol and background have been measured for exactly the same time...
   Mean *= Background->Integral()/Polarization->Integral();
 
+  // At this stage mean, basically is the mean of the background:
+  double MeanUncertainty = 0.0;
+  for (int b = 1; b <= Background->GetNbinsX(); ++b) {
+    MeanUncertainty += sqrt(Background->GetBinContent(b));
+  }
+  MeanUncertainty = MeanUncertainty/Background->GetNbinsX();
+
+
   for (int b = 1; b <= Corrected->GetNbinsX(); ++b) {
+    double PolarizationUncertainty = sqrt(Polarization->GetBinContent(b)*Polarization->GetBinWidth(b))/Polarization->GetBinWidth(b);
+    double BackgroundUncertainty = sqrt(Background->GetBinContent(b)*Background->GetBinWidth(b))/Background->GetBinWidth(b);
     Corrected->SetBinContent(b, Polarization->GetBinContent(b)/Background->GetBinContent(b)*Mean);
+    Corrected->SetBinError(b, sqrt( pow(Mean/Background->GetBinContent(b)*PolarizationUncertainty,2) + pow(Polarization->GetBinContent(b)/Background->GetBinContent(b)*MeanUncertainty, 2) + pow(Polarization->GetBinContent(b)*Mean/Background->GetBinContent(b)/Background->GetBinContent(b)*BackgroundUncertainty, 2) ) );
   }
 
   // Try to fit a cosinus
@@ -5238,7 +5249,8 @@ void MInterfaceMimrec::Polarization()
   Mod->SetParLimits(2, -400, 400);
   Corrected->Fit(Mod, "RQ");
 
-  Corrected->Draw();
+  Corrected->SetFillColor(0);
+  Corrected->Draw("EHIST");
   CorrectedCanvas->Update();
 
   double Modulation = fabs(Mod->GetParameter(1)/Mod->GetParameter(0));
