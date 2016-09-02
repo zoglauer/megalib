@@ -487,6 +487,47 @@ bool MSupervisor::Validate()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MSupervisor::ChangeConfiguration(MString NewField)
+{
+  // Change one settings field
+  
+  // Parse the data
+  MString Nodes = NewField.GetSubString(0, NewField.First('='));
+  vector<MString> NodeNames = Nodes.Tokenize(".");
+  MString Value = NewField.GetSubString(NewField.First('=') + 1);
+  
+  //for (MString S: NodeNames) cout<<S<<endl;
+  //cout<<"Value: "<<Value<<endl;
+  
+  // Find the correct field
+  MXmlDocument* Master = CreateXmlConfiguration();
+  
+  MXmlNode* Iter = Master;
+  for (MString S: NodeNames) {
+    MXmlNode* Node = Iter->GetNode(S);
+    if (Node == nullptr) {
+      cout<<"Error: Unable to find node "<<S<<" under node "<<Iter->GetName()<<endl;
+      return false;
+    }
+    Iter = Node;
+  }
+  
+  // Set the data
+  Iter->SetValue(Value);
+  
+  // Read everything back
+  ReadXmlConfiguration(Master);
+  
+  // Cleanup
+  delete Master;
+  
+  return true;  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MSupervisor::Load(MString FileName)
 {
   // Load all data from a file
@@ -500,6 +541,20 @@ bool MSupervisor::Load(MString FileName)
   MXmlDocument* Document = new MXmlDocument();
   Document->Load(FileName);
 
+  ReadXmlConfiguration(Document);
+
+  delete Document;
+
+  return true;
+} 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Read the configuration data from an XML node
+bool MSupervisor::ReadXmlConfiguration(MXmlDocument* Document)
+{
   int Version = 1;
   MXmlNode* VersionNode = Document->GetNode("Version");
   if (VersionNode != nullptr) {
@@ -511,6 +566,7 @@ bool MSupervisor::Load(MString FileName)
 
   MXmlNode* ModuleSequence = Document->GetNode("ModuleSequence");
   if (ModuleSequence != 0) {
+    m_Modules.clear();
     for (unsigned int m = 0; m < ModuleSequence->GetNNodes(); ++m) {
       MModule* M = GetAvailableModuleByXmlTag(ModuleSequence->GetNode(m)->GetValue());
       if (M == nullptr) M = GetAvailableModuleByName(ModuleSequence->GetNode(m)->GetValue());  // for compatibility with old format
@@ -536,20 +592,17 @@ bool MSupervisor::Load(MString FileName)
       }
     }
   }
-
-  delete Document;
-
+  
   return true;
-} 
-
+}
+ 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSupervisor::Save(MString FileName)
+//! Create an XML node tree from the configuration
+MXmlDocument* MSupervisor::CreateXmlConfiguration()
 {
-  //! Save all data to a file
-
   // Create a XML document describing the data:
   MXmlDocument* Document = new MXmlDocument("NuclearizerData");
 
@@ -569,12 +622,27 @@ bool MSupervisor::Save(MString FileName)
   for (unsigned int a = 0; a < m_AvailableModules.size(); ++a) {
     MXmlNode* ModuleNode = m_AvailableModules[a]->CreateXmlConfiguration();
     ModuleOptions->AddNode(ModuleNode);
-  }
+  }  
+  
+  return Document;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSupervisor::Save(MString FileName)
+{
+  //! Save all data to a file
+
+  // Create the XML tree
+  MXmlDocument* Document = CreateXmlConfiguration();
 
   // Store the module content
   MFile::ExpandFileName(FileName);
   Document->Save(FileName);
 
+  // Clean up
   delete Document;
 
   return true;

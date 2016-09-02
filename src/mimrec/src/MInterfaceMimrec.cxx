@@ -130,6 +130,10 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"      -c --configuration <filename>.cfg:"<<endl;
   Usage<<"             Use this file as parameter file (uses files from -f and -g)"<<endl;
   Usage<<"             If no configuration file is give ~/.mimrec.cfg is used"<<endl;
+  Usage<<"      -C --change-configuration <pattern>:"<<endl;
+  Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
+  Usage<<"             E.g. to replace the standard ARM cut range with 10 degrees, one would set pattern to:"<<endl;
+  Usage<<"             -C TestPositions.DistanceTrans=10"<<endl;
   Usage<<"      -d --debug:"<<endl;
   Usage<<"             Use debug mode"<<endl;
   Usage<<"      -h --help:"<<endl;
@@ -239,7 +243,19 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use this output file name "<<m_OutputFileName<<endl;
     }
   }
-
+  
+  // Look if we need to change the configuration
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--change-configuration" || Option == "-C") {
+      if (m_Data->Change(argv[++i]) == false) {
+        cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;        
+      } else {
+        cout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
+      }
+    }
+  }
+  
   // Do we have a X up and running?
   if (gClient == 0 || gClient->GetRoot() == 0 || gROOT->IsBatch() == true) {
     cout<<"Command-line parser: No X-client or ROOT in batch mode: Using batch mode"<<endl;
