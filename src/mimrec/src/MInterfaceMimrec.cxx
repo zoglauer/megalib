@@ -148,6 +148,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   Usage<<"             Create an arm. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"      -l --light-curve:"<<endl;
   Usage<<"             Create a light curve. If the -o option is given then the image is saved to this file."<<endl;
+  Usage<<"      -p --polarization:"<<endl;
+  Usage<<"             Perform polarization analysis. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --interaction-distance:"<<endl;
   Usage<<"             Create interaction distance plots. If the -o option is given then the image is saved to this file."<<endl;
   Usage<<"         --scatter-angles:"<<endl;
@@ -230,6 +232,10 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use configuration file "<<m_Data->GetSettingsFileName()<<endl;
     } else if (Option == "--output" || Option == "-o") {
       m_OutputFileName = argv[++i];
+      if (m_OutputFileName.Last('.') == string::npos) {
+        m_OutputFileName += ".png";
+        cout<<"Command-line parser: Output file name has no file type. Using .png"<<endl;
+      }
       cout<<"Command-line parser: Use this output file name "<<m_OutputFileName<<endl;
     }
   }
@@ -293,8 +299,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       ARMGamma();
       return KeepAlive;
     } else if (Option == "--light-curve" || Option == "-l") {
-      cout<<"Command-line parser: Generating Light curve..."<<endl;  
+      cout<<"Command-line parser: Generating light curve..."<<endl;  
       LightCurve();
+      return KeepAlive;
+    } else if (Option == "--polarization" || Option == "-p") {
+      cout<<"Command-line parser: Performing polarization analysis..."<<endl;  
+      Polarization();
       return KeepAlive;
     } else if (Option == "--scatter-angles") {
       cout<<"Command-line parser: Generating scatter-angles plot..."<<endl;  
@@ -5289,6 +5299,34 @@ void MInterfaceMimrec::Polarization()
   mout<<"  Outside ARM cut (bkg): "<<OutsideArmCutBackground<<endl;
   mout<<endl;
 
+  if (m_OutputFileName.IsEmpty() == false) {
+    MString Name;
+
+    Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".polarization.rawsource") + Suffix;
+    }
+    PolarizationCanvas->SaveAs(Name);
+
+    Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".polarization.rawbackground") + Suffix;
+    }
+    BackgroundCanvas->SaveAs(Name);
+
+    Name = m_OutputFileName;
+    if (Name.Last('.') != string::npos) {
+      MString Suffix = Name.GetSubString(Name.Last('.'));
+      Name.RemoveInPlace(Name.Last('.'));
+      Name += MString(".polarization.corrected") + Suffix;
+    }
+    CorrectedCanvas->SaveAs(Name);
+  }
+  
   delete Lin;
   delete Mod;
 
