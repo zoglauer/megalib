@@ -68,6 +68,12 @@ class MSettings : public MSettingsBasicFiles
   //! Retrieve the MEGAlib version as unsigned int  
   unsigned int GetMEGAlibVersion() const { return m_MEGAlibVersion; }
 
+  //! Change one settings field
+  //! Syntax: TestPositions.CoordinateSystemSpherical.Theta=100
+  //! The names correspond to the XML nodes <TestPositions> <CoordinateSystemSpherical> <Theta>
+  //! The value after the = is the new entry
+  //! Return true on success
+  bool Change(MString NewField);
 
   // protected methods:
  protected:
