@@ -124,6 +124,10 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"             Use this file as parameter file."<<endl;
   Usage<<"             All other given infromations such as -f and -g overwrite information in the configuration file."<<endl;
   Usage<<"             If no configuration file is give ~/.revan.cfg is used"<<endl;
+  Usage<<"      -C --change-configuration <pattern>:"<<endl;
+  Usage<<"             Replace any value in the configuration file (-C can be used multiple times)"<<endl;
+  Usage<<"             E.g. to change the coincidence window, one would set pattern to:"<<endl;
+  Usage<<"             -C CoincidenceWindow=1e-06"<<endl;
   Usage<<endl;
   Usage<<"      -a --analyze:"<<endl;
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
@@ -188,6 +192,18 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--configuration" || Option == "-c") {
       m_Data->Read(argv[++i]);
       cout<<"Command-line parser: Use configuration file "<<m_Data->GetSettingsFileName()<<endl;
+    }
+  }
+  
+  // Look if we need to change the configuration
+  for (int i = 1; i < argc; i++) {
+    Option = argv[i];
+    if (Option == "--change-configuration" || Option == "-C") {
+      if (m_Data->Change(argv[++i]) == false) {
+        cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;        
+      } else {
+        cout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
+      }
     }
   }
 
