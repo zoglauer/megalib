@@ -44,6 +44,9 @@ class MGTI
   //! Reset
   //! Create an open GTI
   void Reset(bool AllOpen = false);
+
+  //! Add this GTI file's intervals
+  void Add(const MGTI& GTI);
   
   //! Check if the time is withing a good interval 
   //! In case of failure, we create a single time interval from 0 to 2,000,000,000
