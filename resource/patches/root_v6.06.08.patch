@@ -1,0 +1,75 @@
+diff -rupN root_v6.06.08_unpatched/root_v6.06.08-source/graf2d/x11ttf/src/TGX11TTF.cxx root_v6.06.08_patched/root_v6.06.08-source/graf2d/x11ttf/src/TGX11TTF.cxx
+--- root_v6.06.08_unpatched/root_v6.06.08-source/graf2d/x11ttf/src/TGX11TTF.cxx	2015-12-09 02:46:42.000000000 -0800
++++ root_v6.06.08_patched/root_v6.06.08-source/graf2d/x11ttf/src/TGX11TTF.cxx	2016-02-10 11:07:05.300622192 -0800
+@@ -22,6 +22,8 @@ is redirected to point to this class.
+ */
+ 
+ #include <stdlib.h>
++#include <iostream>
++using namespace std;
+ 
+ #  include <ft2build.h>
+ #  include FT_FREETYPE_H
+@@ -67,7 +69,9 @@ public:
+ 
+    ~TXftFontData()
+    {
+-      if (fXftFont) XftFontClose((Display*)gVirtualX->GetDisplay(), fXftFont);
++      if (References() == 1) {
++        if (fXftFont) XftFontClose((Display*)gVirtualX->GetDisplay(), fXftFont);
++      }
+    }
+ };
+ 
+@@ -90,7 +94,7 @@ public:
+ 
+       while ((d = (TXftFontData*) next())) {
+          if (d->fXftFont == (XftFont *)font) {
+-            return d;
++           return d;
+          }
+       }
+       return 0;
+@@ -111,12 +115,23 @@ public:
+ 
+    void AddFont(TXftFontData *data)
+    {
++      // Loop over all existing TXftFontData, if we already have one with the same font data, set the reference counter of this one 
++      // beyond 1 so it does delete the font pointer
++      TIter next(fList);
++      TXftFontData *d = 0;
++
++      while ((d = (TXftFontData*) next())) {
++         if (d->fXftFont == data->fXftFont) {
++           data->AddReference();
++         }
++      }   
++   
+       fList->Add(data);
+    }
+ 
+    void FreeFont(TXftFontData *data)
+    {
+-      if (data->RemoveReference() > 0)  return;
++      //if (data->RemoveReference() > 0)  return;
+       fList->Remove(data);
+       delete data;
+    }
+@@ -597,7 +612,8 @@ FontStruct_t TGX11TTF::LoadQueryFont(con
+ 
+    // already loaded
+    if (data) {
+-      data->AddReference();
++      // Why would we add a reference? We only add a reference when we create a new TXftFontData using the same font
++      //data->AddReference();
+       return (FontStruct_t)data->fXftFont;
+    }
+ 
+@@ -635,6 +651,7 @@ void TGX11TTF::DeleteGC(GContext_t gc)
+       return;
+    }
+ 
++
+    TXftFontData *gcdata = fXftFontHash->FindByGC(gc);
+    if (gcdata) fXftFontHash->FreeFont(gcdata);
+    TGX11::DeleteGC(gc);
