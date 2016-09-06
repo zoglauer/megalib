@@ -847,6 +847,7 @@ bool MSupervisor::Analyze()
    
     // We ensured before that "0" exists 
     if (GetModule(0)->IsStartModule() == true && GetModule(0)->IsFinished() == true) {
+      //cout<<"Initiating shutdown"<<endl;
       DoShutdown = true; 
     }
     
@@ -856,9 +857,11 @@ bool MSupervisor::Analyze()
       
         MModule* M = Modules[m][s];
 
-        if (HasMoreEvents == false && (M->HasAddedReadOutAssemblies() == true || M->HasAnalyzedReadOutAssemblies() == true)) {
+        if (HasMoreEvents == false && (M->HasAddedReadOutAssemblies() == true || 
+                                       M->IsAnalyzing() == true ||
+                                       M->HasAnalyzedReadOutAssemblies() == true)) {
           HasMoreEvents = true;
-          //cout<<"Events for module "<<m<<endl; 
+          //cout<<"Events left for module "<<m<<endl; 
         } else {
           //cout<<"No events for module "<<m<<endl; 
         }

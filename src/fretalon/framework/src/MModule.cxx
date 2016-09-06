@@ -74,6 +74,7 @@ MModule::MModule()
   m_IsOK = true;
   m_IsReady = true;
   m_IsFinished = false;
+  m_IsAnalyzing = false;
   
   m_Interrupt = false;
   
@@ -290,6 +291,7 @@ bool MModule::DoSingleAnalysis()
     return false;
   }
   
+  m_IsAnalyzing = true;
   
   MReadOutAssembly* E = 0;
   // If this is a module which does not generate the events, grab one from the incoming list
@@ -316,9 +318,11 @@ bool MModule::DoSingleAnalysis()
     if (E != 0) {
       m_Queues->AddOutgoing(E);
     }
+    m_IsAnalyzing = false;
     PauseTimer();
     return true;
   } else {
+    m_IsAnalyzing = false;
     PauseTimer();
     return false;
   }

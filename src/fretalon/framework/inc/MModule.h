@@ -184,6 +184,8 @@ class MModule
   virtual bool IsOK() { return m_IsOK; }
   //! Return if the module has finished all possible analyses
   virtual bool IsFinished() { return m_IsFinished; }
+  //! Return if the analysis of an event is running
+  virtual bool IsAnalyzing() { return m_IsAnalyzing; }
 
   //! Return the processing time in seconds - thread safe!
   double GetProcessingTime() { return GetTimer(); } 
@@ -258,6 +260,9 @@ class MModule
   bool m_IsOK;
   //! True, if the module is finished (e.g. cannot read any more events)
   bool m_IsFinished;
+  //! True if the analysis is under way
+  bool m_IsAnalyzing;
+  
   
   //! True if the module can be paused
   bool m_AllowPausing;
