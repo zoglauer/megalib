@@ -668,10 +668,10 @@ bool MDTrigger::Validate()
     }
   }
   if (IsGuardring == true && m_IsVeto == false) {
-    mout<<"   ***  Error  ***  in trigger "<<m_Name<<endl;
-    mout<<"A guard ring must always be combined with a veto trigger!"<<endl;
-    mout<<"Anything else wouldn't work during pre-triggering in the simulation"<<endl;
-    return false;      
+    //mout<<"   ***  Error  ***  in trigger "<<m_Name<<endl;
+    //mout<<"A guard ring must always be combined with a veto trigger!"<<endl;
+    //mout<<"Anything else wouldn't work during pre-triggering in the simulation"<<endl;
+    //return false;      
   }
 
   return true;
