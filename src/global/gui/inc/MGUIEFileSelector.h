@@ -39,7 +39,7 @@ class MGUIEFileSelector : public MGUIElement
 {
   // public interface:
  public:
-  MGUIEFileSelector(const TGWindow* Parent, MString Label, MString FileName);
+  MGUIEFileSelector(const TGWindow* Parent, MString Label, MString FileName = "");
   virtual ~MGUIEFileSelector();
 
   void SetFileName(MString Name);
