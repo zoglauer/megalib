@@ -33,7 +33,7 @@ using namespace std;
 #include "MBackprojection.h"
 #include "MEventSelector.h"
 #include "MFileEventsTra.h"
-#include "MSensitivity.h"
+#include "MExposure.h"
 #include "MImage.h"
 #include "MLMLAlgorithms.h"
 #include "MSettingsImaging.h"
@@ -116,8 +116,8 @@ class MImager
 
   // All the rest:
 
-  //! Set the sensitivity matrix
-  void SetSensitivity(MSensitivity* Sensitivity);
+  //! Set the exposure map
+  void SetExposure(MExposure* Exposure);
   //! Set the pointsources which are cut out of the picture
   void SetDeselectedPointSources(TObjArray* DeselectedPS);
 

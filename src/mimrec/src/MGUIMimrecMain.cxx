@@ -41,7 +41,7 @@
 #include "MGUIResponseParameterPRM.h"
 #include "MGUIARM.h"
 #include "MGUISignificance.h"
-#include "MGUISensitivity.h"
+#include "MGUIExposure.h"
 #include "MGUIAnimation.h"
 #include "MGUIMemory.h"
 #include "MGUIImageDimensions.h"
@@ -133,11 +133,12 @@ void MGUIMimrecMain::Create()
   MenuImaging->AddEntry("Reconstruction algorithm", c_LikelihoodAlgorithm);
   //m_Menu->AddEntry("Penalty", c_LikelihoodPenalty);
   MenuImaging->AddSeparator();
+  MenuImaging->AddEntry("Exposure", c_Exposure);
+  MenuImaging->AddSeparator();
   // MenuImaging->AddEntry("Backprojection algorithm", c_Algorithm);
   MenuImaging->AddEntry("Response type selection", c_Response);
   MenuImaging->AddEntry("Response parameter (for the above selected type)", c_FitParameter);
-  // MenuImaging->AddEntry("Sensitivity", c_Sensitivity);
-  //MenuImaging->DisableEntry(M_BP_SENSITIVITY);
+
   if (m_Data->GetSpecialMode() == true) {
     MenuImaging->AddSeparator();
     MenuImaging->AddLabel("Brand new, special, or not fully test");
@@ -334,9 +335,9 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         }
         break;
 
-//       case c_Sensitivity:
-//         new MGUISensitivity(gClient->GetRoot(), this, m_Data);
-//         break;
+      case c_Exposure:
+        new MGUIExposure(gClient->GetRoot(), this, m_Data);
+        break;
         
       case c_EventSelection:
         new MGUIEventSelection(gClient->GetRoot(), this, m_Data, m_Interface->GetGeometry());

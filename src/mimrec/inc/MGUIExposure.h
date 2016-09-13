@@ -1,5 +1,5 @@
 /*
- * MGUISensitivity.h
+ * MGUIExposure.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUISensitivity__
-#define __MGUISensitivity__
+#ifndef __MGUIExposure__
+#define __MGUIExposure__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,13 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUISensitivity : public MGUIDialog
+class MGUIExposure : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUISensitivity(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIExposure(const TGWindow* Parent, const TGWindow* Main, 
                   MSettingsImaging* Data);
-  virtual ~MGUISensitivity();
+  virtual ~MGUIExposure();
 
   // protected methods:
  protected:
@@ -64,7 +64,7 @@ class MGUISensitivity : public MGUIDialog
 
 #ifdef ___CINT___
  public:
-  ClassDef(MGUISensitivity, 0)
+  ClassDef(MGUIExposure, 0)
 #endif
 
 };

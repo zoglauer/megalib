@@ -70,14 +70,14 @@ MLMLAlgorithms::MLMLAlgorithms()
   m_NBins = 0;
   m_NEvents = 0;
 
-  m_Lj = 0;
-  m_Sj = 0;
-  m_Ri = 0;
-  m_Yi = 0;
-  m_InvYi = 0;
+  m_Lj = nullptr;
+  m_Sj = nullptr;
+  m_Ri = nullptr;
+  m_Yi = nullptr;
+  m_InvYi = nullptr;
 
-  m_Sensitivity = 0;
-  m_Background = 0;
+  m_Exposure = nullptr;
+  m_Background = nullptr;
   
   m_EnableGUIInteractions = true;
 }
@@ -226,13 +226,13 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MLMLAlgorithms::SetSensitivity(MSensitivity *Sensitivity)
+void MLMLAlgorithms::SetExposure(MExposure* Exposure)
 {
   // Set the sensitivity
 
-  massert(Sensitivity != 0);
+  massert(Exposure != 0);
 
-  m_Sensitivity = Sensitivity;
+  m_Exposure = Exposure;
 
   if (m_Sj != 0) delete [] m_Sj;
 

@@ -28,7 +28,7 @@ using namespace std;
 #include "MResponseType.h"
 #include "MSettings.h"
 #include "MPointSource.h"
-
+#include "MExposureMode.h"
 
 // Forward declarations:
 
@@ -200,7 +200,14 @@ class MSettingsImaging : public MSettingsInterface
   int GetNThreads() const { return m_NThreads; }
   void SetNThreads(int NThreads) { m_NThreads = NThreads;  m_BackprojectionModified = true; }
 
-
+  
+  // Menu exposure
+  MExposureMode GetExposureMode() const { return m_ExposureMode; }
+  void SetExposureMode(MExposureMode ExposureMode) { m_ExposureMode = ExposureMode; m_BackprojectionModified = true; }
+ 
+  MString GetExposureEfficiencyFile() const { return m_ExposureEfficiencyFile; }
+  void SetExposureEfficiencyFile(MString ExposureEfficiencyFile) { m_ExposureEfficiencyFile = ExposureEfficiencyFile; }
+  
   // Menu likelihood
 
   // Menu algorithm
@@ -335,6 +342,11 @@ class MSettingsImaging : public MSettingsInterface
   //! The source catalog file name
   MString m_ImageSourceCatalog;
 
+  //! The used exposure mode
+  MExposureMode m_ExposureMode;
+  //! The effificiency file from which the exposure can be calculated
+  MString m_ExposureEfficiencyFile;
+  
   
   // Animation options:
   
@@ -361,8 +373,6 @@ class MSettingsImaging : public MSettingsInterface
 
   MString m_ImagingResponseConeShapesFileName;
 
-  MString m_SensitivityFile;
-  bool m_UseSensitivityFile;
 
   // Memory management
   int m_RAM;

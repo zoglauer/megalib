@@ -25,7 +25,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MBPData.h"
-#include "MSensitivity.h"
+#include "MExposure.h"
 #include "MBackground.h"
 
 // Forward declarations:
@@ -67,8 +67,8 @@ class MLMLAlgorithms
 
   //! Set the list-mode response matrix
   virtual bool SetResponseSlices(vector<MBPData*>& Data, int NImageBins);
-  //! Set the sensitivity matrix
-  virtual void SetSensitivity(MSensitivity* Sensitivity);
+  //! Set the exposure map
+  virtual void SetExposure(MExposure* Exposure);
   //! Set the backgroynd 
   virtual void SetBackground(MBackground* Background);
 
@@ -127,8 +127,8 @@ class MLMLAlgorithms
   //! PSF storage
   vector<MBPData*> m_Storage;
 
-  //! Detetctor sensitivity
-  MSensitivity* m_Sensitivity;
+  //! The exposure map
+  MExposure* m_Exposure;
   //! Background model
   MBackground* m_Background;
 

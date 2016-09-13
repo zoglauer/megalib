@@ -127,6 +127,9 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ImagingResponseComptonLongitudinalFileName = "";
   m_ImagingResponsePairRadialFileName = "";
 
+  m_ExposureMode = MExposureMode::Flat;
+  m_ExposureEfficiencyFile = "";
+  
 
   // Memory management
   m_RAM = 512;
@@ -211,10 +214,9 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ResponseParameterFilesComptonTrans", CleanPath(m_ImagingResponseComptonTransversalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesPair", CleanPath(m_ImagingResponsePairRadialFileName));
 
-
-  // Menu Sensitivity:
-  new MXmlNode(bNode, "SensitivityFileName", CleanPath(m_SensitivityFile));
-  new MXmlNode(bNode, "UseSensitivity", m_UseSensitivityFile);
+  // Menu Exposure:
+  new MXmlNode(bNode, "ExposureMode", static_cast<int>(m_ExposureMode));
+  new MXmlNode(bNode, "ExposureEfficiencyFile", CleanPath(m_ExposureEfficiencyFile));
 
 
 
@@ -347,11 +349,11 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       if ((cNode = bNode->GetNode("ResponseParameterFilesPair")) != 0) {
         m_ImagingResponsePairRadialFileName = cNode->GetValue();
       }
-      if ((cNode = bNode->GetNode("SensitivityFileName")) != 0) {
-        m_SensitivityFile = cNode->GetValue();
+      if ((cNode = bNode->GetNode("ExposureMode")) != 0) {
+        m_ExposureMode = static_cast<MExposureMode>(bNode->GetValueAsInt());
       }
-      if ((cNode = bNode->GetNode("UseSensitivity")) != 0) {
-        m_UseSensitivityFile = cNode->GetValueAsBoolean();
+      if ((cNode = bNode->GetNode("ExposureEfficiencyFile")) != 0) {
+        m_ExposureEfficiencyFile = cNode->GetValue();
       }
     }
   }

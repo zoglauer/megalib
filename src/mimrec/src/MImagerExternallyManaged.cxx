@@ -58,7 +58,7 @@ using namespace std;
 #include "MResponseGaussian.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
-#include "MSensitivity.h" 
+#include "MExposure.h" 
 #include "MImage.h"
 #include "MImage2D.h"
 #include "MImage3D.h"
