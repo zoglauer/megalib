@@ -28,11 +28,11 @@ using namespace std;
 #include <TStyle.h>
 #include <TH1.h>
 #include <TCanvas.h>
-#include <MString.h>
 
 // MEGAlib
 #include "MGlobal.h"
 #include "MStreams.h"
+#include "MString.h"
 #include "MDGeometryQuest.h"
 #include "MDDetector.h"
 #include "MFileEventsSim.h"
@@ -162,7 +162,7 @@ bool SimAnalyzer::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (m_FileName.EndsWith(".sim") == false) {
+  if (m_FileName.EndsWith(".sim") == false && m_FileName.EndsWith(".sim.gz") == false) {
     cout<<"Error: Need a simulation file name, not a "<<m_FileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
