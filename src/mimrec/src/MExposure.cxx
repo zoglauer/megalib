@@ -1,5 +1,5 @@
 /*
- * MSensitivity.cxx
+ * MExposure.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MSensitivity
+// MExposure
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MSensitivity.h"
+#include "MExposure.h"
 
 // Standard libs:
 
@@ -36,14 +36,14 @@
 
 
 #ifdef ___CINT___
-ClassImp(MSensitivity)
+ClassImp(MExposure)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSensitivity::MSensitivity()
+MExposure::MExposure()
 {
   // default constructor
 }
@@ -52,11 +52,11 @@ MSensitivity::MSensitivity()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSensitivity::~MSensitivity()
+MExposure::~MExposure()
 {
   // default destructor
 }
 
 
-// MSensitivity.cxx: the end...
+// MExposure.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -32,7 +32,7 @@ using namespace std;
 #include "MBackprojection.h"
 #include "MEventSelector.h"
 #include "MFileEventsTra.h"
-#include "MSensitivity.h"
+#include "MExposure.h"
 #include "MImage.h"
 #include "MImager.h"
 

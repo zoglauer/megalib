@@ -14,9 +14,9 @@
 
 PRG = $(BN)/mimrec
 
-MOBJS     = $(LB)/MMimrecMain.o
+MOBJS = $(LB)/MMimrecMain.o
 
-GOBJS     = $(LB)/MInterfaceMimrec.o \
+GOBJS = $(LB)/MInterfaceMimrec.o \
 	$(LB)/MGUIMimrecMain.o \
 	$(LB)/MGUIHistogramData.o \
 	$(LB)/MGUIARM.o \
@@ -34,9 +34,10 @@ GOBJS     = $(LB)/MInterfaceMimrec.o \
 	$(LB)/MGUIResponseParameterGaussianByUncertainties.o \
 	$(LB)/MGUIResponseSelection.o \
 	$(LB)/MGUIPolarization.o \
+	$(LB)/MGUIExposure.o \
 
 
-LOBJS     = $(LB)/MSettingsMimrec.o \
+LOBJS = $(LB)/MSettingsMimrec.o \
 	$(LB)/MSettingsImaging.o \
 	$(LB)/MSettingsEventSelections.o \
 	$(LB)/MBPData.o \
@@ -66,7 +67,8 @@ LOBJS     = $(LB)/MSettingsMimrec.o \
 	$(LB)/MResponsePRM.o \
 	$(LB)/MImageGalactic.o \
 	$(LB)/MImageSpheric.o \
-	$(LB)/MSensitivity.o \
+	$(LB)/MExposureMode.o \
+	$(LB)/MExposure.o \
 	$(LB)/MEarthHorizon.o \
 	$(LB)/MStandardAnalysis.o \
 	$(LB)/MVariableSourceDetector.o \

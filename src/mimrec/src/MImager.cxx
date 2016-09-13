@@ -60,7 +60,7 @@ using namespace std;
 #include "MResponseConeShapes.h"
 #include "MResponsePRM.h"
 #include "MResponseEnergyLeakage.h"
-#include "MSensitivity.h" 
+#include "MExposure.h" 
 #include "MImage.h"
 #include "MImage2D.h"
 #include "MImage3D.h"
@@ -515,12 +515,12 @@ bool MImager::SetResponsePRM(const MString& ComptonTrans,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImager::SetSensitivity(MSensitivity* Sensitivity)
+void MImager::SetExposure(MExposure* Exposure)
 {
   // Set the sensitivity matrix
 
 //   for (unsigned int t= 0; t < m_NThreads; ++t) {
-//     m_BPs[t]->SetSensitivity(Sensitivity);
+//     m_BPs[t]->SetExposure(Exposure);
 //   }
 }
 

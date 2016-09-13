@@ -1,5 +1,5 @@
 /*
- * MSensitivity.h
+ * MExposure.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MSensitivity__
-#define __MSensitivity__
+#ifndef __MExposure__
+#define __MExposure__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,12 +27,12 @@ class MBPStorage;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MSensitivity
+class MExposure
 {
   // public interface:
  public:
-  MSensitivity();
-  ~MSensitivity();
+  MExposure();
+  ~MExposure();
 
 
   // protected methods:
@@ -55,7 +55,7 @@ class MSensitivity
 
 #ifdef ___CINT___
  public:
-  ClassDef(MSensitivity, 0) // no description
+  ClassDef(MExposure, 0) // no description
 #endif
 
 };

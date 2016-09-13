@@ -76,7 +76,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_Algorithm, 
                    c_Response, 
                    c_FitParameter, 
-                   c_Sensitivity, 
+                   c_Exposure, 
                    c_EventSelection,  
                    c_ShowEventSelections, 
                    c_ShowEventSelectionsStepwise, 
