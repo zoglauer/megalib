@@ -47,6 +47,7 @@ LOBJS = $(LB)/MSettingsMimrec.o \
 	$(LB)/MBPDataSparseImageOneByte.o \
 	$(LB)/MImager.o \
 	$(LB)/MImagerExternallyManaged.o \
+	$(LB)/MViewPort.o \
 	$(LB)/MProjection.o \
 	$(LB)/MBackprojection.o \
 	$(LB)/MBackprojectionFarField.o \

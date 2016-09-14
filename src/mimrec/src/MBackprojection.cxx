@@ -93,40 +93,6 @@ MBackprojection::~MBackprojection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojection::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
-                                            double x2Min, double x2Max, int x2NBins,
-                                            double x3Min, double x3Max, int x3NBins,
-                                            MVector xAxis, MVector zAxis)
-{
-  // Set the dimensions of the viewport (minimum and maximum x and y-values, 
-  // number of bins)
-
-  m_x1Min = x1Min;
-  m_x1Max = x1Max;
-  m_x1NBins = x1NBins;
-  m_x2Min = x2Min;
-  m_x2Max = x2Max;
-  m_x2NBins = x2NBins;
-  m_x3Min = x3Min;
-  m_x3Max = x3Max;
-  m_x3NBins = x3NBins;
-
-  m_x1IntervalLength = (m_x1Max - m_x1Min)/m_x1NBins;
-  m_x2IntervalLength = (m_x2Max - m_x2Min)/m_x2NBins;
-  m_x3IntervalLength = (m_x3Max - m_x3Min)/m_x3NBins;
-
-  //cout<<"x:"<<m_x1Min*grad<<"!"<<m_x1Max*grad<<"!"<<m_x1NBins<<endl;
-  //cout<<"y:"<<m_x2Min*grad<<"!"<<m_x2Max*grad<<"!"<<m_x2NBins<<endl;
-  //cout<<"ILengths: "<<m_x1IntervalLength*grad<<"!"<<m_x2IntervalLength*grad<<"!"<<m_x1Min*grad<<endl;
-
-  m_NImageBins = m_x1NBins*m_x2NBins*m_x3NBins;
-
-  return;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MBackprojection::PrepareBackprojection()
 {
   //! Prepare all backprojections - must be called before the backprojections
@@ -176,7 +142,6 @@ bool MBackprojection::Assimilate(MPhysicalEvent* Event)
 
   return true;
 }
-
 
 
 // MBackprojection: the end...

@@ -56,33 +56,11 @@ MBackprojectionFarField::MBackprojectionFarField(MCoordinateSystem CoordinateSys
 {
   // Initialize a MBackprojectionFarField object
 
-  m_x1BinCenter = 0;  
-  m_x2BinCenter = 0;    
-  m_x3BinCenter = 0;
+  m_AreaBin = nullptr;
 
-  m_AreaBin = 0;
-
-  m_xBin = 0;
-  m_yBin = 0;
-  m_zBin = 0;
-  
-  // We only have one bin in x3 (= radius) dimension - in a galaxy far, far away (32.4 Mio pc) ;-)
-  m_x3Min = 0.99*c_FarAway;
-  m_x3Max = 1.00*c_FarAway;
-  m_x3NBins = 1;
-
-  // We can initialize x3 here since it is definitely only one bin...
-  m_x3IntervalLength = (m_x3Max - m_x3Min)/m_x3NBins;
-  delete [] m_x3BinCenter;
-  m_x3BinCenter  = new double[m_x3NBins];
-  for (int k = 0; k < m_x3NBins; ++k) {
-    m_x3BinCenter[k] = m_x3Min + (0.5+k)*m_x3IntervalLength;
-  }
-
-  m_XAxis.SetXYZ(1.0, 0.0, 0.0);
-  m_ZAxis.SetXYZ(0.0, 0.0, 1.0);
-
-  m_Rotation.ResizeTo(3,3);
+  m_xBin = nullptr;
+  m_yBin = nullptr;
+  m_zBin = nullptr;
 }
 
 
@@ -93,9 +71,6 @@ MBackprojectionFarField::~MBackprojectionFarField()
 {
   // Delete a MBackprojectionFarField object
 
-  delete [] m_x1BinCenter;
-  delete [] m_x2BinCenter;
-  delete [] m_x3BinCenter;
   delete [] m_AreaBin;
 
   delete [] m_xBin;
@@ -107,77 +82,16 @@ MBackprojectionFarField::~MBackprojectionFarField()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionFarField::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
-                                                  double x2Min, double x2Max, int x2NBins, 
-                                                  double x3Min, double x3Max, int x3NBins,
-                                                  MVector xAxis, MVector zAxis)
+bool MBackprojectionFarField::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
+                                            double x2Min, double x2Max, unsigned int x2NBins, 
+                                            double x3Min, double x3Max, unsigned int x3NBins,
+                                            MVector xAxis, MVector zAxis)
 {
-  // Set the dimensions of the viewport (minimum and maximum x and y-values, 
-  // number of bins) - ignore the z-values
-  // x1 = phi, x2 = theta, x3 = radius
-
-  massert(x1Max > x1Min);
-  //massert(x2Max > x2Min);
-  massert(x3Max > x3Min);
-
-  massert(x1NBins > 0);
-  massert(x2NBins > 0);
-  massert(x3NBins > 0);
-
-
-  m_x1Min = x1Min;
-  m_x1Max = x1Max;
-  m_x1NBins = x1NBins;
-  m_x2Min = x2Min;
-  m_x2Max = x2Max;
-  m_x2NBins = x2NBins;
-
-
-  m_x1IntervalLength = (m_x1Max - m_x1Min)/m_x1NBins;
-  m_x2IntervalLength = (m_x2Max - m_x2Min)/m_x2NBins;
-
-  //mout<<"BS: x1: "<<m_x1Min*c_Deg<<"-"<<m_x1Max*c_Deg<<" in "<<m_x1NBins<<" --> "<<m_x1IntervalLength*c_Deg<<endl;
-  //mout<<"BS: x2: "<<m_x2Min*c_Deg<<"-"<<m_x2Max*c_Deg<<" in "<<m_x2NBins<<" --> "<<m_x2IntervalLength*c_Deg<<endl;
-
-  m_NImageBins = m_x1NBins*m_x2NBins*m_x3NBins;
-
-  // Now compute for all bins their center:
-  delete [] m_x1BinCenter;
-  m_x1BinCenter = new double[m_x1NBins];
-  for (int k = 0; k < m_x1NBins; ++k) {
-    m_x1BinCenter[k] = m_x1Min + (0.5+k)*m_x1IntervalLength;
-  }
-
-  delete [] m_x2BinCenter;
-  m_x2BinCenter  = new double[m_x2NBins];
-  for (int k = 0; k < m_x2NBins; ++k) {
-    m_x2BinCenter[k] = m_x2Min + (0.5+k)*m_x2IntervalLength;
-  }
-
-  
-  // Create Rotation:
-  m_XAxis = xAxis;
-  m_ZAxis = zAxis;
-
-
-  // First compute the y-Axis vector:
-  MVector yAxis = zAxis.Cross(xAxis);
-  
-  //cout<<"RotVector x: "<<m_RotationXAxis.X()<<"!"<<m_RotationXAxis.Y()<<"!"<<m_RotationXAxis.Z()<<endl;
-  //cout<<"RotVector y: "<<m_RotationYAxis.X()<<"!"<<m_RotationYAxis.Y()<<"!"<<m_RotationYAxis.Z()<<endl;
-  //cout<<"RotVector z: "<<m_RotationZAxis.X()<<"!"<<m_RotationZAxis.Y()<<"!"<<m_RotationZAxis.Z()<<endl;
-
-  m_Rotation(0,0) = xAxis.X();
-  m_Rotation(1,0) = xAxis.Y();
-  m_Rotation(2,0) = xAxis.Z();
-  m_Rotation(0,1) = yAxis.X();
-  m_Rotation(1,1) = yAxis.Y();
-  m_Rotation(2,1) = yAxis.Z();
-  m_Rotation(0,2) = zAxis.X();
-  m_Rotation(1,2) = zAxis.Y();
-  m_Rotation(2,2) = zAxis.Z();
-
-  return;
+  // We only have one bin in x3 (= radius) dimension - in a galaxy far, far away (32.4 Mio pc) ;-)
+  return MViewPort::SetDimensions(x1Min, x1Max, x1NBins, 
+                                  x2Min, x2Max, x2NBins, 
+                                  0.9999*c_FarAway, 1.00*c_FarAway, 1,
+                                  xAxis, zAxis);
 }
 
 
@@ -197,8 +111,8 @@ void MBackprojectionFarField::PrepareBackprojection()
   delete [] m_zBin;
   m_zBin = new double[m_NImageBins];
 
-  for (int x1 = 0; x1 < m_x1NBins; ++x1) { // phi!
-    for (int x2 = 0; x2 < m_x2NBins; ++x2) { //theta!
+  for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) { // phi!
+    for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { //theta!
       ToCartesean(m_x2BinCenter[x2], m_x1BinCenter[x1], m_x3BinCenter[0], 
                   m_xBin[x1+x2*m_x1NBins], m_yBin[x1+x2*m_x1NBins], m_zBin[x1+x2*m_x1NBins]);
     }
@@ -211,7 +125,7 @@ void MBackprojectionFarField::PrepareBackprojection()
   delete [] m_AreaBin;
   m_AreaBin = new double[m_x2NBins];
   double TotalArea = 0.0;
-  for (int x2 = 0; x2 < m_x2NBins; x2++) { // theta
+  for (unsigned int x2 = 0; x2 < m_x2NBins; x2++) { // theta
     m_AreaBin[x2] = fabs(m_x1IntervalLength * (cos(m_x2Min + (x2+1)*m_x2IntervalLength) - cos(m_x2Min + x2*m_x2IntervalLength)));
     TotalArea += m_AreaBin[x2];
     m_AreaBin[x2] = m_AreaBin[x2];
@@ -270,7 +184,7 @@ void MBackprojectionFarField::Rotate(double &x, double &y, double &z)
 
 
 void MBackprojectionFarField::ToSpherical(double x, double y, double z, 
-                                        double &t, double &p, double &r)
+                                          double &t, double &p, double &r)
 {
   // Transfer Cartesian Coordinates to Spherical
 
@@ -386,7 +300,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
   NUsedBins = 0;
   Maximum = 0.0;
 
-  int index;
+  unsigned int index;
   //int index_offset;
   
 
@@ -490,7 +404,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
 
   bool HasTrack = m_C->HasTrack();
 
-  for (int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
+  for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
     /* Start comment out the following section if you want to use simple mode 
 
     x2InRad = (0.5+x2)*m_x2IntervalLength + m_x2Min;
@@ -685,7 +599,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
      End comment out if you want to use simple mode and comment in the follwoing to lines */
 
     // Comment the following two line in if you want to use the not-optimized mode:
-    for (int x1 = 0; x1 < m_x1NBins; ++x1) {
+    for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) {
       index = x1 + x2*m_x1NBins;
       
       // Start the backprojections:
@@ -844,12 +758,12 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
 
   MVector SkyDir;
 
-  int i;
+  unsigned int i;
   double InnerSum = 0.0;
 
   // We are going over all bins here...
-  for (int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
-    for (int x1 = 0; x1 < m_x1NBins; ++x1) { // x1 == phi
+  for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { // x2 == theta
+    for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) { // x1 == phi
       i = x1+x2*m_x1NBins; // image bin i
       
       Image[NUsedBins] = 1; //m_Photo->GetWeight();
@@ -919,11 +833,11 @@ bool MBackprojectionFarField::BackprojectionPair(double* Image, int* Bins, int& 
   double Content = 0.0;
   double InnerSum = 0.0;
   double AngleTrans;
-  int i;
+  unsigned int i;
 
   // Let's fit a double gausshaped pair-event
-  for (int x2 = 0; x2 < m_x2NBins; x2++) { // x2 == theta
-    for (int x1 = 0; x1 < m_x1NBins; x1++) { // x1 == phi
+  for (unsigned int x2 = 0; x2 < m_x2NBins; x2++) { // x2 == theta
+    for (unsigned int x1 = 0; x1 < m_x1NBins; x1++) { // x1 == phi
       i = x1+x2*m_x1NBins;
       
       // ad A.:

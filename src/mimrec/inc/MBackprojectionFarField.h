@@ -44,11 +44,11 @@ class MBackprojectionFarField : public MBackprojection
   //! The entry point into the backprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
 
-  //! Set the viewport, i.e. image dimensions
-  virtual void SetViewportDimensions(double xMin, double xMax, int xNBins, 
-                                     double yMin, double yMax, int yNBins, 
-                                     double zMin = 0, double zMax = 0, int zNBins = 0,
-                                     MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
+  //! Set the viewport / image dimensions
+  virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins, 
+                             double yMin, double yMax, unsigned int yNBins, 
+                             double zMin = 0, double zMax = 0, unsigned int zNBins = 0,
+                             MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
 
 
   // protected methods:
@@ -106,13 +106,6 @@ class MBackprojectionFarField : public MBackprojection
   // Area of each bin as a function of theta
   double* m_AreaBin;    
 
-  // Center of the bins (theta)
-  double* m_x1BinCenter;    
-  // Center of the bins (theta)
-  double* m_x2BinCenter;    
-  // Center of the bins (phi)
-  double* m_x3BinCenter;    
-
   // x-Position of the center of the bin 
   double* m_xBin;       
   // y-Position of the center of the bin
@@ -122,15 +115,6 @@ class MBackprojectionFarField : public MBackprojection
 
   //! For optimization: inverted squared vector size of a vector on the sphere
   double m_InvSquareDist;
-
-  //! The x-axis rotation
-  MVector m_XAxis;
-
-  //! The z-axis rotation
-  MVector m_ZAxis;
-
-  //! The stored rotation matrix
-  TMatrix m_Rotation;
 
 
 #ifdef ___CINT___

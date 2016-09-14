@@ -21,6 +21,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MProjection.h"
+#include "MViewPort.h"
 #include "MPhysicalEvent.h"
 #include "MResponse.h"
 #include "MDGeometryQuest.h"
@@ -29,7 +30,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-class MBackprojection : public MProjection
+class MBackprojection : public MProjection, public MViewPort
 {
   // Public Interface:
  public:
@@ -45,12 +46,6 @@ class MBackprojection : public MProjection
   virtual void PrepareBackprojection();  
   //virtual bool Backproject(MPhysicalEvent* Event, double* Image) = 0;
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum) = 0;
-
-  //! Set the viewport, i.e. image dimensions
-  virtual void SetViewportDimensions(double xMin, double xMax, int xNBins, 
-                                     double yMin, double yMax, int yNBins,
-                                     double zMin = 0, double zMax = 0, int zNBins = 1,
-                                     MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
 
   //! Set the geometry
   virtual void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
@@ -218,35 +213,6 @@ class MBackprojection : public MProjection
 
   // protected members:
  protected:
-  //! minimum x (phi) of the viewport
-  double m_x1Min;
-  //! maximum x (phi) of the viewport
-  double m_x1Max;
-  //! minimum y (theta) of the viewport
-  double m_x2Min; 
-  //! maximum y (theta) of the viewport
-  double m_x2Max; 
-  //! minimum z (radius) of the viewport
-  double m_x3Min;
-  //! maximum z (radius) of the viewport
-  double m_x3Max;
-
-  //! number of bins in x (phi) direction
-  int m_x1NBins;                     
-  //! number of bins in y (theta) direction
-  int m_x2NBins; 
-  //! number of bins in z (radius) direction
-  int m_x3NBins; 
-
-  //! length of a bin in x (phi) direction
-  double m_x1IntervalLength;
-  //! length of a bin in y (theta) direction
-  double m_x2IntervalLength;
-  //! length of a bin in z (radius) direction
-  double m_x3IntervalLength;
-
-  //! Total number of bins
-  int m_NImageBins; 
 
 
   //! The response - Compton as well as pair
