@@ -86,23 +86,6 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MBackprojectionNearField::SetViewportDimensions(double x1Min, double x1Max, int x1NBins, 
-                                                  double x2Min, double x2Max, int x2NBins, 
-                                                  double x3Min, double x3Max, int x3NBins,
-                                                  MVector xAxis, MVector zAxis)
-{
-  // Set the dimensions of the viewport
-
-  MBackprojection::SetViewportDimensions(x1Min, x1Max, x1NBins, 
-                                         x2Min, x2Max, x2NBins,
-                                         x3Min, x3Max, x3NBins);
-
-  return;
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -131,28 +114,24 @@ bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image,
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MBackprojectionNearField::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
+                                            double x2Min, double x2Max, unsigned int x2NBins, 
+                                            double x3Min, double x3Max, unsigned int x3NBins,
+                                            MVector xAxis, MVector zAxis)
+{
+  // We cannot handle a viewport rotation here, so set it to the defaults
+  return MViewPort::SetDimensions(x1Min, x1Max, x1NBins, 
+                                  x2Min, x2Max, x2NBins, 
+                                  x3Min, x3Max, x3NBins);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MBackprojectionNearField::PrepareBackprojection()
 {
-  // Now compute for all bins their center:
-  m_xBinCenter = new double[m_x1NBins];
-  for (int k = 0; k < m_x1NBins; ++k) {
-    m_xBinCenter[k] = m_x1Min + (0.5+k)*m_x1IntervalLength;
-    //cout<<m_xBinCenter[k]<<endl;
-  }
-
-  m_yBinCenter = new double[m_x2NBins];
-  for (int k = 0; k < m_x2NBins; ++k) {
-    m_yBinCenter[k] = m_x2Min + (0.5+k)*m_x2IntervalLength;
-    //cout<<m_yBinCenter[k]<<endl;
-  }
-
-  m_zBinCenter = new double[m_x3NBins];
-  for (int k = 0; k < m_x3NBins; ++k) {
-    m_zBinCenter[k] = m_x3Min + (0.5+k)*m_x3IntervalLength;
-    //cout<<m_yBinCenter[k]<<endl;
-  }
-
-  //m_zBinCenter = 0.5*(m_x3Min + m_x3Max);
+  // Nothing ...
 }
 
 
@@ -174,7 +153,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
   // Let the response get the event data:
   m_Response->AnalyzeEvent(m_C);  // <- not the correct place...
 
-  int x, y, z;
+  unsigned int x, y, z;
   double AngleTrans, AngleLong;
   double InnerSum = 0;
   double ConeRadius = 0;
@@ -241,9 +220,9 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
         i = x + i_yz; // We fill each x-row
         
 
-        xBin = m_xBinCenter[x]-xCC;
-        yBin = m_yBinCenter[y]-yCC;
-        zBin = m_zBinCenter[z]-zCC;
+        xBin = m_x1BinCenter[x]-xCC;
+        yBin = m_x2BinCenter[y]-yCC;
+        zBin = m_x3BinCenter[z]-zCC;
         
 
         AngleTrans = Angle(xBin, yBin, zBin, xCA, yCA, zCA) - Phi;
@@ -260,7 +239,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
          
           // Outside outer ring
           if (AngleTrans > Trans_max + 0.002 || AngleTrans < Trans_min - 0.002) {
-            //cout<<m_xBinCenter[x]<<":"<<m_yBinCenter[y]<<endl;
+            //cout<<m_x1BinCenter[x]<<":"<<m_x2BinCenter[y]<<endl;
             double CAdotCA = xCA*xCA + yCA*yCA + zCA*zCA; // Per definition "1"!
             double BCdotBC = xBin*xBin + yBin*yBin + zBin*zBin;
             double BCdotCA = xBin*xCA + yBin*yCA + zBin*zCA;
@@ -291,7 +270,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
             
             // Find the closest solution in x-direction (attention: we are in a coordiante system realtive to cone center!):
             double xNext = 0.0;
-            //cout<<"xBC: "<<m_xBinCenter[x]<<"  xBin: "<<xBin<<"  l1:"<<Lambda1<<"  l2:"<<Lambda2<<" dist: "<<Lambda1-Lambda2<<endl;
+            //cout<<"xBC: "<<m_x1BinCenter[x]<<"  xBin: "<<xBin<<"  l1:"<<Lambda1<<"  l2:"<<Lambda2<<" dist: "<<Lambda1-Lambda2<<endl;
             if (Lambda1 > 0 && Lambda2 > 0) {
               if (Lambda1 < Lambda2) {
                 xNext = Lambda1;
@@ -313,7 +292,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
             x+= (int) floor(xNext/m_x1IntervalLength); 
             if (x >= m_x1NBins) break; // Done
             
-            //cout<<"New x: "<<m_xBinCenter[x]<<endl;
+            //cout<<"New x: "<<m_x1BinCenter[x]<<endl;
             continue;
           } 
         }
@@ -358,7 +337,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
           //cout<<"Approx? "<<((m_ApproximatedMaths == true) ? "true" : "false")<<endl;
           //if (NUsedBins > 0) cout<<" Last content: "<<Image[NUsedBins-1]<<endl;
           //cout<<"Event "<<m_Event->GetId()<<": I seem to still calculate image bins with no content: x="
-          // <<m_xBinCenter[x]<<" y="<<m_yBinCenter[y]<<" z="<<m_yBinCenter[z]<<endl;
+          // <<m_x1BinCenter[x]<<" y="<<m_x2BinCenter[y]<<" z="<<m_x2BinCenter[z]<<endl;
         }
 
       } // end x
@@ -425,17 +404,17 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
 
   double InnerSum = 0.0;
   double AngleTrans;
-  int i;
+  unsigned int i;
 
   // Let's fit a double gausshaped pair-event
-  for (int z = 0; z < m_x3NBins; ++z) {
-    for (int y = 0; y < m_x2NBins; ++y) {
-      for (int x = 0; x < m_x1NBins; ++x) {
+  for (unsigned int z = 0; z < m_x3NBins; ++z) {
+    for (unsigned int y = 0; y < m_x2NBins; ++y) {
+      for (unsigned int x = 0; x < m_x1NBins; ++x) {
         i = x+y*m_x1NBins+z*m_x1NBins*m_x2NBins; // We fill each x-row
 
-        AngleTrans = Angle(m_xBinCenter[x]-xIA, 
-                           m_yBinCenter[y]-yIA, 
-                           m_zBinCenter[z]-zIA, 
+        AngleTrans = Angle(m_x1BinCenter[x]-xIA, 
+                           m_x2BinCenter[y]-yIA, 
+                           m_x3BinCenter[z]-zIA, 
                            xOrigin, yOrigin, zOrigin); //; - m_C->Phi();
         
         Content = m_Response->GetPairResponse(AngleTrans);

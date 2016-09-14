@@ -22,7 +22,7 @@
 #include "MGlobal.h"
 
 // Forward declarations:
-class MBPStorage;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -31,9 +31,10 @@ class MExposure
 {
   // public interface:
  public:
+  // Standard constructor
   MExposure();
+  // Default destructor
   ~MExposure();
-
 
   // protected methods:
  protected:

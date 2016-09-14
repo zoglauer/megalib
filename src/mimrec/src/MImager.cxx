@@ -363,10 +363,10 @@ void MImager::SetViewport(double x1Min, double x1Max, int x1NBins,
   m_x3NBins = x3NBins;
 
   for (unsigned int t= 0; t < m_NThreads; ++t) {
-    m_BPs[t]->SetViewportDimensions(x1Min, x1Max, x1NBins, 
-                                    x2Min, x2Max, x2NBins, 
-                                    x3Min, x3Max, x3NBins,
-                                    xAxis, zAxis);
+    m_BPs[t]->SetDimensions(x1Min, x1Max, x1NBins, 
+                            x2Min, x2Max, x2NBins, 
+                            x3Min, x3Max, x3NBins,
+                            xAxis, zAxis);
   }
    
   m_NBins = x1NBins*x2NBins*x3NBins;

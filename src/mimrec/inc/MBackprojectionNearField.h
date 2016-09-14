@@ -45,10 +45,10 @@ class MBackprojectionNearField : public MBackprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
 
   //! Set the viewport, i.e. image dimensions
-  virtual void SetViewportDimensions(double xMin, double xMax, int xNBins, 
-                                     double yMin, double yMax, int yNBins, 
-                                     double zMin = 0, double zMax = 0, int zNBins = 1,
-                                     MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
+  virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins, 
+                             double yMin, double yMax, unsigned int yNBins, 
+                             double zMin = 0, double zMax = 1, unsigned int zNBins = 1,
+                             MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
 
   // protected methods:
  protected:
@@ -68,12 +68,6 @@ class MBackprojectionNearField : public MBackprojection
 
   // protected members:
  protected:
-  //! Center of the bins (x) x are the image coordinates not the detector coordinates!
-  double* m_xBinCenter;  
-  //! Center of the bins (y)
-  double* m_yBinCenter;  
-  //! Center of bins z
-  double* m_zBinCenter;  
 
 
   // private members:
