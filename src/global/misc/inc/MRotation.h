@@ -119,6 +119,13 @@ public:
   //! Set the bottom row, right component
   void SetZZ(double ZZ) { m_ZZ = ZZ; }  
   
+  //! Return the x-Vector
+  MVector GetX() const { return MVector(m_XX, m_XY, m_XZ); }
+  //! Return the y-Vector
+  MVector GetY() const { return MVector(m_YX, m_YY, m_YZ); }
+  //! Return the z-Vector
+  MVector GetZ() const { return MVector(m_ZX, m_ZY, m_ZZ); }
+  
   //! Assignments
   MRotation& operator= (const MRotation& R) { 
     m_XX = R.m_XX; m_YX = R.m_YX; m_ZX = R.m_ZX; m_XY = R.m_XY; m_YY = R.m_YY; m_ZY = R.m_ZY; m_XZ = R.m_XZ; m_YZ = R.m_YZ; m_ZZ = R.m_ZZ; 
