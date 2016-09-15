@@ -886,7 +886,7 @@ void MResponseMatrixO1::Smooth(unsigned int Times)
 {
   // We access the TH1 routines here...
 
-  if (Times > 0) {
+  if (Times > 0 && GetNBins() > 0) {
     double* Values = new double[GetAxisBins()];
     for (unsigned int i = 0; i < GetAxisBins(); ++i) {
       Values[i] = m_Values[i];
@@ -901,6 +901,7 @@ void MResponseMatrixO1::Smooth(unsigned int Times)
     delete [] Values;
   }
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
