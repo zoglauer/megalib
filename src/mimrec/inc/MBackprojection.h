@@ -214,7 +214,6 @@ class MBackprojection : public MProjection, public MViewPort
   // protected members:
  protected:
 
-
   //! The response - Compton as well as pair
   MResponse* m_Response;              
 

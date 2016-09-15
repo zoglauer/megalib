@@ -83,8 +83,8 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_BinsPhi = 80;
 
   // Dimensions galactic
-  m_GalLatitudeMin = -10;
-  m_GalLatitudeMax = 10;
+  m_GalLatitudeMin = 80;
+  m_GalLatitudeMax = 100;
   m_GalLongitudeMin = 170;
   m_GalLongitudeMax = 190;
   m_BinsGalLatitude = 40;
@@ -350,7 +350,7 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
         m_ImagingResponsePairRadialFileName = cNode->GetValue();
       }
       if ((cNode = bNode->GetNode("ExposureMode")) != 0) {
-        m_ExposureMode = static_cast<MExposureMode>(bNode->GetValueAsInt());
+        m_ExposureMode = static_cast<MExposureMode>(cNode->GetValueAsInt());
       }
       if ((cNode = bNode->GetNode("ExposureEfficiencyFile")) != 0) {
         m_ExposureEfficiencyFile = cNode->GetValue();

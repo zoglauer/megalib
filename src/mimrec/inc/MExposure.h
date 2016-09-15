@@ -20,6 +20,11 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MRotation.h"
+#include "MViewPort.h"
+#include "MExposureMode.h"
+#include "MResponseMatrixO2.h"
+#include "MPhysicalEvent.h"
 
 // Forward declarations:
 
@@ -27,18 +32,38 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MExposure
+class MExposure : public MViewPort
 {
   // public interface:
  public:
-  // Standard constructor
+  //! Default constructor
   MExposure();
-  // Default destructor
-  ~MExposure();
+  //! Default destructor
+  virtual ~MExposure();
 
+  //! Set the efficiency file and switch to that mode
+  bool SetEfficiencyFile(MString EfficiencyFile);
+  
+  //! Set the viewport / image dimensions
+  virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins, 
+                             double yMin, double yMax, unsigned int yNBins, 
+                             double zMin = 0, double zMax = 0, unsigned int zNBins = 0,
+                             MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
+
+  //! Create the exposure for one event
+  virtual bool Expose(const MPhysicalEvent* Event);
+  
+  //! Return a copy of the current exposure map -- user must delete array via "delete [] ..."
+  virtual double* GetExposure();
+  
+  
   // protected methods:
  protected:
-
+  //! Apply the latest exposure to the exposure map
+  bool ApplyExposure();
+  //! A distance metric to determine when we have to recalculate
+  //! The value is just the largest difference between the axis vectors
+  double DistanceMetric(const MRotation& A, const MRotation& B);
 
   // private methods:
  private:
@@ -51,9 +76,36 @@ class MExposure
 
   // private members:
  private:
+  //! The exposure mode
+  MExposureMode m_Mode;
+   
+  //! The exposure image
+  double* m_Exposure;
 
+  //! The last added rotation
+  MRotation m_LastRotation;
+  //! The last added time
+  MTime m_LastTime;
 
-
+  //! The current rotation
+  MRotation m_CurrentRotation;
+  //! The current time
+  MTime m_CurrentTime;
+  
+  // Mode: Calculated by efficiency
+  
+  //! The efficiency response file for mode: CalculateFromEfficiency
+  MResponseMatrixO2 m_Efficiency;
+  //! The rotation of the efficiency matrix for mode: CalculateFromEfficiency
+  MRotation m_EfficiencyRotation;
+  //! The simulation start area for mode: CalculateFromEfficiency
+  double m_EfficiencyStartArea;
+  //! The number of simulated events for mode: CalculateFromEfficiency
+  long m_EfficiencySimulatedEvents;
+  
+  //! Counter: How many times did we add something
+  long m_NExposureUpdates;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MExposure, 0) // no description

@@ -111,6 +111,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponsePhi, 
                    c_ResponseDistance, 
                    c_ResponseTime, 
+                   c_ResponseExposureMap, 
                    c_ResponseTimeWalk, 
                    c_ResponseCoincidenceWindow, 
                    c_ResponseAzimuthalElectronScatterAngle,

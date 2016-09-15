@@ -51,7 +51,7 @@ class MImageSpheric : public MImage2D
   virtual void SetImageArray(double*);
 
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = nullptr, bool Normalize = true);
  
   // protected methods:
  protected:

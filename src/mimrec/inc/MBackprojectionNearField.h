@@ -45,10 +45,11 @@ class MBackprojectionNearField : public MBackprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
 
   //! Set the viewport, i.e. image dimensions
-  virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins, 
-                             double yMin, double yMax, unsigned int yNBins, 
-                             double zMin = 0, double zMax = 1, unsigned int zNBins = 1,
-                             MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
+  virtual bool SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
+                             double x2Min, double x2Max, unsigned int x2NBins,
+                             double x3Min = 0, double x3Max = 0, unsigned int x3NBins = 1,
+                             MVector x1Axis = MVector(1.0, 0.0, 0.0), 
+                             MVector x3Axis = MVector(0.0, 0.0, 1.0));
 
   // protected methods:
  protected:
