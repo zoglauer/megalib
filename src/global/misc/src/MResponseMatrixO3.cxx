@@ -1268,7 +1268,7 @@ void MResponseMatrixO3::Smooth(unsigned int Times)
 {
   // We can only smooth the lowest 1D histograms...
 
-  if (Times > 0) {
+  if (Times > 0 && GetNBins() > 0) {
     double* Values = new double[GetAxisBins(2)];
     for (unsigned int x1 = 0; x1 < GetAxisBins(1); ++x1) {
       for (unsigned int x2 = 0; x2 < GetAxisBins(2); ++x2) {
