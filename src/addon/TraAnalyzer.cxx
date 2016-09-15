@@ -62,7 +62,7 @@ private:
   //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
 
-  //! Simulation file name
+  //! Tra file name
   MString m_FileName;
   //! Geometry file name
   MString m_GeometryFileName;
@@ -99,8 +99,7 @@ bool TraAnalyzer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: TraAnalyzer <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  Usage<<"         -f:   simulation file name"<<endl;
-  Usage<<"         -o:   output simulation file name"<<endl;
+  Usage<<"         -f:   tra file name"<<endl;
   Usage<<"         -g:   geometry file name"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -153,7 +152,7 @@ bool TraAnalyzer::ParseCommandLine(int argc, char** argv)
   }
 
   if (m_FileName == "") {
-    cout<<"Error: Need a simulation file name!"<<endl;
+    cout<<"Error: Need a tra file name!"<<endl;
     cout<<Usage.str()<<endl;
     return false;
   }
@@ -164,7 +163,7 @@ bool TraAnalyzer::ParseCommandLine(int argc, char** argv)
     return false;
   }
 
-  if (m_FileName.EndsWith(".tra") == false) {
+  if (m_FileName.EndsWith(".tra") == false && m_FileName.EndsWith(".tra.gz") == false) {
     cout<<"Error: Need a tra file name, not a "<<m_FileName<<" file "<<endl;
     cout<<Usage.str()<<endl;
     return false;
