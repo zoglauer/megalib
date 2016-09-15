@@ -162,7 +162,7 @@ void MImageSpheric::SetImageArray(double* IA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImageSpheric::Display(TCanvas* Canvas)
+void MImageSpheric::Display(TCanvas* Canvas, bool Normalize)
 {
   // Display the image in a canvas
 
@@ -219,6 +219,11 @@ void MImageSpheric::Display(TCanvas* Canvas)
         merr<<"Image contains NaN ("<<x<<", "<<y<<")"<<show;
       }
     }
+  }
+  
+  // Rescale to 1:
+  if (Normalize == true && Hist->GetMaximum() > 0) {
+    Hist->Scale(1.0/Hist->GetMaximum());
   }
 
   if (IsNew == true) {

@@ -144,6 +144,9 @@ class MInterfaceMimrec : public MInterface
   // Show the horizon zenith in spherical detector coordinates
   void HorizonInSphericalDetectorCoordinates();
   
+  //! Create an exposure map
+  void CreateExposureMap();
+  
   void SelectIds();
 
   // Not used:

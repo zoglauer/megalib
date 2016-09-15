@@ -169,7 +169,7 @@ void MImageGalactic::SetImageArray(double* IA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImageGalactic::Display(TCanvas* Canvas)
+void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
 {
   // Display the image in a canvas
  
@@ -239,7 +239,7 @@ void MImageGalactic::Display(TCanvas* Canvas)
   }
   
   // Rescale to 1:
-  if (Hist->GetMaximum() > 0) {
+  if (Normalize == true && Hist->GetMaximum() > 0) {
     Hist->Scale(1.0/Hist->GetMaximum());
   }
 

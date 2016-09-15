@@ -5909,6 +5909,53 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceMimrec::CreateExposureMap()
+{
+  // First restart the event-loader:
+  if (InitializeEventloader() == false) {
+    return;
+  }  
+  
+  MExposure Exposure;
+  Exposure.SetEfficiencyFile("Exposure.511keV.p1.base.efficiency.90z.90y.rsp");
+  Exposure.SetDimensions(m_Data->GetGalLongitudeMin()*c_Rad, 
+                        m_Data->GetGalLongitudeMax()*c_Rad, 
+                        m_Data->GetBinsGalLongitude(),
+                        (m_Data->GetGalLatitudeMin()+90)*c_Rad,
+                        (m_Data->GetGalLatitudeMax()+90)*c_Rad,
+                        m_Data->GetBinsGalLatitude(),
+                        c_FarAway/10, 
+                        c_FarAway, 
+                        1);
+  
+  
+  MPhysicalEvent* Event;
+  while ((Event = m_EventFile->GetNextEvent()) != 0) { 
+    
+    Exposure.Expose(Event);
+
+    delete Event;
+  }
+  m_EventFile->Close();
+  
+  double* ExposureImage = Exposure.GetExposure();
+  
+  MImageGalactic* Galactic = 
+    new MImageGalactic("Exposure in galactic coordinates", ExposureImage, 
+                       "Longitude", m_Data->GetGalLongitudeMin(), m_Data->GetGalLongitudeMax(), m_Data->GetBinsGalLongitude(),
+                       "Latitude", m_Data->GetGalLatitudeMin(), m_Data->GetGalLatitudeMax(), m_Data->GetBinsGalLatitude(), 
+                       MImage::c_RootDefault);
+  Galactic->Display(nullptr, false);
+
+  delete [] ExposureImage;
+  
+  return;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceMimrec::PointingInGalacticCoordinates()
 {
   // Show the pointing of the instrument in galactic coordinates

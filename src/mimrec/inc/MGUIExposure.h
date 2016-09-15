@@ -37,7 +37,7 @@ class MGUIExposure : public MGUIDialog
   // Public Interface:
  public:
   MGUIExposure(const TGWindow* Parent, const TGWindow* Main, 
-                  MSettingsImaging* Data);
+               MSettingsImaging* Settings);
   virtual ~MGUIExposure();
 
   // protected methods:
@@ -56,7 +56,7 @@ class MGUIExposure : public MGUIDialog
 
   // private members:
  private:
-  MSettingsImaging* m_GUIData;
+  MSettingsImaging* m_Settings;
 
   TGLayoutHints* m_FileSelectorLayout;
   MGUIEFileSelector* m_FileSelector;

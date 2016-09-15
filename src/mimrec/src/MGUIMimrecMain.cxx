@@ -133,7 +133,7 @@ void MGUIMimrecMain::Create()
   MenuImaging->AddEntry("Reconstruction algorithm", c_LikelihoodAlgorithm);
   //m_Menu->AddEntry("Penalty", c_LikelihoodPenalty);
   MenuImaging->AddSeparator();
-  MenuImaging->AddEntry("Exposure", c_Exposure);
+  MenuImaging->AddEntry("Exposure settings", c_Exposure);
   MenuImaging->AddSeparator();
   // MenuImaging->AddEntry("Backprojection algorithm", c_Algorithm);
   MenuImaging->AddEntry("Response type selection", c_Response);
@@ -156,10 +156,11 @@ void MGUIMimrecMain::Create()
   MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
   MenuGeneral->AddEntry("Pointing in galactic coordinates", c_ResponsePointingInGalacticCoordinates);  
+  MenuGeneral->AddEntry("Exposure map", c_ResponseExposureMap);  
   MenuGeneral->AddEntry("Horizon zenith in spherical coordinates", c_ResponseHorizonInSphericalDetectorCoordinates);  
   if (m_Data->GetSpecialMode() == true) {
     MenuGeneral->AddEntry("Time walk", c_ResponseTimeWalk);
-    MenuGeneral->AddEntry("Select Ids", c_ResponseSelectIds);
+    MenuGeneral->AddEntry("Select IDs", c_ResponseSelectIds);
   }
 
   // The sub menu ARM
@@ -622,6 +623,10 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
 
       case c_ResponsePointingInGalacticCoordinates:
         m_Interface->PointingInGalacticCoordinates();
+        break;
+
+      case c_ResponseExposureMap:
+        m_Interface->CreateExposureMap();
         break;
 
       case c_ResponseHorizonInSphericalDetectorCoordinates:
