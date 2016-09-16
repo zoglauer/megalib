@@ -67,8 +67,7 @@ class MModule
   MString GetXmlTag() { return m_XmlTag; }
 
   //! Set the geometry
-  void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
-  
+  virtual void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
   
   //! Return the number of the preceeding modules
   unsigned int GetNPreceedingModuleTypes() const { return m_PreceedingModules.size(); }
