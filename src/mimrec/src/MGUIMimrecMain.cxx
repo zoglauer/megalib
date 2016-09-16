@@ -128,7 +128,6 @@ void MGUIMimrecMain::Create()
   } else {
     MenuImaging->AddEntry("Create animated gif (experimental)", c_Animation);    
   }
-  //MenuImaging->AddEntry("Stop image reconstuction", c_StopReconstruction);
   MenuImaging->AddSeparator();
   MenuImaging->AddEntry("Reconstruction algorithm", c_LikelihoodAlgorithm);
   //m_Menu->AddEntry("Penalty", c_LikelihoodPenalty);
@@ -377,10 +376,6 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         if (OKPressed == true) {
           Launch(true);
         }
-        break;
-        
-      case c_StopReconstruction:
-        m_Interface->InterruptReconstruction();
         break;
 
       case c_ShowEventSelections:

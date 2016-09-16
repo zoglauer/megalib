@@ -90,14 +90,14 @@ MInterfaceMimrec::MInterfaceMimrec() : MInterface()
 {
   // standard constructor
 
-  m_Imager = 0;
-  m_Data = new MSettingsMimrec();
-  m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
+  m_Imager = nullptr;
+  m_Settings = new MSettingsMimrec();
+  m_BasicGuiData = dynamic_cast<MSettings*>(m_Settings);
 
-  m_EventFile = 0;
+  m_EventFile = nullptr;
   m_Selector = new MEventSelector();
 
-  m_SingleBackprojection = new double *[4];
+ // m_SingleBackprojection = new double *[4];
 }
 
 
@@ -232,8 +232,8 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       if (g_Verbosity < 2) g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
     } else if (Option == "--configuration" || Option == "-c") {
-      m_Data->Read(argv[++i]);
-      cout<<"Command-line parser: Use configuration file "<<m_Data->GetSettingsFileName()<<endl;
+      m_Settings->Read(argv[++i]);
+      cout<<"Command-line parser: Use configuration file "<<m_Settings->GetSettingsFileName()<<endl;
     } else if (Option == "--output" || Option == "-o") {
       m_OutputFileName = argv[++i];
       if (m_OutputFileName.Last('.') == string::npos) {
@@ -248,7 +248,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--change-configuration" || Option == "-C") {
-      if (m_Data->Change(argv[++i]) == false) {
+      if (m_Settings->Change(argv[++i]) == false) {
         cout<<"ERROR: Command-line parser: Unable to change this configuration value: "<<argv[i]<<endl;        
       } else {
         cout<<"Command-line parser: Changing this configuration value: "<<argv[i]<<endl;
@@ -270,31 +270,31 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--geometry" || Option == "-g") {
-      if (m_Data->SetGeometryFileName(argv[++i]) == false) {
+      if (m_Settings->SetGeometryFileName(argv[++i]) == false) {
         cout<<"Command-line parser: The geometry file could not be opened correctly: "<<argv[i]<<endl;
         return false;
       }
-      cout<<"Command-line parser: Use geometry file "<<m_Data->GetGeometryFileName()<<endl;
+      cout<<"Command-line parser: Use geometry file "<<m_Settings->GetGeometryFileName()<<endl;
     } else if (Option == "--filename" || Option == "-f") {
-      if (m_Data->SetCurrentFileName(argv[++i]) == false) {
+      if (m_Settings->SetCurrentFileName(argv[++i]) == false) {
         cout<<"Command-line parser: The file could not be opened correctly: "<<argv[i]<<endl;
         return false;
       }
-      cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;
+      cout<<"Command-line parser: Use file "<<m_Settings->GetCurrentFileName()<<endl;
     } else if (Option == "--special" || Option == "--development") {
-      m_Data->SetSpecialMode(true);
+      m_Settings->SetSpecialMode(true);
       cout<<"Command-line parser: Activating development extras mode - hope, you know what you are doing..."<<endl;
     }
   }
 
   // Load the geometry
-  if (SetGeometry(m_Data->GetGeometryFileName(), false) == false) {
-    cout<<"Command-line parser: "<<m_Data->GetGeometryFileName()<<" is no aceptable geometry file!"<<endl;
+  if (SetGeometry(m_Settings->GetGeometryFileName(), false) == false) {
+    cout<<"Command-line parser: "<<m_Settings->GetGeometryFileName()<<" is no aceptable geometry file!"<<endl;
     cout<<"Command-line parser: Please give a correct geometry file via the -g option."<<endl;
     if (m_UseGui == true) {
       cout<<"Command-line parser: Trying to start with a dummy geometry..."<<endl;
-      m_Data->SetGeometryFileName(g_MEGAlibPath + "/resource/examples/geomega/special/Dummy.geo.setup");
-      if (SetGeometry(m_Data->GetGeometryFileName(), false) == false) {
+      m_Settings->SetGeometryFileName(g_MEGAlibPath + "/resource/examples/geomega/special/Dummy.geo.setup");
+      if (SetGeometry(m_Settings->GetGeometryFileName(), false) == false) {
         cout<<"Command-line parser: Hmmm, even reading of dummy geometry failed... Bye."<<endl;
         return false;
       }
@@ -349,12 +349,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       return KeepAlive;
     } else if (Option == "--event-selections" || Option == "-e") {
       cout<<"Command-line parser: Dumping event selections..."<<endl;  
-      // m_Data->SetStoreImages(true);
+      // m_Settings->SetStoreImages(true);
       ShowEventSelections();
       return KeepAlive;
     } else if (Option == "--image" || Option == "-i") {
       cout<<"Command-line parser: Generating image..."<<endl;  
-      // m_Data->SetStoreImages(true);
+      // m_Settings->SetStoreImages(true);
       Reconstruct();
       return KeepAlive;
     }
@@ -363,7 +363,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
    
   // Execute some low level commands
   if (m_UseGui == true) {
-    m_Gui = new MGUIMimrecMain(this, m_Data);
+    m_Gui = new MGUIMimrecMain(this, m_Settings);
     m_Gui->Create();
   } else {
     return false;
@@ -383,11 +383,11 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
 // void MInterfaceMimrec::SetGuiData(MGUIData* BasicGuiData = 0)
 // {
 //   if (BasicGuiData == 0) {
-//     m_Data = new MSettingsMimrec(); // == Load default
-//     m_BasicGuiData = dynamic_cast<MGUIData*>(m_Data);
+//     m_Settings = new MSettingsMimrec(); // == Load default
+//     m_BasicGuiData = dynamic_cast<MGUIData*>(m_Settings);
 //   } else {
 //     m_BasicGuiData = BasicGuiData;
-//     m_Data = dynamic_cast<MSettingsMimrec*>(BasicGuiData);
+//     m_Settings = dynamic_cast<MSettingsMimrec*>(BasicGuiData);
 //   }
 // }
 
@@ -399,15 +399,15 @@ bool MInterfaceMimrec::LoadConfiguration(MString FileName)
 {  
   // Load the configuration file
 
-  if (m_Data == 0) {
-    m_Data = new MSettingsMimrec();
-    m_BasicGuiData = dynamic_cast<MSettings*>(m_Data);
+  if (m_Settings == 0) {
+    m_Settings = new MSettingsMimrec();
+    m_BasicGuiData = dynamic_cast<MSettings*>(m_Settings);
     if (m_UseGui == true) {
-      m_Gui->SetConfiguration(m_Data);
+      m_Gui->SetConfiguration(m_Settings);
     }
   }
   
-  m_Data->Read(FileName);
+  m_Settings->Read(FileName);
 
   return true;
 }
@@ -420,9 +420,9 @@ bool MInterfaceMimrec::SaveConfiguration(MString FileName)
 {
   // Save the configuration file
 
-  massert(m_Data != 0);
+  massert(m_Settings != 0);
 
-  m_Data->Write(FileName);
+  m_Settings->Write(FileName);
 
   return true;
 }
@@ -479,15 +479,15 @@ MVector MInterfaceMimrec::GetTestPosition()
   MVector Test(0.0, 0.0, 1.0); 
 
   // Get the data of the ARM-"Test"-Position
-  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
-    Test.SetMagThetaPhi(c_FarAway, m_Data->GetTPTheta()*c_Rad, m_Data->GetTPPhi()*c_Rad);
-  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
-    Test.SetMagThetaPhi(c_FarAway, (m_Data->GetTPGalLatitude()+90)*c_Rad, m_Data->GetTPGalLongitude()*c_Rad);
-  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
-             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
-    Test.SetXYZ(m_Data->GetTPX(), m_Data->GetTPY(), m_Data->GetTPZ());
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+    Test.SetMagThetaPhi(c_FarAway, m_Settings->GetTPTheta()*c_Rad, m_Settings->GetTPPhi()*c_Rad);
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+    Test.SetMagThetaPhi(c_FarAway, (m_Settings->GetTPGalLatitude()+90)*c_Rad, m_Settings->GetTPGalLongitude()*c_Rad);
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+    Test.SetXYZ(m_Settings->GetTPX(), m_Settings->GetTPY(), m_Settings->GetTPZ());
   } else {
-    merr<<"Unknown coordinate system ID: "<<m_Data->GetCoordinateSystem()<<fatal;
+    merr<<"Unknown coordinate system ID: "<<m_Settings->GetCoordinateSystem()<<fatal;
   }
 
   return Test;
@@ -503,17 +503,17 @@ double MInterfaceMimrec::GetTotalEnergyMin()
 
   double Min = numeric_limits<double>::max(); 
 
-  if (m_Data->GetFirstEnergyRangeMax() > 0) {
-    if (m_Data->GetFirstEnergyRangeMin() < Min) Min = m_Data->GetFirstEnergyRangeMin();
+  if (m_Settings->GetFirstEnergyRangeMax() > 0) {
+    if (m_Settings->GetFirstEnergyRangeMin() < Min) Min = m_Settings->GetFirstEnergyRangeMin();
   }
-  if (m_Data->GetSecondEnergyRangeMax() > 0) {
-    if (m_Data->GetSecondEnergyRangeMin() < Min) Min = m_Data->GetSecondEnergyRangeMin();
+  if (m_Settings->GetSecondEnergyRangeMax() > 0) {
+    if (m_Settings->GetSecondEnergyRangeMin() < Min) Min = m_Settings->GetSecondEnergyRangeMin();
   }
-  if (m_Data->GetThirdEnergyRangeMax() > 0) {
-    if (m_Data->GetThirdEnergyRangeMin() < Min) Min = m_Data->GetThirdEnergyRangeMin();
+  if (m_Settings->GetThirdEnergyRangeMax() > 0) {
+    if (m_Settings->GetThirdEnergyRangeMin() < Min) Min = m_Settings->GetThirdEnergyRangeMin();
   }
-  if (m_Data->GetFourthEnergyRangeMax() > 0) {
-    if (m_Data->GetFourthEnergyRangeMin() < Min) Min = m_Data->GetFourthEnergyRangeMin();
+  if (m_Settings->GetFourthEnergyRangeMax() > 0) {
+    if (m_Settings->GetFourthEnergyRangeMin() < Min) Min = m_Settings->GetFourthEnergyRangeMin();
   }
 
   return Min;
@@ -529,29 +529,20 @@ double MInterfaceMimrec::GetTotalEnergyMax()
 
   double Max = 0; 
 
-  if (m_Data->GetFirstEnergyRangeMax() > 0) {
-    if (m_Data->GetFirstEnergyRangeMax() > Max) Max = m_Data->GetFirstEnergyRangeMax();
+  if (m_Settings->GetFirstEnergyRangeMax() > 0) {
+    if (m_Settings->GetFirstEnergyRangeMax() > Max) Max = m_Settings->GetFirstEnergyRangeMax();
   }
-  if (m_Data->GetSecondEnergyRangeMax() > 0) {
-    if (m_Data->GetSecondEnergyRangeMax() > Max) Max = m_Data->GetSecondEnergyRangeMax();
+  if (m_Settings->GetSecondEnergyRangeMax() > 0) {
+    if (m_Settings->GetSecondEnergyRangeMax() > Max) Max = m_Settings->GetSecondEnergyRangeMax();
   }
-  if (m_Data->GetThirdEnergyRangeMax() > 0) {
-    if (m_Data->GetThirdEnergyRangeMax() > Max) Max = m_Data->GetThirdEnergyRangeMax();
+  if (m_Settings->GetThirdEnergyRangeMax() > 0) {
+    if (m_Settings->GetThirdEnergyRangeMax() > Max) Max = m_Settings->GetThirdEnergyRangeMax();
   }
-  if (m_Data->GetFourthEnergyRangeMax() > 0) {
-    if (m_Data->GetFourthEnergyRangeMax() > Max) Max = m_Data->GetFourthEnergyRangeMax();
+  if (m_Settings->GetFourthEnergyRangeMax() > 0) {
+    if (m_Settings->GetFourthEnergyRangeMax() > Max) Max = m_Settings->GetFourthEnergyRangeMax();
   }
 
   return Max;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MInterfaceMimrec::InterruptReconstruction()
-{
-  m_Interrupt = true;
 }
 
 
@@ -566,9 +557,9 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
   bool JustShowImage = false;
 
   if (Animate == false && // In case of animation we always perform backprojections
-      m_Data->IsEventSelectionModified() == false &&
-      m_Data->IsBackprojectionModified() == false) {
-    if (m_Data->IsLikelihoodModified() == true) {
+      m_Settings->IsEventSelectionModified() == false &&
+      m_Settings->IsBackprojectionModified() == false) {
+    if (m_Settings->IsLikelihoodModified() == true) {
       int Return = 0;
       new TGMsgBox(gClient->GetRoot(), gClient->GetRoot(), "Info", 
                    "Only data concerning the deconvolution has been modified.\nDo you wish to just perform deconvolution?\nOtherwise also the response is redetermined, too.", 
@@ -595,124 +586,124 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
     }
     
     // Initialize:
-    m_Imager = new MImager(m_Data->GetCoordinateSystem(),
-                           m_Data->GetNThreads());
+    m_Imager = new MImager(m_Settings->GetCoordinateSystem(),
+                           m_Settings->GetNThreads());
     m_Imager->SetGeometry(m_Geometry);
     
     // Maths:
-    m_Imager->SetApproximatedMaths(m_Data->GetApproximatedMaths());
+    m_Imager->SetApproximatedMaths(m_Settings->GetApproximatedMaths());
     
     // Set the dimensions of the image
-    if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
-      m_Imager->SetViewport(m_Data->GetPhiMin()*c_Rad, 
-                            m_Data->GetPhiMax()*c_Rad, 
-                            m_Data->GetBinsPhi(),
-                            m_Data->GetThetaMin()*c_Rad,
-                            m_Data->GetThetaMax()*c_Rad,
-                            m_Data->GetBinsTheta(),
+    if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
+      m_Imager->SetViewport(m_Settings->GetPhiMin()*c_Rad, 
+                            m_Settings->GetPhiMax()*c_Rad, 
+                            m_Settings->GetBinsPhi(),
+                            m_Settings->GetThetaMin()*c_Rad,
+                            m_Settings->GetThetaMax()*c_Rad,
+                            m_Settings->GetBinsTheta(),
                             c_FarAway/10, 
                             c_FarAway, 
                             1, 
-                            m_Data->GetImageRotationXAxis(), 
-                            m_Data->GetImageRotationZAxis());
-    } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
-      m_Imager->SetViewport(m_Data->GetGalLongitudeMin()*c_Rad, 
-                            m_Data->GetGalLongitudeMax()*c_Rad, 
-                            m_Data->GetBinsGalLongitude(),
-                            (m_Data->GetGalLatitudeMin()+90)*c_Rad,
-                            (m_Data->GetGalLatitudeMax()+90)*c_Rad,
-                            m_Data->GetBinsGalLatitude(),
+                            m_Settings->GetImageRotationXAxis(), 
+                            m_Settings->GetImageRotationZAxis());
+    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
+      m_Imager->SetViewport(m_Settings->GetGalLongitudeMin()*c_Rad, 
+                            m_Settings->GetGalLongitudeMax()*c_Rad, 
+                            m_Settings->GetBinsGalLongitude(),
+                            (m_Settings->GetGalLatitudeMin()+90)*c_Rad,
+                            (m_Settings->GetGalLatitudeMax()+90)*c_Rad,
+                            m_Settings->GetBinsGalLatitude(),
                             c_FarAway/10, 
                             c_FarAway, 
                             1);
-    } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
-               m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
-      m_Imager->SetViewport(m_Data->GetXMin(), 
-                            m_Data->GetXMax(), 
-                            m_Data->GetBinsX(),
-                            m_Data->GetYMin(), 
-                            m_Data->GetYMax(), 
-                            m_Data->GetBinsY(),
-                            m_Data->GetZMin(), 
-                            m_Data->GetZMax(), 
-                            m_Data->GetBinsZ());
+    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+               m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
+      m_Imager->SetViewport(m_Settings->GetXMin(), 
+                            m_Settings->GetXMax(), 
+                            m_Settings->GetBinsX(),
+                            m_Settings->GetYMin(), 
+                            m_Settings->GetYMax(), 
+                            m_Settings->GetBinsY(),
+                            m_Settings->GetZMin(), 
+                            m_Settings->GetZMax(), 
+                            m_Settings->GetBinsZ());
     } else {
-      merr<<"Unknown coordinate system ID: "<<m_Data->GetCoordinateSystem()<<fatal;
+      merr<<"Unknown coordinate system ID: "<<m_Settings->GetCoordinateSystem()<<fatal;
     }
     
     // Set the draw modes
-    m_Imager->SetDrawMode(m_Data->GetImageDrawMode());
-    m_Imager->SetPalette(m_Data->GetImagePalette());
-    m_Imager->SetSourceCatalog(m_Data->GetImageSourceCatalog());
+    m_Imager->SetDrawMode(m_Settings->GetImageDrawMode());
+    m_Imager->SetPalette(m_Settings->GetImagePalette());
+    m_Imager->SetSourceCatalog(m_Settings->GetImageSourceCatalog());
     
     if (Animate == true) {
-      m_Imager->SetAnimationMode(m_Data->GetAnimationMode());
-      m_Imager->SetAnimationFrameTime(m_Data->GetAnimationFrameTime());
-      m_Imager->SetAnimationFileName(m_Data->GetAnimationFileName());
+      m_Imager->SetAnimationMode(m_Settings->GetAnimationMode());
+      m_Imager->SetAnimationFrameTime(m_Settings->GetAnimationFrameTime());
+      m_Imager->SetAnimationFileName(m_Settings->GetAnimationFileName());
     } else {
      m_Imager->SetAnimationMode(MImager::c_AnimateNothing); 
     }
 
     // Set the response type:
-    if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
-      m_Imager->SetResponseGaussian(m_Data->GetFitParameterComptonTransSphere(), 
-                                    m_Data->GetFitParameterComptonLongSphere(),
-                                    m_Data->GetFitParameterPair(),
-                                    m_Data->GetGauss1DCutOff(),
-                                    m_Data->GetUseAbsorptions());
-    } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
-      m_Imager->SetResponseGaussianByUncertainties(m_Data->GetGaussianByUncertaintiesIncrease());
-    } else if (m_Data->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
-      m_Imager->SetResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
-                                         m_Data->GetFitParameterComptonLongSphere());     
-    } else if (m_Data->GetResponseType() == MResponseType::ConeShapes) {
-      if (m_Imager->SetResponseConeShapes(m_Data->GetImagingResponseConeShapesFileName()) == false) {
+    if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
+      m_Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
+                                    m_Settings->GetFitParameterComptonLongSphere(),
+                                    m_Settings->GetFitParameterPair(),
+                                    m_Settings->GetGauss1DCutOff(),
+                                    m_Settings->GetUseAbsorptions());
+    } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
+      m_Imager->SetResponseGaussianByUncertainties(m_Settings->GetGaussianByUncertaintiesIncrease());
+    } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
+      m_Imager->SetResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
+                                         m_Settings->GetFitParameterComptonLongSphere());     
+    } else if (m_Settings->GetResponseType() == MResponseType::ConeShapes) {
+      if (m_Imager->SetResponseConeShapes(m_Settings->GetImagingResponseConeShapesFileName()) == false) {
         mgui<<"Cannot set cone-shapes response! Aborting imaging!"<<error;
         return;
       }     
-    } else if (m_Data->GetResponseType() == MResponseType::PRM) {
-      if (m_Imager->SetResponsePRM(m_Data->GetImagingResponseComptonTransversalFileName(),
-                                   m_Data->GetImagingResponseComptonLongitudinalFileName(),
-                                   m_Data->GetImagingResponsePairRadialFileName()) == false) {
+    } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
+      if (m_Imager->SetResponsePRM(m_Settings->GetImagingResponseComptonTransversalFileName(),
+                                   m_Settings->GetImagingResponseComptonLongitudinalFileName(),
+                                   m_Settings->GetImagingResponsePairRadialFileName()) == false) {
         mgui<<"Cannot set PRM response! Aborting imaging!"<<error;
         return;
       }
     } else {
-      merr<<"Unknown response type: "<<m_Data->GetResponseType()<<show;
+      merr<<"Unknown response type: "<<m_Settings->GetResponseType()<<show;
       return;
     }
-    m_Imager->UseAbsorptions(m_Data->GetUseAbsorptions());
+    m_Imager->UseAbsorptions(m_Settings->GetUseAbsorptions());
   
     // The tra file name
-    if (m_Imager->SetFileName(m_Data->GetCurrentFileName(), m_Data->GetFastFileParsing()) == false) {
+    if (m_Imager->SetFileName(m_Settings->GetCurrentFileName(), m_Settings->GetFastFileParsing()) == false) {
       return;
     }
 
     // A new event selector:
     MEventSelector S;
-    S.SetSettings(m_Data);
+    S.SetSettings(m_Settings);
     S.SetGeometry(m_Geometry);
     m_Imager->SetEventSelector(S);
 
     // Memory management... needs clean up...
-    m_Imager->SetMemoryManagment(m_Data->GetRAM(),
-                                 m_Data->GetSwap(),
-                                 m_Data->GetMemoryExhausted(),
-                                 m_Data->GetBytes());
+    m_Imager->SetMemoryManagment(m_Settings->GetRAM(),
+                                 m_Settings->GetSwap(),
+                                 m_Settings->GetMemoryExhausted(),
+                                 m_Settings->GetBytes());
   }
 
   if (JustShowImage == false) {
-    if (m_Data->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
+    if (m_Settings->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
       m_Imager->SetDeconvolutionAlgorithmClassicEM();
-    } else if (m_Data->GetLHAlgorithm() == MLMLAlgorithms::c_OSEM) {
-      m_Imager->SetDeconvolutionAlgorithmOSEM(m_Data->GetOSEMSubSets());
+    } else if (m_Settings->GetLHAlgorithm() == MLMLAlgorithms::c_OSEM) {
+      m_Imager->SetDeconvolutionAlgorithmOSEM(m_Settings->GetOSEMSubSets());
     } else {
       merr<<"Unknown deconvolution algorithm. Using classic EM."<<error;
       m_Imager->SetDeconvolutionAlgorithmClassicEM();
     }
 
-    if (m_Data->GetLHStopCriteria() == 0) {
-      m_Imager->SetStopCriterionByIterations(m_Data->GetNIterations());
+    if (m_Settings->GetLHStopCriteria() == 0) {
+      m_Imager->SetStopCriterionByIterations(m_Settings->GetNIterations());
     } else {
       merr<<"Unknown stop criterion. Stopping after 0 iterations."<<error;
       m_Imager->SetStopCriterionByIterations(0);
@@ -739,9 +730,9 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
 
 
   // Reset the modification flags in the GUI data:
-  m_Data->ResetEventSelectionModified();
-  m_Data->ResetBackprojectionModified();
-  m_Data->ResetLikelihoodModified();
+  m_Settings->ResetEventSelectionModified();
+  m_Settings->ResetBackprojectionModified();
+  m_Settings->ResetLikelihoodModified();
 
   return;
 }
@@ -753,6 +744,10 @@ void MInterfaceMimrec::SpectralAnalyzer()
 {
   //! The spectral analyzer
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+
   MSpectralAnalyzer S;
   
   
@@ -762,14 +757,11 @@ void MInterfaceMimrec::SpectralAnalyzer()
 
   // A new event selector:
   MEventSelector Sel;
-  Sel.SetSettings(m_Data);
+  Sel.SetSettings(m_Settings);
   Sel.SetGeometry(m_Geometry);
 
-  // ... loop over all events and save a count in the belonging bin ...
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       S.FillSpectrum(Event->GetEnergy());
     }
@@ -777,17 +769,19 @@ void MInterfaceMimrec::SpectralAnalyzer()
     delete Event;
   } 
   
+  // Close the event loader
+  FinalizeEventLoader();
   
   // Set the GUI options
  
   // peak search
 
-  S.SetSignaltoNoiseRatio(m_Data->GetSpectralSignaltoNoiseRatio());
-  S.SetPoissonLimit(m_Data->GetSpectralPoissonLimit());
+  S.SetSignaltoNoiseRatio(m_Settings->GetSpectralSignaltoNoiseRatio());
+  S.SetPoissonLimit(m_Settings->GetSpectralPoissonLimit());
   
   // Isotope Selection
-  S.SetIsotopeFileName(m_Data->GetSpectralIsotopeFileName());
-  S.SetEnergyRange(m_Data->GetSpectralEnergyRange());
+  S.SetIsotopeFileName(m_Settings->GetSpectralIsotopeFileName());
+  S.SetEnergyRange(m_Settings->GetSpectralEnergyRange());
   
   // Do the analysis
   if (S.FindIsotopes() == true) {
@@ -799,27 +793,61 @@ void MInterfaceMimrec::SpectralAnalyzer()
 ////////////////////////////////////////////////////////////////////////////////
 
   
-bool MInterfaceMimrec::InitializeEventloader(MString File)
+bool MInterfaceMimrec::InitializeEventLoader(MString File)
 {
   // Start the event loader...
 
-  if (File == "") File = m_Data->GetCurrentFileName();
-
-  if (m_EventFile != 0) delete m_EventFile;
+  if (File.IsEmpty() == true) {
+    File = m_Settings->GetCurrentFileName();
+  }
+  
+  if (m_EventFile != nullptr) delete m_EventFile;
   m_EventFile = new MFileEventsTra();
-  m_EventFile->SetFastFileParsing(m_Data->GetFastFileParsing());
+  
+  m_EventFile->SetFastFileParsing(m_Settings->GetFastFileParsing());
   if (m_EventFile->Open(File) == false) return false;
   m_EventFile->ShowProgress(m_UseGui);
-  if (m_Data->GetNThreads() > 1) {
+  if (m_Settings->GetNThreads() > 1) {
     m_EventFile->StartThread();
   }
   
-
   m_Selector->Reset();
   m_Selector->SetGeometry(m_Geometry);
-  m_Selector->SetSettings(m_Data);
+  m_Selector->SetSettings(m_Settings);
 
   return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+    
+MPhysicalEvent* MInterfaceMimrec::GetNextEvent(bool Checks)
+{
+  // Get the next event
+
+  if (Checks == true) {
+    if (m_EventFile == nullptr) return nullptr;
+    if (m_EventFile->IsOpen() == false) return nullptr;
+  }
+  
+  return m_EventFile->GetNextEvent();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+    
+void MInterfaceMimrec::FinalizeEventLoader()
+{
+  // Close the event loader
+
+  if (m_EventFile != nullptr) {
+    if (m_EventFile->IsOpen() == true) {
+      m_EventFile->Close();
+    }
+    delete m_EventFile;
+    m_EventFile = nullptr;
+  }
 }
 
 
@@ -829,15 +857,15 @@ bool MInterfaceMimrec::InitializeEventloader(MString File)
 void MInterfaceMimrec::ShowEventSelections()
 {
   // Show how many events pass the event selections
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
   
   int NEvents = 0;
   int NGoodEvents = 0;
-  
-  // ... loop over all events and save a count in the belonging bin ...
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
     NEvents++;
     //cout<<Event->GetType()<<": "<<Event->ToString()<<endl;
     if (m_Selector->IsQualifiedEvent(Event, true) == true) {
@@ -846,6 +874,9 @@ void MInterfaceMimrec::ShowEventSelections()
     
     delete Event;
   } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
   
   cout<<endl;
   cout<<endl;
@@ -856,8 +887,6 @@ void MInterfaceMimrec::ShowEventSelections()
   cout<<endl;
   
   cout<<m_Selector->ToString()<<endl;
-  
-  m_EventFile->Close();
 }
 
 
@@ -868,8 +897,8 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
 {
   // Show how many events pass the event selections
   
-  // ... loop over all events and save a count in the belonging bin ...
-  if (InitializeEventloader() == false) return;
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
   MEventSelector AllOpen;
   int NAllOpen = 0;
@@ -942,9 +971,8 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
 
   int NRestrictAll= 0;
 
-
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
     if (AllOpen.IsQualifiedEvent(Event, false) == true) {
       NAllOpen++;
     }
@@ -992,8 +1020,9 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
     }
     delete Event;
   } 
-    
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   cout<<endl;
   cout<<endl;
@@ -1025,8 +1054,8 @@ void MInterfaceMimrec::ExtractEvents()
 {
   // Show how many events pass the event selections
     
-  // ... loop over all events and save a count in the belonging bin ...
-  if (InitializeEventloader() == false) return;
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
   MString FileName = m_OutputFileName;
   if (m_OutputFileName.IsEmpty() == true) {
@@ -1049,15 +1078,18 @@ void MInterfaceMimrec::ExtractEvents()
   }
   
 
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       OutFile->AddEvent(Event);
     }
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
+
   OutFile->Close();
 
   mout<<"Extraction file created: "<<FileName<<endl;
@@ -1071,6 +1103,8 @@ void MInterfaceMimrec::ThetaOriginDistribution()
 {
   // Show how many events pass the event selections
   
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
   TH1D* Hist = new TH1D("ThetaOriginDistribution", 
                         "Theta Origin Distribution", 90, 0, 180);
@@ -1081,12 +1115,9 @@ void MInterfaceMimrec::ThetaOriginDistribution()
   Hist->SetStats(false);
   Hist->SetFillColor(8);
 
-  
-  // ... loop over all events and save a count in the belonging bin ...
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
     
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -1101,7 +1132,9 @@ void MInterfaceMimrec::ThetaOriginDistribution()
 
     delete Event;
   } 
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("ThetaOriginDistributionCanvas", 
                                 "Theta Origin Distribution Canvas", 800, 600);
@@ -1128,6 +1161,10 @@ void MInterfaceMimrec::ARMGamma()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+
   double ConfidenceLevel = 0.9; // 90%
   MString ConfidenceLevelString = "90%";
   
@@ -1137,8 +1174,8 @@ void MInterfaceMimrec::ARMGamma()
   double Average = 0;
   int Inside = 0;
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
   double BinWidth = 2.0*Disk/NBins;
   
@@ -1155,21 +1192,18 @@ void MInterfaceMimrec::ARMGamma()
   //Hist->SetFillColor(8);
   Hist->SetMinimum(0);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
 //   MPairEvent* PairEvent = 0; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Value = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+        Value = ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) {
           Inside++;
         }
@@ -1181,7 +1215,7 @@ void MInterfaceMimrec::ARMGamma()
 //       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
 //         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-//         Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+//         Value = PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
 //         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
 //         Hist->Fill(Value*c_Deg);
 //         NEvents++;
@@ -1190,8 +1224,9 @@ void MInterfaceMimrec::ARMGamma()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -1487,9 +1522,9 @@ void MInterfaceMimrec::ARMGamma()
 //   cout<<"RMS:                                     "<<rmssum<<endl;
 
 
-//   if (m_Data->GetStoreImages() == true) {
+//   if (m_Settings->GetStoreImages() == true) {
 //     // Get the base file name of the tra file:
-//     MString Name = m_Data->GetCurrentFileName();
+//     MString Name = m_Settings->GetCurrentFileName();
 //     Name.Remove(Name.Length()-4, 4);
 
 //     Canvas->SaveAs(Name + ".ARMGamma.gif");
@@ -1511,16 +1546,19 @@ void MInterfaceMimrec::DualARM()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
   int NEvents = 0;
   int NEventsInside = 0;
   
   MVector TestPosition = GetTestPosition();
   
-  double x1Max = m_Data->GetTPDistanceTrans();
-  int x1Bins = m_Data->GetHistBinsARMGamma();
+  double x1Max = m_Settings->GetTPDistanceTrans();
+  int x1Bins = m_Settings->GetHistBinsARMGamma();
 
-  double x2Max = m_Data->GetTPDistanceLong();
-  int x2Bins = m_Data->GetHistBinsARMElectron();
+  double x2Max = m_Settings->GetTPDistanceLong();
+  int x2Bins = m_Settings->GetHistBinsARMElectron();
 
   // Initalize the image size (x-axis)
   TH2D* Hist = new TH2D("DualARM", "Dual ARM", x1Bins, -x1Max, x1Max, x2Bins, -x2Max, x2Max);
@@ -1533,23 +1571,20 @@ void MInterfaceMimrec::DualARM()
   Hist->SetFillColor(8);
   Hist->SetContour(50);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   double xValue = 0;
   double yValue = 0;
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        xValue = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
-        yValue = ComptonEvent->GetSPDElectron(TestPosition, m_Data->GetCoordinateSystem());
+        xValue = ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
+        yValue = ComptonEvent->GetSPDElectron(TestPosition, m_Settings->GetCoordinateSystem());
         if (xValue*c_Deg > -x1Max && xValue*c_Deg < x1Max &&
             yValue*c_Deg > -x2Max && yValue*c_Deg < x2Max) {
           NEventsInside++;
@@ -1561,8 +1596,9 @@ void MInterfaceMimrec::DualARM()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -1601,40 +1637,44 @@ void MInterfaceMimrec::DualARM()
 void MInterfaceMimrec::ARMResponseComparison()
 {
   // Compare the ARM with the imaging response
-   
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   MVector TestPosition = GetTestPosition();
   
-  double ARMMax = m_Data->GetTPDistanceTrans();
-  int ARMBins = m_Data->GetHistBinsARMGamma();
+  double ARMMax = m_Settings->GetTPDistanceTrans();
+  int ARMBins = m_Settings->GetHistBinsARMGamma();
   
   MResponse* Response = 0;
-  if (m_Data->GetResponseType() == MResponseType::Gauss1D) {
-    Response = new MResponseGaussian(m_Data->GetFitParameterComptonTransSphere(), 
-                                     m_Data->GetFitParameterComptonLongSphere(),
-                                     m_Data->GetFitParameterPair());
-  } else if (m_Data->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
-    Response = new MResponseEnergyLeakage(m_Data->GetFitParameterComptonTransSphere(), 
-                                       m_Data->GetFitParameterComptonLongSphere());
-  } else if (m_Data->GetResponseType() == MResponseType::GaussByUncertainties) {
+  if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
+    Response = new MResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
+                                     m_Settings->GetFitParameterComptonLongSphere(),
+                                     m_Settings->GetFitParameterPair());
+  } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
+    Response = new MResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
+                                       m_Settings->GetFitParameterComptonLongSphere());
+  } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
     Response = new MResponseGaussianByUncertainties();
-  } else if (m_Data->GetResponseType() == MResponseType::PRM) {
+  } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
     Response = new MResponseConeShapes();
-    if (dynamic_cast<MResponseConeShapes*>(Response)->LoadResponseFile(m_Data->GetImagingResponseConeShapesFileName()) == false) {
+    if (dynamic_cast<MResponseConeShapes*>(Response)->LoadResponseFile(m_Settings->GetImagingResponseConeShapesFileName()) == false) {
       mgui<<"Unable to load response files!"<<endl;
       delete Response;
       return;
     }
-  } else if (m_Data->GetResponseType() == MResponseType::PRM) {
+  } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
     Response = new MResponsePRM();
-    if (dynamic_cast<MResponsePRM*>(Response)->LoadResponseFiles(m_Data->GetImagingResponseComptonTransversalFileName(),
-                                   m_Data->GetImagingResponseComptonLongitudinalFileName(),
-                                   m_Data->GetImagingResponsePairRadialFileName()) == false) {
+    if (dynamic_cast<MResponsePRM*>(Response)->LoadResponseFiles(m_Settings->GetImagingResponseComptonTransversalFileName(),
+                                   m_Settings->GetImagingResponseComptonLongitudinalFileName(),
+                                   m_Settings->GetImagingResponsePairRadialFileName()) == false) {
       mgui<<"Unable to load response files!"<<endl;
       delete Response;
       return;
     }
   } else {
-    merr<<"Unknown response type: "<<m_Data->GetResponseType()<<show;
+    merr<<"Unknown response type: "<<m_Settings->GetResponseType()<<show;
     return;
   }
   
@@ -1656,19 +1696,17 @@ void MInterfaceMimrec::ARMResponseComparison()
   ResponseHist->SetStats(false);
   ResponseHist->SetContour(50);
   
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        double ARM = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg;
+        double ARM = ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
         ARMHist->Fill(ARM, 1);
         Response->AnalyzeEvent(ComptonEvent);
         for (int b = 1; b <= ResponseHist->GetNbinsX(); ++b) {
@@ -1679,8 +1717,9 @@ void MInterfaceMimrec::ARMResponseComparison()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (ARMHist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -1709,12 +1748,16 @@ void MInterfaceMimrec::AngularResolutionPairs()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NEvents = 0;
   double Value = 0;
   int Inside = 0;
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
@@ -1738,20 +1781,18 @@ void MInterfaceMimrec::AngularResolutionPairs()
   Hist2->SetStats(false);
   Hist2->SetFillColor(8);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
+  MPhysicalEvent* Event = nullptr;
   MPairEvent* PairEvent = 0; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+        Value = PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
         Hist->Fill(Value*c_Deg);
         Hist2->Fill(Value*c_Deg, PairEvent->GetOpeningAngle()*c_Deg);
@@ -1761,8 +1802,9 @@ void MInterfaceMimrec::AngularResolutionPairs()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<endl;
@@ -1853,8 +1895,12 @@ void MInterfaceMimrec::ARMGammaVsCompton()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
@@ -1863,34 +1909,33 @@ void MInterfaceMimrec::ARMGammaVsCompton()
   int NBinsAngle = NBins;
   TH2D* Hist = new TH2D("ARM vs. Compton Angle", "ARM vs. Compton Angle (normalized)", 
                         NBinsArm, -Disk, Disk, NBinsAngle, 
-                        m_Data->GetComptonAngleRangeMin(), 
-                        m_Data->GetComptonAngleRangeMax());
+                        m_Settings->GetComptonAngleRangeMin(), 
+                        m_Settings->GetComptonAngleRangeMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("ARM [#circ]");
   Hist->SetYTitle("Compton scatter angle [#circ]");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->Phi()*c_Deg);
       } 
     }
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -1933,8 +1978,12 @@ void MInterfaceMimrec::ARMGammaVsDistance()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
@@ -1943,36 +1992,35 @@ void MInterfaceMimrec::ARMGammaVsDistance()
   int NBinsDistance = 20;
   TH2D* Hist = new TH2D("ARMVsDistance", "ARM vs. distance", 
                         NBinsArm, -Disk, Disk, NBinsDistance, 
-                        m_Data->GetFirstDistanceRangeMin(), 
-                        m_Data->GetFirstDistanceRangeMax());
+                        m_Settings->GetFirstDistanceRangeMin(), 
+                        m_Settings->GetFirstDistanceRangeMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("ARM [#circ]");
   Hist->SetYTitle("Distance [cm]");
 
-  cout<<"Dist: "<<m_Data->GetFirstDistanceRangeMin()<<":"<<m_Data->GetFirstDistanceRangeMax()<<endl;
+  cout<<"Dist: "<<m_Settings->GetFirstDistanceRangeMin()<<":"<<m_Settings->GetFirstDistanceRangeMax()<<endl;
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg, 
                    (ComptonEvent->C2() - ComptonEvent->C1()).Mag());
       } 
     }
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -2015,14 +2063,18 @@ void MInterfaceMimrec::SignificanceMap()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  double XMin = m_Data->GetGalLongitudeMin();
-  double XMax = m_Data->GetGalLongitudeMax();
-  int NBinsXAngle = m_Data->GetBinsGalLongitude();
-  double YMin = m_Data->GetGalLatitudeMin();
-  double YMax = m_Data->GetGalLatitudeMax();
-  int NBinsYAngle = m_Data->GetBinsGalLatitude();
-  double Radius = m_Data->GetSignificanceMapRadius();
-  double Distance = m_Data->GetSignificanceMapDistance();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  double XMin = m_Settings->GetGalLongitudeMin();
+  double XMax = m_Settings->GetGalLongitudeMax();
+  int NBinsXAngle = m_Settings->GetBinsGalLongitude();
+  double YMin = m_Settings->GetGalLatitudeMin();
+  double YMax = m_Settings->GetGalLatitudeMax();
+  int NBinsYAngle = m_Settings->GetBinsGalLatitude();
+  double Radius = m_Settings->GetSignificanceMapRadius();
+  double Distance = m_Settings->GetSignificanceMapDistance();
 
   double dX = (XMax-XMin)/((double)NBinsXAngle);
   double dY = (YMax-YMin)/((double)NBinsYAngle);
@@ -2134,142 +2186,140 @@ void MInterfaceMimrec::SignificanceMap()
   mout << "  Distance: " << Distance << endl;
   mout << "  Radius:   " << Radius << endl;
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
-
+  while ((Event = GetNextEvent()) != 0) {
+    
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-  // Go through each bin and record the counts
-  for (int i_X=0; i_X<NBinsXAngle; i_X++) {
-    double L = XMin + dX*(double)i_X + dX/2.;
-    for (int i_Y=0; i_Y<NBinsYAngle; i_Y++) {
-      double B = YMin + dY*(double)i_Y + dY/2.;
-      // add Compton events that fall within the Radius of the center of each bin
-      BinCenter.SetMagThetaPhi(c_FarAway, (B+90)*c_Rad, L*c_Rad);
-      // Fix these test points... just using simple formulae for now, should use rotations
-      TestPoint1.SetMagThetaPhi(c_FarAway, (90+B+Distance)*c_Rad, (L         )*c_Rad);
-      TestPoint2.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
-      TestPoint3.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L-Distance)*c_Rad);
-      TestPoint4.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
-      TestPoint5.SetMagThetaPhi(c_FarAway, (90+B-Distance)*c_Rad, (L         )*c_Rad);
-      TestPoint6.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
-      TestPoint7.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L+Distance)*c_Rad);
-      TestPoint8.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
-      bool at_center = (fabs(ComptonEvent->GetARMGamma(BinCenter, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP1 = (fabs(ComptonEvent->GetARMGamma(TestPoint1, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP2 = (fabs(ComptonEvent->GetARMGamma(TestPoint2, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP3 = (fabs(ComptonEvent->GetARMGamma(TestPoint3, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP4 = (fabs(ComptonEvent->GetARMGamma(TestPoint4, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP5 = (fabs(ComptonEvent->GetARMGamma(TestPoint5, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP6 = (fabs(ComptonEvent->GetARMGamma(TestPoint6, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP7 = (fabs(ComptonEvent->GetARMGamma(TestPoint7, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      bool at_TP8 = (fabs(ComptonEvent->GetARMGamma(TestPoint8, m_Data->GetCoordinateSystem())*c_Deg)<=Radius);
-      n_testpoints = 0;
-      if (at_TP1) n_testpoints++;
-      if (at_TP2) n_testpoints++;
-      if (at_TP3) n_testpoints++;
-      if (at_TP4) n_testpoints++;
-      if (at_TP5) n_testpoints++;
-      if (at_TP6) n_testpoints++;
-      if (at_TP7) n_testpoints++;
-      if (at_TP8) n_testpoints++;
-      // Counts at center and test point
-      if (at_center) {
-        Hist_CenterCounts->Fill(L,B);
-      }
-      if (at_TP1) {
-        Hist_Counts1->Fill(L,B);
-      }
-      if (at_TP2) {
-        Hist_Counts2->Fill(L,B);
-      }
-      if (at_TP3) {
-        Hist_Counts3->Fill(L,B);
-      }
-      if (at_TP4) {
-        Hist_Counts4->Fill(L,B);
-      }
-      if (at_TP5) {
-        Hist_Counts5->Fill(L,B);
-      }
-      if (at_TP6) {
-        Hist_Counts6->Fill(L,B);
-      }
-      if (at_TP7) {
-        Hist_Counts7->Fill(L,B);
-      }
-      if (at_TP8) {
-        Hist_Counts8->Fill(L,B);
-      }
-      // Counts at center and K test points
-      if (at_center && (n_testpoints==0)) {
-        Hist_Center_0->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==1)) {
-        Hist_Center_1->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==2)) {
-        Hist_Center_2->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==3)) {
-        Hist_Center_3->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==4)) {
-        Hist_Center_4->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==5)) {
-        Hist_Center_5->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==6)) {
-        Hist_Center_6->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==7)) {
-        Hist_Center_7->Fill(L,B);
-      }
-      if (at_center && (n_testpoints==8)) {
-        Hist_Center_8->Fill(L,B);
-      }
-      // No counts at center, but at K test points
-      if (!at_center && (n_testpoints==1)) {
-        Hist_NoCenter_1->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==2)) {
-        Hist_NoCenter_2->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==3)) {
-        Hist_NoCenter_3->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==4)) {
-        Hist_NoCenter_4->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==5)) {
-        Hist_NoCenter_5->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==6)) {
-        Hist_NoCenter_6->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==7)) {
-        Hist_NoCenter_7->Fill(L,B);
-      }
-      if (!at_center && (n_testpoints==8)) {
-        Hist_NoCenter_8->Fill(L,B);
-      }
-    }
-  }
+        // Go through each bin and record the counts
+        for (int i_X=0; i_X<NBinsXAngle; i_X++) {
+          double L = XMin + dX*(double)i_X + dX/2.;
+          for (int i_Y=0; i_Y<NBinsYAngle; i_Y++) {
+            double B = YMin + dY*(double)i_Y + dY/2.;
+            // add Compton events that fall within the Radius of the center of each bin
+            BinCenter.SetMagThetaPhi(c_FarAway, (B+90)*c_Rad, L*c_Rad);
+            // Fix these test points... just using simple formulae for now, should use rotations
+            TestPoint1.SetMagThetaPhi(c_FarAway, (90+B+Distance)*c_Rad, (L         )*c_Rad);
+            TestPoint2.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
+            TestPoint3.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L-Distance)*c_Rad);
+            TestPoint4.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L-DistDiag)*c_Rad);
+            TestPoint5.SetMagThetaPhi(c_FarAway, (90+B-Distance)*c_Rad, (L         )*c_Rad);
+            TestPoint6.SetMagThetaPhi(c_FarAway, (90+B-DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
+            TestPoint7.SetMagThetaPhi(c_FarAway, (90+B         )*c_Rad, (L+Distance)*c_Rad);
+            TestPoint8.SetMagThetaPhi(c_FarAway, (90+B+DistDiag)*c_Rad, (L+DistDiag)*c_Rad);
+            bool at_center = (fabs(ComptonEvent->GetARMGamma(BinCenter, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP1 = (fabs(ComptonEvent->GetARMGamma(TestPoint1, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP2 = (fabs(ComptonEvent->GetARMGamma(TestPoint2, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP3 = (fabs(ComptonEvent->GetARMGamma(TestPoint3, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP4 = (fabs(ComptonEvent->GetARMGamma(TestPoint4, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP5 = (fabs(ComptonEvent->GetARMGamma(TestPoint5, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP6 = (fabs(ComptonEvent->GetARMGamma(TestPoint6, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP7 = (fabs(ComptonEvent->GetARMGamma(TestPoint7, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            bool at_TP8 = (fabs(ComptonEvent->GetARMGamma(TestPoint8, m_Settings->GetCoordinateSystem())*c_Deg)<=Radius);
+            n_testpoints = 0;
+            if (at_TP1) n_testpoints++;
+            if (at_TP2) n_testpoints++;
+            if (at_TP3) n_testpoints++;
+            if (at_TP4) n_testpoints++;
+            if (at_TP5) n_testpoints++;
+            if (at_TP6) n_testpoints++;
+            if (at_TP7) n_testpoints++;
+            if (at_TP8) n_testpoints++;
+            // Counts at center and test point
+            if (at_center) {
+              Hist_CenterCounts->Fill(L,B);
+            }
+            if (at_TP1) {
+              Hist_Counts1->Fill(L,B);
+            }
+            if (at_TP2) {
+              Hist_Counts2->Fill(L,B);
+            }
+            if (at_TP3) {
+              Hist_Counts3->Fill(L,B);
+            }
+            if (at_TP4) {
+              Hist_Counts4->Fill(L,B);
+            }
+            if (at_TP5) {
+              Hist_Counts5->Fill(L,B);
+            }
+            if (at_TP6) {
+              Hist_Counts6->Fill(L,B);
+            }
+            if (at_TP7) {
+              Hist_Counts7->Fill(L,B);
+            }
+            if (at_TP8) {
+              Hist_Counts8->Fill(L,B);
+            }
+            // Counts at center and K test points
+            if (at_center && (n_testpoints==0)) {
+              Hist_Center_0->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==1)) {
+              Hist_Center_1->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==2)) {
+              Hist_Center_2->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==3)) {
+              Hist_Center_3->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==4)) {
+              Hist_Center_4->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==5)) {
+              Hist_Center_5->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==6)) {
+              Hist_Center_6->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==7)) {
+              Hist_Center_7->Fill(L,B);
+            }
+            if (at_center && (n_testpoints==8)) {
+              Hist_Center_8->Fill(L,B);
+            }
+            // No counts at center, but at K test points
+            if (!at_center && (n_testpoints==1)) {
+              Hist_NoCenter_1->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==2)) {
+              Hist_NoCenter_2->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==3)) {
+              Hist_NoCenter_3->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==4)) {
+              Hist_NoCenter_4->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==5)) {
+              Hist_NoCenter_5->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==6)) {
+              Hist_NoCenter_6->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==7)) {
+              Hist_NoCenter_7->Fill(L,B);
+            }
+            if (!at_center && (n_testpoints==8)) {
+              Hist_NoCenter_8->Fill(L,B);
+            }
+          }
+        }
       } 
     }
-
+    
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist_CenterCounts->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<error;
@@ -2553,9 +2603,9 @@ void MInterfaceMimrec::SignificanceMap()
                                YMin, 
                                YMax, 
                                NBinsYAngle, 
-                               m_Data->GetImagePalette(), 
-                               m_Data->GetImageDrawMode(),
-                               m_Data->GetImageSourceCatalog());
+                               m_Settings->GetImagePalette(), 
+                               m_Settings->GetImageDrawMode(),
+                               m_Settings->GetImageSourceCatalog());
   Image->Display();
   
   delete [] Array;
@@ -2576,8 +2626,12 @@ void MInterfaceMimrec::SPDElectronVsCompton()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  int NBins = m_Data->GetHistBinsARMElectron();
-  double Disk = m_Data->GetTPDistanceLong();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMElectron();
+  double Disk = m_Settings->GetTPDistanceLong();
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
@@ -2586,19 +2640,17 @@ void MInterfaceMimrec::SPDElectronVsCompton()
   int NBinsAngle = NBins/3;
   TH2D* Hist = new TH2D("SPD vs. Compton Scatter Angle", "SPD vs. Compton Scatter Angle", 
                         NBinsArm, 0, Disk, NBinsAngle, 
-                        m_Data->GetComptonAngleRangeMin(), 
-                        m_Data->GetComptonAngleRangeMax());
+                        m_Settings->GetComptonAngleRangeMin(), 
+                        m_Settings->GetComptonAngleRangeMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("SPD [#circ]");
   Hist->SetYTitle("Compton scatter angle [#circ]");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -2612,8 +2664,9 @@ void MInterfaceMimrec::SPDElectronVsCompton()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -2693,13 +2746,17 @@ void MInterfaceMimrec::ComptonProbabilityWithARMSelection()
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
-  
-  double Disk = m_Data->GetTPDistanceTrans();
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+    
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
 
   // Initialize the image size
-  int xNBins = m_Data->GetHistBinsARMGamma();
-  double* xBins = CreateAxisBins(m_Data->GetComptonQualityFactorRangeMin(), m_Data->GetComptonQualityFactorRangeMax(), xNBins, true);
+  int xNBins = m_Settings->GetHistBinsARMGamma();
+  double* xBins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), xNBins, true);
 
 
 
@@ -2721,21 +2778,19 @@ void MInterfaceMimrec::ComptonProbabilityWithARMSelection()
   HistBad->SetFillColor(2);
   //HistBad->SetMinimum(0);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
   double ArmValue;
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        ArmValue = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg;
+        ArmValue = ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg;
         if (fabs(ArmValue) < Disk) {
           HistGood->Fill(ComptonEvent->ComptonQualityFactor1());
         } else {
@@ -2746,8 +2801,9 @@ void MInterfaceMimrec::ComptonProbabilityWithARMSelection()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (HistGood->GetMaximum() == 0 && HistBad->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -2780,10 +2836,13 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
-  
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
 
   // Initialize the image size (x-axis)
@@ -2792,7 +2851,7 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
 
   bool logx2 = true;
   int x2NBins = NBins;
-  double* x2Bins = CreateAxisBins(m_Data->GetComptonQualityFactorRangeMin(), m_Data->GetComptonQualityFactorRangeMax(), x2NBins, logx2);
+  double* x2Bins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), x2NBins, logx2);
 
 
 
@@ -2802,28 +2861,27 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
   Hist->SetXTitle("ARM [#circ]");
   Hist->SetYTitle("Compton quality factor");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->ComptonQualityFactor1());
       } 
     }
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -2859,8 +2917,12 @@ void MInterfaceMimrec::ARMGammaVsClusteringProbability()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
 
   // Initialize the image size (x-axis)
@@ -2869,7 +2931,7 @@ void MInterfaceMimrec::ARMGammaVsClusteringProbability()
 
   bool logx2 = true;
   int x2NBins = NBins;
-  double* x2Bins = CreateAxisBins(m_Data->GetClusteringQualityFactorRangeMin(), m_Data->GetClusteringQualityFactorRangeMax(), x2NBins, logx2);
+  double* x2Bins = CreateAxisBins(m_Settings->GetClusteringQualityFactorRangeMin(), m_Settings->GetClusteringQualityFactorRangeMax(), x2NBins, logx2);
 
 
   TH2D* Hist = new TH2D("ARMVsClusteringQualityFactor", "ARM vs. Clustering Quality Factor", 
@@ -2878,28 +2940,27 @@ void MInterfaceMimrec::ARMGammaVsClusteringProbability()
   Hist->SetXTitle("ARM [#circ]");
   Hist->SetYTitle("Clustering quality factor");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem())*c_Deg, 
+        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg, 
                    ComptonEvent->ClusteringQualityFactor());
       } 
     }
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("ARMGamma()", "No events passed the event selections or file is empty!");
@@ -2934,8 +2995,12 @@ void MInterfaceMimrec::SPDVsTrackQualityFactor()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
-  int NBins = m_Data->GetHistBinsARMElectron();
-  double Disk = m_Data->GetTPDistanceLong();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
+  int NBins = m_Settings->GetHistBinsARMElectron();
+  double Disk = m_Settings->GetTPDistanceLong();
   MVector TestPosition = GetTestPosition();
   
   // Initalize the image size (x-axis)
@@ -2943,13 +3008,13 @@ void MInterfaceMimrec::SPDVsTrackQualityFactor()
   double* xBins = CreateAxisBins(0, +Disk, xNBins, false);
 
   bool yLog;
-  if (m_Data->GetTrackQualityFactorRangeMin() > 0 && m_Data->GetTrackQualityFactorRangeMin() < 0.01) {
+  if (m_Settings->GetTrackQualityFactorRangeMin() > 0 && m_Settings->GetTrackQualityFactorRangeMin() < 0.01) {
     yLog = true;
   } else {
     yLog = false;
   }
   int yNBins = NBins;
-  double* yBins = CreateAxisBins(m_Data->GetTrackQualityFactorRangeMin(), m_Data->GetTrackQualityFactorRangeMax(), yNBins, yLog);
+  double* yBins = CreateAxisBins(m_Settings->GetTrackQualityFactorRangeMin(), m_Settings->GetTrackQualityFactorRangeMax(), yNBins, yLog);
 
 
   // Create the histogram
@@ -2960,15 +3025,13 @@ void MInterfaceMimrec::SPDVsTrackQualityFactor()
   Hist->SetYTitle("Track quality factor");
   Hist->SetContour(50);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
   int NQFZero = 0;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -2983,8 +3046,9 @@ void MInterfaceMimrec::SPDVsTrackQualityFactor()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<info;
@@ -3021,27 +3085,28 @@ void MInterfaceMimrec::SPDVsTotalScatterAngleDeviation()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
-  int NBins = m_Data->GetHistBinsARMElectron();
-  double Disk = m_Data->GetTPDistanceLong();
+  
+  int NBins = m_Settings->GetHistBinsARMElectron();
+  double Disk = m_Settings->GetTPDistanceLong();
   MVector TestPosition = GetTestPosition();
   
 
   TH2D* Hist = new TH2D("SPD vs. Total Scatter Angle Deviation", 
                         "SPD vs. Total Scatter Angle Deviation", 
-                        NBins, 0, Disk, NBins, 0, m_Data->GetThetaDeviationMax());
+                        NBins, 0, Disk, NBins, 0, m_Settings->GetThetaDeviationMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("SPD [#circ]");
   Hist->SetYTitle("Theta deviation [#circ]");
   Hist->SetContour(50);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -3055,8 +3120,9 @@ void MInterfaceMimrec::SPDVsTotalScatterAngleDeviation()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<info;
@@ -3086,24 +3152,28 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   double x, y, z = 10000000.0;
   
   // Get the data of the ARM-"Test"-Position
-  if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {  // spheric 
-    x = m_Data->GetTPTheta();
-    y = m_Data->GetTPPhi();
+  if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {  // spheric 
+    x = m_Settings->GetTPTheta();
+    y = m_Settings->GetTPPhi();
 
     // All the external data stuff is in galactic coodinates, but the library uses
     // spherical, so transform it
     //MMath::GalacticToSpheric(x, y);
     MMath::SphericToCartesean(x, y, z);
-  } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
-             m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
-    x = m_Data->GetTPX();
-    y = m_Data->GetTPY();
-    z = m_Data->GetTPZ();
+  } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
+             m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
+    x = m_Settings->GetTPX();
+    y = m_Settings->GetTPY();
+    z = m_Settings->GetTPZ();
   } else {
-    merr<<"Unknown coordinate system ID: "<<m_Data->GetCoordinateSystem()<<fatal;
+    merr<<"Unknown coordinate system ID: "<<m_Settings->GetCoordinateSystem()<<fatal;
   }
 
   
@@ -3112,7 +3182,7 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
   double* x1Bins = CreateAxisBins(GetTotalEnergyMin(), GetTotalEnergyMax(), x1NBins, false);
 
   int x2NBins = 20;
-  double* x2Bins = CreateAxisBins(m_Data->GetComptonQualityFactorRangeMin(), m_Data->GetComptonQualityFactorRangeMax(), x2NBins, true);
+  double* x2Bins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), x2NBins, true);
 
 
   // Create the histogram
@@ -3122,13 +3192,11 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
   Hist->SetXTitle("Energy [keV]");
   Hist->SetYTitle("Compton Quality Factor");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -3142,8 +3210,9 @@ void MInterfaceMimrec::EnergyVsComptonProbability()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<endl;
@@ -3174,6 +3243,10 @@ void MInterfaceMimrec::ComptonSequenceLengthVsComptonProbability()
 {
   // Compton Sequence Length vs. Compton Quality Factor
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   unsigned int MaxSequenceLength = 3;
   
   // Initialize the image size
@@ -3181,7 +3254,7 @@ void MInterfaceMimrec::ComptonSequenceLengthVsComptonProbability()
   double* xBins = CreateAxisBins(0.5, 100.5, xNBins, false);
 
   int yNBins = 100;
-  double* yBins = CreateAxisBins(m_Data->GetComptonQualityFactorRangeMin(), m_Data->GetComptonQualityFactorRangeMax(), yNBins, true);
+  double* yBins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), yNBins, true);
 
 
   TH2D* Hist = new TH2D("ComptonSequenceLengthVsComptonQualityFactor", 
@@ -3192,13 +3265,11 @@ void MInterfaceMimrec::ComptonSequenceLengthVsComptonProbability()
   Hist->SetXTitle("Compton Sequence Length");
   Hist->SetYTitle("Compton Quality Factor");
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
+  MPhysicalEvent* Event = nullptr;
   MComptonEvent* Compton = 0; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -3212,8 +3283,9 @@ void MInterfaceMimrec::ComptonSequenceLengthVsComptonProbability()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<show;
@@ -3247,8 +3319,10 @@ void MInterfaceMimrec::SPDElectron()
   // the electron-cone-surface and the line connecting the cone-apex with the 
   // (Test-) position
   
-  // Display the angular resolution
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
+  
   int NEvents = 0;
   double Value = 0;
   int NAverages = 0;
@@ -3260,8 +3334,8 @@ void MInterfaceMimrec::SPDElectron()
   double SizeARMGamma = 180;
 
 
-  int NBins = m_Data->GetHistBinsARMElectron();
-  double Disk = m_Data->GetTPDistanceLong();
+  int NBins = m_Settings->GetHistBinsARMElectron();
+  double Disk = m_Settings->GetTPDistanceLong();
   MVector TestPosition = GetTestPosition();
 
   
@@ -3276,15 +3350,13 @@ void MInterfaceMimrec::SPDElectron()
   Hist->SetFillColor(8);
   Hist->SetMinimum(0);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
   // And fill the ARM-vector:
 
-  MPhysicalEvent *Event;
-  MComptonEvent *ComptonEvent; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -3303,7 +3375,7 @@ void MInterfaceMimrec::SPDElectron()
       continue;
     }
 
-    Value = ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+    Value = ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
     if (Value*c_Deg < -SizeARMGamma || Value*c_Deg > SizeARMGamma) {
       cout<<"Out of ARMGamma! Ag="<<Value*c_Deg
           <<" As="<<ComptonEvent->GetSPDElectron(TestPosition)*c_Deg<<endl;
@@ -3329,8 +3401,9 @@ void MInterfaceMimrec::SPDElectron()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("", "No events passed the event selections or file is empty!");
@@ -3406,9 +3479,11 @@ void MInterfaceMimrec::ARMElectron()
   // The ARM value for the recoil electron is the minimum angle between 
   // the electron-cone-surface and the line connecting the cone-apex with the 
   // (Test-) position
-  
-  // Display the angular resolution
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NEvents = 0;
   double Value = 0;
   int NAverages = 0;
@@ -3418,8 +3493,8 @@ void MInterfaceMimrec::ARMElectron()
   int FromBottom = 0;
 
 
-  int NBins = m_Data->GetHistBinsARMElectron();
-  double Disk = m_Data->GetTPDistanceLong();
+  int NBins = m_Settings->GetHistBinsARMElectron();
+  double Disk = m_Settings->GetTPDistanceLong();
   MVector TestPosition = GetTestPosition();
 
   // Initalize the image size (x-axis)
@@ -3433,15 +3508,13 @@ void MInterfaceMimrec::ARMElectron()
   Hist->SetFillColor(8);
   Hist->SetMinimum(0);
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
   // And fill the ARM-vector:
 
-  MPhysicalEvent *Event;
-  MComptonEvent *ComptonEvent; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -3460,7 +3533,7 @@ void MInterfaceMimrec::ARMElectron()
       continue;
     }
 
-    Value = ComptonEvent->GetARMElectron(TestPosition, m_Data->GetCoordinateSystem());
+    Value = ComptonEvent->GetARMElectron(TestPosition, m_Settings->GetCoordinateSystem());
 
     if (Value*c_Deg < 70) {
       FromTop++;
@@ -3480,8 +3553,9 @@ void MInterfaceMimrec::ARMElectron()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     Error("", "No events passed the event selections or file is empty!");
@@ -3578,33 +3652,32 @@ void MInterfaceMimrec::EnergySpectra()
 {
   // Display the energy-spectrum of all acceptable events 
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   bool xLog = false;
   double xMin = GetTotalEnergyMin();
   double xMax = GetTotalEnergyMax();
 
-  if (m_Data->GetSecondEnergyRangeMax() > 0) {
-    if (m_Data->GetSecondEnergyRangeMax() > xMax) xMax = m_Data->GetSecondEnergyRangeMax();
-    if (m_Data->GetSecondEnergyRangeMin() < xMin) xMin = m_Data->GetSecondEnergyRangeMin();
+  if (m_Settings->GetSecondEnergyRangeMax() > 0) {
+    if (m_Settings->GetSecondEnergyRangeMax() > xMax) xMax = m_Settings->GetSecondEnergyRangeMax();
+    if (m_Settings->GetSecondEnergyRangeMin() < xMin) xMin = m_Settings->GetSecondEnergyRangeMin();
   }
-  if (m_Data->GetThirdEnergyRangeMax() > 0) {
-    if (m_Data->GetThirdEnergyRangeMax() > xMax) xMax = m_Data->GetThirdEnergyRangeMax();
-    if (m_Data->GetThirdEnergyRangeMin() < xMin) xMin = m_Data->GetThirdEnergyRangeMin();
+  if (m_Settings->GetThirdEnergyRangeMax() > 0) {
+    if (m_Settings->GetThirdEnergyRangeMax() > xMax) xMax = m_Settings->GetThirdEnergyRangeMax();
+    if (m_Settings->GetThirdEnergyRangeMin() < xMin) xMin = m_Settings->GetThirdEnergyRangeMin();
   }
-  if (m_Data->GetFourthEnergyRangeMax() > 0) {
-    if (m_Data->GetFourthEnergyRangeMax() > xMax) xMax = m_Data->GetFourthEnergyRangeMax();
-    if (m_Data->GetFourthEnergyRangeMin() < xMin) xMin = m_Data->GetFourthEnergyRangeMin();
+  if (m_Settings->GetFourthEnergyRangeMax() > 0) {
+    if (m_Settings->GetFourthEnergyRangeMax() > xMax) xMax = m_Settings->GetFourthEnergyRangeMax();
+    if (m_Settings->GetFourthEnergyRangeMin() < xMin) xMin = m_Settings->GetFourthEnergyRangeMin();
   }
   
-//   double  xMin = 350.0;
-//   double  xMax = 10000.0;
 
-  MPhysicalEvent* Event;
-  if (InitializeEventloader() == false) return;
-
-  int NBins = m_Data->GetHistBinsSpectrum();
-  double Disk = m_Data->GetTPDistanceTrans();
+  int NBins = m_Settings->GetHistBinsSpectrum();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
-  bool UseTestPosition = m_Data->GetTPUse();
+  bool UseTestPosition = m_Settings->GetTPUse();
 
   int InsideWindow = 0;
   int OutsideWindow = 0;
@@ -3634,7 +3707,8 @@ void MInterfaceMimrec::EnergySpectra()
 
  
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -3644,7 +3718,7 @@ void MInterfaceMimrec::EnergySpectra()
 
     if (UseTestPosition == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
-        if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg < Disk) {
+        if (fabs(((MComptonEvent*) Event)->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
           Bayes.Add(Event->GetEnergy(), 1);
@@ -3653,7 +3727,7 @@ void MInterfaceMimrec::EnergySpectra()
           OutsideWindow++;
         }
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
-        if (fabs(((MPairEvent*) Event)->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg < Disk) {
+        if (fabs(((MPairEvent*) Event)->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < Disk) {
           InsideWindow++;
           Hist->Fill(Event->GetEnergy());
           Bayes.Add(Event->GetEnergy(), 1);
@@ -3671,12 +3745,14 @@ void MInterfaceMimrec::EnergySpectra()
 
     delete Event;
   } 
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
   
 //   // %%%%%%%%%%%%%%%%%%%%%%%% Write Spectra as ASCII %%%%%%%%%%
 
 //   // Get the base file name of the tra file:
-//   MString AsciiSpectrumNameFull(m_Data->GetCurrentFileName());
+//   MString AsciiSpectrumNameFull(m_Settings->GetCurrentFileName());
 //   MString AsciiSpectrumName(gSystem->BaseName(AsciiSpectrumNameFull.Data()));
 
 
@@ -3758,9 +3834,9 @@ void MInterfaceMimrec::EnergySpectra()
     mout<<"No events passed event selections. Use \"Show event selections\" in the mimrec UI to diagnose"<<show;
   }
 
-//   if (m_Data->GetStoreImages() == true) {
+//   if (m_Settings->GetStoreImages() == true) {
 //     // Get the base file name of the tra file:
-//     MString Name = m_Data->GetCurrentFileName();
+//     MString Name = m_Settings->GetCurrentFileName();
 //     Name.Remove(Name.Length()-4, 4);
 
 //     Canvas->SaveAs(Name + ".Spectrum.gif");
@@ -3780,13 +3856,12 @@ void MInterfaceMimrec::InitialEnergyDeposit()
   // Display the energy-spectrum of all acceptable events 
   // (remember: not all of them will be reconstructable)
 
-  double EnergyMin = m_Data->GetInitialEnergyDepositPairMin();
-  double EnergyMax = m_Data->GetInitialEnergyDepositPairMax();
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
-  MPhysicalEvent *Event;
-  if (InitializeEventloader() == false) return;
-  m_EventFile->IsOpen();
-
+  
+  double EnergyMin = m_Settings->GetInitialEnergyDepositPairMin();
+  double EnergyMax = m_Settings->GetInitialEnergyDepositPairMax();
 
   // Data histogram:
   TH1D* Hist = new TH1D("InitialEnergyDeposit", "Energy deposit in first interaction layer", 100, EnergyMin, EnergyMax);
@@ -3798,7 +3873,8 @@ void MInterfaceMimrec::InitialEnergyDeposit()
   Hist->SetMinimum(0);
 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -3812,7 +3888,9 @@ void MInterfaceMimrec::InitialEnergyDeposit()
 
     delete Event;
   } 
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* SpectrumCanvas = new TCanvas("InitialEnergyDepositCanvas", "Initial energy deposit of pairs", 800, 600);
   SpectrumCanvas->cd();
@@ -3831,8 +3909,10 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   // Display the energy-spectrum of all acceptable events 
   // (remember: not all of them will be reconstructable)
 
-  if (InitializeEventloader() == false) return;
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
+  
   double EnergyMax = GetTotalEnergyMax();
 
   TH2D* ScatterPlot = new TH2D("Energy Distribution", "Energy Distribution", 
@@ -3843,9 +3923,10 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   ScatterPlot->SetYTitle("Energy D1 [keV]");
   ScatterPlot->SetStats(false);
 
+
   // ... loop over all events and save a count in the belonging bin ...
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -3856,13 +3937,14 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
 
     delete Event;
   } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("Scatter Plot", " Scatter Plot", 800, 600);
   Canvas->cd();
   ScatterPlot->Draw("COLZ");
   Canvas->Update();
-
-  m_EventFile->Close();
 
   return;
 }
@@ -3875,19 +3957,22 @@ void MInterfaceMimrec::TimeWalkDistribution()
 {
   // Display a time walk distribution
 
-  if (InitializeEventloader() == false) return;
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
+  
   TH1D* TWHist = new TH1D("Time walk Distribution", "Time walk Distribution", 
-                          100, m_Data->GetTimeWalkRangeMin(), m_Data->GetTimeWalkRangeMax());
+                          100, m_Settings->GetTimeWalkRangeMin(), m_Settings->GetTimeWalkRangeMax());
   TWHist->SetBit(kCanDelete);
   TWHist->SetXTitle("Time walk [ns]");
   TWHist->SetYTitle("#");
   TWHist->SetStats(false);
   TWHist->SetFillColor(8);
 
+  
   // ... loop over all events and save a count in the belonging bin ...
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -3896,13 +3981,14 @@ void MInterfaceMimrec::TimeWalkDistribution()
 
     delete Event;
   } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("Time walk Distribution", "Time walk Distribution", 800, 600);
   Canvas->cd();
   TWHist->Draw();
   Canvas->Update();
-
-  m_EventFile->Close();
 
   return;
 }
@@ -3915,47 +4001,51 @@ void MInterfaceMimrec::TimeWalkArmDistribution()
 {
   // Display a time walk distribution
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   MImage Image;
   Image.SetSpectrum(MImage::c_WhiteBlack);
 
   MVector TestPosition = GetTestPosition();
 
-  if (InitializeEventloader() == false) return;
-
   TH2D* TWHist = new TH2D("Time walk ARM Distribution", "Time walk ARM Distribution", 
-                          int(m_Data->GetTimeWalkRangeMax() - m_Data->GetTimeWalkRangeMin())/100, m_Data->GetTimeWalkRangeMin(), m_Data->GetTimeWalkRangeMax(), 
-                          100, m_Data->GetComptonAngleRangeMin(), m_Data->GetComptonAngleRangeMax());
+                          int(m_Settings->GetTimeWalkRangeMax() - m_Settings->GetTimeWalkRangeMin())/100, m_Settings->GetTimeWalkRangeMin(), m_Settings->GetTimeWalkRangeMax(), 
+                          100, m_Settings->GetComptonAngleRangeMin(), m_Settings->GetComptonAngleRangeMax());
   TWHist->SetBit(kCanDelete);
   TWHist->SetXTitle("Time walk [ns]");
   TWHist->SetYTitle("ARM [deg]");
   TWHist->SetStats(false);
 
+
   // ... loop over all events and save a count in the belonging bin ...
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   MPairEvent* PairEvent = 0; 
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        TWHist->Fill(Event->GetTimeWalk(), fabs(ComptonEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg);
+        TWHist->Fill(Event->GetTimeWalk(), fabs(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg);
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
-        TWHist->Fill(Event->GetTimeWalk(), fabs(PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem()))*c_Deg);
+        TWHist->Fill(Event->GetTimeWalk(), fabs(PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg);
       }
     }
 
     delete Event;
   } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("Time walk Distribution", "Time walk Distribution", 800, 600);
   Canvas->cd();
   TWHist->Draw("COLZ");
   Canvas->Update();
-
-  m_EventFile->Close();
 
   return;
 }
@@ -3968,14 +4058,18 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
 {
   // Distribution of the gamma-scatter-angle
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NBins = 90;
 
   //double Phi;
   int NPhi = 0;
   double AvgPhi = 0;
   double AvgSinPhi = 0;
-  double PhiMin = m_Data->GetComptonAngleRangeMin();
-  double PhiMax = m_Data->GetComptonAngleRangeMax();
+  double PhiMin = m_Settings->GetComptonAngleRangeMin();
+  double PhiMax = m_Settings->GetComptonAngleRangeMax();
   TH1D* PhiHist = new TH1D("PhiDistribution", "Compton scatter angle (phi) distribution", 
                            NBins, PhiMin, PhiMax);
   PhiHist->SetBit(kCanDelete);
@@ -4029,14 +4123,12 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
   
 
 
-  MPhysicalEvent *Event;
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   bool FoundTrack = false;
-  MComptonEvent *ComptonEvent; 
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -4074,7 +4166,9 @@ void MInterfaceMimrec::ScatterAnglesDistribution()
 
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (NPhi > 0) {
     mout<<endl;
@@ -4161,14 +4255,18 @@ void MInterfaceMimrec::ClusteringQualityFactor()
 {
   // Distribution of the Clustering quality factor
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   bool xLog;
-  if (m_Data->GetClusteringQualityFactorRangeMin() > 0 && m_Data->GetClusteringQualityFactorRangeMin() < 0.01) {
+  if (m_Settings->GetClusteringQualityFactorRangeMin() > 0 && m_Settings->GetClusteringQualityFactorRangeMin() < 0.01) {
     xLog = true;
   } else {
     xLog = false;
   }
   int xNBins = 50;
-  double* xBins = CreateAxisBins(m_Data->GetClusteringQualityFactorRangeMin(), m_Data->GetClusteringQualityFactorRangeMax(), xNBins, xLog);
+  double* xBins = CreateAxisBins(m_Settings->GetClusteringQualityFactorRangeMin(), m_Settings->GetClusteringQualityFactorRangeMax(), xNBins, xLog);
 
 
   TH1D* Hist = new TH1D("ClusteringQualityFactor", "Clustering Quality Factor", 
@@ -4181,13 +4279,10 @@ void MInterfaceMimrec::ClusteringQualityFactor()
   Hist->SetMinimum(0);
 
 
-  MPhysicalEvent *Event;
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MComptonEvent *ComptonEvent; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -4204,7 +4299,9 @@ void MInterfaceMimrec::ClusteringQualityFactor()
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("CanvasClusteringQF", "Canvas Clustering Quality Factor", 800, 600);
   Canvas->cd();
@@ -4227,14 +4324,18 @@ void MInterfaceMimrec::ComptonQualityFactor()
 {
   // Distribution of the Compton quality factor
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   bool xLog;
-  if (m_Data->GetComptonQualityFactorRangeMin() > 0 && m_Data->GetComptonQualityFactorRangeMin() < 0.01) {
+  if (m_Settings->GetComptonQualityFactorRangeMin() > 0 && m_Settings->GetComptonQualityFactorRangeMin() < 0.01) {
     xLog = true;
   } else {
     xLog = false;
   }
   int xNBins = 50;
-  double* xBins = CreateAxisBins(m_Data->GetComptonQualityFactorRangeMin(), m_Data->GetComptonQualityFactorRangeMax(), xNBins, xLog);
+  double* xBins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), xNBins, xLog);
 
 
   TH1D* Hist = new TH1D("Compton Quality Factor", "Compton Quality Factor", 
@@ -4247,13 +4348,10 @@ void MInterfaceMimrec::ComptonQualityFactor()
   Hist->SetMinimum(0);
 
 
-  MPhysicalEvent *Event;
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MComptonEvent *ComptonEvent; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -4270,7 +4368,9 @@ void MInterfaceMimrec::ComptonQualityFactor()
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("Canvas CQF", "Canvas CQF", 800, 600);
   Canvas->cd();
@@ -4293,14 +4393,18 @@ void MInterfaceMimrec::TrackQualityFactor()
 {
   // Distribution of the Track quality factor
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   bool xLog;
-  if (m_Data->GetTrackQualityFactorRangeMin() > 0 && m_Data->GetTrackQualityFactorRangeMin() < 0.01) {
+  if (m_Settings->GetTrackQualityFactorRangeMin() > 0 && m_Settings->GetTrackQualityFactorRangeMin() < 0.01) {
     xLog = true;
   } else {
     xLog = false;
   }
   int xNBins = 50;
-  double* xBins = CreateAxisBins(m_Data->GetTrackQualityFactorRangeMin(), m_Data->GetTrackQualityFactorRangeMax(), xNBins, xLog);
+  double* xBins = CreateAxisBins(m_Settings->GetTrackQualityFactorRangeMin(), m_Settings->GetTrackQualityFactorRangeMax(), xNBins, xLog);
 
 
   TH1D* Hist = new TH1D("Track Quality Factor", "Track Quality Factor", 
@@ -4313,13 +4417,10 @@ void MInterfaceMimrec::TrackQualityFactor()
   Hist->SetMinimum(0);
 
 
-  MPhysicalEvent* Event;
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MComptonEvent* ComptonEvent; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
@@ -4336,7 +4437,9 @@ void MInterfaceMimrec::TrackQualityFactor()
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("CanvasTQF", "TCQF Canvas", 800, 600);
   Canvas->cd();
@@ -4358,13 +4461,16 @@ void MInterfaceMimrec::TrackQualityFactor()
 void MInterfaceMimrec::EarthCenterDistance()
 {
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   mimp<<"Fixed earth position at (0, 0, -1e20) = 180 deg"<<endl;
 
   MVector Position(0, 0, -c_FarAway);
 
   MComptonEvent* Compton = 0;
-  MPhysicalEvent* Event = 0;
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   int NEvents = 0;
   int NBins = 100;
@@ -4381,18 +4487,20 @@ void MInterfaceMimrec::EarthCenterDistance()
   Hist->SetMinimum(0);
 
  // First check on the size of the histogram:
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true &&
         Event->GetType() == MPhysicalEvent::c_Compton) {
       Compton = (MComptonEvent*) Event;
-      Hist->Fill(Compton->GetARMGamma(Position, m_Data->GetCoordinateSystem())*c_Deg);
+      Hist->Fill(Compton->GetARMGamma(Position, m_Settings->GetCoordinateSystem())*c_Deg);
       NEvents++;
     }    
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   cout<<"NEvents: "<<NEvents<<endl;
 
@@ -4406,7 +4514,7 @@ void MInterfaceMimrec::EarthCenterDistance()
   Hist->Draw();
   Canvas->Update();
 
-
+  return;
 }
 
 
@@ -4418,16 +4526,19 @@ void MInterfaceMimrec::DistanceDistribution()
   // Distribution of the distance between the first and the second intercation
   // as well as the minimum distance between any interaction
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NBins = 100;
 
   MComptonEvent* Compton = 0;
-  MPhysicalEvent* Event = 0;
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   TH1D* FirstHist = 
     new TH1D("FirstDistance", 
              "Distance between first and second hit", NBins, 
-             m_Data->GetFirstDistanceRangeMin(), m_Data->GetFirstDistanceRangeMax());
+             m_Settings->GetFirstDistanceRangeMin(), m_Settings->GetFirstDistanceRangeMax());
   FirstHist->SetBit(kCanDelete);
   FirstHist->SetXTitle("distance [cm]");
   FirstHist->SetYTitle("counts");
@@ -4436,7 +4547,7 @@ void MInterfaceMimrec::DistanceDistribution()
   FirstHist->SetMinimum(0);
 
   TH1D* AnyHist = new TH1D("AnyDistance", "Minimum distance between any hit", NBins, 
-                           m_Data->GetDistanceRangeMin(), m_Data->GetDistanceRangeMax());
+                           m_Settings->GetDistanceRangeMin(), m_Settings->GetDistanceRangeMax());
   AnyHist->SetBit(kCanDelete);
   AnyHist->SetXTitle("distance [cm]");
   AnyHist->SetYTitle("counts");
@@ -4446,8 +4557,9 @@ void MInterfaceMimrec::DistanceDistribution()
 
   int NEvents = 0;
 
+
   // First check on the size of the histogram:
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true &&
@@ -4459,7 +4571,9 @@ void MInterfaceMimrec::DistanceDistribution()
     }    
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   cout<<"NEvents: "<<NEvents<<endl;
 
@@ -4513,13 +4627,16 @@ void MInterfaceMimrec::SequenceLengths()
   // Distribution of the distance between the first and the second intercation
   // as well as the minimum distance between any interaction
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   unsigned int MaxTrackLength = 3;
   unsigned int MaxSequenceLength = 3;
   int NBins = 100;
 
   MComptonEvent* Compton = 0;
-  MPhysicalEvent* Event = 0;
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   TH1D* TrackHist = 
     new TH1D("LengthFirstTrack", 
@@ -4547,8 +4664,9 @@ void MInterfaceMimrec::SequenceLengths()
   double TracksGt2 = 0.0;
   int NTracksGt2 = 0;
 
+
   // First check on the size of the histogram:
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true &&
@@ -4566,7 +4684,9 @@ void MInterfaceMimrec::SequenceLengths()
     }    
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
 
   if (TrackHist->GetEntries() == 0 && ComptonHist->GetEntries() == 0) {
@@ -4636,73 +4756,17 @@ void MInterfaceMimrec::SequenceLengths()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-// void MInterfaceMimrec::EnergyDistributionD2()
-// {
-//   // Display the energy-spectrum of all acceptable events 
-//   // (remember: not all of them will be reconstructable)
-
-//   const int NBins = 50;
-//   int Bin, NEvents = 0;
-//   double EnergyMin;
-//   EnergyMin = GetTotalEnergyMin();
-//   double EnergyMax;
-//   EnergyMax = GetTotalEnergyMax();
-  
-//   double *EnergyArray = new double[NBins];
-//   for (Bin = 0; Bin < NBins; Bin++) {
-//     EnergyArray[Bin] = 0.0;
-//   }
-//   double BinWidth = 
-//     (EnergyMax - EnergyMin)/NBins;
-
-//   MPhysicalEvent* Event;
-//   MComptonEvent Compton;
-
-//   // Start the event loader...
-//   if (InitializeEventloader() == false) return;
-
-//   // ... loop over all events and save a count in the belonging bin ...
-//   while ((Event = m_EventFile->GetNextEvent()) != 0) {
-
-//     if (m_Selector->IsQualifiedEventFast(Event) == false) {
-//       delete Event;
-//       continue;
-//     }
-
-//     if (Event->GetType() == MPhysicalEvent::c_Compton) {
-//       Compton.Assimilate(dynamic_cast<MComptonEvent*>(Event));
-//     }
-
-//     Bin = int ((Compton.Eg() - EnergyMin)/BinWidth);
-//     if (Bin >= 0 && Bin < NBins) {
-//       EnergyArray[Bin] += 1.0;
-//       NEvents++;
-//     }
-
-//     delete Event;
-//   }
-  
-//   // ... and display it.
-//   m_Display.DisplayHistogram("Measured energy distribution D2", "Energy [keV]", "Number of counts", 
-//                              EnergyArray, EnergyMin, EnergyMax, NBins);
-
-//   cout<<"NEvents: "<<NEvents<<endl;
-
-//   delete [] EnergyArray;
-// }
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MInterfaceMimrec::LightCurve()
 {
   // Time distribution in the data-set
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   unsigned int NBins = 1000;
 
-  MPhysicalEvent* Event = 0;
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   double MinTime = numeric_limits<double>::max();
   double MaxTime = 0;
@@ -4714,7 +4778,7 @@ void MInterfaceMimrec::LightCurve()
   
   // First check on the size of the histogram:
   unsigned long NEvents = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -4730,7 +4794,9 @@ void MInterfaceMimrec::LightCurve()
 
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (TimeList.empty() == true) {
     mgui<<"Light curve: No events passed the event selections!"<<show; 
@@ -4810,14 +4876,17 @@ void MInterfaceMimrec::CoincidenceWindowDistribution()
 {
   // Time distribution in the data-set
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NBins = 100;
 
-  MPhysicalEvent* Event = 0;
-  if (InitializeEventloader() == false) return;
+  MPhysicalEvent* Event = nullptr;
 
   TH1D* Hist = 
     new TH1D("CoincidenceWindow", "Coincidence window", NBins, 
-             m_Data->GetCoincidenceWindowRangeMin(), m_Data->GetCoincidenceWindowRangeMax());
+             m_Settings->GetCoincidenceWindowRangeMin(), m_Settings->GetCoincidenceWindowRangeMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("time [s]");
   Hist->SetYTitle("counts");
@@ -4832,9 +4901,10 @@ void MInterfaceMimrec::CoincidenceWindowDistribution()
   MEventSelector NoTimeWindowSelector = *m_Selector;
   NoTimeWindowSelector.SetTime(0, numeric_limits<double>::max());
 
+
   // First check on the size of the histogram:
   MComptonEvent* ComptonEvent;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
     if (Event->GetType() == MPhysicalEvent::c_Compton) {
       ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
@@ -4852,7 +4922,9 @@ void MInterfaceMimrec::CoincidenceWindowDistribution()
     }
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   mout<<"Minimum coincidence window: "<<setprecision(20)<<MinTime<<endl;
   mout<<"Maximum coincidence window: "<<setprecision(20)<<MaxTime<<setprecision(6)<<endl;
@@ -4898,6 +4970,10 @@ void MInterfaceMimrec::LocationOfFirstIA()
 {
   // Display the location of the first compton interaction
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int x, y;
   int x1NBins = 100;
   int x2NBins = 100;
@@ -4909,16 +4985,11 @@ void MInterfaceMimrec::LocationOfFirstIA()
   double* Array = new double[x1NBins*x2NBins];
   for (x = 0; x < x1NBins*x2NBins; x++) Array[x] = 0.0;
 
-  // Start the Event loader
-  if (InitializeEventloader() == false) {
-    delete [] Array;
-    return;
-  }
   
   // ... loop over all events and save a count in the belonging bin ...
   MPhysicalEvent* Event;
   MComptonEvent Compton;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
@@ -4938,6 +5009,9 @@ void MInterfaceMimrec::LocationOfFirstIA()
 
     delete Event;
   } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
 
   MImage2D* Image = 
@@ -4953,86 +5027,6 @@ void MInterfaceMimrec::LocationOfFirstIA()
 }
 
 
-// ////////////////////////////////////////////////////////////////////////////////
-
-
-// void MInterfaceMimrec::DOM()
-// {
-//   int Bin, NBins = 50;
-//   int NEvents = 0;
-//   double *ARM = new double[NBins];
-//   for (Bin = 0; Bin < NBins; Bin++) ARM[Bin] = 0.0;
-//   double BinWidth;
-
-//   double x, y, z = 10000000.0, Disk;
-  
-//   // Get the data of the ARM-"Test"-Position
-//   if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {  // spheric 
-//     x = m_Data->GetTPTheta();
-//     y = m_Data->GetTPPhi();
-//     Disk = 180;
-
-//     // All the external data stuff is in galactic coodinates, but the library uses
-//     // spherical, so transform it
-//     MMath::GalacticToSpheric(x, y);
-//     MMath::SphericToCartesean(x, y, z);
-//   } else if (m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
-//              m_Data->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
-//     x = m_Data->GetTPX();
-//     y = m_Data->GetTPY();
-//     z = m_Data->GetTPZ();
-//     Disk = 180; //
-//   } else {
-//     merr<<"Unknown coordinate system ID: "<<m_Data->GetCoordinateSystem()<<fatal;
-//   }
-  
-//   // Initalize the image size (x-axis)
-//   BinWidth = 2*Disk/NBins;
-
-//   // Now restart the event-loader:
-//   if (InitializeEventloader() == false) return;
-
-//   // And fill the ARM-vector:
-
-//   MPhysicalEvent* Event;
-//   MComptonEvent ComptonEvent;
-//   MVector Dir;
-//   // ... loop over all events and save a count in the belonging bin ...
-//   while ((Event = m_EventFile->GetNextEvent()) != 0) {
-
-//     if (m_Selector->IsQualifiedEventFast(Event) == false) {
-//       delete Event;
-//       continue;
-//     }
-
-//     if (Event->GetType() == MPhysicalEvent::c_Compton) {
-//       ComptonEvent.Assimilate(Event);
-
-//       if (ComptonEvent.GetARMGamma(MVector(x, y, z), m_Data->GetCoordinateSystem())*c_Deg < 5) {
-//         Dir = ComptonEvent.De();
-//         Bin = int ((Dir.Theta()*c_Deg + Disk)/BinWidth);
-//       }
-//     } else {
-//       delete Event;
-//       continue;
-//     }
-//     if (Bin >= 0 && Bin < NBins) {
-//       ARM[Bin] += 1;
-//       NEvents++;
-//     }
-//     delete Event;
-//   } 
-
-//   m_Display.DisplayHistogram("Zenith angle of electron direction", 
-//                              "Zenith angle [deg]", "Number of events", 
-//                              ARM, -Disk, Disk, NBins);
-
-//   cout<<"ARM: Inside disk = "<<NEvents<<endl;
-
-//   return;
-// }
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -5041,7 +5035,7 @@ void MInterfaceMimrec::Polarization()
   // Checks for Polarization...
 
   // Initalize the image size (x-axis)
-  int NBins = m_Data->GetHistBinsPolarization();
+  int NBins = m_Settings->GetHistBinsPolarization();
 
   double Min = -180.000001;
   double Max = +180.000001;
@@ -5073,20 +5067,20 @@ void MInterfaceMimrec::Polarization()
   Corrected->SetMinimum(0.0);
   Corrected->SetNdivisions(-508, "X");
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   MPairEvent* PairEvent = 0; 
 
   // Origin in spherical coordinates:
-  double Theta = m_Data->GetTPTheta()*c_Rad;
-  double Phi = m_Data->GetTPPhi()*c_Rad;
+  double Theta = m_Settings->GetTPTheta()*c_Rad;
+  double Phi = m_Settings->GetTPPhi()*c_Rad;
 
   // Origin in Cartesian Corrdinates:
   MVector Origin;
   Origin.SetMagThetaPhi(c_FarAway, Theta, Phi);
 
   // Arm cut:
-  double ArmCut = m_Data->GetPolarizationArmCut();
+  double ArmCut = m_Settings->GetPolarizationArmCut();
 
   // Some statistics:
   int InsideArmCutSource = 0;
@@ -5095,17 +5089,17 @@ void MInterfaceMimrec::Polarization()
   int OutsideArmCutBackground = 0;
 
   // Now restart the event-loader with the polarization file:
-  if (InitializeEventloader() == false) return;
+  if (InitializeEventLoader() == false) return;
 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -5120,7 +5114,7 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = PairEvent->GetElectronDirection() + 
             PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
@@ -5137,7 +5131,9 @@ void MInterfaceMimrec::Polarization()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   // Normalize to counts/deg
   for (int b = 1; b <= Polarization->GetNbinsX(); ++b) {
@@ -5164,21 +5160,21 @@ void MInterfaceMimrec::Polarization()
 
 
   // Now restart the event-loader with the background file:
-  if (InitializeEventloader(m_Data->GetPolarizationBackgroundFileName()) == false) return;
+  if (InitializeEventLoader(m_Settings->GetPolarizationBackgroundFileName()) == false) return;
 
   
   MEventSelector SecondSelector(*m_Selector);
   SecondSelector.SetTimeMode(0);
   
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (SecondSelector.IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -5192,7 +5188,7 @@ void MInterfaceMimrec::Polarization()
       } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        if (fabs(PairEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = PairEvent->GetElectronDirection() + 
             PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
@@ -5209,7 +5205,9 @@ void MInterfaceMimrec::Polarization()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   // Normalize to counts/deg
   for (int b = 1; b <= Background->GetNbinsX(); ++b) {
@@ -5355,8 +5353,13 @@ void MInterfaceMimrec::Polarization()
 
 void MInterfaceMimrec::AzimuthalComptonScatterAngle()
 {
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   // Initalize the image size (x-axis)
-  int NBins = m_Data->GetHistBinsARMGamma();
+  int NBins = m_Settings->GetHistBinsARMGamma();
 
   TH1D* Hist = new TH1D("AzimuthalComptonScatterAngle", "Azimuthal Compton Scatter Angle", NBins, -180, 180);
   Hist->SetBit(kCanDelete);
@@ -5368,12 +5371,12 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
   Hist->SetNdivisions(-508, "X");
 
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
 
   // Origin in spherical coordinates:
-  double Theta = m_Data->GetTPTheta()*c_Rad;
-  double Phi = m_Data->GetTPPhi()*c_Rad;
+  double Theta = m_Settings->GetTPTheta()*c_Rad;
+  double Phi = m_Settings->GetTPPhi()*c_Rad;
 
   // Origin in Cartesian Corrdinates:
   MVector Origin;
@@ -5385,17 +5388,14 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
   int InsideArmCutSource = 0;
   int OutsideArmCutSource = 0;
 
-  // Now restart the event-loader with the polarization file:
-  if (InitializeEventloader() == false) return;
-
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+        if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
           MVector Plain = ComptonEvent->Dg();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
@@ -5412,7 +5412,9 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   // Normalize to counts/deg
   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
@@ -5437,8 +5439,13 @@ void MInterfaceMimrec::AzimuthalComptonScatterAngle()
 
 void MInterfaceMimrec::AzimuthalElectronScatterAngle()
 {
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   // Initalize the image size (x-axis)
-  int NBins = m_Data->GetHistBinsARMElectron();
+  int NBins = m_Settings->GetHistBinsARMElectron();
 
   TH1D* Hist = new TH1D("AzimuthalElectronScatterAngle", "Azimuthal Electron Scatter Angle", NBins, -180, 180);
   Hist->SetBit(kCanDelete);
@@ -5450,12 +5457,12 @@ void MInterfaceMimrec::AzimuthalElectronScatterAngle()
   Hist->SetNdivisions(-508, "X");
 
 
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
 
   // Origin in spherical coordinates:
-  double Theta = m_Data->GetTPTheta()*c_Rad;
-  double Phi = m_Data->GetTPPhi()*c_Rad;
+  double Theta = m_Settings->GetTPTheta()*c_Rad;
+  double Phi = m_Settings->GetTPPhi()*c_Rad;
 
   // Origin in Cartesian Corrdinates:
   MVector Origin;
@@ -5467,18 +5474,15 @@ void MInterfaceMimrec::AzimuthalElectronScatterAngle()
   int InsideArmCutSource = 0;
   int OutsideArmCutSource = 0;
 
-  // Now restart the event-loader with the polarization file:
-  if (InitializeEventloader() == false) return;
-
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
         if (ComptonEvent->HasTrack() == true) {
-          if (fabs(ComptonEvent->GetARMGamma(Origin, m_Data->GetCoordinateSystem()))*c_Deg < ArmCut) {
+          if (fabs(ComptonEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
             MVector Plain = ComptonEvent->De();
             Plain.RotateZ(-Phi);
             Plain.RotateY(-Theta);
@@ -5496,7 +5500,9 @@ void MInterfaceMimrec::AzimuthalElectronScatterAngle()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   // Normalize to counts/deg
   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
@@ -5524,10 +5530,14 @@ void MInterfaceMimrec::OpeningAnglePair()
 {
   //
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   // Initalize the image size (x-axis)
   int NBins = 100;
   TH1D* Hist = new TH1D("OpeningAnglePair", "Opening Angle Pair", NBins, 
-                        m_Data->GetOpeningAnglePairMin(), m_Data->GetOpeningAnglePairMax());
+                        m_Settings->GetOpeningAnglePairMin(), m_Settings->GetOpeningAnglePairMax());
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("Opening angle [#circ]");
   Hist->SetYTitle("counts");
@@ -5535,13 +5545,10 @@ void MInterfaceMimrec::OpeningAnglePair()
   Hist->SetFillColor(8);
 
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
+  MPhysicalEvent* Event = nullptr;
   MPairEvent* PairEvent = 0; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -5553,7 +5560,9 @@ void MInterfaceMimrec::OpeningAnglePair()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("OpeningAnglePair", "Opening Angle Pair", 800, 600);
   Canvas->cd();
@@ -5572,12 +5581,16 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
   // the gamma-cone-surface and the line connecting the cone-apex with the 
   // (Test-)position
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   int NEvents = 0;
   double Value = 0;
   int Inside = 0;
   
-  int NBins = m_Data->GetHistBinsARMGamma();
-  double Disk = m_Data->GetTPDistanceTrans();
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
 
   // Initalize the image size (x-axis)
@@ -5591,20 +5604,18 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
   Hist->SetFillColor(8);
   //double BinWidth = 2*Disk/NBins;
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
+  MPhysicalEvent* Event = nullptr;
   MPairEvent* PairEvent = 0; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Pair) {
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
-        Value = PairEvent->GetARMGamma(TestPosition, m_Data->GetCoordinateSystem());
+        Value = PairEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem());
         if (Value*c_Deg > -Disk && Value*c_Deg < Disk) Inside++;
         Hist->Fill(Value*c_Deg, PairEvent->GetTrackQualityFactor());
         NEvents++;
@@ -5613,8 +5624,9 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
 
     delete Event;
   } 
-
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   if (Hist->GetMaximum() == 0) {
     mgui<<"No events passed the event selections or file is empty!"<<endl;
@@ -5646,9 +5658,10 @@ void MInterfaceMimrec::SelectIds()
 {
   //
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
+  
   MString Name = m_EventFile->GetFileName();
   Name.Replace(Name.Length()-4, 4, ".ids");
 
@@ -5660,8 +5673,8 @@ void MInterfaceMimrec::SelectIds()
   }
 
   // ... loop over all events
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       fout<<"ID "<<Event->GetId()<<endl;
@@ -5669,7 +5682,9 @@ void MInterfaceMimrec::SelectIds()
 
     delete Event;
   }   
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   fout.close();
 }
@@ -5682,6 +5697,10 @@ void MInterfaceMimrec::InteractionDepth()
 {
   // Calculates the average interaction depth in tracker and calorimeter:
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  
   TH1D* D1 = new TH1D("D1", "D1", 50, 15, 26);
   D1->SetBit(kCanDelete);
   D1->SetXTitle("[cm]");
@@ -5702,13 +5721,10 @@ void MInterfaceMimrec::InteractionDepth()
   D2->SetFillColor(8);
 
 
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
-
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* ComptonEvent = 0; 
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -5725,6 +5741,9 @@ void MInterfaceMimrec::InteractionDepth()
 
     delete Event;
   }   
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* D1C = new TCanvas();
   D1C->cd();
@@ -5739,9 +5758,6 @@ void MInterfaceMimrec::InteractionDepth()
   cout<<"D2min = "<<D2min<<endl;
   cout<<"D2max = "<<D2max<<endl;
   cout<<"D2avg = "<<((ND2 > 0) ? D2avg/ND2-D2min : 0)<<endl;
-
-
-  m_EventFile->Close();
 }
 
 
@@ -5754,10 +5770,11 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
     mgui<<"You need a loaded geometry for this function"<<error;
     return;
   }
- 
-  if (InitializeEventloader() == false) return;
 
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
 
+  
   double xMin = -100;
   double xMax = +100;
   double yMin = -100;
@@ -5776,8 +5793,8 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   // Step 1: Accumulate many, many hits:
 
   MVector Pos;
-  MPhysicalEvent* Event = 0;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetPosition() != g_VectorNotDefined) { // ???? !!!!
@@ -5850,7 +5867,7 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
   // Step 4: Continue filling from file:
 
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetPosition() != g_VectorNotDefined) {
@@ -5902,7 +5919,9 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   }
   mout<<endl;
 
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 }
 
 
@@ -5911,39 +5930,42 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
 void MInterfaceMimrec::CreateExposureMap()
 {
-  // First restart the event-loader:
-  if (InitializeEventloader() == false) {
-    return;
-  }  
+  // Create an exposure map
+  
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+  
   
   MExposure Exposure;
   Exposure.SetEfficiencyFile("Exposure.511keV.p1.base.efficiency.90z.90y.rsp");
-  Exposure.SetDimensions(m_Data->GetGalLongitudeMin()*c_Rad, 
-                        m_Data->GetGalLongitudeMax()*c_Rad, 
-                        m_Data->GetBinsGalLongitude(),
-                        (m_Data->GetGalLatitudeMin()+90)*c_Rad,
-                        (m_Data->GetGalLatitudeMax()+90)*c_Rad,
-                        m_Data->GetBinsGalLatitude(),
+  Exposure.SetDimensions(m_Settings->GetGalLongitudeMin()*c_Rad, 
+                        m_Settings->GetGalLongitudeMax()*c_Rad, 
+                        m_Settings->GetBinsGalLongitude(),
+                        (m_Settings->GetGalLatitudeMin()+90)*c_Rad,
+                        (m_Settings->GetGalLatitudeMax()+90)*c_Rad,
+                        m_Settings->GetBinsGalLatitude(),
                         c_FarAway/10, 
                         c_FarAway, 
                         1);
   
   
   MPhysicalEvent* Event;
-  while ((Event = m_EventFile->GetNextEvent()) != 0) { 
+  while ((Event = GetNextEvent()) != 0) { 
     
     Exposure.Expose(Event);
 
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
   
   double* ExposureImage = Exposure.GetExposure();
   
   MImageGalactic* Galactic = 
     new MImageGalactic("Exposure in galactic coordinates", ExposureImage, 
-                       "Longitude", m_Data->GetGalLongitudeMin(), m_Data->GetGalLongitudeMax(), m_Data->GetBinsGalLongitude(),
-                       "Latitude", m_Data->GetGalLatitudeMin(), m_Data->GetGalLatitudeMax(), m_Data->GetBinsGalLatitude(), 
+                       "Longitude", m_Settings->GetGalLongitudeMin(), m_Settings->GetGalLongitudeMax(), m_Settings->GetBinsGalLongitude(),
+                       "Latitude", m_Settings->GetGalLatitudeMin(), m_Settings->GetGalLatitudeMax(), m_Settings->GetBinsGalLatitude(), 
                        MImage::c_RootDefault);
   Galactic->Display(nullptr, false);
 
@@ -5959,7 +5981,11 @@ void MInterfaceMimrec::CreateExposureMap()
 void MInterfaceMimrec::PointingInGalacticCoordinates()
 {
   // Show the pointing of the instrument in galactic coordinates
-  
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+    
   double LatMin = 0;   // -90 
   double LatMax = 180; // -90
   unsigned int LatBins = 360;
@@ -5972,16 +5998,11 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
 
   double* Array = new double[LatBins*LongBins];
   for (unsigned int i = 0; i < LatBins*LongBins; ++i) Array[i] = 0;
-  
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) {
-    delete [] Array;
-    return;
-  }
 
-  MPhysicalEvent* Event = 0;
+
+  MPhysicalEvent* Event = nullptr;
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept some events...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -5992,14 +6013,16 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   // Prepare an MImageGalactic class:
   MImageGalactic* Galactic = 
     new MImageGalactic("Pointing in galactic coordinates", Array,
                        "Longitude", LongMin, LongMax, LongBins, 
                        "Latitude", LatMin-90, LatMax-90, LatBins,
-                       m_Data->GetImagePalette(), m_Data->GetImageDrawMode());
+                       m_Settings->GetImagePalette(), m_Settings->GetImageDrawMode());
   Galactic->SetImageArray(Array);
   Galactic->Display();
 
@@ -6015,7 +6038,11 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
 void MInterfaceMimrec::HorizonInSphericalDetectorCoordinates()
 {
   // Show the horizon z axis in spherical detector coordinates
-  
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+    
   double PhiMin = 0;   // -90 
   double PhiMax = 360; // -90
   unsigned int PhiBins = 360;
@@ -6032,13 +6059,10 @@ void MInterfaceMimrec::HorizonInSphericalDetectorCoordinates()
   Spherical->SetFillColor(8);
   Spherical->SetMinimum(0);
 
-  
-  // Now restart the event-loader:
-  if (InitializeEventloader() == false) return;
 
-  MPhysicalEvent* Event = 0;
+  MPhysicalEvent* Event = nullptr;
   // ... loop over all events and save a count in the belonging bin ...
-  while ((Event = m_EventFile->GetNextEvent()) != 0) {
+  while ((Event = GetNextEvent()) != 0) {
 
     // Only accept some events...
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
@@ -6051,7 +6075,9 @@ void MInterfaceMimrec::HorizonInSphericalDetectorCoordinates()
     
     delete Event;
   }
-  m_EventFile->Close();
+  
+  // Close the event loader
+  FinalizeEventLoader();
 
   TCanvas* Canvas = new TCanvas("ZenithCanvas", "ZenithCanvas");
 
@@ -6072,7 +6098,7 @@ void MInterfaceMimrec::StandardAnalysis(double Energy, MVector Position)
   
   A.SetEventSelector(*m_Selector);
   A.SetGeometry(m_Geometry);
-  A.SetFileName(m_Data->GetCurrentFileName());
+  A.SetFileName(m_Settings->GetCurrentFileName());
    
   A.SetPosition(Position);
   A.SetEnergy(Energy);
