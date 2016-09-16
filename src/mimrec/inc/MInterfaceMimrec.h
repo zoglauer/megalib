@@ -77,8 +77,6 @@ class MInterfaceMimrec : public MInterface
 
   //! Perform the default image reconstruction
   void Reconstruct(bool Animate = false);
-  //! Interrupt the default image reconstrcution
-  void InterruptReconstruction();
   //! Create a significance map
   void SignificanceMap();
   
@@ -154,7 +152,12 @@ class MInterfaceMimrec : public MInterface
 
   // protected methods:
  protected:
-  bool InitializeEventloader(MString File = "");
+  //! Intialize the event loader
+  bool InitializeEventLoader(MString File = "");
+  //! Get the next event
+  MPhysicalEvent* GetNextEvent(bool Checks = false);
+  //! Finalize the event loader
+  void FinalizeEventLoader();
 
 private:
 
@@ -164,36 +167,22 @@ private:
 
   // protected members:
  protected:
-  MSettingsMimrec* m_Data;                   // All the information of the GUI
+  //! All the settings from the UI
+  MSettingsMimrec* m_Settings;
+  
+  //! The default used event file
+  MFileEventsTra* m_EventFile;
+  //! The default used event selector
+  MEventSelector* m_Selector;
 
-  double* m_Sensitivities;             // Sensitivity image
-  double** m_SingleBackprojection;      // Single backprojection
-  double* m_FirstBackprojection;       // First backprojection
-  double* m_Image;                     // Image after ML-iterations
+  //! The image reconstructor
+  MImager* m_Imager;
 
-  int m_NExecutedIterations;          // Number of performed iterations
-  int m_NEvents;
-
-  bool m_ThreadAActive;
-
-  int m_ThreadCounter;
-  int m_EventCounter;
-
-  MFileEventsTra *m_EventFile;
-  MEventSelector *m_Selector;
+  //! In automatic mode, save the canvas to this file
+  MString m_OutputFileName;
 
   // private members:
  private:
-  bool m_Interrupt;              // true: the precomputation has been interrupted
-
-  MImager *m_Imager;
-
-  MMath m_Maths;
-
-  MImage *m_IImage;
-
-  // In automatic mode, save the canvas to this file
-  MString m_OutputFileName;
 
 #ifdef ___CINT___
  public:
