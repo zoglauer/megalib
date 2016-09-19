@@ -59,8 +59,6 @@ MGUIMain::MGUIMain(unsigned int Width, unsigned int Height, MInterface* Interfac
   m_BaseData = Data;
 
   m_FontScaler = MGUIDefaults::GetInstance()->GetFontScaler();
-  
-  gStyle->SetPalette(1, 0);
 }
 
 
