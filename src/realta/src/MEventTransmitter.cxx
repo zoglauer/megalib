@@ -92,7 +92,6 @@ private:
  */
 MEventTransmitter::MEventTransmitter() : m_Interrupt(false), m_Port(9090), m_Host("localhost"), m_Speed(1)
 {
-  gStyle->SetPalette(1, 0);
 }
 
 

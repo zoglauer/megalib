@@ -71,8 +71,6 @@ MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
   : TGMainFrame(gClient->GetRoot(), 1200, 700, kVerticalFrame),
     m_Interface(Interface), m_Settings(Settings)
 {
-  gStyle->SetPalette(1, 0);
-
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 

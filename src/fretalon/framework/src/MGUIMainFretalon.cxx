@@ -59,8 +59,6 @@ MGUIMainFretalon::MGUIMainFretalon(MSupervisor* Supervisor)
   : TGMainFrame(gClient->GetRoot(), 350, 300, kVerticalFrame),
     m_Supervisor(Supervisor)
 {
-  gStyle->SetPalette(1, 0);
-
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
