@@ -57,7 +57,7 @@ ClassImp(MImageGalactic)
 
 MImageGalactic::MImageGalactic() : MImage2D()
 {
-  // default constructor
+  m_zTitle = "Intensity [a.u.]";
 }
 
 
@@ -87,6 +87,7 @@ MImageGalactic::MImageGalactic(MString Title, double* IA,
   // Spectrum:   spectrum
   // DrawOption: ROOT draw option
 
+  m_zTitle = "Intensity [a.u.]";
 }
 
 
@@ -106,12 +107,14 @@ MImage* MImageGalactic::Clone()
 {
   //! Clone this image
 
-  MImage* I = 
+  MImageGalactic* I = 
     new MImageGalactic(m_Title, m_IA, 
                        m_xTitle, m_xMin, m_xMax, m_xNBins, 
                        m_yTitle, m_yMin, m_yMax, m_yNBins, 
                        m_Spectrum, m_DrawOption, m_SourceCatalog);
 
+  m_zTitle = I->m_zTitle;
+    
   return I;
 }
 
@@ -172,7 +175,7 @@ void MImageGalactic::SetImageArray(double* IA)
 void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
 {
   // Display the image in a canvas
- 
+  
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, int(900.0/m_xNBins*m_yNBins));
@@ -208,7 +211,7 @@ void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
     Hist->GetYaxis()->SetTickLength(-0.02f);
     Hist->GetYaxis()->SetLabelOffset(0.02f);
     Hist->GetYaxis()->SetLabelSize(0.03f);
-    Hist->GetZaxis()->SetTitle("Intensity [a.u.]");
+    Hist->GetZaxis()->SetTitle(m_zTitle);
     Hist->GetZaxis()->SetTitleOffset(1.2f);
 
     if ((int(m_yMax) - int(m_yMin)) % 60 == 0) {

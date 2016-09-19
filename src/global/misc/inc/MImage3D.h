@@ -39,7 +39,7 @@ class MImage3D : public MImage2D
            MString xTitle, double xMin, double xMax, int xNBins, 
            MString yTitle, double yMin, double yMax, int yNBins, 
            MString zTitle, double zMin, double zMax, int zNBins, 
-           int Spectrum = c_Incendescent, int DrawOption = c_COLCONT4Z);
+           int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage3D();
 
@@ -78,8 +78,8 @@ class MImage3D : public MImage2D
 
   // private members:
  private:
-  //! Title of the z axis
-  MString m_zTitle;
+  // Title of the z axis
+  // Alreday defined in the base class: MString m_zTitle;
   //! Minimum z value
   double m_zMin;
   //! Maximum z value

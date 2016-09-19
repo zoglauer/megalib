@@ -46,7 +46,7 @@ class MImage
   //! Standard constructor
   MImage(MString Title, double* IA, 
          MString xTitle, double xMin, double xMax, int xNBins, 
-         int Spectrum = c_Thesis, int DrawOption = c_COLCONT4Z);
+         int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage();
 
@@ -66,6 +66,10 @@ class MImage
   virtual void SetImageArray(double* IA);
   //! Set the x-Axis attributes
   virtual void SetXAxis(MString xTitle, double xMin, double xMax, int xNBins);
+  //! Set the x-Axis title
+  virtual void SetXAxisTitle(MString xTitle) { m_xTitle = xTitle; }
+  //! Set the y-Axis title
+  virtual void SetYAxisTitle(MString yTitle) { m_yTitle = yTitle; }
   //! Set the spectrum of this image
   virtual void SetSpectrum(int Spectrum);
 
@@ -142,6 +146,9 @@ class MImage
   double m_xMax;
   //! Number of x bins
   int m_xNBins;
+
+  //! Title of the y-axis
+  MString m_yTitle;
 
   //! ID of the used spectrum
   int m_Spectrum;
