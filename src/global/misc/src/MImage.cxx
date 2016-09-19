@@ -151,6 +151,8 @@ MImage* MImage::Clone()
                m_xTitle, m_xMin, m_xMax, m_xNBins, 
                m_Spectrum, m_DrawOption);
 
+  m_yTitle = I->m_yTitle;
+
   return I;
 }
 
@@ -361,7 +363,7 @@ void MImage::SetSpectrum(int Spectrum)
     gStyle->SetPalette(55, 0);
   } else {
     merr<<"Unknown draw palette option. Using default."<<show;
-    gStyle->SetPalette(1, 0);
+    gStyle->SetPalette(55, 0);
   }
   
   m_GlobalSpectrum = m_Spectrum;

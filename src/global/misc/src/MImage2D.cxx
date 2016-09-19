@@ -110,11 +110,13 @@ MImage* MImage2D::Clone()
 {
   //! Clone this image
 
-  MImage* I = 
+  MImage2D* I = 
     new MImage2D(m_Title, m_IA, 
                  m_xTitle, m_xMin, m_xMax, m_xNBins, 
                  m_yTitle, m_yMin, m_yMax, m_yNBins, 
                  m_Spectrum, m_DrawOption);
+
+  m_zTitle = I->m_zTitle;
 
   return I;
 }

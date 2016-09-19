@@ -39,7 +39,7 @@ class MImageSpheric : public MImage2D
   MImageSpheric(MString Title, double *IA,
                 MString xTitle, double xMin, double xMax, int xNBins, 
                 MString yTitle, double yMin, double yMax, int yNBins, 
-                int Spectrum = c_WhiteRedBlack, int DrawOption = c_COLCONT4Z,
+                int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z,
                 MString SourceCatalog = "");
   //! Standard destructor
   virtual ~MImageSpheric();
