@@ -5935,9 +5935,17 @@ void MInterfaceMimrec::CreateExposureMap()
   // Start with the event file loader first (just in case something goes wrong here)
   if (InitializeEventLoader() == false) return;
   
+  // Check if the exposure efficiency file is there:
+  if (MFile::Exists(m_Settings->GetExposureEfficiencyFile()) == false) {
+    mout<<"ERROR: Unable to find exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<endl;
+    return;
+  }
   
   MExposure Exposure;
-  Exposure.SetEfficiencyFile("Exposure.511keV.p1.base.efficiency.90z.90y.rsp");
+  if (Exposure.SetEfficiencyFile(m_Settings->GetExposureEfficiencyFile()) == false) {
+    mout<<"ERROR: Unable to load exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<endl;
+    return;    
+  }
   Exposure.SetDimensions(m_Settings->GetGalLongitudeMin()*c_Rad, 
                         m_Settings->GetGalLongitudeMax()*c_Rad, 
                         m_Settings->GetBinsGalLongitude(),
@@ -5952,8 +5960,9 @@ void MInterfaceMimrec::CreateExposureMap()
   MPhysicalEvent* Event;
   while ((Event = GetNextEvent()) != 0) { 
     
-    Exposure.Expose(Event);
-
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      Exposure.Expose(Event);
+    }
     delete Event;
   }
   
@@ -5963,10 +5972,10 @@ void MInterfaceMimrec::CreateExposureMap()
   double* ExposureImage = Exposure.GetExposure();
   
   MImageGalactic* Galactic = 
-    new MImageGalactic("Exposure in galactic coordinates", ExposureImage, 
-                       "Longitude", m_Settings->GetGalLongitudeMin(), m_Settings->GetGalLongitudeMax(), m_Settings->GetBinsGalLongitude(),
-                       "Latitude", m_Settings->GetGalLatitudeMin(), m_Settings->GetGalLatitudeMax(), m_Settings->GetBinsGalLatitude(), 
-                       MImage::c_RootDefault);
+    new MImageGalactic("Exposure in Galactic coordinates", ExposureImage, 
+                       "Longitude [deg]", m_Settings->GetGalLongitudeMin(), m_Settings->GetGalLongitudeMax(), m_Settings->GetBinsGalLongitude(),
+                       "Latitude [deg]", m_Settings->GetGalLatitudeMin(), m_Settings->GetGalLatitudeMax(), m_Settings->GetBinsGalLatitude());
+  Galactic->SetZAxisTitle("Exposure [cm^{2} s]");
   Galactic->Display(nullptr, false);
 
   delete [] ExposureImage;

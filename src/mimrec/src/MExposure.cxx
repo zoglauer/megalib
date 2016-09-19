@@ -96,6 +96,7 @@ double* MExposure::GetExposure()
   
   double* E = new double[m_NImageBins];
   copy(m_Exposure, m_Exposure+m_NImageBins, E);
+  
   return E; 
 }
 
@@ -151,11 +152,30 @@ bool MExposure::Expose(const MPhysicalEvent* Event)
     return true;
   }
   
-  m_CurrentTime = Event->GetTime();
-  m_CurrentRotation = Event->GetGalacticPointingRotationMatrix();
+  MTime CurrentTime = Event->GetTime();
+  MRotation CurrentRotation = Event->GetGalacticPointingRotationMatrix();
   
-  double Metric = DistanceMetric(m_LastRotation, m_CurrentRotation);
+  double Metric = DistanceMetric(m_LastRotation, CurrentRotation);
 
+  // First handle time jumps
+  if ((CurrentTime - m_CurrentTime).GetAsSeconds() > 60) {
+    cout<<"Exposure: Time jump: "<<m_CurrentTime<<" --> "<<CurrentTime<<endl;
+    
+    // Update the m_Last... & m_Current afterwards since we want to perform the last 
+    // not yet done exposure update
+    ApplyExposure();
+    
+    // Reset:
+    m_LastTime = CurrentTime;
+    m_LastRotation = CurrentRotation;
+    m_CurrentTime = CurrentTime;
+    m_CurrentRotation = CurrentRotation;
+    return true;
+  }
+  
+  // Otherwise, only update if the metric is above a certain value:
+  m_CurrentTime = CurrentTime;
+  m_CurrentRotation = CurrentRotation;
   if (Metric > 1.0*c_Rad) {
     ApplyExposure(); 
   }
@@ -175,6 +195,7 @@ bool MExposure::ApplyExposure()
     double TimeDiff = (m_CurrentTime - m_LastTime).GetAsSeconds();
   
     if (TimeDiff > 0.0) {
+      cout<<"Applying exposure with dt="<<TimeDiff<<"(last time: "<<m_LastTime<<")"<<endl;
       ++m_NExposureUpdates;
       
       MRotation Inv = m_CurrentRotation.GetInvers();
