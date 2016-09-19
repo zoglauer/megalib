@@ -151,8 +151,6 @@ BackgroundMixer::BackgroundMixer() : m_Interrupt(false)
   m_ExtractionFileName = "Extracted";
   
   m_UseGui = true;
-  
-  gStyle->SetPalette(1, 0);
 }
 
 

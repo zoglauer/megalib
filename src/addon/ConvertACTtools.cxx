@@ -75,8 +75,6 @@ private:
  */
 ConvertACTtools::ConvertACTtools() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-
   m_ISOUFileName = g_StringNotDefined;
   m_COSUFileName = g_StringNotDefined;
 }

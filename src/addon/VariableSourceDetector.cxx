@@ -84,8 +84,7 @@ private:
  */
 MVariableSourceDetectionTester::MVariableSourceDetectionTester() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-  //gROOT->SetBatch(true);
+  // Intentionally left blank
 }
 
 

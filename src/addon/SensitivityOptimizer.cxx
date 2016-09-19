@@ -554,8 +554,6 @@ private:
  */
 SensitivityOptimizer::SensitivityOptimizer() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-
   m_ModeSourceExtension = s_ModeNotDefined;
   m_ModeSpectrum = s_ModeNotDefined;
   m_ModeObservation = s_ModeNotDefined;
