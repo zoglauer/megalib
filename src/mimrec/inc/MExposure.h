@@ -53,7 +53,8 @@ class MExposure : public MViewPort
   //! Create the exposure for one event
   virtual bool Expose(const MPhysicalEvent* Event);
   
-  //! Return a copy of the current exposure map -- user must delete array via "delete [] ..."
+  //! Return a copy of the current exposure map. Unit: cm2 * sec / sr
+  //! User must delete array via "delete [] ..."
   virtual double* GetExposure();
   
   
@@ -82,14 +83,14 @@ class MExposure : public MViewPort
   //! The exposure image
   double* m_Exposure;
 
-  //! The last added rotation
+  //! The last applied rotation
   MRotation m_LastRotation;
-  //! The last added time
+  //! The last applied time
   MTime m_LastTime;
 
-  //! The current rotation
+  //! The current rotation -- the exposure of that one has not yet been applied to the map!
   MRotation m_CurrentRotation;
-  //! The current time
+  //! The current time -- the exposure of that one has not yet been applied to the map!
   MTime m_CurrentTime;
   
   // Mode: Calculated by efficiency
