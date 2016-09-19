@@ -71,7 +71,7 @@ private:
 //! Default constructor
 IsotopeFileSplitter::IsotopeFileSplitter() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
+  // Intentionally left blank
 }
 
 

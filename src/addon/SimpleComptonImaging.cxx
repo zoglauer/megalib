@@ -90,8 +90,6 @@ private:
  */
 SimpleComptonImaging::SimpleComptonImaging() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-  
   m_AngularResolution = 5;
   m_Iterations = 5;
 }

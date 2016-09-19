@@ -89,7 +89,6 @@ private:
  */
 Revoxelizer::Revoxelizer() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
 }
 
 
@@ -98,7 +97,7 @@ Revoxelizer::Revoxelizer() : m_Interrupt(false)
  */
 Revoxelizer::~Revoxelizer()
 {
-  // Intentionally left blanck
+  // Intentionally left blank
 }
 
 

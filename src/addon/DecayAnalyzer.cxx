@@ -159,7 +159,7 @@ private:
  */
 DecayAnalyzer::DecayAnalyzer() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
+  // Intentionally left blank
 }
 
 
@@ -168,7 +168,7 @@ DecayAnalyzer::DecayAnalyzer() : m_Interrupt(false)
  */
 DecayAnalyzer::~DecayAnalyzer()
 {
-  // Intentionally left blanck
+  // Intentionally left blank
 }
 
 

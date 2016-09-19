@@ -153,8 +153,6 @@ private:
  */
 SimRandomCoincidence::SimRandomCoincidence() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
-
   m_TimeStretch = 1000;
 
   m_TimeCoincidence.Set(0, 0);

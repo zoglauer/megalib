@@ -75,7 +75,7 @@ private:
  */
 ShowHistograms::ShowHistograms() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
+  // Intentionally left blank
 }
 
 
@@ -84,7 +84,7 @@ ShowHistograms::ShowHistograms() : m_Interrupt(false)
  */
 ShowHistograms::~ShowHistograms()
 {
-  // Intentionally left blanck
+  // Intentionally left blank
 }
 
 

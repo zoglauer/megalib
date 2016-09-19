@@ -107,7 +107,6 @@ private:
  */
 ExternalAnalysisPipelineExample::ExternalAnalysisPipelineExample() : m_Interrupt(false)
 {
-  gStyle->SetPalette(1, 0);
 }
 
 
@@ -116,7 +115,7 @@ ExternalAnalysisPipelineExample::ExternalAnalysisPipelineExample() : m_Interrupt
  */
 ExternalAnalysisPipelineExample::~ExternalAnalysisPipelineExample()
 {
-  // Intentionally left blanck
+  // Intentionally left blank
 }
 
 
