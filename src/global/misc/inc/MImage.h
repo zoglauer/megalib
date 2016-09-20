@@ -45,8 +45,8 @@ class MImage
   MImage();
   //! Standard constructor
   MImage(MString Title, double* IA, 
-         MString xTitle, double xMin, double xMax, int xNBins, 
-         int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+         MString xTitle, double xMin, double xMax, int xNBins,
+         MString vTitle = "", int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage();
 
@@ -69,12 +69,15 @@ class MImage
   //! Set the x-Axis title
   virtual void SetXAxisTitle(MString xTitle) { m_xTitle = xTitle; }
   //! Set the y-Axis title
-  virtual void SetYAxisTitle(MString yTitle) { m_yTitle = yTitle; }
+  virtual void SetValueAxisTitle(MString vTitle) { m_vTitle = vTitle; }
   //! Set the spectrum of this image
   virtual void SetSpectrum(int Spectrum);
 
+  //! If set to true the image is normalize to one
+  virtual void Normalize(bool Normalize) { m_Normalize = Normalize; }
+  
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = nullptr);
   //! Reset to default values:
   virtual void Reset();
   //! Save the canvas if it exists
@@ -147,8 +150,8 @@ class MImage
   //! Number of x bins
   int m_xNBins;
 
-  //! Title of the y-axis
-  MString m_yTitle;
+  //! Title of the value axis
+  MString m_vTitle;
 
   //! ID of the used spectrum
   int m_Spectrum;
@@ -165,6 +168,9 @@ class MImage
   //! The  main histogram
   TH1* m_Histogram;
 
+  //! True if the histogram should be normalized
+  bool m_Normalize;
+  
   //! counts the distributed IDs
   static int m_IDCounter;  
   //! true if the color palettes have already been allocated

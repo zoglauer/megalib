@@ -123,104 +123,13 @@ vector<MImage*> MImagerExternallyManaged::Deconvolve(vector<MBPData*> ResponseSl
   m_EM->ResetStopCriterion();
 
   // Image display
-  MImage* Image = 0;
-  
-  // Display first backprojection for the three different coordinate systems:
-  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
-    Image = new MImageSpheric("Image - Iteration: 0", 
-                              m_EM->GetInitialImage(),
-                              "Phi [deg]", 
-                              m_x1Min*c_Deg,
-                              m_x1Max*c_Deg, 
-                              m_x1NBins,
-                              "Theta [deg]", 
-                              m_x2Min*c_Deg, 
-                              m_x2Max*c_Deg, 
-                              m_x2NBins, 
-                              m_Palette, 
-                              m_DrawMode,
-                              m_SourceCatalog);
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
-    Image = new MImageGalactic("Image - Iteration: 0", 
-                               m_EM->GetInitialImage(), 
-                               "Longitude [deg]", 
-                               m_x1Min*c_Deg,
-                               m_x1Max*c_Deg, 
-                               m_x1NBins,
-                               "Latitude [deg]", 
-                               m_x2Min*c_Deg-90, 
-                               m_x2Max*c_Deg-90, 
-                               m_x2NBins, 
-                               m_Palette, 
-                               m_DrawMode,
-                               m_SourceCatalog);
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
-    if (m_TwoDAxis == 0) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-
-    } else if (m_TwoDAxis == 1) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-      
-    } else {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-    }
-
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
-    Image = new MImage3D("Image - Iteration: 0",
-                         m_EM->GetInitialImage(),
-                         "x [cm]",
-                         m_x1Min, 
-                         m_x1Max, 
-                         m_x1NBins,
-                         "y [cm]",
-                         m_x2Min, 
-                         m_x2Max, 
-                         m_x2NBins,
-                         "z [cm]",
-                         m_x3Min, 
-                         m_x3Max, 
-                         m_x3NBins, 
-                         m_Palette, 
-                         m_DrawMode);
-  } else {
-    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
-    return Images;
+  MImage* Image = CreateImage("Image - Iteration: 0", m_EM->GetInitialImage());
+  if (Image == nullptr) {
+    // Error message already displayed
+    return Images; 
   }
-
-
+  Image->Normalize(true);
+  
   // Store the images:
   Images.push_back(Image->Clone());
  

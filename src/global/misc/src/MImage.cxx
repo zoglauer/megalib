@@ -90,9 +90,10 @@ MImage::MImage()
 
   Init();
 
-  SetTitle("None");
+  SetTitle("Title here");
   SetImageArray((double *) 0);
-  SetXAxis("None", 0, 1, 1);
+  SetXAxis("x-axis", 0, 1, 1);
+  SetValueAxisTitle("values");
   SetSpectrum(0);
   SetDrawOption(c_COLCONT4Z);
 }
@@ -103,7 +104,7 @@ MImage::MImage()
 
 MImage::MImage(MString Title, double* IA,
                MString xTitle, double xMin, double xMax, int xNBins, 
-               int Spectrum, int DrawOption)
+               MString vTitle, int Spectrum, int DrawOption)
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -121,6 +122,7 @@ MImage::MImage(MString Title, double* IA,
 
   SetTitle(Title);
   SetXAxis(xTitle, xMin, xMax, xNBins);
+  SetValueAxisTitle(vTitle);
   SetSpectrum(Spectrum);
   SetDrawOption(DrawOption);
 
@@ -149,9 +151,9 @@ MImage* MImage::Clone()
   MImage* I = 
     new MImage(m_Title, m_IA, 
                m_xTitle, m_xMin, m_xMax, m_xNBins, 
-               m_Spectrum, m_DrawOption);
+               m_vTitle, m_Spectrum, m_DrawOption);
 
-  m_yTitle = I->m_yTitle;
+  I->Normalize(m_Normalize);
 
   return I;
 }
@@ -169,6 +171,8 @@ void MImage::Init()
   m_Histogram = 0;
   m_NEntries = 0;
 
+  m_Normalize = false;
+  
   // ID of this image:
   if (m_IDCounter == numeric_limits<int>::max()) {
     m_IDCounter = 0;
@@ -492,7 +496,7 @@ MString MImage::MakeCanvasTitle()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImage::Display(TCanvas *Canvas)
+void MImage::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
@@ -514,7 +518,7 @@ void MImage::Display(TCanvas *Canvas)
 
     m_Histogram->SetDirectory(0);
     m_Histogram->SetXTitle(m_xTitle);
-    m_Histogram->SetYTitle("Events");
+    m_Histogram->SetYTitle(m_vTitle);
     m_Histogram->SetFillColor(0);
     m_Histogram->SetTitleOffset(float(1.1), "X");
     m_Histogram->SetTitleOffset(float(1.1), "Y");
@@ -543,7 +547,12 @@ void MImage::Display(TCanvas *Canvas)
       merr<<"Image contains NaN ("<<x<<")"<<endl;
     }
   } 
-   
+  
+  // Rescale to 1:
+  if (m_Normalize == true && m_Histogram->GetMaximum() > 0) {
+    m_Histogram->Scale(1.0/m_Histogram->GetMaximum());
+  }
+  
   m_Histogram->Draw(m_DrawOptionString);
 
   SetCreated();

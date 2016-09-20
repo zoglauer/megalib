@@ -220,7 +220,9 @@ void MLMLClassicEM::Deconvolve()
 
   // Correct the image:
   for (unsigned int i = 0; i < m_NBins; i++) {
-    m_Lj[i] *= m_Ej[i]/m_Sj[i];
+    if (m_Sj[i] != 0) {
+      m_Lj[i] *= m_Ej[i]/m_Sj[i];
+    }
   }
 
 //   // Now deconvolve the background scaling factor: 

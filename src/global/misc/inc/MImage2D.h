@@ -42,7 +42,7 @@ class MImage2D : public MImage
   MImage2D(MString Title, double* IA, 
            MString xTitle, double xMin, double xMax, int xNBins, 
            MString yTitle, double yMin, double yMax, int yNBins, 
-           int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+           MString vTitle, int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage2D();
 
@@ -54,11 +54,9 @@ class MImage2D : public MImage
 
   //! Set the y-Axis attributes
   virtual void SetYAxis(MString yTitle, double yMin, double yMax, int yNBins);
-  //! Set the z-Axis title
-  virtual void SetZAxisTitle(MString zTitle) { m_zTitle = zTitle; }
 
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = nullptr);
 
   //! Get the dimensions of the histogram
   virtual unsigned int GetDimensions() const { return 2; }
@@ -77,8 +75,8 @@ class MImage2D : public MImage
 
   // protected members:
  protected:
-  // - Title of the y axis
-  // - Alreday defined in the base class: MString m_yTitle;
+  // Title of the y axis
+  MString m_yTitle;
   //! Minimum y value
   double m_yMin;
   //! Maximum y value
@@ -86,8 +84,6 @@ class MImage2D : public MImage
   //! Number of y bins
   int m_yNBins;
 
-  //! Title of the z axis
-  MString m_zTitle;
 
   // private members:
  private:

@@ -96,6 +96,14 @@ double* MExposure::GetExposure()
   
   double* E = new double[m_NImageBins];
   copy(m_Exposure, m_Exposure+m_NImageBins, E);
+
+  // Normalize test wise to 1
+  double Sum = 0;
+  for (unsigned int i = 0; i < m_NImageBins; ++i) Sum += E[i];
+  if (Sum > 0) {
+    for (unsigned int i = 0; i < m_NImageBins; ++i) E[i] /= Sum;
+  }
+  
   
   return E; 
 }
@@ -107,6 +115,13 @@ double* MExposure::GetExposure()
 //! Set the efficiency file and switch to that mode
 bool MExposure::SetEfficiencyFile(MString EfficiencyFile)
 {
+  if (EfficiencyFile.EndsWith(".efficiency.90y.rsp") == false &&
+      EfficiencyFile.EndsWith(".efficiency.90y.rsp.gz") == false) {
+    cout<<"Error: File is not of type .efficiency.90y.rsp: \""<<EfficiencyFile<<"\""<<endl;
+    return false;
+  }
+      
+  
   m_Efficiency.Read(EfficiencyFile);
   m_Efficiency.Smooth(10);
   
@@ -142,6 +157,8 @@ bool MExposure::SetEfficiencyFile(MString EfficiencyFile)
 //! Create the exposure for one event
 bool MExposure::Expose(const MPhysicalEvent* Event)
 {
+  if (m_Mode == MExposureMode::Flat) return true;
+  
   if (m_LastTime == MTime(0)) {
     m_LastTime = Event->GetTime();
     m_LastRotation = Event->GetGalacticPointingRotationMatrix();

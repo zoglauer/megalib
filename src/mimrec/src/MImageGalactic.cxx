@@ -57,7 +57,6 @@ ClassImp(MImageGalactic)
 
 MImageGalactic::MImageGalactic() : MImage2D()
 {
-  m_zTitle = "Intensity [a.u.]";
 }
 
 
@@ -67,9 +66,9 @@ MImageGalactic::MImageGalactic() : MImage2D()
 MImageGalactic::MImageGalactic(MString Title, double* IA,
                                MString xTitle, double xMin, double xMax, int xNBins, 
                                MString yTitle, double yMin, double yMax, int yNBins, 
-                               int Spectrum, int DrawOption, MString SourceCatalog) :
+                               MString vTitle, int Spectrum, int DrawOption, MString SourceCatalog) :
   MImage2D(Title, IA, xTitle, xMin, xMax, xNBins, yTitle, yMin, 
-           yMax, yNBins, Spectrum, DrawOption), m_XAxis(0), m_SourceCatalog(SourceCatalog)
+           yMax, yNBins, vTitle, Spectrum, DrawOption), m_XAxis(0), m_SourceCatalog(SourceCatalog)
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -84,10 +83,9 @@ MImageGalactic::MImageGalactic(MString Title, double* IA,
   // yMin:       minimum y-value
   // yMax:       maximum y-value
   // yNBins:     number of bins in y
+  // vTitle:     title of the value axis
   // Spectrum:   spectrum
   // DrawOption: ROOT draw option
-
-  m_zTitle = "Intensity [a.u.]";
 }
 
 
@@ -111,9 +109,9 @@ MImage* MImageGalactic::Clone()
     new MImageGalactic(m_Title, m_IA, 
                        m_xTitle, m_xMin, m_xMax, m_xNBins, 
                        m_yTitle, m_yMin, m_yMax, m_yNBins, 
-                       m_Spectrum, m_DrawOption, m_SourceCatalog);
+                       m_vTitle, m_Spectrum, m_DrawOption, m_SourceCatalog);
 
-  m_zTitle = I->m_zTitle;
+  I->Normalize(m_Normalize);
     
   return I;
 }
@@ -172,9 +170,11 @@ void MImageGalactic::SetImageArray(double* IA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
+void MImageGalactic::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
+  
+  cout<<"Dispaly"<<endl;
   
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
@@ -211,7 +211,7 @@ void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
     Hist->GetYaxis()->SetTickLength(-0.02f);
     Hist->GetYaxis()->SetLabelOffset(0.02f);
     Hist->GetYaxis()->SetLabelSize(0.03f);
-    Hist->GetZaxis()->SetTitle(m_zTitle);
+    Hist->GetZaxis()->SetTitle(m_vTitle);
     Hist->GetZaxis()->SetTitleOffset(1.2f);
 
     if ((int(m_yMax) - int(m_yMin)) % 60 == 0) {
@@ -242,13 +242,15 @@ void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
   }
   
   // Rescale to 1:
-  if (Normalize == true && Hist->GetMaximum() > 0) {
+  if (m_Normalize == true && Hist->GetMaximum() > 0) {
     Hist->Scale(1.0/Hist->GetMaximum());
   }
 
   if (IsNew == true) {
     Hist->Draw(m_DrawOptionString);
 
+    cout<<"Galactic: Drawing reverted x-axis"<<endl;
+    
     // Redraw the new axis
     gPad->Update();
     m_XAxis = new TGaxis(gPad->GetUxmax(),
@@ -281,6 +283,7 @@ void MImageGalactic::Display(TCanvas* Canvas, bool Normalize)
     // Draw the new one
     m_XAxis->Draw();
   } else {
+    cout<<"Not new"<<endl;
     m_XAxis->Draw();
   }
   AddNamedSources();

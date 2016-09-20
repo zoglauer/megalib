@@ -39,7 +39,7 @@ class MImage3D : public MImage2D
            MString xTitle, double xMin, double xMax, int xNBins, 
            MString yTitle, double yMin, double yMax, int yNBins, 
            MString zTitle, double zMin, double zMax, int zNBins, 
-           int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
+           MString vTitle = "", int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImage3D();
 
@@ -53,7 +53,7 @@ class MImage3D : public MImage2D
   virtual void SetZAxis(MString zTitle, double zMin, double zMax, int zNBins);
 
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = 0);
+  virtual void Display(TCanvas* Canvas = nullptr);
   
   //! Get the dimensions of the histogram
   virtual unsigned int GetDimensions() const { return 3; }
@@ -78,8 +78,8 @@ class MImage3D : public MImage2D
 
   // private members:
  private:
-  // Title of the z axis
-  // Alreday defined in the base class: MString m_zTitle;
+  //! Title of the z axis
+  MString m_zTitle;
   //! Minimum z value
   double m_zMin;
   //! Maximum z value

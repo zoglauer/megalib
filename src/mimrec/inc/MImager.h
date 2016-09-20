@@ -114,11 +114,14 @@ class MImager
   //! Reset the stop criterion
   void ResetStopCriterion() { if (m_EM != 0) m_EM->ResetStopCriterion(); }
 
-  // All the rest:
+  // Exposure:
 
-  //! Set the exposure map
-  void SetExposure(MExposure* Exposure);
-  //! Set the pointsources which are cut out of the picture
+  //! Set the exposure mode efficiency file
+  bool SetExposureEfficiencyFile(MString FileName);
+
+  // All the rest:  
+  
+  //! Set the point sources which are cut out of the picture
   void SetDeselectedPointSources(TObjArray* DeselectedPS);
 
   //! Set the memory managment features
@@ -186,6 +189,11 @@ class MImager
 
 
   // protected methods:
+ protected:
+  //! Create an image
+  MImage* CreateImage(MString Title, double* Data);
+
+  // protected members:
  protected:
 
   // The image:
@@ -260,6 +268,12 @@ class MImager
   //! True if fast file parsing is enabled
   bool m_FastFileParsing;
 
+  // Exposure calculation
+  
+  //! The exposure calculator
+  MExposure* m_Exposure;
+  
+  
   // Deconvolution:
 
   //! The EM algorithm

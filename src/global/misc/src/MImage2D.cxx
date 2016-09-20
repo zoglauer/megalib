@@ -56,9 +56,9 @@ ClassImp(MImage2D)
 MImage2D::MImage2D() : MImage()
 {
   // Constructor initialising an empty image
-  // Caution: What happens when the data-array is empty??
 
-  Init();
+  // Initialization is mostly done in the MImage constructor
+  SetYAxis("y-Axis", 0, 1, 1);
 }
 
 
@@ -68,8 +68,8 @@ MImage2D::MImage2D() : MImage()
 MImage2D::MImage2D(MString Title, double* IA, 
                    MString xTitle, double xMin, double xMax, int xNBins, 
                    MString yTitle, double yMin, double yMax, int yNBins, 
-                   int Spectrum, int DrawOption) :
-  MImage(Title, IA, xTitle, xMin, xMax, xNBins, Spectrum, DrawOption)
+                   MString vTitle, int Spectrum, int DrawOption) :
+  MImage(Title, IA, xTitle, xMin, xMax, xNBins, vTitle, Spectrum, DrawOption)
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -114,9 +114,9 @@ MImage* MImage2D::Clone()
     new MImage2D(m_Title, m_IA, 
                  m_xTitle, m_xMin, m_xMax, m_xNBins, 
                  m_yTitle, m_yMin, m_yMax, m_yNBins, 
-                 m_Spectrum, m_DrawOption);
+                 m_vTitle, m_Spectrum, m_DrawOption);
 
-  m_zTitle = I->m_zTitle;
+  I->Normalize(m_Normalize);
 
   return I;
 }
@@ -182,7 +182,7 @@ void MImage2D::SetYAxis(MString yTitle, double yMin, double yMax, int yNBins)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImage2D::Display(TCanvas *Canvas)
+void MImage2D::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
@@ -214,6 +214,7 @@ void MImage2D::Display(TCanvas *Canvas)
     //Hist->SetDirectory(0);
     Hist->SetXTitle(m_xTitle);
     Hist->SetYTitle(m_yTitle);
+    Hist->SetZTitle(m_vTitle);
     Hist->SetFillColor(0);
 
     Hist->SetTitleOffset(1.2f, "X");
@@ -251,7 +252,12 @@ void MImage2D::Display(TCanvas *Canvas)
       }
     }
   }
-
+  
+  // Rescale to 1:
+  if (m_Normalize == true && Hist->GetMaximum() > 0) {
+    Hist->Scale(1.0/Hist->GetMaximum());
+  }
+  
   Hist->Draw(m_DrawOptionString);
 
   return;
