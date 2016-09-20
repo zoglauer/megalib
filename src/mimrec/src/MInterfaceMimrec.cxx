@@ -586,94 +586,21 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
     }
     
     // Initialize:
-    m_Imager = new MImager(m_Settings->GetCoordinateSystem(),
-                           m_Settings->GetNThreads());
+    m_Imager = new MImager(m_Settings->GetCoordinateSystem());
     m_Imager->SetGeometry(m_Geometry);
     
-    // Maths:
-    m_Imager->SetApproximatedMaths(m_Settings->GetApproximatedMaths());
-    
-    // Set the dimensions of the image
-    if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
-      m_Imager->SetViewport(m_Settings->GetPhiMin()*c_Rad, 
-                            m_Settings->GetPhiMax()*c_Rad, 
-                            m_Settings->GetBinsPhi(),
-                            m_Settings->GetThetaMin()*c_Rad,
-                            m_Settings->GetThetaMax()*c_Rad,
-                            m_Settings->GetBinsTheta(),
-                            c_FarAway/10, 
-                            c_FarAway, 
-                            1, 
-                            m_Settings->GetImageRotationXAxis(), 
-                            m_Settings->GetImageRotationZAxis());
-    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic) {
-      m_Imager->SetViewport(m_Settings->GetGalLongitudeMin()*c_Rad, 
-                            m_Settings->GetGalLongitudeMax()*c_Rad, 
-                            m_Settings->GetBinsGalLongitude(),
-                            (m_Settings->GetGalLatitudeMin()+90)*c_Rad,
-                            (m_Settings->GetGalLatitudeMax()+90)*c_Rad,
-                            m_Settings->GetBinsGalLatitude(),
-                            c_FarAway/10, 
-                            c_FarAway, 
-                            1);
-    } else if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
-               m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D){
-      m_Imager->SetViewport(m_Settings->GetXMin(), 
-                            m_Settings->GetXMax(), 
-                            m_Settings->GetBinsX(),
-                            m_Settings->GetYMin(), 
-                            m_Settings->GetYMax(), 
-                            m_Settings->GetBinsY(),
-                            m_Settings->GetZMin(), 
-                            m_Settings->GetZMax(), 
-                            m_Settings->GetBinsZ());
-    } else {
-      merr<<"Unknown coordinate system ID: "<<m_Settings->GetCoordinateSystem()<<fatal;
+    if (m_Imager->SetImagingSettings(m_Settings) == false) {
+      mgui<<"Unable to set all imaging settings"<<error;
+      return;
     }
-    
-    // Set the draw modes
-    m_Imager->SetDrawMode(m_Settings->GetImageDrawMode());
-    m_Imager->SetPalette(m_Settings->GetImagePalette());
-    m_Imager->SetSourceCatalog(m_Settings->GetImageSourceCatalog());
-    
+ 
+    // Animations are OFF by default when set via SetImageSettings
     if (Animate == true) {
       m_Imager->SetAnimationMode(m_Settings->GetAnimationMode());
       m_Imager->SetAnimationFrameTime(m_Settings->GetAnimationFrameTime());
       m_Imager->SetAnimationFileName(m_Settings->GetAnimationFileName());
-    } else {
-     m_Imager->SetAnimationMode(MImager::c_AnimateNothing); 
     }
 
-    // Set the response type:
-    if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
-      m_Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
-                                    m_Settings->GetFitParameterComptonLongSphere(),
-                                    m_Settings->GetFitParameterPair(),
-                                    m_Settings->GetGauss1DCutOff(),
-                                    m_Settings->GetUseAbsorptions());
-    } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
-      m_Imager->SetResponseGaussianByUncertainties(m_Settings->GetGaussianByUncertaintiesIncrease());
-    } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
-      m_Imager->SetResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
-                                         m_Settings->GetFitParameterComptonLongSphere());     
-    } else if (m_Settings->GetResponseType() == MResponseType::ConeShapes) {
-      if (m_Imager->SetResponseConeShapes(m_Settings->GetImagingResponseConeShapesFileName()) == false) {
-        mgui<<"Cannot set cone-shapes response! Aborting imaging!"<<error;
-        return;
-      }     
-    } else if (m_Settings->GetResponseType() == MResponseType::PRM) {
-      if (m_Imager->SetResponsePRM(m_Settings->GetImagingResponseComptonTransversalFileName(),
-                                   m_Settings->GetImagingResponseComptonLongitudinalFileName(),
-                                   m_Settings->GetImagingResponsePairRadialFileName()) == false) {
-        mgui<<"Cannot set PRM response! Aborting imaging!"<<error;
-        return;
-      }
-    } else {
-      merr<<"Unknown response type: "<<m_Settings->GetResponseType()<<show;
-      return;
-    }
-    m_Imager->UseAbsorptions(m_Settings->GetUseAbsorptions());
-  
     // The tra file name
     if (m_Imager->SetFileName(m_Settings->GetCurrentFileName(), m_Settings->GetFastFileParsing()) == false) {
       return;
@@ -684,30 +611,9 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
     S.SetSettings(m_Settings);
     S.SetGeometry(m_Geometry);
     m_Imager->SetEventSelector(S);
-
-    // Memory management... needs clean up...
-    m_Imager->SetMemoryManagment(m_Settings->GetRAM(),
-                                 m_Settings->GetSwap(),
-                                 m_Settings->GetMemoryExhausted(),
-                                 m_Settings->GetBytes());
   }
 
   if (JustShowImage == false) {
-    if (m_Settings->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
-      m_Imager->SetDeconvolutionAlgorithmClassicEM();
-    } else if (m_Settings->GetLHAlgorithm() == MLMLAlgorithms::c_OSEM) {
-      m_Imager->SetDeconvolutionAlgorithmOSEM(m_Settings->GetOSEMSubSets());
-    } else {
-      merr<<"Unknown deconvolution algorithm. Using classic EM."<<error;
-      m_Imager->SetDeconvolutionAlgorithmClassicEM();
-    }
-
-    if (m_Settings->GetLHStopCriteria() == 0) {
-      m_Imager->SetStopCriterionByIterations(m_Settings->GetNIterations());
-    } else {
-      merr<<"Unknown stop criterion. Stopping after 0 iterations."<<error;
-      m_Imager->SetStopCriterionByIterations(0);
-    }
 
     // Analyze... do the reconstruction
     m_Imager->Analyze(!JustDeconvolve);
@@ -2603,6 +2509,7 @@ void MInterfaceMimrec::SignificanceMap()
                                YMin, 
                                YMax, 
                                NBinsYAngle, 
+                               "Significance",
                                m_Settings->GetImagePalette(), 
                                m_Settings->GetImageDrawMode(),
                                m_Settings->GetImageSourceCatalog());
@@ -5017,7 +4924,7 @@ void MInterfaceMimrec::LocationOfFirstIA()
   MImage2D* Image = 
     new MImage2D("Location of Second Interaction", Array,
                  "x [m]", x1Min, x1Max, x1NBins,
-                 "y [m]", x2Min, x2Max, x2NBins);
+                 "y [m]", x2Min, x2Max, x2NBins, "counts");
 
   Image->Display();
 
@@ -5974,9 +5881,8 @@ void MInterfaceMimrec::CreateExposureMap()
   MImageGalactic* Galactic = 
     new MImageGalactic("Exposure in Galactic coordinates", ExposureImage, 
                        "Longitude [deg]", m_Settings->GetGalLongitudeMin(), m_Settings->GetGalLongitudeMax(), m_Settings->GetBinsGalLongitude(),
-                       "Latitude [deg]", m_Settings->GetGalLatitudeMin(), m_Settings->GetGalLatitudeMax(), m_Settings->GetBinsGalLatitude());
-  Galactic->SetZAxisTitle("Exposure [cm^{2} s]");
-  Galactic->Display(nullptr, false);
+                       "Latitude [deg]", m_Settings->GetGalLatitudeMin(), m_Settings->GetGalLatitudeMax(), m_Settings->GetBinsGalLatitude(), "Exposure [cm^{2} s]");
+  Galactic->Display(nullptr);
 
   delete [] ExposureImage;
   

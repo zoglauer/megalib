@@ -82,8 +82,8 @@ void MGUIExposure::Create()
 
   m_FileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
   m_FileSelector = new MGUIEFileSelector(this, "Choose a file (assume flat exposure, if the box is empty):");
-  m_FileSelector->SetFileType("Response file", "*.rsp");
-  m_FileSelector->SetFileType("Gzip'ed response file", "*.rsp.gz");
+  m_FileSelector->SetFileType("Response file", "*.efficiency.90y.rsp");
+  m_FileSelector->SetFileType("Gzip'ed response file", "*.efficiency.90y.rsp.gz");
   
   if (m_Settings->GetExposureMode() == MExposureMode::CalculateFromEfficiency) {
     m_FileSelector->SetFileName(m_Settings->GetExposureEfficiencyFile());

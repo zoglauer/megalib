@@ -230,13 +230,12 @@ void MLMLAlgorithms::SetExposure(MExposure* Exposure)
 {
   // Set the sensitivity
 
-  massert(Exposure != 0);
+  massert(Exposure != nullptr);
 
   m_Exposure = Exposure;
 
   if (m_Sj != 0) delete [] m_Sj;
-
-  //m_Sj = m_Sensitivity->GetSensitivity(m_BPStorage);
+  m_Sj = Exposure->GetExposure(); // Array must be deleted here 
 }
 
 
@@ -247,7 +246,7 @@ void MLMLAlgorithms::SetBackground(MBackground *Background)
 {
   // Set the background model
 
-  massert(Background != 0);
+  massert(Background != nullptr);
 
   m_Background = Background;
 

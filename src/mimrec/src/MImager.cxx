@@ -131,7 +131,9 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
     m_ThreadIsFinished.push_back(false);
   }
 
-  m_EM = 0;
+  m_Exposure = new MExposure();
+  
+  m_EM = nullptr;
   
   m_UseAbsorptions = false;
 
@@ -172,6 +174,7 @@ MImager::~MImager()
   }
 
   delete m_EM;
+  delete m_Exposure;
 }
 
 
@@ -301,6 +304,13 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   }
   UseAbsorptions(Settings->GetUseAbsorptions());
 
+  // Exposure
+  if (Settings->GetExposureMode() == MExposureMode::CalculateFromEfficiency) {
+    if (SetExposureEfficiencyFile(Settings->GetExposureEfficiencyFile()) == false) {
+      return false; 
+    }
+  }
+  
   // Memory management... 
   SetMemoryManagment(Settings->GetRAM(),
                      Settings->GetSwap(),
@@ -380,6 +390,12 @@ void MImager::SetViewport(double x1Min, double x1Max, int x1NBins,
   } else { 
     m_TwoDAxis = 2;
   }
+  
+  // Set the viewport also for the exposure calculation
+  m_Exposure->SetDimensions(x1Min, x1Max, x1NBins, 
+                            x2Min, x2Max, x2NBins, 
+                            x3Min, x3Max, x3NBins,
+                            xAxis, zAxis);
 }
 
 
@@ -426,6 +442,17 @@ void MImager::SetResponseGaussianByUncertainties(const double Increase)
 
     m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MImager::SetExposureEfficiencyFile(MString FileName)
+{
+  // Set the exposure mode efficiency file
+  
+  return m_Exposure->SetEfficiencyFile(FileName);
 }
 
 
@@ -509,19 +536,6 @@ bool MImager::SetResponsePRM(const MString& ComptonTrans,
   }
 
   return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MImager::SetExposure(MExposure* Exposure)
-{
-  // Set the sensitivity matrix
-
-//   for (unsigned int t= 0; t < m_NThreads; ++t) {
-//     m_BPs[t]->SetExposure(Exposure);
-//   }
 }
 
 
@@ -673,6 +687,116 @@ int MImager::GetNImageBins()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MImage* MImager::CreateImage(MString Title, double* Data)
+{
+  //! Create an image
+
+  MImage* Image = nullptr;
+  
+   // Display first backprojection for the three different coordinate systems:
+  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
+    Image = new MImageSpheric(Title, 
+                              Data,
+                              "Phi [deg]", 
+                              m_x1Min*c_Deg,
+                              m_x1Max*c_Deg, 
+                              m_x1NBins,
+                              "Theta [deg]", 
+                              m_x2Min*c_Deg, 
+                              m_x2Max*c_Deg, 
+                              m_x2NBins,
+                              "Intensity [a.u.]",
+                              m_Palette, 
+                              m_DrawMode);
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
+    Image = new MImageGalactic(Title, 
+                               Data, 
+                               "Galactic Longitude [deg]", 
+                               m_x1Min*c_Deg,
+                               m_x1Max*c_Deg, 
+                               m_x1NBins,
+                               "Galactic Latitude [deg]", 
+                               m_x2Min*c_Deg-90, 
+                               m_x2Max*c_Deg-90, 
+                               m_x2NBins, 
+                               "Intensity [a.u.]",
+                               m_Palette, 
+                               m_DrawMode,
+                               m_SourceCatalog);
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
+    if (m_TwoDAxis == 0) {
+      Image = new MImage2D(Title,
+                           Data,
+                           "y [cm]",
+                           m_x2Min, 
+                           m_x2Max, 
+                           m_x2NBins,
+                           "z [cm]",
+                           m_x3Min, 
+                           m_x3Max, 
+                           m_x3NBins, 
+                           "Intensity [a.u.]",
+                           m_Palette, 
+                           m_DrawMode);
+    } else if (m_TwoDAxis == 1) {
+      Image = new MImage2D(Title,
+                           Data,
+                           "x [cm]",
+                           m_x1Min, 
+                           m_x1Max, 
+                           m_x1NBins,
+                           "z [cm]",
+                           m_x3Min, 
+                           m_x3Max, 
+                           m_x3NBins, 
+                           "Intensity [a.u.]",
+                           m_Palette, 
+                           m_DrawMode);
+      
+    } else {
+      Image = new MImage2D(Title,
+                           Data,
+                           "x [cm]",
+                           m_x1Min, 
+                           m_x1Max, 
+                           m_x1NBins,
+                           "y [cm]",
+                           m_x2Min, 
+                           m_x2Max, 
+                           m_x2NBins, 
+                           "Intensity [a.u.]",
+                           m_Palette, 
+                           m_DrawMode);
+    }
+  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
+    Image = new MImage3D(Title,
+                         Data,
+                         "x [cm]",
+                         m_x1Min, 
+                         m_x1Max, 
+                         m_x1NBins,
+                         "y [cm]",
+                         m_x2Min, 
+                         m_x2Max, 
+                         m_x2NBins,
+                         "z [cm]",
+                         m_x3Min, 
+                         m_x3Max, 
+                         m_x3NBins, 
+                         "Intensity [a.u.]",
+                         m_Palette, 
+                         m_DrawMode);
+  } else {
+    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
+  } 
+  
+  return Image;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MImager::Analyze(bool CalculateResponse)
 {
   // Do the imaging
@@ -728,104 +852,29 @@ bool MImager::Analyze(bool CalculateResponse)
   
   // Set the response to the EM algorithm 
   m_EM->SetResponseSlices(m_BPEvents, m_NBins);
-  
-  // Image display
-  MImage* Image = 0;
-  
-  // Display first backprojection for the three different coordinate systems:
-  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
-    Image = new MImageSpheric("Image - Iteration: 0", 
-                              m_EM->GetInitialImage(),
-                              "Phi [deg]", 
-                              m_x1Min*c_Deg,
-                              m_x1Max*c_Deg, 
-                              m_x1NBins,
-                              "Theta [deg]", 
-                              m_x2Min*c_Deg, 
-                              m_x2Max*c_Deg, 
-                              m_x2NBins, 
-                              m_Palette, 
-                              m_DrawMode,
-                              m_SourceCatalog);
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
-    Image = new MImageGalactic("Image - Iteration: 0", 
-                               m_EM->GetInitialImage(), 
-                               "Galactic Longitude [deg]", 
-                               m_x1Min*c_Deg,
-                               m_x1Max*c_Deg, 
-                               m_x1NBins,
-                               "Galactic Latitude [deg]", 
-                               m_x2Min*c_Deg-90, 
-                               m_x2Max*c_Deg-90, 
-                               m_x2NBins, 
-                               m_Palette, 
-                               m_DrawMode,
-                               m_SourceCatalog);
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
-    if (m_TwoDAxis == 0) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
 
-    } else if (m_TwoDAxis == 1) {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "z [cm]",
-                           m_x3Min, 
-                           m_x3Max, 
-                           m_x3NBins, 
-                           m_Palette, 
-                           m_DrawMode);
-      
-    } else {
-      Image = new MImage2D("Image - Iteration: 0",
-                           m_EM->GetInitialImage(),
-                           "x [cm]",
-                           m_x1Min, 
-                           m_x1Max, 
-                           m_x1NBins,
-                           "y [cm]",
-                           m_x2Min, 
-                           m_x2Max, 
-                           m_x2NBins, 
-                           m_Palette, 
-                           m_DrawMode);
+  // Set the exposure
+  m_EM->SetExposure(m_Exposure);
+
+  if (m_Exposure->GetMode() != MExposureMode::Flat) {
+    // Display the exposure map
+    double* Map = m_Exposure->GetExposure();
+    MImage* ExposureMap = CreateImage("Exposure Map", Map);
+    delete [] Map;
+    if (ExposureMap == nullptr) {
+      // Error message already displayed
+      return false; 
     }
-
-  } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian3D) {
-    Image = new MImage3D("Image - Iteration: 0",
-                         m_EM->GetInitialImage(),
-                         "x [cm]",
-                         m_x1Min, 
-                         m_x1Max, 
-                         m_x1NBins,
-                         "y [cm]",
-                         m_x2Min, 
-                         m_x2Max, 
-                         m_x2NBins,
-                         "z [cm]",
-                         m_x3Min, 
-                         m_x3Max, 
-                         m_x3NBins, 
-                         m_Palette, 
-                         m_DrawMode);
-  } else {
-    merr<<"Unknown coordinate system ID: "<<m_CoordinateSystem<<fatal;
-    return false;
+    ExposureMap->Display();
   }
+  
+  // Display the initial image
+  MImage* Image = CreateImage("Image - Iteration: 0", m_EM->GetInitialImage());
+  if (Image == nullptr) {
+    // Error message already displayed
+    return false; 
+  }
+  Image->Normalize(true);
   Image->Display();
 
   
@@ -1210,8 +1259,13 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
         }
         TThread::UnLock();
       }
+      
+      // Hack for not multi-threading...
+      if (ThreadID == 0) {
+        m_Exposure->Expose(Event); 
+      }
     }
-
+    
     //TThread::Lock();
     delete Event;
     //TThread::UnLock();

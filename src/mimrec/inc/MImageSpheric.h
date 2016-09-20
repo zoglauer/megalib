@@ -39,8 +39,7 @@ class MImageSpheric : public MImage2D
   MImageSpheric(MString Title, double *IA,
                 MString xTitle, double xMin, double xMax, int xNBins, 
                 MString yTitle, double yMin, double yMax, int yNBins, 
-                int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z,
-                MString SourceCatalog = "");
+                MString vTitle, int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z);
   //! Standard destructor
   virtual ~MImageSpheric();
 
@@ -48,14 +47,14 @@ class MImageSpheric : public MImage2D
   virtual MImage* Clone();
 
   //! Set the image array and redisplay it
-  virtual void SetImageArray(double*);
+  virtual void SetImageArray(double* Array);
 
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = nullptr, bool Normalize = true);
+  virtual void Display(TCanvas* Canvas = nullptr);
  
   // protected methods:
  protected:
-  void AddNamedSources();
+
 
   // private methods:
  private:
@@ -70,7 +69,6 @@ class MImageSpheric : public MImage2D
   //! The new y axis
   TGaxis* m_YAxis;
 
-  MString m_SourceCatalog;
 
 #ifdef ___CINT___
  public:

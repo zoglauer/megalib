@@ -41,6 +41,9 @@ class MExposure : public MViewPort
   //! Default destructor
   virtual ~MExposure();
 
+  //! Get the current exposure mode
+  MExposureMode GetMode() { return m_Mode; }
+  
   //! Set the efficiency file and switch to that mode
   bool SetEfficiencyFile(MString EfficiencyFile);
   

@@ -66,9 +66,9 @@ MImageSpheric::MImageSpheric() : MImage2D()
 MImageSpheric::MImageSpheric(MString Title, double* IA, 
                              MString xTitle, double xMin, double xMax, int xNBins, 
                              MString yTitle, double yMin, double yMax, int yNBins, 
-                             int Spectrum, int DrawOption, MString SourceCatalog) :
+                             MString vTitle, int Spectrum, int DrawOption) :
   MImage2D(Title, IA, xTitle, xMin, xMax, xNBins, yTitle, yMin, 
-           yMax, yNBins, Spectrum, DrawOption), m_YAxis(0), m_SourceCatalog(SourceCatalog)
+           yMax, yNBins, vTitle, Spectrum, DrawOption), m_YAxis(0)
 {
   // Construct an image but do not display it, i.e. save only the data
   // 
@@ -83,6 +83,7 @@ MImageSpheric::MImageSpheric(MString Title, double* IA,
   // yMin:       minimum y-value
   // yMax:       maximum y-value
   // yNBins:     number of bins in y
+  // vTitle:     title of the value axis
   // Spectrum:   spectrum
   // DrawOption: ROOT draw option
 }
@@ -108,7 +109,9 @@ MImage* MImageSpheric::Clone()
     new MImageSpheric(m_Title, m_IA, 
                       m_xTitle, m_xMin, m_xMax, m_xNBins, 
                       m_yTitle, m_yMin, m_yMax, m_yNBins, 
-                      m_Spectrum, m_DrawOption, m_SourceCatalog);
+                      m_vTitle, m_Spectrum, m_DrawOption);
+    
+  I->Normalize(m_Normalize);
 
   return I;
 }
@@ -162,7 +165,7 @@ void MImageSpheric::SetImageArray(double* IA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImageSpheric::Display(TCanvas* Canvas, bool Normalize)
+void MImageSpheric::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
 
@@ -198,6 +201,8 @@ void MImageSpheric::Display(TCanvas* Canvas, bool Normalize)
     Hist->GetXaxis()->SetTitle(m_xTitle);
     Hist->GetXaxis()->CenterTitle();
 
+    Hist->SetZTitle(m_vTitle);
+    
     IsNew = true;
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
@@ -222,7 +227,7 @@ void MImageSpheric::Display(TCanvas* Canvas, bool Normalize)
   }
   
   // Rescale to 1:
-  if (Normalize == true && Hist->GetMaximum() > 0) {
+  if (m_Normalize == true && Hist->GetMaximum() > 0) {
     Hist->Scale(1.0/Hist->GetMaximum());
   }
 
@@ -270,102 +275,12 @@ void MImageSpheric::Display(TCanvas* Canvas, bool Normalize)
   } else {
     m_YAxis->Draw();
   }
-  //AddNamedSources();
+
   m_Canvas->Update();
 
   return;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MImageSpheric::AddNamedSources()
-{
-  if (m_SourceCatalog == "") return;
-
-  MPointSourceSelector PSS;
-  if (PSS.Open(m_SourceCatalog) == false) {
-    mout<<"Error: Unable to open source catalog: "<<m_SourceCatalog<<show;
-  }
-
-  if (PSS.GetNPointSources() == 0) {
-    mout<<"Error: No sources in source catalog."<<show;
-    return;
-  }
-
-
-  // Test a pointsource:
-  double L = 184.56, B = -5.78;
-
-  double xT, yT;
-  unsigned int i;
-
-  double Distance = 0.5;
-  double Shadow = 0.0325;
-
-  for (i = 0; i < PSS.GetNPointSources(); i++) {
-    L = PSS.GetPointSourceAt(i).GetLongitude();
-    B = PSS.GetPointSourceAt(i).GetLatitude();
-    //cout<<m_xMin<<":"<<L<<":"<<m_xMax<<endl;
-    //cout<<m_yMin<<":"<<B<<":"<<m_yMax<<endl;
-    //cout<<PSS.GetPointSourceAt(i)<<endl;
-    if (L >= m_xMin && L <= m_xMax && B >= m_yMin && B <= m_yMax) {
-      //xT = ((L-m_xMin)/(m_xMax-m_xMin))*0.8+0.095;
-      //yT = ((B-m_yMin)/(m_yMax-m_yMin))*0.8+0.1;
-      //xT = (m_xMax+m_xMin) - L;
-      //yT = B;
-      xT = L;
-      yT = (m_yMax+m_yMin)-B;
-
-      //t->SetNDC(false);
-      TText* WhiteLowRight = new TText();
-      //WhiteLowRight->SetTextFont(32);
-      WhiteLowRight->SetTextColor(0);
-      WhiteLowRight->SetTextSize(0.025f);
-      WhiteLowRight->SetTextAlign(12);
-      WhiteLowRight->DrawText(xT + Distance + Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
-
-      TText* WhiteLowLeft = new TText();
-      //WhiteLowLeft->SetTextFont(32);
-      WhiteLowLeft->SetTextColor(0);
-      WhiteLowLeft->SetTextSize(0.025f);
-      WhiteLowLeft->SetTextAlign(12);
-      WhiteLowLeft->DrawText(xT + Distance - Shadow, yT + Distance - Shadow, PSS.GetPointSourceAt(i).GetName());
-
-      TText* WhiteHighLeft = new TText();
-      //WhiteHighLeft->SetTextFont(32);
-      WhiteHighLeft->SetTextColor(0);
-      WhiteHighLeft->SetTextSize(0.025f);
-      WhiteHighLeft->SetTextAlign(12);
-      WhiteHighLeft->DrawText(xT + Distance - Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
-
-      TText* WhiteHighRight = new TText();
-      //WhiteHighRight->SetTextFont(32);
-      WhiteHighRight->SetTextColor(0);
-      WhiteHighRight->SetTextSize(0.025f);
-      WhiteHighRight->SetTextAlign(12);
-      WhiteHighRight->DrawText(xT + Distance + Shadow, yT + Distance + Shadow, PSS.GetPointSourceAt(i).GetName());
-
-      TText* Black = new TText();
-      //Black->SetTextFont(32);
-      Black->SetTextColor(1);
-      Black->SetTextSize(0.025f);
-      Black->SetTextAlign(12);
-      Black->DrawText(xT + Distance, yT + Distance, PSS.GetPointSourceAt(i).GetName());
-
-
-      TMarker* MarkerWhite = new TMarker(xT, yT, 4);
-      MarkerWhite->SetMarkerSize(1.35f);
-      MarkerWhite->SetMarkerColor(0);
-      MarkerWhite->Draw();
-
-      TMarker* MarkerBlack = new TMarker(xT, yT, 2);
-      MarkerBlack->Draw();
-    }
-  }
-
-}
 
 // MImageSpheric.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

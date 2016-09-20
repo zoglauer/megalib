@@ -39,7 +39,7 @@ class MImageGalactic : public MImage2D
   MImageGalactic(MString Title, double* Array,
                  MString xTitle, double xMin, double xMax, int xNBins, 
                  MString yTitle, double yMin, double yMax, int yNBins, 
-                 int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z,
+                 MString vTitle, int Spectrum = c_Rainbow, int DrawOption = c_COLCONT4Z,
                  MString SourceCatalog = "");
   //! Standard destructor
   virtual ~MImageGalactic();
@@ -51,7 +51,7 @@ class MImageGalactic : public MImage2D
   virtual void SetImageArray(double* Array);
 
   //! Display the histogram in the given canvas
-  virtual void Display(TCanvas* Canvas = nullptr, bool Normalize = true);
+  virtual void Display(TCanvas* Canvas = nullptr);
  
   // protected methods:
  protected:
