@@ -257,6 +257,8 @@ void MRotationInterface::SetGalacticPointingXAxis(const double Longitude, const 
   // Left handedness is applied via y-axis
 
   m_HasGalacticPointing = true;
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
   m_GalacticPointingXAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
 }
 
@@ -270,6 +272,8 @@ void MRotationInterface::SetGalacticPointingZAxis(const double Longitude, const 
   // Left handedness is applied via y-axis
 
   m_HasGalacticPointing = true;
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
   m_GalacticPointingZAxis.SetMagThetaPhi(1.0, (90+Latitude)*c_Rad, Longitude*c_Rad);
 }
 
@@ -387,10 +391,12 @@ MRotation MRotationInterface::GetDetectorInverseRotationMatrix() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRotation MRotationInterface::GetGalacticPointingRotationMatrix() const
+MRotation MRotationInterface::GetGalacticPointingRotationMatrix()
 {
   // Return the rotation matrix of this event
 
+  if (m_IsGalacticPointingRotationCalculated == true) return m_GalacticPointingRotation;
+  
   // Verify that x and z axis are at right angle:
   if (fabs(m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis) - c_Pi/2.0)*c_Deg > 0.1) {
     cout<<"Event "<<m_Id<<": GalacticPointing axes are not at right angle, but: "<<m_GalacticPointingXAxis.Angle(m_GalacticPointingZAxis)*c_Deg<<" deg"<<endl;
@@ -404,9 +410,28 @@ MRotation MRotationInterface::GetGalacticPointingRotationMatrix() const
     m_GalacticPointingYAxis *= -1;
   }
 
-  return MRotation(m_GalacticPointingXAxis.X(), m_GalacticPointingYAxis.X(), m_GalacticPointingZAxis.X(),
-                   m_GalacticPointingXAxis.Y(), m_GalacticPointingYAxis.Y(), m_GalacticPointingZAxis.Y(),
-                   m_GalacticPointingXAxis.Z(), m_GalacticPointingYAxis.Z(), m_GalacticPointingZAxis.Z());
+  m_GalacticPointingRotation.Set(m_GalacticPointingXAxis.X(), m_GalacticPointingYAxis.X(), m_GalacticPointingZAxis.X(),
+                                 m_GalacticPointingXAxis.Y(), m_GalacticPointingYAxis.Y(), m_GalacticPointingZAxis.Y(),
+                                 m_GalacticPointingXAxis.Z(), m_GalacticPointingYAxis.Z(), m_GalacticPointingZAxis.Z());
+  m_IsGalacticPointingRotationCalculated = true;
+  
+  return m_GalacticPointingRotation;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MRotation MRotationInterface::GetGalacticPointingInverseRotationMatrix()
+{
+  // Return the rotation matrix of this event
+
+  if (m_IsGalacticPointingInverseRotationCalculated == true) return m_GalacticPointingInverseRotation;
+
+  m_GalacticPointingInverseRotation = GetGalacticPointingRotationMatrix().GetInvers();
+  m_IsGalacticPointingInverseRotationCalculated = true;
+    
+  return m_GalacticPointingInverseRotation;
 }
 
 

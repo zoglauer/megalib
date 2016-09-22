@@ -461,7 +461,7 @@ double MComptonEvent::GetRandomPhi(const double Ei)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) const
+double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) 
 {
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-apex with the 
@@ -473,7 +473,7 @@ double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSyst
   // Rotate/translate the position into event coordinates
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorInverseRotationMatrix()*RotPosition;
-  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
 
   return (m_C1 - m_C2).Angle(RotPosition - m_C1) - m_Phi;
 }
@@ -482,7 +482,7 @@ double MComptonEvent::GetARMGamma(const MVector& Position, const MCoordinateSyst
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateSystem& CS) const
+double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateSystem& CS) 
 {
   // The ARM value for the recoil electron is the minimum angle between 
   // the elctron-cone-surface and the line connecting the cone-apex with the 
@@ -491,7 +491,7 @@ double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateS
   // Rotate the position into event coordinates
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
   
   return (-m_De).Angle(RotPosition - m_C1) - m_Epsilon;
 }
@@ -500,7 +500,7 @@ double MComptonEvent::GetARMElectron(const MVector& Position, const MCoordinateS
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS) const
+double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateSystem& CS)
 {
   // The SPD value for the recoil electron is the minimum angle between 
   // the electron-cone-surface and the line connecting the cone-apex with the 
@@ -509,7 +509,7 @@ double MComptonEvent::GetSPDElectron(const MVector& Position, const MCoordinateS
   // Rotate the position into event coordinates
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
 
   return ((m_C1 - m_C2).Cross(RotPosition - m_C1)).Angle((m_C1 - m_C2).Cross(m_Di));
 }

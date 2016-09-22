@@ -94,7 +94,7 @@ class MPairEvent : public MPhysicalEvent
   MString ToBasicString();
 
   bool MostProbableDirectionIncomingGamma();
-  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D) const;
+  double GetARMGamma(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
 
 
   // protected methods:
