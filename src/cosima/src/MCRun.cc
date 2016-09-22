@@ -713,6 +713,15 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
           if (m_SourceList[so]->GetName() == NextSource->GetSuccessor()) {
             NextSource = m_SourceList[so];
             HasSuccessor = true;
+            if (NextSource->GetBeamType() == MCSource::c_NearFieldReverseDirectionToPredecessor) {
+               NextSource->SetPosition(ParticleGun->GetParticlePosition().getX(), 
+                                       ParticleGun->GetParticlePosition().getY(),
+                                       ParticleGun->GetParticlePosition().getZ(),
+                                       -ParticleGun->GetParticleMomentumDirection().getX(), 
+                                       -ParticleGun->GetParticleMomentumDirection().getY(),
+                                       -ParticleGun->GetParticleMomentumDirection().getZ());
+            }
+            
             break;
           }
         }

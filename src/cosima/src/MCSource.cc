@@ -101,6 +101,7 @@ const int MCSource::c_NearFieldIlluminatedDisk                     = 26;
 const int MCSource::c_NearFieldIlluminatedSquare                   = 27;
 const int MCSource::c_NearFieldVolume                              = 28;
 const int MCSource::c_NearFieldFlatMap                             = 29;
+const int MCSource::c_NearFieldReverseDirectionToPredecessor       = 30;
 
 
 const int MCSource::c_PolarizationNone                             =  1;
@@ -838,6 +839,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_NearFieldIlluminatedSquare:
   case c_NearFieldVolume:
   case c_NearFieldFlatMap:
+  case c_NearFieldReverseDirectionToPredecessor:
   case c_FarFieldPoint:
   case c_FarFieldArea:
   case c_FarFieldGaussian:
@@ -921,6 +923,9 @@ string MCSource::GetBeamTypeAsString() const
     break;
   case c_NearFieldFlatMap:
     Name = "Map";
+    break;
+  case c_NearFieldReverseDirectionToPredecessor:
+    Name = "ReverseDirectionToPredecessor";
     break;
   case c_FarFieldPoint:
     Name = "FarFieldPointSource";
@@ -2430,7 +2435,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_NearFieldDiffractionPoint ||
         m_BeamType == c_NearFieldDiffractionPointKSpace ||
         m_BeamType == c_NearFieldConeBeam ||
-        m_BeamType == c_NearFieldConeBeamGauss) {
+        m_BeamType == c_NearFieldConeBeamGauss ||
+        m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
       m_Position.set(m_PositionParam1, m_PositionParam2, m_PositionParam3);
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
       Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
@@ -2625,7 +2631,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction.setRThetaPhi(1.0, Theta, Phi);
       Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
-
+    
     else if (m_BeamType == c_NearFieldDiffractionPoint) {
       double Theta, Phi;
       // We cannot use m_PositionFunction2D.GetRandom() here since GetRandom assumes Cartesian coordinate system...
@@ -2673,7 +2679,8 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       
     else if  (m_BeamType == c_NearFieldBeam ||
               m_BeamType == c_NearFieldBeam1DProfile ||
-              m_BeamType == c_NearFieldBeam2DProfile) {
+              m_BeamType == c_NearFieldBeam2DProfile ||
+              m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
       m_Direction.setX(m_PositionParam4);
       m_Direction.setY(m_PositionParam5);
       m_Direction.setZ(m_PositionParam6);

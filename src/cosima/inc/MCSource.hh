@@ -387,6 +387,8 @@ public:
   /// Id of a 2D structure emitting particles in isotropically in 3D
   static const int c_NearFieldFlatMap;
 
+  /// The position is identical to the predecessor & the the momentum direction is opposite (e.g. for simulating annihilation) 
+  static const int c_NearFieldReverseDirectionToPredecessor;
   
   // --> Polarization modes
 
