@@ -917,7 +917,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Spectrum", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Spectrum", true) == true) {
         if (T->GetNTokens() >= 3) {
           // Begin different spectra
           MString Type = T->GetTokenAtAsString(2);
@@ -1136,8 +1139,11 @@ bool MCParameterFile::Parse()
                " Number of tokens must be larger than 3!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Beam", true) == true) {
-        if (T->GetNTokens() > 3) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Beam", true) == true) {
+        if (T->GetNTokens() >= 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
           if (Type == "farfieldpointsource" || Type == "farfieldpoint" || Type == "ffps") {
@@ -1844,6 +1850,10 @@ bool MCParameterFile::Parse()
           else if (Type == "activation" || Type == "act") {
             /// Only internally used!
           }
+          else if (Type == "reversedirectiontopredecessor") {
+            Source->SetBeamType(MCSource::c_NearField,
+                                MCSource::c_NearFieldReverseDirectionToPredecessor);
+          }
           else if (Type == "volume" || Type == "vol") {
             if (T->GetNTokens() == 4) {
               Source->SetBeamType(MCSource::c_NearField,
@@ -1868,10 +1878,13 @@ bool MCParameterFile::Parse()
           }
         } else {
           Typo(i, "Cannot parse token \"Beam\" correctly:"
-               " Number of tokens must be larger than 3!");
+               " Number of tokens must be larger or equal 3!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "ParticleType", true) == true) {
+      }
+      
+      
+      else if (T->IsTokenAt(1, "ParticleType", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetParticleType(T->GetTokenAtAsInt(2)) == true) {
             mdebug<<"Setting particle type "<<Source->GetParticleType()
@@ -1886,7 +1899,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Polarization", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Polarization", true) == true) {
         if (T->GetNTokens() >= 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
@@ -1959,7 +1975,10 @@ bool MCParameterFile::Parse()
           Typo(i, "Cannot parse token Polarization correctly: Number of tokens is too small!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "Successor", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "Successor", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetSuccessor(T->GetTokenAtAsString(2)) == true) {
             if (GetSource(T->GetTokenAtAsString(2)) != 0) {
@@ -1978,7 +1997,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "IsSuccessor", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "IsSuccessor", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetIsSuccessor(T->GetTokenAtAsBoolean(2)) == true) {
             mdebug<<"Setting is successor "<<Source->IsSuccessor()
@@ -1992,7 +2014,10 @@ bool MCParameterFile::Parse()
                " Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "LightCurve", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "LightCurve", true) == true) {
         if (T->GetNTokens() > 3) {
           MString Type = T->GetTokenAtAsString(2);
           Type.ToLower();
@@ -2027,7 +2052,10 @@ bool MCParameterFile::Parse()
           Typo(i, "Cannot parse token LightCurve - file correctly: Number of tokens is not correct!");
           return false;
         }
-      } else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
+      } 
+      
+      
+      else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetTotalEnergyFlux(T->GetTokenAtAsDouble(2)*keV/cm/cm) == true) {
             mdebug<<"Setting total energy flux "<<T->GetTokenAtAsDouble(2)
@@ -2610,6 +2638,26 @@ bool MCParameterFile::Parse()
       if (Sources.size() == 0) {
         mout<<"The run "<<m_RunList[r].GetName()<<" contains no sources!"<<endl;
         return false;
+      }
+    }
+  }
+  
+  // If the source beam is of type: c_NearFieldReverseDirectionToPredecessor then make sure we have a predecessor
+  for (unsigned int r = 0; r < m_RunList.size(); ++r) {
+    vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
+    for (unsigned int so = 0; so < Sources.size(); ++so) {
+      if (Sources[so]->GetBeamType() == MCSource::c_NearFieldReverseDirectionToPredecessor) {
+        bool Found = false;
+        for (unsigned int so2 = 0; so2 < Sources.size(); ++so2) {
+          if (Sources[so]->GetName() == Sources[so2]->GetSuccessor()) {
+            Found = true;
+            break;
+          }
+        }
+        if (Found == false) {
+          mout<<"The source "<<Sources[so]->GetName()<<" has a beam of type "<<Sources[so]->GetBeamTypeAsString()<<", but the source is not the successor of any other source!"<<endl;
+          return false;
+        }
       }
     }
   }
