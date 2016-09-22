@@ -65,8 +65,6 @@ MViewPort::MViewPort()
    
   m_XAxis.SetXYZ(1.0, 0.0, 0.0);
   m_ZAxis.SetXYZ(0.0, 0.0, 1.0);
-
-  m_Rotation.ResizeTo(3,3);
 }
 
 
@@ -162,6 +160,7 @@ bool MViewPort::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
   //cout<<"RotVector y: "<<m_RotationYAxis.X()<<"!"<<m_RotationYAxis.Y()<<"!"<<m_RotationYAxis.Z()<<endl;
   //cout<<"RotVector z: "<<m_RotationZAxis.X()<<"!"<<m_RotationZAxis.Y()<<"!"<<m_RotationZAxis.Z()<<endl;
 
+  /*
   m_Rotation(0,0) = xAxis.X();
   m_Rotation(1,0) = xAxis.Y();
   m_Rotation(2,0) = xAxis.Z();
@@ -171,6 +170,19 @@ bool MViewPort::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
   m_Rotation(0,2) = zAxis.X();
   m_Rotation(1,2) = zAxis.Y();
   m_Rotation(2,2) = zAxis.Z();
+  */
+
+  m_Rotation.SetXX(xAxis.X());
+  m_Rotation.SetXY(xAxis.Y());
+  m_Rotation.SetXZ(xAxis.Z());
+  m_Rotation.SetYX(yAxis.X());
+  m_Rotation.SetYY(yAxis.Y());
+  m_Rotation.SetYZ(yAxis.Z());
+  m_Rotation.SetZX(zAxis.X());
+  m_Rotation.SetZY(zAxis.Y());
+  m_Rotation.SetZZ(zAxis.Z());
+  
+  m_InvertedRotation = m_Rotation.GetInvers();
   
   return true;
 }

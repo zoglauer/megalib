@@ -68,6 +68,7 @@ LOBJS = $(LB)/MSettingsMimrec.o \
 	$(LB)/MResponsePRM.o \
 	$(LB)/MImageGalactic.o \
 	$(LB)/MImageSpheric.o \
+	$(LB)/MEfficiency.o \
 	$(LB)/MExposureMode.o \
 	$(LB)/MExposure.o \
 	$(LB)/MEarthHorizon.o \

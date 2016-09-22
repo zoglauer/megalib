@@ -73,8 +73,9 @@ MBackprojection::MBackprojection(MCoordinateSystem CoordinateSystem) : MProjecti
   // reconstruction - due to performance reasons, the correct setting is NOT,
   // not tested!
 
-  m_Response = 0;
-  m_Geometry = 0;
+  m_Response = nullptr;
+  m_Efficiency = nullptr;
+  m_Geometry = nullptr;
   m_UseAbsorptions = false;
 }
 
@@ -87,6 +88,7 @@ MBackprojection::~MBackprojection()
   // standard destructor
 
   delete m_Response;
+  // geometry and efficiency do not get deleted...
 }
 
 

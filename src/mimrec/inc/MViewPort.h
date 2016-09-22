@@ -22,6 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MRotation.h"
 
 // Forward declarations:
 
@@ -99,7 +100,10 @@ class MViewPort
   MVector m_ZAxis;
 
   //! The stored rotation matrix
-  TMatrix m_Rotation;
+  MRotation m_Rotation;
+
+  //! The stored inverted rotation matrix
+  MRotation m_InvertedRotation;
   
   
   // private members:

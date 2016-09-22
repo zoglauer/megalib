@@ -292,7 +292,8 @@ class MImager
   vector<bool> m_ThreadShouldFinish;
   //! Storing a flag that the thread is finished
   vector<bool> m_ThreadIsFinished;
-
+  //! The mutex of these thread
+  TMutex m_Mutex;
 
   // Memory management:
 

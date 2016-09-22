@@ -46,6 +46,7 @@ ClassImp(MExposure)
 MExposure::MExposure() : m_Mode(MExposureMode::Flat), m_LastTime(0),  m_NExposureUpdates(0)
 {
   m_Exposure = new double[1]; 
+  m_Efficiency = nullptr;
 }
 
 
@@ -54,6 +55,7 @@ MExposure::MExposure() : m_Mode(MExposureMode::Flat), m_LastTime(0),  m_NExposur
 
 MExposure::~MExposure()
 {
+  delete m_Efficiency;
   delete [] m_Exposure;
 }
 
@@ -92,7 +94,7 @@ double* MExposure::GetExposure()
 { 
   ApplyExposure();
   
-  cout<<"Exposure generates with "<<m_NExposureUpdates<<" updates"<<endl;
+  cout<<"Exposure generated with "<<m_NExposureUpdates<<" updates"<<endl;
   
   double* E = new double[m_NImageBins];
   copy(m_Exposure, m_Exposure+m_NImageBins, E);
@@ -104,7 +106,6 @@ double* MExposure::GetExposure()
     for (unsigned int i = 0; i < m_NImageBins; ++i) E[i] /= Sum;
   }
   
-  
   return E; 
 }
 
@@ -115,35 +116,9 @@ double* MExposure::GetExposure()
 //! Set the efficiency file and switch to that mode
 bool MExposure::SetEfficiencyFile(MString EfficiencyFile)
 {
-  if (EfficiencyFile.EndsWith(".efficiency.90y.rsp") == false &&
-      EfficiencyFile.EndsWith(".efficiency.90y.rsp.gz") == false) {
-    cout<<"Error: File is not of type .efficiency.90y.rsp: \""<<EfficiencyFile<<"\""<<endl;
-    return false;
-  }
-      
-  
-  m_Efficiency.Read(EfficiencyFile);
-  m_Efficiency.Smooth(10);
-  
-  m_EfficiencyStartArea = m_Efficiency.GetFarFieldStartArea();
-  m_EfficiencySimulatedEvents = m_Efficiency.GetSimulatedEvents();
-
-  m_EfficiencyRotation = MRotation(90.0 * c_Rad, MVector(0, 1, 0));
-
-  
-  // Normalize 
-  for (unsigned int lo = 0; lo < m_Efficiency.GetAxisBins(1); ++lo) { 
-    for (unsigned int la = 0; la < m_Efficiency.GetAxisBins(2); ++la) { 
-      // The photons have been simulated into 4pi
-      // (1) Calculate the photons per sr in the GetAxisBins
-      double Area = (cos(m_Efficiency.GetAxisLowEdge(la, 2)*c_Rad) - cos(m_Efficiency.GetAxisHighEdge(la, 2)*c_Rad)) * 2*c_Pi/(m_Efficiency.GetAxisHighEdge(lo, 1)*c_Rad - m_Efficiency.GetAxisLowEdge(lo, 1)*c_Rad);
-      // (2) Calculate the effective area
-      long StartedPhotons = m_EfficiencySimulatedEvents * Area / 4 / c_Pi;
-      double EffectiveArea = m_EfficiencyStartArea * m_Efficiency.GetBinContent(lo, la) / StartedPhotons;
-      m_Efficiency.SetBinContent(lo, la, EffectiveArea);
-    }
-  }
-  m_Efficiency.Show();  
+  delete m_Efficiency;
+  m_Efficiency = new MEfficiency();
+  if (m_Efficiency->Load(EfficiencyFile) == false) return false;
 
   m_Mode = MExposureMode::CalculateFromEfficiency;
   
@@ -155,7 +130,7 @@ bool MExposure::SetEfficiencyFile(MString EfficiencyFile)
 
 
 //! Create the exposure for one event
-bool MExposure::Expose(const MPhysicalEvent* Event)
+bool MExposure::Expose(MPhysicalEvent* Event)
 {
   if (m_Mode == MExposureMode::Flat) return true;
   
@@ -226,17 +201,18 @@ bool MExposure::ApplyExposure()
             // Galactic coordiantes:
             MVector S;
             S.SetMagThetaPhi(1.0, m_x2BinCenter[x2], m_x1BinCenter[x1]); 
-          
+                    
             // Rotate vector into detector coordinates
             MVector D = Inv*S;
           
             // Rotate D into efficiency coordiante system: 90 degree rotation around the y-axis.
-            D = m_EfficiencyRotation*D;      
+            //D = m_EfficiencyRotation*D;      
           
             // Get the efficiency value
             double EfficiencyValue = 0;
-            EfficiencyValue = m_Efficiency.Get(D.Phi()*c_Deg, D.Theta()*c_Deg);
-          
+            //EfficiencyValue = m_Efficiency.Get(D.Phi()*c_Deg, D.Theta()*c_Deg);
+            EfficiencyValue = m_Efficiency->Get(D.Theta(), D.Phi());
+            
             if (std::isnan(EfficiencyValue)) {
               cout<<"NaN!"<<endl;
               continue;

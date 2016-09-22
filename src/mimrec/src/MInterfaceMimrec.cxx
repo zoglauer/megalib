@@ -5839,18 +5839,23 @@ void MInterfaceMimrec::CreateExposureMap()
 {
   // Create an exposure map
   
-  // Start with the event file loader first (just in case something goes wrong here)
-  if (InitializeEventLoader() == false) return;
+  if (m_Settings->GetExposureMode() == MExposureMode::Flat) {
+    mgui<<"ERROR: You need to set an exposure mode other than \"flat\" in order to create a useful exposure"<<show;
+    return;    
+  }
   
   // Check if the exposure efficiency file is there:
   if (MFile::Exists(m_Settings->GetExposureEfficiencyFile()) == false) {
-    mout<<"ERROR: Unable to find exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<endl;
+    mgui<<"ERROR: Unable to find exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<show;
     return;
   }
   
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+  
   MExposure Exposure;
   if (Exposure.SetEfficiencyFile(m_Settings->GetExposureEfficiencyFile()) == false) {
-    mout<<"ERROR: Unable to load exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<endl;
+    mgui<<"ERROR: Unable to load exposure efficiency file: \""<<m_Settings->GetExposureEfficiencyFile()<<"\""<<show;
     return;    
   }
   Exposure.SetDimensions(m_Settings->GetGalLongitudeMin()*c_Rad, 
