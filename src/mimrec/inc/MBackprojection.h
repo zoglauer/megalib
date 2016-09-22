@@ -24,6 +24,7 @@
 #include "MViewPort.h"
 #include "MPhysicalEvent.h"
 #include "MResponse.h"
+#include "MEfficiency.h"
 #include "MDGeometryQuest.h"
 
 
@@ -57,6 +58,8 @@ class MBackprojection : public MProjection, public MViewPort
   //! Get the response
   MResponse* GetResponse() const { return m_Response; }
 
+  //! Set the efficiency
+  virtual void SetEfficiency(MEfficiency* Efficiency) { m_Efficiency = Efficiency; }
 
 
   // protected methods:
@@ -216,6 +219,9 @@ class MBackprojection : public MProjection, public MViewPort
 
   //! The response - Compton as well as pair
   MResponse* m_Response;              
+
+  //! The overall detector efficiency
+  MEfficiency* m_Efficiency;              
 
   //! True if absorptions are used during response calculations
   bool m_UseAbsorptions;

@@ -155,9 +155,9 @@ bool MBackprojectionFarField::ConeCenter()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBackprojectionFarField::Rotate(double &x, double &y, double &z)
+void MBackprojectionFarField::RotateDetectorSystemImagingSystem(double &x, double &y, double &z)
 {
-  // Rotate the reconstruction-coodinate system
+  // Rotate the reconstruction-coordinate system
 
   MVector P(x, y, z);
  
@@ -172,6 +172,34 @@ void MBackprojectionFarField::Rotate(double &x, double &y, double &z)
   // Apply the specific rotation in spherical coordinate systems
   if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
     P = m_Rotation * P;
+  }
+
+  x = P.X();
+  y = P.Y();
+  z = P.Z();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MBackprojectionFarField::RotateImagingSystemDetectorSystem(double &x, double &y, double &z)
+{
+  // Rotate the reconstruction-coordinate system
+
+  MVector P(x, y, z);
+ 
+  // Apply the specific rotation in spherical coordinate systems
+  if (m_CoordinateSystem == MCoordinateSystem::c_Spheric) {
+    P = m_InvertedRotation * P;
+  }  
+  // Apply the galactic pointing rotation to the event if we have galactic coordinates
+  if (m_Event->HasGalacticPointing() == true && m_CoordinateSystem == MCoordinateSystem::c_Galactic) {
+    P = m_Event->GetGalacticPointingInverseRotationMatrix() * P;
+  }
+  // Apply the detector rotation of the individual event
+  if (m_Event->HasDetectorRotation() == true) {
+    P = m_Event->GetDetectorInverseRotationMatrix() * P;
   }
 
   x = P.X();
@@ -316,14 +344,14 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
   //   xCC = 0*m_x3BinCenter[0]; // for debugging detector rotations
   //   yCC = 0*m_x3BinCenter[0];
   //   zCC = 1*m_x3BinCenter[0];
-  Rotate(xCC, yCC, zCC);
+  RotateDetectorSystemImagingSystem(xCC, yCC, zCC);
   ToSpherical(xCC, yCC, zCC, m_ThetaConeCenter, m_PhiConeCenter, m_RadiusConeCenter);
 
   // The origin of the event on the sky:
   double xOrigin = m_C->DiOnCone().X()*m_x3BinCenter[0];
   double yOrigin = m_C->DiOnCone().Y()*m_x3BinCenter[0];
   double zOrigin = m_C->DiOnCone().Z()*m_x3BinCenter[0];
-  Rotate(xOrigin, yOrigin, zOrigin);
+  RotateDetectorSystemImagingSystem(xOrigin, yOrigin, zOrigin);
 
   // The Compton scatter angle:
   double Phi = m_C->Phi();
@@ -644,7 +672,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
 
         // Sample the 2d-Gauss-function
         Content = m_Response->GetComptonResponse(AngleTrans, AngleLong)*InvIntegral; //*m_AreaBin[x2];
-      }
+      }      index = x1 + x2*m_x1NBins;
 
 
       if (Content > 0.0) {
@@ -654,7 +682,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
           double rx = m_xBin[index];
           double ry = m_yBin[index];
           double rz = m_zBin[index];
-          Rotate(rx, ry, rz);
+          RotateDetectorSystemImagingSystem(rx, ry, rz);
           double Abs = m_Geometry->GetAbsorptionProbability(m_C->C1(), MVector(rx, ry, rz), m_C->Ei()); // Inverse direction to avoid rounding errors!
           Content *= (1-Abs);
         }
@@ -692,7 +720,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
           if (x1Start2Outside == true && x1End2Outside == true && FirstInterval == false) BinsLeft = false;
         }
       } else {
-        if (x1 == x1End2) {
+        if (x1 == x1End2) {      index = x1 + x2*m_x1NBins;
           BinsLeft = false;
         }
       }
@@ -710,16 +738,35 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
     cout<<m_C->ToString()<<endl;
 
     NUsedBins = 0;
-    Maximum = 0;
+    Maximum = 0.0;
     return false;
   }
 
+
+  // If we have an efficiency the use it:
+  if (m_Efficiency != nullptr) {
+    Maximum = 0.0;
+    InnerSum = 0.0;
+    for (int i = 0; i < NUsedBins; ++i) {
+      double x = m_xBin[Bins[i]];
+      double y = m_yBin[Bins[i]];
+      double z = m_zBin[Bins[i]];
+      RotateImagingSystemDetectorSystem(x, y, z);
+      MVector D(x, y, z);
+
+      Image[i] *= m_Efficiency->Get(D.Theta(), D.Phi());
+      InnerSum += Image[i];
+      
+      if (Image[i] > Maximum) Maximum = Image[i];
+    }
+  }
+  
   // If the image does not contain any content, return also false
   // This case should not really happen due to protections before, thus the error message
   if (InnerSum == 0 && NUsedBins != 0) {
     cout<<"Event "<<m_Event->GetId()<<": The image seems to be empty..."<<endl;
     NUsedBins = 0;
-    Maximum = 0;
+    Maximum = 0.0;
     return false;
   }
 
@@ -774,7 +821,7 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
         double ry = m_yBin[i]-Position.Y();
         double rz = m_zBin[i]-Position.Z();
         //cout<<m_x2BinCenter[x2]*c_Deg<<":"<<m_x1BinCenter[x1]*c_Deg<<":  "<<m_Photo->GetPosition()<<":"<<MVector(rx, ry, rz)<<endl;
-        Rotate(rx, ry, rz);
+        RotateDetectorSystemImagingSystem(rx, ry, rz);
         //cout<<m_x2BinCenter[x2]*c_Deg<<":"<<m_x1BinCenter[x1]*c_Deg<<":  "<<m_Photo->GetPosition()<<":"<<MVector(rx, ry, rz)<<endl;
 
         //SkyDir = -MVector(rx, ry, rz) - Position;
@@ -825,7 +872,7 @@ bool MBackprojectionFarField::BackprojectionPair(double* Image, int* Bins, int& 
   double xOrigin = m_P->m_IncomingGammaDirection.X()*m_x3BinCenter[0];
   double yOrigin = m_P->m_IncomingGammaDirection.Y()*m_x3BinCenter[0];
   double zOrigin = m_P->m_IncomingGammaDirection.Z()*m_x3BinCenter[0];
-  Rotate(xOrigin, yOrigin, zOrigin);
+  RotateDetectorSystemImagingSystem(xOrigin, yOrigin, zOrigin);
   // --> The rotation should be performed during assimilation
 
   //double Integral = 1.0/m_Response->GetPairIntegral();

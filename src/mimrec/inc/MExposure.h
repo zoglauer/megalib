@@ -22,6 +22,7 @@
 #include "MGlobal.h"
 #include "MRotation.h"
 #include "MViewPort.h"
+#include "MEfficiency.h"
 #include "MExposureMode.h"
 #include "MResponseMatrixO2.h"
 #include "MPhysicalEvent.h"
@@ -47,6 +48,9 @@ class MExposure : public MViewPort
   //! Set the efficiency file and switch to that mode
   bool SetEfficiencyFile(MString EfficiencyFile);
   
+  //! Return the efficiency - might be nullptr if not-existent/loaded
+  MEfficiency* GetEfficiency() { return m_Efficiency; }
+  
   //! Set the viewport / image dimensions
   virtual bool SetDimensions(double xMin, double xMax, unsigned int xNBins, 
                              double yMin, double yMax, unsigned int yNBins, 
@@ -54,7 +58,7 @@ class MExposure : public MViewPort
                              MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
 
   //! Create the exposure for one event
-  virtual bool Expose(const MPhysicalEvent* Event);
+  virtual bool Expose(MPhysicalEvent* Event);
   
   //! Return a copy of the current exposure map. Unit: cm2 * sec / sr
   //! User must delete array via "delete [] ..."
@@ -96,19 +100,13 @@ class MExposure : public MViewPort
   //! The current time -- the exposure of that one has not yet been applied to the map!
   MTime m_CurrentTime;
   
-  // Mode: Calculated by efficiency
-  
-  //! The efficiency response file for mode: CalculateFromEfficiency
-  MResponseMatrixO2 m_Efficiency;
-  //! The rotation of the efficiency matrix for mode: CalculateFromEfficiency
-  MRotation m_EfficiencyRotation;
-  //! The simulation start area for mode: CalculateFromEfficiency
-  double m_EfficiencyStartArea;
-  //! The number of simulated events for mode: CalculateFromEfficiency
-  long m_EfficiencySimulatedEvents;
-  
   //! Counter: How many times did we add something
   long m_NExposureUpdates;
+  
+  // Mode: Calculated by efficiency
+  
+  //! The efficiency
+  MEfficiency* m_Efficiency;
   
 #ifdef ___CINT___
  public:

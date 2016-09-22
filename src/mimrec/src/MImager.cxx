@@ -435,7 +435,7 @@ void MImager::SetResponseGaussianByUncertainties(const double Increase)
 {
   // Set the Gaussian response parameters
 
-  for (unsigned int t= 0; t < m_NThreads; ++t) {
+  for (unsigned int t = 0; t < m_NThreads; ++t) {
     MResponseGaussianByUncertainties* Response = new MResponseGaussianByUncertainties();
     Response->SetIncrease(Increase);
     Response->SetThreshold(2.5);
@@ -452,7 +452,13 @@ bool MImager::SetExposureEfficiencyFile(MString FileName)
 {
   // Set the exposure mode efficiency file
   
-  return m_Exposure->SetEfficiencyFile(FileName);
+  if (m_Exposure->SetEfficiencyFile(FileName) == false) return false;
+  
+  for (unsigned int t = 0; t < m_NThreads; ++t) {
+    m_BPs[t]->SetEfficiency(m_Exposure->GetEfficiency());
+  }
+    
+  return true;
 }
 
 
@@ -807,7 +813,7 @@ bool MImager::Analyze(bool CalculateResponse)
 
   // Start with some sanity checks:
   for (unsigned int t= 0; t < m_NThreads; ++t) {
-    if (m_BPs[t]->GetResponse() == 0) {
+    if (m_BPs[t]->GetResponse() == nullptr) {
       merr<<"The fit-parameters have not been initialized: "
         "Call \"void MImager::SetResponse...(...)\" in advance."<<show;
       return false;
@@ -874,7 +880,7 @@ bool MImager::Analyze(bool CalculateResponse)
     // Error message already displayed
     return false; 
   }
-  Image->Normalize(true);
+  Image->Normalize(false);
   Image->Display();
 
   
@@ -1172,15 +1178,22 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
 
   // Create a local copy of the backprojection class 
   
-  TThread::Lock();
+  m_Mutex.Lock();
   m_ThreadIsInitialized[ThreadID] = true;
-  TThread::UnLock();
+  m_Mutex.UnLock();
 
 
   // The reconstruction loop
   while (m_ThreadShouldFinish[ThreadID] == false) {
     if (m_OutOfMemory == true) break;
 
+    /*
+    if (GetNEvents() >= 2) {
+      m_ThreadShouldFinish[ThreadID] = true;
+      break;
+    }
+    */
+    
     Event = m_EventFile.GetNextEvent();
 
     // If we don't get an event a serious error ocurred, or we are finished
@@ -1250,14 +1263,14 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
           break;
         }
           
-        TThread::Lock();
+        m_Mutex.Lock();
         AddResponseSlice(Data);
         if (GetUsedBytes() > m_MaxBytes) {
           cout<<"Thread "<<ThreadID<<": Used RAM exceeds the user set maximum ("<<m_MaxBytes/1024/1024<<" MB)  --- finishing..."<<endl;
-          TThread::UnLock();
+          m_Mutex.UnLock();
           break;
         }
-        TThread::UnLock();
+        m_Mutex.UnLock();
       }
       
       // Hack for not multi-threading...
@@ -1266,22 +1279,22 @@ void* MImager::ResponseSliceComputationThread(unsigned int ThreadID)
       }
     }
     
-    //TThread::Lock();
+    //m_Mutex.Lock();
     delete Event;
-    //TThread::UnLock();
+    //m_Mutex.UnLock();
   }
 
-  //TThread::Lock();
+  //m_Mutex.Lock();
   delete [] BackprojectionImage;
   delete [] BackprojectionBins;
-  //TThread::UnLock();
+  //m_Mutex.UnLock();
   
-  TThread::Lock();
+  m_Mutex.Lock();
   m_ThreadIsFinished[ThreadID] = true;
   if (EnoughMemory == false) {
     m_OutOfMemory = true;
   }
-  TThread::UnLock();
+  m_Mutex.UnLock();
 
   return 0;
 }

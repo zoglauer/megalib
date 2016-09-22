@@ -174,8 +174,6 @@ void MImageGalactic::Display(TCanvas* Canvas)
 {
   // Display the image in a canvas
   
-  cout<<"Dispaly"<<endl;
-  
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
     Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, int(900.0/m_xNBins*m_yNBins));
@@ -248,8 +246,6 @@ void MImageGalactic::Display(TCanvas* Canvas)
 
   if (IsNew == true) {
     Hist->Draw(m_DrawOptionString);
-
-    cout<<"Galactic: Drawing reverted x-axis"<<endl;
     
     // Redraw the new axis
     gPad->Update();
@@ -283,11 +279,13 @@ void MImageGalactic::Display(TCanvas* Canvas)
     // Draw the new one
     m_XAxis->Draw();
   } else {
-    cout<<"Not new"<<endl;
     m_XAxis->Draw();
   }
   AddNamedSources();
   m_Canvas->Update();
+  
+  // Make sure everything is updated - just in case we will be multi-threading later
+  gSystem->ProcessEvents();
   
   return;
 }

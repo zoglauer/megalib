@@ -68,7 +68,9 @@ class MBackprojectionFarField : public MBackprojection
 
   bool ConeCenter(); 
 
-  virtual void Rotate(double &x, double &y, double &z);
+  virtual void RotateDetectorSystemImagingSystem(double &x, double &y, double &z);
+  virtual void RotateImagingSystemDetectorSystem(double &x, double &y, double &z);
+  
   void ToSpherical(double x, double y, double z, 
                    double &t, double &p, double &r);
   void ToCartesean(double t, double p, double r, 
@@ -107,11 +109,11 @@ class MBackprojectionFarField : public MBackprojection
   // Area of each bin as a function of theta
   double* m_AreaBin;    
 
-  // x-Position of the center of the bin 
+  // x-Position in detector coordiantes of the center of the bin 
   double* m_xBin;       
-  // y-Position of the center of the bin
+  // y-Position in detector coordiantes of the center of the bin
   double* m_yBin;       
-  // z-Position of the center of the bin
+  // z-Position in detector coordiantes of the center of the bin
   double* m_zBin;       
 
   //! For optimization: inverted squared vector size of a vector on the sphere
