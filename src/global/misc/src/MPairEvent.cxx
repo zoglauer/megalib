@@ -375,7 +375,7 @@ double MPairEvent::GetOpeningAngle() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS) const
+double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem& CS)
 {
   // The ARM value for the scattered gamma-ray is the minimum angle between 
   // the gamma-cone-surface and the line connecting the cone-Spitze with the 
@@ -385,7 +385,7 @@ double MPairEvent::GetARMGamma(const MVector& Position, const MCoordinateSystem&
   
   MVector RotPosition = Position;
   if (m_HasDetectorRotation == true) RotPosition = GetDetectorRotationMatrix().Invert()*RotPosition;
-  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingRotationMatrix().Invert()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic && m_HasGalacticPointing == true) RotPosition = GetGalacticPointingInverseRotationMatrix()*RotPosition;
   
   return m_IncomingGammaDirection.Angle(RotPosition - m_PairCreationIA);
 }
