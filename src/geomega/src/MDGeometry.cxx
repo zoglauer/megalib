@@ -276,7 +276,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   int Stage = 0;
   MTimer Timer;
-  double TimeLimit = 10;
+  double TimeLimit = 0;
   bool FoundDepreciated = false;
 
   // First clean the geometry ...
@@ -338,14 +338,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Now scan the data and search for "Include" files and add them 
   // to the original stored file content
-  MTokenizer Tokenizer;
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
                     
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -401,10 +397,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -433,10 +426,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -522,11 +512,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Do the final replace:
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) { // No maths since we are not yet ready for it...
-      Typo("Tokenizer error");
-      return false;
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
+
     if (Tokenizer.GetNTokens() == 0) continue;
+    
     MString Init = Tokenizer.GetTokenAt(0);
     if (Init == "Volume" ||
       Init == "Material" ||
@@ -568,10 +557,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Check for Vectors FIRST since those are used in ForVector loops...
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) { // No maths since we are not yet ready for it...
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -595,32 +581,29 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) { // No maths since we are not yet ready for it...
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
     
     if ((Vector = GetVector(Tokenizer.GetTokenAt(0))) != 0) {
-      Tokenizer.Analyse(m_DebugInfo.GetText()); // let's do some maths...
+      MTokenizer& Tokenizer2 = m_DebugInfo.GetTokenizer(true);  // Let's do some maths
 
-      if (Tokenizer.IsTokenAt(1, "Matrix") == true) {
+      if (Tokenizer2.IsTokenAt(1, "Matrix") == true) {
         // We need at least 9 keywords:
-        if (Tokenizer.GetNTokens() < 9) {
+        if (Tokenizer2.GetNTokens() < 9) {
           Typo("Vector.Matrix must contain at least nine keywords,"
                " e.g. \"MaskMatrix.Matrix  3 1.0  3 1.0  1 0.0  1 0 1 0 1 0 1 0 1\"");
           return false;
         }
-        unsigned int x_max = Tokenizer.GetTokenAtAsUnsignedInt(2);
-        unsigned int y_max = Tokenizer.GetTokenAtAsUnsignedInt(4);
-        unsigned int z_max = Tokenizer.GetTokenAtAsUnsignedInt(6);
-        double dx = Tokenizer.GetTokenAtAsDouble(3);
-        double dy = Tokenizer.GetTokenAtAsDouble(5);
-        double dz = Tokenizer.GetTokenAtAsDouble(7);
+        unsigned int x_max = Tokenizer2.GetTokenAtAsUnsignedInt(2);
+        unsigned int y_max = Tokenizer2.GetTokenAtAsUnsignedInt(4);
+        unsigned int z_max = Tokenizer2.GetTokenAtAsUnsignedInt(6);
+        double dx = Tokenizer2.GetTokenAtAsDouble(3);
+        double dy = Tokenizer2.GetTokenAtAsDouble(5);
+        double dz = Tokenizer2.GetTokenAtAsDouble(7);
 
         // Now we know the real number of keywords:
-        if (Tokenizer.GetNTokens() != 8+x_max*y_max*z_max) {
+        if (Tokenizer2.GetNTokens() != 8+x_max*y_max*z_max) {
           Typo("This version of Vector.Matrix does not contain the right amount of numbers\"");
           return false;
         }
@@ -628,7 +611,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         for (unsigned int z = 0; z < z_max; ++z) {
           for (unsigned int y = 0; y < y_max; ++y) {
             for (unsigned int x = 0; x < x_max; ++x) {
-              Vector->Add(MVector(x*dx, y*dy, z*dz), Tokenizer.GetTokenAtAsDouble(8 + x + y*x_max + z*x_max*y_max));
+              Vector->Add(MVector(x*dx, y*dy, z*dz), Tokenizer2.GetTokenAtAsDouble(8 + x + y*x_max + z*x_max*y_max));
             }
           }
         }
@@ -654,10 +637,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
        Iter != FileContent.end(); 
        /* ++Iter erase */) {
     m_DebugInfo = (*Iter);
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = (*Iter).GetTokenizer(false);
     
     if (Tokenizer.GetNTokens() == 0) {
       ++Iter;
@@ -665,25 +645,24 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
 
     if (Tokenizer.IsTokenAt(0, "For") == true) {
-
-      Tokenizer.Analyse(m_DebugInfo.GetText(), true); // redo for math's evaluation just here
+      MTokenizer& TokenizerMaths = m_DebugInfo.GetTokenizer(true); // redo for math's evaluation just here
 
       CurrentDepth = ForDepth;
       ForDepth++;
-      if (Tokenizer.GetNTokens() != 5) {
+      if (TokenizerMaths.GetNTokens() != 5) {
         Typo("Line must contain five entries, e.g. \"For I 3 -11.0 11.0\"");
         return false;
       }
 
-      MString Index = Tokenizer.GetTokenAt(1);
-      if (Tokenizer.GetTokenAtAsDouble(2) <= 0 || std::isnan(Tokenizer.GetTokenAtAsDouble(2))) { // std:: is required
-        mout<<"Loop number: "<<Tokenizer.GetTokenAtAsDouble(2)<<endl;
+      MString Index = TokenizerMaths.GetTokenAt(1);
+      if (TokenizerMaths.GetTokenAtAsDouble(2) <= 0 || std::isnan(TokenizerMaths.GetTokenAtAsDouble(2))) { // std:: is required
+        mout<<"Loop number: "<<TokenizerMaths.GetTokenAtAsDouble(2)<<endl;
         Typo("Loop number in for loop must be a positive integer");
         return false;       
       }
-      unsigned int Loops = Tokenizer.GetTokenAtAsUnsignedInt(2);
-      double Start = Tokenizer.GetTokenAtAsDouble(3);
-      double Step = Tokenizer.GetTokenAtAsDouble(4);
+      unsigned int Loops = TokenizerMaths.GetTokenAtAsUnsignedInt(2);
+      double Start = TokenizerMaths.GetTokenAtAsDouble(3);
+      double Step = TokenizerMaths.GetTokenAtAsDouble(4);
       
       // Remove for line
       Iter = FileContent.erase(Iter++);
@@ -692,18 +671,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       vector<MDDebugInfo> ForLoopContent;
       for (; Iter != FileContent.end(); /* ++Iter erase */) {
         m_DebugInfo = (*Iter);
-        if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-          Typo("Tokenizer error");
-          return false;      
-        }
-        if (Tokenizer.GetNTokens() == 0) {
+        MTokenizer& TokenizerFor = (*Iter).GetTokenizer(false);
+
+        if (TokenizerFor.GetNTokens() == 0) {
           Iter++;
           continue;
         }
-        if (Tokenizer.IsTokenAt(0, "For") == true) {
+        if (TokenizerFor.IsTokenAt(0, "For") == true) {
           ForDepth++;
         }
-        if (Tokenizer.IsTokenAt(0, "Done") == true) {
+        if (TokenizerFor.IsTokenAt(0, "Done") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
             Iter = FileContent.erase(Iter++);
@@ -773,18 +750,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       vector<MDDebugInfo> ForLoopContent;
       for (; Iter != FileContent.end(); /* ++Iter erase */) {
         m_DebugInfo = (*Iter);
-        if (Tokenizer.Analyse(m_DebugInfo.GetText(), false) == false) {
-          Typo("Tokenizer error");
-          return false;      
-        }
-        if (Tokenizer.GetNTokens() == 0) {
+        MTokenizer& TokenizerFor = m_DebugInfo.GetTokenizer(false);
+
+        if (TokenizerFor.GetNTokens() == 0) {
           Iter++;
           continue;
         }
-        if (Tokenizer.IsTokenAt(0, "ForVector") == true) {
+        if (TokenizerFor.IsTokenAt(0, "ForVector") == true) {
           ForDepth++;
         }
-        if (Tokenizer.IsTokenAt(0, "DoneVector") == true) {
+        if (TokenizerFor.IsTokenAt(0, "DoneVector") == true) {
           ForDepth--;
           if (ForDepth == CurrentDepth) {
             Iter = FileContent.erase(Iter++);
@@ -864,16 +839,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
 
+  
   // Check for "If"-clauses
   int IfDepth = 0;
   int CurrentIfDepth = 0;
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(FileContent[i].GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
-    
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
+
     if (Tokenizer.GetNTokens() == 0) {
       continue;
     }
@@ -898,17 +871,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       // Forward its endif:
       for (unsigned int j = i+1; j < FileContent.size(); ++j) {
-        if (Tokenizer.Analyse(FileContent[j].GetText(), false) == false) {
-          Typo("Tokenizer error");
-          return false;      
-        }
-        if (Tokenizer.GetNTokens() == 0) {
+        MTokenizer& TokenizerIf = FileContent[j].GetTokenizer(false);
+        if (TokenizerIf.GetNTokens() == 0) {
           continue;
         }
-        if (Tokenizer.IsTokenAt(0, "If") == true) {
+        if (TokenizerIf.IsTokenAt(0, "If") == true) {
           IfDepth++;
         }
-        if (Tokenizer.IsTokenAt(0, "EndIf") == true) {
+        if (TokenizerIf.IsTokenAt(0, "EndIf") == true) {
           IfDepth--;
           if (IfDepth == CurrentIfDepth) {
             FileContent[j].SetText("");
@@ -925,17 +895,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
-    mout<<"Stage "<<Stage<<" (evaluating if clauses) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
+    mout<<"Stage "<<Stage<<" (evaluating if clauses + initial maths evaluation) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
 
   // All constants and for loops are expanded, let's print some text ;-)
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText(), true) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -963,10 +930,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
@@ -1462,10 +1426,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 3) continue;
  
@@ -1549,10 +1510,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 2) continue;
 
@@ -2357,10 +2315,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 2) continue;
 
@@ -3423,10 +3378,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // We need a final volume tree, thus this is really the final loop
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 2) continue;
 
@@ -3670,10 +3622,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
-    if (Tokenizer.Analyse(m_DebugInfo.GetText()) == false) {
-      Typo("Tokenizer error");
-      return false;      
-    }
+    MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 2) continue;
 
