@@ -779,7 +779,7 @@ bool MResponseManipulator::Join()
   Types.push_back(".energyratio.mimrecselected.rsp");
  
   Types.push_back(".arm.allenergies.rsp");
- 	Types.push_back(".arm.photopeak.rsp");
+  Types.push_back(".arm.photopeak.rsp");
 
   FindFiles(m_Prefix, Types);
   
