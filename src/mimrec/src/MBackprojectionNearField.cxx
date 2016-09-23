@@ -298,7 +298,11 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
         }
         
         L = sqrt(xBin*xBin + yBin*yBin + zBin*zBin);
-        ConeRadius = fabs(tanPhi*Acos(AngleTrans)*L);
+        if (m_ApproximatedMaths == true) {
+          ConeRadius = fabs(tanPhi*MFastMath::acos(AngleTrans)*L);
+        } else {
+          ConeRadius = fabs(tanPhi*acos(AngleTrans)*L);          
+        }
         
         if (HasTrack == true) {
           // angle between two planes spanned by ...
@@ -310,7 +314,11 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
           yn2 = (zOrigin*xCA - xOrigin*zCA);
           zn2 = (xOrigin*yCA - yOrigin*xCA);
           
-          AngleLong = Acos((xn1*xn2+yn1*yn2+zn1*zn2)/sqrt((xn1*xn1+yn1*yn1+zn1*zn1)*(xn2*xn2+yn2*yn2+zn2*zn2)));
+          if (m_ApproximatedMaths == true) {
+            AngleLong = MFastMath::acos((xn1*xn2+yn1*yn2+zn1*zn2)/sqrt((xn1*xn1+yn1*yn1+zn1*zn1)*(xn2*xn2+yn2*yn2+zn2*zn2)));
+          } else {
+            AngleLong = acos((xn1*xn2+yn1*yn2+zn1*zn2)/sqrt((xn1*xn1+yn1*yn1+zn1*zn1)*(xn2*xn2+yn2*yn2+zn2*zn2)));
+          }
           
           //cout<<i<<": "<<ConeRadius<<"!"<<tanPhi<<"!"<<AngleTrans<<"!"<<L<<"-->"<<m_Response->GetResponse(AngleTrans, AngleLong)/ConeRadius<<endl;
           

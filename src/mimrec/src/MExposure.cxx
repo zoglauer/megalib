@@ -82,6 +82,15 @@ bool MExposure::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
     m_Exposure[i] = 0.0; 
   }
   
+  m_BinCenterVectors.resize(m_NImageBins);
+  for (unsigned int x3 = 0; x3 < m_x3NBins; ++x3) { // z == radius
+    for (unsigned int x2 = 0; x2 < m_x2NBins; ++x2) { // y == theta == lat
+      for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) { // x == phi == long
+        m_BinCenterVectors[x1 + x2*m_x1NBins + x3*m_x1NBins*m_x2NBins].SetMagThetaPhi(m_x3BinCenter[x3], m_x2BinCenter[x2], m_x1BinCenter[x1]);  
+      }
+    }
+  }
+
   return true;
 }
 
@@ -198,20 +207,11 @@ bool MExposure::ApplyExposure()
           for (unsigned int x1 = 0; x1 < m_x1NBins; ++x1) { // x == phi == long
             index = x1 + x2*m_x1NBins + x3*m_x1NBins*m_x2NBins;
           
-            // Galactic coordiantes:
-            MVector S;
-            S.SetMagThetaPhi(1.0, m_x2BinCenter[x2], m_x1BinCenter[x1]); 
-                    
-            // Rotate vector into detector coordinates
-            MVector D = Inv*S;
-          
-            // Rotate D into efficiency coordiante system: 90 degree rotation around the y-axis.
-            //D = m_EfficiencyRotation*D;      
+            // Rotate the bin center vectors into detector coordinates
+            MVector D = Inv*m_BinCenterVectors[index];
           
             // Get the efficiency value
-            double EfficiencyValue = 0;
-            //EfficiencyValue = m_Efficiency.Get(D.Phi()*c_Deg, D.Theta()*c_Deg);
-            EfficiencyValue = m_Efficiency->Get(D.Theta(), D.Phi());
+            double EfficiencyValue = m_Efficiency->Get(D.ThetaFastMath(), D.PhiFastMath());
             
             if (std::isnan(EfficiencyValue)) {
               cout<<"NaN!"<<endl;

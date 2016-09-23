@@ -667,7 +667,11 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
 
         AngleC = Angle(m_xBin[index], m_yBin[index], m_zBin[index], xOrigin, yOrigin, zOrigin);
         Sum = (AngleA + AngleB + AngleC)*0.5;
-        Temp = Sin(Sum-AngleA)*Sin(Sum-AngleB)/(Sin(Sum)*Sin(Sum-AngleC));
+        if (m_ApproximatedMaths == true) {
+          Temp = MFastMath::sin(Sum-AngleA)*MFastMath::sin(Sum-AngleB)/(MFastMath::sin(Sum)*MFastMath::sin(Sum-AngleC));
+        } else {
+          Temp = sin(Sum-AngleA)*sin(Sum-AngleB)/(sin(Sum)*sin(Sum-AngleC));          
+        }
         AngleLong = 2 * atan(sqrt(fabs(Temp)));
 
         // Sample the 2d-Gauss-function
@@ -754,7 +758,11 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
       RotateImagingSystemDetectorSystem(x, y, z);
       MVector D(x, y, z);
 
-      Image[i] *= m_Efficiency->Get(D.Theta(), D.Phi());
+      if (m_ApproximatedMaths == false) {
+        Image[i] *= m_Efficiency->Get(D.Theta(), D.Phi());
+      } else {
+        Image[i] *= m_Efficiency->Get(D.ThetaFastMath(), D.PhiFastMath());        
+      }
       InnerSum += Image[i];
       
       if (Image[i] > Maximum) Maximum = Image[i];

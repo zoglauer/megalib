@@ -83,7 +83,7 @@ class MBackprojectionFarField : public MBackprojection
     double Nenner = m_InvSquareDist*(u*x + v*y + w*z);
     if (m_ApproximatedMaths == true) {
       // Acos checks if Nenner is within -1 <= x <= 1
-      return Acos(Nenner);
+      return MFastMath::acos(Nenner);
     } else {
       if (Nenner > 1.0) return 0.0;
       if (Nenner < -1.0) return c_Pi;

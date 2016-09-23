@@ -90,6 +90,9 @@ class MExposure : public MViewPort
   //! The exposure image
   double* m_Exposure;
 
+  //! The Galactic coordiantes vector
+  vector<MVector> m_BinCenterVectors;
+  
   //! The last applied rotation
   MRotation m_LastRotation;
   //! The last applied time
