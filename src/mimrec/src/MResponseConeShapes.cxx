@@ -130,7 +130,7 @@ bool MResponseConeShapes::AnalyzeEvent(MPhysicalEvent* Event)
   // Extract all necessary information out of the event:
 
   static int Passes = 0;
-  //if (Passes++ < 50) return false;
+  //if (Passes++ < 10) return false;
   //if (Passes > 80) return false;
 
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
@@ -154,7 +154,8 @@ bool MResponseConeShapes::AnalyzeEvent(MPhysicalEvent* Event)
       return false;
     }
     */
-      
+    
+    
     // Normalize by area
     for (int dphi = 0; dphi < dphi_max; ++dphi) {
       m_Slice.SetBinContent(dphi, m_Slice.GetBinContent(dphi)/m_Slice.GetBinArea(dphi));
@@ -174,16 +175,23 @@ bool MResponseConeShapes::AnalyzeEvent(MPhysicalEvent* Event)
         m_Slice.SetBinContent(dphi, m_Slice.GetBinContent(dphi)/Sum);
       }
     }
-   
+    
     /*
     TH1D* Hist = dynamic_cast<TH1D*>(m_Slice.GetHistogram(false));
     ostringstream Title;
-    Title<<"phi="<<m_Phi<<" energy="<<m_Ei<<" Dist="<<m_Distance<<" IA: "<<m_NumberOfInteractions<<endl;
+    Title<<"phi="<<m_Phi<<" energy="<<m_Ei<<" Dist="<<m_Distance<<" IA: "<<m_NumberOfInteractions<<" counts: "<<Sum<<endl;
     Hist->SetTitle(Title.str().c_str());
     
     TCanvas* C = new TCanvas();
     C->cd();
     Hist->Draw();
+    C->Update();
+    
+    m_Slice.Smooth(100);  
+    TH1D* Hist2 = dynamic_cast<TH1D*>(m_Slice.GetHistogram(false));
+    Hist2->SetLineWidth(2);
+    Hist2->SetLineColor(kRed);
+    Hist2->Draw("SAME");
     C->Update();
     */
     
@@ -235,7 +243,7 @@ double MResponseConeShapes::GetComptonResponse(const double t)
   //
   // t: transversal distance (in rad) from the cone surface
   
-  const double Stretchfactor = 0.5;
+  const double Stretchfactor = 0.75;
   
   return m_Slice.GetInterpolated(Stretchfactor*t*c_Deg)/m_ComptonIntegral;
 }
