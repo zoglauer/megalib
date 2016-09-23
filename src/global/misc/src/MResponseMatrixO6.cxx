@@ -960,7 +960,7 @@ bool MResponseMatrixO6::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO6") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -985,7 +985,7 @@ bool MResponseMatrixO6::ReadSpecific(MFileResponse& Parser,
     MString x4Name;
     MString x5Name;
     MString x6Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "A1") {
         x1Axis = T.GetTokenAtAsFloatVector(1);

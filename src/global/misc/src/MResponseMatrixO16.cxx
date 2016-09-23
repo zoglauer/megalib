@@ -1495,7 +1495,7 @@ bool MResponseMatrixO16::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO16") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -1540,7 +1540,7 @@ bool MResponseMatrixO16::ReadSpecific(MFileResponse& Parser,
     MString x14Name;
     MString x15Name;
     MString x16Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "A1") {
         x1Axis = T.GetTokenAtAsFloatVector(1);

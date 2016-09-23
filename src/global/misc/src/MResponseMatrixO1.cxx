@@ -533,7 +533,7 @@ float MResponseMatrixO1::GetInterpolated(float x1, bool DoExtrapolate) const
     if (m_AxisO1.size() == 2) {
       return m_Values.front();
     } else {
-      // Get Position:
+      // Get Position (lower bound)
       int Position = FindBinCentered(m_AxisO1, x1);
 
       // Take care of boundaries:
@@ -558,7 +558,7 @@ float MResponseMatrixO1::GetInterpolated(float x1, bool DoExtrapolate) const
           (m_Values[Position+1] - m_Values[Position]);
     }
   } else {
-    // Get Position:
+    // Get Position (lower bound)
     int Position = FindBin(m_AxisO1, x1);
 
     // Take care of boundaries:
@@ -690,7 +690,7 @@ bool MResponseMatrixO1::ReadSpecific(MFileResponse& Parser,
     // m_ValuesCentered = false;
     m_AxisO1.clear();
     m_Values.clear();
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() == 0) continue;
       if (T.GetTokenAt(0) == "R1") {
         if (T.GetNTokens() == 3) {
@@ -705,7 +705,7 @@ bool MResponseMatrixO1::ReadSpecific(MFileResponse& Parser,
   } else if (Type == "ResponseMatrixO1Stream") {
     vector<float> xAxis;
     MString x1Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
      if (T.GetNTokens() < 2) continue;
       if (T.GetTokenAt(0) == "A1") {
         xAxis = T.GetTokenAtAsFloatVector(1);

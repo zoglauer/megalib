@@ -91,7 +91,9 @@ class MResponseMatrix
 
   // protected methods:
  protected:
+  //! Find the axis-bin where the axis value contains "Value" 
   int FindBin(const vector<float>& Array, float Value) const;
+  //! This assumes
   int FindBinCentered(const vector<float>& Array, float Value) const;
   bool AreIncreasing(unsigned int order, 
                      unsigned int a1 = c_UnusedAxis,

@@ -828,7 +828,7 @@ bool MResponseMatrixO2::ReadSpecific(MFileResponse& Parser,
   MTokenizer T;
 
   if (Type == "ResponseMatrixO2") {
-//     while (Parser.TokenizeLine(T) == true) {
+//     while (Parser.TokenizeLine(T, true) == true) {
 //       if (T.GetNTokens() == 0) continue;
 //       if (T.GetTokenAt(0) == "R2") {
 //         if (T.GetNTokens() == 4) {
@@ -845,7 +845,7 @@ bool MResponseMatrixO2::ReadSpecific(MFileResponse& Parser,
     vector<float> yAxis;
     MString x1Name;
     MString x2Name;
-    while (Parser.TokenizeLine(T) == true) {
+    while (Parser.TokenizeLine(T, true) == true) {
       if (T.GetNTokens() < 1) continue;
       if (T.GetTokenAt(0) == "A1") {
         xAxis = T.GetTokenAtAsFloatVector(1);

@@ -121,9 +121,12 @@ class MResponseMatrixO1 : public MResponseMatrix
 
   // protected members:
  protected:
+  //! The name of the axis
   MString m_NameAxisO1;
-  vector<float> m_AxisO1;  // 
-  vector<float> m_Values;  // the values
+  //! The axis bin values
+  vector<float> m_AxisO1;
+  //! The data
+  vector<float> m_Values;
 
 
   // private members:
