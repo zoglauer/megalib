@@ -97,7 +97,6 @@ void MRotationInterface::Reset()
 }
 
   
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -183,6 +182,10 @@ int MRotationInterface::ParseLine(const char* Line, bool Fast)
   
   return Ret;
 }
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
 
 //! Stream to a file
 //! Reading has to be done in the derived class 
