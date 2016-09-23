@@ -208,6 +208,7 @@ MVector operator* (const MRotation& L, const MVector& R);
 MRotation operator* (const MRotation& L, const MRotation& R);
 
 
+
 #endif
 
 

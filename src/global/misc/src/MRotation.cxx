@@ -31,7 +31,6 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
 

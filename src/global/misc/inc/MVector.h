@@ -22,11 +22,10 @@
 using namespace std;
 
 // Root libs:
-#include <TMatrix.h>
-#include <TRotation.h>
 
 // MEGAlib libs:
 #include "MString.h"
+#include "MFastMath.h"
 
 // Forward declarations:
 
@@ -122,7 +121,7 @@ public:
   //! Return a new vector which is unit
   MVector Unit() const;
 
-  //! Make *this* vector a unit vector
+  //! Make *this* vector a unit vector(2,2)
   MVector& Unitize();
 
   //! Make all elements positive
@@ -131,8 +130,14 @@ public:
   //! Return the azimuth angle of the vector in spherical coordinates 
   double Phi() const { return (m_X == 0.0 && m_Y == 0.0) ? 0.0 : atan2(m_Y,m_X); }
 
+  //! Return the azimuth angle of the vector in spherical coordinates 
+  double PhiFastMath() const { return (m_X == 0.0 && m_Y == 0.0) ? 0.0 : MFastMath::atan2(m_Y,m_X); }
+
   //! Return he azimuth angle of the vector in spherical coordinates 
   double Theta() const { return (m_X == 0.0 && m_Y == 0.0 && m_Z == 0.0) ? 0.0 : atan2(sqrt(m_X*m_X + m_Y*m_Y),m_Z); }
+
+  //! Return he azimuth angle of the vector in spherical coordinates 
+  double ThetaFastMath() const { return (m_X == 0.0 && m_Y == 0.0 && m_Z == 0.0) ? 0.0 : MFastMath::atan2(sqrt(m_X*m_X + m_Y*m_Y),m_Z); }
 
   // Return the square of the magnitude of this vector
   double Mag2() const { return m_X*m_X + m_Y*m_Y + m_Z*m_Z; }
@@ -167,10 +172,8 @@ public:
   void RotateReferenceFrame(const MVector& V);
 
   
-  //! Do a rotation via a TRotation --- needed by geomega (--> define simplified TRotation later if needed)
-  MVector& operator *= (const TRotation & Rot);
-
-
+  //! Do a rotation 
+  //MVector& operator*= (const MRotation& Rot);
   // Section 6: Additional high-level functions
 
   //! Checks if this vector is in the plane spanned by the other three vectors
@@ -210,8 +213,6 @@ MVector operator* (const MVector& V, double S);
 MVector operator/ (const MVector& V, double S);
 //! Multiplication with scalar from left
 MVector operator* (double S, const MVector& V);
-//! Allow rotations with ROOT matrices --> replace by own rotation class...
-MVector operator* (const TMatrix& M, const MVector& V);
 
 
 

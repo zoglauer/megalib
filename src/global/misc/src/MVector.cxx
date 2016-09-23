@@ -31,7 +31,6 @@
 // ROOT libs:
 
 // MEGAlib libs:
-#include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
 
@@ -381,17 +380,6 @@ MVector operator* (double S, const MVector& V)
 double operator* (const MVector& V, const MVector& W) 
 {
   return V.Dot(W);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MVector operator* (const TMatrix& M, const MVector& V) 
-{
-  return MVector(M(0,0)*V.m_X + M(0,1)*V.m_Y + M(0,2)*V.m_Z,
-                 M(1,0)*V.m_X + M(1,1)*V.m_Y + M(1,2)*V.m_Z,
-                 M(2,0)*V.m_X + M(2,1)*V.m_Y + M(2,2)*V.m_Z);
 }
   
 
