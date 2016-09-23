@@ -249,7 +249,7 @@ void MParser::Typo(int Line, MString Error)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MParser::TokenizeLine(MTokenizer& T)
+bool MParser::TokenizeLine(MTokenizer& T, bool Fast)
 {
   // Tokenize one line of the file
   // Return false if an error occurs
@@ -260,6 +260,9 @@ bool MParser::TokenizeLine(MTokenizer& T)
     return false;
   }
 
+  MString Line;
+  if (ReadLine(Line) == false) return false;
+  /*
   char c;
   MString Line;
   while (true) {
@@ -273,7 +276,13 @@ bool MParser::TokenizeLine(MTokenizer& T)
       break;
     }
   }
-  T.Analyse(Line);
+  */
+  
+  if (Fast == true) {
+    T.AnalyzeFast(Line);    
+  } else {
+    T.Analyze(Line);
+  }
   
   return true;
 }

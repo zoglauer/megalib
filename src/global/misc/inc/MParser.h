@@ -69,7 +69,8 @@ class MParser : public MFile
   //! Some derived classes do not read the whole file during Open()
   //! An example is the response class, which can have large data files requiring optimization
   //! This reads and tokenizes one line of the file
-  bool TokenizeLine(MTokenizer& T);
+  //! The fast mode assumes all token are seperated by a space only (no maths, no . mode)
+  bool TokenizeLine(MTokenizer& T, bool Fast = false);
   //! READ-MODE ONLY: Special!!
   //! Some derived classes do not read the whole file during Open()
   //! An example is the response class, which can have large data files requiring optimization
