@@ -171,8 +171,30 @@ bool MResponseMatrix::AreIncreasing(unsigned int order,
 
 int MResponseMatrix::FindBinCentered(const vector<float>& Array, float Value) const
 {
-  // Does a simple binary search to find the correct !centered! bin:
+  // Does a simple binary search to find the correct bin centered interpolation:
   
+  //                   x-----.-----x-----.-----x-----.-----x
+  //  Case 1: value =               ^^^^^
+  //                         ^ This bin
+  //  Case 2: value =                     ^^^^^
+  //                                     ^ This bin
+  //  Case 3: value =   ^^^^^
+  //                    -1
+  
+  
+  int Bin = FindBin(Array, Value);
+  
+  // Array.size() is guaranteed to be >= 2 
+  if (Bin >= 0 && Bin < int(Array.size()) - 1 && Value < 0.5*(Array[Bin+1] + Array[Bin])) {
+    --Bin;
+  }
+      
+  return Bin;
+  
+  
+  
+  // Old:
+  /*
   massert(Array.size() >= 2);
 
   if (Value < Array[0]) return -1;
@@ -182,11 +204,12 @@ int MResponseMatrix::FindBinCentered(const vector<float>& Array, float Value) co
   int i_max = int(Array.size());
   for (int i = 1; i < i_max; ++i) {
     if (0.5*(Array[i] + Array[i-1]) > Value) {
-      return i-2;
+      return i-2; // Why "-2"
     }
   }
 
   return i_max-1;
+  */
 }
 
 
@@ -196,14 +219,21 @@ int MResponseMatrix::FindBinCentered(const vector<float>& Array, float Value) co
 int MResponseMatrix::FindBin(const vector<float>& Array, float Value) const
 {
   // Does a simple binary search to find the correct bin:
+  // Finds the last bin which is smaller
+  
   
   massert(Array.size() >= 2);
 
   if (Value < Array.front()) return -1;
   if (Value >= Array.back()) return Array.size(); 
 
-  // The following has been optimized for the icc compiler!
+  // C++ version
+  auto UpperBound = upper_bound(Array.begin(), Array.end(), Value);
+  return int(UpperBound - Array.begin()) - 1;
 
+  
+  /*
+  // The following has been optimized for the icc compiler!
   if (Array.size() < 32) {
 
     // Simple search:
@@ -211,7 +241,6 @@ int MResponseMatrix::FindBin(const vector<float>& Array, float Value) const
     for (Iter = Array.begin(); Iter != Array.end(); ++Iter) {
       if ((*Iter) > Value) {
         return int(Iter - Array.begin()) - 1;
-        break;
       } 
     }
     return -1; // Should never be reached...
@@ -234,8 +263,9 @@ int MResponseMatrix::FindBin(const vector<float>& Array, float Value) const
         lower = center;
       }
     }
-    return int(lower);
+    return int(min);
   }
+  */
 }
 
 ////////////////////////////////////////////////////////////////////////////////
