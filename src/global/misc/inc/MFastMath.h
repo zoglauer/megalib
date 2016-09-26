@@ -82,17 +82,18 @@ class MFastMath
     return sqrt(1.0F - x) * (1.5707288F + x*(-0.2121144F + x*(0.0742610F - x*0.0187293F)));
   }
 
-  //! A fast optimization of 1/sqrt() after Newton. Error < 0.0005%
+  //! A fast optimization of 1/sqrt() after John Carmack / Newton. Error < 0.0005%
   //! Attention: Breaks down at large numbers!
-  //! 3x as faster than 1.0/sqrt() on latest Nehalems with gcc -O3 -mtunes=native
+  //! 3x as faster than 1.0/sqrt() on Haswell CPU with gcc -O3 -mtune=native
   //! Needs to be float since it depends on the IEEE floating point definition
   static float invsqrt(float x) {
     float xhalf = 0.5f*x;
 
     // This magic is possible due to the IEEE floating point definition
-    int i = *(int*)&x;
+    uint32_t i;
+    memcpy(&i, &x, sizeof(float));
     i = 0x5f375a86 - (i>>1);
-    x = *(float*)&i;
+    memcpy(&x, &i, sizeof(float));
 
     // Two Newton stages:
     x = x*(1.5f-xhalf*x*x);
