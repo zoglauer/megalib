@@ -18,6 +18,7 @@
 
 // Standard libs:
 #include <cmath>
+#include <cstring>
 using namespace std;
 
 // ROOT libs:
