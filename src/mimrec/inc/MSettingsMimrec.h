@@ -86,6 +86,11 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   void SetTPDistanceLong(double TPDistanceLong) { m_TPDistanceLong = TPDistanceLong; }
 
 
+  // Log binning
+  bool GetLogBinningSpectrum() const { return m_LogBinningSpectrum; }
+  void SetLogBinningSpectrum(bool LogBinningSpectrum) { m_LogBinningSpectrum = LogBinningSpectrum; } 
+  
+
   // Bin sizes for certain histograms:  double GetTPDistanceTrans();
   int GetHistBinsARMGamma() const { return m_HistBinsARMGamma; }
   void SetHistBinsARMGamma(int HistBinsARMGamma) { m_HistBinsARMGamma = HistBinsARMGamma; } 
@@ -121,6 +126,9 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   double m_TPZ;
   double m_TPDistanceTrans;
   double m_TPDistanceLong;
+  
+  // Log binning
+  bool m_LogBinningSpectrum;
 
   // Bin sizes for certain histograms:
   int m_HistBinsARMGamma;

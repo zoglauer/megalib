@@ -3563,10 +3563,14 @@ void MInterfaceMimrec::EnergySpectra()
   if (InitializeEventLoader() == false) return;
 
   
-  bool xLog = false;
+  bool xLog = m_Settings->GetLogBinningSpectrum();
   double xMin = GetTotalEnergyMin();
   double xMax = GetTotalEnergyMax();
 
+  if (xLog == true) {
+    if (xMin <= 0) xMin = 1; 
+  }
+  
   if (m_Settings->GetSecondEnergyRangeMax() > 0) {
     if (m_Settings->GetSecondEnergyRangeMax() > xMax) xMax = m_Settings->GetSecondEnergyRangeMax();
     if (m_Settings->GetSecondEnergyRangeMin() < xMin) xMin = m_Settings->GetSecondEnergyRangeMin();
@@ -3600,7 +3604,7 @@ void MInterfaceMimrec::EnergySpectra()
   Hist->SetDirectory(0);
   Hist->SetBit(kCanDelete);
   Hist->SetXTitle("Energy [keV]");
-  Hist->SetYTitle("counts");
+  Hist->SetYTitle("counts / keV");
   Hist->SetStats(false);
   Hist->SetFillColor(8);
   Hist->SetMinimum(0);
@@ -3694,12 +3698,18 @@ void MInterfaceMimrec::EnergySpectra()
 //     Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
 //   }
   
+  /*
   TCanvas* Canvas2 = new TCanvas();
   Canvas2->cd();
   TH1D* HistBayes = Bayes.GetNormalizedHistogram("count rate", "Energy", "[keV]");
   HistBayes->Draw();
   Canvas2->Update();
+  */
   
+  // Normalize
+  for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
+    Hist->SetBinContent(Hist->GetBinContent(b)/Hist->GetBinWidth(b), b);
+  }
 
   TCanvas* Canvas = new TCanvas();
   Canvas->SetTitle("Spectrum canvas");
