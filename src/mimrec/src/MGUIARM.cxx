@@ -124,6 +124,12 @@ void MGUIARM::Create()
   // In spectral mode we have a checkbutton to choose if we want the test position
   if (m_Mode == MGUIARMModes::m_Spectrum) {
     // The two radio buttons to choose if we want to use a test position
+    m_UseLog = new TGCheckButton(this, "Use logarithmic binning", m_UseLogID);
+    m_UseLog->SetWrapLength(300*Scaler);
+    m_UseLog->Associate(this);
+    m_UseLog->SetState(m_Settings->GetLogBinningSpectrum() ? kButtonDown : kButtonUp);
+    AddFrame(m_UseLog, SelectorLayout);
+
     m_UseTestPosition = new TGCheckButton(this, "Use source position and acceptance window (only Compton and pair events will be displayed)", m_UseTestPositionID);
     m_UseTestPosition->SetWrapLength(300*Scaler);
     m_UseTestPosition->Associate(this);
@@ -256,6 +262,10 @@ bool MGUIARM::OnApply()
     if (m_Distance->IsDouble(-180, 180) == false) {
       return false;
     }
+  }
+  
+  if (m_UseLog != nullptr) {
+    m_Settings->SetLogBinningSpectrum(m_UseLog->GetState() == kButtonDown ? true : false);
   }
   
   if (m_UseTestPosition != nullptr) {

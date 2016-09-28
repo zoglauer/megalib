@@ -87,6 +87,10 @@ class MGUIARM : public MGUIDialog
   //! Check button indicating if we do want to use a test position in spectral mode
   TGCheckButton* m_UseTestPosition;
   const int m_UseTestPositionID = 140;
+
+  //! Check button indicating if we do want to use a logarithmic binning in spectral mode
+  TGCheckButton* m_UseLog;
+  const int m_UseLogID = 141;
   
   MGUIEEntry* m_ThetaIsX;
   MGUIEEntry* m_PhiIsY;
