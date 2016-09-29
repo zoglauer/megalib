@@ -3708,7 +3708,7 @@ void MInterfaceMimrec::EnergySpectra()
   
   // Normalize
   for (int b = 1; b <= Hist->GetNbinsX(); ++b) {
-    Hist->SetBinContent(Hist->GetBinContent(b)/Hist->GetBinWidth(b), b);
+    Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
   }
 
   TCanvas* Canvas = new TCanvas();
@@ -3730,10 +3730,11 @@ void MInterfaceMimrec::EnergySpectra()
 //                  "Sigma2", "Mean2", "Height2",
 //                  "Sigma3", "Mean3", "Height3");
 //   Hist->Fit("TrippleGauss", "Rw");
-  Hist->SetStats(false);
-  Canvas->cd();
-  Hist->SetMinimum(0);
-  Hist->Draw();
+  
+  //Hist->SetStats(false);
+  //Canvas->cd();
+  //Hist->SetMinimum(0);
+  //Hist->Draw();
   Canvas->Update(); 
   if (m_OutputFileName.IsEmpty() == false) {
     Canvas->SaveAs(m_OutputFileName);
