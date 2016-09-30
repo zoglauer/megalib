@@ -23,6 +23,7 @@ commandhelp() {
   echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
   echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
   echo "  --log: Create a log file of what is started where"
+  echo "  --delay: Time between searches for new slots (the longer the time the lower the priority of this instance)"
   echo "  --zip: Compress the output files."
   echo "  --help: Show this help."
   echo ""
@@ -55,6 +56,7 @@ CONTINUE=""
 LOG="FALSE"
 LOGFILE=""
 LOGGING="tee"
+DELAY="10"
 CFG=~/.dcosima.cfg
 
 # The number of already launched runs
@@ -74,6 +76,8 @@ for C in "${CMD[@]}"; do
     CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
+  elif [[ ${C} == *-d* ]]; then
+    DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-l* ]]; then
     LOG="TRUE"
   elif [[ ${C} == *-h* ]]; then
@@ -207,6 +211,13 @@ else
   echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
   commandhelp
   exit 1  
+fi
+
+if [[ ${DELAY} -ge 10 ]]; then
+  echo " * Delay between checks for free slots: ${DELAY}"
+else 
+  DELAY="10"
+  echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
 fi
 
 # The md5 checksum of the configuration file to tell if it changed - initialize empty
@@ -380,7 +391,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   if [[ ${STARTED} -eq 0 ]]; then
     echo ""
     echo " --> No simulation slots available at the moment... Sleeping for a while..."
-    sleep 10
+    sleep ${DELAY}
   else 
     # Sleep a bit to give the last instance a chance to start before we revisit the node   
     sleep 1
