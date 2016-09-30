@@ -22,6 +22,7 @@ commandhelp() {
   echo "  --source=[filename]: The source file"
   echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
   echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
+  echo "  --log: Create a log file of what is started where"
   echo "  --zip: Compress the output files."
   echo "  --help: Show this help."
   echo ""
@@ -51,6 +52,9 @@ INSTANCES="1"
 PREFIX="Run"
 ZIP="FALSE"
 CONTINUE=""
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
 CFG=~/.dcosima.cfg
 
 # The number of already launched runs
@@ -70,6 +74,8 @@ for C in "${CMD[@]}"; do
     CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
@@ -100,6 +106,8 @@ if [[ ${CONTINUE} != "" ]]; then
       exit 1
     fi
     
+    LOGFILE="${PREFIX}.log"
+    
     RUNID=`echo ${CONTINUE} | awk -F"_ID" ' { print $2 }'`
     if [[ ${RUNID} == "" ]]; then
       echo " "
@@ -111,6 +119,10 @@ if [[ ${CONTINUE} != "" ]]; then
     HERE=`pwd`
     cd ${CONTINUE}
     
+    if [[ -f ${LOGFILE} ]]; then
+      LOG="TRUE"
+    fi
+    
     SOURCE=`ls *.source`
     if [[ $( echo ${SOURCE} | wc -l ) !=  1 ]]; then
       echo " "
@@ -121,13 +133,13 @@ if [[ ${CONTINUE} != "" ]]; then
     SOURCE="${CONTINUE}/${SOURCE}"
     
     LAUNCHED="0"
-		FILENAMES=`ls *.p1.inc*.id1.sim*`; 
-		for NAME in ${FILENAMES}; do 
-			ID=`echo ${NAME} | awk -F"inc" '{ print $2 }' | awk -F".id" '{ print $1 }'`
-			if (( ${ID} > ${LAUNCHED} )); then 
-				LAUNCHED=${ID} 
-			fi
-		done 
+    FILENAMES=`ls *.p1.inc*.id1.sim*`; 
+    for NAME in ${FILENAMES}; do 
+      ID=`echo ${NAME} | awk -F"inc" '{ print $2 }' | awk -F".id" '{ print $1 }'`
+      if (( ${ID} > ${LAUNCHED} )); then 
+        LAUNCHED=${ID} 
+      fi
+    done 
     if [[ ${LAUNCHED} == "0" ]]; then
       echo " "
       echo "ERROR: Did not find any simulation files"
@@ -167,6 +179,18 @@ else
   exit 1
 fi
 
+# Make the local directory where we store the data - need to make it here since we need to write the log file in there
+LOCALDIR="${PREFIX}_ID${RUNID}"
+if [[ ${CONTINUE} == "" ]]; then
+  mkdir ${LOCALDIR}
+fi
+
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="${LOCALDIR}/Launch.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
 if [[ ${INSTANCES} -gt 0 ]]; then
   echo " * Simulations instances: ${INSTANCES}"
 else
@@ -189,14 +213,9 @@ fi
 CFGMD5=""
 
 echo " "
-echo "Starting runs:"
+echo "Starting runs..." | ${LOGGING}
 AVAILABLE=0
 
-# Make the local directory where we store the data
-LOCALDIR="${PREFIX}_ID${RUNID}"
-if [[ ${CONTINUE} == "" ]]; then
-  mkdir ${LOCALDIR}
-fi
 
 # preparation for rsync instance launch
 RSYNCCFG=${LOCALDIR}/dcosima-rsync.cfg
@@ -321,7 +340,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
     echo " "
-    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..."
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
     exit 0;
   fi
   
@@ -344,8 +363,8 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
-        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}"
-        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi`
+        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
         STARTED=1
       fi
       if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
@@ -377,7 +396,7 @@ done
 # Finish the rsync setup file:
 echo "DONE" >> ${RSYNCCFG}
 
-echo " * All processes lauched"
+echo " * All processes lauched" | ${LOGGING}
 echo ""
 
 echo "Create a concatenation file"
@@ -454,7 +473,8 @@ if [[ "${ZIP}" == "TRUE" ]]; then
   ConcatFileName="${ConcatFileName}.gz"
 fi
 
-echo "Created concatenation file \"${ConcatFileName}\""
+cd ..
+echo "Created concatenation file \"${ConcatFileName}\"" | ${LOGGING}
 
 
 echo " "
@@ -481,7 +501,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 done
 
 echo " " 
-echo "The simulations have finished!"
+echo "The simulations have finished!" | ${LOGGING}
 echo " "
 
 exit 0;
