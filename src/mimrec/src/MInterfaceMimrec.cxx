@@ -232,7 +232,12 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
       if (g_Verbosity < 2) g_Verbosity = 2;
       cout<<"Command-line parser: Use debug mode"<<endl;
     } else if (Option == "--configuration" || Option == "-c") {
-      m_Settings->Read(argv[++i]);
+      MString FileName = argv[++i];
+      if (MFile::Exists(FileName) == false) {
+        cout<<"Command-line parser: The configuration file does not exists: "<<FileName<<endl;
+        return false;
+      }
+      m_Settings->Read(FileName);
       cout<<"Command-line parser: Use configuration file "<<m_Settings->GetSettingsFileName()<<endl;
     } else if (Option == "--output" || Option == "-o") {
       m_OutputFileName = argv[++i];
@@ -270,14 +275,24 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   for (int i = 1; i < argc; i++) {
     Option = argv[i];
     if (Option == "--geometry" || Option == "-g") {
-      if (m_Settings->SetGeometryFileName(argv[++i]) == false) {
-        cout<<"Command-line parser: The geometry file could not be opened correctly: "<<argv[i]<<endl;
+      MString FileName = argv[++i];
+      if (MFile::Exists(FileName) == false) {
+        cout<<"Command-line parser: The geometry file does not exists: "<<FileName<<endl;
+        return false;
+      }
+      if (m_Settings->SetGeometryFileName(FileName) == false) {
+        cout<<"Command-line parser: The geometry file could not be opened correctly: "<<FileName<<endl;
         return false;
       }
       cout<<"Command-line parser: Use geometry file "<<m_Settings->GetGeometryFileName()<<endl;
     } else if (Option == "--filename" || Option == "-f") {
-      if (m_Settings->SetCurrentFileName(argv[++i]) == false) {
-        cout<<"Command-line parser: The file could not be opened correctly: "<<argv[i]<<endl;
+      MString FileName = argv[++i];
+      if (MFile::Exists(FileName) == false) {
+        cout<<"Command-line parser: The data file does not exists: "<<FileName<<endl;
+        return false;
+      }
+      if (m_Settings->SetCurrentFileName(FileName) == false) {
+        cout<<"Command-line parser: The data file could not be opened correctly: "<<FileName<<endl;
         return false;
       }
       cout<<"Command-line parser: Use file "<<m_Settings->GetCurrentFileName()<<endl;
@@ -291,6 +306,9 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   if (SetGeometry(m_Settings->GetGeometryFileName(), false) == false) {
     cout<<"Command-line parser: "<<m_Settings->GetGeometryFileName()<<" is no aceptable geometry file!"<<endl;
     cout<<"Command-line parser: Please give a correct geometry file via the -g option."<<endl;
+    cout<<"Command-line parser: A universally working geometry for mimrec would be: ${MEGALIB}//resource/examples/geomega/special/Dummy.geo.setup"<<endl;
+    return false;
+    /*
     if (m_UseGui == true) {
       cout<<"Command-line parser: Trying to start with a dummy geometry..."<<endl;
       m_Settings->SetGeometryFileName(g_MEGAlibPath + "/resource/examples/geomega/special/Dummy.geo.setup");
@@ -301,6 +319,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
     } else {
       return false;
     }
+    */
   }
 
   // Now parse all high level options
