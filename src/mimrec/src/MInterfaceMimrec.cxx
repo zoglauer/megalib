@@ -306,7 +306,7 @@ bool MInterfaceMimrec::ParseCommandLine(int argc, char** argv)
   if (SetGeometry(m_Settings->GetGeometryFileName(), false) == false) {
     cout<<"Command-line parser: "<<m_Settings->GetGeometryFileName()<<" is no aceptable geometry file!"<<endl;
     cout<<"Command-line parser: Please give a correct geometry file via the -g option."<<endl;
-    cout<<"Command-line parser: A universally working geometry for mimrec would be: ${MEGALIB}//resource/examples/geomega/special/Dummy.geo.setup"<<endl;
+    cout<<"Command-line parser: A universally working geometry for mimrec would be: ${MEGALIB}/resource/examples/geomega/special/Dummy.geo.setup"<<endl;
     return false;
     /*
     if (m_UseGui == true) {
