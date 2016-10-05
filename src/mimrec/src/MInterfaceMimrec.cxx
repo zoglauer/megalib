@@ -5972,7 +5972,9 @@ void MInterfaceMimrec::PointingInGalacticCoordinates()
     new MImageGalactic("Pointing in galactic coordinates", Array,
                        "Longitude", LongMin, LongMax, LongBins, 
                        "Latitude", LatMin-90, LatMax-90, LatBins,
+                       "propotional to time spent [a.u.]",
                        m_Settings->GetImagePalette(), m_Settings->GetImageDrawMode());
+  Galactic->Normalize(true);
   Galactic->SetImageArray(Array);
   Galactic->Display();
 

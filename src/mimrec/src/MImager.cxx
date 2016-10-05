@@ -880,7 +880,7 @@ bool MImager::Analyze(bool CalculateResponse)
     // Error message already displayed
     return false; 
   }
-  Image->Normalize(false);
+  Image->Normalize(true);
   Image->Display();
 
   
