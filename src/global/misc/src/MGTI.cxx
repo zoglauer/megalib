@@ -134,7 +134,7 @@ bool MGTI::Load(const MString& FileName)
     if (P.GetTokenizerAt(l)->IsTokenAt(0, "IN") == true && P.GetTokenizerAt(l)->GetNTokens() == 2) {
       MGTI GTI;
       if (GTI.Load(P.GetTokenizerAt(l)->GetTokenAtAsString(1)) == true) {
-        cout<<"Added"<<endl;
+        //cout<<"Added: "<<P.GetTokenizerAt(l)->GetTokenAtAsString(1)<<endl;
         Add(GTI);
       } else {
         cout<<"Error: Unable to load GTI file: "<<P.GetTokenizerAt(l)->GetTokenAtAsString(1)<<endl; 
