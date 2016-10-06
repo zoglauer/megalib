@@ -957,6 +957,10 @@ bool MImager::Analyze(bool CalculateResponse)
     mgui<<Prefix<<"*.gif by yourself."<<info;
     
     return true;
+  } else if (m_AnimationMode == c_AnimateIterations) {
+    ostringstream s;
+    s<<Prefix<<setw(5)<<setfill('0')<<0<<".gif";
+    Image->SaveAs(s.str().c_str());    
   }
 
 
