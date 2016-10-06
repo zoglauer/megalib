@@ -335,7 +335,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // Check if it exists and is readable in case we read
   if (Way == c_Read) {
     if (Exists(m_FileName) == false) {
-      mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
+      mgui<<"This file does not exist: \""<<m_FileName<<"\""<<endl;
       return false;      
     }
   }
