@@ -820,7 +820,7 @@ bool MImager::Analyze(bool CalculateResponse)
     }
   }
 
-  MString Prefix;
+  MString Prefix = "/tmp/MimrecAnimation_";
   if (m_AnimationMode != c_AnimateNothing) {
     // Create a temporary file suffix:
     TRandom R;
@@ -1022,13 +1022,13 @@ bool MImager::Analyze(bool CalculateResponse)
   if (m_AnimationMode == c_AnimateIterations) {
     // Concatenate images
     mout<<"Started creating animation... please wait a while..."<<endl;
-    ostringstream command;
-    command<<"convert -loop 1 -delay 100 "<<Prefix<<"*.gif "<<m_AnimationFileName<<endl;
-    gSystem->Exec(command.str().c_str());
+    ostringstream command1;
+    command1<<"convert -loop 1 -delay 100 "<<Prefix<<"*.gif "<<m_AnimationFileName<<endl;
+    gSystem->Exec(command1.str().c_str());
+    ostringstream command2;
+    command2<<"rm "<<Prefix<<"*.gif "<<endl;
+    gSystem->Exec(command2.str().c_str());
     
-    mgui<<"The file "<<m_AnimationFileName<<" has been generated."<<endl;
-    mgui<<"Since MEGAlib des not want to delete any files, you have to delete the intermediary files"<<endl;
-    mgui<<Prefix<<"*.gif by yourself."<<info;
   }
 
   
