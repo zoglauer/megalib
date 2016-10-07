@@ -838,8 +838,8 @@ else
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
   bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee RootBuildLog.txt
-  RESULT=$?
-     
+  RESULT=${PIPESTATUS[0]}
+
   # If we have a new ROOT dir, copy the build log there
   NEWROOT4DIR=`grep ROOTDIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWROOT4DIR} ]]; then
@@ -896,7 +896,7 @@ else
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
   bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee Geant4BuildLog.txt
-  RESULT=$?
+  RESULT=${PIPESTATUS[0]}
   
   # If we have a new Geant4 dir, copy the build log there
   NEWGEANT4DIR=`grep GEANT4DIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
