@@ -707,7 +707,10 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
     
     double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90;
     double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
-    if (Long > 180) Long -= 360;
+    
+    // Get it into the right range:
+    while (Long < LongMin) Long += 360;
+    while (Long > LongMax) Long -= 360;
     
     if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
       if (DumpOutput == true) {
@@ -1240,8 +1243,11 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     
     double Lat = Event->GetGalacticPointingZAxis().Theta()*c_Deg - 90.0;
     double Long = Event->GetGalacticPointingZAxis().Phi()*c_Deg;
-    if (Long < 0) Long += 360.0;
     
+    // Get it into the right range:
+    while (Long < LongMin) Long += 360;
+    while (Long > LongMax) Long -= 360;
+     
     if (Lat < LatMin || Lat > LatMax || Long < LongMin || Long > LongMax) {
       return false;
     }
