@@ -76,7 +76,11 @@ class MRawEventAnalyzer
   //! In case the events are not read from file,
   //! add an event to the back of the temporary event store.
   //! The raw event will be deleted by this class!
-  void AddRawEvent(MRERawEvent* RE);
+  bool AddRawEvent(MRERawEvent* RE);
+  
+  //! In case the events are not read from file,
+  //! create the event from a string containing ALL event data
+  bool AddRawEvent(const MString& RE, bool NeedsNoising = true, int Version = 25);
   
   //! Analyze one event
   //! The event can then be retrieved via GetOptimumEvent() or GetBestTryEvent()
@@ -289,16 +293,23 @@ class MRawEventAnalyzer
   //! Intermediate store of the events after reading
   MRawEventList* m_EventStore;
 
-  //! array of all "possible" events
+  //! List of all "possible" events
   MRawEventList* m_RawEvents;  
 
-  //! Replace all those one day by their base class...
+  //! Coincidence search
   MERCoincidence* m_Coincidence;
+  //! Clustering
   MERClusterize* m_Clusterizer;
+  //! Electron tracking
   MERTrack* m_Tracker;
+  //! Compton sequence reconstruction
   MERCSR* m_CSR;
+  //! Decay search
   MERDecay* m_Decay;
-
+  //! Provides functionality for noising simulation data
+  //! This one is independent of the one used in MFileEventsEvta
+  MERNoising* m_Noising;
+  
   MString m_Filename;
   MString m_FilenameOut;
 

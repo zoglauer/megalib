@@ -122,12 +122,12 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   // default constructor
 
   m_Filename = "";
-  m_Reader = 0;
+  m_Reader = nullptr;
   
   m_FilenameOut = "";
-  m_PhysFile = 0;
+  m_PhysFile = nullptr;
 
-  m_Geometry = 0; 
+  m_Geometry = nullptr; 
   m_RawEvents = new MRawEventList(0);
 
   m_MoreEventsAvailable = true;
@@ -212,11 +212,12 @@ MRawEventAnalyzer::MRawEventAnalyzer()
 
   m_IsBatch = false;
 
-  m_Coincidence = 0;
-  m_Clusterizer = 0;
-  m_Tracker = 0;
-  m_CSR = 0;
-  m_Decay = 0;
+  m_Coincidence = nullptr;
+  m_Clusterizer = nullptr;
+  m_Tracker = nullptr;
+  m_CSR = nullptr;
+  m_Decay = nullptr;
+  m_Noising = nullptr;
 
   m_EventStore = new MRawEventList();
 }
@@ -246,6 +247,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_Tracker;
   delete m_CSR;
   delete m_Decay;
+  delete m_Noising;
 }
 
 
@@ -256,8 +258,14 @@ void MRawEventAnalyzer::SetGeometry(MGeometryRevan* Geometry)
 {
   // Set the geometry
   
-  massert(Geometry != 0);
+  massert(Geometry != nullptr);
   m_Geometry = Geometry;
+  
+  // The noising is based on the geometry data, thus set here
+  delete m_Noising;
+  m_Noising = new MERNoising();
+  m_Noising->SetGeometry(m_Geometry);
+  m_Noising->PreAnalysis();
 }
 
  
@@ -399,16 +407,51 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventAnalyzer::AddRawEvent(MRERawEvent* RE)
+bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, int Version)
 {
   // Add a raw event to the store
   
-  if (m_Reader != 0) {
+  if (m_Reader != nullptr) {
     merr<<"You can only add events if you don't read them from file!"<<show;
-    return;
+    return false;
+  }
+  
+  vector<MString> Lines = String.Tokenize("\n");
+
+  MRERawEvent* RE = new MRERawEvent(m_Geometry);
+  
+  for (MString L: Lines) {
+    if (RE->ParseLine(L, Version) == 1) {
+      delete RE;
+      cout<<"Parsing of line failed: "<<L<<endl;
+      return false; 
+    }
+  }
+
+  if (NeedsNoising == true) {
+    m_Noising->Analyze(RE);
+  }
+  m_EventStore->AddRawEvent(RE);
+  
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRawEventAnalyzer::AddRawEvent(MRERawEvent* RE)
+{
+  // Add a raw event to the store
+  
+  if (m_Reader != nullptr) {
+    merr<<"You can only add events if you don't read them from file!"<<show;
+    return false;
   }
   
   m_EventStore->AddRawEvent(RE);
+  
+  return true;
 }
 
  
