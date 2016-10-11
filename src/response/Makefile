@@ -22,6 +22,7 @@ MOBJC = $(LB)/MResponseCreatorMain.o
 
 LOBJS = $(LB)/MResponseCreator.o \
 				$(LB)/MResponseManipulator.o \
+				$(LB)/MResponseBuilder.o \
 				$(LB)/MResponseBase.o \
 				$(LB)/MResponseClusteringDSS.o \
 				$(LB)/MResponseTracking.o \

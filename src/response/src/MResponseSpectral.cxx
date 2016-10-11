@@ -35,8 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
-#include "MSettingsRevan.h"
-#include "MSettingsMimrec.h"
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,88 +49,46 @@ ClassImp(MResponseSpectral)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default constructor
 MResponseSpectral::MResponseSpectral()
 {
-  // Construct an instance of MResponseSpectral
+  // Intentionally left empty - call Initialize for initialization
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MResponseSpectral::~MResponseSpectral()
 {
-  // Delete this instance of MResponseSpectral
+  // Intentionally left empty 
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseSpectral::OpenFiles()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
-
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) {
-    merr<<"Unable to open simulation file \""<<m_SimulationFileName<<"\" in revan"<<endl; 
-    return false;
-  }
-
-  MSettingsRevan RevanCfg(false);
-  if (RevanCfg.Read(m_RevanCfgFileName) == false) {
-    merr<<"Unable to open revan configuration file \""<<m_RevanCfgFileName<<"\""<<endl; 
-    return false;
-  }
-  m_ReReader->SetSettings(&RevanCfg);
-
-  MSettingsMimrec MimrecCfg(false);
-  if (MimrecCfg.Read(m_MimrecCfgFileName) == false) {
-    merr<<"Unable to open mimrec configuration file \""<<m_MimrecCfgFileName<<"\""<<endl; 
-    return false;
-  }
-  m_MimrecEventSelector.SetSettings(&MimrecCfg);
-
-  if (m_ReReader->PreAnalysis() == false) {
-    merr<<"Unable to initialize event reconstruction."<<endl;     
-    return false;
-  }
   
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) {
-    merr<<"Unable to open simulation file \""<<m_SimulationFileName<<"\" in sivan"<<endl; 
-    return false;
-  }
-
-  return true;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseSpectral::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenFiles() == false) return false;
-
-  cout<<"Generating spectral response"<<endl;
-
+//! Initialize the response matrices and their generation
+bool MResponseSpectral::Initialize() 
+{ 
+  if (MResponseBuilder::Initialize() == false) return false;
+  
+  
   vector<float> AxisEnergy2;
   AxisEnergy2 = CreateLogDist(10, 20000, 1000, 1, 100000);
 
-  MResponseMatrixO2 EnergyBeforeER("Energy (before event reconstruction)", AxisEnergy2, AxisEnergy2);
-  EnergyBeforeER.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergyBeforeER.SetName("Energy (before event reconstruction)");
+  m_EnergyBeforeER.SetAxis(AxisEnergy2, AxisEnergy2);
+  m_EnergyBeforeER.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
-  MResponseMatrixO2 EnergyUnselected("Energy (no event selections)", AxisEnergy2, AxisEnergy2);
-  EnergyUnselected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergyUnselected.SetName("Energy (no event selections)");
+  m_EnergyUnselected.SetAxis(AxisEnergy2, AxisEnergy2);
+  m_EnergyUnselected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
-  MResponseMatrixO2 EnergySelected("Energy (with event selections)", AxisEnergy2, AxisEnergy2);
-  EnergySelected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergySelected.SetName("Energy (with event selections)");
+  m_EnergySelected.SetAxis(AxisEnergy2, AxisEnergy2);
+  m_EnergySelected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
   vector<float> AxisRelativeIdealEnergy;
   AxisRelativeIdealEnergy = CreateLogDist(10, 10000, 400);
@@ -156,56 +113,79 @@ bool MResponseSpectral::CreateResponse()
   //        Fill   Fill       Fill   Fill       Fill   Fill
   
   
-  MResponseMatrixO2 EnergyRatioBeforeER("Energy ratio (before event reconstruction)", AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  EnergyRatioBeforeER.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
+  m_EnergyRatioBeforeER.SetName("Energy ratio (before event reconstruction)");
+  m_EnergyRatioBeforeER.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
+  m_EnergyRatioBeforeER.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
 
-  MResponseMatrixO2 EnergyRatioUnselected("Energy ratio (no event selections)", AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  EnergyRatioUnselected.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
+  m_EnergyRatioUnselected.SetName("Energy ratio (no event selections)");
+  m_EnergyRatioUnselected.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
+  m_EnergyRatioUnselected.SetAxisNames("ideal energy [keV]" , "measured energy / ideal energy");
 
-  MResponseMatrixO2 EnergyRatioSelected("Energy ratio (with event selections)", AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  EnergyRatioSelected.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
+  m_EnergyRatioSelected.SetName("Energy ratio (with event selections)");
+  m_EnergyRatioSelected.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
+  m_EnergyRatioSelected.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
+   
+  
+  return true; 
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Analyze th events (all if in file mode, one if in event-by-event mode)
+bool MResponseSpectral::Analyze() 
+{ 
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
   
   
-  MRawEventList* REList = 0;
-  MPhysicalEvent* Event = 0;
-
-  int Counter = 0;
-  while (InitializeNextMatchingEvent() == true) {
-    REList = m_ReReader->GetRawEventList();
-    MRERawEvent* RE = REList->GetInitialRawEvent();
-    if (RE != nullptr) {
-      EnergyBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy());
-      EnergyRatioBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
-    }
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRERawEvent* RE = REList->GetInitialRawEvent();
+  if (RE != nullptr) {
+    m_EnergyBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy());
+    m_EnergyRatioBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
+  }
     
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
-      if (Event != nullptr) {
-        EnergyUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
-        EnergyRatioUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
-          EnergySelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
-          EnergyRatioSelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
-        }
+  if (REList->HasOptimumEvent() == true) {
+    MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    if (Event != nullptr) {
+      m_EnergyUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
+      m_EnergyRatioUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
+      if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
+        m_EnergySelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
+        m_EnergyRatioSelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
       }
     }
-    
-    if (++Counter % m_SaveAfter == 0) {
-      EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
-      EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
-      EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);
-      EnergyRatioBeforeER.Write(m_ResponseName + ".energyratio.beforeeventreconstruction" + m_Suffix, true);
-      EnergyRatioUnselected.Write(m_ResponseName + ".energyratio.mimrecunselected" + m_Suffix, true);
-      EnergyRatioSelected.Write(m_ResponseName + ".energyratio.mimrecselected" + m_Suffix, true);
-    }
-  }  
+  }
+  
+  return true; 
+}
 
-  EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
-  EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
-  EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);
-  EnergyRatioBeforeER.Write(m_ResponseName + ".energyratio.beforeeventreconstruction" + m_Suffix, true);
-  EnergyRatioUnselected.Write(m_ResponseName + ".energyratio.mimrecunselected" + m_Suffix, true);
-  EnergyRatioSelected.Write(m_ResponseName + ".energyratio.mimrecselected" + m_Suffix, true);
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseSpectral::Finalize() 
+{ 
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseSpectral::Save()
+{
+  // Create the multiple Compton response
+
+  m_EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
+  m_EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
+  m_EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);
+  m_EnergyRatioBeforeER.Write(m_ResponseName + ".energyratio.beforeeventreconstruction" + m_Suffix, true);
+  m_EnergyRatioUnselected.Write(m_ResponseName + ".energyratio.mimrecunselected" + m_Suffix, true);
+  m_EnergyRatioSelected.Write(m_ResponseName + ".energyratio.mimrecselected" + m_Suffix, true);
 
   return true;
 }

@@ -370,18 +370,21 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   } else if (m_Mode == c_ModeSpectral) {
 
     MResponseSpectral Response;
-    m_Creator = (&Response);
-    Response.SetSimulationFileName(m_FileName);
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+    Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
  
-    Response.CreateResponse();
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+
   } else if (m_Mode == c_ModeARM) {
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
