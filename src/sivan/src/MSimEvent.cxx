@@ -342,7 +342,28 @@ void MSimEvent::SetGeometry(MDGeometryQuest* Geo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
+bool MSimEvent::ParseEvent(MString Line, int Version)
+{
+  // Parse the whole event at once
+  
+  Reset();
+  
+  vector<MString> Lines = Line.Tokenize("\n");
+  
+  for (MString L: Lines) {
+    if (ParseLine(L, Version) == false) {
+      return false; 
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MSimEvent::ParseLine(MString LineBuffer, int Version)
 {
   // Analyze one line of text input...
   // Return true if all event data is available
@@ -371,10 +392,14 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
 
   // Start Event:
   if (LineBuffer[0] == 'I' && LineBuffer[1] == 'D') {
-    if (sscanf(LineBuffer.Data(),"ID%d %d\n",&m_NEvent, &m_NStartedEvent) != 2) {
-      mout<<"Error during scanning of sim file in token ID!"<<endl;
-      mout<<"  "<<LineBuffer<<endl;
-      Ret = false;
+    if (sscanf(LineBuffer.Data(),"ID %d %d\n",&m_NEvent, &m_NStartedEvent) != 2) {
+      if (sscanf(LineBuffer.Data(),"ID %d\n",&m_NEvent) != 1) {
+        mout<<"Error during scanning of sim file in token ID!"<<endl;
+        mout<<"  "<<LineBuffer<<endl;
+        Ret = false;
+      } else {
+        m_NStartedEvent = m_NEvent;
+      }
     }
     Reset();
   }
@@ -506,6 +531,7 @@ bool MSimEvent::AddRawInput(MString LineBuffer, int Version)
            (LineBuffer[0] == 'G' && (LineBuffer[1] == 'X' || LineBuffer[1] == 'Z'))) {
     MRotationInterface::ParseLine(LineBuffer);
   }
+  
   return Ret;
 }
 

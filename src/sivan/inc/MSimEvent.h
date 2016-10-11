@@ -85,8 +85,14 @@ class MSimEvent : public MRotationInterface
 
   //! Add the content of the given event to this one
   bool Add(const MSimEvent& Event);
-  //! Add a line from a sim file to this event
-  bool AddRawInput(MString LineBuffer, int Version = 1);
+  
+  //! Parse a single line from a sim file to this event
+  bool ParseLine(MString Line, int Version = 1);
+  bool AddRawInput(MString Line, int Version = 1) { return ParseLine(Line, Version); }
+  
+  //! Parse a full (i.e. multi-line) event from a sim file to this event
+  bool ParseEvent(MString Line, int Version = 1);  
+  
   //! Add an interaction to this event
   bool AddIA(const MSimIA& IA);
   //! Add an interaction to this event --- the event will delete this IA!
