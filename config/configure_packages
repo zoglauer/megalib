@@ -58,11 +58,13 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
   done
   
   if [[ "${TOBEINSTALLED}" != "" ]]; then
-    echo "The following packages need to be installed: ${TOBEINSTALLED}"
+    echo " "
+    echo "Do the following to install all required packages:"
     echo "sudo apt-get update; sudo apt-get install ${TOBEINSTALLED}"
+    echo " "
     exit 1;
   else 
-    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04."
+    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04 & 16.06."
   fi
 fi
 
