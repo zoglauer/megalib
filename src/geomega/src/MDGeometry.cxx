@@ -3584,13 +3584,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (FoundTest == true) {
           m_DetectorList[i]->SetCommonVolume(Test);
-          mout<<"Common mother volume for sensitive detectors of "<<m_DetectorList[i]->GetName()<<": "<<Test->GetName()<<endl;
+          mout<<"Common mother volume for sensitive detectors of "<<m_DetectorList[i]->GetName()<<": "<<m_DetectorList[i]->GetCommonVolume()->GetName()<<endl;
           break;
         }
       }
       
-      if (m_DetectorList[i]->GetCommonVolume() == 0) {
-        mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction"<<endl;
+      if (m_DetectorList[i]->GetCommonVolume() == nullptr) {
+        mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction for "<<m_DetectorList[i]->GetName()<<endl;
         mout<<"If your detector has multiple sensitive volumes, those must have a common volume and there are no copies allowed starting with the sensitive volume up to the common volume."<<endl;
         mout<<"Stopping to scan geometry file!"<<endl;
         Reset();
@@ -3601,8 +3601,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Make sure there is always only one sensitive volume of a certain type in the common volume
     // Due to the above checks it is enough to simply check the number of sensitive volumes in the common volume
-    if (m_DetectorList[i]->GetNSensitiveVolumes() > 1 && m_DetectorList[i]->GetNSensitiveVolumes() != m_DetectorList[i]->GetCommonVolume()->GetNSensitiveVolumes()) {
-      mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction"<<endl;
+    if (m_DetectorList[i]->GetNSensitiveVolumes() > 1 && m_DetectorList[i]->GetNSensitiveVolumes() != m_DetectorList[i]->GetCommonVolume()->GetNSensitiveVolumes()) {      
+      mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction for "<<m_DetectorList[i]->GetName()<<endl;
       mout<<"If your detector has multiple sensitive volumes, those must have a common volume, in which exactly one of those volumes is positioned, and in addition no other sensitive volume. The latter is not the case."<<endl;
       mout<<"Stopping to scan geometry file!"<<endl;
       Reset();
