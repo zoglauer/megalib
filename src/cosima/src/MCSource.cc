@@ -1006,24 +1006,24 @@ bool MCSource::SetPosition(double PositionParam1,
   // Some sanity checks:
   if (m_BeamType == c_FarFieldPoint) {
     if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
-      mout<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_FarFieldArea) {
     if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
-      mout<<m_Name<<": Minimum theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Minimum theta (first parameter) must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam2 < 0 || m_PositionParam2 > c_Pi) {
-      mout<<m_Name<<": Maximum theta must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum theta (first parameter) must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam2 <= m_PositionParam1) {
-      mout<<m_Name<<": Maximum theta must be larger than minimum theta"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum theta (first parameter) must be larger than minimum theta"<<endl;
       return false;
     }
     if (m_PositionParam4 <= m_PositionParam3) {
-      mout<<m_Name<<": Maximum phi must be larger than minimum theta"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Maximum phi (second parameter) must be larger than minimum theta"<<endl;
       return false;
     }
   } else if (m_BeamType == c_FarFieldGaussian) {
@@ -1039,124 +1039,124 @@ bool MCSource::SetPosition(double PositionParam1,
   } else if (m_BeamType == c_NearFieldDiffractionPoint ||
              m_BeamType == c_NearFieldDiffractionPointKSpace) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction of the normal vector must not be (0, 0, 0)"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
     if (m_PositionParam1 == m_PositionParam4 &&
         m_PositionParam2 == m_PositionParam5 &&
         m_PositionParam3 == m_PositionParam6) {
-      mout<<m_Name<<": Position 1 must be different from position 2"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Position 1 must be different from position 2"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBox) {
     if (m_PositionParam1 == m_PositionParam4 &&
         m_PositionParam2 == m_PositionParam5 &&
         m_PositionParam3 == m_PositionParam6) {
-      mout<<m_Name<<": Position 1 must be different from position 2"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Position 1 must be different from position 2"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldSphere) {
     if (m_PositionParam4 <= 0 || m_PositionParam5 <= 0 || m_PositionParam6 <= 0) {
-      mout<<m_Name<<": The radii must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radii must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldDisk) {
     if (m_PositionParam7 < 0) {
-      mout<<m_Name<<": Inner radius must must not be negative"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Inner radius must must not be negative"<<endl;
       return false;
     }
     if (m_PositionParam8 <= 0) {
-      mout<<m_Name<<": Outer radius must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Outer radius must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam9 <= 0) {
-      mout<<m_Name<<": Height must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Height must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam7 >= m_PositionParam8) {
-      mout<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Outer radius must be larger than inner radius"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The radius must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radius must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldBeam1DProfile || m_BeamType == c_NearFieldBeam2DProfile || m_BeamType == c_NearFieldFlatMap) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldConeBeam) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldConeBeamGauss) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 <= 0) {
-      mout<<m_Name<<": The opening angle must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The opening angle must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam8 <= 0) {
-      mout<<m_Name<<": The gaussian 1-sigma value must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The gaussian 1-sigma value must be larger than zero"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldFanBeam) {
     if (m_PositionParam4 == 0 && m_PositionParam5 == 0 && m_PositionParam6 == 0) {
-      mout<<m_Name<<": The first direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The first direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam7 == 0 && m_PositionParam8 == 0 && m_PositionParam9 == 0) {
-      mout<<m_Name<<": The second direction must not be (0, 0, 0)"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The second direction must not be (0, 0, 0)"<<endl;
       return false;
     }
     if (m_PositionParam10 < 0) {
-      mout<<m_Name<<": The beam width must be zero (point beam) or positive"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The beam width must be zero (point beam) or positive"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldIlluminatedDisk) {
     if (m_PositionParam4 <= 0) {
-      mout<<m_Name<<": The radius of the disk must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The radius of the disk must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam5 < 0 || m_PositionParam5 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the disk must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the disk must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam7 < 0 || m_PositionParam7 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the beam must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the beam must be within [0..180]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldIlluminatedSquare) {
     if (m_PositionParam4 <= 0) {
-      mout<<m_Name<<": The half length of the box must be larger than zero"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The half length of the box must be larger than zero"<<endl;
       return false;
     }
     if (m_PositionParam5 < 0 || m_PositionParam5 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the box must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the box must be within [0..180]"<<endl;
       return false;
     }
     if (m_PositionParam7 < 0 || m_PositionParam7 > c_Pi) {
-      mout<<m_Name<<": The phi orientation of the beam must be within [0..pi]"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The phi orientation of the beam must be within [0..180]"<<endl;
       return false;
     }
   } else if (m_BeamType == c_NearFieldActivation || 
              m_BeamType == c_NearFieldVolume) {
     if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsValidVolume(m_Volume) == false) {
-      mout<<m_Name<<": The volume "<<m_Volume<<" does not exist in the loaded geometry!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The volume "<<m_Volume<<" does not exist in the loaded geometry!"<<endl;
       return false;      
     }
   }
@@ -1402,85 +1402,85 @@ bool MCSource::SetEnergy(double EnergyParam1,
   // Perform some sanity checks:
   if (m_SpectralType == c_Monoenergetic) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_Linear) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_PowerLaw) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BrokenPowerLaw) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= m_EnergyParam1 || m_EnergyParam3 > m_EnergyParam2) {
-      mout<<m_Name<<": The break energy must be within the minimum and maximum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The break energy must be within the minimum and maximum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam4 <= 0) {
-      mout<<m_Name<<": The first index (alpha) must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The first index (alpha) must be positive!"<<endl;
       return false;      
     }
     if (m_EnergyParam5 <= 0) {
-      mout<<m_Name<<": The second index (alpha) must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The second index (alpha) must be positive!"<<endl;
       return false;      
     }
   } else if (m_SpectralType == c_Gaussian) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= 0) {
-      mout<<m_Name<<": The sigma must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The sigma must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The cut-off must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The cut-off must be larger than 0!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_ThermalBremsstrahlung) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The temperature must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The temperature must be positive!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BlackBody) {
     if (m_EnergyParam1 <= 0) {
-      mout<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
       return false;
     }
     if (m_EnergyParam2 <= m_EnergyParam1) {
-      mout<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
       return false;
     }
     if (m_EnergyParam3 <= 0) {
-      mout<<m_Name<<": The temperature must be positive!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The temperature must be positive!"<<endl;
       return false;
     }
   } else if (m_SpectralType == c_BandFunction) {
@@ -1592,7 +1592,7 @@ double MCSource::GetEnergyParameter(unsigned int i)
 bool MCSource::SetFlux(const double& Flux) 
 {
   if (m_SpectralType == c_NormalizedEnergyBeamFluxFunction || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
-    mout<<m_Name<<": The beam NormalizedEnergyBeamFluxFunction doesn't need a flux since it is already normalized!"<<endl;
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The beam NormalizedEnergyBeamFluxFunction doesn't need a flux since it is already normalized!"<<endl;
     return false;
   }
   
@@ -1687,12 +1687,12 @@ bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
 {
   if (m_LightCurveType == c_LightCurveFile) {
     if (m_LightCurveFunction.Set(FileName, "DP") == false) {
-      mout<<m_Name<<": LightCurveFile: Unable to load light curve!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": LightCurveFile: Unable to load light curve!"<<endl;
       return false;
     }
     
     if (m_LightCurveFunction.GetSize() < 2) {
-      mout<<m_Name<<": At least two entries in the file are required!"<<endl;
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": At least two entries in the file are required!"<<endl;
       return false;
     }
     
@@ -1703,7 +1703,7 @@ bool MCSource::SetLightCurve(const MString& FileName, const bool& Repeats)
     m_IsFluxVariable = true;
     m_IsRepeatingLightCurve = Repeats;
   } else {
-    mout<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": Unknown light curve type: "<<m_LightCurveType<<endl;
     return false;
   }
   
