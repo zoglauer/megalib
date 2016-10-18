@@ -35,9 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
-#include "MSettingsRevan.h"
-#include "MSettingsMimrec.h"
-#include "MResponseMatrixO5.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,61 +48,31 @@ ClassImp(MResponseImagingARM)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default constructor
 MResponseImagingARM::MResponseImagingARM()
 {
-  // Construct an instance of MResponseImagingARM
+  // Intentionally left empty - call Initialize for initialization
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MResponseImagingARM::~MResponseImagingARM()
 {
-  // Delete this instance of MResponseImagingARM
+  // Nothing to delete
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseImagingARM::OpenFiles()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
-
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) return false;
-
-  MSettingsRevan RevanCfg(false);
-  RevanCfg.Read(m_RevanCfgFileName);
-  m_ReReader->SetSettings(&RevanCfg);
-
-  MSettingsMimrec MimrecCfg(false);
-  MimrecCfg.Read(m_MimrecCfgFileName);
-  m_MimrecEventSelector.SetSettings(&MimrecCfg);
-
-  if (m_ReReader->PreAnalysis() == false) return false;
-
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) return false;
-
-  return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseImagingARM::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenFiles() == false) return false;
-
-  cout<<"Generating imaging response"<<endl;
+//! Initialize the response matrices and their generation
+bool MResponseImagingARM::Initialize() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
 
   vector<float> PhiDiffAxis;
 
@@ -148,78 +116,99 @@ bool MResponseImagingARM::CreateResponse()
   InteractionsAxis.push_back(2.5);
   InteractionsAxis.push_back(9.5);
   
-  MResponseMatrixO5 Arm("Angular resolution (all energies)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
-  Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
+  m_Arm.SetName("Angular resolution (all energies)");
+  m_Arm.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  m_Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
   
-  MResponseMatrixO5 ArmPhotoPeak("Angular resolution (photo-peak)", PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
-  ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
-
-
-  double PhiDiff;
-  MVector IdealOrigin;
-  double IdealEnergy;
-
-  MRawEventList* REList = 0;
-  MPhysicalEvent* Event = 0;
-  MComptonEvent* Compton = 0;
+  m_ArmPhotoPeak.SetName("Angular resolution (photo-peak)");
+  m_ArmPhotoPeak.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
+  m_ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
   
-  int Counter = 0;
-  int NMatchedEvents = 0;
-  int NOptimumEvents = 0;
-  int NQualifiedComptonEvents = 0;
-  int NPhotoPeakEvents = 0;
-  while (InitializeNextMatchingEvent() == true) {
-    ++NMatchedEvents;
-    REList = m_ReReader->GetRawEventList();
+  m_NMatchedEvents = 0;
+  m_NOptimumEvents = 0;
+  m_NQualifiedComptonEvents = 0;
+  m_NPhotoPeakEvents = 0;
+  
+  return true;
+}
 
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
-      if (Event != 0) {
-        ++NOptimumEvents;
-        if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
-          if (Event->GetType() == MPhysicalEvent::c_Compton) {
-            Compton = (MComptonEvent*) Event;
+  
+////////////////////////////////////////////////////////////////////////////////
 
-            if (Compton->IsKinematicsOK() == false) continue;
-            ++NQualifiedComptonEvents;
+
+//! Analyze the current event
+bool MResponseImagingARM::Analyze() 
+{ 
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  ++m_NMatchedEvents;
+  
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  
+  if (REList->HasOptimumEvent() == true) {
+    MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    if (Event != 0) {
+      ++m_NOptimumEvents;
+      if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
+        if (Event->GetType() == MPhysicalEvent::c_Compton) {
+          MComptonEvent* Compton = (MComptonEvent*) Event;
+          
+          if (Compton->IsKinematicsOK() == false) return true;
+          ++m_NQualifiedComptonEvents;
+          
+          // Now get the ideal origin:
+          if (m_SiEvent->GetNIAs() > 0) {
+            MVector IdealOrigin = m_SiEvent->GetIAAt(0)->GetPosition();
             
-            // Now get the ideal origin:
-            if (m_SiEvent->GetNIAs() > 0) {
-              IdealOrigin = m_SiEvent->GetIAAt(0)->GetPosition();
-
-              // Phi response:
-              PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
-              
-              //
-              Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
-              
-              IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
-              
-              if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
-                  IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
-                ++NPhotoPeakEvents;
-                ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
-              }
+            // Phi response:
+            double PhiDiff = Compton->GetARMGamma(IdealOrigin)*c_Deg;
+            
+            //
+            m_Arm.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
+            
+            double IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+            
+            if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
+              IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
+              ++m_NPhotoPeakEvents;
+              m_ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
             }
           }
         }
-      }    
-    }
-    if (++Counter % m_SaveAfter == 0) {
-      Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
-      ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
-    }
-  }  
-
-  Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
-  ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
-
-  cout<<"Statistics: "<<endl;
-  cout<<"# matched events:            "<<NMatchedEvents<<endl;
-  cout<<"# optimum events:            "<<NOptimumEvents<<endl;
-  cout<<"# qualified Compton events:  "<<NQualifiedComptonEvents<<endl;
-  cout<<"# photo peak events:         "<<NPhotoPeakEvents<<endl;
+      }
+    }    
+  }
   
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseImagingARM::Finalize() 
+{ 
+  cout<<"Statistics: "<<endl;
+  cout<<"# matched events:            "<<m_NMatchedEvents<<endl;
+  cout<<"# optimum events:            "<<m_NOptimumEvents<<endl;
+  cout<<"# qualified Compton events:  "<<m_NQualifiedComptonEvents<<endl;
+  cout<<"# photo peak events:         "<<m_NPhotoPeakEvents<<endl;
+
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the responses
+bool MResponseImagingARM::Save()
+{
+  m_Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
+  m_ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
+
   return true;
 }
 

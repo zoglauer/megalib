@@ -288,18 +288,20 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   if (m_Mode == c_ModeClusteringDSS) {
 
     MResponseClusteringDSS Response;
-    m_Creator = (&Response);
-
-    // 
-    Response.SetSimulationFileName(m_FileName);
+ 
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
-    Response.CreateResponse();
+ 
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+    
   } else if (m_Mode == c_ModeComptons) {
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -308,21 +310,22 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseMultipleCompton Response;
-    m_Creator = (&Response);
 
-    // 
-    Response.SetSimulationFileName(m_FileName);
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
-
-    Response.CreateResponse();
+ 
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+    
   } else if (m_Mode == c_ModeComptonsLens) {
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -331,9 +334,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseMultipleComptonLens Response;
-    m_Creator = (&Response);
-    // 
-    Response.SetSimulationFileName(m_FileName);
+
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
@@ -341,10 +343,14 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
+ 
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
 
-    Response.CreateResponse();
+    
   } else if (m_Mode == c_ModeTracks) {
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
@@ -353,19 +359,20 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseTracking Response;
-    m_Creator = (&Response);
-    // 
-    Response.SetSimulationFileName(m_FileName);
+
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
-
-    Response.CreateResponse();
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+ 
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeSpectral) {
 
@@ -378,8 +385,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
-    Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
  
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
@@ -393,19 +400,22 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseImagingARM Response;
-    m_Creator = (&Response);
-    Response.SetSimulationFileName(m_FileName);
+
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
-    Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
  
-    Response.CreateResponse();
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+
   } else if (m_Mode == c_ModeEfficiency) {
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
@@ -414,19 +424,22 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseImagingEfficiency Response;
-    m_Creator = (&Response);
-    Response.SetSimulationFileName(m_FileName);
+    Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    // Response.SetStartEventID(0);
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
-    Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
-    Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
  
-    Response.CreateResponse();
+ 
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+
   } else if (m_Mode == c_ModeImagingListMode) {
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;

@@ -39,10 +39,7 @@ using namespace std;
 #include "MResponseMatrixO1.h"
 #include "MResponseMatrixO2.h"
 #include "MResponseMatrixO3.h"
-#include "MResponseMatrixO4.h"
-#include "MResponseMatrixO5.h"
-#include "MResponseMatrixO6.h"
-#include "MResponseMatrixO7.h"
+
 #include "MSettingsRevan.h"
 #include "MRESEIterator.h"
 #include "MRECluster.h"
@@ -59,33 +56,32 @@ ClassImp(MResponseClusteringDSS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseClusteringDSS::MResponseClusteringDSS() : MResponseBase()
+//! Default constructor
+MResponseClusteringDSS::MResponseClusteringDSS() : MResponseBuilder()
 {
-  // Construct an instance of MResponseClusteringDSS
+  // Intentionally left empty - call Initialize for initialization
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MResponseClusteringDSS::~MResponseClusteringDSS()
 {
-  // Delete this instance of MResponseClusteringDSS
+  // Nothing to delete
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseClusteringDSS::OpenFiles()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
+//! Initialize the response matrices and their generation
+bool MResponseClusteringDSS::Initialize() 
+{ 
+  if (MResponseBuilder::Initialize() == false) return false;
 
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) return false;
-
-  // We ignore this configuration file - we only need clustering
+  // We ignore the loaded configuration file - we only need clustering
   m_ReReader->SetCoincidenceAlgorithm(MRawEventAnalyzer::c_CoincidenceAlgoNone);
   m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoAdjacent);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
@@ -94,43 +90,23 @@ bool MResponseClusteringDSS::OpenFiles()
 
   m_ReReader->SetAdjacentLevel(2);
   m_ReReader->SetAdjacentSigma(-1);
-  
-  
+    
   if (m_ReReader->PreAnalysis() == false) return false;
 
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseClusteringDSS::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenFiles() == false) return false;
-
-  // create axis:
+  // Create matrices:
   vector<float> EnergyAxis;
   EnergyAxis = CreateEquiDist(0, 10000, 100);
   
   vector<float> StripsAxis;
   StripsAxis = CreateEquiDist(1.5, 10.5, 9);
 
-
-
-  MResponseMatrixO2 SeparableYes("SeparableYes", EnergyAxis, StripsAxis);
-  SeparableYes.SetAxisNames("Energy [keV]", "Combined hit strips");
+  m_SeparableYes.SetName("SeparableYes"); 
+  m_SeparableYes.SetAxis(EnergyAxis, StripsAxis);
+  m_SeparableYes.SetAxisNames("Energy [keV]", "Combined hit strips");
   
-  MResponseMatrixO2 SeparableNo("SeparableNo", EnergyAxis, StripsAxis);
-  SeparableNo.SetAxisNames("Energy [keV]", "Combined hit strips");
+  m_SeparableNo.SetName("SeparableNo");
+  m_SeparableNo.SetAxis(EnergyAxis, StripsAxis);
+  m_SeparableNo.SetAxisNames("Energy [keV]", "Combined hit strips");
   
   // create axis:
   vector<float> DualEnergyAxis;
@@ -139,123 +115,146 @@ bool MResponseClusteringDSS::CreateResponse()
   vector<float> DualDepthAxis = { 0, 0.05, 0.1, 0.2, 0.4, 0.8, 1.5 };
 
 
-  MResponseMatrixO3 DualSeparableYes("DualSeparableYes", DualEnergyAxis, DualEnergyAxis, DualDepthAxis);
-  DualSeparableYes.SetAxisNames("Energy [keV]", "Energy [keV]", "Depth difference [cm]");
+  m_DualSeparableYes.SetName("DualSeparableYes");
+  m_DualSeparableYes.SetAxis(DualEnergyAxis, DualEnergyAxis, DualDepthAxis);
+  m_DualSeparableYes.SetAxisNames("Energy [keV]", "Energy [keV]", "Depth difference [cm]");
   
-  MResponseMatrixO3 DualSeparableNo("DualSeparableNo", DualEnergyAxis, DualEnergyAxis, DualDepthAxis);
-  DualSeparableNo.SetAxisNames("Energy [keV]", "Energy [keV]", "Depth difference [cm]");
+  m_DualSeparableNo.SetName("DualSeparableNo");
+  m_DualSeparableNo.SetAxis(DualEnergyAxis, DualEnergyAxis, DualDepthAxis);
+  m_DualSeparableNo.SetAxisNames("Energy [keV]", "Energy [keV]", "Depth difference [cm]");
+  
+  
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
 
 
-  int Counter = 0;
-  while (InitializeNextMatchingEvent() == true) {
-
-    if (g_Verbosity > c_Chatty) cout<<"Match: "<<m_SiEvent->GetId()<<endl;
+//! Analyze the current event
+bool MResponseClusteringDSS::Analyze() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  
+  if (REList->GetNRawEvents() != 1) {
+    cout<<"Something went wrong: we have more than one good event"<<endl;
+    return true;
+  }
+  
+  MRERawEvent* RawEvent = REList->GetRawEventAt(0);
+  int e_max = RawEvent->GetNRESEs();
+  
+  int NClusters = 0;
+  for (int e = 0; e < e_max; ++e) {
+    if (RawEvent->GetRESEAt(e)->GetType() == MRESE::c_Cluster) NClusters++;
+  }
+  if (NClusters == 0) return true;
+  
+  if (g_Verbosity > c_Chatty) cout<<"# Clusters: "<<NClusters<<endl;
+  if (g_Verbosity > c_Chatty) cout<<m_SiEvent->ToSimString()<<endl;
+  
+  
+  for (int e = 0; e < e_max; ++e) {
+    MRESE* RESE = RawEvent->GetRESEAt(e);
     
-    MRawEventList* REList = m_ReReader->GetRawEventList();
-
-    if (REList->GetNRawEvents() != 1) {
-      cout<<"Something went wrong: we have more than one good event"<<endl;
-      continue;
+    if (RESE->GetType() != MRESE::c_Cluster) return true;
+    
+    MRECluster* Cluster = dynamic_cast<MRECluster*>(RESE);
+    if (g_Verbosity > c_Chatty) mout<<"Looking at cluster: "<<Cluster->ToString()<<endl;
+    
+    vector<vector<int>> Origins;
+    for (int r = 0; r < Cluster->GetNRESEs(); ++r) {
+      Origins.push_back(GetOriginIds(Cluster->GetRESEAt(r)));
     }
     
-    MRERawEvent* RawEvent = REList->GetRawEventAt(0);
-    int e_max = RawEvent->GetNRESEs();
+    // A cluster is not necessary when
+    // (a) not two RESEs have the same origin ID
+    // (b) the origin of one RESEs is not in another RESE
     
-    int NClusters = 0;
-    for (int e = 0; e < e_max; ++e) {
-      if (RawEvent->GetRESEAt(e)->GetType() == MRESE::c_Cluster) NClusters++;
-    }
-    if (NClusters == 0) continue;
-    
-    if (g_Verbosity > c_Chatty) cout<<"# Clusters: "<<NClusters<<endl;
-    if (g_Verbosity > c_Chatty) cout<<m_SiEvent->ToSimString()<<endl;
-    
-    
-    for (int e = 0; e < e_max; ++e) {
-      MRESE* RESE = RawEvent->GetRESEAt(e);
-
-      if (RESE->GetType() != MRESE::c_Cluster) continue;
-
-      MRECluster* Cluster = dynamic_cast<MRECluster*>(RESE);
-      if (g_Verbosity > c_Chatty) mout<<"Looking at cluster: "<<Cluster->ToString()<<endl;
-
-      vector<vector<int>> Origins;
-      for (int r = 0; r < Cluster->GetNRESEs(); ++r) {
-        Origins.push_back(GetOriginIds(Cluster->GetRESEAt(r)));
-      }
-      
-      // A cluster is not necessary when
-      // (a) not two RESEs have the same origin ID
-      // (b) the origin of one RESEs is not in another RESE
-      
-      bool UnnecessaryClustering = true;
-      // Check (a):
-      for (int r = 0; r < Cluster->GetNRESEs(); ++r) {
-        for (int rp = r+1; rp < Cluster->GetNRESEs(); ++rp) {
-          for (unsigned int o = 0; o < Origins[r].size(); ++o) {
-            for (unsigned int op = 0; op < Origins[rp].size(); ++op) {
-              // Check (a)
-              if (Origins[r][o] == Origins[rp][op]) {
-                if (g_Verbosity > c_Chatty) cout<<"Same origin check: "<<Origins[r][o]<<":"<<Origins[rp][op]<<endl;
-                UnnecessaryClustering = false;
-                break;
-              }
-              // Check (b)
-              if (HasAsAncestor(Origins[r][o], Origins[rp][op]) == true ||
-                  HasAsAncestor(Origins[rp][op], Origins[r][o]) == true) {
-                if (g_Verbosity > c_Chatty) cout<<"Ancestor check: "<<Origins[r][o]<<":"<<Origins[rp][op]<<endl;               
-                UnnecessaryClustering = false;
-                break;
-              }
+    bool UnnecessaryClustering = true;
+    // Check (a):
+    for (int r = 0; r < Cluster->GetNRESEs(); ++r) {
+      for (int rp = r+1; rp < Cluster->GetNRESEs(); ++rp) {
+        for (unsigned int o = 0; o < Origins[r].size(); ++o) {
+          for (unsigned int op = 0; op < Origins[rp].size(); ++op) {
+            // Check (a)
+            if (Origins[r][o] == Origins[rp][op]) {
+              if (g_Verbosity > c_Chatty) cout<<"Same origin check: "<<Origins[r][o]<<":"<<Origins[rp][op]<<endl;
+              UnnecessaryClustering = false;
+              break;
             }
-            if (UnnecessaryClustering == false) break;
+            // Check (b)
+            if (HasAsAncestor(Origins[r][o], Origins[rp][op]) == true ||
+              HasAsAncestor(Origins[rp][op], Origins[r][o]) == true) {
+              if (g_Verbosity > c_Chatty) cout<<"Ancestor check: "<<Origins[r][o]<<":"<<Origins[rp][op]<<endl;               
+              UnnecessaryClustering = false;
+            break;
+              }
           }
           if (UnnecessaryClustering == false) break;
         }
         if (UnnecessaryClustering == false) break;
       }
-      
-      if (UnnecessaryClustering == true) {
-        if (g_Verbosity > c_Chatty) cout<<"Result: Unnecessary clustering"<<endl;
-        SeparableYes.Add(Cluster->GetEnergy(), Cluster->GetNRESEs());
-        if (Cluster->GetNRESEs() == 2) {
-          MVector PosInDet0 = Cluster->GetRESEAt(0)->GetVolumeSequence()->GetPositionInSensitiveVolume();
-          MVector PosInDet1 = Cluster->GetRESEAt(1)->GetVolumeSequence()->GetPositionInSensitiveVolume();
-          double DepthDifference = fabs(PosInDet0.Z() - PosInDet1.Z());
-          if (Cluster->GetRESEAt(0)->GetEnergy() < Cluster->GetRESEAt(1)->GetEnergy()) {
-            DualSeparableYes.Add(Cluster->GetRESEAt(0)->GetEnergy(), Cluster->GetRESEAt(1)->GetEnergy(), DepthDifference);
-          } else  {
-            DualSeparableYes.Add(Cluster->GetRESEAt(1)->GetEnergy(), Cluster->GetRESEAt(0)->GetEnergy(), DepthDifference);           
-          }
+      if (UnnecessaryClustering == false) break;
+    }
+    
+    if (UnnecessaryClustering == true) {
+      if (g_Verbosity > c_Chatty) cout<<"Result: Unnecessary clustering"<<endl;
+      m_SeparableYes.Add(Cluster->GetEnergy(), Cluster->GetNRESEs());
+      if (Cluster->GetNRESEs() == 2) {
+        MVector PosInDet0 = Cluster->GetRESEAt(0)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        MVector PosInDet1 = Cluster->GetRESEAt(1)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        double DepthDifference = fabs(PosInDet0.Z() - PosInDet1.Z());
+        if (Cluster->GetRESEAt(0)->GetEnergy() < Cluster->GetRESEAt(1)->GetEnergy()) {
+          m_DualSeparableYes.Add(Cluster->GetRESEAt(0)->GetEnergy(), Cluster->GetRESEAt(1)->GetEnergy(), DepthDifference);
+        } else  {
+          m_DualSeparableYes.Add(Cluster->GetRESEAt(1)->GetEnergy(), Cluster->GetRESEAt(0)->GetEnergy(), DepthDifference);           
         }
-      } else {
-        if (g_Verbosity > c_Chatty) cout<<"Result: Necessary clustering"<<endl;
-        SeparableNo.Add(Cluster->GetEnergy(), Cluster->GetNRESEs());
-        if (Cluster->GetNRESEs() == 2) {
-          MVector PosInDet0 = Cluster->GetRESEAt(0)->GetVolumeSequence()->GetPositionInSensitiveVolume();
-          MVector PosInDet1 = Cluster->GetRESEAt(1)->GetVolumeSequence()->GetPositionInSensitiveVolume();
-          double DepthDifference = fabs(PosInDet0.Z() - PosInDet1.Z());
-          if (Cluster->GetRESEAt(0)->GetEnergy() < Cluster->GetRESEAt(1)->GetEnergy()) {
-            DualSeparableNo.Add(Cluster->GetRESEAt(0)->GetEnergy(), Cluster->GetRESEAt(1)->GetEnergy(), DepthDifference);
-          } else  {
-            DualSeparableNo.Add(Cluster->GetRESEAt(1)->GetEnergy(), Cluster->GetRESEAt(0)->GetEnergy(), DepthDifference);           
-          }
+      }
+    } else {
+      if (g_Verbosity > c_Chatty) cout<<"Result: Necessary clustering"<<endl;
+      m_SeparableNo.Add(Cluster->GetEnergy(), Cluster->GetNRESEs());
+      if (Cluster->GetNRESEs() == 2) {
+        MVector PosInDet0 = Cluster->GetRESEAt(0)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        MVector PosInDet1 = Cluster->GetRESEAt(1)->GetVolumeSequence()->GetPositionInSensitiveVolume();
+        double DepthDifference = fabs(PosInDet0.Z() - PosInDet1.Z());
+        if (Cluster->GetRESEAt(0)->GetEnergy() < Cluster->GetRESEAt(1)->GetEnergy()) {
+          m_DualSeparableNo.Add(Cluster->GetRESEAt(0)->GetEnergy(), Cluster->GetRESEAt(1)->GetEnergy(), DepthDifference);
+        } else  {
+          m_DualSeparableNo.Add(Cluster->GetRESEAt(1)->GetEnergy(), Cluster->GetRESEAt(0)->GetEnergy(), DepthDifference);           
         }
       }
     }
-    
-    if (++Counter % m_SaveAfter == 0) {
-      SeparableYes.Write(m_ResponseName + ".allseparable.yes" + m_Suffix, true);
-      SeparableNo.Write(m_ResponseName + ".allseparable.no" + m_Suffix, true);
-      DualSeparableYes.Write(m_ResponseName + ".dualseparable.yes" + m_Suffix, true);
-      DualSeparableNo.Write(m_ResponseName + ".dualseparable.no" + m_Suffix, true);
-    }
   }
   
-  SeparableYes.Write(m_ResponseName + ".allseparable.yes" + m_Suffix, true);
-  SeparableNo.Write(m_ResponseName + ".allseparable.no" + m_Suffix, true);
-  DualSeparableYes.Write(m_ResponseName + ".dualseparable.yes" + m_Suffix, true);
-  DualSeparableNo.Write(m_ResponseName + ".dualseparable.no" + m_Suffix, true);
+  
+  return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseClusteringDSS::Finalize() 
+{ 
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the data
+bool MResponseClusteringDSS::Save()
+{
+  m_SeparableYes.Write(m_ResponseName + ".allseparable.yes" + m_Suffix, true);
+  m_SeparableNo.Write(m_ResponseName + ".allseparable.no" + m_Suffix, true);
+  m_DualSeparableYes.Write(m_ResponseName + ".dualseparable.yes" + m_Suffix, true);
+  m_DualSeparableNo.Write(m_ResponseName + ".dualseparable.no" + m_Suffix, true);
 
   return true;
 }

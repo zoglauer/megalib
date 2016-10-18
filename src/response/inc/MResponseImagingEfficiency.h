@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseBase.h"
+#include "MResponseBuilder.h"
 
 // Forward declarations:
 
@@ -30,23 +30,28 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseImagingEfficiency : public MResponseBase
+class MResponseImagingEfficiency : public MResponseBuilder
 {
   // public interface:
  public:
   MResponseImagingEfficiency();
   virtual ~MResponseImagingEfficiency();
 
-  //! Do all the response creation
-  virtual bool CreateResponse();
+  //! Initialize the response matrices and their generation
+  virtual bool Initialize();
 
+  //! Analyze th events (all if in file mode, one if in event-by-event mode)
+  virtual bool Analyze();
+    
+  //! Finalize the response generation (i.e. save the data a final time )
+  virtual bool Finalize();
+
+  
   // protected methods:
  protected:
-  //MResponseImagingEfficiency() {};
-  //MResponseImagingEfficiency(const MResponseImagingEfficiency& ResponseImagingEfficiency) {};
 
-  //! Load the simulation file in revan and mimrec as well as the configuration files:
-  virtual bool OpenFiles();
+  //! Save the response matrices
+  virtual bool Save();
 
   // private methods:
  private:
@@ -55,7 +60,15 @@ class MResponseImagingEfficiency : public MResponseBase
 
   // protected members:
  protected:
-
+  //! The basic efficiency matrix
+  MResponseMatrixO2 m_Efficiency1;
+  //! The rotation associated with the basic efficiency matrix
+  MRotation m_Rotation1;
+  
+  //! The 90 degree rotated efficiency matrix
+  MResponseMatrixO2 m_Efficiency2;
+  //! The rotation associated with the rotated efficiency matrix
+  MRotation m_Rotation2;
 
   // private members:
  private:
