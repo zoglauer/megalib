@@ -37,8 +37,6 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MFile.h"
-#include "MSettingsRevan.h"
-#include "MSettingsMimrec.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -121,16 +119,15 @@ bool MResponseBuilder::Initialize()
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
 
   // Load revan settings file
-  MSettingsRevan RevanCfg(false);
-  if (RevanCfg.Read(m_RevanCfgFileName) == false) {
-    merr<<"Unable to open revan configuration file \""<<m_RevanCfgFileName<<"\""<<endl; 
+  if (m_RevanSettings.Read(m_RevanSettingsFileName) == false) {
+    merr<<"Unable to open revan settings file \""<<m_RevanSettingsFileName<<"\""<<endl; 
     return false;
   }
   
   // Create the raw event analyzer
   m_ReReader = new MRawEventAnalyzer();
   m_ReReader->SetGeometry(m_ReGeometry);
-  m_ReReader->SetSettings(&RevanCfg);  
+  m_ReReader->SetSettings(&m_RevanSettings);  
   
   if (m_Mode == MResponseBuilderReadMode::File) {
     if (m_ReReader->SetInputModeFile(m_DataFileName) == false) {
@@ -147,13 +144,12 @@ bool MResponseBuilder::Initialize()
   
   
   // Load the mimrec configuration file ...
-  MSettingsMimrec MimrecCfg(false);
-  if (MimrecCfg.Read(m_MimrecCfgFileName) == false) {
-    merr<<"Unable to open mimrec configuration file \""<<m_MimrecCfgFileName<<"\""<<endl; 
+  if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
+    merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
     return false;
   }
   // ... and initialize the event selector 
-  m_MimrecEventSelector.SetSettings(&MimrecCfg);
+  m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
 
   
   // Load the sivan geometry
@@ -307,7 +303,7 @@ void MResponseBuilder::SetResponseName(const MString Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseBuilder::SetRevanConfigurationFileName(const MString FileName)
+bool MResponseBuilder::SetRevanSettingsFileName(const MString FileName)
 {
   // Set and verify the simulation file name
 
@@ -315,7 +311,7 @@ bool MResponseBuilder::SetRevanConfigurationFileName(const MString FileName)
     mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
     return false;
   }
-  m_RevanCfgFileName = FileName;
+  m_RevanSettingsFileName = FileName;
 
   return true;
 }
@@ -324,7 +320,7 @@ bool MResponseBuilder::SetRevanConfigurationFileName(const MString FileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseBuilder::SetMimrecConfigurationFileName(const MString FileName)
+bool MResponseBuilder::SetMimrecSettingsFileName(const MString FileName)
 {
   // Set and verify the simulation file name
 
@@ -332,7 +328,7 @@ bool MResponseBuilder::SetMimrecConfigurationFileName(const MString FileName)
     mout<<"*** Error: \""<<FileName<<"\" does not exist"<<endl;
     return false;
   }
-  m_MimrecCfgFileName = FileName;
+  m_MimrecSettingsFileName = FileName;
 
   return true;
 }

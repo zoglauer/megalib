@@ -29,7 +29,8 @@
 #include "MSimEvent.h"
 #include "MFileEventsSim.h"
 #include "MEventSelector.h"
-
+#include "MSettingsRevan.h"
+#include "MSettingsMimrec.h"
 
 // Forward declarations:
 
@@ -78,10 +79,10 @@ class MResponseBuilder
   //! Set, verify, and open the data file name (sim or evta) - this sets the input mode to file 
   bool SetDataFileName(const MString FileName);
 
-  //! Set and verify the revan configuration file name
-  bool SetRevanConfigurationFileName(const MString FileName);
-  //! Set and verify the mimrec configuration file name
-  bool SetMimrecConfigurationFileName(const MString FileName);
+  //! Set and verify the revan settings file name
+  bool SetRevanSettingsFileName(const MString FileName);
+  //! Set and verify the mimrec settings file name
+  bool SetMimrecSettingsFileName(const MString FileName);
 
   //! Set (overwrite) the ID for the start event
   void SetStartEventID(const unsigned int ID) { m_StartEventID = ID; }
@@ -156,10 +157,15 @@ class MResponseBuilder
   //! Name of the response
   MString m_ResponseName;
 
-  //! Revan configuration file name
-  MString m_RevanCfgFileName;
-  //! Mimrec configuration file name
-  MString m_MimrecCfgFileName;
+  //! Revan settings file name
+  MString m_RevanSettingsFileName;
+  //! The revan settings file
+  MSettingsRevan m_RevanSettings;
+  
+  //! Mimrec settings file name
+  MString m_MimrecSettingsFileName;
+  //! The mimrec settings file
+  MSettingsMimrec m_MimrecSettings;
 
   //! ID for the start event
   unsigned int m_StartEventID;

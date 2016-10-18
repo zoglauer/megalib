@@ -102,86 +102,40 @@ ostream& operator<<(ostream& os, Quadruple& T)
   return os;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default contructor
 MResponseTracking::MResponseTracking()
 {
-  // Construct an instance of MResponseTracking
+  // Intentionally left empty - call Initialize for initialization
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Default destructor
 MResponseTracking::~MResponseTracking()
 {
-  // Delete this instance of MResponseTracking
+  // Nothing to delete
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseTracking::OpenFiles()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
-
-  m_ReReader = new MRawEventAnalyzer();
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) return false;
-  m_ReReader->SetGeometry(m_ReGeometry);
-
-  MSettingsRevan Cfg(false);
-  Cfg.Read(m_RevanCfgFileName);
-  m_ReReader->SetSettings(&Cfg);
-
+//! Initialize the response matrices and their generation
+bool MResponseTracking::Initialize() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
+  
   m_ReReader->SetNTrackSequencesToKeep(numeric_limits<int>::max());
-
   if (m_ReReader->PreAnalysis() == false) return false;
 
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseTracking::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenFiles() == false) return false;
-
-  //cout<<"Trying to generate a pdf for track recognition - please stand by..."<<endl;
-
-  vector<Quadruple> QuadruplesGoodCenter;
-  vector<Quadruple> QuadruplesBadCenter;
-  vector<Quadruple> QuadruplesGoodStop;
-  vector<Quadruple> QuadruplesBadStop;
-  vector<Quadruple> QuadruplesGoodStart;
-  vector<Quadruple> QuadruplesBadStart;
-  // vector<Quadruple>::iterator QuadruplesIter;
-
-  MRETrack* Track = 0;
-  MRESE* RESE = 0;
-  MRERawEvent* RE = 0;
-  MRawEventList* REList = 0;
-
-  int r_max, e_max;
-
-  // the data:
-  double Etot;
-  double Edep;
-  double AngleIn;
-  double AngleOutTheta;
-  double AngleOutPhi;
-
+  
   // create axis:
   vector<float> Axis;
   vector<float> X1Axis;
@@ -199,8 +153,9 @@ bool MResponseTracking::CreateResponse()
   // Global good/bad:
   X1Axis.clear();
   X1Axis = CreateEquiDist(0, 2, 2);
-  MResponseMatrixO1 GoodBadTable("GoodBadTable", X1Axis); 
-  GoodBadTable.SetAxisNames("GoodBad");
+  m_GoodBadTable.SetName("GoodBadTable");
+  m_GoodBadTable.SetAxis(X1Axis); 
+  m_GoodBadTable.SetAxisNames("GoodBad");
 
 
   // Matrix Dual:
@@ -223,10 +178,12 @@ bool MResponseTracking::CreateResponse()
   Axis = CreateEquiDist(600, 1000, 4, c_NoBound, 10000);
   copy(Axis.begin(), Axis.end(), back_inserter(X3Axis));
 
-  MResponseMatrixO3 PdfDualGood("TracksStartGood", X1Axis, X2Axis, X3Axis);
-  PdfDualGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
-  MResponseMatrixO3 PdfDualBad("TracksStartBad", X1Axis, X2Axis, X3Axis);
-  PdfDualBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
+  m_PdfDualGood.SetName("TracksStartGood");
+  m_PdfDualGood.SetAxis(X1Axis, X2Axis, X3Axis);
+  m_PdfDualGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
+  m_PdfDualBad.SetName("TracksStartBad");
+  m_PdfDualBad.SetAxis(X1Axis, X2Axis, X3Axis);
+  m_PdfDualBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
 
 
   // Matrix Start:
@@ -251,10 +208,12 @@ bool MResponseTracking::CreateResponse()
   Axis = CreateEquiDist(600, 1000, 5, c_NoBound, 10000);
   copy(Axis.begin(), Axis.end(), back_inserter(X3Axis));
 
-  MResponseMatrixO3 PdfStartGood("TracksStartGood", X1Axis, X2Axis, X3Axis);
-  PdfStartGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
-  MResponseMatrixO3 PdfStartBad("TracksStartBad", X1Axis, X2Axis, X3Axis);
-  PdfStartBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
+  m_PdfStartGood.SetName("TracksStartGood");
+  m_PdfStartGood.SetAxis(X1Axis, X2Axis, X3Axis);
+  m_PdfStartGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
+  m_PdfStartBad.SetName("TracksStartBad");
+  m_PdfStartBad.SetAxis(X1Axis, X2Axis, X3Axis);
+  m_PdfStartBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}");
 
 
   // Matrix Central:
@@ -281,10 +240,12 @@ bool MResponseTracking::CreateResponse()
   copy(Axis.begin(), Axis.end(), back_inserter(X5Axis));
 
 
-  MResponseMatrixO5 PdfGood("TracksGood", X1Axis, X2Axis, X3Axis, X4Axis, X5Axis);
-  PdfGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}", "Angle_{Out, #varphi}", "Angle_{Out, #vartheta}");
-  MResponseMatrixO5 PdfBad("TracksBad", X1Axis, X2Axis, X3Axis, X4Axis, X5Axis);
-  PdfBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}", "Angle_{Out, #varphi}", "Angle_{Out, #vartheta}");
+  m_PdfGood.SetName("TracksGood");
+  m_PdfGood.SetAxis(X1Axis, X2Axis, X3Axis, X4Axis, X5Axis);
+  m_PdfGood.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}", "Angle_{Out, #varphi}", "Angle_{Out, #vartheta}");
+  m_PdfBad.SetName("TracksBad");
+  m_PdfBad.SetAxis(X1Axis, X2Axis, X3Axis, X4Axis, X5Axis);
+  m_PdfBad.SetAxisNames("E_{tot}", "Angle_{In}", "E_{dep}", "Angle_{Out, #varphi}", "Angle_{Out, #vartheta}");
 
 
   // Matrix Stop:
@@ -302,189 +263,222 @@ bool MResponseTracking::CreateResponse()
   X2Axis.clear();
   X2Axis = CreateEquiDist(0, 90, 45);
 
-  MResponseMatrixO2 PdfStopGood("PdfStopGood", X1Axis, X2Axis);
-  PdfStopGood.SetAxisNames("E_{tot}", "Angle_{In}");
-  MResponseMatrixO2 PdfStopBad("PdfStopBad", X1Axis, X2Axis);
-  PdfStopBad.SetAxisNames("E_{tot}", "Angle_{In}");
+  m_PdfStopGood.SetName("PdfStopGood");
+  m_PdfStopGood.SetAxis(X1Axis, X2Axis);
+  m_PdfStopGood.SetAxisNames("E_{tot}", "Angle_{In}");
+  m_PdfStopBad.SetName("PdfStopBad");
+  m_PdfStopBad.SetAxis(X1Axis, X2Axis);
+  m_PdfStopBad.SetAxisNames("E_{tot}", "Angle_{In}");  
+  
+  
+  return true;
+}
 
 
-  int Counter = 0;
-  while (InitializeNextMatchingEvent() == true) {
+////////////////////////////////////////////////////////////////////////////////
 
-    //g_Verbosity = 1;
 
-    //cout<<"New event"<<endl;
+//! Analyze the current event
+bool MResponseTracking::Analyze()
+{
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  
+  vector<Quadruple> QuadruplesGoodCenter;
+  vector<Quadruple> QuadruplesBadCenter;
+  vector<Quadruple> QuadruplesGoodStop;
+  vector<Quadruple> QuadruplesBadStop;
+  vector<Quadruple> QuadruplesGoodStart;
+  vector<Quadruple> QuadruplesBadStart;
+  // vector<Quadruple>::iterator QuadruplesIter;
+  
+  
+  // the data:
+  double Etot;
+  double Edep;
+  double AngleIn;
+  double AngleOutTheta;
+  double AngleOutPhi;
+  
+  
+  
+  MRESE* RESE = 0;
+  MRERawEvent* RE = 0;
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  
+  QuadruplesGoodStart.clear();
+  QuadruplesBadStart.clear();
+  
+  QuadruplesGoodCenter.clear();
+  QuadruplesBadCenter.clear();
+  
+  QuadruplesGoodStop.clear();
+  QuadruplesBadStop.clear();
+  
+  // First try to find the tracks in all the RawEvents:
+  int r_max = REList->GetNRawEvents();
+  for (int r = 0; r < r_max; ++r) {
+    RE = REList->GetRawEventAt(r);
     
-    RESE = 0;
-    RE = 0;
-    REList = m_ReReader->GetRawEventList();
-
-    QuadruplesGoodStart.clear();
-    QuadruplesBadStart.clear();
-
-    QuadruplesGoodCenter.clear();
-    QuadruplesBadCenter.clear();
-
-    QuadruplesGoodStop.clear();
-    QuadruplesBadStop.clear();
-
-    // First try to find the tracks in all the RawEvents:
-    r_max = REList->GetNRawEvents();
-    for (int r = 0; r < r_max; ++r) {
-      RE = REList->GetRawEventAt(r);
-
+    
+    int e_max = RE->GetNRESEs();
+    for (int e = 0; e < e_max; ++e) {
+      RESE = RE->GetRESEAt(e);
       
-      e_max = RE->GetNRESEs();
-      for (int e = 0; e < e_max; ++e) {
-        RESE = RE->GetRESEAt(e);
-
-        if (RESE->GetType() != MRESE::c_Track) continue;
-
-        bool AllGood = true;
-
-        Track = (MRETrack*) RESE;
-        mdebug<<"Looking at track: "<<Track->ToString()<<endl;
-
-        MRESEIterator Iter;
-        Iter.Start(Track->GetStartPoint());
-
-        if (Iter.GetNRESEs() < 2) continue;
-
-
-        if (Iter.GetNRESEs() == 2) {
-          Iter.GetNextRESE();
-          Etot = Track->GetEnergy();
-          if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true &&
-              IsTrackStop(*Iter.GetCurrent(), *Iter.GetNext(), Etot - Iter.GetCurrent()->GetEnergy()) == true) {
-            mdebug<<"GOOD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            PdfDualGood.Add(Etot, 
-                            CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                            Iter.GetCurrent()->GetEnergy());
+      if (RESE->GetType() != MRESE::c_Track) continue;
+      
+      bool AllGood = true;
+      
+      MRETrack* Track = (MRETrack*) RESE;
+      mdebug<<"Looking at track: "<<Track->ToString()<<endl;
+      
+      MRESEIterator Iter;
+      Iter.Start(Track->GetStartPoint());
+      
+      if (Iter.GetNRESEs() < 2) continue;
+      
+      
+      if (Iter.GetNRESEs() == 2) {
+        Iter.GetNextRESE();
+        double Etot = Track->GetEnergy();
+        if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true &&
+          IsTrackStop(*Iter.GetCurrent(), *Iter.GetNext(), Etot - Iter.GetCurrent()->GetEnergy()) == true) {
+          mdebug<<"GOOD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+        m_PdfDualGood.Add(Etot, 
+                          CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                          Iter.GetCurrent()->GetEnergy());
           } else {
             mdebug<<"BAD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            PdfDualBad.Add(Etot, 
-                           CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                           Iter.GetCurrent()->GetEnergy());
-            AllGood = false;
-          }
-        } else {
-          // Start of the track:
-          Iter.GetNextRESE();
-          Etot = Track->GetEnergy();
-          if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
-            mdebug<<"GOOD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            PdfStartGood.Add(Etot, 
+            m_PdfDualBad.Add(Etot, 
                              CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
                              Iter.GetCurrent()->GetEnergy());
-          } else {
-            mdebug<<"BAD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            PdfStartBad.Add(Etot, 
-                              CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                            Iter.GetCurrent()->GetEnergy());
             AllGood = false;
           }
-
+      } else {
+        // Start of the track:
+        Iter.GetNextRESE();
+        Etot = Track->GetEnergy();
+        if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
+          mdebug<<"GOOD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+          m_PdfStartGood.Add(Etot, 
+                             CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                             Iter.GetCurrent()->GetEnergy());
+        } else {
+          mdebug<<"BAD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+          m_PdfStartBad.Add(Etot, 
+                            CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                            Iter.GetCurrent()->GetEnergy());
+          AllGood = false;
+        }
         
-          // Central part of the track
-          Iter.GetNextRESE();
-          while (Iter.GetNext() != 0) {
-            Etot -= Iter.GetPrevious()->GetEnergy();
-
-            // Decide if it is good or bad...
-            // In the current implementation/simulation the hits have to be in increasing order...
-            if (AreReseInSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
-              // Retrieve the data:
-              Edep = Iter.GetCurrent()->GetEnergy();
-              AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
-              AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-              AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-              mdebug<<"GOOD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
-                    <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-              PdfGood.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
-            } else {
-              // Retrieve the data:
-              Edep = Iter.GetCurrent()->GetEnergy();
-              AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
-              AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-              AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-              PdfBad.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
-              mdebug<<"BAD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
-                    <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-
-              AllGood = false;
-            } // Add good / bad
-            Iter.GetNextRESE();
-          } // If we have a next element
-          
-
-          // The stop section:
+        
+        // Central part of the track
+        Iter.GetNextRESE();
+        while (Iter.GetNext() != 0) {
           Etot -= Iter.GetPrevious()->GetEnergy();
           
-          if (IsTrackStop(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot) == true) {
-            mdebug<<"GOOD stop: "<<Iter.GetPrevious()->GetID()
-                  <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
-            PdfStopGood.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
+          // Decide if it is good or bad...
+          // In the current implementation/simulation the hits have to be in increasing order...
+          if (AreReseInSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
+            // Retrieve the data:
+            Edep = Iter.GetCurrent()->GetEnergy();
+            AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
+            AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+            AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+            mdebug<<"GOOD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
+            <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+            m_PdfGood.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
           } else {
-            mdebug<<"BAD stop: "<<Iter.GetPrevious()->GetID()
-                  <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
-            PdfStopBad.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
+            // Retrieve the data:
+            Edep = Iter.GetCurrent()->GetEnergy();
+            AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
+            AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+            AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+            m_PdfBad.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
+            mdebug<<"BAD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
+            <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+            
             AllGood = false;
-          }
-        }
-        if (AllGood == false) {
-          GoodBadTable.Add(0.5, 1);
-          //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
+          } // Add good / bad
+          Iter.GetNextRESE();
+        } // If we have a next element
+        
+        
+        // The stop section:
+        Etot -= Iter.GetPrevious()->GetEnergy();
+        
+        if (IsTrackStop(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot) == true) {
+          mdebug<<"GOOD stop: "<<Iter.GetPrevious()->GetID()
+          <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
+          m_PdfStopGood.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
         } else {
-          GoodBadTable.Add(1.5, 1);
-          mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
+          mdebug<<"BAD stop: "<<Iter.GetPrevious()->GetID()
+          <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
+          m_PdfStopBad.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
+          AllGood = false;
         }
-      } // all reses
-    } // all raw events
-    
-      // mdebug<<"Good triples:"<<endl;
-    for (unsigned int t = 0; t < QuadruplesGoodCenter.size(); ++t) {
-      //cout<<"t: "<<QuadruplesGood[t];
-      //mdebug<<t<<": "<<QuadruplesGood[t]<<endl;
-    }
-      
-    //mdebug<<"Bad triples:"<<endl;
-    for (unsigned int t = 0; t < QuadruplesBadCenter.size(); ++t) {
-      //mdebug<<t<<": "<<QuadruplesBad[t]<<endl;
-    }
-    
-    if (++Counter % m_SaveAfter == 0) {
-      GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
+      }
+      if (AllGood == false) {
+        m_GoodBadTable.Add(0.5, 1);
+        //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
+      } else {
+        m_GoodBadTable.Add(1.5, 1);
+        mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
+      }
+    } // all reses
+  } // all raw events
   
-      PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
-      PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
-  
-      PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
-      PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
-      
-      PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
-      PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
-      
-      PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
-      PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
-    }
+  // mdebug<<"Good triples:"<<endl;
+  for (unsigned int t = 0; t < QuadruplesGoodCenter.size(); ++t) {
+    //cout<<"t: "<<QuadruplesGood[t];
+    //mdebug<<t<<": "<<QuadruplesGood[t]<<endl;
   }
   
-  GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
+  //mdebug<<"Bad triples:"<<endl;
+  for (unsigned int t = 0; t < QuadruplesBadCenter.size(); ++t) {
+    //mdebug<<t<<": "<<QuadruplesBad[t]<<endl;
+  }
   
-  PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
-  PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
   
-  PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
-  PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
+  return true;
+}
 
-  PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
-  PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
+  
+////////////////////////////////////////////////////////////////////////////////
 
-  PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
-  PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseTracking::Finalize() 
+{ 
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the responses
+bool MResponseTracking::Save()
+{
+  m_GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
+  
+  m_PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
+  m_PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
+  
+  m_PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
+  m_PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
+
+  m_PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
+  m_PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
+
+  m_PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
+  m_PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
 
   return true;
 }
+
+
 
 /******************************************************************************
  * 

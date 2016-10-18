@@ -22,7 +22,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseBase.h"
+#include "MResponseBuilder.h"
 #include "MRESE.h"
 #include "MRETrack.h"
 #include "MResponseMatrixO1.h"
@@ -38,33 +38,36 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-class MResponseMultipleCompton : public MResponseBase
+//! Create a Bayesian Compton sequenceing response 
+class MResponseMultipleCompton : public MResponseBuilder
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseMultipleCompton();
+  //! Default destructor
   virtual ~MResponseMultipleCompton();
 
   //! Set whether or not absorptions should be considered
   void SetDoAbsorptions(const bool Flag = true) { m_DoAbsorptions = Flag; }
 
-  //! Do all the response creation
-  virtual bool CreateResponse();
+  //! Initialize the response matrices and their generation
+  virtual bool Initialize();
+
+  //! Analyze th events (all if in file mode, one if in event-by-event mode)
+  virtual bool Analyze();
+    
+  //! Finalize the response generation (i.e. save the data a final time )
+  virtual bool Finalize();
+
 
   // protected methods:
  protected:
-  //MResponseMultipleCompton() {};
-  //MResponseMultipleCompton(const MResponseMultipleCompton& ResponseMultipleCompton) {};
 
-  //! Create the (soon to be) pdfs  
-  virtual bool CreateMatrices();
+  //! Save the response matrices
+  virtual bool Save();
 
-  //! Store the (soon to be) pdfs  
-  virtual bool SaveMatrices();
-
-  //! Load the simulation file in revan and mimrec as well as the configuration files:
-  virtual bool OpenFiles();
+      
 
   bool IsTrackStart(MRESE& Start, MRESE& Central, double Energy);
   bool IsTrackStop(MRESE& Central, MRESE& Stop, double Energy);

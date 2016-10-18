@@ -62,7 +62,7 @@ MResponseSpectral::MResponseSpectral()
 //! Default destructor
 MResponseSpectral::~MResponseSpectral()
 {
-  // Intentionally left empty 
+  // Nothing to delete
 }
 
   
@@ -72,21 +72,22 @@ MResponseSpectral::~MResponseSpectral()
 //! Initialize the response matrices and their generation
 bool MResponseSpectral::Initialize() 
 { 
+  // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
   
   
   vector<float> AxisEnergy2;
   AxisEnergy2 = CreateLogDist(10, 20000, 1000, 1, 100000);
 
-  m_EnergyBeforeER.SetName("Energy (before event reconstruction)");
+  m_EnergyBeforeER.SetName("Energy response (before event reconstruction)");
   m_EnergyBeforeER.SetAxis(AxisEnergy2, AxisEnergy2);
   m_EnergyBeforeER.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
-  m_EnergyUnselected.SetName("Energy (no event selections)");
+  m_EnergyUnselected.SetName("Energy response (mimrec - no event selections)");
   m_EnergyUnselected.SetAxis(AxisEnergy2, AxisEnergy2);
   m_EnergyUnselected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
-  m_EnergySelected.SetName("Energy (with event selections)");
+  m_EnergySelected.SetName("Energy response (mimrec - with event selections)");
   m_EnergySelected.SetAxis(AxisEnergy2, AxisEnergy2);
   m_EnergySelected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
 
@@ -133,7 +134,7 @@ bool MResponseSpectral::Initialize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Analyze th events (all if in file mode, one if in event-by-event mode)
+//! Analyze the current event
 bool MResponseSpectral::Analyze() 
 { 
   // Initlize next matching event, save if necessary
@@ -176,10 +177,9 @@ bool MResponseSpectral::Finalize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Save the responses
 bool MResponseSpectral::Save()
 {
-  // Create the multiple Compton response
-
   m_EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
   m_EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
   m_EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);

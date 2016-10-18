@@ -76,41 +76,19 @@ MResponseMultipleComptonLens::~MResponseMultipleComptonLens()
   // Delete this instance of MResponseMultipleComptonLens
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonLens::OpenFiles()
-{
-  // Load the simulation file --- has to be called after the geometry is loaded
+//! Initialize the response matrices and their generation
+bool MResponseMultipleComptonLens::Initialize() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
+  
+  m_LensCenter = m_RevanSettings.GetLensCenter();
+  m_FocalSpotCenter = m_RevanSettings.GetFocalSpotCenter();
 
-  m_ReReader = new MRawEventAnalyzer();
-  m_ReReader->SetGeometry(m_ReGeometry);
-  if (m_ReReader->SetInputModeFile(m_SimulationFileName) == false) return false;
-
-  MSettingsRevan Cfg(false);
-  Cfg.Read(m_RevanCfgFileName);
-  m_ReReader->SetSettings(&Cfg);
-
-  //m_ReReader->SetCSROnlyCreateSequences(true);
-
-  m_LensCenter = Cfg.GetLensCenter();
-  m_FocalSpotCenter = Cfg.GetFocalSpotCenter();
-
-  if (m_ReReader->PreAnalysis() == false) return false;
-
-  m_SiReader = new MFileEventsSim(m_SiGeometry);
-  if (m_SiReader->Open(m_SimulationFileName) == false) return false;
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MResponseMultipleComptonLens::CreateMatrices()
-{
 
   vector<float> AxisConeLensDistance;
   vector<float> AxisRadiusBeamCenter;
@@ -142,72 +120,59 @@ bool MResponseMultipleComptonLens::CreateMatrices()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonLens::SaveMatrices()
+bool MResponseMultipleComptonLens::Save()
 {
-  // Store the (soon to be) pdfs  
-
-  //GoodBadTable.Write(m_ResponseName + ".tc.goodbad" + m_Suffix, true);
-  
-
   m_PdfFromLensGood.Write(m_ResponseName + ".lmc.good" + m_Suffix, true);
   m_PdfFromLensBad.Write(m_ResponseName + ".lmc.bad" + m_Suffix, true);
 
   return true;
 }
 
-
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMultipleComptonLens::CreateResponse()
-{
-  // Create the multiple Compton response
-
-  cout<<"Here we are - born to be kings ... "<<endl;
-
-  if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;
-  if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  if (OpenFiles() == false) return false;
-
-  if (CreateMatrices() == false) return false;
-
-
-  // Go ahead event by event and compare the results: 
-
-  int Counter = 0;
-  while (InitializeNextMatchingEvent() == true) {
-
-    // Take only the best event and check if it originates from the lens
-    MRawEventList* REList = m_ReReader->GetRawEventList();
-
-    if (REList->HasOptimumEvent() == true) {
-      MRERawEvent* RE = REList->GetOptimumEvent();
-      if (RE->GetNRESEs() > 1) {
-
-        // Determine all parameters:
-        double ConeLensDistance = CalculateConeLensDistance(*(RE->GetStartPoint()), *(RE->GetStartPoint()->GetLinkAt(0)), RE->GetEnergy())*c_Deg;
-        double Radius = CalculateRadiusFromBeamCenter(*(RE->GetStartPoint()));
-        double InteractionDepth = CalculateInteractionDepth(*(RE->GetStartPoint()));
-        
-        cout<<ConeLensDistance<<":"<<Radius<<":"<<InteractionDepth<<endl;
-        
-        if (m_IsLensOrigin == true) {
-          m_PdfFromLensGood.Add(ConeLensDistance, Radius, InteractionDepth);
-        } else {
-          m_PdfFromLensBad.Add(ConeLensDistance, Radius, InteractionDepth);
-        }
-
-        if (++Counter % m_SaveAfter == 0) {
-          SaveMatrices();
-        }
+//! Analyze the current event
+bool MResponseMultipleComptonLens::Analyze() 
+{ 
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  
+  // Take only the best event and check if it originates from the lens
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  
+  if (REList->HasOptimumEvent() == true) {
+    MRERawEvent* RE = REList->GetOptimumEvent();
+    if (RE->GetNRESEs() > 1) {
+      
+      // Determine all parameters:
+      double ConeLensDistance = CalculateConeLensDistance(*(RE->GetStartPoint()), *(RE->GetStartPoint()->GetLinkAt(0)), RE->GetEnergy())*c_Deg;
+      double Radius = CalculateRadiusFromBeamCenter(*(RE->GetStartPoint()));
+      double InteractionDepth = CalculateInteractionDepth(*(RE->GetStartPoint()));
+      
+      cout<<ConeLensDistance<<":"<<Radius<<":"<<InteractionDepth<<endl;
+      
+      if (m_IsLensOrigin == true) {
+        m_PdfFromLensGood.Add(ConeLensDistance, Radius, InteractionDepth);
+      } else {
+        m_PdfFromLensBad.Add(ConeLensDistance, Radius, InteractionDepth);
       }
+      
     }
   }
-
-  SaveMatrices();
-
+  
   return true;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseMultipleComptonLens::Finalize() 
+{ 
+  return MResponseBuilder::Finalize(); 
 }
 
 
