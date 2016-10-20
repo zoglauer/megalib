@@ -60,6 +60,7 @@ MGUIARM::MGUIARM(const TGWindow* p, const TGWindow* main, MSettingsMimrec* Data,
   m_Mode = ID;
   m_OkPressed = false;
   
+  m_UseLog = nullptr;
   m_UseTestPosition = nullptr;  
   
   m_ThetaIsX = nullptr;
