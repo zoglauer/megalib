@@ -19,7 +19,7 @@ Version 2.29/2.30
   with my originally hacked Geant4 9.1 version.
   Thus for activation simulations, either use an old version of MEGAlib or
   a newer one (2.31 and higher).
-  
+
 + Exchanged the (slow) ROOT rotations (TMatrix*) in Geomega with new
   MRotation class
   --> If something seems wrong with your rotations email me
@@ -41,7 +41,13 @@ Version 2.29/2.30
 + ROOT is now built using cmake instead of its older, error prone configure
   script
   
-  
+
+*** Important bug fixes:
+
++ Fixed in 2.30.01: The simulation produced a wrong power law, when you used the 
+                    index "1" for a power law in Cosima
+
+
 *** Significant new features & improvements:
 
 General:
