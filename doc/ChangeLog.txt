@@ -23,7 +23,7 @@ Version 2.31/2.32
   
   
 *** Critcal bug fixes
-+ Powerlaws with an index of -1 were not simulated correctly in cosima
++ Powerlaws with an index of alpha=1.0 were not simulated correctly in cosima
 
 
 *** Significant new features & improvements:
