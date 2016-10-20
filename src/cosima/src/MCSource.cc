@@ -2198,7 +2198,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
       double Max = pow(m_EnergyParam2, -m_EnergyParam3 + 1);
       m_Energy = pow(Min + CLHEP::RandFlat::shoot(1) * (Max-Min), 1.0/(-m_EnergyParam3 + 1));
     } else {
-      m_Energy = exp(log(m_EnergyParam1) + CLHEP::RandFlat::shoot(1) * (m_EnergyParam2-m_EnergyParam1));
+      m_Energy = exp(log(m_EnergyParam1) + CLHEP::RandFlat::shoot(1) * (log(m_EnergyParam2) - log(m_EnergyParam1)));
     }
   } else if (m_SpectralType == c_BrokenPowerLaw) {
     // This algorithm can be very slow...
