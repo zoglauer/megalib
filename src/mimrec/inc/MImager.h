@@ -84,6 +84,9 @@ class MImager
   //! Set the source catalog
   void SetSourceCatalog(const MString SourceCatalog) { m_SourceCatalog = SourceCatalog; }
 
+  //! Set the image projection
+  void SetProjection(const MImageProjection Projection) { m_Projection = Projection; }
+
 
   // Response part:
 
@@ -225,7 +228,10 @@ class MImager
   int m_DrawMode;
   //! The name of the source catalog
   MString m_SourceCatalog;
-
+  //! The image projection
+  MImageProjection m_Projection;
+  
+  
   //! All produced images:
   vector<MImage*> m_Images;
 

@@ -148,6 +148,7 @@ MImager::MImager(MCoordinateSystem CoordinateSystem, unsigned int NThreads)
   m_DrawMode = MImage::c_COLCONT4Z;
   m_Palette = MImage::c_Thesis;
   m_SourceCatalog = "";
+  m_Projection = MImageProjection::c_None;
 
   m_FastFileParsing = false;
   
@@ -270,7 +271,8 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
   SetDrawMode(Settings->GetImageDrawMode());
   SetPalette(Settings->GetImagePalette());
   SetSourceCatalog(Settings->GetImageSourceCatalog());
-    
+  SetProjection(Settings->GetImageProjection());
+  
   // No animation by default
   SetAnimationMode(MImager::c_AnimateNothing); 
     
@@ -729,6 +731,7 @@ MImage* MImager::CreateImage(MString Title, double* Data)
                                m_Palette, 
                                m_DrawMode,
                                m_SourceCatalog);
+    dynamic_cast<MImageGalactic*>(Image)->SetProjection(m_Projection);
   } else if (m_CoordinateSystem == MCoordinateSystem::c_Cartesian2D) {
     if (m_TwoDAxis == 0) {
       Image = new MImage2D(Title,

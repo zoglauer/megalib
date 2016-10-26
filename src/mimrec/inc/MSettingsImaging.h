@@ -26,6 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MCoordinateSystem.h"
 #include "MResponseType.h"
+#include "MImage.h"
 #include "MSettings.h"
 #include "MPointSource.h"
 #include "MExposureMode.h"
@@ -245,6 +246,9 @@ class MSettingsImaging : public MSettingsInterface
 
   MString GetImageSourceCatalog() const { return m_ImageSourceCatalog; }
   void SetImageSourceCatalog(MString ImageSourceCatalog) { m_ImageSourceCatalog = ImageSourceCatalog; }
+
+  MImageProjection GetImageProjection() const { return m_ImageProjection; }
+  void SetImageProjection(MImageProjection ImageProjection) { m_ImageProjection = ImageProjection; }
  
 
   // Animation options
@@ -341,6 +345,8 @@ class MSettingsImaging : public MSettingsInterface
   int m_ImagePalette;
   //! The source catalog file name
   MString m_ImageSourceCatalog;
+  //! The image projection
+  MImageProjection m_ImageProjection;
 
   //! The used exposure mode
   MExposureMode m_ExposureMode;
