@@ -44,6 +44,9 @@ class MImageGalactic : public MImage2D
   //! Standard destructor
   virtual ~MImageGalactic();
 
+  //! Set the image projection
+  void SetProjection(MImageProjection Projection) { m_Projection = Projection; }
+  
   //! Clone this image
   virtual MImage* Clone();
 
@@ -55,18 +58,30 @@ class MImageGalactic : public MImage2D
  
   // protected methods:
  protected:
+  // Add the named sources to the display
   void AddNamedSources();
 
+  // Display unprojected
+  void DisplayProjectionNone();
+  // Display with Hammer projection
+  void DisplayProjectionHammer();
+  
+  
   // private methods:
  private:
-
-
+  //! Convert lat and long (in rad) to x & y in the Hammer histogram
+  void HammerConv(double Long, double Lat, double CentralMeridian, double& xHammer, double& yHammer);
+  //! Convert x & y in the Hammer histogram to lat and long (in rad)
+  bool HammerInvConv(double xHammer, double yHammer, double CentralMeridian, double& Long, double& Lat);
 
   // protected members:
  protected:
 
   // private members:
  private:
+  //! The projection
+  MImageProjection m_Projection;
+   
   //! The new x axis's
   TGaxis* m_XAxis;
 

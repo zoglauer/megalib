@@ -33,6 +33,7 @@
 
 // MEGAlib libs:
 #include "MStreams.h"
+#include "MImage.h"
 #include "MCoordinateSystem.h"
 
 
@@ -164,6 +165,25 @@ void MGUIImageDimensions::Create()
     
     m_LongitudeBins = new MGUIEEntry(this, "Number of Bins:", false, m_GUIData->GetBinsGalLongitude(), true, 1);
     AddFrame(m_LongitudeBins, BinLayout);
+    
+    TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
+    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0, 0, 20, 20);
+    AddFrame(ProjectionFrame, ProjectionFrameLayout);
+    
+    TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Please choose a projection:");
+    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20, 20, 0, 0);
+    ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
+
+    m_Projection = new TGComboBox(ProjectionFrame);
+    m_Projection->AddEntry("No Projection", static_cast<int>(MImageProjection::c_None));
+    m_Projection->AddEntry("Hammer projection", static_cast<int>(MImageProjection::c_Hammer));
+    m_Projection->Associate(this);
+    m_Projection->Select(static_cast<int>(m_GUIData->GetImageProjection()));
+    m_Projection->SetHeight(m_FontScaler*18);
+    m_Projection->SetWidth(m_FontScaler*120);
+    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20, 20, 0, 0);
+    ProjectionFrame->AddFrame(m_Projection, ProjectionLayout);
+    
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in Cartesian coordinates"); 
@@ -319,6 +339,11 @@ bool MGUIImageDimensions::OnApply()
     if (m_LongitudeBins->IsModified() == true) {
       m_GUIData->SetBinsGalLongitude(m_LongitudeBins->GetAsInt());
     }
+    
+    if (m_Projection->GetSelected() != static_cast<int>(m_GUIData->GetImageProjection())) {
+      m_GUIData->SetImageProjection(static_cast<MImageProjection>(m_Projection->GetSelected()));
+    }
+    
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||
              m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian3D) {
 

@@ -68,9 +68,6 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_NIterations = 5;
   m_PenaltyAlpha = 0;
 
-
-
-
   // Dimensions spherical
   m_ImageRotationXAxis = MVector(1.0, 0.0, 0.0);
   m_ImageRotationZAxis = MVector(0.0, 0.0, 1.0);
@@ -105,6 +102,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_ImageDrawMode = 0;
   m_ImagePalette = 0;
   m_ImageSourceCatalog = "";
+  m_ImageProjection = MImageProjection::c_None;
 
   // Animation options
   m_AnimationMode = 1;
@@ -252,6 +250,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "ImageDrawMode", m_ImageDrawMode);
   new MXmlNode(aNode, "ImagePalette", m_ImagePalette);
   new MXmlNode(aNode, "ImageSourceCatalog", CleanPath(m_ImageSourceCatalog));
+  new MXmlNode(aNode, "ImageProjection", static_cast<int>(m_ImageProjection));
 
   // Menu Image animation options
   aNode = new MXmlNode(Node, "AnimationOptions");
@@ -430,8 +429,12 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
     }      
     if ((bNode = aNode->GetNode("ImageSourceCatalog")) != 0) {
       m_ImageSourceCatalog = bNode->GetValueAsString();
-    }      
+    }
+    if ((bNode = aNode->GetNode("ImageProjection")) != 0) {
+      m_ImageProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
+    }
   }
+  
   
   if ((aNode = Node->GetNode("AnimationOptions")) != 0) {
     if ((bNode = aNode->GetNode("AnimationMode")) != 0) {
