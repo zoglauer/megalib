@@ -37,7 +37,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MSettingsRevan.h"
 #include "MSettingsMimrec.h"
-
+#include "MResponseMatrixO2.h"
+#include "MResponseMatrixO4.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -98,6 +99,19 @@ bool MResponseImagingEfficiency::Initialize()
   // A default rotation of the origin 
   m_Rotation2 = MRotation(90.0 * c_Rad, MVector(0, 0, 1));
 
+  // Detection efficiency detector
+  vector<float> AxisComptonScatterAngle = CreateEquiDist(0.0, 180.0, 36);
+  vector<float> AxisSecondScatterAngleFromZenith = CreateEquiDist(0.0, 180.0, 36);
+  vector<float> AxisFirstInteractionDistance = CreateEquiDist(0.2, 10, 20, 0, 30);
+  vector<float> AxisEi = CreateLogDist(100, 10000, 15);
+
+  m_DetectionEfficiency.SetName("DetectionEfficiency");
+  m_DetectionEfficiency.SetAxis(AxisComptonScatterAngle, AxisSecondScatterAngleFromZenith, AxisFirstInteractionDistance, AxisEi);
+  m_DetectionEfficiency.SetAxisNames("Compton scatter angle [deg]", 
+                                     "Scattered gamma on-axis direction [deg]",
+                                     "Interaction distance [cm]", 
+                                     "Energy [keV]");  
+  
   return true;
 }
 
@@ -132,6 +146,9 @@ bool MResponseImagingEfficiency::Analyze()
             
             MVector IdealOrigin2 = m_Rotation2 * IdealOrigin;
             m_Efficiency2.Add(IdealOrigin2.Phi()*c_Deg, IdealOrigin2.Theta()*c_Deg);
+            
+            m_DetectionEfficiency.Add(Compton->Phi()*c_Deg, Compton->Dg().Angle(MVector(0, 0, -1)), Compton->MinLeverArm(), Compton->Ei());
+            
           }
         }
       }
@@ -141,7 +158,7 @@ bool MResponseImagingEfficiency::Analyze()
   return true;
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -160,8 +177,10 @@ bool MResponseImagingEfficiency::Save()
 {
   m_Efficiency1.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Efficiency2.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_DetectionEfficiency.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Efficiency1.Write(m_ResponseName + ".efficiency.90y" + m_Suffix, true);
   m_Efficiency2.Write(m_ResponseName + ".efficiency.90z.90y" + m_Suffix, true);
+  m_DetectionEfficiency.Write(m_ResponseName + ".efficiency.detection" + m_Suffix, true);
 
   return true;
 }

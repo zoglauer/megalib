@@ -23,6 +23,8 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MResponseBuilder.h"
+#include "MResponseMatrixO2.h"
+#include "MResponseMatrixO4.h"
 
 // Forward declarations:
 
@@ -69,7 +71,11 @@ class MResponseImagingEfficiency : public MResponseBuilder
   MResponseMatrixO2 m_Efficiency2;
   //! The rotation associated with the rotated efficiency matrix
   MRotation m_Rotation2;
+  
+  //! The detection efficiency
+  MResponseMatrixO4 m_DetectionEfficiency;
 
+  
   // private members:
  private:
 
