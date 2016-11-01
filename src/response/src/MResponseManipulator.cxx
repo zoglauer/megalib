@@ -781,6 +781,10 @@ bool MResponseManipulator::Join()
   Types.push_back(".arm.allenergies.rsp");
   Types.push_back(".arm.photopeak.rsp");
 
+  Types.push_back("efficiency.90y.rsp");
+  Types.push_back("efficiency.90z.90y.rsp");
+  Types.push_back("efficiency.detector.rsp");
+
   FindFiles(m_Prefix, Types);
   
   return true;
