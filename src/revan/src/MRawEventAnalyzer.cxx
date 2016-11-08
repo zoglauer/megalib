@@ -123,6 +123,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
 
   m_Filename = "";
   m_Reader = nullptr;
+  m_SaveOI = false;
   
   m_FilenameOut = "";
   m_PhysFile = nullptr;
@@ -349,6 +350,22 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetEventIdMin(S->GetEventIdMin());
 
   SetRejectAllBadEvents(S->GetRejectAllBadEvents());
+  
+  SetSaveOI(S->GetSaveOI());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRawEventAnalyzer::SetSaveOI(bool SaveOI) 
+{ 
+  //! Save the OI 
+
+  m_SaveOI = SaveOI; 
+  if (m_Reader != nullptr) {
+    m_Reader->SaveOI(m_SaveOI); 
+  }
 }
 
 
@@ -358,7 +375,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
 bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
 {
   delete m_Reader;
-  m_Reader = 0;
+  m_Reader = nullptr;
   
   if (MFile::Exists(Filename) == false) {
     mout<<"MRawEventAnalyzer: Input file: \""<<Filename<<"\" does not exist!"<<endl;
@@ -370,9 +387,10 @@ bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
   if (m_Reader->Open(m_Filename) == false) {
     mout<<"MRawEventAnalyzer: Unable to open input file \""<<m_Filename<<"\""<<endl;
     delete m_Reader;
-    m_Reader = 0;
+    m_Reader = nullptr;
     return false;
   }
+  m_Reader->SaveOI(m_SaveOI);
   
   return true;
 }

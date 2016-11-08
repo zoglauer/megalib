@@ -72,6 +72,8 @@ MFileEventsEvta::MFileEventsEvta(MGeometryRevan* Geometry) : MFileEvents()
 
   m_Noising = new MERNoising();
   m_Noising->SetGeometry(m_Geometry);
+  
+  m_SaveOI = false;
 }
 
 
@@ -285,19 +287,21 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
       // We parse the IA information (if present) and transfer the position and direction of the first hit 
       // as OI information to the event
       
-      /*
-      if (Line[0] == 'I' && Line[1] == 'A') {
-        if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
-          double x, y, z, dx, dy, dz, px, py, pz, e;
-          if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*lf;%lf;%lf;%lf;%*d;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*lf;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-                     &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
-            ostringstream out;
+      
+      if (m_SaveOI == true) {
+        if (Line[0] == 'I' && Line[1] == 'A') {
+          if (Line[3] == 'I' && Line[4] == 'N' && Line[5] == 'I' && Line[6] == 'T') {
+            double x, y, z, dx, dy, dz, px, py, pz, e;
+            if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+              &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
+              ostringstream out;
             out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
             Line = out.str().c_str();
+              }
           }
         }
       }
-      */
+      
 
       // All other keywords need to be handled by the current event itself
       Event->ParseLine(Line, m_Version);

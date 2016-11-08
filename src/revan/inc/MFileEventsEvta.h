@@ -48,6 +48,8 @@ class MFileEventsEvta : public MFileEvents
   //! Get the noising ER
   MERNoising* GetERNoising() { return m_Noising; }
 
+  //! Save the OI information
+  void SaveOI(bool SaveOI = true) { m_SaveOI = SaveOI; }
 
   // protected methods:
  protected:
@@ -73,6 +75,9 @@ class MFileEventsEvta : public MFileEvents
   bool m_IsSimulation;
   bool m_IsFirstEvent;
 
+  //! Save the OI information
+  bool m_SaveOI;
+  
   //! The ER responsible for noising the data
   MERNoising* m_Noising;
   

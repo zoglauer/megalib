@@ -122,7 +122,7 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_RejectAllBadEvents = true;
 
   m_NJobs = 1;
-  
+  m_SaveOI = false;
 
   m_SpecialMode = false;
 }
@@ -142,6 +142,7 @@ MSettingsEventReconstruction::~MSettingsEventReconstruction()
 bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
 {
   new MXmlNode(Node, "NJobs", m_NJobs);
+  // Not stored! new MXmlNode(Node, "SaveOI", m_SaveOI);
 
   new MXmlNode(Node, "CoincidenceAlgorithm", m_CoincidenceAlgorithm);
   new MXmlNode(Node, "ClusteringAlgorithm", m_ClusteringAlgorithm);
@@ -214,6 +215,12 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("NJobs")) != 0) {
     m_NJobs = aNode->GetValueAsUnsignedInt();
   }
+  /* No reading!
+  if ((aNode = Node->GetNode("SaveOI")) != 0) {
+    m_Save = aNode->GetValueAsBoolean();
+  }
+  */
+  
   if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {
     m_ClusteringAlgorithm = aNode->GetValueAsInt();
   }
