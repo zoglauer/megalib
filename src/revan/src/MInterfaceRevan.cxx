@@ -129,6 +129,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<"             E.g. to change the coincidence window, one would set pattern to:"<<endl;
   Usage<<"             -C CoincidenceWindow=1e-06"<<endl;
   Usage<<endl;
+  Usage<<"         --oi:"<<endl;
+  Usage<<"             Save the OI information, in case tra files are generated"<<endl;
+  Usage<<endl;
   Usage<<"      -a --analyze:"<<endl;
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
   Usage<<"      -e --energy-before:"<<endl;
@@ -230,6 +233,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
         return false;
       }
       cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;
+    } else if (Option == "--oi") {
+      m_Data->SetSaveOI(true);
+      cout<<"Command-line parser: Store OI"<<endl;
     } else if (Option == "--jobs" || Option == "-j") {
       m_Data->SetNJobs(atoi(argv[++i]));
       cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;

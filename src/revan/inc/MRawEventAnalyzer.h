@@ -91,6 +91,9 @@ class MRawEventAnalyzer
   //! c_AnalysisNoEventsLeftInFile
   unsigned int AnalyzeEvent();
   
+  //! Save the OI 
+  void SetSaveOI(bool SaveOI);
+  
   // The return codes of AnalyzeEvent()
   static const unsigned int c_AnalysisSucess;
   static const unsigned int c_AnalysisCoincidenceWindowWait;
@@ -287,6 +290,9 @@ class MRawEventAnalyzer
  private:
   //! The sim/evta file reader
   MFileEventsEvta* m_Reader;
+  //! Save the OI information
+  bool m_SaveOI;
+
   //! The tra file writer
   MFileEventsTra* m_PhysFile;
 

@@ -34,6 +34,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   MSettingsEventReconstruction();
   virtual ~MSettingsEventReconstruction();
 
+  void SetSaveOI(bool SaveOI) { m_SaveOI = SaveOI; }
+  bool GetSaveOI() const { return m_SaveOI; }
   
   void SetNJobs(unsigned int ID) { m_NJobs = ID; }
   unsigned int GetNJobs() { return m_NJobs; }
@@ -253,6 +255,9 @@ class MSettingsEventReconstruction : public MSettingsInterface
  protected:
   unsigned int m_NJobs;
 
+  //! Save the OI information
+  bool m_SaveOI;
+  
   // Reconstruction options:
   int m_CoincidenceAlgorithm;
   int m_ClusteringAlgorithm;
