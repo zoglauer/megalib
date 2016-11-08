@@ -186,6 +186,12 @@ bool GradedZ::Analyze()
   TransmissionCurve->SetYTitle("Transmission [%]");
   TransmissionCurve->SetMaximum(100);
   TransmissionCurve->SetNdivisions(520, "Y");
+  
+  TH1D* FullyAbsorbed = new TH1D("FullyAbsorbed", "Percentage of events which are fully absorbed in the shield", NBins, Emin, Emax);
+  FullyAbsorbed->SetXTitle("Energy of primary [keV]");
+  FullyAbsorbed->SetYTitle("Fully absorbed [%]");
+  FullyAbsorbed->SetMaximum(100);
+  FullyAbsorbed->SetNdivisions(520, "Y");
  
   TH1D* TransmissionCurveUnharmed = new TH1D("TransmissionCurveUnharmed", "Transmission Curve (any primary making it through the shield unchanged)", NBins, Emin, Emax);
   TransmissionCurveUnharmed->SetXTitle("Energy of primary [keV]");
@@ -209,12 +215,16 @@ bool GradedZ::Analyze()
       bool HasCompton = false;
       bool HasInteraction = false;
       double BlackAbsorberEnergy = 0;
+      double EscapedEnergy = 0;
       for (unsigned int i = 1; i < SiEvent->GetNIAs(); ++i) {
         if (SiEvent->GetIAAt(i)->GetProcess() == "BLAK") { //
           MeasuredSpectrum->Fill(SiEvent->GetIAAt(i)->GetMotherEnergy());
           BlackAbsorberEnergy += SiEvent->GetIAAt(i)->GetMotherEnergy();
         } else {
           HasInteraction = true;
+        }
+        if (SiEvent->GetIAAt(i)->GetProcess() == "ESCP") { // We can have multiples
+          EscapedEnergy += SiEvent->GetIAAt(i)->GetMotherEnergy();
         }
         if (SiEvent->GetIAAt(i)->GetProcess() == "COMP") { // We can have multiples
           HasCompton = true;
@@ -232,6 +242,9 @@ bool GradedZ::Analyze()
       if (HasInteraction == false) {
         TransmissionCurveUnharmed->Fill(Energy, 1);
       }
+      if (fabs(EscapedEnergy + BlackAbsorberEnergy - Energy) < 0.001) {
+        FullyAbsorbed->Fill(Energy, 1);
+      }
     }
     delete SiEvent;
   }
@@ -245,11 +258,13 @@ bool GradedZ::Analyze()
       ComptonInteractionWithT->SetBinContent(b, 100*ComptonInteractionWithT->GetBinContent(b)/AllHits->GetBinContent(b));
       TransmissionCurve->SetBinContent(b, 100* TransmissionCurve->GetBinContent(b)/AllHits->GetBinContent(b));
       TransmissionCurveUnharmed->SetBinContent(b, 100* TransmissionCurveUnharmed->GetBinContent(b)/AllHits->GetBinContent(b));
+      FullyAbsorbed->SetBinContent(b, 100 - 100*FullyAbsorbed->GetBinContent(b)/AllHits->GetBinContent(b));
     } else {
       ComptonInteractions->SetBinContent(b, 0);
       ComptonInteractionWithT->SetBinContent(b, 0);
       TransmissionCurve->SetBinContent(b, 0);
       TransmissionCurveUnharmed->SetBinContent(b, 0);
+      FullyAbsorbed->SetBinContent(b, 0);
     }
   }
 
@@ -286,6 +301,14 @@ bool GradedZ::Analyze()
   TransmissionCurveUnharmed->Draw();
   TransmissionCurveUnharmedCanvas->Update();
   TransmissionCurveUnharmedCanvas->SaveAs("TransmissionCurveUnharmed.pdf");
+
+  TCanvas* FullyAbsorbedCanvas = new TCanvas();
+  FullyAbsorbedCanvas->cd();
+  FullyAbsorbedCanvas->SetGridx();
+  FullyAbsorbedCanvas->SetGridy();
+  FullyAbsorbed->Draw();
+  FullyAbsorbedCanvas->Update();
+  FullyAbsorbedCanvas->SaveAs("TransmissionCurveUnharmed.pdf");
 
   cout<<"The simulation file contained "<<SiReader.GetSimulatedEvents()<<" events simulated over an observation time of "<<SiReader.GetObservationTime()<<endl;
 
