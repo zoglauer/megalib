@@ -668,7 +668,7 @@ void MImageGalactic::AddNamedSources()
       Black->DrawText(xT + Distance, yT + Distance, PSS.GetPointSourceAt(i).GetName());
       
       
-      
+      /*
       TText* MarkerWhiteLowRight = new TText();
       //WhiteLowRight->SetTextFont(32);
       MarkerWhiteLowRight->SetTextColor(0);
@@ -703,13 +703,23 @@ void MImageGalactic::AddNamedSources()
       MarkerBlack->SetTextSize(MarkerSize);
       MarkerBlack->SetTextAlign(MarkerAlign);
       MarkerBlack->DrawText(xT, yT, "x");
-      
-      /*      
-      TMarker* Marker = new TMarker();
-      Marker->SetMarkerSize(2.0f);
-      Marker->SetMarkerStyle(2);
-      Marker->DrawMarker(xT, yT);
       */
+      
+      TLatex* T2 = new TLatex(xT, yT, "#oplus");
+      T2->SetTextSize(0.025);
+      T2->SetTextColor(kWhite);
+      T2->SetTextAlign(22);
+      T2->SetLineWidth(2);
+      T2->Draw();
+
+      TLatex* T = new TLatex(xT, yT, "#otimes");
+      T->SetTextSize(0.025);
+      T->SetTextColor(kBlack);
+      T->SetTextAlign(22);
+      T->SetLineWidth(2);
+      T->Draw();
+  
+      
     }
   }
 
