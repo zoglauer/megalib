@@ -4746,6 +4746,8 @@ void MInterfaceMimrec::LightCurve()
   if (NEvents/10 < NBins) NBins = NEvents/10;
   if (NBins < 10) NBins = 10;
   
+  //NBins = (int) (MaxTime - MinTime);
+  
   // Find the common time between min and max
   long min = (long) MinTime;
   long max = (long) MaxTime;
@@ -4759,7 +4761,7 @@ void MInterfaceMimrec::LightCurve()
   
   int Subtract = min * pow(10, Counter);
   
-  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve  (red: bayesian block binning)", NBins, MinTime - Subtract, MaxTime - Subtract);
+  TH1D* HistOptimized = new TH1D("TimeOptimized", "Light curve", NBins, MinTime - Subtract, MaxTime - Subtract);
   HistOptimized->SetBit(kCanDelete);
   HistOptimized->SetXTitle(MString("Time [s] + ") + MString(Subtract) + " seconds");
   HistOptimized->SetYTitle("counts/sec");
@@ -4779,6 +4781,7 @@ void MInterfaceMimrec::LightCurve()
   HistOptimized->Draw();
   CanvasOptimized->Update();
 
+  /*
   MBinnerBayesianBlocks Bayes;
   Bayes.SetMinMax(MinTime - Subtract, MaxTime - Subtract);
   Bayes.SetMinimumBinWidth((int) (std::max(1.0, 0.5*HistOptimized->GetBinWidth(1)) + 0.5));
@@ -4796,6 +4799,7 @@ void MInterfaceMimrec::LightCurve()
   HistBayes->GetXaxis()->SetNdivisions(509);
   HistBayes->Draw("SAME");
   CanvasOptimized->Update();
+  */
   
   if (m_OutputFileName.IsEmpty() == false) {
     CanvasOptimized->SaveAs(m_OutputFileName);
@@ -5101,7 +5105,7 @@ void MInterfaceMimrec::Polarization()
 
   
   MEventSelector SecondSelector(*m_Selector);
-  SecondSelector.SetTimeMode(0);
+  SecondSelector.SetTimeMode(0); // Since the background file is likely simulation, we do not use a time cut -- this is noted in the GUI
   
   // ... loop over all events and save a count in the belonging bin ...
   while ((Event = GetNextEvent()) != 0) {
