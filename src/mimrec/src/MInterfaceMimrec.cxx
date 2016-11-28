@@ -5007,10 +5007,11 @@ void MInterfaceMimrec::Polarization()
   Corrected->SetStats(false);
   Corrected->SetMinimum(0.0);
   Corrected->SetNdivisions(-508, "X");
-
+  Corrected->SetFillColor(0);
+  
   MPhysicalEvent* Event = nullptr;
   MComptonEvent* ComptonEvent = nullptr; 
-  MPairEvent* PairEvent = 0; 
+  MPairEvent* PairEvent = nullptr; 
 
   // Origin in spherical coordinates:
   double Theta = m_Settings->GetTPTheta()*c_Rad;
@@ -5075,22 +5076,11 @@ void MInterfaceMimrec::Polarization()
   
   // Close the event loader
   FinalizeEventLoader();
-
-  // Normalize to counts/deg
-  for (int b = 1; b <= Polarization->GetNbinsX(); ++b) {
-    Polarization->SetBinContent(b, Polarization->GetBinContent(b)/Polarization->GetBinWidth(b));
-  }
-
-  
+ 
   if (Polarization->Integral() == 0) {
     mgui<<"No events passed the event selections for the polarized data file"<<show;
     return;
   }
-
-  TCanvas* PolarizationCanvas = new TCanvas("PolarizationCanvas", "Polarized source", 800, 600);
-  PolarizationCanvas->cd();
-  Polarization->Draw();
-  PolarizationCanvas->Update();
 
   for (int b = 1; b <= Polarization->GetNbinsX(); ++b) {
     if (Polarization->GetBinContent(b) == 0) {
@@ -5130,8 +5120,7 @@ void MInterfaceMimrec::Polarization()
         PairEvent = dynamic_cast<MPairEvent*>(Event);
 
         if (fabs(PairEvent->GetARMGamma(Origin, m_Settings->GetCoordinateSystem()))*c_Deg < ArmCut) {
-          MVector Plain = PairEvent->GetElectronDirection() + 
-            PairEvent->GetPositronDirection();
+          MVector Plain = PairEvent->GetElectronDirection() + PairEvent->GetPositronDirection();
           Plain.RotateZ(-Phi);
           Plain.RotateY(-Theta);
           
@@ -5150,26 +5139,12 @@ void MInterfaceMimrec::Polarization()
   // Close the event loader
   FinalizeEventLoader();
 
-  // Normalize to counts/deg
-  for (int b = 1; b <= Background->GetNbinsX(); ++b) {
-    if (Background->GetBinContent(b) == 0) {
-      mgui<<"You don't have enough statistics in your background measurement: Some bins are zero!"<<endl;
-      return;
-    }
-    Background->SetBinContent(b, Background->GetBinContent(b)/Background->GetBinWidth(b));
-  }
-  
   if (Background->Integral() == 0) {
     mgui<<"No events passed the event selections for the background data file"<<show;
     return;
   }
 
-  TCanvas* BackgroundCanvas = new TCanvas("BackgroundCanvas", "Not polarized source", 800, 600);
-  BackgroundCanvas->cd();
-  Background->Draw();
-  BackgroundCanvas->Update();
-
-  // Normalize to counts/deg
+  // Sanity check
   for (int b = 1; b <= Background->GetNbinsX(); ++b) {
     if (Background->GetBinContent(b) == 0) {
       mgui<<"You don't have enough statistics in your background measurement: Some bins are zero, e.g. bin "<<b<<endl;
@@ -5177,31 +5152,60 @@ void MInterfaceMimrec::Polarization()
     }
   }
 
-  // Correct the image:
-  double Mean = Polarization->Integral()/Corrected->GetNbinsX();
 
-  // The scaling is necessary, since we cannot assume that pol and background have been measured for exactly the same time...
-  Mean *= Background->Integral()/Polarization->Integral();
+  // Correct the modulation signature with the zero modulation
+  
+  // The correction is
+  // C[i] = P[i]/B[i] * SUM_j( B[j] ) / NBins 
+  
+  // Its uncertainty is 
+  // dC[i] = 
+  //  
+  
 
-  // At this stage mean, basically is the mean of the background:
-  double MeanUncertainty = 0.0;
-  for (int b = 1; b <= Background->GetNbinsX(); ++b) {
-    MeanUncertainty += sqrt(Background->GetBinContent(b));
+  // Since we correcting with background, we have to multiply with its mean
+  double Mean = Background->Integral()/NBins;
+
+  for (int i = 1; i <= NBins; ++i) {
+    Corrected->SetBinContent(i, Polarization->GetBinContent(i)/Background->GetBinContent(i)*Mean);
+    double Uncertainty = 0.0;
+    
+    // Mean part
+    for (int j = 1; j <= NBins; ++j) {
+      Uncertainty += pow(Polarization->GetBinContent(i)/Background->GetBinContent(i)/NBins * sqrt(Background->GetBinContent(j)), 2);
+    }
+    
+    // Background part:
+    Uncertainty += pow(Polarization->GetBinContent(i)/Background->GetBinContent(i)/Background->GetBinContent(i) * Mean * sqrt(Background->GetBinContent(i)), 2);
+    // REMARK:
+    // In theory the above case would never the uncertainty equation, since when i look at the mean
+    // part: P[i]/B[i] * B[i] cancels out
+    // However, since significantly underestimates the uncertainty, thus cannot be right...
+    
+    
+    // Polarization part:
+    Uncertainty += pow(Mean/Background->GetBinContent(i) * sqrt(Polarization->GetBinContent(i)), 2);
+
+    Corrected->SetBinError(i, sqrt(Uncertainty));
   }
-  MeanUncertainty = MeanUncertainty/Background->GetNbinsX();
-
-
-  for (int b = 1; b <= Corrected->GetNbinsX(); ++b) {
-    double PolarizationUncertainty = sqrt(Polarization->GetBinContent(b)*Polarization->GetBinWidth(b))/Polarization->GetBinWidth(b);
-    double BackgroundUncertainty = sqrt(Background->GetBinContent(b)*Background->GetBinWidth(b))/Background->GetBinWidth(b);
-    Corrected->SetBinContent(b, Polarization->GetBinContent(b)/Background->GetBinContent(b)*Mean);
-    Corrected->SetBinError(b, sqrt( pow(Mean/Background->GetBinContent(b)*PolarizationUncertainty,2) + pow(Polarization->GetBinContent(b)/Background->GetBinContent(b)*MeanUncertainty, 2) + pow(Polarization->GetBinContent(b)*Mean/Background->GetBinContent(b)/Background->GetBinContent(b)*BackgroundUncertainty, 2) ) );
+    
+  // Normalize before we do anything else  
+  
+  for (int b = 1; b <= NBins; ++b) {
+    Polarization->SetBinContent(b, Polarization->GetBinContent(b)/Polarization->GetBinWidth(b));
   }
 
-  // Try to fit a cosinus
-  TCanvas* CorrectedCanvas = new TCanvas("CorrectedCanvas", "Background corrected polarization signature", 800, 600);
-  CorrectedCanvas->cd();
-
+  for (int b = 1; b <= NBins; ++b) {
+    Background->SetBinContent(b, Background->GetBinContent(b)/Background->GetBinWidth(b));
+  }    
+    
+  for (int b = 1; b <= NBins; ++b) {
+    Corrected->SetBinContent(b, Corrected->GetBinContent(b)/Corrected->GetBinWidth(b));
+    Corrected->SetBinError(b, Corrected->GetBinError(b)/Corrected->GetBinWidth(b));
+  }
+  
+    
+  // Try to fit a cosine
   TF1* Lin = new TF1("LinearModulation", "pol0", -180*0.99, 180*0.99);
   Corrected->Fit(Lin, "RQFI");
   double LinChisquare = Lin->GetChisquare();
@@ -5213,11 +5217,6 @@ void MInterfaceMimrec::Polarization()
   Mod->SetParLimits(1, 0, 10000000);
   Mod->SetParLimits(2, -400, 400);
   Corrected->Fit(Mod, "RQ");
-
-  Corrected->SetFillColor(0);
-  Corrected->Draw(); //"EHIST");
-  Mod->Draw("SAME");
-  CorrectedCanvas->Update();
 
   double Modulation = fabs(Mod->GetParameter(1)/Mod->GetParameter(0));
   double ModulationError = sqrt((Mod->GetParError(1)*Mod->GetParError(1))/(Mod->GetParameter(0)*Mod->GetParameter(0)) + 
@@ -5254,6 +5253,30 @@ void MInterfaceMimrec::Polarization()
   mout<<"  Outside ARM cut (bkg): "<<OutsideArmCutBackground<<endl;
   mout<<endl;
 
+  
+  
+  // Now normalize to counts/deg & draw everything on screen:
+
+  TCanvas* PolarizationCanvas = new TCanvas("PolarizationCanvas", "Polarized source", 800, 600);
+  PolarizationCanvas->cd();
+  Polarization->Draw();
+  PolarizationCanvas->Update(); 
+  
+
+  TCanvas* BackgroundCanvas = new TCanvas("BackgroundCanvas", "Not polarized source", 800, 600);
+  BackgroundCanvas->cd();
+  Background->Draw();
+  BackgroundCanvas->Update();
+
+  
+  TCanvas* CorrectedCanvas = new TCanvas("CorrectedCanvas", "Background corrected polarization signature", 800, 600);
+  CorrectedCanvas->cd();
+  Corrected->Draw(); //"EHIST");
+  Mod->Draw("SAME");
+  CorrectedCanvas->Update();
+
+  
+  // Safe
   if (m_OutputFileName.IsEmpty() == false) {
     MString Name;
 
