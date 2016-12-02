@@ -45,6 +45,7 @@ MSimGR::MSimGR(MDGeometryQuest* Geo)
   m_DetectorType = MDDetector::c_NoDetectorType;
   m_Position = g_VectorNotDefined;
   m_Energy = 0;
+  m_OriginalEnergy = m_Energy;
   m_VolumeSequence = 0;
   m_Geometry = Geo;
 }
@@ -67,6 +68,8 @@ MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Ene
       mout<<"Error: This guard ring hit at "<<m_Position<<" has no corresponding sensitive volume!"<<endl;
     }
   }
+  
+  m_OriginalEnergy = m_Energy;
 }
 
 
@@ -99,8 +102,10 @@ bool MSimGR::AddRawInput(MString LineBuffer, const int Version)
     }
   }
 
-  if (Noise(true) == false) return false;
+  m_OriginalEnergy = m_Energy; 
   
+  if (Noise(true) == false) return false;
+
   return true;
 }
 
@@ -156,7 +161,7 @@ bool MSimGR::Noise(bool RecalculateVolumeSequence)
   // Make sure we noise not twice:
   m_Energy = m_OriginalEnergy;
 
-  //cout<<"Before: "<<m_Energy;
+  //cout<<"Before: "<<m_Energy<<" --> ";
   if (m_Geometry != 0) {
     if (RecalculateVolumeSequence == true) {
       delete m_VolumeSequence;
