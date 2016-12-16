@@ -12,6 +12,15 @@ if ( [[ ${COMPILER} != g++ ]] && [[ ${COMPILER} != clang++ ]] && [[ ${COMPILER} 
   exit 1;
 fi
 
+if [[ -f xcode-select ]]; then
+  if [[ `xcode-select -p` != 0 ]]; then
+    echo "ERROR: You seem to be on macOS but the command line tools have not been installed completely"
+    echo "       Please execute \"xcode-select --install\", open a new terminal, and try again to run this script"
+    exit 1;
+  fi
+fi
+
+
 
 # Allowed versions
 GCCMIN=40700
@@ -35,7 +44,7 @@ int main()
   Version += 10000*__clang_major__;
   cout<<Version<<endl;
   return 0;
-#endif  
+#endif
 
 #ifdef __ICC
   Version = __ICC;
@@ -49,7 +58,7 @@ int main()
   Version += 10000*__GNUC__;
   cout<<Version<<endl;
   return 0;
-#endif  
+#endif
 
   return 1;
 }
@@ -64,7 +73,7 @@ if [[ -f compilertest ]]; then
   rm -f compilertest
 else
   echo " "
-  echo "ERROR: I could not compiler the test program"
+  echo "ERROR: I could not compile the test program"
   exit 1;
 fi
 
@@ -73,7 +82,7 @@ fi
 if [[ ${COMPILER} == g* ]]; then
   if [[ ${STATUS} -ge ${GCCMIN} ]]; then
     exit 0;
-  else 
+  else
     MAJOR=$(( GCCMIN / 10000 ))
     MINOR=$(( (GCCMIN - 10000*MAJOR) / 100 ))
     PATCH=$(( (GCCMIN - 10000*MAJOR - 100*MINOR) ))
@@ -85,7 +94,7 @@ elif  [[ ${COMPILER} == c* ]]; then
   if [[ ${OS} == linux ]]; then
     if [[ ${STATUS} -ge ${CLANGMIN} ]]; then
       exit 0;
-    else 
+    else
       MAJOR=$(( CLANGMIN / 10000 ))
       MINOR=$(( (CLANGMIN - 10000*MAJOR) / 100 ))
       PATCH=$(( (CLANGMIN - 10000*MAJOR - 100*MINOR) ))
@@ -96,7 +105,7 @@ elif  [[ ${COMPILER} == c* ]]; then
   elif [[ ${OS} == darwin ]]; then
     if [[ ${STATUS} -ge ${APPLECLANGMIN} ]]; then
       exit 0;
-    else 
+    else
       MAJOR=$(( APPLECLANGMIN / 10000 ))
       MINOR=$(( (APPLECLANGMIN - 10000*MAJOR) / 100 ))
       PATCH=$(( (APPLECLANGMIN - 10000*MAJOR - 100*MINOR) ))
@@ -108,7 +117,7 @@ elif  [[ ${COMPILER} == c* ]]; then
 elif  [[ ${COMPILER} == i* ]]; then
   if [[ ${STATUS} -ge ${ICCMIN} ]]; then
     exit 0;
-  else 
+  else
     echo " "
     echo "ERROR: You need at least icc ${ICCMIN} for MEGAlib"
     exit 1;
