@@ -26,9 +26,23 @@ CF	= $(TOP)/config
 #------------------------------------------------------------------------------
 # Included options (result of ./configure)
 
-include $(TOP)/config/Makefile.options
-include $(TOP)/config/Makefile.config
-include $(TOP)/config/Makefile.user
+ifneq ("$(wildcard $(TOP)/config/Makefile.options)","")
+  include $(TOP)/config/Makefile.options
+else
+  $(error You have to run ./configure first)
+endif
+
+ifneq ("$(wildcard $(TOP)/config/Makefile.config)","")
+  include $(TOP)/config/Makefile.config
+else
+  $(error You have to run ./configure first)
+endif
+
+ifneq ("$(wildcard $(TOP)/config/Makefile.user)","")
+  include $(TOP)/config/Makefile.user
+else
+  $(error You have to run ./configure first)
+endif
 
 CXXFLAGS    += -I$(IN)
 LDFLAGS     += -L$(LB)
