@@ -44,7 +44,7 @@ fi
 # Check for version of ROOT
 rv=`root-config --version`
 version=`echo $rv | awk -F. '{ print $1 }'`;
-release=`echo $rv | awk -F/ '{ print $1 }' | awk -F. '{ print $2 }'`;
+release=`echo $rv | awk -F/ '{ print $1 }' | awk -F. '{ print $2 }' | sed -e 's/^0*//'`;
 patch=`echo $rv | awk -F/ '{ print $2 }'`;
 RootVersion=$((100*${version} + ${release}))
 

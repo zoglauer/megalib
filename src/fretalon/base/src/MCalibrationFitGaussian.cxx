@@ -34,6 +34,7 @@
 #include "Fit/UnBinData.h"
 #include "HFitInterface.h"
 #include "Fit/Fitter.h"
+#include "TThread.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
