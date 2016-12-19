@@ -7,6 +7,7 @@ LINKTODIR="/tmp/871264n782d0nrbncxr804x7ngd9ygn9gc79y4gn94mgvzyg497"
 if [[ ${GOOD} == "yes" ]] && [[ $# -ne 1 ]] ; then
   echo "mlink: No directory given!"
   GOOD="NO!"
+  # No exit, since this should be called by "source"
 else 
   LINKTODIR=$1
 fi
@@ -16,12 +17,14 @@ LINKTODIR=$1
 if [[ ${GOOD} == "yes" ]] && [[ ! -d ${LINKTODIR} ]]; then
   echo "mlink: Directory $1 does not exit"
   GOOD="NO!"
+  # No exit, since this should be called by "source"
 fi 
 
 if [[ ${GOOD} == "yes" ]] && [[ ! -L ${DIR} ]]; then
   if [[ -d ${DIR} ]]; then
     echo "mlink: ${DIR} is a real directory, no symbolic link!"
     GOOD="NO!"
+    # No exit, since this should be called by "source"
   fi 
 fi
 
@@ -30,13 +33,27 @@ if [[ ${GOOD} == "yes" ]]; then
   ln -s ${LINKTODIR} ${DIR}
   
   if [[ -f ${DIR}/bin/source-megalib.sh ]]; then
-    source ${DIR}/bin/source-megalib.sh
+    OUT=$(mktemp /tmp/mlink.XXXXXXXXXX)
+    source ${DIR}/bin/source-megalib.sh 2>&1 | tee ${OUT}
+    if [[ `cat ${OUT} | grep "ERROR"` != "" ]]; then
+      echo "mlink: An error occurred when sourcing source-megalib.sh in the new MEGAlib directory"
+      echo "       It seems MEGAlib has not been setup correctly. Please rerun setup.sh!"
+      echo " "  
+      GOOD="NO!"
+      # No exit, since this should be called by "source"
+    fi 
+    rm ${OUT}
+  else
+    echo "mlink: It seems MEGAlib has not been setup correctly. Please run setup.sh!"      
+    GOOD="NO!"
+    # No exit, since this should be called by "source"
   fi
-    
+  
+  SETLINK=
   cd ${DIR}
     
-  echo "If everything went correctly you are now in the new MEGAlib directory: ${DIR}"
-  echo "If not you didn't call this script with \"source\" and you should exit your shell."
+  echo "If everything went correctly you are now in the new MEGAlib directory: ${DIR} which is a link to $(ls -l ../${DIR} | sed 's/^.* -> //')"
+  echo "If not you didn't call this script with \"source\", then you should launch a new shell now."
 fi
 
 # No exit, since we want to be able to call this via "source"
