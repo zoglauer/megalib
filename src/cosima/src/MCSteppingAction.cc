@@ -1329,7 +1329,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
 /******************************************************************************
  * Return the Process ID
  */
-struct CompareDesc { 
+struct MCSteppingActionCompareDesc { 
   vector<unsigned long long> V;
   bool operator() (unsigned int i1, unsigned int i2) { return V[i1] > V[i2]; }
 } MyCompareDesc;
