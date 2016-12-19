@@ -14,7 +14,7 @@ TIMESTART=$(date +%s)
 confhelp() {
   echo ""
   echo "Setup script for MEGAlib"
-  echo " " 
+  echo " "
   echo "This script downloads MEGAlib, downloads and builds ROOT and Geant4, compiles MEGAlib, "
   echo "and finally creates an environment script for MEGAlib"
   echo "This script can be used for the initial installation of MEGAlib as well as for its update!"
@@ -25,7 +25,7 @@ confhelp() {
   echo "Options for all paths and programs:"
   echo "--megalib-path=[path to MEGAlib - default: \"MEGAlib\"]"
   echo "    This is the path to where MEGAlib is installed. If the path exists, we will try to update MEGAlib."
-  echo "    MEGAlib must have been checked out from one of the Repositories or we cannot use it!" 
+  echo "    MEGAlib must have been checked out from one of the Repositories or we cannot use it!"
   echo " "
   echo "--repository=[git or svn - default: git]"
   echo "    The repository from where we are retrieving MEGAlib. Always use git unless you know the svn password :)"
@@ -88,7 +88,7 @@ absolutefilename() {
 # A first round of sanity checks
 
 if [ "$SHELL" != "/bin/bash" ]; then
-  echo " " 
+  echo " "
   echo "Info: This is a bash script. Thus you need to use bash for it and not: ${SHELL}"
   echo " "
 fi
@@ -149,7 +149,7 @@ BRANCH=""
 MAXTHREADS=1;
 if ( `test -f /usr/sbin/sysctl` ); then
   MAXTHREADS=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif ( `test -f /proc/cpuinfo` ); then
   MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 if [ "$?" != "0" ]; then
@@ -271,15 +271,6 @@ else
   echo " * Updating MEGAlib to the latest version"
 fi
 
-if [[ ${BRANCH} != "" ]]; then
-  if [[ ${REPOSITORY} == git ]]; then
-    echo " * Using MEGAlib git branch ${BRANCH}"
-  else
-    echo "ERROR: You can only select a branch when using the git repository."
-    exit 1
-  fi    
-fi
-
 if [ "${EXTERNALPATH}" != "" ]; then
   EXTERNALPATH=`absolutefilename ${EXTERNALPATH}`
 fi
@@ -300,7 +291,7 @@ if [[ "${ROOTPATH}" != "${ROOTPATH% *}" ]]; then
 fi
 if [ "${ROOTPATH}" == "" ]; then
   echo " * Download latest compatible version of ROOT"
-else 
+else
   echo " * Using the installation of ROOT: ${ROOTPATH}"
 fi
 
@@ -314,7 +305,7 @@ if [[ "${GEANT4PATH}" != "${GEANT4PATH% *}" ]]; then
 fi
 if [ "${GEANT4PATH}" == "" ]; then
   echo " * Download latest compatible version of Geant4"
-else 
+else
   echo " * Using the installation of Geant4: ${GEANT4PATH}"
 fi
 
@@ -326,7 +317,7 @@ if [[ ${REPOSITORY} == s* ]]; then
     echo " "
     echo "ERROR: svn needs to be installed if you want to use the svn repository"
     exit 1
-  fi 
+  fi
 elif [[ ${REPOSITORY} == g* ]]; then
   REPOSITORY="git"
   echo " * Using the git repository"
@@ -335,7 +326,7 @@ elif [[ ${REPOSITORY} == g* ]]; then
     echo " "
     echo "ERROR: git needs to be installed if you want to use the git repository"
     exit 1
-  fi 
+  fi
 elif [[ ${REPOSITORY} == c* ]]; then
   REPOSITORY="cvs"
   echo " * Using the cvs repository"
@@ -344,7 +335,7 @@ elif [[ ${REPOSITORY} == c* ]]; then
     echo " "
     echo "ERROR: cvs needs to be installed if you want to use the cvs repository"
     exit 1
-  fi 
+  fi
 else
   echo " "
   echo "ERROR: Unsupported repository: ${REPOSITORY}"
@@ -355,6 +346,11 @@ fi
 if [[ ${RELEASE} == r* ]]; then
   RELEASE="rel"
   echo " * Using latest release version"
+  if [[ ${BRANCH} != "" ]]; then
+    echo "   Ignoring request for branch ${BRANCH} since you requested the release version."
+    echo "   Please use --rel=dev if you want to use a specific MEGAlib development branch"
+    BRANCH=""
+  fi
 elif [[ ${RELEASE} == d* ]]; then
   RELEASE="dev"
   echo " * Using latest development version"
@@ -363,6 +359,15 @@ else
   echo "ERROR: Unknown MEGAlib version: ${RELEASE}"
   confhelp
   exit 1
+fi
+
+if [[ ${BRANCH} != "" ]]; then
+  if [[ ${REPOSITORY} == git ]]; then
+    echo " * Using MEGAlib git branch ${BRANCH}"
+  else
+    echo "ERROR: You can only select a branch when using the git repository."
+    exit 1
+  fi
 fi
 
 if [[ ${OS} == l* ]]; then
@@ -415,11 +420,11 @@ fi
 if [ ! -z "${MAXTHREADS##[0-9]*}" ] 2>/dev/null; then
   echo "ERROR: The maximum number of threads must be a number and not ${MAXTHREADS}!"
   exit 1
-fi  
+fi
 if [ "${MAXTHREADS}" -le "0" ]; then
   echo "ERROR: The maximum number of threads must be at least 1 and not ${MAXTHREADS}!"
   exit 1
-else 
+else
   echo " * Using this maximum number of threads: ${MAXTHREADS}"
 fi
 
@@ -477,10 +482,10 @@ UPDATEMODE="NO"
 
 if [ -d $MEGALIBPATH ]; then
   # MEGAlib does exist - update it
-  
+
   cd ${MEGALIBPATH}
-  MEGALIBPATH=`pwd` # For later - in case this was relative 
-  
+  MEGALIBPATH=`pwd` # For later - in case this was relative
+
   if [ ! -f src/global/misc/src/MGlobal.cxx ]; then
     echo " "
     echo "ERROR: The directory given in your MEGAlib path (\"${MEGALIBPATH}\") is not a MEGAlib directory."
@@ -504,7 +509,7 @@ if [ -d $MEGALIBPATH ]; then
     if  [ "${OLDREPOSITORY}" != "${REPOSITORY}" ]; then
       echo " "
       echo "ERROR: You want to update an existing version of MEGAlib checked out from ${OLDREPOSITORY} with ${REPOSITORY}... an impossible task..."
-      exit 1    
+      exit 1
     fi
 
     echo "Making a backup of your old source code - just in case..."
@@ -557,7 +562,7 @@ if [ -d $MEGALIBPATH ]; then
     elif [ "${REPOSITORY}" == "cvs" ]; then
       if [ "${RELEASE}" == "dev" ]; then
         echo "Switching to latest development version of MEGAlib in the cvs repository..."
-        cvs -d :pserver:anonymous@cvs.mpe.mpg.de:/home/zoglauer/Repository update -A -d 
+        cvs -d :pserver:anonymous@cvs.mpe.mpg.de:/home/zoglauer/Repository update -A -d
         if [ "$?" != "0" ]; then
           echo " "
           echo "ERROR: Unable to switch to the latest development version in cvs"
@@ -621,7 +626,7 @@ if [ -d $MEGALIBPATH ]; then
           exit 1
         fi
       fi
-      
+
       echo "Fast forwarding to the head"
       git pull origin
       if [ "$?" != "0" ]; then
@@ -730,7 +735,7 @@ else
 
         cd ${STARTPATH}
       fi
-    else 
+    else
       echo "Switching to branch ${BRANCH}..."
       cd ${MEGALIBPATH}
       git checkout ${BRANCH}
@@ -742,7 +747,7 @@ else
 
       cd ${STARTPATH}
     fi
-  else 
+  else
     echo " "
     echo "ERROR: Unknown repository: ${REPOSITORY}"
     exit 1;
@@ -754,7 +759,7 @@ else
   fi
 
   cd ${MEGALIBPATH}
-  MEGALIBPATH=`pwd` # For later - in case this was relative 
+  MEGALIBPATH=`pwd` # For later - in case this was relative
 
   if [ ! -f src/global/misc/src/MGlobal.cxx ]; then
     echo " "
@@ -762,11 +767,11 @@ else
     exit 1
   fi
   cd ${HERE}
-  
-  echo " " 
+
+  echo " "
   echo "SUCCESS: Checked out MEGAlib from its repository!"
 fi
-  
+
 
 # Prepare the environment script
 ENVFILE="${MEGALIBPATH}/new-source-megalib.sh"
@@ -784,7 +789,7 @@ echo "MEGALIBDIR=${MEGALIBPATH}" >> ${ENVFILE}
 # Do a compiler test
 COMPILER="g++"
 if [[ ${OS} == linux ]]; then
-  COMPILER="g++" 
+  COMPILER="g++"
 elif [[ ${OS} == macosx ]]; then
   COMPILER="c++"
 fi
@@ -815,7 +820,7 @@ EXTERNALPATH=$(cd $(dirname ${EXTERNALPATH}); pwd)/$(basename ${EXTERNALPATH})
 cd ${STARTPATH}
 if [ "${ROOTPATH}" != "" ]; then
   # Check if we can use the given ROOT version
-  
+
   bash ${MEGALIBDIR}/config/check-rootversion.sh --check=${ROOTPATH}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
@@ -830,16 +835,16 @@ if [ "${ROOTPATH}" != "" ]; then
     fi
   fi
   echo "ROOTDIR=$(cd $(dirname ${ROOTPATH}); pwd)/$(basename ${ROOTPATH})" >> ${ENVFILE}
-else   
+else
   # Download and build a new ROOT version
-  if [ ! -d ${EXTERNALPATH} ]; then 
+  if [ ! -d ${EXTERNALPATH} ]; then
     mkdir ${EXTERNALPATH}
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
   bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee RootBuildLog.txt
-  RESULT=$?
-     
+  RESULT=${PIPESTATUS[0]}
+
   # If we have a new ROOT dir, copy the build log there
   NEWROOT4DIR=`grep ROOTDIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWROOT4DIR} ]]; then
@@ -855,13 +860,24 @@ else
     else
       echo " "
       echo "ERROR: Something went wrong during the ROOT setup."
+      # The check currently happens in configure_compilertest
+      #if [[ ${OS} == darwin ]]; then
+      #  echo " "
+      #  echo "       Since you are on a Mac, the most common problem is that you have not installed/updated the "
+      #  echo "       Xcode command-line tools correctly."
+      #  echo "       Please issue the following command to install them, and rerun the MEGAlib setup script:"
+      #  echo " "
+      #  echo "       xcode-select --install"
+      #  echo " "
+      #  echo "       If this does not help:"
+      #fi
       issuereport
       exit 1
     fi
   fi
-fi  
+fi
 
-echo " " 
+echo " "
 echo "SUCCESS: We have a usable ROOT version!"
 
 
@@ -873,7 +889,7 @@ echo " "
 cd ${STARTPATH}
 if [ "${GEANT4PATH}" != "" ]; then
   # Check if we can use the given Geant4 version
-  
+
   bash ${MEGALIBDIR}/config/check-geant4version.sh --check=${GEANT4PATH}
   RESULT=$?
   if [ "${RESULT}" != "0" ]; then
@@ -888,22 +904,22 @@ if [ "${GEANT4PATH}" != "" ]; then
     fi
   fi
   echo "GEANT4DIR=$(cd $(dirname ${GEANT4PATH}); pwd)/$(basename ${GEANT4PATH})" >> ${ENVFILE}
-else   
+else
   # Download and build a new Geant4 version
-  if [ ! -d ${EXTERNALPATH} ]; then 
+  if [ ! -d ${EXTERNALPATH} ]; then
     mkdir ${EXTERNALPATH}
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
   bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee Geant4BuildLog.txt
-  RESULT=$?
-  
+  RESULT=${PIPESTATUS[0]}
+
   # If we have a new Geant4 dir, copy the build log there
   NEWGEANT4DIR=`grep GEANT4DIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWGEANT4DIR} ]]; then
     mv Geant4BuildLog.txt ${NEWGEANT4DIR}
   fi
-  
+
   # Now handle build errors
   if [ "${RESULT}" != "0" ]; then
     if [ "${RESULT}" == "127" ]; then
@@ -917,7 +933,7 @@ else
       exit 1
     fi
   fi
-fi  
+fi
 
 echo " "
 echo "SUCCESS: We have a usable Geant4 version!"
@@ -965,7 +981,7 @@ echo "Storing last good options"
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
 SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP}"
 if [[ ${BRANCH} != "" ]]; then
-  SETUP+="--branch=${BRANCH}"
+  SETUP+=" --branch=${BRANCH}"
 fi
 
 echo "${SETUP}" >> ${MEGALIBDIR}/config/SetupOptions.txt
@@ -976,7 +992,7 @@ echo " "
 echo "Finished! Execution duration: ${TIMEDIFF} seconds"
 
 echo " "
-echo " " 
+echo " "
 echo "SUCCESS: MEGAlib should be installed now"
 echo " "
 echo "In order to run any MEGAlib programs, you have to source the following file first:"
@@ -986,4 +1002,3 @@ echo " "
 
 
 exit 0
-
