@@ -3,18 +3,11 @@
 ******************************************************************************
 
 
-Version 2.31/2.32
+Version 2.99/3.00
 =================
 
 *** IMPORTANT - PLEASE READ:
 
-+ Currently all MEGAlib development efforts are geared towards analyzing
-  the COSI 2016 balloon flight which happens in the "experimental" branch
-  on github. Since this required significant changes / additions to MEGAlib, 
-  the experimental branch will ultimately morph into version 3.0.
-  Meanwhile, this version ("master on github") just contains bug fixes, 
-  non-critical updates, and compatibility updates with the latest OS and 
-  ROOT/Geant4 versions.
 + Default ROOT version is now 6.06, default Geant4 version is 10.2
  
 
@@ -22,10 +15,6 @@ Version 2.31/2.32
 + The performance of activation simulations is currently not the best...
   
   
-*** Critcal bug fixes
-+ Powerlaws with an index of alpha=1.0 were not simulated correctly in cosima
-
-
 *** Significant new features & improvements:
 
 General:

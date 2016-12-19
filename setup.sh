@@ -914,6 +914,7 @@ else
   bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee Geant4BuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
+
   # If we have a new Geant4 dir, copy the build log there
   NEWGEANT4DIR=`grep GEANT4DIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWGEANT4DIR} ]]; then
