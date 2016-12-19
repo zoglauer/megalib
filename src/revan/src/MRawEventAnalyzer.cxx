@@ -436,6 +436,7 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
   
   vector<MString> Lines = String.Tokenize("\n");
 
+  MRESE::ResetIDCounter();
   MRERawEvent* RE = new MRERawEvent(m_Geometry);
   
   for (MString L: Lines) {
