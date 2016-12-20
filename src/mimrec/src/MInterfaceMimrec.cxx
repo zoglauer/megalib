@@ -4925,7 +4925,6 @@ void MInterfaceMimrec::LocationOfFirstIA()
 
   double* Array = new double[x1NBins*x2NBins];
   for (x = 0; x < x1NBins*x2NBins; x++) Array[x] = 0.0;
-
   
   // ... loop over all events and save a count in the belonging bin ...
   MPhysicalEvent* Event;
@@ -5753,7 +5752,10 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
   map<MString, int> DetectorOccupation;
 
-
+  long NMeanDepths = 0;
+  double MeanDepth = 0.0;
+  
+  
   // Step 1: Accumulate many, many hits:
 
   MVector Pos;
@@ -5782,9 +5784,8 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
 
 
   // Step 2: Create the histograms
-
   DetermineAxis(xMin, xMax, yMin, yMax, zMin, zMax, Positions);
-
+  
   TH3D* xyzHist = new TH3D("SpacialHitDistributionXYZ", 
                         "Spacial hit distribution xyz", 
                         MaxNBins, xMin, +xMax,
@@ -5826,6 +5827,9 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
     xHist->Fill(Pos[0]);
     yHist->Fill(Pos[1]);
     zHist->Fill(Pos[2]);
+    
+    NMeanDepths++;
+    MeanDepth += Pos[2];
   }
 
 
@@ -5843,7 +5847,10 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
           xyzHist->Fill(Pos[0], Pos[1], Pos[2]);
           xHist->Fill(Pos[0]);
           yHist->Fill(Pos[1]);
-          zHist->Fill(Pos[2]);        
+          zHist->Fill(Pos[2]);
+          
+          NMeanDepths++;
+          MeanDepth += Pos[2];
         }
       }
     } 
@@ -5883,6 +5890,10 @@ void MInterfaceMimrec::LocationOfInitialInteraction()
   }
   mout<<endl;
 
+  if (NMeanDepths > 0) {
+    mout<<"Mean depth: "<<MeanDepth/NMeanDepths<<" cm"<<endl;
+    mout<<endl;
+  }
   
   // Close the event loader
   FinalizeEventLoader();
