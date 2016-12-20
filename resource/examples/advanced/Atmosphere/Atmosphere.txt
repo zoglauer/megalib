@@ -24,11 +24,22 @@ Calculated MSIS Model Parameters: Mark all (although we will not need all of the
 Press submit, download, and save the data (I named it: Atmosphere.BestCrabDay.txt)
 
 
-Step 1: Create a geomega mass model
+Step 2: Compile all addon programs
 **********************************
 
-Use the small program AtmosphereModelCreator.cxx to create a geomega mass model out of the downloaded data
+make
 
+
+Step 3: Create a geomega mass model
+**********************************
+
+Use the small program AtmosphereModelCreator.cxx to create a geomega mass model out of the downloaded data:
+
+AtmosphereModelCreator -f Atmosphere.BestCrabDay.txt
+
+The output is: Atmosphere.BestCrabDay.geo
+
+Fell free to look at it with geomega
 
 
 

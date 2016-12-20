@@ -65,6 +65,8 @@ private:
   MString m_FileName;
   //! Test sphere altitude
   double m_Altitude;
+  //! Compressed atmosphere
+  bool m_Compressed;
 };
 
 
@@ -77,6 +79,7 @@ AtmosphereModelCreator::AtmosphereModelCreator() : m_Interrupt(false)
   gStyle->SetPalette(55, 0);
   
   m_Altitude = 33.5; // km
+  m_Compressed = false;
 }
 
 
@@ -101,6 +104,7 @@ bool AtmosphereModelCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: AtmosphereModelCreator <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   file name"<<endl;
+  Usage<<"         -c:   compressed: greate a thin slab for near-field simulations, instead of the whole atmosphere"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -146,6 +150,9 @@ bool AtmosphereModelCreator::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
+    } else if (Option == "-c") {
+      m_Compressed = true;
+      cout<<"Creating compressed atmosphere."<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -222,6 +229,7 @@ bool AtmosphereModelCreator::Analyze()
   // Now create the model
   MString ModelFileName = m_FileName;
   m_FileName.ReplaceAll(".txt", "");
+  if (m_Compressed == true) m_FileName += ".compressed";
   m_FileName += ".geo";
   ofstream out;
   out.open(m_FileName);
@@ -232,8 +240,9 @@ bool AtmosphereModelCreator::Analyze()
   out<<fixed;
   
   
-  unsigned int Power = 12;
+  unsigned int Power = 1;
   double Size = pow(2, Power) * 100000; // 1024 km
+  if (Size < 102400000) Size = 102400000;
   
   out<<"# Atmosphere model created from file "<<m_FileName<<endl;
   out<<endl;
@@ -253,6 +262,14 @@ bool AtmosphereModelCreator::Analyze()
   out<<endl;
   
   for (unsigned int i = 1; i < DataSets.size(); ++i) {
+    double HalfHeight = 0.5 * (DataSets[i].Height - DataSets[i-1].Height);
+    if (m_Compressed == false) HalfHeight *= 100000;
+
+    if (m_Compressed == true) {
+      if (HalfHeight < m_Altitude) continue;
+      // HalfHeight is in cm, Altutude in km, so it fits agaian :)
+    }
+    
     double H = DataSets[i-1].H;
     double He = DataSets[i-1].He;
     double N = DataSets[i-1].N + 2*DataSets[i-1].N2;
@@ -268,6 +285,7 @@ bool AtmosphereModelCreator::Analyze()
     Ar = 1000000*Ar/Sum;
     
     double Density = DataSets[i-1].Density;
+    if (m_Compressed == true) Density *= 100000;
     
     MString MaterialName("MaterialSlice_");
     MaterialName += DataSets[i-1].Height;
@@ -291,59 +309,60 @@ bool AtmosphereModelCreator::Analyze()
     
     out<<"Volume "<<VolumeName<<endl;
     out<<VolumeName<<".Material "<<MaterialName<<endl;
-    out<<VolumeName<<".Shape BOX "<<Size/2<<" "<<Size/2<<" "<<0.5 * (DataSets[i].Height - DataSets[i-1].Height)*100000<<endl;
+    out<<VolumeName<<".Shape BOX "<<Size/2<<" "<<Size/2<<" "<<HalfHeight<<endl;
     out<<VolumeName<<".Visibility  1"<<endl;
-    out<<VolumeName<<".Position 0 0 "<<0.5 * (DataSets[i].Height + DataSets[i-1].Height)*100000<<endl;
+    out<<VolumeName<<".Position 0 0 "<<HalfHeight<<endl;
     out<<VolumeName<<".Mother World"<<endl;
     out<<endl;
     
   }
   
-  
-  // Find the plane with the test spheres
-  for (unsigned int i = 1; i < DataSets.size(); ++i) {
-    if (DataSets[i-1].Height <= m_Altitude && DataSets[i].Height > m_Altitude) {
-      MString VolumeName("VolumeSlice_");
-      VolumeName += DataSets[i-1].Height;
-      VolumeName += "_";
-      VolumeName += DataSets[i].Height;
-
-      MString MaterialName("MaterialSlice_");
-      MaterialName += DataSets[i-1].Height;
-      MaterialName += "_";
-      MaterialName += DataSets[i].Height;
-      for (unsigned int p = Power; p <= Power; p--) {
-        double Size = 100000 * pow(2, p) - (Power - p); 
-        double Height = 50000 - (Power - p); 
-        out<<"Volume SphereBox_"<<p<<endl;
-        out<<"SphereBox_"<<p<<".Material "<<MaterialName<<endl;
-        out<<"SphereBox_"<<p<<".Shape BOX "<<0.5*Size<<" "<<0.5*Size<<" "<<Height<<endl;
-        out<<"SphereBox_"<<p<<".Visibility 1"<<endl;
-        if (p == Power) {
-          out<<"SphereBox_"<<p<<".Mother "<<VolumeName<<endl;
-        } else {
-          out<<"SphereBox_"<<p<<".Copy SphereBox_pp_"<<p<<endl;
-          out<<"SphereBox_pp_"<<p<<".Position "<<0.5*Size<<" "<<0.5*Size<<" 0.0"<<endl;
-          out<<"SphereBox_pp_"<<p<<".Mother SphereBox_"<<p+1<<endl;
-          out<<"SphereBox_"<<p<<".Copy SphereBox_pm_"<<p<<endl;
-          out<<"SphereBox_pm_"<<p<<".Position "<<0.5*Size<<" "<<-0.5*Size<<" 0.0"<<endl;
-          out<<"SphereBox_pm_"<<p<<".Mother SphereBox_"<<p+1<<endl;
-          out<<"SphereBox_"<<p<<".Copy SphereBox_mp_"<<p<<endl;
-          out<<"SphereBox_mp_"<<p<<".Position "<<-0.5*Size<<" "<<0.5*Size<<" 0.0"<<endl;
-          out<<"SphereBox_mp_"<<p<<".Mother SphereBox_"<<p+1<<endl;
-          out<<"SphereBox_"<<p<<".Copy SphereBox_mm_"<<p<<endl;
-          out<<"SphereBox_mm_"<<p<<".Position "<<-0.5*Size<<" "<<-0.5*Size<<" 0.0"<<endl;
-          out<<"SphereBox_mm_"<<p<<".Mother SphereBox_"<<p+1<<endl;
-          out<<endl;
+  if (m_Compressed == false) {
+    // Find the plane with the test spheres
+    for (unsigned int i = 1; i < DataSets.size(); ++i) {
+      if (DataSets[i-1].Height <= m_Altitude && DataSets[i].Height > m_Altitude) {
+        MString VolumeName("VolumeSlice_");
+        VolumeName += DataSets[i-1].Height;
+        VolumeName += "_";
+        VolumeName += DataSets[i].Height;
+        
+        MString MaterialName("MaterialSlice_");
+        MaterialName += DataSets[i-1].Height;
+        MaterialName += "_";
+        MaterialName += DataSets[i].Height;
+        for (unsigned int p = Power; p <= Power; p--) {
+          double Size = 100000 * pow(2, p) - (Power - p); 
+          double Height = 50000 - (Power - p); 
+          out<<"Volume SphereBox_"<<p<<endl;
+          out<<"SphereBox_"<<p<<".Material "<<MaterialName<<endl;
+          out<<"SphereBox_"<<p<<".Shape BOX "<<0.5*Size<<" "<<0.5*Size<<" "<<Height<<endl;
+          out<<"SphereBox_"<<p<<".Visibility 1"<<endl;
+          if (p == Power) {
+            out<<"SphereBox_"<<p<<".Mother "<<VolumeName<<endl;
+          } else {
+            out<<"SphereBox_"<<p<<".Copy SphereBox_pp_"<<p<<endl;
+            out<<"SphereBox_pp_"<<p<<".Position "<<0.5*Size<<" "<<0.5*Size<<" 0.0"<<endl;
+            out<<"SphereBox_pp_"<<p<<".Mother SphereBox_"<<p+1<<endl;
+            out<<"SphereBox_"<<p<<".Copy SphereBox_pm_"<<p<<endl;
+            out<<"SphereBox_pm_"<<p<<".Position "<<0.5*Size<<" "<<-0.5*Size<<" 0.0"<<endl;
+            out<<"SphereBox_pm_"<<p<<".Mother SphereBox_"<<p+1<<endl;
+            out<<"SphereBox_"<<p<<".Copy SphereBox_mp_"<<p<<endl;
+            out<<"SphereBox_mp_"<<p<<".Position "<<-0.5*Size<<" "<<0.5*Size<<" 0.0"<<endl;
+            out<<"SphereBox_mp_"<<p<<".Mother SphereBox_"<<p+1<<endl;
+            out<<"SphereBox_"<<p<<".Copy SphereBox_mm_"<<p<<endl;
+            out<<"SphereBox_mm_"<<p<<".Position "<<-0.5*Size<<" "<<-0.5*Size<<" 0.0"<<endl;
+            out<<"SphereBox_mm_"<<p<<".Mother SphereBox_"<<p+1<<endl;
+            out<<endl;
+          }
         }
+        
+        out<<"Volume TestSphere"<<endl;
+        out<<"TestSphere.Material "<<MaterialName<<endl;
+        out<<"TestSphere.Shape Sphere 0 "<<50000 - Power - 1<<endl;
+        out<<"TestSphere.Visibility 1"<<endl;
+        out<<"TestSphere.Position 0 0 0"<<endl;
+        out<<"TestSphere.Mother SphereBox_0"<<endl;
       }
-      
-      out<<"Volume TestSphere"<<endl;
-      out<<"TestSphere.Material "<<MaterialName<<endl;
-      out<<"TestSphere.Shape Sphere 0 "<<50000 - Power - 1<<endl;
-      out<<"TestSphere.Visibility 1"<<endl;
-      out<<"TestSphere.Position 0 0 0"<<endl;
-      out<<"TestSphere.Mother SphereBox_0"<<endl;
     }
   }
 
