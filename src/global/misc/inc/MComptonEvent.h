@@ -140,9 +140,10 @@ class MComptonEvent : public MPhysicalEvent
   inline double TrackQualityFactor1() const { return m_TrackQualityFactor1; }
   inline double TrackQualityFactor2() const { return m_TrackQualityFactor2; }
 
-  inline double MinLeverArm() const { return (m_C2 - m_C1).Mag(); }
-  inline double AnyLeverArm() const { return m_LeverArm; }
-  inline double LeverArm() const { return AnyLeverArm(); }
+  inline double FirstLeverArm() const { return (m_C2 - m_C1).Mag(); }
+  inline double MinLeverArm() const { return (m_C2 - m_C1).Mag(); }  // Depreciated
+  inline double AnyLeverArm() const { return m_LeverArm; } // bad naming
+  inline double LeverArm() const { return AnyLeverArm(); } // bad naming
 
 
 
