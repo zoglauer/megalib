@@ -599,8 +599,8 @@ void MImageGalactic::AddNamedSources()
 
   float TextSize = 0.02f;
   int TextAlign = 12;  
-  float MarkerSize = 0.6*TextSize;
-  int MarkerAlign = 22;
+  //float MarkerSize = 0.6*TextSize;
+  //int MarkerAlign = 22;
   
   for (i = 0; i < PSS.GetNPointSources(); i++) {
     L = PSS.GetPointSourceAt(i).GetLongitude();
