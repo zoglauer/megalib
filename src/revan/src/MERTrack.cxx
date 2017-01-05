@@ -487,11 +487,11 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
   //
   // The typical pattern of a pair is:
   // (a) There is a vertex
-  // (b) In two layers above/below are at least two hits
+  // (b) In N layers above/below are at least two hits
 
   // Search the vertex:
   // The vertex is at this point a (non-ambiguous) track or a single (clustered) 
-  // hit followed by at least two layers with two hits per layer:
+  // hit followed by at least N layers with two hits per layer:
 
   mdebug<<"Searching for a pair vertex"<<endl;
 
@@ -499,11 +499,16 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
   bool OnlyHitInLayer = false;
   unsigned int MaximumLayerJump = 2;
   //MRESE* RESE = 0;
-
+  unsigned int SearchRange = 30; 
+  int MinPairLength = m_NLayersForVertexSearch;
   
-  // Create a list of RESEs dorted by depth in tracker
+  // Create a list of RESEs sorted by depth in tracker
   vector<MRESE*> ReseList;
   for (int h = 0; h < RE->GetNRESEs(); h++) {
+    if (IsInTracker(RE->GetRESEAt(h)) == false) continue;
+    // Everthing below 90 has to go -- eliminate Bremsstrahlung
+    //if (RE->GetRESEAt(h)->GetEnergy() < 90) continue;
+    
     ReseList.push_back(RE->GetRESEAt(h));
   }
   sort(ReseList.begin(), ReseList.end(), CompareRESEByZ());
@@ -512,19 +517,16 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
   vector<MRESE*>::iterator Iterator1;
   vector<MRESE*>::iterator Iterator2;
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-    if (IsInTracker(*Iterator1) == false) continue;
     mdebug<<(*Iterator1)->GetID()<<": "<<(*Iterator1)->GetPosition().Z()<<endl;
   }
 
   // For each of the RESE's in the list check if it could be the first of the vertex
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
-    if (IsInTracker(*Iterator1) == false) continue;
-
+ 
     // If it is a single hit, and if it is the only one in its layer:
     OnlyHitInLayer = true;
     for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
       if ((*Iterator1) == (*Iterator2)) continue;
-      if (IsInTracker(*Iterator2) == false) continue;
       if (m_Geometry->AreInSameLayer((*Iterator1), (*Iterator2)) == true) {
         OnlyHitInLayer = false;
         break;
@@ -535,19 +537,20 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     mdebug<<(*Iterator1)->ToString()<<endl;
 
     // We only have one hit:
-    vector<int> NBelow(m_NLayersForVertexSearch, 0);
-    vector<int> NAbove(m_NLayersForVertexSearch, 0);
+    vector<int> NBelow(SearchRange, 0);
+    vector<int> NAbove(SearchRange, 0);
 
     int Distance;
     for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
       if ((*Iterator1) == (*Iterator2)) continue;
-      if (IsInTracker(*Iterator2) == false) continue;
+      // Ignore small energy deposits equivalent to bremsstrahlung
+      //if ((*Iterator2)->GetEnergy() < 90) continue;
 
       Distance = m_Geometry->GetLayerDistance((*Iterator1), (*Iterator2));
-      if (Distance > 0 && Distance < int(m_NLayersForVertexSearch)) NAbove[Distance]++;
-      if (Distance < 0 && abs(Distance) < int(m_NLayersForVertexSearch)) NBelow[abs(Distance)]++;
+      if (Distance > 0 && Distance < int(SearchRange)) NAbove[Distance]++;
+      if (Distance < 0 && abs(Distance) < int(SearchRange)) NBelow[abs(Distance)]++;
       massert(Distance != 0); // In this case the algorithm is broken...
-      mdebug<<"Distance "<<(*Iterator1)->GetID()<<" - "<<(*Iterator2)->GetID()<<": "<<Distance<<endl;
+      //mdebug<<"Distance "<<(*Iterator1)->GetID()<<" - "<<(*Iterator2)->GetID()<<": "<<Distance<<endl;
     }
 
 
@@ -557,28 +560,42 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     MRESE* Vertex = 0;
     int VertexDirection = 0;
 
-    unsigned int NLGE = 0;    // number of layers hit 
-    unsigned int NLGETwo = 0; // number of layers with hits greater or equal 2
-    unsigned int NLGEOne = 0; // number of layers with exact one hit
-
-    mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: "
-          <<NAbove[1]<<" "<<NAbove[2]<<" "<<NAbove[3]<<" "<<NAbove[4]<<" "<<NAbove[5]<<endl;
-    mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Below: "
-          <<NBelow[1]<<" "<<NBelow[2]<<" "<<NBelow[3]<<" "<<NBelow[4]<<" "<<NBelow[5]<<endl;
     
     // Check for vertex below
     if (NAbove[1] == 0) {
-      NLGETwo = 0;
-      NLGEOne = 1; // We count the first one too...
-      NLGE = 1; // We count the first one two...
+      int StartIndex = 0; // We start when we have 2 hits for the first time
+      int StopIndex = 0; // We stop when we skip 2 layers for the first time
+      int LayersWithAtLeastTwoHitsBetweenStartAndStop = 0;
+
       
-      for (unsigned int d = 1; d < m_NLayersForVertexSearch; ++d) {
-        if (NBelow[d] >= 1) NLGE++;
-        if (NBelow[d] == 1) NLGEOne++;
-        if (NBelow[d] >= 2) NLGETwo++;        
+      for (unsigned int d = 1; d < SearchRange-1; ++d) {
+        // We stop when we skip 2 layers for the first time
+        if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
+        StopIndex = d;
+        // Store the index where we have 2 hits for the first time, twice
+        if (StartIndex == 0 && NBelow[d] > 1 && NBelow[d+2] > 1) StartIndex = d;
+        
+        if (StartIndex != 0) {
+          if (NBelow[d] >= 2) ++LayersWithAtLeastTwoHitsBetweenStartAndStop;
+        }
       }
-      mdebug<<"Vertec statistics (max: "<<m_NLayersForVertexSearch<<"): layers=:"<<NLGE<<" with one hit: "<<NLGEOne<<" 2 or more: "<<NLGETwo<<endl; 
-      if (NLGE >= m_NLayersForVertexSearch-MaximumLayerJump && NLGETwo >= 2 && NLGEOne >= 1) {
+      
+      // Since we can have just a single track at the end, move upward until we have at least two hits in a row
+      for (unsigned int d = StopIndex; d > 2; --d) {
+        if (NBelow[d-1] >= 2 && NBelow[d-2] >= 2) break;
+        StopIndex = d;
+      }
+      
+      mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: ";
+      for (int i: NAbove) mdebug<<i<<" ";
+      mdebug<<endl;
+      mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Below: ";
+      for (int i: NBelow) mdebug<<i<<" ";
+      mdebug<<endl;
+     
+      mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl; 
+      
+      if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 4 && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {  
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
@@ -626,7 +643,6 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   Electron->AddRESE(RE->GetVertex());
   Electron->SetStartPoint(RE->GetVertex());
 
-	// problem virtual is not deleted!!!!
   MRESE* Virtual = 
     new MREHit(RE->GetVertex()->GetPosition(), 0, RE->GetVertex()->GetTime(),
                RE->GetVertex()->GetDetector(), 
@@ -797,14 +813,41 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     RE->CompressRESEs();
 
   } while (true);
-  
-  // Now add (not append) the remaining hits to the nearest track
-  
 
   
-  // Finally add all other hits unlinked to the tracks
+  // For the electron and positron track walk down the track and determine the straightness from the 5 straigtest segments
+  // Hits with deviate more than X% from this straightness are tossed out of the track
+  EliminatePairDeviations(RE, Electron);
+  EliminatePairDeviations(RE, Positron);
+  
+  // Clean up
   RE->RemoveRESE(RE->GetVertex());
   RE->CompressRESEs();
+
+  // We now might have a new start point, thus make sure we fix the vertex
+  MRESE* NewStartElectron = Electron->GetStartPoint();
+  MRESE* NewStartPositron = Positron->GetStartPoint();
+  
+  if (NewStartElectron->GetPosition().GetZ() < NewStartPositron->GetPosition().GetZ()) {
+    MRESE* NewStart = NewStartPositron->Duplicate();
+    NewStartElectron->AddLink(NewStart);
+    NewStart->AddLink(NewStartElectron);
+    Electron->AddRESE(NewStart);
+    Electron->SetStartPoint(NewStart);
+    RE->SetVertex(NewStart);
+  } else if (NewStartElectron->GetPosition().GetZ() > NewStartPositron->GetPosition().GetZ()) {
+    MRESE* NewStart = NewStartElectron->Duplicate();
+    NewStartPositron->AddLink(NewStart);
+    NewStart->AddLink(NewStartPositron);
+    Positron->AddRESE(NewStart);
+    Positron->SetStartPoint(NewStart);
+    RE->SetVertex(NewStart);    
+  } else {
+    RE->SetVertex(NewStartElectron);   
+  }
+  
+  
+  // Now add (not append) the remaining hits to the nearest track
 
   for (int r = 0; r < RE->GetNRESEs(); r++) {
     if (Electron->ComputeMinDistance(RE->GetRESEAt(r)) < Positron->ComputeMinDistance(RE->GetRESEAt(r))) {
@@ -841,6 +884,119 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     delete Electron;
     delete Positron;
   }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
+{
+  const int NEvaluations = 4;
+  const double FactorAboveMaxDeviation = 1.3;
+  const double MinDeviation = 8.0*c_Rad;
+  
+  vector<double> Deviations;
+  
+  MRESE* Start = Track->GetStartPoint();
+  if (Start == nullptr) return;
+  if (Start->GetNLinks() != 1) return;
+  MRESE* Middle = Start->GetLinkAt(0);
+  if (Middle->GetNLinks() != 2) return;
+  MRESE* End = Middle->GetOtherLink(Start);
+  while (true) {
+    Deviations.push_back((Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition()));
+    
+    Start = Middle;
+    Middle = End;
+    if (Middle->GetNLinks() != 2) break;
+    End = Middle->GetOtherLink(Start);
+  }
+  
+  // If we have less or equal than "NEvaluations" values, we do nothing
+  if (Deviations.size() <= NEvaluations) return;
+  
+  // Sort increasing
+  sort(Deviations.begin(), Deviations.end(), std::less<double>());
+  
+  // Create the average of the first NEvaluations
+  double AverageDeviation = 0.0;
+  for (unsigned int i = 0; i < NEvaluations; ++i) {
+    AverageDeviation += Deviations[i];
+  }
+  AverageDeviation /= NEvaluations;
+  
+  // Find the largest deviation
+  double MaxDeviation = 0.0;
+  for (unsigned int i = 0; i < NEvaluations; ++i) {
+    if (Deviations[i] > MaxDeviation) {
+      MaxDeviation = Deviations[i];
+    }
+  }
+  MaxDeviation *= FactorAboveMaxDeviation;
+  if (MaxDeviation < MinDeviation) MaxDeviation = MinDeviation;
+  
+  mdebug<<"Maximum deviation: "<<MaxDeviation*c_Deg<<" degrees"<<endl;
+  
+  // Find the first segment which is below the average deviation:
+  Start = Track->GetStartPoint();
+  Middle = Start->GetLinkAt(0);
+  End = Middle->GetOtherLink(Start);
+  while (true) {
+    double Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
+    
+    if (Deviation <= AverageDeviation) break;
+    
+    Start = Middle;
+    Middle = End;
+    if (Middle->GetNLinks() != 2) break;
+    End = Middle->GetOtherLink(Start);
+  }
+
+  // First fix the track upstream:
+  MRESE* BestNewStartPoint = Start;
+  while (Start->GetNLinks() == 2) { // while this is not the real start
+    End = Middle;
+    Middle = Start;
+    Start = Middle->GetOtherLink(End);
+    MRESE* StartOldOtherLink = Middle;
+    
+    double Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
+    mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg"<<endl; 
+
+    while (Deviation > MaxDeviation && Start->GetNLinks() == 2) {
+      MRESE* ThrowOut = Start;
+      Start = Start->GetOtherLink(StartOldOtherLink);
+      StartOldOtherLink = ThrowOut;
+      
+      // Remove the RESE
+      Track->RemoveRESE(ThrowOut);
+      mdebug<<"Removing RESE: "<<ThrowOut->GetID()<<" from track due to a deviation of "<<Deviation*c_Deg<<" deg (max allowed: "<<MaxDeviation*c_Deg<<" deg)"<<endl;
+      RE->AddRESE(ThrowOut);
+        
+      // Relink the others
+      ThrowOut->RemoveAllLinks();
+      Start->RemoveLink(ThrowOut);
+      Middle->RemoveLink(ThrowOut);
+      Start->AddLink(Middle);
+      Middle->AddLink(Start);
+      
+      Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
+      mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg "<<endl; 
+    }
+
+    if (Deviation < MaxDeviation) {
+      BestNewStartPoint = Start;
+    } else {
+      // We are at the old start point, thus clean up:
+      Start->GetLinkAt(0)->RemoveLink(Start);
+      Start->RemoveAllLinks();
+      Track->RemoveRESE(Start);
+    }
+  }
+  
+  Track->SetStartPoint(BestNewStartPoint);
+  Track->CompressRESEs();
 }
 
 

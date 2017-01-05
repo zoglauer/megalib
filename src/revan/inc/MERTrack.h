@@ -63,6 +63,9 @@ class MERTrack : public MERConstruction
   virtual bool EvaluateTracks(MRERawEvent* ER);
   virtual bool EvaluateTrack(MRETrack* Track);
   virtual bool EvaluatePairs(MRERawEvent* ER);
+  
+  //! Eliminate track segements with a too strong deviation from the rest
+  virtual void EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track);
 
   virtual MRawEventList* CheckForPair(MRERawEvent* RE);
   virtual void TrackPairs(MRERawEvent* ER);
