@@ -96,6 +96,9 @@ class MInterfaceSivan : public MInterface
   //! Shows a 2D histogram of the produced isotopes
   void IsotopeGeneration();
   
+  //! Shows a table of initial interaction vs detector type
+  void InitialInteraction();
+  
   void SecondaryGenerationPattern();
 
   void TriggerPatternEfficiency();
