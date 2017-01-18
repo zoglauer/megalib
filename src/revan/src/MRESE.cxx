@@ -1058,6 +1058,24 @@ void MRESE::CompressRESEs()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRESE::Shuffle()
+{
+  //! Shuffle the RESEs around...
+  
+  unsigned int size = GetNRESEs();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = m_RESEList->GetRESEAt(To);
+    m_RESEList->SetRESEAt(To, m_RESEList->GetRESEAt(From));
+    m_RESEList->SetRESEAt(From, Temp);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 double MRESE::ComputeMinDistance(MRESE *RESE)
 {
   // Compute the minimum distance between two RESE

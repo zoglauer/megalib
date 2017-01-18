@@ -64,6 +64,7 @@ using namespace std;
 #include "MERCSREnergyRecovery.h"
 #include "MERCSRToFWithEnergyRecovery.h"
 #include "MERCSRBayesian.h"
+#include "MERCSRNeuralNetwork.h"
 #include "MERDecay.h"
 
 
@@ -93,12 +94,13 @@ const int MRawEventAnalyzer::c_TrackingAlgoBayesian        = 5;
 const int MRawEventAnalyzer::c_TrackingAlgoRank            = 6;
 const int MRawEventAnalyzer::c_TrackingAlgoPearson         = 7;
 
-const int MRawEventAnalyzer::c_CSRAlgoNone       = 0;
-const int MRawEventAnalyzer::c_CSRAlgoFoM        = 1;
-const int MRawEventAnalyzer::c_CSRAlgoFoME       = 2;
-const int MRawEventAnalyzer::c_CSRAlgoFoMToF     = 3;
-const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE = 5;
-const int MRawEventAnalyzer::c_CSRAlgoBayesian   = 4;
+const int MRawEventAnalyzer::c_CSRAlgoNone          = 0;
+const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
+const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
+const int MRawEventAnalyzer::c_CSRAlgoFoMToF        = 3;
+const int MRawEventAnalyzer::c_CSRAlgoBayesian      = 4;
+const int MRawEventAnalyzer::c_CSRAlgoNeuralNetwork = 5;
+const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE    = 6;
 
 const int MRawEventAnalyzer::c_DecayAlgoNone     = 0;
 const int MRawEventAnalyzer::c_DecayAlgoStandard = 1;
@@ -330,9 +332,11 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetCSRMaxNHits(S->GetCSRMaxNHits());
 
   SetOriginObjectsFileName(S->GetOriginObjectsFileName());
-
+  
   SetBCTFileName(S->GetBayesianComptonFileName());
-
+  
+  SetNeuralNetworkFileName(S->GetNeuralNetworkFileName());
+  
   SetLensCenter(S->GetLensCenter());
   SetFocalSpotCenter(S->GetFocalSpotCenter());
 
@@ -1159,6 +1163,17 @@ bool MRawEventAnalyzer::PreAnalysis()
                                       m_CSRMaxNHits, 
                                       m_GuaranteeStartD1, 
                                       m_CSROnlyCreateSequences) == false) {
+        Return = false;
+      }
+    } else if (m_CSRAlgorithm == c_CSRAlgoNeuralNetwork) {
+      m_CSR = new MERCSRNeuralNetwork();
+      if (dynamic_cast<MERCSRNeuralNetwork*>(m_CSR)->SetParameters(m_NeuralNetworkFileName, 
+        m_Geometry, 
+        m_CSRThresholdMin, 
+        m_CSRThresholdMax, 
+        m_CSRMaxNHits, 
+        m_GuaranteeStartD1, 
+        m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
     } else if (m_CSRAlgorithm != c_CSRAlgoNone) {

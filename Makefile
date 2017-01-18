@@ -209,6 +209,7 @@ EVIEWLIBS = \
 	-lGeomega \
 	-lCommonMisc \
 	-lCommonGui \
+	-lNeuralNet \
 
 evi: link glo rev geolib
 	@$(MAKE) evi -C src
@@ -306,6 +307,7 @@ REVANLIBS = \
 	-lSpectralyzeGui \
 	-lCommonMisc \
 	-lCommonGui \
+	-lNeuralNet \
 
 revan: info rev
 	@$(BN)/revan $(CMD)
@@ -351,6 +353,7 @@ clean_cosima:
 RESPONSELIBS = \
 	-lCommonMisc \
 	-lCommonGui \
+	-lNeuralNet \
 	-lGeomega \
 	-lRevan \
 	-lMimrec \
@@ -402,6 +405,7 @@ REALTALIBS = \
 	-lMimrecGui \
 	-lSpectralyze \
 	-lSpectralyzeGui \
+	-lNeuralNet \
 	-lCommonMisc \
 	-lCommonGui \
 

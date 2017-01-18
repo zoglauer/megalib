@@ -160,7 +160,8 @@ class MRawEventAnalyzer
   static const int c_CSRAlgoFoMToF;
   static const int c_CSRAlgoFoMToFAndE;
   static const int c_CSRAlgoBayesian;
-
+  static const int c_CSRAlgoNeuralNetwork;
+  
   //! Set the Compton photon tracking algorithm: One of c_CSRAlgoNone, c_CSRAlgoFoM, c_CSRAlgoFoME, c_CSRAlgoFoMToF, c_CSRAlgoBayesian
   void SetCSRAlgorithm(int ID) { m_CSRAlgorithm = ID; }
 
@@ -240,9 +241,11 @@ class MRawEventAnalyzer
   void SetCSRMaxNHits(int Value) { m_CSRMaxNHits = Value; }
   void SetCSROnlyCreateSequences(bool Flag) { m_CSROnlyCreateSequences = Flag; }
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
-
+  
   void SetBCTFileName(MString FileName) { m_BCTFileName = FileName; }
-
+  
+  void SetNeuralNetworkFileName(MString FileName) { m_NeuralNetworkFileName = FileName; }
+  
   void SetFocalSpotCenter(MVector FocalSpotCenter) { m_FocalSpotCenter = FocalSpotCenter; }
   void SetLensCenter(MVector LensCenter) { m_LensCenter = LensCenter; }
 
@@ -395,7 +398,9 @@ class MRawEventAnalyzer
 
   MString m_OriginObjectsFileName;
   MString m_BCTFileName;
-
+  
+  MString m_NeuralNetworkFileName;
+  
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;
 

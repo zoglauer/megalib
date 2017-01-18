@@ -109,6 +109,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_BayesianComptonFileName = "";
   m_BayesianElectronFileName = "";
 
+  m_NeuralNetworkFileName = "";
+  
   // General options:
   m_TotalEnergyMin = 0;
   m_TotalEnergyMax = 1000000;
@@ -194,7 +196,8 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "DecayFile", CleanPath(m_DecayFileName));
   new MXmlNode(Node, "BayesianComptonFile", CleanPath(m_BayesianComptonFileName));
   new MXmlNode(Node, "BayesianElectronFile", CleanPath(m_BayesianElectronFileName));
-
+  new MXmlNode(Node, "NeuralNetworkFile", CleanPath(m_NeuralNetworkFileName));
+  
   new MXmlNode(Node, "TotalEnergy", m_TotalEnergyMin, m_TotalEnergyMax);
   new MXmlNode(Node, "LeverArm", m_LeverArmMin, m_LeverArmMax);
   new MXmlNode(Node, "EventId", m_EventIdMin, m_EventIdMax);
@@ -349,6 +352,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("BayesianElectronFile")) != 0) {
     m_BayesianElectronFileName = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("NeuralNetworkFile")) != 0) {
+    m_NeuralNetworkFileName = aNode->GetValueAsString();
   }
   if ((aNode = Node->GetNode("TotalEnergy")) != 0) {
     m_TotalEnergyMin = aNode->GetMinValueAsDouble();

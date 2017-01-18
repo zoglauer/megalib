@@ -100,16 +100,17 @@ class MResponseCreator
   const static int c_ModeTracks                    = 1;
   const static int c_ModeComptons                  = 2;
   const static int c_ModeComptonsLens              = 3;
-  const static int c_ModeVerify                    = 4;
-  const static int c_ModeImagingListMode           = 5;
-  const static int c_ModeImagingBinnedMode         = 6;
-  const static int c_ModeImagingCodedMask          = 7;
-  const static int c_ModeEarthHorizon              = 8;
-  const static int c_ModeFirstInteractionPosition  = 9;
-  const static int c_ModeSpectral                  = 10;
-  const static int c_ModeARM                       = 11;
-  const static int c_ModeEfficiency                = 12;
-  const static int c_ModeClusteringDSS             = 13;
+  const static int c_ModeComptonsNeuralNetwork     = 4;
+  const static int c_ModeVerify                    = 5;
+  const static int c_ModeImagingListMode           = 6;
+  const static int c_ModeImagingBinnedMode         = 7;
+  const static int c_ModeImagingCodedMask          = 8;
+  const static int c_ModeEarthHorizon              = 9;
+  const static int c_ModeFirstInteractionPosition  = 10;
+  const static int c_ModeSpectral                  = 11;
+  const static int c_ModeARM                       = 12;
+  const static int c_ModeEfficiency                = 13;
+  const static int c_ModeClusteringDSS             = 14;
 
 #ifdef ___CINT___
  public:

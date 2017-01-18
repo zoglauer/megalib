@@ -582,6 +582,42 @@ double MERCSR::ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MERCSR::CalculatePhotoDistance(const MVector& Start, 
+                                              const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetPhotoAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculateComptonDistance(const MVector& Start, 
+                                                const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSR::CalculateTotalDistance(const MVector& Start, 
+                                              const MVector& Stop, double Etot)
+{
+  double Distance = m_Geometry->GetAbsorptionProbability(Start, Stop, Etot); 
+  
+  return Distance;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MString MERCSR::ToString(bool CoreOnly) const
 {
   // Dump an options string gor the tra file:

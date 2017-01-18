@@ -61,17 +61,13 @@ class MERCSRBayesian : public MERCSR
                      bool GuaranteeStartD1 = true,
                      bool CreateOnlyPermutations = false);
 
-  // The response generator need to access the same functions...
-  double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);
-  double CalculateComptonDistance(const MVector& Start, const MVector& Stop, double Etot);
-  double CalculateTotalDistance(const MVector& Start, const MVector& Stop, double Etot);
-
   static double CalculateDPhiInDegree(MRESE* Start, MRESE* Central, MRESE* Stop, double Energy);
   static double CalculateDCosPhi(MRESE* Start, MRESE* Central, MRESE* Stop, double Energy);
   static double CalculatePhiEInDegree(MRESE* Central, double Etot);
   static double CalculateCosPhiE(MRESE* Central, double Etot);
   static double CalculatePhiGInDegree(MRESE* Start, MRESE* Central, MRESE* Stop);
-
+  static double CalculateCosPhiG(MRESE* Start, MRESE* Central, MRESE* Stop);
+  
   static double CalculateDAlphaInDegree(MRETrack* Start, MRESE* Central, double Energy);
   static double CalculateDCosAlpha(MRETrack* Start, MRESE* Central, double Energy);
   static double CalculateAlphaEInDegree(MRETrack* Start, MRESE* Central, double Energy);

@@ -139,6 +139,7 @@ void MGUIERAlgorithm::Create()
   m_CSRList->Add("Compton Sequence Reconstruction with Energy Recovery (Chi-square approach via energies)");
   m_CSRList->Add("Compton Sequence Reconstruction with Time of Flight (Chi-square approach via angles and time)");
   m_CSRList->Add("Bayesian Compton Tracking (Bayesian model selection)");
+  m_CSRList->Add("Neural network Compton-scatter pattern identification");
   if (m_Data->GetSpecialMode() == true) {
     m_CSRList->Add("UNDER CONSTRUCTION: Compton Sequence Reconstruction with Time of Flight and Energy Recovery");
   }

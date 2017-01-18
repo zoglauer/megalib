@@ -502,42 +502,6 @@ void MERCSRBayesian::VerifyEntries(float& NEntriesGood, float& NEntriesBad)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MERCSRBayesian::CalculatePhotoDistance(const MVector& Start, 
-                                              const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetPhotoAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MERCSRBayesian::CalculateComptonDistance(const MVector& Start, 
-                                                const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetComptonAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MERCSRBayesian::CalculateTotalDistance(const MVector& Start, 
-                                              const MVector& Stop, double Etot)
-{
-  double Distance = m_Geometry->GetAbsorptionProbability(Start, Stop, Etot); 
-
-  return Distance;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 double MERCSRBayesian::CalculateDCosPhi(MRESE* Start, MRESE* Central, MRESE* Stop, 
                                      double Energy)
 {
@@ -618,6 +582,23 @@ double MERCSRBayesian::CalculatePhiGInDegree(MRESE* Start, MRESE* Central,
 
   return PhiG;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MERCSRBayesian::CalculateCosPhiG(MRESE* Start, MRESE* Central, 
+                                        MRESE* Stop)
+{
+  double CosPhiG = (Central->GetPosition() - Start->GetPosition()).
+  Dot(Stop->GetPosition() - Central->GetPosition());
+  
+  CosPhiG /= (Central->GetPosition() - Start->GetPosition()).Mag();
+  CosPhiG /= (Stop->GetPosition() - Central->GetPosition()).Mag();
+  
+  return CosPhiG;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

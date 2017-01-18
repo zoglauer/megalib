@@ -46,6 +46,7 @@ class MRESEList
   MRESE* GetRESEContainingRESE(int ID);
   bool ContainsRESE(MRESE *RESE);
   bool ContainsRESE(int ID);
+  void SetRESEAt(int i, MRESE* R);
   void AddRESE(MRESE* RESE);
   void AddRESEFirst(MRESE* RESE);
   MRESE* RemoveRESE(MRESE* RESE);

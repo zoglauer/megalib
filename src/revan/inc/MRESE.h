@@ -135,6 +135,9 @@ class MRESE
   virtual void DeleteRESEAndCompress(int ID);
   virtual void CompressRESEs();
 
+  //! Shuffle the RESEs around in random order (goal: they are more or less sorted when the come from cosima, but not in real life)
+  virtual void Shuffle();
+  
   // delete all the RESEs which are part of this RESE
   virtual void DeleteAll();
 

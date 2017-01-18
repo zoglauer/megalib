@@ -85,6 +85,11 @@ class MERCSR : public MERConstruction
   /// Compute the position error for an angle defined by those three vectors
   double ComputePositionError(MRESE* First, MRESE* Second, MRESE* Third);
 
+  double CalculatePhotoDistance(const MVector& Start, const MVector& Stop, double Etot);
+  double CalculateComptonDistance(const MVector& Start, const MVector& Stop, double Etot);
+  double CalculateTotalDistance(const MVector& Start, const MVector& Stop, double Etot);
+  
+  
   // private methods:
  private:
 

@@ -28,6 +28,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 				$(LB)/MResponseTracking.o \
 				$(LB)/MResponseMultipleCompton.o \
 				$(LB)/MResponseMultipleComptonLens.o \
+				$(LB)/MResponseMultipleComptonNeuralNet.o \
 				$(LB)/MResponseFirstInteractionPosition.o \
 				$(LB)/MResponseSpectral.o \
 				$(LB)/MResponseImaging.o \

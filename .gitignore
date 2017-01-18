@@ -63,7 +63,8 @@ depth_calibration_cosi2016_v2
 depth_calibration_cosi2016_v3
 feeder
 sphereworldsimulator
-
+neuralnettester
+RevanAnalyzer
 
 #config directory:
 Makefile.options

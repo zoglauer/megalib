@@ -55,7 +55,7 @@ class MResponseBuilder
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
 
-  //! Analyze one events
+  //! Analyze one event
   virtual bool Analyze();
     
   //! Finalize the response generation (i.e. save the data a final time )

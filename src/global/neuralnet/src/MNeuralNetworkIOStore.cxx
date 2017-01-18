@@ -1,0 +1,189 @@
+/*
+ * MNeuralNetworkIOStore.cxx
+ *
+ *
+ * Copyright (C) 2005-2007 by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MNeuralNetworkIOStore
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MNeuralNetworkIOStore.h"
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CINT___
+ClassImp(MNeuralNetworkIOStore)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNeuralNetworkIOStore::MNeuralNetworkIOStore()
+{
+  // Construct an instance of MNeuralNetworkIOStore
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNeuralNetworkIOStore::~MNeuralNetworkIOStore()
+{
+  // Delete this instance of MNeuralNetworkIOStore
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetNInputs(const unsigned int N)
+{
+  m_Inputs.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIOStore::GetNInputs() const
+{
+  return m_Inputs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetInput(const unsigned int i, const double Value)
+{
+  m_Inputs[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIOStore::GetInput(const unsigned int i) const
+{
+  return m_Inputs[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetNOutputs(const unsigned int N)
+{
+  m_Outputs.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIOStore::GetNOutputs() const
+{
+  return m_Outputs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetOutput(const unsigned int i, const double Value)
+{
+  m_Outputs[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIOStore::GetOutput(const unsigned int i) const
+{
+  return m_Outputs[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetNUserValues(const unsigned int N)
+{
+  m_UserValues.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIOStore::GetNUserValues() const
+{
+  return m_UserValues.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIOStore::SetUserValue(const unsigned int i, const double Value)
+{
+  m_UserValues[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIOStore::GetUserValue(const unsigned int i) const
+{
+  return m_UserValues[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MNeuralNetworkIOStore::ToString() const
+{
+  MString S = "";
+
+  for (unsigned int i = 0; i < m_Inputs.size(); ++i) {
+    S += i;
+    S += ": ";
+    S += m_Inputs[i];
+    S += "\n";
+  }
+
+  return S;
+}
+
+
+// MNeuralNetworkIOStore.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

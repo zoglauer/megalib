@@ -201,10 +201,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   void SetBayesianElectronFileName(MString Name) { m_BayesianElectronFileName = Name; }
   MString GetBayesianElectronFileName() { return m_BayesianElectronFileName; }
-
+  
   void SetBayesianComptonFileName(MString Name) { m_BayesianComptonFileName = Name; }
   MString GetBayesianComptonFileName() { return m_BayesianComptonFileName; }
-
+  
+  void SetNeuralNetworkFileName(MString Name) { m_NeuralNetworkFileName = Name; }
+  MString GetNeuralNetworkFileName() { return m_NeuralNetworkFileName; }
+  
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
   MString GetOriginObjectsFileName() { return m_OriginObjectsFileName; }
 
@@ -311,8 +314,10 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double m_CSRThresholdMin;
   double m_CSRThresholdMax;
   int m_CSRMaxNHits;
-
+  
   MString m_BayesianComptonFileName;
+  
+  MString m_NeuralNetworkFileName;
   
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;

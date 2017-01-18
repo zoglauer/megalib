@@ -135,7 +135,7 @@ bool MResponseMultipleComptonLens::Save()
 //! Analyze the current event
 bool MResponseMultipleComptonLens::Analyze() 
 { 
-  // Initlize next matching event, save if necessary
+  // Initialize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
   

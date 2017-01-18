@@ -1793,6 +1793,16 @@ double MResponseMultipleCompton::CalculatePhiGInDegree(MRESE& Start, MRESE& Cent
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MResponseMultipleCompton::CalculateCosPhiG(MRESE& Start, MRESE& Central, 
+                                                  MRESE& Stop)
+{
+  return MERCSRBayesian::CalculateCosPhiG(&Start, &Central, &Stop);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 double MResponseMultipleCompton::CalculateCosPhiE(MRESE& Central, double Etot)
 {
   return MERCSRBayesian::CalculateCosPhiE(&Central, Etot);

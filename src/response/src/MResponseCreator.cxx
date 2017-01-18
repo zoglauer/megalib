@@ -41,6 +41,7 @@ using namespace std;
 #include "MResponseClusteringDSS.h"
 #include "MResponseMultipleCompton.h"
 #include "MResponseMultipleComptonLens.h"
+#include "MResponseMultipleComptonNeuralNet.h"
 #include "MResponseFirstInteractionPosition.h"
 #include "MResponseSpectral.h"
 #include "MResponseImaging.h"
@@ -121,8 +122,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
   Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"                                         t  : track"<<endl;
-  Usage<<"                                         c  : compton"<<endl;
-  Usage<<"                                         l  : lens"<<endl;
+  Usage<<"                                         c  : compton (Bayesian)"<<endl;
+  Usage<<"                                         n  : compton (NeuralNetwork)"<<endl;
+  Usage<<"                                         l  : compton (Laue lens or collimated)"<<endl;
   Usage<<"                                         a  : ARM"<<endl;
   Usage<<"                                         il : list-mode imaging"<<endl;
   Usage<<"                                         ib : binned-mode imaging"<<endl;
@@ -210,10 +212,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         m_Mode = c_ModeClusteringDSS;
       } else if (SubOption == "c") {
         m_Mode = c_ModeComptons;
-        cout<<"Choosing Compton mode"<<endl;
+        cout<<"Choosing Compton mode (Bayesian)"<<endl;
+      } else if (SubOption == "n") {
+        m_Mode = c_ModeComptonsNeuralNetwork;
+        cout<<"Choosing Compton mode (Neural Network)"<<endl;
       } else if (SubOption == "l") {
         m_Mode = c_ModeComptonsLens;
-        cout<<"Choosing Compton lens mode"<<endl;
+        cout<<"Choosing Compton mode (lens/collimated)"<<endl;
       } else if (SubOption == "s") {
         m_Mode = c_ModeSpectral;
         cout<<"Choosing spectral mode"<<endl;
@@ -308,20 +313,44 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       cout<<Usage.str()<<endl;
       return false;
     }
-
+    
     MResponseMultipleCompton Response;
-
+    
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-
+    
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-
+    
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
- 
+    
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+    
+  } else if (m_Mode == c_ModeComptonsNeuralNetwork) {
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponseMultipleComptonNeuralNet Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetDoAbsorptions(!m_NoAbsorptions);
+    
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;

@@ -294,6 +294,21 @@ void MRESEList::AddRESEFirst(MRESE* RESE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRESEList::SetRESEAt(int i, MRESE* RESE)
+{
+  // Set a RESE to the specified position
+  
+  massert(this != 0);
+  massert(RESE != 0);
+  massert(int(m_RESEList.size()) > i);
+  
+  m_RESEList[i] = RESE;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MRESE* MRESEList::RemoveRESE(MRESE* RESE)
 {
   // Remove RESE from the list. Afterwards the list contains an empty slot!

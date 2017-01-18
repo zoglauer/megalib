@@ -99,6 +99,7 @@ class MResponseMultipleCompton : public MResponseBuilder
   double CalculateDPhiInDegree(MRESE& Start, MRESE& Central, MRESE& Stop, double Etot);
   double CalculateCosPhiE(MRESE& Central, double Etot);
   double CalculatePhiEInDegree(MRESE& Central, double Etot);
+  double CalculateCosPhiG(MRESE& Start, MRESE& Central, MRESE& Stop);
   double CalculatePhiGInDegree(MRESE& Start, MRESE& Central, MRESE& Stop);
   double CalculateCosAlphaE(MRETrack& Start, MRESE& Central, double Etot);
   double CalculateAlphaEInDegree(MRETrack& Start, MRESE& Central, double Etot);

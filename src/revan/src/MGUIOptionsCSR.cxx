@@ -58,9 +58,11 @@ MGUIOptionsCSR::MGUIOptionsCSR(const TGWindow* Parent, const TGWindow* Main,
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
-  m_Options = 0;
-  m_OptionsUndecided = 0;
-
+  
+  m_Options = nullptr;
+  m_OptionsUndecided = nullptr;
+  m_MaxNSingleHits = nullptr;
+  
   Create();
 }
 
@@ -187,6 +189,15 @@ void MGUIOptionsCSR::Create()
                                       m_Data->GetCSRMaxNHits(), true, 3);
     AddFrame(m_MaxNSingleHits, EntryLayout);
 
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoNeuralNetwork) {
+    AddSubTitle("Options for neural network Compton-scatter patter identification"); 
+    TGLayoutHints* NeuralNetworkFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
+    m_NeuralNetworkFileSelector = 
+    new MGUIEFileSelector(this, "File containing the neural network data (\".nn.erm\"):", 
+                          m_Data->GetNeuralNetworkFileName());
+    m_NeuralNetworkFileSelector->SetFileType("Neural Network ER Master file", "*.nn.erm");
+    AddFrame(m_NeuralNetworkFileSelector, NeuralNetworkFileSelectorLayout);      
+    
   } else {
     AddSubTitle("You deselected Compton tracking"); 
   }
@@ -228,7 +239,7 @@ bool MGUIOptionsCSR::ProcessMessage(long Message, long Parameter1, long Paramete
 bool MGUIOptionsCSR::OnApply()
 {
   // The Apply button has been pressed
-  if (m_MaxNSingleHits->GetAsInt() > 8) {
+  if (m_MaxNSingleHits != nullptr && m_MaxNSingleHits->GetAsInt() > 8) {
     int Return = 0;
     MString Text = "A maximum number of interactions beyond 8 is rather unreasonable and consumes large amounts of memory!\n";
     Text += "Do you really want to proceed?";
@@ -273,6 +284,8 @@ bool MGUIOptionsCSR::OnApply()
   } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoBayesian) {
     m_Data->SetBayesianComptonFileName(m_BayesianFileSelector->GetFileName());
     m_Data->SetCSRMaxNHits(m_MaxNSingleHits->GetAsInt());
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoNeuralNetwork) {
+    m_Data->SetNeuralNetworkFileName(m_NeuralNetworkFileSelector->GetFileName());
   }
   return true;
 }
