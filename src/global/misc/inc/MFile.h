@@ -77,10 +77,16 @@ class MFile
   //! Seek the given position
   virtual void Seek(streamoff Offset, ios_base::seekdir Way);
 
-  //! Write some text (and clear the stream)
+  //! Write a new line
+  virtual void WriteLine();
+  //! Write some text and clear the stream
   virtual void Write(const ostringstream& S);
+  //! Write some text, a new line, and clear the stream
+  virtual void WriteLine(const ostringstream& S);
   //! Write some text
   virtual void Write(const MString& S);
+  //! Write some text + new line
+  virtual void WriteLine(const MString& S);
   //! Write some text
   virtual void Write(const double d);
   //! Write some text
