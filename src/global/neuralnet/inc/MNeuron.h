@@ -44,20 +44,18 @@ public:
   //! Standard destructor
   virtual ~MNeuron();
   
-  //! Set the basic values
+  //! Set the basic value
   virtual void Set(int NValues = 1, int NErrors = 1);
   
   virtual double GetMomentum();
   
   //! Set the current value
   virtual void SetValue(double Value, int i = 0);
-  
   //! Return the current value
   virtual double GetValue(int i = 0);
   
   //! Set the current Error
   virtual void SetError(double Error, int i = 0);
-  
   //! Return the current Error
   virtual double GetError(int i = 0);
   

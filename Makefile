@@ -100,6 +100,9 @@ clean_globalmisc:
 clean_globalgui:
 	@$(MAKE) clean_glogui -C src
 
+clean_globalneuralnet:
+	@$(MAKE) clean_gloneuralnet -C src
+
 
 #------------------------------------------------------------------------------
 # Addon

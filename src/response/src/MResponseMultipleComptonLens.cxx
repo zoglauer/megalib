@@ -212,5 +212,6 @@ double MResponseMultipleComptonLens::CalculateInteractionDepth(MRESE& First)
   return (First.GetPosition() - m_FocalSpotCenter).Dot(m_FocalSpotCenter - m_LensCenter)/(m_FocalSpotCenter - m_LensCenter).Mag();
 }
 
+
 // MResponseMultipleComptonLens.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

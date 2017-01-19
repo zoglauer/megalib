@@ -69,34 +69,34 @@ ClassImp(MResponseMultipleComptonNeuralNet)
 MResponseMultipleComptonNeuralNet::MResponseMultipleComptonNeuralNet()
 {
   // Construct an instance of MResponseMultipleComptonNeuralNet
-
+  
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 10;
   m_CSRMaxLength = 10;
-
+  
   mimp<<"Is this stuff still needed????"<<show;
   m_MaxEnergyDifference = 5; // keV
   m_MaxEnergyDifferencePercent = 0.02;
-
+  
   m_MaxTrackEnergyDifference = 30; // keV
   m_MaxTrackEnergyDifferencePercent = 0.1;
-
+  
   // We can save much more frequently here, since the files are a lot smaller
   m_SaveAfter = 10000;
-
+  
   m_UseRawData = true;
   m_UseDistances = true;
   m_UseInteractionProbabilities = true;
   m_UseComptonScatterProbabilities = true;
   m_UseComptonScatterAngles = true;
   m_UseDPhiCriterion = true;
-
-//   m_UseRawData = false;
-//   m_UseDistances = false;
-//   m_UseInteractionProbabilities = false;
-//   m_UseComptonScatterProbabilities = false;
-//   m_UseComptonScatterAngles = false;
-//   m_UseDPhiCriterion = true;
+  
+  //   m_UseRawData = false;
+  //   m_UseDistances = false;
+  //   m_UseInteractionProbabilities = false;
+  //   m_UseComptonScatterProbabilities = false;
+  //   m_UseComptonScatterAngles = false;
+  //   m_UseDPhiCriterion = true;
 }
 
 
@@ -122,15 +122,15 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
   if (m_ReReader->PreAnalysis() == false) return false;
-
-
+  
+  
   // Create the neural net 
-
+  
   int f = 0;
-
+  
   m_CSRMaxLength = 3;
   mimp<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<show;
-
+  
   // Information needs to go into base file! 
   m_EnergyMin.push_back(0.0);
   //   m_EnergyMax.push_back(130.0);
@@ -144,7 +144,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   //   m_EnergyMax.push_back(3500.0);
   //   m_EnergyMin.push_back(3500.0);
   //   m_EnergyMax.push_back(10000.0);
-
+  
   // Determine normalizations: All x, y, z and E-values have to be between 0.2 and 0.8
   // Positions are normalized linearly, while Energies are normalized logarithmically
   m_xMin = -10.0;
@@ -154,10 +154,10 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   m_zMin =  -6.0;
   m_zInt =  8.0;
   m_MaximumDistance = sqrt(m_xInt*m_xInt + m_yInt*m_yInt + m_zInt*m_zInt);
-
+  
   unsigned int TotalInputDoubles = 0;
   double MiddleNodeScaler = 1.0;
-
+  
   m_SequenceNNs.resize(m_EnergyMin.size());
   m_SequenceNNIOStore.resize(m_EnergyMin.size());
   m_SequenceBestVerificationDataRatio.resize(m_EnergyMin.size());
@@ -166,7 +166,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
     m_SequenceNNIOStore[e].resize(m_CSRMaxLength+1);
     m_SequenceBestVerificationDataRatio[e].resize(m_CSRMaxLength+1);
     for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
-
+      
       // Determine number of input nodes:
       unsigned int NInputNodes = 0;
       f = int(TMath::Factorial(i));
@@ -175,7 +175,8 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
         NInputNodes += 4*i;
       }
       if (m_UseDistances == true) {
-       // all distances              = (i-1) * i!
+        // TODO: We actually have 
+        // all distances              = (i-1) * i!
         NInputNodes += (i-1)*f;        
       }
       if (m_UseInteractionProbabilities == true) {
@@ -197,7 +198,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
       }
       m_SequenceNNs[e][i].SetNInputNodes(NInputNodes);
       TotalInputDoubles += NInputNodes;
-
+      
       // Best performance is reached for 24 middle nodes if a 3-site event is given
       if (i == 2) {
         MiddleNodeScaler = 4.0;
@@ -208,22 +209,22 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
       } else {
         MiddleNodeScaler = 2.0;        
       }
-
+      
       // X x (input nodes + output nodes)
       m_SequenceNNs[e][i].SetNMiddleNodes(int(MiddleNodeScaler*f));
-
+      
       // 2 + all possible first two combinations
       m_SequenceNNs[e][i].SetNOutputNodes(f);
-
+      
       m_SequenceNNs[e][i].SetLearningRate(0.4);
       m_SequenceNNs[e][i].SetMomentum(0.9);
       m_SequenceNNs[e][i].SetNUserComments(4);
       m_SequenceNNs[e][i].Create();
-
+      
       m_SequenceBestVerificationDataRatio[e][i] = 0.0;
     }
   }
-
+  
   m_QualityNNs.resize(m_EnergyMin.size());
   m_QualityNNIOStore.resize(m_EnergyMin.size());
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
@@ -238,7 +239,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
         NInputNodes += 4*i;
       }
       if (m_UseDistances == true) {
-       // all distances              = (i-1) * i!
+        // all distances              = (i-1) * i!
         NInputNodes += (i-1)*f;        
       }
       if (m_UseInteractionProbabilities == true) {
@@ -270,7 +271,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
       } else {
         MiddleNodeScaler = 2.0;        
       }
-
+      
       m_QualityNNs[e][i].SetNMiddleNodes(int(MiddleNodeScaler*f));
       // only one single number - the smaller, the better the quality...
       
@@ -280,10 +281,10 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
       m_QualityNNs[e][i].Create();
     }
   }
-
+  
   // Let's save the "best" one's - although the first one is bad
   Save();
-
+  
   // Build permutation matrix:
   m_Permutator.resize(m_CSRMaxLength+1);
   for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
@@ -310,14 +311,14 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   //       cout<<endl;
   //     }
   //   }
-
+  
   // Determine how many events to store:
   MSystem System;
   int RAM = System.GetFreeRAM();
-
+  
   m_EventsToStore = RAM/(2*sizeof(double)*TotalInputDoubles);
   mout<<"Events to store per IOStore list: "<<m_EventsToStore<<endl;
-
+  
   return true;
 }
 
@@ -333,7 +334,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
     mout<<"Unable to open file "<<m_ResponseName<<".nn.erm"<<endl;
     return false;
   }
-
+  
   fout<<"# Neural network event reconstruction master file"<<endl;
   fout<<endl;
   fout<<"# DO NOT MANIPULATE THIS FILE!"<<endl;
@@ -342,7 +343,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
   fout<<"Version 1"<<endl;
   fout<<"Type erm"<<endl;
   fout<<endl;
-
+  
   fout<<"# Energy intervals"<<endl;
   fout<<"MI ";
   for (unsigned int i = 0; i < m_EnergyMin.size(); ++i) fout<<m_EnergyMin[i]<<" ";
@@ -351,13 +352,13 @@ bool MResponseMultipleComptonNeuralNet::Save()
   for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) fout<<m_EnergyMax[i]<<" ";
   fout<<endl;
   fout<<endl;
-
+  
   fout<<"# Detector dimensions"<<endl;
   fout<<"DX "<<m_xMin<<" "<<m_xInt<<endl;
   fout<<"DY "<<m_yMin<<" "<<m_yInt<<endl;
   fout<<"DZ "<<m_zMin<<" "<<m_zInt<<endl;
   fout<<endl;
-
+  
   fout<<"# Used dimensions"<<endl;
   fout<<"DI UseRawData "<<((m_UseRawData == true) ? "true" : "false")<<endl;
   fout<<"DI UseDistances "<<((m_UseDistances == true) ? "true" : "false")<<endl;
@@ -366,7 +367,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
   fout<<"DI UseComptonScatterAngles "<<((m_UseComptonScatterAngles == true) ? "true" : "false")<<endl;
   fout<<"DI UseDPhiCriterion "<<((m_UseDPhiCriterion == true) ? "true" : "false")<<endl;
   fout<<endl;
-
+  
   fout<<"# Networks"<<endl;
   bool Return = true;
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
@@ -389,12 +390,12 @@ bool MResponseMultipleComptonNeuralNet::Save()
       fout<<"NQ "<<e<<" "<<i<<" "<<out.str()<<endl;
     }
   }
-
+  
   fout<<endl;
   fout<<"EN"<<endl;
-
+  
   fout.close();
-
+  
   return Return;
 }
 
@@ -427,55 +428,54 @@ bool MResponseMultipleComptonNeuralNet::SaveMatrixQualityNN(unsigned int e, unsi
 bool MResponseMultipleComptonNeuralNet::Analyze()
 {
   // Create the multiple Compton response
-
-
-//   unsigned int SimplyCounter = 0;
-//   ofstream Simply2;
-//   Simply2.open("Simply2.sim");
-//   ofstream Simply3;
-//   Simply3.open("Simply3.sim");
-//   ofstream Simply4;
-//   Simply4.open("Simply4.sim");
-
+  
+  
+  //   unsigned int SimplyCounter = 0;
+  //   ofstream Simply2;
+  //   Simply2.open("Simply2.sim");
+  //   ofstream Simply3;
+  //   Simply3.open("Simply3.sim");
+  //   ofstream Simply4;
+  //   Simply4.open("Simply4.sim");
+  
   // Go ahead event by event and compare the results: 
-  MRESE* RESE = 0;
-  MRERawEvent* RE = 0;
-  MRawEventList* REList = 0;
+  MRERawEvent* RE = nullptr;
+  MRawEventList* REList = nullptr;
   vector<MRESE*> RESEs;
-
+  
   vector<vector<int> > ClassicSequenceGood(m_EnergyMin.size());
   vector<vector<int> > ClassicSequenceBad(m_EnergyMin.size());
-
+  
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     ClassicSequenceGood[e].resize(m_CSRMaxLength+1);
     ClassicSequenceBad[e].resize(m_CSRMaxLength+1);
   }
-
+  
   // Current event parameters
   vector<MRESE*> Sorted;
   vector<int> SortedIDs;
   bool StartResolved = false;
   bool CompletelyAbsorbed = false;
-
+  
   unsigned int SequenceBin = 0;
   unsigned int EnergyBin = 0;
-
+  
   unsigned int SequenceLength = 0;
-
+  
   int VerboseLevel = 1;
-
+  
   int CounterToNextTeaching = 0;
-
+  
   do {
     // Stay in an infinite event loop, i.e. re-read the sim file
     // Exit only on an error
     int InitializationTry = 0;
     while (InitializationTry < 2) {
       if (InitializeNextMatchingEvent() == false) {
-//         CloseSimulationFile();
-//         if (OpenSimulationFile() == false) {
-//           InitializationTry = 1;
-//         }
+        //         CloseSimulationFile();
+        //         if (OpenSimulationFile() == false) {
+        //           InitializationTry = 1;
+        //         }
       } else {
         break;
       }
@@ -485,60 +485,59 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
       mout<<"CreateResponse: Error during reinitialization of infinite event loop"<<endl;
       break;
     }
-
-
-    RESE = 0;
-    RE = 0;
+    
+    
+    RE = nullptr;
     REList = m_ReReader->GetRawEventList();
-
+    
     //g_DebugLevel = 1;
-
+    
     int r_max = REList->GetNRawEvents();
     for (int r = 0; r < r_max; ++r) {
       RE = REList->GetRawEventAt(r);
-
+      
       // Check if complete sequence is ok:
       SequenceLength = (unsigned int) RE->GetNRESEs();
-
+      
       //if (SequenceLength !=3) continue;
-
-
+      
+      
       // Step 1:
       // Some initial selections:
       if (RE->GetEnergy() < m_EnergyMin.front() || RE->GetEnergy() > m_EnergyMax.back()) continue;
-
+      
       if (SequenceLength <= 1) {
         mdebug<<"CreateResponse: Not enough hits: "<<SequenceLength<<endl;
         continue;
       }
-  
+      
       if (SequenceLength > (unsigned int) m_CSRMaxLength) {
         mdebug<<"CreateResponse: To many hits: "<<SequenceLength<<endl;
         continue;
       }
-
+      
       mout<<"Matched event:"<<endl;
       mout<<RE->ToString()<<endl;
-
-//       m_SiEvent->SetEventNumber(++SimplyCounter);
-//       if (SequenceLength == 2) {
-//         Simply2<<m_SiEvent->ToSimString(24);
-//       }
-//       if (SequenceLength == 3) {
-//         Simply3<<m_SiEvent->ToSimString(24);
-//       }
-//       if (SequenceLength == 4) {
-//         Simply4<<m_SiEvent->ToSimString(24);
-//       }
-//       continue;
-
+      
+      //       m_SiEvent->SetEventNumber(++SimplyCounter);
+      //       if (SequenceLength == 2) {
+      //         Simply2<<m_SiEvent->ToSimString(24);
+      //       }
+      //       if (SequenceLength == 3) {
+      //         Simply3<<m_SiEvent->ToSimString(24);
+      //       }
+      //       if (SequenceLength == 4) {
+      //         Simply4<<m_SiEvent->ToSimString(24);
+      //       }
+      //       continue;
+      
       // Step 2:
       // Analyze the current event
       RESEs.clear();
       for (int i = 0; i < RE->GetNRESEs(); ++i) RESEs.push_back(RE->GetRESEAt(i));
       Sorted.clear();
       Sorted.resize(RESEs.size());
-
+      
       StartResolved = FindCorrectSequence(RESEs, Sorted);
       CompletelyAbsorbed = AreCompletelyAbsorbed(RESEs, RE);
       if (StartResolved == true && CompletelyAbsorbed == true) {
@@ -547,7 +546,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         mout<<" --> Bad event!"<<endl;
         continue;
       }        
-
+      
       //       // Store the event for later learning
       //       m_Events.push_back(RE->Duplicate());
       //       m_StartResolved.push_back(StartResolved);
@@ -561,19 +560,19 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         }
       }
       //       m_SortedRESEIDs.push_back(SortedIDs);
-
+      
       // Set all values to the NN
-
+      
       //       // Step 1:
       //       // Grap the data:
       //       RE = *EventIterator;
       //       StartResolved = *StartResolvedIterator;
       //       CompletelyAbsorbed = *CompletelyAbsorbedIterator;
       //       SortedRESEIDs = *SortedIterator;
-
+      
       //       RESEs.clear();
       //       for (int i = 0; i < RE->GetNRESEs(); ++i) RESEs.push_back(RE->GetRESEAt(i));
-
+      
       SequenceBin = (unsigned int) RE->GetNRESEs();
       
       EnergyBin = numeric_limits<unsigned int>::max();
@@ -587,11 +586,11 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         mout<<"Energy not within NN limits: "<<RE->GetEnergy()<<endl;
         EnergyBin = m_EnergyMax.size() -1;
       }
-
+      
       
       // Let's be annoying to the NN, sort the master RESEs randomly
       Shuffle(RESEs);
-
+      
       if (VerboseLevel > 1) {
         cout<<"Raw event "<<RE->GetEventId()<<endl;
         for (unsigned int re = 0; re < RESEs.size(); ++re) {
@@ -607,17 +606,17 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           cout<<"Bad event"<<endl;
         }
       }
-
-
+      
+      
       // Step 2:
       // Teach the neural net:
-
+      
       // Set the input:
       bool InputValid = true;
       unsigned int PosSequenceNN = 0;
       unsigned int PosQualityNN = 0;
-
-
+      
+      
       // (a) Raw data:
       if (m_UseRawData == true) {
         for (unsigned int r = 0; r < RESEs.size(); ++r) {
@@ -625,7 +624,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           double y = (RESEs[r]->GetPosition().Y() - m_yMin)/m_yInt;
           double z = (RESEs[r]->GetPosition().Z() - m_zMin)/m_zInt;
           double E = 0.1+0.8*(RESEs[r]->GetEnergy() - m_EnergyMin.front())/(m_EnergyMax[EnergyBin] - m_EnergyMin.front());
-
+          
           if (m_SequenceNNs[EnergyBin][SequenceBin].SetInput(PosSequenceNN++, x) == false) InputValid = false;
           if (m_SequenceNNs[EnergyBin][SequenceBin].SetInput(PosSequenceNN++, y) == false) InputValid = false;
           if (m_SequenceNNs[EnergyBin][SequenceBin].SetInput(PosSequenceNN++, z) == false) InputValid = false;
@@ -636,7 +635,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           if (m_QualityNNs[EnergyBin][SequenceBin].SetInput(PosQualityNN++, E) == false) InputValid = false;
         }
       }
-
+      
       // (b) distances:
       if (m_UseDistances == true) {
         for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
@@ -665,7 +664,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
       }
-
+      
       // (c) absorption/scatter probabilities:
       if (m_UseInteractionProbabilities == true) {
         for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
@@ -675,14 +674,14 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
             Energy -= RESEs[m_Permutator[SequenceBin][i][r]]->GetEnergy();
             // For larger events, this is too time consuming
             //if (RESEs.size() <= 2) {
-              if (r == SequenceBin-2) {
-                Prob = CalculateAbsorptionProbabilityTotal(*RESEs[m_Permutator[SequenceBin][i][r]], *RESEs[m_Permutator[SequenceBin][i][r+1]], Energy);
-              } else {
-                Prob = CalculateAbsorptionProbabilityCompton(*RESEs[m_Permutator[SequenceBin][i][r]], *RESEs[m_Permutator[SequenceBin][i][r+1]], Energy);
-              }
-              //}
+            if (r == SequenceBin-2) {
+              Prob = CalculateAbsorptionProbabilityTotal(*RESEs[m_Permutator[SequenceBin][i][r]], *RESEs[m_Permutator[SequenceBin][i][r+1]], Energy);
+            } else {
+              Prob = CalculateAbsorptionProbabilityCompton(*RESEs[m_Permutator[SequenceBin][i][r]], *RESEs[m_Permutator[SequenceBin][i][r+1]], Energy);
+            }
+            //}
             
-
+            
             if (VerboseLevel > 1) {
               cout<<"Prob's: S"<<i<<": ";
               for  (unsigned int re = 0; re < RESEs.size(); ++re) {
@@ -705,7 +704,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
       }
-
+      
       // (d) Compton scatter angles
       //     (+) phi's via energy:
       if (m_UseComptonScatterAngles == true) {
@@ -738,7 +737,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
             if (m_QualityNNs[EnergyBin][SequenceBin].SetInput(PosQualityNN++, CosPhi) == false) InputValid = false;	  
           }
         }
-
+        
         //    (+) phi's via geometry:
         for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
           for (unsigned int r = 1; r < SequenceBin-1; ++r) {
@@ -770,8 +769,8 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
       }
-
-
+      
+      
       // (e) Compton scatter propabilities:
       if (m_UseComptonScatterProbabilities == true) {
         for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
@@ -781,9 +780,9 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
             if (Phi < 0) Phi = 0;
             if (Phi > 180) Phi = 180;
             double Prob = MComptonEvent::GetKleinNishinaNormalizedByArea(Energy, Phi*c_Rad);
-
+            
             Energy -= RESEs[m_Permutator[SequenceBin][i][r]]->GetEnergy();
-
+            
             if (VerboseLevel > 1) {
               cout<<"Compton prob's: S"<<i<<": ";
               for  (unsigned int re = 0; re < RESEs.size(); ++re) {
@@ -808,8 +807,8 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
       }
-
-
+      
+      
       // (f) dphi's:
       if (m_UseDPhiCriterion == true) {
         int BestSequence = 0;
@@ -887,16 +886,16 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
       }
-
+      
       // (d) Complain if there was an error
       if (InputValid == false) {
         mout<<"Input to neural network is not correctly normalized!"<<endl;
         massert(false);
         continue;
       }
-
+      
       //cout<<m_SequenceNNs[EnergyBin][SequenceBin].GetIOStore().ToString()<<endl;
-
+      
       // Determine which output neuron should indicate the correct sequence
       int CorrectSequence = 0; 
       if (StartResolved == true) {
@@ -917,12 +916,12 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         }
       }
       cout<<"Sequence ID: "<<CorrectSequence<<" i.e. "<<CorrectSequence<<" output slot"<<endl;
-
+      
       // Store the correct sequence
-
-
+      
+      
       // Set preliminary output values to retrieve the IOStores
-
+      
       // Good quality means 0.25; bad = 0.75
       if (CompletelyAbsorbed == false || StartResolved == false) {
         m_QualityNNs[EnergyBin][SequenceBin].SetOutput(0, 0.75);
@@ -935,44 +934,44 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           cout<<"Learning quality: "<<0.25<<endl;
         }
       }
-
-        // Don't store quality for the time being...
-//       // ... and store ...
-//       m_QualityNNIOStore[EnergyBin][SequenceBin].push_back(m_QualityNNs[EnergyBin][SequenceBin].GetIOStore());
-
-//       // Add some additional value, the normalized ARM values, which will represent the quality of the given sequence:
-//       m_QualityNNIOStore[EnergyBin][SequenceBin].back().SetNUserValues(int(TMath::Factorial(RESEs.size())));
-//       for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
-//         double Energy = RE->GetEnergy();
-//         double Phi = CalculatePhiEInDegree(*RESEs[m_Permutator[SequenceBin][i][0]], Energy)*c_Rad;
-//         MVector InvScatterDir = RESEs[m_Permutator[SequenceBin][i][0]]->GetPosition() -  RESEs[m_Permutator[SequenceBin][i][1]]->GetPosition();
-//         MVector TestPos = m_SiEvent->GetIAAt(0)->GetPosition();
-
-//         double ARM = fabs(InvScatterDir.Angle(TestPos - RESEs[m_Permutator[SequenceBin][i][0]]->GetPosition()) - Phi);
-
-//         if (VerboseLevel > 1) {
-//           cout<<"ARM: S"<<i<<": ";
-//           for  (unsigned int re = 0; re < RESEs.size(); ++re) {
-//             cout<<RESEs[m_Permutator[SequenceBin][i][re]]->GetID();
-//             if (re < RESEs.size()-1) {
-//               cout<<" -> ";
-//             } else {
-//               cout<<" : ";
-//             }
-//           }
-//           cout<<" ARM="<<ARM;
-//         }
-//         // Normalize between 0.1 .. 0.9;
-//         ARM = 0.1 + 0.8*ARM/c_Pi;
-//         if (ARM > 0.9) ARM = 0.9;
-//         if (ARM < 0.1) ARM = 0.1;
-//         if (VerboseLevel > 1) {
-//           cout<<" --> "<<ARM<<endl;
-//         }
-//         m_QualityNNIOStore[EnergyBin][SequenceBin].back().SetUserValue(i, ARM);
-//       }      
-     
-
+      
+      // Don't store quality for the time being...
+      //       // ... and store ...
+      //       m_QualityNNIOStore[EnergyBin][SequenceBin].push_back(m_QualityNNs[EnergyBin][SequenceBin].GetIOStore());
+      
+      //       // Add some additional value, the normalized ARM values, which will represent the quality of the given sequence:
+      //       m_QualityNNIOStore[EnergyBin][SequenceBin].back().SetNUserValues(int(TMath::Factorial(RESEs.size())));
+      //       for (unsigned int i = 0; i < m_Permutator[SequenceBin].size(); ++i) {
+      //         double Energy = RE->GetEnergy();
+      //         double Phi = CalculatePhiEInDegree(*RESEs[m_Permutator[SequenceBin][i][0]], Energy)*c_Rad;
+      //         MVector InvScatterDir = RESEs[m_Permutator[SequenceBin][i][0]]->GetPosition() -  RESEs[m_Permutator[SequenceBin][i][1]]->GetPosition();
+      //         MVector TestPos = m_SiEvent->GetIAAt(0)->GetPosition();
+      
+      //         double ARM = fabs(InvScatterDir.Angle(TestPos - RESEs[m_Permutator[SequenceBin][i][0]]->GetPosition()) - Phi);
+      
+      //         if (VerboseLevel > 1) {
+      //           cout<<"ARM: S"<<i<<": ";
+      //           for  (unsigned int re = 0; re < RESEs.size(); ++re) {
+      //             cout<<RESEs[m_Permutator[SequenceBin][i][re]]->GetID();
+      //             if (re < RESEs.size()-1) {
+      //               cout<<" -> ";
+      //             } else {
+      //               cout<<" : ";
+      //             }
+      //           }
+      //           cout<<" ARM="<<ARM;
+      //         }
+      //         // Normalize between 0.1 .. 0.9;
+      //         ARM = 0.1 + 0.8*ARM/c_Pi;
+      //         if (ARM > 0.9) ARM = 0.9;
+      //         if (ARM < 0.1) ARM = 0.1;
+      //         if (VerboseLevel > 1) {
+      //           cout<<" --> "<<ARM<<endl;
+      //         }
+      //         m_QualityNNIOStore[EnergyBin][SequenceBin].back().SetUserValue(i, ARM);
+      //       }      
+      
+      
       // We learn the sequence only if we do have a GOOD event!
       if (CompletelyAbsorbed == true && StartResolved == true) {
         for (int i = 0; i < TMath::Factorial(SequenceBin); ++i) {
@@ -988,7 +987,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
             }
           }
         }
-
+        
         // ... and store ...
         m_SequenceNNIOStore[EnergyBin][SequenceBin].push_back(m_SequenceNNs[EnergyBin][SequenceBin].GetIOStore());
         cout<<"IOStore("<<EnergyBin<<","<<SequenceBin<<") :"<<m_SequenceNNIOStore[EnergyBin][SequenceBin].size()<<endl;
@@ -1001,28 +1000,32 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         } else{
           m_SequenceNNIOStore[EnergyBin][SequenceBin].back().IsVerificationData(false);
         }
-
-        double ClassicRatio = 100.0*double(ClassicSequenceGood[EnergyBin][SequenceBin])/(ClassicSequenceGood[EnergyBin][SequenceBin]+ClassicSequenceBad[EnergyBin][SequenceBin]);
-        MString Comment4 = "# Success ratio (cla): ";
-        Comment4 += ClassicRatio;
-        m_SequenceNNs[EnergyBin][SequenceBin].SetUserComment(3, Comment4);
-
         
-
-
+        MString Comment4 = "# Success ratio (cla): ";
+        if (SequenceBin == 2) { // == 2-site events
+          Comment4 += "N/A (we only check for the minimum dphi as criteria, which requires 3+ hits)"; 
+        } else {
+          double ClassicRatio = 100.0*double(ClassicSequenceGood[EnergyBin][SequenceBin])/(ClassicSequenceGood[EnergyBin][SequenceBin] + ClassicSequenceBad[EnergyBin][SequenceBin]);
+          Comment4 += ClassicRatio;
+        }
+        m_SequenceNNs[EnergyBin][SequenceBin].SetUserComment(3, Comment4);
+        
+        
+        
+        
         CounterToNextTeaching++;
       }
-
+      
     } // For each raw event...
-
-
+    
+    
     cout<<"Counter to teaching: "<<CounterToNextTeaching<<endl;
     
     // Teach, and check if we have to remove events from the store
     if (CounterToNextTeaching >= 10000) {
       CounterToNextTeaching = 0;
       Teach();
-
+      
       //
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
         for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
@@ -1034,19 +1037,19 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         }
       }
     }
-
-    //g_DebugLevel = 0;
+    
+    // g_DebugLevel = 0;
   } while (m_Interrupt == false);
-
-//   Simply2.close();
-//   Simply3.close();
-//   Simply4.close();
-
+  
+  //   Simply2.close();
+  //   Simply3.close();
+  //   Simply4.close();
+  
   // Do a final teaching:
-  while (m_Interrupt == false) {
+  if (m_Interrupt == false) {
     Teach();
   }
-
+  
   return true;
 }
 
@@ -1067,23 +1070,23 @@ bool MResponseMultipleComptonNeuralNet::Finalize()
 void MResponseMultipleComptonNeuralNet::Teach()
 {
   // Teach the neural network the events
-
+  
   // Go ahead event by event and compare the results: 
   int VerboseLevel = 0;
-
+  
   // The statistics section:
   vector<vector<int> > SequenceGood(m_EnergyMin.size());
   vector<vector<int> > SequenceBad(m_EnergyMin.size());
   vector<vector<double> > SequenceRatio(m_EnergyMin.size());
-
+  
   vector<vector<int> > SequenceVerificationDataGood(m_EnergyMin.size());
   vector<vector<int> > SequenceVerificationDataBad(m_EnergyMin.size());
   vector<vector<double> > SequenceVerificationDataRatio(m_EnergyMin.size());
-
+  
   vector<vector<int> > QualityGood(m_EnergyMin.size());
   vector<vector<int> > QualityBad(m_EnergyMin.size());
   vector<vector<double> > QualityRatio(m_EnergyMin.size());
-
+  
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     SequenceGood[e].resize(m_CSRMaxLength+1);
     SequenceBad[e].resize(m_CSRMaxLength+1);
@@ -1097,23 +1100,23 @@ void MResponseMultipleComptonNeuralNet::Teach()
     QualityBad[e].resize(m_CSRMaxLength+1);
     QualityRatio[e].resize(m_CSRMaxLength+1);
   }
-
+  
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
       SequenceGood[e][s] = 0;
       SequenceBad[e][s] = 0;
       SequenceRatio[e][s] = 0;
-    
+      
       SequenceVerificationDataGood[e][s] = 0;
       SequenceVerificationDataBad[e][s] = 0;
       SequenceVerificationDataRatio[e][s] = 0;
-    
+      
       QualityGood[e][s] = 0;
       QualityBad[e][s] = 0;
       QualityRatio[e][s] = 0;
     }
   }
-
+  
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     cout<<"Energy loop: "<<e<<endl;
     for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
@@ -1124,182 +1127,182 @@ void MResponseMultipleComptonNeuralNet::Teach()
       // Loop A: Learn
       for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin();
            Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
-
+        
         // Get and check input:
         MNeuralNetworkIOStore SequenceIOStore = (*Iter);
-        
-        // We do not want to look at verification data in the first loop
-        if (SequenceIOStore.IsVerificationData() == true) continue;
-
-        // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
-        int CorrectSequence = 0;
-        for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-          if (SequenceIOStore.GetOutput(i) < 0.5) {
-            CorrectSequence = i;
-            break;
-          }
-        }
-        
-        // Set input:
-        m_SequenceNNs[e][s].SetInput(SequenceIOStore);
-        // Run the neural net, i.e. determine its output
-        m_SequenceNNs[e][s].Run();
-        
-        
-        // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
-        bool NNKnowsSequence = true;
-        int NNSuggestedSequence = 0;
-        double NNSuggestedSequenceValue = numeric_limits<double>::max();
-        for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-          if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
-            NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
-            NNSuggestedSequence = i;
-          }
-        }
-        if (NNSuggestedSequence != CorrectSequence) {
-          NNKnowsSequence = false;
-        }
-        
-        // Store performance data
-        if (NNKnowsSequence == true) {
-          SequenceGood[e][s]++;
-        } else {
-          SequenceBad[e][s]++;
-        }
-
-        // ... prepare for learning ...
-        m_SequenceNNs[e][s].SetOutputError(SequenceIOStore);
-        // ... and learn ...
-        m_SequenceNNs[e][s].Learn();
-
-        // Dump some text:
-        if (VerboseLevel > 0) {
-          cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
-          for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-            cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
-            if (int(i) == CorrectSequence) {
-              cout<<" <--"<<endl;
-            } else {
-              cout<<endl;
-            }
-            if (NNKnowsSequence == true) {
-              cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
-            } else {
-              cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
-            }
-          }
-        }
-
-        if (m_Interrupt == true) break;
-      } // sequenced IO loop for learning
-
       
-      // -------
-
-      // Loop B: Test
-      for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin();
-           Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
-        
-        // Get and check input:
-        MNeuralNetworkIOStore SequenceIOStore = (*Iter);
-        
-        // We do not want to look at training data in the second loop
-        if (SequenceIOStore.IsVerificationData() == false) continue;
-
-        // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
-        int CorrectSequence = 0;
+      // We do not want to look at verification data in the first loop
+      if (SequenceIOStore.IsVerificationData() == true) continue;
+      
+      // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
+      int CorrectSequence = 0;
+      for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+        if (SequenceIOStore.GetOutput(i) < 0.5) {
+          CorrectSequence = i;
+          break;
+        }
+      }
+      
+      // Set input:
+      m_SequenceNNs[e][s].SetInput(SequenceIOStore);
+      // Run the neural net, i.e. determine its output
+      m_SequenceNNs[e][s].Run();
+      
+      
+      // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
+      bool NNKnowsSequence = true;
+      int NNSuggestedSequence = 0;
+      double NNSuggestedSequenceValue = numeric_limits<double>::max();
+      for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+        if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
+          NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
+          NNSuggestedSequence = i;
+        }
+      }
+      if (NNSuggestedSequence != CorrectSequence) {
+        NNKnowsSequence = false;
+      }
+      
+      // Store performance data
+      if (NNKnowsSequence == true) {
+        SequenceGood[e][s]++;
+      } else {
+        SequenceBad[e][s]++;
+      }
+      
+      // ... prepare for learning ...
+      m_SequenceNNs[e][s].SetOutputError(SequenceIOStore);
+      // ... and learn ...
+      m_SequenceNNs[e][s].Learn();
+      
+      // Dump some text:
+      if (VerboseLevel > 0) {
+        cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
         for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-          if (SequenceIOStore.GetOutput(i) < 0.5) {
-            CorrectSequence = i;
-            break;
+          cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
+          if (int(i) == CorrectSequence) {
+            cout<<" <--"<<endl;
+          } else {
+            cout<<endl;
+          }
+          if (NNKnowsSequence == true) {
+            cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
+          } else {
+            cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
           }
         }
-        
-        // Set input:
-        m_SequenceNNs[e][s].SetInput(SequenceIOStore);
-        // Run the neural net, i.e. determine its output
-        m_SequenceNNs[e][s].Run();
-        
-        
-        // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
-        bool NNKnowsSequence = true;
-        int NNSuggestedSequence = 0;
-        double NNSuggestedSequenceValue = numeric_limits<double>::max();
-        for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-          if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
-            NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
-            NNSuggestedSequence = i;
-          }
-        }
-        if (NNSuggestedSequence != CorrectSequence) {
-          NNKnowsSequence = false;
-        }
-        
-        // Store verification performance data
-        if (NNKnowsSequence == true) {
-          SequenceVerificationDataGood[e][s]++;
-        } else {
-          SequenceVerificationDataBad[e][s]++;
-        }
-
-        // Dump some text:
-        if (VerboseLevel > 0) {
-          cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
-          for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-            cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
-            if (int(i) == CorrectSequence) {
-              cout<<" <--"<<endl;
-            } else {
-              cout<<endl;
-            }
-            if (NNKnowsSequence == true) {
-              cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
-            } else {
-              cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
-            }
-          }
-        }
-
-        if (m_Interrupt == true) break;
-      } // sequenced IO loop for verification
+      }
       
       if (m_Interrupt == true) break;
+           } /* sequenced IO loop for learning */
+           
+           
+           // -------
+           
+           // Loop B: Test
+           for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin();
+                Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
+             
+             // Get and check input:
+             MNeuralNetworkIOStore SequenceIOStore = (*Iter);
+           
+           // We do not want to look at training data in the second loop
+           if (SequenceIOStore.IsVerificationData() == false) continue;
+           
+           // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
+           int CorrectSequence = 0;
+           for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+             if (SequenceIOStore.GetOutput(i) < 0.5) {
+               CorrectSequence = i;
+               break;
+             }
+           }
+           
+           // Set input:
+           m_SequenceNNs[e][s].SetInput(SequenceIOStore);
+           // Run the neural net, i.e. determine its output
+           m_SequenceNNs[e][s].Run();
+           
+           
+           // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
+           bool NNKnowsSequence = true;
+           int NNSuggestedSequence = 0;
+           double NNSuggestedSequenceValue = numeric_limits<double>::max();
+           for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+             if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
+               NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
+               NNSuggestedSequence = i;
+             }
+           }
+           if (NNSuggestedSequence != CorrectSequence) {
+             NNKnowsSequence = false;
+           }
+           
+           // Store verification performance data
+           if (NNKnowsSequence == true) {
+             SequenceVerificationDataGood[e][s]++;
+           } else {
+             SequenceVerificationDataBad[e][s]++;
+           }
+           
+           // Dump some text:
+           if (VerboseLevel > 0) {
+             cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
+             for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+               cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
+               if (int(i) == CorrectSequence) {
+                 cout<<" <--"<<endl;
+               } else {
+                 cout<<endl;
+               }
+               if (NNKnowsSequence == true) {
+                 cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
+               } else {
+                 cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
+               }
+             }
+           }
+           
+           if (m_Interrupt == true) break;
+                } /* sequenced IO loop for verification */
+                
+                if (m_Interrupt == true) break;
     } // sequence loop
     
     if (m_Interrupt == true) break;
   } // energy loop
   
   
-    // Check what we have learned:
+  // Check what we have learned:
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
       cout<<endl;
       cout<<"Performance for sequence length "<<s<<" within "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<" keV"<<endl;
-  
+      
       // sequence
       if (SequenceGood[e][s]+SequenceBad[e][s] > 0) {
         MString Comment1 = "# Number of different training events: ";
         Comment1 += m_SequenceNNIOStore[e][s].size();
         m_SequenceNNs[e][s].SetUserComment(0, Comment1);
-
+        
         cout<<"(a) Sequence "<<s<<endl;
         SequenceRatio[e][s] = 100.0*double(SequenceGood[e][s])/(SequenceGood[e][s]+SequenceBad[e][s]);
         cout<<"    This loop (all):  Good: "<<SequenceGood[e][s]<<" Bad: "<<SequenceBad[e][s]
-            <<" Ratio: "<<SequenceRatio[e][s]<<endl;
-
+        <<" Ratio: "<<SequenceRatio[e][s]<<endl;
+        
         MString Comment2 = "# Success ratio (all): ";
         Comment2 += SequenceRatio[e][s];
         m_SequenceNNs[e][s].SetUserComment(1, Comment2);
-
+        
         if (SequenceVerificationDataGood[e][s]+SequenceVerificationDataBad[e][s] > 0) {
           SequenceVerificationDataRatio[e][s] = 100.0*double(SequenceVerificationDataGood[e][s])/(SequenceVerificationDataGood[e][s]+SequenceVerificationDataBad[e][s]);
           cout<<"    This loop (ver):  Good: "<<SequenceVerificationDataGood[e][s]<<" Bad: "<<SequenceVerificationDataBad[e][s]
-              <<" Ratio: "<<SequenceVerificationDataRatio[e][s]<<" (best: "<<m_SequenceBestVerificationDataRatio[e][s]<<")"<<endl;
+          <<" Ratio: "<<SequenceVerificationDataRatio[e][s]<<" (best: "<<m_SequenceBestVerificationDataRatio[e][s]<<")"<<endl;
           
           MString Comment3 = "# Success ratio (ver): ";
           Comment3 += SequenceVerificationDataRatio[e][s];
           m_SequenceNNs[e][s].SetUserComment(2, Comment3);
-
+          
           if (m_Interrupt == false) {
             if (SequenceVerificationDataRatio[e][s] > m_SequenceBestVerificationDataRatio[e][s] && SequenceGood[e][s] + SequenceBad[e][s] > 1000) {
               m_SequenceBestVerificationDataRatio[e][s] = SequenceVerificationDataRatio[e][s];
@@ -1308,18 +1311,18 @@ void MResponseMultipleComptonNeuralNet::Teach()
           }
         }
       }
-        
+      
       // quality
       if (QualityGood[e][s]+QualityBad[e][s] > 0) {
         cout<<"(b) Quality "<<s<<endl;
         QualityRatio[e][s] = 100.0*double(QualityGood[e][s])/(QualityGood[e][s]+QualityBad[e][s]);
         cout<<"    This loop:  Good: "<<QualityGood[e][s]<<" Bad: "<<QualityBad[e][s]
-            <<" Ratio: "<<QualityRatio[e][s]<<endl;
+        <<" Ratio: "<<QualityRatio[e][s]<<endl;
       }
     }
   } // statistics loop
   
-
+  
   Save();
 }
 
@@ -1331,11 +1334,11 @@ bool MResponseMultipleComptonNeuralNet::AreCompletelyAbsorbed(const vector<MRESE
 {
   // Return true if ALL individual RESEs are completely absorbed
   // AND the photon from the start of the event!
-
+  
   mimp<<"Function has bad interface!"<<show;
-
+  
   vector<int> AllOriginIds;
-
+  
   for (unsigned int i = 0; i < RESEs.size(); ++i) {
     vector<int> OriginIds = GetOriginIds(RESEs[i]);
     if (IsAbsorbed(OriginIds, RESEs[i]->GetEnergy(), RESEs[i]->GetEnergyResolution()) == false) {
@@ -1348,13 +1351,13 @@ bool MResponseMultipleComptonNeuralNet::AreCompletelyAbsorbed(const vector<MRESE
       }
     }
   }
-
+  
   if (IsTotalAbsorbed(AllOriginIds, RE->GetEnergy(), RE->GetEnergyResolution()) == false) {
     mout<<"Whole event "<<RE->GetID()<<" is not completely absorbed!"<<endl;
     return false;
   }
-
-
+  
+  
   return true;
 }
 
@@ -1368,18 +1371,18 @@ bool MResponseMultipleComptonNeuralNet::FindFirstInteractions(const vector<MRESE
   // 
   // First and second are the *detected* first and second interaction ---
   // there may be some undetected before and in between
-
+  
   //mout<<"FindFirstInteractions"<<endl;
-
+  
   First = 0;
   Second = 0;
-
+  
   // Determine for all RESEs the Origin IDs
   vector<vector<int> > OriginIds;
   for (unsigned int r = 0; r < RESEs.size(); ++r) {
     OriginIds.push_back(GetOriginIds(RESEs[r]));
   }
-
+  
   // Motherparticle of smallest ID - needs to be a photon!
   int Smallest = numeric_limits<int>::max();
   for (unsigned int i = 0; i < OriginIds.size(); ++i) {
@@ -1387,21 +1390,21 @@ bool MResponseMultipleComptonNeuralNet::FindFirstInteractions(const vector<MRESE
       if (OriginIds[i][j] < Smallest) Smallest = OriginIds[i][j];
     }
   }
-
+  
   if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
     if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" &&
-        m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
+      m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
       mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
-      return false;
-    }
+    return false;
+      }
   } else {
     if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
-        m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
+      m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
       mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
-      return false;
-    }
+    return false;
+      }
   }
-
+  
   if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
     // Find one and only RESE associated with this:
     for (unsigned int i = 0; i < OriginIds.size(); ++i) {
@@ -1423,7 +1426,7 @@ bool MResponseMultipleComptonNeuralNet::FindFirstInteractions(const vector<MRESE
     mout<<"FindFirstInteractions: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
     return false;
   }
-
+  
   // Go through the main event tree in the file and find the RESEs:
   for (unsigned int s = Smallest+1; s < m_SiEvent->GetNIAs(); ++s) {
     // The second event in the sequence needs to have the same origin than the first one
@@ -1445,14 +1448,14 @@ bool MResponseMultipleComptonNeuralNet::FindFirstInteractions(const vector<MRESE
       if (Second != 0) break;
     }
   }
-
+  
   if (First == 0 || Second == 0) {
     mout<<"FindFirstInteractions: Did not find first and second!"<<endl;
     return false;
   }
-
+  
   //cout<<"First RESE: "<<First->GetID()<<", Second RESE: "<<Second->GetID()<<endl;
-
+  
   return true;
 }
 
@@ -1466,17 +1469,17 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
   // 
   // First and second are the *detected* first and second interaction ---
   // there may be some undetected before and in between
-
+  
   //mout<<"FindFirstInteractions"<<endl;
   Sorted.resize(RESEs.size());
   for (unsigned int i = 0; i < Sorted.size(); ++i) Sorted[i] = 0;
-
+  
   // Determine for all RESEs the Origin IDs
   vector<vector<int> > OriginIds;
   for (unsigned int r = 0; r < RESEs.size(); ++r) {
     OriginIds.push_back(GetOriginIds(RESEs[r]));
   }
-
+  
   // Motherparticle of smallest ID - needs to be a photon!
   int Smallest = numeric_limits<int>::max();
   for (unsigned int i = 0; i < OriginIds.size(); ++i) {
@@ -1484,21 +1487,21 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
       if (OriginIds[i][j] < Smallest) Smallest = OriginIds[i][j];
     }
   }
-
+  
   if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
     if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" &&
-        m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
+      m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
       mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
-      return false;
-    }
+    return false;
+      }
   } else {
     if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
-        m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
+      m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
       mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
-      return false;
-    }
+    return false;
+      }
   }
-
+  
   if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
     // Find one and only RESE associated with this:
     for (unsigned int i = 0; i < OriginIds.size(); ++i) {
@@ -1520,32 +1523,32 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
     mout<<"FindCorrectSequence: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
     return false;
   }
-
+  
   //mout<<"FindCorrectSequence: First RESE "<<Sorted[0]->GetID()<<" (Smallest: "<<Smallest<<")"<<endl;
-
+  
   // Check if there is a Compton is missing...
   for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
     // The second event in the sequence needs to have the same origin than the first one
     if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin() &&
-        m_SiEvent->GetIAAt(s)->GetType() == "COMP") {
+      m_SiEvent->GetIAAt(s)->GetType() == "COMP") {
       //cout<<m_SiEvent->GetIAAt(s)->GetEnergy()<<endl;
       bool Found = false;
-      for (unsigned int i = 0; i < OriginIds.size(); ++i) {
-        for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
-          //cout<<int(s+1)<<":"<<OriginIds[i][j]<<endl;
-          if (OriginIds[i][j] == int(s+1)) {
-            Found = true;
-            break;
-          }
+    for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+      for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+        //cout<<int(s+1)<<":"<<OriginIds[i][j]<<endl;
+        if (OriginIds[i][j] == int(s+1)) {
+          Found = true;
+          break;
         }
       }
-      if (Found == false) {
-        mout<<"FindCorrectSequence: Gap! Cannot find representant for Compton ID "<<s+1<<endl;
-        return false;
-      }
     }
+    if (Found == false) {
+      mout<<"FindCorrectSequence: Gap! Cannot find representant for Compton ID "<<s+1<<endl;
+      return false;
+    }
+      }
   }
-
+  
   // Go through the main event tree in the file and find the RESE sequence:
   unsigned int FreeSpotInSorted = 1;
   for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
@@ -1566,7 +1569,7 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
       }
     }
   }
-
+  
   // Check if in all but the last interaction only contain a Compton interaction and it's possible dependents:
   for (unsigned int s = 0; s < Sorted.size()-1; ++s) {
     if (Sorted[s] != 0) {
@@ -1582,24 +1585,24 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
       //mout<<"FindCorrectSequence: All Compton "<<Sorted[s]->GetID()<<endl;
     }
   }
-
-//   mout<<"Sequence: ";
-//   for (unsigned int s = 0; s < Sorted.size(); ++s) {
-//     if (Sorted[s] == 0) {
-//       mout<<" ?";
-//     } else {
-//       mout<<" "<<Sorted[s]->GetID();
-//     }
-//   }
-//   mout<<endl;
-
+  
+  //   mout<<"Sequence: ";
+  //   for (unsigned int s = 0; s < Sorted.size(); ++s) {
+  //     if (Sorted[s] == 0) {
+  //       mout<<" ?";
+  //     } else {
+  //       mout<<" "<<Sorted[s]->GetID();
+  //     }
+  //   }
+  //   mout<<endl;
+  
   for (unsigned int s = 0; s < Sorted.size(); ++s) {
     if (Sorted[s] == 0) {
       mout<<"FindCorrectSequence: Did not find complete sequence!"<<endl;
       return false;
     }
   }
-
+  
   return true;
 }
 
@@ -1610,13 +1613,13 @@ bool MResponseMultipleComptonNeuralNet::FindCorrectSequence(const vector<MRESE*>
 unsigned int MResponseMultipleComptonNeuralNet::NumberOfComptonInteractions(vector<int> AllSimIds)
 {
   unsigned int N = 0;
-
+  
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
     if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetType() == "COMP") {
       N++;
     }
   }
-
+  
   return N;
 }
 
@@ -1627,7 +1630,7 @@ unsigned int MResponseMultipleComptonNeuralNet::NumberOfComptonInteractions(vect
 void MResponseMultipleComptonNeuralNet::Shuffle(vector<MRESE*>& RESEs)
 {
   //! Shuffle the RESEs around...
-
+  
   unsigned int size = RESEs.size();
   for (unsigned int i = 0; i < 2*size; ++i) {
     unsigned int From = gRandom->Integer(size);
