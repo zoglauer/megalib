@@ -62,8 +62,24 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi  
 
+  # Check if .bash_local exists
+  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME[$m]}: MEGAlib has never been installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if .bash_local exists
+  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'`
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME[$m]}: MEGAlib has never been correctly installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+  
   # Check that cosima is installed
-  GITVERSION[$m]=`ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
+  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Unable to retrieve git version!"
     MACHINES[$m]=""
@@ -71,7 +87,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
       
   # Check that cosima is installed
-  AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
+  AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; type cosima > /dev/null' 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Cosima not found!"
     GITVERSION[$m]=""
@@ -85,14 +101,18 @@ echo " "
 OUTPUT=""
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   if [[ "${MACHINES[$m]}" == "" ]]; then
-    OUTPUT="${OUTPUT} ${REMOTEHOST[$m]} "
+    if [[ ${REMOTENAME[$m]} != "" ]]; then
+      OUTPUT="${OUTPUT} * ${REMOTENAME[$m]} (${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]})\n"
+    else 
+      OUTPUT="${OUTPUT} * ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}\n"
+    fi
     continue;
   fi
 done
   
 if [[ ${OUTPUT} != "" ]]; then
   echo "The following machines have no running MEGAlib version installed:"
-  echo "  ${OUTPUT}"
+  echo -e "${OUTPUT}"
   exit 1
 else
   VERSIONLOG="${REMOTENAME[0]}: ${GITVERSION[0]}\n"
