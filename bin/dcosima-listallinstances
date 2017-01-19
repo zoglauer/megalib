@@ -72,6 +72,30 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi  
 
+  # Check if .bash_local exists
+  ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if MEGAlib path exists
+  ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: MEGAlib has never been correctly installed"
+    MACHINES[$m]=""
+    continue
+  fi 
+
+  # Check if .dcosima.cfg path exists
+  ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else exit 1; fi'
+  if [ "$?" != "0" ]; then
+    echo " * Machine ${REMOTENAME}: dcosima has not been setup (no .dcosima.cfg file exists)"
+    MACHINES[$m]=""
+    continue
+  fi 
+
   # Check if cosima is installed
   AVAILABLE=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type cosima > /dev/null" 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
