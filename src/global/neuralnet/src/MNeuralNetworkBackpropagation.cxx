@@ -311,9 +311,6 @@ bool MNeuralNetworkBackpropagation::Stream(const bool Read)
     
     
   } else {
-    
-    ostringstream S;
-    
     WriteLine("Type RSP");
     WriteLine("Version 1");
     WriteLine();
@@ -326,35 +323,7 @@ bool MNeuralNetworkBackpropagation::Stream(const bool Read)
     }
     WriteLine("\n");
     
-    WriteLine(MString("NI ") + m_NInputNodes);
-    for (unsigned int i = 0; i < m_InputNodes.size(); ++i) {
-      m_InputNodes[i]->Stream(*this, m_Version, Read);
-      WriteLine("NE EN");
-    }
-    WriteLine("NI EN");
-    
-    WriteLine(MString("NM ") + m_NMiddleNodes);
-    for (unsigned int i = 0; i < m_MiddleNodes.size(); ++i) {
-      m_MiddleNodes[i]->Stream(*this, m_Version, Read);
-      WriteLine("NE EN");
-    }
-    WriteLine("NM EN");
-    
-    WriteLine(MString("NO ") + m_NOutputNodes);
-    for (unsigned int i = 0; i < m_OutputNodes.size(); ++i) {
-      m_OutputNodes[i]->Stream(*this, m_Version, Read);
-      WriteLine("NE EN");
-    }
-    WriteLine("NO EN");
-    
-    for (unsigned int i = 0; i < m_Synapses.size(); ++i) {
-      m_Synapses[i]->Stream(*this, m_Version, Read);
-      WriteLine("SY EN");
-    }
-    
-    WriteLine(MString("LR ") + m_LearningRate);
-    WriteLine(MString("MM ") + m_Momentum);
-    WriteLine("EN");
+    Write(ToString());
     
     Flush();    
   }
@@ -372,19 +341,7 @@ bool MNeuralNetworkBackpropagation::Stream(const bool Read)
 MString MNeuralNetworkBackpropagation::ToString() const
 {
   ostringstream S;
-  
-  S<<"Type RSP"<<endl;
-  S<<"Version 1"<<endl;
-  S<<endl;
-  
-  S<<"# Number of times the function \"Learn()\" has been called: "<<m_NLearningRuns<<endl;
-  S<<endl;
-  
-  for (unsigned int i = 0; i < m_UserComments.size(); ++i) {
-    S<<m_UserComments[i]<<endl;
-  }
-  S<<endl;
-  
+   
   S<<"NI "<<m_NInputNodes<<endl;
   for (unsigned int i = 0; i < m_InputNodes.size(); ++i) {
     S<<m_InputNodes[i]->ToString();

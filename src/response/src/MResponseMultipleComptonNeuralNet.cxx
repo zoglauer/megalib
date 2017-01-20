@@ -1131,142 +1131,115 @@ void MResponseMultipleComptonNeuralNet::Teach()
         // Get and check input:
         MNeuralNetworkIOStore SequenceIOStore = (*Iter);
       
-      // We do not want to look at verification data in the first loop
-      if (SequenceIOStore.IsVerificationData() == true) continue;
+        // We do not want to look at verification data in the first loop
+        if (SequenceIOStore.IsVerificationData() == true) continue;
       
-      // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
-      int CorrectSequence = 0;
-      for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-        if (SequenceIOStore.GetOutput(i) < 0.5) {
-          CorrectSequence = i;
-          break;
-        }
-      }
-      
-      // Set input:
-      m_SequenceNNs[e][s].SetInput(SequenceIOStore);
-      // Run the neural net, i.e. determine its output
-      m_SequenceNNs[e][s].Run();
-      
-      
-      // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
-      bool NNKnowsSequence = true;
-      int NNSuggestedSequence = 0;
-      double NNSuggestedSequenceValue = numeric_limits<double>::max();
-      for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-        if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
-          NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
-          NNSuggestedSequence = i;
-        }
-      }
-      if (NNSuggestedSequence != CorrectSequence) {
-        NNKnowsSequence = false;
-      }
-      
-      // Store performance data
-      if (NNKnowsSequence == true) {
-        SequenceGood[e][s]++;
-      } else {
-        SequenceBad[e][s]++;
-      }
-      
-      // ... prepare for learning ...
-      m_SequenceNNs[e][s].SetOutputError(SequenceIOStore);
-      // ... and learn ...
-      m_SequenceNNs[e][s].Learn();
-      
-      // Dump some text:
-      if (VerboseLevel > 0) {
-        cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
+        // Determine the correct sequence as known from the simulation --- we have exactly one good one with a value of 0.25 -- find it
+        int CorrectSequence = 0;
         for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-          cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
-          if (int(i) == CorrectSequence) {
-            cout<<" <--"<<endl;
-          } else {
-            cout<<endl;
-          }
-          if (NNKnowsSequence == true) {
-            cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
-          } else {
-            cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
+          if (SequenceIOStore.GetOutput(i) < 0.5) {
+            CorrectSequence = i;
+            break;
           }
         }
-      }
       
-      if (m_Interrupt == true) break;
-           } /* sequenced IO loop for learning */
+        // Set input:
+        m_SequenceNNs[e][s].SetInput(SequenceIOStore);
+        // Run the neural net, i.e. determine its output
+        m_SequenceNNs[e][s].Run();
+      
+      
+        // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
+        bool NNKnowsSequence = true;
+        int NNSuggestedSequence = m_SequenceNNs[e][s].GetOutputNodeWithSmallestValue();
+        if (NNSuggestedSequence != CorrectSequence) {
+          NNKnowsSequence = false;
+        }
+      
+        // Store performance data
+        if (NNKnowsSequence == true) {
+          SequenceGood[e][s]++;
+        } else {
+          SequenceBad[e][s]++;
+        }
+      
+        // ... prepare for learning ...
+        m_SequenceNNs[e][s].SetOutputError(SequenceIOStore);
+        // ... and learn ...
+        m_SequenceNNs[e][s].Learn();
+      
+        // Dump some text:
+        if (VerboseLevel > 0) {
+          cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
+          for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+            if (NNKnowsSequence == true) {
+              cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
+            } else {
+              cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
+            }
+          }
+        }
+      
+        if (m_Interrupt == true) break;
+      } // sequenced IO loop for learning
            
            
-           // -------
+      // -------
            
-           // Loop B: Test
-           for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin();
-                Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
+      // Loop B: Test
+      for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin(); Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
              
-             // Get and check input:
-             MNeuralNetworkIOStore SequenceIOStore = (*Iter);
+        // Get and check input:
+        MNeuralNetworkIOStore SequenceIOStore = (*Iter);
            
-           // We do not want to look at training data in the second loop
-           if (SequenceIOStore.IsVerificationData() == false) continue;
+        // We do not want to look at training data in the second loop
+        if (SequenceIOStore.IsVerificationData() == false) continue;
            
-           // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
-           int CorrectSequence = 0;
-           for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-             if (SequenceIOStore.GetOutput(i) < 0.5) {
-               CorrectSequence = i;
-               break;
-             }
-           }
+        // Determine the correct sequence as known by simulation --- we have exactly one good one if a value of 0.25
+        int CorrectSequence = 0;
+        for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+          if (SequenceIOStore.GetOutput(i) < 0.5) {
+            CorrectSequence = i;
+            break;
+          }
+        }
            
-           // Set input:
-           m_SequenceNNs[e][s].SetInput(SequenceIOStore);
-           // Run the neural net, i.e. determine its output
-           m_SequenceNNs[e][s].Run();
+        // Set input:
+        m_SequenceNNs[e][s].SetInput(SequenceIOStore);
+        // Run the neural net, i.e. determine its output
+        m_SequenceNNs[e][s].Run();
            
            
-           // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
-           bool NNKnowsSequence = true;
-           int NNSuggestedSequence = 0;
-           double NNSuggestedSequenceValue = numeric_limits<double>::max();
-           for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-             if (m_SequenceNNs[e][s].GetOutput(i) < NNSuggestedSequenceValue) {
-               NNSuggestedSequenceValue = m_SequenceNNs[e][s].GetOutput(i);
-               NNSuggestedSequence = i;
-             }
-           }
-           if (NNSuggestedSequence != CorrectSequence) {
-             NNKnowsSequence = false;
-           }
+        // If the correct sequence also has the smallest output of the neural net, then the neural net knows the sequence
+        bool NNKnowsSequence = true;
+        int NNSuggestedSequence = m_SequenceNNs[e][s].GetOutputNodeWithSmallestValue();
+        if (NNSuggestedSequence != CorrectSequence) {
+          NNKnowsSequence = false;
+        }
            
-           // Store verification performance data
-           if (NNKnowsSequence == true) {
-             SequenceVerificationDataGood[e][s]++;
-           } else {
-             SequenceVerificationDataBad[e][s]++;
-           }
+        // Store verification performance data
+        if (NNKnowsSequence == true) {
+          SequenceVerificationDataGood[e][s]++;
+        } else {
+          SequenceVerificationDataBad[e][s]++;
+        }
            
-           // Dump some text:
-           if (VerboseLevel > 0) {
-             cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
-             for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
-               cout<<"Output sequence "<<i<<": "<<m_SequenceNNs[e][s].GetOutput(i);
-               if (int(i) == CorrectSequence) {
-                 cout<<" <--"<<endl;
-               } else {
-                 cout<<endl;
-               }
-               if (NNKnowsSequence == true) {
-                 cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
-               } else {
-                 cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
-               }
-             }
-           }
+        // Dump some text:
+        if (VerboseLevel > 0) {
+          cout<<"Event ID: "<<SequenceIOStore.GetUserValue(0)<<endl;
+          for (unsigned int i = 0; i < SequenceIOStore.GetNOutputs(); ++i) {
+            if (NNKnowsSequence == true) {
+              cout<<"GOOD: Neural net has already learned the sequence of this event"<<endl;
+            } else {
+              cout<<"BAD: Neural net doesn't know the sequence of this event"<<endl;
+            }
+          }
+        }
            
-           if (m_Interrupt == true) break;
-                } /* sequenced IO loop for verification */
+        if (m_Interrupt == true) break;
+      } // sequenced IO loop for verification
                 
-                if (m_Interrupt == true) break;
+      if (m_Interrupt == true) break;
     } // sequence loop
     
     if (m_Interrupt == true) break;

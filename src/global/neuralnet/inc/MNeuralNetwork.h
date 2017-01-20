@@ -58,18 +58,18 @@ public:
   
   //! Set the input nodes
   void SetNInputNodes(unsigned int N) { m_NInputNodes = N; }
-  //! Return the number of input nodes -- network needs to be created first
-  unsigned int GetNInputNodes() const { return m_InputNodes.size(); }
+  //! Return the number of input nodes 
+  unsigned int GetNInputNodes() const { return m_NInputNodes; }
   
   //! Set the nodes of the hidden middle layer
   void SetNMiddleNodes(unsigned int N) { m_NMiddleNodes = N; }
-  //! Return the number of middle nodes -- network needs to be created first
-  unsigned int GetNMiddleNodes() const { return m_MiddleNodes.size(); }
+  //! Return the number of middle nodes 
+  unsigned int GetNMiddleNodes() const { return m_NMiddleNodes; }
   
   //! Set the output nodes
   void SetNOutputNodes(unsigned int N) { m_NOutputNodes = N; }
-  //! Return the number of output nodes -- network needs to be created first
-  unsigned int GetNOutputNodes() const { return m_OutputNodes.size(); }
+  //! Return the number of output nodes 
+  unsigned int GetNOutputNodes() const { return m_NOutputNodes; }
   
   
   //! Create the neural network layout -- needs to be overwritten
@@ -81,21 +81,25 @@ public:
   //! Set the input via pre-stored values
   bool SetInput(MNeuralNetworkIOStore& Store);
   //! Set the input of one specific input node (numbering starts with zero)
-  bool SetInput(unsigned int i, double Value);
+  virtual bool SetInput(unsigned int i, double Value);
   
   
   //! Run, i.e. create the output
   virtual bool Run();
   
   //! Return the output of one specific node (numbering starts with zero)
-  double GetOutput(unsigned int i);
+  virtual double GetOutput(unsigned int i);
+  //! Return the output node with the smallest output value
+  virtual unsigned int GetOutputNodeWithSmallestValue();
+  
   //! Set the output of one specific input node for learning (numbering starts with zero)
-  bool SetOutput(unsigned int i, double Value);
+  virtual bool SetOutput(unsigned int i, double Value);
+  // No by store ???
   
   //! Set the output error via pre-stored values
-  void SetOutputError(MNeuralNetworkIOStore& Store);
+  bool SetOutputError(MNeuralNetworkIOStore& Store);
   //! Set the output error of one specific node (numbering starts with zero)
-  void SetOutputError(unsigned int i, double Value);
+  virtual bool SetOutputError(unsigned int i, double Value);
   
   //! Do the learning --- we will not decide if the learning was sufficient!
   virtual bool Learn();

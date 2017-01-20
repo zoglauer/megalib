@@ -27,6 +27,8 @@
 #include "MNeuralNetwork.h"
 
 // Standard libs:
+#include <limits>
+using namespace std;
 
 // ROOT libs:
 
@@ -265,7 +267,7 @@ bool MNeuralNetwork::SetInput(MNeuralNetworkIOStore& Store)
   }
   
   for (unsigned int i = 0; i < Store.GetNInputs(); ++i) {
-    m_InputNodes[i]->SetValue(Store.GetInput(i));
+    SetInput(i, Store.GetInput(i)); // Don't set it directly since this function can be derived
   }
   
   return true;
@@ -330,37 +332,62 @@ double MNeuralNetwork::GetOutput(unsigned int i)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetwork::GetOutputNodeWithSmallestValue()
+{
+  //! Return the output node with the smallest output value
+
+  double OutValue = numeric_limits<double>::max();
+  unsigned int OutNode = 0;
+  
+  for (unsigned int i = 0; i < m_NOutputNodes; ++i) {
+    if (m_OutputNodes[i]->GetValue() < OutValue) {
+      OutValue = m_OutputNodes[i]->GetValue();
+      OutNode = i;
+    }
+  }
+  
+  return OutNode;
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNeuralNetwork::SetOutputError(unsigned int i, double Value)
+bool MNeuralNetwork::SetOutputError(unsigned int i, double Value)
 {
   //! Return the output of one specific node (numbering starts with zero)
   
   if (i >= m_NOutputNodes) {
     merr<<"Output node ID out of range: ID="<<i<<", ID-MAX="<<m_NOutputNodes-1<<show;
-    return;
+    return false;
   }
   
   m_OutputNodes[i]->SetError(Value);
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNeuralNetwork::SetOutputError(MNeuralNetworkIOStore& Store)
+bool MNeuralNetwork::SetOutputError(MNeuralNetworkIOStore& Store)
 {
   // Set the output via pre-stored values
   
   if (Store.GetNOutputs() != m_NOutputNodes) {
     merr<<"Output node number not equal: Store="<<Store.GetNOutputs()<<", NN="<<m_NOutputNodes<<show;
-    return;
+    return false;
   }
   
   for (unsigned int i = 0; i < Store.GetNOutputs(); ++i) {
-    m_OutputNodes[i]->SetError(Store.GetOutput(i));
+    SetOutputError(i, Store.GetOutput(i));
   }
+  
+  return true;
 }
 
 

@@ -30,6 +30,7 @@ NOBJS 	= $(LB)/MNeuron.o \
 	$(LB)/MNeuralNetwork.o \
 	$(LB)/MNeuralNetworkIOStore.o \
 	$(LB)/MNeuralNetworkBackpropagation.o \
+	$(LB)/MNeuralNetworkBackpropagationAssembly.o \
 
 OBJS	= $(NOBJS) $(TOBJS)
 

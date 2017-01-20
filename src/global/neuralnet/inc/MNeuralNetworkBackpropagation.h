@@ -74,14 +74,14 @@ private:
   
   // protected members:
 protected:
-  
-  
-  // private members:
-private:
   //! Learning rate
   double m_LearningRate;
   //! The momentum
   double m_Momentum;
+  
+  
+  // private members:
+private:
   
   
   #ifdef ___CINT___
