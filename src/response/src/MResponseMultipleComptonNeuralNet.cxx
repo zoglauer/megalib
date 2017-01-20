@@ -167,6 +167,8 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
     m_SequenceBestVerificationDataRatio[e].resize(m_CSRMaxLength+1);
     for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
       
+      m_SequenceNNs[e][i].SetNNeuralNetworks(7);
+      
       // Determine number of input nodes:
       unsigned int NInputNodes = 0;
       f = int(TMath::Factorial(i));
@@ -231,6 +233,9 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
     m_QualityNNs[e].resize(m_CSRMaxLength+1);
     m_QualityNNIOStore[e].resize(m_CSRMaxLength+1);
     for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+      
+      m_QualityNNs[e][i].SetNNeuralNetworks(7); 
+      
       // Determine number of input nodes:
       unsigned int NInputNodes = 0;
       f = int(TMath::Factorial(i));

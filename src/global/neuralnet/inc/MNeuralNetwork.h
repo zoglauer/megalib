@@ -77,11 +77,29 @@ public:
   //! Return if the neural network has been created / setup
   bool IsCreated() { return m_IsCreated; }  
   
+  // This is the secondary interface, where the network is put together from exisiting neurons
+  
+  //! Add an input node 
+  void AddInputNode(MNeuron* N) { m_InputNodes.push_back(N); m_NInputNodes = m_InputNodes.size(); }
+  //! Add an input node 
+  void AddMiddleNode(MNeuron* N) { m_MiddleNodes.push_back(N); m_NInputNodes = m_MiddleNodes.size(); }
+  //! Add an input node 
+  void AddOutputNode(MNeuron* N) { m_OutputNodes.push_back(N); m_NOutputNodes = m_OutputNodes.size(); }
+  //! Add an input node
+  void AddSynapse(MSynapse* N) { m_Synapses.push_back(N);  }
+  
+  //! Restore the links after copy construction or loading
+  bool RestoreLinks();
+  
+  
   
   //! Set the input via pre-stored values
   bool SetInput(MNeuralNetworkIOStore& Store);
   //! Set the input of one specific input node (numbering starts with zero)
   virtual bool SetInput(unsigned int i, double Value);
+
+  //! Return the input of one specific input node (numbering starts with zero) or zero if it does not exist
+  double GetInput(unsigned int i);
   
   
   //! Run, i.e. create the output
@@ -127,14 +145,11 @@ public:
   virtual MString ToString() const { return MString(); }
   
   //! Return an IO store
-  MNeuralNetworkIOStore GetIOStore();
+  virtual MNeuralNetworkIOStore GetIOStore();
   
   
   // protected methods:
 protected:
-  
-  //! Restore the links after copy construction or loading
-  bool RestoreLinks();
   
   
   // private methods:

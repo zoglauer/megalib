@@ -151,6 +151,9 @@ bool MNeuralNetworkBackpropagation::Create()
 {
   //! Create the neural network layout
   
+  // Todo Make sure the arrays are empty!
+  // Call clear or so...
+  
   for (unsigned int i = 0; i < m_NInputNodes; ++i) {
     MInputNeuron* iNeuron = new MInputNeuron();
     m_InputNodes.push_back(iNeuron);

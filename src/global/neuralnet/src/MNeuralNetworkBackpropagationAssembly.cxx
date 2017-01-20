@@ -47,6 +47,8 @@ ClassImp(MNeuralNetworkBackpropagationAssembly)
 MNeuralNetworkBackpropagationAssembly::MNeuralNetworkBackpropagationAssembly() : MNeuralNetworkBackpropagation()
 {
   // Construct an instance of MNeuralNetworkBackpropagationAssembly
+  
+  m_NNeuralNetworks = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +87,7 @@ bool MNeuralNetworkBackpropagationAssembly::Create()
     N->SetNInputNodes(m_NInputNodes);
     N->SetNMiddleNodes(m_NMiddleNodes);
     N->SetNOutputNodes(m_NOutputNodes);
-    N->Create();  
+    N->MNeuralNetworkBackpropagation::Create();  
     m_NeuralNetworks.push_back(N);
   }
   
@@ -252,6 +254,8 @@ bool MNeuralNetworkBackpropagationAssembly::Learn()
 {
   bool Return = true;
   
+  m_NLearningRuns++;
+  
   for (unsigned int n = 0; n < m_NNeuralNetworks; ++n) {
     if (m_NeuralNetworks[n]->Learn() == false) {
       Return = false;
@@ -282,7 +286,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
     
     m_NeuralNetworks.clear();
     bool IsActive = false;    
-    MNeuralNetworkBackpropagationAssembly* ActiveNN = nullptr;
+    MNeuralNetworkBackpropagation* ActiveNN = nullptr;
     
     while (IsGood() == true) {
       ReadLine(Line);
@@ -298,11 +302,11 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
           break;
         } 
       } else if (Line[0] == 'N' && Line[1] == 'I') {
-        ActiveNN = new MNeuralNetworkBackpropagationAssembly();
+        ActiveNN = new MNeuralNetworkBackpropagation();
         
         unsigned int Number;
         if (sscanf(Line, "NI %u", &Number) == 1) {
-          ActiveNN->m_NInputNodes = Number;
+          ActiveNN->SetNInputNodes(Number);
           //m_InputNeurons.resize(Number);
           // Loop over input neurons:
           while (IsGood()) {
@@ -316,7 +320,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
               if (N->Stream(*this, m_Version, Read) == false) {
                 return false;
               }
-              ActiveNN->m_InputNodes.push_back(N);
+              ActiveNN->AddInputNode(N);
             } else if (MString(Line) == "NI EN") {
               break;
             }
@@ -328,7 +332,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
       } else if (Line[0] == 'N' && Line[1] == 'M') {
         unsigned int Number;
         if (sscanf(Line, "NM %u", &Number) == 1) {
-          ActiveNN->m_NMiddleNodes = Number;
+          ActiveNN->SetNMiddleNodes(Number);
           //m_MiddleNeurons.resize(Number);
           while (IsGood()) {
             ReadLine(Line);
@@ -339,7 +343,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
               if (N->Stream(*this, m_Version, Read) == false) {
                 return false;
               }
-              ActiveNN->m_MiddleNodes.push_back(N);
+              ActiveNN->AddMiddleNode(N);
             } else if (MString(Line) == "NM EN") {
               break;
             }
@@ -351,7 +355,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
       } else if (Line[0] == 'N' && Line[1] == 'O') {
         unsigned int Number;
         if (sscanf(Line, "NO %d", &Number) == 1) {
-          ActiveNN->m_NOutputNodes = Number;
+          ActiveNN->SetNOutputNodes(Number);
           //m_OutputNeurons.resize(Number);
           while (IsGood()) {
             ReadLine(Line);
@@ -362,7 +366,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
               if (N->Stream(*this, m_Version, Read) == false) {
                 return false;
               }
-              ActiveNN->m_OutputNodes.push_back(N);
+              ActiveNN->AddOutputNode(N);
             } else if (MString(Line) == "NO EN") {
               break;
             }
@@ -376,16 +380,22 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
         if (Sy->Stream(*this, m_Version, Read) == false) {
           return false;
         }
-        ActiveNN->m_Synapses.push_back(Sy);        
+        ActiveNN->AddSynapse(Sy);        
       } else if (Line[0] == 'L' && Line[1] == 'R') {
-        if (sscanf(Line, "LR %lf", &ActiveNN->m_LearningRate) != 1) {
+        double LearningRate;
+        if (sscanf(Line, "LR %lf", &LearningRate) != 1) {
           mout<<"Unable to parse LR!"<<endl;
           Ret = 1;
+        } else {
+          ActiveNN->SetLearningRate(LearningRate); 
         }
       } else if (Line[0] == 'M' && Line[1] == 'M') {
-        if (sscanf(Line, "MM %lf", &ActiveNN->m_Momentum) != 1) {
+        double Momentum;
+        if (sscanf(Line, "MM %lf", &Momentum) != 1) {
           mout<<"Unable to parse MM!"<<endl;
           Ret = 1;
+        } else {
+          ActiveNN->SetMomentum(Momentum); 
         }
       } else if (Line[0] == 'E' && Line[1] == 'N') {
         if (IsActive == true && Ret == 0) {
@@ -417,7 +427,7 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
     }
     WriteLine();
     
-    Write(MString("NN ") + m_NNeuralNetworks);
+    WriteLine(MString("NN ") + m_NNeuralNetworks);
     for (unsigned int n = 0; n < m_NNeuralNetworks; ++n) {
       Write(m_NeuralNetworks[n]->ToString());
     }
@@ -429,6 +439,27 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
   //cout<<"Return code: "<<Return<<endl;
   
   return Return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNeuralNetworkIOStore MNeuralNetworkBackpropagationAssembly::GetIOStore()
+{
+  // Return the current stored values of the input and outputg nodes...
+  
+  MNeuralNetworkIOStore IOStore;
+  IOStore.SetNInputs(m_NInputNodes);
+  for (unsigned int i = 0; i < m_NInputNodes; ++i) {
+    IOStore.SetInput(i, m_NeuralNetworks[0]->GetInput(i)); 
+  }
+  IOStore.SetNOutputs(m_NOutputNodes);
+  for (unsigned int i = 0; i < m_NOutputNodes; ++i) {
+    IOStore.SetOutput(i, m_NeuralNetworks[0]->GetOutput(i)); 
+  }
+  
+  return IOStore;
 }
 
 

@@ -319,6 +319,22 @@ bool MNeuralNetwork::Run()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+double MNeuralNetwork::GetInput(unsigned int i)
+{
+  //! Return the input of one specific node (numbering starts with zero)
+  
+  if (i >= m_NInputNodes) {
+    merr<<"Input node ID out of range: ID="<<i<<", ID-MAX="<<m_NInputNodes-1<<show;
+    return 0.0;
+  }
+  
+  return m_InputNodes[i]->GetValue();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 double MNeuralNetwork::GetOutput(unsigned int i)
 {
   //! Return the output of one specific node (numbering starts with zero)

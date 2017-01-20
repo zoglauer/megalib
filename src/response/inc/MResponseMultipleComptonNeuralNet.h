@@ -29,6 +29,7 @@ using namespace std;
 #include "MRERawEvent.h"
 #include "MRETrack.h"
 #include "MNeuralNetworkBackpropagation.h"
+#include "MNeuralNetworkBackpropagationAssembly.h"
 
 // Forward declarations:
 
@@ -88,9 +89,9 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
   // protected members:
  protected:
   //! The neural network determining the sequence - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagation> > m_SequenceNNs;
+  vector<vector<MNeuralNetworkBackpropagationAssembly> > m_SequenceNNs;
   //! The neural network determining the quality of the event - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagation> > m_QualityNNs;
+  vector<vector<MNeuralNetworkBackpropagationAssembly> > m_QualityNNs;
 
   //! A stored list of events as NN IO --- quality NN
   vector<vector<list<MNeuralNetworkIOStore> > > m_QualityNNIOStore;
