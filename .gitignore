@@ -100,5 +100,6 @@ External
 *.killcosimas.bash
 .DS_Store
 callgrind.*
-
+*.rsp
+*.erm
 
