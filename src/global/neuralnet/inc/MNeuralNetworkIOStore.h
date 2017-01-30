@@ -24,6 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MNeuralNetworkIO.h"
 
 // Forward declarations:
 
@@ -31,34 +32,33 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Storage for a set og neural network IO's
 class MNeuralNetworkIOStore
 {
   // public interface:
 public:
+  //! Default constructor
   MNeuralNetworkIOStore();
+  //! Default destructor
   virtual ~MNeuralNetworkIOStore();
   
-  void SetNInputs(const unsigned int N);
-  unsigned int GetNInputs() const;
-  void SetInput(const unsigned int i, const double Value);
-  double GetInput(const unsigned int i) const;
+  //! Load the store
+  bool Load(MString FileName);
+  //! Save the store
+  bool Save(MString FileName);
   
-  void SetNOutputs(const unsigned int N);
-  unsigned int GetNOutputs() const;
-  void SetOutput(const unsigned int i, const double Value);
-  double GetOutput(const unsigned int i) const;
+  //! Return the number of available  neural network IOs
+  unsigned int Size() const { return m_IOs.size(); }
+  //! Add a neural network IO
+  void Add(const MNeuralNetworkIO& IO) { m_IOs.push_back(IO); }
+  //! Add a neural network IO
+  void RemoveFirst() { if (m_IOs.size() > 0) m_IOs.erase(m_IOs.begin()); }
+  //! Return a neural network IO --- throw an exception MExceptionIndexOutOfBounds otherwise
+  MNeuralNetworkIO Get(unsigned int i) const;
+  //! Return the last neural network IO --- throw an exception MExceptionObjectDoesNotExist otherwise
+  MNeuralNetworkIO GetLast() const;
   
-  void SetNUserValues(const unsigned int N);
-  unsigned int GetNUserValues() const;
-  void SetUserValue(const unsigned int i, const double Value);
-  double GetUserValue(const unsigned int i) const;
   
-  //! True if this data set shall be used for verification
-  bool IsVerificationData() const { return m_IsVerificationData; }
-  //! Set if this data set shall be used for verification
-  void IsVerificationData(bool IsVerificationData) { m_IsVerificationData = IsVerificationData; }
-  
-  MString ToString() const;
   
   // protected methods:
 protected:
@@ -75,13 +75,8 @@ protected:
   
   // private members:
 private:
-  vector<double> m_Inputs;
-  vector<double> m_Outputs;
+  vector<MNeuralNetworkIO> m_IOs;
   
-  vector<double> m_UserValues;
-  
-  //! True if this data set shall be used for verification
-  bool m_IsVerificationData;
   
   #ifdef ___CINT___
 public:

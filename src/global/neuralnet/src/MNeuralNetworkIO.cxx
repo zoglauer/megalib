@@ -1,0 +1,189 @@
+/*
+ * MNeuralNetworkIO.cxx
+ *
+ *
+ * Copyright (C) 2005-2007 by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MNeuralNetworkIO
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MNeuralNetworkIO.h"
+
+// Standard libs:
+
+// ROOT libs:
+
+// MEGAlib libs:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CINT___
+ClassImp(MNeuralNetworkIO)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNeuralNetworkIO::MNeuralNetworkIO()
+{
+  // Construct an instance of MNeuralNetworkIO
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MNeuralNetworkIO::~MNeuralNetworkIO()
+{
+  // Delete this instance of MNeuralNetworkIO
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetNInputs(const unsigned int N)
+{
+  m_Inputs.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIO::GetNInputs() const
+{
+  return m_Inputs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetInput(const unsigned int i, const double Value)
+{
+  m_Inputs[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIO::GetInput(const unsigned int i) const
+{
+  return m_Inputs[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetNOutputs(const unsigned int N)
+{
+  m_Outputs.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIO::GetNOutputs() const
+{
+  return m_Outputs.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetOutput(const unsigned int i, const double Value)
+{
+  m_Outputs[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIO::GetOutput(const unsigned int i) const
+{
+  return m_Outputs[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetNUserValues(const unsigned int N)
+{
+  m_UserValues.resize(N);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MNeuralNetworkIO::GetNUserValues() const
+{
+  return m_UserValues.size();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MNeuralNetworkIO::SetUserValue(const unsigned int i, const double Value)
+{
+  m_UserValues[i] = Value;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MNeuralNetworkIO::GetUserValue(const unsigned int i) const
+{
+  return m_UserValues[i];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MNeuralNetworkIO::ToString() const
+{
+  MString S = "";
+
+  for (unsigned int i = 0; i < m_Inputs.size(); ++i) {
+    S += i;
+    S += ": ";
+    S += m_Inputs[i];
+    S += "\n";
+  }
+
+  return S;
+}
+
+
+// MNeuralNetworkIO.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////

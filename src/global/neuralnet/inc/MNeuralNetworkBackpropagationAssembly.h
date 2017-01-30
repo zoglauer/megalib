@@ -56,7 +56,7 @@ public:
   virtual bool Create();
   
   
-  //! Make sure the base class "bool SetInput(MNeuralNetworkIOStore& Store);"
+  //! Make sure the base class "bool SetInput(MNeuralNetworkIO& Store);"
   using MNeuralNetwork::SetInput;
   //! Set the input of one specific input node for all networks
   virtual bool SetInput(unsigned int i, double Value);
@@ -72,7 +72,7 @@ public:
   //! Set the output of one specific input node for learning for all networks
   bool SetOutput(unsigned int i, double Value);
   
-  //! Make sure the base class "bool SetOutputError(MNeuralNetworkIOStore& Store);"
+  //! Make sure the base class "bool SetOutputError(MNeuralNetworkIO& Store);"
   using MNeuralNetwork::SetOutputError;
   //! Set the output error of one specific node for all networks
   bool SetOutputError(unsigned int i, double Value);
@@ -85,7 +85,7 @@ public:
   virtual bool Stream(const bool Read);
   
   //! Return an IO store
-  virtual MNeuralNetworkIOStore GetIOStore();
+  virtual MNeuralNetworkIO GetIOStore();
   
   
   // protected methods:

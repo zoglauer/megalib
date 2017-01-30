@@ -28,6 +28,7 @@ using namespace std;
 #include "MRESE.h"
 #include "MRERawEvent.h"
 #include "MRETrack.h"
+#include "MNeuralNetworkIOStore.h"
 #include "MNeuralNetworkBackpropagation.h"
 #include "MNeuralNetworkBackpropagationAssembly.h"
 
@@ -89,21 +90,21 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
   // protected members:
  protected:
   //! The neural network determining the sequence - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagationAssembly> > m_SequenceNNs;
+  vector<vector<MNeuralNetworkBackpropagationAssembly>> m_SequenceNNs;
   //! The neural network determining the quality of the event - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagationAssembly> > m_QualityNNs;
+  vector<vector<MNeuralNetworkBackpropagationAssembly>> m_QualityNNs;
 
-  //! A stored list of events as NN IO --- quality NN
-  vector<vector<list<MNeuralNetworkIOStore> > > m_QualityNNIOStore;
+  //! A stored list of events as NN IO as a function of energy and seuqence --- quality NN
+  vector<vector<MNeuralNetworkIOStore>> m_QualityNNIOStore;
 
-  //! A stored list of events as NN IO --- sequence NN
-  vector<vector<list<MNeuralNetworkIOStore> > > m_SequenceNNIOStore;
+  //! A stored list of events as NN IO as a function of energy and seuqence --- sequence NN
+  vector<vector<MNeuralNetworkIOStore>> m_SequenceNNIOStore;
 
   //! All possible Permutations for fast access:
-  vector<vector<vector<unsigned int> > > m_Permutator;
+  vector<vector<vector<unsigned int>>> m_Permutator;
 
   //!  Best quality ratio of all epochs using only the verification data
-  vector<vector<double> > m_SequenceBestVerificationDataRatio;
+  vector<vector<double>> m_SequenceBestVerificationDataRatio;
 
 
   double m_xMin;

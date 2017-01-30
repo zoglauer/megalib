@@ -128,7 +128,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   
   int f = 0;
   
-  m_CSRMaxLength = 3;
+  m_CSRMaxLength = 4;
   mimp<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<show;
   
   // Information needs to go into base file! 
@@ -177,7 +177,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
         NInputNodes += 4*i;
       }
       if (m_UseDistances == true) {
-        // TODO: We actually have 
+        // TODO: We actually have less than that...
         // all distances              = (i-1) * i!
         NInputNodes += (i-1)*f;        
       }
@@ -322,7 +322,7 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   int RAM = System.GetFreeRAM();
   
   m_EventsToStore = RAM/(2*sizeof(double)*TotalInputDoubles);
-  mout<<"Events to store per IOStore list: "<<m_EventsToStore<<endl;
+  mout<<"Events to store per IOStore list (limited by RAM: "<<RAM<<"): "<<m_EventsToStore<<endl;
   
   return true;
 }
@@ -993,19 +993,22 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
           }
         }
         
-        // ... and store ...
-        m_SequenceNNIOStore[EnergyBin][SequenceBin].push_back(m_SequenceNNs[EnergyBin][SequenceBin].GetIOStore());
-        cout<<"IOStore("<<EnergyBin<<","<<SequenceBin<<") :"<<m_SequenceNNIOStore[EnergyBin][SequenceBin].size()<<endl;
+        // ... get IO store ...
+        MNeuralNetworkIO IO = m_SequenceNNs[EnergyBin][SequenceBin].GetIOStore();
         
         // Add event ID:
-        m_SequenceNNIOStore[EnergyBin][SequenceBin].back().SetNUserValues(1);
-        m_SequenceNNIOStore[EnergyBin][SequenceBin].back().SetUserValue(0, RE->GetEventId());
+        IO.SetNUserValues(1);
+        IO.SetUserValue(0, RE->GetEventId());
         if (gRandom->Rndm() < 0.15) {
-          m_SequenceNNIOStore[EnergyBin][SequenceBin].back().IsVerificationData(true);
+          IO.IsVerificationData(true);
         } else{
-          m_SequenceNNIOStore[EnergyBin][SequenceBin].back().IsVerificationData(false);
+          IO.IsVerificationData(false);
         }
         
+        // ... and store ...
+        m_SequenceNNIOStore[EnergyBin][SequenceBin].Add(IO);
+        cout<<"IOStore("<<EnergyBin<<","<<SequenceBin<<") :"<<m_SequenceNNIOStore[EnergyBin][SequenceBin].Size()<<endl;
+
         MString Comment4 = "# Success ratio (cla): ";
         if (SequenceBin == 2) { // == 2-site events
           Comment4 += "N/A (we only check for the minimum dphi as criteria, which requires 3+ hits)"; 
@@ -1034,10 +1037,10 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
       //
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
         for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
-          cout<<"Bin size: e="<<e<<", seq="<<s<<": "<<m_SequenceNNIOStore[e][s].size()<<endl;
-          if (m_SequenceNNIOStore[e][s].size() > m_EventsToStore) {
+          cout<<"Bin size: e="<<e<<", seq="<<s<<": "<<m_SequenceNNIOStore[e][s].Size()<<endl;
+          if (m_SequenceNNIOStore[e][s].Size() > m_EventsToStore) {
             cout<<" ---> Cutting..."<<endl;
-            while (m_SequenceNNIOStore[e][s].size() > m_EventsToStore) m_SequenceNNIOStore[e][s].pop_front();
+            while (m_SequenceNNIOStore[e][s].Size() > m_EventsToStore) m_SequenceNNIOStore[e][s].RemoveFirst();
           }
         }
       }
@@ -1126,15 +1129,14 @@ void MResponseMultipleComptonNeuralNet::Teach()
     cout<<"Energy loop: "<<e<<endl;
     for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
       cout<<"Sequence loop: "<<s<<"/"<<m_CSRMaxLength<<endl;
-      cout<<" size: "<<m_SequenceNNIOStore[e][s].size()<<endl;
+      cout<<" size: "<<m_SequenceNNIOStore[e][s].Size()<<endl;
       
       // Sequence
       // Loop A: Learn
-      for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin();
-           Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
+      for (unsigned int io = 0; io < m_SequenceNNIOStore[e][s].Size(); ++io) {
         
         // Get and check input:
-        MNeuralNetworkIOStore SequenceIOStore = (*Iter);
+        MNeuralNetworkIO SequenceIOStore = m_SequenceNNIOStore[e][s].Get(io);
       
         // We do not want to look at verification data in the first loop
         if (SequenceIOStore.IsVerificationData() == true) continue;
@@ -1192,10 +1194,10 @@ void MResponseMultipleComptonNeuralNet::Teach()
       // -------
            
       // Loop B: Test
-      for (list<MNeuralNetworkIOStore>::iterator Iter = m_SequenceNNIOStore[e][s].begin(); Iter != m_SequenceNNIOStore[e][s].end(); ++Iter) {
-             
+      for (unsigned int io = 0; io < m_SequenceNNIOStore[e][s].Size(); ++io) {
+        
         // Get and check input:
-        MNeuralNetworkIOStore SequenceIOStore = (*Iter);
+        MNeuralNetworkIO SequenceIOStore = m_SequenceNNIOStore[e][s].Get(io);
            
         // We do not want to look at training data in the second loop
         if (SequenceIOStore.IsVerificationData() == false) continue;
@@ -1260,7 +1262,7 @@ void MResponseMultipleComptonNeuralNet::Teach()
       // sequence
       if (SequenceGood[e][s]+SequenceBad[e][s] > 0) {
         MString Comment1 = "# Number of different training events: ";
-        Comment1 += m_SequenceNNIOStore[e][s].size();
+        Comment1 += m_SequenceNNIOStore[e][s].Size();
         m_SequenceNNs[e][s].SetUserComment(0, Comment1);
         
         cout<<"(a) Sequence "<<s<<endl;

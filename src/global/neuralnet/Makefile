@@ -27,8 +27,9 @@ NOBJS 	= $(LB)/MNeuron.o \
 	$(LB)/MSynapse.o \
 	$(LB)/MAdalineSynapse.o \
 	$(LB)/MBackpropagationSynapse.o \
-	$(LB)/MNeuralNetwork.o \
+	$(LB)/MNeuralNetworkIO.o \
 	$(LB)/MNeuralNetworkIOStore.o \
+	$(LB)/MNeuralNetwork.o \
 	$(LB)/MNeuralNetworkBackpropagation.o \
 	$(LB)/MNeuralNetworkBackpropagationAssembly.o \
 

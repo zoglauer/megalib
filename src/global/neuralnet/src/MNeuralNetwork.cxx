@@ -257,7 +257,7 @@ bool MNeuralNetwork::SetInput(unsigned int i, double Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNeuralNetwork::SetInput(MNeuralNetworkIOStore& Store)
+bool MNeuralNetwork::SetInput(MNeuralNetworkIO& Store)
 {
   // Set the input via pre-stored values
   
@@ -390,7 +390,7 @@ bool MNeuralNetwork::SetOutputError(unsigned int i, double Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MNeuralNetwork::SetOutputError(MNeuralNetworkIOStore& Store)
+bool MNeuralNetwork::SetOutputError(MNeuralNetworkIO& Store)
 {
   // Set the output via pre-stored values
   
@@ -430,11 +430,11 @@ bool MNeuralNetwork::Learn()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNeuralNetworkIOStore MNeuralNetwork::GetIOStore()
+MNeuralNetworkIO MNeuralNetwork::GetIOStore()
 {
   // Return the current stored values of the input and outputg nodes...
   
-  MNeuralNetworkIOStore IOStore;
+  MNeuralNetworkIO IOStore;
   IOStore.SetNInputs(m_NInputNodes);
   for (unsigned int i = 0; i < m_NInputNodes; ++i) {
     IOStore.SetInput(i, m_InputNodes[i]->GetValue()); 

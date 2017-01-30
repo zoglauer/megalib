@@ -26,7 +26,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MParser.h"
 #include "MTokenizer.h"
-#include "MNeuralNetworkIOStore.h"
+#include "MNeuralNetworkIO.h"
 
 // Forward declarations:
 class MNeuron;
@@ -94,7 +94,7 @@ public:
   
   
   //! Set the input via pre-stored values
-  bool SetInput(MNeuralNetworkIOStore& Store);
+  bool SetInput(MNeuralNetworkIO& Store);
   //! Set the input of one specific input node (numbering starts with zero)
   virtual bool SetInput(unsigned int i, double Value);
 
@@ -115,7 +115,7 @@ public:
   // No by store ???
   
   //! Set the output error via pre-stored values
-  bool SetOutputError(MNeuralNetworkIOStore& Store);
+  bool SetOutputError(MNeuralNetworkIO& Store);
   //! Set the output error of one specific node (numbering starts with zero)
   virtual bool SetOutputError(unsigned int i, double Value);
   
@@ -145,7 +145,7 @@ public:
   virtual MString ToString() const { return MString(); }
   
   //! Return an IO store
-  virtual MNeuralNetworkIOStore GetIOStore();
+  virtual MNeuralNetworkIO GetIOStore();
   
   
   // protected methods:

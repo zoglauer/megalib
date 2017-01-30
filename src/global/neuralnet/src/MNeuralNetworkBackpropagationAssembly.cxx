@@ -445,11 +445,11 @@ bool MNeuralNetworkBackpropagationAssembly::Stream(const bool Read)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MNeuralNetworkIOStore MNeuralNetworkBackpropagationAssembly::GetIOStore()
+MNeuralNetworkIO MNeuralNetworkBackpropagationAssembly::GetIOStore()
 {
   // Return the current stored values of the input and outputg nodes...
   
-  MNeuralNetworkIOStore IOStore;
+  MNeuralNetworkIO IOStore;
   IOStore.SetNInputs(m_NInputNodes);
   for (unsigned int i = 0; i < m_NInputNodes; ++i) {
     IOStore.SetInput(i, m_NeuralNetworks[0]->GetInput(i)); 
