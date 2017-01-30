@@ -40,6 +40,9 @@
 ClassImp(MExceptions)
 #endif
 
+//! Assign static variable
+bool MException::m_Abort = true;
+
 
 // MExceptions.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

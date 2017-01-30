@@ -34,22 +34,43 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! This exception is thrown when a parmeter is out of range and 
-//! the error cannot be reconvered gracefully
-class MExceptionParameterOutOfRange : public exception
+//! Exception base class - i
+class MException : public exception
 {
 public:
-  //! Default constructor
-  MExceptionParameterOutOfRange() : m_IsEmpty(true), m_Value(0), m_Minimum(0), m_Maximum(0), m_Name("") {
-    abort();
+  // Default constructor
+  MException() {
+    if (m_Abort == true) {
+      abort();
+    }
+  }
+  
+  //! Abort instead of throwing anexception
+  static void UseAbort(bool Abort = true) { m_Abort = Abort; }
+  
+protected:
+  //! Flag storing the global variable if exception should abort the program instead of being thrown
+  static bool m_Abort;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+//! This exception is thrown when a parmeter is out of range and 
+//! the error cannot be reconvered gracefully
+class MExceptionParameterOutOfRange : public MException
+  {
+  public:
+    //! Default constructor
+  MExceptionParameterOutOfRange() : MException(), m_IsEmpty(true), m_Value(0), m_Minimum(0), m_Maximum(0), m_Name("") {
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
-  MExceptionParameterOutOfRange(double Value, double Min, double Max, MString Name) {
-    abort();
+  MExceptionParameterOutOfRange(double Value, double Min, double Max, MString Name) : MException() {
     SetMinSizeIndex(Value, Min, Max, Name);
   }
   //! Default destructor
-  ~MExceptionParameterOutOfRange() throw() {}
+  virtual ~MExceptionParameterOutOfRange() throw() {}
   //! Set the data minimum array index, its size, and the accessing index to the array
   void SetMinSizeIndex(double Value, double Min, double Max, MString Name) {
     m_Value = Value; m_Minimum = Min; m_Maximum = Max; m_Name = Name; m_IsEmpty = false;
@@ -84,20 +105,18 @@ private:
 
 //! This exception is thrown when an index is out-of-bounds and 
 //! the error cannot be recovered gracefully
-class MExceptionIndexOutOfBounds : public exception
+class MExceptionIndexOutOfBounds : public MException
 {
 public:
   //! Default constructor
-  MExceptionIndexOutOfBounds() : m_IsEmpty(true), m_Min(0), m_Size(0), m_Index(0) {
-    abort();
+  MExceptionIndexOutOfBounds() : MException(), m_IsEmpty(true), m_Min(0), m_Size(0), m_Index(0) {
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
-  MExceptionIndexOutOfBounds(unsigned int Min, unsigned int Size, unsigned int Index) {
-    abort();
+  MExceptionIndexOutOfBounds(unsigned int Min, unsigned int Size, unsigned int Index) : MException() {
     SetMinSizeIndex(Min, Size, Index);
   }
   //! Default destructor
-  ~MExceptionIndexOutOfBounds() throw() {}
+  virtual ~MExceptionIndexOutOfBounds() throw() {}
   //! Set the data minimum array index, its size, and the accessing index to the array
   void SetMinSizeIndex(unsigned int Min, unsigned int Size, unsigned int Index) {
     m_Min = Min; m_Size = Size; m_Index = Index; m_IsEmpty = false;
@@ -130,19 +149,17 @@ private:
 
 //! This exception is thrown when an index is out-of-bounds and 
 //! the error cannot be recovered gracefully
-class MExceptionObjectDoesNotExist : public exception
+class MExceptionObjectDoesNotExist : public MException
 {
 public:
   //! Default constructor
-  MExceptionObjectDoesNotExist() : m_IsEmpty(true), m_Name("") {
-    abort();
+  MExceptionObjectDoesNotExist() : MException(), m_IsEmpty(true), m_Name("") {
   }
   //! Standard constructor
-  MExceptionObjectDoesNotExist(const MString& Name) : m_IsEmpty(true), m_Name(Name) {
-    abort();
+  MExceptionObjectDoesNotExist(const MString& Name) : MException(), m_IsEmpty(true), m_Name(Name) {
   }
   //! Default destructor
-  ~MExceptionObjectDoesNotExist() throw() {}
+  virtual ~MExceptionObjectDoesNotExist() throw() {}
   //! Set the data minimum array index, its size, and the accessing index in the array
   void SetName(const MString& Name) { m_Name = Name; }
   //! The error message
@@ -169,24 +186,22 @@ private:
 
 //! This exception is thrown when an index is out-of-bounds and 
 //! the error cannot be recovered gracefully
-class MExceptionUnknownMode : public exception
+class MExceptionUnknownMode : public MException
 {
 public:
   //! Default constructor
-  MExceptionUnknownMode() : m_IsEmpty(true), m_Type(""), m_Mode("") {
-    abort();
+  MExceptionUnknownMode() : MException(), m_IsEmpty(true), m_Type(""), m_Mode("") {
   }
   //! Standard constructor
-  MExceptionUnknownMode(const MString& Mode) : m_IsEmpty(true), m_Type(""), m_Mode(Mode) {
-    abort();
+  MExceptionUnknownMode(const MString& Mode) : MException(), m_IsEmpty(true), m_Type(""), m_Mode(Mode) {
   }
   //! Standard constructor
-  MExceptionUnknownMode(const MString& Type, int i) : m_IsEmpty(true), m_Type(Type) {
+  MExceptionUnknownMode(const MString& Type, int i) : MException(), m_IsEmpty(true), m_Type(Type) {
     m_Mode += i;
     abort();
   }
   //! Default destructor
-  ~MExceptionUnknownMode() throw() {}
+  virtual ~MExceptionUnknownMode() throw() {}
   //! Set a name for the unknown mode
   void SetName(const MString& Mode) { m_Mode = Mode; }
   //! The error message
@@ -219,19 +234,17 @@ private:
 
 //! This exception is thrown when an index is out-of-bounds and 
 //! the error cannot be recovered gracefully
-class MExceptionNeverReachThatLineOfCode : public exception
+class MExceptionNeverReachThatLineOfCode : public MException
 {
 public:
   //! Default constructor
-  MExceptionNeverReachThatLineOfCode() : m_IsEmpty(true) {
-    abort();
+  MExceptionNeverReachThatLineOfCode() : MException(), m_IsEmpty(true) {
   }
   //! Standard constructor
-  MExceptionNeverReachThatLineOfCode(const MString& Description) : m_IsEmpty(false), m_Description(Description) {
-    abort();
+  MExceptionNeverReachThatLineOfCode(const MString& Description) : MException(), m_IsEmpty(false), m_Description(Description) {
   }
   //! Default destructor
-  ~MExceptionNeverReachThatLineOfCode() throw() {}
+  virtual ~MExceptionNeverReachThatLineOfCode() throw() {}
   //! Set a name for the unknown mode
   void SetDescription(const MString& Description) { m_Description = Description; m_IsEmpty = false; }
   //! The error message
