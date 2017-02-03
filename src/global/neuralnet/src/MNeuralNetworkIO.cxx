@@ -31,6 +31,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MExceptions.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,6 +83,10 @@ unsigned int MNeuralNetworkIO::GetNInputs() const
 
 void MNeuralNetworkIO::SetInput(const unsigned int i, const double Value)
 {
+  if (i >= m_Inputs.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Inputs.size(), i);
+  }
+  
   m_Inputs[i] = Value;
 }
 
@@ -91,6 +96,10 @@ void MNeuralNetworkIO::SetInput(const unsigned int i, const double Value)
 
 double MNeuralNetworkIO::GetInput(const unsigned int i) const
 {
+  if (i >= m_Inputs.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Inputs.size(), i);
+  }
+
   return m_Inputs[i];
 }
 
@@ -118,6 +127,10 @@ unsigned int MNeuralNetworkIO::GetNOutputs() const
 
 void MNeuralNetworkIO::SetOutput(const unsigned int i, const double Value)
 {
+   if (i >= m_Outputs.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Outputs.size(), i);
+  }
+
   m_Outputs[i] = Value;
 }
 
@@ -127,43 +140,58 @@ void MNeuralNetworkIO::SetOutput(const unsigned int i, const double Value)
 
 double MNeuralNetworkIO::GetOutput(const unsigned int i) const
 {
+   if (i >= m_Outputs.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Outputs.size(), i);
+  }
+
   return m_Outputs[i];
 }
 
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNeuralNetworkIO::SetNUserValues(const unsigned int N)
+void MNeuralNetworkIO::AddUserValue(const MString& Key, const double Value)
 {
-  m_UserValues.resize(N);
+  unsigned int Index = FindKey(Key);
+  if (Index != numeric_limits<unsigned int>::max()) {
+    m_UserValues[Index] = Value;
+  } else {
+    m_UserValueKeys.push_back(Key);
+    m_UserValues.push_back(Value);
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MNeuralNetworkIO::GetNUserValues() const
+double MNeuralNetworkIO::GetUserValue(const MString& Key) const
 {
-  return m_UserValues.size();
+  unsigned int Index = FindKey(Key);
+  if (Index != numeric_limits<unsigned int>::max()) {
+    return m_UserValues[Index];
+  }
+  
+  throw MExceptionObjectDoesNotExist(Key);
+  
+  return 0;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MNeuralNetworkIO::SetUserValue(const unsigned int i, const double Value)
+unsigned int MNeuralNetworkIO::FindKey(const MString& Key) const
 {
-  m_UserValues[i] = Value;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MNeuralNetworkIO::GetUserValue(const unsigned int i) const
-{
-  return m_UserValues[i];
+  for (unsigned int i = 0; i < m_UserValueKeys.size(); ++i) {
+    if (Key == m_UserValueKeys[i]) {
+      return i; 
+    }
+  }
+  
+  return numeric_limits<unsigned int>::max();
 }
 
 

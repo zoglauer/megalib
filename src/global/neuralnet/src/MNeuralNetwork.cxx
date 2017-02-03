@@ -243,7 +243,7 @@ bool MNeuralNetwork::SetInput(unsigned int i, double Value)
   }
   
   if (Value <= 0 || Value >= 1.0) {
-    merr<<"Input node "<<i<<": value out of range: "<<Value<<"! Needs to be ]0..1["<<show;
+    merr<<"Input node "<<i<<"/"<<m_NInputNodes<<": value out of range: "<<Value<<"! Needs to be ]0..1["<<show;
     return false;
   }
   

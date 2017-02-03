@@ -90,13 +90,12 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
   // protected members:
  protected:
   //! The neural network determining the sequence - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagationAssembly>> m_SequenceNNs;
+  vector<vector<MNeuralNetworkBackpropagation>> m_SequenceNNs;
   //! The neural network determining the quality of the event - array over energy intervals and sequence lengths 
-  vector<vector<MNeuralNetworkBackpropagationAssembly>> m_QualityNNs;
+  vector<vector<MNeuralNetworkBackpropagation>> m_QualityNNs;
 
   //! A stored list of events as NN IO as a function of energy and seuqence --- quality NN
   vector<vector<MNeuralNetworkIOStore>> m_QualityNNIOStore;
-
   //! A stored list of events as NN IO as a function of energy and seuqence --- sequence NN
   vector<vector<MNeuralNetworkIOStore>> m_SequenceNNIOStore;
 
@@ -105,6 +104,8 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
 
   //!  Best quality ratio of all epochs using only the verification data
   vector<vector<double>> m_SequenceBestVerificationDataRatio;
+  //!  Best quality ratio of all epochs using only the verification data
+  vector<vector<double>> m_QualityBestVerificationDataRatio;
 
 
   double m_xMin;
@@ -133,7 +134,11 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
   bool m_UseComptonScatterAngles;
   bool m_UseDPhiCriterion;
 
-
+  //! Desired output value for good
+  const double m_GoodValue = 0.1;
+  //! Desired output value for bad
+  const double m_BadValue = 0.9;
+  
 #ifdef ___CINT___
  public:
   ClassDef(MResponseMultipleComptonNeuralNet, 0) // no description

@@ -166,10 +166,10 @@ public:
   virtual const char* what() const throw() {
     if (m_IsEmpty == false) {
       ostringstream stream;
-      stream<<"Object "<<m_Name<<" not found in the list/vector/array!"<<endl; 
+      stream<<"Object/Key "<<m_Name<<" not found in the list/vector/array!"<<endl; 
       return stream.str().c_str();
     } else {
-      return "Object not found in the list/vector/array!"; 
+      return "Object/Key not found in the list/vector/array!"; 
     }
   }
 

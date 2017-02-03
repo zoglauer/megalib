@@ -138,6 +138,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"          --no-absorptions           don't calculate absoption probabilities"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
+  Usage<<"          --verbosity                Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
 
@@ -165,6 +166,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         Option == "-i" || Option == "--max-id" ||
         Option == "-c" || Option == "--revan-config" ||
         Option == "-b" || Option == "--mimrec-config" ||
+        Option == "--verbosity" ||
         Option == "-s" || Option == "--save") {
       if (!((argc > i+1) && argv[i+1][0] != '-')){
         cout<<"Error: Option "<<argv[i][1]<<" needs a second argument!"<<endl;
@@ -258,9 +260,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       m_NoAbsorptions = true;
       cout<<"Calculating no absorptions"<<endl;
     } else if (Option == "-d") {
-      if (g_Verbosity < 2) g_Verbosity = 2;
+      if (g_Verbosity < 2) g_Verbosity = c_Chatty;
       cout<<"Enabling debug!"<<endl;
       mdebug<<"Debug enabled!"<<endl;
+    } else if (Option == "--verbosity") {
+      g_Verbosity = atoi(argv[++i]);
+      if (g_Verbosity < 0) g_Verbosity = c_Quiet;
+      cout<<"Setting verbosity to "<<g_Verbosity<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
