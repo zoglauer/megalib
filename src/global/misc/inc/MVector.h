@@ -168,12 +168,13 @@ public:
   void RotateY(double Angle); 
   //! Rotate around z-axis
   void RotateZ(double Angle); 
-  //! Rotate around Uz
+  //! Rotate around V
   void RotateReferenceFrame(const MVector& V);
 
   
   //! Do a rotation 
   //MVector& operator*= (const MRotation& Rot);
+  
   // Section 6: Additional high-level functions
 
   //! Checks if this vector is in the plane spanned by the other three vectors
