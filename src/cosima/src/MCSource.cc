@@ -1027,7 +1027,14 @@ bool MCSource::SetPosition(double PositionParam1,
       return false;
     }
   } else if (m_BeamType == c_FarFieldGaussian) {
-    // not implemented
+    if (m_PositionParam1 < 0 || m_PositionParam1 > c_Pi) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Theta must be within [0..pi]"<<endl;
+      return false;
+    }
+    if (m_PositionParam3 < 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": Sigma must be larger than zero"<<endl;
+      return false;
+    }
   } else if (m_BeamType == c_FarFieldFileZenithDependent) {
     // nothing
   } else if (m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
@@ -2316,6 +2323,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     double Phi = 0.0;
     if (m_BeamType == c_FarFieldPoint || 
         m_BeamType == c_FarFieldArea ||
+        m_BeamType == c_FarFieldGaussian ||
         m_BeamType == c_FarFieldFileZenithDependent ||
         m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
       if (m_BeamType == c_FarFieldPoint || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
@@ -2345,10 +2353,35 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
           mout<<m_Name<<": Unknown start area type for position generation"<<endl;
         }
 
+      } else if (m_BeamType == c_FarFieldGaussian) {
+        // Determine a random start position in a Gaussian disk
+        // Param1: Theta
+        // Param2: Phi
+        // Param3: Sigma
+        
+        // Create Gaussian distribution arounf theta = 0, phi = 0
+        Phi = CLHEP::RandFlat::shoot(1)*360*deg;
+        do {
+          Theta = 5*CLHEP::RandFlat::shoot(1)*m_PositionParam3; // Sample theta with 3 sigma;
+        } while (gRandom->Rndm() > sin(Theta*m_PositionParam3)*exp(-(Theta*Theta)/(2*m_PositionParam3*m_PositionParam3))); // Copy and paste from GMega, no clue where I had it from
+        
+        // Now rotate into the correct position
+        G4ThreeVector V;
+        V.setRThetaPhi(1.0, Theta, Phi);
+        
+        G4ThreeVector Rotation;
+        Rotation.setRThetaPhi(1.0, m_PositionParam1, m_PositionParam2);
+        
+        V.rotateUz(Rotation);
+        
+        // Set the final values
+        Theta = V.theta();
+        Phi = V.phi();
+        
       } else if (m_BeamType == c_FarFieldFileZenithDependent) {
         // Determine a random position on the sphere between 
         // theta min and theta max in the file:
-
+        
         if (m_StartAreaType == c_StartAreaSphere) {
           while (true) {
             Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
@@ -2418,11 +2451,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
       Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
       Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
-    } 
-
-    else if  (m_BeamType == c_FarFieldGaussian) {
-      mout<<"Mode SphericalGaussian not yet implemented!"<<endl;
-      return false;
     } 
   } 
 
