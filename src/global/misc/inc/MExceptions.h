@@ -41,6 +41,7 @@ public:
   // Default constructor
   MException() {
     if (m_Abort == true) {
+      cout<<what()<<endl<<flush;
       abort();
     }
   }
@@ -172,12 +173,47 @@ public:
       return "Object/Key not found in the list/vector/array!"; 
     }
   }
-
+  
 private:
   //! True if SetName() has never been called
   bool m_IsEmpty;
   //! The Name of the not found object
   MString m_Name;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an index is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionObjectsNotIdentical : public MException
+{
+public:
+  //! Default constructor
+  MExceptionObjectsNotIdentical() : MException(), m_Name1(""), m_Name2("") {
+  }
+  //! Standard constructor
+  MExceptionObjectsNotIdentical(const MString& Name1, const MString& Name2) : MException(), m_Name1(Name1), m_Name2(Name2) {
+  }
+  //! Default destructor
+  virtual ~MExceptionObjectsNotIdentical() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_Name1 != "" && m_Name2 != "") {
+      ostringstream stream;
+      stream<<"The object "<<m_Name1<<" and "<<m_Name2<<" are not identical!"<<endl; 
+      return stream.str().c_str();
+    } else {
+      return "Objects not identical!"; 
+    }
+  }
+  
+private:
+  //! The name of the first object
+  MString m_Name1;
+  //! The name of the second object
+  MString m_Name2;
 };
 
 
