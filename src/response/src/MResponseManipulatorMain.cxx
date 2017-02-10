@@ -47,20 +47,21 @@ using namespace std;
 
 
 MResponseManipulator* g_Prg = 0;
+int g_NInterruptCatches = 1;
 
 
-//////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
+//! Called when an interrupt signal is flagged
+//! All catched signals lead to a well defined exit of the program
 void CatchSignal(int a)
 {
-  // Called when an interrupt signal is flagged
-  // All catched signals lead to a well defined exit of the program
-
-  cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
-  
-  if (g_Prg != 0) {
+  if (g_Prg != 0 && g_NInterruptCatches-- > 0) {
+    cout<<"Catched signal Ctrl-C (ID="<<a<<"):"<<endl;
     g_Prg->Interrupt();
+  } else {
+    abort();
   }
 }
 
