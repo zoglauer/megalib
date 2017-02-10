@@ -65,11 +65,11 @@ MEventSelector::MEventSelector()
   m_FirstTotalEnergyMin = 0;
   m_FirstTotalEnergyMax = numeric_limits<double>::max();
   m_SecondTotalEnergyMin = 0;
-  m_SecondTotalEnergyMax = numeric_limits<double>::max();
+  m_SecondTotalEnergyMax = 0;
   m_ThirdTotalEnergyMin = 0;
-  m_ThirdTotalEnergyMax = numeric_limits<double>::max();
+  m_ThirdTotalEnergyMax = 0;
   m_FourthTotalEnergyMin = 0;
-  m_FourthTotalEnergyMax = numeric_limits<double>::max();
+  m_FourthTotalEnergyMax = 0;
   
   m_TimeMode = 0;
   m_TimeMin.Set(0);
