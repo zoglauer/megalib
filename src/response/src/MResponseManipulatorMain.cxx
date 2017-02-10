@@ -28,6 +28,8 @@
 
 // Standard libs:
 #include <iostream>
+#include <csignal>
+#include <cstdlib>
 using namespace std;
 
 // ROOT libs:
@@ -69,6 +71,9 @@ void CatchSignal(int a)
 int main(int argc, char** argv)
 {
   // Main function... the beginning...
+
+  // Catch a user interupt for graceful shutdown
+  signal(SIGINT, CatchSignal);
 
   // Initialize global MEGALIB variables, especially mgui, etc.
   MGlobal::Initialize("Response Manipulator");
