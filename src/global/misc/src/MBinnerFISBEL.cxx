@@ -108,10 +108,10 @@ void MBinnerFISBEL::Create(unsigned int NBins)
     NCollars += 2; // for the half on top and bottom
     //if (NCollars % 2 == 1) ++NCollars; 
     
-    cout<<"Bins: "<<NBins<<endl;
-    cout<<"Fix bin area: "<<FixBinArea *TMath::RadToDeg() *TMath::RadToDeg()<<" deg^2"<<endl;
-    cout<<"Square length: "<<SquareLength*TMath::RadToDeg()<<endl;
-    cout<<"Collars: "<<NCollars<<endl;
+    //cout<<"Bins: "<<NBins<<endl;
+    //cout<<"Fix bin area: "<<FixBinArea *TMath::RadToDeg() *TMath::RadToDeg()<<" deg^2"<<endl;
+    //cout<<"Square length: "<<SquareLength*TMath::RadToDeg()<<endl;
+    //cout<<"Collars: "<<NCollars<<endl;
     
     m_LongitudeBins.resize(NCollars, 0);
     m_LatitudeBinEdges.resize(NCollars + 1, 0); // we have one more edge than bins
@@ -154,12 +154,12 @@ void MBinnerFISBEL::Create(unsigned int NBins)
     
   }
   
-  cout<<"FISBEL::Create() Bin layout (latitude bin edges (amount: "<<m_LatitudeBinEdges.size()<<") followed be longitude bins): "<<endl;
-  for (unsigned int l = 0; l < m_LatitudeBinEdges.size(); ++l) {
-    cout<<m_LatitudeBinEdges[l]*TMath::RadToDeg();
-    if (l < m_LongitudeBins.size()) cout<<" bins: "<<m_LongitudeBins[l];
-    cout<<endl;
-  }
+  //cout<<"FISBEL::Create() Bin layout (latitude bin edges (amount: "<<m_LatitudeBinEdges.size()<<") followed be longitude bins): "<<endl;
+  //for (unsigned int l = 0; l < m_LatitudeBinEdges.size(); ++l) {
+    //cout<<m_LatitudeBinEdges[l]*TMath::RadToDeg();
+    //if (l < m_LongitudeBins.size()) cout<<" bins: "<<m_LongitudeBins[l];
+    //cout<<endl;
+  //}
     
   // Calculate the number of bins *before* the given latitude bin
   // Required to speed up bin search
