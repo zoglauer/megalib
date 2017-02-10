@@ -41,7 +41,7 @@ ClassImp(MExceptions)
 #endif
 
 //! Assign static variable
-bool MException::m_Abort = true;
+bool MException::m_Abort = false;
 
 
 // MExceptions.cxx: the end...

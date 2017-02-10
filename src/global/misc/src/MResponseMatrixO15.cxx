@@ -57,7 +57,7 @@ ClassImp(MResponseMatrixO15)
 
 
 MResponseMatrixO15::MResponseMatrixO15() :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // default constructor
 
@@ -76,7 +76,7 @@ MResponseMatrixO15::MResponseMatrixO15(vector<float> x1Axis, vector<float> x2Axi
                                        vector<float> x11Axis, vector<float> x12Axis, 
                                        vector<float> x13Axis, vector<float> x14Axis, 
                                        vector<float> x15Axis) :
-  MResponseMatrix()
+  MResponseMatrixOx()
 {
   // constructor
 
@@ -98,7 +98,7 @@ MResponseMatrixO15::MResponseMatrixO15(MString Name,
                                        vector<float> x11Axis, vector<float> x12Axis, 
                                        vector<float> x13Axis, vector<float> x14Axis, 
                                        vector<float> x15Axis) :
-  MResponseMatrix(Name)
+  MResponseMatrixOx(Name)
 {
   // constructor
 

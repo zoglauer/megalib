@@ -88,65 +88,78 @@ void MBinnerFISBEL::Create(unsigned int NBins)
   // (4) latitude distance close to 
    
   m_NumberOfBins = NBins;
-  int NSubDivisions = m_NumberOfBins;  // <-- remove
+  m_LatitudeBinEdges.clear();
+  m_LongitudeBins.clear();
+  m_NumberOfBinsBeforeLatitudeBin.clear();
   
-  double FixBinArea = 4.0*TMath::Pi() / NSubDivisions;
-  double SquareLength = sqrt(FixBinArea);
-  int NCollars = int((TMath::Pi() / SquareLength - 1) + 0.5);  // -1 for half one top AND Bottom, 0.5 to round to next integer
-  NCollars += 2; // for the half on top and bottom
-  //if (NCollars % 2 == 1) ++NCollars; 
-  
-  //cout<<"Fix bin area: "<<FixBinArea *TMath::RadToDeg() *TMath::RadToDeg()<<" deg^2"<<endl;
-  //cout<<"Square length: "<<SquareLength*TMath::RadToDeg()<<endl;
-  //cout<<"Collars: "<<NCollars<<endl;
-  
-  m_LongitudeBins.resize(NCollars, 0);
-  m_LatitudeBinEdges.resize(NCollars + 1, 0); // we have one more edge than bins
-
-  // Top and bottom first
-  m_LatitudeBinEdges[0] = 0;
-  m_LatitudeBinEdges[NCollars] = TMath::Pi();
-  
-  // Start on top and bottom with a circular region:
-  m_LongitudeBins[0] = 1;
-  m_LongitudeBins[NCollars - 1] = m_LongitudeBins[0];
-
-  m_LatitudeBinEdges[1] = acos(1 - 2.0/NSubDivisions);
-  m_LatitudeBinEdges[NCollars - 1] = TMath::Pi() - m_LatitudeBinEdges[1];
-  
-  // Now the rest iteratively:
-  for (int Collar = 1; ((NCollars % 2  == 0) ? Collar < NCollars/2 : Collar <= NCollars/2); ++Collar) {
-    double UnusedLatitude = m_LatitudeBinEdges[NCollars - Collar] - m_LatitudeBinEdges[Collar];
-    double UnusedCollars = NCollars - 2*Collar;
+  if (m_NumberOfBins == 1) {
     
-    double NextEdgeEstimate = m_LatitudeBinEdges[Collar] + UnusedLatitude/UnusedCollars;
+    m_LatitudeBinEdges.push_back(0);
+    m_LatitudeBinEdges.push_back(TMath::Pi());
+    m_LongitudeBins.push_back(1);
     
-    double NextBinsEstimate = 2*TMath::Pi() * (cos(m_LatitudeBinEdges[Collar]) - cos(NextEdgeEstimate)) / FixBinArea;
+  } else {
     
-    // Round
-    int NextBins = int(NextBinsEstimate + 0.5);
-    double NextEdge = acos(cos(m_LatitudeBinEdges[Collar]) - NextBins*FixBinArea/2.0/TMath::Pi());
-  
-    //cout<<"Unused lat: "<<UnusedLatitude*TMath::RadToDeg()<<endl;
-    //cout<<"Next edge estimate: "<<NextEdgeEstimate*TMath::RadToDeg()<<"  -->  real: "<<NextEdge*TMath::RadToDeg()<<endl;
-    //cout<<"Next bins estimate: "<<NextBinsEstimate<<"  ---> real: "<<NextBins<<endl;
-  
-    // Add: 
-    m_LongitudeBins[Collar] = NextBins;
-    if (Collar != NCollars/2) m_LatitudeBinEdges[Collar+1] = NextEdge;
-    // Do the same at the bottom (in the center it just self assignment):
-    m_LongitudeBins[NCollars - Collar - 1] = NextBins;
-    if (Collar != NCollars/2) m_LatitudeBinEdges[NCollars - (Collar+1)] = TMath::Pi() - NextEdge;
+    int NSubDivisions = m_NumberOfBins;  // <-- remove
+    
+    double FixBinArea = 4.0*TMath::Pi() / NSubDivisions;
+    double SquareLength = sqrt(FixBinArea);
+    int NCollars = int((TMath::Pi() / SquareLength - 1) + 0.5);  // -1 for half one top AND Bottom, 0.5 to round to next integer
+    NCollars += 2; // for the half on top and bottom
+    //if (NCollars % 2 == 1) ++NCollars; 
+    
+    cout<<"Bins: "<<NBins<<endl;
+    cout<<"Fix bin area: "<<FixBinArea *TMath::RadToDeg() *TMath::RadToDeg()<<" deg^2"<<endl;
+    cout<<"Square length: "<<SquareLength*TMath::RadToDeg()<<endl;
+    cout<<"Collars: "<<NCollars<<endl;
+    
+    m_LongitudeBins.resize(NCollars, 0);
+    m_LatitudeBinEdges.resize(NCollars + 1, 0); // we have one more edge than bins
+    
+    // Top and bottom first
+    m_LatitudeBinEdges[0] = 0;
+    m_LatitudeBinEdges[NCollars] = TMath::Pi();
+    
+    // Start on top and bottom with a circular region:
+    m_LongitudeBins[0] = 1;
+    m_LongitudeBins[NCollars - 1] = m_LongitudeBins[0];
+    
+    m_LatitudeBinEdges[1] = acos(1 - 2.0/NSubDivisions);
+    m_LatitudeBinEdges[NCollars - 1] = TMath::Pi() - m_LatitudeBinEdges[1];
+    
+    // Now the rest iteratively:
+    for (int Collar = 1; ((NCollars % 2  == 0) ? Collar < NCollars/2 : Collar <= NCollars/2); ++Collar) {
+      double UnusedLatitude = m_LatitudeBinEdges[NCollars - Collar] - m_LatitudeBinEdges[Collar];
+      double UnusedCollars = NCollars - 2*Collar;
+      
+      double NextEdgeEstimate = m_LatitudeBinEdges[Collar] + UnusedLatitude/UnusedCollars;
+      
+      double NextBinsEstimate = 2*TMath::Pi() * (cos(m_LatitudeBinEdges[Collar]) - cos(NextEdgeEstimate)) / FixBinArea;
+      
+      // Round
+      int NextBins = int(NextBinsEstimate + 0.5);
+      double NextEdge = acos(cos(m_LatitudeBinEdges[Collar]) - NextBins*FixBinArea/2.0/TMath::Pi());
+      
+      //cout<<"Unused lat: "<<UnusedLatitude*TMath::RadToDeg()<<endl;
+      //cout<<"Next edge estimate: "<<NextEdgeEstimate*TMath::RadToDeg()<<"  -->  real: "<<NextEdge*TMath::RadToDeg()<<endl;
+      //cout<<"Next bins estimate: "<<NextBinsEstimate<<"  ---> real: "<<NextBins<<endl;
+      
+      // Add: 
+      m_LongitudeBins[Collar] = NextBins;
+      if (Collar != NCollars/2) m_LatitudeBinEdges[Collar+1] = NextEdge;
+      // Do the same at the bottom (in the center it just self assignment):
+      m_LongitudeBins[NCollars - Collar - 1] = NextBins;
+      if (Collar != NCollars/2) m_LatitudeBinEdges[NCollars - (Collar+1)] = TMath::Pi() - NextEdge;
+    }
+    
   }
   
-  /*
-  cout<<"Bins: "<<endl;
+  cout<<"FISBEL::Create() Bin layout (latitude bin edges (amount: "<<m_LatitudeBinEdges.size()<<") followed be longitude bins): "<<endl;
   for (unsigned int l = 0; l < m_LatitudeBinEdges.size(); ++l) {
     cout<<m_LatitudeBinEdges[l]*TMath::RadToDeg();
     if (l < m_LongitudeBins.size()) cout<<" bins: "<<m_LongitudeBins[l];
     cout<<endl;
   }
-  */
     
   // Calculate the number of bins *before* the given latitude bin
   // Required to speed up bin search
@@ -191,7 +204,7 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
   
   // Sanity checks
   if (Theta < 0 || Theta > c_Pi) {
-    throw MExceptionParameterOutOfRange(Theta, 0, c_Pi, "Theta");
+    throw MExceptionParameterOutOfRange(Theta, 0, c_Pi, "Theta/Latitude");
     return 0;
   }
   
@@ -226,7 +239,36 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
     return 0;
   }
   
+  //cout<<"Found bin: "<<Theta*c_Deg<<":"<<Phi*c_Deg<<endl;
+  
   return Bins;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return axis bins edges for external drawing
+vector<vector<double>> MBinnerFISBEL::GetDrawingAxisBinEdges() const
+{
+  vector<double> xAxis;
+  xAxis.push_back(0);
+  for (unsigned int l = 0; l < m_LongitudeBins.size(); ++l) {
+    for (unsigned int b = 1; b < m_LongitudeBins[l]; ++b) { 
+      xAxis.push_back(double(b)/m_LongitudeBins[l] * 2*TMath::Pi());
+    } 
+  }
+  xAxis.push_back(2*TMath::Pi());  
+
+  // Sort and remove duplicates
+  sort(xAxis.begin(), xAxis.end());
+  xAxis.erase(unique( xAxis.begin(), xAxis.end() ), xAxis.end());
+  
+  vector<vector<double>> Axes;
+  Axes.push_back(xAxis);
+  Axes.push_back(m_LatitudeBinEdges);
+  
+  return Axes;
 }
 
 
@@ -236,19 +278,13 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
 //! Show a histogram of the data
 void MBinnerFISBEL::View(vector<double> Data) const
 {
-  cout<<"Long bins: "<<m_LongitudeBins.size()<<endl;
+  cout<<"Long bins: "<<m_LongitudeBins.size()<<": "; for (auto b: m_LongitudeBins) cout<<b<<" "; cout<<endl;
   
   // Create a histogram
-  vector<double> xAxis;
-  xAxis.push_back(0);
-  for (unsigned int l = 0; l < m_LongitudeBins.size(); ++l) {
-    for (unsigned int b = 1; b < m_LongitudeBins[l]; ++b) { 
-      xAxis.push_back(double(b)/m_LongitudeBins[l] * 2*TMath::Pi());
-    } 
-  }
-  xAxis.push_back(2*TMath::Pi());  
   
-  vector<double> yAxis = m_LatitudeBinEdges;
+  vector<vector<double>> Axes = GetDrawingAxisBinEdges();
+  vector<double> xAxis = Axes[0];
+  vector<double> yAxis = Axes[1];
   
   // Some conversion to allow display for ROOT in AITOFF projection...
   for (unsigned int a = 0; a < xAxis.size(); ++a) xAxis[a] = xAxis[a]*TMath::RadToDeg() - 180; 
@@ -256,10 +292,7 @@ void MBinnerFISBEL::View(vector<double> Data) const
   
   bool UseAitoff = false;
   if ( fabs(yAxis[0] + 90) < 0.001 && fabs(yAxis.back() - 90) < 0.001 ) UseAitoff = true;
-  
-  // Sort and remove duplicates
-  sort(xAxis.begin(), xAxis.end());
-  xAxis.erase(unique( xAxis.begin(), xAxis.end() ), xAxis.end());
+
     
   cout<<"xAxis entries: "<<xAxis.size()<<" (vs. "<<m_NumberOfBins<<" bins)"<<endl;
     
@@ -314,6 +347,8 @@ void MBinnerFISBEL::View(vector<double> Data) const
     Hist->Draw("colz");
   }
   C->Update();
+  
+  gSystem->ProcessEvents();
 }
 
 

@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseMatrix.h"
+#include "MResponseMatrixOx.h"
 #include "MResponseMatrixO16.h"
 
 // Forward declarations:
@@ -33,7 +33,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMatrixO17 : public MResponseMatrix
+class MResponseMatrixO17 : public MResponseMatrixOx
 {
   // public interface:
  public:

@@ -56,14 +56,55 @@ protected:
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when a parmeter is out of range and 
+//! the error cannot be reconvered gracefully
+class MExceptionTestFailed : public MException
+{
+public:
+  //! Constructor giving the minium array index, its size, and the accessing index to the array 
+  MExceptionTestFailed(MString Description, double Value1, MString Test, double Value2) : MException() {
+    ostringstream out;
+    out<<"Test failed: "<<Description<<": "<<Value1<<" "<<Test<<" "<<Value2<<endl;
+    m_Description = out.str();
+  }
+  /*
+  //! Constructor giving the minium array index, its size, and the accessing index to the array 
+  MExceptionTestFailed(MString Description, int Value1, int Value2, MString Test) : MException() {
+    ostringstream out;
+    out<<"Test failed: "<<Description<<": "<<Value1<<" "<<Test<<" "<<Value2<<endl;
+    m_Description = out.str();
+  }
+  //! Constructor giving the minium array index, its size, and the accessing index to the array 
+  MExceptionTestFailed(MString Description, unsigned int Value1, unsigned int Value2, MString Test) : MException() {
+    ostringstream out;
+    out<<"Test failed: "<<Description<<": "<<Value1<<" "<<Test<<" "<<Value2<<endl;
+    m_Description = out.str();
+  }
+  */
+  //! Default destructor
+  virtual ~MExceptionTestFailed() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    return m_Description.Data();
+  }
   
-  
+private:
+  //! Description of the test
+  MString m_Description;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! This exception is thrown when a parmeter is out of range and 
 //! the error cannot be reconvered gracefully
 class MExceptionParameterOutOfRange : public MException
-  {
-  public:
-    //! Default constructor
+{
+public:
+  //! Default constructor
   MExceptionParameterOutOfRange() : MException(), m_IsEmpty(true), m_Value(0), m_Minimum(0), m_Maximum(0), m_Name("") {
   }
   //! Constructor giving the minium array index, its size, and the accessing index to the array 
@@ -86,7 +127,7 @@ class MExceptionParameterOutOfRange : public MException
       return "Index out of bounds!"; 
     }
   }
-
+  
 private:
   //! True if SetValueMinMaxName() has never been called
   bool m_IsEmpty;
@@ -132,7 +173,7 @@ public:
       return "Index out of bounds!"; 
     }
   }
-
+  
 private:
   //! True if SetMinSizeIndex() has never been called
   bool m_IsEmpty;
@@ -142,6 +183,44 @@ private:
   unsigned int m_Size;
   //! The index with which we wanted to access the array, vector, etc.
   unsigned int m_Index;
+};
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an value is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionValueOutOfBounds : public MException
+{
+public:
+  //! Default constructor
+  MExceptionValueOutOfBounds() : MException() {
+    m_Description = "Value out of bounds!"; 
+  }
+  //! Constructor giving the minimum and maximum and the given value 
+  MExceptionValueOutOfBounds(double Value) : MException() {
+    m_Description = "Value out of bounds: ";
+    m_Description += Value;
+  }
+  //! Constructor giving the minimum and maximum and the given value 
+  MExceptionValueOutOfBounds(double Min, double Max, double Value) : MException() {
+    ostringstream stream;
+    stream<<"Value out of bounds - allowed: ["<<Min<<".."<<Max<<"] - your's: "<<Value<<endl; 
+    m_Description = stream.str();
+  }
+  //! Default destructor
+  virtual ~MExceptionValueOutOfBounds() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    return m_Description.Data();
+  }
+  
+private:
+  //! The description
+  MString m_Description;
 };
 
 
@@ -298,13 +377,56 @@ public:
       return "We should have never reached that line of code!"; 
     }
   }
-
+  
 private:
   //! True if SetName() has never been called
   bool m_IsEmpty;
   //! The description of what went wrong
   MString m_Description;
+  
+};
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an index is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionArbitrary : public MException
+{
+public:
+  //! Default constructor
+  MExceptionArbitrary() : MException(), m_IsEmpty(true) {
+  }
+  //! Standard constructor
+  MExceptionArbitrary(const MString& Description) : MException(), m_IsEmpty(false), m_Description(Description) {
+  }
+  //! Default destructor
+  virtual ~MExceptionArbitrary() throw() {}
+  //! Set a name for the unknown mode
+  void SetDescription(const MString& Description) { m_Description = Description; m_IsEmpty = false; }
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_IsEmpty == false) {
+      ostringstream stream;
+      if (m_Description == "") {
+        stream<<"An exception was triggered: "<<endl;
+        stream<<m_Description<<endl;
+      } else {
+        stream<<"An exception was triggered!"<<endl;        
+      }
+      return stream.str().c_str();
+    } else {
+      return "An exception was triggered!"; 
+    }
+  }
+  
+private:
+  //! True if SetName() has never been called
+  bool m_IsEmpty;
+  //! The description of what went wrong
+  MString m_Description;
+  
 };
 
 

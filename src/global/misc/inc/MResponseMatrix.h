@@ -63,74 +63,30 @@ class MResponseMatrix
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
   
   virtual unsigned long GetNBins() const = 0;
-
-  virtual float GetAxisContent(unsigned int b, unsigned int order = 0) const = 0;
-  virtual vector<float> GetAxis(unsigned int order = 0) const = 0;
-  virtual unsigned int GetAxisBins(unsigned int order = 0) const = 0;
-  virtual MString GetAxisName(unsigned int order = 0) const = 0;
-  virtual float GetAxisMinimum(unsigned int order = 0) const = 0;
-  virtual float GetAxisMaximum(unsigned int order = 0) const = 0;
-  virtual float GetAxisLowEdge(unsigned int b, unsigned int order = 0) const = 0;
-  virtual float GetAxisHighEdge(unsigned int b, unsigned int order = 0) const = 0;
-
-  bool IsIncreasing(vector<float> Axis) const;
-
-  void SetValuesCenteredFlag(bool Centered) { m_ValuesCentered = Centered; }
-  bool AreValuesCentered() const { return m_ValuesCentered; }
-
   virtual float GetMaximum() const = 0;
   virtual float GetMinimum() const = 0;
   virtual float GetSum() const = 0;
-  virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int order = 0) const = 0;
-
+  
   static const float c_ShowX;
   static const float c_ShowY;
   static const float c_ShowZ;
   static const float c_ShowNo;
-  static const unsigned int c_UnusedAxis;
 
+  
   // protected methods:
  protected:
-  //! Find the axis-bin where the axis value contains "Value" 
-  int FindBin(const vector<float>& Array, float Value) const;
-  //! This assumes
-  int FindBinCentered(const vector<float>& Array, float Value) const;
-  bool AreIncreasing(unsigned int order, 
-                     unsigned int a1 = c_UnusedAxis,
-                     unsigned int a2 = c_UnusedAxis,
-                     unsigned int a3 = c_UnusedAxis,
-                     unsigned int a4 = c_UnusedAxis,
-                     unsigned int a5 = c_UnusedAxis,
-                     unsigned int a6 = c_UnusedAxis,
-                     unsigned int a7 = c_UnusedAxis,
-                     unsigned int a8 = c_UnusedAxis,
-                     unsigned int a9 = c_UnusedAxis,
-                     unsigned int a10 = c_UnusedAxis,
-                     unsigned int a11 = c_UnusedAxis,
-                     unsigned int a12 = c_UnusedAxis,
-                     unsigned int a13 = c_UnusedAxis,
-                     unsigned int a14 = c_UnusedAxis,
-                     unsigned int a15 = c_UnusedAxis,
-                     unsigned int a16 = c_UnusedAxis,
-                     unsigned int a17 = c_UnusedAxis,
-                     unsigned int a18 = c_UnusedAxis) const;
-                     
-                     
   //! Write some basic header data to the file/stream 
   void WriteHeader(ostringstream& out);
-
-  // private methods:
- private:
+  
   //! Read the class specific info from the file
   virtual bool ReadSpecific(MFileResponse&, const MString&, const int) { return true; };
+  
+  // private methods:
+ private:
 
   // protected members:
  protected:
-  static const unsigned long c_SizeLimit;
-  static const unsigned long c_Outside;
 
-  //! True if the values correspond to bin centers
-  bool m_ValuesCentered;
   //! Name of this response
   MString m_Name;
 

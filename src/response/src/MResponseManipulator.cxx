@@ -54,6 +54,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MFileResponse.h"
 #include "MResponseMatrix.h"
+#include "MResponseMatrixON.h"
 #include "MResponseMatrixO1.h"
 #include "MResponseMatrixO2.h"
 #include "MResponseMatrixO3.h"
@@ -1091,6 +1092,7 @@ bool MResponseManipulator::Statistics()
 {
   MFileResponse File;
   MResponseMatrix* R = File.Read(m_FileName.c_str());
+  if (R == nullptr) return false;
  
   cout<<"Statistics of response matrix \""<<m_FileName
       <<"\" of order "<<R->GetOrder()<<":"<<endl;
@@ -1101,12 +1103,14 @@ bool MResponseManipulator::Statistics()
   cout<<"Sum:     "<<R->GetSum()<<endl;
   cout<<"Avg:     "<<R->GetSum()/R->GetNBins()<<endl;
   cout<<endl;
+  /*
   cout<<"Axis:"<<endl;
   for (unsigned int i = 1; i <= R->GetOrder(); ++i) {
     cout<<"  x"<<i<<":  "<<R->GetAxisName(i)<<" (from "<<R->GetAxisContent(0, i)
         <<" to "<<R->GetAxisContent(R->GetAxisBins(i), i)
         <<" in "<<R->GetAxisBins(i)<<" bins)"<<endl;
-  }
+  } 
+  */
 
   delete R;
   return true;
@@ -1128,7 +1132,14 @@ bool MResponseManipulator::Show()
   MFileResponse File;
   MResponseMatrix* R = File.Read(m_FileName.c_str());
   
-  if (R->GetOrder() == 1) {
+  if (R == nullptr) return false;
+  
+  if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+    dynamic_cast<MResponseMatrixON*>(R)->Smooth(m_NSmooths);
+    vector<float> Axes = { m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17 };
+    Axes.resize(R->GetOrder());
+    dynamic_cast<MResponseMatrixON*>(R)->ShowSlice(Axes, m_Normalized);
+  } else if (R->GetOrder() == 1) {
     dynamic_cast<MResponseMatrixO1*>(R)->Smooth(m_NSmooths);
     dynamic_cast<MResponseMatrixO1*>(R)->Show(m_Normalized);
   } else if (R->GetOrder() == 2) {
@@ -1189,7 +1200,14 @@ bool MResponseManipulator::Show()
     MFileResponse File;
     MResponseMatrix* R = File.Read(OtherFile.c_str());
 
-    if (R->GetOrder() == 1) {
+    if (R == nullptr) return false;
+    
+    if (dynamic_cast<MResponseMatrixON*>(R) != nullptr) {
+      dynamic_cast<MResponseMatrixON*>(R)->Smooth(m_NSmooths);
+      vector<float> Axes = { m_x1, m_x2, m_x3, m_x4, m_x5, m_x6, m_x7, m_x8, m_x9, m_x10, m_x11, m_x12, m_x13, m_x14, m_x15, m_x16, m_x17 };
+      Axes.resize(R->GetOrder());
+      dynamic_cast<MResponseMatrixON*>(R)->ShowSlice(Axes, m_Normalized);
+    } else if (R->GetOrder() == 1) {
       dynamic_cast<MResponseMatrixO1*>(R)->Smooth(m_NSmooths);
       dynamic_cast<MResponseMatrixO1*>(R)->Show(m_Normalized);
     } else if (R->GetOrder() == 2) {

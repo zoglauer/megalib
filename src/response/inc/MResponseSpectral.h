@@ -23,7 +23,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MResponseBuilder.h"
-#include "MResponseMatrixO2.h"
+#include "MResponseMatrixON.h"
 
 // Forward declarations:
 
@@ -62,13 +62,13 @@ class MResponseSpectral : public MResponseBuilder
 
   // protected members:
  protected:
-  MResponseMatrixO2 m_EnergyBeforeER;
-  MResponseMatrixO2 m_EnergyUnselected;
-  MResponseMatrixO2 m_EnergySelected;
+  MResponseMatrixON m_EnergyBeforeER;
+  MResponseMatrixON m_EnergyUnselected;
+  MResponseMatrixON m_EnergySelected;
  
-  MResponseMatrixO2 m_EnergyRatioBeforeER;
-  MResponseMatrixO2 m_EnergyRatioUnselected;
-  MResponseMatrixO2 m_EnergyRatioSelected;
+  MResponseMatrixON m_EnergyRatioBeforeER;
+  MResponseMatrixON m_EnergyRatioUnselected;
+  MResponseMatrixON m_EnergyRatioSelected;
   
                                         
   // private members:

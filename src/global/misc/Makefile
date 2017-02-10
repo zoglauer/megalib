@@ -17,6 +17,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MCoordinateSystem.o \
 	$(LB)/MExceptions.o \
 	$(LB)/MResponseMatrix.o \
+	$(LB)/MResponseMatrixOx.o \
 	$(LB)/MResponseMatrixO1.o \
 	$(LB)/MResponseMatrixO2.o \
 	$(LB)/MResponseMatrixO3.o \
@@ -34,6 +35,9 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MResponseMatrixO15.o \
 	$(LB)/MResponseMatrixO16.o \
 	$(LB)/MResponseMatrixO17.o \
+	$(LB)/MResponseMatrixON.o \
+	$(LB)/MResponseMatrixAxis.o \
+	$(LB)/MResponseMatrixAxisSpheric.o \
 	$(LB)/MString.o \
 	$(LB)/MStreamBuffer.o \
 	$(LB)/MStreams.o \

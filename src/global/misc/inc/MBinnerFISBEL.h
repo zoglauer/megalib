@@ -53,7 +53,8 @@ class MBinnerFISBEL
   //! Find a bin
   //! Theta (= latitude) and phi (= longitude) are in (mathematical) spherical coordinates
   //! The bins are arranged along the iso-latitude lines starting at the north pole (theta = latitude = 0)
-  //! Since this is MEGAlib, theta and phi are in degrees!
+  //! Theta and phi are in radians!
+  //! TODO: Should be degree...
   unsigned int FindBin(double Theta, double Phi) const;
   
   //! Get number of bins
@@ -69,6 +70,8 @@ class MBinnerFISBEL
   //! If the given vector has the correct dimension, it's data will be shown
   void View(vector<double> = {}) const;
   
+  //! Return axis bins edges for external drawing
+  vector<vector<double>> GetDrawingAxisBinEdges() const;
   
   // protected methods:
  protected:

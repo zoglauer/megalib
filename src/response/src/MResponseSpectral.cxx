@@ -35,7 +35,8 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
-
+#include "MResponseMatrixAxis.h"
+#include "MResponseMatrixAxisSpheric.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,26 +77,36 @@ bool MResponseSpectral::Initialize()
   if (MResponseBuilder::Initialize() == false) return false;
   
   
-  vector<float> AxisEnergy2;
-  AxisEnergy2 = CreateLogDist(10, 20000, 1000, 1, 100000);
-
+  MResponseMatrixAxis Ideal("ideal energy [keV]");
+  Ideal.SetLogarithmic(500, 10, 20000, 1, 100000);
+  
+  MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
+  Origin.SetFISBEL(500);
+  
+  MResponseMatrixAxis Measured("measured energy [keV]");
+  Measured.SetLogarithmic(500, 10, 20000, 1, 100000);
+  
   m_EnergyBeforeER.SetName("Energy response (before event reconstruction)");
-  m_EnergyBeforeER.SetAxis(AxisEnergy2, AxisEnergy2);
-  m_EnergyBeforeER.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergyBeforeER.AddAxis(Ideal);
+  m_EnergyBeforeER.AddAxis(Origin);
+  m_EnergyBeforeER.AddAxis(Measured);
 
   m_EnergyUnselected.SetName("Energy response (mimrec - no event selections)");
-  m_EnergyUnselected.SetAxis(AxisEnergy2, AxisEnergy2);
-  m_EnergyUnselected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergyUnselected.AddAxis(Ideal);
+  m_EnergyUnselected.AddAxis(Origin);
+  m_EnergyUnselected.AddAxis(Measured);
 
   m_EnergySelected.SetName("Energy response (mimrec - with event selections)");
-  m_EnergySelected.SetAxis(AxisEnergy2, AxisEnergy2);
-  m_EnergySelected.SetAxisNames("ideal energy [keV]", "measured energy [keV]");
+  m_EnergySelected.AddAxis(Ideal);
+  m_EnergySelected.AddAxis(Origin);
+  m_EnergySelected.AddAxis(Measured);
 
-  vector<float> AxisRelativeIdealEnergy;
-  AxisRelativeIdealEnergy = CreateLogDist(10, 10000, 400);
+  
+  MResponseMatrixAxis RatioIdeal("ideal energy [keV]");
+  RatioIdeal.SetLinear(400, 10, 10000);
 
-  vector<float> AxisRelativeMeasuredEnergy;
-  AxisRelativeMeasuredEnergy = CreateEquiDist(0, 1.2, 9 + 100*6);
+  MResponseMatrixAxis RatioMeasuredIdeal("measured energy / ideal energy");
+  RatioMeasuredIdeal.SetLinear(9 + 100*6, 0, 1.2);
   // 9 + N*6:
   // The goal is to have one bin exactly centered around 1.0
   // The above statement gives a boarder pixel at 0, 0.4, 0.8, 1.2
@@ -115,17 +126,19 @@ bool MResponseSpectral::Initialize()
   
   
   m_EnergyRatioBeforeER.SetName("Energy ratio (before event reconstruction)");
-  m_EnergyRatioBeforeER.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  m_EnergyRatioBeforeER.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
+  m_EnergyRatioBeforeER.AddAxis(RatioIdeal);
+  m_EnergyRatioBeforeER.AddAxis(Origin);
+  m_EnergyRatioBeforeER.AddAxis(RatioMeasuredIdeal);
 
   m_EnergyRatioUnselected.SetName("Energy ratio (no event selections)");
-  m_EnergyRatioUnselected.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  m_EnergyRatioUnselected.SetAxisNames("ideal energy [keV]" , "measured energy / ideal energy");
-
+  m_EnergyRatioUnselected.AddAxis(RatioIdeal);
+  m_EnergyRatioUnselected.AddAxis(Origin);
+  m_EnergyRatioUnselected.AddAxis(RatioMeasuredIdeal);
+  
   m_EnergyRatioSelected.SetName("Energy ratio (with event selections)");
-  m_EnergyRatioSelected.SetAxis(AxisRelativeIdealEnergy, AxisRelativeMeasuredEnergy);
-  m_EnergyRatioSelected.SetAxisNames("ideal energy [keV]", "measured energy / ideal energy");
-   
+  m_EnergyRatioSelected.AddAxis(RatioIdeal);
+  m_EnergyRatioSelected.AddAxis(Origin);
+  m_EnergyRatioSelected.AddAxis(RatioMeasuredIdeal);
   
   return true; 
 }
@@ -143,22 +156,31 @@ bool MResponseSpectral::Analyze()
   
   MRawEventList* REList = m_ReReader->GetRawEventList();
   MRERawEvent* RE = REList->GetInitialRawEvent();
+  
+  double SimStartEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+  double SimStartTheta = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Theta()*c_Deg;
+  double SimStartPhi = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Phi()*c_Deg;
+  while (SimStartPhi < 0) SimStartPhi += 360;  
+  
   if (RE != nullptr) {
-    m_EnergyBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy());
-    m_EnergyRatioBeforeER.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), RE->GetEnergy() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
+    m_EnergyBeforeER.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() });
+    m_EnergyRatioBeforeER.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() / SimStartEnergy });
   }
     
+  
   if (REList->HasOptimumEvent() == true) {
     MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
     if (Event != nullptr) {
-      m_EnergyUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
-      m_EnergyRatioUnselected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
+      m_EnergyUnselected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
+      m_EnergyRatioUnselected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
-        m_EnergySelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei());
-        m_EnergyRatioSelected.Add(m_SiEvent->GetIAAt(0)->GetSecondaryEnergy(), Event->Ei() / m_SiEvent->GetIAAt(0)->GetSecondaryEnergy());
+        // TODO: We might need to do an ARM cut?
+        m_EnergySelected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
+        m_EnergyRatioSelected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
       }
     }
   }
+  
   
   return true; 
 }

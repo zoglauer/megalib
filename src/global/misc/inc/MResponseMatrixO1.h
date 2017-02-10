@@ -24,7 +24,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MResponseMatrix.h"
+#include "MResponseMatrixOx.h"
 
 // ROOT libs:
 #include <TGraph.h>
@@ -49,7 +49,7 @@ template< class T > class greater_than : public unary_function< T, bool >
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMatrixO1 : public MResponseMatrix
+class MResponseMatrixO1 : public MResponseMatrixOx
 {
   // public interface:
  public:
