@@ -44,7 +44,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Equality operator
   bool operator==(const MResponseMatrixAxisSpheric& Axis);
   //! Inequality operator
-  bool operator!=(const MResponseMatrixAxisSpheric& Axis) { return operator==(Axis); };
+  bool operator!=(const MResponseMatrixAxisSpheric& Axis) { return !(operator==(Axis)); };
 
   //! Clone this axis
   virtual MResponseMatrixAxisSpheric* Clone() const;

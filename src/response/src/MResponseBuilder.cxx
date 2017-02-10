@@ -494,7 +494,7 @@ bool MResponseBuilder::SanityCheckSimulations()
   if (m_OnlyINITRequired == true) return true;
   
   if (m_SiEvent->GetNIgnoredHTs() > 0) {
-    mout<<"Response: We have ignored HTs in the sim file -> "<<
+    mout<<"Response: Event "<<m_SiEvent->GetID()<<": We have ignored HTs in the sim file -> "<<
       " check your geometry, because noising was deactivated!"<<endl;
     return false;
   }

@@ -152,7 +152,7 @@ vector<MString> MResponseMatrixON::GetAxisNames(unsigned int AxisIndex) const
 bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
 {
   // Two matrixes are identical if they have the same axis:
-
+  
   if (m_Axes.size() != R.m_Axes.size()) {
     return false;
   }

@@ -47,7 +47,7 @@ class MResponseMatrixAxis
   //! Equality operator
   bool operator==(const MResponseMatrixAxis& Axis);
   //! Inequality operator
-  bool operator!=(const MResponseMatrixAxis& Axis) { return operator==(Axis); };
+  bool operator!=(const MResponseMatrixAxis& Axis) { return !(operator==(Axis)); };
   
   
   //! Clone this axis

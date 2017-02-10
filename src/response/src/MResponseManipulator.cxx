@@ -659,13 +659,18 @@ bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
     MResponseMatrix* First = File.Read(SortedFiles[t][0]);
     
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
+      if (m_Interrupt == true) break;
+      
       MResponseMatrix* Append = File.Read(SortedFiles[t][f]);    
       
       if (First->GetOrder() != Append->GetOrder()) {
         mout<<"Cannot append file, because they are of different order!"<<endl;
       } else {
         mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
-        if (First->GetOrder() == 1) {
+        if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+          *dynamic_cast<MResponseMatrixON*>(First) += 
+          *dynamic_cast<MResponseMatrixON*>(Append);
+        } else if (First->GetOrder() == 1) {
           *dynamic_cast<MResponseMatrixO1*>(First) += 
           *dynamic_cast<MResponseMatrixO1*>(Append);
         } else if (First->GetOrder() == 2) {
