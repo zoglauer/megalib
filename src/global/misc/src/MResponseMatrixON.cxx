@@ -683,9 +683,10 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
 
   bool Ok = true;
   
-  MTokenizer T;
+  MTimer T;
 
   if (Type == "ResponseMatrixONStream") {
+    MTokenizer T;
     vector<MTokenizer> xAxis;
     MString x1Name;
     while (Parser.TokenizeLine(T, true) == true) {
@@ -780,6 +781,8 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
   }
   
   
+  cout<<"Time spent reading response: "<<T.GetElapsed()<<" seconds"<<endl;
+  
   return Ok;
 }
 
@@ -790,10 +793,8 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
 bool MResponseMatrixON::Write(MString FileName, bool Stream)
 {
   // Write the content to file
-
-
-  massert(GetNBins() > 0);
-
+  
+  
   MFileResponse File;
   if (File.Open(FileName, MFile::c_Write) == false) return false;
 
@@ -833,16 +834,19 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<"StartStream "<<m_Values.size()<<endl;
   File.Write(s);
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    File.Write(m_Values[i]);
+    if (m_Values[i] == 0) {
+      File.Write("0 "); 
+    } else {
+      File.Write(m_Values[i]);
+    }
   }
   s<<endl;
   s<<"StopStream"<<endl;
   File.Write(s);
  
-  
-  mdebug<<"File \""<<FileName<<"\" with "<<m_Values.size()
-        <<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
   File.Close();
+  
+  mout<<"File \""<<FileName<<"\" with "<<m_Values.size()<<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
   
   return true;
 }
