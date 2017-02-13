@@ -24,6 +24,7 @@
 // ROOT libs:
 
 // MEGAlib libs:
+#include "MExceptions.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -141,6 +142,26 @@ bool MResponseMatrixAxisSpheric::InRange(double Theta, double Phi) const
   if (Theta < 0 || Theta > 180) return false;
   
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the minimum axis values
+vector<double> MResponseMatrixAxisSpheric::GetMinima() const
+{
+  return { 0, 0 };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the minimum axis values
+vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
+{
+  return { 180, 360 };
 }
 
 

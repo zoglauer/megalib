@@ -133,6 +133,9 @@ class MResponseMatrixON : public MResponseMatrix
   //! Show as an image
   void ShowSlice(vector<float> Axes, bool Normalized = true);
   
+  //! Return a string with statistics numbers
+  virtual MString GetStatistics() const;
+  
 
   // protected methods:
  protected:
@@ -145,10 +148,11 @@ class MResponseMatrixON : public MResponseMatrix
 
   //! Find the bin of m_Values corresponding to the axis bins X
   unsigned int FindBin(vector<unsigned int> X) const;
-    
   //! Find the bin of m_Values corresponding to the axis values X
   unsigned int FindBin(vector<double> X) const;
-  
+  //! Find the axes bins corresponding to the internal value bin Bin
+  vector<unsigned int> FindBins(unsigned int Bin) const;
+    
   //! Given an order, return the axis it belongs to
   //! Can throw: MExceptionValueOutOfBounds, MExceptionNeverReachThatLineOfCode
   MResponseMatrixAxis* GetAxisByOrder(unsigned int Order);

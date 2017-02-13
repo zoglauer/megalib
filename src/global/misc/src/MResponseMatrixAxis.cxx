@@ -248,6 +248,35 @@ vector<vector<double>> MResponseMatrixAxis::GetDrawingAxisBinEdges() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the minimum axis values
+vector<double> MResponseMatrixAxis::GetMinima() const
+{
+  if (m_BinEdges.size() == 0) {
+    throw MExceptionArbitrary("Empty bin edge vector --- cannot determine minima");
+  }
+  
+  return { m_BinEdges[0] };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the minimum axis values
+vector<double> MResponseMatrixAxis::GetMaxima() const
+{
+  if (m_BinEdges.size() == 0) {
+    throw MExceptionArbitrary("Empty bin edge vector --- cannot determine minima");
+  }
+  
+  return { m_BinEdges.back() };
+  
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Write the content to a stream
 void MResponseMatrixAxis::Write(ostringstream& out)
 {

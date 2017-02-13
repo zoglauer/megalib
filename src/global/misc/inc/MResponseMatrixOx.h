@@ -58,7 +58,9 @@ class MResponseMatrixOx : public MResponseMatrix
 
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int order = 0) const = 0;
 
-
+  //! Return a string with statistics numbers
+  virtual MString GetStatistics() const;
+  
   // protected methods:
  protected:
   //! Find the axis-bin where the axis value contains "Value" 

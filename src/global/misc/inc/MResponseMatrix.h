@@ -67,6 +67,10 @@ class MResponseMatrix
   virtual float GetMinimum() const = 0;
   virtual float GetSum() const = 0;
   
+  //! Return a string with statistics numbers
+  virtual MString GetStatistics() const = 0;
+  
+  
   static const float c_ShowX;
   static const float c_ShowY;
   static const float c_ShowZ;

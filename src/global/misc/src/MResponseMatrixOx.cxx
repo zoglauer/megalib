@@ -302,5 +302,35 @@ bool MResponseMatrixOx::Read(MString FileName)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a string with statistics numbers
+MString MResponseMatrixOx::GetStatistics() const
+{
+  ostringstream out;
+  
+  out<<"Statistics for response matrix \""<<m_Name<<"\":"<<endl;
+  out<<endl;
+  out<<"Number of axes:         "<<m_Order<<endl;
+  out<<"Number of dimensions:   "<<m_Order<<endl;
+  out<<"Number of bins:         "<<GetNBins()<<endl;
+  out<<"Maximum:                "<<GetMaximum()<<endl;
+  out<<"Minimum:                "<<GetMinimum()<<endl;
+  out<<"Sum:                    "<<GetSum()<<endl;
+  out<<"Avgerage value:         "<<GetSum()/GetNBins()<<endl;
+  out<<endl;
+
+  out<<"Axes:"<<endl;
+  for (unsigned int i = 1; i <= GetOrder(); ++i) {
+    out<<"  x"<<i<<":  "<<GetAxisName(i)<<" (from "<<GetAxisContent(0, i)
+      <<" to "<<GetAxisContent(GetAxisBins(i), i)
+      <<" in "<<GetAxisBins(i)<<" bins)"<<endl;
+  } 
+
+  return out.str();
+}
+
+
 // MResponseMatrixOx.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

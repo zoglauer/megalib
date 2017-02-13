@@ -63,6 +63,10 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;
+  //! Return the minimum axis values
+  virtual vector<double> GetMinima() const;
+  //! Return the minimum axis values
+  virtual vector<double> GetMaxima() const;
   
   //! Write the content to a stream
   virtual void Write(ostringstream& out);

@@ -81,7 +81,7 @@ bool MResponseSpectral::Initialize()
   Ideal.SetLogarithmic(500, 10, 20000, 1, 100000);
   
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
-  Origin.SetFISBEL(500);
+  Origin.SetFISBEL(413);
   
   MResponseMatrixAxis Measured("measured energy [keV]");
   Measured.SetLogarithmic(500, 10, 20000, 1, 100000);
@@ -90,20 +90,29 @@ bool MResponseSpectral::Initialize()
   m_EnergyBeforeER.AddAxis(Ideal);
   m_EnergyBeforeER.AddAxis(Origin);
   m_EnergyBeforeER.AddAxis(Measured);
-
+  if (m_SiReader != nullptr) {
+    m_EnergyBeforeER.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+  
   m_EnergyUnselected.SetName("Energy response (mimrec - no event selections)");
   m_EnergyUnselected.AddAxis(Ideal);
   m_EnergyUnselected.AddAxis(Origin);
   m_EnergyUnselected.AddAxis(Measured);
-
+  if (m_SiReader != nullptr) {
+    m_EnergyUnselected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+  
   m_EnergySelected.SetName("Energy response (mimrec - with event selections)");
   m_EnergySelected.AddAxis(Ideal);
   m_EnergySelected.AddAxis(Origin);
   m_EnergySelected.AddAxis(Measured);
-
+  if (m_SiReader != nullptr) {
+    m_EnergySelected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+  
   
   MResponseMatrixAxis RatioIdeal("ideal energy [keV]");
-  RatioIdeal.SetLinear(400, 10, 10000);
+  RatioIdeal.SetLinear(500, 10, 10000);
 
   MResponseMatrixAxis RatioMeasuredIdeal("measured energy / ideal energy");
   RatioMeasuredIdeal.SetLinear(9 + 100*6, 0, 1.2);
@@ -129,16 +138,25 @@ bool MResponseSpectral::Initialize()
   m_EnergyRatioBeforeER.AddAxis(RatioIdeal);
   m_EnergyRatioBeforeER.AddAxis(Origin);
   m_EnergyRatioBeforeER.AddAxis(RatioMeasuredIdeal);
-
+  if (m_SiReader != nullptr) {
+    m_EnergyRatioBeforeER.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+  
   m_EnergyRatioUnselected.SetName("Energy ratio (no event selections)");
   m_EnergyRatioUnselected.AddAxis(RatioIdeal);
   m_EnergyRatioUnselected.AddAxis(Origin);
   m_EnergyRatioUnselected.AddAxis(RatioMeasuredIdeal);
+  if (m_SiReader != nullptr) {
+    m_EnergyRatioUnselected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
   
   m_EnergyRatioSelected.SetName("Energy ratio (with event selections)");
   m_EnergyRatioSelected.AddAxis(RatioIdeal);
   m_EnergyRatioSelected.AddAxis(Origin);
   m_EnergyRatioSelected.AddAxis(RatioMeasuredIdeal);
+  if (m_SiReader != nullptr) {
+    m_EnergyRatioSelected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
   
   return true; 
 }
@@ -202,13 +220,28 @@ bool MResponseSpectral::Finalize()
 //! Save the responses
 bool MResponseSpectral::Save()
 {
+  MTimer T;
+  
+  m_EnergyBeforeER.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
+  
+  m_EnergyUnselected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
+  
+  m_EnergySelected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);
+  
+  m_EnergyRatioBeforeER.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyRatioBeforeER.Write(m_ResponseName + ".energyratio.beforeeventreconstruction" + m_Suffix, true);
+  
+  m_EnergyRatioUnselected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyRatioUnselected.Write(m_ResponseName + ".energyratio.mimrecunselected" + m_Suffix, true);
+  
+  m_EnergyRatioSelected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyRatioSelected.Write(m_ResponseName + ".energyratio.mimrecselected" + m_Suffix, true);
-
+  
+  cout<<"Time spent saving data: "<<T.GetElapsed()<<" seconds"<<endl;
+  
   return true;
 }
 

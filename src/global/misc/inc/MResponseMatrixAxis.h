@@ -80,7 +80,12 @@ class MResponseMatrixAxis
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;
   //! Return the axis names
-  virtual vector<MString> GetNames() const { return m_Names; };
+  virtual vector<MString> GetNames() const { return m_Names; }
+  //! Return the minimum axis values
+  virtual vector<double> GetMinima() const;
+  //! Return the minimum axis values
+  virtual vector<double> GetMaxima() const;
+  
   
   //! Write the content to a stream
   virtual void Write(ostringstream& out);

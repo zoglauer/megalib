@@ -295,6 +295,24 @@ unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+vector<unsigned int> MResponseMatrixON::FindBins(unsigned int Bin) const
+{
+  // Find the axes bins corresponding to the internal value bin Bin
+  
+  vector<unsigned int> Bins(m_Axes.size());
+  
+  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+    Bins[a] = Bin % m_Axes[a]->GetNumberOfBins();
+    Bin = (Bin - Bins[a]) / m_Axes[a]->GetNumberOfBins();
+  }
+  
+  return Bins;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 unsigned int MResponseMatrixON::FindBin(vector<double> X) const
 {
   // Find the bin of m_Values corresponding to the axis values X
@@ -422,24 +440,6 @@ void MResponseMatrixON::Set(vector<double> X, float Value)
   }
   
   m_Values[FindBin(X)] = Value;
-  
-  /*
-  vector<float>::iterator Iter;
-  Iter = find(m_AxisO1.begin(), m_AxisO1.end(), x);
-  
-  if (Iter != m_AxisO1.end()) {
-    (*Iter) = Value;
-  } else {
-    Iter = find_if(m_AxisO1.begin(), m_AxisO1.end(), greater_than<float>(x));
-    if (Iter != m_AxisO1.end()) {
-      m_AxisO1.insert(Iter, x);
-      m_Values.insert(m_Values.begin()+(Iter-m_AxisO1.begin()), Value);
-    } else {
-      m_AxisO1.push_back(x);
-      m_Values.push_back(Value);
-    }
-  }
-  */
 }
 
 
@@ -683,105 +683,126 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
 
   bool Ok = true;
   
-  MTimer T;
+  MTimer Timer;
 
-  if (Type == "ResponseMatrixONStream") {
-    MTokenizer T;
-    vector<MTokenizer> xAxis;
-    MString x1Name;
-    while (Parser.TokenizeLine(T, true) == true) {
-     if (T.GetNTokens() < 2) continue;
-      if (T.GetTokenAt(0) == "AN") {
-        vector<MString> AxisName = T.GetTokenAtAsStringVector(1, true);
-        //for (unsigned int i = 0; i < AxisName.size(); ++i) {
-        //  cout<<"N: "<<AxisName[i]<<endl;
-        //}
-        // Sub parse until we have found axis type
-        while (Parser.TokenizeLine(T, true) == true) {
-          if (T.GetNTokens() < 2) continue;
-          if (T.GetTokenAt(0) == "AT") {
-            MString Type = T.GetTokenAfterAsString(1);
-            if (Type == "1D BinEdges") {
-              if (AxisName.size() != 1) {
-                mout<<"MResponseMatrixON: Did not find a single axis name for the response matrix axis!"<<endl;
-                return false;
+
+  MTokenizer T;
+  vector<MTokenizer> xAxis;
+  MString x1Name;
+  while (Parser.TokenizeLine(T, true) == true) {
+    if (T.GetNTokens() < 2) continue;
+    if (T.GetTokenAt(0) == "AN") {
+      vector<MString> AxisName = T.GetTokenAtAsStringVector(1, true);
+      //for (unsigned int i = 0; i < AxisName.size(); ++i) {
+      //  cout<<"N: "<<AxisName[i]<<endl;
+      //}
+      // Sub parse until we have found axis type
+      while (Parser.TokenizeLine(T, true) == true) {
+        if (T.GetNTokens() < 2) continue;
+        if (T.GetTokenAt(0) == "AT") {
+          MString Type = T.GetTokenAfterAsString(1);
+          if (Type == "1D BinEdges") {
+            if (AxisName.size() != 1) {
+              mout<<"MResponseMatrixON: Did not find a single axis name for the response matrix axis!"<<endl;
+              return false;
+            }
+            MResponseMatrixAxis* A = new MResponseMatrixAxis(AxisName[0]);
+            // Sub parse until we found the axis data
+            while (Parser.TokenizeLine(T, true) == true) {
+              if (T.GetNTokens() < 2) continue;
+              if (T.GetTokenAt(0) == "AD") {
+                A->SetBinEdges(T.GetTokenAtAsDoubleVector(1));
+                m_Axes.push_back(A);
+                break;
               }
-              MResponseMatrixAxis* A = new MResponseMatrixAxis(AxisName[0]);
-              // Sub parse until we found the axis data
-              while (Parser.TokenizeLine(T, true) == true) {
-                if (T.GetNTokens() < 2) continue;
-                if (T.GetTokenAt(0) == "AD") {
-                  A->SetBinEdges(T.GetTokenAtAsDoubleVector(1));
-                  m_Axes.push_back(A);
-                  break;
-                }
-              }
-            } else if (Type == "2D FISBEL") {
-              if (AxisName.size() != 2) {
-                mout<<"MResponseMatrixON: Did not find two axis names for the response matrix axis!"<<endl;
-                return false;
-              }              
-              MResponseMatrixAxisSpheric* A = new MResponseMatrixAxisSpheric(AxisName[0], AxisName[1]);
-              // Sub parse until we found the axis data
-              while (Parser.TokenizeLine(T, true) == true) {
-                if (T.GetNTokens() < 2) continue;
-                if (T.GetTokenAt(0) == "AD") {
-                  A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1));
-                  m_Axes.push_back(A);
-                  break;
-                }
+            }
+          } else if (Type == "2D FISBEL") {
+            if (AxisName.size() != 2) {
+              mout<<"MResponseMatrixON: Did not find two axis names for the response matrix axis!"<<endl;
+              return false;
+            }              
+            MResponseMatrixAxisSpheric* A = new MResponseMatrixAxisSpheric(AxisName[0], AxisName[1]);
+            // Sub parse until we found the axis data
+            while (Parser.TokenizeLine(T, true) == true) {
+              if (T.GetNTokens() < 2) continue;
+              if (T.GetTokenAt(0) == "AD") {
+                A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1));
+                m_Axes.push_back(A);
+                break;
               }
             }
           }
-          break;
         }
-      } else if (T.GetTokenAt(0) == "StartStream") {
-        unsigned long StreamSize = T.GetTokenAtAsLong(1);
-
-        if (GetNBins() != StreamSize) {
-          mout<<"MResponseMatrixON: The number of bins ("<<GetNBins()<<") and the stream size ("<<StreamSize<<") are not in sync!"<<endl;
-          Ok = false;
-          break;
-        }
-        m_Values.resize(StreamSize, 0);
-        
-        m_Order = 0;
-        for (unsigned int a = 0; a < m_Axes.size(); ++a) {
-          m_Order += m_Axes[a]->GetDimension(); 
-        }
-        
-        
-        bool StreamOk = true;
-        float Data;
-        unsigned long x, x_max = StreamSize;
-        for (x = 0; x < x_max; ++x) {
-          if (StreamSize == 0) {
-            StreamOk = false;
-            break;
-          }
-          if (Parser.GetFloat(Data) == true) {
-            m_Values[x] = Data;
-            StreamSize--;
-          } else {
-            StreamOk = false;
-            break;
-          }
-        }
-        
-        if (StreamOk == false) {
-          mout<<"MResponseMatrixON: Stream was not ok!"<<endl;
-          Ok = false;
-          break;
-        }
+        break;
       }
-    }   
-  } else {
-    mout<<"MResponseMatrixON: Encountered unknown response type while read ResponseMatrixON"<<endl;
-    Ok = false;
+    } else if (T.GetTokenAt(0) == "Type") {
+      if (Type == "ResponseMatrixONStream") {
+        while (Parser.TokenizeLine(T, true) == true) {
+          if (T.GetNTokens() < 2) continue;
+          
+          if (T.GetTokenAt(0) == "StartStream") {
+            unsigned long StreamSize = T.GetTokenAtAsLong(1);
+            
+            if (GetNBins() != StreamSize) {
+              mout<<"MResponseMatrixON: The number of bins ("<<GetNBins()<<") and the stream size ("<<StreamSize<<") are not in sync!"<<endl;
+              Ok = false;
+              break;
+            }
+            m_Values.resize(StreamSize, 0);
+            
+            m_Order = 0;
+            for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+              m_Order += m_Axes[a]->GetDimension(); 
+            }
+            
+            
+            bool StreamOk = true;
+            float Data;
+            unsigned long x, x_max = StreamSize;
+            for (x = 0; x < x_max; ++x) {
+              if (StreamSize == 0) {
+                StreamOk = false;
+                break;
+              }
+              if (Parser.GetFloat(Data) == true) {
+                m_Values[x] = Data;
+                StreamSize--;
+              } else {
+                StreamOk = false;
+                break;
+              }
+            }
+            
+            if (StreamOk == false) {
+              mout<<"MResponseMatrixON: Stream was not ok!"<<endl;
+              Ok = false;
+              break;
+            }
+          }
+        } // secondary tokenizer loop
+      } else if (Type == "ResponseMatrixON") {
+        m_Values.resize(GetNBins(), 0);
+        while (Parser.TokenizeLine(T, true) == true) {
+          if (T.GetNTokens() != m_Axes.size() + 2) continue;
+          if (T.GetTokenAt(0) == "RD") {
+            vector<unsigned int> Bins(m_Axes.size(), 0);
+            for (unsigned int b = 1; b < m_Axes.size() + 1; ++b) {
+              Bins[b-1] = T.GetTokenAtAsUnsignedInt(b);
+            }
+            SetBinContent(Bins, T.GetTokenAtAsFloat(m_Axes.size() + 1));
+          }
+        }
+      } // Stream or no stream
+    } // Axis/Type loop
+  } // main loop
+  
+  m_Order = 0;
+  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+    m_Order += m_Axes[a]->GetDimension(); 
   }
   
   
-  cout<<"Time spent reading response: "<<T.GetElapsed()<<" seconds"<<endl;
+  cout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
   
   return Ok;
 }
@@ -822,28 +843,58 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<endl;
   File.Write(s);
   
-  s<<"Type ResponseMatrixONStream"<<endl;
   s<<endl;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     m_Axes[a]->Write(s);
     File.Write(s);
   }
   s<<endl;
-
-  // Write content stream
-  s<<"StartStream "<<m_Values.size()<<endl;
   File.Write(s);
+  
+  // Determine the sparcity:
+  unsigned long Empty = 0;
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     if (m_Values[i] == 0) {
-      File.Write("0 "); 
-    } else {
-      File.Write(m_Values[i]);
+      Empty += 1;
     }
   }
-  s<<endl;
-  s<<"StopStream"<<endl;
-  File.Write(s);
- 
+  if (double(Empty)/GetNBins() > 0.9) {
+    Stream = false;
+  }
+  
+  if (Stream == true) {
+    s<<"Type ResponseMatrixONStream"<<endl;
+    s<<endl;
+  
+    // Write content stream
+    s<<"StartStream "<<m_Values.size()<<endl;
+    File.Write(s);
+    for (unsigned int i = 0; i < m_Values.size(); ++i) {
+      if (m_Values[i] == 0) {
+        File.Write("0 "); // Little speed up (x8 for sparse matrices)
+      } else {
+        File.Write(m_Values[i]);
+      }
+    }
+    s<<endl;
+    s<<"StopStream"<<endl;
+    File.Write(s);
+  } else {
+    s<<"Type ResponseMatrixON"<<endl;
+    s<<endl;
+    
+    for (unsigned int i = 0; i < m_Values.size(); ++i) {
+      if (m_Values[i] == 0) continue;
+      vector<unsigned int> Bins = FindBins(i);
+      s<<"RD ";
+      for (unsigned int b = 0; b < Bins.size(); ++b) {
+        s<<Bins[b]<<" ";
+      }
+      s<<m_Values[i]<<endl;;
+      File.Write(s);
+    }
+  }
+
   File.Close();
   
   mout<<"File \""<<FileName<<"\" with "<<m_Values.size()<<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
@@ -1090,6 +1141,39 @@ ostream& operator<<(ostream& os, const MResponseMatrixON& R)
   }
   */
   return os;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a string with statistics numbers
+MString MResponseMatrixON::GetStatistics() const
+{
+  ostringstream out;
+  
+  out<<"Statistics for response matrix \""<<m_Name<<"\":"<<endl;
+  out<<endl;
+  out<<"Number of axes:         "<<m_Axes.size()<<endl;
+  out<<"Number of dimensions:   "<<m_Order<<endl;
+  out<<"Number of bins:         "<<GetNBins()<<endl;
+  out<<"Maximum:                "<<GetMaximum()<<endl;
+  out<<"Minimum:                "<<GetMinimum()<<endl;
+  out<<"Sum:                    "<<GetSum()<<endl;
+  out<<"Avgerage value:         "<<GetSum()/GetNBins()<<endl;
+  out<<endl;
+  
+  out<<"Axes:"<<endl;
+  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+    out<<"  x"<<a<<":  ";
+    for (unsigned int i = 0; i < m_Axes[a]->GetNames().size(); ++i) {
+      out<<m_Axes[a]->GetNames()[i]<<" (from "<<m_Axes[a]->GetMinima()[i]<<" to "<<m_Axes[a]->GetMaxima()[i]<<")";
+      if (m_Axes[a]->GetNames().size() > 1 && i < m_Axes[a]->GetNames().size() -1) out<<"  +  ";
+    }
+    out<<endl;
+  } 
+  
+  return out.str();
 }
 
 

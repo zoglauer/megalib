@@ -1098,26 +1098,9 @@ bool MResponseManipulator::Statistics()
   MFileResponse File;
   MResponseMatrix* R = File.Read(m_FileName.c_str());
   if (R == nullptr) return false;
- 
-  cout<<"Statistics of response matrix \""<<m_FileName
-      <<"\" of order "<<R->GetOrder()<<":"<<endl;
-  cout<<endl;
-  cout<<"NBins:   "<<R->GetNBins()<<endl;
-  cout<<"Maximum: "<<R->GetMaximum()<<endl;
-  cout<<"Minimum: "<<R->GetMinimum()<<endl;
-  cout<<"Sum:     "<<R->GetSum()<<endl;
-  cout<<"Avg:     "<<R->GetSum()/R->GetNBins()<<endl;
-  cout<<endl;
-  /*
-  cout<<"Axis:"<<endl;
-  for (unsigned int i = 1; i <= R->GetOrder(); ++i) {
-    cout<<"  x"<<i<<":  "<<R->GetAxisName(i)<<" (from "<<R->GetAxisContent(0, i)
-        <<" to "<<R->GetAxisContent(R->GetAxisBins(i), i)
-        <<" in "<<R->GetAxisBins(i)<<" bins)"<<endl;
-  } 
-  */
-
+  cout<<R->GetStatistics()<<endl;
   delete R;
+  
   return true;
 }
 
