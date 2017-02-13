@@ -5157,6 +5157,13 @@ void MInterfaceMimrec::Polarization()
   // The correction is
   // C[i] = P[i]/B[i] * SUM_j( B[j] ) / NBins 
   
+  // Why do we do this?
+  // The measurement counts is basically the perfect polarization signature multiplied with the probability that we detect something in this direction:
+  // Now to get the polarization signature we have to divide by this probability.
+  // We don't need anything absolute since we are only interested in the polarization angle and modulation.
+  // Thus a proxy for the polarization is the normalized background, i.e. background divided by its mean.
+  
+  
   // Its uncertainty is 
   // dC[i] = 
   //  
