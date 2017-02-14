@@ -80,9 +80,12 @@ class MResponseMatrixON : public MResponseMatrix
   //! Return the number of bins
   virtual unsigned long GetNBins() const;
   
+  //! Return the number of axes
+  unsigned int GetNumberOfAxes() { return m_Axes.size(); }
+  
   //! Return a const reference to the given axis
-  //! Throws exception
-  const MResponseMatrixAxis& GetAxis(unsigned int AxisIndex);
+  //! Throws exception MExceptionIndexOutOfBounds
+  const MResponseMatrixAxis& GetAxis(unsigned int AxisIndex) const;
   
   //! Check if the values are inside the range of all axes
   bool InRange(vector<double> X) const;

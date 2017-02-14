@@ -149,6 +149,21 @@ vector<MString> MResponseMatrixON::GetAxisNames(unsigned int AxisIndex) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return a const reference to the given axis
+//! Throws exception MExceptionIndexOutOfBounds
+const MResponseMatrixAxis& MResponseMatrixON::GetAxis(unsigned int AxisIndex) const
+{
+  if (AxisIndex >= m_Axes.size()) {
+    throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex);
+  }
+ 
+  return *m_Axes[AxisIndex];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
 {
   // Two matrixes are identical if they have the same axis:
