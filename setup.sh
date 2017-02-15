@@ -947,7 +947,11 @@ echo " "
 
 # Finalize the source script:
 echo " " >> ${ENVFILE}
-echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --geant4=\${GEANT4DIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
+if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 0 )); then 
+  echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
+else 
+  echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --geant4=\${GEANT4DIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
+fi
 echo " " >> ${ENVFILE}
 
 source ${ENVFILE}
