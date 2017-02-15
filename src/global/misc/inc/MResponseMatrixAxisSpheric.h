@@ -61,6 +61,13 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Test if theta and phi (in degree) are within the range of the axis - the second value is required
   virtual bool InRange(double Theta, double Phi) const;
   
+  //! True if the axis has 1D bin edges
+  virtual bool Has1DBinEdges() { return false; }
+  //! Get the 1D bin edges
+  //! Check with Has1DBinEdges first, because this is not guaranteed
+  virtual vector<double> Get1DBinEdges() { return vector<double>(); }
+  
+  
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;
   //! Return the minimum axis values

@@ -77,6 +77,12 @@ class MResponseMatrixAxis
   //! Test if the x-value is within the range of the axis - the second value in always ignored
   virtual bool InRange(double X1, double X2 = g_DoubleNotDefined) const;
   
+  //! True if the axis has 1D bin edges
+  virtual bool Has1DBinEdges() { return true; }
+  //! Get the 1D bin edges
+  //! Check with Has1DBinEdges first, because this is not guaranteed
+  virtual vector<double> Get1DBinEdges() { return m_BinEdges; }
+  
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;
   //! Return the axis names
