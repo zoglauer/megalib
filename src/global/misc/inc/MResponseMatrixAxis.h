@@ -70,9 +70,13 @@ class MResponseMatrixAxis
   //! Return the number of axis bins
   virtual unsigned int GetNumberOfBins() const { if (m_BinEdges.size() <= 1) { return 0; } else { return m_BinEdges.size() - 1; } }
   //! Return the axis bin given a axis value
-  //! Can throw MExceptionArbitrary, MExceptionValueOutOfBounds, MExceptionIndexOutOfBounds
+  //! Can throw: MExceptionArbitrary, MExceptionValueOutOfBounds, MExceptionIndexOutOfBounds
   //! To avoid any exceptions, call InRange() first!
   virtual unsigned int GetAxisBin(double X1, double X2 = g_DoubleNotDefined) const;
+  
+  //! Return the area of the given axis bin
+  //! Can throw: MExceptionIndexOutOfBounds
+  virtual double GetArea(unsigned int Bin) const;
   
   //! Test if the x-value is within the range of the axis - the second value in always ignored
   virtual bool InRange(double X1, double X2 = g_DoubleNotDefined) const;

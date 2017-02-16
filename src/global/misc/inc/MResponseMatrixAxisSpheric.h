@@ -67,6 +67,8 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Check with Has1DBinEdges first, because this is not guaranteed
   virtual vector<double> Get1DBinEdges() { return vector<double>(); }
   
+  //! Return the area of the given axis bin
+  virtual double GetArea(unsigned int Bin) const;
   
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;

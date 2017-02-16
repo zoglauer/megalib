@@ -115,6 +115,16 @@ unsigned int MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) co
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the area of the given axis bin
+double MResponseMatrixAxisSpheric::GetArea(unsigned int Bin) const
+{
+  return 4*c_Pi/m_Binner.GetNBins() * c_Deg*c_Deg;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return the axis bins for drawing --- those might be narrower than the real bins
 vector<vector<double>> MResponseMatrixAxisSpheric::GetDrawingAxisBinEdges() const
 {

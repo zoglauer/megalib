@@ -216,6 +216,20 @@ unsigned int MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the area of the given axis bin
+double MResponseMatrixAxis::GetArea(unsigned int Bin) const
+{
+  if (Bin >= m_BinEdges.size() - 1) {
+    throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
+  }
+  
+  return m_BinEdges[Bin+1] - m_BinEdges[Bin];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Test if the x-value is within the range of the axis
 bool MResponseMatrixAxis::InRange(double X1, double X2) const
 {

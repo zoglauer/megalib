@@ -96,7 +96,7 @@ class MResponseMatrixON : public MResponseMatrix
   
   //! Set the bin content
   //! Throw exception "" when out of bounds
-  void SetBinContent(vector<unsigned int> AxisBins, float Value = 1);
+  void Set(vector<unsigned int> AxisBins, float Value = 1);
   //! Find the bin and set the value
   //! Throws exception
   void Set(vector<double> AxisValues, float Value = 1);
@@ -106,10 +106,10 @@ class MResponseMatrixON : public MResponseMatrix
   
   // Interface to retrieve the content
 
+  //! Get the area of a bin corresponding to the specific value
+  virtual float GetArea(vector<double> AxisValues) const;
   //! Get the content of a specific bin 
-  virtual float GetBinContent(vector<unsigned int> AxisBins) const;
-  //! Get the area of a bin
-  //virtual float GetBinArea(vector<unsigned int> AxisBins) const;
+  virtual float Get(vector<unsigned int> AxisBins) const;
   //! Get the content of the bin corresponding to the specific value
   virtual float Get(vector<double> AxisValues) const;
   //! Get the interpolated content of the bin corresponding to the specific value
@@ -153,6 +153,8 @@ class MResponseMatrixON : public MResponseMatrix
   unsigned int FindBin(vector<unsigned int> X) const;
   //! Find the bin of m_Values corresponding to the axis values X
   unsigned int FindBin(vector<double> X) const;
+  //! Find the axes bins corresponding to the axis values X
+  vector<unsigned int> FindBins(vector<double> X) const;
   //! Find the axes bins corresponding to the internal value bin Bin
   vector<unsigned int> FindBins(unsigned int Bin) const;
     
