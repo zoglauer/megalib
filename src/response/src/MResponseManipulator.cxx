@@ -771,6 +771,9 @@ bool MResponseManipulator::Join()
   Types.push_back(".t.stop.bad.rsp");
   Types.push_back(".t.dual.good.rsp");
   Types.push_back(".t.dual.bad.rsp");
+ 
+  Types.push_back(".quality.good.rsp");
+  Types.push_back(".quality.bad.rsp");
   
   Types.push_back(".dualseparable.yes.rsp");
   Types.push_back(".dualseparable.no.rsp");
@@ -790,6 +793,10 @@ bool MResponseManipulator::Join()
   Types.push_back("efficiency.90y.rsp");
   Types.push_back("efficiency.90z.90y.rsp");
   Types.push_back("efficiency.detector.rsp");
+
+  Types.push_back("binnedimaging.imagingresponse.rsp");
+  Types.push_back("binnedimaging.exposure.rsp");
+  Types.push_back("binnedimaging.energyresponse.rsp");
 
   FindFiles(m_Prefix, Types);
   
