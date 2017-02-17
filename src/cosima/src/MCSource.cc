@@ -691,6 +691,58 @@ string MCSource::GetSpectralTypeAsString() const
 
 
 /******************************************************************************
+ * Return the name of the spectrum (e.g. mono, etc.)
+ */
+string MCSource::GetSpectralAsString() const
+{
+  ostringstream Name;
+
+  switch (m_SpectralType) {
+  case c_Map:
+    Name<<"Map";
+    break;
+  case c_Monoenergetic:
+    Name<<"Mono "<<m_EnergyParam1/keV;
+    break;
+  case c_Linear:
+    Name<<"Linear "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV;
+    break;
+  case c_PowerLaw:
+    Name<<"PowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
+    break;
+  case c_BrokenPowerLaw:
+    Name<<"BrokenPowerLaw "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5;
+    break;
+  case c_Gaussian:
+    Name<<"Gaussian "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3;
+    break;
+  case c_ThermalBremsstrahlung:
+    Name<<"ThermalBremsstrahlung "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV;
+    break;
+  case c_BlackBody:
+    Name<<"BlackBody "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3/keV;
+    break;
+  case c_BandFunction:
+    Name<<"BandFunction "<<m_EnergyParam1/keV<<" "<<m_EnergyParam2/keV<<" "<<m_EnergyParam3<<" "<<m_EnergyParam4<<" "<<m_EnergyParam5/keV;
+    break;
+  case c_FileDifferentialFlux:
+    Name<<"FileDifferentialFlux";
+    break;
+  case c_Activation:
+    Name<<"Activation";
+    break;
+  case c_NormalizedEnergyBeamFluxFunction:
+    Name<<"NormalizedEnergyBeamFluxFunction";
+    break;
+  default:
+    break;
+  }
+  
+  return Name.str();
+}
+
+
+/******************************************************************************
  * Return true, if the coordinate system could be set correctly
  */
 bool MCSource::SetCoordinateSystem(const int& CoordinateSystem)
@@ -947,6 +999,100 @@ string MCSource::GetBeamTypeAsString() const
   }
 
   return Name;
+}
+
+
+/******************************************************************************
+ * Return the name of the beam in similar format as given in the source file
+ */
+string MCSource::GetBeamAsString() const
+{
+  ostringstream Name;
+
+  switch (m_BeamType) {
+  case c_NearFieldPoint:
+    Name<<"PointSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm;
+    break;
+  case c_NearFieldLine:
+    Name<<"LineSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldBox:
+    Name<<"Box "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldDisk:
+    Name<<"Disk "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4<<" "<<m_PositionParam5<<" "<<m_PositionParam6<<" "<<m_PositionParam7/cm<<" "<<m_PositionParam8/cm<<" "<<m_PositionParam9/cm<<" "<<m_PositionParam10/deg<<" "<<m_PositionParam11/deg;
+    break;
+  case c_NearFieldSphere:
+    Name<<"Sphere "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldBeam:
+    Name<<"HomogeneousBeam "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4<<" "<<m_PositionParam5<<" "<<m_PositionParam6<<" "<<m_PositionParam7/cm;
+    break;
+  case c_NearFieldActivation:
+    Name<<"Activation";
+    break;
+  case c_NearFieldRestrictedPoint:
+    Name<<"RestrictedPointSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm;
+    break;
+  case c_NearFieldRestrictedLine:
+    Name<<"RestrictedLineSource "<<m_PositionParam1/cm<<" "<<m_PositionParam2/cm<<" "<<m_PositionParam3/cm<<" "<<m_PositionParam4/cm<<" "<<m_PositionParam5/cm<<" "<<m_PositionParam6/cm;
+    break;
+  case c_NearFieldDiffractionPoint:
+    Name<<"DiffractionPointSource";
+    break;
+  case c_NearFieldDiffractionPointKSpace:
+    Name<<"DiffractionPointKSpace";
+    break;
+  case c_NearFieldBeam1DProfile:
+    Name<<"RadialProfileBeam";
+    break;
+  case c_NearFieldBeam2DProfile:
+    Name<<"MapProfileBeam";
+    break;
+  case c_NearFieldConeBeam:
+    Name<<"ConeBeam";
+    break;
+  case c_NearFieldConeBeamGauss:
+    Name<<"GaussianConeBeam";
+    break;
+  case c_NearFieldFanBeam:
+    Name<<"FanBeam";
+    break;
+  case c_NearFieldIlluminatedDisk:
+    Name<<"IlluminatedDisk";
+    break;
+  case c_NearFieldIlluminatedSquare:
+    Name<<"IlluminatedSquare";
+    break;
+  case c_NearFieldVolume:
+    Name<<"Volume";
+    break;
+  case c_NearFieldFlatMap:
+    Name<<"Map";
+    break;
+  case c_NearFieldReverseDirectionToPredecessor:
+    Name<<"ReverseDirectionToPredecessor";
+    break;
+  case c_FarFieldPoint:
+    Name<<"FarFieldPointSource "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg;
+    break;
+  case c_FarFieldArea:
+    Name<<"FarFieldAreaSource "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg<<" "<<m_PositionParam3/deg<<" "<<m_PositionParam4/deg;
+    break;
+  case c_FarFieldGaussian:
+    Name<<"FarFieldGaussian "<<m_PositionParam1/deg<<" "<<m_PositionParam2/deg<<" "<<m_PositionParam3/deg;
+    break;
+  case c_FarFieldFileZenithDependent:
+    Name<<"FarFieldFileZenithDependent";
+    break;
+  case c_FarFieldNormalizedEnergyBeamFluxFunction:
+    Name<<"FarFieldNormalizedEnergyBeamFluxFunction";
+    break;
+  default:
+    break;
+  }
+
+  return Name.str();
 }
 
 

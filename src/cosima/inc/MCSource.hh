@@ -277,8 +277,12 @@ public:
   /// Generate an inititial polarization in the particle gun
   bool GeneratePolarization(G4GeneralParticleSource* Gun);
 
-  /// Return the name of the beam (e.g. FarFieldAreaSource)
+  /// Return the beam as string
+  string GetBeamAsString() const;
+  /// Return the type of the beam (e.g. FarFieldAreaSource)
   string GetBeamTypeAsString() const;
+  /// Return the spectrum as string
+  string GetSpectralAsString() const;
   /// Return the name of the spectrum (e.g. mono, etc.)
   string GetSpectralTypeAsString() const;
   /// Return the name of the polarization type

@@ -233,13 +233,13 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
   }
   
   if (SameBeamType == true) {
-    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamTypeAsString()<<endl;
+    Out<<"BeamType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetBeamAsString()<<endl;
   } else {
     Out<<"BeamType Multiple"<<endl;
   }
   
   if (SameSpectralType == true) {
-    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralTypeAsString()<<endl;
+    Out<<"SpectralType "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetSpectralAsString()<<endl;
   } else {
     Out<<"SpectralType Multiple"<<endl;
   }
