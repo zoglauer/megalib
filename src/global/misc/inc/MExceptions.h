@@ -409,7 +409,7 @@ public:
   virtual const char* what() const throw() {
     if (m_IsEmpty == false) {
       ostringstream stream;
-      if (m_Description == "") {
+      if (m_Description != "") {
         stream<<"An exception was triggered: "<<endl;
         stream<<m_Description<<endl;
       } else {
