@@ -1,5 +1,5 @@
 /*
- * MResponseImagingBinnedMode.cxx
+ * MResponseEventQuality.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MResponseImagingBinnedMode
+// MResponseEventQuality
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MResponseImagingBinnedMode.h"
+#include "MResponseEventQuality.h"
 
 // Standard libs:
 #include <vector>
@@ -43,7 +43,7 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MResponseImagingBinnedMode)
+ClassImp(MResponseEventQuality)
 #endif
 
 
@@ -51,9 +51,9 @@ ClassImp(MResponseImagingBinnedMode)
 
 
 //! Default constructor
-MResponseImagingBinnedMode::MResponseImagingBinnedMode()
+MResponseEventQuality::MResponseEventQuality()
 {
-  m_ResponseNameSuffix = "binnedimaging";
+  // Intentionally left empty - call Initialize for initialization
 }
 
 
@@ -61,7 +61,7 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode()
 
 
 //! Default destructor
-MResponseImagingBinnedMode::~MResponseImagingBinnedMode()
+MResponseEventQuality::~MResponseEventQuality()
 {
   // Nothing to delete
 }
@@ -71,7 +71,7 @@ MResponseImagingBinnedMode::~MResponseImagingBinnedMode()
 
 
 //! Initialize the response matrices and their generation
-bool MResponseImagingBinnedMode::Initialize()
+bool MResponseEventQuality::Initialize()
 {
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
@@ -79,12 +79,6 @@ bool MResponseImagingBinnedMode::Initialize()
   int AngleBinWidth = 5;
   int AngleBins = 4*c_Pi*c_Deg*c_Deg / AngleBinWidth / AngleBinWidth;
 
-  MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
-  AxisEnergyInitial.SetLinear(1, 0, 2000);
-  
-  MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
-  AxisSkyCoordinates.SetFISBEL(AngleBins);
-  
   MResponseMatrixAxis AxisEnergyMeasured("Measured energy [keV]");
   AxisEnergyMeasured.SetLinear(1, 0, 2000);
 
@@ -94,36 +88,21 @@ bool MResponseImagingBinnedMode::Initialize()
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
   AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
   
-  m_ImagingResponse.SetName("7D imaging response");
-  m_ImagingResponse.AddAxis(AxisEnergyInitial);
-  m_ImagingResponse.AddAxis(AxisSkyCoordinates);
-  m_ImagingResponse.AddAxis(AxisEnergyMeasured);
-  m_ImagingResponse.AddAxis(AxisPhi);
-  m_ImagingResponse.AddAxis(AxisScatteredGammaRayCoordinates);
-   if (m_SiReader != nullptr) {
-    m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  m_GoodQuality.SetName("Event quality -- good events");
+  m_GoodQuality.AddAxis(AxisEnergyMeasured);
+  m_GoodQuality.AddAxis(AxisPhi);
+  m_GoodQuality.AddAxis(AxisScatteredGammaRayCoordinates);
+  if (m_SiReader != nullptr) {
+    m_GoodQuality.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
   
-  m_Exposure.SetName("Exposure");
-  m_Exposure.AddAxis(AxisEnergyInitial);
-  m_Exposure.AddAxis(AxisSkyCoordinates);
+  m_BadQuality.SetName("Event quality -- good events");
+  m_BadQuality.AddAxis(AxisEnergyMeasured);
+  m_BadQuality.AddAxis(AxisPhi);
+  m_BadQuality.AddAxis(AxisScatteredGammaRayCoordinates);
   if (m_SiReader != nullptr) {
-    m_Exposure.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-  }
-  
-  MResponseMatrixAxis AxisEnergyInitialFine("Initial energy [keV]");
-  AxisEnergyInitialFine.SetLogarithmic(500, 1, 20000);
-  
-  MResponseMatrixAxis AxisEnergyMeasuredFine("Measured energy [keV]");
-  AxisEnergyMeasuredFine.SetLogarithmic(200, 1, 2000);
-
-  m_EnergyResponse.SetName("Energy response");
-  m_EnergyResponse.AddAxis(AxisEnergyInitialFine);
-  m_EnergyResponse.AddAxis(AxisSkyCoordinates);
-  m_EnergyResponse.AddAxis(AxisEnergyMeasuredFine);
-  if (m_SiReader != nullptr) {
-    m_EnergyResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
-  }
+    m_BadQuality.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }   
   
   return true;
 }
@@ -133,7 +112,7 @@ bool MResponseImagingBinnedMode::Initialize()
 
 
 //! Analyze the current event
-bool MResponseImagingBinnedMode::Analyze() 
+bool MResponseEventQuality::Analyze() 
 { 
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
@@ -186,18 +165,18 @@ bool MResponseImagingBinnedMode::Analyze()
   // Now get the origin information
   MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
   IdealOriginDir = Rotation*IdealOriginDir;
-  double Lambda = IdealOriginDir.Phi()*c_Deg;
-  while (Lambda < -180) Lambda += 360.0;
-  while (Lambda > +180) Lambda -= 360.0;
+  //double Lambda = IdealOriginDir.Phi()*c_Deg;
+  //while (Lambda < -180) Lambda += 360.0;
+  //while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
-  double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
-  
+  //double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
   
   // And fill the matrices
-  m_ImagingResponse.Add( { EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi } );
-  m_Exposure.Add( { EnergyInitial, Nu, Lambda } );
-  m_EnergyResponse.Add( { EnergyInitial, Nu, Lambda, EnergyMeasured } );
-            
+  if (Nu < 60) {
+    m_GoodQuality.Add( { EnergyMeasured, Phi, Psi, Chi } );
+  } else if (Nu > 80) {
+    m_BadQuality.Add( { EnergyMeasured, Phi, Psi, Chi } );
+  }
   
   return true;
 }
@@ -207,7 +186,7 @@ bool MResponseImagingBinnedMode::Analyze()
 
 
 //! Finalize the response generation (i.e. save the data a final time )
-bool MResponseImagingBinnedMode::Finalize() 
+bool MResponseEventQuality::Finalize() 
 { 
   return MResponseBuilder::Finalize(); 
 }
@@ -217,22 +196,21 @@ bool MResponseImagingBinnedMode::Finalize()
 
 
 //! Save the responses
-bool MResponseImagingBinnedMode::Save()
+bool MResponseEventQuality::Save()
 {
-  MResponseBuilder::Save(); 
+  MTimer T;
   
-  m_ImagingResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_ImagingResponse.Write(GetFilePrefix() + ".imagingresponse" + m_Suffix, true);
+  m_GoodQuality.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_GoodQuality.Write(m_ResponseName + ".quality.good" + m_Suffix, true);
   
-  m_Exposure.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_Exposure.Write(GetFilePrefix() + ".exposure" + m_Suffix, true);
+  m_BadQuality.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_BadQuality.Write(m_ResponseName + ".quality.bad" + m_Suffix, true);
   
-  m_EnergyResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyResponse.Write(GetFilePrefix() + ".energyresponse" + m_Suffix, true);
+  cout<<"Time spent saving data: "<<T.GetElapsed()<<" seconds"<<endl;
   
   return true;
 }
 
 
-// MResponseImagingBinnedMode.cxx: the end...
+// MResponseEventQuality.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -109,7 +109,7 @@ ostream& operator<<(ostream& os, Quadruple& T)
 //! Default contructor
 MResponseTracking::MResponseTracking()
 {
-  // Intentionally left empty - call Initialize for initialization
+  m_ResponseNameSuffix = "t";
 }
 
 
@@ -461,19 +461,21 @@ bool MResponseTracking::Finalize()
 //! Save the responses
 bool MResponseTracking::Save()
 {
-  m_GoodBadTable.Write(m_ResponseName + ".t.goodbad" + m_Suffix, true);
+  MResponseBuilder::Save();
   
-  m_PdfStartGood.Write(m_ResponseName + ".t.start.good" + m_Suffix, true);
-  m_PdfStartBad.Write(m_ResponseName + ".t.start.bad" + m_Suffix, true);
+  m_GoodBadTable.Write(GetFilePrefix() + ".goodbad" + m_Suffix, true);
   
-  m_PdfDualGood.Write(m_ResponseName + ".t.dual.good" + m_Suffix, true);
-  m_PdfDualBad.Write(m_ResponseName + ".t.dual.bad" + m_Suffix, true);
+  m_PdfStartGood.Write(GetFilePrefix() + ".start.good" + m_Suffix, true);
+  m_PdfStartBad.Write(GetFilePrefix() + ".start.bad" + m_Suffix, true);
+  
+  m_PdfDualGood.Write(GetFilePrefix() + ".dual.good" + m_Suffix, true);
+  m_PdfDualBad.Write(GetFilePrefix() + ".dual.bad" + m_Suffix, true);
 
-  m_PdfGood.Write(m_ResponseName + ".t.central.good" + m_Suffix, true);
-  m_PdfBad.Write(m_ResponseName + ".t.central.bad" + m_Suffix, true);
+  m_PdfGood.Write(GetFilePrefix() + ".central.good" + m_Suffix, true);
+  m_PdfBad.Write(GetFilePrefix() + ".central.bad" + m_Suffix, true);
 
-  m_PdfStopGood.Write(m_ResponseName + ".t.stop.good" + m_Suffix, true);
-  m_PdfStopBad.Write(m_ResponseName + ".t.stop.bad" + m_Suffix, true);
+  m_PdfStopGood.Write(GetFilePrefix() + ".stop.good" + m_Suffix, true);
+  m_PdfStopBad.Write(GetFilePrefix() + ".stop.bad" + m_Suffix, true);
 
   return true;
 }

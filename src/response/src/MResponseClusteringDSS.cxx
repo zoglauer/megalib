@@ -59,7 +59,7 @@ ClassImp(MResponseClusteringDSS)
 //! Default constructor
 MResponseClusteringDSS::MResponseClusteringDSS() : MResponseBuilder()
 {
-  // Intentionally left empty - call Initialize for initialization
+  m_ResponseNameSuffix = "clustering";
 }
 
 
@@ -251,10 +251,12 @@ bool MResponseClusteringDSS::Finalize()
 //! Save the data
 bool MResponseClusteringDSS::Save()
 {
-  m_SeparableYes.Write(m_ResponseName + ".allseparable.yes" + m_Suffix, true);
-  m_SeparableNo.Write(m_ResponseName + ".allseparable.no" + m_Suffix, true);
-  m_DualSeparableYes.Write(m_ResponseName + ".dualseparable.yes" + m_Suffix, true);
-  m_DualSeparableNo.Write(m_ResponseName + ".dualseparable.no" + m_Suffix, true);
+  MResponseBuilder::Save(); 
+
+  m_SeparableYes.Write(GetFilePrefix() + ".allseparable.yes" + m_Suffix, true);
+  m_SeparableNo.Write(GetFilePrefix() + ".allseparable.no" + m_Suffix, true);
+  m_DualSeparableYes.Write(GetFilePrefix() + ".dualseparable.yes" + m_Suffix, true);
+  m_DualSeparableNo.Write(GetFilePrefix() + ".dualseparable.no" + m_Suffix, true);
 
   return true;
 }

@@ -254,7 +254,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       m_DividendFileName = argv[++i];
       m_DivisorFileName = argv[++i];
       m_Probability = true;
-      cout<<"Accepting file names for probability: "<<m_DividendFileName<<"/("<<m_DividendFileName<<"+"<<m_DivisorFileName<<")"<<endl;
+      cout<<"Accepting file names for probability operation: "<<m_DividendFileName<<" / ("<<m_DividendFileName<<" + "<<m_DivisorFileName<<")"<<endl;
     } else if (Option == "-j") {
       m_Prefix = argv[++i];
       m_Join = true;
@@ -816,7 +816,10 @@ bool MResponseManipulator::Divide()
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
     mout<<"Cannot append file, because they are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /= 
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+    } else if (Zahler->GetOrder() == 1) {
       *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
         *dynamic_cast<MResponseMatrixO1*>(Nenner);
     } else if (Zahler->GetOrder() == 2) {
@@ -897,7 +900,11 @@ bool MResponseManipulator::Ratio()
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
     mout<<"Cannot append file, because they are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /= 
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+      *dynamic_cast<MResponseMatrixO1*>(Zahler) *= SumNenner/SumZahler;
+    } else if (Zahler->GetOrder() == 1) {
       *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
         *dynamic_cast<MResponseMatrixO1*>(Nenner);
       *dynamic_cast<MResponseMatrixO1*>(Zahler) *= SumNenner/SumZahler;
@@ -992,7 +999,12 @@ bool MResponseManipulator::Probability()
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
     mout<<"Cannot calculate the probability, because the response files are of different order!"<<endl;
   } else {
-    if (Zahler->GetOrder() == 1) {
+    if (dynamic_cast<MResponseMatrixON*>(Zahler) != nullptr) {
+      *dynamic_cast<MResponseMatrixON*>(Nenner) += 
+        *dynamic_cast<MResponseMatrixON*>(Zahler);
+      *dynamic_cast<MResponseMatrixON*>(Zahler) /= 
+        *dynamic_cast<MResponseMatrixON*>(Nenner);
+    } else if (Zahler->GetOrder() == 1) {
       *dynamic_cast<MResponseMatrixO1*>(Nenner) += 
         *dynamic_cast<MResponseMatrixO1*>(Zahler);
       *dynamic_cast<MResponseMatrixO1*>(Zahler) /= 
@@ -1082,7 +1094,8 @@ bool MResponseManipulator::Probability()
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  if (m_FileName == "") m_FileName = "Probability.rsp";
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 

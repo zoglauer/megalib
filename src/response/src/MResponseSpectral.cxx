@@ -53,7 +53,7 @@ ClassImp(MResponseSpectral)
 //! Default constructor
 MResponseSpectral::MResponseSpectral()
 {
-  // Intentionally left empty - call Initialize for initialization
+  m_ResponseNameSuffix = "energy";
 }
 
 
@@ -220,27 +220,26 @@ bool MResponseSpectral::Finalize()
 //! Save the responses
 bool MResponseSpectral::Save()
 {
-  MTimer T;
+  MResponseBuilder::Save(); 
+
   
   m_EnergyBeforeER.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyBeforeER.Write(m_ResponseName + ".energy.beforeeventreconstruction" + m_Suffix, true);
+  m_EnergyBeforeER.Write(GetFilePrefix() + ".beforeeventreconstruction" + m_Suffix, true);
   
   m_EnergyUnselected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyUnselected.Write(m_ResponseName + ".energy.mimrecunselected" + m_Suffix, true);
+  m_EnergyUnselected.Write(GetFilePrefix() + ".mimrecunselected" + m_Suffix, true);
   
   m_EnergySelected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergySelected.Write(m_ResponseName + ".energy.mimrecselected" + m_Suffix, true);
+  m_EnergySelected.Write(GetFilePrefix() + ".mimrecselected" + m_Suffix, true);
   
   m_EnergyRatioBeforeER.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyRatioBeforeER.Write(m_ResponseName + ".energyratio.beforeeventreconstruction" + m_Suffix, true);
+  m_EnergyRatioBeforeER.Write(GetFilePrefix() + ".ratio.beforeeventreconstruction" + m_Suffix, true);
   
   m_EnergyRatioUnselected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyRatioUnselected.Write(m_ResponseName + ".energyratio.mimrecunselected" + m_Suffix, true);
+  m_EnergyRatioUnselected.Write(GetFilePrefix() + ".ratio.mimrecunselected" + m_Suffix, true);
   
   m_EnergyRatioSelected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyRatioSelected.Write(m_ResponseName + ".energyratio.mimrecselected" + m_Suffix, true);
-  
-  cout<<"Time spent saving data: "<<T.GetElapsed()<<" seconds"<<endl;
+  m_EnergyRatioSelected.Write(GetFilePrefix() + ".ratio.mimrecselected" + m_Suffix, true);
   
   return true;
 }

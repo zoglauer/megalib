@@ -100,11 +100,13 @@ class MResponseBuilder
  protected:
 
   //! Save the response matrices
-  virtual bool Save() { return false; }
+  virtual bool Save();
 
   //! Load the geometry, return 0 on failure
   MGeometryRevan* LoadGeometry(bool ActivateNoise, double GlobalFailureRate);
 
+  //! Get the output file prefix
+  MString GetFilePrefix() const;
 
   //! Initialize the next sivan/revan matching event for response creation
   bool InitializeNextMatchingEvent();
@@ -156,6 +158,8 @@ class MResponseBuilder
   MString m_GeometryFileName;
   //! Name of the response
   MString m_ResponseName;
+  //! A lower case response suffix unique for all response names, which is added to the file names
+  MString m_ResponseNameSuffix;
 
   //! Revan settings file name
   MString m_RevanSettingsFileName;

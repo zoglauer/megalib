@@ -63,6 +63,7 @@ MResponseBuilder::MResponseBuilder()
   m_DataFileName = g_StringNotDefined;
   m_GeometryFileName = g_StringNotDefined;
   m_ResponseName = g_StringNotDefined;
+  m_ResponseNameSuffix = "";
 
   m_StartEventID = 0;
   m_MaxNEvents = numeric_limits<unsigned int>::max();
@@ -210,6 +211,39 @@ bool MResponseBuilder::Finalize()
   if (Save() == false) return false;
   
   return true; 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the output file prefix
+MString MResponseBuilder::GetFilePrefix() const
+{
+  MString Prefix = m_ResponseName;
+  if (m_ResponseNameSuffix != "") {
+    Prefix += ".";
+    Prefix += m_ResponseNameSuffix;
+  }
+  
+  return Prefix;
+}
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Save the response matrices
+bool MResponseBuilder::Save() 
+{ 
+  if (m_RevanSettingsFileName != "") {
+    m_RevanSettings.Write(GetFilePrefix() + ".revan.cfg");
+  }
+  if (m_MimrecSettingsFileName != "") {
+    m_MimrecSettings.Write(GetFilePrefix() + ".mimrec.cfg");
+  }
+  
+  return false; 
 }
 
 

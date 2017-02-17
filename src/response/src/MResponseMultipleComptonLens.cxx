@@ -61,7 +61,9 @@ ClassImp(MResponseMultipleComptonLens)
 MResponseMultipleComptonLens::MResponseMultipleComptonLens()
 {
   // Construct an instance of MResponseMultipleComptonLens
-
+  
+  m_ResponseNameSuffix = "lmc";
+  
   m_IsLensOrigin = true;
   m_LensCenter = g_VectorNotDefined;
   m_FocalSpotCenter = g_VectorNotDefined;
@@ -122,8 +124,10 @@ bool MResponseMultipleComptonLens::Initialize()
 
 bool MResponseMultipleComptonLens::Save()
 {
-  m_PdfFromLensGood.Write(m_ResponseName + ".lmc.good" + m_Suffix, true);
-  m_PdfFromLensBad.Write(m_ResponseName + ".lmc.bad" + m_Suffix, true);
+  MResponseBuilder::Save(); 
+
+  m_PdfFromLensGood.Write(GetFilePrefix() + ".good" + m_Suffix, true);
+  m_PdfFromLensBad.Write(GetFilePrefix() + ".bad" + m_Suffix, true);
 
   return true;
 }

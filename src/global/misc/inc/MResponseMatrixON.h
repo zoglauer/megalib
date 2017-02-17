@@ -47,9 +47,6 @@ class MResponseMatrixON : public MResponseMatrix
   MResponseMatrixON(const MString& Name);
   //! DEfault destructor
   virtual ~MResponseMatrixON();
-
-  //! Set the name of the matrix
-  //void SetName(const MString& Name) { m_Name = Name; }
   
   //! Add an axis
   void AddAxis(const MResponseMatrixAxis& Axis);

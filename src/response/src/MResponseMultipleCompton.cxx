@@ -55,7 +55,9 @@ ClassImp(MResponseMultipleCompton)
 
 //! Default constructor
 MResponseMultipleCompton::MResponseMultipleCompton()
-{
+{  
+  m_ResponseNameSuffix = "mc";
+  
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 5;
   m_CSRMaxLength = 7;
@@ -328,25 +330,27 @@ bool MResponseMultipleCompton::Initialize()
 //! Save the responses
 bool MResponseMultipleCompton::Save()
 {
-  m_GoodBadTable.Write(m_ResponseName + ".mc.goodbad" + m_Suffix, true);
+  MResponseBuilder::Save(); 
+
+  m_GoodBadTable.Write(GetFilePrefix() + ".goodbad" + m_Suffix, true);
   
-  m_PdfDualGood.Write(m_ResponseName + ".mc.dual.good" + m_Suffix, true);
-  m_PdfDualBad.Write(m_ResponseName + ".mc.dual.bad" + m_Suffix, true);
+  m_PdfDualGood.Write(GetFilePrefix() + ".dual.good" + m_Suffix, true);
+  m_PdfDualBad.Write(GetFilePrefix() + ".dual.bad" + m_Suffix, true);
   
-  m_PdfStartGood.Write(m_ResponseName + ".mc.start.good" + m_Suffix, true);
-  m_PdfStartBad.Write(m_ResponseName + ".mc.start.bad" + m_Suffix, true);
+  m_PdfStartGood.Write(GetFilePrefix() + ".start.good" + m_Suffix, true);
+  m_PdfStartBad.Write(GetFilePrefix() + ".start.bad" + m_Suffix, true);
   
-  m_PdfTrackGood.Write(m_ResponseName + ".mc.track.good" + m_Suffix, true);
-  m_PdfTrackBad.Write(m_ResponseName + ".mc.track.bad" + m_Suffix, true);
+  m_PdfTrackGood.Write(GetFilePrefix() + ".track.good" + m_Suffix, true);
+  m_PdfTrackBad.Write(GetFilePrefix() + ".track.bad" + m_Suffix, true);
   
-  m_PdfComptonGood.Write(m_ResponseName + ".mc.compton.good" + m_Suffix, true);
-  m_PdfComptonBad.Write(m_ResponseName + ".mc.compton.bad" + m_Suffix, true);
+  m_PdfComptonGood.Write(GetFilePrefix() + ".compton.good" + m_Suffix, true);
+  m_PdfComptonBad.Write(GetFilePrefix() + ".compton.bad" + m_Suffix, true);
   
-  m_PdfComptonScatterProbabilityGood.Write(m_ResponseName + ".mc.comptondistance.good" + m_Suffix, true);
-  m_PdfComptonScatterProbabilityBad.Write(m_ResponseName + ".mc.comptondistance.bad" + m_Suffix, true);
+  m_PdfComptonScatterProbabilityGood.Write(GetFilePrefix() + ".comptondistance.good" + m_Suffix, true);
+  m_PdfComptonScatterProbabilityBad.Write(GetFilePrefix() + ".comptondistance.bad" + m_Suffix, true);
       
-  m_PdfPhotoAbsorptionProbabilityGood.Write(m_ResponseName + ".mc.photodistance.good" + m_Suffix, true);
-  m_PdfPhotoAbsorptionProbabilityBad.Write(m_ResponseName + ".mc.photodistance.bad" + m_Suffix, true);
+  m_PdfPhotoAbsorptionProbabilityGood.Write(GetFilePrefix() + ".photodistance.good" + m_Suffix, true);
+  m_PdfPhotoAbsorptionProbabilityBad.Write(GetFilePrefix() + ".photodistance.bad" + m_Suffix, true);
       
   return true;
 }

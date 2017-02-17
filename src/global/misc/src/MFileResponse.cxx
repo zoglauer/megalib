@@ -95,7 +95,7 @@ bool MFileResponse::Open(MString FileName, unsigned int Way)
 
 
   if (MFile::Open(FileName, Way) == false) {
-    mlog<<"MFileResponse::Open: Unable to open file "<<FileName<<"."<<endl;
+    mlog<<"MFileResponse::Open: Unable to open file \""<<FileName<<"\"."<<endl;
     return false;
   }
 

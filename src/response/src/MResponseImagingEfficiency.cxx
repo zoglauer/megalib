@@ -54,7 +54,7 @@ ClassImp(MResponseImagingEfficiency)
 //! Default constructor
 MResponseImagingEfficiency::MResponseImagingEfficiency()
 {
-  // Intentionally left empty - call Initialize for initialization
+  m_ResponseNameSuffix = "efficiency";
 }
 
 
@@ -175,12 +175,14 @@ bool MResponseImagingEfficiency::Finalize()
 //! Save the responses
 bool MResponseImagingEfficiency::Save()
 {
+  MResponseBuilder::Save(); 
+
   m_Efficiency1.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Efficiency2.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_DetectionEfficiency.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_Efficiency1.Write(m_ResponseName + ".efficiency.90y" + m_Suffix, true);
-  m_Efficiency2.Write(m_ResponseName + ".efficiency.90z.90y" + m_Suffix, true);
-  m_DetectionEfficiency.Write(m_ResponseName + ".efficiency.detection" + m_Suffix, true);
+  m_Efficiency1.Write(GetFilePrefix() + ".90y" + m_Suffix, true);
+  m_Efficiency2.Write(GetFilePrefix() + ".90z.90y" + m_Suffix, true);
+  m_DetectionEfficiency.Write(GetFilePrefix() + ".detection" + m_Suffix, true);
 
   return true;
 }

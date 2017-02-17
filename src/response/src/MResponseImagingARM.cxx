@@ -51,7 +51,7 @@ ClassImp(MResponseImagingARM)
 //! Default constructor
 MResponseImagingARM::MResponseImagingARM()
 {
-  // Intentionally left empty - call Initialize for initialization
+  m_ResponseNameSuffix = "imagingarm";
 }
 
 
@@ -206,8 +206,10 @@ bool MResponseImagingARM::Finalize()
 //! Save the responses
 bool MResponseImagingARM::Save()
 {
-  m_Arm.Write(m_ResponseName + ".arm.allenergies" + m_Suffix, true);
-  m_ArmPhotoPeak.Write(m_ResponseName + ".arm.photopeak" + m_Suffix, true);
+  MResponseBuilder::Save(); 
+
+  m_Arm.Write(GetFilePrefix() + ".allenergies" + m_Suffix, true);
+  m_ArmPhotoPeak.Write(GetFilePrefix() + ".photopeak" + m_Suffix, true);
 
   return true;
 }

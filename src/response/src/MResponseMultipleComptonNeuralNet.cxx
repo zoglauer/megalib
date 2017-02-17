@@ -70,6 +70,8 @@ MResponseMultipleComptonNeuralNet::MResponseMultipleComptonNeuralNet()
 {
   // Construct an instance of MResponseMultipleComptonNeuralNet
   
+  m_ResponseNameSuffix = "nn";
+  
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 10;
   m_CSRMaxLength = 10;
@@ -340,8 +342,10 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
 
 bool MResponseMultipleComptonNeuralNet::Save()
 {
+  MResponseBuilder::Save(); 
+
   ofstream fout;
-  fout.open(m_ResponseName + ".nn.erm");
+  fout.open(GetFilePrefix() + ".erm");
   if (fout.is_open() == false) {
     mout<<"Unable to open file "<<m_ResponseName<<".nn.erm"<<endl;
     return false;
@@ -385,7 +389,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
       ostringstream out;
-      out<<m_ResponseName<<".e"<<e<<".s"<<i<<".seq.nn.rsp";
+      out<<GetFilePrefix()<<".e"<<e<<".s"<<i<<".seq.rsp";
       if (m_SequenceNNs[e][i].Save(out.str().c_str()) == false) {
         Return = false;
       }
@@ -395,7 +399,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
       ostringstream out;
-      out<<m_ResponseName<<".e"<<e<<".s"<<i<<".qual.nn.rsp";
+      out<<GetFilePrefix()<<".e"<<e<<".s"<<i<<".qual.rsp";
       if (m_QualityNNs[e][i].Save(out.str().c_str()) == false) {
         Return = false;
       }
@@ -418,7 +422,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
 bool MResponseMultipleComptonNeuralNet::SaveMatrixSequenceNN(unsigned int e, unsigned int s, MString Flag)
 {
   ostringstream out;
-  out<<m_ResponseName<<Flag<<".e"<<e<<".s"<<s<<".seq.nn.rsp";
+  out<<GetFilePrefix()<<Flag<<".e"<<e<<".s"<<s<<".seq.rsp";
   return m_SequenceNNs[e][s].Save(out.str().c_str());
 }
 
@@ -429,7 +433,7 @@ bool MResponseMultipleComptonNeuralNet::SaveMatrixSequenceNN(unsigned int e, uns
 bool MResponseMultipleComptonNeuralNet::SaveMatrixQualityNN(unsigned int e, unsigned int s, MString Flag)
 {
   ostringstream out;
-  out<<m_ResponseName<<Flag<<".e"<<e<<".s"<<s<<".qual.nn.rsp";
+  out<<GetFilePrefix()<<Flag<<".e"<<e<<".s"<<s<<".qual.rsp";
   return m_QualityNNs[e][s].Save(out.str().c_str());
 }
 

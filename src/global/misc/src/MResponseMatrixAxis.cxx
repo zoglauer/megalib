@@ -96,13 +96,13 @@ bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis)
 void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   if (Min >= Max) {
-    throw MExceptionArbitrary("Minimum is larger or equal Maximum"); 
+    throw MExceptionTestFailed("Minimum is larger or equal Maximum", Min, ">=", Max); 
   }
   if (UnderFlowMin != g_DoubleNotDefined && UnderFlowMin >= Min) {
-    throw MExceptionArbitrary("The underflow must be smaller than the minimum"); 
+    throw MExceptionTestFailed("The underflow must be smaller than the minimum", UnderFlowMin, ">=", Min); 
   }
   if (OverFlowMax != g_DoubleNotDefined && OverFlowMax <= Max) {
-    throw MExceptionArbitrary("The underflow must be smaller than the minimum"); 
+    throw MExceptionTestFailed("The overlow must be larger than the maximum", OverFlowMax, "<=", Max); 
   }
   
   m_BinEdges.clear();
@@ -142,14 +142,17 @@ void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, 
 //! Set the axis in logarithmic mode
 void MResponseMatrixAxis::SetLogarithmic(unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
+  if (Min <= 0) {
+    throw MExceptionTestFailed("The minimum must be larger than 0", Min, "<=", 0); 
+  }
   if (Min >= Max) {
-    throw MExceptionArbitrary("Minimum is larger or equal Maximum"); 
+    throw MExceptionTestFailed("Minimum is larger or equal Maximum", Min, ">=", Max); 
   }
   if (UnderFlowMin != g_DoubleNotDefined && UnderFlowMin >= Min) {
-    throw MExceptionArbitrary("The underflow must be smaller than the minimum"); 
+    throw MExceptionTestFailed("The underflow must be smaller than the minimum", UnderFlowMin, ">=", Min); 
   }
   if (OverFlowMax != g_DoubleNotDefined && OverFlowMax <= Max) {
-    throw MExceptionArbitrary("The underflow must be smaller than the minimum"); 
+    throw MExceptionTestFailed("The overlow must be larger than the maximum", OverFlowMax, "<=", Max); 
   }
   
   m_BinEdges.clear();

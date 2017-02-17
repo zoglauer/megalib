@@ -1,5 +1,5 @@
 /*
- * MResponseImagingBinnedMode.h
+ * MResponseEventQuality.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MResponseImagingBinnedMode__
-#define __MResponseImagingBinnedMode__
+#ifndef __MResponseEventQuality__
+#define __MResponseEventQuality__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,12 +31,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseImagingBinnedMode : public MResponseBuilder
+class MResponseEventQuality : public MResponseBuilder
 {
   // public interface:
  public:
-  MResponseImagingBinnedMode();
-  virtual ~MResponseImagingBinnedMode();
+  MResponseEventQuality();
+  virtual ~MResponseEventQuality();
 
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
@@ -62,12 +62,10 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
   // protected members:
  protected:
-  //! The imaging response 
-  MResponseMatrixON m_ImagingResponse;
-  // the exposure
-  MResponseMatrixON m_Exposure;
-  //! The fine energy response (fine than the one in imaging)
-  MResponseMatrixON m_EnergyResponse;
+  //! The event quality response --- good events 
+  MResponseMatrixON m_GoodQuality;
+  //! The event quality response --- bad events 
+  MResponseMatrixON m_BadQuality;
   
 
   // private members:
@@ -77,7 +75,7 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
 #ifdef ___CINT___
  public:
-  ClassDef(MResponseImagingBinnedMode, 0) // no description
+  ClassDef(MResponseEventQuality, 0) // no description
 #endif
 
 };

@@ -111,6 +111,7 @@ class MResponseCreator
   const static int c_ModeARM                       = 12;
   const static int c_ModeEfficiency                = 13;
   const static int c_ModeClusteringDSS             = 14;
+  const static int c_ModeEventQuality              = 15;
 
 #ifdef ___CINT___
  public:

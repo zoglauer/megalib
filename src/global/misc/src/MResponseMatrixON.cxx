@@ -388,7 +388,7 @@ bool MResponseMatrixON::InRange(vector<double> X) const
   // Check if the values are inside the range of all axes
   
   if (X.size() != m_Order) {
-    throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Order);
+    throw MExceptionTestFailed("The matrix dimension (input vs. internal) are not identical", X.size(), "!=", m_Order);
     return false;
   }
   
@@ -424,7 +424,7 @@ bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
   // Check if the values are inside the range of all axes
   
   if (Bins.size() != m_Axes.size()) {
-    throw MExceptionTestFailed("The axes sizes are not identical", Bins.size(), "!=", m_Axes.size());
+    throw MExceptionTestFailed("The axes sizes (input vs. internal) are not identical", Bins.size(), "!=", m_Axes.size());
     return false;
   }
   
@@ -1250,7 +1250,7 @@ MString MResponseMatrixON::GetStatistics() const
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     out<<"  x"<<a<<":  ";
     for (unsigned int i = 0; i < m_Axes[a]->GetNames().size(); ++i) {
-      out<<m_Axes[a]->GetNames()[i]<<" (from "<<m_Axes[a]->GetMinima()[i]<<" to "<<m_Axes[a]->GetMaxima()[i]<<")";
+      out<<m_Axes[a]->GetNames()[i]<<" (from "<<m_Axes[a]->GetMinima()[i]<<" to "<<m_Axes[a]->GetMaxima()[i]<<" with "<<m_Axes[a]->GetNumberOfBins()<<" bins)";
       if (m_Axes[a]->GetNames().size() > 1 && i < m_Axes[a]->GetNames().size() -1) out<<"  +  ";
     }
     out<<endl;

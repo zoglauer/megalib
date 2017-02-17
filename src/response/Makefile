@@ -37,6 +37,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 				$(LB)/MResponseImagingBinnedMode.o \
 				$(LB)/MResponseImagingCodedMask.o \
 				$(LB)/MResponseEarthHorizon.o \
+				$(LB)/MResponseEventQuality.o \
 
 
 OBJS = $(MOBJM) $(MOBJC) $(LOBJS)
