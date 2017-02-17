@@ -173,6 +173,14 @@ else
   commandhelp
   exit 1
 fi
+# Check if the source file is really a source file
+NUMBEROFRUNS=`cat ${SOURCE} | grep "^Run " | wc -l`
+if [[ ${NUMBEROFRUNS} == 0 ]]; then
+  echo " "
+  echo "ERROR: No runs found in the sim file ${SOURCE}"
+  commandhelp
+  exit 1
+fi
 
 if [[ ${PREFIX} != "" ]]; then
   echo " * Prefix to the output directory: ${PREFIX}"
