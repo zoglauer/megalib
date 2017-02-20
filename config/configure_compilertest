@@ -12,9 +12,10 @@ if ( [[ ${COMPILER} != g++ ]] && [[ ${COMPILER} != clang++ ]] && [[ ${COMPILER} 
   exit 1;
 fi
 
-if [[ -f xcode-select ]]; then
-  OUT=$(pkgutil --files com.apple.pkg.CLTools_Executables)
-  if [[ ${OUT} == No* ]]; then
+type xcode-select >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  OUT=$(pkgutil --files com.apple.pkg.CLTools_Executables 2>&1)
+  if [[ ${OUT} == No* ]] || [[ ${OUT} == "pkgutil: command not found" ]]; then
     echo "ERROR: You seem to be on macOS but the command line tools have not been installed completely"
     echo "       Please execute \"xcode-select --install\", open a new terminal, and try again to run this script"
     exit 1;
