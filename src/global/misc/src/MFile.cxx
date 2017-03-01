@@ -65,7 +65,7 @@ MFile::MFile()
 {
   // Construct an instance of MFile
 
-  m_Progress = 0;  
+  m_Progress = nullptr;
   m_ZipFile = 0;
   m_IsOpen = false;
   m_ReadLineBufferLength = 0;
@@ -82,12 +82,14 @@ MFile::~MFile()
   // Delete this instance of MFile
 
   Close();
-  
+
+  m_ProgressMutex.Lock();
   if (m_OwnProgress == true) {
     delete m_Progress;
   } else if (m_Progress != 0) {
     m_Progress->SetValue(0, m_ProgressLevel);
   }
+  m_ProgressMutex.UnLock();
 }
 
 
@@ -98,7 +100,7 @@ MFile::~MFile()
 void MFile::Reset()
 {
   // Close the file and set all values to default values
-  
+
   Close();
 
   m_FileName = "";
@@ -124,7 +126,7 @@ void MFile::Reset()
 
   m_UncompressedFileLength = 0;
   m_HasUncompressedFileLength = false;
-  
+
   // The maximum allowed file length
   m_MaxFileLength = numeric_limits<streamsize>::max()/100*95;
   //m_MaxFileLength = 100000;
@@ -141,7 +143,7 @@ void MFile::SetVersion(const int Version)
   m_Version = Version;
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -160,7 +162,7 @@ bool MFile::FileExists(const char* FileName)
 {
   // Check if the file exists:
 
-  return Exists(MString(FileName));  
+  return Exists(MString(FileName));
 }
 
 
@@ -172,9 +174,9 @@ bool MFile::Exists(MString FileName)
   // Check if the file exists:
 
   MFile::ExpandFileName(FileName);
-  if (FileName.Length() <= 1) return false; 
+  if (FileName.Length() <= 1) return false;
   if (FileName.EndsWith("/") == true) return false;
-  
+
   if (FileName == GetDirectoryName(FileName)) { // does not work in all cases..!
     return false;
   }
@@ -193,7 +195,7 @@ bool MFile::Exists(MString FileName)
     in.close();
     return false;
   }
-  
+
   // Check if we can read something
   if (Length > 0) {
     char c;
@@ -202,17 +204,17 @@ bool MFile::Exists(MString FileName)
       in.get(c);
     } catch (...) {
       in.close();
-      return false; 
+      return false;
     }
     if (in.good() == false) {
       in.close();
       return false;
     }
   }
-  
+
   in.close();
 
-  return true;  
+  return true;
 }
 
 
@@ -222,14 +224,14 @@ bool MFile::Exists(MString FileName)
 bool MFile::ApplyPath(MString& FileName, const MString& Path)
 {
   // Sets the path of "Path" as new path to "FileName"
-  
+
   if (gSystem->IsAbsoluteFileName(FileName) == true) return true;
 
   MString NewPath = Path;
   ExpandFileName(NewPath);
-  
-  MString DirName = GetDirectoryName(NewPath); 
-  
+
+  MString DirName = GetDirectoryName(NewPath);
+
   FileName = DirName + MString("/") + FileName;
 
   return true;
@@ -265,19 +267,19 @@ MString MFile::GetDirectoryName(const MString& Name)
   MString WorkingDir = "";
   MString FileName = Name;
 
-  ExpandFileName(FileName);  
+  ExpandFileName(FileName);
 
   MString WindowsDir = "";
   if (FileName.Length() >= 2 && FileName[1] == ':') {
-    WindowsDir = FileName.GetSubString(0, 2); 
+    WindowsDir = FileName.GetSubString(0, 2);
   }
   WorkingDir += gSystem->DirName(FileName);
-  
+
   // Some ROOT versions have a windows working dir bug:
   if (WindowsDir != "" && WorkingDir.BeginsWith(WindowsDir) == false) {
     WorkingDir = WindowsDir + WorkingDir;
   }
-  
+
   return WorkingDir;
 }
 
@@ -288,13 +290,13 @@ MString MFile::GetDirectoryName(const MString& Name)
 void MFile::ExpandFileName(MString& FileName, const MString& WorkingDir)
 {
   // Just in case: Expand file name:
-  
+
   // We have to switch to TString...
   TString Name(FileName.Data());
   gSystem->ExpandPathName(Name);
   gSystem->ExpandPathName(Name);
   FileName = Name;
-  
+
   // On Unix system we start always with a "/", on windows we have a : before the first "/" or "\"
   // Problem: What is with file:// something??
   if (FileName.BeginsWith("/") == false && FileName.BeginsWith("\\") == false && !(FileName.Length() >= 2 && FileName[1] == ':')) {
@@ -322,7 +324,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
 
   m_UncompressedFileLength = 0;
   m_HasUncompressedFileLength = false;
-  
+
   m_FileName = FileName;
   if (m_FileName == "") {
     mgui<<"You need to give a file name, before I can open a file."<<error;
@@ -336,19 +338,19 @@ bool MFile::Open(MString FileName, unsigned int Way)
   if (Way == c_Read) {
     if (Exists(m_FileName) == false) {
       mgui<<"This file does not exist: \""<<m_FileName<<"\""<<endl;
-      return false;      
+      return false;
     }
   }
-  
-  
+
+
   // If the file is zipped we have to unzip it
-  
+
   if (CheckFileExtension("gz") == true) {
     m_WasZipped = true;
   } else {
     m_WasZipped = false;
   }
-  
+
   if (m_WasZipped == true) {
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
@@ -375,7 +377,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // We are open now
   m_IsOpen = true;
   m_Way = Way;
-  
+
   return true;
 }
 
@@ -397,11 +399,15 @@ bool MFile::Rewind()
     m_File.clear();
     m_File.seekg(0);
   }
-  
-  if (m_Progress != 0) {
-    UpdateProgress();
+
+  m_ProgressMutex.Lock();
+  if (m_Progress != nullptr) {
+    m_ProgressMutex.UnLock();
+    UpdateProgress(); // Does its own lock
+    m_ProgressMutex.Lock();
     m_Progress->ResetTimer();
   }
+  m_ProgressMutex.UnLock();
 
   return true;
 }
@@ -423,12 +429,12 @@ bool MFile::Close()
   m_IsOpen = false;
 
   ShowProgress(false);
-  
+
   if (m_ReadLineBufferLength != 0) {
     delete [] m_ReadLineBuffer;
     m_ReadLineBufferLength = 0;
   }
-  
+
   return true;
 }
 
@@ -437,8 +443,8 @@ bool MFile::Close()
 
 
   //! Return true is the file is good
-bool MFile::IsGood() 
-{ 
+bool MFile::IsGood()
+{
   if (m_WasZipped == true) {
     return (gzeof(m_ZipFile) == 0 ? true : false);
   } else {
@@ -450,12 +456,12 @@ bool MFile::IsGood()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFile::Clear() 
-{ 
+void MFile::Clear()
+{
   if (m_WasZipped == true) {
     // Don't do anything...
   } else {
-    return m_File.clear(); 
+    return m_File.clear();
   }
 }
 
@@ -463,10 +469,10 @@ void MFile::Clear()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MFile::Seek(streampos Pos) 
-{ 
+void MFile::Seek(streampos Pos)
+{
   //! Seek the given position
-  
+
   if (m_WasZipped == true) {
     gzseek(m_ZipFile, Pos, SEEK_SET);
   } else {
@@ -479,8 +485,8 @@ void MFile::Seek(streampos Pos)
 
 
   //! Seek the given position
-void MFile::Seek(streamoff Offset, ios_base::seekdir Way) 
-{ 
+void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
+{
   if (m_WasZipped == true) {
     if (Way == ios_base::beg) {
       gzseek(m_ZipFile, (z_off_t) Offset, SEEK_SET);
@@ -490,7 +496,7 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
       gzseek(m_ZipFile, (z_off_t) Offset, SEEK_END);
     }
   } else {
-    m_File.seekg(Offset, Way); 
+    m_File.seekg(Offset, Way);
   }
 }
 
@@ -499,12 +505,12 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 
 
 //! Write some text and clear the stream
-void MFile::WriteLine() 
-{ 
+void MFile::WriteLine()
+{
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, "\n");
   } else {
-    m_File<<endl; 
+    m_File<<endl;
   }
 }
 
@@ -513,12 +519,12 @@ void MFile::WriteLine()
 
 
 //! Write some text and clear the stream
-void MFile::Write(const ostringstream& S) 
-{ 
+void MFile::Write(const ostringstream& S)
+{
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S.str().c_str());
   } else {
-    m_File<<S.str(); 
+    m_File<<S.str();
   }
 }
 
@@ -527,13 +533,13 @@ void MFile::Write(const ostringstream& S)
 
 
 //! Write some text and clear the stream
-void MFile::WriteLine(const ostringstream& S) 
-{ 
+void MFile::WriteLine(const ostringstream& S)
+{
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S.str().c_str());
     gzputs(m_ZipFile, "\n");
   } else {
-    m_File<<S.str()<<endl; 
+    m_File<<S.str()<<endl;
   }
 }
 
@@ -542,12 +548,12 @@ void MFile::WriteLine(const ostringstream& S)
 
 
 //! Write some text
-void MFile::Write(const MString& S) 
-{   
+void MFile::Write(const MString& S)
+{
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S);
   } else {
-    m_File<<S; 
+    m_File<<S;
   }
 }
 
@@ -556,12 +562,12 @@ void MFile::Write(const MString& S)
 
 
 //! Write some text
-void MFile::WriteLine(const MString& S) 
-{   
+void MFile::WriteLine(const MString& S)
+{
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S + "\n");
   } else {
-    m_File<<S<<endl; 
+    m_File<<S<<endl;
   }
 }
 
@@ -570,14 +576,14 @@ void MFile::WriteLine(const MString& S)
 
 
 //! Write some text
-void MFile::Write(const double d) 
-{   
+void MFile::Write(const double d)
+{
   if (m_WasZipped == true) {
     ostringstream out;
     out<<d;
     gzputs(m_ZipFile, out.str().c_str());
   } else {
-    m_File<<d; 
+    m_File<<d;
   }
 }
 
@@ -587,12 +593,12 @@ void MFile::Write(const double d)
 
 
 //! Write some text
-void MFile::Write(const char c) 
-{ 
+void MFile::Write(const char c)
+{
   if (m_WasZipped == true) {
     gzputc(m_ZipFile, c);
   } else {
-    m_File<<c; 
+    m_File<<c;
   }
 }
 
@@ -601,27 +607,27 @@ void MFile::Write(const char c)
 
 
 //! Flush all written text
-void MFile::Flush() 
-{ 
+void MFile::Flush()
+{
   if (m_WasZipped == true) {
     // We do not want to do this, since it degrades perfromance...
   } else {
     m_File<<flush;
   }
 }
- 
-  
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Get one character
-bool MFile::Get(char& c) 
-{ 
+bool MFile::Get(char& c)
+{
   if (IsGood() == false) return false;
 
-  if (m_WasZipped == true) {  
+  if (m_WasZipped == true) {
     c = '\0';
     int i = gzgetc(m_ZipFile);
     if (i == -1) {
@@ -636,7 +642,7 @@ bool MFile::Get(char& c)
     m_File.get(c);
     if (m_File.good() == false) return false;
   }
-  
+
   return true;
 }
 
@@ -645,11 +651,11 @@ bool MFile::Get(char& c)
 
 
 //! Get one float
-bool MFile::Get(float& f) 
-{ 
+bool MFile::Get(float& f)
+{
   if (IsGood() == false) return false;
 
-  if (m_WasZipped == true) {  
+  if (m_WasZipped == true) {
     f = 0;
     string temp;
     int i;
@@ -662,7 +668,7 @@ bool MFile::Get(float& f)
         }
         return false;
       }
-      if (i == ' ' || i == '\n' || i == '\0' || i == '\t') break; 
+      if (i == ' ' || i == '\n' || i == '\0' || i == '\t') break;
       temp += (char) i;
     }
     f = atof(temp.c_str());
@@ -670,7 +676,7 @@ bool MFile::Get(float& f)
     m_File>>f;
     if (m_File.good() == false) return false;
   }
-  
+
   return true;
 }
 
@@ -685,14 +691,14 @@ bool MFile::ReadLine(MString& String)
   if (IsGood() == false) return false;
 
   String.Clear();
-  
+
   if (m_WasZipped == true) {
     if (m_ReadLineBufferLength == 0) {
       m_ReadLineBufferLength = 1000;
       m_ReadLineBuffer = new char[m_ReadLineBufferLength];
     }
     char* Return = 0;
-    
+
     do {
       m_ReadLineBuffer[0] = '\0';
       Return = gzgets(m_ZipFile, m_ReadLineBuffer, m_ReadLineBufferLength-1);
@@ -706,16 +712,16 @@ bool MFile::ReadLine(MString& String)
       }
       String.Append(Return);
     } while (strlen(Return) == m_ReadLineBufferLength-2);
-    
+
     // Remove any returns:
     if (String.Length() > 0 && String.GetStringRef().back() == '\n') {
-      String.StripBackInPlace('\n');  
+      String.StripBackInPlace('\n');
     }
     // Slower: String.RemoveAll('\n');
   } else {
     String.ReadLine(m_File);
   }
-  
+
   return true;
 }
 
@@ -726,31 +732,44 @@ bool MFile::ReadLine(MString& String)
 bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
 {
   if (IsGood() == false) return false;
-  
+
   //! Read one line
   if (m_WasZipped == true) {
     for (unsigned int i = 0; i < Size; ++i) {
       int c = gzgetc(m_ZipFile);
       if (c == -1 || (char) c == Delimeter) {
         String[i] = '\0';
-        return true; 
+        return true;
       }
       String[i] = (char) c;
     }
   } else {
     m_File.getline(String, Size, Delimeter);
   }
-  
+
   return true;
 }
-  
-  
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 void MFile::ShowProgress(bool Show)
 {
-  //
+  // Show or not the progress mutex
+
+  m_ProgressMutex.Lock();
+  ShowProgressNoLock(Show);
+  m_ProgressMutex.UnLock();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MFile::ShowProgressNoLock(bool Show)
+{
+  // Show or not the progress mutex
 
   if (Show == true) {
     if (gClient == 0 || gClient->GetRoot() == 0 || gROOT->IsBatch() == true) {
@@ -781,21 +800,30 @@ void MFile::SetProgressTitle(MString Main, MString Sub)
 {
   // Set the title of the current progress bar
 
-  if (m_Progress != 0) {
+  m_ProgressMutex.Lock();
+  if (m_Progress != nullptr) {
     m_Progress->SetTitles(Main, Sub);
   }
+  m_ProgressMutex.UnLock();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFile::IsShowProgress() 
+bool MFile::IsShowProgress()
 {
-  // Return show progress   
+  // Return show progress
 
-  if (m_Progress != 0) return true;
-  return false;
+  bool Return = false;
+
+  m_ProgressMutex.Lock();
+  if (m_Progress != nullptr) {
+    Return = true;
+  }
+  m_ProgressMutex.UnLock();
+
+  return Return;
 }
 
 
@@ -806,11 +834,13 @@ void MFile::SetProgress(MGUIProgressBar* Progress, int Level)
 {
   // Take over a progressbar
 
+  m_ProgressMutex.Lock();
   delete m_Progress;
   m_Progress = Progress;
   m_ProgressLevel = Level;
   m_OwnProgress = false;
   m_SkippedProgressUpdates = 0;
+  m_ProgressMutex.UnLock();
 }
 
 
@@ -821,27 +851,39 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
-  
-  if (m_Canceled == true) return false;
-  if (m_Progress == 0 || GetFileLength() == (streampos) 0) return true;
 
-  if (++m_SkippedProgressUpdates < UpdatesToSkip) return true;
-  m_SkippedProgressUpdates = 0;
-  
-  TThread::Lock(); // GUI is not allowed to be accessed from multiple threads!
-  
-  double Value = (double) GetFilePosition() / (double) GetFileLength();
-  
-  m_Progress->SetValue(Value, m_ProgressLevel);
-  gSystem->ProcessEvents();
+  // GUI is not allowed to be accessed from multiple threads!
+  m_ProgressMutex.Lock();
 
-  TThread::UnLock();
-  
-  if (m_Progress->TestCancel() == true) {
-    ShowProgress(false);
-    m_Canceled = true;
+  if (m_Canceled == true) {
+    m_ProgressMutex.UnLock();
     return false;
   }
+  if (m_Progress == nullptr || GetFileLength() == (streampos) 0) {
+    m_ProgressMutex.UnLock();
+    return true;
+  }
+
+  if (++m_SkippedProgressUpdates < UpdatesToSkip) {
+    m_ProgressMutex.UnLock();
+    return true;
+  }
+  m_SkippedProgressUpdates = 0;
+
+  double Value = (double) GetFilePosition() / (double) GetFileLength();
+
+  m_Progress->SetValue(Value, m_ProgressLevel);
+  if (TThread::SelfId() == g_MainThreadID) gSystem->ProcessEvents();
+
+  if (m_Progress->TestCancel() == true) {
+    ShowProgressNoLock(false);
+    m_Canceled = true;
+    m_ProgressMutex.UnLock();
+
+    return false;
+  }
+
+  m_ProgressMutex.UnLock();
 
   return true;
 }
@@ -853,7 +895,7 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
 bool MFile::IsOpen()
 {
   // Return true if file is open
-  
+
   return m_IsOpen;
 }
 
@@ -873,7 +915,7 @@ bool MFile::CheckFileExtension(MString Extension)
   Lower.ToLower();
   Lower.Prepend(".");
 
-  if (m_FileName.EndsWith(Upper) == true || 
+  if (m_FileName.EndsWith(Upper) == true ||
       m_FileName.EndsWith(Lower) == true) {
     return true;
   } else {
@@ -885,7 +927,7 @@ bool MFile::CheckFileExtension(MString Extension)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName) 
+MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
 {
   // Make RelFileName relative to AbsFileName
   // Rel: /home/andreas/Test/MyFile.tra
@@ -896,7 +938,7 @@ MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
   MFile::ExpandFileName(AbsFileName);
 
   int MinLength = min(RelFileName.Last('/'), AbsFileName.Last('/'));
-  
+
   int PreviousSlash = -1;
   for (int i = 0; i <= MinLength; ++i) {
     if (RelFileName[i] != AbsFileName[i]) {
@@ -910,8 +952,8 @@ MString MFile::RelativeFileName(MString RelFileName, MString AbsFileName)
       RemainingSlashesAbs++;
     }
   }
-  
-  if (PreviousSlash > 0) { 
+
+  if (PreviousSlash > 0) {
     RelFileName.Remove(0, PreviousSlash+1);
 
     if (RemainingSlashesAbs > 0) {
@@ -938,10 +980,10 @@ MString MFile::GetBaseName(const MString& Name)
   if (Name.Length() == 1 && Name[0] == '/') return Name;
   size_t Pos = Name.Last('/');
   if (Pos == MString::npos) return Name;
-  
+
   return Name.GetSubString(Pos+1);
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -952,7 +994,7 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
   // Since this is a random access operation it should be very fast...
 
   if (Redetermine == false && m_HasUncompressedFileLength == true) return m_UncompressedFileLength;
-  
+
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
     return 0;
@@ -961,36 +1003,36 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
   streampos Length;
   if (m_WasZipped == true) {
     if (m_Way == c_Read) {
-      
+
       // First get the compressed file size
       ifstream in;
       in.open(m_FileName);
       in.seekg(0, ios_base::end);
       double CompressedTotal = in.tellg();
       in.close();
-      
+
       Length = 0;
       if (CompressedTotal > 1000000) {
         cout<<"Handling a larger compressed file... this might take a while to initialize..."<<endl;
         // Get the uncompressed file size after stepping ahead the compressed total ...
         double Uncompressed = gzseek(m_ZipFile, CompressedTotal, SEEK_SET);
         // ... and the compressed position
-        gzgetc(m_ZipFile); // Need one to get the correct offset 
+        gzgetc(m_ZipFile); // Need one to get the correct offset
         double Compressed = gzoffset(m_ZipFile);
-      
+
         //cout<<CompressedTotal<<":"<<Uncompressed<<":"<<Compressed<<endl;
-        
+
         // Now calculate the 97% position minus 100000:
         streampos Ahead = (streampos) (Uncompressed / Compressed * CompressedTotal - 100000);
         Ahead = 0.97*Ahead;
         //cout<<"Ahead: "<<Ahead<<endl;
-        
+
         Length = gzseek(m_ZipFile, Ahead, SEEK_SET);
       }
-     
+
       while (gzgetc(m_ZipFile) != -1) Length += 1;
       gzrewind(m_ZipFile);
-      
+
       //cout<<"Uncompressed file length: "<<Length<<endl;
     } else {
       Length = (streampos) gzoffset(m_ZipFile); // We are already at the end
@@ -1004,14 +1046,14 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
     } else {
       Length = m_File.tellp(); // We are already at the end
     }
-  }    
+  }
 
   m_UncompressedFileLength = Length;
   m_HasUncompressedFileLength = true;
-  
+
   return Length;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1021,7 +1063,7 @@ streampos MFile::GetFileLength(bool Redetermine)
   // Return the file length on disk
 
   if (Redetermine == false && m_HasFileLength == true) return m_FileLength;
-  
+
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
     return 0;
@@ -1048,11 +1090,11 @@ streampos MFile::GetFileLength(bool Redetermine)
     } else {
       Length = m_File.tellp(); // We are already at the end
     }
-  }    
+  }
 
   m_FileLength = Length;
   m_HasFileLength = true;
-  
+
   return Length;
 }
 
@@ -1076,7 +1118,7 @@ streampos MFile::GetFilePosition()
   } else {
     Pos = m_File.tellg();
   }
-  
+
   return Pos;
 }
 
@@ -1100,7 +1142,7 @@ streampos MFile::GetUncompressedFilePosition()
   } else {
     Pos = m_File.tellg();
   }
-  
+
   return Pos;
 }
 

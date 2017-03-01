@@ -15,8 +15,8 @@
 #undef    DEBUGGEO
 #undef ___THREADS___
 
-// the following defines are only important, if HARDWARE is defined 
-//        ----------- Select ONE driver -------------- 
+// the following defines are only important, if HARDWARE is defined
+//        ----------- Select ONE driver --------------
 #ifdef HARDWARE
 
 // #undef  VME_INTEL_CPU        // defined in makefile
@@ -35,14 +35,14 @@
 #undef  SBUS_HARDWARE
 #endif
 
-#ifdef SBUS_VME_NODRIVER 
+#ifdef SBUS_VME_NODRIVER
 // in this case, the VmeBus classes are included in the shared libs
 #define  ___HTML2___
 #define  SBUS_HARDWARE
 #undef  PAR_HARD
 #endif
 
-#ifdef SBUS_VME_DRIVER 
+#ifdef SBUS_VME_DRIVER
 // in this case, the VmeBus classes are included in the shared libs
 #define  ___HTML2___
 #define  SBUS_HARDWARE
@@ -126,7 +126,10 @@ extern const int c_Info;
 extern const int c_Chatty;
 extern const int c_Extreme;
 
+//! A global mutex
 extern TMutex* g_Mutex;
+//! The ID of the main thread
+extern Long_t g_MainThreadID;
 
 // And here a lot of other useful constants:
 extern const double c_Pi;
@@ -134,22 +137,27 @@ extern const double c_TwoPi;
 extern const double c_Sqrt2Pi;        // 2.5066283
 extern const double c_Rad;            // c_Pi / 180.0
 extern const double c_Deg;            // 180.0 / c_Pi
-extern const double c_SpeedOfLight;   //  
-extern const double c_E0;             // rest mass electron  
-extern const double c_FarAway;        // Radius for conversion from spherical to cartesian coordinates   
-extern const double c_LargestEnergy;  // 
+extern const double c_SpeedOfLight;   //
+extern const double c_E0;             // rest mass electron
+extern const double c_FarAway;        // Radius for conversion from spherical to cartesian coordinates
+extern const double c_LargestEnergy;  //
 extern const MVector c_NullVector;
 
 // A dummy class which takes care of initializations
 class MGlobal
 {
  public:
+  //! Default constructor
   MGlobal() {};
-  static bool Initialize(MString ProgramName = "", MString ProgramDescription = ""); // Has to be called in main 
+  //! Do all the one-time initilizations
+  static bool Initialize(MString ProgramName = "", MString ProgramDescription = ""); // Has to be called in main
+
+
 
  private:
-  static void CenterString(MString& String, unsigned int LineLength, bool DoBorders = true); 
-  static void ShowIntro(MString ProgramName, MString ProgramDescription = ""); 
+  static void CenterString(MString& String, unsigned int LineLength, bool DoBorders = true);
+  static void ShowIntro(MString ProgramName, MString ProgramDescription = "");
+
 };
 
 extern MGlobal g_Global;

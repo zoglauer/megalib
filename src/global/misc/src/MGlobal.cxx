@@ -65,22 +65,22 @@ unsigned int g_Version = 10000;
 MString g_VersionString = "1.00.00";
 
 // Remove year of copyright and replace with (C) by ....
-const MString g_CopyrightYear = "2016"; 
-const MString g_Homepage = "http://megalibtoolkit.com"; 
+const MString g_CopyrightYear = "2016";
+const MString g_Homepage = "http://megalibtoolkit.com";
 const MString g_MEGAlibPath = "$(MEGALIB)";
 
-const MString g_StringNotDefined = "___NotDefined___"; 
-const MVector g_VectorNotDefined = MVector(numeric_limits<double>::max()/11, 
-                                           numeric_limits<double>::max()/11, 
+const MString g_StringNotDefined = "___NotDefined___";
+const MVector g_VectorNotDefined = MVector(numeric_limits<double>::max()/11,
+                                           numeric_limits<double>::max()/11,
                                            numeric_limits<double>::max()/11);
-const MRotation g_RotationNotDefined = MRotation(numeric_limits<double>::max()/11, 
-                                                 numeric_limits<double>::max()/11, 
+const MRotation g_RotationNotDefined = MRotation(numeric_limits<double>::max()/11,
                                                  numeric_limits<double>::max()/11,
-                                                 numeric_limits<double>::max()/11, 
-                                                 numeric_limits<double>::max()/11, 
                                                  numeric_limits<double>::max()/11,
-                                                 numeric_limits<double>::max()/11, 
-                                                 numeric_limits<double>::max()/11, 
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11,
+                                                 numeric_limits<double>::max()/11,
                                                  numeric_limits<double>::max()/11);
 const int g_IntNotDefined = numeric_limits<int>::max()-11;
 const unsigned int g_UnsignedIntNotDefined = numeric_limits<unsigned int>::max()-11;
@@ -107,6 +107,7 @@ const double c_LargestEnergy = 0.999*numeric_limits<float>::max();
 const MVector c_NullVector(0.0, 0.0, 0.0);
 
 TMutex* g_Mutex = 0;
+Long_t g_MainThreadID = 0;
 
 MGlobal g_Global;
 
@@ -148,7 +149,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gStyle->SetTitleFont(42, "XYZ");
   gStyle->SetTitleOffset(1.3f, "XY");
   //gStyle->SetTitleAlign(22);
-  
+
   gStyle->SetLabelFont(42, "XYZ");
 
   gStyle->SetFrameBorderSize(0);
@@ -158,7 +159,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gStyle->SetCanvasBorderSize(0);
   gStyle->SetCanvasBorderMode(0);
   gStyle->SetCanvasColor(0);
-  
+
   gStyle->SetHistMinimumZero(true);
   gStyle->SetBit(kCanDelete);
   //gStyle->SetHistFillColor(8);
@@ -172,7 +173,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   gStyle->SetPadBottomMargin(Margin);
 
   gStyle->SetLabelSize(0.03f, "XYZP");
-  
+
   gStyle->SetPalette(55, 0);
   //gStyle->SetPalette(kBird);
 
@@ -185,7 +186,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   // Read the versions:
   MString FileName = "$(MEGALIB)/config/Version.txt";
   MFile::ExpandFileName(FileName);
-  
+
   ifstream in;
   in.open(FileName);
   if (in.is_open()) {
@@ -215,7 +216,8 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 #endif
 
   g_Mutex = new TMutex();
-  
+  g_MainThreadID = TThread::SelfId();
+
   return true;
 }
 
@@ -226,7 +228,7 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
 void MGlobal::CenterString(MString& String, unsigned int LineLength, bool DoBorders)
 {
   if (LineLength < 2) return;
-  
+
   while (true) {
     if (String.Length() < LineLength-2) {
       String.Prepend(" ");
@@ -244,7 +246,7 @@ void MGlobal::CenterString(MString& String, unsigned int LineLength, bool DoBord
     String.Append("*");
   } else {
     String.Prepend(" ");
-    String.Append(" ");  
+    String.Append(" ");
   }
 }
 
@@ -263,7 +265,7 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   MString MEGAlibLine = "This program is part of MEGAlib version ";
   MEGAlibLine += g_VersionString;
   if (MEGAlibLine.Length() > LineLength) LineLength = MEGAlibLine.Length();
- 
+
   MString CopyrightLine = "(C) by Andreas Zoglauer and contributors";
   if (CopyrightLine.Length() > LineLength) LineLength = CopyrightLine.Length();
 
@@ -278,7 +280,7 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
 
   MString HomepageLine = "http://megalibtoolkit.com";
   if (HomepageLine.Length() > LineLength) LineLength = HomepageLine.Length();
-  
+
   MString DevelopmentVersion;
   if (g_MajorVersion % 2 == 1) {
     //if (g_MinorVersion == 0) {
@@ -311,30 +313,30 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
   MString EmptyLine = "*";
   for (unsigned int i = 0; i < LineLength-2; ++i) EmptyLine += ' ';
   EmptyLine += "*";
-  
+
   cout<<endl;
   cout<<ClosedLine<<endl;
   cout<<EmptyLine<<endl;
-  cout<<ProgramLine<<endl;  
+  cout<<ProgramLine<<endl;
   cout<<EmptyLine<<endl;
-  cout<<MEGAlibLine<<endl;  
-  cout<<CopyrightLine<<endl;  
+  cout<<MEGAlibLine<<endl;
+  cout<<CopyrightLine<<endl;
   cout<<EmptyLine<<endl;
-  cout<<ReferenceIntroLine<<endl;  
-  cout<<ReferenceLine<<endl;  
+  cout<<ReferenceIntroLine<<endl;
+  cout<<ReferenceLine<<endl;
   cout<<EmptyLine<<endl;
-  cout<<HomepageIntroLine<<endl;  
-  cout<<HomepageLine<<endl;  
+  cout<<HomepageIntroLine<<endl;
+  cout<<HomepageLine<<endl;
   cout<<EmptyLine<<endl;
-  cout<<ClosedLine<<endl; 
+  cout<<ClosedLine<<endl;
   cout<<endl;
-  
+
   // Check if this is a development version
   if (g_MajorVersion % 2 == 1) {
-    cout<<DevelopmentVersion<<endl; 
+    cout<<DevelopmentVersion<<endl;
     cout<<endl;
   }
-  
+
   // Check if we have found a newer version
   MString FileName = "$(MEGALIB)/config/UpdateCheck.txt";
   MFile::ExpandFileName(FileName);
@@ -352,14 +354,14 @@ void MGlobal::ShowIntro(MString ProgramName, MString ProgramDescription)
       if (NewVersion > g_Version) {
         MString NewVersion = MString("An updated MEGAlib version (") + VersionString + MString(") is in the repository!");
         CenterString(NewVersion, LineLength, false);
-        cout<<NewVersion<<endl; 
-        cout<<Update<<endl; 
+        cout<<NewVersion<<endl;
+        cout<<Update<<endl;
         cout<<endl;
       }
-    } 
+    }
   }
 
-  
+
 }
 
 
