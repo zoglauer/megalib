@@ -1193,7 +1193,7 @@ bool MCParameterFile::Parse()
           else if (Type == "farfieldgaussian" || Type == "ffg") {
             if (T->GetNTokens() == 6) {
               Source->SetBeamType(MCSource::c_FarField,
-                                  MCSource::c_FarFieldPoint);
+                                  MCSource::c_FarFieldGaussian);
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
