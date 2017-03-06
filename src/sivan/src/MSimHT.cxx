@@ -140,43 +140,61 @@ MSimHT::~MSimHT()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MSimHT::AddRawInput(MString LineBuffer, const int Version)
+bool MSimHT::AddRawInput(MString LineBuffer, int Version)
 {
   // Analyze one line of text input...
 
-  MString Origin(LineBuffer);
-  int i;
+  // Handle the most common MEGAlib 2.x sim / evta file versions
+  if (Version == 25 && LineBuffer.BeginsWith("HTsim ")) {
+    Version = 101;
+  } else if (Version == 21 && LineBuffer.BeginsWith("HT ")) {
+    Version = 200;
+  }
 
-  int Reads = 5;
-  if (Version == 20 || Version == 1) {
-    if (sscanf(LineBuffer.Data(), "HTsim%d;%lf;%lf;%lf;%lf\n",
-               &m_DetectorType, &m_Position[0], &m_Position[1], 
-               &m_Position[2], &m_Energy) != 5) {
-      mout<<"MSimHT: Unable to parse hit: "<<LineBuffer<<endl;
+
+  int Reads = 0;
+  if (Version == 100) { // No time
+    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy) != 6) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
       return false;
     }
     Reads = 5;
-  } else {
-    double dx,dy,dz,dE;
-    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf;%lf;%*s",
-               &m_DetectorType, &m_Position[0], &m_Position[1], 
-               &m_Position[2], &m_Energy, &m_Time) != 6) {
-      if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;OK\n",
-                 &m_DetectorType, &m_Position[0], &m_Position[1], 
-                 &m_Position[2], &m_Energy, &dx,&dy, &dz, &dE) != 9) {
-        mout<<"MSimHT: Unable to parse hit: "<<LineBuffer<<endl;
-        return false;
-      }
+  } else if (Version == 101) { // with time 
+    if (sscanf(LineBuffer.Data(), "HTsim %d;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &m_Time) != 6) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
     }
     Reads = 6;
+  } else if (Version == 200) { // no time, with uncertainties
+    double dx,dy,dz,dE;
+    if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &dx, &dy, &dz, &dE) != 9) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
+    }
+    m_Time = 0;
+    Reads = 9;
+  } else if (Version == 201) {// with time & uncertainties
+    double dx, dy, dz, dE, dT;
+    if (sscanf(LineBuffer.Data(), "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
+               &m_DetectorType, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &m_Time, &dx, &dy, &dz, &dE, &dT) != 11) {
+      mout<<"MSimHT: Unable to parse hit of version "<<Version<<": "<<LineBuffer<<endl;
+      return false;
+    }
+    Reads = 10;
+  } else {
+    merr<<"Unknown version of sim/evta file (version: "<<Version<<"), please upgrade (or use old version of MEGAlib prior to 3.0)"<<endl;
+    return false;
   }
-
   
   m_OriginalPosition = m_Position;
   m_OriginalEnergy = m_Energy;
 
-  // Only the part with the origins should remain...
-  for (i = 0; i < Reads; i++) {
+  // Remove everything but the (variable) origin part...
+  MString Origin(LineBuffer);
+  for (int i = 0; i < Reads; ++i) {
     if (Origin.First(';') == MString::npos) {
       Origin = "";
     } else {

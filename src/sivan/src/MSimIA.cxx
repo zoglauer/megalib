@@ -111,87 +111,16 @@ bool MSimIA::AddRawInput(MString LineBuffer, int Version)
 {
   // Analyze one line of text input...
 
-  bool Ret = true;
   char Type[10] = "????\0";
 
-  if (Version == 15) {
-    if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf",
-               Type, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_DetectorType, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_MotherParticleID, 
-               &m_MotherParticleDirection[0], 
-               &m_MotherParticleDirection[1], 
-               &m_MotherParticleDirection[2], 
-               &m_MotherParticleEnergy) != 12) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
-    }
-  } else if (Version == 20 || Version == 21) {
-    if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-               Type, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_DetectorType, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_MotherParticleID, 
-               &m_MotherParticleDirection[0], 
-               &m_MotherParticleDirection[1], 
-               &m_MotherParticleDirection[2], 
-               &m_MotherParticlePolarisation[0], 
-               &m_MotherParticlePolarisation[1], 
-               &m_MotherParticlePolarisation[2], 
-               &m_MotherParticleEnergy,
-               &m_SecondaryParticleID, 
-               &m_SecondaryParticleDirection[0], 
-               &m_SecondaryParticleDirection[1], 
-               &m_SecondaryParticleDirection[2], 
-               &m_SecondaryParticlePolarisation[0], 
-               &m_SecondaryParticlePolarisation[1], 
-               &m_SecondaryParticlePolarisation[2], 
-               &m_SecondaryParticleEnergy) != 23) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
-    }
-  } else if (Version == 22) {
-    if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-               Type, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_DetectorType, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_MotherParticleID, 
-               &m_MotherParticleDirection[0], 
-               &m_MotherParticleDirection[1], 
-               &m_MotherParticleDirection[2], 
-               &m_MotherParticlePolarisation[0], 
-               &m_MotherParticlePolarisation[1], 
-               &m_MotherParticlePolarisation[2], 
-               &m_MotherParticleEnergy,
-               &m_SecondaryParticleID, 
-               &m_SecondaryParticleDirection[0], 
-               &m_SecondaryParticleDirection[1], 
-               &m_SecondaryParticleDirection[2], 
-               &m_SecondaryParticlePolarisation[0], 
-               &m_SecondaryParticlePolarisation[1], 
-               &m_SecondaryParticlePolarisation[2], 
-               &m_Time,
-               &m_SecondaryParticleEnergy) != 24) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
-    }
-  } else if (Version == 23 || Version == 25) {
+  // Handle the most common MEGAlib 2.x sim / evta file versions
+  if (Version == 25 && LineBuffer.BeginsWith("HTsim ")) {
+    Version = 101;
+  } else if (Version == 21 && LineBuffer.BeginsWith("HT ")) {
+    Version = 200;
+  }
+
+  if (Version == 101 || Version == 100 || Version == 200 || Version == 201) {
     if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
                Type, 
                &m_ID, 
@@ -217,87 +146,15 @@ bool MSimIA::AddRawInput(MString LineBuffer, int Version)
                &m_SecondaryParticlePolarisation[1], 
                &m_SecondaryParticlePolarisation[2], 
                &m_SecondaryParticleEnergy) != 24) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
+      return false;
     }
-  } else if (Version == 24) {
-    if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf",
-               Type, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_DetectorType, 
-               &m_Time,
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_MotherParticleID, 
-               &m_MotherParticleDirection[0], 
-               &m_MotherParticleDirection[1], 
-               &m_MotherParticleDirection[2], 
-               &m_MotherParticleEnergy,
-               &m_SecondaryParticleID, 
-               &m_SecondaryParticleDirection[0], 
-               &m_SecondaryParticleDirection[1], 
-               &m_SecondaryParticleDirection[2], 
-               &m_SecondaryParticleEnergy) != 18) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
-    }
-  } else if (Version == 26) {
-    if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%d;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%d;%lf;%lf;%lf;%lf;%d",
-               Type, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_DetectorType, 
-               &m_Time,
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_MotherParticleID, 
-               &m_MotherParticleDirection[0], 
-               &m_MotherParticleDirection[1], 
-               &m_MotherParticleDirection[2], 
-               &m_MotherParticleEnergy,
-               &m_SecondaryParticleID, 
-               &m_SecondaryParticleDirection[0], 
-               &m_SecondaryParticleDirection[1], 
-               &m_SecondaryParticleDirection[2], 
-               &m_SecondaryParticleEnergy,
-               &m_ParentNucleus) != 19) {
-      Ret = false;
-    } else {
-      m_Process = MString(Type);
-    }
+    m_Process = MString(Type);
   } else {
-    if (sscanf(LineBuffer.Data(), "IA%d;%4s;%d;%d;%d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
-               &m_DetectorType, 
-               Type, 
-               &m_SecondaryParticleID, 
-               &m_ID, 
-               &m_OriginID, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_SecondaryParticleDirection[0], 
-               &m_SecondaryParticleDirection[1], 
-               &m_SecondaryParticleDirection[2], 
-               &m_SecondaryParticleEnergy) != 12) {
-      Ret = false;
-    } else {
-      if (Version <= 2 && (m_SecondaryParticleID == 2 || m_SecondaryParticleID == 3)) {
-        m_SecondaryParticleEnergy -= 511.004;
-      }
-      m_Process = MString(Type);
-    }
+    merr<<"Unknown version of sim/evta file (version: "<<Version<<"), please upgrade (or use old version of MEGAlib prior to 3.0)"<<endl;
+    return false;
   }
 
-  if (Ret == false) {
-    mout<<"Unable to scan Version "<<Version<<" IA!"<<endl;
-  }
-
-  return Ret;
+  return true;
 }
 
 

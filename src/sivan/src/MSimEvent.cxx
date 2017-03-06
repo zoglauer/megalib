@@ -65,7 +65,7 @@ ClassImp(MSimEvent)
 
 // This number has to be increased, whenever there is a significant change
 // in any of the default output ToSimString(...) of the Sim classes 
-const int MSimEvent::s_Version = 25;
+const int MSimEvent::s_Version = 101;
 
 // Some constants indicating what to store
 const int MSimEvent::c_StoreSimulationInfoAll = 0;
@@ -376,7 +376,7 @@ bool MSimEvent::ParseLine(MString LineBuffer, int Version)
   // VT
   // TF
   // ES
-
+  
   bool Ret = true;
 
   m_Version = Version;

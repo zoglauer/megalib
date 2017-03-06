@@ -64,25 +64,36 @@ MREHit::MREHit() : MRESE()
 
 bool MREHit::ParseLine(MString HitString, int Version)
 {
-  // Constructs a hit out of a String. The String must be of the form:
-  //
-  // HTsim%d;%lf;%lf;%lf;%lf\n (Detector, xPos, yPos, zPos, Energy)
-  // HT%d;%lf;%lf;%lf;%lf\n (Detector, xPos, yPos, zPos, Energy)
-  //
-  // If an error occures during reading the string, the hit is marked as
+  // If an error occurs during reading the string, the hit is marked as
   // m_IsValid = false
 
   Reset();
   
-  if (Version < 0) Version = 25;
+  // Handle the most common MEGAlib 2.x sim / evta file versions
+  if (Version == 25 && HitString.BeginsWith("HTsim ")) {
+    Version = 101;
+  } else if (Version == 21 && HitString.BeginsWith("HT ")) {
+    Version = 200;
+  }
   
   m_IsValid = true;
   m_FixedResolutions = false;
 
-  // Parse the two main file types first:
-  
-  // The default simulation file:
-  if (Version == 25 && HitString.BeginsWith("HTsim ")) {
+
+  if (Version == 100) {
+    if (sscanf(HitString, "HTsim %d;%lf;%lf;%lf;%lf\n", 
+               &m_Detector, 
+               &m_Position[0], 
+               &m_Position[1], 
+               &m_Position[2], 
+               &m_Energy) == 5) {
+      m_Time = 0;
+      m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
+      m_EnergyResolution = 0.0;
+      m_TimeResolution = 0.0;
+      m_IsValid = true;
+    }
+  } else if (Version == 101) {
     if (sscanf(HitString, "HTsim %d;%lf;%lf;%lf;%lf;%lf\n", 
                &m_Detector, 
                &m_Position[0], 
@@ -94,11 +105,8 @@ bool MREHit::ParseLine(MString HitString, int Version)
       m_EnergyResolution = 0.0;
       m_TimeResolution = 0.0;
       m_IsValid = true;
-      return true;
-    }
-  }
-  // The default evta file 
-  if (Version == 21 && HitString.BeginsWith("HT ")) {
+    }    
+  } else if (Version == 200) {
     if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
                &m_Detector,
                &m_Position[0], 
@@ -113,129 +121,27 @@ bool MREHit::ParseLine(MString HitString, int Version)
       m_TimeResolution = 0;
       m_IsValid = true;
       m_FixedResolutions = true;
-      return true;
     }
-  }
-  
-  
-  // Now all the old stuff for compatibility:
-  
-  if (Version == 1 || Version == 20) { 
-    if (sscanf(HitString, "HTsim%d;%lf;%lf;%lf;%lf\n", 
-               &m_Detector, 
+  } else if (Version == 201) {
+    if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
+               &m_Detector,
                &m_Position[0], 
                &m_Position[1], 
                &m_Position[2], 
-               &m_Energy) == 5) {
-      m_IsValid = true;
-    } else {
-      m_IsValid = false;
-      m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read event:"<<endl
-          <<HitString<<endl;
-    }
-  } else if (Version == 3 || Version >= 21) { 
-    if (sscanf(HitString, "HTsim%d;%lf;%lf;%lf;%lf;%lf\n", 
-               &m_Detector, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_Energy, 
-               &m_Time) == 6) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf\n",
-                      &m_Detector,
-                      &m_Position[0], 
-                      &m_Position[1], 
-                      &m_Position[2], 
-                      &m_Energy,
-                      &m_Time) == 6) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf\n",
-                      &m_Detector,
-                      &m_Position[0], 
-                      &m_Position[1], 
-                      &m_Position[2], 
-                      &m_Energy) == 5) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
-                      &m_Detector,
-                      &m_Position[0], 
-                      &m_Position[1], 
-                      &m_Position[2], 
-                      &m_Energy, 
-                      &m_PositionResolution[0], 
-                      &m_PositionResolution[1], 
-                      &m_PositionResolution[2], 
-                      &m_EnergyResolution) == 9) {
+               &m_Energy,
+               &m_Time,
+               &m_PositionResolution[0], 
+               &m_PositionResolution[1], 
+               &m_PositionResolution[2], 
+               &m_EnergyResolution,
+               &m_TimeResolution
+              ) == 11) {
       m_IsValid = true;
       m_FixedResolutions = true;
-    } else if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;OK\n",
-                      &m_Detector,
-                      &m_Position[0], 
-                      &m_Position[1], 
-                      &m_Position[2], 
-                      &m_Energy, 
-                      &m_PositionResolution[0], 
-                      &m_PositionResolution[1], 
-                      &m_PositionResolution[2], 
-                      &m_EnergyResolution) == 9) {
-      m_IsValid = true;
-      m_FixedResolutions = true;
-    } else {
-      m_IsValid = false;
-      m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read event (version: "<<Version<<"):"<<endl
-          <<HitString<<endl;
     }
-  } else if (Version == 4) { // MEGA Duke evta file:
-    MTokenizer T(HitString, ';', false);
-    if (T.GetNTokens() == 10) {
-      sscanf(T.GetTokenAt(0), "HT%*4s%d", &m_Detector);
-      m_Position.SetXYZ(T.GetTokenAtAsDouble(1), 
-                        T.GetTokenAtAsDouble(2), 
-                        T.GetTokenAtAsDouble(3));
-      m_PositionResolution.SetXYZ(T.GetTokenAtAsDouble(6), 
-                                  T.GetTokenAtAsDouble(7), 
-                                  T.GetTokenAtAsDouble(8));
-      m_Energy = T.GetTokenAtAsDouble(4);
-      m_EnergyResolution = T.GetTokenAtAsDouble(9);
-      m_IsValid = true;
-      m_FixedResolutions = true;
-      if (T.GetTokenAt(5) != "OK") {
-        if (T.GetTokenAt(5).Contains("OF") == true) {
-          m_IsValid = false;
-        } else if (T.GetTokenAt(5).Contains("BA") == true || 
-                   T.GetTokenAt(5).Contains("XO") == true || 
-                   T.GetTokenAt(5).Contains("YO") == true) {
-          m_IsValid = false;
-        }
-      }
-    } else {
-      m_IsValid = false;
-      m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read HT (version: "<<Version<<"):"<<endl
-          <<HitString<<endl;
-    }
-  } else { // old evta and sim...
-    if (sscanf(HitString, "HTsim%d;%lf;%lf;%lf;%lf;%lf\n", 
-               &m_Detector, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy, &m_Time) == 6) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HTsim%d;%lf;%lf;%lf;%lf\n", 
-                      &m_Detector, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy) == 5) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HT%*4s%d;%lf;%lf;%lf;%lf\n", 
-                      &m_Detector, &m_Position[0], &m_Position[1], &m_Position[2], &m_Energy) == 5) {
-      m_IsValid = true;
-    } else if (sscanf(HitString, "HT%*4s%d;%lf;%*s", 
-                      &m_Detector, &m_Energy) == 2) {
-      m_IsValid = true;
-    } else {
-      m_IsValid = false;
-      m_SubElementType = MRESE::c_Unknown;
-      merr<<"Unable to read event (version: "<<Version<<"):"<<endl
-          <<HitString<<endl;
-    }
+  } else {
+    merr<<"Unknown version of sim/evta file (Version from file: "<<Version<<"), please upgrade (or use old version of MEGAlib prior to 3.0)"<<endl;
+    return false;
   }
   
   return m_IsValid;

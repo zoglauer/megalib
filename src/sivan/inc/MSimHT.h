@@ -51,7 +51,7 @@ class MSimHT
   virtual ~MSimHT();
 
   //! Set everything via one line of input
-  bool AddRawInput(MString LineBuffer, const int Version);
+  bool AddRawInput(MString LineBuffer, int Version = 100);
 
   //! Return the number of the detector, where the hit took place
   int GetDetectorType() const { return m_DetectorType; };
