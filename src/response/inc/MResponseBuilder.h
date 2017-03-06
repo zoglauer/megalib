@@ -115,9 +115,9 @@ class MResponseBuilder
   //! Do a sanity check if the simulations are usable for this task
   bool SanityCheckSimulations();
 
-  //! Return a list of IDs of that RESE
+  //! Return a list of REVAN IDs of that RESE
   vector<int> GetReseIds(MRESE* RESE);
-  //! Return a list of Sivan Origin IA Ids
+  //! Return a list of Sivan Origin IA IDs for the given RESE
   vector<int> GetOriginIds(MRESE* RESE);
 
   //! Check if IDs (RESE or origins?) are in sequence
@@ -228,7 +228,7 @@ class MResponseBuilder
   
   //! The IDs of all RESEs
   map<MRESE*, vector<int> > m_Ids;
-  //! The origin IDs of all RESEs
+  //! The origin IDs of all RESEs - only created on demand by GetOriginIDs()
   map<MRESE*, vector<int> > m_OriginIds;
 
   const static float c_NoBound;

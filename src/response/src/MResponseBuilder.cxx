@@ -528,7 +528,7 @@ bool MResponseBuilder::SanityCheckSimulations()
   if (m_OnlyINITRequired == true) return true;
   
   if (m_SiEvent->GetNIgnoredHTs() > 0) {
-    mout<<"Response: Event "<<m_SiEvent->GetID()<<": We have ignored HTs in the sim file -> "<<
+    mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): We have ignored HTs in the sim file -> "<<
       " check your geometry, because noising was deactivated!"<<endl;
     return false;
   }
@@ -541,7 +541,7 @@ bool MResponseBuilder::SanityCheckSimulations()
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {
-      mout<<"The simulation has less hits than the raw event!!!"<<endl;
+      mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): The simulation has less hits than the raw event!!!"<<endl;
       return false;
     }
 
@@ -550,16 +550,19 @@ bool MResponseBuilder::SanityCheckSimulations()
 
       vector<int> EndOriginIds = GetOriginIds(RESE);
 
-      bool More = false;
+      // Check that all origin IDs are > 2, i.e. belong to a process and not an init
+      bool HasOriginIDs = false;
       for (unsigned int i = 0; i < EndOriginIds.size(); ++i) {
-        if (EndOriginIds[i] > 1) {
-          More = true;
-          break;
+        if (EndOriginIds[i] <= 1) {
+          mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has the following non-compliant origin ID: "<<EndOriginIds[i]<<endl;
+          return false;
+        } else {
+          HasOriginIDs = true;
         }
       }
-
-      if (More == false) {
-        return false;
+      if (HasOriginIDs == false) {
+        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has no origin IDs: Your simulations most like do not contain the full required IA information block!"<<endl;
+        return false;       
       }
     }
   }
@@ -630,14 +633,17 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
 {
   // Extremely time critical function!
 
+  // ID offset between hits in revan and sivan
   const int IdOffset = 2;
 
+  // First check if it already exits
   map<MRESE*, vector<int> >::iterator RIter = m_OriginIds.find(RESE);
-
   if (RIter != m_OriginIds.end()) {
     return (*RIter).second;
   } else {
+    // If not find them...
     
+    // Get the revan RESE Ids
     vector<int> Ids = GetReseIds(RESE);
 
     vector<int> OriginIds;
@@ -668,6 +674,7 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
       }
     }
 
+    // ... finally store them
     sort(OriginIds.begin(), OriginIds.end());
     m_OriginIds[RESE] = OriginIds;
 
