@@ -12,7 +12,7 @@ PhysicsListEMActivateFluorescence    false
 
 # Output formats
 StoreCalibrated                      true
-StoreSimulationInfo                  true
+StoreSimulationInfo                  all
 StoreSimulationInfoIonization        false
 DiscretizeHits                       true
 
