@@ -114,9 +114,9 @@ bool MSimIA::AddRawInput(MString LineBuffer, int Version)
   char Type[10] = "????\0";
 
   // Handle the most common MEGAlib 2.x sim / evta file versions
-  if (Version == 25 && LineBuffer.BeginsWith("HTsim ")) {
+  if (Version == 25) {
     Version = 101;
-  } else if (Version == 21 && LineBuffer.BeginsWith("HT ")) {
+  } else if (Version == 21) {
     Version = 200;
   }
 
