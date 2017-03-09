@@ -135,6 +135,7 @@ class MInterfaceMimrec : public MInterface
   void OpeningAnglePair();
   void SequenceLengths();
   void LocationOfInitialInteraction();
+  void DirectionScatteredGammaRay();
 
   // Show the pointing (z-axis) of the instrument in galactic coordinates
   void PointingInGalacticCoordinates();

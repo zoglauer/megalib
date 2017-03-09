@@ -5619,6 +5619,68 @@ void MInterfaceMimrec::AngularResolutionVsQualityFactorPair()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceMimrec::DirectionScatteredGammaRay()
+{
+  
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+  
+  
+  
+  // Initalize the image size (x-axis)
+  //BinWidth = 2*Disk/NBins;
+  TH2D* Hist = new TH2D("Direction scattered gamma ray", "Direction scattered gamma ray", 90, -180, 180, 45, 0, 180);
+  Hist->SetBit(kCanDelete);
+  Hist->SetDirectory(0);
+  Hist->SetXTitle("Phi in instrument coordiantes [#circ]");
+  Hist->SetYTitle("Theta in instrument coordiantes [#circ]");
+  Hist->SetStats(false);
+  Hist->SetFillColor(8);
+  //double BinWidth = 2*Disk/NBins;
+  
+  
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = 0; 
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != 0) {
+    
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+        
+        Hist->Fill(ComptonEvent->Dg().Phi()*c_Deg, ComptonEvent->Dg().Theta()*c_Deg);
+      }
+    }
+    
+    delete Event;
+  } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
+  
+  if (Hist->GetMaximum() == 0) {
+    mgui<<"No events passed the event selections or file is empty!"<<endl;
+    return;
+  }
+  
+  
+  TCanvas *Canvas = new TCanvas("Canvas direction scattered gamma ray", "Canvas direction scattered gamma ray", 800, 600);
+  Canvas->SetFillColor(0);
+  Canvas->SetFrameBorderSize(0);
+  Canvas->SetFrameBorderMode(0);
+  Canvas->SetBorderSize(0);
+  Canvas->SetBorderMode(0);
+  
+  Canvas->cd();
+  Hist->Draw("colz");
+  Canvas->Update();
+  
+  return;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -190,13 +190,14 @@ void MGUIMimrecMain::Create()
   MenuQuality->AddEntry("Clustering Quality Factor", c_ResponseClusteringQualityFactor);
   MenuQuality->AddEntry("ARM of scattered gamma-ray vs. Clustering Quality Factor", c_ResponseArmGammaVsClusteringProbability);
 
-  // The sub menu quality factors:
+  // The sub menu rest:
   TGPopupMenu* MenuDistributions = new TGPopupMenu(fClient->GetRoot());
   MenuDistributions->AddEntry("Scatter angle distributions", c_ResponsePhi);
   MenuDistributions->AddEntry("Distance distribution", c_ResponseDistance);
   MenuDistributions->AddEntry("Compton sequence and track length", c_ResponseSequenceLengths);
   MenuDistributions->AddEntry("Coincidence window", c_ResponseCoincidenceWindow);
   MenuDistributions->AddEntry("Energy distribution Electron Photon", c_ResponseEnergyDistributionD1D2);
+  MenuDistributions->AddEntry("Direction scattered gamma ray", c_ResponseDirectionScatteredGammaRay);
   MenuDistributions->AddEntry("Azimuthal Compton scatter angle distribution", c_ResponseAzimuthalComptonScatterAngle);
   MenuDistributions->AddEntry("Azimuthal Electron scatter angle distribution", c_ResponseAzimuthalElectronScatterAngle);
 
@@ -557,7 +558,11 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_ResponseSequenceLengths:
         m_Interface->SequenceLengths();
         break;
-
+      
+      case c_ResponseDirectionScatteredGammaRay:
+        m_Interface->DirectionScatteredGammaRay();
+        break;
+        
       case c_ResponseAzimuthalComptonScatterAngle:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {

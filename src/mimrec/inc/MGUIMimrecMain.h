@@ -132,6 +132,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseEarthCenterDistance,
                    c_ResponsePointingInGalacticCoordinates,
                    c_ResponseHorizonInSphericalDetectorCoordinates,
+                   c_ResponseDirectionScatteredGammaRay,
                    c_ResponseTest }; 
 
 #ifdef ___CINT___
