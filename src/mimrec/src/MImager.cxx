@@ -859,6 +859,9 @@ bool MImager::Analyze(bool CalculateResponse)
   
   mout<<"Preparing the first image... Please stand by..."<<endl;
   
+  // Reset the stop criterion
+  m_EM->ResetStopCriterion();
+  
   // Set the response to the EM algorithm 
   m_EM->SetResponseSlices(m_BPEvents, m_NBins);
 
