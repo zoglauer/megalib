@@ -27,6 +27,7 @@
 #include "MNeuralNetworkIOStore.h"
 
 // Standard libs:
+#include <iomanip>
 #include <fstream>
 using namespace std;
 
