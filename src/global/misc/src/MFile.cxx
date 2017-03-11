@@ -735,7 +735,7 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
 
   //! Read one line
   if (m_WasZipped == true) {
-    for (unsigned int i = 0; i < Size; ++i) {
+    for (streamsize i = 0; i < Size; ++i) {
       int c = gzgetc(m_ZipFile);
       if (c == -1 || (char) c == Delimeter) {
         String[i] = '\0';
