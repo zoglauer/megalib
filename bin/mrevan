@@ -33,7 +33,7 @@ FILES=""
 # Find the default number of threads
 if ( `test -f /usr/sbin/sysctl` ); then
   THREADS=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif ( `test -f /proc/cpuinfo` ); then
   THREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 
@@ -48,8 +48,8 @@ fi
 
 while [ $# -gt 0 ] ; do
   case $1 in
-  -h|--help) 
-    help; 
+  -h|--help)
+    help;
     exit 0;;
   -t)
     shift;
@@ -145,9 +145,9 @@ fi
 echo " "
 echo "Launching mcosima"
 echo " "
-echo "Number of threads to use:  ${THREADS}" 
-echo "Nice level:                ${NICELEVEL}" 
-echo "Revan configuration file:  ${CFG}" 
+echo "Number of threads to use:  ${THREADS}"
+echo "Nice level:                ${NICELEVEL}"
+echo "Revan configuration file:  ${CFG}"
 echo "Sim files:                 ${FILES}"
 
 
@@ -155,7 +155,7 @@ echo "Sim files:                 ${FILES}"
 for SIMFILE in ${FILES}; do
   mdelay revan ${THREADS}
   echo "Launching revan for file ${SIMFILE}"
-  nohup nice -n ${NICELEVEL} revan -c ${CFG} -a -n -f ${SIMFILE} > /dev/null &
+  nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}" > /dev/null &
 done
 
 
