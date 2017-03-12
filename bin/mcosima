@@ -14,7 +14,7 @@ help() {
   echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
   echo "    -n <nice>:     The nice level as an integer"
   echo "    -z:            zip the simulations files"
-  echo "    -e:            Use the given special cosima executable instead" 
+  echo "    -e:            Use the given special cosima executable instead"
   echo "    -w:            If set, wait until all jobs have finished."
   echo "";
   echo "Example:";
@@ -30,7 +30,7 @@ help() {
 Threads=1;
 if ( `test -f /usr/sbin/sysctl` ); then
   Threads=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif ( `test -f /proc/cpuinfo` ); then
   Threads=`grep processor /proc/cpuinfo | wc -l`
 fi
 Source="!@#$";
@@ -63,8 +63,8 @@ fi;
 while [ $# -gt 0 ] ; do
   Found=0;
   case $1 in
-  -h|--help) 
-    help; 
+  -h|--help)
+    help;
     exit 0;;
   -w|--wait)
     Found=1;
@@ -139,9 +139,9 @@ while [ $# -gt 0 ] ; do
       echo "Error: Only one source file allowed";
       echo "       For details see mcosima --help"
       echo " "
-      help; 
+      help;
       exit 1;
-    fi    
+    fi
   fi
 
   shift
@@ -200,11 +200,11 @@ echo " "
 echo "Launching mcosima"
 echo " "
 echo "Executable: ${Executable}"
-echo "Number of threads to use: ${Threads}" 
-echo "Maximum number of cosima threads on machine: ${Max}" 
-echo "Source file: ${Source}" 
-echo "gzip'ing the output file: ${Zip}" 
-echo "Waiting until all threads have finished: ${Wait}" 
+echo "Number of threads to use: ${Threads}"
+echo "Maximum number of cosima threads on machine: ${Max}"
+echo "Source file: ${Source}"
+echo "gzip'ing the output file: ${Zip}"
+echo "Waiting until all threads have finished: ${Wait}"
 
 
 
@@ -249,14 +249,16 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   mdelay ${Executable} ${Max}
   echo "Launching cosima run ${i}/${Threads}"
   Random=`od -vAn -N4 -tu4 < /dev/urandom`
-  Cmd="nice -n ${Nice} ${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID}"
+  Cmd="${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID}"
   if [[ "${Zip}" == "yes" ]]; then
     Cmd="${Cmd} -z"
   fi
   Cmd="${Cmd} ${Source}"
   #echo "Starting ${Cmd}"
   #${Cmd} >> Dump.txt
-  nohup ${Cmd} > /dev/null &
+  #nohup ${Cmd} > /dev/null &
+  # Required for latest macOS version since paths are not forwarded
+  nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null &
   Pids[${#Pids[*]}]=$!
   #Pids="$Pids $! "
   # We need to sleep for a little while so that cosima can determine which is the next file to use
@@ -271,9 +273,9 @@ ConcatFileName="Bla.sim"
 
 # Extract the base file names from the source file
 grep -i ".FileName" ${Source} | while read line; do
-  Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`; 
+  Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
   echo "Creating concatenation file for simulation \"${Base}\""
-  ConcatFileName="${Base}.p${ThreadsID}.sim" 
+  ConcatFileName="${Base}.p${ThreadsID}.sim"
 
   FirstFileName="${Base}.p${ThreadsID}.inc1.id1.sim"
   if [[ "${Zip}" == "yes" ]]; then
@@ -293,7 +295,7 @@ grep -i ".FileName" ${Source} | while read line; do
       sleep 1;
       echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
     done
-  else 
+  else
     while [ `wc -l ${FirstFileName} | awk -F" " '{ print $1 }'` -le 100 ]; do
       sleep 1;
       echo "Waiting for first 100 lines to be written into the simulation file \"${FirstFileName}\" ..."
@@ -306,7 +308,7 @@ grep -i ".FileName" ${Source} | while read line; do
   if [[ "${Zip}" == "yes" ]]; then
     gunzip -c ${FirstFileName} 2> /dev/null | head -n 100 > /tmp/mcosima.head
     # Remark: 2> /dev/null suppresses a "unexpected end of file" error message since the file is obviously not yet closed
-  else 
+  else
     head -n 100 ${FirstFileName} > /tmp/mcosima.head
   fi
   while read LINE
@@ -323,11 +325,11 @@ grep -i ".FileName" ${Source} | while read line; do
   rm /tmp/mcosima.head
 
   echo " " >> ${ConcatFileName}
-    
+
   for (( i=1; i <= ${Threads}; i+=1 )); do
     echo "IN ${Base}.p${ThreadsID}.inc${i}.id1.sim" >> ${ConcatFileName}
   done
-    
+
   echo "EN" >> ${ConcatFileName}
   echo " " >> ${ConcatFileName}
 
@@ -346,7 +348,7 @@ grep -i ".FileName" ${Source} | while read line; do
     echo "kill -2 ${Pids[$p]}" >> ${KillFileName}
   done
   echo " " >> ${KillFileName}
-  echo "exit" >> ${KillFileName} 
+  echo "exit" >> ${KillFileName}
 done
 
 
@@ -357,4 +359,3 @@ if [ "${Wait}" = "yes" ]; then
 fi
 
 exit 0;
-
