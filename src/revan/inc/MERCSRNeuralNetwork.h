@@ -47,10 +47,10 @@ class MERCSRNeuralNetwork : public MERCSR
   MERCSRNeuralNetwork();
   virtual ~MERCSRNeuralNetwork();
 
-  virtual bool SetParameters(MString FileName, 
-                             MGeometryRevan* Geometry, 
-                             double ThresholdMin = 0.0, 
-                             double ThresholdMax = 0.5, 
+  virtual bool SetParameters(MString FileName,
+                             MGeometryRevan* Geometry,
+                             double ThresholdMin = 0.0,
+                             double ThresholdMax = 0.5,
                              int MaxNHits = 5,
                              bool GuaranteeStartD1 = true,
                              bool CreateOnlyPermutations = false);
@@ -76,13 +76,13 @@ class MERCSRNeuralNetwork : public MERCSR
 
   // private members:
  private:
-  unsigned int m_UseAbsorptionsUpTo; 
+  //unsigned int m_UseAbsorptionsUpTo;
 
   MString m_FileName;
 
-  //! The neural network determining the sequence - array over energy intervals and sequence lengths 
+  //! The neural network determining the sequence - array over energy intervals and sequence lengths
   vector<vector<MNeuralNetworkBackpropagation> > m_SequenceNNs;
-  //! The neural network determining the quality of the event - array over energy intervals and sequence lengths 
+  //! The neural network determining the quality of the event - array over energy intervals and sequence lengths
   vector<vector<MNeuralNetworkBackpropagation> > m_QualityNNs;
 
   //! All possible Permutations for fast access:
@@ -90,13 +90,13 @@ class MERCSRNeuralNetwork : public MERCSR
 
   double m_xMin;
   double m_xInt;
-  
+
   double m_yMin;
   double m_yInt;
-  
+
   double m_zMin;
   double m_zInt;
-  
+
   double m_MaximumDistance;
 
   vector<double> m_EnergyMin;
@@ -108,7 +108,7 @@ class MERCSRNeuralNetwork : public MERCSR
   bool m_UseDistances;
   bool m_UseInteractionProbabilities;
   bool m_UseComptonScatterProbabilities;
-  bool m_UseAbsorptions;
+  ///bool m_UseAbsorptions;
   bool m_UseComptonScatterAngles;
   bool m_UseDPhiCriterion;
 
