@@ -93,7 +93,7 @@ void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
   m_Axes.push_back(Axis.Clone());
   m_Order += Axis.GetDimension();
   m_Values.resize(GetNBins(), 0);
-  
+
   ostringstream out;
   m_Axes.back()->Write(out);
 }
@@ -105,10 +105,10 @@ void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
 void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   // Set the axis
-  
+
   MResponseMatrixAxis* Axis = new MResponseMatrixAxis(Name);
   Axis->SetLinear(NBins, Min, Max, UnderFlowMin, OverFlowMax);
-  
+
   m_Axes.push_back(Axis);
   m_Order += 1;
   m_Values.resize(GetNBins(), 0);
@@ -121,10 +121,10 @@ void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned int NBins, d
 void MResponseMatrixON::AddAxisLogarithmic(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   // Set the axis
-  
+
   MResponseMatrixAxis* Axis = new MResponseMatrixAxis(Name);
   Axis->SetLogarithmic(NBins, Min, Max, UnderFlowMin, OverFlowMax);
-  
+
   m_Axes.push_back(Axis);
   m_Order += 1;
   m_Values.resize(GetNBins(), 0);
@@ -139,9 +139,9 @@ vector<MString> MResponseMatrixON::GetAxisNames(unsigned int AxisIndex) const
   // Return the name of the axis
 
   if (AxisIndex >= m_Axes.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex); 
+    throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex);
   }
-  
+
   return m_Axes[AxisIndex]->GetNames();
 }
 
@@ -156,7 +156,7 @@ const MResponseMatrixAxis& MResponseMatrixON::GetAxis(unsigned int AxisIndex) co
   if (AxisIndex >= m_Axes.size()) {
     throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex);
   }
- 
+
   return *m_Axes[AxisIndex];
 }
 
@@ -167,17 +167,17 @@ const MResponseMatrixAxis& MResponseMatrixON::GetAxis(unsigned int AxisIndex) co
 bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
 {
   // Two matrixes are identical if they have the same axis:
-  
+
   if (m_Axes.size() != R.m_Axes.size()) {
     return false;
   }
-  
+
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     if (*m_Axes[a] != *R.m_Axes[a]) {
-      return false; 
+      return false;
     }
   }
-  
+
   return true;
 }
 
@@ -279,30 +279,30 @@ MResponseMatrixON& MResponseMatrixON::operator*=(const float& Value)
 unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
 {
   // Find the bin of m_Values corresponding to the axis bins X
-  
+
   if (X.size() != m_Axes.size()) {
-    throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Axes.size()); 
+    throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Axes.size());
   }
-  
+
   double Multiplier = 0;
   unsigned int Bin = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     if (X[a] >= m_Axes[a]->GetNumberOfBins()) {
-      throw MExceptionIndexOutOfBounds(0, m_Axes[a]->GetNumberOfBins(), X[a]); 
+      throw MExceptionIndexOutOfBounds(0, m_Axes[a]->GetNumberOfBins(), X[a]);
     }
-    
+
     if (a == 0) {
       Multiplier = 1;
     } else {
-      Multiplier *= m_Axes[a-1]->GetNumberOfBins(); 
+      Multiplier *= m_Axes[a-1]->GetNumberOfBins();
     }
     Bin += Multiplier*X[a];
   }
-  
+
   if (Bin >= m_Values.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Values.size(), Bin); 
+    throw MExceptionIndexOutOfBounds(0, m_Values.size(), Bin);
   }
-  
+
   return Bin;
 }
 
@@ -313,14 +313,14 @@ unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
 vector<unsigned int> MResponseMatrixON::FindBins(unsigned int Bin) const
 {
   // Find the axes bins corresponding to the internal value bin Bin
-  
+
   vector<unsigned int> Bins(m_Axes.size());
-  
+
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     Bins[a] = Bin % m_Axes[a]->GetNumberOfBins();
     Bin = (Bin - Bins[a]) / m_Axes[a]->GetNumberOfBins();
   }
-  
+
   return Bins;
 }
 
@@ -334,26 +334,26 @@ vector<unsigned int> MResponseMatrixON::FindBins(vector<double> X) const
 
   unsigned int Xbin = 0;
   vector<unsigned int> Bins;
-  
+
   if (X.size() != m_Order) {
     throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Order);
     return Bins;
   }
-  
+
   //cout<<"Find Bin: Input data: "; for (auto b: X) cout<<b<<" "; cout<<endl;
-  
+
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == true) {
-        Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin])); 
+        Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin]));
       } else {
         cout<<m_Name<<": Axis: "<<m_Axes[a]->GetNames()[0]<<endl;
         throw MExceptionValueOutOfBounds(X[Xbin]);
       }
     } else if (Dimension == 2) {
       if (m_Axes[a]->InRange(X[Xbin], X[Xbin+1]) == true) {
-        Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin], X[Xbin+1])); 
+        Bins.push_back(m_Axes[a]->GetAxisBin(X[Xbin], X[Xbin+1]));
       } else {
         cout<<X[Xbin]<<":"<<X[Xbin+1]<<endl;
         throw MExceptionValueOutOfBounds();
@@ -364,7 +364,7 @@ vector<unsigned int> MResponseMatrixON::FindBins(vector<double> X) const
     }
     Xbin += Dimension;
   }
-  
+
   return Bins;
 }
 
@@ -386,12 +386,12 @@ unsigned int MResponseMatrixON::FindBin(vector<double> X) const
 bool MResponseMatrixON::InRange(vector<double> X) const
 {
   // Check if the values are inside the range of all axes
-  
+
   if (X.size() != m_Order) {
     throw MExceptionTestFailed("The matrix dimension (input vs. internal) are not identical", X.size(), "!=", m_Order);
     return false;
   }
-  
+
   //cout<<"Inrange: Input data: "; for (auto b: X) cout<<b<<" "; cout<<endl;
 
   unsigned int Xbin = 0;
@@ -411,7 +411,7 @@ bool MResponseMatrixON::InRange(vector<double> X) const
     }
     Xbin += Dimension;
   }
-  
+
   return true;
 }
 
@@ -422,18 +422,18 @@ bool MResponseMatrixON::InRange(vector<double> X) const
 bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
 {
   // Check if the values are inside the range of all axes
-  
+
   if (Bins.size() != m_Axes.size()) {
     throw MExceptionTestFailed("The axes sizes (input vs. internal) are not identical", Bins.size(), "!=", m_Axes.size());
     return false;
   }
-  
+
   for (unsigned int a = 0; a < m_Order; ++a) {
     if (Bins[a] >= m_Axes[a]->GetNumberOfBins()) {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -444,11 +444,11 @@ bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
 void MResponseMatrixON::Set(vector<unsigned int> X, float Value)
 {
   // Set the content of the bin
-  
+
   if (InRange(X) == false) {
-    return; 
+    return;
   }
-  
+
   m_Values[FindBin(X)] = Value;
 }
 
@@ -461,9 +461,9 @@ void MResponseMatrixON::Set(vector<double> X, float Value)
   // Set a value
 
   if (InRange(X) == false) {
-    return; 
+    return;
   }
-  
+
   m_Values[FindBin(X)] = Value;
 }
 
@@ -476,9 +476,9 @@ void MResponseMatrixON::Add(vector<double> X, float Value)
   // Add a value to the bin closest to x, y
 
   if (InRange(X) == false) {
-    return; 
+    return;
   }
-  
+
   m_Values[FindBin(X)] += Value;
 }
 
@@ -489,16 +489,16 @@ void MResponseMatrixON::Add(vector<double> X, float Value)
 unsigned long MResponseMatrixON::GetNBins() const
 {
   // Return the number of bins
-  
+
   unsigned long Bins = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     if (Bins == 0) {
-      Bins = m_Axes[a]->GetNumberOfBins(); 
+      Bins = m_Axes[a]->GetNumberOfBins();
     } else {
-      Bins *= m_Axes[a]->GetNumberOfBins(); 
+      Bins *= m_Axes[a]->GetNumberOfBins();
     }
   }
-  
+
   return Bins;
 }
 
@@ -521,21 +521,21 @@ float MResponseMatrixON::Get(vector<unsigned int> X) const
 float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) const
 {
   // Return the array-data according to value x1
-  
+
   if (InRange(X) == false) {
     cout<<"Out of range: ";
     for (auto x: X) cout<<x<<" ";
     cout<<endl;
-    return 0; 
+    return 0;
   }
-  
+
   mout<<"Interpolation not implemented!"<<endl;
-  
+
   return m_Values[FindBin(X)];
-  
+
   // We have to distinguish two different cases:
   // (1) the values are at the center of the bin (e.g. used by response files)
-  // (2) the values are the edge (axis point) (e.g. used by MEGAlib absorption files) 
+  // (2) the values are the edge (axis point) (e.g. used by MEGAlib absorption files)
 
   // We can assume that the bin size is larger equal 2
 
@@ -545,9 +545,9 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
   // t = y1 - m*x1
   // y = y1 + (x-x1)*m
 
-  
+
   /*
-  if (m_ValuesCentered == true) { 
+  if (m_ValuesCentered == true) {
     if (m_AxisO1.size() == 2) {
       return m_Values.front();
     } else {
@@ -594,7 +594,7 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
         return m_Values.back();
       }
     }
-    
+
     // Interpolate:
     return m_Values[Position] + (x1 - m_AxisO1[Position])/
       (m_AxisO1[Position+1] - m_AxisO1[Position])*
@@ -609,15 +609,15 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
 
 float MResponseMatrixON::Get(vector<double> X) const
 {
-  // Return the array-data according to value x 
+  // Return the array-data according to value x
 
   if (InRange(X) == false) {
     cout<<"Out of range: ";
     for (auto x: X) cout<<x<<" ";
     cout<<endl;
-    return 0; 
+    return 0;
   }
-  
+
   return m_Values[FindBin(X)];
 }
 
@@ -628,21 +628,21 @@ float MResponseMatrixON::Get(vector<double> X) const
 float MResponseMatrixON::GetArea(vector<double> X) const
 {
   // Return the area of the bin corresponding to X
-  
+
   if (InRange(X) == false) {
     cout<<"Out of range: ";
     for (auto x: X) cout<<x<<" ";
     cout<<endl;
-    return 0.0; 
+    return 0.0;
   }
-  
+
   vector<unsigned int> Bins = FindBins(X);
 
-  double Area = 1;  
+  double Area = 1;
   for (unsigned int b = 0; b < Bins.size(); ++b) {
     Area *= m_Axes[b]->GetArea(Bins[b]);
   }
-  
+
   return Area;
 }
 
@@ -659,7 +659,7 @@ float MResponseMatrixON::GetMaximum() const
     if (m_Values[i] > Max) {
       Max = m_Values[i];
     }
-  }  
+  }
 
   return Max;
 }
@@ -677,7 +677,7 @@ float MResponseMatrixON::GetMinimum() const
     if (m_Values[i] < Min) {
       Min = m_Values[i];
     }
-  }  
+  }
 
   return Min;
 }
@@ -693,7 +693,7 @@ float MResponseMatrixON::GetSum() const
   float Sum = 0;
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     Sum += m_Values[i];
-  }  
+  }
 
   return Sum;
 }
@@ -707,9 +707,9 @@ float MResponseMatrixON::GetSum() const
 MResponseMatrixAxis* MResponseMatrixON::GetAxisByOrder(unsigned int Order)
 {
   if (Order < 1 || Order > m_Order) {
-    throw MExceptionValueOutOfBounds(1, m_Order, Order);    
+    throw MExceptionValueOutOfBounds(1, m_Order, Order);
   }
-  
+
   unsigned int CountedOrder = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     CountedOrder += m_Axes[a]->GetDimension();
@@ -717,9 +717,9 @@ MResponseMatrixAxis* MResponseMatrixON::GetAxisByOrder(unsigned int Order)
       return m_Axes[a];
     }
   }
-  
+
   throw MExceptionNeverReachThatLineOfCode();
-  
+
   return nullptr;
 }
 
@@ -727,14 +727,14 @@ MResponseMatrixAxis* MResponseMatrixON::GetAxisByOrder(unsigned int Order)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser, 
-                                     const MString& Type, 
+bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
+                                     const MString& Type,
                                      const int Version)
 {
   // Read the data from file directly into this matrix
 
   bool Ok = true;
-  
+
   MTimer Timer;
 
 
@@ -772,7 +772,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
             if (AxisName.size() != 2) {
               mout<<"MResponseMatrixON: Did not find two axis names for the response matrix axis!"<<endl;
               return false;
-            }              
+            }
             MResponseMatrixAxisSpheric* A = new MResponseMatrixAxisSpheric(AxisName[0], AxisName[1]);
             // Sub parse until we found the axis data
             while (Parser.TokenizeLine(T, true) == true) {
@@ -791,23 +791,23 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
       if (Type == "ResponseMatrixONStream") {
         while (Parser.TokenizeLine(T, true) == true) {
           if (T.GetNTokens() < 2) continue;
-          
+
           if (T.GetTokenAt(0) == "StartStream") {
             unsigned long StreamSize = T.GetTokenAtAsLong(1);
-            
+
             if (GetNBins() != StreamSize) {
               mout<<"MResponseMatrixON: The number of bins ("<<GetNBins()<<") and the stream size ("<<StreamSize<<") are not in sync!"<<endl;
               Ok = false;
               break;
             }
             m_Values.resize(StreamSize, 0);
-            
+
             m_Order = 0;
             for (unsigned int a = 0; a < m_Axes.size(); ++a) {
-              m_Order += m_Axes[a]->GetDimension(); 
+              m_Order += m_Axes[a]->GetDimension();
             }
-            
-            
+
+
             bool StreamOk = true;
             float Data;
             unsigned long x, x_max = StreamSize;
@@ -824,7 +824,7 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
                 break;
               }
             }
-            
+
             if (StreamOk == false) {
               mout<<"MResponseMatrixON: Stream was not ok!"<<endl;
               Ok = false;
@@ -847,15 +847,15 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
       } // Stream or no stream
     } // Axis/Type loop
   } // main loop
-  
+
   m_Order = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
-    m_Order += m_Axes[a]->GetDimension(); 
+    m_Order += m_Axes[a]->GetDimension();
   }
-  
-  
+
+
   cout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
-  
+
   return Ok;
 }
 
@@ -866,8 +866,8 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
 bool MResponseMatrixON::Write(MString FileName, bool Stream)
 {
   // Write the content to file
-  
-  
+
+
   MFileResponse File;
   if (File.Open(FileName, MFile::c_Write) == false) return false;
 
@@ -894,7 +894,7 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<"CE false"<<endl;
   s<<endl;
   File.Write(s);
-  
+
   s<<endl;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     m_Axes[a]->Write(s);
@@ -902,7 +902,7 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   }
   s<<endl;
   File.Write(s);
-  
+
   // Determine the sparcity:
   unsigned long Empty = 0;
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
@@ -913,11 +913,11 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   if (double(Empty)/GetNBins() > 0.9) {
     Stream = false;
   }
-  
+
   if (Stream == true) {
     s<<"Type ResponseMatrixONStream"<<endl;
     s<<endl;
-  
+
     // Write content stream
     s<<"StartStream "<<m_Values.size()<<endl;
     File.Write(s);
@@ -934,7 +934,7 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   } else {
     s<<"Type ResponseMatrixON"<<endl;
     s<<endl;
-    
+
     for (unsigned int i = 0; i < m_Values.size(); ++i) {
       if (m_Values[i] == 0) continue;
       vector<unsigned int> Bins = FindBins(i);
@@ -948,9 +948,9 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   }
 
   File.Close();
-  
+
   mout<<"File \""<<FileName<<"\" with "<<m_Values.size()<<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
-  
+
   return true;
 }
 
@@ -963,12 +963,12 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
   // Create a ROOT histogram:
 
   Write("Test.txt", true);
-  
+
   if (AxisValues.size() < m_Order) {
     merr<<"MResponseMatrixON::ShowSlice: You have to give as many axis values as there are axes!"<<endl;
     return;
   }
-  
+
   bool ContainsShowX = false;
   for (unsigned int v = 0; v < AxisValues.size(); ++v) {
     if (AxisValues[v] == MResponseMatrix::c_ShowX) {
@@ -998,16 +998,16 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
     merr<<"MResponseMatrixON::ShowSlice: Cannot show z axis if y axis is not shown."<<endl;
     return;
   }
-    
+
   vector<float> ShowMatrix;
   if (ContainsShowX == true) ShowMatrix.push_back(MResponseMatrix::c_ShowX);
   if (ContainsShowY == true) ShowMatrix.push_back(MResponseMatrix::c_ShowY);
   if (ContainsShowZ == true) ShowMatrix.push_back(MResponseMatrix::c_ShowZ);
-  
-  
+
+
   vector<unsigned int> Order;
   vector<bool> found(m_Order, false);
-  
+
   for (unsigned int s = 0; s < ShowMatrix.size(); ++s) {
     for (unsigned int a = 0; a < AxisValues.size(); ++a) {
       if (AxisValues[a] == ShowMatrix[s]) {
@@ -1019,29 +1019,29 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
   //for (unsigned int i = 0; i < Order.size(); ++i) {
   //  cout<<"Order "<<i<<": "<<Order[i]<<endl;
   //}
-  
+
   unsigned int NAxes = Order.size();
-  
+
   for (unsigned int a = 0; a < AxisValues.size(); ++a) {
     if (found[a] == false) {
       Order.push_back(a+1);
-      //values.push_back(m_Axes[a]->GetAxisBin(AxisValues[a]));    
-    }  
+      //values.push_back(m_Axes[a]->GetAxisBin(AxisValues[a]));
+    }
   }
-  
+
   /*
   mout<<"Mapping: "<<endl;
   for (unsigned int i = 0; i < Order.size(); ++i) {
     mout<<i<<": a="<<Order[i]<<" - m="<<values[i]<<endl;
   }
   */
-  
+
   vector<MResponseMatrixAxis*> DrawnAxes;
   for (unsigned int a = 0; a < NAxes; ++a) {
     DrawnAxes.push_back(GetAxisByOrder(Order[a]));
     a += DrawnAxes.back()->GetDimension() - 1; // Jump if the axis has multiple dimensions
   }
-  
+
   vector<vector<double>> BinEdges;
   for (unsigned int a = 0; a < DrawnAxes.size(); ++a) {
     vector<vector<double>> ProvidedBinEdges = DrawnAxes[a]->GetDrawingAxisBinEdges();
@@ -1049,7 +1049,7 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
       BinEdges.push_back(ProvidedBinEdges[v]);
     }
   }
-  
+
   vector<MString> AxisNames;
   for (unsigned int a = 0; a < DrawnAxes.size(); ++a) {
     vector<MString> ProvidedAxisNames = DrawnAxes[a]->GetNames();
@@ -1057,8 +1057,8 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
       AxisNames.push_back(ProvidedAxisNames[v]);
     }
   }
-  
-  
+
+
   if (GetNBins() > 0) {
 
 
@@ -1069,15 +1069,15 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
     //for (unsigned int i = 0; i < Values.size(); ++i) {
     //  cout<<"Value "<<i<<": "<<Values[i]<<endl;
     //}
-      
-    
+
+
     if (NAxes == 1) {
-      
+
       TH1D* Hist = new TH1D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);
-      
+
       for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
         Values[Order[0]-1] = Hist->GetBinCenter(bx);
         Value = Get(Values);
@@ -1088,29 +1088,29 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
         if (Value < Minimum) Minimum = Value;
         Hist->SetBinContent(bx, Value);
       }
-      
+
       TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
-        Canvas->SetLogx(); 
+        Canvas->SetLogx();
       }
       Hist->SetMinimum(Minimum);
       Hist->Draw();
       Canvas->Update();
-      
+
     } else if (NAxes == 2) {
-      
+
       TH2D* Hist = new TH2D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);
       Hist->SetYTitle(AxisNames[1]);
-      
+
       //double Norm = 1;
       for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
         for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
           Values[Order[0]-1] = Hist->GetXaxis()->GetBinCenter(bx);
-          Values[Order[1]-1] = Hist->GetYaxis()->GetBinCenter(by);    
+          Values[Order[1]-1] = Hist->GetYaxis()->GetBinCenter(by);
           //cout<<"Values: "; for (unsigned int i = 0; i < Values.size(); ++i) cout<<Values[i]<<" "; cout<<" ---> "<<Get(Values)<<" "<<GetArea(Values)<<endl;
           Value = Get(Values);
           if (Value == 0) continue;
@@ -1121,28 +1121,28 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
           Hist->SetBinContent(bx, by, Value);
         }
       }
-      
+
       TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
-        Canvas->SetLogx(); 
+        Canvas->SetLogx();
       }
       if (GetAxisByOrder(Order[1])->IsLogarithmic() == true) {
-        Canvas->SetLogy(); 
+        Canvas->SetLogy();
       }
       Hist->SetMinimum(Minimum);
       Hist->Draw("colz");
       Canvas->Update();
-      
+
     } else if (NAxes == 3) {
-      
+
       TH3D* Hist = new TH3D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0], BinEdges[2].size() - 1, &BinEdges[2][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);
       Hist->SetYTitle(AxisNames[1]);
       Hist->SetYTitle(AxisNames[2]);
-      
+
       //double Norm = 1;
       for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
         for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
@@ -1160,26 +1160,26 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
           }
         }
       }
-      
+
       TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
-        Canvas->SetLogx(); 
+        Canvas->SetLogx();
       }
       if (GetAxisByOrder(Order[1])->IsLogarithmic() == true) {
-        Canvas->SetLogy(); 
+        Canvas->SetLogy();
       }
       if (GetAxisByOrder(Order[2])->IsLogarithmic() == true) {
-        Canvas->SetLogz(); 
+        Canvas->SetLogz();
       }
       Hist->SetMinimum(Minimum);
       Hist->Draw();
       Canvas->Update();
-      
+
     } else {
       merr<<"Wrong number of axis: "<<NAxes<<endl;
     }
-    
+
   } else {
     mout<<"Empty response matrix of order 7"<<endl;
   }
@@ -1199,9 +1199,9 @@ void MResponseMatrixON::Smooth(unsigned int Times)
     for (unsigned int i = 0; i < GetAxisBins(); ++i) {
       Values[i] = m_Values[i];
     }
-    
+
     TH1::SmoothArray(GetAxisBins(), Values, Times);
-    
+
     for (unsigned int i = 0; i < GetAxisBins(); ++i) {
       SetBinContent(i, Values[i]);
     }
@@ -1234,7 +1234,7 @@ ostream& operator<<(ostream& os, const MResponseMatrixON& R)
 MString MResponseMatrixON::GetStatistics() const
 {
   ostringstream out;
-  
+
   out<<"Statistics for response matrix \""<<m_Name<<"\":"<<endl;
   out<<endl;
   out<<"Number of axes:         "<<m_Axes.size()<<endl;
@@ -1243,9 +1243,9 @@ MString MResponseMatrixON::GetStatistics() const
   out<<"Maximum:                "<<GetMaximum()<<endl;
   out<<"Minimum:                "<<GetMinimum()<<endl;
   out<<"Sum:                    "<<GetSum()<<endl;
-  out<<"Avgerage value:         "<<GetSum()/GetNBins()<<endl;
+  out<<"Average value:         "<<GetSum()/GetNBins()<<endl;
   out<<endl;
-  
+
   out<<"Axes:"<<endl;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     out<<"  x"<<a<<":  ";
@@ -1254,8 +1254,8 @@ MString MResponseMatrixON::GetStatistics() const
       if (m_Axes[a]->GetNames().size() > 1 && i < m_Axes[a]->GetNames().size() -1) out<<"  +  ";
     }
     out<<endl;
-  } 
-  
+  }
+
   return out.str();
 }
 

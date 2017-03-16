@@ -100,7 +100,7 @@ bool MResponseMatrixOx::IsIncreasing(vector<float> Axis) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrixOx::AreIncreasing(unsigned int order, 
+bool MResponseMatrixOx::AreIncreasing(unsigned int order,
                                     unsigned int a1,
                                     unsigned int a2,
                                     unsigned int a3,
@@ -167,7 +167,7 @@ bool MResponseMatrixOx::AreIncreasing(unsigned int order,
 int MResponseMatrixOx::FindBinCentered(const vector<float>& Array, float Value) const
 {
   // Does a simple binary search to find the correct bin centered interpolation:
-  
+
   //                   x-----.-----x-----.-----x-----.-----x
   //  Case 1: value =               ^^^^^
   //                         ^ This bin
@@ -175,25 +175,25 @@ int MResponseMatrixOx::FindBinCentered(const vector<float>& Array, float Value) 
   //                                     ^ This bin
   //  Case 3: value =   ^^^^^
   //                    -1
-  
-  
+
+
   int Bin = FindBin(Array, Value);
-  
-  // Array.size() is guaranteed to be >= 2 
+
+  // Array.size() is guaranteed to be >= 2
   if (Bin >= 0 && Bin < int(Array.size()) - 1 && Value < 0.5*(Array[Bin+1] + Array[Bin])) {
     --Bin;
   }
-      
+
   return Bin;
-  
-  
-  
+
+
+
   // Old:
   /*
   massert(Array.size() >= 2);
 
   if (Value < Array[0]) return -1;
-  if (Value >= Array.back()) return Array.size(); 
+  if (Value >= Array.back()) return Array.size();
 
   // Very simple search:
   int i_max = int(Array.size());
@@ -215,18 +215,18 @@ int MResponseMatrixOx::FindBin(const vector<float>& Array, float Value) const
 {
   // Does a simple binary search to find the correct bin:
   // Finds the last bin which is smaller
-  
-  
+
+
   massert(Array.size() >= 2);
 
   if (Value < Array.front()) return -1;
-  if (Value >= Array.back()) return Array.size(); 
+  if (Value >= Array.back()) return Array.size();
 
   // C++ version
   auto UpperBound = upper_bound(Array.begin(), Array.end(), Value);
   return int(UpperBound - Array.begin()) - 1;
 
-  
+
   /*
   // The following has been optimized for the icc compiler!
   if (Array.size() < 32) {
@@ -236,7 +236,7 @@ int MResponseMatrixOx::FindBin(const vector<float>& Array, float Value) const
     for (Iter = Array.begin(); Iter != Array.end(); ++Iter) {
       if ((*Iter) > Value) {
         return int(Iter - Array.begin()) - 1;
-      } 
+      }
     }
     return -1; // Should never be reached...
 
@@ -275,7 +275,7 @@ bool MResponseMatrixOx::Read(MString FileName)
   if (g_Verbosity == c_Chatty) {
     mout<<"Started reading file \""<<FileName<<"\" ... This way take a while ..."<<endl;
   }
-  
+
   MFileResponse Parser;
   if (Parser.Open(FileName) == false) return false;
 
@@ -283,7 +283,7 @@ bool MResponseMatrixOx::Read(MString FileName)
 
   // Store header information:
   int Version = Parser.GetVersion();
-  MString Type = Parser.GetFileType(); 
+  MString Type = Parser.GetFileType();
   SetName(Parser.GetName());
   SetValuesCenteredFlag(Parser.AreValuesCentered());
   SetHash(Parser.GetHash());
@@ -292,7 +292,7 @@ bool MResponseMatrixOx::Read(MString FileName)
 
   Ok = ReadSpecific(Parser, Type, Version);
 
-  if (g_Verbosity == c_Chatty) {  
+  if (g_Verbosity == c_Chatty) {
     mdebug<<"File \""<<FileName<<"\" with "<<GetNBins()
           <<" entries read in "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
@@ -309,7 +309,7 @@ bool MResponseMatrixOx::Read(MString FileName)
 MString MResponseMatrixOx::GetStatistics() const
 {
   ostringstream out;
-  
+
   out<<"Statistics for response matrix \""<<m_Name<<"\":"<<endl;
   out<<endl;
   out<<"Number of axes:         "<<m_Order<<endl;
@@ -318,7 +318,7 @@ MString MResponseMatrixOx::GetStatistics() const
   out<<"Maximum:                "<<GetMaximum()<<endl;
   out<<"Minimum:                "<<GetMinimum()<<endl;
   out<<"Sum:                    "<<GetSum()<<endl;
-  out<<"Avgerage value:         "<<GetSum()/GetNBins()<<endl;
+  out<<"Average value:         "<<GetSum()/GetNBins()<<endl;
   out<<endl;
 
   out<<"Axes:"<<endl;
@@ -326,7 +326,7 @@ MString MResponseMatrixOx::GetStatistics() const
     out<<"  x"<<i<<":  "<<GetAxisName(i)<<" (from "<<GetAxisContent(0, i)
       <<" to "<<GetAxisContent(GetAxisBins(i), i)
       <<" in "<<GetAxisBins(i)<<" bins)"<<endl;
-  } 
+  }
 
   return out.str();
 }
