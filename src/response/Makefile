@@ -12,7 +12,7 @@
 # Definitions:
 #
 
-PRGM	= $(BN)/responsemanipulator 
+PRGM	= $(BN)/responsemanipulator
 
 MOBJM	=	$(LB)/MResponseManipulatorMain.o
 
@@ -34,6 +34,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 				$(LB)/MResponseImaging.o \
 				$(LB)/MResponseImagingARM.o \
 				$(LB)/MResponseImagingEfficiency.o \
+				$(LB)/MResponseImagingEfficiencyNearField.o \
 				$(LB)/MResponseImagingBinnedMode.o \
 				$(LB)/MResponseImagingCodedMask.o \
 				$(LB)/MResponseEarthHorizon.o \
@@ -89,6 +90,3 @@ $(PRGC): $(MOBJC) $(SLOBJ)
 
 #
 #----------------------------------------------------------------
-
-
-

@@ -58,7 +58,7 @@ class MImager
 
 
   // Set the settings
-  
+
   //! Set all settings
   bool SetSettings(MSettingsMimrec* Settings);
   //! Set only the imaging settings
@@ -70,7 +70,7 @@ class MImager
   // Image part:
 
   //! Set the image dimensions
-  void SetViewport(double xMin, double xMax, int xNBins, 
+  void SetViewport(double xMin, double xMax, int xNBins,
                    double yMin, double yMax, int yNBins,
                    double zMin = 0, double zMax = 0, int zNBins = 1,
                    MVector xAxis = MVector(1.0, 0.0, 0.0), MVector zAxis = MVector(0.0, 0.0, 1.0));
@@ -78,41 +78,45 @@ class MImager
   //! Set the draw mode
   void SetDrawMode(const int DrawMode) { m_DrawMode = DrawMode; }
 
-  //! Set the palette
+  //! Set the palette (see MImage.h for the options)
   void SetPalette(const int Palette) { m_Palette = Palette; }
 
-  //! Set the source catalog
+  //! Set the source catalog file name
   void SetSourceCatalog(const MString SourceCatalog) { m_SourceCatalog = SourceCatalog; }
 
-  //! Set the image projection
+  //! Set the image projection mode (see MImage.h for the options)
   void SetProjection(const MImageProjection Projection) { m_Projection = Projection; }
 
 
   // Response part:
 
-  //! Set the Gaussian response 
-  void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, 
+  //! Set the Gaussian response:
+  //! Transversal: 1-sigma Gaussian ARM-width equivalent
+  //! Longitudinal: 1-sigma Gaussian SPD-widthj equivalent
+  //! Pair: 1-sigma Gaussian
+  void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair,
                            const double CutOff, const bool UseAbsorptions);
   //! Calculate the response using the known uncertainties of the event
+  //! Increase is an artificial increase of the value
   void SetResponseGaussianByUncertainties(double Increase);
-  //! Determine the response considering energy leakage
+  //! Determine the response considering energy leakage - old - do not use
   void SetResponseEnergyLeakage(const double Longitudinal, const double Transversal);
-  //! Determine the response from simualted cone shapes
+  //! Determine the response from simulated cone shapes stored in file "FilerName"
   bool SetResponseConeShapes(const MString& FileName);
-  //! Set response matrices
+  //! Set response matrices - old - do not use
   bool SetResponsePRM(const MString& ComptonTrans, const MString& ComptonLong, const MString& Pair);
 
   //! Set if absorption probabilities should be use
   void UseAbsorptions(bool UseAbsorptions = true);
 
   // Deconvolution part:
-  
+
   //! Use the classic EM algorithm for deconvolution
   void SetDeconvolutionAlgorithmClassicEM();
   //! Use the OSEM algorithm for deconvolution
   void SetDeconvolutionAlgorithmOSEM(unsigned int NSubsets);
 
-  //! Use a stop criterion by 
+  //! Use a stop criterion by
   void SetStopCriterionByIterations(int NIterations);
   //! Reset the stop criterion
   void ResetStopCriterion() { if (m_EM != 0) m_EM->ResetStopCriterion(); }
@@ -122,8 +126,8 @@ class MImager
   //! Set the exposure mode efficiency file
   bool SetExposureEfficiencyFile(MString FileName);
 
-  // All the rest:  
-  
+  // All the rest:
+
   //! Set the point sources which are cut out of the picture
   void SetDeselectedPointSources(TObjArray* DeselectedPS);
 
@@ -133,14 +137,14 @@ class MImager
   //! Set the maths approximation
   void SetApproximatedMaths(bool Approximated);
 
-  //! Set the event selector 
+  //! Set the event selector
   void SetEventSelector(const MEventSelector& Selector);
   //! Set the geometry
   void SetGeometry(MDGeometryQuest* Geometry);
   //! Open the event file
-  bool SetFileName(MString FileName, bool FastFileParsing = false); 
+  bool SetFileName(MString FileName, bool FastFileParsing = false);
 
-  
+
   // The animation
 
   //! ID representing no animation at all
@@ -156,7 +160,7 @@ class MImager
   void SetAnimationFrameTime(const double AnimationFrameTime) { m_AnimationFrameTime = AnimationFrameTime; }
   //! Set the output file namespace
   void SetAnimationFileName(const MString AnimationFileName) { m_AnimationFileName = AnimationFileName; }
-  
+
   // The real analysis:
 
   //! The main imaging routine
@@ -200,7 +204,7 @@ class MImager
  protected:
 
   // The image:
-  
+
   //! x1-axis: Minimum
   double m_x1Min;
   //! x1-axis: Maximum
@@ -230,8 +234,8 @@ class MImager
   MString m_SourceCatalog;
   //! The image projection
   MImageProjection m_Projection;
-  
-  
+
+
   //! All produced images:
   vector<MImage*> m_Images;
 
@@ -239,33 +243,33 @@ class MImager
   // Response calculation:
 
   //! Number of bins (x*y*z) of the image
-  int m_NBins;  
+  int m_NBins;
   //! The coordinate system
   MCoordinateSystem m_CoordinateSystem;
-  //! Which of the axes is the 2D axis 
+  //! Which of the axes is the 2D axis
   int m_TwoDAxis;
 
 
   // Animation:
-  
+
   //! The animation mode (animate backprojections or animate iterations)
   int m_AnimationMode;
   //! The time between frames in seconds of observation time
   double m_AnimationFrameTime;
-  //! The name of the to be genarted animated gif file 
+  //! The name of the to be genarted animated gif file
   MString m_AnimationFileName;
 
-  
+
   // Response calculation:
 
   //! The response slices in list-mode
   vector<MBPData*> m_BPEvents;
   //! The backprojection algorithm classs --- one per thread
   vector<MBackprojection*> m_BPs;
- 
+
   //! Use absorption probabilities
   bool m_UseAbsorptions;
-  
+
   //! The event selector
   MEventSelector m_Selector;
   //! The event file
@@ -275,11 +279,11 @@ class MImager
   bool m_FastFileParsing;
 
   // Exposure calculation
-  
+
   //! The exposure calculator
   MExposure* m_Exposure;
-  
-  
+
+
   // Deconvolution:
 
   //! The EM algorithm
@@ -307,10 +311,10 @@ class MImager
   unsigned long m_MaxBytes;
   //! Flag indicating the storage accuracy of the response slices
   int m_ComputationAccuracy;
-  
+
   //! Flag indicating we went out of memory
   bool m_OutOfMemory;
-  
+
   //! Currently used bytes for the response
   unsigned long m_UsedBytes;
 

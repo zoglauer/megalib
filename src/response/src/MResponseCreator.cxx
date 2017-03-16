@@ -47,6 +47,7 @@ using namespace std;
 #include "MResponseImaging.h"
 #include "MResponseImagingARM.h"
 #include "MResponseImagingEfficiency.h"
+#include "MResponseImagingEfficiencyNearField.h"
 #include "MResponseImagingBinnedMode.h"
 #include "MResponseImagingCodedMask.h"
 #include "MResponseEarthHorizon.h"
@@ -91,7 +92,7 @@ MResponseCreator::MResponseCreator()
   m_NoAbsorptions = false;
 
   m_SaveAfter = 100000;
-  
+
   m_Compress = false;
 }
 
@@ -115,7 +116,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: responsecreator <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"      -g  --geometry        file  m  geometry file name"<<endl;
-  Usage<<"      -f  --filename        file  m  file name"<<endl;  
+  Usage<<"      -f  --filename        file  m  file name"<<endl;
   Usage<<"      -d  --debug                    enable debug"<<endl;
   Usage<<"      -r  --response-name   file     response file name"<<endl;
   Usage<<"      -v  --verify                   verify"<<endl;
@@ -130,7 +131,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"                                         il : list-mode imaging"<<endl;
   Usage<<"                                         ib : binned-mode imaging"<<endl;
   Usage<<"                                         ic : coded mask imaging"<<endl;
-  Usage<<"                                         ef : efficieny"<<endl;
+  Usage<<"                                         ef : efficiency far field (e.g. astrophysics)"<<endl;
+  Usage<<"                                         en : efficiency near field (e.g. medical)"<<endl;
   Usage<<"                                         e  : earth horizon"<<endl;
   Usage<<"                                         f  : first interaction position"<<endl;
   Usage<<"                                         q  : event quality"<<endl;
@@ -176,7 +178,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
-    } 
+    }
     // Multiple arguments_
     //else if (Option == "-??") {
     //  if (!((argc > i+2) && argv[i+1][0] != '-' && argv[i+2][0] != '-')){
@@ -244,7 +246,10 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         cout<<"Choosing Earth Horizon mode"<<endl;
       } else if (SubOption == "ef") {
         m_Mode = c_ModeEfficiency;
-        cout<<"Choosing efficiency mode"<<endl;
+        cout<<"Choosing efficiency mode far field"<<endl;
+      } else if (SubOption == "en") {
+        m_Mode = c_ModeEfficiencyNearField;
+        cout<<"Choosing efficiency mode near field"<<endl;
       } else if (SubOption == "f") {
         m_Mode = c_ModeFirstInteractionPosition;
         cout<<"Choosing First Interaction Position mode"<<endl;
@@ -279,7 +284,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       return false;
     }
   }
-  
+
   if (m_Mode == c_ModeUnknown) {
     cout<<"Error: you have to define a mode!"<<endl;
     cout<<Usage.str()<<endl;
@@ -293,7 +298,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   if (m_FileName == g_StringNotDefined) {
     cout<<"Error: No file name given!"<<endl;
     cout<<Usage.str()<<endl;
-    return false;  
+    return false;
   }
   if (m_ResponseName == g_StringNotDefined) {
     cout<<"Error: No response name given!"<<endl;
@@ -305,7 +310,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   if (m_Mode == c_ModeClusteringDSS) {
 
     MResponseClusteringDSS Response;
- 
+
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
@@ -314,63 +319,63 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
-    
+
   } else if (m_Mode == c_ModeComptons) {
-    
+
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
-    
+
     MResponseMultipleCompton Response;
-    
+
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
-    
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
-    
+
   } else if (m_Mode == c_ModeComptonsNeuralNetwork) {
-    
+
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
       return false;
     }
-    
+
     MResponseMultipleComptonNeuralNet Response;
-    
+
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
-    
+
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
-    
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
-    
+
   } else if (m_Mode == c_ModeComptonsLens) {
-    
+
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -389,14 +394,14 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
-    
+
   } else if (m_Mode == c_ModeTracks) {
-    
+
     if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -414,7 +419,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
@@ -429,16 +434,16 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeARM) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -454,16 +459,16 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEfficiency) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -478,17 +483,42 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
- 
- 
+
+
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true);
+    if (Response.Finalize() == false) return false;
+
+  } else if (m_Mode == c_ModeEfficiencyNearField) {
+
+    if (m_MimrecCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No mimrec configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+
+    MResponseImagingEfficiencyNearField Response;
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+
+    Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
 } else if (m_Mode == c_ModeEventQuality) {
-  
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -503,16 +533,16 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
- 
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeImagingListMode) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -528,13 +558,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
- 
+
     Response.CreateResponse();
   } else if (m_Mode == c_ModeFirstInteractionPosition) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -550,14 +580,14 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
- 
+
     Response.CreateResponse();
-    
+
   } else if (m_Mode == c_ModeImagingBinnedMode) {
-    
+
      if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -570,7 +600,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     }
 
     MResponseImagingBinnedMode Response;
-    
+
     Response.SetDataFileName(m_FileName);
     Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
@@ -578,16 +608,16 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
-    
+
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true);
     if (Response.Finalize() == false) return false;
-    
+
   } else if (m_Mode == c_ModeImagingCodedMask) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -603,13 +633,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
- 
+
     Response.CreateResponse();
   } else if (m_Mode == c_ModeEarthHorizon) {
-    
+
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;
@@ -625,13 +655,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     // Response.SetStartEventID(0);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
-    
+
     Response.SetMimrecConfigurationFileName(m_MimrecCfgFileName);
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
- 
+
     Response.CreateResponse();
   }
-  
+
   return true;
 }
 

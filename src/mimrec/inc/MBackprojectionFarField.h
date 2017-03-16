@@ -45,16 +45,16 @@ class MBackprojectionFarField : public MBackprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
 
   //! Set the viewport / image dimensions
-  virtual bool SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
+  virtual bool SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
                              double x2Min, double x2Max, unsigned int x2NBins,
                              double x3Min = 0, double x3Max = 0, unsigned int x3NBins = 1,
-                             MVector x1Axis = MVector(1.0, 0.0, 0.0), 
+                             MVector x1Axis = MVector(1.0, 0.0, 0.0),
                              MVector x3Axis = MVector(0.0, 0.0, 1.0));
 
 
   // protected methods:
  protected:
-  //! Assimilate the event data - stores parts of the event data in the class for acceleration pruposes 
+  //! Assimilate the event data - stores parts of the event data in the class for acceleration pruposes
   virtual bool Assimilate(MPhysicalEvent* Event);
 
   //! Calculate the repsonse of a Compton event
@@ -66,14 +66,14 @@ class MBackprojectionFarField : public MBackprojection
 
 
 
-  bool ConeCenter(); 
+  bool ConeCenter();
 
   virtual void RotateDetectorSystemImagingSystem(double &x, double &y, double &z);
   virtual void RotateImagingSystemDetectorSystem(double &x, double &y, double &z);
-  
-  void ToSpherical(double x, double y, double z, 
+
+  void ToSpherical(double x, double y, double z,
                    double &t, double &p, double &r);
-  void ToCartesean(double t, double p, double r, 
+  void ToCartesean(double t, double p, double r,
                    double &x, double &y, double &z);
 
 
@@ -97,24 +97,24 @@ class MBackprojectionFarField : public MBackprojection
   // protected members:
  protected:
   //! Intersection between the cone axis and the sphere in x, y, z
-  MVector m_ConeCenter;  
+  MVector m_ConeCenter;
 
   //! Theta coordinate of the intersection between the cone axis and the sphere
-  double m_ThetaConeCenter; 
+  double m_ThetaConeCenter;
   //! Phi coordinate of the intersection between the cone axis and the sphere
-  double m_PhiConeCenter; 
+  double m_PhiConeCenter;
   //! Radius coordinate of the intersection between the cone axis and the sphere
   double m_RadiusConeCenter;
 
   // Area of each bin as a function of theta
-  double* m_AreaBin;    
+  double* m_AreaBin;
 
-  // x-Position in detector coordiantes of the center of the bin 
-  double* m_xBin;       
-  // y-Position in detector coordiantes of the center of the bin
-  double* m_yBin;       
-  // z-Position in detector coordiantes of the center of the bin
-  double* m_zBin;       
+  // x-Position in detector coordinates of the center of the bin
+  double* m_xBin;
+  // y-Position in detector coordinates of the center of the bin
+  double* m_yBin;
+  // z-Position in detector coordinates of the center of the bin
+  double* m_zBin;
 
   //! For optimization: inverted squared vector size of a vector on the sphere
   double m_InvSquareDist;

@@ -79,9 +79,9 @@ class MResponseCreator
 
   //! Event ID to start analysis with
   int m_StartEvent;
-  //! Maximum Number of analysed events (not stop ID) 
+  //! Maximum Number of analysed events (not stop ID)
   int m_MaxNEvents;
-  //! Save after so many analyzed events the response file 
+  //! Save after so many analyzed events the response file
   int m_SaveAfter;
 
   //! Name of the revan configuration file
@@ -91,7 +91,7 @@ class MResponseCreator
 
   //! Don't look at absorptions when in multiple Compton mode
   bool m_NoAbsorptions;
-  
+
   //! Compress the output response files
   bool m_Compress;
 
@@ -110,8 +110,9 @@ class MResponseCreator
   const static int c_ModeSpectral                  = 11;
   const static int c_ModeARM                       = 12;
   const static int c_ModeEfficiency                = 13;
-  const static int c_ModeClusteringDSS             = 14;
-  const static int c_ModeEventQuality              = 15;
+  const static int c_ModeEfficiencyNearField       = 14;
+  const static int c_ModeClusteringDSS             = 15;
+  const static int c_ModeEventQuality              = 16;
 
 #ifdef ___CINT___
  public:

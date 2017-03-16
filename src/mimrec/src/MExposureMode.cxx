@@ -37,19 +37,23 @@ ClassImp(MExposureMode)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-std::ostream& operator<<(std::ostream& os, MExposureMode Type) 
+std::ostream& operator<<(std::ostream& os, MExposureMode Type)
 {
   os<<"exposure mode: ";
   if (Type == MExposureMode::Unknown) {
-    os<<"unknown"; 
+    os<<"unknown";
   } else if (Type == MExposureMode::Flat) {
-    os<<"flat"; 
+    os<<"flat";
   } else if (Type == MExposureMode::CalculateFromEfficiency) {
-    os<<"calculated from efficiency"; 
+    os<<"calculated from efficiency (near or far field, moving or static)";
+  } else if (Type == MExposureMode::CalculateFromEfficiencyFarFieldMoving) {
+    os<<"calculated from efficiency (far field, moving)";
+  } else if (Type == MExposureMode::CalculateFromEfficiencyNearFieldStatic) {
+    os<<"calculated from efficiency (near field, static)";
   } else {
     os<<static_cast<int>(Type)<<" (undefined name)";
   }
-  
+
   return os;
 }
 

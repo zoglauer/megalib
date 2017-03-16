@@ -67,8 +67,8 @@ MBackprojectionNearField::~MBackprojectionNearField()
 bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
 {
   // Take over all the necessary event data and perform some elementary computations:
-  // the compton angle, the cone axis, the most probable origin of the gamma ray, 
-  // and here: the intersection of the cone axis with the sphere. 
+  // the compton angle, the cone axis, the most probable origin of the gamma ray,
+  // and here: the intersection of the cone axis with the sphere.
   //
   // If an error occures, normally because the event data is so bad that the event
   // can hardly be caused by compton effect, we return false.
@@ -77,7 +77,7 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
     return false;
   }
 
-  if (Event->GetType() == MPhysicalEvent::c_Compton || 
+  if (Event->GetType() == MPhysicalEvent::c_Compton ||
       Event->GetType() == MPhysicalEvent::c_Pair) {
     return true;
   }
@@ -93,8 +93,8 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
 bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Take over all the necessary event data and perform some elementary computations:
-  // the compton angle, the cone axis, the most probable origin of the gamma ray 
-  // if possible, the center of the cone. 
+  // the compton angle, the cone axis, the most probable origin of the gamma ray
+  // if possible, the center of the cone.
 
   if (MBackprojectionNearField::Assimilate(Event) == false) return false;
 
@@ -114,14 +114,14 @@ bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MBackprojectionNearField::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins, 
-                                            double x2Min, double x2Max, unsigned int x2NBins, 
+bool MBackprojectionNearField::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
+                                            double x2Min, double x2Max, unsigned int x2NBins,
                                             double x3Min, double x3Max, unsigned int x3NBins,
                                             MVector xAxis, MVector zAxis)
 {
   // We cannot handle a viewport rotation here, so set it to the defaults
-  return MViewPort::SetDimensions(x1Min, x1Max, x1NBins, 
-                                  x2Min, x2Max, x2NBins, 
+  return MViewPort::SetDimensions(x1Min, x1Max, x1NBins,
+                                  x2Min, x2Max, x2NBins,
                                   x3Min, x3Max, x3NBins);
 }
 
@@ -144,7 +144,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
   // The event expands to a double-gausshaped banana
   //
   // Image            :  the produced binned image - must have the correct dimensions
-  // Limit            :  the limit 
+  // Limit            :  the limit
   // NABoveLimit      :
 
   Maximum = 0.0;
@@ -157,7 +157,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
   double AngleTrans, AngleLong;
   double InnerSum = 0;
   double ConeRadius = 0;
-  
+
   double Content;
 
   // Cone axis vector (reverse direction of scattered gamma ray)
@@ -189,7 +189,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
   double tanPhi = tan(Phi);
 
   //double Threshold = 0.001;
-  
+
   // Min and max Trans-angle above threshold:
   double Trans_max = m_Response->GetComptonTransversalMax();
   double Trans_min = m_Response->GetComptonTransversalMin();
@@ -198,7 +198,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
   double PhiMax = Phi + Trans_max;
   double cosPhiMin = cos(PhiMin);
   double cosPhiMax = cos(PhiMax);
-  
+
   double L;
 
 
@@ -218,15 +218,15 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
       i_yz = y*m_x1NBins + i_z;
       for (x = 0; x < m_x1NBins; x++) {
         i = x + i_yz; // We fill each x-row
-        
+
 
         xBin = m_x1BinCenter[x]-xCC;
         yBin = m_x2BinCenter[y]-yCC;
         zBin = m_x3BinCenter[z]-zCC;
-        
+
 
         AngleTrans = Angle(xBin, yBin, zBin, xCA, yCA, zCA) - Phi;
-          
+
 
         // Skip pixels below threshold:
         if (x < m_x1NBins - 1) { // We just do the optimization if there are bins left in x-direction:
@@ -236,14 +236,14 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
           // The axis is defined by:
           // X = P + l*(1, 0, 0) where P is the bin center relative to the cone center, i.e. xBin, yBin, zBin
           // Then we determine a, b, c of the Mitternachtsformel and calculate lambda1,2
-         
+
           // Outside outer ring
           if (AngleTrans > Trans_max + 0.002 || AngleTrans < Trans_min - 0.002) {
             //cout<<m_x1BinCenter[x]<<":"<<m_x2BinCenter[y]<<endl;
             double CAdotCA = xCA*xCA + yCA*yCA + zCA*zCA; // Per definition "1"!
             double BCdotBC = xBin*xBin + yBin*yBin + zBin*zBin;
             double BCdotCA = xBin*xCA + yBin*yCA + zBin*zCA;
-            
+
             double cos2PhiRelevant;
             if (AngleTrans > Trans_max) {
               //cout<<"Outside: "<<(AngleTrans - Trans_max)*c_Deg<<endl;
@@ -253,21 +253,21 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
               cos2PhiRelevant = cosPhiMin;
             }
             cos2PhiRelevant *= cos2PhiRelevant;
-            
+
             double a = xCA*xCA - CAdotCA*cos2PhiRelevant;
             double b = 2*(BCdotCA*xCA - xBin*CAdotCA*cos2PhiRelevant);
             double c = BCdotCA*BCdotCA - BCdotBC*CAdotCA*cos2PhiRelevant;
-            
+
             double Diskriminante = b*b-4*a*c; // This has to be identical on one x-axis since the distance between axis intersection stays the same
             //cout<<"Diskriminante: "<<Diskriminante<<":"<<a<<":"<<b<<":"<<c<<":"<<CAdotCA<<":"<<BCdotBC<<":"<<BCdotCA<<":"<<cos2PhiRelevant<<endl;
-            
+
             if (Diskriminante <= 0) { // We ignore the "academic" solution of a tangential point, it's simply not relevant
                 //cout<<"No intersection with cone"<<endl;
               break;
             }
             double Lambda1 = (-b-sqrt(Diskriminante))/(2*a);
             double Lambda2 = (-b+sqrt(Diskriminante))/(2*a);
-            
+
             // Find the closest solution in x-direction (attention: we are in a coordiante system realtive to cone center!):
             double xNext = 0.0;
             //cout<<"xBC: "<<m_x1BinCenter[x]<<"  xBin: "<<xBin<<"  l1:"<<Lambda1<<"  l2:"<<Lambda2<<" dist: "<<Lambda1-Lambda2<<endl;
@@ -283,45 +283,45 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
               xNext = Lambda2;
             } else {
               //cout<<"Beyond intersection"<<endl;
-              break;                
+              break;
             }
             //cout<<"Chosen lamda: "<<xNext<<endl;
-            
-            
+
+
             // Now skip ahead:
-            x+= (int) floor(xNext/m_x1IntervalLength); 
+            x+= (int) floor(xNext/m_x1IntervalLength);
             if (x >= m_x1NBins) break; // Done
-            
+
             //cout<<"New x: "<<m_x1BinCenter[x]<<endl;
             continue;
-          } 
+          }
         }
-        
+
         L = sqrt(xBin*xBin + yBin*yBin + zBin*zBin);
         if (m_ApproximatedMaths == true) {
           ConeRadius = fabs(tanPhi*MFastMath::acos(AngleTrans)*L);
         } else {
-          ConeRadius = fabs(tanPhi*acos(AngleTrans)*L);          
+          ConeRadius = fabs(tanPhi*acos(AngleTrans)*L);
         }
-        
+
         if (HasTrack == true) {
           // angle between two planes spanned by ...
           xn1 = yBin*zCA - zBin*yCA;
           yn1 = (zBin*xCA - xBin*zCA);
           zn1 = xBin*yCA - yBin*xCA;
-          
+
           xn2 = (yOrigin*zCA - zOrigin*yCA);
           yn2 = (zOrigin*xCA - xOrigin*zCA);
           zn2 = (xOrigin*yCA - yOrigin*xCA);
-          
+
           if (m_ApproximatedMaths == true) {
             AngleLong = MFastMath::acos((xn1*xn2+yn1*yn2+zn1*zn2)/sqrt((xn1*xn1+yn1*yn1+zn1*zn1)*(xn2*xn2+yn2*yn2+zn2*zn2)));
           } else {
             AngleLong = acos((xn1*xn2+yn1*yn2+zn1*zn2)/sqrt((xn1*xn1+yn1*yn1+zn1*zn1)*(xn2*xn2+yn2*yn2+zn2*zn2)));
           }
-          
+
           //cout<<i<<": "<<ConeRadius<<"!"<<tanPhi<<"!"<<AngleTrans<<"!"<<L<<"-->"<<m_Response->GetResponse(AngleTrans, AngleLong)/ConeRadius<<endl;
-          
+
           // Sample the 2d-Gauss-function: m_AreaBin[t] is missing ---> new geometry is missing!!!
           Content = m_Response->GetComptonResponse(AngleTrans, AngleLong)/ConeRadius;
         } else {
@@ -334,7 +334,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
             Maximum = Content;
           }
           InnerSum += Content;
-          
+
           Image[NUsedBins] = Content;
           Bins[NUsedBins] = i;
           ++NUsedBins;
@@ -351,7 +351,7 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
       } // end x
     } // end y
   } // end z
-    
+
   // <--------- time critical <---------
 
   // If one of the above computed numbers has been NaN
@@ -360,10 +360,39 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
     cout<<"Event "<<m_Event->GetId()<<": Catched a NaN!"<<endl;
     cout<<m_C->ToString()<<endl;
     cout<<"dPhi: "<<m_C->dPhi()*c_Deg<<endl;
-    
+
     NUsedBins = 0;
     Maximum = 0;
     return false;
+  }
+
+  // If we have an efficiency the use it:
+  if (m_Efficiency != nullptr) {
+    Maximum = 0.0;
+    InnerSum = 0.0;
+    for (int i = 0; i < NUsedBins; ++i) {
+      int xBin = Bins[i] % m_x1NBins;
+      int yBin = ((Bins[i] - xBin) / m_x1NBins) % m_x1NBins;
+      int zBin = (Bins[i] - xBin - m_x1NBins*yBin) / (m_x1NBins*m_x2NBins);
+
+      double x = m_x1BinCenter[xBin];
+      double y = m_x1BinCenter[yBin];
+      double z = m_x1BinCenter[zBin];
+
+      //RotateImagingSystemDetectorSystem(x, y, z);
+      MVector D(x, y, z);
+
+      double Efficiency = 0.0;
+      if (m_ApproximatedMaths == false) {
+        Efficiency = m_Efficiency->GetNearField(x, y, z);
+      } else {
+        Efficiency = m_Efficiency->GetNearField(x, y, z);
+      }
+      Image[i] *= Efficiency;
+      InnerSum += Image[i];
+
+      if (Image[i] > Maximum) Maximum = Image[i];
+    }
   }
 
   // If the image does not contain any content, return also false
@@ -389,7 +418,7 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
   // The event expands to a double-gausshaped banana
   //
   // Image            :  the produced binned image - must have the correct dimensions
-  // Limit            :  the limit 
+  // Limit            :  the limit
   // NABoveLimit      :
 
   // Tronsform the gamma direction to spherical coordinates:
@@ -397,7 +426,7 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
 
   Maximum = 0.0;
   NUsedBins = 0;
-  
+
   double Content;
 
   double xOrigin = m_P->m_IncomingGammaDirection.X();
@@ -420,11 +449,11 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
       for (unsigned int x = 0; x < m_x1NBins; ++x) {
         i = x+y*m_x1NBins+z*m_x1NBins*m_x2NBins; // We fill each x-row
 
-        AngleTrans = Angle(m_x1BinCenter[x]-xIA, 
-                           m_x2BinCenter[y]-yIA, 
-                           m_x3BinCenter[z]-zIA, 
+        AngleTrans = Angle(m_x1BinCenter[x]-xIA,
+                           m_x2BinCenter[y]-yIA,
+                           m_x3BinCenter[z]-zIA,
                            xOrigin, yOrigin, zOrigin); //; - m_C->Phi();
-        
+
         Content = m_Response->GetPairResponse(AngleTrans);
 
         if (Content > 0.0) {
@@ -438,13 +467,13 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
       }
     }
   }
-  
+
   if (InRange(InnerSum) == false) {
     merr<<"Catched a NaN!"<<endl;
     merr<<m_C->ToString()<<endl;
     return false;
   }
-  
+
   if (InnerSum < 0.00001) {
     // Event not inside the viewport
     return false;
