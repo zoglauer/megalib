@@ -44,11 +44,14 @@ class MBPData
   virtual void Deconvolve(double* Expectation, double* InvYnew, int Event) {};
   //! Perform the list-mode convolution
   virtual void Convolve(double* Ynew, int Event, double* Image, int NBins) {};
-  //! Just sum it up, i.e. add the content to the image 
+  //! Just sum it up, i.e. add the content to the image
   virtual void Sum(double* Image, int NBins) {};
 
   //! Return the number of bytes used by this image
   virtual int GetUsedBytes() const;
+
+  //! Return the number of used bins
+  virtual int GetUsedBins() const { return 0; }
 
   // The data types:
   //! Data type is unknown
@@ -57,9 +60,9 @@ class MBPData
   static const int c_Image             = 1;
   //! Reponse splice as one sparse 2D array of floats
   static const int c_ImageOneBit       = 2;
-  //! Reponse splice as one complete 2D array of 8bit values plus maximum 
+  //! Reponse splice as one complete 2D array of 8bit values plus maximum
   static const int c_SparseImage       = 3;
-  //! Reponse splice as a sparse array of 8bit values plus maximum 
+  //! Reponse splice as a sparse array of 8bit values plus maximum
   static const int c_SparseImageOneBit = 4;
 
   // protected members:

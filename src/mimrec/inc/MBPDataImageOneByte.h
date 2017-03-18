@@ -44,11 +44,14 @@ class MBPDataImageOneByte : public MBPData
   void Deconvolve(double* Expectation, double* InvYnew, int Event);
   //! Perform the list-mode convolution
   void Convolve(double* Ynew, int Event, double* Image, int NBins);
-  //! Just sum it up, i.e. add the content to the image 
+  //! Just sum it up, i.e. add the content to the image
   void Sum(double* Image, int NBins);
 
   //! Return the number of bytes used by this image
   virtual int GetUsedBytes() const;
+
+  //! Return the number of used bins
+  virtual int GetUsedBins() const { return m_NBins; }
 
 
   // private members:
@@ -56,9 +59,9 @@ class MBPDataImageOneByte : public MBPData
   // Remember: If you change something you have to add it to the GetUsedBytes-function!
 
   //! The maximum image value
-  float m_Maximum; 
+  float m_Maximum;
   //! The relative values of the image pixel
-  unsigned char* m_Image;  
+  unsigned char* m_Image;
   //! The number of image bins
   int m_NBins;
 

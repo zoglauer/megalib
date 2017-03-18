@@ -31,35 +31,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! The detector rotation interface for all event types 
+//! The detector rotation interface for all event types
 class MRotationInterface
 {
   // public interface:
  public:
   //! Default constructor
   MRotationInterface();
-  //! Default destuctor 
+  //! Default destuctor
   virtual ~MRotationInterface();
 
   //! Reset to default values
   void Reset();
-  
+
   //! Check if the data is OK
   bool Validate();
-  
+
   //! Set all data
   void Set(MRotationInterface& RO);
-  
+
   //! Parse a line
   //! Warning: This is for fast parsing: No checks are performed what-so-ever!
   //! Returns 0, if the line got correctly parsed
-  //! Returns 1, if the line got not correctly parsed 
+  //! Returns 1, if the line got not correctly parsed
   int ParseLine(const char* Line, bool Fast = false);
-  
+
   //! Stream to a file
-  //! Reading has to be done in the derived class 
+  //! Reading has to be done in the derived class
   void Stream(ostringstream& S);
-  
+
   //! Set if you wish to store the coordinates in galactic coordinates
   void SetHasGalacticPointing(bool GalacticPointing = true) { m_HasGalacticPointing = GalacticPointing; }
   //! Return if we have galactic coodinates
@@ -79,10 +79,15 @@ class MRotationInterface
   //! Get the z-axis of the galactic coordinate system - input is in degrees
   MVector GetGalacticPointingZAxis() const { return m_GalacticPointingZAxis; }
 
-  //! Return the pointing (z-axis) - longitude component
-  double GetGalacticPointingZAxisLongitude() const { return m_GalacticPointingZAxis.Phi(); }      
-  //! Return the pointing (z-axis) - latitude component 
-  double GetGalacticPointingZAxisLatitude() const { return m_GalacticPointingZAxis.Theta() - 0.5*c_Pi; }      
+  //! Return the pointing (x-axis) - longitude component in radians!
+  double GetGalacticPointingXAxisLongitude() const { return m_GalacticPointingXAxis.Phi(); }
+  //! Return the pointing (x-axis) - latitude component in radians!
+  double GetGalacticPointingXAxisLatitude() const { return m_GalacticPointingXAxis.Theta() - 0.5*c_Pi; }
+
+  //! Return the pointing (z-axis) - longitude component in radians!
+  double GetGalacticPointingZAxisLongitude() const { return m_GalacticPointingZAxis.Phi(); }
+  //! Return the pointing (z-axis) - latitude component in radians!
+  double GetGalacticPointingZAxisLatitude() const { return m_GalacticPointingZAxis.Theta() - 0.5*c_Pi; }
 
   //! Return the detector rotation as rotation matrix
   MRotation GetGalacticPointingRotationMatrix();
@@ -90,7 +95,7 @@ class MRotationInterface
   MRotation GetGalacticPointingInverseRotationMatrix();
 
 
-  
+
   //! Return if we have a detector rotation
   bool HasDetectorRotation() const { return m_HasDetectorRotation; }
 
@@ -98,7 +103,7 @@ class MRotationInterface
   void SetDetectorRotationXAxis(const MVector Rot);
   //! Set the z-axis of the detector coordinate system
   void SetDetectorRotationZAxis(const MVector Rot);
-  
+
   //! Get the x-axis of the detector coordinate system
   MVector GetDetectorRotationXAxis() const;
   //! Get the z-axis of the detector coordinate system
@@ -109,11 +114,11 @@ class MRotationInterface
   //! Return the inverse detector rotation as rotation matrix
   MRotation GetDetectorInverseRotationMatrix() const;
 
-  
-  
+
+
   //! Return if we have a horizon pointing
   bool HasHorizonPointing() const { return m_HasHorizonPointing; }
-  
+
   //! Set the x-axis of the horizon coordinate system - input is in degrees
   void SetHorizonPointingXAxis(const double AzimuthNorth, const double Elevation) { m_HasHorizonPointing = true; m_HorizonPointingXAxis.SetMagThetaPhi(1.0, (90-Elevation)*c_Rad, AzimuthNorth*c_Rad); }
   //! Set the z-axis of the horizon coordinate system - input is in degrees
@@ -127,7 +132,7 @@ class MRotationInterface
   MVector GetHorizonPointingXAxis() const { return m_HorizonPointingXAxis; }
   //! Get the z-axis of the horizon coordinate system
   MVector GetHorizonPointingZAxis() const { return m_HorizonPointingZAxis; }
-  
+
   //! Get the rotation of the horizon coordinate system
   MRotation GetHorizonPointingRotationMatrix() const;
 
@@ -143,15 +148,15 @@ class MRotationInterface
   // protected members:
  protected:
   //! The event ID
-  unsigned long m_Id;   
-   
-  //! If true, a pointing in galactic coordinates is present 
+  unsigned long m_Id;
+
+  //! If true, a pointing in galactic coordinates is present
   bool m_HasGalacticPointing;
   //! The rotation around the X axis
   MVector m_GalacticPointingXAxis;
   //! The rotation around the Z axis
-  MVector m_GalacticPointingZAxis;  
-  
+  MVector m_GalacticPointingZAxis;
+
   //! If true, a detector rotation is present
   bool m_HasDetectorRotation;
   //! The rotation around the X axis
@@ -175,7 +180,7 @@ class MRotationInterface
   bool m_IsGalacticPointingInverseRotationCalculated;
   //! The INVERSE Galactic pointing rotation - only filled if already calculated
   MRotation m_GalacticPointingInverseRotation;
-  
+
   // private members:
  private:
 

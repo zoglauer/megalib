@@ -44,22 +44,25 @@ class MBPDataSparseImage : public MBPData
   void Deconvolve(double* Expectation, double* InvYnew, int Event);
   //! Perform the list-mode convolution
   void Convolve(double* Ynew, int Event, double* Image, int NBins);
-  //! Just sum it up, i.e. add the content to the image 
+  //! Just sum it up, i.e. add the content to the image
   void Sum(double* Image, int NBins);
 
   //! Return the number of bytes used by this image
   virtual int GetUsedBytes() const;
+
+  //! Return the number of used bins
+  virtual int GetUsedBins() const { return m_NEntries; }
 
   // private members:
  private:
   // Remember: If you change something you have to add it to the GetUsedBytes-function!
 
   //! The relative values of the image pixel
-  float* m_Data;  
+  float* m_Data;
   //! The belonging indices
-  int* m_Index; 
+  int* m_Index;
   //! The number of stored image pixels
-  int m_NEntries; 
+  int m_NEntries;
   //! The number of image bins
   int m_NBins;
 

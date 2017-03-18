@@ -46,7 +46,7 @@ class MBPData;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! The main class managing image reconstruction
 class MImager
 {
   // Public Interface:
@@ -317,6 +317,9 @@ class MImager
 
   //! Currently used bytes for the response
   unsigned long m_UsedBytes;
+
+  //! Currently used bins for the response
+  unsigned long m_UsedBins;
 
 
   // private members:
