@@ -262,7 +262,6 @@ bool MExposure::ApplyExposure()
       }
     }
   } else {
-    cout<<"Flat ecposurer"<<endl;
     if (m_Exposure[0] != 1) {
       for (unsigned int i = 0; i < m_NImageBins; ++i) {
         m_Exposure[i] = 1.0;
