@@ -103,6 +103,8 @@ void MFile::Reset()
 
   Close();
 
+  m_FileMutex.Lock();
+
   m_FileName = "";
   m_Way = c_Read;
 
@@ -130,6 +132,8 @@ void MFile::Reset()
   // The maximum allowed file length
   m_MaxFileLength = numeric_limits<streamsize>::max()/100*95;
   //m_MaxFileLength = 100000;
+
+  m_FileMutex.UnLock();  
 }
 
 
@@ -351,6 +355,8 @@ bool MFile::Open(MString FileName, unsigned int Way)
     m_WasZipped = false;
   }
 
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     if (Way == c_Read) {
       m_ZipFile = gzopen(m_FileName, "rb");
@@ -359,6 +365,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
     }
     if (m_ZipFile == NULL) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
+      m_FileMutex.UnLock();
       return false;
     }
   } else {
@@ -370,6 +377,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
     }
     if (m_File.is_open() == false) {
       mgui<<"Unable to open file \""<<m_FileName<<"\""<<endl;
+      m_FileMutex.UnLock();
       return false;
     }
   }
@@ -377,6 +385,8 @@ bool MFile::Open(MString FileName, unsigned int Way)
   // We are open now
   m_IsOpen = true;
   m_Way = Way;
+
+  m_FileMutex.UnLock();
 
   return true;
 }
@@ -389,7 +399,10 @@ bool MFile::Rewind()
 {
   // Rewind to the beginning of the file
 
+  m_FileMutex.Lock();
+
   if (m_IsOpen == false) {
+    m_FileMutex.UnLock();
     return false;
   }
 
@@ -399,6 +412,8 @@ bool MFile::Rewind()
     m_File.clear();
     m_File.seekg(0);
   }
+
+  m_FileMutex.UnLock();
 
   m_ProgressMutex.Lock();
   if (m_Progress != nullptr) {
@@ -418,7 +433,12 @@ bool MFile::Rewind()
 
 bool MFile::Close()
 {
-  if (IsOpen() == false) return true;
+  m_FileMutex.Lock();
+
+  if (IsOpen() == false) {
+    m_FileMutex.UnLock();
+    return true;
+  }
 
   // Close the file first
   if (m_WasZipped == true) {
@@ -435,6 +455,8 @@ bool MFile::Close()
     m_ReadLineBufferLength = 0;
   }
 
+  m_FileMutex.UnLock();
+
   return true;
 }
 
@@ -445,11 +467,31 @@ bool MFile::Close()
   //! Return true is the file is good
 bool MFile::IsGood()
 {
+  m_FileMutex.Lock();
+
+  bool IsGood = IsGoodNoLock();
+
+  m_FileMutex.UnLock();
+
+  return IsGood;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+  //! Return true is the file is good
+bool MFile::IsGoodNoLock()
+{
+  bool IsGood = false;
+
   if (m_WasZipped == true) {
-    return (gzeof(m_ZipFile) == 0 ? true : false);
+    IsGood = (gzeof(m_ZipFile) == 0 ? true : false);
   } else {
-    return m_File.good();
+    IsGood = m_File.good();
   }
+
+  return IsGood;
 }
 
 
@@ -458,11 +500,15 @@ bool MFile::IsGood()
 
 void MFile::Clear()
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     // Don't do anything...
   } else {
-    return m_File.clear();
+    m_File.clear();
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -473,11 +519,15 @@ void MFile::Seek(streampos Pos)
 {
   //! Seek the given position
 
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzseek(m_ZipFile, Pos, SEEK_SET);
   } else {
     m_File.seekg(Pos);
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -487,6 +537,8 @@ void MFile::Seek(streampos Pos)
   //! Seek the given position
 void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     if (Way == ios_base::beg) {
       gzseek(m_ZipFile, (z_off_t) Offset, SEEK_SET);
@@ -498,6 +550,8 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
   } else {
     m_File.seekg(Offset, Way);
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -507,11 +561,15 @@ void MFile::Seek(streamoff Offset, ios_base::seekdir Way)
 //! Write some text and clear the stream
 void MFile::WriteLine()
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, "\n");
   } else {
     m_File<<endl;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -521,11 +579,15 @@ void MFile::WriteLine()
 //! Write some text and clear the stream
 void MFile::Write(const ostringstream& S)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S.str().c_str());
   } else {
     m_File<<S.str();
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -535,12 +597,16 @@ void MFile::Write(const ostringstream& S)
 //! Write some text and clear the stream
 void MFile::WriteLine(const ostringstream& S)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S.str().c_str());
     gzputs(m_ZipFile, "\n");
   } else {
     m_File<<S.str()<<endl;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -550,11 +616,15 @@ void MFile::WriteLine(const ostringstream& S)
 //! Write some text
 void MFile::Write(const MString& S)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S);
   } else {
     m_File<<S;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -564,11 +634,15 @@ void MFile::Write(const MString& S)
 //! Write some text
 void MFile::WriteLine(const MString& S)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputs(m_ZipFile, S + "\n");
   } else {
     m_File<<S<<endl;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -578,6 +652,8 @@ void MFile::WriteLine(const MString& S)
 //! Write some text
 void MFile::Write(const double d)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     ostringstream out;
     out<<d;
@@ -585,6 +661,8 @@ void MFile::Write(const double d)
   } else {
     m_File<<d;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -595,11 +673,15 @@ void MFile::Write(const double d)
 //! Write some text
 void MFile::Write(const char c)
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     gzputc(m_ZipFile, c);
   } else {
     m_File<<c;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -609,11 +691,15 @@ void MFile::Write(const char c)
 //! Flush all written text
 void MFile::Flush()
 {
+  m_FileMutex.Lock();
+
   if (m_WasZipped == true) {
     // We do not want to do this, since it degrades perfromance...
   } else {
     m_File<<flush;
   }
+
+  m_FileMutex.UnLock();
 }
 
 
@@ -625,23 +711,34 @@ void MFile::Flush()
 //! Get one character
 bool MFile::Get(char& c)
 {
-  if (IsGood() == false) return false;
+  m_FileMutex.Lock();
+
+  if (IsGoodNoLock() == false) {
+    m_FileMutex.UnLock();
+    return false;
+  }
 
   if (m_WasZipped == true) {
     c = '\0';
     int i = gzgetc(m_ZipFile);
     if (i == -1) {
       if (gzeof(m_ZipFile) == 0) {
-        int ErrorCode;
+        int ErrorCode = 0;
         cout<<"Error in MFile::Get(char& c): "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
       }
+      m_FileMutex.UnLock();
       return false;
     }
     c = (char) i;
   } else {
     m_File.get(c);
-    if (m_File.good() == false) return false;
+    if (m_File.good() == false) {
+      m_FileMutex.UnLock();
+      return false;
+    }
   }
+
+  m_FileMutex.UnLock();
 
   return true;
 }
@@ -653,7 +750,12 @@ bool MFile::Get(char& c)
 //! Get one float
 bool MFile::Get(float& f)
 {
-  if (IsGood() == false) return false;
+  m_FileMutex.Lock();
+
+  if (IsGood() == false) {
+    m_FileMutex.UnLock();
+    return false;
+  }
 
   if (m_WasZipped == true) {
     f = 0;
@@ -663,9 +765,10 @@ bool MFile::Get(float& f)
       i = gzgetc(m_ZipFile);
       if (i == -1) {
         if (gzeof(m_ZipFile) == 0) {
-          int ErrorCode;
+          int ErrorCode = 0;
           cout<<"Error: "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
+        m_FileMutex.UnLock();
         return false;
       }
       if (i == ' ' || i == '\n' || i == '\0' || i == '\t') break;
@@ -674,8 +777,13 @@ bool MFile::Get(float& f)
     f = atof(temp.c_str());
   } else {
     m_File>>f;
-    if (m_File.good() == false) return false;
+    if (m_File.good() == false) {
+      m_FileMutex.UnLock();
+      return false;
+    }
   }
+
+  m_FileMutex.UnLock();
 
   return true;
 }
@@ -688,12 +796,17 @@ bool MFile::ReadLine(MString& String)
 {
   //! Read one line
 
-  if (IsGood() == false) return false;
+  m_FileMutex.Lock();
+
+  if (IsGoodNoLock() == false) {
+    m_FileMutex.UnLock();
+    return false;
+  }
 
   String.Clear();
 
   if (m_WasZipped == true) {
-    if (m_ReadLineBufferLength == 0) {
+    if (m_ReadLineBufferLength == 0) {  // micro chance of a race condition --- but as long as the class is used as designed it will never happen
       m_ReadLineBufferLength = 1000;
       m_ReadLineBuffer = new char[m_ReadLineBufferLength];
     }
@@ -708,6 +821,7 @@ bool MFile::ReadLine(MString& String)
           cout<<"Error reading compressed file: "<<endl;
           cout<<"   "<<gzerror(m_ZipFile, &ErrorCode)<<endl;
         }
+        m_FileMutex.UnLock();
         return false;
       }
       String.Append(Return);
@@ -722,6 +836,8 @@ bool MFile::ReadLine(MString& String)
     String.ReadLine(m_File);
   }
 
+  m_FileMutex.UnLock();
+
   return true;
 }
 
@@ -731,7 +847,12 @@ bool MFile::ReadLine(MString& String)
 
 bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
 {
-  if (IsGood() == false) return false;
+  m_FileMutex.Lock();
+
+  if (IsGoodNoLock() == false) {
+    m_FileMutex.UnLock();
+    return false;
+  }
 
   //! Read one line
   if (m_WasZipped == true) {
@@ -739,6 +860,7 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
       int c = gzgetc(m_ZipFile);
       if (c == -1 || (char) c == Delimeter) {
         String[i] = '\0';
+        m_FileMutex.UnLock();
         return true;
       }
       String[i] = (char) c;
@@ -746,6 +868,8 @@ bool MFile::ReadLine(char* String, streamsize Size, char Delimeter)
   } else {
     m_File.getline(String, Size, Delimeter);
   }
+
+  m_FileMutex.UnLock();
 
   return true;
 }
@@ -993,10 +1117,16 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
   // Return the file length
   // Since this is a random access operation it should be very fast...
 
-  if (Redetermine == false && m_HasUncompressedFileLength == true) return m_UncompressedFileLength;
+  m_FileMutex.Lock();
+
+  if (Redetermine == false && m_HasUncompressedFileLength == true) {
+    m_FileMutex.UnLock();
+    return m_UncompressedFileLength;
+  }
 
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
+    m_FileMutex.UnLock();
     return 0;
   }
 
@@ -1051,6 +1181,8 @@ streampos MFile::GetUncompressedFileLength(bool Redetermine)
   m_UncompressedFileLength = Length;
   m_HasUncompressedFileLength = true;
 
+  m_FileMutex.UnLock();
+
   return Length;
 }
 
@@ -1062,12 +1194,19 @@ streampos MFile::GetFileLength(bool Redetermine)
 {
   // Return the file length on disk
 
-  if (Redetermine == false && m_HasFileLength == true) return m_FileLength;
+  m_FileMutex.Lock();
+
+  if (Redetermine == false && m_HasFileLength == true) {
+    m_FileMutex.UnLock();
+    return m_FileLength;
+  }
 
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
+    m_FileMutex.UnLock();
     return 0;
   }
+
 
   streampos Length;
   if (m_WasZipped == true) {
@@ -1095,6 +1234,8 @@ streampos MFile::GetFileLength(bool Redetermine)
   m_FileLength = Length;
   m_HasFileLength = true;
 
+  m_FileMutex.UnLock();
+
   return Length;
 }
 
@@ -1107,17 +1248,22 @@ streampos MFile::GetFilePosition()
   // Return the file length
   // Since this is a random access operation it should be very fast...
 
+  m_FileMutex.Lock();
+
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
+    m_FileMutex.UnLock();
     return 0;
   }
 
-  streampos Pos;
+  streampos Pos = 0;
   if (m_WasZipped == true) {
     Pos = (streampos) gzoffset(m_ZipFile);
   } else {
     Pos = m_File.tellg();
   }
+
+  m_FileMutex.UnLock();
 
   return Pos;
 }
@@ -1131,8 +1277,11 @@ streampos MFile::GetUncompressedFilePosition()
   // Return the file length
   // Since this is a random access operation it should be very fast...
 
+  m_FileMutex.Lock();
+
   if (IsOpen() == false) {
     merr<<"File "<<m_FileName<<" not open!"<<show;
+    m_FileMutex.UnLock();
     return 0;
   }
 
@@ -1142,6 +1291,8 @@ streampos MFile::GetUncompressedFilePosition()
   } else {
     Pos = m_File.tellg();
   }
+
+  m_FileMutex.UnLock();
 
   return Pos;
 }

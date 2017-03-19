@@ -169,6 +169,8 @@ class MFile
  protected:
   //! The show progress functions without mutex locking
   void ShowProgressNoLock(bool Show = true);
+  //! Return true is the file is good without mutex locking
+  virtual bool IsGoodNoLock();
 
 
   // private methods:
@@ -220,9 +222,11 @@ class MFile
  private:
   //! The basic file stream for normal C++
   fstream m_File;
-
   //! The basic file stream for zlib
   gzFile m_ZipFile;
+
+  //! The file mutex
+  TMutex m_FileMutex;
 
   //! The known file length on disk -- if it has not yet been determined m_HasFileLength is false
   streampos m_FileLength;
