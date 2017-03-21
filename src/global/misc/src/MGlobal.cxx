@@ -165,6 +165,9 @@ bool MGlobal::Initialize(MString ProgramName, MString ProgramDescription)
   //gStyle->SetHistFillColor(8);
   gStyle->SetOptStat(0);
 
+  // Speeds up drawing of canvas if an openGL capable GPU is available
+  gStyle->SetCanvasPreferGL(true);
+
   // Change the region where the drawing starts in canvases:
   float Margin = 0.15f;
   gStyle->SetPadLeftMargin(Margin);
