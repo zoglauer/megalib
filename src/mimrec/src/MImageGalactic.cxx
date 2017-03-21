@@ -273,8 +273,6 @@ void MImageGalactic::DisplayProjectionNone()
 
     // Draw the new one
     m_XAxis->Draw();
-  } else {
-    m_XAxis->Draw();
   }
 
   AddNamedSources();

@@ -63,15 +63,15 @@ MImageSpheric::MImageSpheric() : MImage2D()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MImageSpheric::MImageSpheric(MString Title, double* IA, 
-                             MString xTitle, double xMin, double xMax, int xNBins, 
-                             MString yTitle, double yMin, double yMax, int yNBins, 
+MImageSpheric::MImageSpheric(MString Title, double* IA,
+                             MString xTitle, double xMin, double xMax, int xNBins,
+                             MString yTitle, double yMin, double yMax, int yNBins,
                              MString vTitle, int Spectrum, int DrawOption) :
-  MImage2D(Title, IA, xTitle, xMin, xMax, xNBins, yTitle, yMin, 
+  MImage2D(Title, IA, xTitle, xMin, xMax, xNBins, yTitle, yMin,
            yMax, yNBins, vTitle, Spectrum, DrawOption), m_YAxis(0)
 {
   // Construct an image but do not display it, i.e. save only the data
-  // 
+  //
   // Title:      Title of the image, 0 means no title
   // IA:         data-array
   // NEntries:   length of the data array
@@ -105,12 +105,12 @@ MImage* MImageSpheric::Clone()
 {
   //! Clone this image
 
-  MImage* I = 
-    new MImageSpheric(m_Title, m_IA, 
-                      m_xTitle, m_xMin, m_xMax, m_xNBins, 
-                      m_yTitle, m_yMin, m_yMax, m_yNBins, 
+  MImage* I =
+    new MImageSpheric(m_Title, m_IA,
+                      m_xTitle, m_xMin, m_xMax, m_xNBins,
+                      m_yTitle, m_yMin, m_yMax, m_yNBins,
                       m_vTitle, m_Spectrum, m_DrawOption);
-    
+
   I->Normalize(m_Normalize);
 
   return I;
@@ -187,22 +187,40 @@ void MImageSpheric::Display(TCanvas* Canvas)
   } else {
     m_Canvas->SetWindowSize(int(700.0/m_yNBins*m_xNBins), 700);
   }
-  
+
   // m_Canvas->cd(); // No cd in order to allow the user to use a sub-pad here
 
   bool IsNew = false;
   TH2D* Hist = 0;
   if (m_Histogram == 0) {
     Hist = new TH2D(m_CanvasTitle + "ImageSpheric" + m_IDCounter, m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax);
-    Hist->SetContour(50);
     m_Histogram = dynamic_cast<TH1*>(Hist);
 
     Hist->SetStats(false);
+    Hist->SetContour(50);
+
     Hist->GetXaxis()->SetTitle(m_xTitle);
     Hist->GetXaxis()->CenterTitle();
+    Hist->GetXaxis()->SetTitleOffset(1.6f);
+    Hist->GetXaxis()->SetTitleSize(0.04f);
+    Hist->GetXaxis()->CenterTitle();
+    Hist->GetXaxis()->SetTickLength(-0.03f);
+    Hist->GetXaxis()->SetLabelOffset(0.03f);
+    Hist->GetXaxis()->SetLabelSize(0.035f);
+    if ((int(m_xMax) - int(m_xMin)) % 360 == 0) {
+      Hist->GetXaxis()->SetNdivisions(612);
+      //Hist->GetXaxis()->SetOption("N+");
+    } else if ((int(m_xMax) - int(m_xMin)) % 60 == 0) {
+      Hist->GetXaxis()->SetNdivisions(606);
+      //Hist->GetXaxis()->SetOption("N+");
+    }
 
-    Hist->SetZTitle(m_vTitle);
-    
+    Hist->GetZaxis()->SetTitle(m_vTitle);
+    Hist->GetZaxis()->SetTitleOffset(1.2f);
+    Hist->GetZaxis()->SetTitleSize(0.04f);
+    Hist->GetZaxis()->SetLabelSize(0.035f);
+
+
     IsNew = true;
   } else {
     Hist = dynamic_cast<TH2D*>(m_Histogram);
@@ -225,7 +243,7 @@ void MImageSpheric::Display(TCanvas* Canvas)
       }
     }
   }
-  
+
   // Rescale to 1:
   if (m_Normalize == true && Hist->GetMaximum() > 0) {
     Hist->Scale(1.0/Hist->GetMaximum());
@@ -243,12 +261,13 @@ void MImageSpheric::Display(TCanvas* Canvas)
                            gPad->GetUymin(),
                            Hist->GetYaxis()->GetXmin(),
                            Hist->GetYaxis()->GetXmax(),
-                           510,"+");
+                           510,"-S");
       m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
       m_YAxis->CenterTitle(true);
       m_YAxis->SetTitle(m_yTitle);
       m_YAxis->SetLabelOffset(-0.03f);
-      m_YAxis->SetTitleOffset(1.5f);
+      m_YAxis->SetTickLength(0.015f);
+      m_YAxis->SetTitleOffset(-1.5f);
     } else {
       m_YAxis = new TGaxis(gPad->GetUxmin(),
                            gPad->GetUymax(),
@@ -256,12 +275,15 @@ void MImageSpheric::Display(TCanvas* Canvas)
                            gPad->GetUymin(),
                            Hist->GetYaxis()->GetXmin(),
                            Hist->GetYaxis()->GetXmax(),
-                           510,"+");
+                           510,"-S");
       m_YAxis->ImportAxisAttributes(Hist->GetYaxis());
       m_YAxis->CenterTitle(true);
       m_YAxis->SetTitle(m_yTitle);
-      m_YAxis->SetLabelOffset(-0.03f);
-      m_YAxis->SetTitleOffset(1.5f);
+      m_YAxis->SetLabelOffset(-0.025f);
+      m_YAxis->SetLabelSize(0.035f);
+      m_YAxis->SetTitleOffset(-1.9f);
+      m_YAxis->SetTitleSize(0.04f);
+      m_YAxis->SetTickLength(0.015f);
       m_YAxis->SetBit(TAxis::kRotateTitle);
     }
 
@@ -269,10 +291,8 @@ void MImageSpheric::Display(TCanvas* Canvas)
     // Remove the current axis
     Hist->GetYaxis()->SetLabelOffset(999);
     Hist->GetYaxis()->SetTickLength(0);
-  
+
     // Draw the new one
-    m_YAxis->Draw();
-  } else {
     m_YAxis->Draw();
   }
 
