@@ -103,11 +103,11 @@ MImage::MImage()
 
 
 MImage::MImage(MString Title, double* IA,
-               MString xTitle, double xMin, double xMax, int xNBins, 
+               MString xTitle, double xMin, double xMax, int xNBins,
                MString vTitle, int Spectrum, int DrawOption)
 {
   // Construct an image but do not display it, i.e. save only the data
-  // 
+  //
   // Title:      Title of the image, 0 means no title
   // IA:         data-array
   // xTitle:     title of the x axis
@@ -148,9 +148,9 @@ MImage* MImage::Clone()
 {
   //! Clone this image
 
-  MImage* I = 
-    new MImage(m_Title, m_IA, 
-               m_xTitle, m_xMin, m_xMax, m_xNBins, 
+  MImage* I =
+    new MImage(m_Title, m_IA,
+               m_xTitle, m_xMin, m_xMax, m_xNBins,
                m_vTitle, m_Spectrum, m_DrawOption);
 
   I->Normalize(m_Normalize);
@@ -172,7 +172,7 @@ void MImage::Init()
   m_NEntries = 0;
 
   m_Normalize = false;
-  
+
   // ID of this image:
   if (m_IDCounter == numeric_limits<int>::max()) {
     m_IDCounter = 0;
@@ -201,7 +201,7 @@ void MImage::Init()
 
 void MImage::SetTitle(MString Title)
 {
-  // Set the titel of the image
+  // Set the title of the image
 
   m_Title = Title;
 
@@ -257,7 +257,7 @@ void MImage::SetImageArray(double* IA)
       } else {
         merr<<"Image contains NaN ("<<x<<")"<<show;
       }
-    } 
+    }
   }
 }
 
@@ -283,10 +283,10 @@ void MImage::SetSpectrum(int Spectrum)
 {
   // Set the spectrum of this image
 
-  m_Spectrum = Spectrum;  
+  m_Spectrum = Spectrum;
 
   if (m_GlobalSpectrum == m_Spectrum) return;
-  
+
   if (m_Spectrum == c_RootDefault) {
     gStyle->SetPalette(1, 0);
   } else if (m_Spectrum == c_Thesis) {
@@ -295,7 +295,7 @@ void MImage::SetSpectrum(int Spectrum)
     Double_t Green[Number] = { 0.0000, 0.0000, 0.0000, 0.5000, 1.0000, 1.0000, 1.0000 };
     Double_t Blue[Number]  = { 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.7500 };
     Double_t Stops[Number] = { 0.0000, 0.1000, 0.3000, 0.5000,  0.700, 0.9000, 1.0000 };
-    
+
     // Arithmetic-mean:
     double Min = (Red[0]+Green[0]+Blue[0])/3.0;
     double Max = (Red[Number-1]+Green[Number-1]+Blue[Number-1])/3.0;
@@ -303,7 +303,7 @@ void MImage::SetSpectrum(int Spectrum)
     Stops[Number-1] = 1.0;
     for (unsigned int i = 1; i < Number-1; ++i) {
       double Value = ((Red[i]+Green[i]+Blue[i])/3.0-Min)/(Max-Min);
-      Stops[i] = Value; 
+      Stops[i] = Value;
     }
     TColor::CreateGradientColorTable(Number, Stops, Red, Green, Blue, 100);
   } else if (m_Spectrum == c_ThesisVarAtLow) {
@@ -312,7 +312,7 @@ void MImage::SetSpectrum(int Spectrum)
     Double_t Green[Number] = { 0.0000, 0.0000, 0.0000, 0.5000, 1.0000, 1.0000, 1.0000, 1.0000 };
     Double_t Blue[Number]  = { 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.7500, 1.0000 };
     Double_t Stops[Number] = { 0.0000, 0.050, 0.090, 0.1366, 0.2233, 0.5000, 0.7500, 1.0000 };
-    
+
     TColor::CreateGradientColorTable(Number, Stops, Red, Green, Blue, 100);
   } else if (m_Spectrum == c_BlackWhite) {
     int Number = 2;
@@ -369,7 +369,7 @@ void MImage::SetSpectrum(int Spectrum)
     merr<<"Unknown draw palette option. Using default."<<show;
     gStyle->SetPalette(55, 0);
   }
-  
+
   m_GlobalSpectrum = m_Spectrum;
 }
 
@@ -379,7 +379,7 @@ void MImage::SetSpectrum(int Spectrum)
 
 void MImage::SetDrawOption(const int Option)
 {
-  // Set the "ROOT"-draw option, e.g. HIST or LEGO2, CONT0Z, etc. 
+  // Set the "ROOT"-draw option, e.g. HIST or LEGO2, CONT0Z, etc.
 
   m_DrawOption = Option;
 
@@ -432,7 +432,7 @@ void MImage::SaveAs(MString FileName)
     m_Canvas->SaveAs(FileName);
   } else {
     mout<<"Error: Cannot save image because the canvas does not or no longer exist!"<<endl;
-  } 
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -444,7 +444,7 @@ bool MImage::CanvasExists()
 
   if (gROOT->FindObject(m_CanvasTitle) == 0) {
     return false;
-  } 
+  }
 
   return true;
 }
@@ -455,7 +455,7 @@ bool MImage::CanvasExists()
 
 MString MImage::MakeCanvasTitle()
 {
-  // Create a Canvas title of form "<m_Title> - <m_ID>" 
+  // Create a Canvas title of form "<m_Title> - <m_ID>"
 
   char Text[1000];
   sprintf(Text, "%s - %i", (const char *) m_Title.Data(), MImage::m_IDCounter);
@@ -465,7 +465,7 @@ MString MImage::MakeCanvasTitle()
   Cleaned.ReplaceAll('-', '_');
   Cleaned.ReplaceAll(':', '_');
   Cleaned.ReplaceAll('/', '_');
-  Cleaned.ReplaceAll('\\', '_'); 
+  Cleaned.ReplaceAll('\\', '_');
   Cleaned.ReplaceAll('!', '_');
   Cleaned.ReplaceAll('$', '_');
   Cleaned.ReplaceAll('@', '_');
@@ -533,7 +533,7 @@ void MImage::Display(TCanvas* Canvas)
   } else {
     m_Histogram->SetTitle(m_Title);
   }
-  
+
   double Content = 0.0;
   for (int x = 0; x < m_xNBins; x++) {
     Content = m_IA[x];
@@ -546,13 +546,13 @@ void MImage::Display(TCanvas* Canvas)
     } else {
       merr<<"Image contains NaN ("<<x<<")"<<endl;
     }
-  } 
-  
+  }
+
   // Rescale to 1:
   if (m_Normalize == true && m_Histogram->GetMaximum() > 0) {
     m_Histogram->Scale(1.0/m_Histogram->GetMaximum());
   }
-  
+
   m_Histogram->Draw(m_DrawOptionString);
 
   SetCreated();
@@ -567,10 +567,10 @@ void MImage::Display(TCanvas* Canvas)
 void MImage::Reset()
 {
   // Reset to default values:
-  
+
   for (int x = 0; x < m_xNBins; x++) {
     m_IA[x] = 0;
-  }  
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -592,12 +592,12 @@ double MImage::GetAverage()
   //! Calculate the average
 
   if (m_NEntries == 0) return 0;
-  
+
   double Average = 0.0;
   for (int e = 0; e < m_NEntries; ++e) {
-    Average += m_IA[e]; 
+    Average += m_IA[e];
   }
-  
+
   return Average / m_NEntries;
 }
 
@@ -610,19 +610,19 @@ void MImage::DetermineMaximum(double& MaxValue, vector<double>& Coordinate)
 {
   MaxValue = 0;
   double MaxIndex = 0;
-  
+
   for (int e = 0; e < m_NEntries; ++e) {
     if (m_IA[e] > MaxValue) {
       MaxValue = m_IA[e];
       MaxIndex = e;
     }
   }
-  
+
   Coordinate.clear();
   Coordinate.push_back((MaxIndex+0.5) * (m_xMax-m_xMin)/m_xNBins + m_xMin);
 }
-  
-  
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /*
@@ -642,7 +642,7 @@ void MImage::ExportCSV(MString FileName)
   }
 
   FileStream.close();
-  
+
   return;
 }
 */
@@ -653,7 +653,7 @@ void MImage::ExportCSV(MString FileName)
 void MImage::ExportFits()
 {
   fitsfile *fptr;
-  
+
   int status;
   long exposure;
 
@@ -693,7 +693,7 @@ void MImage::ExportFits()
   fits_close_file(fptr, &status);
   cout<<"5. "<<endl;
   fits_report_error(stderr, status);
-  
+
   fits_report_error(stderr, status);
   cout<<status<<endl;
 }
