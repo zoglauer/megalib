@@ -28,6 +28,9 @@
 
 // Standard libs:
 #include <limits>
+#include <algorithm>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 // ROOT libs:
@@ -51,7 +54,8 @@ MLMLOSEM::MLMLOSEM() : MLMLClassicEM()
 {
   // Construct an instance of MLMLOSEM
 
-  m_NSubSets = 4;
+  m_NSetSubSets = 1;
+  m_NUsedSubSets = m_NSetSubSets;
 }
 
 
@@ -67,83 +71,143 @@ MLMLOSEM::~MLMLOSEM()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Set the number of subsets:
+void MLMLOSEM::SetNSubSets(unsigned int NSubSets)
+{
+  m_NSetSubSets = NSubSets;
+  if (m_NSetSubSets < 1) {
+    m_NSetSubSets = 1;
+  }
+  m_NUsedSubSets = m_NSetSubSets;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Randomly shuffle the events
+void MLMLOSEM::Shuffle()
+{
+  random_shuffle(m_Storage.begin(), m_Storage.end());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MLMLOSEM::CalculateEventApportionment()
+{
+  // Split the events by used bins
+
+  m_EventApportionment.clear();
+
+  int MinNEventsPerSubset = 5000;
+  m_NUsedSubSets = m_NSetSubSets;
+  if (m_NEvents < MinNEventsPerSubset*m_NUsedSubSets && m_NUsedSubSets > 1) {
+    cout<<"OS-EM: You need at least "<<MinNEventsPerSubset<<" events per subset for the OS-EM algorithm."<<endl;
+    m_NUsedSubSets = m_NEvents/MinNEventsPerSubset;
+    if (m_NUsedSubSets == 0) m_NUsedSubSets = 1;
+  }
+  cout<<"OS-EM: You have "<<m_NEvents<<" events, thus I use "<<m_NUsedSubSets<<" subsets."<<endl;
+
+  unsigned int Split = m_Storage.size() / m_NThreads / m_NUsedSubSets;
+
+  for (unsigned int i = 0; i < m_NThreads*m_NUsedSubSets; ++i) {
+    unsigned int Start = 0;
+    if (m_EventApportionment.size() != 0) {
+      Start = m_EventApportionment.back().second + 1;
+    }
+    unsigned int Stop = Start + Split - 1;
+    if (i == m_NThreads*m_NUsedSubSets - 1) {
+      Stop = m_Storage.size() - 1;
+    }
+    m_EventApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MLMLOSEM::DoOneIteration()
 {
   // Do only one iteration, i.e. convole and deconvole the data
 
-  int UpdateInterval = 0;
-
-  int MinNEventsPerSubset = 5000;
-  unsigned int NSubSets = m_NSubSets;
-  if (m_NEvents < MinNEventsPerSubset*NSubSets && NSubSets > 1) {
-    cout<<"OS-EM: You need at least "<<MinNEventsPerSubset<<" events per subset for the OS-EM algorithm."<<endl;
-    NSubSets = m_NEvents/MinNEventsPerSubset;
-    if (NSubSets == 0) NSubSets = 1;
-  }
-  cout<<"OS-EM: You have "<<m_NEvents<<" events, thus I use "<<NSubSets<<" subsets."<<endl;
-
   for (unsigned int i = 0; i < m_NEvents; i++) m_Yi[i] = 0.0;
 
-  for (unsigned int s = 0; s < NSubSets; ++s) {
-    UpdateInterval = 200*NSubSets;
+  // Everything happens in the main thread
+  if (m_NThreads == 1) {
+    for (unsigned int s = 0; s < m_NUsedSubSets; ++s) {
+      cout<<"Subset: "<<s+1<<"/"<<m_NUsedSubSets<<endl;
+      // Convolve:
+      Convolve(m_EventApportionment[s].first, m_EventApportionment[s].second);
 
-    // Do the convolution:
-    // y_i_bar = Sum_j (t_ij l_j)/v_i + rs*r_i
-
-    // This is very simple for the classic algorithm:
-    for (unsigned int i = s; i < m_NEvents; i += NSubSets) {
-      // All the convolution-work is done within the MBPImage... classes, 
-      // called by m_BPStorage->GetResponseSlice(i): Sum_j (t_ij l_j)
-      m_Storage[i]->Convolve(m_Yi, i, m_Lj, m_NBins);
-      
-      // Normalize and add background
-      if (m_Vi[i] != 0) {
-        m_Yi[i] = m_Yi[i]/m_Vi[i];
-      } else {
-        //Warning("void MLMLOSEM::Convolve(double *Ci)",
-        //"m_V[i] = 0 not allowed --> The event is not within the image so useless...");
-      }
-      
-      if (m_EnableGUIInteractions == true && (i-s)%UpdateInterval == 0) {
-        gSystem->ProcessEvents();
-        gSystem->ProcessEvents();
-      }
-    }
-
-    // The inv is just for improved performance"
-    for (unsigned int i = s; i < m_NEvents; i += NSubSets) {
-      if (m_Yi[i] == 0) {
-        cout<<"LM-ML-OS-EM: We have an empty event. Eliminating event "<<i<<"..."<<endl;
-        m_InvYi[i] = 0.0;
-      } else {
-        m_InvYi[i] = 1.0/m_Yi[i];
-      }  
-    }
-
-    // Do the de-convolution:
-    // In other words: compute the correction image
-    //             or: compute the expectation
-    // e_j = Sum_i t_ij / y_i_bar for the image pixels
-        
-    for (unsigned int j = 0; j < m_NBins; ++j) m_Ej[j] = 0.0;
-
-    for (unsigned int i = s; i < m_NEvents; i += NSubSets) {
-      // All the deconvolution-work is done within the MBPImage... classes, 
-      // called by m_BPStorage->GetResponseSlice(i)
-      m_Storage[i]->Deconvolve(m_Ej, m_InvYi, i);
-      
-      if (m_EnableGUIInteractions == true && (i-s)%UpdateInterval == 0) {
-        gSystem->ProcessEvents();
-        gSystem->ProcessEvents();
-      }
-    }
-    
-
-    // Correct the image we the data we have so far:
-    for (unsigned int j = 0; j < m_NBins; ++j) {
-      m_Lj[j] *= m_Ej[j]/m_Sj[j];
+      // Deconvolve:
+      ResetExpectation();
+      Deconvolve(m_EventApportionment[s].first, m_EventApportionment[s].second);
+      CorrectImage();
     }
   }
+  // Now multi-threaded
+  else {
+
+    for (unsigned int s = 0; s < m_NUsedSubSets; ++s) {
+      //cout<<"Subset: "<<s+1<<"/"<<m_NUsedSubSets<<endl;
+      // Convolution:
+      vector<thread> Threads(m_NThreads);
+      m_ThreadRunning.resize(m_NThreads, true);
+      for (unsigned int t = 0; t < m_NThreads; ++t) {
+        m_ThreadRunning[t] = true;
+        Threads[t] = thread(&MLMLOSEM::ConvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NThreads].first, m_EventApportionment[t + s*m_NThreads].second);
+      }
+      while (true) {
+        bool Finished = true;
+        for (unsigned int t = 0; t < m_NThreads; ++t) {
+          if (m_ThreadRunning[t] == true) {
+            Finished = false;
+            break;
+          }
+        }
+        if (Finished == false) {
+          this_thread::sleep_for(chrono::milliseconds(1));
+        } else {
+          for (unsigned int t = 0; t < m_NThreads; ++t) {
+            Threads[t].join();
+          }
+          break;
+        }
+      }
+
+      // Deconvolution:
+      //cout<<"Deconvolving..."<<endl;
+      ResetExpectation();
+      Threads.clear();;
+      for (unsigned int t = 0; t < m_NThreads; ++t) {
+        m_ThreadRunning[t] = true;
+        Threads[t] = thread(&MLMLOSEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NThreads].first, m_EventApportionment[t + s*m_NThreads].second);
+      }
+      while (true) {
+        bool Finished = true;
+        for (unsigned int t = 0; t < m_NThreads; ++t) {
+          if (m_ThreadRunning[t] == true) {
+            Finished = false;
+            break;
+          }
+        }
+        if (Finished == false) {
+          this_thread::sleep_for(chrono::milliseconds(1));
+        } else {
+          for (unsigned int t = 0; t < m_NThreads; ++t) {
+            Threads[t].join();
+          }
+          break;
+        }
+      }
+      CorrectImage();
+      //cout<<"Done!"<<endl;
+    }
+  }
+
 
   m_NPerformedIterations++;
 
@@ -159,6 +223,24 @@ bool MLMLOSEM::DoOneIteration()
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MLMLOSEM::ConvolveThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop)
+{
+  MLMLClassicEM::ConvolveThreadEntry(ThreadID, Start, Stop);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MLMLOSEM::DeconvolveThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop)
+{
+  MLMLClassicEM::DeconvolveThreadEntry(ThreadID, Start, Stop);
 }
 
 

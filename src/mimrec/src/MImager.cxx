@@ -867,6 +867,9 @@ bool MImager::Analyze(bool CalculateResponse)
   // Set the response to the EM algorithm
   m_EM->SetResponseSlices(m_BPEvents, m_NBins);
 
+  // Set the number of threads
+  m_EM->SetNumberOfThreads(m_NThreads);
+
   // Set the exposure
   m_EM->SetExposure(m_Exposure);
 
@@ -1004,6 +1007,7 @@ bool MImager::Analyze(bool CalculateResponse)
     if (gROOT->IsBatch() == false) {
       Progress->SetValue(CurrentIteration);
       gSystem->ProcessEvents();
+      gSystem->ProcessEvents();
     }
 
     ostringstream Title;
@@ -1019,8 +1023,7 @@ bool MImager::Analyze(bool CalculateResponse)
     }
     m_Images.push_back(Image->Clone());
 
-    if (m_EM->IsStopCriterionFullfilled() == true ||
-        (gROOT->IsBatch() == false && Progress->TestCancel() == true)) {
+    if (m_EM->IsStopCriterionFullfilled() == true ||  (gROOT->IsBatch() == false && Progress->TestCancel() == true)) {
       break;
     }
   }

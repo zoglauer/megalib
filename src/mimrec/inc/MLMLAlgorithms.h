@@ -43,7 +43,7 @@ class MLMLAlgorithms
   //! Default destructor
   virtual ~MLMLAlgorithms();
 
-  //! Use the stop criterion 
+  //! Use the stop criterion
   void UseStopCriterionByIterations(unsigned int NIterations);
   //! Return true if the stop criterion is fullfilled
   bool IsStopCriterionFullfilled();
@@ -60,7 +60,7 @@ class MLMLAlgorithms
 
   //! Return the maximum number of iterations
   unsigned int GetMaxNIterations() const { return m_MaxNIterations; }
-  
+
   //! Set if GUI interaction are possible (i.e. if ProcessEvents is called)
   //! This should be always set to false in a multi-threaded environment!
   void EnableGUIInteractions(bool EnableGUIInteractions = true) { m_EnableGUIInteractions = EnableGUIInteractions; }
@@ -69,8 +69,10 @@ class MLMLAlgorithms
   virtual bool SetResponseSlices(vector<MBPData*>& Data, int NImageBins);
   //! Set the exposure map
   virtual void SetExposure(MExposure* Exposure);
-  //! Set the backgroynd 
+  //! Set the backgroynd
   virtual void SetBackground(MBackground* Background);
+  //! Set the number of threads
+  virtual void SetNumberOfThreads(unsigned int NThreads);
 
 
   //! ID for the classic MLEM algorithm
@@ -85,7 +87,11 @@ class MLMLAlgorithms
 
   // protected methods:
  protected:
+  //! Determine the apportionment of the events for the threads
+  virtual void CalculateEventApportionment();
 
+  //! Shuffle the events around - does notthing here, but in ordered subsets algorithm
+  virtual void Shuffle() {};
 
   // private methods:
  private:
@@ -100,13 +106,16 @@ class MLMLAlgorithms
   unsigned int m_MaxNIterations;
 
   //! Number of iterations to perform
-  //unsigned int m_NIterations;           
+  //unsigned int m_NIterations;
   //! Number of already performed iterations
   unsigned int m_NPerformedIterations;
 
+  //! The number of threads to be used
+  unsigned int m_NThreads;
+
   //! Number of image bins
-  unsigned int m_NBins;  
-  //! Number of events 
+  unsigned int m_NBins;
+  //! Number of events
   unsigned int m_NEvents;
 
   //! estimated image after several iterations
@@ -127,6 +136,12 @@ class MLMLAlgorithms
   //! PSF storage
   vector<MBPData*> m_Storage;
 
+  //! Event apportionment for the threads
+  vector<pair<unsigned int, unsigned int>> m_EventApportionment;
+  //! Flags indicating the threads are running:
+  vector<bool> m_ThreadRunning;
+
+
   //! The exposure map
   MExposure* m_Exposure;
   //! Background model
@@ -134,8 +149,8 @@ class MLMLAlgorithms
 
   //! True if GUI interaction should be enabled, i.e. if ProcessEvents() is called (default: true)
   bool m_EnableGUIInteractions;
-  
-  
+
+
   // private members:
  private:
 
