@@ -164,9 +164,9 @@ void MBPDataSparseImageOneByte::Deconvolve(double* Expectation, double* InvYnew,
   double Scaler = m_Maximum / 255.0;
 
   int Bin = 0;
-  for (unsigned int i = 0; i < m_IndexSize; ++i) {
+  for (int i = 0; i < m_IndexSize; ++i) {
     int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
-    for (unsigned int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
       Expectation[Index] += Scaler * m_Data[Bin] * InvYnew[Event];
       ++Bin;
     }
@@ -185,9 +185,9 @@ void MBPDataSparseImageOneByte::Convolve(double* Ynew, int Event, double* Image,
   double Scaler = m_Maximum / 255.0;
 
   int Bin = 0;
-  for (unsigned int i = 0; i < m_IndexSize; ++i) {
+  for (int i = 0; i < m_IndexSize; ++i) {
     int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
-    for (unsigned int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
       Sum += Scaler * m_Data[Bin] * Image[Index];
       ++Bin;
     }
@@ -211,9 +211,9 @@ void MBPDataSparseImageOneByte::Sum(double* Image, int NBins)
   double Scaler = m_Maximum / 255.0;
 
   int Bin = 0;
-  for (unsigned int i = 0; i < m_IndexSize; ++i) {
+  for (int i = 0; i < m_IndexSize; ++i) {
     int IndexMax = m_IndexStart[i] + m_IndexContinuation[i];
-    for (unsigned int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
+    for (int Index = m_IndexStart[i]; Index <= IndexMax; ++Index) {
       Image[Index] += Scaler * m_Data[Bin];
       ++Bin;
     }
