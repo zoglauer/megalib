@@ -94,12 +94,12 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   // Dimensions Cartesean
   m_XMin = -5;
   m_XMax = 5;
-  m_BinsZ = 50;
+  m_BinsX = 50;
   m_YMin = -5;
   m_YMax = 5;
-  m_BinsZ = 50;
-  m_ZMin = 10;
-  m_ZMax = 10;
+  m_BinsY = 50;
+  m_ZMin = 9.99;
+  m_ZMax = 10.01;
   m_BinsZ = 1;
 
   // Image drawing options 
@@ -128,7 +128,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
 
 
   // Memory management
-  m_RAM = 512;
+  m_RAM = 1500;
   m_Swap = 128;
   m_MemoryExhausted = 2;
   m_Bytes = 1;
@@ -136,19 +136,6 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_FastFileParsing = false;
   m_NThreads = 1;
 
-
-  m_XMin = -5;
-  m_XMax = 5;
-
-  m_YMin = -5;
-  m_YMax = 5;
-
-  m_ZMin = 10;
-  m_ZMax = 10;
-
-  m_BinsZ = 10;
-
-  
   // Significance
   m_SignificanceMapRadius = 5.2;
   m_SignificanceMapDistance = 20.;
