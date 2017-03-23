@@ -90,15 +90,15 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   // Dimensions Cartesean
   m_XMin = -5;
   m_XMax = 5;
-  m_BinsZ = 50;
+  m_BinsX = 50;
   m_YMin = -5;
   m_YMax = 5;
-  m_BinsZ = 50;
-  m_ZMin = 10;
-  m_ZMax = 10;
+  m_BinsY = 50;
+  m_ZMin = 9.99;
+  m_ZMax = 10.01;
   m_BinsZ = 1;
 
-  // Image drawing options 
+  // Image drawing options
   m_ImageDrawMode = 0;
   m_ImagePalette = 0;
   m_ImageSourceCatalog = "";
@@ -108,7 +108,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_AnimationMode = 1;
   m_AnimationFrameTime = 10; //sec
   m_AnimationFileName = "MyAnimated.gif";
-  
+
   // Response
   m_ResponseType = MResponseType::Gauss1D;
 
@@ -120,17 +120,17 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_GaussianByUncertaintiesIncrease = 0.0;
 
   m_ImagingResponseConeShapesFileName = "";
-  
+
   m_ImagingResponseComptonTransversalFileName = "";
   m_ImagingResponseComptonLongitudinalFileName = "";
   m_ImagingResponsePairRadialFileName = "";
 
   m_ExposureMode = MExposureMode::Flat;
   m_ExposureEfficiencyFile = "";
-  
+
 
   // Memory management
-  m_RAM = 512;
+  m_RAM = 1500;
   m_Swap = 128;
   m_MemoryExhausted = 2;
   m_Bytes = 1;
@@ -138,19 +138,6 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_FastFileParsing = false;
   m_NThreads = 1;
 
-
-  m_XMin = -5;
-  m_XMax = 5;
-
-  m_YMin = -5;
-  m_YMax = 5;
-
-  m_ZMin = 10;
-  m_ZMax = 10;
-
-  m_BinsZ = 10;
-
-  
   // Significance
   m_SignificanceMapRadius = 5.2;
   m_SignificanceMapDistance = 20.;
@@ -207,7 +194,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ResponseParameter1DGaussianByUncertaintiesIncrease", m_GaussianByUncertaintiesIncrease);
 
   new MXmlNode(bNode, "ResponseParameterConeShapes", m_ImagingResponseConeShapesFileName);
-  
+
   new MXmlNode(bNode, "ResponseParameterFilesComptonLong", CleanPath(m_ImagingResponseComptonLongitudinalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesComptonTrans", CleanPath(m_ImagingResponseComptonTransversalFileName));
   new MXmlNode(bNode, "ResponseParameterFilesPair", CleanPath(m_ImagingResponsePairRadialFileName));
@@ -224,7 +211,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "Type", static_cast<int>(m_CoordinateSystem));
 
   // Menu Dimensions - Spherical
-  new MXmlNode(aNode, "SphericalRotationAxisX", m_ImageRotationXAxis); 
+  new MXmlNode(aNode, "SphericalRotationAxisX", m_ImageRotationXAxis);
   new MXmlNode(aNode, "SphericalRotationAxisZ", m_ImageRotationZAxis);
   new MXmlNode(aNode, "SphericalTheta", m_ThetaMin, m_ThetaMax);
   new MXmlNode(aNode, "SphericalThetaBins", m_BinsTheta);
@@ -272,7 +259,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "ApproximatedMaths", m_ApproximatedMaths);
   new MXmlNode(aNode, "FastFileParsing", m_FastFileParsing);
   new MXmlNode(aNode, "NThreads", m_NThreads);
-  
+
 
   return true;
 }
@@ -284,11 +271,11 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
 bool MSettingsImaging::ReadXml(MXmlNode* Node)
 {
   // Retrieve the content from an XML tree
-  
+
   MXmlNode* aNode = 0;
   MXmlNode* bNode = 0;
   MXmlNode* cNode = 0;
-  
+
   if ((aNode = Node->GetNode("ImageReconstructionAlgorithms")) != 0) {
     if ((bNode = aNode->GetNode("ListMode")) != 0) {
       if ((cNode = bNode->GetNode("Algorithm")) != 0) {
@@ -356,8 +343,8 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       }
     }
   }
-  
-  
+
+
   if ((aNode = Node->GetNode("CoordinateSystem")) != 0) {
     if ((bNode = aNode->GetNode("Type")) != 0) {
       m_CoordinateSystem = static_cast<MCoordinateSystem>(bNode->GetValueAsInt());
@@ -418,15 +405,15 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       m_BinsZ = bNode->GetValueAsInt();
     }
   }
-  
-  
+
+
   if ((aNode = Node->GetNode("ImageDrawingOptions")) != 0) {
     if ((bNode = aNode->GetNode("ImageDrawMode")) != 0) {
       m_ImageDrawMode = bNode->GetValueAsInt();
     }
     if ((bNode = aNode->GetNode("ImagePalette")) != 0) {
       m_ImagePalette = bNode->GetValueAsInt();
-    }      
+    }
     if ((bNode = aNode->GetNode("ImageSourceCatalog")) != 0) {
       m_ImageSourceCatalog = bNode->GetValueAsString();
     }
@@ -434,29 +421,29 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       m_ImageProjection = static_cast<MImageProjection>(bNode->GetValueAsInt());
     }
   }
-  
-  
+
+
   if ((aNode = Node->GetNode("AnimationOptions")) != 0) {
     if ((bNode = aNode->GetNode("AnimationMode")) != 0) {
       m_AnimationMode = bNode->GetValueAsInt();
     }
     if ((bNode = aNode->GetNode("AnimationFrameTime")) != 0) {
       m_AnimationFrameTime = bNode->GetValueAsDouble();
-    }      
+    }
     if ((bNode = aNode->GetNode("AnimationFileName")) != 0) {
       m_AnimationFileName = bNode->GetValueAsString();
-    }      
+    }
   }
-  
+
   if ((aNode = Node->GetNode("SignificanceMap")) != 0) {
     if ((bNode = aNode->GetNode("SignificanceMapDistance")) != 0) {
-      m_SignificanceMapDistance = bNode->GetValueAsDouble(); 
+      m_SignificanceMapDistance = bNode->GetValueAsDouble();
     }
     if ((bNode = aNode->GetNode("SignificanceMapRadius")) != 0) {
       m_SignificanceMapRadius = bNode->GetValueAsDouble();
     }
   }
-  
+
   if ((aNode = Node->GetNode("MemoryManagement")) != 0) {
     if ((bNode = aNode->GetNode("RAM")) != 0) {
       m_RAM = bNode->GetValueAsInt();
@@ -480,7 +467,7 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       m_NThreads = bNode->GetValueAsInt();
     }
   }
-  
+
   return true;
 }
 
