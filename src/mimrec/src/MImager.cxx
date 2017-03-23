@@ -1085,7 +1085,6 @@ bool MImager::ComputeResponseSlices()
   m_EventFile.SetProgressTitle("Progress", "Progress of response slice generation");
 
   if (m_NThreads > 1) {
-    m_EventFile.SetAutomaticProgressUpdates(false);
     m_EventFile.SetDelayedFileParsing(true);
     m_EventFile.StartThread();
 

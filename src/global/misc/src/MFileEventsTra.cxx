@@ -76,8 +76,6 @@ MFileEventsTra::MFileEventsTra() : MFileEvents()
   m_StopThread = false;
   m_Thread = 0;
 
-  m_AutomaticProgressUpdates = true;
-
   m_Version = 1;
 
   m_NDataSets = 0;
@@ -98,6 +96,7 @@ MFileEventsTra::~MFileEventsTra()
 {
   // Delete this instance of MFileEventsTra
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -252,11 +251,10 @@ MPhysicalEvent* MFileEventsTra::GetNextEvent()
 {
   // Return the next event from the list, wait if non is present...
 
-  if (m_AutomaticProgressUpdates == true) {
-    if (UpdateProgress() == false) {
-      return 0;
-    }
+  if (UpdateProgress() == false) {
+    return nullptr;
   }
+
 
   if (m_Threaded == false) {
     return ReadNextEvent();

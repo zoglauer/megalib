@@ -86,7 +86,7 @@ MFile::~MFile()
   m_ProgressMutex.Lock();
   if (m_OwnProgress == true) {
     delete m_Progress;
-  } else if (m_Progress != 0) {
+  } else if (m_Progress != nullptr) {
     m_Progress->SetValue(0, m_ProgressLevel);
   }
   m_ProgressMutex.UnLock();
@@ -752,7 +752,7 @@ bool MFile::Get(float& f)
 {
   m_FileMutex.Lock();
 
-  if (IsGood() == false) {
+  if (IsGoodNoLock() == false) {
     m_FileMutex.UnLock();
     return false;
   }
@@ -898,6 +898,8 @@ void MFile::ShowProgressNoLock(bool Show)
   if (Show == true) {
     if (gClient == 0 || gClient->GetRoot() == 0 || gROOT->IsBatch() == true) {
       cout<<"Can't show progress bar, because you do not have a GUI"<<endl;
+    } else if (TThread::SelfId() != g_MainThreadID) {
+      cout<<"Can't show progress bar, since this is not the main thread"<<endl;      
     } else {
       if (m_OwnProgress == true) {
         delete m_Progress;
@@ -912,7 +914,7 @@ void MFile::ShowProgressNoLock(bool Show)
     if (m_OwnProgress == true) {
       delete m_Progress;
     }
-    m_Progress = 0;
+    m_Progress = nullptr;
   }
 }
 
@@ -923,6 +925,11 @@ void MFile::ShowProgressNoLock(bool Show)
 void MFile::SetProgressTitle(MString Main, MString Sub)
 {
   // Set the title of the current progress bar
+
+   // We cannot update the progress bar from anything but the main thread
+  if (TThread::SelfId() != g_MainThreadID) {
+    return;
+  }
 
   m_ProgressMutex.Lock();
   if (m_Progress != nullptr) {
@@ -975,7 +982,12 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
-
+  
+  // We cannot update the progress bar from anything but the main thread
+  if (TThread::SelfId() != g_MainThreadID) {
+    return true;
+  }
+  
   // GUI is not allowed to be accessed from multiple threads!
   m_ProgressMutex.Lock();
 
@@ -997,8 +1009,10 @@ bool MFile::UpdateProgress(unsigned int UpdatesToSkip)
   double Value = (double) GetFilePosition() / (double) GetFileLength();
 
   m_Progress->SetValue(Value, m_ProgressLevel);
-  if (TThread::SelfId() == g_MainThreadID) gSystem->ProcessEvents();
-
+  if (TThread::SelfId() == g_MainThreadID) {
+    gSystem->ProcessEvents();
+  }
+  
   if (m_Progress->TestCancel() == true) {
     ShowProgressNoLock(false);
     m_Canceled = true;

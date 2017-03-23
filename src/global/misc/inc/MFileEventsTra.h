@@ -52,9 +52,6 @@ class MFileEventsTra : public MFileEvents
 
   //! Enable or disable delayed file parsing
   void SetDelayedFileParsing(bool ParseDelayed) { m_ParseDelayed = ParseDelayed; }
-
-  //! Set if you want automatic progressbas updates --- must be set to wrong if we have multiple thread pulling data
-  void SetAutomaticProgressUpdates(bool AutomaticProgressUpdates) { m_AutomaticProgressUpdates = AutomaticProgressUpdates; }
   
   //! If you want this class to be multi-threaded, call this function
   bool StartThread();
@@ -87,8 +84,6 @@ class MFileEventsTra : public MFileEvents
   bool m_Threaded;
   bool m_StopThread;
   TThread* m_Thread;
-  //! True if we do automatic progress updates
-  bool m_AutomaticProgressUpdates;
   
   //! True if the event sshould be read in fast mode (i.e. without fault tolerance)
   bool m_Fast;

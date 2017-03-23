@@ -312,7 +312,7 @@ bool MFileEvents::Rewind()
     return false;
   }
 
-  bool ProgressShown = (m_Progress != 0) ? true : false;
+  bool ProgressShown = (m_Progress != nullptr) ? true : false;
   Close();
   Open(m_OriginalFileName, m_Way);
   ShowProgress(ProgressShown);
@@ -806,6 +806,12 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
+  
+  // We cannot update the progress bar from anything but the main thread
+  if (TThread::SelfId() != g_MainThreadID) {
+    //cout<<"Update wrong thread: "<<TThread::SelfId()<<":"<<g_MainThreadID<<endl;
+    return true;
+  }
 
   // GUI is not allowed to be accessed from multiple threads!
   m_ProgressMutex.Lock();
@@ -835,8 +841,10 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
   }
 
   m_Progress->SetValue(Value, m_ProgressLevel);
-  if (TThread::SelfId() == g_MainThreadID) gSystem->ProcessEvents();
-
+  if (TThread::SelfId() == g_MainThreadID) {
+    gSystem->ProcessEvents();
+  }
+  
   if (m_Progress->TestCancel() == true) {
     ShowProgressNoLock(false);
     m_Canceled = true;
@@ -847,6 +855,10 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
 
   m_ProgressMutex.UnLock();
 
+  if (m_IncludeFile != nullptr) {
+    m_IncludeFile->UpdateProgress(UpdatesToSkip);
+  }
+  
   return true;
 }
 
