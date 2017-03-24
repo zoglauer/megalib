@@ -37,7 +37,7 @@ while [ ${RunningInstances} -ge ${MaxRunningInstances} ]; do
   # [ ] prevent the listing of the grep itself
   # We exclude this process itself in the listing
   # sed -> don't remember
-  RunningInstances=`ps -Af | grep "[ ]${Program}" | grep -v "mdelay ${Program}" | grep -r "bash -c " | wc -l | sed 's/^ *//g'`
+  RunningInstances=`ps -Af | grep "[ ]${Program}" | grep -v "mdelay ${Program}" | grep -v "bash -c " | wc -l | sed 's/^ *//g'`
   if [ ${RunningInstances} -eq 0 ]; then
     exit 0;
   fi
