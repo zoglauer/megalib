@@ -84,6 +84,7 @@ class MGUISivanMain : public MGUIMain
                    c_IncidenceAngle,
                    c_IncidenceEnergy,
                    c_IncidenceVsMeasuredEnergy,
+                   c_InitialInteraction,
                    c_DepositedEnergy,
                    c_InitialComptonScatterAngle,
                    c_EnergyOfSecondaries,

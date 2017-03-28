@@ -3849,7 +3849,143 @@ void MInterfaceSivan::CompleteAbsorptionRatio()
 
 }
 
+ 
+////////////////////////////////////////////////////////////////////////////////
 
+
+ 
+void MInterfaceSivan::InitialInteraction()
+{  
+  //! Shows a table of initial interaction vs detector type
+  
+  // Open the simulation file:
+  MFileEventsSim EventFile(m_Geometry);
+  if (EventFile.Open(m_Data->GetCurrentFileName()) == false) {
+    mgui<<"Unable to open file"<<error;
+    return;
+  }
+  EventFile.ShowProgress();
+
+  // A vector of interaction types (0: PHOT, 1: COMP, 2: PAIR, 3: Rest)
+  vector<long> m_Types(4, 0);
+  vector<MString> m_DetectorNames;
+  
+  vector<vector<long>> m_OccupancyMatrix;
+  
+  MSimEvent* Event;
+  while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    if (Event->GetNIAs() >= 2) {
+      unsigned int Type = 3;
+      if (Event->GetIAAt(1)->GetProcess() == "PHOT") {
+        Type = 0; 
+      } else if (Event->GetIAAt(1)->GetProcess() == "COMP") {
+        Type = 1; 
+      } else if (Event->GetIAAt(1)->GetProcess() == "PAIR") {
+        Type = 2;
+      }
+      
+      MDVolumeSequence VS = m_Geometry->GetVolumeSequence(Event->GetIAAt(1)->GetPosition());
+      if (VS.GetDetector() != nullptr) {       
+        MString Name = VS.GetDetector()->GetName();
+        bool Found = false;
+        for (unsigned int n = 0; n < m_DetectorNames.size(); ++n) {
+          if (m_DetectorNames[n] == Name) {
+            m_OccupancyMatrix[n][Type]++;
+            Found = true;
+          }
+        }
+        if (Found == false) {
+          m_OccupancyMatrix.push_back(m_Types);
+          m_OccupancyMatrix.back()[Type]++;
+          m_DetectorNames.push_back(Name);
+        }
+      }
+    }
+    delete Event;
+  }
+  
+  // Now print the matrix:
+  cout<<endl;
+  cout<<endl;
+  cout<<"Statistics on type and detector of the first interaction "<<endl;
+  cout<<"======================================================== "<<endl;
+  cout<<endl;
+  
+  // Determine sums and totals
+  vector<long> ProcessTotals(4, 0);
+  vector<long> DetectorTotals(m_DetectorNames.size(), 0);
+  long Total = 0;
+  for (unsigned int n = 0; n < m_DetectorNames.size(); ++n) {
+    for (unsigned int i = 0; i < m_OccupancyMatrix[n].size(); ++i) {
+      ProcessTotals[i] += m_OccupancyMatrix[n][i];
+      DetectorTotals[n] += m_OccupancyMatrix[n][i];
+      Total += m_OccupancyMatrix[n][i];
+    }
+  }
+    
+  // Determine with of detector column
+  unsigned int WidthCol1 = 0;
+  for (MString N: m_DetectorNames) {
+    if (N.Length() > WidthCol1) WidthCol1 = N.Length();
+  }
+  WidthCol1 += 2;
+  
+  
+  // Determine width of number columns
+  unsigned int Width = (unsigned int) log10((double) Total) + 1;
+  if (Width < 4) Width = 4;
+
+  cout<<"As counts:"<<endl<<endl;
+  cout<<setw(WidthCol1+3)<<" | "<<setw(Width)<<right<<"PHOT"<<" | "<<setw(Width)<<right<<"COMP"<<" | "<<setw(Width)<<right<<"PAIR"<<" | "<<setw(Width)<<right<<"Rest"<<" | "<<setw(Width)<<right<<" Tot"<<" |"<<endl;
+  for (unsigned int i = 0; i < WidthCol1 + 5*Width + 6*3 - 1; ++i) cout<<"-";
+  cout<<endl;
+  for (unsigned int n = 0; n < m_DetectorNames.size(); ++n) {
+    cout<<setw(WidthCol1)<<m_DetectorNames[n]<<" | ";
+    for (unsigned int i = 0; i < m_OccupancyMatrix[n].size(); ++i) {
+      cout<<setw(Width)<<right<<m_OccupancyMatrix[n][i]<<" | ";
+    }
+    cout<<setw(Width)<<right<<DetectorTotals[n]<<" | ";
+    cout<<endl;
+  }
+  for (unsigned int i = 0; i < WidthCol1 + 5*Width + 6*3 - 1; ++i) cout<<"-";
+  cout<<endl;
+  // Sums:
+  cout<<setw(WidthCol1)<<right<<"Total"<<" | ";
+  for (unsigned int i = 0; i < ProcessTotals.size(); ++i) {
+    cout<<setw(Width)<<right<<ProcessTotals[i]<<" | ";
+  }
+  cout<<setw(Width)<<right<<Total<<" | "<<endl;
+  cout<<endl;
+  cout<<endl;
+  
+  
+  Width = 6;
+  cout<<"As percentage:"<<endl<<endl;
+  cout<<setw(WidthCol1+3)<<" | "<<setw(Width)<<right<<"PHOT"<<"  | "<<setw(Width)<<right<<"COMP"<<"  | "<<setw(Width)<<right<<"PAIR"<<"  | "<<setw(Width)<<right<<"Rest"<<"  | "<<setw(Width)<<right<<"Total"<<"  |"<<endl;
+  for (unsigned int i = 0; i < WidthCol1 + 5*Width + 6*3 + 5 - 1; ++i) cout<<"-";
+  cout<<endl;
+  for (unsigned int n = 0; n < m_DetectorNames.size(); ++n) {
+    cout<<setw(WidthCol1)<<m_DetectorNames[n]<<" | ";
+    for (unsigned int i = 0; i < m_OccupancyMatrix[n].size(); ++i) {
+      cout<<setw(Width)<<fixed<<setprecision(2)<<right<<100.0*m_OccupancyMatrix[n][i]/Total<<"% | ";
+    }
+    cout<<setw(Width)<<fixed<<setprecision(2)<<right<<100.0*DetectorTotals[n]/Total<<"% | ";
+    cout<<endl;
+  }
+  for (unsigned int i = 0; i < WidthCol1 + 5*Width + 6*3 + 5 - 1; ++i) cout<<"-";
+  cout<<endl;
+  // Sums:
+  cout<<setw(WidthCol1)<<right<<"Total"<<" | ";
+  for (unsigned int i = 0; i < ProcessTotals.size(); ++i) {
+    cout<<setw(Width)<<fixed<<setprecision(2)<<right<<100.0*ProcessTotals[i]/Total<<"% | ";
+  }
+  cout<<setw(Width)<<fixed<<setprecision(2)<<right<<100.0*Total/Total<<"% | "<<endl;
+  cout<<endl;
+  
+  return;
+}
+  
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
