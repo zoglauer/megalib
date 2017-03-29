@@ -620,9 +620,10 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
     // Step 2: Check if one of the stop conditions is fulfilled
     //         Then we can stop now
     if (NextSource->GetNextEmission() == numeric_limits<double>::max()) {
-      cout<<"Stop: "<<NextSource->GetName()<<endl;
-      m_SimulatedTime = numeric_limits<double>::max();
-      // That's basically stop by time...
+      // We ran out of events here, thus we are done. 
+      // Thus just pick the event stop condition, and say it is fullfilled.
+      m_StopCondition = c_StopByEvents;
+      m_Events = m_NSimulatedEvents;
       return;
     }
 
@@ -644,7 +645,7 @@ void MCRun::GeneratePrimaries(G4Event* Event, G4GeneralParticleSource* ParticleG
 
     bool HasSuccessor = false;
     do {
-//       if (m_SourceList[MinID].IsBuildUpEventList() == true) {
+//       if (m_SourceList[MinID].IsBuildUpEventList() == true) { 
 //         break;
 //       }
 

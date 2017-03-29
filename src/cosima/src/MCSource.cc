@@ -244,11 +244,12 @@ void MCSource::Initialize()
   m_IsSuccessor = false;
   m_IsEventList = false;
   m_IsBuildUpEventList = false;
+  m_IsFileEventList = false;
   m_IsIsotopeCount = false;
 
   m_EventListSize = 0;
   m_IsotopeCount = 0;
-
+  
   // Intensity of this source
   m_InputFlux = c_Invalid;
   m_Flux = c_Invalid;
@@ -359,6 +360,10 @@ bool MCSource::GenerateParticles(G4GeneralParticleSource* ParticleGun)
   }
 
   if (m_IsEventList == true) {
+    if (m_EventListSize < 100000 && m_IsFileEventList == true && m_EventListFile.is_open()) {
+      ContinueReadingEventList();
+    }
+    
     delete m_EventList[0];
     m_EventList.pop_front();
     m_EventListSize--;
@@ -1974,25 +1979,53 @@ void MCSource::SetPolarizationDegree(const double& Degree)
   }
 }
 
+
 /******************************************************************************
  * Set entries of the event list from file
  */
-bool MCSource::AddToEventList(MString FileName)
+bool MCSource::SetEventListFromFile(MString FileName)
 {
-  const unsigned int Max = 10000000;
-
-  ifstream in;
-  in.open(FileName);
+  if (m_EventListSize > 0) {
+    mout<<m_Name<<": We already have an event list!"<<endl;
+    return false; 
+  }
   
-  if (in.is_open() == false) {
+  if (m_EventListFile.is_open()) {
+    m_EventListFile.close(); 
+  }
+  
+  m_EventListFile.open(FileName);
+  if (m_EventListFile.is_open() == false) {
     mout<<m_Name<<": Unable to open file "<<FileName<<endl;
     return false; 
   }
   
+  m_IsEventList = true;
+  m_IsFileEventList = true;
+
+  if (ContinueReadingEventList() == false) {
+    return false; 
+  }
+  
+  return true;
+}
+
+
+/******************************************************************************
+ * Set entries of the event list from file
+ */
+bool MCSource::ContinueReadingEventList()
+{
+  const unsigned int Max = 500000;
+    
+  if (m_EventListFile.is_open() == false) {
+    return true; 
+  }
+  
   MTokenizer Tokens;
   MString Line;
-  while (in.good() == true) {
-    Line.ReadLine(in);
+  while (m_EventListFile.good() == true) {
+    Line.ReadLine(m_EventListFile);
     Tokens.Analyze(Line, false);
     if (Tokens.GetNTokens() == 0) continue;
     
@@ -2001,7 +2034,7 @@ bool MCSource::AddToEventList(MString FileName)
       cout<<Tokens.GetText()<<endl;
       return false;
     }
-          
+    
     MEventListEntry* Entry = new MEventListEntry;
     Entry->m_ID = Tokens.GetTokenAtAsInt(0);
     Entry->m_IsSuccessor = Tokens.GetTokenAtAsBoolean(1);
@@ -2018,16 +2051,16 @@ bool MCSource::AddToEventList(MString FileName)
     m_EventList.push_back(Entry);
     m_EventListSize++; 
     
-    if (m_EventListSize > Max) {
-      mout<<m_Name<<": Event list is too large (exeeds "<<Max<<")."<<endl;
-      in.close();
-      return false;
+    if (m_EventListSize >= Max) {
+      break;
     }
   }
   
-  in.close();
+  if (m_EventListFile.good() == false) {
+    m_EventListFile.close();
+  }
   
-  m_IsEventList = true;
+  // cout<<"Read events from file: "<<m_EventListSize<<" events in store"<<endl;
   
   return true;
 }
@@ -2048,6 +2081,12 @@ bool MCSource::AddToEventList(double Energy,
 
   //cout<<"Size: "<<m_EventListTime.size()<<endl;
 
+  if (m_IsFileEventList == true) {
+    mout<<m_Name<<": No events can be added to an event list read from file."<<endl;
+    return false;
+  }
+  
+  
   const unsigned int Max = 10000000;
   if (m_EventListSize >= Max) {
     mout<<m_Name<<": Event list too large (exeeds "<<Max<<"). Last event eliminated (t="<<m_EventList.back()->m_Time/s<<" sec)"<<endl;

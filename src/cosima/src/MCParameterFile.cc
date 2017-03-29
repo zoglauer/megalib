@@ -866,7 +866,7 @@ bool MCParameterFile::Parse()
     if ((Source = GetSource(T->GetTokenAt(0))) != 0) {
       if (T->IsTokenAt(1, "EventList", true) == true) {
         if (T->GetNTokens() == 3) {
-          if (Source->AddToEventList(T->GetTokenAtAsString(2)) == false) {
+          if (Source->SetEventListFromFile(T->GetTokenAtAsString(2)) == false) {
             Typo(i, "Unable to add event list!");
             return false;
           }

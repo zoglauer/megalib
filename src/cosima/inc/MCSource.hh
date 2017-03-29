@@ -107,19 +107,22 @@ public:
   void SetBuildUpEventList() { m_IsBuildUpEventList = true; m_IsEventList = true; }
   /// Return true if this is a build up event list
   bool IsBuildUpEventList() const { return m_IsBuildUpEventList; }
-  /// Return true if this is an event list
+  /// Return the current size of the event list -- more events could be added later or via reading from file and 
   unsigned int SizeEventList() const { return m_EventList.size(); }
-  /// Set an entry of the event list
+  /// Add an entry of the event list -- will return false if we read the event list from file
   bool AddToEventList(double Energy, G4ThreeVector Position, G4ThreeVector Direction, 
                       G4ThreeVector Polarization, double Time, 
                       G4ParticleDefinition* ParticleType, MString VolumeName);
-  /// Set entries of the event list from file
-  bool AddToEventList(MString FileName);
   /// Return the next particle type in the event list
   G4ParticleDefinition* GetEventListNextParticle() { return (m_EventListSize > 0) ? m_EventList[0]->m_ParticleDefinition : nullptr; }
   /// Return the next volume in the event list
   MString GetEventListNextVolume() { return (m_EventListSize > 0) ? m_EventList[0]->m_VolumeName : ""; }
 
+  /// Set entries of the event list from file 
+  bool SetEventListFromFile(MString FileName);
+  /// Set entries of the event list from file
+  bool ContinueReadingEventList();
+  
   
   
   /// Return true, if the coordinate system could be set correctly
@@ -624,7 +627,12 @@ private:
   /// Total number of events which have not be started in history of this source (required for speed optimizations)
   int m_NEventsSkipped;
 
-
+  /// Event list file
+  ifstream m_EventListFile;
+  /// True if this is an event list read from file
+  bool m_IsFileEventList;
+  
+  
   /// True if this source is an isotope count source
   bool m_IsIsotopeCount;
   /// The current isotope count
