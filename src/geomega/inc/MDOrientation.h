@@ -42,16 +42,16 @@ class MDOrientation
 
   // public interface:
  public:
-  //! Standard constructor with the name of the vector
+  //! Standard constructor with the name of the orientation
   MDOrientation(const MString Name);
   //! Standard copy constructor
   MDOrientation(const MDOrientation& V);
   //! Default destructor
   virtual ~MDOrientation();
 
-  //! Return the name of the vector
+  //! Return the name of the orientation
   MString GetName() const { return m_Name; }
-  //! Set the name of the vector
+  //! Set the name of the orientation
   void SetName(const MString& Name) { m_Name = Name; }
 
   //! Validate the data and create the shape 
