@@ -1,5 +1,8 @@
 # How to generate a background for a NuSTAR-like orbit
 
+# Get trapped proton/electron and cosima proton/alpha particle files from SPENVIS
+# The given ones are for NuSTAR orbit
+
 # Compile
 make
 
