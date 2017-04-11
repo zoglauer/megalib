@@ -186,6 +186,37 @@ private:
 };
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when an index is out-of-bounds and 
+//! the error cannot be recovered gracefully
+class MExceptionEmptyArray : public MException
+{
+public:
+  //! Default constructor
+  MExceptionEmptyArray() : MException(), m_Name("") {
+  }
+  //! Constructor giving the minium array index, its size, and the accessing index to the array 
+  MExceptionEmptyArray(MString Name) : MException(), m_Name(Name) {
+  }
+  //! Default destructor
+  virtual ~MExceptionEmptyArray() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    if (m_Name.IsEmpty() == true) {
+      return "The array has no elements!"; 
+    } else {
+      ostringstream stream;
+      stream<<"The array \""<<m_Name<<"\" has no elements."<<endl; 
+      return stream.str().c_str();
+    }
+  }
+  
+private:
+  //! Name of the array
+  MString m_Name;
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -385,6 +416,7 @@ private:
   MString m_Description;
   
 };
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
