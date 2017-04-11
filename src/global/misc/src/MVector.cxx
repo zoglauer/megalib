@@ -256,6 +256,26 @@ double MVector::Angle(const MVector& V) const
   }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MVector MVector::Orthogonal() const 
+{
+  // Return an orthogonal vector by eliminating the component closest to zero to avoid large rounding errors 
+  
+  double aX = fabs(m_X);
+  double aY = fabs(m_Y);
+  double aZ = fabs(m_Z);
+  
+  if (aX < aY) {
+    return aX < aZ ? MVector(0.0, m_Z, -m_Y) : MVector(m_Y, -m_X, 0.0);
+  } else {
+    return aY < aZ ? MVector(-m_Z, 0.0, m_X) : MVector(m_Y, -m_X, 0.0);
+  }
+}
+      
+      
 ////////////////////////////////////////////////////////////////////////////////
 
 

@@ -145,7 +145,9 @@ public:
   // Return the magnitude of this vector
   double Mag() const { return sqrt(m_X*m_X + m_Y*m_Y + m_Z*m_Z); }
 
-
+  // Return an orthogonal vector, by eliminating the component closest to zero to avoid large rounding errors 
+  MVector Orthogonal() const;
+  
 
   // Section 4: Advanced mathematical operations:
 
