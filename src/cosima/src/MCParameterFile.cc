@@ -556,7 +556,7 @@ bool MCParameterFile::Parse()
   }
 
 
-  // Step 2bi: Primary Run parameters
+  // Step 2bi: Primary Activator parameters
   MCActivator* Activator = 0;
 
   for (i = 0; i < GetNLines(); ++i) {
@@ -778,6 +778,40 @@ bool MCParameterFile::Parse()
         } else {
           Typo(i, "Cannot parse token IsotopeProductionFile correctly:"
                " Number of tokens is not correct!");
+          return false;
+        }
+      } else if (T->IsTokenAt(1, "OrientationSky", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"OrientationSky\" correctly");
+            return false;
+          }          
+          // The sky can only be rotated if in Galactic coordinates
+          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Galactic && O.IsOriented() == true) {
+            Typo(i, "\"OrientationSky\" can only have an orientation in Galactic coordinates!");
+            return false;            
+          }
+          Run->SetSkyOrientation(O);
+          
+        } else {
+          Typo(i, "Cannot parse token \"OrientationSky\" correctly: Number of tokens is not correct!");
+          return false;
+        }
+      } else if (T->IsTokenAt(1, "OrientationDetector", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"OrientationDetector\" correctly");
+            return false;
+          }
+          if (O.GetCoordinateSystem() != MCOrientationCoordinateSystem::c_Local || O.IsOriented() == true) {
+            Typo(i, "\"OrientationDetector\" for the time being the detector cannot be oriented (leave at Local Fixed)!");
+            return false;            
+          }
+          Run->SetDetectorOrientation(O);
+        } else {
+          Typo(i, "Cannot parse token \"OrientationDetector\" correctly: Number of tokens is not correct!");
           return false;
         }
       }
@@ -2075,6 +2109,19 @@ bool MCParameterFile::Parse()
         }
       } 
       
+      else if (T->IsTokenAt(1, "Orientation", true) == true) {
+        if (T->GetNTokens() >= 4) {
+          MCOrientation O;
+          if (O.Parse(*T) == false) {
+            Typo(i, "Cannot parse token \"Orientation\" correctly");
+            return false;
+          }
+          Source->SetOrientation(O);
+        } else {
+          Typo(i, "Cannot parse token \"Orientation\" correctly: Number of tokens is not correct!");
+          return false;
+        }
+      }
       
       else if (T->IsTokenAt(1, "TotalEnergyFlux", true) == true) {
         if (T->GetNTokens() == 3) {

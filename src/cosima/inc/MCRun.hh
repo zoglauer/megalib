@@ -21,6 +21,7 @@
 
 // Cosima:
 #include "MCSource.hh"
+#include "MCOrientation.hh"
 #include "MCIsotopeStore.hh"
 
 // Geant4:
@@ -128,7 +129,21 @@ public:
   bool SetEvents(const int& Events);
   /// Return the maximum number of events for this run
   int GetEvents() const { return m_Events; }
-
+  
+  /// Set the sky-orientation
+  bool SetSkyOrientation(const MCOrientation& Orientation) { m_SkyOrientation = Orientation; return true; }
+  /// Return the sky orientation
+  MCOrientation GetSkyOrientation() const { return m_SkyOrientation; }
+  /// Return the sky orientation as const reference
+  const MCOrientation& GetSkyOrientationReference() const { return m_SkyOrientation; }
+  
+  /// Set the detector orientation
+  bool SetDetectorOrientation(const MCOrientation& Orientation) { m_DetectorOrientation = Orientation; return true; }
+  /// Return the detector orientation
+  MCOrientation GetDetectorOrientation() const { return m_DetectorOrientation; }
+  /// Return the detector orientation as const reference
+  const MCOrientation& GetDetectorOrientationReference() const { return m_DetectorOrientation; }
+  
   /// Return the stop condition type
   int GetStopCondition() const { return m_StopCondition; }
 
@@ -238,6 +253,11 @@ private:
   /// List of sources
   vector<MCSource*> m_SourceList;
 
+  /// The detector orientation
+  MCOrientation m_DetectorOrientation;
+  /// The sky orientation
+  MCOrientation m_SkyOrientation;
+  
   /// Map indicating, when we have the next emission for the source
   set<MCSource*, NextEmissionSort> m_NextEmission;
   //set<MCSource*> m_NextEmission;

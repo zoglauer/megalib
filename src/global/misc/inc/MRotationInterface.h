@@ -80,24 +80,29 @@ class MRotationInterface
   MVector GetGalacticPointingZAxis() const { return m_GalacticPointingZAxis; }
 
   //! Return the pointing (x-axis) - longitude component in radians!
-  double GetGalacticPointingXAxisLongitude() const { return m_GalacticPointingXAxis.Phi(); }
+  double GetGalacticPointingXAxisLongitude() const { return (m_GalacticPointingXAxis.Phi() < 0) ? m_GalacticPointingXAxis.Phi() + c_TwoPi : m_GalacticPointingXAxis.Phi(); }
   //! Return the pointing (x-axis) - latitude component in radians!
   double GetGalacticPointingXAxisLatitude() const { return m_GalacticPointingXAxis.Theta() - 0.5*c_Pi; }
 
   //! Return the pointing (z-axis) - longitude component in radians!
-  double GetGalacticPointingZAxisLongitude() const { return m_GalacticPointingZAxis.Phi(); }
+  double GetGalacticPointingZAxisLongitude() const { return (m_GalacticPointingZAxis.Phi() < 0) ? m_GalacticPointingZAxis.Phi() + c_TwoPi : m_GalacticPointingZAxis.Phi(); }
   //! Return the pointing (z-axis) - latitude component in radians!
   double GetGalacticPointingZAxisLatitude() const { return m_GalacticPointingZAxis.Theta() - 0.5*c_Pi; }
 
-  //! Return the detector rotation as rotation matrix
+  //! Return the Galactic rotation as rotation matrix
   MRotation GetGalacticPointingRotationMatrix();
-  //! Return the detector rotation as rotation matrix
+  //! Return the Galactic rotation as rotation matrix
   MRotation GetGalacticPointingInverseRotationMatrix();
 
 
 
   //! Return if we have a detector rotation
   bool HasDetectorRotation() const { return m_HasDetectorRotation; }
+
+  //! Set the x-axis of the detector coordinate system - input is in degrees
+  void SetDetectorPointingXAxis(const double Phi, const double Theta);
+  //! Set the z-axis of the detector coordinate system - input is in degrees
+  void SetDetectorPointingZAxis(const double Phi, const double Theta);
 
   //! Set the x-axis of the detector coordinate system
   void SetDetectorRotationXAxis(const MVector Rot);

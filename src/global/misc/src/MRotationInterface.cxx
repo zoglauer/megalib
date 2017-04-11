@@ -284,6 +284,32 @@ void MRotationInterface::SetGalacticPointingZAxis(const double Longitude, const 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRotationInterface::SetDetectorPointingXAxis(const double Phi, const double Theta)
+{
+  // Set the X axis of the LEFT-handed galactic coordinate system:
+  // Left handedness is applied via y-axis
+  
+  m_HasDetectorRotation = true;
+  m_DetectorRotationXAxis.SetMagThetaPhi(1.0, Theta*c_Rad, Phi*c_Rad);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRotationInterface::SetDetectorPointingZAxis(const double Phi, const double Theta)
+{
+  // Set the Z axis of the LEFT-handed galactic coordinate system:
+  // Left handedness is applied via y-axis
+  
+  m_HasDetectorRotation = true;
+  m_DetectorRotationZAxis.SetMagThetaPhi(1.0, Theta*c_Rad, Phi*c_Rad);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRotationInterface::SetDetectorRotationXAxis(const MVector Rot)
 {
   // Set the X axis of the right-handed Cartesian coordinate system:

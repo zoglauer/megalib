@@ -359,6 +359,27 @@ void MCEventAction::AddIA(G4String ProcessID,
 
 
 /******************************************************************************
+ * Set the Galactic pointing --- this is in degree as is does not translate well into radians (e.g. -90 lat)
+ */
+void MCEventAction::SetGalacticPointing(double XLat, double XLong, double ZLat, double ZLong)
+{
+  m_Event->SetGalacticPointingXAxis(XLong*c_Deg, XLat*c_Deg);
+  m_Event->SetGalacticPointingZAxis(ZLong*c_Deg, ZLat*c_Deg);
+}
+
+
+/******************************************************************************
+ * Set the Detector orientation --- this is in degree for congruence reasons with SetGalacticPointing
+ */
+void MCEventAction::SetDetectorPointing(double XTheta, double XPhi, double ZTheta, double ZPhi)
+{
+  m_Event->SetDetectorPointingXAxis(XPhi*c_Deg, XTheta*c_Deg);
+  m_Event->SetDetectorPointingZAxis(ZPhi*c_Deg, ZTheta*c_Deg);
+ 
+}
+
+
+/******************************************************************************
  * Add a deposit in passive material to the event data
  */
 void MCEventAction::AddDepositPassiveMaterial(double Energy, 

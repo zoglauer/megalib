@@ -1,0 +1,36 @@
+# Max is my default COSI-like quick sim. This is the source for it
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/special/Max.geo.setup
+
+
+# Physics list
+PhysicsListEM                        LivermorePol
+PhysicsListEMActivateFluorescence    false
+
+
+# Output formats
+StoreCalibrated                      true
+StoreSimulationInfo                  true
+StoreSimulationInfoIonization        false
+DiscretizeHits                       true
+
+
+# Movements
+Run MyRun
+MyRun.FileName                  GalacticScan
+MyRun.NTriggers                 200000
+MyRun.OrientationSky            Galactic File NoLoop GalacticScan.ori
+
+MyRun.Source MySource
+MySource.ParticleType               1
+MySource.Beam                       FarFieldPointSource 0 0 
+MySource.Orientation                Galactic Fixed -05.78 184.56
+MySource.Spectrum                   Mono 511
+MySource.Flux                       0.001
+
+MyRun.Source MyBackground
+MyBackground.ParticleType       1
+MyBackground.Beam               FarFieldAreaSource 0.0 45.0 0.0 360.0
+MyBackground.Orientation        Local Fixed
+MyBackground.Spectrum           Mono 511
+MyBackground.Flux               0.01

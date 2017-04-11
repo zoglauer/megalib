@@ -89,6 +89,10 @@ public:
              G4ThreeVector SecondaryMomentumDirection,
              G4ThreeVector SecondaryPolarization,
              double SecondaryEnergy);
+  ///! Set the Galactic pointing 
+  void SetGalacticPointing(double XLat, double XLong, double ZLat, double ZLong);
+  ///! Set the Detector orientation 
+  void SetDetectorPointing(double XTheta, double XPhi, double ZTheta, double ZPhi);
   /// Add a passive material output information
   void AddDepositPassiveMaterial(double Energy, string MaterialName);
 

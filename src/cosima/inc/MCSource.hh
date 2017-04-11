@@ -28,6 +28,7 @@
 #include "TF1.h"
 
 // Cosima:
+#include "MCOrientation.hh"
 
 // MEGAlib:
 #include "MTokenizer.h"
@@ -191,7 +192,13 @@ public:
   /// Return the degree of polarization 1.0 == 100% polarized
   double GetPolarizationDegree() const { return m_PolarizationDegree; }
 
-
+  
+  /// Set the orientation
+  bool SetOrientation(const MCOrientation& Orientation) { m_Orientation = Orientation; return true; }
+  /// Return the orientation
+  MCOrientation GetOrientation() const { return m_Orientation; }
+  
+  
   /// Return true, if the successor flag couls be set correctly
   bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
   /// Return the successor flag
@@ -711,6 +718,10 @@ private:
   /// Degree of polarization
   double m_PolarizationDegree;
 
+  
+  /// The orientation
+  MCOrientation m_Orientation;
+  
   
   /// Number of generated particles
   long m_NGeneratedParticles;

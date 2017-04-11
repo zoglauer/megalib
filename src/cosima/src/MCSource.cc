@@ -492,7 +492,7 @@ bool MCSource::SetStartAreaParameters(double StartAreaParam1,
   UpgradeFlux();
   // and the light curve information
   UpgradeLightCurve();
-
+  
   return true;
 }
 
@@ -1415,6 +1415,14 @@ bool MCSource::UpgradePosition()
     m_PositionParam14 = Norm.z();
   }
 
+  // If we have non-looping orientation, set the time to the start time
+  if (m_Orientation.IsOriented() == true) {
+    if (m_Orientation.IsLooping() == false) {
+      m_NextEmission = m_Orientation.GetStartTime();
+    }
+  }
+  
+  
   return true;
 }
 
@@ -1884,6 +1892,10 @@ bool MCSource::UpgradeLightCurve()
       m_LightCurveFunction.ScaleY((m_LightCurveFunction.GetXMax() - m_LightCurveFunction.GetXMin())/m_LightCurveFunction.Integrate());
     }
     cout<<"Final light-curve integration: "<<m_LightCurveFunction.Integrate()<<endl;
+    
+    if (m_NextEmission < m_LightCurveFunction.GetXMin()) {
+      m_NextEmission = m_LightCurveFunction.GetXMin();
+    }
   }
   
   return true;
@@ -2179,7 +2191,7 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
       NextEmission = m_LightCurveFunction.FindX(m_NextEmission, dIntegral, m_IsRepeatingLightCurve);
       if (m_IsRepeatingLightCurve == false && NextEmission >= m_LightCurveFunction.GetXMax()) {
         m_IsActive = false;
-        NextEmission = numeric_limits<double>::max();
+        m_NextEmission = numeric_limits<double>::max();
         mout<<m_Name<<": light-curve data exceeded."<<endl;
         return true;
       } else {
@@ -2190,8 +2202,26 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
       mout<<m_Name<<": A flat light curve should not be handled here..."<<endl;
     }
   }
-
+  
   m_NextEmission = NextEmission + Time;
+  
+  // If we have a non-looping orientation, check if we are outside:
+  if (m_Orientation.IsOriented() == true && m_Orientation.IsLooping() == false) {
+    if (m_NextEmission > m_Orientation.GetStopTime()) {
+      m_IsActive = false;
+      m_NextEmission = numeric_limits<double>::max();
+      mout<<m_Name<<": orientation data exceeded."<<endl;      
+    }
+  }
+  
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+  if (Sky.IsOriented() == true && Sky.IsLooping() == false) {
+    if (m_NextEmission > Sky.GetStopTime()) {
+      m_IsActive = false;
+      m_NextEmission = numeric_limits<double>::max();
+      mout<<m_Name<<": orientation data exceeded."<<endl;      
+    }
+  }  
   
   return true;
 }
@@ -2630,12 +2660,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       
       // Translate sphere center
       m_Position += m_StartAreaPosition;
-      
-      //cout<<"Start pos: "<<Position/cm<<":"<<x/cm<<":"<<y/cm<<":"<<z/cm<<endl;
-
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
   } 
 
@@ -2651,8 +2675,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_NearFieldConeBeamGauss ||
         m_BeamType == c_NearFieldReverseDirectionToPredecessor) {
       m_Position.set(m_PositionParam1, m_PositionParam2, m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     }
 
     else if (m_BeamType == c_NearFieldLine || m_BeamType == c_NearFieldRestrictedLine) {
@@ -2662,9 +2684,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[1] = m_PositionParam2 + 
         Random*(m_PositionParam5 - m_PositionParam2);
       m_Position[2] = m_PositionParam3 + 
-        Random*(m_PositionParam6 - m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+        Random*(m_PositionParam6 - m_PositionParam3);    
     } 
 
     else if  (m_BeamType == c_NearFieldBox) {
@@ -2673,9 +2693,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[1] = m_PositionParam2 + 
         CLHEP::RandFlat::shoot(1)*(m_PositionParam5 - m_PositionParam2);
       m_Position[2] = m_PositionParam3 + 
-        CLHEP::RandFlat::shoot(1)*(m_PositionParam6 - m_PositionParam3);
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+        CLHEP::RandFlat::shoot(1)*(m_PositionParam6 - m_PositionParam3);  
     } 
 
     else if  (m_BeamType == c_NearFieldSphere) {
@@ -2688,9 +2706,7 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
                m_Position[2]*m_Position[2]/(m_PositionParam6*m_PositionParam6) > 1);
       m_Position = G4ThreeVector(m_PositionParam1, 
                                m_PositionParam2, 
-                               m_PositionParam3) + m_Position;
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+                               m_PositionParam3) + m_Position;      
     } 
 
     else if (m_BeamType == c_NearFieldFanBeam) {
@@ -2726,11 +2742,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] += m_PositionParam1;
       m_Position[1] += m_PositionParam2;
       m_Position[2] += m_PositionParam3;
-      
-      // And now set everything
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
 
     else if (m_BeamType == c_NearFieldBeam ||
@@ -2817,15 +2828,11 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Position[0] += m_PositionParam1;
       m_Position[1] += m_PositionParam2;
       m_Position[2] += m_PositionParam3;    
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
     } 
 
     else if (m_BeamType == c_NearFieldActivation ||
              m_BeamType == c_NearFieldVolume) {
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);      
+      m_Position = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetRandomPosition(m_Volume);   
     }
 
 
@@ -2842,7 +2849,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       double Theta = acos(1-2*CLHEP::RandFlat::shoot());
       double Phi = 2*c_Pi*CLHEP::RandFlat::shoot();
       m_Direction.setRThetaPhi(1.0, Theta, Phi);
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
     
     else if (m_BeamType == c_NearFieldDiffractionPoint) {
@@ -2874,9 +2880,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         (Temp[0]*cos(Theta)+Temp[2]*sin(Theta))*sin(Phi) + Temp[1]*cos(Phi);
       m_Direction[2] = 
         -Temp[0]*sin(Theta)+Temp[2]*cos(Theta);
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
-
     }
 
     else if (m_BeamType == c_NearFieldDiffractionPointKSpace) {
@@ -2886,8 +2889,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction[0] = 0;
       m_Direction[1] = 0;
       m_Direction[2] = 1;
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
       
     else if  (m_BeamType == c_NearFieldBeam ||
@@ -2897,8 +2898,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction.setX(m_PositionParam4);
       m_Direction.setY(m_PositionParam5);
       m_Direction.setZ(m_PositionParam6);
-
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
 
     else if  (m_BeamType == c_NearFieldRestrictedPoint ||
@@ -2948,9 +2947,6 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
       m_Direction[0] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*cos(BeamPhi) - DirectionOnAxis[1]*sin(BeamPhi);
       m_Direction[1] = (DirectionOnAxis[0]*cos(BeamTheta)+DirectionOnAxis[2]*sin(BeamTheta))*sin(BeamPhi) + DirectionOnAxis[1]*cos(BeamPhi);
       m_Direction[2] = -DirectionOnAxis[0]*sin(BeamTheta)+DirectionOnAxis[2]*cos(BeamTheta);
-
-      // Give the information to the particle gun:
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     }
 
     else if (m_BeamType == c_NearFieldIlluminatedDisk || 
@@ -3035,12 +3031,56 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
 
       // The final solution:
       m_Position += l*m_Direction;
-
-      Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
-      Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
-      Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);
     } 
   }
+  
+  // If there is any orientation, then rotate & translate
+  const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
+
+  // Not all possible orientation combinations are valid!
+  // Can can have either:
+  // A) Sky and source in Galactic coordiantes then source must be a far field source
+  // B) Sky and source in Local coordiantes 
+  // C) Sky in Galactic coordiantes and source in local coordiantes
+  
+  if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+    Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.Orient(m_NextEmission, m_Position, m_Direction);
+    }
+         
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientInvers(m_NextEmission, m_Position, m_Direction);
+    }             
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic && 
+            Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_CoordinateSystem != c_FarField) {
+      mout<<m_Name<<": An orientation in the Galactic coordiante systems requires a far field source!"<<endl;
+      return false;        
+    }
+        
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.Orient(m_NextEmission, m_Position, m_Direction);
+    }
+        
+    if (Sky.IsOriented() == true) {
+      // This reorientation can only happen is both are of the same coordinate system
+      Sky.OrientInvers(m_NextEmission, m_Position, m_Direction);
+    }    
+  } else if (m_Orientation.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Local && 
+             Sky.GetCoordinateSystem() == MCOrientationCoordinateSystem::c_Galactic) {
+    if (m_Orientation.IsOriented() == true) {
+      m_Orientation.Orient(m_NextEmission, m_Position, m_Direction);
+    }    
+  } else {
+    mout<<m_Name<<": You have a not allowed combination of rotations of the source and the sky!"<<endl;
+    return false;
+  }
+  
+  Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
+  Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
+  Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);  
 
   return true;
 }
