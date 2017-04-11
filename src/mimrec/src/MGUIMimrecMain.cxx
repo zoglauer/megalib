@@ -155,6 +155,7 @@ void MGUIMimrecMain::Create()
   MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
   MenuGeneral->AddEntry("Pointing in galactic coordinates", c_ResponsePointingInGalacticCoordinates);  
+  MenuGeneral->AddEntry("Create cosima orientation file", c_ResponseCreateCosimaOrientationFile);
   MenuGeneral->AddEntry("Exposure map", c_ResponseExposureMap);  
   MenuGeneral->AddEntry("Horizon zenith in spherical coordinates", c_ResponseHorizonInSphericalDetectorCoordinates);  
   if (m_Data->GetSpecialMode() == true) {
@@ -164,11 +165,11 @@ void MGUIMimrecMain::Create()
 
   // The sub menu ARM
   TGPopupMenu* MenuARM = new TGPopupMenu(fClient->GetRoot());
-  MenuARM->AddEntry("ARM of scattered gamma-ray", c_ResponseArmGamma);
+  MenuARM->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
   MenuARM->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
   MenuARM->AddEntry("ARM of recoil electron", c_ResponseArmElectron);
-  MenuARM->AddEntry("ARM of scattered gamma-ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
-  MenuARM->AddEntry("ARM of scattered gamma-ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
+  MenuARM->AddEntry("ARM of scattered gamma ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
+  MenuARM->AddEntry("ARM of scattered gamma ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
   MenuARM->AddEntry("SPD of recoil electron vs Compton Scatter Angel (phi)", c_ResponseSpdElectronVsCompton);
   MenuARM->AddEntry("Dual ARM", c_ResponseDualArm);
   MenuARM->AddEntry("ARM-imaging-response comparison", c_ResponseArmComparison);
@@ -178,7 +179,7 @@ void MGUIMimrecMain::Create()
   TGPopupMenu* MenuQuality = new TGPopupMenu(fClient->GetRoot());
   MenuQuality->AddEntry("Compton Sequence Quality Factor", c_ResponseComptonQualityFactor);
   MenuQuality->AddEntry("Compton Sequence Quality Factor with ARM selection", c_ResponseComptonProbabilityWithARMSelection);
-  MenuQuality->AddEntry("ARM of scattered gamma-ray vs. Compton Quality Factor", c_ResponseArmGammaVsComptonProbability);
+  MenuQuality->AddEntry("ARM of scattered gamma ray vs. Compton Quality Factor", c_ResponseArmGammaVsComptonProbability);
   MenuQuality->AddEntry("Energy vs. Compton Quality Factor", c_ResponseEnergyVsComptonProbability);
   MenuQuality->AddEntry("Compton Sequence Length vs Compton Quality Factor", c_ResponseComptonSequenceLengthVsComptonProbability);
   MenuQuality->AddEntry("Earth center distance", c_ResponseEarthCenterDistance);
@@ -220,7 +221,7 @@ void MGUIMimrecMain::Create()
   MenuResponse->AddSeparator();
   MenuResponse->AddLabel("Compton specific");
   MenuResponse->AddSeparator();
-  MenuResponse->AddEntry("ARM of scattered gamma-ray", c_ResponseArmGamma);
+  MenuResponse->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
   MenuResponse->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
   MenuResponse->AddPopup("All ARM/SPD options", MenuARM);
   MenuResponse->AddSeparator();
@@ -623,6 +624,10 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
 
       case c_ResponsePointingInGalacticCoordinates:
         m_Interface->PointingInGalacticCoordinates();
+        break;
+
+      case c_ResponseCreateCosimaOrientationFile:
+        m_Interface->CreateCosimaOrientationFile();
         break;
 
       case c_ResponseExposureMap:

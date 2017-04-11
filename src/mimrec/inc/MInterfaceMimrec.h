@@ -140,6 +140,9 @@ class MInterfaceMimrec : public MInterface
   // Show the pointing (z-axis) of the instrument in galactic coordinates
   void PointingInGalacticCoordinates();
 
+  // Create an orientstion file for cosima from an existing observation
+  void CreateCosimaOrientationFile();
+
   // Show the horizon zenith in spherical detector coordinates
   void HorizonInSphericalDetectorCoordinates();
   

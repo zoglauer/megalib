@@ -131,6 +131,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseLocationOfInitialInteraction,
                    c_ResponseEarthCenterDistance,
                    c_ResponsePointingInGalacticCoordinates,
+                   c_ResponseCreateCosimaOrientationFile,
                    c_ResponseHorizonInSphericalDetectorCoordinates,
                    c_ResponseDirectionScatteredGammaRay,
                    c_ResponseTest }; 

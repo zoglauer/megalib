@@ -6149,6 +6149,68 @@ void MInterfaceMimrec::HorizonInSphericalDetectorCoordinates()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// Create an orientation file for cosima from an existing observation
+void MInterfaceMimrec::CreateCosimaOrientationFile()
+{
+
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+
+  MString FileName = m_Settings->GetCurrentFileName();
+  FileName.ReplaceAtEnd(".tra.gz", ".ori");
+  FileName.ReplaceAtEnd(".tra", ".ori");
+  
+  ofstream out;
+  out.open(FileName);
+  out<<endl;
+  out<<"Type OrientationsGalactic"<<endl;
+  out<<endl;
+  out.setf(ios::fixed);
+  out.precision(6);
+  // First check on the size of the histogram:
+
+  double LastXAxisLongitude = -1000;
+  double LastXAxisLatitude = -1000;
+  double LastZAxisLongitude = -1000;
+  double LastZAxisLatitude = -1000;
+  
+  MPhysicalEvent* Event = nullptr;
+  while ((Event = GetNextEvent()) != 0) {
+    if (Event->HasGalacticPointing() == true) {
+      if (LastXAxisLongitude != Event->GetGalacticPointingXAxisLongitude() ||
+        LastXAxisLatitude != Event->GetGalacticPointingXAxisLatitude() ||
+        LastZAxisLongitude != Event->GetGalacticPointingZAxisLongitude() ||
+        LastZAxisLatitude != Event->GetGalacticPointingZAxisLatitude()) {
+        out<<"OG "<<Event->GetTime()
+          <<" "<<Event->GetGalacticPointingXAxisLatitude()*c_Deg
+          <<" "<<Event->GetGalacticPointingXAxisLongitude()*c_Deg
+          <<" "<<Event->GetGalacticPointingZAxisLatitude()*c_Deg
+          <<" "<<Event->GetGalacticPointingZAxisLongitude()*c_Deg<<endl;
+         
+        LastXAxisLongitude = Event->GetGalacticPointingXAxisLongitude();
+        LastXAxisLatitude = Event->GetGalacticPointingXAxisLatitude();
+        LastZAxisLongitude = Event->GetGalacticPointingZAxisLongitude();
+        LastZAxisLatitude = Event->GetGalacticPointingZAxisLatitude();
+      }
+    }
+
+    delete Event;
+  }
+
+  // Close the event loader
+  FinalizeEventLoader();
+
+  out<<"EN"<<endl;
+  out<<endl;
+  out.close();
+
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceMimrec::StandardAnalysis(double Energy, MVector Position)
 {
   cout<<"Standard analysis started"<<endl; 
