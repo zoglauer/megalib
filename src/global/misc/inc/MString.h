@@ -187,7 +187,12 @@ class MString
   void ReplaceAllInPlace(const MString& From, const MString& To); 
   //! Replace all occurances of from with string and return the new string
   MString& ReplaceAll(const MString& From, const MString& To); 
-
+  
+  //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string
+  void ReplaceAtEndInPlace(const MString& From, const MString& To); 
+  //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string and return the new string
+  MString& ReplaceAtEnd(const MString& From, const MString& To); 
+  
   //! Remove all occurances of From 
   void RemoveAllInPlace(const MString& From);
   //! Remove all occurances of From and return the new string

@@ -161,6 +161,29 @@ MString& MString::ReplaceAll(const MString& From, const MString& To)
   return *this;
 } 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string
+void MString::ReplaceAtEndInPlace(const MString& From, const MString& To)
+{
+  if (EndsWith(From) == false) return;
+  
+  m_String.erase(Length() - From.Length(), From.Length());
+  m_String += To;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string and return the new string
+MString& MString::ReplaceAtEnd(const MString& From, const MString& To)
+{
+  ReplaceAtEndInPlace(From, To);
+  return *this;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
