@@ -85,7 +85,7 @@ class MBackprojection : public MProjection, public MViewPort
       return acos(Nenner);
     } else {
       // Acos checks if Nenner is within -1 <= x <= 1
-      return MFastMath::cos(Nenner);
+      return MFastMath::acos(Nenner);
     }
   }
 
