@@ -24,6 +24,7 @@ Cosima:
 + Support for Geant4 10.2
 + Option to simulate event list (including advanced example)
 + Lightcurve simulations
++ Orientations
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)
