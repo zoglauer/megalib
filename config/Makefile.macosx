@@ -25,7 +25,7 @@ DEFINES       = -UHARDWARE
 LD            = c++
 LDFLAGS       = $(OPT) -Xlinker -bind_at_load -flat_namespace -D___MACOSX___
 SOFLAGS       = -dynamiclib -flat_namespace -undefined suppress 
-LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum                           
+LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum -lTMVA
 GLIBS         = $(ROOTGLIBS) 
 DEPFLAGS      = -M
 

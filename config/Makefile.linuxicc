@@ -24,7 +24,7 @@ DEFINES       = -UHARDWARE
 LD            = icc
 LDFLAGS       = $(OPT) -D___LINUX___
 SOFLAGS       = -shared  
-LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum
+LIBS          = $(ROOTLIBS) -lpthread -lThread -lMinuit -lGeom -lSpectrum -lTMVA
 GLIBS         = $(ROOTGLIBS) 
 DEPFLAGS      = -M
 
