@@ -118,17 +118,20 @@ bool MResponseBuilder::Initialize()
 { 
   // Load revan geometry
   if ((m_ReGeometry = LoadGeometry(true, 0.0)) == 0) return false;
-
-  // Load revan settings file
-  if (m_RevanSettings.Read(m_RevanSettingsFileName) == false) {
-    merr<<"Unable to open revan settings file \""<<m_RevanSettingsFileName<<"\""<<endl; 
-    return false;
-  }
   
   // Create the raw event analyzer
   m_ReReader = new MRawEventAnalyzer();
   m_ReReader->SetGeometry(m_ReGeometry);
-  m_ReReader->SetSettings(&m_RevanSettings);  
+  
+  
+  // Load revan settings file
+  if (m_RevanSettingsFileName != g_StringNotDefined && m_RevanSettingsFileName != "") {
+    if (m_RevanSettings.Read(m_RevanSettingsFileName) == false) {
+      merr<<"Unable to open revan settings file \""<<m_RevanSettingsFileName<<"\""<<endl; 
+      return false;
+    }
+    m_ReReader->SetSettings(&m_RevanSettings);  
+  }
   
   if (m_Mode == MResponseBuilderReadMode::File) {
     if (m_ReReader->SetInputModeFile(m_DataFileName) == false) {
@@ -145,13 +148,14 @@ bool MResponseBuilder::Initialize()
   
   
   // Load the mimrec configuration file ...
-  if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
-    merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
-    return false;
+  if (m_MimrecSettingsFileName != g_StringNotDefined && m_MimrecSettingsFileName != "") {
+    if (m_MimrecSettings.Read(m_MimrecSettingsFileName) == false) {
+      merr<<"Unable to open mimrec settings file \""<<m_MimrecSettingsFileName<<"\""<<endl; 
+      return false;
+    }
+    // ... and initialize the event selector 
+    m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
   }
-  // ... and initialize the event selector 
-  m_MimrecEventSelector.SetSettings(&m_MimrecSettings);
-
   
   // Load the sivan geometry
   if ((m_SiGeometry = LoadGeometry(false, 0.0)) == 0) return false;

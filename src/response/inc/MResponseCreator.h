@@ -96,23 +96,27 @@ class MResponseCreator
   bool m_Compress;
 
   //! Modes
-  const static int c_ModeUnknown                   = 0;
-  const static int c_ModeTracks                    = 1;
-  const static int c_ModeComptons                  = 2;
-  const static int c_ModeComptonsLens              = 3;
-  const static int c_ModeComptonsNeuralNetwork     = 4;
-  const static int c_ModeVerify                    = 5;
-  const static int c_ModeImagingListMode           = 6;
-  const static int c_ModeImagingBinnedMode         = 7;
-  const static int c_ModeImagingCodedMask          = 8;
-  const static int c_ModeEarthHorizon              = 9;
-  const static int c_ModeFirstInteractionPosition  = 10;
-  const static int c_ModeSpectral                  = 11;
-  const static int c_ModeARM                       = 12;
-  const static int c_ModeEfficiency                = 13;
-  const static int c_ModeEfficiencyNearField       = 14;
-  const static int c_ModeClusteringDSS             = 15;
-  const static int c_ModeEventQuality              = 16;
+  enum MResponseModes {
+    c_ModeUnknown,
+    c_ModeTracks,
+    c_ModeComptons,
+    c_ModeComptonsLens,
+    c_ModeComptonsNeuralNetwork,
+    c_ModeComptonsTMVA,
+    c_ModeVerify,
+    c_ModeImagingListMode,
+    c_ModeImagingBinnedMode,
+    c_ModeImagingCodedMask,
+    c_ModeEarthHorizon,
+    c_ModeFirstInteractionPosition,
+    c_ModeSpectral,
+    c_ModeARM,
+    c_ModeEfficiency,
+    c_ModeEfficiencyNearField,
+    c_ModeClusteringDSS,
+    c_ModeEventQuality
+  };
+
 
 #ifdef ___CINT___
  public:

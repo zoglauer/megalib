@@ -1,0 +1,767 @@
+/*
+ * MResponseMultipleComptonTMVA.cxx
+ *
+ *
+ * Copyright (C) by Andreas Zoglauer.
+ * All rights reserved.
+ *
+ *
+ * This code implementation is the intellectual property of
+ * Andreas Zoglauer.
+ *
+ * By copying, distributing or modifying the Program (or any work
+ * based on the Program) you indicate your acceptance of this statement,
+ * and all its terms.
+ *
+ */
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MResponseMultipleComptonTMVA
+//
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Include the header:
+#include "MResponseMultipleComptonTMVA.h"
+
+// Standard libs:
+#include <limits>
+#include <algorithm>
+#include <vector>
+using namespace std;
+
+// ROOT libs:
+#include "TMath.h"
+
+// MEGAlib libs:
+#include "MAssert.h"
+#include "MStreams.h"
+#include "MSystem.h"
+#include "MRESEIterator.h"
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef ___CINT___
+ClassImp(MResponseMultipleComptonTMVA)
+#endif
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
+{
+  // Construct an instance of MResponseMultipleComptonTMVA
+  
+  m_ResponseNameSuffix = "tmva";
+  
+  m_DoAbsorptions = true;
+  m_MaxAbsorptions = 10;
+  m_CSRMaxLength = 10;
+  
+  m_MaxEnergyDifference = 5; // keV
+  m_MaxEnergyDifferencePercent = 0.02;
+  
+  m_MaxTrackEnergyDifference = 30; // keV
+  m_MaxTrackEnergyDifferencePercent = 0.1;
+  
+  // We can save much more frequently here, since the files are a lot smaller
+  m_SaveAfter = 10000;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMultipleComptonTMVA::~MResponseMultipleComptonTMVA()
+{
+  // Delete this instance of MResponseMultipleComptonTMVA
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Initialize the response matrices and their generation
+bool MResponseMultipleComptonTMVA::Initialize() 
+{ 
+  // Initialize next matching event, save if necessary
+  if (MResponseBuilder::Initialize() == false) return false;
+  
+  // We are not doing any sequencing or decay detection!
+  m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
+  m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
+  if (m_ReReader->PreAnalysis() == false) return false;
+  
+  
+  // Build permutation matrix:
+  m_Permutator.resize(m_CSRMaxLength+1);
+  for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+    vector<vector<unsigned int>> Permutations;
+    vector<unsigned int> Indices;
+    for (unsigned int j = 0; j < i; ++j) {
+      Indices.push_back(j);
+    }
+    vector<unsigned int>::iterator Begin = Indices.begin();
+    vector<unsigned int>::iterator End = Indices.end();
+    do {
+      Permutations.push_back(Indices);
+    } while (next_permutation(Begin, End));
+    m_Permutator[i] = Permutations;
+  }
+  //   // Verify:
+  //   for (unsigned int i = 2; i < m_Permutator.size(); ++i) {
+  //     cout<<"Size: "<<i<<endl;
+  //     for (unsigned int j = 0; j < m_Permutator[i].size(); ++j) {
+  //       cout<<"  Permutation "<<j<<"/"<<m_Permutator[i].size()<<": "<<endl;
+  //       for (unsigned int k = 0; k < m_Permutator[i][j].size(); ++k) {
+  //         cout<<m_Permutator[i][j][k]<<" ";
+  //       }
+  //       cout<<endl;
+  //     }
+  //   }  
+  
+  // Create the ROOT tree for TMVA analysis
+  
+  m_CSRMaxLength = 4;
+  cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
+  
+  for (int c = 0; c <= m_CSRMaxLength-2; ++c) {
+    int l = c+2;
+    
+    TTree* Good = new TTree("Good", "Good Compton ER tree"); //"ComptonTMVA", "ComptonTMVA");
+    TTree* Bad = new TTree("Bad", "Bad Compton ER tree"); //"ComptonTMVA", "ComptonTMVA");
+    
+    m_SimulationIDs.push_back(0);
+    MString Name("SimulationIDs");
+    Good->Branch(Name, &m_SimulationIDs[c], Name + "/L");
+    Bad->Branch(Name, &m_SimulationIDs[c], Name + "/L");
+    
+    m_Energies.push_back(vector<double>(l));
+    for (unsigned int i = 0; i < m_Energies[c].size(); ++i) {
+      MString Name("Energy");
+      Name += i+1;
+      Good->Branch(Name, &m_Energies[c][i], Name + "/D");
+      Bad->Branch(Name, &m_Energies[c][i], Name + "/D");
+    }
+    
+    
+    m_PositionsX.push_back(vector<double>(l));
+    for (unsigned int i = 0; i < m_PositionsX[c].size(); ++i) {
+      MString Name("X");
+      Name += i+1;
+      Good->Branch(Name, &m_PositionsX[c][i], Name + "/D");
+      Bad->Branch(Name, &m_PositionsX[c][i], Name + "/D");
+    }
+    m_PositionsY.push_back(vector<double>(l));
+    for (unsigned int i = 0; i < m_PositionsY[c].size(); ++i) {
+      MString Name("Y");
+      Name += i+1;
+      Good->Branch(Name, &m_PositionsY[c][i], Name + "/D");
+      Bad->Branch(Name, &m_PositionsY[c][i], Name + "/D");
+    }
+    m_PositionsZ.push_back(vector<double>(l));
+    for (unsigned int i = 0; i < m_PositionsZ[c].size(); ++i) {
+      MString Name("Z");
+      Name += i+1;
+      Good->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
+      Bad->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
+    }
+    
+    
+    m_ComptonScatterAngles.push_back(vector<double>(l-1));
+    for (unsigned int i = 0; i < m_ComptonScatterAngles[c].size(); ++i) {
+      MString Name("ComptonScatterAngle");
+      Name += i+1;
+      Good->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
+      Bad->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
+    }
+    
+    m_KleinNishinaProbability.push_back(vector<double>(l-1));
+    for (unsigned int i = 0; i < m_KleinNishinaProbability[c].size(); ++i) {
+      MString Name("KleinNishinaProbability");
+      Name += i+1;
+      Good->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
+      Bad->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
+    }
+    
+    if (l > 2) {
+      m_ComptonScatterAngleDifference.push_back(vector<double>(l-2));
+      for (unsigned int i = 0; i < m_ComptonScatterAngleDifference[c-1].size(); ++i) { // "-1" since we only start at 3 interactions
+        MString Name("ComptonScatterAngleDifference");
+        Name += i+1;
+        Good->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
+        Bad->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
+      }
+    }
+    
+    m_AbsorptionProbabilities.push_back(vector<double>(l-1));
+    for (unsigned int i = 0; i < m_AbsorptionProbabilities[c].size(); ++i) {
+      MString Name("AbsorptionProbabilities");
+      Name += i+1;
+      Good->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/D");
+      Bad->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/D");
+    }
+    
+    /***
+    m_ColumnDensityToCompton.push_back(vector<double>(l-2));
+    for (unsigned int i = 0; i < m_ColumnDensityToCompton[c].size(); ++i) {
+      MString Name("ColumnDensityToCompton");
+      Name += i+1;
+      Good->Branch(Name, &m_ColumnDensityToCompton[c][i], Name + "/D");
+      Bad->Branch(Name, &m_ColumnDensityToCompton[c][i], Name + "/D");
+    }
+    
+    m_ColumnDensityToPhoto.push_back(0);
+    MString Name("ColumnDensityToPhoto");
+    Good->Branch(Name, &m_ColumnDensityToPhoto[c], Name + "/D");
+    Bad->Branch(Name, &m_ColumnDensityToPhoto[c], Name + "/D");
+    
+    m_ColumnDensityToFirstIAAverage.push_back(0);
+    MString Name("ColumnDensityToFirstIAAverage");
+    Good->Branch(Name, &m_ColumnDensityToFirstIAAverage[c], Name + "/D");
+    Bad->Branch(Name, &m_ColumnDensityToFirstIAAverage[c], Name + "/D");
+    
+    m_ColumnDensityToFirstIAMaximum.push_back(0);
+    MString Name("ColumnDensityToFirstIAMaximum");
+    Good->Branch(Name, &m_ColumnDensityToFirstIAMaximum[c], Name + "/D");
+    Bad->Branch(Name, &m_ColumnDensityToFirstIAMaximum[c], Name + "/D");
+    
+    m_ColumnDensityToFirstIAMinimum.push_back(0);
+    MString Name("ColumnDensityToFirstIAMinimum");
+    Good->Branch(Name, &m_ColumnDensityToFirstIAMinimum[c], Name + "/D");
+    Bad->Branch(Name, &m_ColumnDensityToFirstIAMinimum[c], Name + "/D");
+    ***/
+    
+    m_TreeGood.push_back(Good);
+    m_TreeBad.push_back(Bad);
+  }
+  
+
+  m_SaveAfter = 1000000000;
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonTMVA::Save()
+{
+  MResponseBuilder::Save(); 
+  
+  for (unsigned int t = 0; t < m_TreeGood.size(); ++t) {
+    TFile GoodOne(GetFilePrefix() + ".seq" + (t+2) + ".good.root", "recreate");
+    GoodOne.cd();
+    m_TreeGood[t]->Print();
+    m_TreeGood[t]->Write();
+    GoodOne.Close();
+    
+    TFile BadOne(GetFilePrefix() + ".seq" + (t+2) + ".bad.root", "recreate");
+    BadOne.cd();
+    m_TreeBad[t]->Write();
+    BadOne.Close();
+    
+    //m_TreeGood[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".good.root");
+    //m_TreeBad[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".bad.root");
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonTMVA::Analyze()
+{
+  // Create the multiple Compton response
+  
+  // Initlize next matching event, save if necessary
+  if (MResponseBuilder::Analyze() == false) return false;
+  
+  // Go ahead event by event and compare the results: 
+  MRERawEvent* RE = nullptr;
+  MRawEventList* REList = m_ReReader->GetRawEventList();
+  vector<MRESE*> RESEs;
+  
+  
+  // Current event parameters
+  vector<MRESE*> SequencedRESEs;
+  vector<int> SequencedRESEsIDs;
+  bool StartResolved = false;
+  bool CompletelyAbsorbed = false;
+  
+  unsigned int SequenceLength = 0;
+  
+  
+  int r_max = REList->GetNRawEvents();
+  for (int r = 0; r < r_max; ++r) {
+    RE = REList->GetRawEventAt(r);
+    
+    //cout<<"Start (ID: "<<RE->GetEventId()<<")"<<endl;
+    
+    // Check if complete sequence is ok:
+    SequenceLength = (unsigned int) RE->GetNRESEs();
+    
+    // Step 1:
+    // Some initial selections:
+    if (SequenceLength <= 1) {
+      mdebug<<"CreateResponse: Not enough hits: "<<SequenceLength<<endl;
+      continue;
+    }
+    
+    if (SequenceLength > (unsigned int) m_CSRMaxLength) {
+      mdebug<<"CreateResponse: To many hits: "<<SequenceLength<<endl;
+      continue;
+    }
+    
+    if (g_Verbosity >= c_Chatty) { 
+      mout<<"Matched event (Sim ID: "<<RE->GetEventId()<<")"<<endl;
+      mout<<RE->ToString()<<endl;
+    }
+    
+    
+    // Step 2:
+    // Analyze the current event
+    RESEs.clear();
+    for (int i = 0; i < RE->GetNRESEs(); ++i) RESEs.push_back(RE->GetRESEAt(i));
+    SequencedRESEs.clear();
+    SequencedRESEs.resize(RESEs.size());
+    
+    StartResolved = FindCorrectSequence(RESEs, SequencedRESEs);
+    
+    // If we don't have sequenced RESEs at that point something went badly wrong with the event, so we skip it here
+    bool FoundNullPtr = false;
+    for (unsigned int i = 0; i < SequenceLength; ++i) {
+      if ( SequencedRESEs[i] == nullptr) {
+        FoundNullPtr = true;
+        break;
+      }
+    }
+    if (FoundNullPtr == true) {
+      //mout<<"Event cannot be sequenced correctly (Sim ID: "<<RE->GetEventId()<<")"<<endl;
+      SequencedRESEs = RESEs;
+    }
+    
+    
+    CompletelyAbsorbed = AreCompletelyAbsorbed(RESEs, RE);
+    if (StartResolved == true && CompletelyAbsorbed == true) {
+      if (g_Verbosity >= c_Chatty) mout<<" --> Good event!"<<endl;
+    } else {
+      if (g_Verbosity >= c_Chatty) mout<<" --> Bad event: completely aborbed: "<<(CompletelyAbsorbed ? "true" : "false")<<"  resolved: "<<(StartResolved ? "true" : "false")<<endl;
+      //continue;
+    }        
+    
+    
+    // Build a tree element for all permutations:
+    
+    for (unsigned int p = 0; p < m_Permutator[SequenceLength].size(); ++p) {
+      
+      m_SimulationIDs[SequenceLength-2] = RE->GetEventId();
+      
+      // (a) Raw data:
+      for (unsigned int r = 0; r < SequenceLength; ++r) {
+        m_Energies[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
+        m_PositionsX[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().X();
+        m_PositionsY[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().Y();
+        m_PositionsZ[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().Z();
+      }
+      
+      // (b) Compton scatter angle & Klein-Nishina
+      double EnergyIncomingGamma = RE->GetEnergy();
+      double EnergyElectron = 0.0;
+      double Phi = 0.0;
+      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+        EnergyElectron = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
+        Phi = MComptonEvent::ComputePhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
+        m_ComptonScatterAngles[SequenceLength-2][r] = Phi*c_Deg;
+        m_KleinNishinaProbability[SequenceLength-2][r] = MComptonEvent::GetKleinNishinaNormalizedByArea(EnergyIncomingGamma, Phi);
+        EnergyIncomingGamma -= EnergyElectron;
+        //if (p == 0 && StartResolved == true && CompletelyAbsorbed == true && Phi*c_Deg > 179.99) {
+        //  cout<<"Large Compton scatter angle (Sim ID: "<<RE->GetEventId()<<") -- Start:"<<SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetEnergy()<<endl;
+        //  mout<<RE->ToString()<<endl;
+        //}
+      }
+      
+      // (c) Compton scatter angle difference
+      for (unsigned int r = 0; r < SequenceLength-2; ++r) {
+        // Via Angle:
+        MVector FirstDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition();
+        MVector SecondDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+2]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition();
+        double PhiGeo = FirstDir.Angle(SecondDir);
+        m_ComptonScatterAngleDifference[SequenceLength-3][r] = PhiGeo*c_Deg - m_ComptonScatterAngles[SequenceLength-2][r+1]; // "-3" since we ponly start for 3-site events
+      }
+      
+      // (d) Absorption probabilities
+      EnergyIncomingGamma = RE->GetEnergy();
+      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+        EnergyIncomingGamma -= SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
+        
+        m_AbsorptionProbabilities[SequenceLength-2][r] = CalculateAbsorptionProbabilityTotal(*SequencedRESEs[m_Permutator[SequenceLength][p][r]], *SequencedRESEs[m_Permutator[SequenceLength][p][r+1]], EnergyIncomingGamma);
+      }
+      
+      if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
+        //cout<<"Add good"<<endl;
+        m_TreeGood[SequenceLength-2]->Fill();
+      } else {
+        //cout<<"Add bad"<<endl;
+        m_TreeBad[SequenceLength-2]->Fill();          
+      }
+    } // all permutations
+    
+  } // All raw events
+  
+  /*
+  if (m_Counter % 100 == 0) {
+    Save();
+    return false;
+  }
+  */
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Finalize the response generation (i.e. save the data a final time )
+bool MResponseMultipleComptonTMVA::Finalize() 
+{ 
+  return MResponseBuilder::Finalize(); 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMultipleComptonTMVA::Teach()
+{
+  // Teach the neural network the events
+  
+ 
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonTMVA::AreCompletelyAbsorbed(const vector<MRESE*>& RESEs, MRERawEvent* RE)
+{
+  // Return true if ALL individual RESEs are completely absorbed
+  // AND the photon from the start of the event!
+    
+  vector<int> AllOriginIds;
+  
+  for (unsigned int i = 0; i < RESEs.size(); ++i) {
+    vector<int> OriginIds = GetOriginIds(RESEs[i]);
+    if (IsAbsorbed(OriginIds, RESEs[i]->GetEnergy(), RESEs[i]->GetEnergyResolution()) == false) {
+      if (g_Verbosity >= c_Chatty) mout<<"RESE "<<RESEs[i]->GetID()<<" is not completely absorbed!"<<endl;
+      return false;
+    }
+    for (unsigned int j = 0; j < OriginIds.size(); ++j) {
+      if (find(AllOriginIds.begin(), AllOriginIds.end(), OriginIds[j]) == AllOriginIds.end()) {
+        AllOriginIds.push_back(OriginIds[j]);
+      }
+    }
+  }
+  
+  if (IsTotalAbsorbed(AllOriginIds, RE->GetEnergy(), RE->GetEnergyResolution()) == false) {
+    if (g_Verbosity >= c_Chatty) mout<<"Whole event "<<RE->GetID()<<" is not completely absorbed!"<<endl;
+    return false;
+  }
+  
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonTMVA::FindFirstInteractions(const vector<MRESE*>& RESEs, MRESE*& First, MRESE*& Second)
+{
+  // Return true if those were found
+  // 
+  // First and second are the *detected* first and second interaction ---
+  // there may be some undetected before and in between
+  
+  //mout<<"FindFirstInteractions"<<endl;
+  
+  First = 0;
+  Second = 0;
+  
+  // Determine for all RESEs the Origin IDs
+  vector<vector<int>> OriginIds;
+  for (unsigned int r = 0; r < RESEs.size(); ++r) {
+    OriginIds.push_back(GetOriginIds(RESEs[r]));
+  }
+  
+  // Motherparticle of smallest ID - needs to be a photon!
+  int Smallest = numeric_limits<int>::max();
+  for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+    for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+      if (OriginIds[i][j] < Smallest) Smallest = OriginIds[i][j];
+    }
+  }
+  
+  if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" &&
+      m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
+      return false;
+    }
+  } else {
+    if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
+      m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
+      return false;
+    }
+  }
+  
+  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
+    // Find one and only RESE associated with this:
+    for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+      for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+        if (OriginIds[i][j] == Smallest) {
+          if (First == 0) {
+            First = RESEs[i];
+          } else {
+            // If we have more than one RESE associated with this, then we have no clear first hit 
+            // and have to reject...
+            if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: First: RESE "<<First->GetID()<<" and "<<RESEs[i]->GetID()<<" are associated with start IA "<<Smallest<<endl;
+            return false;
+          }
+        }
+      }
+    }
+  } else {
+    // Only photons can be good...
+    if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
+    return false;
+  }
+  
+  // Go through the main event tree in the file and find the RESEs:
+  for (unsigned int s = Smallest+1; s < m_SiEvent->GetNIAs(); ++s) {
+    // The second event in the sequence needs to have the same origin than the first one
+    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin()) {
+      for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+        for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+          if (OriginIds[i][j] == int(s) && RESEs[i] != First) {
+            if (Second == 0) {
+              Second = RESEs[i];
+            } else {
+              // If we have more than one RESE associated with this, then we have no clear first hit 
+              // and have to reject...
+              if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: Second: RESE "<<Second->GetID()<<" and "<<RESEs[i]->GetID()<<" are associated with current IA "<<i<<endl;
+              return false;
+            }
+          }
+        }
+      }
+      if (Second != 0) break;
+    }
+  }
+  
+  if (First == 0 || Second == 0) {
+    if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: Did not find first and second!"<<endl;
+    return false;
+  }
+  
+  //cout<<"First RESE: "<<First->GetID()<<", Second RESE: "<<Second->GetID()<<endl;
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RESEs, vector<MRESE*>& SequencedRESEs)
+{
+  // Return true if those were found
+  // 
+  // First and second are the *detected* first and second interaction ---
+  // there may be some undetected before and in between
+  
+  //mout<<"FindFirstInteractions"<<endl;
+  
+  SequencedRESEs.resize(RESEs.size());
+  for (unsigned int i = 0; i < SequencedRESEs.size(); ++i) SequencedRESEs[i] = 0;
+  
+  // Determine for all RESEs the Origin IDs
+  vector<vector<int>> OriginIds;
+  for (unsigned int r = 0; r < RESEs.size(); ++r) {
+    OriginIds.push_back(GetOriginIds(RESEs[r]));
+  }
+  
+  // Motherparticle of smallest ID - needs to be a photon!
+  int Smallest = numeric_limits<int>::max();
+  for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+    for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+      if (OriginIds[i][j] < Smallest) Smallest = OriginIds[i][j];
+    }
+  }
+  
+  // What about BREM
+  if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" && m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
+        return false;
+      }
+    } else {
+      if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
+          m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
+        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
+        return false;
+      }
+    }
+  
+  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
+    // Find one and only RESE associated with this:
+    for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+      for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+        if (OriginIds[i][j] == Smallest) {
+          if (SequencedRESEs[0] == 0) {
+            SequencedRESEs[0] = RESEs[i];
+          } else {
+            // If we have more than one RESE associated with this, then we have no clear first hit 
+            // and have to reject...
+            if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: First: RESE "<<SequencedRESEs[0]->GetID()<<" and "<<RESEs[i]->GetID()<<" are associated with start IA "<<Smallest<<endl;
+            return false;
+          }
+        }
+      }
+    }
+  } else {
+    // Only photons can be good...
+    if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
+    return false;
+  }
+  
+  //mout<<"FindCorrectSequence: First RESE "<<SequencedRESEs[0]->GetID()<<" (Smallest: "<<Smallest<<")"<<endl;
+  
+  // Check if there is a Compton is missing...
+  for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
+    // The second event in the sequence needs to have the same origin than the first one
+    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin() &&
+      m_SiEvent->GetIAAt(s)->GetType() == "COMP") {
+      //cout<<m_SiEvent->GetIAAt(s)->GetEnergy()<<endl;
+      bool Found = false;
+      for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+        for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+          //cout<<int(s+1)<<":"<<OriginIds[i][j]<<endl;
+          if (OriginIds[i][j] == int(s+1)) {
+            Found = true;
+            break;
+          }
+        }
+      }
+      if (Found == false) {
+        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Gap! Cannot find representant for Compton ID "<<s+1<<endl;
+        return false;
+      }
+    }
+  }
+  
+  // Go through the main event tree in the file and find the RESE sequence:
+  unsigned int FreeSpotInSequencedRESEs = 1;
+  for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
+    // The second event in the sequence needs to have the same origin than the first one
+    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin()) {
+      // Loop over all RESEs
+      for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+        // If the current RESE is not yet in the list:
+        if (find(SequencedRESEs.begin(), SequencedRESEs.end(), RESEs[i]) == SequencedRESEs.end()) {
+          for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
+            if (OriginIds[i][j] == int(s)) {
+              SequencedRESEs[FreeSpotInSequencedRESEs] = RESEs[i];
+              //mout<<"FindCorrectSequence: next RESE "<<SequencedRESEs[FreeSpotInSequencedRESEs]->GetID()<<endl;
+              FreeSpotInSequencedRESEs++;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Check if in all but the last interaction only contain a Compton interaction and it's possible dependents:
+  for (unsigned int s = 0; s < SequencedRESEs.size()-1; ++s) {
+    if (SequencedRESEs[s] != 0) {
+      vector<int> SequencedRESEsIDs = GetOriginIds(SequencedRESEs[s]);
+      if (ContainsOnlyComptonDependants(SequencedRESEsIDs) == false) {
+        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Not only Compton (+ dependents) in interaction "<<SequencedRESEs[s]->GetID()<<endl;
+        return false;
+      }
+      if (NumberOfComptonInteractions(SequencedRESEsIDs) != 1) {
+        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Not exactly one Compton in interaction "<<SequencedRESEs[s]->GetID()<<endl;
+        return false;        
+      }
+      //mout<<"FindCorrectSequence: All Compton "<<SequencedRESEs[s]->GetID()<<endl;
+    }
+  }
+  
+  //   mout<<"Sequence: ";
+  //   for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
+  //     if (SequencedRESEs[s] == 0) {
+  //       mout<<" ?";
+  //     } else {
+  //       mout<<" "<<SequencedRESEs[s]->GetID();
+  //     }
+  //   }
+  //   mout<<endl;
+  
+  for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
+    if (SequencedRESEs[s] == 0) {
+      if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Did not find complete sequence!"<<endl;
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MResponseMultipleComptonTMVA::NumberOfComptonInteractions(vector<int> AllSimIds)
+{
+  unsigned int N = 0;
+  
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetType() == "COMP") {
+      N++;
+    }
+  }
+  
+  return N;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMultipleComptonTMVA::Shuffle(vector<MRESE*>& RESEs)
+{
+  //! Shuffle the RESEs around...
+  
+  unsigned int size = RESEs.size();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = RESEs[To];
+    RESEs[To] = RESEs[From];
+    RESEs[From] = Temp;
+  }
+}
+
+
+// MResponseMultipleComptonTMVA.cxx: the end...
+////////////////////////////////////////////////////////////////////////////////
