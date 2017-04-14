@@ -225,10 +225,16 @@ class MComptonEvent : public MPhysicalEvent
   MString ToBasicString() const;
 
   // To do: Implement all different possibilities...
+  
+  //! Calculate the recoil electron energy Ee using the total scatter angle theta in radians and the scattered gamma-ray energy Eg
   static double ComputeEeViaThetaEg(const double Theta, const double Eg);
+  //! Calculate the scattered gamma ray energy Eg using the total scatter angle theta in radians and the recoil electron energy Ee
   static double ComputeEgViaThetaEe(const double Theta, const double Ee);
+  //! Calculate the Compton scatter angle phi in radians using the recoil electron energy Ee and the scattered gamma ray energy Eg
   static double ComputePhiViaEeEg(const double Ee, const double Eg);
+  //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the scattered gamma ray energy Eg
   static double ComputeEeViaPhiEg(const double Phi, const double Eg);
+  //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the total energy Ei
   static double ComputeEeViaPhiEi(const double Phi, const double Ei);
 
   double CalculateThetaViaAngles() const;
