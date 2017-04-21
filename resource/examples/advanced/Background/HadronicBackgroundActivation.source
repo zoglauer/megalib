@@ -1,0 +1,16 @@
+# Assembly file for the hadron simulations - activation
+
+Include Setup.source
+
+# Physics list
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+
+
+# The activation calculation
+Activator A
+A.IsotopeProductionFile   Isotopes.p1.inc1.dat
+A.ActivationMode          ConstantIrradiation  31556736
+A.ActivationFile          Activation.dat
+
+

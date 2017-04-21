@@ -1,0 +1,18 @@
+# Assembly file for the hadron simulations - hadrons themselves
+
+Include Setup.source
+
+
+# Physics list
+PhysicsListHD                      qgsp-bic-hp
+PhysicsListEM                      Livermore
+DecayMode                          ActivationBuildup
+
+
+Run SpaceSim
+SpaceSim.FileName                  TrappedHadronicBackground
+SpaceSim.Triggers                  100000 
+SpaceSim.IsotopeProductionFile     TrappedIsotopes
+
+Include TrappedProtonsSpenvis.partial.source
+
