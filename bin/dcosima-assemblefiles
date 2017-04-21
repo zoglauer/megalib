@@ -122,7 +122,7 @@ while true; do
       eval F="${TOCHECK[$m]}"
       #echo "Testing: ${F}"
 
-      # Check for "Geometry"
+      # Check for all the files
       VERYNEWONES=""
       VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Include" | awk '{print $2}'`
       VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Geometry" | awk  '{print $2}'`
@@ -131,8 +131,13 @@ while true; do
       VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`
       VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep MapProfileBeam | awk '{print $9}'`
       VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep ActivationSources | awk '{print $2}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $3}'`
-      #VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep  | awk '{print $3}'`
+      if [[ `cat ${F} | grep "\ File\ "` != "" ]]; then
+        if [[ `cat ${F}  | awk '{print $2}'` == "File" ]]; then 
+          VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $3}'`
+        elif [[ `cat ${F}  | grep "\ File\ " | grep ".Orientation"` != "" ]]; then
+          VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $5}'`
+        fi
+      fi
       
       #VERYNEWONES="${VERYNEWONES//$\(MEGALIB\)/$\{MEGALIB\}}"
       #echo "Very new: ${VERYNEWONES}"
