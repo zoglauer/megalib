@@ -109,17 +109,16 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   vector<vector<double>> m_ComptonScatterAngleDifference;
   //! The total absorption probabilities
   vector<vector<double>> m_AbsorptionProbabilities;
-  //! The g/cm2 to Compton interaction 
-  vector<vector<double>> m_ColumnDensityToCompton;
-  //! The g/cm2 to photo absorption 
-  vector<vector<double>> m_ColumnDensityToPhoto;
   //! The average column desnity to first IA
-  vector<double> m_ColumnDensityToFirstIAAverage;
+  vector<double> m_AbsorptionProbabilityToFirstIAAverage;
   //! The peak column desnity to first IA
-  vector<double> m_ColumnDensityToFirstIAMaximum;
+  vector<double> m_AbsorptionProbabilityToFirstIAMaximum;
   //! The minimum column desnity to first IA
-  vector<double> m_ColumnDensityToFirstIAMinimum;
-  
+  vector<double> m_AbsorptionProbabilityToFirstIAMinimum;
+  //! The Zenith angle
+  vector<double> m_ZenithAngle;
+  //! The Nadir angle
+  vector<double> m_NadirAngle;  
   
   //! All possible Permutations for fast access:
   //! Build the following way: [Sequence length] [Permuation ID] [Index]

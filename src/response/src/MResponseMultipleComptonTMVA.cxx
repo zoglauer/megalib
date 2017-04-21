@@ -127,7 +127,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   
   // Create the ROOT tree for TMVA analysis
   
-  m_CSRMaxLength = 4;
+  m_CSRMaxLength = 2;
   cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
   
   for (int c = 0; c <= m_CSRMaxLength-2; ++c) {
@@ -143,7 +143,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
     
     m_Energies.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_Energies[c].size(); ++i) {
-      MString Name("Energy");
+      Name = "Energy";
       Name += i+1;
       Good->Branch(Name, &m_Energies[c][i], Name + "/D");
       Bad->Branch(Name, &m_Energies[c][i], Name + "/D");
@@ -152,21 +152,21 @@ bool MResponseMultipleComptonTMVA::Initialize()
     
     m_PositionsX.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsX[c].size(); ++i) {
-      MString Name("X");
+      Name = "X";
       Name += i+1;
       Good->Branch(Name, &m_PositionsX[c][i], Name + "/D");
       Bad->Branch(Name, &m_PositionsX[c][i], Name + "/D");
     }
     m_PositionsY.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsY[c].size(); ++i) {
-      MString Name("Y");
+      Name = "Y";
       Name += i+1;
       Good->Branch(Name, &m_PositionsY[c][i], Name + "/D");
       Bad->Branch(Name, &m_PositionsY[c][i], Name + "/D");
     }
     m_PositionsZ.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsZ[c].size(); ++i) {
-      MString Name("Z");
+      Name = "Z";
       Name += i+1;
       Good->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
       Bad->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
@@ -175,7 +175,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
     
     m_ComptonScatterAngles.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_ComptonScatterAngles[c].size(); ++i) {
-      MString Name("ComptonScatterAngle");
+      Name = "ComptonScatterAngle";
       Name += i+1;
       Good->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
       Bad->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
@@ -183,7 +183,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
     
     m_KleinNishinaProbability.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_KleinNishinaProbability[c].size(); ++i) {
-      MString Name("KleinNishinaProbability");
+      Name = "KleinNishinaProbability";
       Name += i+1;
       Good->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
       Bad->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
@@ -192,7 +192,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
     if (l > 2) {
       m_ComptonScatterAngleDifference.push_back(vector<double>(l-2));
       for (unsigned int i = 0; i < m_ComptonScatterAngleDifference[c-1].size(); ++i) { // "-1" since we only start at 3 interactions
-        MString Name("ComptonScatterAngleDifference");
+        Name = "ComptonScatterAngleDifference";
         Name += i+1;
         Good->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
         Bad->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
@@ -201,48 +201,43 @@ bool MResponseMultipleComptonTMVA::Initialize()
     
     m_AbsorptionProbabilities.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_AbsorptionProbabilities[c].size(); ++i) {
-      MString Name("AbsorptionProbabilities");
+      Name = "AbsorptionProbabilities";
       Name += i+1;
       Good->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/D");
       Bad->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/D");
     }
     
-    /***
-    m_ColumnDensityToCompton.push_back(vector<double>(l-2));
-    for (unsigned int i = 0; i < m_ColumnDensityToCompton[c].size(); ++i) {
-      MString Name("ColumnDensityToCompton");
-      Name += i+1;
-      Good->Branch(Name, &m_ColumnDensityToCompton[c][i], Name + "/D");
-      Bad->Branch(Name, &m_ColumnDensityToCompton[c][i], Name + "/D");
-    }
+    m_AbsorptionProbabilityToFirstIAAverage.push_back(0);
+    Name = "AbsorptionProbabilityToFirstIAAverage";
+    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/D");
+    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/D");
     
-    m_ColumnDensityToPhoto.push_back(0);
-    MString Name("ColumnDensityToPhoto");
-    Good->Branch(Name, &m_ColumnDensityToPhoto[c], Name + "/D");
-    Bad->Branch(Name, &m_ColumnDensityToPhoto[c], Name + "/D");
+    m_AbsorptionProbabilityToFirstIAMaximum.push_back(0);
+    Name = "AbsorptionProbabilityToFirstIAMaximum";
+    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/D");
+    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/D");
     
-    m_ColumnDensityToFirstIAAverage.push_back(0);
-    MString Name("ColumnDensityToFirstIAAverage");
-    Good->Branch(Name, &m_ColumnDensityToFirstIAAverage[c], Name + "/D");
-    Bad->Branch(Name, &m_ColumnDensityToFirstIAAverage[c], Name + "/D");
+    m_AbsorptionProbabilityToFirstIAMinimum.push_back(0);
+    Name = "AbsorptionProbabilityToFirstIAMinimum";
+    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/D");
+    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/D");
     
-    m_ColumnDensityToFirstIAMaximum.push_back(0);
-    MString Name("ColumnDensityToFirstIAMaximum");
-    Good->Branch(Name, &m_ColumnDensityToFirstIAMaximum[c], Name + "/D");
-    Bad->Branch(Name, &m_ColumnDensityToFirstIAMaximum[c], Name + "/D");
+    m_ZenithAngle.push_back(0);
+    Name = "ZenithAngle";
+    Good->Branch(Name, &m_ZenithAngle[c], Name + "/D");
+    Bad->Branch(Name, &m_ZenithAngle[c], Name + "/D");
     
-    m_ColumnDensityToFirstIAMinimum.push_back(0);
-    MString Name("ColumnDensityToFirstIAMinimum");
-    Good->Branch(Name, &m_ColumnDensityToFirstIAMinimum[c], Name + "/D");
-    Bad->Branch(Name, &m_ColumnDensityToFirstIAMinimum[c], Name + "/D");
-    ***/
+    m_NadirAngle.push_back(0);
+    Name = "NadirAngle";
+    Good->Branch(Name, &m_NadirAngle[c], Name + "/D");
+    Bad->Branch(Name, &m_NadirAngle[c], Name + "/D");
     
     m_TreeGood.push_back(Good);
     m_TreeBad.push_back(Bad);
   }
   
 
-  m_SaveAfter = 1000000000;
+  m_SaveAfter = 100000000;
   
   return true;
 }
@@ -406,6 +401,45 @@ bool MResponseMultipleComptonTMVA::Analyze()
         m_AbsorptionProbabilities[SequenceLength-2][r] = CalculateAbsorptionProbabilityTotal(*SequencedRESEs[m_Permutator[SequenceLength][p][r]], *SequencedRESEs[m_Permutator[SequenceLength][p][r+1]], EnergyIncomingGamma);
       }
       
+      // (e) Incoming probabilities
+      EnergyIncomingGamma = RE->GetEnergy();
+      Phi = m_ComptonScatterAngles[SequenceLength-2][0]*c_Rad;
+      MVector FirstIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetPosition();
+      MVector SecondIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][1]]->GetPosition();
+      MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
+      // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
+      MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
+      // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
+      MVector Incoming = FirstScatteredGammaRayDir;
+      Incoming.RotateAroundVector(Ortho, Phi);
+      
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
+      m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
+      m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
+      unsigned int Steps = 36;
+      double StepWidth = c_TwoPi/Steps;
+      for (unsigned int a = 0; a < Steps; ++a) {
+        MVector Outgoing = -Incoming;
+        Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
+        Outgoing.Unitize();
+        double P = m_SiGeometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
+        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
+        if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
+          m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
+        }
+        if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
+          m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+        }
+      }
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
+      
+      // (f) Zenith and Nadir angles
+      MVector Zenith(0, 0, 1);
+      m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
+      MVector Nadir(0, 0, -1);
+      m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
+      
+      
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
         //cout<<"Add good"<<endl;
         m_TreeGood[SequenceLength-2]->Fill();
@@ -414,15 +448,8 @@ bool MResponseMultipleComptonTMVA::Analyze()
         m_TreeBad[SequenceLength-2]->Fill();          
       }
     } // all permutations
-    
   } // All raw events
-  
-  /*
-  if (m_Counter % 100 == 0) {
-    Save();
-    return false;
-  }
-  */
+
   
   return true;
 }
