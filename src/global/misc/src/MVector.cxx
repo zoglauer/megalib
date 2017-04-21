@@ -33,6 +33,7 @@
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MRotation.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -331,6 +332,7 @@ void MVector::RotateReferenceFrame(const MVector& OriginalDir)
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -342,6 +344,18 @@ void MVector::RotateZ(double Angle)
   m_X = cos(Angle)*OldX - sin(Angle)*m_Y;
   m_Y = sin(Angle)*OldX + cos(Angle)*m_Y;
   // m_Z is untouched
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Rotate vector with axis Axis by angle Angle
+void MVector::RotateAroundVector(const MVector& Axis, double Angle)
+{
+  MRotation R;
+  R.Set(Angle, Axis);
+  (*this) = R*(*this);
 }
 
 

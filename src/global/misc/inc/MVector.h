@@ -172,7 +172,9 @@ public:
   void RotateZ(double Angle); 
   //! Rotate around V
   void RotateReferenceFrame(const MVector& V);
-
+  //! Rotate vector with axis Axis by Angle
+  void RotateAroundVector(const MVector& Axis, double Angle);
+  
   
   //! Do a rotation 
   //MVector& operator*= (const MRotation& Rot);
