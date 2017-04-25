@@ -109,9 +109,6 @@ bool MStandardAnalysis::Analyze()
     delete Event;
   }
   
-  double StartArea = EventFile;
-  long NSimulatedPhotons = 0;
-  
   
   if (Energies.size() == 0) {
     cout<<"Error: No data found"<<endl;
