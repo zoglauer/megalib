@@ -598,11 +598,11 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"    Input file options:"<<endl;
   Usage<<"      -p <file> <sim photons> <sim area> <theta> <phi>:  "<<endl;
-  Usage<<"                                                    Source file, inlcuding the number of simulated photons and their start area"<<endl;
-  Usage<<"      -pa <file> <sim photons> <fluence>:  "<<endl;
+  Usage<<"                                                    Mono-energetic point-source tra file, inlcuding the number of simulated photons and their start area"<<endl;
+  //Usage<<"      -pa <file> <sim photons> <fluence>:  "<<endl;
   Usage<<"                                                    Source file for extended line source sensitivity calculations, including the number of simulated photons and the fluence [ph/cm2]: flux [ph/cm2/s] x simulated observation time "<<endl;
   Usage<<"      -k <file> <sim photons> <sim area> <plaw> <plaw Emin> <plaw Emax> <theta> <phi>: "<<endl;
-  Usage<<"                                                    Source file for continuum sensitivity calculation, inlcuding the number of simulated photons and their start area and the power law index for determining the started photons per bin"<<endl;
+  Usage<<"                                                    Continuum point source, inlcuding the number of simulated photons and their start area and the power law index Gamma for determining the started photons per bin"<<endl;
   Usage<<"      -b <file> <time>:                             Background file name and measurement time"<<endl;
   Usage<<endl;
   Usage<<"    Data space options:"<<endl;
@@ -776,6 +776,9 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       m_SourceStartPhotons.push_back(atoi(argv[++i]));
       m_SourceStartArea.push_back(atof(argv[++i]));
       m_SourcePowerLaw.push_back(atof(argv[++i]));
+      if (m_SourcePowerLaw.back() < 0) {
+        mlog<<"Attention: Your power law index is negative? Are sure about this? E.g. Crab has +2.19"<<endl; 
+      }
       m_SourcePowerLawEmin.push_back(atof(argv[++i]));
       m_SourcePowerLawEmax.push_back(atof(argv[++i]));
       m_SourceTheta.push_back(atof(argv[++i]));
@@ -785,7 +788,7 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       mlog<<"Accepting continuum source file name: "<<m_SourceFile.back()
           <<" (start photons: "<<m_SourceStartPhotons.back()
           <<", start area: "<<m_SourceStartArea.back()
-          <<", power law: "<<m_SourcePowerLaw.back()
+          <<", power law index: "<<m_SourcePowerLaw.back()
           <<", emin:  "<<m_SourcePowerLawEmin.back()
           <<", emax:  "<<m_SourcePowerLawEmax.back()
           <<", theta: "<<m_SourceTheta.back()
@@ -1401,17 +1404,17 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
       }
 
       // Calculate start photons per bin:
-      double Constant = m_SourceStartPhotons[x]*(m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], m_SourcePowerLaw[x]+1) - 
-                                                                         pow(m_SourcePowerLawEmin[x], m_SourcePowerLaw[x]+1));
+      double Constant = m_SourceStartPhotons[x]*(-m_SourcePowerLaw[x]+1)/(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - 
+                                                                         pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1));
       mlog<<"Constant: "<<Constant<<" of "<<m_SourceFile[x]<<endl;
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-        m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], m_SourcePowerLaw[x]+1) - 
-                                                                                                    pow(m_EnergyMin[e], m_SourcePowerLaw[x]+1))));
+        m_SourceStartPhotonsContinuumSensitivityBin[x].push_back(int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_EnergyMax[e], -m_SourcePowerLaw[x]+1) - 
+                                                                                                    pow(m_EnergyMin[e], -m_SourcePowerLaw[x]+1))));
         mlog<<"Continuum bin: "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<": Counts: "<<m_SourceStartPhotonsContinuumSensitivityBin[x].back()<<endl;
       }
       
       mlog<<"Sanity check: min="<<m_SourcePowerLawEmin[x]<<" max="<<m_SourcePowerLawEmax[x]<<" counts="
-          <<int(Constant/(m_SourcePowerLaw[x]+1)*(pow(m_SourcePowerLawEmax[x], m_SourcePowerLaw[x]+1) - pow(m_SourcePowerLawEmin[x], m_SourcePowerLaw[x]+1)))<<endl;
+          <<int(Constant/(-m_SourcePowerLaw[x]+1)*(pow(m_SourcePowerLawEmax[x], -m_SourcePowerLaw[x]+1) - pow(m_SourcePowerLawEmin[x], -m_SourcePowerLaw[x]+1)))<<endl;
     }
   }
 
@@ -2500,7 +2503,7 @@ bool SensitivityOptimizer::Analyze()
                                 for (unsigned int f = 0; f < f_max; ++f) {
                                   //mlog<<"FDI"<<endl;
                                   UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].TestSourceEvent(Event);
-                                  //mout<<"Found untracked Compton"<<endl;
+                                  //mout<<"Found untracked Compton: "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].GetSourceCounts()<<endl;
                                 }
                               }
                             }
@@ -2571,13 +2574,8 @@ bool SensitivityOptimizer::Analyze()
     }  // loop over all source files...
   }
 
-  cout<<OpenSelector.ToString()<<endl;
 
-
-  mlog<<"Source time: "<<TimerSource.GetElapsed()<<endl;
-  mlog<<"Source counts: "<<TimerSource.GetElapsed()<<endl;
-
-
+  
   //
   // Background:
   //
@@ -2826,6 +2824,7 @@ bool SensitivityOptimizer::Analyze()
                                       x_best_trackedcompton = 0;
                                       y_best_trackedcompton = 0;
                                     }
+                                    cout<<"Untracked: "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSensitivity()<< " vs. "<<UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSourceCounts()<<endl;
                                     if (UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSensitivity() < BestSensitivity_untrackedcompton && 
                                         UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetSourceCounts() > 0 &&
                                         UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, 0, 0)].GetBackgroundCounts() > 0 && 

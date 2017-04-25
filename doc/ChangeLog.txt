@@ -49,6 +49,10 @@ Realta:
 
 Spectralizer:
 
+Addons:
++ SensitivityOptimizer: The power law index input has now the same sign as
+  in cosima, it's the Gamma, i.e. the positive one (e.g. Crab has +2.19)
+
 Examples:
 + The EventList example demonstartes the use of event list during simulation
   basically allowing any arbitrary beam/spectrum/polarization input
