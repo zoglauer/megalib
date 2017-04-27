@@ -43,7 +43,7 @@ CT  = $(TOP)/cint
 
 MPRG=$(subst .cxx,,$(PRG))
 
-MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lCommonMisc -lCommonGui  
+MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lNeuralNet -lCommonMisc -lCommonGui  
 
 
 #-------------------------------------------------------------------------------
