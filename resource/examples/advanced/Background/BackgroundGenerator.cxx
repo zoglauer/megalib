@@ -73,6 +73,8 @@ protected:
   
   //! Generate the albedo photons according to Ajello and Mizuno et al
   bool GenerateAlbedoPhotonsAjelloMizuno();
+  //! Generate the albedo photons according to Tuerler, Mizuno & Abdo et al
+  bool GenerateAlbedoPhotonsTuerlerMizunoAbdo();
   //! Generate the albedo photon lines according to Harris et al
   bool GenerateAlbedoPhotonLinesHarris();
   //! Generate the albedo electron spectrum according to Alcaracz 2000 (AMS) and Mizuno
@@ -81,10 +83,14 @@ protected:
   bool GenerateAlbedoPositronsAlcarazMizuno();
   //! Generate the albedo proton spectrum according to Alcaracz 2000 (AMS)
   bool GenerateAlbedoProtonsAlcaraz();
+  //! Generate the albedo proton spectrum according to Mizuno 2004 (AMS)
+  bool GenerateAlbedoProtonsAveragedMizuno();
   //! Generate the albedo proton spectrum according to Alcaracz 2000 (AMS)
   bool GenerateAlbedoProtonsAveragedAlcaraz();
-  //! Generate the albedo neutron spectrum according to Armstrong and Morris
+  //! Generate the albedo neutron spectrum according to Kole+ 2014 and Morris
   bool GenerateAlbedoNeutronsMorrisKole();
+  //! Generate the albedo neutron spectrum according to Kole+ 2014
+  bool GenerateAlbedoNeutronsKole();
   
   
   //!
@@ -333,12 +339,12 @@ bool BackgroundGenerator::Analyze()
   
   
   if (m_IsEarthOrbit == true) {
-    if (GenerateAlbedoPhotonsAjelloMizuno() == false) return false;
+    if (GenerateAlbedoPhotonsTuerlerMizunoAbdo() == false) return false;
     if (GenerateAlbedoPhotonLinesHarris() == false) return false;
     if (GenerateAlbedoElectronsAlcarazMizuno() == false) return false;
     if (GenerateAlbedoPositronsAlcarazMizuno() == false) return false;
-    if (GenerateAlbedoProtonsAveragedAlcaraz() == false) return false;
-    if (GenerateAlbedoNeutronsMorrisKole() == false) return false;
+    if (GenerateAlbedoProtonsAveragedMizuno() == false) return false;
+    if (GenerateAlbedoNeutronsKole() == false) return false;
   }
 
   return true;
@@ -353,10 +359,23 @@ bool BackgroundGenerator::Analyze()
 bool BackgroundGenerator::GenerateAlbedoPhotonsAjelloMizuno()
 {
   auto Ajello = [](double EnergykeV) {   
-    // Valid uo to ~ 1MeV
+    // Valid up to ~ 1MeV
     return 0.0148/(pow(EnergykeV/33.7, -5) + pow(EnergykeV/33.7, 1.72)); 
   };
 
+  /* Mizuno downward:
+  auto Mizuno = [](double EnergykeV) {
+    // Valid above ~ 1 MeV
+    if (EnergykeV < 1000000) {
+      return (250.0*pow(EnergykeV/1000, -1.7) + 114000*pow(EnergykeV/1000, -2.5)*exp(-pow(EnergykeV/1000/120, -1.5))) / 1000.0 / 10000.0;
+    } else if (EnergykeV >= 1000000) {
+      return 21500*pow(EnergykeV/1000, -2.2) / 1000.0 / 10000.0;
+    }
+    return 0.0;
+  };
+  */
+  
+  // Mizuno upward
   auto Mizuno = [](double EnergykeV) {
     // Valid above ~ 1 MeV
     if (EnergykeV < 20000) {
@@ -368,7 +387,7 @@ bool BackgroundGenerator::GenerateAlbedoPhotonsAjelloMizuno()
     }
     return 0.0;
   };
-
+  
   auto AjelloMizuno = [Ajello, Mizuno](double EnergykeV, double ScalerAjello, double ScalerMizuno) {
     if (EnergykeV < 1000) { 
       return Ajello(EnergykeV)*ScalerAjello;
@@ -447,6 +466,133 @@ bool BackgroundGenerator::GenerateAlbedoPhotonsAjelloMizuno()
 
   return true;
 }
+
+
+
+/******************************************************************************
+ * Generate an albedo photon spectrum after Tuerler+ (A&A 512, A49, 2010) & Mizuno 2004 & Abdo (PHYSICAL REVIEW D80, 122004, 2009)
+ * Mizuno is used as the absolute normalization and the Ajello shape is scaled 
+ * to the Mizuno normalization
+ */
+bool BackgroundGenerator::GenerateAlbedoPhotonsTuerlerMizunoAbdo()
+{
+  // Tuerler low energy component
+  auto Tuerler = [](double EnergykeV) {
+    if (EnergykeV < 49.4) {
+      return 0.05*pow(EnergykeV, -0.37);
+    } else {
+      return 0.05*pow(49.4, 1.78-0.37)*pow(EnergykeV, -1.78);
+    }
+  };
+  
+  // Mizuno downward component
+  auto Mizuno = [](double EnergykeV) {
+    // Valid above ~ 1 MeV
+    if (EnergykeV < 20000) {
+      return 1010.0*pow(EnergykeV/1000, -1.34) / 1000.0 / 10000.0;
+    } else if (EnergykeV >= 20000 && EnergykeV < 1000000) {
+      return 7290.0*pow(EnergykeV/1000, -2.0) / 1000.0 / 10000.0;
+    } else if (EnergykeV >= 1000000) {
+      return 29000*pow(EnergykeV/1000, -2.2) / 1000.0 / 10000.0;
+    }
+    return 0.0;
+  };
+  
+  // Abdo FERMI
+  auto Abdo = [](double EnergykeV) {   
+    // Valid from 200 MeV & up
+    return 1.823e-8*pow(EnergykeV/200000, -2.8);
+  };
+  
+  auto TuerlerMizunoAbdo = [Tuerler, Mizuno, Abdo](double EnergykeV, double ScalerTuerler, double ScalerMizuno, double ScalerAbdo) {
+    if (EnergykeV < 750) { 
+      return Tuerler(EnergykeV)*ScalerTuerler;
+    } else if (EnergykeV > 200000) { 
+      return Abdo(EnergykeV)*ScalerAbdo;
+    } else {
+      return Mizuno(EnergykeV)*ScalerMizuno;
+    }
+  };
+  
+  if (m_IsEarthOrbit == false) return true;
+  
+  mout<<endl;
+  mout<<"Generating an albedo photon spectrum according to Tuerler and Mizuno..."<<endl;
+  
+  if (IsValid(1, 1000000000) == false) {
+    return false;
+  }
+  
+  
+  vector<double> Angle;
+  for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
+    if (m_AngleBins[b] >= m_HorizonAngle) {
+      Angle.push_back(1.0);
+    } else {
+      Angle.push_back(0.0);
+    }
+  }
+  
+  // Scaling from Mizuno et al.
+  double Rcut_desired = m_AverageGeomagneticCutOff;
+  double Rcut_Mizuno = 4.5;
+  double ScalerMizuno = pow(Rcut_desired/Rcut_Mizuno, -1.13);
+  
+  // Make sure to scale the Tuerler result to the Mizuno result at 1 MeV:
+  double MizunoValue = ScalerMizuno*Mizuno(750);
+  double TuerlerValue = Tuerler(750);
+  double ScalerTuerler = MizunoValue/TuerlerValue;
+  
+  MizunoValue = ScalerMizuno*Mizuno(200000);
+  double AbdoValue = Abdo(200000);
+  double ScalerAbdo = MizunoValue/AbdoValue;
+  
+  vector<double> Spectrum;
+  for (unsigned int b = 0; b < m_NEnergyBins; ++b) {
+    Spectrum.push_back(TuerlerMizunoAbdo(m_EnergyBins[b], ScalerTuerler, ScalerMizuno, ScalerAbdo));
+    cout<<m_EnergyBins[b]<<":"<<TuerlerMizunoAbdo(m_EnergyBins[b], ScalerTuerler, ScalerMizuno, ScalerAbdo)<<endl;
+  }
+  
+  
+  // Determine the flux in ph/s/cm2 via numerical integration...
+  double Flux = 0;
+  int Bins = 10000;
+  double Min = log(m_EnergyMin);
+  double Max = log(m_EnergyMax);
+  double Dist = (Max-Min)/Bins;
+  for (double e = 0; e <= Bins-1; ++e) {
+    double EMin = exp(Min + e*Dist);
+    double EMax = exp(Min + (e+1)*Dist);
+    double Average = 0.5*(TuerlerMizunoAbdo(EMin, ScalerTuerler, ScalerMizuno, ScalerAbdo) + TuerlerMizunoAbdo(EMax, ScalerTuerler, ScalerMizuno, ScalerAbdo));
+    Flux += Average*(EMax-EMin);
+  }
+  // Integration factor over sphere
+  double AngleFactor = 2*c_Pi * (cos(m_HorizonAngle*c_Rad) - (-1));
+  
+  cout<<"Angle-factor: "<<AngleFactor<<endl;
+  cout<<"Flux: "<<Flux<<" ph/cm2/s/sr"<<endl;
+  Flux *= AngleFactor;
+  cout<<"Flux: "<<Flux<<" ph/cm2/s"<<endl;
+  
+  MString Comments;
+  Comments += "# Albedo photons determinined after Turler+ 2010, Mizuno+ 2004, Abdo+ 2009\n";
+  Comments += "# Assumptions: \n";
+  Comments += "# (1) Use Tuerler below 750 keV, Abdo+ above 200 MeV, Mizuno in between \n";
+  Comments += "# (2) Everything is normalized to Mizuno \n";
+  Comments += "# (3) Geomagnetic cutoff difference scaled as in Mizuno \n";
+  Comments += "# (4) Angular distribution is flat out to the Earth-horizon (no limb brightening!) \n";
+  Comments += "# (5) Tuerler includes the reflected CXB component, not just the Albedo component thus is larger at lower energies than Ajello \n";
+  Comments += "# (6) The lower energy limit is ~20 keV \n";
+  Comments += "# (7) Limb brightening and darkening is NOT included\n";
+  Comments += "# (8) There should be a bump form the 511-keV-Compton scatters belog ~450 keV which is NOT included \n";
+  
+  WriteEnergyFile("AlbedoPhotonsTuerlerMizunoAbdo", Spectrum);
+  WriteAngleFile("AlbedoPhotonsTuerlerMizunoAbdo", Angle);
+  WriteSourceFile("AlbedoPhotonsTuerlerMizunoAbdo", Flux, 1, Comments);
+  
+  return true;
+}
+
 
 
 /******************************************************************************
@@ -769,7 +915,7 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAlcaraz()
     Energies.push_back(8.60); Fluxes.push_back(2.0E-06);
     Energies.push_back(10.73); Fluxes.push_back(1.0E-07);
     Energies.push_back(13.34);
-    
+        
     for (unsigned int e = 0; e < Energies.size() - 1; ++e) {
       Energies[e] = 0.5*(Energies[e] + Energies[e+1]); 
     }
@@ -851,7 +997,8 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAlcaraz()
   Comments += "# Albedo proton spectrum downward component determinined after Alcaraz 2000\n";
   Comments += "# Assumptions: \n";
   Comments += "# * Equatorial low-earth orbit \n";
-  Comments += "# * Angular distribution is flat out to the Earth-horizon \n";  
+  Comments += "# * Angular distribution is flat \n";  
+  Comments += "# * Everything below 70 MeV is a wild guess extrapolation \n";  
   
   WriteEnergyFile("AlbedoProtonAlcarazDownward", Spectrum);
   WriteAngleFile("AlbedoProtonAlcarazDownward", Angle);
@@ -862,7 +1009,8 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAlcaraz()
   
   Angle.clear();
   for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
-    if (m_AngleBins[b] >= 90) {
+    if (m_AngleBins[b] >= 90) { 
+      
       Angle.push_back(1.0);
     } else {
       Angle.push_back(0.0);
@@ -922,14 +1070,14 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
     vector<double> Energies;
     vector<double> Fluxes;
     
-    // Extrapolated to lower energies
-    Energies.push_back(0.001); Fluxes.push_back(1.07);
-    Energies.push_back(0.002); Fluxes.push_back(0.7819);
-    Energies.push_back(0.005); Fluxes.push_back(0.51533);
-    Energies.push_back(0.01); Fluxes.push_back(0.3759);
-    Energies.push_back(0.02); Fluxes.push_back(0.2742);
-    Energies.push_back(0.05); Fluxes.push_back(0.180722);
-    // Original measurements near equator
+    // Extrapolated to lower energies from last two values
+    Energies.push_back(0.001); Fluxes.push_back(7.753);
+    Energies.push_back(0.002); Fluxes.push_back(4.15);
+    Energies.push_back(0.005); Fluxes.push_back(1.812);
+    Energies.push_back(0.010); Fluxes.push_back(0.969);
+    Energies.push_back(0.020); Fluxes.push_back(0.518);
+    Energies.push_back(0.050); Fluxes.push_back(0.226);
+    // Original measurements near equator, units: p/m^2/s/sr/MeV
     Energies.push_back(0.07); Fluxes.push_back(1.67E-01);
     Energies.push_back(0.10); Fluxes.push_back(1.21E-01);
     Energies.push_back(0.15); Fluxes.push_back(9.79E-02);
@@ -951,6 +1099,12 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
     Energies.push_back(10.73); Fluxes.push_back(1.0E-07);
     Energies.push_back(13.34);    
     
+    // Re-extrapolate down:
+    double Gradient = (log10(Fluxes[7]) - log10(Fluxes[6])) / (log10(Energies[7]) - log10(Energies[6]));
+    for (unsigned int i = 5; i <= 5; --i) {
+      Fluxes[i] = pow(10, log10(Fluxes[i+1]) - Gradient*(log10(Energies[i+1]) - log10(Energies[i])));
+    }
+    
     for (unsigned int e = 0; e < Energies.size() - 1; ++e) {
       Energies[e] = 0.5*(Energies[e] + Energies[e+1]); 
     }
@@ -970,7 +1124,7 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
       }
     }
     
-    return Flux/1000.0/10000.0;
+    return Flux/1000.0/10000.0; // return Flux in p/cm2/s/sr/keV
   };
   
   auto AlcarazUpward = [] (double EnergykeV) {
@@ -980,12 +1134,12 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
     vector<double> Fluxes;
     
     // Extrapolated up
-    Energies.push_back(0.001); Fluxes.push_back(2.52);
-    Energies.push_back(0.002); Fluxes.push_back(1.62);
-    Energies.push_back(0.005); Fluxes.push_back(0.91);
-    Energies.push_back(0.01); Fluxes.push_back(0.59);
-    Energies.push_back(0.02); Fluxes.push_back(0.38);
-    Energies.push_back(0.05); Fluxes.push_back(0.21);
+    Energies.push_back(0.001); Fluxes.push_back(21.29);
+    Energies.push_back(0.002); Fluxes.push_back(9.62);
+    Energies.push_back(0.005); Fluxes.push_back(3.369);
+    Energies.push_back(0.01); Fluxes.push_back(1.523);
+    Energies.push_back(0.02); Fluxes.push_back(0.689);
+    Energies.push_back(0.05); Fluxes.push_back(0.241);
     // Original
     Energies.push_back(0.07); Fluxes.push_back(16.4E-2);
     Energies.push_back(0.10); Fluxes.push_back(10.9E-2);
@@ -1008,6 +1162,12 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
     Energies.push_back(10.73); Fluxes.push_back(1.0E-07);
     Energies.push_back(13.34);
     
+    // Re-extrapolate down:
+    double Gradient = (log10(Fluxes[7]) - log10(Fluxes[6])) / (log10(Energies[7]) - log10(Energies[6]));
+    for (unsigned int i = 5; i <= 5; --i) {
+      Fluxes[i] = pow(10, log10(Fluxes[i+1]) - Gradient*(log10(Energies[i+1]) - log10(Energies[i])));
+    }
+    
     for (unsigned int e = 0; e < Energies.size() - 1; ++e) {
       Energies[e] = 0.5*(Energies[e] + Energies[e+1]); 
     }
@@ -1027,7 +1187,7 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
       }
     }
     
-    return Flux/1000.0/10000.0;
+    return Flux/1000.0/10000.0; // return Flux in p/cm2/s/sr/keV
   };
   
   if (m_IsEarthOrbit == false) return true;
@@ -1044,8 +1204,6 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
   vector<double> Spectrum;
   double Flux = 0;
   int Bins = 10000;
-  double AngleFactor = 2*c_Pi * (cos(m_HorizonAngle*c_Rad) - (-1));
-  MString Comments;
  
   
   // Upward and Downward component combined
@@ -1061,7 +1219,7 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
   }
   
   
-  // Determine the flux in ph/s/cm2 via numerical integration...
+  // Determine the flux in ph/s/cm2/sr via numerical integration...
   Flux = 0;
   Bins = 10000;
   double Min = log(m_EnergyMin);
@@ -1073,24 +1231,115 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
     double Average = 0.5*(0.5*(AlcarazUpward(EMin) + AlcarazDownward(EMin)) + 0.5*(AlcarazUpward(EMax) + AlcarazDownward(EMax)));
     Flux += Average*(EMax-EMin);
   }
-  // Integration factor over half sphere
-  AngleFactor = 2*c_Pi;
+
+  // Integration factor over full sphere
+  double AngleFactor = 4*c_Pi;
 
   cout<<"Angle-factor: "<<AngleFactor<<endl;
   cout<<"Flux: "<<Flux<<" ph/cm2/s/sr"<<endl;
   Flux *= AngleFactor;
   cout<<"Flux: "<<Flux<<" ph/cm2/s"<<endl;
 
+  MString Comments;
   Comments = "";
   Comments += "# Albedo proton spectrum upward and downward component combined and averaged determinined after Alcaraz 2000\n";
   Comments += "# Assumptions: \n";
   Comments += "# * Equatorial low-earth orbit \n";
   Comments += "# * Angular distribution is isotropic \n";  
+  Comments += "# * Alcaraz's data goes from 70 MeV to 5 GeV. Below that we extrapolate from gradient from last data point.\n";  
+  Comments += "# * We arbitrarily cut a 1 MeV .\n";  
   
   WriteEnergyFile("AlbedoProtonAlcaraz", Spectrum);
   WriteAngleFile("AlbedoProtonAlcaraz", Angle);
   WriteSourceFile("AlbedoProtonAlcaraz", Flux, 4, Comments);
 
+  return true;
+}
+
+
+/******************************************************************************
+ * Generate an albedo proton spectrum after Mizuno+ 2004
+ * Combines and averages up and downward component
+ */
+bool BackgroundGenerator::GenerateAlbedoProtonsAveragedMizuno()
+{
+  // 0.0 ≤ θM ≤ 0.2 down/upward cutoff PL 0.136/0.123/0.155/0.51  F0 /F1 /a/Ec (GeV) f
+  
+  auto MizunoAveraged = [] (double EnergykeV) {
+    double EnergyMeV = 0.001*EnergykeV;
+    
+    if (EnergyMeV < 1) return 0.0;
+    
+    double Flux = 0.0;
+    if (EnergyMeV > 100) {
+      Flux = 0.123*pow(EnergyMeV/1000, -0.155) * exp(-pow(EnergyMeV/511, -0.155+1)); // p/m2/s/sr/MeV
+    } else {
+      Flux = 0.136*pow(EnergyMeV/100, -1);
+    }
+    
+    return Flux/1000.0/10000.0; // return Flux in p/cm2/s/sr/keV
+  };
+  
+  if (m_IsEarthOrbit == false) return true;
+  
+  mout<<endl;
+  mout<<"Generating an albedo proton spectrum according to Mizuno..."<<endl;
+  
+  if (IsValid(1, 1000000000) == false) {
+    return false;
+  }
+  
+  
+  vector<double> Angle;
+  vector<double> Spectrum;
+  double Flux = 0;
+  int Bins = 10000;
+  
+  
+  // Upward and Downward component combined
+  
+  Angle.clear();
+  for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
+    Angle.push_back(1.0);
+  }
+  
+  Spectrum.clear();
+  for (unsigned int b = 0; b < m_NEnergyBins; ++b) {
+    Spectrum.push_back(MizunoAveraged(m_EnergyBins[b]));
+  }
+  
+  
+  // Determine the flux in ph/s/cm2/sr via numerical integration...
+  Flux = 0;
+  Bins = 10000;
+  double Min = log(m_EnergyMin);
+  double Max = log(m_EnergyMax);
+  double Dist = (Max-Min)/Bins;
+  for (double e = 0; e <= Bins-1; ++e) {
+    double EMin = exp(Min + e*Dist);
+    double EMax = exp(Min + (e+1)*Dist);
+    double Average = 0.5*(MizunoAveraged(EMin) + MizunoAveraged(EMax));
+    Flux += Average*(EMax-EMin);
+  }
+  cout<<"Flux: "<<Flux<<" ph/cm2/s/sr"<<endl;
+  
+  // Integration factor over full sphere
+  double AngleFactor = 4*c_Pi;
+  cout<<"Angle-factor: "<<AngleFactor<<endl;
+  Flux *= AngleFactor;
+  cout<<"Flux: "<<Flux<<" ph/cm2/s"<<endl;
+  
+  MString Comments;
+  Comments = "";
+  Comments += "# Albedo proton spectrum upward and downward component combined and averaged determinined after Mizuno 2004\n";
+  Comments += "# Assumptions: \n";
+  Comments += "# * Equatorial low-earth orbit \n";
+  Comments += "# * Angular distribution is isotropic \n";  
+  
+  WriteEnergyFile("AlbedoProtonMizuno", Spectrum);
+  WriteAngleFile("AlbedoProtonMizuno", Angle);
+  WriteSourceFile("AlbedoProtonMizuno", Flux, 4, Comments);
+  
   return true;
 }
 
@@ -1119,11 +1368,11 @@ bool BackgroundGenerator::GenerateAlbedoNeutronsMorrisKole()
 
   auto Kole = [this] (double EnergyMeV) {
     double Pressure = 0;
-    double MagLat = 10;
-    double SolarActivity = 0;
+    double MagLat = m_Inclination; // Orig: 10
+    double SolarActivity = 0.5; // Solar Minimum (0), Solar Maximum (1)
     
     double a = 0.0003 + (7.0-5.0*SolarActivity)*0.001*(1-tanh(c_Rad*(180-4.0*MagLat)));
-    double b = 0.0120 + (1.4-0.9*SolarActivity)*  0.1*(1-tanh(c_Rad*(180-3.5*MagLat)));
+    double b = 0.0140 + (1.4-0.9*SolarActivity)*  0.1*(1-tanh(c_Rad*(180-3.5*MagLat))); 
     double c = 180 -                             42*(1-tanh(c_Rad*(180-5.5*MagLat)));
     double d = -0.008 + (6.0-1.0*SolarActivity)*0.001*(1-tanh(c_Rad*(180-4.4*MagLat)));
 
@@ -1170,8 +1419,10 @@ bool BackgroundGenerator::GenerateAlbedoNeutronsMorrisKole()
   }
   // Integration factor over sphere
   double AngleFactor = 2*c_Pi * (cos(m_HorizonAngle*c_Rad) - (-1));
-
-  double Scaler = Morris(150)/Kole(150);
+  cout<<"Angle-factor: "<<AngleFactor<<endl;
+  
+  cout<<"Scaler: "<<Morris(150)/Kole(150)<<endl;
+  double Scaler = 1.0; //Morris(150)/Kole(150);
   cout<<"Normalization at 30 MeV: Morris: "<<Morris(30)<<" vs. Kole "<<Kole(30)<<endl;
   cout<<"Normalization at 150 MeV: Morris: "<<Morris(150)<<" vs. Kole "<<Kole(150)<<endl;
   
@@ -1194,21 +1445,116 @@ bool BackgroundGenerator::GenerateAlbedoNeutronsMorrisKole()
     Flux += Average*(EMax-EMin);
   }
 
-  cout<<"Angle-factor: "<<AngleFactor<<endl;
   cout<<"Flux: "<<Flux<<" n/cm2/s/sr"<<endl;
-  Flux *= AngleFactor;
-  cout<<"Flux: "<<Flux<<" n/cm2/s"<<endl;
+  //Flux *= AngleFactor;
+  //cout<<"Flux: "<<Flux<<" n/cm2/s"<<endl;
 
   MString Comments;
   Comments += "# Albedo neutrons determinined after Morris 1995 & Kole 2014\n";
   Comments += "# Assumptions: \n";
   Comments += "# * Use the Morris absolute flux value @ 150 MeV and the shape of Kole \n";
   Comments += "# * Angular distribution is flat out to the Earth-horizon (no limb brightening!) \n";  
+  Comments += "# * Solar activity is assumed to be half way between solar minimum and maximum \n";
+  Comments += "# * The inclination was used to approximate the average Magnetic Latitude \n";
   
   WriteEnergyFile("AlbedoNeutronsMorrisKole", Spectrum);
   WriteAngleFile("AlbedoNeutronsMorrisKole", Angle);
   WriteSourceFile("AlbedoNeutronsMorrisKole", Flux, 6, Comments);
 
+  return true;
+}
+
+
+/******************************************************************************
+ * Generate an albedo neutron spectrum after Kole
+ */
+bool BackgroundGenerator::GenerateAlbedoNeutronsKole()
+{
+  
+  auto Kole = [this] (double EnergyMeV) {
+    double Pressure = 0;
+    double MagLat = m_Inclination; // Orig: 10
+    double SolarActivity = 0.5; // Solar Minimum (0), Solar Maximum (1)
+    
+    double a = 0.0003 + (7.0-5.0*SolarActivity)*0.001*(1-tanh(c_Rad*(180-4.0*MagLat)));
+    double b = 0.0140 + (1.4-0.9*SolarActivity)*  0.1*(1-tanh(c_Rad*(180-3.5*MagLat))); 
+    double c = 180 -                             42*(1-tanh(c_Rad*(180-5.5*MagLat)));
+    double d = -0.008 + (6.0-1.0*SolarActivity)*0.001*(1-tanh(c_Rad*(180-4.4*MagLat)));
+    
+    double Slope1 = -0.29 * exp(-Pressure/7.5) + 0.735;
+    double Norm1 = (a*Pressure + b)*exp(-Pressure/c) + d;
+    double Slope2 = -0.247 * exp(-Pressure/36.5) + 1.4;
+    double Norm2 = Norm1*pow(0.9, -Slope1+Slope2);
+    double Slope3 = -0.40 * exp(-Pressure/40.0) + 0.9;
+    double Norm3 = Norm2*pow(15, -Slope2+Slope3);
+    double Slope4 = -0.46 * exp(-Pressure/100.0) + 2.53;
+    double Norm4 = Norm3*pow(70, -Slope3+Slope4);
+    
+    double Flux = 0.0;
+    if (EnergyMeV < 0.9) {
+      Flux = Norm1 * pow(EnergyMeV, -Slope1);
+    } else if (EnergyMeV >= 0.9 && EnergyMeV < 15) {
+      Flux = Norm2 * pow(EnergyMeV, -Slope2);
+    } else if (EnergyMeV >= 15 && EnergyMeV < 70) {
+      Flux = Norm3 * pow(EnergyMeV, -Slope3);
+    } else if (EnergyMeV >= 70) {
+      Flux = Norm4 * pow(EnergyMeV, -Slope4);    
+    }
+    
+    return Flux / 1000.0; // Switch from n/MeV/cm2/s to n/keV/cm2/s
+  };
+  
+  if (m_IsEarthOrbit == false) return true;
+  
+  mout<<endl;
+  mout<<"Generating an albedo neutron spectrum according to Morris and Kole..."<<endl;
+  
+  if (IsValid(1, 1000000000) == false) {
+    return false;
+  }
+  
+  
+  vector<double> Angle;
+  for (unsigned int b = 0; b < m_AngleBins.size(); ++b) {
+    if (m_AngleBins[b] >= m_HorizonAngle) {
+      Angle.push_back(1.0);
+    } else {
+      Angle.push_back(0.0);
+    }
+  }
+  // Integration factor over sphere
+  double AngleFactor = 2*c_Pi * (cos(m_HorizonAngle*c_Rad) - (-1));
+  
+  vector<double> Spectrum;
+  for (unsigned int b = 0; b < m_NEnergyBins; ++b) {
+    Spectrum.push_back(Kole(m_EnergyBins[b]/1000)/AngleFactor); // We need the angle factor here to switch from ph/cm2/s/keV to ph/cm2/s/keV/sr
+  }
+  
+  
+  // Determine the flux in ph/s/cm2 via numerical integration...
+  double Flux = 0;
+  int Bins = 10000;
+  double Min = log(m_EnergyMin);
+  double Max = log(m_EnergyMax);
+  double Dist = (Max-Min)/Bins;
+  for (double e = 0; e <= Bins-1; ++e) {
+    double EMin = exp(Min + e*Dist);
+    double EMax = exp(Min + (e+1)*Dist);
+    double Average = 0.5*(Kole(EMin/1000) + Kole(EMax/1000));
+    Flux += Average*(EMax-EMin);
+  }
+  
+  MString Comments;
+  Comments += "# Albedo neutrons determinined after Kole+ 2014\n";
+  Comments += "# Assumptions: \n";
+  Comments += "# * Angular distribution is flat out to the Earth-horizon (no limb brightening!) \n";  
+  Comments += "# * Solar activity is assumed to be half way between solar minimum and maximum \n";
+  Comments += "# * The inclination was used to approximate the average Magnetic Latitude \n";
+  
+  WriteEnergyFile("AlbedoNeutronsKole", Spectrum);
+  WriteAngleFile("AlbedoNeutronsKole", Angle);
+  WriteSourceFile("AlbedoNeutronsKole", Flux, 6, Comments);
+  
   return true;
 }
 

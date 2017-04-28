@@ -57,9 +57,9 @@ void BackgroundViewer()
   FileNames.push_back("CosmicAlphasSpenvis.spectrum.dat"); Names.push_back("Cosmic alphas"); Colors.push_back(kOrange-7);
   FileNames.push_back("CosmicElectronsMizuno.spectrum.dat"); Names.push_back("Cosmic electrons"); Colors.push_back(kYellow);
   FileNames.push_back("CosmicPositronsMizuno.spectrum.dat"); Names.push_back("Cosmic positrons"); Colors.push_back(kPink);
-  FileNames.push_back("AlbedoPhotonsAjelloMizuno.spectrum.dat"); Names.push_back("Albedo photons"); Colors.push_back(kBlue);
-  FileNames.push_back("AlbedoProtonAlcaraz.spectrum.dat"); Names.push_back("Albedo protons"); Colors.push_back(kOrange);
-  FileNames.push_back("AlbedoNeutronsMorrisKole.spectrum.dat"); Names.push_back("Albedo neutrons"); Colors.push_back(kMagenta);
+  FileNames.push_back("AlbedoPhotonsTuerlerMizunoAbdo.spectrum.dat"); Names.push_back("Albedo photons"); Colors.push_back(kBlue);
+  FileNames.push_back("AlbedoProtonMizuno.spectrum.dat"); Names.push_back("Albedo protons"); Colors.push_back(kOrange);
+  FileNames.push_back("AlbedoNeutronsKole.spectrum.dat"); Names.push_back("Albedo neutrons"); Colors.push_back(kMagenta);
   FileNames.push_back("AlbedoElectronsAlcarazMizuno.spectrum.dat"); Names.push_back("Albedo electrons"); Colors.push_back(kCyan);
   FileNames.push_back("AlbedoPositronsAlcarazMizuno.spectrum.dat"); Names.push_back("Albedo positrons"); Colors.push_back(kAzure-4);
   FileNames.push_back("TrappedProtonsSpenvis.spectrum.dat"); Names.push_back("Trapped protons (orbit averaged)"); Colors.push_back(kGray);
