@@ -5,14 +5,14 @@ Include Setup.source
 
 # Physics list
 PhysicsListHD                      qgsp-bic-hp
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 DecayMode                          ActivationBuildup
 
 
 Run SpaceSim
 SpaceSim.FileName                  TrappedHadronicBackground
 SpaceSim.Triggers                  100000 
-SpaceSim.IsotopeProductionFile     TrappedIsotopes
+SpaceSim.IsotopeProductionFile     TrappedHadronicBackgroundIsotopes
 
 Include TrappedProtonsSpenvis.partial.source
 

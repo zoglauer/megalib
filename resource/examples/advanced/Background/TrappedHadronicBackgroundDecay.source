@@ -11,5 +11,5 @@ Run ActivationStep3
 ActivationStep3.FileName                         TrappedHadronicBackgroundDecay
 ActivationStep3.Triggers                         100000
 
-ActivationStep3.ActivationSources                TrappedActivation.dat
+ActivationStep3.ActivationSources                TrappedHadronicBackgroundActivation.dat
 

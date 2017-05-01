@@ -12,7 +12,7 @@ DecayMode                          ActivationBuildup
 Run SpaceSim
 SpaceSim.FileName                  HadronicBackground
 SpaceSim.Triggers                  100000 
-SpaceSim.IsotopeProductionFile     Isotopes
+SpaceSim.IsotopeProductionFile     HadronicBackgroundIsotopes
 
 Include CosmicProtonsSpenvis.partial.source
 Include CosmicAlphasSpenvis.partial.source
