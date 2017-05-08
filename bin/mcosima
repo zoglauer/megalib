@@ -213,7 +213,13 @@ ThreadsID="0"
 
 BaseNames=""
 while read line; do
-  Base=`echo $line | awk -F ".FileName|.filename|.Filename" '{ print $2 }'`;
+  # Ignore comments
+  Start=`echo $line | sed 's/^ *//g'`; 
+  if [[ ${Start} == \#* ]] || [[ ${Start} == \/\/* ]]; then
+    continue
+  fi
+  
+  Base=`echo $line | awk -F ".FileName|.filename|.Filename" '{ print $2 }'`
   if [ "${Base}" != "" ]; then
     BaseNames="${BaseNames} ${Base}"
   fi
@@ -233,7 +239,7 @@ fi
 for Base in ${BaseNames}; do
   while true; do
     ThreadsID=`expr ${ThreadsID} + 1`
-    N=`find . -name "${Base}.p${ThreadsID}.*.sim*" | wc -l | sed 's/ //g'`
+    N=`find . -name "${Base}.p${ThreadsID}.inc*.sim*" | wc -l | sed 's/ //g'`
     #echo "Found: $N of ${Base}.p${ThreadsID}.*sim"
     if [ "${N}" == "0" ]; then
       break;
@@ -248,24 +254,29 @@ Pids=( )
 for (( i=1; i <= ${Threads}; i+=1 )); do
   mdelay ${Executable} ${Max}
   echo "Launching cosima run ${i}/${Threads}"
+  
   Random=`od -vAn -N4 -tu4 < /dev/urandom`
-  Cmd="${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID}"
+  
+  Tag=""
+  for N in `seq 1 16`; do Tag="${Tag}$(( RANDOM%10 ))"; done
+  
+  Cmd="${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID} -t ${Tag}"
   if [[ "${Zip}" == "yes" ]]; then
     Cmd="${Cmd} -z"
   fi
   Cmd="${Cmd} ${Source}"
-  #echo "Starting ${Cmd}"
-  #${Cmd} >> Dump.txt
-  #nohup ${Cmd} > /dev/null &
+
+  echo "${Cmd}"
   # Required for latest macOS version since paths are not forwarded
   nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null &
-  Pids[${#Pids[*]}]=$!
-  #Pids="$Pids $! "
+  
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  if ( [ ${Threads} -gt 1 ] && [ $i -ne ${Threads} ] ); then
-    echo "Sleeping for 1 second to seperate the starts out a bit..."
-    sleep 1
-  fi
+  echo "Sleeping for 1 second to seperate the starts out a bit and make sure everything is started before we continue..."
+  sleep 1
+  
+  Pid=`ps -Af | grep "[ ]${Tag}" | grep -v "bash -c " | awk '{ print $2 }'`
+  Pids[${#Pids[*]}]=${Pid}
+
 done
 
 # Create a concatenation file
@@ -274,6 +285,13 @@ ConcatFileName="Bla.sim"
 # Extract the base file names from the source file
 grep -i ".FileName" ${Source} | while read line; do
   Base=`echo $line | awk -F".FileName|.Filename|.filename" '{ print $2 }' | sed 's/^ *//g'`;
+  
+  # Ignore comments
+  Start=`echo $line | sed 's/^ *//g'`; 
+  if [[ ${Start} == \#* ]] || [[ ${Start} == \/\/* ]]; then
+    continue
+  fi
+  
   echo "Creating concatenation file for simulation \"${Base}\""
   ConcatFileName="${Base}.p${ThreadsID}.sim"
 
