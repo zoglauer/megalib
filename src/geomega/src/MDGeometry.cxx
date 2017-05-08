@@ -131,6 +131,27 @@ MDGeometry::MDGeometry()
   m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
   
   m_LaunchedByGeomega = false;
+  
+  m_BlockedConstants = { "Volume", "Material", "Trigger", "System", 
+    "Strip2D", "MDStrip2D", 
+    "Strip3D", "MDStrip3D", 
+    "Strip3DDirectional", "MDStrip3DDirectional", 
+    "DriftChamber", "MDDriftChamber", 
+    "AngerCamera", "MDAngerCamera", 
+    "Simple", "Scintillator", "ACS", "MDACS", 
+    "Calorimeter", "MDCalorimeter", 
+    "Voxel3D", "MDVoxel3D", 
+    "SurroundingVolume", 
+    "If", "Endif", "For", "Done", "Vector",
+    "H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg",
+    "Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr",
+    "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
+    "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
+    "In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd",
+    "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
+    "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
+    "At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm",
+    "Bk","Cf","Es","Fm","Md","No","Lr" };
 }
 
 
@@ -434,6 +455,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     if (Tokenizer.IsTokenAt(0, "Constant") == true) {
       if (Tokenizer.GetNTokens() != 3) {
         Typo("Line must contain three entries, e.g. \"Constant Distance 10.5\"");
+        return false;
+      }
+      vector<MString>::iterator VIter = find(m_BlockedConstants.begin(), m_BlockedConstants.end(), Tokenizer.GetTokenAt(1));
+      if (VIter != m_BlockedConstants.end()) {
+        Typo("Constant has a reserved name, and thus cannot be used!");
         return false;
       }
       map<MString, MString>::iterator Iter = m_ConstantMap.find(Tokenizer.GetTokenAt(1));

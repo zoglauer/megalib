@@ -239,7 +239,9 @@ class MDGeometry
   vector<MString> m_ConstantList;
   //! A map of all constants and their companions
   map<MString, MString> m_ConstantMap;
-
+  //! A list of all not allowed constants
+  vector<MString> m_BlockedConstants;
+  
   //! The different detector types
   vector<int> m_NDetectorTypes; 
 
