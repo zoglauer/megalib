@@ -245,6 +245,7 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
   Usage<<"         -z:   gzip *.sim files"<<endl;
   //Usage<<"         -p:   parallel ID (used by mcosima)"<<endl;
   //Usage<<"         -f:   incarnation ID (used by mcosima)"<<endl;
+  //Usage<<"         -t:   unique tag ID (used by mcosima)"<<endl;
   Usage<<"         -v:   verbosity (0: Basic Geant, 1: Standard, 2: Debug, 3: All Geant)"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
@@ -341,6 +342,9 @@ bool MCMain::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-p") {
       m_ParallelID = atoi(argv[++i]);
       mout<<"Setting the ID for parallel simulations to "<<m_ParallelID<<endl;
+    } else if (Option == "-t") {
+      // Ignore the tag, it is only used to identify the remotely started processes
+      ++i;
     } else if (Option == "-f") {
       m_IncarnationID = atoi(argv[++i]);
       mout<<"Setting the ID of the simulation file incarnation to "<<m_IncarnationID<<endl;
