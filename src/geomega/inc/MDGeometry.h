@@ -109,6 +109,7 @@ class MDGeometry
   void AddDetector(MDDetector* Detector);
   MDDetector* GetDetectorAt(unsigned int i);
   MDDetector* GetDetector(const MString& Name);
+  MDDetector* GetDetector(MVector Position);
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
 

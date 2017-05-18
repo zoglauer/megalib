@@ -5257,6 +5257,18 @@ MDDetector* MDGeometry::GetDetector(const MString& Name)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MDDetector* MDGeometry::GetDetector(MVector Position)
+{
+  // Return the detector which corresponds to position Pos
+  
+  MDVolumeSequence S = GetVolumeSequence(Position);
+  return S.GetDetector();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 unsigned int MDGeometry::GetDetectorIndex(const MString& Name)
 {
   // Return the index of material with name Name or g_UnsignedIntNotDefined if it does not exist

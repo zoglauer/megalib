@@ -43,7 +43,7 @@ class MDGeometryQuest : public MDGeometry
   // public interface:
  public:
   MDGeometryQuest();
-  ~MDGeometryQuest();
+  virtual ~MDGeometryQuest();
 
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
 
@@ -61,7 +61,6 @@ class MDGeometryQuest : public MDGeometry
                       MVector& PRes, double& ERes, double& TRes);
 
   MDVolume* GetEmbeddingVolume(MVector Position);
-  MDDetector* GetDetector(MVector Position);
   MString GetDetectorName(MVector Position);
   bool AreInSameVoxel(MVector Pos1, MVector Pos2);
 

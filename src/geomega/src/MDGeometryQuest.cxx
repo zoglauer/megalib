@@ -371,18 +371,6 @@ void MDGeometryQuest::AllwaysAssumeTrigger(bool Flag)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDDetector* MDGeometryQuest::GetDetector(MVector Position)
-{
-  // Return the detector which corresponds to position Pos
-
-  MDVolumeSequence S = GetVolumeSequence(Position);
-  return S.GetDetector();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDGeometryQuest::GetDetectorName(MVector Position)
 {
   // Return the name of the detector which corresponds to position Pos

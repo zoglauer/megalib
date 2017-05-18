@@ -108,6 +108,8 @@ class MDStrip2D : public MDDetector
   virtual bool AreNear(const MVector& Pos1, const MVector& dPos1, 
                        const MVector& Pos2, const MVector& dPos2, 
                        const double Sigma, const int Level) const;
+                       
+  //! Given a position in the detector find the strips
   virtual bool DetermineStrips(const MVector& Pos, int& xStrip, int& yStrip) const;
 
   //! Check if all input is reasonable
