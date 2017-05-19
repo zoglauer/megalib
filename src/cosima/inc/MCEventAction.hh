@@ -182,7 +182,9 @@ private:
   G4bool m_StoreOnlyTriggeredEvents;
   /// True if each hit in its own event
   G4bool m_StoreOneHitPerEvent;
-
+  /// The minimum energy an event must have before it is stored
+  double m_StoreMinimumEnergy;
+  
   /// Precision (number of digits after '.') for scientific storage
   int m_StoreScientificPrecision;
 

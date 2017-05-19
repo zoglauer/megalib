@@ -16,6 +16,10 @@
  */
 
 
+// Standard library
+#include<limits>
+using namespace std;
+
 // Cosima:
 #include "MCParameterFile.hh"
 #include "MCPhysicsList.hh"
@@ -57,6 +61,7 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_StoreSimulationInfoIonization(false),
                                      m_StoreOnlyTriggeredEvents(true),
                                      m_StoreOneHitPerEvent(false),
+                                     m_StoreMinimumEnergy(-numeric_limits<double>::max()),
                                      m_DiscretizeHits(true),
                                      m_CheckForOverlaps(false),
                                      m_OverlapCheckResolution(1000),
@@ -423,6 +428,15 @@ bool MCParameterFile::Parse()
       } else {
         Typo(i, "Cannot parse token StoreOneHitPerEvent:"
              " Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreMinimumEnergy", true) == true) {
+      if (T->GetNTokens() == 2) {
+        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1);
+        mdebug<<"Storing only events with at least this amount of energy: "<<m_StoreMinimumEnergy<<endl;
+      } else {
+        Typo(i, "Cannot parse token StoreMinimimumEnergy:"
+        " Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "DiscretizeHits", true) == true) {

@@ -69,6 +69,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip,
   m_StoreCalibrated = RunParameters.StoreCalibrated();
   m_StoreOnlyTriggeredEvents = RunParameters.StoreOnlyTriggeredEvents();
   m_StoreOneHitPerEvent = RunParameters.StoreOneHitPerEvent();
+  m_StoreMinimumEnergy = RunParameters.StoreMinimumEnergy();
 
   if (RunParameters.StoreScientific() == true) {
     m_StoreScientificPrecision = RunParameters.StoreScientificPrecision();
@@ -643,22 +644,25 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
           E[e]->SetID(Run.GetNTriggeredEvents());
         }
 
-        // Save and transmit know if we should do it
-        SaveEventToFile(E[e]);
-        TransmitEvent(E[e]);
-        if (m_RelegateEvents == true) {
-          m_Relegator(E[e]); 
+        if (E[e]->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+          // Save and transmit know if we should do it
+          SaveEventToFile(E[e]);
+          TransmitEvent(E[e]);
+          if (m_RelegateEvents == true) {
+            m_Relegator(E[e]); 
+          }
         }
-
         
         delete E[e];
       }
     } else {
       // Save and transmit know if we should do it
-      SaveEventToFile(m_Event);
-      TransmitEvent(m_Event);
-      if (m_RelegateEvents == true) {
-        m_Relegator(m_Event); 
+      if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+        SaveEventToFile(m_Event);
+        TransmitEvent(m_Event);
+        if (m_RelegateEvents == true) {
+          m_Relegator(m_Event); 
+        }
       }
     }
 

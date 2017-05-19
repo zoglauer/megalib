@@ -116,6 +116,8 @@ public:
   bool StoreOnlyTriggeredEvents() const { return m_StoreOnlyTriggeredEvents; }
   /// Return true, if each hit is stored in an own event
   bool StoreOneHitPerEvent() const { return m_StoreOneHitPerEvent; }
+  /// Return the minimum amount of energy an event must deposit before it is stored (default: -numeric_limits<double>::max())
+  double StoreMinimumEnergy() const { return m_StoreMinimumEnergy; }
   /// Return true, if the hits should be discretized
   bool DiscretizeHits() const { return m_DiscretizeHits; }
   /// Return the watched volumes list
@@ -206,6 +208,8 @@ private:
   bool m_StoreOnlyTriggeredEvents;
   /// True if each hit is stored in its own event
   bool m_StoreOneHitPerEvent;
+  /// An event must at least deposit this amount of energy to be triggered (default: -numeric_limits<double>::max())
+  double m_StoreMinimumEnergy;
   /// True, if hits should be discretized in the volume voxels
   bool m_DiscretizeHits;
   /// List of watched volumes to store enter & exit information
