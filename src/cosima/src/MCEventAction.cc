@@ -586,9 +586,6 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
       }
     }
 
-    mout<<"Storing event "<<Run.GetNTriggeredEvents()
-        <<" of "<<Event->GetEventID()+1<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s ... Please stand by... "<<flush;
-
     // (b) Store the positions and energies or store Strips and counts...
     if (m_StoreCalibrated == true) {
       for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
@@ -633,8 +630,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     } else {
       mout<<"Storing uncalibrated data is no longer supported..."<<endl;
     }
-    
-    mout<<"Done"<<endl;
+
 
     if (m_StoreOneHitPerEvent == true && m_Event->GetNHTs() > 1) {
       vector<MSimEvent*> E = m_Event->CreateSingleHitEvents();
@@ -658,6 +654,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     } else {
       // Save and transmit know if we should do it
       if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
+        mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<Event->GetEventID()+1<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
         SaveEventToFile(m_Event);
         TransmitEvent(m_Event);
         if (m_RelegateEvents == true) {
