@@ -38,7 +38,7 @@ Box1Orientation.Position 0 0 0
 Box1Orientation.Rotation 45 45 0
 
 Shape Subtraction BoxMinusSphere
-BoxMinusSphere.Parameters Sphere1 Box1
+BoxMinusSphere.Parameters Sphere1 Box1 Box1Orientation
 
 Orientation SubtractionsPosition
 SubtractionsPosition.Position -10 0 0
@@ -46,11 +46,13 @@ SubtractionsPosition.Position -10 0 0
 Volume Subtraction
 Subtraction.Material CsI
 Subtraction.Shape BoxMinusSphere
+Subtraction.Color 2
 #Subtraction.Orientation SubtractionsPosition
 Subtraction.Position 0 0 0 
 Subtraction.Mother WorldVolume
 
 Volume Intersection
+Intersection.Color 2
 Intersection.Material CsI
 Intersection.Shape Intersection Sphere1 Box1 Box1Orientation
 #Intersection.Orientation SubtractionsPosition
@@ -58,6 +60,7 @@ Intersection.Position 30 0 0
 Intersection.Mother WorldVolume
 
 Volume Union
+Union.Color 2
 Union.Material CsI
 Union.Shape Union Sphere1 Box1 Box1Orientation
 #Union.Orientation SubtractionsPosition
