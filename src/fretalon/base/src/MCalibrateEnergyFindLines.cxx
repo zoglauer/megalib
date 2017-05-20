@@ -30,6 +30,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MExceptions.h"
+#include "MTimer.h"
 #include "MBinnerFixedNumberOfBins.h"
 #include "MBinnerFixedCountsPerBin.h"
 #include "MBinnerBayesianBlocks.h"
@@ -110,6 +111,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   double RangeBeyondPeak = 2.5;
   //double Epsilon = 0.01;
 
+  MTimer T;
   // Step 1: Create a histogram with the correct binning:
   MBinnerBayesianBlocks Binner;
   Binner.SetMinimumBinWidth(MinimumBinWidthForBayesianBinner);
@@ -123,6 +125,7 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   }
   TH1D* Data = Binner.GetNormalizedHistogram(MString("Data ") + ROGID, "ADC Values", "counts / ADC value");
   Binner.Clear();
+  cout<<"Binner: "<<T.GetElapsed()<<endl;
   
   if (Data->GetNbinsX() < 5) return true;
         
@@ -143,6 +146,8 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
                                       (Data->GetBinCenter(b)-Data->GetBinCenter(b-1))/Average);
   }
 
+  
+  
   // Step 4: Find zero passages + --> -
   bool Start = true;
   bool FirstPeak = false;
@@ -453,7 +458,9 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
     }
   }
 
-       
+  cout<<"Final: "<<T.GetElapsed()<<endl;
+  
+   
   if (m_DiagnosticsMode == true) {
     TLockGuard G(gROOTMutex);
     TCanvas* FirstDerivationCanvas = new TCanvas();

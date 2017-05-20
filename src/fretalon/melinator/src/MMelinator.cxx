@@ -1028,6 +1028,11 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
   ProgressBar.SetTitles("Calibration", "Progress of calibration");
   ProgressBar.SetMinMax(0, m_Store.GetNumberOfReadOutCollections()); 
   
+  m_TimeToFindLines = 0.0;
+  m_TimeToAssignEnergies = 0.0;
+  m_TimeToDetermineModel = 0.0;  
+  
+  
   m_ThreadNextItem = 0;
   m_Threads.resize(m_NThreads);
   m_ThreadIsInitialized.resize(m_NThreads);
@@ -1101,8 +1106,14 @@ bool MMelinator::Calibrate(bool ShowDiagnostics)
     }
   }
   
-  if (g_Verbosity >= c_Info) cout<<"Time spent in calibration: "<<Timer.GetElapsed()<<" sec"<<endl;
-  
+  //if (g_Verbosity >= c_Info) 
+  {
+    cout<<"Time spent in calibration: "<<Timer.GetElapsed()<<" sec"<<endl;
+    cout<<"  + Time spent to find line: "<<m_TimeToFindLines<<" sec"<<endl;
+    cout<<"  + Time spent to assign energies: "<<m_TimeToAssignEnergies<<" sec"<<endl;
+    cout<<"  + Time spent to determine model: "<<m_TimeToDetermineModel<<" sec"<<endl;
+  }
+    
   return true;
 }
 
@@ -1147,25 +1158,35 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     
     unsigned int Verbosity = g_Verbosity;
     if (ShowDiagnostics == true) g_Verbosity = c_Info;
+
+    MTimer Timer;
+  
     
     // Step 1: find the lines
+    Timer.Reset();
     MCalibrateEnergyFindLines FindLines;
     FindLines.SetDiagnosticsMode(ShowDiagnostics);
     FindLines.SetRange(m_HistogramMin, m_HistogramMax);
+    cout<<"T1: "<<Timer.GetElapsed()<<endl;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
       FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
+    cout<<"T2: "<<Timer.GetElapsed()<<endl;
     FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
     FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
+    cout<<"T3: "<<Timer.GetElapsed()<<endl;
     
     if (FindLines.Calibrate() == false) {
       cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
       g_Verbosity = Verbosity;
       return false;
     }
+    cout<<"T4: "<<Timer.GetElapsed()<<endl;
+    m_TimeToFindLines += Timer.GetElapsed();
     
     
     // Step 2: Assign the energies
+    Timer.Reset();
     MCalibrateEnergyAssignEnergies AssignEnergies;
     AssignEnergies.SetMode(m_CalibrationModelEnergyAssignmentMethod);
     AssignEnergies.SetDiagnosticsMode(ShowDiagnostics);
@@ -1181,9 +1202,11 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       g_Verbosity = Verbosity;
       return false;
     }
+    m_TimeToAssignEnergies += Timer.GetElapsed();
     
     
     // Step 3: Determine model
+    Timer.Reset();
     MCalibrateEnergyDetermineModel DetermineModel;
     DetermineModel.SetDiagnosticsMode(ShowDiagnostics);
     DetermineModel.SetRange(m_HistogramMin, m_HistogramMax);
@@ -1200,6 +1223,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       g_Verbosity = Verbosity;
       return false;
     }
+    m_TimeToDetermineModel += Timer.GetElapsed();
     
     
     

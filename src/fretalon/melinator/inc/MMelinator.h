@@ -241,6 +241,16 @@ class MMelinator
   //! ID of the next item to be processed
   unsigned int m_ThreadNextItem;
 
+  // Time the key calibration steps
+  
+  //! Time in seconds to find the lines
+  double m_TimeToFindLines;
+  //! Time to assign energies
+  double m_TimeToAssignEnergies;
+  //! Time to determine model
+  double m_TimeToDetermineModel;
+  
+  
   
 #ifdef ___CINT___
  public:
