@@ -49,9 +49,9 @@ class MString
   MString(MString&& String) : m_String(move(String.m_String)) {} 
   MString(const string& S) { m_String = S; }
   MString(const ostringstream& S) { m_String = S.str(); }
-  MString(const char* S) { m_String = S; }
+  MString(const char* S) { if (S!= nullptr) m_String = S; }
   //! Copy first n characters of S
-  MString(const char* S, unsigned int N) { m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
+  MString(const char* S, unsigned int N) { if (S != nullptr) m_String = string(S, N); /* slower: m_String.assign(S, N); */ }
   MString(const char S) { m_String = S; }
   MString(const short i) { operator+=(i); }
   MString(const unsigned short i) { operator+=(i); }
@@ -69,7 +69,7 @@ class MString
   // Assignment: 
   MString& operator=(const MString& S) { m_String = S.m_String; return *this; }
   MString& operator=(char S) { m_String = S; return *this; }
-  MString& operator=(const char* S) { m_String = S; return *this; }
+  MString& operator=(const char* S) { if (S != nullptr) m_String = S; return *this; }
   //MString& operator=(const TString& S) { m_String = S; return *this; }
   MString& operator=(const string& S) { m_String = S; return *this; }
 
