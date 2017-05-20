@@ -7,7 +7,7 @@ PhysicsListEM                        LivermorePol
 
 # Output formats
 StoreCalibrated                      true
-StoreSimulationInfo                  true
+StoreSimulationInfo                  init-only
 StoreSimulationInfoIonization        false
 DiscretizeHits                       true
 
@@ -22,4 +22,4 @@ MySource.ParticleType               1
 MySource.Beam                       PointSource 0 0 0
 MySource.Orientation                Local File Loop Ring.ori
 MySource.Spectrum                   Mono 511
-MySource.Flux                       1.0
+MySource.Flux                       10000000.0
