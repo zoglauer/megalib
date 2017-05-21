@@ -22,22 +22,30 @@ confhelp() {
   echo "Usage: ./setup.sh [options - all are optional!]";
   echo " "
   echo " "
-  echo "Options for all paths and programs:"
-  echo "--megalib-path=[path to MEGAlib - default: \"MEGAlib\"]"
+  echo "Options:"
+  echo " "
+  echo "--megalibpath=[path to MEGAlib - default: \"MEGAlib\"]"
   echo "    This is the path to where MEGAlib is installed. If the path exists, we will try to update MEGAlib."
   echo "    MEGAlib must have been checked out from one of the Repositories or we cannot use it!"
   echo " "
   echo "--repository=[git or svn - default: git]"
   echo "    The repository from where we are retrieving MEGAlib. Always use git unless you know the svn password :)"
   echo " "
-  echo "--release=[rel or dev]"
+  echo "--release=[rel or dev - default: rel]"
   echo "    Choose between release or development version."
   echo " "
-  echo "--keep-megalib-as-is"
-  echo "    Do not update the MEGAlib from a repository, just recompile it."
-  echo "    You need to set \"--megalib-path\"!"
+  echo "--branch=[name of a git branch - no default]"
+  echo "    If using the git repository and the release is set to development, you can choose the exact git branch"
   echo " "
-  echo "--external-path=[path - default: \"directory given by --megalib-path\"\external]"
+  echo "--keepmegalibasis=[off/no, on/yes - default: off]"
+  echo "    Choose if you want to keep the current MEGAlib installation and just recompile, or if you want to update from the repository and then recompile."
+  echo "    If set to off, you need to set \"--megalib-path\", and --release, --repository, and --branch are ignored!"
+  echo " "
+  echo "--keepenvironmentasis=[off/no, on/yes - default: off]"
+  echo "    By default all relevant environment paths (such as LD_LIBRRAY_PATH, CPATH) are reset to empty"
+  echo "    to avoid most libray conflicts. This flag toggles this behaviour and lets you decide to keep your environment or not."
+  echo " "
+  echo "--externalpath=[path - default: \"directory given by --megalib-path\"\external]"
   echo "    Directory where to install the required version of ROOT and Geant4."
   echo " "
   echo "--root=[path to existing ROOT installation]"
@@ -49,23 +57,22 @@ confhelp() {
   echo "--maxthreads=[integer >=1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
-  echo "--patch=[yes or no (default no)]"
+  echo "--patch=[yes or no - default: no]"
   echo "    Apply MEGAlib internal (!) ROOT or Geant4 patches, if there are any."
   echo " "
-  echo "--debug=[off/no, on/yes]"
-  echo "    Debugging options for ROOT, Geant4 & MEGAlib (Default is on for MEGAlib, but off for ROOT and Geant4)"
+  echo "--debug=[off/no, on/yes - default: off]"
+  echo "    Debugging options for ROOT, Geant4 & MEGAlib."
   echo " "
-  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "--cleanup=[off/no, on/yes - default: off]"
   echo "    Remove intermediate build files"
   echo " "
-  echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher)]"
+  echo "--optimization=[off/no, normal/on/yes, strong/hard (requires gcc 4.2 or higher) - default: on]"
   echo "    Compilation optimization for MEGAlib ONLY (Default is normal)"
   echo " "
-  echo "--updates=[off/no, on/yes]"
+  echo "--updates=[off/no, on/yes - default: off]"
   echo "    Check periodically for updates. Default is off."
   echo "    Even if set to on, update checks will only be performed, if the user has write access to the MEGAlib installation."
   echo " "
-  echo "General options:"
   echo "--help or -h"
   echo "    Show this help."
   echo " "
@@ -133,6 +140,7 @@ echo " "
 # Default options:
 MEGALIBPATH=""
 KEEPMEGALIBASIS="off"
+KEEPENVASIS="off"
 REPOSITORY="git"
 RELEASE="rel"
 EXTERNALPATH=""
@@ -217,8 +225,10 @@ for C in "${CMD[@]}"; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-ma*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-k* ]]; then
-    KEEPMEGALIBASIS="on"
+  elif [[ ${C} == *-keepm* ]]; then
+    KEEPMEGALIBASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-keepe* ]]; then
+    KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-b* ]]; then
     BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
@@ -244,6 +254,9 @@ COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
 UPDATES=`echo ${UPDATES} | tr '[:upper:]' '[:lower:]'`
 PATCH=`echo ${PATCH} | tr '[:upper:]' '[:lower:]'`
 CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
+KEEPMEGALIBASIS=`echo ${KEEPMEGALIBASIS} | tr '[:upper:]' '[:lower:]'`
+KEEPENVASIS=`echo ${KEEPENVASIS} | tr '[:upper:]' '[:lower:]'`
+
 
 
 # Provide feed back and perform error checks:
@@ -255,6 +268,7 @@ if [[ "${HERE}" != "${HERE% *}" ]]; then
   exit 1
 fi
 
+
 if [ "${MEGALIBPATH}" != "" ]; then
   MEGALIBPATH=`absolutefilename ${MEGALIBPATH}`
 fi
@@ -265,11 +279,37 @@ if [[ "${MEGALIBPATH}" != "${MEGALIBPATH% *}" ]]; then
 fi
 echo " * Using this path to MEGAlib: ${MEGALIBPATH}"
 
-if [ "${KEEPMEGALIBASIS}" == "on" ]; then
-  echo " * Keeping the existing MEGAlib installation, just recompile."
-else
+
+if ( [[ ${KEEPMEGALIBASIS} == of* ]] || [[ ${KEEPMEGALIBASIS} == n* ]] ); then
+  KEEPMEGALIBASIS="off"
   echo " * Updating MEGAlib to the latest version"
+elif ( [[ ${KEEPMEGALIBASIS} == on ]] || [[ ${KEEPMEGALIBASIS} == y* ]] ); then
+  KEEPMEGALIBASIS="on"
+  echo " * Keeping the existing MEGAlib installation, just recompiling MEGAlib."
+else
+  echo " "
+  echo "ERROR: Unknown option for keeping MEGAlib or not: ${KEEPMEGALIBASIS}"
+  confhelp
+  exit 1
 fi
+
+
+if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
+  KEEPENVASIS="off"
+  echo " * Clearing the environment paths PATH, LD_LIBRARY_PATH, CPATH"
+  # We cannot clean PATH, otherwise no programs can be found anymore 
+  export LD_LIBRARY_PATH=""
+  export CPATH=""
+elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
+  KEEPENVASIS="on"
+  echo " * Keeping the existing environment paths as is."
+else
+  echo " "
+  echo "ERROR: Unknown option for keeping MEGAlib or not: ${KEEPENVASIS}"
+  confhelp
+  exit 1
+fi
+
 
 if [ "${EXTERNALPATH}" != "" ]; then
   EXTERNALPATH=`absolutefilename ${EXTERNALPATH}`
@@ -280,6 +320,7 @@ if [[ "${EXTERNALPATH}" != "${EXTERNALPATH% *}" ]]; then
   exit 1
 fi
 echo " * Using this path to install external software (ROOT, Geant4): ${EXTERNALPATH}"
+
 
 if [ "${ROOTPATH}" != "" ]; then
   ROOTPATH=`absolutefilename ${ROOTPATH}`
@@ -295,6 +336,7 @@ else
   echo " * Using the installation of ROOT: ${ROOTPATH}"
 fi
 
+
 if [ "${GEANT4PATH}" != "" ]; then
   GEANT4PATH=`absolutefilename ${GEANT4PATH}`
 fi
@@ -308,6 +350,7 @@ if [ "${GEANT4PATH}" == "" ]; then
 else
   echo " * Using the installation of Geant4: ${GEANT4PATH}"
 fi
+
 
 if [[ ${REPOSITORY} == s* ]]; then
   REPOSITORY="svn"
@@ -343,6 +386,7 @@ else
   exit 1
 fi
 
+
 if [[ ${RELEASE} == r* ]]; then
   RELEASE="rel"
   echo " * Using latest release version"
@@ -361,6 +405,7 @@ else
   exit 1
 fi
 
+
 if [[ ${BRANCH} != "" ]]; then
   if [[ ${REPOSITORY} == git ]]; then
     echo " * Using MEGAlib git branch ${BRANCH}"
@@ -369,6 +414,7 @@ if [[ ${BRANCH} != "" ]]; then
     exit 1
   fi
 fi
+
 
 if [[ ${OS} == l* ]]; then
   OS="linux"
@@ -382,6 +428,7 @@ else
   confhelp
   exit 1
 fi
+
 
 if ( [[ ${OPT} == of* ]] || [[ ${OPT} == no ]] ); then
   OPT="off"
@@ -842,7 +889,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee RootBuildLog.txt
+  bash ${MEGALIBDIR}/config/build-root.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} | tee RootBuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
   # If we have a new ROOT dir, copy the build log there
@@ -860,17 +907,6 @@ else
     else
       echo " "
       echo "ERROR: Something went wrong during the ROOT setup."
-      # The check currently happens in configure_compilertest
-      #if [[ ${OS} == darwin ]]; then
-      #  echo " "
-      #  echo "       Since you are on a Mac, the most common problem is that you have not installed/updated the "
-      #  echo "       Xcode command-line tools correctly."
-      #  echo "       Please issue the following command to install them, and rerun the MEGAlib setup script:"
-      #  echo " "
-      #  echo "       xcode-select --install"
-      #  echo " "
-      #  echo "       If this does not help:"
-      #fi
       issuereport
       exit 1
     fi
@@ -911,7 +947,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
-  bash ${MEGALIBDIR}/config/build-geant4.sh -e=${ENVFILE} -p=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} | tee Geant4BuildLog.txt
+  bash ${MEGALIBDIR}/config/build-geant4.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} | tee Geant4BuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
 
@@ -970,7 +1006,6 @@ if [ "$?" != "0" ]; then
 fi
 
 
-
 echo "Compiling MEGAlib..."
 make -j${MAXTHREADS}
 if [ "$?" != "0" ]; then
@@ -979,12 +1014,14 @@ if [ "$?" != "0" ]; then
   exit 1
 fi
 
+
 echo "Renaming and moving the environment script"
 mv ${ENVFILE} bin/source-megalib.sh
 
-echo "Storing last good options"
+
+echo "Storing last good options..."
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
-SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP}"
+SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS}"
 if [[ ${BRANCH} != "" ]]; then
   SETUP+=" --branch=${BRANCH}"
 fi

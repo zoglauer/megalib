@@ -33,6 +33,8 @@ CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 # In case you have trouble with zlib (gz... something error messages)
 # CONFIGUREOPTIONS+=" -Dbuiltin_zlib=ON -Dbuiltin_lzma=ON"
 
+# In case ROOT complains about you python version
+# CONFIGUREOPTIONS+=" -Dpython=OFF"
 
 # Switching off things we do not need right now but which are on by default
 CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dssl=OFF -Dxrootd=OFF"
@@ -70,19 +72,23 @@ confhelp() {
   echo "--tarball=[file name of ROOT tar ball]"
   echo "    Use this tarball instead of downloading it from the ROOT website" 
   echo " "
-  echo "--environment-script=[file name of new environment script]"
-  echo "    File in which the ROOT path is stored. This is used by the MEGAlib setup script" 
+  echo "--sourcescript=[file name of new environment script]"
+  echo "    File in which the MEGAlib environment is/will be stored. This is used by the MEGAlib setup script" 
   echo " "
-  echo "--debug=[off/no, on/yes]"
-  echo "    Default is on."
+  echo "--debug=[off/no, on/yes - default: off]"
+  echo "    Compile with degugging options."
   echo " "
-  echo "--maxthreads=[integer >=1]"
+  echo "--keepenvironmentasis=[off/no, on/yes - default: off]"
+  echo "    By default all relevant environment paths (such as LD_LIBRRAY_PATH, CPATH) are reset to empty to avoid most libray conflicts."
+  echo "    This flag toggles this behaviour and lets you decide to keep your environment or not."
+  echo " "
+  echo "--maxthreads=[integer >=1 - default: 1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
   echo " "
-  echo "--patch=[yes or no (default no)]"
+  echo "--patch=[yes or no - default: no]"
   echo "    Apply MEGAlib internal (!) ROOT patches, if there are any for this version."
   echo " "
-  echo "--cleanup=[off/no, on/yes (default: off)]"
+  echo "--cleanup=[off/no, on/yes - default: off]"
   echo "    Remove intermediate build files"
   echo " "
   echo "--help or -h"
@@ -115,12 +121,13 @@ DEBUGSTRING=""
 DEBUGOPTIONS=""
 PATCH="off"
 CLEANUP="off"
+KEEPENVASIS="off"
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-e*=* ]]; then
+  elif [[ ${C} == *-s*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -130,6 +137,8 @@ for C in ${CMD}; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-cl*=* ]]; then
     CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-k* ]]; then
+    KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
     confhelp
@@ -142,6 +151,8 @@ for C in ${CMD}; do
     exit 1
   fi
 done
+
+
 
 echo ""
 echo ""
@@ -159,6 +170,7 @@ if [ "${TARBALL}" != "" ]; then
     echo " * Using this tarball: ${TARBALL}"    
   fi
 fi
+
 
 if [ "${ENVFILE}" != "" ]; then
   if [[ ! -f "${ENVFILE}" ]]; then
@@ -214,6 +226,7 @@ else
   exit 1
 fi
 
+
 CLEANUP=`echo ${CLEANUP} | tr '[:upper:]' '[:lower:]'`
 if ( [[ ${CLEANUP} == of* ]] || [[ ${CLEANUP} == n* ]] ); then
   CLEANUP="off"
@@ -224,6 +237,24 @@ elif ( [[ ${CLEANUP} == on ]] || [[ ${CLEANUP} == y* ]] ); then
 else
   echo " "
   echo "ERROR: Unknown option for clean up: ${CLEANUP}"
+  confhelp
+  exit 1
+fi
+
+
+KEEPENVASIS=`echo ${KEEPENVASIS} | tr '[:upper:]' '[:lower:]'`
+if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
+  KEEPENVASIS="off"
+  echo " * Clearing the environment paths LD_LIBRARY_PATH, CPATH"
+  # We cannot clean PATH, otherwise no programs can be found anymore 
+  export LD_LIBRARY_PATH=""
+  export CPATH=""
+elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
+  KEEPENVASIS="on"
+  echo " * Keeping the existing environment paths as is."
+else
+  echo " "
+  echo "ERROR: Unknown option for keeping MEGAlib or not: ${KEEPENVASIS}"
   confhelp
   exit 1
 fi
@@ -441,7 +472,6 @@ fi
 echo "Configuring..."
 cd ${ROOTBUILDDIR}
 export ROOTSYS=${ROOTDIR}
-export LD_LIBRARY_PATH=""
 echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}"
 cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
