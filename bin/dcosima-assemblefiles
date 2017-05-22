@@ -122,27 +122,38 @@ while true; do
       eval F="${TOCHECK[$m]}"
 
       # Check for all the files
-      VERYNEWONES=""
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Include" | awk '{print $2}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "^Geometry" | awk  '{print $2}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep FarFieldFileZenithDependent | awk '{print $3}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep FarFieldNormalizedEnergyBeamFluxFunction | awk '{print $3}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep MapProfileBeam | awk '{print $9}'`
-      VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep ActivationSources | awk '{print $2}'`
+      #echo "Analyzing: ${F}"
+      VERYNEWONES=()
+      VERYNEWONES+=(`cat ${F} | grep "^Include" | awk '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep "^Geometry" | awk  '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep FarFieldFileZenithDependent | awk '{print $3}'`)
+      VERYNEWONES+=(`cat ${F} | grep FarFieldNormalizedEnergyBeamFluxFunction | awk '{print $3}'`)
+      VERYNEWONES+=(`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`)
+      VERYNEWONES+=(`cat ${F} | grep MapProfileBeam | awk '{print $9}'`)
+      VERYNEWONES+=(`cat ${F} | grep ActivationSources | awk '{print $2}'`)
       if [[ `cat ${F} | grep "\ File\ "` != "" ]]; then
-        if [[ `cat ${F}  | grep "\ File\ "| awk '{print $2}'` == "File" ]]; then 
-         VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $3}'`
-        elif [[ `cat ${F}  | grep "\ File\ " | grep ".Orientation"` != "" ]]; then
-          VERYNEWONES="${VERYNEWONES} "`cat ${F} | grep "\ File\ " | awk '{print $5}'`
-        fi
+        OLDIFS=${IFS}
+        IFS=$'\n'
+        LINES=(`cat ${F} | grep "\ File\ "`)
+        IFS=${OLDIFS}
+        #echo "LINES:"
+        #printf '%s\n' "${LINES[@]}"
+        for (( i=0; i<=$(( ${#LINES[@]} - 1 )); i++ )); do
+          L=${LINES[$i]}
+          #echo "Line ${L}"
+          if [[ `echo ${L}  | grep "\ File\ " | awk '{print $2}'` == File ]]; then 
+            #echo "Files 2 : $(echo ${L} | grep "\ File\ " | awk '{print $2}')"
+            VERYNEWONES+=(`echo ${L}  | grep "\ File\ " | awk '{print $3}'`)
+          elif [[ `echo ${L}  | grep "\ File\ " | grep ".Orientation"` != "" ]]; then
+            VERYNEWONES+=(`echo ${L}  | grep "\ File\ " | awk '{print $5}'`)
+          fi
+        done
       fi
       
-      #VERYNEWONES="${VERYNEWONES//$\(MEGALIB\)/$\{MEGALIB\}}"
-      #echo "Very new: ${VERYNEWONES}"
+      #echo "Very new: ${VERYNEWONES[@]}"
       
       DIR=`dirname ${F}`
-      for N in ${VERYNEWONES}; do
+      for N in ${VERYNEWONES[@]}; do
         ORIG=${N}
         N="${N//$\(MEGALIB\)/$\{MEGALIB\}}"
         eval N=${N}
