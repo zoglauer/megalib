@@ -127,7 +127,7 @@ KEEPENVASIS="off"
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-s*=* ]]; then
+  elif [[ ${C} == *-s*=* ]] || [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-m*=* ]]; then
     MAXTHREADS=`echo ${C} | awk -F"=" '{ print $2 }'`

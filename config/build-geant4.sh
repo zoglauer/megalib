@@ -105,7 +105,7 @@ KEEPENVASIS="off"
 for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-s*=* ]]; then
+  elif [[ ${C} == *-s*=* ]] || [[ ${C} == *-e*=* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
   elif [[ ${C} == *-m*=* ]]; then
