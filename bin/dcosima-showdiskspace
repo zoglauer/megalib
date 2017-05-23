@@ -60,17 +60,20 @@ ALLALLOWED="0"
 ALLPOSSIBLE="0"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
+  echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}:"
+  
   # Do a quick test if the machine is available:
   REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
+    echo "   - NOT ACCESSIBLE"
     continue
   fi  
 
   # Check if we have a configuration file
   CONFIGFILE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo \"NOT FOUND\"; fi; echo \"FOUND\";"`
   if [ "${CONFIGFILE}" == "NOT FOUND" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NO dcosima configuration file found"
+    echo "   - NO dcosima configuration file found"
+    echo " "
     continue
   fi
 
@@ -78,32 +81,57 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
   MASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NO place to store the simulated data is given in the .dcosima.cfg file"
+    echo "   - NO directory to store the simulated data is given in the .dcosima.cfg file"
     continue
   fi
   MASTERDIR=`echo ${MASTERDIR} | awk '{ print $2 }'`
   if [ "${MASTERDIR}" == "" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Can not read the simulation directory in the .dcosima.cfg file"
+    echo "   - Cannot read the simulation directory in the .dcosima.cfg file"
     continue
   fi
 
   # Create the directory if it does not yet exist...
   ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi"
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to create the simulation directory"
+    echo "   - Unable to create the simulation directory"
+    echo " "
     continue
   fi
   
   # Check the disk space
-  DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MASTERDIR}; df -k . -P -T -BG | tail -n 1"`
+  FREEDISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${MASTERDIR}; df -k . -P -T -BG | tail -n 1"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to determine free disk space!"
+    echo "   - Unable to determine free disk space!"
+    echo " "
     continue
   fi
-  DISKSPACE=$(echo ${DISKSPACE}  | awk '{ print $5 }' | sed 's/.$//' )
+  FREEDISKSPACE=$(echo ${FREEDISKSPACE}  | awk '{ print $5 }' | sed 's/.$//' )
+  echo "   - Free disk space: ${FREEDISKSPACE} GByte"
   
-  echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Free disk space: ${DISKSPACE} GByte"
+  # Get the directories & the disk space used
+  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); for i in $(ls -dtr */); do cd ${i}; DU=$(du -h -s); DU=${DU//.}; echo "${i%%/}: ${DU}\n"; cd ..; done;'
+  SPACEANDDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  if [ "$?" != "0" ]; then
+    echo "   - Unable to retrieve the directories!"
+    echo " "
+    continue
+  fi
+  
+  if [[ ${SPACEANDDIR} != "" ]]; then 
+    echo "   - Run directories:"
+    OLDIFS=${IFS}; 
+    IFS=$'\n'; 
+    LINES=( $(echo -e ${SPACEANDDIR} | column -t -c 2) ); 
+    IFS=${OLDIFS}; 
+    for L in "${LINES[@]}"; do 
+      echo "     ${L}"; 
+    done
+  else
+    echo "   - No run directories found"  
+  fi
 done
 
+
+echo " "
 
 exit 0
