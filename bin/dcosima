@@ -18,18 +18,18 @@ commandhelp() {
   echo "Usage: dcosima [options]";
   echo ""
   echo "Options:"
+  echo "  --name=[name]: The name of the run, which will also be the prefix for the output directory"
   echo "  --instances=[number]: The number of instances to use"
   echo "  --source=[filename]: The source file"
-  echo "  --prefix=[name]: A name (prefix) prepended to the output directory"
   echo "  --continue=[name]: Continue a simulation run with the given name (ignores --source & --prefix)"
-  echo "  --log: Create a log file of what is started where"
-  echo "  --delay: Time between searches for new slots (the longer the time the lower the priority of this instance)"
+  echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
   echo "  --zip: Compress the output files."
+  echo "  --log: Create a log file of what is started where"
   echo "  --help: Show this help."
   echo ""
   echo "";
   echo "Example: "
-  echo "  dcosima --source=Crab.source";
+  echo "  dcosima -s=Crab.source -i=10 -p=CrabSim -z";
   echo "";
 }
 
@@ -50,7 +50,7 @@ done
 # Default options:
 SOURCE=""
 INSTANCES="1"
-PREFIX="Run"
+PREFIX=""
 ZIP="FALSE"
 CONTINUE=""
 LOG="FALSE"
@@ -70,7 +70,7 @@ for C in "${CMD[@]}"; do
     SOURCE=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-p*=* ]]; then
+  elif [[ ${C} == *-n*=* ]] || [[ ${C} == *-p*=* ]]; then
     PREFIX=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-c*=* ]]; then
     CONTINUE=`echo ${C} | awk -F"=" '{ print $2 }'`
@@ -183,10 +183,10 @@ if [[ ${NUMBEROFRUNS} == 0 ]]; then
 fi
 
 if [[ ${PREFIX} != "" ]]; then
-  echo " * Prefix to the output directory: ${PREFIX}"
+  echo " * Name of this run and prefix to the output directory: ${PREFIX}"
 else
   echo " "
-  echo "ERROR: You need to give a prefix to the output directory"
+  echo "ERROR: You should give a unique name to this run."
   commandhelp
   exit 1
 fi
