@@ -79,7 +79,8 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
   
   # Check that cosima is installed
-  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
+  #GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
+  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git log -1 --pretty=format:"%h %cd" --date=short'`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Unable to retrieve git version!"
     MACHINES[$m]=""
@@ -129,9 +130,11 @@ else
   echo " "
   if [[ ${IDENTICAL} == "no" ]]; then
     echo "Not all machines run the same version of MEGAlib. Update MEGAlib!"
+    echo " "
     exit 1
   else 
     echo "GOOD: All machines are accessible and run the same version of MEGAlib!"
+    echo " "
   fi
 fi
   
