@@ -149,38 +149,38 @@ echo " "
 
 
 # Check if the host is available:
-echo "* Checking if host is available..."
+echo " * Checking if host is available..."
 REMOTECOMMAND='hostname'
 HOST=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to access the host" | ${LOGGING}
   exit 1
 fi
-echo "  --> Host ${HOST} is accessible"
+echo "   --> Host ${HOST} is accessible"
 
 
 # Check if cosima is available:
-echo "* Checking if host has cosima installed..."
+echo " * Checking if host has cosima installed..."
 AVAILABLE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; type cosima > /dev/null" 2>&1`
 if [ "${AVAILABLE}" != "" ]; then
   echo "ERROR: Cosima not found!" | ${LOGGING}
   exit 1
 fi
-echo "  --> Cosima found on machine"
+echo "   --> Cosima found on machine"
 
 
 # Check if we have a configuration file
-echo "* Checking if host has a dcosima configuration file"
+echo " * Checking if host has a dcosima configuration file"
 CONFIGFILE=`ssh -q -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -f ~/.dcosima.cfg ]]; then exit 1; fi; exit 0;"`
 if [ "$?" != "0" ]; then
   echo "ERROR: dcosima configuration file not found" | ${LOGGING}
   exit 1
 fi
-echo "  --> Cosima configuration file found"
+echo "   --> Cosima configuration file found"
 
 
 # Check if we have a global directory defined in the configuration file, if yes we will use that one
-echo "* Checking for remote global directory..."
+echo " * Checking for remote global directory..."
 REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
 MASTERDIR=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
@@ -194,11 +194,11 @@ if [ "${MASTERDIR}" == "" ]; then
   echo "       Make sure you have a directory in the remote .dcosima.cfg file" | ${LOGGING}
   exit 1
 fi
-echo "  --> Master directory: ${MASTERDIR}"
+echo "   --> Master directory: ${MASTERDIR}"
 
 
 # Check if we have a nice level defined in the configuration file, if yes we will use that one
-echo "* Checking for nice level..."
+echo " * Checking for nice level..."
 REMOTECOMMAND='COUNT=`grep -c ^nice ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^nice ~/.dcosima.cfg; fi;'
 NICELEVEL=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} 'bash -s' <<< ${REMOTECOMMAND} )
 if [ "$?" != "0" ]; then
@@ -214,12 +214,12 @@ if [ "${NICELEVEL}" != "" ]; then
 else
   NICELEVEL="0"
 fi
-echo "  --> Nice level: ${NICELEVEL}"
+echo "   --> Nice level: ${NICELEVEL}"
 
 
 # Make global directory
 echo " * Testing/making remote global directory \"${MASTERDIR}\"..." 
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi; exit 0;"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} "if [[ ! -d ${MASTERDIR} ]]; then mkdir ${MASTERDIR}; fi;"
 if [ "$?" != "0" ]; then
   echo "ERROR: Failed to create remote global directory" | ${LOGGING}
   exit 1
