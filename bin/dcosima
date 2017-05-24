@@ -336,6 +336,14 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       MACHINES[$m]=""
       continue
     fi
+
+    # Create the directory if it does not yet exist...
+    ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${REMOTEMASTERDIR} ]]; then mkdir ${REMOTEMASTERDIR}; fi"
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to create master directory!"
+      MACHINES[$m]=""
+      continue
+    fi
     
     # Check if we have enough disk space free
     DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${REMOTEMASTERDIR}; df -k . -P -T -BG | tail -n 1"`
