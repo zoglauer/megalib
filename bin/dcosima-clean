@@ -9,14 +9,14 @@
 
 commandhelp() {
   echo ""
-  echo "dcosima-clean - clean the dcosima directory on the remote machines";
+  echo "dcosima-clean - clean a run from the dcosima directory on the remote machines";
   echo "Copyright by Andreas Zoglauer"
   echo ""
   echo "Usage: dcosima-clean [options]";
   echo ""
   echo "Options:"
-  echo "  --directory=[run name]: Removes the directories of a specific run. "
-  echo "                          Used dcosima-showdiskspace to see all runs with not cleaned directories"
+  echo "  --name=[run name]: Name of the run whose directory we shuld remove."
+  echo "                     Used dcosima-showdiskspace to see all runs with not cleaned directories"
   echo "  --help: Show this help."
   echo ""
   echo "";
@@ -41,7 +41,6 @@ done
 # Default options:
 CFG=~/.dcosima.cfg
 REMOTEDIR="DCOSIMA_!!!!_IDONOTEXIST"
-MEGALIBPATH="Science/Software"
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
@@ -60,7 +59,7 @@ for C in "${CMD[@]}"; do
 done
 
 if [[ ${REMOTEDIR} == "DCOSIMA_!!!!_IDONOTEXIST" ]]; then
-  echo "ERROR: You need to give a dcosima run directory"
+  echo "ERROR: You need to give a dcosima run name"
   exit 1
 fi
 
@@ -110,7 +109,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   for D in ${DIRECTORIES}; do
     D=${D%%/}
     if [[ ${D} == *_ID* ]] && [[ ${D} == ${REMOTEDIR} ]]; then
-      # If yes we remove it
+      # If yes, we remove it
       echo " * Cleaning ${REMOTEMASTERDIR}/${D} on ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}..."
       ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${REMOTEMASTERDIR} ]]; then rm -rf ${REMOTEMASTERDIR}/${D}; fi; exit 0;"
       CLEANED="YES"
