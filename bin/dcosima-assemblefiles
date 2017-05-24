@@ -156,7 +156,9 @@ while true; do
       for N in ${VERYNEWONES[@]}; do
         ORIG=${N}
         N="${N//$\(MEGALIB\)/$\{MEGALIB\}}"
+        #N="${N//$\(NUCLEARIZER\)/$\{NUCLEARIZER\}}"
         eval N=${N}
+        if [ "$?" != "0" ]; then exit 1; fi  # Above line can fail, if there are uncommon paths to expand 
         eval N=${N}
         if [[ ${N} != /* ]]; then
           N="${DIR}/${N}"
