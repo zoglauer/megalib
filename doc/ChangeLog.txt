@@ -27,6 +27,7 @@ Cosima:
 + Orientations
 + StoreMinimumEnergy: Store only events which deposited at least this
   amount of energy
++ Improved dcosima distributed simulation
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)
