@@ -75,10 +75,10 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   for ((index=0; index < ${#RUNNINGCOSIMAS[@]}; index++)); do
     if [ "${RUNNINGCOSIMAS[index]}" == "-t" ]; then
       RUN=${RUNNINGCOSIMAS[index+1]}
-      if [[ ${MAP[RUN]} == "" ]]; then
+      if [[ ${MAP[${RUN}]} == "" ]]; then
         MAP[${RUN}]=0
       fi
-      MAP[${RUN}]=$(( ${MAP[${RUN}]} + 1 ))
+      MAP[${RUN}]=$(( MAP[${RUN}] + 1 ))
     fi
   done
   
