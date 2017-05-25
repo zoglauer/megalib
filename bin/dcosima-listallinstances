@@ -59,7 +59,7 @@ echo "Gathering data... this might take a minute..."
 echo " " 
 
 
-OUTPUT=$"Instances: Available / Running / Allowed #\n"
+OUTPUT=$"Instances:# Available #/# Running #/# Allowed\n"
 OUTPUT+=$" # \n"
 ALLALLOWED="0"
 ALLPOSSIBLE="0"
