@@ -101,7 +101,7 @@ echo " "
 echo "Joining files..."
 echo " "
 
-responsemainpulator -j ${NAME}
+responsemanipulator -j ${NAME}
 
 echo "Done"
 echo " "
