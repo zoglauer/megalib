@@ -87,12 +87,12 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Convert to a string in the evta file
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
-  unsigned int GetEventID();
-  void SetEventID(unsigned int ID);
+  unsigned long GetEventID();
+  void SetEventID(unsigned long ID);
 
   // Depreciated:
-  unsigned int GetEventId() { mdep<<"Please use: GetEventID"<<show; return GetEventID(); }
-  void SetEventId(unsigned int ID) { mdep<<"Please use: SetEventID"<<show; SetEventID(ID); }
+  unsigned long GetEventId() { mdep<<"Please use: GetEventID"<<show; return GetEventID(); }
+  void SetEventId(unsigned long ID) { mdep<<"Please use: SetEventID"<<show; SetEventID(ID); }
 
   MTime GetEventTime() const { return m_EventTime; }
   void SetEventTime(MTime Time) { m_EventTime = Time; }
@@ -258,7 +258,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! The time this event happened
   MTime m_EventTime;
   //! The numerical ID
-  unsigned int m_EventID;
+  unsigned long m_EventID;
   //! The type (Compton, etc.)
   int m_EventType;
   //! The rejection reason, if any

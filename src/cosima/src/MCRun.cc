@@ -48,8 +48,8 @@ const int MCRun::c_StopByTime = 2;
 MCRun::MCRun()
 {
   m_Duration = numeric_limits<double>::max();
-  m_Triggers = numeric_limits<int>::max();
-  m_Events = numeric_limits<int>::max();
+  m_Triggers = numeric_limits<long>::max();
+  m_Events = numeric_limits<long>::max();
   m_StopCondition = c_StopByTriggers;
 
   m_SimulatedTime = 0.0;
@@ -103,7 +103,7 @@ bool MCRun::SetDuration(const double& Duration)
 /******************************************************************************
  * Return true, if the triggers could be set correctly
  */
-bool MCRun::SetTriggers(const int& Triggers) 
+bool MCRun::SetTriggers(const long& Triggers) 
 { 
   if (Triggers > 0) {
     m_Triggers = Triggers;
@@ -118,7 +118,7 @@ bool MCRun::SetTriggers(const int& Triggers)
 /******************************************************************************
  * Return true, if the events could be set correctly
  */
-bool MCRun::SetEvents(const int& Events) 
+bool MCRun::SetEvents(const long& Events) 
 { 
   if (Events > 0) {
     m_Events = Events;
@@ -434,13 +434,13 @@ bool MCRun::CheckStopConditions()
     return true;
   }
 
-  if (m_NTriggeredEvents == numeric_limits<int>::max()) {
-    mout<<"Maximum number of triggered events ("<<numeric_limits<int>::max()<<") reached"<<endl;
+  if (m_NTriggeredEvents == numeric_limits<long>::max()) {
+    mout<<"Maximum number of triggered events ("<<numeric_limits<long>::max()<<") reached"<<endl;
     return true;
   }
 
-  if (m_NSimulatedEvents == numeric_limits<int>::max()) {
-    mout<<"Maximum number of simulated events ("<<numeric_limits<int>::max()<<") reached"<<endl;
+  if (m_NSimulatedEvents == numeric_limits<long>::max()) {
+    mout<<"Maximum number of simulated events ("<<numeric_limits<long>::max()<<") reached"<<endl;
     return true;
   }
 

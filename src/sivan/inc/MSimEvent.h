@@ -69,14 +69,14 @@ class MSimEvent : public MRotationInterface
   void Reset();
 
   //! Set the event ID
-  void SetID(const int ID) { m_NEvent = ID; }
+  void SetID(const long ID) { m_NEvent = ID; }
   //! Get the event ID
-  int GetID() const { return m_NEvent; }
+  long GetID() const { return m_NEvent; }
 
   //! Set the simulation event ID of this event, i.e. the started number of events
-  void SetSimulationEventID(int ID) { m_NStartedEvent = ID; }
+  void SetSimulationEventID(long ID) { m_NStartedEvent = ID; }
   //! Get the simulation event ID of this event, i.e. the started number of events  
-  int GetSimulationEventID() const { return m_NStartedEvent; }
+  long GetSimulationEventID() const { return m_NStartedEvent; }
 
   //! Set the time of the event
   void SetTime(const MTime Time) { m_Time = Time; }
@@ -315,14 +315,14 @@ class MSimEvent : public MRotationInterface
 
   // Depreciated:
 
-  void SetEventNumber(int EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
-  int GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }
+  void SetEventNumber(long EventNumber) { mdep<<"Please use: SetID"<<show; m_NEvent = EventNumber; }
+  long GetEventNumber() { mdep<<"Please use: GetID"<<show; return m_NEvent; }
 
-  void SetId(const int Id) { mdep<<"Please use: SetID"<<show; m_NEvent = Id; }
-  int GetId() const { mdep<<"Please use: GetID"<<show; return m_NEvent; }
+  void SetId(const long Id) { mdep<<"Please use: SetID"<<show; m_NEvent = Id; }
+  long GetId() const { mdep<<"Please use: GetID"<<show; return m_NEvent; }
 
-  void SetStartedEventNumber(int EventNumber) { mdep<<"Please use: SetSimulationEventID"<<show; SetSimulationEventID(EventNumber); } ;
-  int GetStartedEventNumber() { mdep<<"Please use: GetSimulationEventID"<<show; return GetSimulationEventID(); };
+  void SetStartedEventNumber(long EventNumber) { mdep<<"Please use: SetSimulationEventID"<<show; SetSimulationEventID(EventNumber); } ;
+  long GetStartedEventNumber() { mdep<<"Please use: GetSimulationEventID"<<show; return GetSimulationEventID(); };
 
 
   // public constants
@@ -370,9 +370,9 @@ class MSimEvent : public MRotationInterface
   vector<MString> m_CCs;   
 
   //! Event ID
-  unsigned int m_NEvent;
+  unsigned long m_NEvent;
   //! Number of simulated events up to this event ID
-  unsigned int m_NStartedEvent;    
+  unsigned long m_NStartedEvent;    
 
   // Special measurements: 
   //! Time of the (start) of the event

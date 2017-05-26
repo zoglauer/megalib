@@ -392,8 +392,8 @@ bool MSimEvent::ParseLine(MString LineBuffer, int Version)
 
   // Start Event:
   if (LineBuffer[0] == 'I' && LineBuffer[1] == 'D') {
-    if (sscanf(LineBuffer.Data(),"ID %d %d\n",&m_NEvent, &m_NStartedEvent) != 2) {
-      if (sscanf(LineBuffer.Data(),"ID %d\n",&m_NEvent) != 1) {
+    if (sscanf(LineBuffer.Data(),"ID %lu %lu\n",&m_NEvent, &m_NStartedEvent) != 2) {
+      if (sscanf(LineBuffer.Data(),"ID %lu\n",&m_NEvent) != 1) {
         mout<<"Error during scanning of sim file in token ID!"<<endl;
         mout<<"  "<<LineBuffer<<endl;
         Ret = false;

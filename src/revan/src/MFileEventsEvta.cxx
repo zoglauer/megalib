@@ -53,7 +53,7 @@ ClassImp(MFileEventsEvta)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const int MFileEventsEvta::c_NoId = -1;
+const long MFileEventsEvta::c_NoId = -1;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -242,7 +242,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
       
       // Backward compatibility: The SE keyword may contain the event ID
       if (Line[0] == 'S' && Line[1] == 'E') {
-        if (sscanf(Line.Data(), "SE%i", &m_EventId) != 1) {
+        if (sscanf(Line.Data(), "SE%lu", &m_EventId) != 1) {
           m_EventId = c_NoId;
         }
       }
@@ -295,9 +295,9 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
             if (sscanf(Line.Data(), "IA INIT %*d;%*d;%*d;%*f;%lf;%lf;%lf;%*d;%*f;%*f;%*f;%*f;%*f;%*f;%*f;%*d;%lf;%lf;%lf;%lf;%lf;%lf;%lf",
               &x, &y, &z, &dx, &dy, &dz, &px, &py, &pz, &e) == 10) {
               ostringstream out;
-            out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
-            Line = out.str().c_str();
-              }
+              out<<"OI "<<x<<";"<<y<<";"<<z<<";"<<dx<<";"<<dy<<";"<<dz<<";"<<px<<";"<<py<<";"<<pz<<";"<<e<<endl;
+              Line = out.str().c_str();
+            }
           }
         }
       }

@@ -441,7 +441,7 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
   String = MString("");
 
   // Header:
-  sprintf(Text, "Raw Event (%i) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n", 
+  sprintf(Text, "Raw Event (%lu) at %lf s with %d hits and %.2f+-%.2f keV, starting with (%d):\n", 
           m_EventID, m_EventTime.GetAsSeconds(), GetNRESEs(), GetEnergy(), m_EnergyResolution, (m_Start != 0) ? m_Start->GetID() : -1);
   for (int i = 0; i < Level; i++) String += MString("   ");
   String += MString(Text);
@@ -592,7 +592,7 @@ int MRERawEvent::GetVertexDirection()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRERawEvent::SetEventID(unsigned int Id)
+void MRERawEvent::SetEventID(unsigned long Id)
 {
   m_EventID = Id;
 }
@@ -601,7 +601,7 @@ void MRERawEvent::SetEventID(unsigned int Id)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MRERawEvent::GetEventID()
+unsigned long MRERawEvent::GetEventID()
 {
   return m_EventID;
 }
@@ -1549,8 +1549,8 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     }  
   } else if (Line[0] == 'I' && Line[1] == 'D') {
     // Store the event ID
-    if (sscanf(Line, "ID %i %*i", &m_EventID) != 1) {
-      if (sscanf(Line, "ID %i", &m_EventID) != 1) {
+    if (sscanf(Line, "ID %lu %*u", &m_EventID) != 1) {
+      if (sscanf(Line, "ID %lu", &m_EventID) != 1) {
         Ret = 1;
       }
     }  

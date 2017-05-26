@@ -73,8 +73,8 @@ class MPhysicalEvent : public MRotationInterface
   void SetTime(const MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
 
-  void SetId(const unsigned int Id) { m_Id = Id; }
-  unsigned int GetId() const { return m_Id; };
+  void SetId(const unsigned long Id) { m_Id = Id; }
+  unsigned long GetId() const { return m_Id; };
 
   void SetTimeWalk(const int TimeWalk) { m_TimeWalk = TimeWalk; }
   int GetTimeWalk() const { return m_TimeWalk; }
