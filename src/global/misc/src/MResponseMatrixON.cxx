@@ -428,7 +428,7 @@ bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
     return false;
   }
 
-  for (unsigned int a = 0; a < m_Order; ++a) {
+  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     if (Bins[a] >= m_Axes[a]->GetNumberOfBins()) {
       return false;
     }
