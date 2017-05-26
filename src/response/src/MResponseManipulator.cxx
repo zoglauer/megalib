@@ -724,7 +724,11 @@ bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
         } else {
           merr<<"Unsupported matrix order: "<<First->GetOrder()<<endl;
         }
+        
+        // Add up the simulated events
+        First->SetSimulatedEvents(First->GetSimulatedEvents() + Append->GetSimulatedEvents());
       }
+            
       delete Append;
 
     }
@@ -733,9 +737,7 @@ bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
     if (AnyZipped == true) NewName += ".gz";
     First->Write(NewName, true);
     delete First;
-
   }
-
 
   return true;
 }
