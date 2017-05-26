@@ -101,7 +101,7 @@ bool MResponseImagingBinnedMode::Initialize()
   m_ImagingResponse.AddAxis(AxisEnergyMeasured);
   m_ImagingResponse.AddAxis(AxisPhi);
   m_ImagingResponse.AddAxis(AxisScatteredGammaRayCoordinates);
-   if (m_SiReader != nullptr) {
+  if (m_SiReader != nullptr) {
     m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
   
