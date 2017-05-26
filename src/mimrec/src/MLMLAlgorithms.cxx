@@ -65,7 +65,8 @@ MLMLAlgorithms::MLMLAlgorithms()
   m_MaxNIterations = 10;
 
   m_NThreads = 1;
-
+  m_NUsedThreads = 1;
+  
   //m_NIterations = 0;
   m_NPerformedIterations = 0;
 
@@ -245,13 +246,20 @@ void MLMLAlgorithms::CalculateEventApportionment()
 
   unsigned int Split = m_Storage.size() / m_NThreads;
 
-  for (unsigned int i = 0; i < m_NThreads; ++i) {
+  if (Split == 0) {
+    m_NUsedThreads = 1;
+    Split = m_Storage.size();
+  } else {
+    m_NUsedThreads = m_NThreads;
+  }
+  
+  for (unsigned int i = 0; i < m_NUsedThreads; ++i) {
     unsigned int Start = 0;
     if (m_EventApportionment.size() != 0) {
       Start = m_EventApportionment.back().second + 1;
     }
     unsigned int Stop = Start + Split - 1;
-    if (i == m_NThreads - 1) {
+    if (i == m_NUsedThreads - 1) {
       Stop = m_Storage.size() - 1;
     }
     m_EventApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));

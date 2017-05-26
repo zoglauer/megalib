@@ -111,16 +111,23 @@ void MLMLOSEM::CalculateEventApportionment()
   cout<<"OS-EM: You have "<<m_NEvents<<" events, thus I use "<<m_NUsedSubSets<<" subsets."<<endl;
 
   unsigned int Split = m_Storage.size() / m_NThreads / m_NUsedSubSets;
+  if (Split == 0) {
+    m_NUsedThreads = 1;
+    Split = m_Storage.size() / m_NUsedThreads / m_NUsedSubSets;
+  } else {
+    m_NUsedThreads = m_NThreads; 
+  }
 
-  for (unsigned int i = 0; i < m_NThreads*m_NUsedSubSets; ++i) {
+  for (unsigned int i = 0; i < m_NUsedThreads*m_NUsedSubSets; ++i) {
     unsigned int Start = 0;
     if (m_EventApportionment.size() != 0) {
       Start = m_EventApportionment.back().second + 1;
     }
     unsigned int Stop = Start + Split - 1;
-    if (i == m_NThreads*m_NUsedSubSets - 1) {
+    if (i == m_NUsedThreads*m_NUsedSubSets - 1) {
       Stop = m_Storage.size() - 1;
     }
+    //cout<<"Split: "<<Start<<":"<<Stop<<endl;
     m_EventApportionment.push_back(pair<unsigned int, unsigned int>(Start, Stop));
   }
 }
@@ -136,9 +143,9 @@ bool MLMLOSEM::DoOneIteration()
   for (unsigned int i = 0; i < m_NEvents; i++) m_Yi[i] = 0.0;
 
   // Everything happens in the main thread
-  if (m_NThreads == 1) {
+  if (m_NUsedThreads == 1) { 
     for (unsigned int s = 0; s < m_NUsedSubSets; ++s) {
-      cout<<"Subset: "<<s+1<<"/"<<m_NUsedSubSets<<endl;
+      //cout<<"Subset: "<<s+1<<"/"<<m_NUsedSubSets<<endl;
       // Convolve:
       Convolve(m_EventApportionment[s].first, m_EventApportionment[s].second);
 
@@ -154,15 +161,15 @@ bool MLMLOSEM::DoOneIteration()
     for (unsigned int s = 0; s < m_NUsedSubSets; ++s) {
       //cout<<"Subset: "<<s+1<<"/"<<m_NUsedSubSets<<endl;
       // Convolution:
-      vector<thread> Threads(m_NThreads);
-      m_ThreadRunning.resize(m_NThreads, true);
-      for (unsigned int t = 0; t < m_NThreads; ++t) {
+      vector<thread> Threads(m_NUsedThreads);
+      m_ThreadRunning.resize(m_NUsedThreads, true);
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         m_ThreadRunning[t] = true;
-        Threads[t] = thread(&MLMLOSEM::ConvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NThreads].first, m_EventApportionment[t + s*m_NThreads].second);
+        Threads[t] = thread(&MLMLOSEM::ConvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NUsedThreads].first, m_EventApportionment[t + s*m_NUsedThreads].second);
       }
       while (true) {
         bool Finished = true;
-        for (unsigned int t = 0; t < m_NThreads; ++t) {
+        for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
           if (m_ThreadRunning[t] == true) {
             Finished = false;
             break;
@@ -171,7 +178,7 @@ bool MLMLOSEM::DoOneIteration()
         if (Finished == false) {
           this_thread::sleep_for(chrono::milliseconds(1));
         } else {
-          for (unsigned int t = 0; t < m_NThreads; ++t) {
+          for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
             Threads[t].join();
           }
           break;
@@ -182,13 +189,13 @@ bool MLMLOSEM::DoOneIteration()
       //cout<<"Deconvolving..."<<endl;
       ResetExpectation();
       Threads.clear();;
-      for (unsigned int t = 0; t < m_NThreads; ++t) {
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         m_ThreadRunning[t] = true;
-        Threads[t] = thread(&MLMLOSEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NThreads].first, m_EventApportionment[t + s*m_NThreads].second);
+        Threads[t] = thread(&MLMLOSEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NUsedThreads].first, m_EventApportionment[t + s*m_NUsedThreads].second);
       }
       while (true) {
         bool Finished = true;
-        for (unsigned int t = 0; t < m_NThreads; ++t) {
+        for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
           if (m_ThreadRunning[t] == true) {
             Finished = false;
             break;
@@ -197,7 +204,7 @@ bool MLMLOSEM::DoOneIteration()
         if (Finished == false) {
           this_thread::sleep_for(chrono::milliseconds(1));
         } else {
-          for (unsigned int t = 0; t < m_NThreads; ++t) {
+          for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
             Threads[t].join();
           }
           break;

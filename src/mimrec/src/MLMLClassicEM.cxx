@@ -136,7 +136,7 @@ bool MLMLClassicEM::DoOneIteration()
   // before and after the iteration
 
   // Non-multi-threaded
-  if (m_NThreads == 1) {
+  if (m_NUsedThreads == 1) {
     // Convolve:
     Convolve(0, m_Storage.size()-1);
 
@@ -177,15 +177,15 @@ bool MLMLClassicEM::DoOneIteration()
 
 void MLMLClassicEM::ConvolveMultiThreaded()
 {
-  vector<thread> Threads(m_NThreads);
-  m_ThreadRunning.resize(m_NThreads, true);
-  for (unsigned int t = 0; t < m_NThreads; ++t) {
+  vector<thread> Threads(m_NUsedThreads);
+  m_ThreadRunning.resize(m_NUsedThreads, true);
+  for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
     m_ThreadRunning[t] = true;
     Threads[t] = thread(&MLMLClassicEM::ConvolveThreadEntry, this, t, m_EventApportionment[t].first, m_EventApportionment[t].second);
   }
   while (true) {
     bool Finished = true;
-    for (unsigned int t = 0; t < m_NThreads; ++t) {
+    for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
       if (m_ThreadRunning[t] == true) {
         Finished = false;
         break;
@@ -194,7 +194,7 @@ void MLMLClassicEM::ConvolveMultiThreaded()
     if (Finished == false) {
       this_thread::sleep_for(chrono::milliseconds(1));
     } else {
-      for (unsigned int t = 0; t < m_NThreads; ++t) {
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         Threads[t].join();
       }
       break;
@@ -269,15 +269,15 @@ void MLMLClassicEM::DeconvolveMultiThreaded()
 {
   //cout<<"Deconvolving..."<<endl;
   ResetExpectation();
-  vector<thread> Threads(m_NThreads);
-  m_ThreadRunning.resize(m_NThreads, true);
-  for (unsigned int t = 0; t < m_NThreads; ++t) {
+  vector<thread> Threads(m_NUsedThreads);
+  m_ThreadRunning.resize(m_NUsedThreads, true);
+  for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
     m_ThreadRunning[t] = true;
     Threads[t] = thread(&MLMLClassicEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t].first, m_EventApportionment[t].second);
   }
   while (true) {
     bool Finished = true;
-    for (unsigned int t = 0; t < m_NThreads; ++t) {
+    for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
       if (m_ThreadRunning[t] == true) {
         Finished = false;
         break;
@@ -286,7 +286,7 @@ void MLMLClassicEM::DeconvolveMultiThreaded()
     if (Finished == false) {
       this_thread::sleep_for(chrono::milliseconds(1));
     } else {
-      for (unsigned int t = 0; t < m_NThreads; ++t) {
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         Threads[t].join();
       }
       break;

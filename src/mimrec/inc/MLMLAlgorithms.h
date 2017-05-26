@@ -110,9 +110,11 @@ class MLMLAlgorithms
   //! Number of already performed iterations
   unsigned int m_NPerformedIterations;
 
-  //! The number of threads to be used
+  //! The number of threads intended to be used
   unsigned int m_NThreads;
-
+  //! The number of threads really used
+  unsigned int m_NUsedThreads;
+  
   //! Number of image bins
   unsigned int m_NBins;
   //! Number of events
