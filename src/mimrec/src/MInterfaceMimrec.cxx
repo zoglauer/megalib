@@ -4724,6 +4724,11 @@ void MInterfaceMimrec::LightCurve()
       } else {
         if (Event->GetTime().GetAsDouble() < MinTime) MinTime = Event->GetTime().GetAsDouble();
         if (Event->GetTime().GetAsDouble() > MaxTime) MaxTime = Event->GetTime().GetAsDouble();
+        if (NEvents > 0) {
+          if (TimeList.back() > Event->GetTime().GetAsDouble()) {
+            cout<<"Backwards time jump detected: "<<setprecision(20)<<TimeList.back()<<" --> "<<Event->GetTime().GetAsDouble()<<endl; 
+          }
+        }
         TimeList.push_back(Event->GetTime().GetAsDouble());
         NEvents++;
       }
@@ -6168,11 +6173,28 @@ void MInterfaceMimrec::CreateCosimaOrientationFile()
   out.setf(ios::fixed);
   out.precision(6);
   // First check on the size of the histogram:
-
+  
+  FileName = m_Settings->GetCurrentFileName();
+  FileName.ReplaceAtEnd(".tra.gz", ".onoff");
+  FileName.ReplaceAtEnd(".tra", ".onoff");
+  
+  ofstream lout;
+  lout.open(FileName);
+  lout<<endl;
+  lout<<"Type OnOff"<<endl;
+  lout<<endl;
+  lout.setf(ios::fixed);
+  lout.precision(6);
+  // First check on the size of the histogram:
+  
   double LastXAxisLongitude = -1000;
   double LastXAxisLatitude = -1000;
   double LastZAxisLongitude = -1000;
   double LastZAxisLatitude = -1000;
+  
+  bool First = true;
+  MTime LastTime(0);
+  MTime Gap(5.0); 
   
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
@@ -6192,18 +6214,36 @@ void MInterfaceMimrec::CreateCosimaOrientationFile()
         LastZAxisLongitude = Event->GetGalacticPointingZAxisLongitude();
         LastZAxisLatitude = Event->GetGalacticPointingZAxisLatitude();
       }
+      if (First == false) {
+        if (Event->GetTime() - LastTime > Gap) {
+          cout<<"Off: "<<Event->GetTime()<<":"<<LastTime<<endl;
+          lout<<"DP "<<LastTime<<" off"<<endl;
+          lout<<"DP "<<Event->GetTime()<<" on"<<endl;
+        }
+      } else {
+        lout<<"DP "<<Event->GetTime()<<" on"<<endl;
+        First = false;
+      }
+      LastTime = Event->GetTime();
     }
 
     delete Event;
   }
-
+  if (First == false) {
+    lout<<LastTime<<" off"<<endl;
+  }
+  
   // Close the event loader
   FinalizeEventLoader();
-
+  
   out<<"EN"<<endl;
   out<<endl;
   out.close();
-
+  
+  lout<<"EN"<<endl;
+  lout<<endl;
+  lout.close();
+  
   return;
 }
 
