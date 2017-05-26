@@ -206,7 +206,7 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const MResponseMatrixON& R)
 
 MResponseMatrixON& MResponseMatrixON::operator-=(const MResponseMatrixON& R)
 {
-  // Append a matrix to this one
+  // Subtract a matrix from this one
 
   if (*this == R) {
     for (unsigned int i = 0; i < m_Values.size(); ++i) {
