@@ -255,36 +255,36 @@ bool MDTriggerUnit::HasVetoed()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDTriggerUnit::GetNameTrigger()
+//! Return a list of all the vetoes which have been raised
+vector<MString> MDTriggerUnit::GetTriggerNameList()
 {
-  if (HasTriggered() == true) {
-    // Check for triggers:
-    for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      if (m_Geometry->GetTriggerAt(t)->HasTriggered() == true) {
-        return m_Geometry->GetTriggerAt(t)->GetName();
-      }
+  vector<MString> List;
+  
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    if (m_Geometry->GetTriggerAt(t)->HasTriggered() == true) {
+      List.push_back(m_Geometry->GetTriggerAt(t)->GetName());
     }
   }
-
-  return "";
+  
+  return List;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDTriggerUnit::GetNameVeto()
+vector<MString> MDTriggerUnit::GetVetoNameList()
 {
-  if (HasVetoed() == true) {
-    // Check for vetoes:
-    for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
-        return m_Geometry->GetTriggerAt(t)->GetName();
-      }
+  vector<MString> List;
+  
+  // Check for vetoes:
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
+      List.push_back(m_Geometry->GetTriggerAt(t)->GetName());
     }
   }
-
-  return "";
+  
+  return List;
 }
 
 

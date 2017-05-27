@@ -49,12 +49,19 @@ class MERNoising : public MERConstruction
   //! Add the statistics of the given MERNoising to this one
   void AddStatistics(MERNoising* Noising);
   
-  //! Return the trigger map
-  map<MString, int> GetTriggerMap() const { return m_TriggerMap; }
-  //! Return the veto map
-  map<MString, int> GetVetoMap() const { return m_VetoMap; }
   //! Return the number
-  int GetNNotTriggeredEvents() const { return m_NNotTriggeredEvents; }
+  long GetNTriggeredEvents() const { return m_NTriggeredEvents; }
+  //! Return the number
+  long GetNVetoedEvents() const { return m_NVetoedEvents; }
+  //! Return the number
+  long GetNNotTriggeredOrVetoedEvents() const { return m_NNotTriggeredOrVetoedEvents; }
+  
+  //! Return the trigger map
+  map<MString, long> GetTriggerMapTriggerNames() const { return m_TriggerMapTriggerNames; }
+  //! Return the veto map
+  map<MString, long> GetVetoMapTriggerNames() const { return m_VetoMapTriggerNames; }
+  //! Return the veto map
+  map<MString, long> GetVetoMapVetoNames() const { return m_VetoMapVetoNames; }
 
   //! Give a summary string containing the trigger statistics
   MString ToString(bool CoreOnly = false) const;
@@ -75,12 +82,20 @@ class MERNoising : public MERConstruction
 
   // private members:
  private:
-  //! Which trigger was "triggered" how often
-  map<MString, int> m_TriggerMap;
-  //! Which trigger was "triggered" how often
-  map<MString, int> m_VetoMap;
+  //! The number of events which have triggered
+  long m_NTriggeredEvents;
+  //! For triggered events, list the names of all triggered raised
+  map<MString, long> m_TriggerMapTriggerNames;
+  
+  //! The number of events which have triggered
+  long m_NVetoedEvents;
+  //! For vetoes events, list the names of all triggered raised
+  map<MString, long> m_VetoMapTriggerNames;
+  //! For vetoed events, list the names of all vetoes raised
+  map<MString, long> m_VetoMapVetoNames;
+
   //! The number of events which have not triggered
-  int m_NNotTriggeredEvents;
+  long m_NNotTriggeredOrVetoedEvents;
   
 
 #ifdef ___CINT___

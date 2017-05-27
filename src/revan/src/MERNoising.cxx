@@ -80,10 +80,14 @@ MERNoising::~MERNoising()
 
 bool MERNoising::PreAnalysis()
 {
-  m_NNotTriggeredEvents = 0;
-  m_TriggerMap.clear();
-  m_VetoMap.clear();
-
+  m_NTriggeredEvents = 0;
+  m_NVetoedEvents = 0;
+  m_NNotTriggeredOrVetoedEvents = 0;
+  
+  m_TriggerMapTriggerNames.clear();
+  m_VetoMapTriggerNames.clear();
+  m_VetoMapVetoNames.clear();
+  
   return true;
 }
 
@@ -214,8 +218,18 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
 
 
-  if ((TriggerName = Trigger->GetNameVeto()) != "") {
-    m_VetoMap[TriggerName]++;
+  if (Trigger->HasVetoed() == true) {
+    ++m_NVetoedEvents;
+
+    vector<MString> TriggerNames = Trigger->GetTriggerNameList();
+    for (MString S: TriggerNames) {
+      m_VetoMapTriggerNames[S]++; 
+    }
+    vector<MString> VetoNames = Trigger->GetVetoNameList();
+    for (MString S: VetoNames) {
+      m_VetoMapVetoNames[S]++; 
+    }
+    
     h_max = Event->GetNRESEs();
     for (int h = 0; h < h_max; ++h) {
       RESE = Event->GetRESEAt(h);
@@ -225,11 +239,17 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     }
     Event->CompressRESEs();
     mdebug<<"TG - Event: "<<Event->GetEventID()<<" vetoed by: "<<TriggerName<<endl;
-  } else if ((TriggerName = Trigger->GetNameTrigger()) != "") {
-    m_TriggerMap[TriggerName]++;
+  } else if (Trigger->HasTriggered()) {
+    ++m_NTriggeredEvents;
+    
+    vector<MString> TriggerNames = Trigger->GetTriggerNameList();
+    for (MString S: TriggerNames) {
+      m_TriggerMapTriggerNames[S]++; 
+    }
     mdebug<<"TG - Event: "<<Event->GetEventID()<<" triggered with: "<<TriggerName<<endl;
   } else {
-    m_NNotTriggeredEvents++;
+    ++m_NNotTriggeredOrVetoedEvents;
+    
     h_max = Event->GetNRESEs();
     for (int h = 0; h < h_max; ++h) {
       RESE = Event->GetRESEAt(h);
@@ -312,17 +332,20 @@ void MERNoising::AddStatistics(MERNoising* Noising)
 {
   // Add the statistics
   
-  for (map<MString, int>::const_iterator Iter = Noising->m_TriggerMap.begin();
-       Iter != Noising->m_TriggerMap.end(); ++Iter) {
-    m_TriggerMap[(*Iter).first] += (*Iter).second;
+  for (map<MString, long>::const_iterator Iter = Noising->m_TriggerMapTriggerNames.begin(); Iter != Noising->m_TriggerMapTriggerNames.end(); ++Iter) {
+    m_TriggerMapTriggerNames[(*Iter).first] += (*Iter).second;
   }
 
-  for (map<MString, int>::const_iterator Iter = Noising->m_VetoMap.begin();
-       Iter != Noising->m_VetoMap.end(); ++Iter) {
-    m_VetoMap[(*Iter).first] += (*Iter).second;
+  for (map<MString, long>::const_iterator Iter = Noising->m_VetoMapTriggerNames.begin(); Iter != Noising->m_VetoMapTriggerNames.end(); ++Iter) {
+    m_VetoMapTriggerNames[(*Iter).first] += (*Iter).second;
   }
-
-  m_NNotTriggeredEvents += Noising->m_NNotTriggeredEvents;
+  for (map<MString, long>::const_iterator Iter = Noising->m_VetoMapVetoNames.begin(); Iter != Noising->m_VetoMapVetoNames.end(); ++Iter) {
+    m_VetoMapVetoNames[(*Iter).first] += (*Iter).second;
+  }
+  
+  m_NTriggeredEvents += Noising->m_NTriggeredEvents;
+  m_NVetoedEvents += Noising->m_NVetoedEvents;
+  m_NNotTriggeredOrVetoedEvents += Noising->m_NNotTriggeredOrVetoedEvents;
 }
 
 
@@ -333,39 +356,43 @@ MString MERNoising::ToString(bool) const
 {
   ostringstream out;
 
-  map<MString, int>::const_iterator Iter;
-  int NTriggeredEvents = 0;
-  int NVetoedEvents = 0;
-  for (Iter = m_VetoMap.begin(); Iter != m_VetoMap.end(); ++Iter) {
-    NVetoedEvents += (*Iter).second;
-  }
-  for (Iter = m_TriggerMap.begin(); Iter != m_TriggerMap.end(); ++Iter) {
-    NTriggeredEvents += (*Iter).second;
-  }
-
   int Width = 6;
-  size_t Length = 52;
+  size_t Length = 50;
 
-  if (m_NNotTriggeredEvents > 0 || NTriggeredEvents > 0 || NVetoedEvents > 0) {
+  if (m_NNotTriggeredOrVetoedEvents > 0 || m_NTriggeredEvents > 0 || m_NVetoedEvents > 0) {
+    out<<endl;
     out<<"Trigger statistics:"<<endl;
-    out<<"  Not triggered events: .................................. "<<setw(Width)<<m_NNotTriggeredEvents<<endl;
+    out<<"  Not triggered events: .................................. "<<setw(Width)<<m_NNotTriggeredOrVetoedEvents<<endl;
 
-    out<<"  Number of vetoed events: ............................... "<<setw(Width)<<NVetoedEvents<<endl;
-    for (Iter = m_VetoMap.begin(); Iter != m_VetoMap.end(); ++Iter) {
-      size_t L = (*Iter).first.Length();
-      out<<"    "<<(*Iter).first<<": ";
-      if (L < Length) for (size_t l = 0; l < Length-L; ++l) out<<".";
-      out<<" "<<setw(Width)<<(*Iter).second<<endl;
+    out<<"  Number of vetoed events: ............................... "<<setw(Width)<<m_NVetoedEvents<<endl;
+    if (m_NVetoedEvents > 0) {
+      out<<"    Raised vetoes (multiples possible)"<<endl;
+      for (auto Iter = m_VetoMapVetoNames.begin(); Iter != m_VetoMapVetoNames.end(); ++Iter) {
+        size_t L = (*Iter).first.Length();
+        out<<"      "<<(*Iter).first<<": ";
+        if (L < Length) for (size_t l = 0; l < Length-L; ++l) out<<".";
+        out<<" "<<setw(Width)<<(*Iter).second<<endl;
+      }
+      out<<"    Raised triggers canceled by a veto (multiples possible)"<<endl;
+      for (auto Iter = m_VetoMapTriggerNames.begin(); Iter != m_VetoMapTriggerNames.end(); ++Iter) {
+        size_t L = (*Iter).first.Length();
+        out<<"      "<<(*Iter).first<<": ";
+        if (L < Length) for (size_t l = 0; l < Length-L; ++l) out<<".";
+        out<<" "<<setw(Width)<<(*Iter).second<<endl;
+      }
     }
-
-    out<<"  Number of triggered events: ............................ "<<setw(Width)<<NTriggeredEvents<<endl;
-    for (Iter = m_TriggerMap.begin(); Iter != m_TriggerMap.end(); ++Iter) {
-      size_t L = (*Iter).first.Length();
-      out<<"    "<<(*Iter).first<<": ";
-      if (L < Length) for (size_t l = 0; l < Length-L; ++l) out<<".";
-      out<<" "<<setw(Width)<<(*Iter).second<<endl;
+    
+    out<<"  Number of triggered events: ............................ "<<setw(Width)<<m_NTriggeredEvents<<endl;
+    if (m_NTriggeredEvents > 0) {
+      out<<"    Raised triggers (multiples possible)"<<endl;
+      for (auto Iter = m_TriggerMapTriggerNames.begin(); Iter != m_TriggerMapTriggerNames.end(); ++Iter) {
+        size_t L = (*Iter).first.Length();
+        out<<"      "<<(*Iter).first<<": ";
+        if (L < Length) for (size_t l = 0; l < Length-L; ++l) out<<".";
+        out<<" "<<setw(Width)<<(*Iter).second<<endl;
+      }
     }
-    //out<<"  If several trigger criteria are fulfilled only the first one (according to the sequence in the geometry file) is reported!"<<endl;
+    out<<endl;
   }
 
   return out.str().c_str();

@@ -17,6 +17,8 @@
 
 
 // Standard libs:
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
@@ -65,13 +67,14 @@ class MDTriggerUnit
 
   //! Return true if the last event has raised a trigger
   bool HasTriggered();
-  //! If the last event has raised a trigger, return its name 
-  MString GetNameTrigger();
+  //! Return a list of all the vetoes which have been raised
+  vector<MString> GetTriggerNameList();
+  
   //! Return true if the last event has raised a veto
   bool HasVetoed();
-  //! If the last event has raised a veto, return its name 
-  MString GetNameVeto();
-
+  //! Return a list of all the vetoes which have been raised
+  vector<MString> GetVetoNameList();
+  
 
   // protected methods:
  protected:
