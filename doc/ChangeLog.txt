@@ -28,6 +28,8 @@ Cosima:
 + StoreMinimumEnergy: Store only events which deposited at least this
   amount of energy
 + Improved dcosima distributed simulation
++ Replaced "StoreOnlyTriggeredEvents" with "PreTriggerMode" using 3 modes:
+  Full, EveryEventWithHits & Everything
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)

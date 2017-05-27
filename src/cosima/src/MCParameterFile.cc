@@ -44,6 +44,9 @@ const int MCParameterFile::c_DecayModeBuildUp                 = 2;
 const int MCParameterFile::c_DecayModeActivationBuildUp       = 3;
 const int MCParameterFile::c_DecayModeActivationDelayedDecay  = 4;
 
+const int MCParameterFile::c_PreTriggerEverything             = 0;
+const int MCParameterFile::c_PreTriggerEveryEventWithHits     = 1;
+const int MCParameterFile::c_PreTriggerFull                   = 2;
 
 /******************************************************************************
  * Default constructor - the parsing of the file takes place in Parse()
@@ -53,13 +56,13 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_PhysicsListEM(MCPhysicsList::c_EMLivermore), 
                                      m_PhysicsListHD(MCPhysicsList::c_HDNone), 
                                      m_DecayMode(c_DecayModeIgnore),
+                                     m_PreTriggerMode(c_PreTriggerFull),
                                      m_StoreCalibrated(true), 
                                      m_StoreScientific(false),
                                      m_StoreScientificPrecision(5),
                                      m_StoreSimulationInfo(MSimEvent::c_StoreSimulationInfoAll),
                                      m_StoreSimulationInfoVersion(MSimEvent::GetOutputVersion()),
                                      m_StoreSimulationInfoIonization(false),
-                                     m_StoreOnlyTriggeredEvents(true),
                                      m_StoreOneHitPerEvent(false),
                                      m_StoreMinimumEnergy(-numeric_limits<double>::max()),
                                      m_DiscretizeHits(true),
@@ -413,12 +416,38 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "StoreOnlyEventsWithEnergyLoss", true) == true ||
                T->IsTokenAt(0, "StoreOnlyTriggeredEvents", true) == true) {
+      mout<<"Info: "<<T->GetTokenAt(0)<<" is deprecated. Please use PreTriggerMode"<<endl;
       if (T->GetNTokens() == 2) {
-        m_StoreOnlyTriggeredEvents = T->GetTokenAtAsBoolean(1);
-        mdebug<<"Storing only triggered events: "<<((m_StoreOnlyTriggeredEvents == true) ? "true" : "false")<<endl;
+        if (T->GetTokenAtAsBoolean(1) == true) {
+          m_PreTriggerMode = c_PreTriggerFull;
+          mdebug<<"Storing only triggered events"<<endl;
+        } else {
+          m_PreTriggerMode = c_PreTriggerEverything;          
+          mdebug<<"Storing all events independent of any trigger"<<endl;
+        }
       } else {
         Typo(i, "Cannot parse token StoreOnlyTriggeredEvents correctly:"
              " Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "PreTriggerMode", true) == true) {
+      if (T->GetNTokens() == 2) {
+        MString Mode = T->GetTokenAtAsString(1);
+        Mode.ToLower();
+        if (Mode == "everything") {
+          m_PreTriggerMode = c_PreTriggerEverything;          
+          mdebug<<"Storing all events independent of any trigger"<<endl;
+        } else if  (Mode == "full") {
+          m_PreTriggerMode = c_PreTriggerFull;
+          mdebug<<"Storing only triggered events"<<endl;
+        } else if (Mode == "everyeventwithhits") {
+          m_PreTriggerMode = c_PreTriggerEveryEventWithHits;  
+        } else {
+          Typo(i, "Cannot parse token PreTriggerMode correctly: Unknown PreTriggerMode mode!");
+          return false;
+        }
+      } else {
+        Typo(i, "Cannot parse token PreTriggerMode correctly: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "StoreOneHitPerEvent", true) == true) {

@@ -57,20 +57,19 @@ const int MCEventAction::c_InvalidCollID = -987;
 /******************************************************************************
  * Default constructor
  */
-MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, 
-                             const long Seed) : 
-  m_RunParameters(RunParameters),
-  m_Zip(Zip)
+MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, const long Seed) : 
+  m_RunParameters(RunParameters), m_Zip(Zip)
 {
   m_OutFileName = "";
 
   m_StoreSimulationInfo = RunParameters.StoreSimulationInfo();
   m_StoreSimulationInfoVersion = RunParameters.StoreSimulationInfoVersion();
   m_StoreCalibrated = RunParameters.StoreCalibrated();
-  m_StoreOnlyTriggeredEvents = RunParameters.StoreOnlyTriggeredEvents();
   m_StoreOneHitPerEvent = RunParameters.StoreOneHitPerEvent();
   m_StoreMinimumEnergy = RunParameters.StoreMinimumEnergy();
-
+  
+  m_PreTriggerMode = RunParameters.GetPreTriggerMode();
+  
   if (RunParameters.StoreScientific() == true) {
     m_StoreScientificPrecision = RunParameters.StoreScientificPrecision();
   } else {
@@ -401,7 +400,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   
   MCRun& Run = m_RunParameters.GetCurrentRun();
 
-  // make a list of all collections:
+  // Make a list of all collections:
   G4SDManager* SDMan = G4SDManager::GetSDMpointer();
   
   vector<MC2DStripHitsCollection*> TwoDStripColl;
@@ -415,38 +414,31 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
   int ID = 0;
   for (unsigned int i = 0; i < m_2DStripCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_2DStripCollNames[i]);
-    TwoDStripColl.push_back((MC2DStripHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    TwoDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_CalorimeterCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_CalorimeterCollNames[i]);
-    CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event
-                                ->GetHCofThisEvent()->GetHC(ID));
+    CalorimeterColl.push_back((MCCalorBarHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_3DStripCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_3DStripCollNames[i]);
-    ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    ThreeDStripColl.push_back((MC2DStripHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_Voxel3DCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_Voxel3DCollNames[i]);
-    Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event
-                            ->GetHCofThisEvent()->GetHC(ID));
+    Voxel3DColl.push_back((MCVoxel3DHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_ScintillatorCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_ScintillatorCollNames[i]);
-    ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event
-                                 ->GetHCofThisEvent()->GetHC(ID));
+    ScintillatorColl.push_back((MCScintillatorHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_DriftChamberCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_DriftChamberCollNames[i]);
-    DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event
-                                 ->GetHCofThisEvent()->GetHC(ID));
+    DriftChamberColl.push_back((MCDriftChamberHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
   for (unsigned int i = 0; i < m_AngerCameraCollNames.size(); ++i) {
     ID = SDMan->GetCollectionID(m_AngerCameraCollNames[i]);
-    AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event
-                              ->GetHCofThisEvent()->GetHC(ID));
+    AngerCameraColl.push_back((MCAngerCameraHitsCollection*) Event->GetHCofThisEvent()->GetHC(ID));
   }
 
 
@@ -536,10 +528,26 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
   }
 
-
-  if (HasTriggered == false && m_StoreOnlyTriggeredEvents == true) {
-    mdebug<<"Event has not triggered!"<<endl;
+  bool StoreEvent = false;
+  if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEverything) {
+    StoreEvent = true;
+  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerEveryEventWithHits) {
+    if (SensitiveEnergy > 0) {
+      StoreEvent = true;
+    }
+  } else if (m_PreTriggerMode == MCParameterFile::c_PreTriggerFull) {
+    if (HasTriggered == true) {
+      StoreEvent = true;
+    }
   } else {
+    mout<<"ERROR: Unknown pre-trigger mode, assuming full pretrigger."<<endl;
+    if (HasTriggered == true) {
+      StoreEvent = true;
+    }
+  }
+    
+    
+  if (StoreEvent == true) {
     for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
       mdebug<<"Writing 2D strip hits..."<<endl;
       TwoDStripColl[i]->PrintAllHits();

@@ -178,8 +178,6 @@ private:
   unsigned int m_StoreSimulationInfoVersion;
   /// True if hits as posiiton/enrgy and not as bars/strips should be written to the file  
   G4bool m_StoreCalibrated;
-  /// True if only events with which have triggered should be stored
-  G4bool m_StoreOnlyTriggeredEvents;
   /// True if each hit in its own event
   G4bool m_StoreOneHitPerEvent;
   /// The minimum energy an event must have before it is stored
@@ -188,6 +186,9 @@ private:
   /// Precision (number of digits after '.') for scientific storage
   int m_StoreScientificPrecision;
 
+  /// The pre-trigger mode (either store everything, only events with hits, or fully pretriggered events)
+  int m_PreTriggerMode;
+  
   /// A timer stopping the real event action time
   MTimer m_Timer;
   /// The total time spent during all event actions:
