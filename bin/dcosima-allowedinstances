@@ -86,9 +86,11 @@ if [ "${REMOTE}" == "" ]; then
   
 fi
 
+
+
 # Check for time restrictions
-if [ "${REMOTE}" == "" ]; then
-  # Get the remote inhibitors
+if [[ "${REMOTE}" == "" ]]; then
+
   GOOD=true
   TIMES=$(if [ -f ~/.dcosima.cfg ]; then cat ~/.dcosima.cfg | grep ^time; fi;)
   #echo "${TIMES}"
@@ -102,6 +104,11 @@ if [ "${REMOTE}" == "" ]; then
   if [ "$?" != "0" ]; then GOOD=false; fi
   NOW=$(date +%s)
   #echo "Start: ${STARTTIME}, Now: ${NOW}, Stop: ${STOPTIME}"
+  
+  # Ignore Saturdays and Sundays
+  if [[ "$(date +%u)" == "6" || "$(date +%u)" == "7" ]]; then
+    GOOD=false
+  fi
   
   if [[ ${GOOD} == true ]]; then  
     if [[ ${STARTTIME} -le ${STOPTIME} ]]; then
