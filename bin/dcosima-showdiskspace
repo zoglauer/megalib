@@ -110,7 +110,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo "   - Free disk space: ${FREEDISKSPACE} GByte"
   
   # Get the directories & the disk space used
-  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); for i in $(ls -dtr */); do cd ${i}; DU=$(du -h -s); DU=${DU//.}; NEWESTFILE=0; for F in `find . -name "*" -type f`; do DATE=$(date -r ${F} +%s); if [[ ${DATE} -gt ${NEWESTFILE} ]]; then NEWESTFILE=${DATE}; fi; done; LATEST=$(date -d @${NEWESTFILE} +"%Y-%m-%d\xC2\xA0%H:%M"); echo "${i%%/}: last\xC2\xA0access:\xC2\xA0${LATEST}  disk\xC2\xA0space:\xC2\xA0${DU}\n"; cd ..; done;'
+  REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); for i in $(ls -dtr */); do cd ${i}; DU=$(du -h -s); DU=${DU::-1}; NEWESTFILE=0; for F in `find . -name "*" -type f`; do DATE=$(date -r ${F} +%s); if [[ ${DATE} -gt ${NEWESTFILE} ]]; then NEWESTFILE=${DATE}; fi; done; LATEST=$(date -d @${NEWESTFILE} +"%Y-%m-%d\xC2\xA0%H:%M"); echo "${i%%/}: last\xC2\xA0access:\xC2\xA0${LATEST}  disk\xC2\xA0space:\xC2\xA0${DU}\n"; cd ..; done;'
   SPACEANDDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "   - Unable to retrieve the directories!"
