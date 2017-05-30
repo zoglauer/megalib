@@ -83,6 +83,7 @@ MCEventAction::MCEventAction(MCParameterFile& RunParameters, const bool Zip, con
 
   m_Interrupt = false;
 
+  m_ID = 0;
   m_Event = new MSimEvent();
 
   m_SaveEvents = false;
@@ -107,6 +108,7 @@ bool MCEventAction::NextRun()
 {
   Reset();
 
+  m_ID = 0;
   m_Event->SetGeometry(MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetGeometry());
 
   m_TriggerUnit = MCRunManager::GetMCRunManager()->GetDetectorConstruction()->GetGeometry()->GetTriggerUnit();
@@ -297,9 +299,10 @@ void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
  */
 void MCEventAction::BeginOfEventAction(const G4Event* Event)
 {
-  mdebug<<"Starting event "<<Event->GetEventID();
-  mdebug<< "... Please stand by..."<<endl;
-
+  ++m_ID;  
+  
+  mdebug<<"Starting event "<<m_ID<< "... Please stand by..."<<endl;
+  
   if (m_TimerStarted == false) {
     m_Timer.Start();
     m_TimerStarted = true;
@@ -581,7 +584,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     Run.AddTriggeredEvent();
 
     m_Event->SetID(Run.GetNTriggeredEvents());
-    m_Event->SetSimulationEventID(Event->GetEventID()+1);
+    m_Event->SetSimulationEventID(m_ID);
     m_Event->SetTime(Run.GetSimulatedTime()/s);
 
     map<string, double>::iterator Iter; 
@@ -662,7 +665,7 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     } else {
       // Save and transmit know if we should do it
       if (m_Event->GetTotalEnergyDepositBeforeNoising() > m_StoreMinimumEnergy) {
-        mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<Event->GetEventID()+1<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
+        mout<<"Storing event "<<Run.GetNTriggeredEvents()<<" of "<<m_ID<<" at t_obs="<<Run.GetSimulatedTime()/s<<"s"<<endl;
         SaveEventToFile(m_Event);
         TransmitEvent(m_Event);
         if (m_RelegateEvents == true) {

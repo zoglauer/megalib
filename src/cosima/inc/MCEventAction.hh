@@ -98,7 +98,9 @@ public:
 
   /// Interrupts the executon at the end of the next event
   void Interrupt() { m_Interrupt = true; }
-
+  /// Return if there should be an interrupt
+  bool GetInterrupt() const { return m_Interrupt; }
+  
   // protected methods:
 protected:
   /// Write the file header 
@@ -169,6 +171,10 @@ private:
   /// Assigned fixed incarnation ID of the output file(s)
   //int m_IncarnationID;
 
+  /// ID of the current event
+  long m_ID;
+  
+  
   /// The temporary store of the simulated event
   MSimEvent* m_Event;
 

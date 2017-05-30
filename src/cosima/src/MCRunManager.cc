@@ -119,8 +119,18 @@ void MCRunManager::StartBeam()
     RunTimer.Start();
 
     // Execute the new run:
-    G4RunManager::BeamOn(numeric_limits<int>::max());
-
+    while (true) {
+      G4RunManager::BeamOn(2000000000);
+      if (m_RunParameters.GetCurrentRun().CheckStopConditions() == true) {
+        break;
+      }
+      if (GetEventAction()->GetInterrupt() == true) {
+        break; 
+      }
+      mout<<endl;
+      mout<<"Restarting Geant4 since we almost reached the maximum number of events Geant4 can process..."<<endl;
+      mout<<endl;
+    }
     RunTimer.Pause();
 
     m_RunParameters.GetCurrentRun().DumpRunStatistics(RunTimer.GetElapsed());
