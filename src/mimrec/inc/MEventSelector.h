@@ -155,7 +155,7 @@ class MEventSelector
   void ApplyTrackQualityFactor(MEventSelector& E) { E.SetTrackQualityFactor(m_TrackQualityFactorMin, m_TrackQualityFactorMax); }
   void SetCoincidenceWindow(double Min = 0, double Max = 1);
   void ApplyCoincidenceWindow(MEventSelector& E) { E.SetCoincidenceWindow(m_CoincidenceWindowMin, m_CoincidenceWindowMax); }
-  void SetEventId(int Min = 2, int Max = 10);
+  void SetEventId(long Min = 0, long Max = numeric_limits<long>::max());
   void ApplyEventId(MEventSelector& E) { E.SetEventId(m_EventIdMin, m_EventIdMax); }
 
 
@@ -242,8 +242,8 @@ class MEventSelector
   double m_TrackQualityFactorMax;
   double m_CoincidenceWindowMin;
   double m_CoincidenceWindowMax;
-  unsigned int m_EventIdMin;
-  unsigned int m_EventIdMax;
+  long m_EventIdMin;
+  long m_EventIdMax;
   double m_ThetaDeviationMax;
   MEarthHorizon m_EarthHorizon;
 
@@ -290,44 +290,44 @@ class MEventSelector
 
   vector<MString> m_ExcludedDetectors;
 
-  int m_NAnalyzed;
-  int m_NAccepted;
-  int m_NRejectedIsGood;
-  int m_NRejectedStartDetector;
-  int m_NRejectedTotalEnergy;
-  int m_NRejectedTime;
-  int m_NRejectedTimeWalk;
-  int m_NRejectedElectronEnergy;
-  int m_NRejectedGammaEnergy;
-  int m_NRejectedComptonAngle;
-  int m_NRejectedFirstLeverArm;
-  int m_NRejectedLeverArm;
-  int m_NRejectedEventId;
-  int m_NRejectedTrackLength;
-  int m_NRejectedSequenceLength;
-  int m_NRejectedClusteringQualityFactor;
-  int m_NRejectedComptonQualityFactor;
-  int m_NRejectedTrackQualityFactor;
-  int m_NRejectedCoincidenceWindow;
-  int m_NRejectedEarthHorizonCut;
-  int m_NRejectedThetaDeviationMax;
-  int m_NRejectedUsePhotos;
-  int m_NRejectedUsePairs;
-  int m_NRejectedUseComptons;
-  int m_NRejectedUseMuons;
-  int m_NRejectedUseDecays;
-  int m_NRejectedUseUnidentifiables;
-  int m_NRejectedUseFlaggedAsBad;
-  int m_NRejectedUseTrackedComptons;
-  int m_NRejectedUseNotTrackedComptons;
-  int m_NRejectedOpeningAnglePair;
-  int m_NRejectedInitialEnergyDepositPair;
-  int m_NRejectedPairQualityFactor;
-  int m_NRejectedPointing;
-  int m_NRejectedARM;
-  int m_NRejectedSPD;
-  int m_NRejectedBeam;
-  int m_NRejectedQuickHack;
+  long m_NAnalyzed;
+  long m_NAccepted;
+  long m_NRejectedIsGood;
+  long m_NRejectedStartDetector;
+  long m_NRejectedTotalEnergy;
+  long m_NRejectedTime;
+  long m_NRejectedTimeWalk;
+  long m_NRejectedElectronEnergy;
+  long m_NRejectedGammaEnergy;
+  long m_NRejectedComptonAngle;
+  long m_NRejectedFirstLeverArm;
+  long m_NRejectedLeverArm;
+  long m_NRejectedEventId;
+  long m_NRejectedTrackLength;
+  long m_NRejectedSequenceLength;
+  long m_NRejectedClusteringQualityFactor;
+  long m_NRejectedComptonQualityFactor;
+  long m_NRejectedTrackQualityFactor;
+  long m_NRejectedCoincidenceWindow;
+  long m_NRejectedEarthHorizonCut;
+  long m_NRejectedThetaDeviationMax;
+  long m_NRejectedUsePhotos;
+  long m_NRejectedUsePairs;
+  long m_NRejectedUseComptons;
+  long m_NRejectedUseMuons;
+  long m_NRejectedUseDecays;
+  long m_NRejectedUseUnidentifiables;
+  long m_NRejectedUseFlaggedAsBad;
+  long m_NRejectedUseTrackedComptons;
+  long m_NRejectedUseNotTrackedComptons;
+  long m_NRejectedOpeningAnglePair;
+  long m_NRejectedInitialEnergyDepositPair;
+  long m_NRejectedPairQualityFactor;
+  long m_NRejectedPointing;
+  long m_NRejectedARM;
+  long m_NRejectedSPD;
+  long m_NRejectedBeam;
+  long m_NRejectedQuickHack;
 
   friend ostream& operator<<(ostream& os, MEventSelector& S);
 

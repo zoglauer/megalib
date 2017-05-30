@@ -365,8 +365,8 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
     m_LeverArmMax = aNode->GetMaxValueAsDouble();
   }
   if ((aNode = Node->GetNode("EventId")) != 0) {
-    m_EventIdMin = aNode->GetMinValueAsInt();
-    m_EventIdMax = aNode->GetMaxValueAsInt();
+    m_EventIdMin = aNode->GetMinValueAsLong();
+    m_EventIdMax = aNode->GetMaxValueAsLong();
   }
   if ((aNode = Node->GetNode("RejectAllBadEvents")) != 0) {
     m_RejectAllBadEvents = aNode->GetValueAsBoolean();

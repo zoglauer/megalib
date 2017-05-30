@@ -102,7 +102,7 @@ void MGUIOptionsGeneral::Create()
                                    false,
                                    m_Data->GetEventIdMin(), 
                                    m_Data->GetEventIdMax(), 
-                                   true, -1);
+                                   true, -1l);
   AddFrame(m_EventId, m_MinMaxLayout);
   
   m_Options = new MGUIECBList(this, "Additional options:");
@@ -139,8 +139,8 @@ bool MGUIOptionsGeneral::OnApply()
                                 0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_LeverArm->CheckRange(0.0, numeric_limits<double>::max(), 
                              0.0, numeric_limits<double>::max(), true) == false) return false;
-  if (m_EventId->CheckRange(-1, numeric_limits<int>::max(), 
-                            -1, numeric_limits<int>::max(), false) == false) return false;
+  if (m_EventId->CheckRange(-1l, numeric_limits<long>::max(), 
+                            -1l, numeric_limits<long>::max(), false) == false) return false;
 
   m_Data->SetTotalEnergyMin(m_TotalEnergy->GetMinValue());
   m_Data->SetTotalEnergyMax(m_TotalEnergy->GetMaxValue());

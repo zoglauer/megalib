@@ -62,7 +62,7 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_EventSelectorTab = 0;
 
   m_EventIdRangeMin = 0;
-  m_EventIdRangeMax = numeric_limits<int>::max();
+  m_EventIdRangeMax = 10000000;
 
   m_TrackLengthRangeMin = 1;
   m_TrackLengthRangeMax = 100;

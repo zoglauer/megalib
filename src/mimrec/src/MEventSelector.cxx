@@ -113,7 +113,7 @@ MEventSelector::MEventSelector()
   m_ThetaDeviationMax = 180;
 
   m_EventIdMin = 0; 
-  m_EventIdMax = numeric_limits<int>::max();
+  m_EventIdMax = numeric_limits<long>::max();
 
   m_UseSource = false;
   m_SourcePosition = MVector(0, 0, c_FarAway);
@@ -1749,7 +1749,7 @@ void MEventSelector::SetCoincidenceWindow(double Min, double Max)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetEventId(int Min, int Max)
+void MEventSelector::SetEventId(long Min, long Max)
 {
   // Set the range of
 

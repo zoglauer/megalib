@@ -73,8 +73,8 @@ class MPhysicalEvent : public MRotationInterface
   void SetTime(const MTime Time) { m_Time = Time; }
   MTime GetTime() const { return m_Time; }
 
-  void SetId(const unsigned long Id) { m_Id = Id; }
-  unsigned long GetId() const { return m_Id; };
+  void SetId(const long Id) { m_Id = Id; }
+  long GetId() const { return m_Id; };
 
   void SetTimeWalk(const int TimeWalk) { m_TimeWalk = TimeWalk; }
   int GetTimeWalk() const { return m_TimeWalk; }
@@ -156,7 +156,7 @@ class MPhysicalEvent : public MRotationInterface
   MTime m_Time;
 
   //! The event ID
-  unsigned long m_Id;
+  long m_Id;
 
   //! True if this event has been passed all tests..
   bool m_IsGoodEvent; 

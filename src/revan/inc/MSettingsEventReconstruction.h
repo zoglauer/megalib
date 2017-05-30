@@ -231,10 +231,10 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetLeverArmMin(double Value) { m_LeverArmMin = Value; }
   double GetLeverArmMin() { return m_LeverArmMin; }
   
-  void SetEventIdMax(int Value) { m_EventIdMax = Value; }
-  int GetEventIdMax() { return m_EventIdMax; }
-  void SetEventIdMin(int Value) { m_EventIdMin = Value; }
-  int GetEventIdMin() { return m_EventIdMin; }
+  void SetEventIdMax(long Value) { m_EventIdMax = Value; }
+  long GetEventIdMax() { return m_EventIdMax; }
+  void SetEventIdMin(long Value) { m_EventIdMin = Value; }
+  long GetEventIdMin() { return m_EventIdMin; }
 
   void SetRejectAllBadEvents(bool Flag) { m_RejectAllBadEvents = Flag; }
   bool GetRejectAllBadEvents() { return m_RejectAllBadEvents; }
@@ -333,8 +333,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double m_LeverArmMin;
   double m_LeverArmMax;
 
-  int m_EventIdMin;
-  int m_EventIdMax;
+  long m_EventIdMin;
+  long m_EventIdMax;
 
   bool m_RejectAllBadEvents;
 

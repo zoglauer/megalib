@@ -408,7 +408,7 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
     if (Fast == true) {
       m_Id = strtol(Line+3, NULL, 10);
     } else {
-      if (sscanf(Line, "ID %lu", &m_Id) != 1) {
+      if (sscanf(Line, "ID %li", &m_Id) != 1) {
         Ret = 1;
       }
     }

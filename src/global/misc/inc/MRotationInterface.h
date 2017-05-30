@@ -153,7 +153,7 @@ class MRotationInterface
   // protected members:
  protected:
   //! The event ID
-  unsigned long m_Id;
+  long m_Id;
 
   //! If true, a pointing in galactic coordinates is present
   bool m_HasGalacticPointing;

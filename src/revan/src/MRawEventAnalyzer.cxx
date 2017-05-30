@@ -596,12 +596,12 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
 
   if (SelectionsPassed == true && 
-      ((RE->GetEventID() < (unsigned int) m_EventIdMin && m_EventIdMin >= 0) || 
-       (RE->GetEventID() > (unsigned int) m_EventIdMax && m_EventIdMax >= 0))) {
+      ((RE->GetEventID() < m_EventIdMin && m_EventIdMin >= 0) || 
+       (RE->GetEventID() > m_EventIdMax && m_EventIdMax >= 0))) {
     mdebug<<"ER - Selection: Event ID out of limits: "<<RE->GetEventID()
         <<" is not within ["<<m_EventIdMin<<", "<<m_EventIdMax<<"]"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionEventIdOutOfLimits);
-    if (RE->GetEventID() > (unsigned int) m_EventIdMax && m_EventIdMax >= 0) {
+    if (RE->GetEventID() > m_EventIdMax && m_EventIdMax >= 0) {
       mout<<"ER - Event ID above limit!"<<endl;
       return c_AnalysisUndefinedError;
     }
