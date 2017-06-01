@@ -6,17 +6,12 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/simplifiedprototype/Prototype.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                      LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-#StoreScientific                     true  2
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                all
 
-
+# Run & source parameters
 Run Na22
 Na22.FileName                      Na22Decay
 Na22.NTriggers                     2000000

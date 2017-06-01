@@ -2,24 +2,21 @@
 # This shows the usage of watched volumes - take a look at the sim file to see the ENTR & EXIT entries
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
 PhysicsListEM   Livermore
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 PhysicsListHD                        qgsp-bic-hp
-ActivateFluorescence                 false
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
+StoreSimulationInfo                  all
 StoreSimulationInfoWatchedVolumes    BigSphere
-StoreOnlyTriggeredEvents             false
-DiscretizeHits                       true
+PreTriggerMode                       Everything
 
-
+# Run & source parameters
 Run MySim
 MySim.FileName         EntrExit
 MySim.Time             10000.0

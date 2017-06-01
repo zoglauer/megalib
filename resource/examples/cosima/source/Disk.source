@@ -6,27 +6,20 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/special/GeACT.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                    LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo              all
 
-
-
-# Run 1: A open ring source
-
+# Run & source parameters
 Run OpenRing
-OpenRing.FileName                      OpenRing
-OpenRing.Triggers                      300000.0
+OpenRing.FileName                OpenRing
+OpenRing.Triggers                300000
 
 OpenRing.Source OpenRingSource
-OpenRingSource.ParticleType            1
-OpenRingSource.Beam                    DiskSource  0.0 0.0 30.0   1.0 0.0 1.0   10.0 9.0 1.0   0.0 360.0
-OpenRingSource.Spectrum                Mono 662.0
-OpenRingSource.Flux                    1.0
+OpenRingSource.ParticleType      1
+OpenRingSource.Beam              DiskSource  0.0 0.0 30.0   1.0 0.0 1.0   9.0 10.0 1.0   0.0 360.0
+OpenRingSource.Spectrum          Mono 662.0
+OpenRingSource.Flux              1.0
 
 

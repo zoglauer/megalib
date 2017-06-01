@@ -10,20 +10,17 @@ DetectorTimeConstant               0.000005
 
 
 # Physics parameters
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 PhysicsListHD                      qgsp-bic-hp
 DecayMode                          ActivationDelayedDecay
 
 
 # Storage parameters
-StoreCalibrated                    true
-StoreSimulationInfo                true
-DiscretizeHits                     true
+StoreSimulationInfo                all
 
 
 # Particle range cuts:
 DefaultRangeCut     0.1
-
 
 
 Run ActivationStep3

@@ -2,20 +2,17 @@
 # A Crab-like source in the zenith on cosmic and albedo photon background
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                        LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                  all
 
-
+# Run & source parameters
 Run SpaceSim
 SpaceSim.FileName         CrabObservation
 SpaceSim.Time             1.0

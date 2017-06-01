@@ -7,15 +7,10 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/Satellite.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                        LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
-
+StoreSimulationInfo                  all
 
 # Run parameters:
 Run EffectiveArea

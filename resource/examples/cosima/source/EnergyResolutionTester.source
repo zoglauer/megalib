@@ -8,14 +8,10 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/special/EnergyResolutionTester.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
-PhysicsListEMActivateFluorescence    false
+PhysicsListEM                        LivermorePol
 
 # Output formats
-StoreCalibrated                      true
-StoreSimulationInfo                  true
-StoreSimulationInfoIonization        false
-DiscretizeHits                       true
+StoreSimulationInfo                  all
 
 
 

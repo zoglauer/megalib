@@ -1,15 +1,20 @@
 # An example run for Cosima
 
 
+# Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/simplifiedprototype/TomographySimple.geo.setup
-PhysicsListEM   Livermore
 
+# Physics list
+PhysicsListEM               LivermorePol
 
+# Output formats
+StoreSimulationInfo         all
+
+# Run & source parameters
 Run Patient
-Patient.FileName              Tomography
-Patient.NTriggers             1000000
-
+Patient.FileName            Tomography
+Patient.NTriggers           1000000
 
 Patient.Source Cancer1
 Cancer1.ParticleType        1

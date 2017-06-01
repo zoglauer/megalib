@@ -5,15 +5,13 @@ Version               1
 Geometry              $(MEGALIB)/resource/examples/geomega/special/RadioactiveDecay.geo.setup
 
 # Physics list
-PhysicsListEM                        LivermorePol
-DecayMode                            ActivationDelayedDecay
+PhysicsListEM                      LivermorePol
+DecayMode                          ActivationDelayedDecay
 
 # Output formats
-StoreSimulationInfo                    all
+StoreSimulationInfo                all
 
-
-# Run parameters:
-
+# Run & source parameters
 Run Na22
 Na22.FileName                      RadioactiveDecay
 Na22.Time                          1.0
