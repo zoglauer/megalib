@@ -249,34 +249,41 @@ done
 
 echo " "
 
+# Prepare the kill script
+KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
+rm -f ${KillFileName}
+echo "#! /bin/bash" >> ${KillFileName}
+echo " " >> ${KillFileName}
+
+
 # Start the sims
-Pids=( )
 for (( i=1; i <= ${Threads}; i+=1 )); do
-  mdelay ${Executable} ${Max}
+  # First check if we are ready to launch a new thread
+  mwait -i=threads -p=cosima -m
+  
   echo "Launching cosima run ${i}/${Threads}"
   
-  Random=`od -vAn -N4 -tu4 < /dev/urandom`
+  Seed=`od -vAn -N4 -tu4 < /dev/urandom`
   
   Tag=""
   for N in `seq 1 16`; do Tag="${Tag}$(( RANDOM%10 ))"; done
   
-  Cmd="${ExecuteString} -v 0 -s ${Random} -p ${ThreadsID} -t ${Tag}"
+  Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -t ${Tag}"
   if [[ "${Zip}" == "yes" ]]; then
     Cmd="${Cmd} -z"
   fi
   Cmd="${Cmd} ${Source}"
 
-  echo "${Cmd}"
+  #echo "${Cmd}"
   # Required for latest macOS version since paths are not forwarded
-  nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null &
+  nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null 2>&1 &
   
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  echo "Sleeping for 1 second to seperate the starts out a bit and make sure everything is started before we continue..."
-  sleep 1
+  echo "Sleeping for 2 seconds to make sure everything is started before we continue..."
+  sleep 2
   
   Pid=`ps -Af | grep "[ ]${Tag}" | grep -v "bash -c " | awk '{ print $2 }'`
-  Pids[${#Pids[*]}]=${Pid}
-
+  echo "kill -2 ${Pid}" >> ${KillFileName}
 done
 
 # Create a concatenation file
@@ -357,16 +364,6 @@ grep -i ".FileName" ${Source} | while read line; do
   fi
 
   echo "Created concatenation file \"${ConcatFileName}\""
-
-  KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
-  rm -f ${KillFileName}
-  echo "#! /bin/bash" >> ${KillFileName}
-  echo " " >> ${KillFileName}
-  for (( p = 0; p < ${#Pids[*]}; p++ )); do
-    echo "kill -2 ${Pids[$p]}" >> ${KillFileName}
-  done
-  echo " " >> ${KillFileName}
-  echo "exit" >> ${KillFileName}
 done
 
 
