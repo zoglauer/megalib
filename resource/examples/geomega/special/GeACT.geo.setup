@@ -7,12 +7,6 @@ Version 1.0
 
 SurroundingSphere 40  0.0  0.0  0.0  40.0
 
-// Use this volume, to test the surrounding sphere:
-#Volume Sphere
-#Sphere.Shape SPHE 0.0 40.0 0.0 180.0 -180.0 180.
-#Sphere.Position 0.0 0.0 0.0
-#Sphere.Mother WorldVolume
-
 
 Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
 
@@ -170,17 +164,16 @@ GStrip.TriggerThreshold            10
 
 GStrip.DepthResolution      100  0.1
 
-GStrip.EnergyResolutionAt   10        0.417   
-GStrip.EnergyResolutionAt   20        0.425           
-GStrip.EnergyResolutionAt   50        0.4375    
-GStrip.EnergyResolutionAt   100       0.454     
-
-GStrip.EnergyResolutionAt   200       0.492     
-GStrip.EnergyResolutionAt   500       0.5875      
-GStrip.EnergyResolutionAt   1000      0.7217       
-GStrip.EnergyResolutionAt   2000      0.9317      
-GStrip.EnergyResolutionAt   5000      1.3819       
-GStrip.EnergyResolutionAt   10000     1.9094                     
-GStrip.EnergyResolutionAt   100000    5.907         
+GStrip.EnergyResolution   Gauss   10     10        0.417   
+GStrip.EnergyResolution   Gauss   20     20        0.425           
+GStrip.EnergyResolution   Gauss   50     50        0.4375    
+GStrip.EnergyResolution   Gauss   100    100       0.454     
+GStrip.EnergyResolution   Gauss   200    200       0.492     
+GStrip.EnergyResolution   Gauss   500    500       0.5875      
+GStrip.EnergyResolution   Gauss   1000   1000      0.7217       
+GStrip.EnergyResolution   Gauss   2000   2000      0.9317      
+GStrip.EnergyResolution   Gauss   5000   5000      1.3819       
+GStrip.EnergyResolution   Gauss   10000  10000     1.9094                     
+GStrip.EnergyResolution   Gauss   100000 100000    5.907         
 
 GStrip.FailureRate 0.0
