@@ -91,7 +91,23 @@ for SINGLEFILE in ${FILES}; do
   nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
   echo "Started ${COUNTER} out of ${COUNTERMAX}"
   COUNTER=$(( ${COUNTER} + 1 ))
-  sleep 2
+  
+  # Wait until the responsecreator is fully loaded
+  LASTMEM=0
+  while true; do
+    sleep 1
+    MEMORY=0;
+    PIDS=$(ps -Af | grep "[ ]responsecreator" | awk '{ print $2 }');
+    for P in ${PIDS}; do
+      MEMORY=$(( MEMORY + $(ps -o rss= ${P}) ))
+    done;
+    if [[ ${MEMORY} -gt ${LASTMEM} ]]; then
+      echo "Waiting till responsecreator is full loaded..."
+    else
+      break
+    fi
+    LASTMEM=${MEMORY}
+  done
 done
 
 
