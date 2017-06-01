@@ -279,8 +279,8 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null 2>&1 &
   
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  echo "Sleeping for 2 seconds to make sure everything is started before we continue..."
-  sleep 2
+  # mwait with option -m guaratees another second wait
+  sleep 1
   
   Pid=`ps -Af | grep "[ ]${Tag}" | grep -v "bash -c " | awk '{ print $2 }'`
   echo "kill -2 ${Pid}" >> ${KillFileName}

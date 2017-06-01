@@ -86,28 +86,14 @@ echo "Standard arguments: ${NEWCMD}"
 COUNTER=1
 COUNTERMAX=`echo ${FILES} | wc -w`
 for SINGLEFILE in ${FILES}; do
-  OUT="${NAME}.${COUNTER}"
+  # Wait for everything being started, enough memory, and a free slot
   mwait -p=responsecreator -i=threads -m
+  
+  # Ready to launch
+  OUT="${NAME}.${COUNTER}"
   nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
   echo "Started ${COUNTER} out of ${COUNTERMAX}"
   COUNTER=$(( ${COUNTER} + 1 ))
-  
-  # Wait until the responsecreator is fully loaded
-  LASTMEM=0
-  while true; do
-    sleep 1
-    MEMORY=0;
-    PIDS=$(ps -Af | grep "[ ]responsecreator" | awk '{ print $2 }');
-    for P in ${PIDS}; do
-      MEMORY=$(( MEMORY + $(ps -o rss= ${P}) ))
-    done;
-    if [[ ${MEMORY} -gt ${LASTMEM} ]]; then
-      echo "Waiting till responsecreator is full loaded..."
-    else
-      break
-    fi
-    LASTMEM=${MEMORY}
-  done
 done
 
 

@@ -112,6 +112,28 @@ while [[ ${WAIT} == true ]]; do
         REQUIREDMEMORY=$(ps -o rss= ${P})
       fi
     done; 
+    
+    # Wait until the program is fully loaded
+    REQUIREDMEMORY=0
+    LASTTOTALMEMORY=0
+    while true; do
+      TOTALMEMORY=0;
+      PIDS=$(ps -Af | grep "[ ]${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c "  | awk '{ print $2 }'); 
+      for P in ${PIDS}; do
+        TOTALMEMORY=$(( TOTALMEMORY + $(ps -o rss= ${P}) ))
+        if [ $(ps -o rss= ${P}) -gt ${REQUIREDMEMORY} ]; then  
+          REQUIREDMEMORY=$(ps -o rss= ${P})
+        fi
+      done;
+      if [[ ${TOTALMEMORY} -gt ${LASTTOTALMEMORY} ]]; then
+        echo "Waiting till program is full loaded..."
+        sleep 2
+      else
+        break
+      fi
+      LASTTOTALMEMORY=${TOTALMEMORY}
+    done    
+    
     #echo "Required memory: ${REQUIREDMEMORY}"
     
     AVAILABLEMEMORY=$(cat /proc/meminfo | grep "MemAvailable:" | awk '{ print $2 }')
