@@ -87,10 +87,11 @@ COUNTER=1
 COUNTERMAX=`echo ${FILES} | wc -w`
 for SINGLEFILE in ${FILES}; do
   OUT="${NAME}.${COUNTER}"
-  mdelay responsecreator ${THREADS}
+  mwait -p=responsecreator -i=threads -m
   nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
   echo "Started ${COUNTER} out of ${COUNTERMAX}"
   COUNTER=$(( ${COUNTER} + 1 ))
+  sleep 2
 done
 
 
