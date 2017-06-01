@@ -120,14 +120,19 @@ while [[ ${WAIT} == true ]]; do
       TOTALMEMORY=0;
       PIDS=$(ps -Af | grep "[ ]${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c "  | awk '{ print $2 }'); 
       for P in ${PIDS}; do
-        TOTALMEMORY=$(( TOTALMEMORY + $(ps -o rss= ${P}) ))
-        if [ $(ps -o rss= ${P}) -gt ${REQUIREDMEMORY} ]; then  
-          REQUIREDMEMORY=$(ps -o rss= ${P})
+        MEM=$(ps -o rss= ${P})
+        if [[ ${MEM} != "" ]]; then
+          TOTALMEMORY=$(( TOTALMEMORY + MEM ))
+          if [ ${MEM} -gt ${REQUIREDMEMORY} ]; then  
+            REQUIREDMEMORY=${MEM}
+          fi
         fi
-      done;
+      done
       if [[ ${TOTALMEMORY} -gt ${LASTTOTALMEMORY} ]]; then
-        echo "Waiting till program is full loaded..."
-        sleep 2
+        if [ ${LASTTOTALMEMORY} -gt 0 ]; then
+          echo "Waiting till program is full loaded..."
+        fi
+        sleep 1
       else
         break
       fi
