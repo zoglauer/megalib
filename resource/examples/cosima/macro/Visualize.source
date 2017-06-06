@@ -1,0 +1,25 @@
+# Example run for Cosima
+# A Crab-like source in the zenith on cosmic and albedo photon background
+
+
+# basics
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/simplifiedprototype/Prototype.geo.setup
+
+# Physics list
+PhysicsListEM               LivermorePol
+
+# Output formats
+StoreSimulationInfo         init-only
+
+# Run & Source
+Run VisSim
+VisSim.Triggers         100000
+
+VisSim.Source VisBeam
+VisBeam.ParticleType           1
+VisBeam.Beam                   HomogeneousBeam 0 0 40   0 0 -1   0.01
+VisBeam.Spectrum               Linear 200 20000
+VisBeam.Flux                   1.0
+
+
