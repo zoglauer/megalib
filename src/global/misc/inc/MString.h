@@ -233,8 +233,13 @@ class MString
 
   //! Test if the string is a number -- ignores whitespace at beginning and end
   bool IsNumber() const;
-  
-  
+
+  //! Test if the string is a positive integer -- ignores whitespace at beginning and end
+  bool IsPositiveInteger() const;
+
+  // General type test (use for int, long, etc.)  
+  template <typename T> bool Is() const;
+
   static const size_t npos;
   
   // protected methods:
@@ -296,6 +301,14 @@ inline MString operator+(const MString& S1, float N) { MString S(S1); S += N; re
 inline MString operator+(float N, const MString& S2) { ostringstream out; out<<N; MString S = out.str(); return S + S2; }
 inline MString operator+(const MString& S1, double N) { MString S(S1); S += N; return S; }
 inline MString operator+(double N, const MString& S2) { ostringstream out; out<<N; MString S = out.str(); return S + S2; }
+
+template <typename T> bool MString::Is() const
+{
+  istringstream In(m_String);
+  T x;
+  return In>>x>>std::ws && In.eof();
+}
+
 
 
 #endif
