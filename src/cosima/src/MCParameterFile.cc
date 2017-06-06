@@ -782,17 +782,18 @@ bool MCParameterFile::Parse()
                  T->IsTokenAt(1, "NTriggers", true) == true) {
         if (T->GetNTokens() >= 3) {
           // ToDo: Check if source already exists:
-          if (Run->SetTriggers(T->GetTokenAtAsInt(2)) == true) {
-            mdebug<<"Setting number of triggers "
-                  <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
+          if (T->GetTokenAtAsString(2).Is<unsigned long>() == false) {
+            Typo(i, "Cannot parse token Triggers correctly: Number not a positive (long) integer.");
+            return false;             
+          }  
+          if (Run->SetTriggers(T->GetTokenAtAsLong(2)) == true) {
+            mdebug<<"Setting number of triggers to "<<T->GetTokenAtAsLong(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Cannot parse token Triggers correctly:"
-                 " Number not positive?");
+            Typo(i, "Cannot parse token Triggers correctly: Number not a positive (long) integer or you used floating point notation?");
             return false;             
           }
         } else {
-          Typo(i, "Cannot parse token Triggers correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Cannot parse token Triggers correctly: Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "Events", true) == true ||
@@ -801,17 +802,18 @@ bool MCParameterFile::Parse()
                  T->IsTokenAt(1, "NEvents", true) == true) {
         if (T->GetNTokens() >= 3) {
           // ToDo: Check if source already exists:
-          if (Run->SetEvents(T->GetTokenAtAsInt(2)) == true) {
-            mdebug<<"Setting number of events "
-                  <<T->GetTokenAtAsInt(2)<<" for run "<<Run->GetName()<<endl;
+          if (T->GetTokenAtAsString(2).Is<unsigned long>() == false) {
+            Typo(i, "Cannot parse token Events correctly: Number not a positive (long) integer.");
+            return false;             
+          }  
+          if (Run->SetEvents(T->GetTokenAtAsLong(2)) == true) {
+            mdebug<<"Setting number of events to "<<T->GetTokenAtAsLong(2)<<" for run "<<Run->GetName()<<endl;
           } else {
-            Typo(i, "Cannot parse token Events correctly:"
-                 " Number not positive?");
+            Typo(i, "Cannot parse token Events correctly: Number not a positive (long) integer or you used floating point notation?");
             return false;             
           }
         } else {
-          Typo(i, "Cannot parse token Events correctly:"
-               " Number of tokens is not correct!");
+          Typo(i, "Cannot parse token Events correctly: Number of tokens is not correct!");
           return false;
         }
       } else if (T->IsTokenAt(1, "IsotopeProductionFile", true) == true) {
