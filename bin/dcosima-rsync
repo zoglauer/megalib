@@ -44,9 +44,9 @@ sync() {
     #echo "psync: Checking ${RSYNCS[$m]}"
     if [[ ${RSYNCS[$m]} == rsync* ]]; then
       # Wait until we have no more than 6 of our rsync processes running, otherwise our system might be slowed down too much
-      mwait -p="rsync -az" -i=4
+      mwait -p="rsync -az --append" -i=4
       echo "dcosima-rsync: Syncing: ${RSYNCS[$m]}"
-      eval ${RSYNCS[$m]}
+      time eval ${RSYNCS[$m]}
     elif [[ ${RSYNCS[$m]} == DONE ]]; then
       break
     else 
