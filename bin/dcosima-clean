@@ -44,7 +44,7 @@ REMOTEDIR="DCOSIMA_!!!!_IDONOTEXIST"
 
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-d*=* ]]; then
+  if [[ ${C} == *-n*=* ]]; then
     REMOTEDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
