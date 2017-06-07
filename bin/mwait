@@ -71,7 +71,7 @@ if [[ ${INSTANCES} == t* ]]; then
 elif [[ ${INSTANCES} == c* ]]; then  
   MAXTHREADS=$(getconf _NPROCESSORS_ONLN)
   MAXTHREADS=$(( MAXTHREADS / 2 ))
-elif [[ ${INSTANCES} == ^[0-9]+$ ]]; then
+elif [[ ${INSTANCES} =~ ^[0-9]+$ ]]; then
   MAXTHREADS=${INSTANCES}
 else
   echo ""
