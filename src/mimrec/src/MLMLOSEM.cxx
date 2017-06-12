@@ -186,9 +186,19 @@ bool MLMLOSEM::DoOneIteration()
       }
 
       // Deconvolution:
-      //cout<<"Deconvolving..."<<endl;
-      ResetExpectation();
-      Threads.clear();;
+      
+      // Reset the expectation:
+      if (m_tEj.size() != m_NUsedThreads) {
+        m_tEj.resize(m_NUsedThreads, vector<double>(m_NBins));
+      }
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
+        for (unsigned int i = 0; i < m_NBins; ++i) {
+          m_tEj[t][i] = 0;
+        }
+      }
+      
+      // Deconvolve
+      Threads.clear();
       for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
         m_ThreadRunning[t] = true;
         Threads[t] = thread(&MLMLOSEM::DeconvolveThreadEntry, this, t, m_EventApportionment[t + s*m_NUsedThreads].first, m_EventApportionment[t + s*m_NUsedThreads].second);
@@ -210,8 +220,15 @@ bool MLMLOSEM::DoOneIteration()
           break;
         }
       }
+      
+      ResetExpectation();
+      for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
+        for (unsigned int i = 0; i < m_NBins; i++) {
+          m_Ej[i] += m_tEj[t][i];
+        }
+      }      
+      
       CorrectImage();
-      //cout<<"Done!"<<endl;
     }
   }
 

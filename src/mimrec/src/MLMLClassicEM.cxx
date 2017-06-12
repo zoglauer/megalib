@@ -150,7 +150,7 @@ bool MLMLClassicEM::DoOneIteration()
   else {
     // Convolve
     ConvolveMultiThreaded();
-
+    
     // Deconvolution:
     DeconvolveMultiThreaded();
   }
@@ -210,11 +210,11 @@ void MLMLClassicEM::ConvolveMultiThreaded()
 
 void MLMLClassicEM::ConvolveThreadEntry(unsigned int ThreadID, unsigned int Start, unsigned int Stop)
 {
-  //cout<<"Convolution thread: "<<ThreadID<<endl;
-
   Convolve(Start, Stop);
 
+  m_TheadMutex.lock();
   m_ThreadRunning[ThreadID] = false;
+  m_TheadMutex.unlock();
 }
 
 
@@ -268,7 +268,17 @@ void MLMLClassicEM::Convolve(unsigned int Start, unsigned int Stop)
 void MLMLClassicEM::DeconvolveMultiThreaded()
 {
   //cout<<"Deconvolving..."<<endl;
-  ResetExpectation();
+  
+  // Reset the expectation:
+  if (m_tEj.size() != m_NUsedThreads) {
+    m_tEj.resize(m_NUsedThreads, vector<double>(m_NBins));
+  }
+  for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
+    for (unsigned int i = 0; i < m_NBins; ++i) {
+      m_tEj[t][i] = 0;
+    }
+  }
+  
   vector<thread> Threads(m_NUsedThreads);
   m_ThreadRunning.resize(m_NUsedThreads, true);
   for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
@@ -292,6 +302,14 @@ void MLMLClassicEM::DeconvolveMultiThreaded()
       break;
     }
   }
+  
+  ResetExpectation();
+  for (unsigned int t = 0; t < m_NUsedThreads; ++t) {
+    for (unsigned int i = 0; i < m_NBins; i++) {
+      m_Ej[i] += m_tEj[t][i];
+    }
+  }
+  
   CorrectImage();
 }
 
@@ -303,9 +321,19 @@ void MLMLClassicEM::DeconvolveThreadEntry(unsigned int ThreadID, unsigned int St
 {
   //cout<<"Deconvolution thread: "<<ThreadID<<endl;
 
-  Deconvolve(Start, Stop);
+  for (unsigned int i = Start; i <= Stop; i++) {
+    // All the deconvolution-work is done within the MBPImage... classes,
+    // called by m_BPStorage->GetResponseSlice(i)
+    m_Storage[i]->Deconvolve(&m_tEj[ThreadID][0], m_InvYi, i);
+    
+    if (m_EnableGUIInteractions == true && TThread::SelfId() == g_MainThreadID && i%1000 == 0) {
+      gSystem->ProcessEvents();
+    }
+  }
 
+  m_TheadMutex.lock();
   m_ThreadRunning[ThreadID] = false;
+  m_TheadMutex.unlock();
 }
 
 

@@ -241,7 +241,7 @@ bool MLMLAlgorithms::SetResponseSlices(vector<MBPData*>& Storage, int NImageBins
 void MLMLAlgorithms::CalculateEventApportionment()
 {
   // Split the events by used bins
-
+  
   m_EventApportionment.clear();
 
   unsigned int Split = m_Storage.size() / m_NThreads;

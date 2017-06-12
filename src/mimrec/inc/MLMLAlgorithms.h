@@ -18,6 +18,7 @@
 
 // Standard libs:
 #include <vector>
+#include <mutex>
 using namespace std;
 
 // ROOT libs:
@@ -142,7 +143,8 @@ class MLMLAlgorithms
   vector<pair<unsigned int, unsigned int>> m_EventApportionment;
   //! Flags indicating the threads are running:
   vector<bool> m_ThreadRunning;
-
+  //! Thread parameter mutex
+  mutex m_TheadMutex;
 
   //! The exposure map
   MExposure* m_Exposure;

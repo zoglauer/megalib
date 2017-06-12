@@ -79,7 +79,9 @@ class MLMLClassicEM : public MLMLAlgorithms
   double* m_Vi;
   //! Expectation or correction image
   double* m_Ej;
-
+  //! Expectation or correction image - one per thread
+  vector<vector<double>> m_tEj;
+  
   //! Initial likelihood of the image
   double m_InitialLikelihood;
   //! Likelihood of the last iteration
