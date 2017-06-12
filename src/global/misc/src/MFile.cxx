@@ -433,6 +433,9 @@ bool MFile::Rewind()
 
 bool MFile::Close()
 {
+  // Start with that, because we don't want to have both locked at the same time, m_FileMutex and m_ProgressMutex
+  ShowProgress(false);  
+
   m_FileMutex.Lock();
 
   if (IsOpen() == false) {
@@ -448,15 +451,13 @@ bool MFile::Close()
   }
   m_IsOpen = false;
 
-  ShowProgress(false);
-
   if (m_ReadLineBufferLength != 0) {
     delete [] m_ReadLineBuffer;
     m_ReadLineBufferLength = 0;
   }
 
   m_FileMutex.UnLock();
-
+  
   return true;
 }
 
@@ -966,11 +967,13 @@ void MFile::SetProgress(MGUIProgressBar* Progress, int Level)
   // Take over a progressbar
 
   m_ProgressMutex.Lock();
+  
   delete m_Progress;
   m_Progress = Progress;
   m_ProgressLevel = Level;
   m_OwnProgress = false;
   m_SkippedProgressUpdates = 0;
+  
   m_ProgressMutex.UnLock();
 }
 
