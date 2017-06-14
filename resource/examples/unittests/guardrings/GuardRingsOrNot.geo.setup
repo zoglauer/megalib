@@ -1,0 +1,152 @@
+# Test the guard ring implementation
+
+Name GuardRingOrNot
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+Volume Strip2DNoGR
+Strip2DNoGR.Material Silicon
+Strip2DNoGR.Shape BOX 4.0 4.0 0.1
+Strip2DNoGR.Position 0 0 1
+Strip2DNoGR.Mother WorldVolume
+
+Volume Strip2DPassiveGR
+Strip2DPassiveGR.Material Silicon
+Strip2DPassiveGR.Shape BOX 4.0 4.0 0.1
+Strip2DPassiveGR.Position 0 0 2
+Strip2DPassiveGR.Mother WorldVolume
+
+Volume Strip2DActiveGR
+Strip2DActiveGR.Material Silicon
+Strip2DActiveGR.Shape BOX 4.0 4.0 0.1
+Strip2DActiveGR.Position 0 0 3
+Strip2DActiveGR.Mother WorldVolume
+
+Volume VoxelNoGR
+VoxelNoGR.Material Silicon
+VoxelNoGR.Shape BOX 4.0 4.0 0.25
+VoxelNoGR.Position 0 0 -1
+VoxelNoGR.Mother WorldVolume
+
+Volume VoxelPassiveGR
+VoxelPassiveGR.Material Silicon
+VoxelPassiveGR.Shape BOX 4.0 4.0 0.1
+VoxelPassiveGR.Position 0 0 -2
+VoxelPassiveGR.Mother WorldVolume
+
+Volume VoxelActiveGR
+VoxelActiveGR.Material Silicon
+VoxelActiveGR.Shape BOX 4.0 4.0 0.1
+VoxelActiveGR.Position 0 0 -3
+VoxelActiveGR.Mother WorldVolume
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+Strip2D                            DetStrip2DNoGR
+DetStrip2DNoGR.SensitiveVolume     Strip2DNoGR
+DetStrip2DNoGR.Offset              0.0   0.0
+DetStrip2DNoGR.StripNumber         40    40
+DetStrip2DNoGR.NoiseThreshold      15
+DetStrip2DNoGR.TriggerThreshold    30
+DetStrip2DNoGR.EnergyResolution    Ideal
+
+Strip2D                                 DetStrip2DPassiveGR
+DetStrip2DPassiveGR.SensitiveVolume     Strip2DPassiveGR
+DetStrip2DPassiveGR.Offset              0.2   0.2
+DetStrip2DPassiveGR.StripNumber         40    40
+DetStrip2DPassiveGR.NoiseThreshold      15
+DetStrip2DPassiveGR.TriggerThreshold    30
+DetStrip2DPassiveGR.EnergyResolution    Ideal
+
+Strip2D                                          DetStrip2DActiveGR
+DetStrip2DActiveGR.SensitiveVolume               Strip2DActiveGR
+DetStrip2DActiveGR.Offset                        0.2   0.2
+DetStrip2DActiveGR.StripNumber                   40    40
+DetStrip2DActiveGR.NoiseThreshold                15
+DetStrip2DActiveGR.TriggerThreshold              30
+DetStrip2DActiveGR.EnergyResolution              Ideal
+DetStrip2DActiveGR.GuardringEnergyResolution     100 1.5
+DetStrip2DActiveGR.GuardringEnergyResolution     1000 1.5
+DetStrip2DActiveGR.GuardringTriggerThreshold     40
+
+
+
+Voxel3D                            DetVoxel3DNoGR
+DetVoxel3DNoGR.SensitiveVolume     VoxelNoGR
+DetVoxel3DNoGR.Offset              0.0   0.0   0.0
+DetVoxel3DNoGR.VoxelNumber         40    40    10
+DetVoxel3DNoGR.NoiseThreshold      15
+DetVoxel3DNoGR.TriggerThreshold    30
+DetVoxel3DNoGR.EnergyResolution    Ideal
+
+Voxel3D                                 DetVoxel3DPassiveGR
+DetVoxel3DPassiveGR.SensitiveVolume     VoxelPassiveGR
+DetVoxel3DPassiveGR.Offset              0.2   0.2    0.2
+DetVoxel3DPassiveGR.VoxelNumber         40    40     10
+DetVoxel3DPassiveGR.NoiseThreshold      15
+DetVoxel3DPassiveGR.TriggerThreshold    30
+DetVoxel3DPassiveGR.EnergyResolution    Ideal
+
+Voxel3D                                         DetVoxel3DActiveGR
+DetVoxel3DActiveGR.SensitiveVolume              VoxelActiveGR
+DetVoxel3DActiveGR.Offset                       0.2   0.2   0.0
+DetVoxel3DActiveGR.VoxelNumber                  40    40    10
+DetVoxel3DActiveGR.NoiseThreshold               15
+DetVoxel3DActiveGR.TriggerThreshold             30
+DetVoxel3DActiveGR.EnergyResolution             Ideal
+DetVoxel3DActiveGR.GuardringEnergyResolution    100 1.5
+DetVoxel3DActiveGR.GuardringEnergyResolution    1000 1.5
+DetVoxel3DActiveGR.GuardringTriggerThreshold    40
+
+
+
+Trigger TriggerStrip2DNoGR
+TriggerStrip2DNoGR.Detector DetStrip2DNoGR 1
+
+Trigger TriggerStrip2DPassiveGR
+TriggerStrip2DPassiveGR.Detector DetStrip2DPassiveGR 1
+
+Trigger TriggerStrip2DActiveGR
+TriggerStrip2DActiveGR.Detector DetStrip2DActiveGR 1
+
+
+Trigger TriggerVoxel3DNoGR
+TriggerVoxel3DNoGR.Detector DetVoxel3DNoGR 1
+
+Trigger TriggerVoxel3DPassiveGR
+TriggerVoxel3DPassiveGR.Detector DetVoxel3DPassiveGR 1
+
+Trigger TriggerVoxel3DActiveGR
+TriggerVoxel3DActiveGR.Detector DetVoxel3DActiveGR 1
+
+
+
+
+
