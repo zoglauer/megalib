@@ -279,6 +279,7 @@ MResponseMatrixON& MResponseMatrixON::operator*=(const float& Value)
 unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
 {
   // Find the bin of m_Values corresponding to the axis bins X
+  // Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....
 
   if (X.size() != m_Axes.size()) {
     throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Axes.size());
@@ -399,10 +400,12 @@ bool MResponseMatrixON::InRange(vector<double> X) const
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == false) {
+        cout<<"Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else if (Dimension == 2) {
       if (m_Axes[a]->InRange(X[Xbin], X[Xbin+1]) == false) {
+        cout<<"Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else {
@@ -512,7 +515,6 @@ float MResponseMatrixON::Get(vector<unsigned int> X) const
 
   return m_Values[FindBin(X)];
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -958,11 +960,9 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
+void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MString Title)
 {
   // Create a ROOT histogram:
-
-  Write("Test.txt", true);
 
   if (AxisValues.size() < m_Order) {
     merr<<"MResponseMatrixON::ShowSlice: You have to give as many axis values as there are axes!"<<endl;
@@ -1070,10 +1070,11 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
     //  cout<<"Value "<<i<<": "<<Values[i]<<endl;
     //}
 
+    if (Title == "") Title = m_Name;
 
     if (NAxes == 1) {
 
-      TH1D* Hist = new TH1D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0]);
+      TH1D* Hist = new TH1D("", Title, BinEdges[0].size() - 1, &BinEdges[0][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);
@@ -1100,7 +1101,7 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
 
     } else if (NAxes == 2) {
 
-      TH2D* Hist = new TH2D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0]);
+      TH2D* Hist = new TH2D("", Title, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);
@@ -1136,7 +1137,7 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize)
 
     } else if (NAxes == 3) {
 
-      TH3D* Hist = new TH3D(m_Name, m_Name, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0], BinEdges[2].size() - 1, &BinEdges[2][0]);
+      TH3D* Hist = new TH3D("", Title, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0], BinEdges[2].size() - 1, &BinEdges[2][0]);
       Hist->SetStats(true);
       Hist->SetContour(50);
       Hist->SetXTitle(AxisNames[0]);

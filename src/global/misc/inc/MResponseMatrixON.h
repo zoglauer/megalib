@@ -91,6 +91,9 @@ class MResponseMatrixON : public MResponseMatrix
   
   // Interface to modify the content
   
+  //! Set the content of a specific bin -- directly without error checks
+  //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+  void Set(unsigned int Bin, float Value = 1) { m_Values.at(Bin) = Value; }
   //! Set the bin content
   //! Throw exception "" when out of bounds
   void Set(vector<unsigned int> AxisBins, float Value = 1);
@@ -107,6 +110,9 @@ class MResponseMatrixON : public MResponseMatrix
   virtual float GetArea(vector<double> AxisValues) const;
   //! Get the content of a specific bin 
   virtual float Get(vector<unsigned int> AxisBins) const;
+  //! Get the content of a specific bin -- directly without error checks
+  //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+  virtual float Get(unsigned int Bin) const { return m_Values.at(Bin); }
   //! Get the content of the bin corresponding to the specific value
   virtual float Get(vector<double> AxisValues) const;
   //! Get the interpolated content of the bin corresponding to the specific value
@@ -131,7 +137,7 @@ class MResponseMatrixON : public MResponseMatrix
   virtual void Smooth(unsigned int Times = 1);
 
   //! Show as an image
-  void ShowSlice(vector<float> Axes, bool Normalized = true);
+  void ShowSlice(vector<float> Axes, bool Normalized = true, MString Title = "");
   
   //! Return a string with statistics numbers
   virtual MString GetStatistics() const;
