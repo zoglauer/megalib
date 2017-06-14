@@ -530,7 +530,7 @@ void MDVolume::SetDetector(MDDetector* Detector)
   // Set the detector, this volume belongs to
 
   //cout<<m_Name<<" with detector: "<<(Detector != 0 ? Detector->GetName() : "none")<<endl;
-
+  
   m_Detector = Detector;
 }
 

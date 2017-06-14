@@ -39,6 +39,7 @@
 #include "MDVolume.h"
 #include "MDStrip2D.h"
 #include "MDVoxel3D.h"
+#include "MDGuardRing.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -129,42 +130,29 @@ bool MDTriggerUnit::AddHit(const double& Energy, MDVolumeSequence& V)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerUnit::AddGuardringHit(const MVector& Position, 
+bool MDTriggerUnit::AddGuardRingHit(const MVector& Position, 
                                     const double& Energy)
 {
 
   MDVolumeSequence S = m_Geometry->GetVolumeSequence(Position, false, true);
-  return AddGuardringHit(Energy, S);
+  return AddGuardRingHit(Energy, S);
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerUnit::AddGuardringHit(const double& Energy, MDVolumeSequence& V)
+bool MDTriggerUnit::AddGuardRingHit(const double& Energy, MDVolumeSequence& V)
 {
   bool Added = false;
 
   if (V.GetDetector() != 0) {
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      if (V.GetDetector()->HasGuardring() == true) {
-        if (V.GetDetector()->GetType() == MDDetector::c_Strip2D ||
-            V.GetDetector()->GetType() == MDDetector::c_Strip3D ||
-            V.GetDetector()->GetType() == MDDetector::c_Strip3DDirectional ||
-            V.GetDetector()->GetType() == MDDetector::c_DriftChamber) {
-          if (m_IgnoreThresholds == true || dynamic_cast<MDStrip2D*>(V.GetDetector())->IsAboveGuardringTriggerThreshold(Energy) == true) { 
-            if (m_Geometry->GetTriggerAt(t)->AddGuardringHit(V) == true) {
-              Added = true;
-            }
+      if (V.GetDetector()->HasGuardRing() == true) {
+        if (m_IgnoreThresholds == true || V.GetDetector()->GetGuardRing()->IsAboveTriggerThreshold(Energy, V.GetGridPoint()) == true) { 
+          if (m_Geometry->GetTriggerAt(t)->AddGuardRingHit(V) == true) {
+            Added = true;
           }
-        } else if (V.GetDetector()->GetType() == MDDetector::c_Voxel3D) {
-          if (m_IgnoreThresholds == true || dynamic_cast<MDVoxel3D*>(V.GetDetector())->IsAboveGuardringTriggerThreshold(Energy) == true) { 
-            if (m_Geometry->GetTriggerAt(t)->AddGuardringHit(V) == true) {
-              Added = true;
-            }
-          }
-        } else {
-          merr<<"Detector "<<V.GetDetector()->GetName()<<" has no guardring ?? !!"<<endl;
         }
       } else {
         merr<<"Detector "<<V.GetDetector()->GetName()<<" has no guardring ?? !!"<<endl;

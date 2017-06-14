@@ -28,6 +28,7 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MDDetector.h"
+#include "MDGuardRing.h"
 #include "MStreams.h"
 
 #ifdef ___CINT___
@@ -178,8 +179,13 @@ bool MSimGR::Noise(bool RecalculateVolumeSequence)
       }
     }
     if (m_Geometry->GetActivateNoising() == true) {
-      if (m_VolumeSequence->GetDetector()->NoiseGuardring(m_Energy) == false) {
-        merr<<"Error: Unable to noise guard ring energy!"<<show;
+      if (m_VolumeSequence->GetDetector()->HasGuardRing() == true) {
+        double DummyTime = 0.0;
+        m_VolumeSequence->GetDetector()->GetGuardRing()->Noise(m_Position, m_Energy, DummyTime, nullptr);
+      } else {
+        mout<<"The detector of this guard ring hit at "<<m_Position<<" has no guard ring detector!"<<endl;
+        mout<<"  --> It will not show up in the later analysis!"<<endl;
+        return false;  
       }
 
       if (m_Energy <= 0.0) return false; // Below trigger threshold of guard ring

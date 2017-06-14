@@ -12,13 +12,15 @@ Version 2.99/3.00
  
 
 *** KNOWN ISSUES
-+ The performance of activation simulations is currently not the best...
++ The performance of activation simulations is still not the best...
   
   
 *** Significant new features & improvements:
 
 General:
-+ Setup script now has an option to keep MEGAlib un-updated 
++ Setup script now has an option to keep MEGAlib un-updated
++ Fixed many multi-threading bugs
++ Added old and new neural network interface
 
 Cosima:
 + Support for Geant4 10.2
@@ -30,24 +32,36 @@ Cosima:
 + Improved dcosima distributed simulation
 + Replaced "StoreOnlyTriggeredEvents" with "PreTriggerMode" using 3 modes:
   Full, EveryEventWithHits & Everything
++ Updated all examples
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)
 
 Fretalon:
++ Many smaller enhancements triggered by COSI analysis
 
 Geomega:
 + New option to show the surrounding sphere (ShowSurroundingsphere true)
   This will only be displayed in geomega, but does not show up in any
   other program
++ Internal rewrite of the guard ring interface: 
+  - Guard rings are now their own detector type
+  - You need to give 2 energy resolution data point as in all other detectors
+  - Updated all examples accordingly
   
 Reponse:
++ New base class for all responses
++ Many improvements for COSI analysis
++ TMVA analysis
   
 Revan:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
++ Added neural network Compton sequence reconstruction 
 
 Mimrec:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
++ Parallelization of image deconvolution
++ New imaging rsponse mode
 
 
 Realta:

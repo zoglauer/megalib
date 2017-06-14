@@ -64,13 +64,14 @@ using namespace std;
 #include "MStreams.h"
 #include "MREAM.h"
 #include "MREAMDriftChamberEnergy.h"
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
 #include "MREAMStartInformation.h"
 #include "MDDetector.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"
 #include "MDVoxel3D.h"
+#include "MDGuardRing.h"
 
 
 #ifdef ___CINT___
@@ -1654,24 +1655,16 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       if (V->GetDetector() == 0) {
         mout<<"Position of GR does not represent a detector!"<<endl; 
         Ret = 1;
-      } else if (V->GetDetector()->GetType() != MDDetector::c_DriftChamber && 
-                 V->GetDetector()->GetType() != MDDetector::c_Strip3D &&
-                 V->GetDetector()->GetType() != MDDetector::c_Strip3DDirectional &&
-                 V->GetDetector()->GetType() != MDDetector::c_Voxel3D &&
-                 V->GetDetector()->GetType() != MDDetector::c_Strip2D) {
+      } else if (V->GetDetector()->HasGuardRing() == false) {
         mout<<"Position of GR does not represent a detector with guard ring!"<<endl; 
         Ret = 1;
       } else {
-        MREAMGuardringHit* GR = new MREAMGuardringHit();
+        MREAMGuardRingHit* GR = new MREAMGuardRingHit();
         GR->SetVolumeSequence(V); // GR is responsible for the volume sequence!
         // We do NOT do any noising here!!
-        // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardringEnergy(Energy);
+        // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardRingEnergy(Energy);
         GR->SetEnergy(Energy);
-        if (V->GetDetector()->GetType() == MDDetector::c_Voxel3D) {
-          GR->SetEnergyResolution(dynamic_cast<MDVoxel3D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-        } else {
-          GR->SetEnergyResolution(dynamic_cast<MDStrip2D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-        }
+        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
         m_Measurements.push_back(GR);
       }
     } else {

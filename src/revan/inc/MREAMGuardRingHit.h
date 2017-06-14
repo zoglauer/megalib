@@ -1,5 +1,5 @@
 /*
- * MREAMGuardringHit.h
+ * MREAMGuardRingHit.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MREAMGuardringHit__
-#define __MREAMGuardringHit__
+#ifndef __MREAMGuardRingHit__
+#define __MREAMGuardRingHit__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,19 +30,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MREAMGuardringHit : public MREAM
+class MREAMGuardRingHit : public MREAM
 {
   // public interface:
  public:
   //! Default constructor for a guard ring hit
-  MREAMGuardringHit();
+  MREAMGuardRingHit();
   //! Copy constructor for a guard ring hit
-  MREAMGuardringHit(const MREAMGuardringHit& REAMGuardringHit);
+  MREAMGuardRingHit(const MREAMGuardRingHit& REAMGuardRingHit);
   //! Default destructor for a guard ring hit
-  virtual ~MREAMGuardringHit();
+  virtual ~MREAMGuardRingHit();
 
   //! Default assignment constructor
-  const MREAMGuardringHit& operator=(const MREAMGuardringHit&);
+  const MREAMGuardRingHit& operator=(const MREAMGuardRingHit&);
 
   //! In almost all cases when we need a replica of this object we do not know what it is -
   //! Thus we need a general duplication mechanism
@@ -63,8 +63,8 @@ class MREAMGuardringHit : public MREAM
 
   // protected methods:
  protected:
-  //MREAMGuardringHit() {};
-  //MREAMGuardringHit(const MREAMGuardringHit& REAMGuardringHit) {};
+  //MREAMGuardRingHit() {};
+  //MREAMGuardRingHit(const MREAMGuardRingHit& REAMGuardRingHit) {};
 
   // private methods:
  private:
@@ -85,7 +85,7 @@ class MREAMGuardringHit : public MREAM
 
 #ifdef ___CINT___
  public:
-  ClassDef(MREAMGuardringHit, 0) // no description
+  ClassDef(MREAMGuardRingHit, 0) // no description
 #endif
 
 };

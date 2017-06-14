@@ -129,7 +129,7 @@ class MDGridPoint
   static const unsigned int c_YStrip;
   static const unsigned int c_XYAnger;
   static const unsigned int c_XYZAnger;
-  static const unsigned int c_Guardring;
+  static const unsigned int c_GuardRing;
   static const unsigned int c_MinType;
   static const unsigned int c_MaxType;
 

@@ -36,6 +36,7 @@ LOBJS	= $(LB)/MSettingsGeomega.o \
 	$(LB)/MDStrip3DDirectional.o \
 	$(LB)/MDDriftChamber.o \
 	$(LB)/MDVoxel3D.o \
+	$(LB)/MDGuardRing.o \
 	$(LB)/MDShape.o \
 	$(LB)/MDShapeBRIK.o \
 	$(LB)/MDShapeSPHE.o \

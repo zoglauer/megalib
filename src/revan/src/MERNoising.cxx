@@ -40,13 +40,14 @@ using namespace std;
 #include "MAssert.h"
 #include "MREAM.h"
 #include "MREAMDriftChamberEnergy.h"
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"
 #include "MDStrip3D.h"
 #include "MDVoxel3D.h"
 #include "MDStrip3DDirectional.h"
+#include "MDGuardRing.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -144,27 +145,23 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       DCE->SetEnergy(Energy);
       DCE->SetEnergyResolution(dynamic_cast<MDDriftChamber*>(V->GetDetector())->GetLightEnergyResolution(Energy));
       ++Iter;
-    } else if ((*Iter)->GetType() == MREAM::c_GuardringHit) {
-      MREAMGuardringHit* GR = dynamic_cast<MREAMGuardringHit*>(*Iter);
+    } else if ((*Iter)->GetType() == MREAM::c_GuardRingHit) {
+      MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(*Iter);
       double Energy = GR->GetEnergy();
       MDVolumeSequence* V = GR->GetVolumeSequence();
-      if (V->GetDetector()->GetType() == MDDetector::c_Voxel3D) {
-        dynamic_cast<MDVoxel3D*>(V->GetDetector())->NoiseGuardring(Energy);
-        GR->SetEnergyResolution(dynamic_cast<MDVoxel3D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-      } else if (V->GetDetector()->GetType() == MDDetector::c_Strip2D ||
-                 V->GetDetector()->GetType() == MDDetector::c_Strip3D ||
-                 V->GetDetector()->GetType() == MDDetector::c_Strip3DDirectional ||
-                 V->GetDetector()->GetType() == MDDetector::c_DriftChamber) {
-        dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardring(Energy);
-        GR->SetEnergyResolution(dynamic_cast<MDStrip2D*>(V->GetDetector())->GetGuardringEnergyResolution(Energy));
-      } else {
-        merr<<"Detector "<<V->GetDetector()->GetName()<<" has no guard ring ?? !!"<<endl;
-      }
-      GR->SetEnergy(Energy);
-      if (Energy == 0) {
+      if (V->GetDetector()->HasGuardRing() == false || V->GetDetector()->GetGuardRing()->IsActive() == false) {
         Event->DeleteREAM(Iter);
       } else {
-        ++Iter;
+        MVector DummyPosition;
+        double DummyTime = 0.0;
+        V->GetDetector()->GetGuardRing()->Noise(DummyPosition, Energy, DummyTime, nullptr);
+        GR->SetEnergy(Energy);
+        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
+        if (Energy == 0) {
+          Event->DeleteREAM(Iter);
+        } else {
+          ++Iter;
+        }
       }
     } else if ((*Iter)->GetType() == MREAM::c_Directional) {
       MREAMDirectional* DR = dynamic_cast<MREAMDirectional*>(*Iter);
@@ -211,9 +208,9 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
   Event->CompressRESEs();
   for (unsigned int a = 0; a < Event->GetNREAMs(); ++a) {
-    if (Event->GetREAMAt(a)->GetType() == MREAM::c_GuardringHit) {
-      MREAMGuardringHit* GR = dynamic_cast<MREAMGuardringHit*>(Event->GetREAMAt(a));
-      Trigger->AddGuardringHit(GR->GetEnergy(), *(GR->GetVolumeSequence()));
+    if (Event->GetREAMAt(a)->GetType() == MREAM::c_GuardRingHit) {
+      MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(Event->GetREAMAt(a));
+      Trigger->AddGuardRingHit(GR->GetEnergy(), *(GR->GetVolumeSequence()));
     }
   }
 

@@ -68,9 +68,9 @@ class MDTrigger
   void SetDetector(MDDetector* Detector, const unsigned int Hits);
   
   //! Add this guard ring detector type as positive trigger, with the number of hits 
-  void SetGuardringDetectorType(const int Detectortype, const unsigned int Hits);
+  void SetGuardRingDetectorType(const int Detectortype, const unsigned int Hits);
   //! Add this guard ring detector type as positive trigger, with the number of hits 
-  void SetGuardringDetector(MDDetector* Detector, const unsigned int Hits);
+  void SetGuardRingDetector(MDDetector* Detector, const unsigned int Hits);
   
   //! Validate the trigger setup - required to be called after the setup is complete
   virtual bool Validate();
@@ -79,7 +79,7 @@ class MDTrigger
   vector<int> GetDetectorTypes() { return m_DetectorTypes; }
   //! Return the triggering detectors
   vector<MDDetector*> GetDetectors() { return m_Detectors; }
-  //! Return the trigger types (0: Normal detector, 1: Guardring)
+  //! Return the trigger types (0: Normal detector, 1: GuardRing)
   vector<int> GetTriggerTypes() { return m_Types; }
   
   //! Return true if this trigger applies to the detector
@@ -88,7 +88,7 @@ class MDTrigger
   //! Returns true if the hit could be added 
   bool AddHit(MDVolumeSequence& VS);
   //! Returns true if the hit could be added 
-  bool AddGuardringHit(MDVolumeSequence& VS);
+  bool AddGuardRingHit(MDVolumeSequence& VS);
 
   //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
   void Reset();
@@ -108,7 +108,7 @@ class MDTrigger
   virtual MString ToString();
 
   static const int c_Detector;
-  static const int c_Guardring;
+  static const int c_GuardRing;
 
   // protected methods:
  protected:
@@ -132,7 +132,7 @@ class MDTrigger
   vector<int> m_DetectorTypes;
   //! Detector this trigger consists of
   vector<MDDetector*> m_Detectors;
-  //! The type: 0: Normal detector, 1: Guardring
+  //! The type: 0: Normal detector, 1: GuardRing
   vector<int> m_Types;
   //! Number of hits necessary to raise the trigger
   vector<unsigned int> m_Hits;

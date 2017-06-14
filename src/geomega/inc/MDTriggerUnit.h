@@ -61,9 +61,9 @@ class MDTriggerUnit
   //! Add a new hit
   bool AddHit(const double& Energy, MDVolumeSequence& VS);
   //! Add a new guard ring hit
-  bool AddGuardringHit(const MVector& Position, const double& Energy);
+  bool AddGuardRingHit(const MVector& Position, const double& Energy);
   //! Add a new guard ring hit
-  bool AddGuardringHit(const double& Energy, MDVolumeSequence& VS);
+  bool AddGuardRingHit(const double& Energy, MDVolumeSequence& VS);
 
   //! Return true if the last event has raised a trigger
   bool HasTriggered();

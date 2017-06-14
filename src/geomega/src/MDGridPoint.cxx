@@ -52,9 +52,9 @@ const unsigned int MDGridPoint::c_XStrip = 3;
 const unsigned int MDGridPoint::c_YStrip = 4;
 const unsigned int MDGridPoint::c_XYAnger = 5;
 const unsigned int MDGridPoint::c_XYZAnger = 6;
-const unsigned int MDGridPoint::c_Guardring = 7;
+const unsigned int MDGridPoint::c_GuardRing = 7;
 const unsigned int MDGridPoint::c_MinType = MDGridPoint::c_Voxel;
-const unsigned int MDGridPoint::c_MaxType = MDGridPoint::c_Guardring;
+const unsigned int MDGridPoint::c_MaxType = MDGridPoint::c_GuardRing;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +176,7 @@ bool MDGridPoint::operator==(const MDGridPoint& GridPoint)
           m_zGrid != GridPoint.m_zGrid) {
         return false;
       }
-    } else if (m_Type == c_Guardring || 
+    } else if (m_Type == c_GuardRing || 
                m_Type == c_XYAnger ||
                m_Type == c_XYZAnger) {
       return true;
@@ -249,7 +249,7 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
       m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
       // Finally add the hits:
       m_Hits += GridPoint.m_Hits;
-    } else if (m_Type == c_Guardring) {
+    } else if (m_Type == c_GuardRing) {
       m_Energy += GridPoint.m_Energy;
       m_Position.SetXYZ(0.0, 0.0, 0.0);
       // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
@@ -319,8 +319,8 @@ ostream& operator<<(ostream& os, const MDGridPoint& GridPoint)
     os<<"XYAnger)"<<endl;
   } else if (GridPoint.m_Type == MDGridPoint::c_XYZAnger) {
     os<<"XYZAnger)"<<endl;
-  } else if (GridPoint.m_Type == MDGridPoint::c_Guardring) {
-    os<<"Guardring)"<<endl;
+  } else if (GridPoint.m_Type == MDGridPoint::c_GuardRing) {
+    os<<"GuardRing)"<<endl;
   } else {
     os<<"not (completely) implemented type)"<<endl;
   }

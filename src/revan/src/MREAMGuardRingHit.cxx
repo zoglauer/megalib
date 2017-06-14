@@ -1,5 +1,5 @@
 /*
- * MREAMGuardringHit.cxx
+ * MREAMGuardRingHit.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MREAMGuardringHit
+// MREAMGuardRingHit
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 
 // Standard libs:
 #include <iostream>
@@ -42,18 +42,18 @@ using namespace std;
 
 
 #ifdef ___CINT___
-ClassImp(MREAMGuardringHit)
+ClassImp(MREAMGuardRingHit)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MREAMGuardringHit::MREAMGuardringHit() : MREAM()
+MREAMGuardRingHit::MREAMGuardRingHit() : MREAM()
 {
-  // Construct an instance of MREAMGuardringHit
+  // Construct an instance of MREAMGuardRingHit
 
-  m_Type = c_GuardringHit;
+  m_Type = c_GuardRingHit;
   
   m_Energy = g_DoubleNotDefined;
   m_EnergyResolution = g_DoubleNotDefined;
@@ -63,9 +63,9 @@ MREAMGuardringHit::MREAMGuardringHit() : MREAM()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MREAMGuardringHit::MREAMGuardringHit(const MREAMGuardringHit& REAM)
+MREAMGuardRingHit::MREAMGuardRingHit(const MREAMGuardRingHit& REAM)
 {
-  // Construct an instance of MREAMGuardringHit
+  // Construct an instance of MREAMGuardRingHit
 
   m_Type = REAM.m_Type;
   m_VolumeSequence = new MDVolumeSequence(*(REAM.m_VolumeSequence));
@@ -77,21 +77,21 @@ MREAMGuardringHit::MREAMGuardringHit(const MREAMGuardringHit& REAM)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MREAMGuardringHit::~MREAMGuardringHit()
+MREAMGuardRingHit::~MREAMGuardRingHit()
 {
-  // Delete this instance of MREAMGuardringHit
+  // Delete this instance of MREAMGuardRingHit
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MREAM* MREAMGuardringHit::Clone()
+MREAM* MREAMGuardRingHit::Clone()
 {
   // Duplicate this REAM
 
   massert(this != 0);
-  return new MREAMGuardringHit(*this);
+  return new MREAMGuardRingHit(*this);
 }
 
 
@@ -99,7 +99,7 @@ MREAM* MREAMGuardringHit::Clone()
 
 
 
-MString MREAMGuardringHit::ToEvtaString(const int ScientificPrecision, const int Version)
+MString MREAMGuardRingHit::ToEvtaString(const int ScientificPrecision, const int Version)
 {  
   //! Convert to a string in the evta file
 
@@ -139,5 +139,5 @@ MString MREAMGuardringHit::ToEvtaString(const int ScientificPrecision, const int
 }
 
 
-// MREAMGuardringHit.cxx: the end...
+// MREAMGuardRingHit.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

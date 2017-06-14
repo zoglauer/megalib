@@ -77,6 +77,7 @@ using namespace std;
 #include "MDDriftChamber.h"
 #include "MDAngerCamera.h"
 #include "MDVoxel3D.h"
+#include "MDGuardRing.h"
 #include "MDSystem.h"
 #include "MTimer.h"
 #include "MString.h"
@@ -1851,22 +1852,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         T->SetDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
-      } else if (Tokenizer.IsTokenAt(1, "GuardringDetectorType") == true) {
+      } else if (Tokenizer.IsTokenAt(1, "GuardRingDetectorType") == true || Tokenizer.IsTokenAt(1, "GuardringDetectorType") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
-               " e.g. \"D1D2Trigger.GuardringDetectorType Strip3D 1\"");
+               " e.g. \"D1D2Trigger.GuardRingDetectorType Strip3D 1\"");
           return false;
         }
         if (MDDetector::IsValidDetectorType(Tokenizer.GetTokenAtAsString(2)) == false) {
           Typo("Line must contain a valid detector type, e.g. Strip2D, DriftChamber, etc.");
           return false;          
         }
-        T->SetGuardringDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
+        T->SetGuardRingDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
                                     Tokenizer.GetTokenAtAsInt(3));
-      } else if (Tokenizer.IsTokenAt(1, "GuardringDetector") == true) {
+      } else if (Tokenizer.IsTokenAt(1, "GuardRingDetector") == true || Tokenizer.IsTokenAt(1, "GuardringDetector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
-               " e.g. \"D1D2Trigger.GuardringDetector MyStrip2D 1\"");
+               " e.g. \"D1D2Trigger.GuardRingDetector MyStrip2D 1\"");
           return false;
         }
         MDDetector* TriggerDetector;
@@ -1874,7 +1875,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("A detector of this name does not exist!");
           return false;
         }
-        T->SetGuardringDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
+        T->SetGuardRingDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
       } else if (Tokenizer.IsTokenAt(1, "NegativeDetectorType") == true) {
         mout<<" *** Outdated *** "<<endl;
         mout<<"The \"NegativeDetectorType\" keyword is no longer supported!"<<endl;
@@ -2833,7 +2834,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         //         dynamic_cast<MDStrip2D*>(D)->SetOrientation(Tokenizer.GetTokenAtAsInt(2));
       }
       // Check for guard ring threshold
-      else if (Tokenizer.IsTokenAt(1, "GuardringTriggerThreshold") == true) {
+      else if (Tokenizer.IsTokenAt(1, "GuardRingTriggerThreshold") == true ||
+               Tokenizer.IsTokenAt(1, "GuardringTriggerThreshold") == true) {
         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
             D->GetDetectorType() != MDDetector::c_Strip3D &&
             D->GetDetectorType() != MDDetector::c_Voxel3D &&
@@ -2844,49 +2846,63 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetNTokens() < 3 || Tokenizer.GetNTokens() > 4) {
           Typo("Line must contain two strings and 2 double,"
-               " e.g. \"Wafer.GuardringTriggerThreshold 30 10\"");
+               " e.g. \"Wafer.GuardRingTriggerThreshold 30 10\"");
           return false;
         }
         if (D->GetDetectorType() == MDDetector::c_Voxel3D) {
-          dynamic_cast<MDVoxel3D*>(D)->SetGuardringTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetNoiseThresholdEqualsTriggerThreshold(true);
+          D->GetGuardRing()->SetTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
           if (Tokenizer.GetNTokens() == 4) {
-            dynamic_cast<MDVoxel3D*>(D)->SetGuardringTriggerThresholdSigma(Tokenizer.GetTokenAtAsDouble(3));
+            D->GetGuardRing()->SetTriggerThresholdSigma(Tokenizer.GetTokenAtAsDouble(3));
           }
         } else {
-          dynamic_cast<MDStrip2D*>(D)->SetGuardringTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDStrip2D*>(D)->HasGuardRing(true);
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetNoiseThresholdEqualsTriggerThreshold(true);
+          D->GetGuardRing()->SetTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
           if (Tokenizer.GetNTokens() == 4) {
-            dynamic_cast<MDStrip2D*>(D)->SetGuardringTriggerThresholdSigma(Tokenizer.GetTokenAtAsDouble(3));
+            D->GetGuardRing()->SetTriggerThresholdSigma(Tokenizer.GetTokenAtAsDouble(3));
           }
         }
       }
       // Check for guard ring energy resolution
-      else if (Tokenizer.IsTokenAt(1, "GuardringEnergyResolution") == true || 
+      else if (Tokenizer.IsTokenAt(1, "GuardRingEnergyResolution") == true || 
+               Tokenizer.IsTokenAt(1, "GuardRingEnergyResolutionAt") == true ||
+               Tokenizer.IsTokenAt(1, "GuardringEnergyResolution") == true || 
                Tokenizer.IsTokenAt(1, "GuardringEnergyResolutionAt") == true) {
         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
             D->GetDetectorType() != MDDetector::c_Strip3D &&
             D->GetDetectorType() != MDDetector::c_Voxel3D &&
             D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
             D->GetDetectorType() != MDDetector::c_DriftChamber) {
-          Typo("Option GuardringEnergyResolutionAt only supported for StripxD & DriftChamber");
+          Typo("Option GuardRingEnergyResolution only supported for StripxD, DriftChamber, Voxel3D");
           return false;
         }
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain two strings and 2 doubles,"
-               " e.g. \"Wafer.GuardringEnergyResolutionAt 30 10\"");
+               " e.g. \"Wafer.GuardRingEnergyResolution 30 10\"");
           return false;
         }
         if (D->GetDetectorType() == MDDetector::c_Voxel3D) {
-          if (dynamic_cast<MDVoxel3D*>(D)->SetGuardringEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                        Tokenizer.GetTokenAtAsDouble(3)) == false) {
-            Typo("Incorrect input");
-            return false;
+          if (D->HasGuardRing() == false) {
+            dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
+            D->GetGuardRing()->SetActive(true);
+            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
+                                                 Tokenizer.GetTokenAtAsDouble(2), 
+                                                 Tokenizer.GetTokenAtAsDouble(3));
         } else {
-          if (dynamic_cast<MDStrip2D*>(D)->SetGuardringEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                        Tokenizer.GetTokenAtAsDouble(3)) == false) {
-            Typo("Incorrect input");
-            return false;
+          if (D->HasGuardRing() == false) {
+            dynamic_cast<MDStrip2D*>(D)->HasGuardRing(true);
+            D->GetGuardRing()->SetActive(true);
+            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
+                                                 Tokenizer.GetTokenAtAsDouble(2), 
+                                                 Tokenizer.GetTokenAtAsDouble(3));
         }
       }
       // Check for Calorimeter specific tokens:
@@ -3051,7 +3067,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain two strings and 2 doubles,"
-               " e.g. \"Wafer.TriggerThresholdDepthCorrectionGuardringTriggerThresholdAt 30 10\"");
+               " e.g. \"Wafer.TriggerThresholdDepthCorrection 30 10\"");
           return false;
         }
         if (dynamic_cast<MDStrip3D*>(D)->SetTriggerThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2), 
@@ -3065,12 +3081,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (D->GetDetectorType() != MDDetector::c_Strip3D &&
             D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
             D->GetDetectorType() != MDDetector::c_DriftChamber) {
-          Typo("Option NoiseThresholdDepthCorrectionAt only supported for StripxD & DriftChamber");
+          Typo("Option NoiseThresholdDepthCorrection only supported for StripxD & DriftChamber");
           return false;
         }
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain two strings and 2 doubles,"
-               " e.g. \"Wafer.NoiseThresholdDepthCorrectionGuardringNoiseThresholdAt 30 10\"");
+               " e.g. \"Wafer.NoiseThresholdDepthCorrection 30 10\"");
           return false;
         }
         if (dynamic_cast<MDStrip3D*>(D)->SetNoiseThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2), 

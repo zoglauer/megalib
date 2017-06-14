@@ -299,7 +299,7 @@ class MSimEvent : public MRotationInterface
   double GetAverageEnergyDeposit(int Detector);
   
   //! Return the total energy deposited in all guard rings
-  double GetGuardringEnergy();
+  double GetGuardRingEnergy();
 
   //! Return the number of ignored hits (below threshold, no detector)
   int GetNIgnoredHTs() const { return m_NIgnoredHTs; }

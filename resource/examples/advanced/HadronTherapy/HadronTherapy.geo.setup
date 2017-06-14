@@ -150,7 +150,8 @@ GStrip.NoiseThreshold 15.0
 GStrip.TriggerThreshold 40.0
 
 GStrip.GuardringEnergyResolution 100 1.5
-GStrip.GuardringTriggerThreshold    40
+GStrip.GuardringEnergyResolution 1000 1.5
+GStrip.GuardringTriggerThreshold 40
 
 GStrip.FailureRate 0.0
 

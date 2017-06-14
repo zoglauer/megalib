@@ -35,7 +35,7 @@
 #include "MAssert.h"
 #include "MREAM.h"
 #include "MREAMDriftChamberEnergy.h"
-#include "MREAMGuardringHit.h"
+#include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"

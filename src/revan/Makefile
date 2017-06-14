@@ -63,7 +63,7 @@ LOBJS = $(LB)/MGeometryRevan.o \
 				$(LB)/MRERawEvent.o \
 				$(LB)/MREAM.o \
 				$(LB)/MREAMDriftChamberEnergy.o \
-				$(LB)/MREAMGuardringHit.o \
+				$(LB)/MREAMGuardRingHit.o \
 				$(LB)/MREAMDirectional.o \
 				$(LB)/MREAMStartInformation.o \
 				

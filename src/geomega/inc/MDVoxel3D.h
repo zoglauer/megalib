@@ -41,7 +41,6 @@ class MDVoxel3D : public MDDetector
   virtual bool CopyDataToNamedDetectors();
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
-  virtual bool NoiseGuardring(double& Energy) const;
   virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
                                          const double& Energy, 
                                          const double& Time, 
@@ -63,21 +62,15 @@ class MDVoxel3D : public MDDetector
   virtual MString GetGeant3Divisions() const;
   virtual MString GetMGeantDivisions() const;
   virtual MString ToString() const;
-
-  bool SetGuardringEnergyResolution(const double Energy, const double Resolution);
-  virtual double GetGuardringEnergyResolution(const double Energy) const;
-
-  void SetGuardringTriggerThreshold(const double Threshold) { m_GuardringTriggerThreshold = Threshold; }
-  double GetGuardringTriggerThreshold() const { return m_GuardringTriggerThreshold; }
-
-  void SetGuardringTriggerThresholdSigma(const double Sigma) { m_GuardringTriggerThresholdSigma = Sigma; }
-  double GetGuardringTriggerThresholdSigma() const { return m_GuardringTriggerThresholdSigma; }
-
-  virtual bool IsAboveGuardringTriggerThreshold(const double& Energy) const;
-
-  //! Retrieve a unique position on the guard ring 
-  MVector GetUniqueGuardringPosition() const;
-
+  
+  
+  //! Set that this detector has a guard ring
+  //! It will be verified in Validate(), and then if there is no actual offset you will get an error there
+  void HasGuardRing(bool HasGuardRing);
+  //! We also use this variation from the base class
+  using MDDetector::HasGuardRing;
+  
+  
   void SetWidth(const double x, const double y, const double z);
   double GetWidthX() const { return m_WidthX; }
   double GetWidthY() const { return m_WidthY; }
@@ -155,20 +148,7 @@ class MDVoxel3D : public MDDetector
   int m_NBlocksY;
   //! z number of blocks (sensitive volumes) in detector
   int m_NBlocksZ;
-
-  //! Trigger threshold of the guard ring
-  double m_GuardringTriggerThreshold;
-  //! Trigger threshold of the guard ring one sigma resolution
-  double m_GuardringTriggerThresholdSigma;
   
-  
-  //! The energy resolution type of the guard ring
-  int m_GuardringEnergyResolutionType;
-  //! Energy resolution of the guard ring
-  MFunction m_GuardringEnergyResolution; 
-
-  //! A unique position in the guardring of one wafer relative to the wafer center!!
-  MVector m_UniqueGuardringPosition;
 
   // private members:
  private:
