@@ -174,12 +174,11 @@ PCB.Component                   H   8
 PCB.Component                   C   5   
 PCB.Component                   O   2   
 
-// Values of Peek are not correct, except for the density (=1.31) !!!
 Material Peek
 Peek.Density                     1.31
-Peek.Component                   H   8   
-Peek.Component                   C   5  
-Peek.Component                   O   2  
+Peek.Component                   H   12   
+Peek.Component                   C   19  
+Peek.Component                   O   3  
 
 // Values of Plastic Isolation  are not correct !!!
 Material Plastic_Isolation

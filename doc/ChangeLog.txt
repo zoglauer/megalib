@@ -48,6 +48,7 @@ Geomega:
   - Guard rings are now their own detector type
   - You need to give 2 energy resolution data point as in all other detectors
   - Updated all examples accordingly
++ Fixed the PEEK elemental composition to 19C12H3O from 5C8H2O
   
 Reponse:
 + New base class for all responses
