@@ -38,7 +38,17 @@ ClassImp(MCoordinateSystem)
 
 
 std::ostream& operator<<(std::ostream& os, MCoordinateSystem C) {
-  return os<<static_cast<int>(C); 
+  if (C == MCoordinateSystem::c_Galactic) {
+    return os<<"Galactic";
+  } else if (C == MCoordinateSystem::c_Spheric) {
+    return os<<"spheric";
+  } else if (C == MCoordinateSystem::c_Cartesian2D) {
+    return os<<"Cartesian 2D";    
+  } else if (C == MCoordinateSystem::c_Cartesian3D) {
+    return os<<"Cartesian 3D";
+  } else {
+    return os<<"unknown";
+  }
 }
 
 
