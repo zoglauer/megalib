@@ -573,7 +573,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
         if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
         StopIndex = d;
         // Store the index where we have 2 hits for the first time, twice
-        if (StartIndex == 0 && NBelow[d] > 1 && NBelow[d+2] > 1) StartIndex = d;
+        if (StartIndex == 0 && NBelow[d] > 1 && NBelow[d+1] > 1) StartIndex = d;
         
         if (StartIndex != 0) {
           if (NBelow[d] >= 2) ++LayersWithAtLeastTwoHitsBetweenStartAndStop;
