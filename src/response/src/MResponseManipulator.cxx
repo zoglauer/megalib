@@ -529,12 +529,18 @@ bool MResponseManipulator::Append()
 {
   MFileResponse File;
   MResponseMatrix* R = File.Read(m_FileName.c_str());
-  if (R == 0) return false;
+  if (R == nullptr) {
+    merr<<"Error: Unable to read first response file \""<<m_FileName<<"\" - aborting..."<<endl;
+    return false;
+  }
 
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
     MFileResponse AppendFile;
     MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f].c_str());
-    if (RAppend == 0) return false;
+    if (RAppend == nullptr) {
+      merr<<"Error: Unable to read response file \""<<m_AppendFileNames[f]<<"\" - aborting..."<<endl;
+      return false;
+    }
 
     mout<<"Appending: "<<m_AppendFileNames[f]<<endl;
 
@@ -657,11 +663,19 @@ bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
     }
     MFileResponse File;
     MResponseMatrix* First = File.Read(SortedFiles[t][0]);
-
+    if (First == nullptr) {
+      merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
+      break;
+    }
+      
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
       if (m_Interrupt == true) break;
 
       MResponseMatrix* Append = File.Read(SortedFiles[t][f]);
+      if (Append == nullptr) {
+        merr<<"Error: Unable to read response file \""<<SortedFiles[t][f]<<"\" - skipping it..."<<endl;
+        continue;
+      }
 
       if (First->GetOrder() != Append->GetOrder()) {
         mout<<"Cannot append file, because they are of different order!"<<endl;
