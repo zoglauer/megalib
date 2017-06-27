@@ -42,7 +42,7 @@ MPI = $(BN)/bundler
 
 MLIBS = -L$(LB) -lMimrecGui -lMimrec -lRevanGui -lRevan -lSivanGui -lSivan -lSpectralyzeGui -lSpectralyze -lGeomegaGui -lGeomega -lNeuralNet -lCommonMisc -lCommonGui  
 
-EVERYTHING = $(PRGSX) $(FITS) $(MPI)
+EVERYTHING = $(PRGSX)
 
 #----------------------------------------------------------------
 # Commands:
