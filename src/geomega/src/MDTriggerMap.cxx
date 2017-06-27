@@ -108,7 +108,7 @@ bool MDTriggerMap::ReadTriggerMap(MString FileName)
         return false;
       }
       
-      MDTriggerMode Mode;
+      MDTriggerMode Mode = MDTriggerMode::c_VetoableTrigger;
       if (T->IsTokenAt(0, "TV") == true) { 
         Mode = MDTriggerMode::c_VetoableTrigger;
       } else if (T->IsTokenAt(0, "TN") == true) {
