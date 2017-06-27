@@ -469,12 +469,16 @@ bool MDVolumeSequence::HasVolume(MDVolume* Volume) const
 
 bool MDVolumeSequence::HasSameDetector(const MDVolumeSequence& VS) const
 {
-  if (GetDetector() == 0 || VS.GetDetector() == 0) {
-    mdebug<<"Not same detector: Zero pointer"<<endl;
+  if (GetDetector() == 0) {
+    mdebug<<"HasSameDetector(): No - this VS has no detectors"<<endl;
+    return false;
+  }
+  if (VS.GetDetector() == 0) {
+    mdebug<<"HasSameDetector(): No - the tested VS has no detectors"<<endl;
     return false;
   }
   if (GetDetector()->GetName() != VS.GetDetector()->GetName()) {
-    mdebug<<"Not same detector: Different names"<<endl;
+    mdebug<<"HasSameDetector(): Different detector names"<<endl;
     return false;
   }
 

@@ -126,15 +126,6 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   Usage<<"         --create-cross-sections:"<<endl;
   Usage<<"             Create cross section files"<<endl;
   Usage<<endl;
-  Usage<<"         --create-mggpod <filename suffix>:"<<endl;
-  Usage<<"             Create mggpod files with this file name suffix"<<endl;
-  Usage<<"         --create-mggpod-noia <filename suffix>:"<<endl;
-  Usage<<"             Create mggpod files with this file name suffix without IA information"<<endl;
-  Usage<<"         --create-mggpod-default:"<<endl;
-  Usage<<"             Create mggpod files with the default file name"<<endl;
-  Usage<<"         --create-mggpod-default-noia:"<<endl;
-  Usage<<"             Create mggpod files with the default file name without IA information"<<endl;
-  Usage<<endl;
 
   // Store some options temporarily:
   MString Option;
@@ -228,37 +219,7 @@ bool MInterfaceGeomega::ParseCommandLine(int argc, char** argv)
   // Now parse all high level options
   for (int i = 1; i < argc; i++) {
      Option = argv[i];
-     if (Option == "--create-mggpod-default") {
-       cout<<"Command-line parser: Creating default mggpod files "<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(0); 
-       m_Data->SetStoreIAs(true);
-       WriteMGeantFiles();
-       return false;
-     } else if (Option == "--create-mggpod-default-noia") {
-       cout<<"Command-line parser: Creating default mggpod files without IA information"<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(0);
-       m_Data->SetStoreIAs(false);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-mggpod") {
-       cout<<"Command-line parser: Creating mggpod files with suffix "<<m_Data->GetMGeantFileName()<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(1); 
-       m_Data->SetStoreIAs(true);
-       m_Data->SetMGeantFileName(argv[++i]);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-mggpod-noia") {
-       cout<<"Command-line parser: Creating mggpod files with suffix "<<m_Data->GetMGeantFileName()<<endl;
-       gROOT->SetBatch(true);
-       m_Data->SetMGeantOutputMode(1); 
-       m_Data->SetMGeantFileName(argv[++i]);
-       m_Data->SetStoreIAs(false);
-       WriteMGeantFiles();
-       return false;
-    } else if (Option == "--create-cross-sections") {
+    if (Option == "--create-cross-sections") {
        cout<<"Command-line parser: Creating cross section files"<<endl;
        gROOT->SetBatch(true);
        CreateCrossSections();
@@ -499,52 +460,6 @@ void MInterfaceGeomega::DumpInformation()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MInterfaceGeomega::WriteGeant3Files()
-{
-  // Translate the geometry-setup-file to Geant3
-
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
-    if (ReadGeometry() == false) {
-      return;
-    }
-  }
-
-  m_Geometry->WriteGeant3Files();    
-  mgui<<"Geant3-files written!"<<info;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MInterfaceGeomega::WriteMGeantFiles()
-{
-  // Translate the geometry-setup-file to MGeant (Geant3 variant) - RMK
-
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
-    if (ReadGeometry() == false) {
-      return;
-    }
-  }
-
-  if (m_Data->GetMGeantOutputMode() == 0) {
-    m_Geometry->WriteMGeantFiles("", m_Data->GetStoreIAs(), m_Data->GetStoreVetoes());
-  } else {
-    m_Geometry->WriteMGeantFiles(m_Data->GetMGeantFileName(), m_Data->GetStoreIAs(), m_Data->GetStoreVetoes());
-  }
-  // mgui doesn't work with batch mode!
-  mout<<"MGeant-files written!"<<endl
-      <<"Please take a look at the files,"<<endl
-      <<"because you might have to modify them"<<endl
-      <<"before you use them with MGeant/MGGPOD!"<<info;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MInterfaceGeomega::FindVolume(MVector Pos)
 {
   // Find the volume sequence for position Pos
@@ -629,9 +544,9 @@ void MInterfaceGeomega::GetResolutions()
     double Pmin = 0;
     double Pmax = 1000;
     bool HasDepthResolution = false;
-    if (D->GetDetectorType() == MDDetector::c_Calorimeter) {
+    if (D->GetType() == MDDetector::c_Calorimeter) {
       HasDepthResolution = dynamic_cast<MDCalorimeter*>(D)->HasDepthResolution();
-    } else if (D->GetDetectorType() == MDDetector::c_Strip3D) {
+    } else if (D->GetType() == MDDetector::c_Strip3D) {
       HasDepthResolution = true;;
     }
 
@@ -716,9 +631,9 @@ void MInterfaceGeomega::GetResolutions()
     }
 
     // Depth dependent energy resolution for Strip detectors
-    if (D->GetDetectorType() == MDDetector::c_Strip3D ||
-        D->GetDetectorType() == MDDetector::c_Strip3DDirectional ||
-        D->GetDetectorType() == MDDetector::c_DriftChamber) {
+    if (D->GetType() == MDDetector::c_Strip3D ||
+        D->GetType() == MDDetector::c_Strip3DDirectional ||
+        D->GetType() == MDDetector::c_DriftChamber) {
       MDStrip3D* Strip = dynamic_cast<MDStrip3D*>(D);
       if (Strip->HasEnergyResolutionDepthCorrection() == true) {
         double FixedEnergy = 1000;

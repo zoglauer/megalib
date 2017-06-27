@@ -1,0 +1,238 @@
+---------------------------------------------------------
+# Simple geometry to explain how trigger maps work
+
+
+Name TriggerMapGeometry
+Version 1.0
+
+SurroundingSphere 50.0 0.0 0.0 0.0 50.0
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+Volume World
+World.Shape BOX 100.0 100.0 100.0
+World.Material Vacuum
+World.Position 0 0 0
+World Mother 0
+
+
+Constant InnerHalfSize 10.0
+
+Volume Wafer
+Wafer.Shape BOX InnerHalfSize InnerHalfSize 0.05
+Wafer.Material Silicon
+
+Constant TrackerLayerDistance 1.0
+
+For I 21 10 -TrackerLayerDistance
+	Wafer.Copy Wafer_%I
+	Wafer_%I.Position 0 0 $I
+	Wafer_%I.Mother World
+	
+	Tracker.NamedDetector TrackerWafer_%I
+	TrackerWafer_%I.Assign World.Wafer_%I
+Done
+
+
+Strip2D Tracker
+
+Tracker.DetectorVolume      Wafer
+Tracker.SensitiveVolume     Wafer
+
+Tracker.StructuralPitch     0.0   0.0   TrackerLayerDistance
+
+Tracker.Offset              0.3   0.3
+Tracker.StripNumber         400    400
+
+Tracker.NoiseThreshold      15
+Tracker.TriggerThreshold    30
+
+Tracker.EnergyResolution Gaus 10      10        1.0   
+Tracker.EnergyResolution Gaus 100     100       1.0     
+Tracker.EnergyResolution Gaus 1000    1000      1.0       
+
+
+Tracker.GuardRingEnergyResolution 100 10
+Tracker.GuardRingEnergyResolution 1000 10
+Tracker.GuardRingTriggerThreshold 100
+
+
+
+Volume CsIBar
+CsIBar.Shape BOX 0.245 0.245 4.0
+CsIBar.Material CsI
+
+# 
+Volume CsIBlock
+CsIBlock.Shape BOX InnerHalfSize InnerHalfSize 4.0
+CsIBlock.Material Millipore
+CsIBlock.Position 0 0 -16
+CsIBlock.Mother World
+
+For X 40 { -InnerHalfSize+0.25 } 0.5
+	For Y 40 { -InnerHalfSize+0.25 }  0.5
+		CsIBar.Copy CsIBar_%X_%Y
+		CsIBar_%X_%Y.Position $X $Y 0.0
+		CsIBar_%X_%Y.Mother CsIBlock
+	Done
+Done
+
+
+Calorimeter Cali
+Cali.SensitiveVolume      CsIBar
+Cali.DetectorVolume       CsIBlock
+
+Cali.StructuralPitch      0.05 0.05  0.0
+Cali.StructuralOffset     0.05 0.05 0.0
+
+Cali.NoiseThreshold         20 
+Cali.TriggerThreshold      100
+
+Cali.DepthResolution    300      1
+
+Cali.EnergyResolution  Gauss   1      1      39.1432
+Cali.EnergyResolution  Gauss   2      2      39.1433
+Cali.EnergyResolution  Gauss   5      5      39.1436
+Cali.EnergyResolution  Gauss   10     10     39.144
+Cali.EnergyResolution  Gauss   20     20     39.1449
+Cali.EnergyResolution  Gauss   50     50     39.1475
+Cali.EnergyResolution  Gauss   100    100    39.1518
+Cali.EnergyResolution  Gauss   200    200    39.1604
+Cali.EnergyResolution  Gauss   500    500    39.1862
+Cali.EnergyResolution  Gauss   1000   1000   39.2292
+Cali.EnergyResolution  Gauss   2000   2000   39.3151
+Cali.EnergyResolution  Gauss   5000   5000   39.5716
+Cali.EnergyResolution  Gauss   10000  10000  39.9955
+Cali.EnergyResolution  Gauss   20000  20000  40.83
+Cali.EnergyResolution  Gauss   50000  50000  43.2371
+Cali.EnergyResolution  Gauss   100000 100000 46.9756
+
+
+
+
+
+
+# Anticoincidence
+
+Constant UpperOuterHalfSize { InnerHalfSize + 1.5 }
+
+Volume ACSTopBottom
+ACSTopBottom.Shape BOX UpperOuterHalfSize UpperOuterHalfSize 0.25
+ACSTopBottom.Material NE110
+
+ACSTopBottom.Copy ACSTop
+ACSTop.Position 0.0 0.0 12.0
+ACSTop.Mother World
+
+ACSTopBottom.Copy ACSBottom
+ACSBottom.Position 0.0 0.0 -22.0
+ACSBottom.Mother World
+
+Volume ACSSide
+ACSSide.Shape BOX { UpperOuterHalfSize - 0.25 } 0.25 {33.0/2}
+ACSSide.Material NE110
+
+ACSSide.Copy ACSSide_py
+ACSSide_py.Position 0.0 UpperOuterHalfSize -5.0
+ACSSide_py.Mother World
+
+ACSSide.Copy ACSSide_my
+ACSSide_my.Position 0.0 { -UpperOuterHalfSize } -5.0
+ACSSide_my.Mother World
+
+
+ACSSide.Copy ACSSide_px
+ACSSide_px.Position UpperOuterHalfSize 0.0 -5.0
+ACSSide_px.Rotation 0 0 90
+ACSSide_px.Mother World
+
+ACSSide.Copy ACSSide_mx
+ACSSide_mx.Rotation 0 0 90
+ACSSide_mx.Position { -UpperOuterHalfSize } 0.0 -5.0
+ACSSide_mx.Mother World
+
+
+Scintillator   AntiTopBottom
+
+AntiTopBottom.SensitiveVolume     ACSTopBottom
+
+AntiTopBottom.TriggerThreshold  200
+AntiTopBottom.NoiseThresholdEqualsTriggerThreshold  true
+AntiTopBottom.EnergyResolution  Gauss   0   0     100
+AntiTopBottom.EnergyResolution  Gauss  10  10     100
+
+AntiTopBottom.Named AntiTop
+AntiTop.Assign World.ACSTop
+
+AntiTopBottom.Named AntiBottom
+AntiBottom.Assign World.ACSBottom
+
+
+Scintillator   AntiSide
+
+AntiSide.SensitiveVolume     ACSSide
+
+AntiSide.TriggerThreshold  200
+AntiSide.NoiseThresholdEqualsTriggerThreshold  true
+AntiSide.EnergyResolution  Gauss   0   0     100
+AntiSide.EnergyResolution  Gauss  10  10     100
+
+
+# The basic trigger criteria resembling as close as possible the new one
+
+#Trigger Classic
+#Classic.Veto false
+#Classic.Detector Tracker 1
+#Classic.Detector Cali 1
+
+#Trigger Classic2
+#Classic2.Veto true
+#Classic2.GuardRingDetector Tracker 1
+
+#Trigger Classic3
+#Classic3.Veto true
+#Classic3.Detector AntiTopBottom 1
+
+#Trigger Classic4
+#Classic4.Veto true
+#Classic4.Detector AntiSide 1
+
+
+# Replicating the classic trigger with the new trigger map
+
+#TriggerMap OneSiteTriggers
+#OneSiteTriggers.Map OneSiteTriggers.trig
+#TriggerMap GuardRingVeto
+#GuardRingVeto.Map GuardRingVeto.trig
+#TriggerMap ACSVeto
+#ACSVeto.Map ACSVeto.trig
+
+
+# New trigger interface
+
+TriggerMap TwoSiteTriggers
+TwoSiteTriggers.Map TwoSiteTriggers.trig
+TriggerMap PairTrigger
+PairTrigger.Map PairTrigger.trig
+TriggerMap GuardRingVeto
+GuardRingVeto.Map GuardRingVeto.trig
+TriggerMap ACSVeto
+ACSVeto.Map ACSVeto.trig
+
+
+# New - all triggers combined
+
+#TriggerMap Combined
+#Combined.Map Combined.trig
+
+
+
+
+
+

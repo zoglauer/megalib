@@ -18,7 +18,6 @@ MOBJS	= $(LB)/MGeomegaMain.o
 
 GOBJS	= $(LB)/MInterfaceGeomega.o \
 	$(LB)/MGUIGeomegaMain.o \
-	$(LB)/MGUIMGeant.o \
 	$(LB)/MGUIPosition.o \
 	$(LB)/MGUIPathLength.o \
 
@@ -56,6 +55,8 @@ LOBJS	= $(LB)/MSettingsGeomega.o \
 	$(LB)/MDMaterialComponent.o \
 	$(LB)/MDSystem.o \
 	$(LB)/MDTrigger.o \
+	$(LB)/MDTriggerBasic.o \
+	$(LB)/MDTriggerMap.o \
 	$(LB)/MDTriggerUnit.o \
 	$(LB)/MDVector.o \
 	$(LB)/MDDebugInfo.o \

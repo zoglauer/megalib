@@ -41,7 +41,7 @@ public:
   /// Default constructor: Sets the name, type and default values for geometry
   MC2DStripSD(G4String Name);
   /// Default destructor: empty
-  ~MC2DStripSD();
+  virtual ~MC2DStripSD();
   
   /// Initialize the hit collection
   void Initialize(G4HCofThisEvent*);

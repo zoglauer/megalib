@@ -64,8 +64,6 @@ class MDGeometry
   //! WARNING: This is NOT reentrant, you cannot draw two different geometries!
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
   
-  bool WriteGeant3Files();
-  bool WriteMGeantFiles(MString FilePrefix = "", bool StoreIAs = false, bool StoreVetoes = true);
   bool TestIntersections();
   void DumpInformation();
   void CalculateMasses();
@@ -96,7 +94,8 @@ class MDGeometry
   unsigned int GetVolumeIndex(const MString& Name);
   unsigned int GetNVolumes() const;
   MDVolume* GetWorldVolume();
-
+  vector<MDVolume*> GetVolumeList() const { return m_VolumeList; }
+  
   void SetStartVolumeName(MString StartVolume) { m_StartVolume = StartVolume; }
   MString GetStartVolumeName() { return m_StartVolume; }
 
@@ -105,13 +104,15 @@ class MDGeometry
   MDMaterial* GetMaterial(const MString& Name);
   unsigned int GetMaterialIndex(const MString& Name);
   unsigned int GetNMaterials();
-
+  vector<MDMaterial*> GetMaterialList() const { return m_MaterialList; }
+  
   void AddDetector(MDDetector* Detector);
   MDDetector* GetDetectorAt(unsigned int i);
   MDDetector* GetDetector(const MString& Name);
   MDDetector* GetDetector(MVector Position);
   unsigned int GetDetectorIndex(const MString& Name);
   unsigned int GetNDetectors();
+  vector<MDDetector*> GetDetectorList() const { return m_DetectorList; }
 
   bool AddShape(const MString& Type, const MString& Name);
   void AddShape(MDShape* Shape);
@@ -119,13 +120,15 @@ class MDGeometry
   MDShape* GetShape(const MString& Name);
   unsigned int GetShapeIndex(const MString& Name);
   unsigned int GetNShapes();
-
+  vector<MDShape*> GetShapeList() const { return m_ShapeList; }
+  
   void AddOrientation(MDOrientation* Orientation);
   MDOrientation* GetOrientationAt(unsigned int i);
   MDOrientation* GetOrientation(const MString& Name);
   unsigned int GetOrientationIndex(const MString& Name);
   unsigned int GetNOrientations();
-
+  vector<MDOrientation*> GetOrientationList() const { return m_OrientationList; }
+  
   MDTriggerUnit* GetTriggerUnit() { return m_TriggerUnit; }
 
   void AddTrigger(MDTrigger* Trigger);
@@ -133,7 +136,8 @@ class MDGeometry
   MDTrigger* GetTrigger(const MString& Name);
   unsigned int GetTriggerIndex(const MString& Name);
   unsigned int GetNTriggers();
-
+  vector<MDTrigger*> GetTriggerList() const { return m_TriggerList; }
+  
   MDSystem* GetSystem(const MString& Name);
   MDSystem* GetSystem() { return m_System; }
   

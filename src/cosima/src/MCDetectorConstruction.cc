@@ -278,7 +278,7 @@ bool MCDetectorConstruction::ConstructDetectors()
   MCSD* SD = 0;
   for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
 
-    Type = m_Geometry->GetDetectorAt(d)->GetDetectorType();
+    Type = m_Geometry->GetDetectorAt(d)->GetType();
     Name = m_Geometry->GetDetectorAt(d)->GetName() + "SD";
 
     Detector = m_Geometry->GetDetectorAt(d);
@@ -514,7 +514,10 @@ bool MCDetectorConstruction::ConstructDetectors()
           }
         }
       }
-
+    }
+    
+    else if (Type == MDDetector::c_GuardRing) {
+      // This is part of the strip & voxel detectors!
     } else {
       merr<<"DetectorType not yet implemented ("
           <<Detector->GetName()<<")!"<<endl;

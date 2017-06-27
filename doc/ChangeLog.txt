@@ -44,11 +44,14 @@ Geomega:
 + New option to show the surrounding sphere (ShowSurroundingsphere true)
   This will only be displayed in geomega, but does not show up in any
   other program
++ Fixed the PEEK elemental composition to 19C12H3O from 5C8H2O
++ Dropped support for Geant3
 + Internal rewrite of the guard ring interface: 
   - Guard rings are now their own detector type
   - You need to give 2 energy resolution data point as in all other detectors
   - Updated all examples accordingly
-+ Fixed the PEEK elemental composition to 19C12H3O from 5C8H2O
++ New trigger mode: TriggerMap. This mode allows much more complex trigger,
+  e.g. tracks in the tracker, non-vetoable triggers for long tracks, etc.
   
 Reponse:
 + New base class for all responses
@@ -62,7 +65,7 @@ Revan:
 Mimrec:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
 + Parallelization of image deconvolution
-+ New imaging rsponse mode
++ New imaging response modes
 
 
 Realta:

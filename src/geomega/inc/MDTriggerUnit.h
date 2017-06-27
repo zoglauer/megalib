@@ -43,11 +43,14 @@ class MDTriggerUnit
   //! Default destructor
   virtual ~MDTriggerUnit();
 
-  //! Reset the stored event data - call befoire each new event
+  //! Reset the stored event data - call before each new event
   void Reset();
+  
+  //! Validate the trigger unit
+  bool Validate() const;
 
-  //! Set a flag indicating that vetoes are ignored
-  void IgnoreVetoes(bool IgnoreVetoesFlag) { m_IgnoreVetoes = IgnoreVetoesFlag; }
+  //! Set a flag indicating that vetoes are ignored and transfer it to all triggers
+  void IgnoreVetoes(bool IgnoreVetoesFlag);
   //! Set a flag indicating that thresholds are ignored
   void IgnoreThresholds(bool IgnoreThresholdsFlag) { m_IgnoreThresholds = IgnoreThresholdsFlag; }
 

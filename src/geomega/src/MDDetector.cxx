@@ -348,7 +348,12 @@ bool MDDetector::CopyDataToNamedDetectors()
 
     m_NamedDetectors[d]->m_HasGuardRing = m_HasGuardRing;
     m_NamedDetectors[d]->m_GuardRing = nullptr;
-    if (m_GuardRing != nullptr) m_NamedDetectors[d]->m_GuardRing = new MDGuardRing(*m_GuardRing);
+    if (m_GuardRing != nullptr) {
+      m_NamedDetectors[d]->m_GuardRing = dynamic_cast<MDGuardRing*>(m_GuardRing->Clone());
+      m_NamedDetectors[d]->m_GuardRing->SetName(m_NamedDetectors[d]->GetName() + "_GuardRing");
+      m_GuardRing->AddNamedDetector(m_NamedDetectors[d]->m_GuardRing);
+      m_NamedDetectors[d]->m_GuardRing->SetVolumeSequence(m_NamedDetectors[d]->m_VolumeSequence);
+    }
 
     if (m_PulseShape != 0) m_NamedDetectors[d]->m_PulseShape = new TF1(*m_PulseShape);
     m_NamedDetectors[d]->m_PulseShapeMin = m_PulseShapeMin;
@@ -379,7 +384,8 @@ MDDetector::~MDDetector()
   // default destructor
   
   delete m_PulseShape;
-  delete m_GuardRing;
+  // NO: delete m_GuardRing;
+  // The guard rings have been added to the geometry and will be deleted there
 }
 
 
@@ -1437,9 +1443,9 @@ bool MDDetector::Validate()
   }
   
   if (m_NoiseThresholdEqualsTriggerThreshold == true) {
-    if (m_NoiseThreshold != g_DoubleNotDefined) {
+    if (m_NoiseThreshold != g_DoubleNotDefined && m_NoiseThreshold != 0) {
       mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
-      mout<<"Ignoring noise threshold, because NoiseThresholdEqualsTriggerThreshold is set"<<endl; 
+      mout<<"Ignoring noise threshold ("<<m_NoiseThreshold<<" keV), because NoiseThresholdEqualsTriggerThreshold is set"<<endl; 
       m_NoiseThreshold = 0;
       m_NoiseThresholdSigma = 0;
     }

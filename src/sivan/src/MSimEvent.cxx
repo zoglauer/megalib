@@ -2246,7 +2246,7 @@ int MSimEvent::GetLengthOfFirstComptonTrack()
   vector<MSimHT*> HTs;
   for (unsigned int h = 0; h < GetNHTs(); ++h) {
     if (GetHTAt(h)->IsOrigin(2) == true) {
-      if (GetHTAt(h)->GetVolumeSequence()->GetDetector()->GetDetectorType() == MDDetector::c_Strip2D) {
+      if (GetHTAt(h)->GetVolumeSequence()->GetDetector()->GetType() == MDDetector::c_Strip2D) {
         HTs.push_back(GetHTAt(h));
       }
     }

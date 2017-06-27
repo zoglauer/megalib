@@ -40,6 +40,8 @@
 #include "MDStrip2D.h"
 #include "MDVoxel3D.h"
 #include "MDGuardRing.h"
+#include "MDTriggerBasic.h"
+#include "MDTriggerMap.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -84,6 +86,85 @@ void MDTriggerUnit::Reset()
 {
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
     m_Geometry->GetTriggerAt(t)->Reset();
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MDTriggerUnit::Validate() const
+{
+  // Validate the trigger unit
+  
+  // Check that we do not mix Basic and Universal triggers classes
+  if (m_Geometry->GetNTriggers() > 0) {
+    MDTriggerType Type = m_Geometry->GetTriggerAt(0)->GetType();
+    for (unsigned int t = 1; t < m_Geometry->GetNTriggers(); ++t) {
+      if (m_Geometry->GetTriggerAt(t)->GetType() != Type) {
+        mout<<"   ***  Error  ***  in trigger unit"<<endl;
+        mout<<"You cannot mix trigger class (e.g. basic and universal)"<<endl;
+        return false;
+      }
+    }
+  }
+  
+  // Check if all detectors are existing for universal triggers
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    if (m_Geometry->GetTriggerAt(t)->GetType() == MDTriggerType::c_Universal) {
+      vector<MString> DetectorNames = dynamic_cast<MDTriggerMap*>(m_Geometry->GetTriggerAt(t))->GetDetectors();
+      
+      vector<MDDetector*> Detectors = m_Geometry->GetDetectorList();
+      for (MString Name: DetectorNames) {
+        bool Found = false;
+        for (unsigned int d = 0; d < Detectors.size(); ++d) {
+          if (Detectors[d]->GetName() == Name) {
+            Found = true;
+            break;
+          }
+        }
+        if (Found == false) {
+          mout<<"   ***  Error  ***  in trigger "<<m_Geometry->GetTriggerAt(t)->GetName()<<endl;
+          mout<<"Unknown detector: "<<Name<<endl;
+          return false;          
+        }
+      }
+    }
+  }
+  
+  // Make sure that all detectors which have only veto triggers have NoiseThresholdEqualsTriggerThreshold set
+  for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
+    int NVetoes = 0;
+    int NTriggers = 0;
+    for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+      if (m_Geometry->GetTriggerAt(t)->IsVetoing(m_Geometry->GetDetectorAt(d)) == true) {
+        NVetoes++;
+      }
+      if (m_Geometry->GetTriggerAt(t)->IsTriggering(m_Geometry->GetDetectorAt(d)) == true) {
+        NTriggers++; 
+      }
+    }
+    if (NVetoes > 0 && NTriggers == 0 && m_Geometry->GetDetectorAt(d)->GetNoiseThresholdEqualsTriggerThreshold() == false) {
+      mout<<"   ***  Error  ***  Triggers with vetoes"<<endl;
+      mout<<"A detector (here: "<<m_Geometry->GetDetectorAt(d)->GetName()<<"), which only has veto triggers, must have the flag \"NoiseThresholdEqualsTriggerThreshold true\"!"<<endl;
+      return false;
+    }
+  }  
+  
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a flag indicating that vetoes are ignored and transfer it to all triggers
+void MDTriggerUnit::IgnoreVetoes(bool IgnoreVetoesFlag) 
+{ 
+  m_IgnoreVetoes = IgnoreVetoesFlag; 
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    m_Geometry->GetTriggerAt(t)->IgnoreVetoes(m_IgnoreVetoes);
   }
 }
 
@@ -184,9 +265,20 @@ bool MDTriggerUnit::HasTriggered()
     return true;
   }
 
+  // If we have a non-vetoable trigger, we have triggered
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<": Non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
+    if (m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true) {
+      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
+      return true;
+    }
+  }
+  
+  
   // If we have one veto then we have not triggered
-  if (m_IgnoreVetoes == false) {
+  if (m_IgnoreVetoes == false) { // This should not be neceassary since the triggers handle it...
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed? "<<(m_Geometry->GetTriggerAt(t)->HasVetoed() == true ? "yes" : "no")<<endl;
       if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
         mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed!"<<endl;
         return false;
@@ -196,6 +288,7 @@ bool MDTriggerUnit::HasTriggered()
 
   // Check for real triggers:
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered? "<<(m_Geometry->GetTriggerAt(t)->HasTriggered() == true ? "yes" : "no")<<endl;
     if (m_Geometry->GetTriggerAt(t)->HasTriggered() == true) {
       mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
       return true;
@@ -227,7 +320,16 @@ bool MDTriggerUnit::HasVetoed()
   if (m_Geometry->GetNTriggers() == 0) {
     return false;
   }
-
+  
+  // If we have a non-vetoable trigger, we have not vetoed
+  for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
+    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
+    if (m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true) {
+      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" no vetoed!"<<endl;
+      return false;
+    }
+  }
+  
   // If we have one veto then we have not triggered
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
     if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
@@ -243,7 +345,7 @@ bool MDTriggerUnit::HasVetoed()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return a list of all the vetoes which have been raised
+//! Return a list of all the triggers which have been raised
 vector<MString> MDTriggerUnit::GetTriggerNameList()
 {
   vector<MString> List;
@@ -261,6 +363,7 @@ vector<MString> MDTriggerUnit::GetTriggerNameList()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return a list of all the vetoes which have been raised
 vector<MString> MDTriggerUnit::GetVetoNameList()
 {
   vector<MString> List;

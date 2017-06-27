@@ -56,7 +56,6 @@ class MGUIGeomegaMain : public MGUIMain
   virtual void Open();
   virtual void Launch();
   virtual void About();
-  void WriteMGeant();
   void Position();
   void PathLengths();
 

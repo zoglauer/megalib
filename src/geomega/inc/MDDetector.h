@@ -87,8 +87,6 @@ class MDDetector
   //! Do a conversion from string ID to int ID
   static int GetDetectorType(const MString& Type);
 
-  //! Remove this later...
-  virtual int GetDetectorType() const { return m_Type; }
 
   //! If set to true, then the noise threshold equals the trigger threshold (i.e. basically only the latter exists) and avoids
   //! that randomization is done twice!

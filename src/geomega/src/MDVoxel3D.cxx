@@ -162,6 +162,10 @@ bool MDVoxel3D::CopyDataToNamedDetectors()
     D->m_VoxelSizeX = m_VoxelSizeX;
     D->m_VoxelSizeY = m_VoxelSizeY;
     D->m_VoxelSizeZ = m_VoxelSizeZ;
+    
+    if (D->HasGuardRing() == true) {
+      D->m_GuardRing->SetMotherDetector(D);
+    }
   }
    
   return true; 

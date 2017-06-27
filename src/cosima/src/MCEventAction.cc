@@ -275,6 +275,8 @@ void MCEventAction::SetCollectionName(G4String Name, int Type)
     m_DriftChamberCollNames.push_back(Name);
   } else if (Type == MDDetector::c_AngerCamera) {
     m_AngerCameraCollNames.push_back(Name);
+  } else if (Type == MDDetector::c_GuardRing) {
+    // just a sub-detector
   } else {
     merr<<"Unknown detector type: "<<Type<<endl;
   }
@@ -492,7 +494,11 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     
     for (unsigned int i = 0; i < TwoDStripColl.size(); ++i) {
       for (h = 0; h < TwoDStripColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        if ((*TwoDStripColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*TwoDStripColl[i])[h]->GetPosition().getX(), (*TwoDStripColl[i])[h]->GetPosition().getY(), (*TwoDStripColl[i])[h]->GetPosition().getZ())/cm, (*TwoDStripColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < CalorimeterColl.size(); ++i) {
@@ -502,12 +508,20 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
     for (unsigned int i = 0; i < ThreeDStripColl.size(); ++i) {
       for (h = 0; h < ThreeDStripColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        if ((*ThreeDStripColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*ThreeDStripColl[i])[h]->GetPosition().getX(), (*ThreeDStripColl[i])[h]->GetPosition().getY(), (*ThreeDStripColl[i])[h]->GetPosition().getZ())/cm, (*ThreeDStripColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < Voxel3DColl.size(); ++i) {
       for (h = 0; h < Voxel3DColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        if ((*Voxel3DColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        } else {
+          m_TriggerUnit->AddHit(MVector((*Voxel3DColl[i])[h]->GetPosition().getX(), (*Voxel3DColl[i])[h]->GetPosition().getY(), (*Voxel3DColl[i])[h]->GetPosition().getZ())/cm, (*Voxel3DColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < ScintillatorColl.size(); ++i) {
@@ -517,7 +531,11 @@ void MCEventAction::EndOfEventAction(const G4Event* Event)
     }
     for (unsigned int i = 0; i < DriftChamberColl.size(); ++i) {
       for (h = 0; h < DriftChamberColl[i]->entries(); ++h) {
-        m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
+        if ((*DriftChamberColl[i])[h]->GetIsGuardringHit() == true) {
+          m_TriggerUnit->AddGuardRingHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);          
+        } else {
+          m_TriggerUnit->AddHit(MVector((*DriftChamberColl[i])[h]->GetPosition().getX(), (*DriftChamberColl[i])[h]->GetPosition().getY(), (*DriftChamberColl[i])[h]->GetPosition().getZ())/cm, (*DriftChamberColl[i])[h]->GetEnergy()/keV);
+        }
       }
     }
     for (unsigned int i = 0; i < AngerCameraColl.size(); ++i) {

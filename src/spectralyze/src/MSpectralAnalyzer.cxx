@@ -147,7 +147,7 @@ bool MSpectralAnalyzer::SetSpectrum(int NBins, double EnergyMin, double EnergyMa
   if (BinningMode == 2) {
     for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
       for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-        if (m_Geometry->GetTriggerAt(t)->IncludesDetectorAsPositiveTrigger(m_Geometry->GetDetectorAt(d)) == true) {
+        if (m_Geometry->GetTriggerAt(t)->IsTriggering(m_Geometry->GetDetectorAt(d)) == true) {
           Detectors.push_back(m_Geometry->GetDetectorAt(d));
           break;
         }
@@ -355,7 +355,7 @@ bool MSpectralAnalyzer::FindIsotopes()
   vector<MDDetector*> Detectors;
   for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      if (m_Geometry->GetTriggerAt(t)->IncludesDetectorAsPositiveTrigger(m_Geometry->GetDetectorAt(d)) == true) {
+      if (m_Geometry->GetTriggerAt(t)->IsTriggering(m_Geometry->GetDetectorAt(d)) == true) {
         Detectors.push_back(m_Geometry->GetDetectorAt(d));
         break;
       }

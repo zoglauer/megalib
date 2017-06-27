@@ -148,6 +148,10 @@ bool MDStrip2D::CopyDataToNamedDetectors()
     D->m_StripLengthY = m_StripLengthY;
   
     D->m_Orientation = m_Orientation;
+    
+    if (D->HasGuardRing() == true) {
+      D->m_GuardRing->SetMotherDetector(D);
+    }
   }
    
   return true; 

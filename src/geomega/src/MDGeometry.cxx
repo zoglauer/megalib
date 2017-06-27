@@ -79,6 +79,9 @@ using namespace std;
 #include "MDVoxel3D.h"
 #include "MDGuardRing.h"
 #include "MDSystem.h"
+#include "MDTrigger.h"
+#include "MDTriggerBasic.h"
+#include "MDTriggerMap.h"
 #include "MTimer.h"
 #include "MString.h"
 
@@ -133,7 +136,8 @@ MDGeometry::MDGeometry()
   
   m_LaunchedByGeomega = false;
   
-  m_BlockedConstants = { "Volume", "Material", "Trigger", "System", 
+  m_BlockedConstants = { "Volume", "Material", "System",
+    "Trigger", "TriggerBasic", "TriggerMap"
     "Strip2D", "MDStrip2D", 
     "Strip3D", "MDStrip3D", 
     "Strip3DDirectional", "MDStrip3DDirectional", 
@@ -547,6 +551,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     if (Init == "Volume" ||
       Init == "Material" ||
       Init == "Trigger" ||
+      Init == "TriggerBasic" ||
+      Init == "TriggerMap" ||
       Init == "System" ||
       Init == "Strip2D" ||
       Init == "MDStrip2D" ||
@@ -1229,9 +1235,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       
       continue;
     }
-        
+    
     // Trigger
-    else if (Tokenizer.IsTokenAt(0, "Trigger") == true) {
+    else if (Tokenizer.IsTokenAt(0, "Trigger") == true ||
+      Tokenizer.IsTokenAt(0, "TriggerBasic") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Trigger D1D2\"");
         return false;
@@ -1244,11 +1251,30 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-
-      AddTrigger(new MDTrigger(Tokenizer.GetTokenAt(1)));
+      
+      AddTrigger(dynamic_cast<MDTrigger*>(new MDTriggerBasic(Tokenizer.GetTokenAt(1))));
+      continue;
+      } 
+      
+    // Trigger
+    else if (Tokenizer.IsTokenAt(0, "TriggerMap") == true) {
+      if (Tokenizer.GetNTokens() != 2) {
+        Typo("Line must contain two strings, e.g. \"TriggerMap T\"");
+        return false;
+      }
+      if (m_DoSanityChecks == true) {
+        if (ValidName(Tokenizer.GetTokenAt(1)) == false) {
+          return false;
+        }
+        if (NameExists(Tokenizer.GetTokenAt(1)) == true) {
+          return false;
+        }
+      }
+        
+      AddTrigger(dynamic_cast<MDTrigger*>(new MDTriggerMap(Tokenizer.GetTokenAt(1))));
       continue;
     } 
-         
+        
     // System
     else if (Tokenizer.IsTokenAt(0, "System") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1775,8 +1801,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         FoundDepreciated = true;
 
         if (Tokenizer.GetNTokens() != 4) {
-          Typo("Line must contain two strings and 2 integer,"
-               " e.g. \"D1D2Trigger.DetectorType 1 2\"");
+          Typo("Line must contain two strings and 2 integer, e.g. \"D1D2Trigger.DetectorType 1 2\"");
           return false;
         }
         // Check if such a detector type exists:
@@ -1791,30 +1816,53 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Line contains a not defined detector type!");
           return false;
         }
-        T->SetVeto(false);
-        T->SetTriggerByChannel(true);
-        T->SetDetectorType(Tokenizer.GetTokenAtAsInt(2), Tokenizer.GetTokenAtAsInt(3));
-      } else if (Tokenizer.IsTokenAt(1, "TriggerByChannel") == true) {
-        if (Tokenizer.GetNTokens() != 3) {
-          Typo("Line must contain two strings and one boolean,"
-               " e.g. \"D1D2Trigger.TriggerByChannel true\"");
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetVeto(false);
+          dynamic_cast<MDTriggerBasic*>(T)->SetTriggerByChannel(true);
+          dynamic_cast<MDTriggerBasic*>(T)->SetDetectorType(Tokenizer.GetTokenAtAsInt(2), Tokenizer.GetTokenAtAsInt(3));
+        } else {
+          Typo("Keyword PositiveDetectorType only supported for basic trigger");
           return false;
         }
-        T->SetTriggerByChannel(Tokenizer.GetTokenAtAsBoolean(2));
+        
+      } else if (Tokenizer.IsTokenAt(1, "TriggerByChannel") == true) {
+        if (Tokenizer.GetNTokens() != 3) {
+          Typo("Line must contain two strings and one boolean, e.g. \"D1D2Trigger.TriggerByChannel true\"");
+          return false;
+        }
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetTriggerByChannel(Tokenizer.GetTokenAtAsBoolean(2));
+        } else {
+          Typo("Keyword TriggerByChannel only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "TriggerByDetector") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean,"
                " e.g. \"D1D2Trigger.TriggerByDetector true\"");
           return false;
         }
-        T->SetTriggerByDetector(Tokenizer.GetTokenAtAsBoolean(2));
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetTriggerByDetector(Tokenizer.GetTokenAtAsBoolean(2));
+        } else {
+          Typo("Keyword TriggerByDetector only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "Veto") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean,"
                " e.g. \"D1D2Trigger.Veto true\"");
           return false;
         }
-        T->SetVeto(Tokenizer.GetTokenAtAsBoolean(2));
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetVeto(Tokenizer.GetTokenAtAsBoolean(2));
+        } else {
+          Typo("Keyword Veto only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "DetectorType") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1837,9 +1885,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Line contains a not defined detector type!");
           return false;
         }
-        T->SetDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
                            Tokenizer.GetTokenAtAsInt(3));
-  
+        } else {
+          Typo("Keyword DetectorType only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "Detector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1851,7 +1904,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("A detector of this name does not exist!");
           return false;
         }
-        T->SetDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
+        } else {
+          Typo("Keyword Detector only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "GuardRingDetectorType") == true || Tokenizer.IsTokenAt(1, "GuardringDetectorType") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1862,12 +1921,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Line must contain a valid detector type, e.g. Strip2D, DriftChamber, etc.");
           return false;          
         }
-        T->SetGuardRingDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetGuardRingDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
                                     Tokenizer.GetTokenAtAsInt(3));
+        } else {
+          Typo("Keyword GuardRingDetectorType only supported for basic trigger");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "GuardRingDetector") == true || Tokenizer.IsTokenAt(1, "GuardringDetector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
-               " e.g. \"D1D2Trigger.GuardRingDetector MyStrip2D 1\"");
+          " e.g. \"D1D2Trigger.GuardRingDetector MyStrip2D 1\"");
           return false;
         }
         MDDetector* TriggerDetector;
@@ -1875,11 +1940,33 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("A detector of this name does not exist!");
           return false;
         }
-        T->SetGuardRingDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
+        if (T->GetType() == MDTriggerType::c_Basic) {
+          dynamic_cast<MDTriggerBasic*>(T)->SetGuardRingDetector(TriggerDetector, Tokenizer.GetTokenAtAsInt(3));
+        } else {
+          Typo("Keyword GuardRingDetector only supported for basic trigger");
+          return false;
+        }
+        
+      } else if (Tokenizer.IsTokenAt(1, "Map") == true) {
+        if (Tokenizer.GetNTokens() != 3) {
+          Typo("Line must contain three strings, e.g. \"MapTrigger.Map MyMap.trig\"");
+          return false;
+        }
+        if (T->GetType() == MDTriggerType::c_Universal) {
+          if (dynamic_cast<MDTriggerMap*>(T)->ReadTriggerMap(Tokenizer.GetTokenAtAsString(2)) == false) {
+            Typo("Unable to read trigger map");
+            return false;            
+          }
+        } else {
+          Typo("Keyword Map only supported for map triggers");
+          return false;
+        }
+        
       } else if (Tokenizer.IsTokenAt(1, "NegativeDetectorType") == true) {
         mout<<" *** Outdated *** "<<endl;
         mout<<"The \"NegativeDetectorType\" keyword is no longer supported!"<<endl;
         return false;
+        
       } else {
         Typo("Unrecognized trigger option");
         return false;
@@ -2685,9 +2772,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"The \"Width\" keyword is no longer supported, since it contained redundant information"<<endl; 
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-        //             D->GetDetectorType() != MDDetector::c_DriftChamber &&
-        //             D->GetDetectorType() != MDDetector::c_Strip3D) {
+        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //             D->GetType() != MDDetector::c_DriftChamber &&
+        //             D->GetType() != MDDetector::c_Strip3D) {
         //           Typo("Option Width only supported for StripxD & DriftChamber");
         //           return false;
         //         }
@@ -2702,9 +2789,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"The \"Pitch\" keyword is no longer supported, since it contained redundant information"<<endl; 
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-        //             D->GetDetectorType() != MDDetector::c_Strip3D &&
-        //             D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //             D->GetType() != MDDetector::c_Strip3D &&
+        //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option Pitch only supported for StripxD & DriftChamber");
         //           return false;
         //         }
@@ -2722,16 +2809,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Offset cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
-        if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-            D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_Voxel3D &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip2D && 
+            D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_Voxel3D &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option Offset only supported for StripxD & DriftChamber");
           return false;
         }
         
-        if (D->GetDetectorType() == MDDetector::c_Voxel3D) {
+        if (D->GetType() == MDDetector::c_Voxel3D) {
           if (Tokenizer.GetNTokens() != 5) {
             Typo("Line must contain one string and 3 doubles,"
                  " e.g. \"Voxler.Offset 0.2 0.2 0.2\"");
@@ -2756,10 +2843,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("StripNumber cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
-        if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-            D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip2D && 
+            D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option StripNumber only supported for StripxD & DriftChamber");
           return false;
         }
@@ -2777,7 +2864,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  Tokenizer.IsTokenAt(1, "VoxelNumber") == true ||
                  Tokenizer.IsTokenAt(1, "Voxels") == true ||
                  Tokenizer.IsTokenAt(1, "Voxel") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Voxel3D) {
+        if (D->GetType() != MDDetector::c_Voxel3D) {
           Typo("Option Strip/Voxel number only supported for Voxel3D");
           return false;
         }
@@ -2799,9 +2886,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"The \"StripLength\" keyword is no longer supported, since it contained redundant information"<<endl; 
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-        //             D->GetDetectorType() != MDDetector::c_Strip3D &&
-        //             D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //             D->GetType() != MDDetector::c_Strip3D &&
+        //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option StripLength only supported for StripxD & DriftChamber");
         //           return false;
         //         }
@@ -2818,9 +2905,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"The \"Orientation\" keyword is no longer supported, since it contained redundant information"<<endl; 
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-        //             D->GetDetectorType() != MDDetector::c_Strip3D &&
-        //             D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //             D->GetType() != MDDetector::c_Strip3D &&
+        //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option StripLength only supported for StripxD & DriftChamber");
         //           return false;
         //         }
@@ -2836,11 +2923,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for guard ring threshold
       else if (Tokenizer.IsTokenAt(1, "GuardRingTriggerThreshold") == true ||
                Tokenizer.IsTokenAt(1, "GuardringTriggerThreshold") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-            D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Voxel3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip2D && 
+            D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Voxel3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option GuardRingTriggerThreshold only supported for StripxD & DriftChamber");
           return false;
         }
@@ -2849,7 +2936,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.GuardRingTriggerThreshold 30 10\"");
           return false;
         }
-        if (D->GetDetectorType() == MDDetector::c_Voxel3D) {
+        if (D->GetType() == MDDetector::c_Voxel3D) {
           dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
           D->GetGuardRing()->SetActive(true);
           D->GetGuardRing()->SetNoiseThresholdEqualsTriggerThreshold(true);
@@ -2872,11 +2959,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                Tokenizer.IsTokenAt(1, "GuardRingEnergyResolutionAt") == true ||
                Tokenizer.IsTokenAt(1, "GuardringEnergyResolution") == true || 
                Tokenizer.IsTokenAt(1, "GuardringEnergyResolutionAt") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Strip2D && 
-            D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Voxel3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip2D && 
+            D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Voxel3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option GuardRingEnergyResolution only supported for StripxD, DriftChamber, Voxel3D");
           return false;
         }
@@ -2885,7 +2972,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.GuardRingEnergyResolution 30 10\"");
           return false;
         }
-        if (D->GetDetectorType() == MDDetector::c_Voxel3D) {
+        if (D->GetType() == MDDetector::c_Voxel3D) {
           if (D->HasGuardRing() == false) {
             dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
             D->GetGuardRing()->SetActive(true);
@@ -2917,7 +3004,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       else if (Tokenizer.IsTokenAt(1, "DepthResolution") == true ||
                Tokenizer.IsTokenAt(1, "DepthResolutionAt") == true) {
         bool Return = true;
-        if (D->GetDetectorType() == MDDetector::c_Calorimeter) {
+        if (D->GetType() == MDDetector::c_Calorimeter) {
           if (Tokenizer.GetNTokens() == 4) {
             Return = dynamic_cast<MDCalorimeter*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
                                                                            Tokenizer.GetTokenAtAsDouble(3), 
@@ -2927,9 +3014,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                                                                            Tokenizer.GetTokenAtAsDouble(3), 
                                                                            Tokenizer.GetTokenAtAsDouble(4));
           }
-        } else if (D->GetDetectorType() == MDDetector::c_Strip3D ||
-                   D->GetDetectorType() == MDDetector::c_Strip3DDirectional ||
-                   D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        } else if (D->GetType() == MDDetector::c_Strip3D ||
+                   D->GetType() == MDDetector::c_Strip3DDirectional ||
+                   D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() == 4) {
             Return = dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
                                                                        Tokenizer.GetTokenAtAsDouble(3), 
@@ -2949,9 +3036,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }      
       else if (Tokenizer.IsTokenAt(1, "DepthResolutionThreshold") == true) {
-        if (D->GetDetectorType() == MDDetector::c_Strip3D ||
-            D->GetDetectorType() == MDDetector::c_Strip3DDirectional ||
-            D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_Strip3D ||
+            D->GetType() == MDDetector::c_Strip3DDirectional ||
+            D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 doubles,"
                  " e.g. \"Wafer.DepthResolutionThreshold 25.0\"");
@@ -2971,9 +3058,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for Strip3D and higher specific tokens:
       else if (Tokenizer.IsTokenAt(1, "EnergyResolutionDepthCorrection") == true || 
                Tokenizer.IsTokenAt(1, "EnergyResolutionDepthCorrectionAt") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option EnergyResolutionDepthCorrectionAt only supported for StripxD & DriftChamber");
           return false;
         }
@@ -3059,9 +3146,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       else if (Tokenizer.IsTokenAt(1, "TriggerThresholdDepthCorrection") == true || 
                Tokenizer.IsTokenAt(1, "TriggerThresholdDepthCorrectionAt") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option TriggerThresholdDepthCorrectionAt only supported for StripxD & DriftChamber");
           return false;
         }
@@ -3078,9 +3165,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       else if (Tokenizer.IsTokenAt(1, "NoiseThresholdDepthCorrection") == true || 
                Tokenizer.IsTokenAt(1, "NoiseThresholdDepthCorrectionAt") == true) {
-        if (D->GetDetectorType() != MDDetector::c_Strip3D &&
-            D->GetDetectorType() != MDDetector::c_Strip3DDirectional &&
-            D->GetDetectorType() != MDDetector::c_DriftChamber) {
+        if (D->GetType() != MDDetector::c_Strip3D &&
+            D->GetType() != MDDetector::c_Strip3DDirectional &&
+            D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option NoiseThresholdDepthCorrection only supported for StripxD & DriftChamber");
           return false;
         }
@@ -3098,7 +3185,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for Strip3DDirectional specific tokens:
       else if (Tokenizer.IsTokenAt(1, "DirectionalResolution") == true || 
                Tokenizer.IsTokenAt(1, "DirectionalResolutionAt") == true) {
-        if (D->GetDetectorType() == MDDetector::c_Strip3DDirectional) {
+        if (D->GetType() == MDDetector::c_Strip3DDirectional) {
           if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
             Typo("Line must contain two strings and 2 doubles,"
                  " e.g. \"Wafer.DirectionResolutionAt 662 39\"");
@@ -3123,7 +3210,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for Anger camera specific tokens
       else if (Tokenizer.IsTokenAt(1, "PositionResolution") == true || 
                Tokenizer.IsTokenAt(1, "PositionResolutionAt") == true) {
-        if (D->GetDetectorType() != MDDetector::c_AngerCamera) {
+        if (D->GetType() != MDDetector::c_AngerCamera) {
           Typo("Option PositionResolution only supported for AngerCamera");
           return false;
         }
@@ -3135,7 +3222,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         dynamic_cast<MDAngerCamera*>(D)->SetPositionResolution(Tokenizer.GetTokenAtAsDouble(2), 
                                                                Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Positioning") == true) {
-        if (D->GetDetectorType() == MDDetector::c_AngerCamera) {
+        if (D->GetType() == MDDetector::c_AngerCamera) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
                  " e.g. \"Anger.Postioning XYZ\"");
@@ -3155,7 +3242,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         // Check for DriftChamber specific tokens:
       } else if (Tokenizer.IsTokenAt(1, "LightSpeed") == true) {
-        if (D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two string and 3 doubles:,"
                  " e.g. \"Chamber.LightSpeed 18E+9\"");
@@ -3168,7 +3255,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
        
       } else if (Tokenizer.IsTokenAt(1, "LightDetectorPosition") == true) {
-        if (D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
                  " e.g. \"Chamber.LightDetectorPosition 3\"");
@@ -3181,7 +3268,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
        
       } else if (Tokenizer.IsTokenAt(1, "DriftConstant") == true) {
-        if (D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two string and 1 double:"
                  " e.g. \"Chamber.DriftConstant 3\"");
@@ -3194,7 +3281,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
        
       } else if (Tokenizer.IsTokenAt(1, "EnergyPerElectron") == true) {
-        if (D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
                  " e.g. \"Chamber.EnergyPerElectron 3\"");
@@ -3208,7 +3295,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
        
       } else if (Tokenizer.IsTokenAt(1, "LightEnergyResolution") == true || 
                  Tokenizer.IsTokenAt(1, "LightEnergyResolutionAt") == true) {
-        if (D->GetDetectorType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 4) {
             Typo("Line must contain two strings and 2 doubles,"
                  " e.g. \"Wafer.LightEnergyResolutionAt 662   39\"");
@@ -3354,6 +3441,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
+  
+  // Make sure the guard ring detectors show up in our list
+  for (unsigned int i = 0; i < GetNDetectors(); i++) {
+    if (m_DetectorList[i]->HasGuardRing() == true && GetDetector(m_DetectorList[i]->GetGuardRing()->GetName()) == nullptr) { 
+      AddDetector(m_DetectorList[i]->GetGuardRing());
+    }
+  }
+  
 
   if (m_ShowVolumes == false) {
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -3434,7 +3529,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("The Assign keyword can only be used with named detectors");
           return false;
         }
-        MVector Pos;
+        MVector Pos; 
         if (Tokenizer.GetNTokens() == 3) {
           vector<MString> VolumeNames = Tokenizer.GetTokenAtAsString(2).Tokenize(".");
           if (VolumeNames.size() == 0) {
@@ -3494,6 +3589,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         MDVolumeSequence* VS = new MDVolumeSequence();
         m_WorldVolume->GetVolumeSequence(Pos, VS);
         D->SetVolumeSequence(*VS);
+        if (D->HasGuardRing() == true) {
+          D->GetGuardRing()->SetVolumeSequence(*VS);
+        }
         delete VS;
       }
     }
@@ -3657,7 +3755,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     if (m_DetectorList[i]->Validate() == false) {
       IsValid = false;
     }
-    m_NDetectorTypes[m_DetectorList[i]->GetDetectorType()]++;
+    m_NDetectorTypes[m_DetectorList[i]->GetType()]++;
   }
 
   // Special detector loop for blocked channels:
@@ -3690,27 +3788,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       IsValid = false;
     }
   }
-  // Make sure that all detectors which have only veto triggers have NoiseThresholdEqualsTriggerThreshold setf 
-  for (unsigned int d = 0; d < GetNDetectors(); ++d) {
-    int NVetoes = 0;
-    int NTriggers = 0;
-    for (unsigned int t = 0; t < GetNTriggers(); ++t) {
-      if (GetTriggerAt(t)->Applies(GetDetectorAt(d)) == true) {
-        if (GetTriggerAt(t)->IsVeto() == true) {
-          NVetoes++;
-        } else {
-          NTriggers++; 
-        }
-      }
-    }
-    if (NVetoes > 0 && NTriggers == 0 && GetDetectorAt(d)->GetNoiseThresholdEqualsTriggerThreshold() == false) {
-      mout<<"   ***  Error  ***  Triggers with vetoes"<<endl;
-      mout<<"A detector (here: "<<GetDetectorAt(d)->GetName()<<"), which only has veto triggers, must have the flag \"NoiseThresholdEqualsTriggerThreshold true\"!"<<endl;
-      Reset();
-      return false;
-    }
+  if (m_TriggerUnit->Validate() == false) {
+    IsValid = false;
   }
-
+  
+  
   // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
@@ -3740,12 +3822,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   if (m_ComplexER == false) {
     int NTrackers = 0;
     for (unsigned int i = 0; i < GetNDetectors(); i++) {
-      if (m_DetectorList[i]->GetDetectorType() == MDDetector::c_Strip2D) {
+      if (m_DetectorList[i]->GetType() == MDDetector::c_Strip2D) {
         if (dynamic_cast<MDStrip2D*>(m_DetectorList[i])->GetOrientation() != 2) {
           mout<<"   ***  Error  ***  ComplexER"<<endl;
           mout<<"This keyword can only be applied for tracker which are oriented in z-axis!"<<endl;
-          Reset();
-          return false;
+          IsValid = false;
         } else {
           NTrackers++;
         }
@@ -3766,44 +3847,38 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"You have not defined any trigger criteria!!"<<endl;
   } else {
     // Check if each detector has a trigger criterion: 
-    vector<MDDetector*> Detectors;
-    for (unsigned int i = 0; i < GetNDetectors(); ++i) Detectors.push_back(m_DetectorList[i]);
-    
-    for (unsigned int t = 0; t < GetNTriggers(); ++t) {
-      vector<MDDetector*> TriggerDetectors = m_TriggerList[t]->GetDetectors();
-      for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
-        for (unsigned int d2 = 0; d2 < TriggerDetectors.size(); ++d2) {
-          if (Detectors[d1] == 0) continue;
-          if (Detectors[d1] == TriggerDetectors[d2]) {
-            Detectors[d1] = 0;
+    for (unsigned int i = 0; i < GetNDetectors(); ++i) {
+      // Guard ring trigger criteria are optional...
+      if (m_DetectorList[i]->GetType() == MDDetector::c_GuardRing) continue;
+      
+      bool Found = false;
+      for (unsigned int t = 0; t < GetNTriggers(); ++t) {
+        if (m_TriggerList[t]->Applies(m_DetectorList[i]) == true) {
+          Found = true;
+          break;
+        }
+        // If we have a named detectors, in case the "named after detector" has a trigger criteria, we are fine
+        if (m_DetectorList[i]->IsNamedDetector() == true) {
+          if (m_TriggerList[t]->Applies(m_DetectorList[i]->GetNamedAfterDetector()) == true) {
+            Found = true;
             break;
           }
-          // If we have a named detectors, in case the "named after detector" has a trigger criteria, we are fine
-          if (Detectors[d1]->IsNamedDetector() == true) {
-            if (Detectors[d1]->GetNamedAfterDetector() == TriggerDetectors[d2]) {
-              Detectors[d1] = 0;
-              break;
+        }
+        // If the detector has named detectors which have a trigger criteria, we are fine to
+        if (m_DetectorList[i]->HasNamedDetectors() == true) {
+          for (unsigned int n = 0; n < m_DetectorList[i]->GetNNamedDetectors(); ++n) {
+            for (unsigned int t2 = 0; t2 < GetNTriggers(); ++t2) {
+              if (m_TriggerList[t2]->Applies(GetDetector(m_DetectorList[i]->GetNamedDetectorName(n))) == true) {
+                Found = true;
+                break;
+              }
             }
           }
         }
       }
-
-      vector<int> TriggerDetectorTypes = m_TriggerList[t]->GetDetectorTypes();
-      for (unsigned int d1 = 0; d1 < Detectors.size(); ++d1) {
-        if (Detectors[d1] == 0) continue;
-        for (unsigned int d2 = 0; d2 < TriggerDetectorTypes.size(); ++d2) {
-          if (Detectors[d1]->GetDetectorType() == TriggerDetectorTypes[d2]) {
-            Detectors[d1] = 0;
-            break;
-          }
-        }
-      } 
-    }
-    
-    for (unsigned int i = 0; i < Detectors.size(); ++i) {
-      if (Detectors[i] != 0) {
+      if (Found == false) {
         mout<<"   ***  Warning  ***  "<<endl;
-        mout<<"You have not defined any trigger criterion for detector: "<<Detectors[i]->GetName()<<endl;
+        mout<<"You have not defined any trigger criterion for detector: "<<m_DetectorList[i]->GetName()<<endl;
       }
     }
   }
@@ -4230,221 +4305,6 @@ void MDGeometry::CalculateMasses()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometry::WriteGeant3Files()
-{
-  // Create GEANT3 files
-  
-  if (m_GeometryScanned == false) {
-    Error("bool MDGeometry::WriteGeant3Files()",
-          "Geometry has to be scanned first");
-    return false;
-  }
-
-  // Some sanity checks:
-  if (GetNMaterials() > 200) {
-    mout<<"Error: GMega only supports 200 materials at the moment!"<<endl;
-    return false;
-  }
-
-  // open the geometry-file:
-  fstream FileStream; // = new fstream();
-  // gcc 2.95.3: FileStream.open("ugeom.f", ios::out, 0664);
-  FileStream.open("ugeom.f", ios_base::out);
-
-  // Write header:
-  ostringstream Text;
-  Text<<
-    "************************************************************************\n"
-    "*\n"
-    "*     Copyright (C) by the MEGA-team.\n"
-    "*     All rights reserved.\n"
-    "*\n"
-    "*\n"
-    "*     This code implementation is the intellectual property of the \n"
-    "*     MEGA-team at MPE.\n"
-    "*\n"
-    "*     By copying, distributing or modifying the Program (or any work\n"
-    "*     based on the Program) you indicate your acceptance of this \n"
-    "*     statement, and all its terms.\n"
-    "*\n"
-    "************************************************************************\n"
-    "\n"
-    "\n"
-    "      SUBROUTINE UGEOM\n"
-    "\n"
-    "************************************************************************\n"
-    "*\n"
-    "*     Initializes the geometry\n"
-    "*\n"
-    "*     Author: This file has been automatically generated by the \n"
-    "*             geometry-program GeoMega "<<g_VersionString<<"\n"
-    "*\n"
-    "************************************************************************\n"
-    "\n"
-    "      IMPLICIT NONE\n"
-    "\n"
-    "\n"
-    "      INCLUDE 'common.f'\n"
-    "\n"
-    "\n"
-    "\n"
-    "      INTEGER IVOL\n"
-    "      DIMENSION IVOL("<<MDVolume::m_IDCounter<<")\n"
-    "      REAL UBUF\n"
-    "      DIMENSION UBUF(2)\n\n"<<endl;
-
-  FileStream<<WFS(Text.str().c_str());
-  Text.str("");
-
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    FileStream<<WFS(m_MaterialList[i]->GetGeant3DIM());
-  }
-
-  for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    FileStream<<WFS(m_VolumeList[i]->GetGeant3DIM());
-  }
-
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    FileStream<<WFS(m_MaterialList[i]->GetGeant3DATA());
-  }
-
-  for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    FileStream<<WFS(m_VolumeList[i]->GetGeant3DATA());
-  }
-
-  Text<<endl<<
-    "      ZNMAT = "<<GetNMaterials()<<endl;
-  FileStream<<WFS(Text.str().c_str());
-  Text.str("");
-  
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    FileStream<<WFS(m_MaterialList[i]->GetGeant3());
-  }
-
-  Text<<endl<<
-    "      CALL GPART"<<endl<<
-    "      CALL GPHYSI"<<endl<<endl;
-  FileStream<<WFS(Text.str().c_str());
-  Text.str("");
-
-  FileStream<<WFS(m_WorldVolume->GetGeant3())<<endl;
-  
-  //FileStream.setf(ios_base::fixed, ios_base::floatfield);
-  FileStream.setf(ios::fixed, ios::floatfield);
-  //FileStream.precision(3);
-
-  // Finally position the volumes
-  MString Name, MotherName, CopyName;
-
-  // Scan through the tree...
-  int IDCounter = 1;
-  FileStream<<WFS(m_WorldVolume->GetGeant3Position(IDCounter))<<endl;
-
-
-  Text<<endl;
-  Text<<"      CALL GGCLOS"<<endl;
-  Text<<"      GEONAM = \""<<m_FileName<<"\""<<endl;
-
-  double MinDist;
-  MVector RSize = m_WorldVolume->GetSize();
-  MinDist = RSize.X();
-  if (RSize.Y() < MinDist) MinDist = RSize.Y();
-  if (RSize.Z() < MinDist) MinDist = RSize.Z();
-  Text<<"      MDIST = "<<MinDist<<endl;
-  Text<<endl;
-
-  Text<<"      SPHR = "<<m_SurroundingSphereRadius<<endl;
-  Text<<"      SPHX = "<<m_SurroundingSpherePosition.X()<<endl;
-  Text<<"      SPHY = "<<m_SurroundingSpherePosition.Y()<<endl;
-  Text<<"      SPHZ = "<<m_SurroundingSpherePosition.Z()<<endl;
-  Text<<"      SPHD = "<<m_SurroundingSphereDistance<<endl;
-
-  Text<<endl;
-  Text<<"      RETURN"<<endl;
-  Text<<"      END"<<endl;;
-  FileStream<<WFS(Text.str().c_str());
-  Text.str("");
-
-  FileStream.close();
-
-  
-  // open the geometry-file:
-  // gcc 2.95.3: FileStream.open("detinit.f", ios::out, 0664);
-  FileStream.open("detinit.f", ios_base::out);
-
-  
-  Text<<
-    "************************************************************************\n"
-    "*\n"
-    "*     Copyright (C) by the MEGA-team.\n"
-    "*     All rights reserved.\n"
-    "*\n"
-    "*\n"
-    "*     This code implementation is the intellectual property of the \n"
-    "*     MEGA-team at MPE.\n"
-    "*\n"
-    "*     By copying, distributing or modifying the Program (or any work\n"
-    "*     based on the Program) you indicate your acceptance of this \n"
-    "*     statement, and all its terms.\n"
-    "*\n"
-    "************************************************************************\n"
-    "\n"
-    "\n"
-    "      SUBROUTINE DETINIT\n"
-    "\n"
-    "************************************************************************\n"
-    "*\n"
-    "*     Initializes the detectors\n"
-    "*\n"
-    "*     Author: This file has been automatically generated by the \n"
-    "*             geometry-program GeoMega "<<g_VersionString<<"\n"
-    "*\n"
-    "************************************************************************\n"
-    "\n"
-    "      IMPLICIT NONE\n"
-    "\n"
-    "      INCLUDE 'common.f'\n"
-    "\n"<<endl;
-
-  Text<<"      NDET = "<<GetNDetectors()<<endl<<endl;
-
-  if (GetNDetectors() > 0) {
-    Text<<"      NSENS = "<<GetDetectorAt(0)->GetGlobalNSensitiveVolumes()<<endl<<endl;
-  }
-
-  // Write detectors
-  for(unsigned int i = 0; i < GetNDetectors(); i++) {
-    Text<<m_DetectorList[i]->GetGeant3();
-  }
-
-
-  // Write trigger conditions
-  Text<<"      TNTRIG = "<<GetNTriggers()<<endl<<endl;
-  for(unsigned int i = 0; i < GetNTriggers(); i++) {
-    Text<<m_TriggerList[i]->GetGeant3(i+1);
-  }
-
-  Text<<endl;
-  Text<<"      EVINFO = 1"<<endl;
-  Text<<"      SNAM = '"<<m_Name<<"_"<<m_Version<<"'"<<endl<<endl;
-  Text<<"      RETURN"<<endl;
-  Text<<"      END"<<endl;
-
-  FileStream<<WFS(Text.str().c_str());
-  Text.str("");
-  
-  FileStream.close();
-  
-  // Clean up...
-  m_WorldVolume->ResetCloneTemplateFlags();
-
-  return true;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDGeometry::WFS(MString Text)
 {
   // Real name: WrapFortranStrings
@@ -4507,317 +4367,6 @@ MString MDGeometry::WFS(MString Text)
   }
   
   return Formated + Text;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDGeometry::WriteMGeantFiles(MString FilePrefix, bool StoreIAs, bool StoreVetoes)
-{
-  // This routine generates an intermediate geometry-file, which can be decoded
-  // by MGEANT or MGGPOD
-  //
-  // Guest author: RMK
-  
-  MString FileName; 
-  fstream FileStream;
-
-  if (m_GeometryScanned == false) {
-    Error("bool MDGeometry::WriteMGeantFiles()",
-          "Geometry has to be scanned first");
-    return false;
-  }
-
-  // Extract file part of pathname
-  MString theFile = m_FileName;
-  if (theFile.Contains("/")) {
-    theFile.Remove(0,theFile.Last('/')+1);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Create the materials file: MEGA_materials.mat
-  // ---------------------------------------------------------------------------
-  //
-
-  if (FilePrefix == "") {
-    FileName = "materials.mat";
-  } else {
-    FileName = FilePrefix + ".mat";
-  }
-
-  // gcc 2.95.3: FileStream.open("MEGA_materials.mat", ios::out, 0664);
-  FileStream.open(FileName, ios_base::out);
- 
-  FileStream<<
-    "! +============================================================================+"<<endl<<
-    "! MEGA_materials.mat         MGEANT/MGGPOD materials list file                  "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Based on setup file: "<< theFile << endl <<
-    "!                                                                               "<<endl<<
-    "! Copyright (C) by the MEGA-team.                                     "<<endl<<
-    "! All rights reserved.                                                          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Author: This file has been automatically generated by the                     "<<endl<<
-    "!         geometry-program GeoMega (Version: "<<g_VersionString<<")"<<endl<<
-    "! +============================================================================+"<<endl<<
-    "! Built-in Materials (numbers 1-16) -->                                         "<<endl<<
-    "!      hydrogen, deuterium, helium, lithium, beryllium, carbon, nitrogen,       "<<endl<<
-    "!      neon, aluminum, iron, copper, tungsten, lead, uranium, air, vacuum       "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Format for User Materials -->                                                 "<<endl<<
-    "!  mate  imate  chmat  A  Z  dens  radl  absl(=1.0)  nwbuf <CR>                 "<<endl<<
-    "!        [ubuf]                                                                 "<<endl<<
-    "!  mixt  imate  chmat  nlmat  dens <CR>                                         "<<endl<<
-    "!        A(1)  Z(1)  wmat(1)                                                    "<<endl<<
-    "!        ...                                                                    "<<endl<<
-    "!        A(N)  Z(N)  wmat(N)                                                    "<<endl<<
-    "!       (wmat = prop by number(nlmat<0) or weight(nlmat>0); N = abs(nlmat))     "<<endl<<
-    "!                                                                               "<<endl<<
-    "!  umix  imate  chmat  nlmat  dens <CR>                                         "<<endl<<
-    "!        A(1)  elenam(1)  wmat(1)                                               "<<endl<<
-    "!        ...                                                                    "<<endl<<
-    "!        A(N)  elenam(N)  wmat(N)                                               "<<endl<<
-    "!       (wmat = prop by number(nlmat<0) or weight(nlmat>0); N = abs(nlmat),     "<<endl<<
-    "!        use A(i) == 0.0 to select natural isotopic abundance mixture)          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! +============================================================================+"<<endl;
-  FileStream<<endl<<endl;
-
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    FileStream << m_MaterialList[i]->GetMGeant();
-  }
-
-  FileStream << endl << "end" << endl;
-
-  FileStream.close();
-
-  // ---------------------------------------------------------------------------
-  // Create the tracking media file: MEGA_media.med
-  // ---------------------------------------------------------------------------  
-
-  if (FilePrefix == "") {
-    FileName = "media.med";
-  } else {
-    FileName = FilePrefix + ".med";
-  }
-
-  // gcc 2.95.3: FileStream.open("MEGA_media.med", ios::out, 0664);
-  FileStream.open(FileName, ios_base::out);
-
-  FileStream<<
-    "! +============================================================================+"<<endl<<
-    "! MEGA_media.med             MGEANT/MGGPOD tracking media list file             "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Based on setup file: " << theFile << endl <<
-    "!                                                                               "<<endl<<
-    "! Copyright (C) by the MEGA-team.                                     "<<endl<<
-    "! All rights reserved.                                                          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Author: This file has been automatically generated by the                     "<<endl<<
-    "!         geometry-program GeoMega (Version: "<<g_VersionString<<")"<<endl<<
-    "! +============================================================================+"<<endl<<
-    "!  Format for User Media -->                                                    "<<endl<<
-    "!  tmed itmed chmed chmat pass/dete/shld/mask ->                                "<<endl<<
-    "!       ->ifield fieldm *tmaxfd *stemax *deemax epsil *stmin nwbuf <CR>         "<<endl<<
-    "!       [ubuf]                                                                  "<<endl<<
-    "!       (* set negative for automatic calculation of tracking parameter)        "<<endl<<
-    "!  tpar chmed chpar parval                                                      "<<endl<<
-    "! +============================================================================+"<<endl;
-  FileStream<<endl<<endl;
-  FileStream<<"! Some additional comments:"<<endl;
-  FileStream<<"! Adjust material sorting by hand to dete, pass, shld, or mask"<<endl;
-  FileStream<<"! as required - see MGEANT manual!"<<endl;
-  FileStream<<endl<<endl;
-
-
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    // Check if a detector consists of this material:
-    int Sensitivity = 0;
-    for (unsigned int d = 0; d < GetNDetectors(); ++d) {
-      for (unsigned int v = 0; v < GetDetectorAt(d)->GetNSensitiveVolumes(); ++v) {
-        if (GetDetectorAt(d)->GetSensitiveVolume(v)->GetMaterial()->GetName() == GetMaterialAt(i)->GetName()) {
-          if (GetDetectorAt(d)->GetDetectorType() == MDDetector::c_ACS) {
-            Sensitivity = 2;
-          } else {
-            Sensitivity = 1;
-          }
-        }
-      }
-    }
-    FileStream << m_MaterialList[i]->GetMGeantTmed(Sensitivity);
-  }
-
-  FileStream << endl << "end" << endl;
-
-  FileStream.close();
-
-
-  // ---------------------------------------------------------------------------
-  // Create the geometry file: MEGA_setup.geo
-  // ---------------------------------------------------------------------------
-
-  if (FilePrefix == "") {
-    FileName = "setup.geo";
-  } else {
-    FileName = FilePrefix + ".geo";
-  }
-
-  // gcc 2.95.3: FileStream.open("MEGA_setup.geo", ios::out, 0664);
-  FileStream.open(FileName, ios_base::out);
-
-  FileStream<<
-    "! +============================================================================+"<<endl<<
-    "! MEGA_setup.geo             MGEANT/MGGPOD geometry list file                   "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Based on setup file: " << theFile << endl <<
-    "!                                                                               "<<endl<<
-    "! Copyright (C) by the MEGA-team.                                     "<<endl<<
-    "! All rights reserved.                                                          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Author: This file has been automatically generated by the                     "<<endl<<
-    "!         geometry-program GeoMega (Version: "<<g_VersionString<<")"<<endl<<
-    "! +============================================================================+"<<endl<<
-    "! Format for Shape and Position Parameters Input -->                            "<<endl<<
-    "! rotm irot theta1 phi1 theta2 phi2 theta3 phi3                                 "<<endl<<
-    "! volu chname chshap chmed npar <CR>                                            "<<endl<<
-    "!      [parms]                                                                  "<<endl<<
-    "! posi chname copy chmoth x y z irot chonly                                     "<<endl<<
-    "! posp chname copy chmoth x y z irot chonly npar <CR>                           "<<endl<<
-    "!      parms                                                                    "<<endl<<
-    "! divn chname chmoth ndiv iaxis                                                 "<<endl<<
-    "! dvn2 chname chmoth ndiv iaxis co chmed                                        "<<endl<<
-    "! divt chname chmoth step iaxis chmed ndvmx                                     "<<endl<<
-    "! dvt2 chname chmoth step iaxis co chmed ndvmx                                  "<<endl<<
-    "! divx chname chmoth ndiv iaxis step co chmed ndvmx                             "<<endl<<
-    "! satt chname chiatt ival                                                       "<<endl<<
-    "! tree ndets firstdetnum detlvl shldlvl masklvl                                 "<<endl<<
-    "! Euclid support =>                                                             "<<endl<<
-    "! eucl filename                                                                 "<<endl<<
-    "! ROTM irot theta1 phi1 theta2 phi2 theta3 phi3                                 "<<endl<<
-    "! VOLU 'chname' 'chshap' numed npar <CR>                                        "<<endl<<
-    "!      [parms]                                                                  "<<endl<<
-    "! POSI 'chname' copy 'chmoth' x y z irot 'chonly'                               "<<endl<<
-    "! POSP 'chname' copy 'chmoth' x y z irot 'chonly' npar <CR>                     "<<endl<<
-    "!      parms                                                                    "<<endl<<
-    "! DIVN 'chname' 'chmoth' ndiv iaxis                                             "<<endl<<
-    "! DVN2 'chname' 'chmoth' ndiv iaxis co numed                                    "<<endl<<
-    "! DIVT 'chname' 'chmoth' step iaxis numed ndvmx                                 "<<endl<<
-    "! DVT2 'chname' 'chmoth' step iaxis co numed ndvmx                              "<<endl<<
-    "! +============================================================================+"<<endl;
-  FileStream<<endl<<endl;
-
-
-  // Tree command - not needed for ACT / INIT - but do not delete
-  // FileStream << "! Tree Structure (must be modified manually!)" << endl;
-  // FileStream << "tree 1 1 1 1 1" << endl << endl;
-
-  // Volume tree data
-  FileStream << m_WorldVolume->GetMGeant() << endl;
-  
-  // Volume position data
-  int IDCounter = 1;
-  FileStream << m_WorldVolume->GetMGeantPosition(IDCounter) << endl;
-
-  FileStream << endl << "end" << endl;
-
-  FileStream.close();
-
-  // ---------------------------------------------------------------------------
-  // Create the detector initialization file: detector.det
-  // ---------------------------------------------------------------------------
-
-  if (FilePrefix == "") {
-    FileName = "detector.det";
-  } else {
-    FileName = FilePrefix + "_detector.det";
-  }
-  
-  // open the geometry-file:
-  FileStream.open(FileName, ios_base::out);
-  
-  FileStream<<
-    "! +============================================================================+"<<endl<<
-    "! detector.det         MGGPOD-MEGALIB-extension detector & trigger description  "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Based on setup file: " << theFile << endl <<
-    "!                                                                               "<<endl<<
-    "! Copyright (C) by the MEGA-team.                                     "<<endl<<
-    "! All rights reserved.                                                          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Author: This file has been automatically generated by the                     "<<endl<<
-    "!         geometry-program GeoMega (Version: "<<g_VersionString<<")"<<endl<<
-    "! +============================================================================+"<<endl<<
-    "\n"<<endl;
-  
-  FileStream<<"NDET "<<GetNDetectors()<<endl<<endl;
-
-  if (GetNDetectors() > 0) {
-    FileStream<<"NSEN "<<GetDetectorAt(0)->GetGlobalNSensitiveVolumes()<<endl<<endl;
-  }
-
-  // Write detectors
-  for(unsigned int i = 0; i < GetNDetectors(); i++) {
-    FileStream<<m_DetectorList[i]->GetMGeant();
-  }
-
-  // Write trigger conditions
-  FileStream<<"NTRG "<<GetNTriggers()<<endl<<endl;
-  for(unsigned int i = 0; i < GetNTriggers(); i++) {
-    FileStream<<m_TriggerList[i]->GetMGeant(i+1);
-  }
-
- FileStream<<endl;
-  FileStream<<"END"<<endl;
-  FileStream.close();
-
-  if (FilePrefix == "") {
-    FileName = "megalib.ini";
-  } else {
-    FileName = FilePrefix + "_megalib.ini";
-  }
-  
-  // open the geometry-file:
-  FileStream.open(FileName, ios_base::out);
-  
-  FileStream<<
-    "! +============================================================================+"<<endl<<
-    "! megalib.ini                       MGGPOD-MEGALIB-extension setup input file   "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Based on setup file: " << theFile << endl <<
-    "!                                                                               "<<endl<<
-    "! Copyright (C) by the MEGA-team.                                     "<<endl<<
-    "! All rights reserved.                                                          "<<endl<<
-    "!                                                                               "<<endl<<
-    "! Author: This file has been automatically generated by the                     "<<endl<<
-    "!         geometry-program GeoMega (Version: "<<g_VersionString<<")"<<endl<<
-    "! +============================================================================+"<<endl<<
-    "\n"<<endl;
-
-  FileStream<<endl;
-  FileStream<<"GNAM "<<theFile<<endl;
-  FileStream<<endl;
-  FileStream<<"VERS 24"<<endl;
-  FileStream<<endl;
-  if (StoreIAs == true) {
-    FileStream<<"EIFO 1"<<endl;
-  } else {
-    FileStream<<"EIFO 0"<<endl;
-  }
-  if (StoreVetoes == true) {
-    FileStream<<"VIFO 1"<<endl;
-  } else {
-    FileStream<<"VIFO 0"<<endl;
-  }
-  FileStream<<endl;
-  FileStream<<"END"<<endl;
-  FileStream.close();
- 
-
-  // Clean up...
-  m_WorldVolume->ResetCloneTemplateFlags();
-
-  return true;
 }
 
 

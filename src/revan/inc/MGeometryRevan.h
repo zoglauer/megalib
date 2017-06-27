@@ -31,19 +31,30 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Enhanced geometry with revan specific additions
 class MGeometryRevan : public MDGeometryQuest
 {
   // public interface:
  public:
+  //! Standard constructor
   MGeometryRevan();
+  //! Default destructor
   virtual ~MGeometryRevan();
 
+  //! Noise a hit consi
   virtual bool NoiseHit(MVector& Pos, double& E);
+  //! Return true if the two RESEs are in the same detector and the same layer
   virtual bool AreInSameLayer(MRESE* Orig, MRESE* Test);
+  //! Return true if the two RESEs are in the same detector / tracker
   virtual bool AreInSameDetectorVolume(MRESE* RESE1, MRESE* RESE2);
-  virtual bool IsBelow(MRESE* Orig, MRESE* Test, int NBelow = 1);
-  virtual bool IsAbove(MRESE* Orig, MRESE* Test, int NAbove = 1);
-  int GetLayerDistance(MRESE* Orig, MRESE* Test);
+  //! Check if the Test hit is NBelow layers below the Reference hit
+  virtual bool IsBelow(MRESE* Reference, MRESE* Test, int NBelow = 1);
+  //! Check if the Test hit is NBelow layers below the Reference hit
+  virtual bool IsAbove(MRESE* Reference, MRESE* Test, int NAbove = 1);
+  //! Return the distance in layers between the reference and test hit
+  int GetLayerDistance(MRESE* Reference, MRESE* Test);
+  //! Return the distance in cm between the refe
+  
 
   static const int c_DifferentTracker;
 

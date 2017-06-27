@@ -176,10 +176,10 @@ int MGeometryRevan::GetLayerDistance(MRESE *Orig, MRESE *Test)
       return c_DifferentTracker;
     }
 
-    if ((Orig->GetVolumeSequence()->GetDetector()->GetDetectorType() != MDDetector::c_Strip2D &&
-         Orig->GetVolumeSequence()->GetDetector()->GetDetectorType() != MDDetector::c_Strip3D) ||
-        (Test->GetVolumeSequence()->GetDetector()->GetDetectorType() != MDDetector::c_Strip2D &&
-         Test->GetVolumeSequence()->GetDetector()->GetDetectorType() != MDDetector::c_Strip3D)) {
+    if ((Orig->GetVolumeSequence()->GetDetector()->GetType() != MDDetector::c_Strip2D &&
+         Orig->GetVolumeSequence()->GetDetector()->GetType() != MDDetector::c_Strip3D) ||
+        (Test->GetVolumeSequence()->GetDetector()->GetType() != MDDetector::c_Strip2D &&
+         Test->GetVolumeSequence()->GetDetector()->GetType() != MDDetector::c_Strip3D)) {
       mdebug<<"("<<Orig->GetID()<<"+"<<Test->GetID()<<"): Not a Strip Detector!"<<endl;
       return c_DifferentTracker;
     }

@@ -64,8 +64,6 @@ class MInterfaceGeomega : public MInterface
   void CalculateMasses();
   void GetResolutions();
   void DumpInformation();
-  void WriteGeant3Files();
-  void WriteMGeantFiles();
   void TestOnly();
   void FindVolume(MVector Pos);
   void CreateCrossSections();
