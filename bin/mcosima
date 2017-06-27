@@ -28,9 +28,9 @@ help() {
 
 # Initialize
 Threads=1;
-if ( `test -f /usr/sbin/sysctl` ); then
+if [[ ${OSTYPE} == darwin* ]]; then
   Threads=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then
+elif [[ ${OSTYPE} == linux ]]; then
   Threads=`grep processor /proc/cpuinfo | wc -l`
 fi
 Source="!@#$";

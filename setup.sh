@@ -155,9 +155,9 @@ CLEANUP="off"
 BRANCH=""
 
 MAXTHREADS=1;
-if ( `test -f /usr/sbin/sysctl` ); then
+if [[ ${OSTYPE} == darwin* ]]; then
   MAXTHREADS=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then
+elif [[ ${OSTYPE} == linux ]]; then
   MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 if [ "$?" != "0" ]; then

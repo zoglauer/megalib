@@ -21,9 +21,9 @@ commandhelp() {
 
 # Initialize
 THREADS=1;
-if ( `test -f /usr/sbin/sysctl` ); then
+if [[ ${OSTYPE} == darwin* ]]; then
   THREADS=`sysctl -n hw.logicalcpu_max`
-elif ( `test -f /proc/cpuinfo` ); then 
+elif [[ ${OSTYPE} == linux ]]; then 
   THREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 
