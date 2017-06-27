@@ -86,6 +86,8 @@ void MRotationInterface::Reset()
   m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
   m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
   m_HasGalacticPointing = false; 
+  m_IsGalacticPointingRotationCalculated = false;
+  m_IsGalacticPointingInverseRotationCalculated = false;
 
   m_DetectorRotationXAxis = MVector(1.0, 0.0, 0.0);
   m_DetectorRotationZAxis = MVector(0.0, 0.0, 1.0);

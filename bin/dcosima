@@ -73,6 +73,7 @@ done
 
 # Default options:
 SOURCE=""
+SOURCEFILENAME=""
 INSTANCES="1"
 PREFIX=""
 ZIP="FALSE"
@@ -129,6 +130,7 @@ echo "Chosen options:"
 
 if [[ ${CONTINUE} != "" ]]; then
   if [[ -d ${CONTINUE} ]]; then
+    echo " * Continuing simulation into directory: ${SOURCE}"
     # We have to determine the prefix, the RUNID, source, and the number of already lauched files
     PREFIX=`echo ${CONTINUE} | awk -F"_ID" ' { print $1 }'`
     if [[ ${PREFIX} == "" ]]; then
@@ -155,29 +157,24 @@ if [[ ${CONTINUE} != "" ]]; then
       LOG="TRUE"
     fi
     
-    SOURCE=`ls *.source`
-    if [[ $( echo ${SOURCE} | wc -l ) !=  1 ]]; then
+    SOURCEFILENAME=`ls *.source`
+    if [[ $( echo ${SOURCEFILENAME} | wc -l ) !=  1 ]]; then
       echo " "
-      echo "ERROR: I did not find exactly one source file: ${SOURCE}"
+      echo "ERROR: I did not find exactly one source file: ${SOURCEFILENAME}"
       commandhelp
       exit 1      
     fi
-    SOURCE="${CONTINUE}/${SOURCE}"
+    SOURCE="${CONTINUE}/${SOURCEFILENAME}"
     
-    LAUNCHED="0"
-    FILENAMES=`ls *.p1.inc*.id1.sim*`; 
-    for NAME in ${FILENAMES}; do 
-      ID=`echo ${NAME} | awk -F"inc" '{ print $2 }' | awk -F".id" '{ print $1 }'`
-      if (( ${ID} > ${LAUNCHED} )); then 
-        LAUNCHED=${ID} 
-      fi
-    done 
-    if [[ ${LAUNCHED} == "0" ]]; then
+    echo "   Looking for simulation file with highest ID... this might take a while.."
+    LAUNCHED=$(ls *.p1.inc*.id1.sim* | awk -v FS="(inc|.id)" '{print $2}' | sort -n | tail -1)
+    if [[ ${LAUNCHED} == "" ]]; then
       echo " "
       echo "ERROR: Did not find any simulation files"
       commandhelp
       exit 1          
     fi
+    echo "   Continuing simulation with ID $(( LAUNCHED + 1 )).."
     
     if [[ $( ls *p1.inc*.id1.sim.gz ) != "" ]]; then 
       ZIP="TRUE"
@@ -209,6 +206,8 @@ if [[ ${NUMBEROFRUNS} == 0 ]]; then
   commandhelp
   exit 1
 fi
+# Get just the file name
+SOURCEFILENAME=$(basename ${SOURCE})
 
 if [[ ${PREFIX} != "" ]]; then
   echo " * Name of this run and prefix to the output directory: ${PREFIX}"
@@ -226,7 +225,7 @@ if [[ ${CONTINUE} == "" ]]; then
 fi
 
 if [[ ${LOG} == "TRUE" ]]; then
-  LOGFILE="${LOCALDIR}/Launch.log"
+  LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
   LOGGING="tee -a ${LOGFILE}"
   echo " * Logging output to file: ${LOGFILE}"
 fi
@@ -262,6 +261,8 @@ CFGMD5=""
 
 
 # Do a few more sanity checks
+echo " "
+echo "Performing sanity checks..." | ${LOGGING}
 
 # (1) Just one Run?
 RUNS=$(cat ${SOURCE} | grep "^Run" | wc -l)
@@ -281,9 +282,17 @@ if [ "$?" != "0" ]; then
   exit 1
 fi
 
+# (2) Do we have eactly one source file
+if [ "$(ls ${TMPDIR}/*.source | wc -l)" != "1" ]; then
+  rm -r ${TMPDIR}
+  echo " "
+  echo "ERROR: We do not have exactly one source file" | ${LOGGING}
+  exit 1
+fi
+
 # (3) Can we start the simulation?
 cd ${TMPDIR}
-OUT=$(timeout 15s cosima ${SOURCE})
+OUT=$(timeout 15s cosima ${SOURCEFILENAME})
 ERROR=$(echo ${OUT} | grep "Error")
 if [[ ${ERROR} != "" ]]; then
   echo " "
@@ -463,7 +472,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       if [[ ${ALLOWED} -gt 0 ]]; then
         LAUNCHED=$(( ${LAUNCHED} + 1 ))
         echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
-        dcosima-runinstance --source=${SOURCE} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
+        dcosima-runinstance --source=${SOURCEFILENAME} --rundir=${LOCALDIR} --instanceid=${LAUNCHED} --remote=${MACHINES[$m]} `if [[ ${ZIP} == TRUE ]]; then echo "--zip"; fi` `if [[ ${LOG} == TRUE ]]; then echo "--log=${LOGFILE}"; fi`
         STARTED=1
       fi
       if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi

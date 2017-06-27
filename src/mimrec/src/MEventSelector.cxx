@@ -890,7 +890,7 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       if (fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) < m_ARMMin || 
           fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem)*c_Deg) > m_ARMMax) {
         if (DumpOutput == true) {
-          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<": "
+          cout<<"ID "<<Event->GetId()<<": Not within ARM cut around "<<m_SourcePosition<<" (Coordinate system: "<<m_SourceCoordinateSystem<<"): "
               <<m_ARMMin<<" < "<<fabs(C->GetARMGamma(m_SourcePosition, m_SourceCoordinateSystem))*c_Deg<<" < "<<m_ARMMax<<endl;
         }      
         m_NRejectedARM++;
