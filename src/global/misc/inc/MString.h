@@ -121,8 +121,13 @@ class MString
   operator const char*() const { return m_String.c_str(); }
   // operator string() const { return m_String; } // VC++ 10 has problem with this
   // operator TString() const { return TString(m_String.c_str()); } // ROOT has problems with this
+  
+  //! To C++ string
   string ToString() const { return m_String; } 
   int ToInt() const { return atoi(m_String.c_str()); } 
+  unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); } 
+  long ToLong() const { return stol(m_String.c_str()); } 
+  unsigned long ToUnsignedLong() const { return (unsigned int) stoul(m_String.c_str()); } 
   double ToDouble() const { return atof(m_String.c_str()); }
 
 
