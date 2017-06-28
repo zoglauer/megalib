@@ -199,6 +199,10 @@ public:
   MCOrientation GetOrientation() const { return m_Orientation; }
   
   
+  /// Return true, if the far field transmission probability file could be set and read correctly
+  bool SetFarFieldTransmissionProbability(const MString& FileName);
+
+  
   /// Return true, if the successor flag couls be set correctly
   bool SetIsSuccessor(const bool& IsSuccessorFlag) { m_IsSuccessor = IsSuccessorFlag; return true; }
   /// Return the successor flag
@@ -721,6 +725,12 @@ private:
   
   /// The orientation
   MCOrientation m_Orientation;
+  
+  
+  /// Flag indicating we should apply the far field transmission probabilities
+  bool m_UseFarFieldTransmissionProbability;
+  /// Far field transmission probabilities
+  MFunction2D m_FarFieldTransmissionProbability;
   
   
   /// Number of generated particles

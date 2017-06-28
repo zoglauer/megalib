@@ -2187,6 +2187,7 @@ bool MCParameterFile::Parse()
       } else if (T->IsTokenAt(1, "Energy", true) == true) {
       } else if (T->IsTokenAt(1, "Intensity", true) == true) {
       } else if (T->IsTokenAt(1, "Flux", true) == true) {
+      } else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true) == true) {
       } else if (T->IsTokenAt(1, "EventList", true) == true) {
       } else {      
         Typo(i, MString("Unknown keyword: ") + T->GetTokenAt(1));
@@ -2724,6 +2725,21 @@ bool MCParameterFile::Parse()
           return false;
         }
       } // token
+      
+      else if (T->IsTokenAt(1, "FarFieldTransmissionProbability", true)) {
+        if (T->GetNTokens() == 3) {
+
+          if (Source->SetFarFieldTransmissionProbability(T->GetTokenAtAsString(2)) == true) {
+            mdebug<<"Setting far field transmission probability: "<<T->GetTokenAtAsString(2)<<endl;
+          } else {
+            Typo(i, "Cannot parse token FarFieldTransmissionProbability correctly");
+            return false;
+          }
+        } else {
+          Typo(i, "Cannot parse token FarFieldTransmissionProbability correctly: Number of tokens is not correct!");
+          return false;
+        }
+      }
     } // is source
   } // Step 6
 
