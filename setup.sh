@@ -157,7 +157,7 @@ BRANCH=""
 MAXTHREADS=1;
 if [[ ${OSTYPE} == darwin* ]]; then
   MAXTHREADS=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux ]]; then
+elif [[ ${OSTYPE} == linux* ]]; then
   MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 if [ "$?" != "0" ]; then

@@ -23,7 +23,7 @@ commandhelp() {
 THREADS=1;
 if [[ ${OSTYPE} == darwin* ]]; then
   THREADS=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux ]]; then 
+elif [[ ${OSTYPE} == linux* ]]; then 
   THREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 

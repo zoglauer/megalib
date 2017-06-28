@@ -30,7 +30,7 @@ help() {
 Threads=1;
 if [[ ${OSTYPE} == darwin* ]]; then
   Threads=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux ]]; then
+elif [[ ${OSTYPE} == linux* ]]; then
   Threads=`grep processor /proc/cpuinfo | wc -l`
 fi
 Source="!@#$";

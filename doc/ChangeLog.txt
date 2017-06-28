@@ -8,7 +8,7 @@ Version 2.99/3.00
 
 *** IMPORTANT - PLEASE READ:
 
-+ Default ROOT version is now 6.06, default Geant4 version is 10.2
++ Default ROOT version is now 6.08, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
