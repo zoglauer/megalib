@@ -299,7 +299,7 @@ void MCEventAction::SetRelegator(void (Relegator)(MSimEvent*))
 /******************************************************************************
  * Things to do before the start of a new event (reset last event data)
  */
-void MCEventAction::BeginOfEventAction(const G4Event* Event)
+void MCEventAction::BeginOfEventAction(const G4Event*)
 {
   ++m_ID;  
   

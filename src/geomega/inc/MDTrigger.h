@@ -76,16 +76,16 @@ class MDTrigger
   virtual void IgnoreVetoes(bool Ignore) { m_IgnoreVetoes = Ignore; }
   
   //! Return true if this trigger applies to the detector
-  virtual bool Applies(MDDetector* D) const { return false; }
+  virtual bool Applies(MDDetector*) const { return false; }
   //! Return true if this trigger is triggering (not vetoing)
-  virtual bool IsTriggering(MDDetector* D) const { return false; }
+  virtual bool IsTriggering(MDDetector*) const { return false; }
   //! Return true if this trigger is vetoing
-  virtual bool IsVetoing(MDDetector* D) const { return false; }
+  virtual bool IsVetoing(MDDetector*) const { return false; }
   
   //! Returns true if the hit could be added 
-  virtual bool AddHit(MDVolumeSequence& VS) { return false; }
+  virtual bool AddHit(MDVolumeSequence&) { return false; }
   //! Returns true if the hit could be added 
-  virtual bool AddGuardRingHit(MDVolumeSequence& VS) { return false; }
+  virtual bool AddGuardRingHit(MDVolumeSequence&) { return false; }
 
   //! Reset all added hits - it will not change the basic setup of the trigger (type, detector, required hits)
   virtual void Reset() { }
