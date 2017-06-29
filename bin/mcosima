@@ -1,6 +1,28 @@
 #! /bin/bash
 
 
+# On exit, or if we hit ctrl-C, kill all your children
+trap CleanUp SIGTERM SIGINT 
+
+CleanUp() {
+  echo " "
+  echo " "
+  echo "Received command to shut down gracefully..."
+  echo " "
+
+  if [[ -f ${KillFileName} ]]; then
+    bash ${KillFileName}
+  fi
+  
+  sleep 1
+  
+  echo "Done"
+  echo " "
+  
+  exit 0
+}
+
+
 help() {
   echo ""
   echo "mcosima - parallel simulation script for cosima on the same machine";
@@ -13,6 +35,7 @@ help() {
   echo "    -t <threads>:  The number of threads as an integer"
   echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
   echo "    -n <nice>:     The nice level as an integer"
+  echo "    -d <seconds>:  Delay in seconds between starting jobs (min=default: 2 seconds)"
   echo "    -z:            zip the simulations files"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -w:            If set, wait until all jobs have finished."
@@ -38,6 +61,7 @@ Max=${Threads}
 Nice=0;
 Wait="no"
 Zip="no"
+Delay=2
 ExecuteString="cosima"
 Executable="cosima"
 
@@ -127,6 +151,19 @@ while [ $# -gt 0 ] ; do
     Nice=$1;
     #echo "Using nice level ${Nice}";
     ;;
+  -d)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -d needs an argument";
+      echo "       For details see mcosima --help"
+      echo " "
+      exit 0;
+    fi
+    Found=1;
+    Delay=$1;
+    #echo "Using nice level ${Nice}";
+    ;;
   *)
     ;;
   esac
@@ -174,6 +211,19 @@ else
   rm /tmp/aux
   exit 1;
 fi
+
+if echo ${Delay} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind delay must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+if [ ${Delay} -le 2 ]; then Delay=2; fi
 
 if echo ${Max} | grep "^[0-9]*$" > /tmp/aux
 then
@@ -254,12 +304,13 @@ KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
 rm -f ${KillFileName}
 echo "#! /bin/bash" >> ${KillFileName}
 echo " " >> ${KillFileName}
+echo "TAGS=( )" >> ${KillFileName}
 
 
 # Start the sims
 for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
-  mwait -i=threads -p=cosima -m
+  mwait -i=threads -p=cosima
   
   echo "Launching cosima run ${i}/${Threads}"
   
@@ -279,12 +330,33 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null 2>&1 &
   
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  # mwait with option -m guaratees another second wait
-  sleep 1
+  sleep ${Delay}
   
-  Pid=`ps -Af | grep "[ ]${Tag}" | grep -v "bash -c " | awk '{ print $2 }'`
-  echo "kill -2 ${Pid}" >> ${KillFileName}
+  echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
 done
+
+cat  >> ${KillFileName} <<EOF
+
+RoundOne=true
+while true; do
+  FOUND=false
+  for T in "\${TAGS[@]}"; do
+    Pid=\`ps -Af | grep "[ ]\${T}" | grep -v "bash -c " | awk '{ print \$2 }'\`
+    if [[ \${Pid} != "" ]] && [[ \${RoundOne} == true ]]; then
+      kill -2 \${Pid}
+      FOUND=true
+    fi
+  done 
+  if [[ \${FOUND} == false ]]; then
+    echo "All simulation processes gracefully terminated"
+    break
+  fi
+  RoundOne=false
+  sleep 1
+done
+
+EOF
+
 
 # Create a concatenation file
 ConcatFileName="Bla.sim"
