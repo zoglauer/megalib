@@ -131,6 +131,7 @@ while true; do
       VERYNEWONES+=(`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`)
       VERYNEWONES+=(`cat ${F} | grep MapProfileBeam | awk '{print $9}'`)
       VERYNEWONES+=(`cat ${F} | grep ActivationSources | awk '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep FarFieldTransmissionProbability | awk '{print $2}'`)
       if [[ `cat ${F} | grep "\ File\ "` != "" ]]; then
         OLDIFS=${IFS}
         IFS=$'\n'
