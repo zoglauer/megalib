@@ -13,7 +13,7 @@ StoreSimulationInfo      all
 
 # Run & source parameters
 Run SpaceSim
-SpaceSim.FileName        CrabObservation
+SpaceSim.FileName        MEGATest_2MeV
 SpaceSim.Time            1000.0
 
 SpaceSim.Source Crab

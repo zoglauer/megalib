@@ -14,7 +14,7 @@ StoreSimulationInfo         all
 
 # Run & source parameters
 Run SpaceSim
-SpaceSim.FileName           CrabObservation
+SpaceSim.FileName           CrabOnlyObservation
 SpaceSim.Time               1000.0
 
 # Attention: Concerning the lower energy band:

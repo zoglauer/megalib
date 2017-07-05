@@ -3,7 +3,7 @@
 
 # Global parameters
 Version         1
-Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
+Geometry        $(MEGALIB)/resource/examples/geomega/GRIPS/GRIPS.geo.setup
 
 # Physics list
 PhysicsListEM             LivermorePol
