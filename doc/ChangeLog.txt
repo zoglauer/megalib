@@ -45,7 +45,7 @@ Geomega:
   This will only be displayed in geomega, but does not show up in any
   other program
 + Fixed the PEEK elemental composition to 19C12H3O from 5C8H2O
-+ Dropped support for Geant3
++ Dropped support for Geant3/MGeant
 + Internal rewrite of the guard ring interface: 
   - Guard rings are now their own detector type
   - You need to give 2 energy resolution data point as in all other detectors
