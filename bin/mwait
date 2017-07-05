@@ -90,7 +90,7 @@ while [[ ${WAIT} == true ]]; do
   # We exclude this process itself in the listing
   # sed -> don't remember
   RUNNINGTHREADS=0
-  RUNNINGTHREADS=$(( RUNNINGTHREADS + $(ps -Af | grep "[ ]${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c " | wc -l | sed 's/^ *//g') ))
+  RUNNINGTHREADS=$(( RUNNINGTHREADS + $(ps -Af | grep "[ ]${PROGRAM}" | grep -v "mwait ${PROGRAM}" | grep -v "bash -c " | grep -v "timeout " | wc -l | sed 's/^ *//g') ))
   
   #echo "mwait: ${MAXTHREADS} vs. ${RUNNINGTHREADS}"
   
