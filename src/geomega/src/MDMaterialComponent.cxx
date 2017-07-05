@@ -49,17 +49,11 @@ ClassImp(MDMaterialComponent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-const int MDMaterialComponent::c_ByAtoms = 1;
-const int MDMaterialComponent::c_ByMass = 2;
-const double MDMaterialComponent::c_NaturalComposition = 999999999.99987654;
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MDMaterialComponent::MDMaterialComponent(): m_A(c_NaturalComposition), m_Z(1), m_Weight(1), m_Type(c_ByAtoms)
+MDMaterialComponent::MDMaterialComponent()
 {
   // default constructor
+  
+  SetByAtomicWeighting("H", 1);
 }
 
 
@@ -70,25 +64,11 @@ MDMaterialComponent::MDMaterialComponent(const MDMaterialComponent& C)
 {
   // default constructor
 
-  SetA(C.m_A);
-  SetZ(C.m_Z);
-  SetWeight(C.m_Weight);
-  SetType(C.m_Type);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MDMaterialComponent::MDMaterialComponent(double A, double Z, 
-                                         double Weight, int Type)
-{
-  // default constructor
-
-  SetA(A);
-  SetZ(Z);
-  SetWeight(Weight);
-  SetType(Type);
+  m_AtomicWeight = C.m_AtomicWeight;
+  m_AtomicNumber = C.m_AtomicNumber;
+  m_WeightingType = C.m_WeightingType;
+  m_Weighting = C.m_Weighting;
+  m_HasNaturalComposition = C.m_HasNaturalComposition;
 }
 
 
@@ -104,10 +84,12 @@ MDMaterialComponent::~MDMaterialComponent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDMaterialComponent::SetElement(MString Name) {
+bool MDMaterialComponent::SetElement(MString Name) 
+{
   // Set the element by name
   
-  const char* elem[] = {"H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg",
+  vector<MString> ElementName = {
+      "H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg",
       "Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr",
       "Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr",
       "Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
@@ -115,22 +97,61 @@ bool MDMaterialComponent::SetElement(MString Name) {
       "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf",
       "Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po",
       "At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm",
-      "Bk","Cf","Es","Fm","Md","No","Lr"};
+      "Bk","Cf","Es","Fm","Md","No","Lr","Rf","Db","Sg","Bh","Hs","Mt","Rg"};
  
+  vector<double> AverageAtomicWeight = { 
+    1.0079, 4.0026, 6.941, 9.0122, 10.811, 12.0107, 14.0067, 15.9994, 18.9984, 20.1797, 22.9897, 24.305, 26.9815, 28.0855, 30.9738, 32.065, 35.453, 39.948, 39.0983, 40.078, 44.9559, 47.867, 50.9415, 51.9961, 54.938, 55.845, 58.9332, 58.6934, 63.546, 65.39, 69.723, 72.64, 74.9216, 78.96, 79.904, 83.8, 85.4678, 87.62, 88.9059, 91.224, 92.9064, 95.94, 98, 101.07, 102.9055, 106.42, 107.8682, 112.411, 114.818, 118.71, 121.76, 127.6, 126.9045, 131.293, 132.9055, 137.327, 138.9055, 140.116, 140.9077, 144.24, 145, 150.36, 151.964, 157.25, 158.9253, 162.5, 164.9303, 167.259, 168.9342, 173.04, 174.967, 178.49, 180.9479, 183.84, 186.207, 190.23, 192.217, 195.078, 196.9665, 200.59, 204.3833, 207.2, 208.9804, 209, 210, 222, 223, 226, 227, 232.0381, 231.0359, 238.0289, 237, 244, 243, 247, 247, 251, 252, 257, 258, 259, 262, 261, 262, 266, 264, 277, 268, 272
+  };
+      
+      
   bool Found = false;
   for (unsigned int i = 0; i < 100; ++i) {
-    MString Element(elem[i]);
+    MString Element(ElementName[i]);
     Element.ToLower();
     Name.ToLower();
     if (Element == Name) {
-      m_Z = i+1;
+      m_AtomicNumber = i+1;
+      m_AtomicWeight = AverageAtomicWeight[i];
       Found = true;
       break;
     }
   }
   if (Found == false) return false;
       
-  m_A = c_NaturalComposition; // we don't need this anymore!
+  m_HasNaturalComposition = true;
+  
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set a component by atomic weighting
+bool MDMaterialComponent::SetByAtomicWeighting(double AtomicWeight, int AtomicNumber, int Weighting)
+{
+  if (AtomicWeight <= 0) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The atomic weight must be positive."<<endl;
+    return false;    
+  }
+  
+  if (AtomicNumber <= 0 || AtomicNumber > 128) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The atomic number must be within [1...128]."<<endl;
+    return false;    
+  }
+  
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The weighting by atoms must be a positive number."<<endl;
+    return false;        
+  }
+  
+  m_AtomicWeight = AtomicWeight;
+  m_AtomicNumber = AtomicNumber;
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByAtoms;
+  m_Weighting = Weighting;
+  m_HasNaturalComposition = false;
   
   return true;
 }
@@ -139,104 +160,123 @@ bool MDMaterialComponent::SetElement(MString Name) {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDMaterialComponent::SetA(double A)
+//! Set a component by atomic weighting with natural composition
+bool MDMaterialComponent::SetByAtomicWeighting(MString Name, int Weighting)
 {
-  // Set the amic mass of this component
-
-  // In GCALOR Vacuum needs A = 0
-  massert(A >= 0);
-
-  m_A = A;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterialComponent::SetZ(double Z)
-{
-  // Set the number of protons/ of this component
-
-  // In GCALOR Vacuum needs A = 0
-  massert(Z >= 0);
-  massert(Z <= 100);
-
-  m_Z = Z;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDMaterialComponent::SetWeight(double Weight)
-{
-  // Set the number of atoms or the fractional mass of this component
-  // What it is is controled via the type
-
-  if (Weight <= 0) {
-    mout<<"   ***  Warning  ***  in component "<<ToString()<<endl;
-    mout<<"You have a material component with a non-positive weighting factor!"<<endl;
-    m_Weight = 0;
-  } else {
-    m_Weight = Weight;
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  ***  in material component "<<Name<<endl;
+    mout<<"The weighting by atoms must be a positive number."<<endl;
+    return false;        
   }
+  
+  if (SetElement(Name) == false) {
+    mout<<"   ***  Error  ***  in material component "<<Name<<endl;
+    mout<<"Cannot set the element."<<endl;
+    return false; 
+  }
+  
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByAtoms;
+  m_Weighting = Weighting;
+  m_HasNaturalComposition = true;
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDMaterialComponent::SetType(int Type)
+//! Set a component by mass weighting
+bool MDMaterialComponent::SetByMassWeighting(double AtomicWeight, int AtomicNumber, double Weighting)
 {
-  // Set the type, which is either component by mass of by atoms
+  if (AtomicWeight <= 0) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The atomic weight must be positive."<<endl;
+    return false;    
+  }
+  
+  if (AtomicNumber <= 0 || AtomicNumber > 128) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The atomic number must be within [1...128]."<<endl;
+    return false;    
+  }
+  
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  ***  in material component with A="<<AtomicWeight<<" and Z="<<AtomicNumber<<endl;
+    mout<<"The weighting by mass must be a positive number."<<endl;
+    return false;        
+  }
+  
+  m_AtomicWeight = AtomicWeight;
+  m_AtomicNumber = AtomicNumber;
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByMass;
+  m_Weighting = Weighting;
+  m_HasNaturalComposition = false;
+  
+  return true;
+}
 
-  massert(Type == c_ByAtoms || Type == c_ByMass);  
+////////////////////////////////////////////////////////////////////////////////
 
-  m_Type = Type;
+
+//! Set a component by mass weighting with natural composition
+bool MDMaterialComponent::SetByMassWeighting(MString Name, double Weighting)
+{
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  ***  in material component "<<Name<<endl;
+    mout<<"The weighting by atoms must be a positive number."<<endl;
+    return false;        
+  }
+  
+  if (SetElement(Name) == false) {
+    mout<<"   ***  Error  ***  in material component "<<Name<<endl;
+    mout<<"Cannot set the element."<<endl;
+    return false; 
+  }
+  
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByMass;
+  m_Weighting = Weighting;
+  m_HasNaturalComposition = true;
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterialComponent::GetA() const
+//! Set the weighting by mass
+bool MDMaterialComponent::SetWeightingByMass(double Weighting)
 {
-  // Return the atomic mass of this component
-
-  return m_A;
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  *** "<<endl;
+    mout<<"The weighting by atoms must be a positive number."<<endl;
+    return false;        
+  }
+  
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByMass;
+  m_Weighting = Weighting;
+  
+  return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDMaterialComponent::GetZ() const
+//! Set the weighting by atoms
+bool MDMaterialComponent::SetWeightingByAtoms(int Weighting)
 {
-  // Return the number of protons
-
-  return m_Z;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-double MDMaterialComponent::GetWeight() const
-{
-  // Return the number of atoms or mass fraction
-
-  return m_Weight;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDMaterialComponent::GetType() const
-{
-  // Return the type, which is either component by mass of by atoms
-
-  return m_Type;
+  if (Weighting <= 0) {
+    mout<<"   ***  Error  *** "<<endl;
+    mout<<"The weighting by atoms must be a positive number."<<endl;
+    return false;        
+  }
+  
+  m_WeightingType = MDMaterialComponentWeightingType::c_ByAtoms;
+  m_Weighting = Weighting;
+  
+  return true;
 }
 
 
@@ -247,15 +287,15 @@ bool MDMaterialComponent::Validate()
 {
   // check for initialisation errors:
 
-  if (m_A < m_Z) {
-    if ((m_Z != 1 && m_A != 1) ||
-        (m_Z != 0 && m_A != 0)) {  // In GCALOR Vacuum needs A = Z = 0
+  if (m_AtomicWeight < m_AtomicNumber) {
+    if ((m_AtomicNumber != 1 && m_AtomicWeight != 1) ||
+        (m_AtomicNumber != 0 && m_AtomicWeight != 0)) {  // In GCALOR Vacuum needs A = Z = 0
       mout<<"   ***  Error  ***  in component "<<ToString()<<endl;
       mout<<"N < Z!"<<endl;
       return false;
     }
   }
-  if (m_Z > 100) { // mgeant limitation!
+  if (m_AtomicNumber > 100) { // mgeant limitation!
     mout<<"   ***  Error  ***  in component "<<ToString()<<endl;
     mout<<"Z > 100!"<<endl;
     return false;
@@ -274,15 +314,15 @@ MString MDMaterialComponent::ToString() const
 
   ostringstream out;
   if (HasNaturalIsotopeComposition()) {
-    out<<"Z="<<m_Z<<" (A=natural composition), ";
+    out<<"Z="<<m_AtomicNumber<<" (A=natural composition), ";
   } else {
-    out<<"Z="<<m_Z<<", A="<<m_A<<", ";
+    out<<"Z="<<m_AtomicNumber<<", A="<<m_AtomicWeight<<", ";
   }
   
-  if (m_Type == c_ByAtoms) {
-    out<<"atoms="<<m_Weight;
+  if (m_WeightingType == MDMaterialComponentWeightingType::c_ByAtoms) {
+    out<<"atoms="<<GetWeightingByAtoms();
   } else {
-    out<<"mass fraction="<<m_Weight;
+    out<<"mass fraction="<<GetWeightingByMass();
   }
 
   return out.str().c_str();  
@@ -298,18 +338,21 @@ MString MDMaterialComponent::GetGeomega() const
 
   ostringstream out;
 
-  if (GetType() == MDMaterialComponent::c_ByAtoms) {
+  if (m_WeightingType == MDMaterialComponentWeightingType::c_ByAtoms) {
     out<<".ComponentByAtoms ";
   } else {
     out<<".ComponentByMass ";      
   }
   if (HasNaturalIsotopeComposition() == true) {
-    out<<MDMaterial::ConvertZToString(GetZ())<<" ";
+    out<<MDMaterial::ConvertAtomicNumberToName(GetAtomicNumber())<<" ";
   } else {
-    out<<GetA()<<" "<<GetZ()<<" ";
+    out<<m_AtomicWeight<<" "<<m_AtomicNumber<<" ";
   }
-  out<<GetWeight();
-  
+  if (m_WeightingType == MDMaterialComponentWeightingType::c_ByAtoms) {
+    out<<GetWeightingByAtoms();
+  } else {
+    out<<GetWeightingByMass();
+  }
 
   return out.str().c_str();
 }

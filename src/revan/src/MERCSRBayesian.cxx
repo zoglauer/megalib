@@ -696,7 +696,7 @@ int MERCSRBayesian::GetMaterial(MRESE* Hit)
     return 0;
   }
 
-  int ZMain = V->GetMaterial()->GetZMainComponent();
+  int ZMain = V->GetMaterial()->GetAtomicNumberMainComponent();
 
   if (ZMain == 14) { // Si
     return 1;

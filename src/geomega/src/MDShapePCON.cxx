@@ -236,60 +236,6 @@ bool MDShapePCON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapePCON::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL("<<3+3*m_NSections<<")"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Phi<<","<<m_DPhi<<","<<m_NSections;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<","<<m_Z[i]<<","<<m_Rmin[i]<<","<<m_Rmax[i];
-  }
-  out<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(6);
-
-  out<<"           "<<m_Phi<<" "<<m_DPhi<<" "<<m_NSections<<endl;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<"           "<<m_Z[i]<<" "<<m_Rmin[i]<<" "<<m_Rmax[i]<<endl;
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapePCON::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -302,28 +248,6 @@ MString MDShapePCON::GetGeomega() const
   }
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePCON::GetGeant3ShapeName()
-{
-  //
-
-  return "PCON";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapePCON::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 3 + 3*m_NSections;
 }
 
 

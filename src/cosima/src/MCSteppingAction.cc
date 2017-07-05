@@ -1561,7 +1561,7 @@ int MCSteppingAction::GetParticleType(G4String Name)
         sA += Start[i];
       }
     }
-    int Z = MDMaterial::ConvertZToNumber(sZ);
+    int Z = MDMaterial::ConvertNameToAtomicNumber(sZ);
     int A = atoi(sA);
     
     if (Z > 0 && Z < 120 && A > 0 && A < 1000) {

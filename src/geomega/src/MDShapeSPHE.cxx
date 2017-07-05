@@ -294,55 +294,6 @@ double MDShapeSPHE::GetPhimax() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeSPHE::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(6)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Rmin<<","<<m_Rmax<<","<<m_Thetamin<<","<<endl;
-  out<<"     &  "<<m_Thetamax<<","<<m_Phimin<<","<<m_Phimax<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Rmin<<" "<<m_Rmax<<" "<<m_Thetamin<<endl;
-  out<<"           "<<m_Thetamax<<" "<<m_Phimin<<" "<<m_Phimax<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeSPHE::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -352,28 +303,6 @@ MString MDShapeSPHE::GetGeomega() const
      <<m_Thetamin<<" "<<m_Thetamax<<" "<<m_Phimin<<" "<<m_Phimax;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeSPHE::GetGeant3ShapeName()
-{
-  //
-
-  return "SPHE";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeSPHE::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 6;
 }
 
 

@@ -106,7 +106,6 @@ MDGeometry::MDGeometry()
   m_StartVolume = "";
   m_ShowVolumes = true;
   m_DefaultColor = -1;
-  m_IgnoreShortNames = true;
   m_DoSanityChecks = true;
   m_ComplexER = true;
 
@@ -254,7 +253,6 @@ void MDGeometry::Reset()
   delete m_System;
   m_System = new MDSystem("NoName");
 
-  m_IgnoreShortNames = true; // This should NOT be reset...
   m_DoSanityChecks = true;
   m_ComplexER = true;
   m_VirtualizeNonDetectorVolumes = false;
@@ -995,8 +993,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
 
-      AddVolume(new MDVolume(Tokenizer.GetTokenAt(1), 
-                             CreateShortName(Tokenizer.GetTokenAt(1))));
+      AddVolume(new MDVolume(Tokenizer.GetTokenAt(1)));
       continue;
     } 
 
@@ -1116,13 +1113,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Ignore short names
     else if (Tokenizer.IsTokenAt(0, "IgnoreShortNames") == true) {
-      if (Tokenizer.GetNTokens() != 2) {
-        Typo("Line must contain two values: IgnoreShortNames true");
-        return false;
-      }
-
-      m_IgnoreShortNames = Tokenizer.GetTokenAtAsBoolean(1);
-
+      mout<<" *** Outdated *** "<<endl;
+      mout<<"The \"IgnoreShortNames\" keyword is no longer supported!"<<endl;
+      
       continue;
     }
     
@@ -1189,9 +1182,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
              
-      AddMaterial(new MDMaterial(Tokenizer.GetTokenAt(1), 
-                                 CreateShortName(Tokenizer.GetTokenAt(1)),
-                                 CreateShortName(Tokenizer.GetTokenAt(1), 19, false, true)));
+      AddMaterial(new MDMaterial(Tokenizer.GetTokenAt(1)));
       continue;
     }
     
@@ -1506,9 +1497,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
 
-        MCopy = new MDMaterial(Tokenizer.GetTokenAt(2), 
-                               CreateShortName(Tokenizer.GetTokenAt(2)),
-                               CreateShortName(Tokenizer.GetTokenAt(2), 19));
+        MCopy = new MDMaterial(Tokenizer.GetTokenAt(2));
 
         AddMaterial(MCopy);
         M->AddClone(MCopy);
@@ -1596,17 +1585,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (Tokenizer.GetNTokens() == 4) {
-          if (M->SetComponent(Tokenizer.GetTokenAtAsString(2), 
-                              Tokenizer.GetTokenAtAsDouble(3), 
-                              MDMaterialComponent::c_ByAtoms) == false) {
+          if (M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsString(2), 
+                                               Tokenizer.GetTokenAtAsInt(3)) == false) {
             Typo("Element not found!");
             return false;
           }
         } else {
-          M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
-                          Tokenizer.GetTokenAtAsDouble(3), 
-                          Tokenizer.GetTokenAtAsDouble(4),
-                          MDMaterialComponent::c_ByAtoms);
+          M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsDouble(2), 
+                                           Tokenizer.GetTokenAtAsInt(3), 
+                                          Tokenizer.GetTokenAtAsInt(4));
           mout<<"   ***  Info  ***  "<<endl;
           mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
           mout<<"e.g. \"Alu.ComponentByAtoms Al 1.0\""<<endl;
@@ -1620,37 +1607,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (Tokenizer.GetNTokens() == 4) {
-          if (M->SetComponent(Tokenizer.GetTokenAtAsString(2), 
-                              Tokenizer.GetTokenAtAsDouble(3), 
-                              MDMaterialComponent::c_ByMass) == false) {
+          if (M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsString(2), 
+                                             Tokenizer.GetTokenAtAsDouble(3)) == false) {
             Typo("Element not found!");
             return false;
           }
         } else {
-          M->SetComponent(Tokenizer.GetTokenAtAsDouble(2), 
-                          Tokenizer.GetTokenAtAsDouble(3), 
-                          Tokenizer.GetTokenAtAsDouble(4),
-                          MDMaterialComponent::c_ByMass);
+          M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsDouble(2), 
+                                         Tokenizer.GetTokenAtAsInt(3), 
+                                         Tokenizer.GetTokenAtAsDouble(4));
           mout<<"   ***  Info  ***  "<<endl;
           mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
           mout<<"e.g. \"Alu.ComponentByMass Al 1.0\""<<endl;
         }
       } else if (Tokenizer.IsTokenAt(1, "Sensitivity") == true) {
-        if (Tokenizer.GetNTokens() != 3) {
-          Typo("Line must contain two strings and one int,"
-               " e.g. \"Alu.Sensitivity 1\"");
-          return false;
-        }
-        M->SetSensitivity(Tokenizer.GetTokenAtAsInt(2));
-        //      }
-        //       // Check for total absorption coefficients:
-        //       else if (Tokenizer.IsTokenAt(1, "TotalAbsorptionFile") == true) {
-        //         if (Tokenizer.GetNTokens() < 3) {
-        //           Typo("Line must contain three strings"
-        //                " e.g. \"Wafer.TotalAbsorptionFile MyFile.abs");
-        //           return false;
-        //         }
-        //         M->SetAbsorptionFileName(Tokenizer.GetTokenAfterAsString(2));
+        mout<<"   ***  Info  ***  "<<endl;
+        mout<<"Sensitivity keyword is redundant"<<endl;
       } else if (Tokenizer.IsTokenAt(1, "Copy") == true) {
         // No warning...
       } else {
@@ -2439,16 +2411,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       // Check for simulation in voxels instead of a junk volume
       if (Tokenizer.IsTokenAt(1, "VoxelSimulation") == true) {
-        if (Tokenizer.GetNTokens() != 3) {
-          Typo("Line must contain two strings and 1 boolean,"
-               " e.g. \"Wafer.VoxelSimulation true\"");
-          return false;
-        }
-        if (Tokenizer.GetTokenAtAsBoolean(2) == true) {
-          D->UseDivisions(CreateShortName(MString("X" + D->GetName())),
-                          CreateShortName(MString("Y" + D->GetName())),
-                          CreateShortName(MString("Z" + D->GetName())));
-        }
+        mout<<" *** Outdated *** "<<endl;
+        mout<<"The \"VoxelSimulation\" keyword is no longer supported!"<<endl;        
       }
       // Check for sensitive volume
       else if (Tokenizer.IsTokenAt(1, "SensitiveVolume") == true) {
@@ -3365,11 +3329,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Test if the surrounding sphere should be shown
   if (m_SurroundingSphereShow == true && m_LaunchedByGeomega == true) {
     MString MaterialName = "SurroundingSphereVolumeMaterial";
-    MDMaterial* SuperDense = new MDMaterial(MaterialName, 
-                                 CreateShortName(MaterialName),
-                                 CreateShortName(MaterialName, 19, false, true));
-    MDMaterialComponent* SuperDenseComponent = 
-      new MDMaterialComponent(MDMaterialComponent::c_NaturalComposition, 82, 1, MDMaterialComponent::c_ByAtoms);
+    MDMaterial* SuperDense = new MDMaterial(MaterialName);
+    MDMaterialComponent* SuperDenseComponent = new MDMaterialComponent();
+    SuperDenseComponent->SetByAtomicWeighting("Pb", 1);
     SuperDense->SetComponent(SuperDenseComponent);
     SuperDense->SetDensity(10000.0);
     
@@ -4410,248 +4372,6 @@ MString MDGeometry::MakeValidName(MString Name)
   }
 
   return ValidName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDGeometry::CreateShortName(MString Name, unsigned int Length, bool Fill, bool KeepKeywords)
-{
-  // Create a Length character short name out of name, which is not in one of
-  // the lists (detectors, materials, volumes)
-  // e.g. if there exist two volumes, TrackerBox and TrackerStalk,
-  // the first one is called TRAC, the second TRA0 
-
-  if (m_IgnoreShortNames == true) {
-    return "IGNO";
-  }
-
-  MString SN;
-  Name.ToLower();
-
-  bool FoundMicsetKeyword = false;
-  MString MicsetKeyword = "_micset";
-  if (KeepKeywords == true && Name.Contains(MicsetKeyword) == true) {
-    //mout<<"   *** Info ***"<<endl;
-    //mout<<"Special MGGPOD material keyword "<<MicsetKeyword<<" found!"<<endl;
-    FoundMicsetKeyword = true;
-    Name.ReplaceAll(MicsetKeyword, "");
-    Length -= MicsetKeyword.Length();
-  }
-  bool FoundGeRecoilKeyword = false;
-  MString GeRecoilKeyword = "_ge_recoil";
-  if (KeepKeywords == true && Name.Contains(GeRecoilKeyword) == true) {
-    //mout<<"   *** Info ***"<<endl;
-    //mout<<"Special MGGPOD material keyword "<<GeRecoilKeyword<<" found!"<<endl;
-    FoundGeRecoilKeyword = true;
-    Name.ReplaceAll(GeRecoilKeyword, "");
-    Length -= GeRecoilKeyword.Length();
-  }
-  bool FoundSiRecoilKeyword = false;
-  MString SiRecoilKeyword = "_si_recoil";
-  if (KeepKeywords == true && Name.Contains(SiRecoilKeyword) == true) {
-    //mout<<"   *** Info ***"<<endl;
-    //mout<<"Special MGGPOD material keyword "<<SiRecoilKeyword<<" found!"<<endl;
-    FoundSiRecoilKeyword = true;
-    Name.ReplaceAll(SiRecoilKeyword, "");
-    Length -= SiRecoilKeyword.Length();
-  }
-  bool FoundCZTRecoilKeyword = false;
-  MString CZTRecoilKeyword = "_czt_recoil";
-  if (KeepKeywords == true && Name.Contains(CZTRecoilKeyword) == true) {
-    //mout<<"   *** Info ***"<<endl;
-    //mout<<"Special MGGPOD material keyword "<<CZTRecoilKeyword<<" found!"<<endl;
-    FoundCZTRecoilKeyword = true;
-    Name.ReplaceAll(CZTRecoilKeyword, "");
-    Length -= CZTRecoilKeyword.Length();
-  }
-  bool FoundAddRecoilKeyword = false;
-  MString AddRecoilKeyword = "_addrec";
-  if (KeepKeywords == true && Name.Contains(AddRecoilKeyword) == true) {
-    mout<<"   *** Info ***"<<endl;
-    mout<<"Special MGGPOD material keyword "<<AddRecoilKeyword<<" found!"<<endl;
-    FoundAddRecoilKeyword = true;
-    Name.ReplaceAll(AddRecoilKeyword, "");
-    Length -= AddRecoilKeyword.Length();
-  }
-  
-
-  // Remove everything which is not alphanumerical from the name:
-  for (size_t i = 0; i < Name.Length(); ++i) {
-    if (isalnum(Name[i]) == false && 
-        Name[i] != '_' && 
-        Name[i] != '-') {
-      Name.Remove(i, 1);
-    }
-  }
-
-  // Keep only first "Length" charcters:callgrind.out.16396
-  Name = Name.GetSubString(0, Length);
-
-  if (Length < 4) Length = 4;
-
-  // if we are smaller, we can try to expand the name:
-  if (Name.Length() < Length) {
-    if (ShortNameExists(Name) == true) {
-      unsigned int MaxExpand = 0;
-      if (pow(10.0, (int) (Length-Name.Length())) - 1 > numeric_limits<unsigned int>::max()) {
-        MaxExpand = numeric_limits<unsigned int>::max();
-      } else {
-        MaxExpand = (unsigned int) (pow(10.0, (int) (Length-Name.Length())) - 1.0);
-      }
-      for (unsigned int i = 1; i < MaxExpand; ++i) {
-        SN = Name;
-        SN += i;     
-        if (ShortNameExists(SN) == false) {
-          Name = SN;
-          break;
-        }
-      }
-    }
-  }
-  
-  // If we still haven't found a suited short name: 
-  if (ShortNameExists(Name) == true) {
-    
-    // Step one: test the first "Length" letters
-    SN = Name.Replace(Length, Name.Length() - Length, ""); 
-    if (ShortNameExists(SN) == true) {
-      // Step three: Replace the last character by a number ...
-      for (int j = (int) '0'; j < (int) '9'; j++) {
-        SN[Length-1] = (char) j;
-        if (ShortNameExists(SN) == false) {
-          break;
-        }
-      }
-    }
-    if (ShortNameExists(SN) == true) {      
-      // Step four: Replace the last two characters by a numbers ...
-      for (int i = (int) '0'; i < (int) '9'; i++) {
-        for (int j = (int) '0'; j < (int) '9'; j++) {
-          SN[Length-2] = (char) i;
-          SN[Length-1] = (char) j;
-          if (ShortNameExists(SN) == false) {
-            break;
-          }
-        }
-        if (ShortNameExists(SN) == false) {
-          break;
-        }
-      }
-    }
-    if (ShortNameExists(SN) == true) {      
-      // Step five: Replace the last three characters by a numbers ...
-      for (int k = (int) '0'; k < (int) '9'; k++) {
-        for (int i = (int) '0'; i < (int) '9'; i++) {
-          for (int j = (int) '0'; j < (int) '9'; j++) {
-            SN[Length-3] = (char) k;
-            SN[Length-2] = (char) i;
-            SN[Length-1] = (char) j;
-            if (ShortNameExists(SN) == false) {
-              break;
-            }
-          }
-          if (ShortNameExists(SN) == false) {
-            break;
-          }
-        }
-        if (ShortNameExists(SN) == false) {
-          break;
-        }
-      }
-    }
-    if (ShortNameExists(SN) == true) {
-      // That's too much:
-      merr<<"You have too many volumes starting with "<<Name<<endl;
-      merr<<"Please add \"IgnoreShortNames true\" into your geometry file!"<<endl;
-      merr<<"As a result you are not able to do Geant3/MGEANT/MGGPOS simulations"<<endl;
-      m_IgnoreShortNames = true;
-      return "IGNO";
-    }                    
-    Name = SN;
-  }
-
-  if (KeepKeywords == true && FoundMicsetKeyword == true) {
-    Name += MicsetKeyword;
-    Length += MicsetKeyword.Length();
-  }
-  
-  if (KeepKeywords == true && FoundGeRecoilKeyword == true) {
-    Name += GeRecoilKeyword;
-    Length += GeRecoilKeyword.Length();
-  }
-  
-  if (KeepKeywords == true && FoundSiRecoilKeyword == true) {
-    Name += SiRecoilKeyword;
-    Length += SiRecoilKeyword.Length();
-  }
-  
-  if (KeepKeywords == true && FoundCZTRecoilKeyword == true) {
-    Name += CZTRecoilKeyword;
-    Length += CZTRecoilKeyword.Length();
-  }
-  
-  if (KeepKeywords == true && FoundAddRecoilKeyword == true) {
-    Name += AddRecoilKeyword;
-    Length += AddRecoilKeyword.Length();
-  }
-  
-  // We always need a name which has exactly Length characters
-  while (Name.Length() < Length) {
-    if (Fill == true) {
-      Name += '_';
-    } else {
-      Name += ' ';
-    }
-  }
-
-  return Name;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MDGeometry::ShortNameExists(MString Name)
-{
-  // Check all lists if "Name" is already listed 
-
-  for (unsigned int i = 0; i < GetNVolumes(); i++) {
-    if (Name.AreIdentical(m_VolumeList[i]->GetName(), true) == true ||
-        Name.AreIdentical(m_VolumeList[i]->GetShortName(), true) == true) {
-      return true;
-    }
-  }
-  
-  // Test materials
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (Name.AreIdentical(m_MaterialList[i]->GetName(), true) == true || 
-        Name.AreIdentical(m_MaterialList[i]->GetShortName(), true) == true || 
-        Name.AreIdentical(m_MaterialList[i]->GetOriginalMGeantShortName(), true) == true) {
-      return true;
-    }
-  }
-  
-  // Test detectors
-  for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (Name.AreIdentical(m_DetectorList[i]->GetName(), true) == true || 
-        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionX(), true) == true || 
-        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionY(), true) == true || 
-        Name.AreIdentical(m_DetectorList[i]->GetShortNameDivisionZ(), true) == true) {
-      return true;
-    }
-  }
-  
-
-  // Test triggers
-  for (unsigned int i = 0; i < GetNTriggers(); i++) {
-   if (Name.AreIdentical(m_TriggerList[i]->GetName(), true) == true) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 

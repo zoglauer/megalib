@@ -395,56 +395,6 @@ double MDShapeTRAP::GetAlpha2() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeTRAP::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(11)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRAP::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Dz<<","<<m_Theta<<","<<m_Phi<<","<<m_H1<<","<<m_Bl1<<","<<m_Tl1<<","<<m_Alpha1<<","<<m_H2<<","<<m_Bl2<<","<<m_Tl2<<","<<m_Alpha2<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRAP::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Dz    <<" "<<m_Theta <<" "<<m_Phi<<endl;
-  out<<"           "<<m_H1    <<" "<<m_Bl1   <<" "<<m_Tl1<<endl;
-  out<<"           "<<m_Alpha1<<" "<<m_H2    <<" "<<m_Bl2<<endl;
-  out<<"           "<<m_Tl2   <<" "<<m_Alpha2<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeTRAP::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -455,28 +405,6 @@ MString MDShapeTRAP::GetGeomega() const
      <<m_H2<<" "<<m_Bl2<<" "<<m_Tl2<<" "<<m_Alpha2;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRAP::GetGeant3ShapeName()
-{
-  //
-
-  return "TRAP";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeTRAP::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 11;
 }
 
 

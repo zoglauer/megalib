@@ -68,9 +68,6 @@ class MDGeometry
   void DumpInformation();
   void CalculateMasses();
 
-  //! Set whether to ignore short names (short names are required for Geant3/MGGPOD)
-  void IgnoreShortNames(bool Ignore) { m_IgnoreShortNames = Ignore; }
-
   //! This flag tells us we are within geomega, this enables a few options, which are not
   //! available in the normal library mode, e.g. view the surrounding sphere
   void LaunchedByGeomega() { m_LaunchedByGeomega = true; } 
@@ -158,8 +155,6 @@ class MDGeometry
 
   void CreateNode(MDVolume *Volume);
 
-  MString CreateShortName(MString Name, unsigned int Length = 4, bool Fill = false, bool KeepKeywords = false);
-  bool ShortNameExists(MString Name);
   bool ValidName(MString Name);
   static MString MakeValidName(MString Name);
 
@@ -271,8 +266,6 @@ class MDGeometry
   bool m_ShowVolumes; // if false, no volumes are shown except those with a visibility higher than 1
   int m_DefaultColor; // if positive, this color is applied to all volumes
 
-  //! Ignore short names (which are only needed for Geant3/MGGPOD conversion)
-  bool m_IgnoreShortNames;
   bool m_DoSanityChecks; //
   bool m_ComplexER; //
   

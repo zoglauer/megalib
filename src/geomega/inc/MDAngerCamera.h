@@ -65,10 +65,6 @@ class MDAngerCamera : public MDDetector
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const ;
-  virtual MString GetMGeant() const ;
-  virtual MString GetGeant3Divisions() const { return ""; }
-  virtual MString GetMGeantDivisions() const { return ""; }
   virtual MString ToString() const;
 
   //! Set the type XY-only or XYZ-only

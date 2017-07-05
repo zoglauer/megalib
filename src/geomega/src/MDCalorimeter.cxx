@@ -385,56 +385,6 @@ bool MDCalorimeter::AreNear(const MVector& Pos1, const MVector& dPos1,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDCalorimeter::GetGeant3() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = 2"<<endl;
-  if (m_DepthResolution.GetNDataPoints() == 0) {
-    out<<"      DETTYP("<<m_ID<<") = 2"<<endl;
-  } else {
-    out<<"      DETTYP("<<m_ID<<") = 3"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDCalorimeter::GetMGeant() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" 2"<<endl;
-  if (m_DepthResolution.GetNDataPoints() == 0) {
-    out<<"DTTP "<<m_ID<<" 2"<<endl;
-  } else {
-    out<<"DTTP "<<m_ID<<" 3"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDCalorimeter::GetGeomega() const
 {
   // Return all detector characteristics in Geomega-Format

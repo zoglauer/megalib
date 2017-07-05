@@ -203,54 +203,6 @@ double MDShapeTRD1::GetZ() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeTRD1::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(4)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Ddx1<<","<<m_Ddx2<<","<<m_Dy<<","<<m_Dz<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Ddx1<<" "<<m_Ddx2<<" "<<m_Dy<<endl;
-  out<<"           "<<m_Dz<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeTRD1::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -259,28 +211,6 @@ MString MDShapeTRD1::GetGeomega() const
   out<<"TRD1 "<<m_Ddx1<<" "<<m_Ddx2<<" "<<m_Dy<<" "<<m_Dz;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeTRD1::GetGeant3ShapeName()
-{
-  //
-
-  return "TRD1";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeTRD1::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 4;
 }
 
 

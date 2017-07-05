@@ -58,14 +58,6 @@ class MDShapeUnion : public MDShape
   MString ToString();
   //! Dump the content in geomega format
   MString GetGeomega() const { return ""; };
-  
-  // DUMMY -  Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString) { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3DATA(MString) { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  MString GetGeant3ShapeName() { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return ""; }
-  int GetGeant3NumberOfParameters() { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return 0; }
-  MString GetMGeantDATA(MString) { merr<<"MDShapeUnion does not support the Geant3/MGGPOD interface"<<error; return ""; }
-
 
 
   //! Return the augend (first number)

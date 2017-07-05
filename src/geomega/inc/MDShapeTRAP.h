@@ -66,11 +66,6 @@ class MDShapeTRAP : public MDShape
   double GetAlpha2() const;
 
   MString ToString();
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
   MString GetGeomega() const;
 
   double GetVolume();

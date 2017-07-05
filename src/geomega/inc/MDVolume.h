@@ -46,13 +46,10 @@ class MDVolume
 {
   // public interface:
  public:
-  MDVolume(MString Name = "", MString ShortName = "");
+  MDVolume(MString Name = "");
   virtual ~MDVolume();
 
   inline const MString& GetName() const { return m_Name; }
-
-  MString GetShortName();
-  void SetShortName(MString ShortName);
 
   void SetWorldVolume();
   bool IsWorldVolume();
@@ -221,16 +218,6 @@ class MDVolume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
 
-  // Interface 
-
-  MString GetGeant3DIM();
-  MString GetGeant3DATA();
-  MString GetGeant3();
-  MString GetGeant3Position(int& IDCounter);
-
-  MString GetMGeant();
-  MString GetMGeantPosition(int& IDCounter);
-
   //! Recursively return a geomega setup file type string 
   MString GetGeomega();
 
@@ -257,7 +244,6 @@ class MDVolume
   // private members:
  private:
   MString m_Name;              // Name of this volume
-  MString m_ShortName;         // 4 character Geant3 name of this volume
 
   bool m_WorldVolume;        // True if this is the world volume  
   bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry

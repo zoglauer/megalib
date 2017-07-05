@@ -56,13 +56,6 @@ class MDShapeBRIK : public MDShape
   MString ToString();
   MString GetGeomega() const;
 
-  // Old Geant3/MGGPOD interface
-  MString GetGeant3DIM(MString ShortName);
-  MString GetGeant3DATA(MString ShortName);
-  MString GetGeant3ShapeName();
-  int GetGeant3NumberOfParameters();
-  MString GetMGeantDATA(MString ShortName);
-
 
   double GetSizeX();
   double GetSizeY();

@@ -223,11 +223,6 @@ class MDDetector
 
   virtual bool IsVeto(const MVector& Pos, const double Energy) const;
 
-  virtual MString GetGeomega() const = 0;
-  virtual MString GetGeant3() const = 0;
-  virtual MString GetMGeant() const = 0;
-  virtual MString GetGeant3Divisions() const = 0;
-  virtual MString GetMGeantDivisions() const = 0;
   virtual MString ToString() const;
 
   // The named detector interface -- this is usually only used in connection of calibrating real data, NOT for simulated data

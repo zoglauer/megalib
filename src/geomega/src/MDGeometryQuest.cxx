@@ -237,7 +237,7 @@ void MDGeometryQuest::AddHit(MString Name, MVector Position, double Size, int Co
 {
   //
 
-  MDVolume* V = new MDVolume(Name, Name);
+  MDVolume* V = new MDVolume(Name);
   MDShapeSPHE* Sphere = new MDShapeSPHE(Name); // Shape is deleted with the volume...
   Sphere->Set(0.0, Size, 0.0, 180.0, 0.0, 360.0);
   Sphere->Validate();
@@ -286,7 +286,7 @@ void MDGeometryQuest::RemoveAllHits()
 
 void MDGeometryQuest::AddLink(MVector PositionA, MVector PositionB, double Size, int Color)
 {
-  MDVolume *V = new MDVolume("A Link", "Link");
+  MDVolume *V = new MDVolume("A Link");
   MDShapeTUBS* TUBS = new MDShapeTUBS("Link"); // Shape is deleted with the volume...
   TUBS->Set(0.0, Size, 0.5*(PositionB - PositionA).Mag(), 0.0, 360.0);
   TUBS->Validate();

@@ -52,7 +52,6 @@ class MDStrip3DDirectional : public MDStrip3D
   virtual bool Validate();
 
   virtual MString GetGeomega() const;
-  virtual MString GetMGeant() const;
 
   static const int c_DirectionalResolutionTypeUnknown;
   static const int c_DirectionalResolutionTypeIdeal;

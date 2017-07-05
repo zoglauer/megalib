@@ -228,92 +228,6 @@ double MDShapeCONE::GetHalfHeight()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeCONE::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(5)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONE::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_HalfHeight<<","<<m_RminBottom<<","<<m_RmaxBottom<<","<<m_RminTop<<","<<m_RmaxTop<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONE::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-  
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_HalfHeight<<" "<<m_RminBottom<<" "<<m_RmaxBottom<<endl;
-  out<<"           "<<m_RminTop<<" "<<m_RmaxTop<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONE::GetGeomega() const
-{
-  // Return the Geomega representation 
-
-  ostringstream out;
-
-  out<<"CONE "<<m_HalfHeight<<" "<<m_RminBottom<<" "<<m_RmaxBottom<<" "
-     <<m_RminTop<<" "<<m_RmaxTop;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONE::GetGeant3ShapeName()
-{
-  //
-
-  return "CONE";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeCONE::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 5;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MVector MDShapeCONE::GetSize()
 {
   // Return the size of a surrounding box
@@ -359,6 +273,23 @@ MVector MDShapeCONE::GetUniquePosition() const
 
   return MVector(0.25*(m_RmaxBottom+m_RminBottom+m_RmaxTop+m_RminTop), 0.0, 0.0);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDShapeCONE::GetGeomega() const
+{
+  // Return the Geomega representation 
+  
+  ostringstream out;
+  
+  out<<"CONE "<<m_HalfHeight<<" "<<m_RminBottom<<" "<<m_RmaxBottom<<" "
+  <<m_RminTop<<" "<<m_RmaxTop;
+  
+  return out.str().c_str();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

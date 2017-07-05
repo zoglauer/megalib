@@ -57,10 +57,6 @@ class MDVoxel3D : public MDDetector
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const;
-  virtual MString GetMGeant() const;
-  virtual MString GetGeant3Divisions() const;
-  virtual MString GetMGeantDivisions() const;
   virtual MString ToString() const;
   
   

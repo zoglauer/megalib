@@ -437,51 +437,6 @@ MString MDDriftChamber::GetGeomega() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDDriftChamber::GetGeant3() const
-{
-  ostringstream out;
-
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = 4"<<endl;
-  out<<"      DETTYP("<<m_ID<<") = 5"<<endl;
-  out<<"      WIDTH("<<m_ID<<",1) = "<<m_WidthX<<endl;
-  out<<"      WIDTH("<<m_ID<<",2) = "<<m_WidthY<<endl;
-  out<<"      OFFSET("<<m_ID<<",1) = "<<m_OffsetX<<endl;
-  out<<"      OFFSET("<<m_ID<<",2) = "<<m_OffsetY<<endl;
-  out<<"      SPITCH("<<m_ID<<",1) = "<<m_PitchX<<endl;
-  out<<"      SPITCH("<<m_ID<<",2) = "<<m_PitchX<<endl;
-  out<<"      SLENGTH("<<m_ID<<",1) = "<<m_StripLengthX<<endl;
-  out<<"      SLENGTH("<<m_ID<<",2) = "<<m_StripLengthY<<endl;
-  out<<"      NSTRIP("<<m_ID<<",1) = "<<m_NStripsX<<endl;
-  out<<"      NSTRIP("<<m_ID<<",2) = "<<m_NStripsX<<endl;
-  out<<endl;
-
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDDriftChamber::GetMGeant() const
-{
-  mimp<<"This class is not yet ready for MGGPOD's MEGAlib extension (standard MGGPOD ok)!!!"<<show;
-
-  return MDStrip3D::GetMGeant();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDDriftChamber::ToString() const
 {
   ostringstream out;

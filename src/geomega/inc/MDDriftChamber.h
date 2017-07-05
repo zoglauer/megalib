@@ -63,8 +63,6 @@ class MDDriftChamber : public MDStrip3D
 
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const;
-  virtual MString GetMGeant() const;
   virtual MString ToString() const;
 
   //! Check if all input is reasonable

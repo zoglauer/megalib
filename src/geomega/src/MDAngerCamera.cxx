@@ -272,57 +272,6 @@ MVector MDAngerCamera::GetPositionInDetectorVolume(const unsigned int xGrid,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDAngerCamera::GetGeant3() const
-{
-  ostringstream out;
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    out<<"      SENVOL("<<m_SVs[i]->GetSensitiveVolumeID()<<") = '"<<m_SVs[i]->GetShortName()<<"'"<<endl;
-    out<<"      SENDET("<<m_SVs[i]->GetSensitiveVolumeID()<<") = "<<m_ID<<endl;
-  }
-
-  out<<"      DETNR("<<m_ID<<") = "<<m_Type<<endl;
-  if (m_PositionResolutionType == c_PositionResolutionXY) {
-    out<<"      DETTYP("<<m_ID<<") = 6"<<endl;
-  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
-    out<<"      DETTYP("<<m_ID<<") = 7"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDAngerCamera::GetMGeant() const
-{
-  ostringstream out;
-
-
-  for (unsigned int i = 0; i < m_SVs.size(); i++) {
-    MString Name = m_SVs[i]->GetShortName();
-    Name.ToUpper();
-    out<<"SENV "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<Name<<endl;
-    out<<"SEND "<<m_SVs[i]->GetSensitiveVolumeID()<<" "<<m_ID<<endl;
-  }
-
-  out<<"DTNR "<<m_ID<<" "<<m_Type<<endl;
-  if (m_PositionResolutionType == c_PositionResolutionXY) {
-    out<<"DTTP "<<m_ID<<" 6"<<endl;
-  } else if (m_PositionResolutionType == c_PositionResolutionXYZ) {
-    out<<"DTTP "<<m_ID<<" 7"<<endl;
-  }
-  out<<endl;
-
-  return out.str().c_str();  
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDAngerCamera::GetGeomega() const
 {
   // Return all detector characteristics in Geomega-Format

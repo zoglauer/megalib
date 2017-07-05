@@ -272,55 +272,6 @@ double MDShapeCONS::GetPhiMax()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeCONS::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(7)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_HalfHeight<<","<<m_RminBottom<<","<<m_RmaxBottom<<","<<m_RminTop<<","<<m_RmaxTop<<","<<m_PhiMin<<","<<m_PhiMax<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-  
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_HalfHeight<<" "<<m_RminBottom<<" "<<m_RmaxBottom<<endl;
-  out<<"           "<<m_RminTop<<" "<<m_RmaxTop<<endl;
-  out<<"           "<<m_PhiMin<<" "<<m_PhiMax<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapeCONS::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -331,28 +282,6 @@ MString MDShapeCONS::GetGeomega() const
      <<m_RminTop<<" "<<m_RmaxTop<<" "<<m_PhiMin<<" "<<m_PhiMax;
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeCONS::GetGeant3ShapeName()
-{
-  //
-
-  return "CONS";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeCONS::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 7;
 }
 
 

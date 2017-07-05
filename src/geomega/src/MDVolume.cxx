@@ -67,7 +67,7 @@ int MDVolume::m_WrittenRotID = 1;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MDVolume::MDVolume(MString Name, MString ShortName)
+MDVolume::MDVolume(MString Name)
 {
   // default constructor
 
@@ -84,9 +84,6 @@ MDVolume::MDVolume(MString Name, MString ShortName)
   m_SensID = 0;
 
   m_Name = Name;
-  m_ShortName = ShortName;
-
-
 
   m_Mother = 0;
   m_Material = 0;
@@ -134,28 +131,6 @@ MDVolume::MDVolume(MString Name, MString ShortName)
 MDVolume::~MDVolume()
 {
   // We only delete a few things here, most is done in MDGeometry:
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetShortName()
-{
-  // Return the type of this volume
-
-  return m_ShortName;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MDVolume::SetShortName(MString ShortName)
-{
-  // Return the type of this volume
-
-  m_ShortName = ShortName;
 }
 
 
@@ -1156,7 +1131,7 @@ MDVolume* MDVolume::Clone(MString Name)
 
   if (GetCloneTemplate() == 0) {
 
-    V = new MDVolume(Name+"_"+m_Name, m_ShortName);
+    V = new MDVolume(Name + "_" + m_Name);
     V->SetMaterial(m_Material);
     V->SetShape(m_Shape);
 
@@ -1180,7 +1155,7 @@ MDVolume* MDVolume::Clone(MString Name)
     AddClone(V);
 
   } else {
-    V = new MDVolume(Name+"_"+GetCloneTemplate()->GetName()+"["+m_Name+"]", GetCloneTemplate()->GetShortName());
+    V = new MDVolume(Name+"_"+GetCloneTemplate()->GetName()+"["+m_Name+"]");
 
     V->SetMaterial(GetCloneTemplate()->GetMaterial());
     V->SetShape(GetCloneTemplate()->GetShape());
@@ -1247,10 +1222,6 @@ bool MDVolume::CopyDataToClones()
 
   for (unsigned i = 0; i < m_Clones.size(); i++) {
     Clone = m_Clones[i];
-    
-    if (Clone->GetShortName().IsEmpty()) {
-      Clone->SetShortName(m_ShortName);
-    }
     
     if (Clone->GetMaterial() == 0) {
       Clone->SetMaterial(m_Material);
@@ -2594,171 +2565,6 @@ unsigned int MDVolume::GetNSensitiveVolumes()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDVolume::GetGeant3DIM()
-{
-  // Write the Geant3 dimension information, e.g.
-  // REAL VPCB2VOL
-  // DIMENSION VPCB2VOL(3)
-
-  if (m_CloneTemplate != 0) return MString("");
-
-  ostringstream out;
-  out<<"***** Volume: "<<m_Name<<endl;
-  out<<m_Shape->GetGeant3DIM(m_ShortName)<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3DATA()
-{
-  // Write the Geant3 data information, e.g.
-  // DATA VPCB3VOL/5.2500,6.3000,0.1000/ 
-
-  if (m_CloneTemplate != 0) return MString("");
-
-  ostringstream out;
-  out<<m_Shape->GetGeant3DATA(m_ShortName);
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3()
-{
-  // Write the volume and rotation information, e.g.
-  // CALL GSVOLU('PCB2','BOX ',6,VPCB2VOL,3,IVOL(38))
-  // CALL GSROTM(8,90.0,-180.0,90.0,-90.0,0.0,0.0)
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  // Do not write the rotation information if the clone template has already been 
-  // written and this rotations ID is identical with the master id:
-  if (m_CloneTemplate != 0 && 
-      m_CloneTemplate->IsCloneTemplateVolumeWritten() == true && 
-      m_RotID == m_CloneTemplate->GetRotationID()) {
-    // nothing
-  } else {
-    if (m_IsRotated == true && m_RotID > 0) {
-      out<<"***** Name: "<<m_Name<<endl;
-      out<<"      CALL GSROTM("<<m_RotID<<","<<m_Theta1<<","<<m_Phi1<<","
-         <<m_Theta2<<","<<m_Phi2<<","<<m_Theta3<<","<<m_Phi3<<")"<<endl;
-    }
-  }
-
-  // Write the volume information when
-  // + it is no clone  OR
-  // + it is a clone but the template has not yet been written
-  if (m_CloneTemplate == 0 ||
-      (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false)) {
-    // Write volume information:
-    out<<"      CALL GSVOLU('"<<m_ShortName<<"','"<<m_Shape->GetGeant3ShapeName()<<"',"<<
-      m_Material->GetID()<<",V"<<m_ShortName<<"VOL,"<<
-      m_Shape->GetGeant3NumberOfParameters()<<",IVOL("<<m_ID<<"))"<<endl;
-
-    // Write possible divisions:
-    if (m_Detector != 0) {
-      out<<m_Detector->GetGeant3Divisions();
-    }
-
-    // Advance into the volume tree:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetGeant3();
-    }
-
-    if (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
-    }
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetMGeant()
-{
-  // Write the volume information in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  // Do not write the rotation information if the clone template has already been 
-  // written and this rotations ID is identical with the master id:
-  if (m_CloneTemplate != 0 && 
-      m_CloneTemplate->IsCloneTemplateVolumeWritten() == true && 
-      m_RotID == m_CloneTemplate->GetRotationID()) {
-    // nothing
-  } else {
-    if (m_IsRotated == true && m_RotID > 0) {
-      out << endl;
-      if (m_CloneTemplate == 0) {
-        out << "! Rotation belongs to : " << m_Name << endl;
-      } else {
-        out << "! Rotation belongs to : " << m_CloneTemplate->GetName() << endl;
-      }
-      out << "rotm " << m_RotID << " " << m_Theta1 << " " << m_Phi1 << " "
-          << m_Theta2 << " " << m_Phi2 << " " << m_Theta3 << " " << m_Phi3 << endl;
-    }
-  }
-
-  // Write the volume information when
-  // + it is no clone  OR
-  // + it is a clone but the template has not yet been written
-  out.precision(3);
-  if (m_CloneTemplate == 0 ||
-      (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false)) {
-    // Write volume information:
-    out << endl;
-    if (m_CloneTemplate == 0) {
-      out << "! Geomega volume name: " << m_Name << endl;
-    } else {
-      out << "! Geomega volume name: " << m_CloneTemplate->GetName() << endl;
-    }
-
-    MString VolumeName = m_ShortName;
-    VolumeName.ToUpper();
-    MString MaterialName = m_Material->GetMGeantShortName();
-    MaterialName.ToUpper();
-
-    out << "volu " << VolumeName << " " << m_Shape->GetGeant3ShapeName() << " "
-        << MaterialName << " " << m_Shape->GetGeant3NumberOfParameters() << endl;
-    out << m_Shape->GetMGeantDATA(m_ShortName);
-    out << "satt " << VolumeName << " SEEN " << m_Visibility << endl;
-    
-    // Write possible divisions:
-    if (m_Detector != 0 && m_IsSensitive == true) {
-      out<<m_Detector->GetMGeantDivisions();
-    }
-
-    // Advance into the volume tree:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out << GetDaughterAt(i)->GetMGeant();
-    }
-
-    if (m_CloneTemplate != 0 && m_CloneTemplate->IsCloneTemplateVolumeWritten() == false) {
-      m_CloneTemplate->SetCloneTemplateVolumeWritten(true);
-    }
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 void MDVolume::ResetCloneTemplateFlags()
 {
   // Reset all clone template written falgs:
@@ -2785,157 +2591,6 @@ void MDVolume::ResetCloneTemplateFlags()
   for (unsigned int i = 0; i < GetNDaughters(); i++) {
     GetDaughterAt(i)->ResetCloneTemplateFlags();
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetMGeantPosition(int& IDCounter)
-{
-  // Write the volume position information in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(3);
-
-  MDVolume* VC;
-  int ID = 0;
-  MString Name, MotherName, CopyName;
-
-  if ((VC = GetCloneTemplate()) != 0) {
-      
-    ID = GetCloneTemplate()->GetCloneId(this);
-    
-    Name = GetShortName();
-    Name.ToUpper();
-    CopyName = GetShortName();
-    CopyName.ToUpper();
-    MotherName = GetMother()->GetShortName();
-    MotherName.ToUpper();
-
-    out<<endl;
-    out<<"! Positioning "<<GetCloneTemplate()->GetName()<<" in "<<GetMother()->GetName()<<":"<<endl;
-    out<<"posi "<<CopyName<<" "<<ID<<" "<< MotherName<<" "
-       <<GetPosition().X()<<" "<<GetPosition().Y()<<" "<< GetPosition().Z()<<" " 
-       <<GetRotationID();
-    if (m_IsMany == false) {
-      out<<" ONLY"<<endl;
-    } else {
-      out<<" MANY"<<endl;
-    }
-    
-    if (GetCloneTemplate()->AreCloneTemplateDaughtersWritten() == false) {
-      for (unsigned int i = 0; i < GetNDaughters(); i++) {
-        out<<GetDaughterAt(i)->GetMGeantPosition(IDCounter);
-      }
-      GetCloneTemplate()->SetCloneTemplateDaughtersWritten(true);
-    }
-  } else {
-    // If it is no copy then position it only when it has a mother or is the root volume
-    if (GetMother() !=  0) {
-      
-      //ID = IDCounter++;
-      ID = 1;
-
-      Name = GetShortName();
-      Name.ToUpper();
-      MotherName = GetMother()->GetShortName();
-      MotherName.ToUpper();
-      
-      out<<endl;
-      out<<"! Positioning "<<m_Name<<" in "<<GetMother()->GetName()<< ":"<<endl;
-      out<<"posi "<<Name<<" "<<ID<<" "<<MotherName<<" " 
-         <<GetPosition().X()<<" "<<GetPosition().Y()<<" "<<GetPosition().Z()<<" "
-         <<GetRotationID();
-      if (m_IsMany == false) {
-        out<<" ONLY"<<endl;
-      } else {
-        out<<" MANY"<<endl;
-      }
-    }
-
-    // Do the same for all daughters:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetMGeantPosition(IDCounter);
-    }
-  }
-         
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDVolume::GetGeant3Position(int& IDCounter)
-{
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  //out.precision(1);
-
-  //cout<<"Looking at volume: "<<m_Name<<endl;
-  MDVolume *VC;
-  int ID;
-  MString Name, MotherName, CopyName;
-
-  if ((VC = GetCloneTemplate()) != 0) {
-      
-    //cout<<VC->GetShortName()<<"="<<VC->GetName()<<"!"<<GetMother()->GetShortName()<<"="<<GetMother()->GetName()<<endl;
-    // If the volume is a copy, then reposition the CopyOf volume:
-    ID = IDCounter++;
-    //ID = GetID();
-    
-    Name = GetShortName();
-    CopyName = GetShortName();
-    MotherName = GetMother()->GetShortName();
-    
-    out<<"      CALL GSPOS('"<<CopyName<<"',"<<ID<<",'"<<MotherName
-       <<"',"<<GetPosition().X()<<","<<GetPosition().Y()<<","
-       <<GetPosition().Z()<<","<<GetRotationID();
-    if (m_IsMany == false) {
-      out<<",'ONLY')"<<endl;
-    } else {
-      out<<",'MANY')"<<endl;
-    }
-    
-    if (GetCloneTemplate()->AreCloneTemplateDaughtersWritten() == false) {
-      for (unsigned int i = 0; i < GetNDaughters(); i++) {
-        out<<GetDaughterAt(i)->GetGeant3Position(IDCounter);
-      }
-      GetCloneTemplate()->SetCloneTemplateDaughtersWritten(true);
-    }
-  } else {
-    // If it is no copy then position it only when it has a mother or is the root volume
-    if (GetMother() !=  0) {
-      //cout<<"   is root"<<endl;
-      
-      ID = IDCounter++;
-
-      Name = GetShortName();
-      MotherName = GetMother()->GetShortName();
-      
-      out<<"      CALL GSPOS('"<<Name<<"',"<<ID<<",'"<<MotherName
-         <<"',"<<GetPosition().X()<<","<<GetPosition().Y()<<","
-         <<GetPosition().Z()<<","<<GetRotationID();
-      if (m_IsMany == false) {
-        out<<",'ONLY')"<<endl<<endl;
-      } else {
-        out<<",'MANY')"<<endl<<endl;
-      }
-    } else {
-      //cout<<"   is ignored..."<<endl;
-    }
-
-    // Do the same for all daughters:
-    for (unsigned int i = 0; i < GetNDaughters(); i++) {
-      out<<GetDaughterAt(i)->GetGeant3Position(IDCounter);
-    }
-  }
-  
-  
-
-  return out.str().c_str();
 }
 
 
@@ -3042,7 +2697,7 @@ MString MDVolume::ToString(bool Recursive)
 
   ostringstream out;
 
-  out<<"Volume "<<m_Name<<endl; //" ("<<m_ShortName<<")"<<endl;
+  out<<"Volume "<<m_Name<<endl;
   if (m_Shape != 0) { 
     out<<"   Shape: "<<m_Shape->ToString();
   } else {

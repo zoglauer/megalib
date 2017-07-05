@@ -246,60 +246,6 @@ bool MDShapePGON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapePGON::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL("<<4+3*m_NSections<<")"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePGON::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Phi<<","<<m_DPhi<<","<<m_NSides<<","<<m_NSections;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<","<<m_Z[i]<<","<<m_Rmin[i]<<","<<m_Rmax[i];
-  }
-  out<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePGON::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(6);
-
-  out<<"           "<<m_Phi<<" "<<m_DPhi<<" "<<m_NSides<<" "<<m_NSections<<endl;
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    out<<"           "<<m_Z[i]<<" "<<m_Rmin[i]<<" "<<m_Rmax[i]<<endl;
-  }
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MString MDShapePGON::GetGeomega() const
 {
   // Return the Geomega representation 
@@ -311,28 +257,6 @@ MString MDShapePGON::GetGeomega() const
   }
 
   return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapePGON::GetGeant3ShapeName()
-{
-  //
-
-  return "PGON";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapePGON::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 4 + 3*m_NSections;
 }
 
 

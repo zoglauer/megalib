@@ -266,95 +266,6 @@ bool MDShapeGTRA::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MDShapeGTRA::GetGeant3DIM(MString ShortName)
-{
-  ostringstream out;
-
-  out<<"      REAL V"<<ShortName<<"VOL"<<endl;
-  out<<"      DIMENSION V"<<ShortName<<"VOL(12)"<<endl;  
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeGTRA::GetGeant3DATA(MString ShortName)
-{
-  //
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-  out<<"      DATA V"<<ShortName<<"VOL/"<<m_Dz<<","<<m_Theta<<","<<m_Phi<<","<<m_Twist<<","<<m_H1<<","<<m_Bl1<<","<<m_Tl1<<","<<m_Alpha1<<","<<m_H2<<","<<m_Bl2<<","<<m_Tl2<<","<<m_Alpha2<<"/"<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeGTRA::GetMGeantDATA(MString ShortName)
-{
-  // Write the shape parameters in MGEANT/mggpod format.
-
-  ostringstream out;
-  out.setf(ios::fixed, ios::floatfield);
-  out.precision(4);
-
-  out<<"           "<<m_Dz<<" "<<m_Theta<<" "<<m_Phi<<endl;
-  out<<"           "<<m_Twist<<" "<<m_H1<<" "<<m_Bl1<<endl;
-  out<<"           "<<m_Tl1<<" "<<m_Alpha1<<" "<<m_H2<<endl;
-  out<<"           "<<m_Bl2<<" "<<m_Tl2<<" "<<m_Alpha2<<endl;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeGTRA::GetGeomega() const
-{
-  // Return the Geomega representation 
-
-  ostringstream out;
-
-  out<<"GTRA "<<m_Dz<<" "<<m_Theta<<" "<<m_Phi<<" "<<m_Twist<<" "
-     <<m_H1<<" "<<m_Bl1<<" "<<m_Tl1<<" "<<m_Alpha1<<" "
-     <<m_H2<<" "<<m_Bl2<<" "<<m_Tl2<<" "<<m_Alpha2;
-
-  return out.str().c_str();
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-MString MDShapeGTRA::GetGeant3ShapeName()
-{
-  //
-
-  return "GTRA";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-int MDShapeGTRA::GetGeant3NumberOfParameters()
-{
-  //
-
-  return 11;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MVector MDShapeGTRA::GetSize()
 {
   // Return the size of a surrounding box
@@ -418,6 +329,23 @@ MVector MDShapeGTRA::GetUniquePosition() const
   mimp<<"Is this really correct??"<<endl;
 
   return MVector(0.0, 0.0, 0.0);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MDShapeGTRA::GetGeomega() const
+{
+  // Return the Geomega representation 
+  
+  ostringstream out;
+  
+  out<<"GTRA "<<m_Dz<<" "<<m_Theta<<" "<<m_Phi<<" "<<m_Twist<<" "
+  <<m_H1<<" "<<m_Bl1<<" "<<m_Tl1<<" "<<m_Alpha1<<" "
+  <<m_H2<<" "<<m_Bl2<<" "<<m_Tl2<<" "<<m_Alpha2;
+  
+  return out.str().c_str();
 }
 
 

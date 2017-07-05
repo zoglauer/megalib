@@ -1000,8 +1000,8 @@ bool MCDetectorConstruction::ConstructMaterials()
       ShortName<<m_Geometry->GetMaterialAt(mat)->GetName().Data()
                <<"_El"<<c+1<<endl;
 
-      double A = Component->GetA();
-      double Z = Component->GetZ();
+      double A = Component->GetAtomicWeight();
+      double Z = Component->GetAtomicNumber();
 
       if (A < 1 && Z < 1) {
         mout<<m_Geometry->GetMaterialAt(mat)->GetName().Data()<<": Probably found Geant3 vaccum: upgrading to Geant4 vacuum"<<endl; 
@@ -1021,10 +1021,10 @@ bool MCDetectorConstruction::ConstructMaterials()
         return false;
       }
       
-      if (Component->GetType() == MDMaterialComponent::c_ByAtoms) {
-        Material->AddElement(Element, TMath::Nint(Component->GetWeight()));
+      if (Component->GetWeightingType() == MDMaterialComponentWeightingType::c_ByAtoms) {
+        Material->AddElement(Element, Component->GetWeightingByAtoms());
       } else {
-        Material->AddElement(Element, double(Component->GetWeight()));
+        Material->AddElement(Element, Component->GetWeightingByMass());
       }
     }
     mdebug<<Material<<endl;

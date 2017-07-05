@@ -58,11 +58,6 @@ class MDShape
   //! Return the representation as ROOT shape
   TGeoShape* GetRootShape() { return m_Geo; }
 
-  virtual MString GetGeant3DIM(MString ShortName) = 0;
-  virtual MString GetGeant3DATA(MString ShortName) = 0;
-  virtual MString GetGeant3ShapeName() = 0;
-  virtual int GetGeant3NumberOfParameters() = 0;
-  virtual MString GetMGeantDATA(MString ShortName) = 0;
   virtual MString GetGeomega() const = 0;
   virtual MString GetType();
 

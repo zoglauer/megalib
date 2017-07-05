@@ -85,10 +85,6 @@ class MDGuardRing : public MDDetector
                                               MDVolume* Volume);
 
   virtual MString GetGeomega() const;
-  virtual MString GetGeant3() const ;
-  virtual MString GetMGeant() const ;
-  virtual MString GetGeant3Divisions() const { return ""; }
-  virtual MString GetMGeantDivisions() const { return ""; }
   virtual MString ToString() const;
 
 
