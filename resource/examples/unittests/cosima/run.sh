@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# The minimum MEGAlib version whne starting comparison
-MINMEGALIBVERSION=29904
+# The minimum MEGAlib version when starting comparison
+MINMEGALIBVERSION=29903
 
 # First run all sims for ~2 minutes
 
@@ -53,7 +53,7 @@ TAG=m${MegalibVersion}.r${RootVersion}.g${Geant4Version}
 for F in ${FILES}; do
   mwait --i=cores --p=cosima
   echo "Starting simulation of ${F}"
-  #timeout 180s cosima -s 1 ${MEGALIB}/resource/examples/cosima/source/${F} > /dev/null &
+  timeout 180s cosima -s 1 ${MEGALIB}/resource/examples/cosima/source/${F} > /dev/null &
 done
 wait
 
@@ -69,8 +69,10 @@ for F in $(ls *.sim); do
     cat ${F} | grep -v -E "^Geometry|^MEGAlib|^Date|^#" | sha256sum > ${OUT}
   fi
   for E in ${EXISTING}; do
-    VERSION=$(echo ${E} | awk -F".m" '{print $2}' | awk -F".r" '{ print $1 }')
-    if [[ ${VERSION} -gt ${MINMEGALIBVERSION} ]]; then
+    if [[ ${E} == ${OUT} ]]; then continue; fi;
+    VERSION=$(echo ${E} | awk -F"." '{print $(NF-3)}') # we cannot count rom the beginnig but must count from the end
+    VERSION=${VERSION#m}
+    if [ "${VERSION}" -ge "${MINMEGALIBVERSION}" ]; then
       DIFF=$(diff ${OUT} ${E})
       if [[ ${DIFF} == "" ]]; then
         echo "Comparing ${OUT} with ${E} --> identical"
