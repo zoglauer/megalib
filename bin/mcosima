@@ -35,7 +35,7 @@ help() {
   echo "    -t <threads>:  The number of threads as an integer"
   echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
   echo "    -n <nice>:     The nice level as an integer"
-  echo "    -d <seconds>:  Delay in seconds between starting jobs (min=default: 2 seconds)"
+  #echo "    -d <seconds>:  Delay in seconds between starting jobs (min=default: 2 seconds)"
   echo "    -z:            zip the simulations files"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -w:            If set, wait until all jobs have finished."
@@ -319,7 +319,7 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   Tag=""
   for N in `seq 1 16`; do Tag="${Tag}$(( RANDOM%10 ))"; done
   
-  Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -t ${Tag}"
+  Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -f ${i} -t ${Tag}"
   if [[ "${Zip}" == "yes" ]]; then
     Cmd="${Cmd} -z"
   fi
@@ -330,7 +330,7 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null 2>&1 &
   
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  sleep ${Delay}
+  #sleep ${Delay}
   
   echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
 done
