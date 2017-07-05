@@ -1021,7 +1021,7 @@ mv ${ENVFILE} bin/source-megalib.sh
 
 echo "Storing last good options..."
 rm -f ${MEGALIBDIR}/config/SetupOptions.txt
-SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS}"
+SETUP="--external-path=${EXTERNALPATH} --root=${ROOTPATH} --geant4=${GEANT4PATH} --release=${RELEASE} --repository=${REPOSITORY} --optimization=${OPT} --debug=${DEBUG} --updates=${UPDATES} --patch=${PATCH} --cleanup=${CLEANUP} --keepmegalibasis=${KEEPMEGALIBASIS} --keepenvironmentasis=${KEEPENVASIS} --maxthreads=${MAXTHREADS}"
 if [[ ${BRANCH} != "" ]]; then
   SETUP+=" --branch=${BRANCH}"
 fi
