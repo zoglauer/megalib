@@ -1,0 +1,95 @@
+
+#---------------------------------------------------------
+# Trapezoid example
+
+
+Name Trappy
+Version 1.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+# Half height of the 3D-trapezoid
+Constant T1_DZ     2.0
+# The following two angles define how the top trapezoif is shifted towards the bottom trapezoid
+# This is the theta angle of the shift (projection in x-z plane)
+Constant T1_Theta  { atan2(sqrt((T1_H1-T1_H2)*(T1_H1-T1_H2) + 0.25*(T1_BL1-T1_BL2)*(T1_BL1-T1_BL2)), 2*T1_DZ)*TMath::RadToDeg() } 
+# This is the phi angle of the shift (projection in x-y plane)
+Constant T1_Phi    { 90 - atan2(0.5*(T1_BL1 - T1_BL2), T1_H1-T1_H2)*TMath::RadToDeg() }
+
+# Next 4 are for the bottom trapezoid
+# Half height
+Constant T1_H1     15.0
+# Bottom half length
+Constant T1_BL1    12.0
+# Top half length
+Constant T1_TL1    0.00000015
+# Angle between the top center and the bottom center
+Constant T1_Alpha1 { atan2(T1_BL1, 2*T1_H1)*TMath::RadToDeg() } 
+
+# The next 4 are for the top trapezoid
+# Half height
+Constant T1_H2     10.0
+# Bottom half length
+Constant T1_BL2    8.0
+# Top half length
+Constant T1_TL2    0.0000001
+# Angle between the top center and the bottom center
+Constant T1_Alpha2 { atan2(T1_BL2, 2*T1_H2)*TMath::RadToDeg() } 
+
+Volume Trap
+Trap.Material Germanium
+Trap.Shape TRAP T1_DZ T1_Theta T1_Phi T1_H1 T1_BL1 T1_TL1 T1_Alpha1 T1_H2 T1_BL2 T1_TL2 T1_Alpha2
+Trap.Position 0 0 0 
+Trap.Mother WorldVolume
+
+
+Constant T2_DZ     2.0
+Constant T2_Theta  { atan2(sqrt((T2_H1-T2_H2)*(T2_H1-T2_H2) + 0.25*(T2_BL1-T2_BL2)*(T2_BL1-T2_BL2)), 2*T2_DZ)*TMath::RadToDeg() } 
+Constant T2_Phi    { 90 + atan2(0.5*(T2_BL1 - T2_BL2), T2_H1-T2_H2)*TMath::RadToDeg() }
+Constant T2_H1     15.0
+Constant T2_BL1    12.0
+Constant T2_TL1    0.00000015
+Constant T2_Alpha1 { -atan2(T2_BL1, 2*T2_H1)*TMath::RadToDeg() } 
+Constant T2_H2     10.0
+Constant T2_BL2    8.0
+Constant T2_TL2    0.0000001
+Constant T2_Alpha2 { -atan2(T2_BL2, 2*T2_H2)*TMath::RadToDeg() } 
+
+
+Constant AngleRad { 2*atan2(T2_BL1, T2_H1) }  
+
+
+Volume Trap2
+Trap2.Material Germanium
+Trap2.Shape TRAP T2_DZ T2_Theta T2_Phi T2_H1 T2_BL1 T2_TL1 T2_Alpha1 T2_H2 T2_BL2 T2_TL2 T2_Alpha2
+
+# The following magic is to align the two trapezoids:
+Constant XTop { -0.25*(T2_BL1+T2_BL2) } 
+Constant YTop { 0.5*(T2_H1+T2_H2) }
+Constant Distance { sqrt( XTop*XTop + YTop*YTop )}
+Constant ExistingAngleRad { atan2(YTop, XTop) - TMath::Pi()/2 }
+Constant NewAngleRad { AngleRad - ExistingAngleRad - TMath::Pi()/2 } 
+
+Trap2.Position {  XTop - Distance * cos(-NewAngleRad) + (2* (-1) * XTop) } { YTop - Distance * sin(-NewAngleRad) } 0
+Trap2.Rotation 0 0 { -AngleRad * TMath::RadToDeg() } 
+Trap2.Mother WorldVolume
+-
+
+
+
+
+
