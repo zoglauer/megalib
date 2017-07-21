@@ -24,9 +24,17 @@ WorldVolume.Mother 0
 
 # Half height of the 3D-trapezoid
 Constant T1_DZ     2.0
-# The following two angles define how the top trapezoif is shifted towards the bottom trapezoid
+
+# The following two angles define how the top trapezoid is shifted towards the bottom trapezoid
+
+# This assumes the center of the smaller relative to the larger triangle has the follwoing distances
+# In height: T1_H1-T1_H2
+# In x: (0.5*T1_BL1 - 0.5*T1_BL2)
+#       The 0.5 originates from the fact that we have trinagles and the x-distances at half height of the triangles are half of the bottom size.
+
 # This is the theta angle of the shift (projection in x-z plane)
-Constant T1_Theta  { atan2(sqrt((T1_H1-T1_H2)*(T1_H1-T1_H2) + 0.25*(T1_BL1-T1_BL2)*(T1_BL1-T1_BL2)), 2*T1_DZ)*TMath::RadToDeg() } 
+Constant T1_Theta  { atan2(sqrt((T1_H1-T1_H2)*(T1_H1-T1_H2) + 0.5*(T1_BL1-T1_BL2) * 0.5*(T1_BL1-T1_BL2)), 2*T1_DZ)*TMath::RadToDeg() } 
+
 # This is the phi angle of the shift (projection in x-y plane)
 Constant T1_Phi    { 90 - atan2(0.5*(T1_BL1 - T1_BL2), T1_H1-T1_H2)*TMath::RadToDeg() }
 
