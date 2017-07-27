@@ -75,6 +75,7 @@ using namespace std;
 #include "MResponseEnergyLeakage.h"
 #include "MBinnerBayesianBlocks.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -6196,6 +6197,7 @@ void MInterfaceMimrec::CreateCosimaOrientationFile()
   MTime LastTime(0);
   MTime Gap(5.0); 
   
+  bool IsOn = false;
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
     if (Event->HasGalacticPointing() == true) {
@@ -6215,22 +6217,43 @@ void MInterfaceMimrec::CreateCosimaOrientationFile()
         LastZAxisLatitude = Event->GetGalacticPointingZAxisLatitude();
       }
       if (First == false) {
-        if (Event->GetTime() - LastTime > Gap) {
-          cout<<"Off: "<<Event->GetTime()<<":"<<LastTime<<endl;
-          lout<<"DP "<<LastTime<<" off"<<endl;
-          lout<<"DP "<<Event->GetTime()<<" on"<<endl;
+        if (Event->GetTime() < LastTime) {
+          if (IsOn == true) {
+            cout<<"Backwards JUMP! Off: "<<Event->GetTime()<<":"<<LastTime<<endl;
+            lout<<"DP "<<LastTime<<" off"<<endl;
+            IsOn = false;
+          }
+        } else {  
+          if (Event->GetTime() - LastTime > Gap) {
+            if (IsOn == true) {
+              cout<<"Forward Jump: Off: "<<Event->GetTime()<<":"<<LastTime<<endl;
+              lout<<"DP "<<LastTime<<" off"<<endl;
+              IsOn = false;
+            }
+          } else {
+            if (IsOn == false) {
+              //cout<<"On: "<<Event->GetTime()<<":"<<LastTime<<endl;
+              lout<<"DP "<<LastTime<<" on"<<endl;
+              IsOn = true;
+            }
+          }
         }
       } else {
+        //cout<<"On: "<<Event->GetTime()<<":"<<LastTime<<endl;
         lout<<"DP "<<Event->GetTime()<<" on"<<endl;
         First = false;
+        IsOn = true;
       }
-      LastTime = Event->GetTime();
+      if (Event->GetTime() > LastTime) {
+        LastTime = Event->GetTime();
+      }
     }
 
     delete Event;
   }
-  if (First == false) {
-    lout<<LastTime<<" off"<<endl;
+  if (IsOn == true) {
+    //cout<<"Off: "<<LastTime<<endl;
+    lout<<"DP "<<LastTime<<" off"<<endl;
   }
   
   // Close the event loader
