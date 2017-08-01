@@ -1,6 +1,6 @@
 Example illustrating the creation and use of trigger maps
 
-The underlying geometry is a simple electron tracker, in which Compton scattering or pair creation happens, a calorimeter on the bottom, as well as a simple segmented anti-coincidence system.
+The underlying geometry is a simple electron tracker, in which Compton scattering or pair creation happens, a calorimeter on the bottom, as well as a simple segmented anti-coincidence system. Volumes and detectors are defined in Base.geo.setup, the triggers in TriggerMap.geo.setup - this file then in turn includes Base.geo.setup.
 
 
 1) Create the trigger maps
@@ -9,7 +9,7 @@ Take a look in the file CreateTriggerMap.cxx to see an easy way to create the tr
 To create the trigger maps, execute:
 >> make -f ${MEGALIB}/resource/standalone/Makefile.StandAlone PRG=CreateTriggerMap
 and then
->> CreateTriggerMap -g TriggerMap.geo.setup
+>> CreateTriggerMap -g Base.geo.setup
 
 This will create several trigger maps:
 a) OneSiteTriggers.trig - vetoable trigger: at least one hit in tracker and at least one hit in the calorimeter
