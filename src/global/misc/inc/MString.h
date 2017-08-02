@@ -46,7 +46,7 @@ class MString
   // Copy constructor
   MString(const MString& String) : m_String(String.m_String) {}
   // Move constructor
-  MString(MString&& String) : m_String(move(String.m_String)) {} 
+  MString(MString&& String) : m_String(move(String.m_String)) {}
   MString(const string& S) { m_String = S; }
   MString(const ostringstream& S) { m_String = S.str(); }
   MString(const char* S) { if (S!= nullptr) m_String = S; }
@@ -65,8 +65,8 @@ class MString
 
   // Move
   MString& operator=(MString&& String) { m_String = move(String.m_String); return *this; }
-  
-  // Assignment: 
+
+  // Assignment:
   MString& operator=(const MString& S) { m_String = S.m_String; return *this; }
   MString& operator=(char S) { m_String = S; return *this; }
   MString& operator=(const char* S) { if (S != nullptr) m_String = S; return *this; }
@@ -75,35 +75,35 @@ class MString
 
   //MString& Format(const char* Format, ...);
 
-  //char& operator[](size_t i) { return m_String[i]; }  
-  //char operator[](size_t i) const { return m_String[i]; } 
+  //char& operator[](size_t i) { return m_String[i]; }
+  //char operator[](size_t i) const { return m_String[i]; }
 
-  char& operator[](int i) { return m_String[i]; } 
-  char operator[](int i) const { return m_String[i]; } 
+  char& operator[](int i) { return m_String[i]; }
+  char operator[](int i) const { return m_String[i]; }
 
-  char& operator[](unsigned int i) { return m_String[i]; } 
-  char operator[](unsigned int i) const { return m_String[i]; } 
+  char& operator[](unsigned int i) { return m_String[i]; }
+  char operator[](unsigned int i) const { return m_String[i]; }
 
-  char& operator[](long i) { return m_String[i]; } 
-  char operator[](long i) const { return m_String[i]; } 
+  char& operator[](long i) { return m_String[i]; }
+  char operator[](long i) const { return m_String[i]; }
 
-  char& operator[](unsigned long i) { return m_String[i]; } 
-  char operator[](unsigned long i) const { return m_String[i]; } 
+  char& operator[](unsigned long i) { return m_String[i]; }
+  char operator[](unsigned long i) const { return m_String[i]; }
 
 
   // Access:
-  
-  //! Access to the internal c-string -- do not delete the array since it is the MString internal data 
+
+  //! Access to the internal c-string -- do not delete the array since it is the MString internal data
   const char* Data() const { return m_String.c_str(); }
   //! Return a copy of the internal c++-string
   string GetString() const { return m_String; }
-  //! Access to the internal c++-string -- do not delete the array since it is the MString internal data 
+  //! Access to the internal c++-string -- do not delete the array since it is the MString internal data
   string& GetStringRef() { return m_String; }
   //! Return true if the string is empty
   bool IsEmpty() const { return m_String.empty(); }
   //! Return the length of the string
   size_t Length() const { return m_String.size(); }
-  
+
   //! Return a substring
   MString GetSubString(size_t Start, size_t Size) const { if (Start >= Length()) return ""; return m_String.substr(Start, Size); }
   //! Return a substring starting at start with the remaining length of the string
@@ -121,13 +121,13 @@ class MString
   operator const char*() const { return m_String.c_str(); }
   // operator string() const { return m_String; } // VC++ 10 has problem with this
   // operator TString() const { return TString(m_String.c_str()); } // ROOT has problems with this
-  
+
   //! To C++ string
-  string ToString() const { return m_String; } 
-  int ToInt() const { return atoi(m_String.c_str()); } 
-  unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); } 
-  long ToLong() const { return stol(m_String.c_str()); } 
-  unsigned long ToUnsignedLong() const { return (unsigned int) stoul(m_String.c_str()); } 
+  string ToString() const { return m_String; }
+  int ToInt() const { return atoi(m_String.c_str()); }
+  unsigned int ToUnsignedInt() const { return (unsigned int) stoul(m_String.c_str()); }
+  long ToLong() const { return stol(m_String.c_str()); }
+  unsigned long ToUnsignedLong() const { return (unsigned int) stoul(m_String.c_str()); }
   double ToDouble() const { return atof(m_String.c_str()); }
 
 
@@ -135,8 +135,8 @@ class MString
 
 
   //! Is lower operator for sorting by name
-  bool operator<(const MString& N) const;  
-  
+  bool operator<(const MString& N) const;
+
   //! Fast comparison especially in case of ignoring the case
   bool AreIdentical(const MString& S, bool IgnoreCase = false) const;
 
@@ -189,50 +189,50 @@ class MString
   MString& Replace(size_t Start, size_t Size, const MString& S) { if (Start >= Length()) return *this; m_String.replace(Start, Size, S.m_String); return *this; }
 
   //! Replace all occurances of from with string
-  void ReplaceAllInPlace(const MString& From, const MString& To); 
+  void ReplaceAllInPlace(const MString& From, const MString& To);
   //! Replace all occurances of from with string and return the new string
-  MString& ReplaceAll(const MString& From, const MString& To); 
-  
+  MString& ReplaceAll(const MString& From, const MString& To);
+
   //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string
-  void ReplaceAtEndInPlace(const MString& From, const MString& To); 
+  void ReplaceAtEndInPlace(const MString& From, const MString& To);
   //! Replace the string "From" at the end of the string with "To", if "From" is at the end of the string and return the new string
-  MString& ReplaceAtEnd(const MString& From, const MString& To); 
-  
-  //! Remove all occurances of From 
+  MString& ReplaceAtEnd(const MString& From, const MString& To);
+
+  //! Remove all occurances of From
   void RemoveAllInPlace(const MString& From);
   //! Remove all occurances of From and return the new string
   MString& RemoveAll(const MString& From);
-  
+
   void StripFrontInPlace(const char S = ' ') { while (Length() > 0 && m_String[0] == S) m_String.erase(0, 1); }
   MString& StripFront(const char S = ' ') { StripFrontInPlace(S); return *this; }
   void StripBackInPlace(const char S = ' ') { while (Length() > 0 && m_String[Length()-1] == S) m_String.erase(Length()-1, 1); }
   MString& StripBack(const char S = ' ') { StripBackInPlace(S); return *this; }
   void StripInPlace(const char S = ' ') { StripFront(S); StripBack(S); }
   MString& Strip(const char S = ' ') { StripInPlace(S); return *this; }
-  
-  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(m_String[p]); } 
-  MString& ToLower() { ToLowerInPlace(); return *this; } 
-  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(m_String[p]); } 
-  MString& ToUpper() { ToUpperInPlace(); return *this; } 
-  
-  
-  
+
+  void ToLowerInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::tolower(m_String[p]); }
+  MString& ToLower() { ToLowerInPlace(); return *this; }
+  void ToUpperInPlace() { for (size_t p = 0; p < m_String.size(); ++p) m_String[p] = std::toupper(m_String[p]); }
+  MString& ToUpper() { ToUpperInPlace(); return *this; }
+
+
+
   //! Read one line into this string replace all previous content
   istream& ReadLine(istream& in);
   //! Read one line into this string replace all previous content
   void Read(istream& in);
   //! Return a hash value of the string
   long GetHash() const;
-  
+
   // Analyze
-  
+
   //! Return true if the string contains the given string
   bool Contains(const MString& S) const { return (m_String.find(S.m_String) != string::npos); }
   //! Return true if the string begins with the given string
-  bool BeginsWith(const MString& S) const; 
+  bool BeginsWith(const MString& S) const;
   //! Return true if the string end with the given string
-  bool EndsWith(const MString& S) const; 
-  
+  bool EndsWith(const MString& S) const;
+
   //! Split the string in substring using the delimeter
   vector<MString> Tokenize(const MString& Delimeter, bool IgnoreEmpty = true) const;
 
@@ -242,18 +242,18 @@ class MString
   //! Test if the string is a positive integer -- ignores whitespace at beginning and end
   bool IsPositiveInteger() const;
 
-  // General type test (use for int, long, etc.)  
+  // General type test (use for int, long, etc.)
   template <typename T> bool Is() const;
 
   static const size_t npos;
-  
+
   // protected methods:
  protected:
 
   // private methods:
  private:
    //! This function ONLY exists to prevent the compiler to make a built-in one --- DO NOT USE
-  //const char* operator[](int) { return 0; } 
+  //const char* operator[](int) { return 0; }
 
 
 
@@ -311,7 +311,20 @@ template <typename T> bool MString::Is() const
 {
   istringstream In(m_String);
   T x;
-  return In>>x>>std::ws && In.eof();
+  In>>x;
+  if (In.fail() == false) {
+    if (In.eof() == true) {
+      return true;
+    } else {
+      In>>std::ws;
+      if (In.fail() == false && In.eof() == true) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+  //return In>>x>>std::ws && In.eof();
 }
 
 
