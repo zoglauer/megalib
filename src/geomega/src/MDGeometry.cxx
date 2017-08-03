@@ -1925,7 +1925,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (T->GetType() == MDTriggerType::c_Universal) {
-          if (dynamic_cast<MDTriggerMap*>(T)->ReadTriggerMap(Tokenizer.GetTokenAtAsString(2)) == false) {
+          MString FileName = Tokenizer.GetTokenAtAsString(2);
+          
+          MFile::ExpandFileName(FileName, m_FileName);
+          
+          if (gSystem->AccessPathName(FileName) == 1) {
+            Typo("The file does not exist!");
+            return false;
+          }
+          
+          if (dynamic_cast<MDTriggerMap*>(T)->ReadTriggerMap(FileName) == false) {
             Typo("Unable to read trigger map");
             return false;            
           }
@@ -3895,7 +3904,7 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
   FileContent.clear();
 
   MFile::ExpandFileName(FileName);
-
+  
   // First edit the file name:
   if (gSystem->IsAbsoluteFileName(FileName) == false) {
     FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
