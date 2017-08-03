@@ -320,22 +320,8 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
                      Settings->GetMemoryExhausted(),
                      Settings->GetBytes());
 
-
-  if (Settings->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
-    SetDeconvolutionAlgorithmClassicEM();
-  } else if (Settings->GetLHAlgorithm() == MLMLAlgorithms::c_OSEM) {
-    SetDeconvolutionAlgorithmOSEM(Settings->GetOSEMSubSets());
-  } else {
-    merr<<"Unknown deconvolution algorithm. Using classic EM."<<error;
-    SetDeconvolutionAlgorithmClassicEM();
-  }
-
-  if (Settings->GetLHStopCriteria() == 0) {
-    SetStopCriterionByIterations(Settings->GetNIterations());
-  } else {
-    merr<<"Unknown stop criterion. Stopping after 0 iterations."<<error;
-    SetStopCriterionByIterations(0);
-  }
+  // Set the deconvolution settings 
+  SetDeconvolutionSettings(Settings);
 
   return true;
 }
@@ -344,10 +330,36 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MImager::SetDeconvolutionSettings(MSettingsImaging* Settings)
+{
+  //! Set only the event reconstruction settings
+  
+  if (Settings->GetLHAlgorithm() == MLMLAlgorithms::c_ClassicEM) {
+    SetDeconvolutionAlgorithmClassicEM();
+  } else if (Settings->GetLHAlgorithm() == MLMLAlgorithms::c_OSEM) {
+    SetDeconvolutionAlgorithmOSEM(Settings->GetOSEMSubSets());
+  } else {
+    merr<<"Unknown deconvolution algorithm. Using classic EM."<<error;
+    SetDeconvolutionAlgorithmClassicEM();
+  }
+  
+  if (Settings->GetLHStopCriteria() == 0) {
+    SetStopCriterionByIterations(Settings->GetNIterations());
+  } else {
+    merr<<"Unknown stop criterion. Stopping after 0 iterations."<<error;
+    SetStopCriterionByIterations(0);
+  }
+  
+  return true;
+}
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
 bool MImager::SetEventSelectionSettings(MSettingsEventSelections* Settings)
 {
   //! Set only the event reconstruction settings
-
+    
   m_Selector.SetSettings(Settings);
 
   return true;

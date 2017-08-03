@@ -65,7 +65,9 @@ class MImager
   bool SetImagingSettings(MSettingsImaging* Settings);
   //! Set only the event reconstruction settings
   bool SetEventSelectionSettings(MSettingsEventSelections* Settings);
-
+  //! Set only the deconvolution settings
+  bool SetDeconvolutionSettings(MSettingsImaging* Settings);
+  
 
   // Image part:
 

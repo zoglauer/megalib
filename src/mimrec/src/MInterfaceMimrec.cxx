@@ -635,6 +635,11 @@ void MInterfaceMimrec::Reconstruct(bool Animate)
 
   if (JustShowImage == false) {
 
+    if (m_Imager->SetDeconvolutionSettings(m_Settings) == false) {
+      mgui<<"Unable to set all deconvolution settings"<<error;
+      return;
+    }
+    
     // Analyze... do the reconstruction
     m_Imager->Analyze(!JustDeconvolve);
 
@@ -1245,7 +1250,11 @@ void MInterfaceMimrec::ARMGamma()
       Confidence->SetTitle("Confidence Histogram ARM");
       Confidence->SetLineColor(kAzure+10);
       Confidence->SetFillColor(kAzure+10);
-      (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence, ConfidenceLevel);
+      if (TVirtualFitter::GetFitter() != nullptr) {
+        (TVirtualFitter::GetFitter())->GetConfidenceIntervals(Confidence, ConfidenceLevel);
+      } else {
+        merr<<"Virtual fitter is nullptr -- confidence intervals are wrong!"<<endl; 
+      }
       Hist->SetTitle(MString("ARM (Compton cone) with ") + ConfidenceLevelString + MString(" confidence intervals"));
     }
   }
