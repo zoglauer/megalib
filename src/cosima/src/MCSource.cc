@@ -3146,6 +3146,7 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
   } else if (m_PolarizationType == c_PolarizationRandom) {
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+    m_Polarization = m_Polarization.unit();
   } else if (m_PolarizationType == c_PolarizationAbsolute || 
              m_PolarizationType == c_PolarizationRelativeX ||
              m_PolarizationType == c_PolarizationRelativeY ||
@@ -3163,15 +3164,18 @@ bool MCSource::GeneratePolarization(G4GeneralParticleSource* Gun)
           m_Polarization = m_Direction.cross(G4ThreeVector(0.0, 0.0, 1.0));
         }
         m_Polarization.rotate(m_Direction, m_PolarizationParam1);
+        m_Polarization = m_Polarization.unit();
       }
     } else {
       m_Polarization = m_Direction.orthogonal();
       m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+      m_Polarization = m_Polarization.unit();
     }
   } else {
     merr<<m_Name<<": Unknown polarization type: "<<m_PolarizationType<<endl;
     m_Polarization = m_Direction.orthogonal();
     m_Polarization.rotate(m_Direction, CLHEP::RandFlat::shoot(2*c_Pi));
+    m_Polarization = m_Polarization.unit();
   }
   
   if (m_PolarizationType != c_PolarizationNone) {
