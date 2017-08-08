@@ -713,23 +713,6 @@ void MInterfaceRevan::GenerateSpectra()
   
    
   // Step 4: Dump it!
-
-  if (OutputScreen == true) {
-    int c = 0;
-    const int MaxCanvases = 100;
-    for (TH1D* Hist: AllSpectra) {
-      if (++c > MaxCanvases) {
-        mgui<<"We only display up to "<<MaxCanvases<<" individual spectra"<<info;
-        break;
-      }
-      
-      TCanvas* C = new TCanvas();
-      C->cd();
-      if (xLog == true) C->SetLogx();
-      Hist->Draw();
-      C->Update();
-    }
-  }
   
   if (OutputFile == true) {
     for (TH1D* Hist: AllSpectra) {
@@ -769,6 +752,31 @@ void MInterfaceRevan::GenerateSpectra()
     }
   }
 
+  if (OutputScreen == true) {
+    int c = 0;
+    const int MaxCanvases = 100;
+    for (TH1D* Hist: AllSpectra) {
+      if (++c > MaxCanvases) {
+        mgui<<"We only display up to "<<MaxCanvases<<" individual spectra"<<info;
+        break;
+      }
+      
+      // Convert to cts/keV
+      for (int b = 1; b <= Hist->GetXaxis()->GetNbins(); ++b) {
+        if (Hist->GetBinContent(b) > 0) {
+          Hist->SetBinContent(b, Hist->GetBinContent(b)/Hist->GetBinWidth(b));
+        }
+      }
+      
+      TCanvas* C = new TCanvas();
+      C->cd();
+      if (xLog == true) C->SetLogx();
+      Hist->Draw();
+      C->Update();
+    }
+  }  
+  
+  
   delete [] xBins;
 }
 
