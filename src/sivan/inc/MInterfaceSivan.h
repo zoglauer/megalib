@@ -108,9 +108,12 @@ class MInterfaceSivan : public MInterface
 
   // protected methods:
  protected:
-   void InitializeSimEventLoader();
+  void InitializeSimEventLoader();
 
-   double ComptonAngle(double E1, double E2);
+  // Find the minimum and maximum start energy in the sims file
+  void FindMinimumAndMaximumStartEnergy(double& Min, double& Max, unsigned int NEventsToCheck = 1000); 
+   
+  double ComptonAngle(double E1, double E2);
 
   // private methods:
  private:

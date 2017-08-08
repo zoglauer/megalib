@@ -98,7 +98,7 @@ void MGUISivanMain::Create()
   m_MenuAnalysis->AddEntry("Secondary generation pattern", c_SecondaryGenerationPattern); 
   m_MenuAnalysis->AddEntry("Interaction detector sequence", c_InteractionDetectorSequence); 
   m_MenuAnalysis->AddEntry("Energy of Secondaries", c_EnergyOfSecondaries);
-  m_MenuAnalysis->AddEntry("Energy Loss By Material", c_EnergyLossByMaterial);
+  m_MenuAnalysis->AddEntry("Energy Loss By Material and Escapes", c_EnergyLossByMaterial);
   m_MenuAnalysis->AddEntry("Number of Hits per event and detector", c_Hits);
   m_MenuAnalysis->AddEntry("Statistics on ideal interactions", c_NInteractions);
   m_MenuAnalysis->AddEntry("Position of first detected interaction", c_FirstHitPosition);

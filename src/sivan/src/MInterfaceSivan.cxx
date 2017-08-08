@@ -3335,79 +3335,157 @@ void MInterfaceSivan::Moliere()
 
 void MInterfaceSivan::EnergyLossByMaterial()
 {
+  // Find the minimum and maximum start energy
+  double Emin = 0;
+  double Emax = 0;
+  FindMinimumAndMaximumStartEnergy(Emin, Emax, 10000);
+  
+  Emin = 0;
+  Emax *= 1.1;
+  
+  
   // Open the simulation file:
   MFileEventsSim EventFile(m_Geometry);
   if (EventFile.Open(m_Data->GetCurrentFileName()) == false) return;
   EventFile.ShowProgress();
 
   int NBins = 100;
-  double Emin = 0;
-  double Emax = 1000;
 
-  map<TString, TH1D*> Materials;
-  TH1D* Hist = new TH1D("Detector", "Detector", NBins, Emin, Emax);
-  Materials[TString("Detector")] = Hist;
-
-  int NEvents = 0;
-  int NEventsWithLoss = 0;
+  //! Count events with losses as a function of energy
+  TH1D* NEventsWithLossesHist = new TH1D("NEventsWithLossesHist", "NEventsWithLossesHist", NBins, Emin, Emax);
+  TH1D* CombinedLossHist = new TH1D("CombinedLossHist", "CombinedLossHist", NBins, Emin, Emax);
+  
+  map<TString, TH1D*> LossHistograms;
+  TH1D* EscapeLossHist = new TH1D("EscapeLoss", "Escape", NBins, Emin, Emax);
+  LossHistograms[TString("Escape")] = EscapeLossHist;
+  
+  map<TString, TH1I*> CountHistograms;
+  TH1I* EscapeCountHist = new TH1I("EscapeCounts", "Escape", NBins, Emin, Emax);
+  CountHistograms[TString("Escape")] = EscapeCountHist;
   
   MSimEvent* Event;
   while ((Event = EventFile.GetNextEvent()) != 0) {
+    if (Event->GetNIAs() == 0 || Event->GetTotalEnergyDepositBeforeNoising() == 0) {
+      delete Event;
+      continue;
+    }
+    
+    /* 
+    //For AMEGO
+    MDVolumeSequence VS = m_Geometry->GetVolumeSequence(Event->GetIAAt(1)->GetPosition());
+    if (VS.GetDetector() == nullptr || VS.GetDetector()->GetName() != "SStrip") {
+      delete Event;
+      continue;
+    }
+    */
+    
+    bool FoundLoss = false;
+    
     for (unsigned int p = 0; p < Event->GetNPMs(); ++p) {
       MSimPM* PM = Event->GetPMAt(p);
       TString Name = PM->GetMaterialName().Data();
       bool Found = false;
-      for (map<TString, TH1D*>::iterator I = Materials.begin(); I != Materials.end(); ++I) {
+      for (map<TString, TH1I*>::iterator I = CountHistograms.begin(); I != CountHistograms.end(); ++I) {
         if (I->first == TString(Name.Data())) {
           Found = true;
-          I->second->Fill(PM->GetEnergy());
+          I->second->Fill(Event->GetTotalEnergyDepositBeforeNoising(), 1);
+          FoundLoss = true;
+          break;
+        }
+      }
+      for (map<TString, TH1D*>::iterator I = LossHistograms.begin(); I != LossHistograms.end(); ++I) {
+        if (I->first == TString(Name.Data())) {
+          Found = true;
+          I->second->Fill(Event->GetTotalEnergyDepositBeforeNoising(), PM->GetEnergy());
+          CombinedLossHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), PM->GetEnergy());          
           break;
         }
       }
       if (Found == false) {
-        TH1D* Hist = new TH1D(Name, Name, NBins, Emin, Emax);
-        Hist->Fill(PM->GetEnergy());
-        Materials[Name] = Hist;
+        TH1I* CountHist = new TH1I(Name + "Counts", Name, NBins, Emin, Emax);
+        CountHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), 1);
+        FoundLoss = true;
+        CountHistograms[Name] = CountHist;
+        
+        TH1D* LossHist = new TH1D(Name + "Loss", Name, NBins, Emin, Emax);
+        LossHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), PM->GetEnergy());
+        CombinedLossHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), PM->GetEnergy());          
+        LossHistograms[Name] = LossHist;
       }
     }
-    Materials[TString("Detector")]->Fill(Event->GetIAAt(0)->GetEnergy() - Event->GetEnergyDepositNotSensitiveMaterial());
+    
+    double Energy = 0;
+    for (unsigned int i = 0; i < Event->GetNIAs(); ++i) {
+      if (Event->GetIAAt(i)->GetProcess() == "ESCP") {
+        Energy += Event->GetIAAt(i)->GetMotherEnergy();
+      }
+    }
+    if (Energy > 0) {
+      CountHistograms[TString("Escape")]->Fill(Event->GetTotalEnergyDepositBeforeNoising(), 1);
+      LossHistograms[TString("Escape")]->Fill(Event->GetTotalEnergyDepositBeforeNoising(), Energy);
+      CombinedLossHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), Energy);          
+    }
+    
+    if (FoundLoss == true) {
+      NEventsWithLossesHist->Fill(Event->GetTotalEnergyDepositBeforeNoising(), 1); 
+    }
+    
     delete Event;
-    ++NEvents;
-    if (Event->GetNPMs() > 0) ++NEventsWithLoss;
   }
 
+  
   // Stack the Hists:
-  THStack* Stack = new THStack("Stack", "Energy spectrum for all materials");
-
-  TLegend* Legend = new TLegend(0.15,0.35,0.3,0.85, NULL, "brNDC");
-
+  THStack* CountStack = new THStack("CountStack", "Number of events with the given energy-loss feature");
+  TLegend* CountLegend = new TLegend(0.18,0.55,0.38,0.83, NULL, "brNDC");
+  
+  
   unsigned int Color = 1;
-  for (map<TString, TH1D*>::iterator I = Materials.begin(); I != Materials.end(); ++I) {
-    //for (int b = 1; b <= Histos[i]->GetNbinsX(); ++b) {
-    //  Histos[i]->SetBinContent(b, Histos[i]->GetBinContent(b)/Histos[i]->GetBinWidth(b));
-    //}
-
+  for (map<TString, TH1I*>::iterator I = CountHistograms.begin(); I != CountHistograms.end(); ++I) {
     I->second->SetFillColor(++Color);
-    Stack->Add(I->second);
-  }
-  for (map<TString, TH1D*>::iterator I = Materials.begin(); I != Materials.end(); ++I) {
-    Legend->AddEntry(I->second, I->second->GetTitle());
+    CountStack->Add(I->second);
+    CountLegend->AddEntry(I->second, I->second->GetTitle());
   }
 
   // Now draw:
   TCanvas* ECanvas = new TCanvas("EnergyCanvas", "Energy Spectrum", 800, 600);
   ECanvas->cd();
-  Stack->Draw();
-  Stack->GetHistogram()->SetXTitle("Energy [keV]");
-  Stack->GetHistogram()->SetYTitle("counts");
-  Stack->Draw();
-  Legend->Draw();
+  CountStack->Draw();
+  CountStack->GetHistogram()->SetXTitle("Measured energy [keV]");
+  CountStack->GetHistogram()->SetYTitle("Events with given energy loss feature");
+  CountStack->Draw();
+  CountLegend->Draw();
 
-  cout<<"Event with energy loss: "<<NEventsWithLoss<<"/"<<NEvents<<endl;
-  for (map<TString, TH1D*>::iterator I = Materials.begin(); I != Materials.end(); ++I) {
-    cout<<I->first<<": "<<I->second->Integral()<<"/"<<NEvents<<endl;
+  
+  // Stack the Hists:
+  THStack* LossStack = new THStack("LossStack", "Average energy loss due to the given energy-loss feature");
+  TLegend* LossLegend = new TLegend(0.18,0.55,0.38,0.83, NULL, "brNDC");
+  
+  Color = 1;
+  
+  for (map<TString, TH1D*>::iterator I = LossHistograms.begin(); I != LossHistograms.end(); ++I) {
+    TH1D* LossHist = I->second;
+    
+    for (int b = 1; b <= NEventsWithLossesHist->GetXaxis()->GetNbins(); ++b) {
+      if (NEventsWithLossesHist->GetBinContent(b) > 0) {
+        LossHist->SetBinContent(b, LossHist->GetBinContent(b) / NEventsWithLossesHist->GetBinContent(b));
+        LossHist->SetBinError(b, 0);
+      }
+    }
+    
+    LossHist->SetFillColor(++Color);
+    LossStack->Add(LossHist);
+    LossLegend->AddEntry(LossHist, LossHist->GetTitle());
   }
-
+  
+  // Now draw:
+  TCanvas* LossCanvas = new TCanvas("AvgEnergyLossCanvas", "Average Energy Loss", 800, 600);
+  LossCanvas->cd();
+  LossStack->Draw("");
+  LossStack->GetHistogram()->SetXTitle("Measured energy [keV]");
+  LossStack->GetHistogram()->SetYTitle("Average energy loss [keV]");
+  LossStack->Draw("");
+  LossLegend->Draw();
+  LossCanvas->Update();
 }
 
 
@@ -4374,6 +4452,38 @@ void MInterfaceSivan::NInteractions()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MInterfaceSivan::FindMinimumAndMaximumStartEnergy(double& Min, double& Max, unsigned int NEventsToCheck)
+{
+  MFileEventsSim EventFile(m_Geometry);
+  if (EventFile.Open(m_Data->GetCurrentFileName()) == false) {
+    mgui<<"Unable to open file"<<error;
+    return;
+  }
+  EventFile.ShowProgress();
+  
+  Min = numeric_limits<double>::max();
+  Max = -numeric_limits<double>::max();
+  
+  MSimEvent* Event;
+  mout<<"Testing energy dimensions..."<<endl;
+  while ((Event = EventFile.GetNextEvent(false)) != 0) {
+    if (Event->GetNIAs() >= 1) {
+      if (Event->GetIAAt(0)->GetSecondaryEnergy() < Min) Min = Event->GetIAAt(0)->GetSecondaryEnergy();
+      if (Event->GetIAAt(0)->GetSecondaryEnergy() > Max) Max = Event->GetIAAt(0)->GetSecondaryEnergy();
+    }
+    
+    delete Event;
+    if (NEventsToCheck-- <= 0) break;
+  }
+  mout<<"Energy limits of sim file: "<<Min<<" - "<<Max<<" keV"<<endl;
+
+  EventFile.Close();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MInterfaceSivan::IncidenceEnergy()
 {
   // Open the simulation file:
@@ -4481,7 +4591,7 @@ void MInterfaceSivan::IncidenceVsMeasuredEnergy()
     if (Event->GetNIAs() >= 1) {
       if (Event->GetIAAt(0)->GetSecondaryEnergy() < EMin) EMin = Event->GetIAAt(0)->GetSecondaryEnergy();
       if (Event->GetIAAt(0)->GetSecondaryEnergy() > EMax) EMax = Event->GetIAAt(0)->GetSecondaryEnergy();
-      if (Event->GetREnergy() < EMin) EMin = Event->GetREnergy();
+      if (Event->GetREnergy() > 0 && Event->GetREnergy() < EMin) EMin = Event->GetREnergy();
       if (Event->GetREnergy() > EMax) EMax = Event->GetREnergy();
     }
     
@@ -4490,8 +4600,8 @@ void MInterfaceSivan::IncidenceVsMeasuredEnergy()
   }
   mout<<"E:"<<EMin<<" - "<<EMax<<endl;
 
-  EMax += max(0.2*(EMax-EMin), 10.0);
-  EMin -= max(0.2*(EMax-EMin), 10.0);
+  //EMax += max(0.2*(EMax-EMin), 10.0);
+  //EMin -= max(0.2*(EMax-EMin), 10.0);
 
   EMin = TMath::Floor(EMin);
   EMax = TMath::Ceil(EMax);
@@ -4503,40 +4613,54 @@ void MInterfaceSivan::IncidenceVsMeasuredEnergy()
   mout<<endl;
 
   bool IsLog = false;
-  //if (EMax/EMin > 100) IsLog = true;
-  int ENBins = 500;
+  if (EMax/EMin > 100) IsLog = true;
+  
+  unsigned long NEvents = 0;
+  NEvents = EventFile.GetNEvents(false);
+  
+  int ENBins = 100;
+  
+  if (NEvents > 0) {
+    ENBins = sqrt(NEvents)/10;
+    if (ENBins < 5) ENBins = 5;
+  }
+  
   double* EBins = CreateAxisBins(EMin, EMax, ENBins, IsLog);
 
 
   TH2D* Energy = new TH2D("Energies", "Incidence vs. measured energies", ENBins, EBins, ENBins, EBins);
   Energy->SetBit(kCanDelete);
-  Energy->SetXTitle("Measured energy [keV]");
-  Energy->SetYTitle("Incidence energy [keV]");
+  Energy->SetXTitle("Incidence energy [keV]");
+  Energy->SetYTitle("Measured energy [keV]");
   Energy->SetZTitle("counts/keV^2");
   Energy->SetFillColor(8);
 
   EventFile.Rewind();
   while ((Event = EventFile.GetNextEvent(true)) != 0) { // True required, so that we do trigger and veto
     if (Event->GetNIAs() >= 1 && Event->GetREnergy() > 0) {
-      Energy->Fill(Event->GetREnergy(), Event->GetIAAt(0)->GetSecondaryEnergy());
+      Energy->Fill(Event->GetIAAt(0)->GetSecondaryEnergy(), Event->GetREnergy());
     }
 
     delete Event;
   }
 
   // Normalize to counts/keV^2
+  double Min = numeric_limits<double>::max();
   for (int bx = 1; bx <= Energy->GetNbinsX(); ++bx) {
     for (int by = 1; by <= Energy->GetNbinsY(); ++by) {
-      Energy->SetBinContent(bx, by, Energy->GetBinContent(bx, by)/Energy->GetXaxis()->GetBinWidth(bx)/Energy->GetYaxis()->GetBinWidth(by));
+      double Value = Energy->GetBinContent(bx, by)/Energy->GetXaxis()->GetBinWidth(bx)/Energy->GetYaxis()->GetBinWidth(by);
+      Energy->SetBinContent(bx, by, Value);
+      if (Value > 0 && Value < Min) Min = Value;
     }
   }
-  
+  Energy->SetMinimum(Min);
 
   TCanvas* ECanvas = new TCanvas("Energy Canvas", "Energy Canvas", 800, 600);
   if (IsLog == true) {
     ECanvas->SetLogx();
     ECanvas->SetLogy();
   }
+  ECanvas->SetLogz();
   ECanvas->cd();
   Energy->Draw("colz");
   ECanvas->Update();
