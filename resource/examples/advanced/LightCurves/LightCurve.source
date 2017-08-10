@@ -1,0 +1,26 @@
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
+
+# Physics list
+PhysicsListEM                        Livermore-Pol
+
+# Output formats
+StoreSimulationInfo       init-only
+
+
+Run SpaceSim
+SpaceSim.FileName         VariableObservation
+SpaceSim.Time             1000.0
+
+# Attention: Concerning the lower energy band:
+# The analysis is planned to be performed above 1 MeV.
+# Therfore you set the lower energy limit for the simulation, well below this limit, 
+# to avoid problems due to energy resolution limitations
+
+SpaceSim.Source Variable
+Variable.ParticleType           1
+Variable.Beam                   FarFieldPointSource 0 0
+Variable.Spectrum               PowerLaw 200 10000 2.17
+Variable.Flux                   0.15
+Variable.Lightcurve             File true Lightcurve.dat
