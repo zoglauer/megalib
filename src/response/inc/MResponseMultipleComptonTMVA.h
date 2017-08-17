@@ -57,9 +57,13 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   // protected methods:
  protected:
    
-   //! Save the response matrices
-   virtual bool Save();
+  //! Save the response matrices
+  virtual bool Save();
 
+  //! Store one element
+  bool Store(unsigned int SequenceLength, bool IsGood);
+  
+  
   //! Find the first two interaction in the simulated event
   bool FindFirstInteractions(const vector<MRESE*>& RESEs, MRESE*& First, MRESE*& Second);
   //! Find the correct interaction sequence, or return false if non can be found  

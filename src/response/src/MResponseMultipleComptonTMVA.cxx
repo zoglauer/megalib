@@ -70,7 +70,7 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
   m_MaxTrackEnergyDifferencePercent = 0.1;
   
   // We can save much more frequently here, since the files are a lot smaller
-  m_SaveAfter = 10000;
+  m_SaveAfter = numeric_limits<long>::max();
 }
 
 
@@ -237,7 +237,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   }
   
 
-  m_SaveAfter = 100000000;
+  m_SaveAfter = numeric_limits<unsigned long>::max();
   
   return true;
 }
@@ -248,23 +248,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
 
 bool MResponseMultipleComptonTMVA::Save()
 {
-  MResponseBuilder::Save(); 
-  
-  for (unsigned int t = 0; t < m_TreeGood.size(); ++t) {
-    TFile GoodOne(GetFilePrefix() + ".seq" + (t+2) + ".good.root", "recreate");
-    GoodOne.cd();
-    m_TreeGood[t]->Print();
-    m_TreeGood[t]->Write();
-    GoodOne.Close();
-    
-    TFile BadOne(GetFilePrefix() + ".seq" + (t+2) + ".bad.root", "recreate");
-    BadOne.cd();
-    m_TreeBad[t]->Write();
-    BadOne.Close();
-    
-    //m_TreeGood[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".good.root");
-    //m_TreeBad[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".bad.root");
-  }
+  // Nothing here, only save at the end
   
   return true;
 }
@@ -461,6 +445,23 @@ bool MResponseMultipleComptonTMVA::Analyze()
 //! Finalize the response generation (i.e. save the data a final time )
 bool MResponseMultipleComptonTMVA::Finalize() 
 { 
+  // We only save at the end since ROOT has trouble updating the file...
+  for (unsigned int t = 0; t < m_TreeGood.size(); ++t) {
+    TFile GoodOne(GetFilePrefix() + ".seq" + (t+2) + ".good.root", "recreate");
+    GoodOne.cd();
+    m_TreeGood[t]->Print();
+    m_TreeGood[t]->Write();
+    GoodOne.Close();
+    
+    TFile BadOne(GetFilePrefix() + ".seq" + (t+2) + ".bad.root", "recreate");
+    BadOne.cd();
+    m_TreeBad[t]->Write();
+    BadOne.Close();
+    
+    //m_TreeGood[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".good.root");
+    //m_TreeBad[t]->SaveAs(GetFilePrefix() + ".seq" + (t+2) + ".bad.root");
+  }
+  
   return MResponseBuilder::Finalize(); 
 }
 

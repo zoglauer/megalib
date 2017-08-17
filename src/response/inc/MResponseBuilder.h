@@ -172,11 +172,11 @@ class MResponseBuilder
   MSettingsMimrec m_MimrecSettings;
 
   //! ID for the start event
-  unsigned int m_StartEventID;
+  unsigned long m_StartEventID;
   //! Maximum number of events to be analyzed 
-  unsigned int m_MaxNEvents;
+  unsigned long m_MaxNEvents;
   //! Safe the response after this amount of events are stored
-  unsigned int m_SaveAfter;
+  unsigned long m_SaveAfter;
   //! Compress the response files
   bool m_Compress;
   //! The file suffix 
