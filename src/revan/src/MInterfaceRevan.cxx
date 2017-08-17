@@ -134,8 +134,8 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"      -a --analyze:"<<endl;
   Usage<<"             Analyze the evta-file given with the -f option, otherwise the file in the configuration file"<<endl;
-  Usage<<"      -e --energy-before:"<<endl;
-  Usage<<"             Show the spectrum before the analysis"<<endl;
+  Usage<<"      -s --generate spectra:"<<endl;
+  Usage<<"             Generate spectra using the options previously set in the GUI and stored in the configuration file"<<endl;
   Usage<<endl;
   Usage<<"      -d --debug:"<<endl;
   Usage<<"             Use debug mode"<<endl;
@@ -268,9 +268,9 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Analyzing..."<<endl;
       AnalyzeEvents();
       return false;
-    } else if (Option == "--energy-before" || Option == "-e") {
-      cout<<"Command-line parser: Showing energy histogram before reconstruction..."<<endl;
-      InitialEnergySpectrum();
+    } else if (Option == "--generate-spectra" || Option == "-s") {
+      cout<<"Command-line parser: Generate spectra (use the options from the configuration file)"<<endl;
+      GenerateSpectra();
       return true;
     }
   }
