@@ -103,6 +103,8 @@ bool MResponseMultipleCompton::Initialize()
   }
   MString NameAxisSequenceLength = "Sequence length";
 
+  double MaxEnergy = 5000;
+  
   // Material: 0: unknown, 1: Si, 2: Ge, 3: Xe, 4: CsI
   // Make sure this is identical with: MERCSRBayesian::GetMaterial()
   vector<float> AxisMaterial;
@@ -120,11 +122,11 @@ bool MResponseMultipleCompton::Initialize()
   MString NameAxisScatterProbability = "Scatter probability";
 
   // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyDistances = CreateLogDist(15, 5000, 38, 1, 20000);
+  vector<float> AxisTotalEnergyDistances = CreateLogDist(15, MaxEnergy, 38, 1, 20000);
   MString NameAxisTotalEnergyDistances = "Energy [keV]";
 
   // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyStart = CreateLogDist(100, 5000, 38, 1, 20000);
+  vector<float> AxisTotalEnergyStart = CreateLogDist(100, MaxEnergy, 38, 1, 20000);
   MString NameAxisTotalEnergyStart = "Energy [keV]";
 
 
@@ -134,7 +136,7 @@ bool MResponseMultipleCompton::Initialize()
   MString NameAxisComptonScatterAngleDual = "cos#varphi";
 
   // Total energy axis for scatter probabilities
-  vector<float> AxisTotalEnergyDual = CreateLogDist(150, 2000, 18, 1, 20000);
+  vector<float> AxisTotalEnergyDual = CreateLogDist(100, MaxEnergy, 18, 1, 20000);
   MString NameAxisTotalEnergyDual = "Energy [keV]";
 
   // Scatter probability axis
@@ -287,8 +289,7 @@ bool MResponseMultipleCompton::Initialize()
     CreateLogDist(0.2, 10, 7, 0.01, 100, 0, false); 
   MString NameAxisDistance = "Distance [cm]";
 
-  vector<float> AxisTotalEnergy = 
-    CreateLogDist(100, 1500, 4, 1, 10000, 0, false);
+  vector<float> AxisTotalEnergy = CreateLogDist(100, MaxEnergy, 4, 1, 10000, 0, false);
   //CreateLogDist(1, 10000, 1); //, 1, 10000, 0, false);
   //mimp<<"No total energy bins!"<<show;
   MString NameAxisTotalEnergy = "E_{tot} [keV]";
