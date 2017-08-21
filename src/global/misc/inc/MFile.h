@@ -142,6 +142,8 @@ class MFile
   static bool Exists(MString FileName);
   //! Return true is the file exists
   static bool FileExists(const char* FileName); // depreciated
+  //! Return true if the file was removed successfully
+  static bool Remove(MString FileName);
   //! Check if a program exists
   static bool ProgramExists(MString Program);
   //! Sets the path of "Path" as new path to "FileName" IF FileName has a relative path
