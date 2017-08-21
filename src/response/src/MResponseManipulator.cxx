@@ -614,9 +614,9 @@ bool MResponseManipulator::Append()
 
 
 /******************************************************************************
- * Find Files:
+ * Find and join *.rsp files:
  */
-bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
+bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 {
   // Get all files
   TSystemDirectory D(".", gSystem->pwd());
@@ -758,6 +758,67 @@ bool MResponseManipulator::FindFiles(MString Prefix, vector<MString> Types)
 
 
 /******************************************************************************
+ * Find and join *.rsp files:
+ */
+bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
+{
+  // Get all files
+  TSystemDirectory D(".", gSystem->pwd());
+  TList* Files = D.GetListOfFiles();
+  if (Files == 0) {
+    mout<<"Can't get files!"<<endl;
+    return false;
+  }
+
+  // Sort them
+  //cout<<"Sorting files..."<<endl;
+  unsigned int Added = 0;
+  vector<vector<MString>> SortedFiles(Types.size(), vector<MString>());
+  for (int i = 0; i <= Files->LastIndex(); ++i) {
+    MString Name = Files->At(i)->GetName();
+    if (Name.BeginsWith(Prefix) == false) continue;
+    for (unsigned int t = 0; t < Types.size(); ++t) {
+      //cout<<"Checking "<<Name<<" for prefix \""<<Prefix<<"\" and suffix \""<<Types[t]<<"\" (+ .gz)... "<<endl;
+      if (Name.EndsWith(Types[t]) == true && Name != Prefix + Types[t]) {
+        SortedFiles[t].push_back(Name);
+        //cout<<"yes"<<endl;
+        ++Added;
+      }
+    }
+  }
+  if (Added > 0) {
+    cout<<"Considering "<<Added<<" files..."<<endl;
+  } else {
+    cout<<"No files found to join..."<<endl;
+    return false;
+  }
+  
+  // Append them
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    if (SortedFiles[t].size() == 0) {
+      cout<<"No files of type "<<Types[t]<<endl;
+      continue;
+    }
+
+    // Remove a potentially existing output file:
+    if (MFile::Exists(Prefix + Types[t]) == true) {
+      MFile::Remove(Prefix + Types[t]);
+    }
+
+    MString Command = "hadd " + Prefix + Types[t] + " ";
+    for (unsigned int f = 0; f < SortedFiles[t].size(); ++f) {
+      Command += SortedFiles[t][f];
+      Command += " ";
+    }
+    
+    gSystem->Exec(Command);
+  }
+
+  return true;
+}
+
+
+/******************************************************************************
  * Append a response matrix to this one:
  */
 bool MResponseManipulator::Join()
@@ -814,8 +875,31 @@ bool MResponseManipulator::Join()
   Types.push_back(".binnedimaging.imagingresponse.rsp");
   Types.push_back(".binnedimaging.exposure.rsp");
   Types.push_back(".binnedimaging.energyresponse.rsp");
+  
+  JoinRSPFiles(m_Prefix, Types);
+  
+  
+  vector<MString> RootTypes;
+  
+  RootTypes.push_back(".tmva.seq2.good.root");
+  RootTypes.push_back(".tmva.seq2.bad.root");
+  RootTypes.push_back(".tmva.seq3.good.root");
+  RootTypes.push_back(".tmva.seq3.bad.root");
+  RootTypes.push_back(".tmva.seq4.good.root");
+  RootTypes.push_back(".tmva.seq4.bad.root");
+  RootTypes.push_back(".tmva.seq5.good.root");
+  RootTypes.push_back(".tmva.seq5.bad.root");
+  RootTypes.push_back(".tmva.seq6.good.root");
+  RootTypes.push_back(".tmva.seq6.bad.root");
+  RootTypes.push_back(".tmva.seq7.good.root");
+  RootTypes.push_back(".tmva.seq7.bad.root");
+  RootTypes.push_back(".tmva.seq8.good.root");
+  RootTypes.push_back(".tmva.seq8.bad.root");
+  RootTypes.push_back(".tmva.seq9.good.root");
+  RootTypes.push_back(".tmva.seq9.bad.root");
+    
+  JoinROOTFiles(m_Prefix, RootTypes);
 
-  FindFiles(m_Prefix, Types);
 
   return true;
 }

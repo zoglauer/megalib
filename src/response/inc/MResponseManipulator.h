@@ -54,7 +54,8 @@ protected:
   bool Ratio();
   bool Probability();
   bool Join();
-  bool FindFiles(MString Prefix, vector<MString> Type);
+  bool JoinRSPFiles(MString Prefix, vector<MString> Type);
+  bool JoinROOTFiles(MString Prefix, vector<MString> Type);
 
 private:
   /// True, if the analysis needs to be interrupted
