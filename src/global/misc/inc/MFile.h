@@ -157,9 +157,11 @@ class MFile
   static MString RelativeFileName(MString RelFileName, MString AbsFileName);
   //! Return the directory name (replacement for inconsistent gSystem->DirName)
   static MString GetDirectoryName(const MString& Name);
-  //! Return the directory name (replacement for inconsistent gSystem->DirName)
+  //! Return the base file name
   static MString GetBaseName(const MString& Name);
-
+  //! Return the current working directory
+  static MString GetWorkingDirectory();
+  
 
   //! The file modes: Write to a new file
   static unsigned int c_Write;

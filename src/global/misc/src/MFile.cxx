@@ -1141,7 +1141,17 @@ MString MFile::GetBaseName(const MString& Name)
   return Name.GetSubString(Pos+1);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
+
+MString MFile::GetWorkingDirectory()
+{
+  //! Return the current working directory
+
+  return gSystem->GetWorkingDirectory();  
+}
+
+  
 ////////////////////////////////////////////////////////////////////////////////
 
 
