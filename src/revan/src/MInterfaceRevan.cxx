@@ -420,6 +420,8 @@ void MInterfaceRevan::AnalyzeEvents()
   } else if (FilenameOut.EndsWith("sim.gz")) {
     FilenameOut.Replace(FilenameOut.Length()-6, 6, "tra.gz");
   }
+  
+  FilenameOut = MFile::GetWorkingDirectory() + "/" + MFile::GetBaseName(FilenameOut);
 
   MRawEventAnalyzer Analyzer;
   Analyzer.SetGeometry(m_Geometry);
