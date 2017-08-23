@@ -279,6 +279,44 @@ vector<vector<double>> MBinnerFISBEL::GetDrawingAxisBinEdges() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the bin center(s) of the given axis bin
+//! Can throw: MExceptionIndexOutOfBounds
+vector<double> MBinnerFISBEL::GetBinCenters(unsigned int Bin) const
+{
+  if (Bin >= m_NumberOfBins) {
+    throw MExceptionIndexOutOfBounds(0, m_NumberOfBins, Bin);
+  }
+  
+  // --> This is a bit too complicated to be right... or good
+  
+  // We always have one bin at bottom and top, which need to be handled differently:
+  if (Bin == 0) {
+    return vector<double> { 0, 0 };
+  } else if (Bin == m_NumberOfBins - 1) {
+    return vector<double> { c_Pi, 0 };
+  }
+    
+  
+  // Find the latitude bin:
+  unsigned int LatitudeBin = 0;
+  vector<double>::const_iterator LowerBound = lower_bound(m_NumberOfBinsBeforeLatitudeBin.begin(), m_NumberOfBinsBeforeLatitudeBin.end(), Bin);
+  if (LowerBound != m_NumberOfBinsBeforeLatitudeBin.end()) {
+    LatitudeBin = LowerBound - m_NumberOfBinsBeforeLatitudeBin.begin() - 1;
+  } else {
+    LatitudeBin = m_LatitudeBinEdges.size() - 2;
+  }
+  
+  unsigned int LongitudeBins = Bin - m_NumberOfBinsBeforeLatitudeBin[LatitudeBin];
+  
+  //cout<<Bin<<"--> "<<0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1])*c_Deg<<":"<<double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin]*c_Deg<<endl;
+  
+  return vector<double> { 0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1]), double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin] };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Show a histogram of the data
 void MBinnerFISBEL::View(vector<double> Data) const
 {

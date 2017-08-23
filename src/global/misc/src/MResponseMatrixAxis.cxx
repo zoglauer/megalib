@@ -294,6 +294,21 @@ vector<double> MResponseMatrixAxis::GetMaxima() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the bin center(s) of the given axis bin
+//! Can throw: MExceptionIndexOutOfBounds
+vector<double> MResponseMatrixAxis::GetBinCenters(unsigned int Bin) const
+{
+  if (Bin >= m_BinEdges.size() - 1) {
+    throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
+  }
+  
+  return vector<double> { 0.5 *(m_BinEdges[Bin] + m_BinEdges[Bin+1]) };
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Write the content to a stream
 void MResponseMatrixAxis::Write(ostringstream& out)
 {

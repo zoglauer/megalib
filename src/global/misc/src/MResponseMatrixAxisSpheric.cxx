@@ -178,6 +178,25 @@ vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the bin center(s) of the given axis bin
+//! Can throw: MExceptionIndexOutOfBounds
+vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned int Bin) const
+{
+  if (Bin >= m_BinEdges.size() - 1) {
+    throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
+  }
+  
+  vector<double> Centers = m_Binner.GetBinCenters(Bin);
+  Centers[0] *= c_Deg;
+  Centers[1] *= c_Deg;
+  
+  return Centers;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Write the content to a stream
 void MResponseMatrixAxisSpheric::Write(ostringstream& out)
 {

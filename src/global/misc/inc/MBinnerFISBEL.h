@@ -66,6 +66,10 @@ class MBinnerFISBEL
   //! Get the latitude bin edges (in degree)
   vector<double> GetLatitudeBinEdges() const { return m_LatitudeBinEdges; } 
   
+  //! Get the bin center (returns: theta, phi)
+  //! Can throw: MExceptionIndexOutOfBounds
+  vector<double> GetBinCenters(unsigned int Bin) const;
+  
   //! View the binning
   //! If the given vector has the correct dimension, it's data will be shown
   void View(vector<double> = {}) const;
@@ -87,7 +91,7 @@ class MBinnerFISBEL
   //! The number of bins
   unsigned int m_NumberOfBins;
 
-  //! The longitude bins
+  //! The longitude bins per latitude slice
   vector<unsigned int> m_LongitudeBins;
   //! The latitude bin edges
   vector<double> m_LatitudeBinEdges;
@@ -96,7 +100,9 @@ class MBinnerFISBEL
   // private members:
  private:
   //! Little accelerator vector to speed up the bin search:
-  //! Number of bins in the longitudebins *before* this latitude bin
+  //! Number of bins in the longitude bins *before* this latitude bin
+  //! top bin: 0 (no bins above that)
+  //! top+1 bin: number of bins in top bin, etc.
   vector<double> m_NumberOfBinsBeforeLatitudeBin;
 
   

@@ -248,12 +248,35 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const MResponseMatrixON& R)
 
 MResponseMatrixON& MResponseMatrixON::operator+=(const float& Value)
 {
-  // Append a matrix to this one
-
+  // Append this value to the matrix
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     m_Values[i] += Value;
   }
+  
+  return *this;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON& MResponseMatrixON::operator-=(const float& Value)
+{
+  // Subtract this value from the matrix
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
+  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+    m_Values[i] -= Value;
+  }
+  
   return *this;
 }
 
@@ -263,12 +286,39 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const float& Value)
 
 MResponseMatrixON& MResponseMatrixON::operator*=(const float& Value)
 {
-  // Append a matrix to this one
-
+  // Multiply a matrix by this value
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     m_Values[i] *= Value;
   }
+  
+  return *this;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
+{
+  // Divide a matrix by this value
+  
+  if (Value == 0) {
+    throw MExceptionDivisionByZero();
+  }
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
+  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+    m_Values[i] /= Value;
+  }
+  
   return *this;
 }
 
@@ -400,12 +450,12 @@ bool MResponseMatrixON::InRange(vector<double> X) const
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == false) {
-        cout<<"Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
+        cout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else if (Dimension == 2) {
       if (m_Axes[a]->InRange(X[Xbin], X[Xbin+1]) == false) {
-        cout<<"Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
+        cout<<"Response matrix "<<m_Name<<": Not in range: "<<m_Axes[a]->GetNames()[0]<<": "<<X[Xbin]<<endl;
         return false;
       }
     } else {
@@ -447,7 +497,11 @@ bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
 void MResponseMatrixON::Set(vector<unsigned int> X, float Value)
 {
   // Set the content of the bin
-
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
   if (InRange(X) == false) {
     return;
   }
@@ -462,7 +516,11 @@ void MResponseMatrixON::Set(vector<unsigned int> X, float Value)
 void MResponseMatrixON::Set(vector<double> X, float Value)
 {
   // Set a value
-
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
   if (InRange(X) == false) {
     return;
   }
@@ -474,14 +532,37 @@ void MResponseMatrixON::Set(vector<double> X, float Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::Add(vector<double> X, float Value)
+void MResponseMatrixON::Add(vector<unsigned int> X, float Value)
 {
   // Add a value to the bin closest to x, y
-
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
   if (InRange(X) == false) {
     return;
   }
+  
+  m_Values[FindBin(X)] += Value;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMatrixON::Add(vector<double> X, float Value)
+{
+  // Add a value to the bin closest to x, y
+  
+  if (isfinite(Value) == false) {
+    throw MExceptionNumberNotFinite();
+  }
+  
+  if (InRange(X) == false) {
+    return;
+  }
+  
   m_Values[FindBin(X)] += Value;
 }
 
@@ -964,6 +1045,8 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
 {
   // Create a ROOT histogram:
 
+  //gROOT->SetBatch(true);
+  
   if (AxisValues.size() < m_Order) {
     merr<<"MResponseMatrixON::ShowSlice: You have to give as many axis values as there are axes!"<<endl;
     return;
@@ -1087,10 +1170,14 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
           Value /= GetArea(Values);
         }
         if (Value < Minimum) Minimum = Value;
-        Hist->SetBinContent(bx, Value);
+        if (isfinite(Value) == true) {
+          Hist->SetBinContent(bx, Value);
+        } else {
+          merr<<"Bin "<<bx<<" is not a finite number!"<<endl; 
+        }
       }
 
-      TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
         Canvas->SetLogx();
@@ -1119,11 +1206,15 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
             Value /= GetArea(Values);
           }
           if (Value < Minimum) Minimum = Value;
-          Hist->SetBinContent(bx, by, Value);
+          if (isfinite(Value) == true) {
+            Hist->SetBinContent(bx, by, Value);
+          } else {
+            merr<<"Bin "<<bx<<", "<<by<<" is not a finite number!"<<endl; 
+          }
         }
       }
 
-      TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
         Canvas->SetLogx();
@@ -1134,7 +1225,9 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
       Hist->SetMinimum(Minimum);
       Hist->Draw("colz");
       Canvas->Update();
-
+      
+      //Canvas->SaveAs("Test.C");
+      
     } else if (NAxes == 3) {
 
       TH3D* Hist = new TH3D("", Title, BinEdges[0].size() - 1, &BinEdges[0][0], BinEdges[1].size() - 1, &BinEdges[1][0], BinEdges[2].size() - 1, &BinEdges[2][0]);
@@ -1157,12 +1250,16 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
               Value /= GetArea(Values);
             }
             if (Value < Minimum) Minimum = Value;
-            Hist->SetBinContent(bx, by, bz, Value);
+            if (isfinite(Value) == true) {
+              Hist->SetBinContent(bx, by, bz, Value);
+            } else {
+              merr<<"Bin "<<bx<<", "<<by<<", "<<bz<<" is not a finite number!"<<endl; 
+            }
           }
         }
       }
 
-      TCanvas* Canvas = new TCanvas("Canvas", "", 0, 0, 600, 600);
+      TCanvas* Canvas = new TCanvas();
       Canvas->cd();
       if (GetAxisByOrder(Order[0])->IsLogarithmic() == true) {
         Canvas->SetLogx();

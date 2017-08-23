@@ -77,6 +77,10 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Return the minimum axis values
   virtual vector<double> GetMaxima() const;
   
+  //! Return the bin center(s) of the given axis bin, theta & phi 
+  //! Can throw: MExceptionIndexOutOfBounds
+  virtual vector<double> GetBinCenters(unsigned int Bin) const;
+  
   //! Write the content to a stream
   virtual void Write(ostringstream& out);
   

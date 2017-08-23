@@ -67,9 +67,13 @@ class MResponseMatrixON : public MResponseMatrix
   void Init();
   //! Add a scalar to the matrix
   MResponseMatrixON& operator+=(const float& Value);
+  //! Subtract a scalar from the matrix
+  MResponseMatrixON& operator-=(const float& Value);
   //! Multiply matrix by a scalar
   MResponseMatrixON& operator*=(const float& Value);  
-
+  //! Divide matrix by a scalar
+  MResponseMatrixON& operator/=(const float& Value);  
+  
   //! return an axis name (order starts with 1)
   //! Throws exception
   vector<MString> GetAxisNames(unsigned int AxisIndex) const;
@@ -95,14 +99,20 @@ class MResponseMatrixON : public MResponseMatrix
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
   void Set(unsigned int Bin, float Value = 1) { m_Values.at(Bin) = Value; }
   //! Set the bin content
-  //! Throw exception "" when out of bounds
+  //! Throw exception "MExceptionTestFailed" when out of bounds
   void Set(vector<unsigned int> AxisBins, float Value = 1);
   //! Find the bin and set the value
-  //! Throws exception
+  //! Throws exception MExceptionTestFailed
   void Set(vector<double> AxisValues, float Value = 1);
   //! Find the bin and add the value
-  //! Throws exception
+  //! Throws exception MExceptionTestFailed
+  void Add(vector<unsigned int> AxisValues, float Value = 1);
+  //! Find the bin and add the value
+  //! Throws exception MExceptionTestFailed
   void Add(vector<double> AxisValues, float Value = 1);
+  //! Add to the content of a specific bin -- directly without error checks
+  //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+  void Add(unsigned int Bin, float Value = 1) { m_Values.at(Bin) += Value; }
   
   // Interface to retrieve the content
 
@@ -135,7 +145,7 @@ class MResponseMatrixON : public MResponseMatrix
 
   //! Smooth the content of the response
   virtual void Smooth(unsigned int Times = 1);
-
+  
   //! Show as an image
   void ShowSlice(vector<float> Axes, bool Normalized = true, MString Title = "");
   

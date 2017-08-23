@@ -34,7 +34,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Exception base class - i
+//! Exception base class
 class MException : public exception
 {
 public:
@@ -252,6 +252,42 @@ public:
 private:
   //! The description
   MString m_Description;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when a division by zero would have occured
+class MExceptionDivisionByZero : public MException
+{
+public:
+  //! Default constructor
+  MExceptionDivisionByZero() : MException() {}
+  //! Default destructor
+  virtual ~MExceptionDivisionByZero() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    return "Division by zero!";
+  }
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! This exception is thrown when a number is not finite, i.e. nan or inf
+class MExceptionNumberNotFinite : public MException
+{
+public:
+  //! Default constructor
+  MExceptionNumberNotFinite() : MException() {}
+  //! Default destructor
+  virtual ~MExceptionNumberNotFinite() throw() {}
+  //! The error message
+  virtual const char* what() const throw() {
+    return "Number not finite!";
+  }
 };
 
 
