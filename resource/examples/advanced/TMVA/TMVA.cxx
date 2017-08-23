@@ -37,6 +37,9 @@ using namespace std;
 #include <TBranch.h>
 #include <TObjArray.h>
 #include "TMVA/Factory.h"
+#include "TMVA/DataLoader.h"
+#include "TMVA/Tools.h"
+#include "TMVA/TMVAGui.h"
 
 // MEGAlib
 #include "MGlobal.h"
@@ -164,7 +167,8 @@ bool TMVAAnalyzer::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  TFile* Results = new TFile("Results.root", "recreate");
+  MString ResultsFileName = "Results.root";
+  TFile* Results = new TFile(ResultsFileName, "recreate");
   
   TFile* SourceFile = new TFile(m_FileName); 
   TTree* SourceTree = (TTree*) SourceFile->Get("Good");
@@ -181,52 +185,47 @@ bool TMVAAnalyzer::Analyze()
     return false;
   }
       
-    
-  TMVA::Factory* F = new TMVA::Factory("MVAnalysis", Results, "V");
-  F->AddSignalTree(SourceTree, 1.0);
-  F->AddBackgroundTree(BackgroundTree, 1.0);
-    
+  TMVA::Factory *factory = new TMVA::Factory("TMVAClassification", Results,
+                                            "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+      
+  TMVA::DataLoader *dataloader=new TMVA::DataLoader("dataset");
+      
   TObjArray* Branches = SourceTree->GetListOfBranches();
   for (int b = 0; b < Branches->GetEntries(); ++b) {
     TBranch* B = dynamic_cast<TBranch*>(Branches->At(b));
     TString Name = B->GetName();
     if (Name != "SimulationIDs") {
-      F->AddVariable(Name, 'D');
+      dataloader->AddVariable(Name, 'D');
     }
   }
   
-  F->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
-  //F->BookMethod(TMVA::Types::kLikelihood, "LikelihoodPCA", 
-  //              "!H:!V:!TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=10:NSmoothBkg[0]=10:NSmooth=5:NAvEvtPerBin=30:VarTransform=PCA");
-  //F->BookMethod(TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:NCycles=200:HiddenLayers=N+1,N:TestRate=5");
+  dataloader->AddSignalTree(SourceTree, 1.0);
+  dataloader->AddBackgroundTree(BackgroundTree, 1.0);
   
-  // BFGS training with bayesian regulators
-  //F->BookMethod(TMVA::Types::kMLP, "MLPBNN", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:TrainingMethod=BFGS:UseRegulator" );
+  dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
+
+  // Standard MLP  
+  factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
-  F->BookMethod(TMVA::Types::kBDT, "BDTD", "!H:!V:NTrees=400:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:PruneMethod=CostComplexity:PruneStrength=1.5:VarTransform=Decorrelate");
+  factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD",
+                       "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
   
-  //F->BookMethod(TMVA::Types::kPDEFoam, "PDEFoamBoost", "!H:!V:Boost_Num=30:Boost_Transform=linear:SigBgSeparate=F:MaxDepth=4:UseYesNoCell=T:DTLogic=MisClassificationError:FillFoamWithOrigWeights=F:TailCut=0:nActiveCells=500:nBin=20:Nmin=400:Kernel=None:Compress=T" );
-  
-  // Adaptive Boost
-  F->BookMethod(TMVA::Types::kBDT, "BDT", "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-  
-  
-  // Support vector machine
-  //F->BookMethod(TMVA::Types::kSVM, "SVM - var=norm", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
-  //F->BookMethod(TMVA::Types::kSVM, "SVM - var=pca", "Gamma=0.25:Tol=0.001:VarTransform=PCA" );
-  //F->BookMethod(TMVA::Types::kSVM, "SVM - var=decorrelate", "Gamma=0.25:Tol=0.001:VarTransform=Decorrelate" );
-  
-  
-  
-  // K-Nearest Neighbour classifier (KNN)
-  //F->BookMethod(TMVA::Types::kKNN, "KNN", "H:nkNN=20:ScaleFrac=0.8:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim" );
     
     
   
-  F->TrainAllMethods();
-  F->TestAllMethods();
-  F->EvaluateAllMethods();
+  factory->TrainAllMethods();
+  factory->TestAllMethods();
+  factory->EvaluateAllMethods();
+  
+  Results->Close();
+  
+  delete factory;
+  delete dataloader;
+  // Launch the GUI for the root macros
+  //if (!gROOT->IsBatch()) TMVA::TMVAGui(ResultsFileName);
+  
+  
   
   return true;
 }
