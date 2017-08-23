@@ -181,20 +181,20 @@ bool MResponseSpectral::Analyze()
   while (SimStartPhi < 0) SimStartPhi += 360;  
   
   if (RE != nullptr) {
-    m_EnergyBeforeER.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() });
-    m_EnergyRatioBeforeER.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() / SimStartEnergy });
+    m_EnergyBeforeER.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() });
+    m_EnergyRatioBeforeER.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() / SimStartEnergy });
   }
     
   
   if (REList->HasOptimumEvent() == true) {
     MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
     if (Event != nullptr) {
-      m_EnergyUnselected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
-      m_EnergyRatioUnselected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
+      m_EnergyUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
+      m_EnergyRatioUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
         // TODO: We might need to do an ARM cut?
-        m_EnergySelected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
-        m_EnergyRatioSelected.Add({ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
+        m_EnergySelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
+        m_EnergyRatioSelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
       }
     }
   }

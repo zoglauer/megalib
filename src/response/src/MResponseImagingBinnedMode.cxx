@@ -195,10 +195,11 @@ bool MResponseImagingBinnedMode::Analyze()
   
   
   // And fill the matrices
-  m_ImagingResponse.Add( { EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi } );
-  m_Exposure.Add( { EnergyInitial, Nu, Lambda } );
-  m_EnergyResponse.Add( { EnergyInitial, Nu, Lambda, EnergyMeasured } );
+  m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi } );
+  m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
+  m_EnergyResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
             
+  //cout<<"Added: "<<Event->GetId()<<":"<<Phi<<":"<<Psi<<":"<<Chi<<endl;
   
   return true;
 }

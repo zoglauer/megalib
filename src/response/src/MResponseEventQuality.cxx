@@ -173,9 +173,9 @@ bool MResponseEventQuality::Analyze()
   
   // And fill the matrices
   if (Nu < 60) {
-    m_GoodQuality.Add( { EnergyMeasured, Phi, Psi, Chi } );
+    m_GoodQuality.Add( vector<double>{ EnergyMeasured, Phi, Psi, Chi } );
   } else if (Nu > 80) {
-    m_BadQuality.Add( { EnergyMeasured, Phi, Psi, Chi } );
+    m_BadQuality.Add( vector<double>{ EnergyMeasured, Phi, Psi, Chi } );
   }
   
   return true;
