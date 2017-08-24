@@ -388,6 +388,11 @@ bool SimpleComptonImaging::Analyze()
   long Started = m_Response.GetSimulatedEvents();
   double StartArea = m_Response.GetFarFieldStartArea();
   double Steradians = 4*c_Pi / InitialDirectionBins;
+  if (StartArea == 0) {
+    cout<<"Error no start area given"<<endl;
+    return false;
+  }
+
   cout<<"Bin area: "<<Steradians<<" sr"<<endl;
   cout<<"Start area: "<<StartArea<<endl;
   
@@ -531,6 +536,10 @@ bool SimpleComptonImaging::Analyze()
   
   // Normalize pointing by time
   cout<<"Normalize pointing..."<<endl;
+  if (TimeBetweenEvents.size() < 2) {
+   cout<<"ERROR: Not enough events passed the event selections!"<<endl;
+   return false;
+  }
   sort(TimeBetweenEvents.begin(), TimeBetweenEvents.end());
   double MediumTime = TimeBetweenEvents[TimeBetweenEvents.size()/2];
   cout<<"Medium time: "<<MediumTime<<" & Events: "<<TimeBetweenEvents.size()+1<<endl;
@@ -721,7 +730,7 @@ bool SimpleComptonImaging::Analyze()
     Image.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true);  
     gSystem->ProcessEvents();
     
-    Image.Write(MString("FirstBackprojection_") + (i+1) + ".rsp");
+    Image.Write("FirstBackprojection.rsp");
   }
 
 
