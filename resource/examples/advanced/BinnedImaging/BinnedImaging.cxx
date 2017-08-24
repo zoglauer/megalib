@@ -565,7 +565,7 @@ bool SimpleComptonImaging::Analyze()
       }
     }
     
-    unsigned int Split = PointingBinsX.size() / 4;
+    unsigned int Split = PointingBinsX.size() / std::thread::hardware_concurrency();
     if (Split == 0) {
       m_ThreadRunning.resize(1, true);
       RotateResponseInParallel(0, PointingBinsX, PointingBinsZ);
@@ -706,11 +706,22 @@ bool SimpleComptonImaging::Analyze()
     }
     cout<<"Done: "<<T.GetElapsed()<<endl;
     
-    // Normalize image to 1.0    
+    // Normalize image to 1.0
+    double Sum = Image.GetSum();
+    if (Sum == 0) {
+      cout<<"Error: First backprojection sum image is zero"<<endl;
+      return false;
+    }
+    if (isfinite(Sum) == false) {
+      cout<<"Error: First backprojection image contains non-finite number."<<endl;
+      return false;
+    }
     Image *= 1.0/Image.GetSum();
     
     Image.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true);  
     gSystem->ProcessEvents();
+    
+    Image.Write(MString("FirstBackprojection_") + (i+1) + ".rsp");
   }
 
 
@@ -754,7 +765,7 @@ bool SimpleComptonImaging::Analyze()
       }
     }
     
-    Mean.Write("Mean.rsp");
+    Mean.Write(MString("Mean_") + (i+1) + ".rsp");
     cout<<"Iteration: "<<i+1<<" - deconvolve"<<endl;
     
     double ImageFlux = 0.0;
@@ -808,7 +819,6 @@ bool SimpleComptonImaging::Analyze()
           Image.Set(A2, Content * Image.Get(A2) / Sum);
           ImageFlux += Content * Image.Get(A2) / Sum / ObservationTime / StartArea;
           Display.Set(A2, Content * Image.Get(A2) / Sum / ObservationTime / StartArea / Steradians );
-          Display.Write(MString("Iteration_") + (i+1));
           //Image.Set(vector<unsigned int>{ie, id}, Content * Image.Get(vector<unsigned int>{ie, id}) / Sum);
           gSystem->ProcessEvents();
         }
@@ -821,7 +831,7 @@ bool SimpleComptonImaging::Analyze()
     Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
     cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
     
-    NewImage.Write("NewImage.rsp");
+    Display.Write(MString("Image_") + (i+1) + ".rsp");
     
     gSystem->ProcessEvents();
     
