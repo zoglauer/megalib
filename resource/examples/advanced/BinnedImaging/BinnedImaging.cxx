@@ -96,6 +96,8 @@ private:
   /// The number of iterations the algorithm has to run
   unsigned int m_Iterations;
   
+  /// True if we do MaxEnt, MaxLikelihood otherwise
+  bool m_UseMaximumEntropy;
   
   /// Indicating of the threads are still running
   vector<bool> m_ThreadRunning;
@@ -119,6 +121,7 @@ private:
 SimpleComptonImaging::SimpleComptonImaging() : m_Interrupt(false)
 {
   m_Iterations = 5;
+  m_UseMaximumEntropy = true;
   gStyle->SetPalette(kBird);
 }
 
@@ -696,118 +699,320 @@ bool SimpleComptonImaging::Analyze()
     Image.Write("FirstBackprojection.rsp");
   }
 
-
-  // The iterations
-  MResponseMatrixON Mean;
-  Mean.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
-  Mean.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
-  Mean.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
   
-  
-  for (unsigned int i = 0; i < m_Iterations; ++i) {
-    cout<<"Iteration: "<<i+1<<" - convolve"<<endl;
+  if (m_UseMaximumEntropy == true) {
     
-    // Convolve:
-    //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + S1*S2*S3*S4*a5
-    //! Logic: a1 + S1*(a2 + S2*(a3 + S3*(a4 + S4*(a5))))
+    // Set up Lagrange multipliers
+    
+    MResponseMatrixON Lagrange;
+    Lagrange.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
+    Lagrange.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
+    Lagrange.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
+    
     unsigned long P1 = 1;
-    unsigned long P2 = P1*InitialEnergyBins;
-    unsigned long P3 = P2*InitialDirectionBins;
-    unsigned long P4 = P3*FinalEnergyBins;
-    unsigned long P5 = P4*FinalPhiBins;
+    unsigned long P2 = P1*FinalEnergyBins;
+    unsigned long P3 = P2*FinalPhiBins;
     for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
-      unsigned long A3 = P3*fe;
+      unsigned long A1 = P1*fe;
       for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
-        unsigned long A4 = P4*fp;
+        unsigned long A2 = P2*fp;
         for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-          unsigned long A5 = P5*fd;
-          
-          float NewMean = 0;
-          for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
-            unsigned long A1 = P1*ie;
-            for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
-              unsigned long A2 = P2*id;
-              NewMean += Image.Get(ie + InitialEnergyBins*id) * m_ResponseGalactic.Get(ie + P2*id + P3*fe + P4*fp + P5*fd);
-              //NewMean += Image.Get(vector<unsigned int>{ie, id}) * m_ResponseGalactic.Get(vector<unsigned int>{ie, id, fe, fp, fd});
-            }
-          }
-          Mean.Set(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd, NewMean);
-          //Mean.Set(vector<unsigned int>{fe, fp, fd}, NewMean);
+          unsigned long A3 = P3*fd;
+          Lagrange.Set(A3, 1.0);
         }
       }
     }
     
-    Mean.Write(MString("Mean_") + (i+1) + ".rsp");
-    cout<<"Iteration: "<<i+1<<" - deconvolve"<<endl;
+    double DataSum = Data.GetSum();
     
-    double ImageFlux = 0.0;
+    // The iterations
+    MResponseMatrixON Expectation;
+    Expectation.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
+    Expectation.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
+    Expectation.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
     
-    MResponseMatrixON NewImage("NewImage");
-    NewImage.AddAxis(m_Response.GetAxis(0)); // energy
-    NewImage.AddAxis(m_Response.GetAxis(1)); // image space
+    double MaximumEntropy = 0;
+    int MaximumIterations = 0;
     
-    // Deconvolve:
-    unsigned long M1 = 1;
-    unsigned long M2 = M1*InitialEnergyBins;
-    unsigned long M3 = M2*InitialDirectionBins;
-    unsigned long M4 = M3*FinalEnergyBins;
-    unsigned long M5 = M4*FinalPhiBins;
-    for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
-      unsigned long A1 = M1*ie;
-      for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
-        unsigned long A2 = A1 + M2*id;
-        float Content = 0.0;
-        float Sum = 0.0;
-        unsigned long N1 = 1;
-        unsigned long N2 = N1*FinalEnergyBins;
-        unsigned long N3 = N2*FinalPhiBins;
-        for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
-          unsigned long A3 = A2 + M3*fe;
-          unsigned long B1 = N1*fe;
-          for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
-            unsigned long A4 = A3 + M4*fp;
-            unsigned long B2 = B1 + N2*fp;
-            for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-              unsigned long A5 = A4 + M5*fd;
-              unsigned long B3 = B2 + N3*fd;
-              
-              if (Mean.Get(B3) > 0) {
-                Content += m_ResponseGalactic.Get(A5) * Data.Get(B3) / Mean.Get(B3);
+    for (unsigned int i = 0; i < m_Iterations; ++i) {
+      
+      // Step 1: Calculate the restored image:
+      
+      MResponseMatrixON RestoredImage("RestoredImage");
+      RestoredImage.AddAxis(m_Response.GetAxis(0)); // energy
+      RestoredImage.AddAxis(m_Response.GetAxis(1)); // image space      
+      
+      double RestoredImageSum = 0;
+      
+      unsigned long M1 = 1;
+      unsigned long M2 = M1*InitialEnergyBins;
+      unsigned long M3 = M2*InitialDirectionBins;
+      unsigned long M4 = M3*FinalEnergyBins;
+      unsigned long M5 = M4*FinalPhiBins;
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        unsigned long A1 = M1*ie;
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          unsigned long A2 = A1 + M2*id;
+          float Content = 0.0;
+          float Sum = 0.0;
+          unsigned long N1 = 1;
+          unsigned long N2 = N1*FinalEnergyBins;
+          unsigned long N3 = N2*FinalPhiBins;
+          for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+            unsigned long A3 = A2 + M3*fe;
+            unsigned long B1 = N1*fe;
+            for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+              unsigned long A4 = A3 + M4*fp;
+              unsigned long B2 = B1 + N2*fp;
+              for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+                unsigned long A5 = A4 + M5*fd;
+                unsigned long B3 = B2 + N3*fd;
+                
+                Content += m_ResponseGalactic.Get(A5) * Lagrange.Get(B3);
               }
-              Sum += m_ResponseGalactic.Get(A5);
-              
-              /*
-              // Slow version
-              if (Mean.Get(vector<unsigned int>{fe, fp, fd}) > 0) {
-                Content += m_ResponseGalactic.Get(vector<unsigned int>{ie, id, fe, fp, fd}) * Data.Get(vector<unsigned int>{fe, fp, fd}) / Mean.Get(vector<unsigned int>{fe, fp, fd});
+            }
+          }
+          
+          Content = exp(Content);
+          RestoredImage.Set(A2, Content);
+          RestoredImageSum += Content;
+        }
+      }
+      
+      
+      if (RestoredImageSum == 0) {
+        cerr<<"ERROR: RestoredImageSum == 0"<<endl;
+        return false;
+      }
+      cout<<"RestoredImageSum="<<RestoredImageSum<<endl;
+      
+      double Entropy = 0;
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        unsigned long A1 = M1*ie;
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          unsigned long A2 = A1 + M2*id;
+          float RestoredImageUpdate = RestoredImage.Get(A2)*DataSum/RestoredImageSum;
+          RestoredImage.Set(A2, RestoredImageUpdate);
+          Entropy += RestoredImageUpdate*log(RestoredImageUpdate);
+        }
+      }
+      cout<<"Entropy: "<<Entropy<<endl;    
+      
+      
+      // Step 2: Convolve the data again into data space - expectation calculation
+      
+      unsigned long P1 = 1;
+      unsigned long P2 = P1*InitialEnergyBins;
+      unsigned long P3 = P2*InitialDirectionBins;
+      unsigned long P4 = P3*FinalEnergyBins;
+      unsigned long P5 = P4*FinalPhiBins;
+      for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+        unsigned long A3 = P3*fe;
+        for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+          unsigned long A4 = P4*fp;
+          for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+            unsigned long A5 = P5*fd;
+            
+            float NewExpectation = 0;
+            for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+              unsigned long A1 = P1*ie;
+              for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+                unsigned long A2 = P2*id;
+                NewExpectation += RestoredImage.Get(ie + InitialEnergyBins*id) * m_ResponseGalactic.Get(ie + P2*id + P3*fe + P4*fp + P5*fd);
+              }
+            }
+            Expectation.Set(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd, NewExpectation);
+          }
+        }
+      }
+      
+      double ExpectationSum = Expectation.GetSum();
+      if (ExpectationSum == 0) {
+        cerr<<"ERROR: ExpectationSum == 0"<<endl;
+        return false;
+      }
+      
+      
+      
+      // Step 3: Update Lagrange multipliers
+      double Scale = ExpectationSum/DataSum;
+      
+      if (Scale == 0) {
+        cerr<<"ERROR: Scale == 0"<<endl;
+        break;
+      }
+      
+      unsigned long Q1 = 1;
+      unsigned long Q2 = Q1*FinalEnergyBins;
+      unsigned long Q3 = Q2*FinalPhiBins;
+      for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+        unsigned long A1 = Q1*fe;
+        for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+          unsigned long A2 = Q2*fp;
+          for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+            unsigned long A3 = Q3*fd;
+            
+            double Update = 0;
+            double PreLog = 0;
+            if (Data.Get(A3) > 0) {
+              PreLog = Data.Get(A3)*Scale;
+              if (PreLog < 1.0E-9) PreLog = 1.0E-9;
+              Update += log(PreLog);
+            }
+            if (Expectation.Get(A3) > 0 && Data.Get(A3) > 0) {
+              PreLog = Expectation.Get(A3); 
+              if (PreLog < 1.0E-9) PreLog = 1.0E-9;
+              Update -= log(PreLog);
+            }
+            Lagrange.Set(A3, Update);
+          }
+        }
+      }
+      
+      
+      
+      // Step 4: Update the real image:
+      MResponseMatrixON NewImage("NewImage");
+      NewImage.AddAxis(m_Response.GetAxis(0)); // energy
+      NewImage.AddAxis(m_Response.GetAxis(1)); // image space
+      
+      double ImageFlux = 0;
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        unsigned long A1 = P1*ie;
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          unsigned long A2 = P2*id;
+          NewImage.Set(A2, RestoredImage.Get(A2) * DataSum/RestoredImageSum);
+          ImageFlux += NewImage.Get(A2) / ObservationTime / StartArea;
+        }
+      }
+      
+      if (Entropy > MaximumEntropy) {
+        MaximumEntropy = Entropy;
+        MaximumIterations = i;
+      }
+      
+      ostringstream Title;
+      Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
+      NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
+      cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+      
+    } // iterations
+    
+  } else {
+    // The iterations
+    MResponseMatrixON Mean;
+    Mean.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
+    Mean.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
+    Mean.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
+    
+    
+    double MaximumEntropy = 0;
+    int MaximumIterations = 0;
+    for (unsigned int i = 0; i < m_Iterations; ++i) {
+      cout<<"Iteration: "<<i+1<<" - convolve"<<endl;
+      
+      // Convolve:
+      //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + S1*S2*S3*S4*a5
+      //! Logic: a1 + S1*(a2 + S2*(a3 + S3*(a4 + S4*(a5))))
+      unsigned long P1 = 1;
+      unsigned long P2 = P1*InitialEnergyBins;
+      unsigned long P3 = P2*InitialDirectionBins;
+      unsigned long P4 = P3*FinalEnergyBins;
+      unsigned long P5 = P4*FinalPhiBins;
+      for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+        unsigned long A3 = P3*fe;
+        for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+          unsigned long A4 = P4*fp;
+          for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+            unsigned long A5 = P5*fd;
+            
+            float NewMean = 0;
+            for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+              unsigned long A1 = P1*ie;
+              for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+                unsigned long A2 = P2*id;
+                NewMean += Image.Get(ie + InitialEnergyBins*id) * m_ResponseGalactic.Get(ie + P2*id + P3*fe + P4*fp + P5*fd);
+                //NewMean += Image.Get(vector<unsigned int>{ie, id}) * m_ResponseGalactic.Get(vector<unsigned int>{ie, id, fe, fp, fd});
+              }
+            }
+            Mean.Set(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd, NewMean);
+            //Mean.Set(vector<unsigned int>{fe, fp, fd}, NewMean);
+          }
+        }
+      }
+      
+      Mean.Write(MString("Mean_") + (i+1) + ".rsp");
+      cout<<"Iteration: "<<i+1<<" - deconvolve"<<endl;
+      
+      double ImageFlux = 0.0;
+      
+      MResponseMatrixON NewImage("NewImage");
+      NewImage.AddAxis(m_Response.GetAxis(0)); // energy
+      NewImage.AddAxis(m_Response.GetAxis(1)); // image space
+      
+      // Deconvolve:
+      unsigned long M1 = 1;
+      unsigned long M2 = M1*InitialEnergyBins;
+      unsigned long M3 = M2*InitialDirectionBins;
+      unsigned long M4 = M3*FinalEnergyBins;
+      unsigned long M5 = M4*FinalPhiBins;
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        unsigned long A1 = M1*ie;
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          unsigned long A2 = A1 + M2*id;
+          float Content = 0.0;
+          float Sum = 0.0;
+          unsigned long N1 = 1;
+          unsigned long N2 = N1*FinalEnergyBins;
+          unsigned long N3 = N2*FinalPhiBins;
+          for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+            unsigned long A3 = A2 + M3*fe;
+            unsigned long B1 = N1*fe;
+            for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+              unsigned long A4 = A3 + M4*fp;
+              unsigned long B2 = B1 + N2*fp;
+              for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+                unsigned long A5 = A4 + M5*fd;
+                unsigned long B3 = B2 + N3*fd;
+                
+                if (Mean.Get(B3) > 0) {
+                  Content += m_ResponseGalactic.Get(A5) * Data.Get(B3) / Mean.Get(B3);
+                }
+                Sum += m_ResponseGalactic.Get(A5);
+                
+                /*
+                 *            // Slow version
+                 *            if (Mean.Get(vector<unsigned int>{fe, fp, fd}) > 0) {
+                 *              Content += m_ResponseGalactic.Get(vector<unsigned int>{ie, id, fe, fp, fd}) * Data.Get(vector<unsigned int>{fe, fp, fd}) / Mean.Get(vector<unsigned int>{fe, fp, fd});
               }
               Sum += m_ResponseGalactic.Get(vector<unsigned int>{ie, id, fe, fp, fd});
               */
+              }
             }
           }
-        }
-        if (Sum > 0) {
-          NewImage.Set(A2, Content);
-          Image.Set(A2, Content * Image.Get(A2) / Sum);
-          ImageFlux += Content * Image.Get(A2) / Sum / ObservationTime / StartArea;
-          Display.Set(A2, Content * Image.Get(A2) / Sum / ObservationTime / StartArea / Steradians );
-          //Image.Set(vector<unsigned int>{ie, id}, Content * Image.Get(vector<unsigned int>{ie, id}) / Sum);
-          gSystem->ProcessEvents();
+          if (Sum > 0) {
+            NewImage.Set(A2, Content);
+            Image.Set(A2, Content * Image.Get(A2) / Sum);
+            ImageFlux += Content * Image.Get(A2) / Sum / ObservationTime / StartArea;
+            Display.Set(A2, Content * Image.Get(A2) / Sum / ObservationTime / StartArea / Steradians );
+            //Image.Set(vector<unsigned int>{ie, id}, Content * Image.Get(vector<unsigned int>{ie, id}) / Sum);
+            gSystem->ProcessEvents();
+          }
         }
       }
+      
+      ostringstream Title;
+      Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
+      
+      Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
+      cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+      
+      Display.Write(MString("Image_") + (i+1) + ".rsp");
+      
+      gSystem->ProcessEvents();
+      
+      if (m_Interrupt == true) break;
     }
-    
-    ostringstream Title;
-    Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
-    
-    Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
-    cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
-    
-    Display.Write(MString("Image_") + (i+1) + ".rsp");
-    
-    gSystem->ProcessEvents();
-    
-    if (m_Interrupt == true) break;
   }
   
   
