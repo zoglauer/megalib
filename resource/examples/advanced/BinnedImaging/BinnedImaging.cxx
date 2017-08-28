@@ -401,6 +401,7 @@ bool SimpleComptonImaging::Analyze()
     MTimer T;
     
     //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + S1*S2*S3*S4*a5  
+    float Max = 0;
     unsigned long M1 = 1;
     unsigned long M2 = M1*InitialEnergyBins;
     unsigned long M3 = M2*InitialDirectionBins;
@@ -419,7 +420,9 @@ bool SimpleComptonImaging::Analyze()
             for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
               unsigned long A5 = A4 + M5*fd;
               Detected = m_Response.Get(A5);
-              m_Response.Set(A5, float(Detected) / float(Emitted));
+              float Value = float(Detected) / float(Emitted);
+              m_Response.Set(A5, Value);
+              if (Value > Max) Max = Value;
               // Detected = m_Response.Get(vector<unsigned int>{ie, id, fe, fp, fd});
               // m_Response.Set(vector<unsigned int>{ie, id, fe, fp, fd}, float(Detected) / float(Emitted)) / StartArea / Radians;
             }
@@ -427,6 +430,32 @@ bool SimpleComptonImaging::Analyze()
         }
       }
     }
+
+    /*
+    // Cleaning round - remove everything with less than 1% contribution
+    float Threshold = 0.02*Max;
+    for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+      unsigned long A1 = M1*ie;
+      for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+        unsigned long A2 = A1 + M2*id;
+        long Emitted = Started/InitialDirectionBins;
+        long Detected = 0;
+        for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+          unsigned long A3 = A2 + M3*fe;
+          for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+            unsigned long A4 = A3 + M4*fp;
+            for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+              unsigned long A5 = A4 + M5*fd;
+              if (m_Response.Get(A5) < Threshold) {
+                m_Response.Set(A5, 0.0);
+              }
+            }
+          }
+        }
+      }
+    }
+    */
+
     cout<<"Done: "<<T.GetElapsed()<<endl;
   }
   
@@ -475,7 +504,7 @@ bool SimpleComptonImaging::Analyze()
       Dg = -ComptonEvent->Dg(); // Invert!
       
       
-      if (Phi < 0 || Phi > 25) continue;
+      if (Phi < 0 || Phi > 60) continue;
       //if (Phi > ) continue;
       
       if (ComptonEvent->HasGalacticPointing() == true) {
@@ -613,73 +642,7 @@ bool SimpleComptonImaging::Analyze()
     cout<<"Number of directions in pointings file: "<<Dirs<<endl;
   }
 
-  /*
-  if (EventFile->Open(m_FileName) == false) return false;
-  while ((Event = EventFile->GetNextEvent()) != 0) {
-    
-    if (EventSelector.IsQualifiedEventFast(Event) == false) {
-      delete Event;
-      continue;
-    }
-    
-    if (Event->GetType() == MPhysicalEvent::c_Compton) {
-      ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
-      
-      Ei = ComptonEvent->Ei();
-      Phi = ComptonEvent->Phi()*c_Deg;
-      Dg = -ComptonEvent->Dg(); // Invert!
-      
-      
-      if (Phi > 30) continue;
-      // if (Phi < 50 || Phi > 60) continue;
-      
-      if (ComptonEvent->HasGalacticPointing() == true) {
-        MRotation R = ComptonEvent->GetGalacticPointingRotationMatrix();
-        Dg = R*Dg;
-      } else {
-        cout<<"Event has no Galactic pointing!"<<endl;
-        delete Event;
-        continue;        
-      }
-      
-      Chi = Dg.Phi()*c_Deg;
-      while (Chi < 0) Chi += 360.0;
-      while (Chi > 360) Chi -= 360.0;
-      Psi = Dg.Theta()*c_Deg;
-      
-      //cout<<"Psi: "<<Psi<<endl;
-       
-      {
-        MResponseMatrixON I("Display");
-        I.AddAxis(m_Response.GetAxis(0)); // energy
-        I.AddAxis(m_Response.GetAxis(1)); // image space
-        
-        
-        for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
-          for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
-            //vector<double> Centers = m_ResponseGalactic.GetAxis(1).GetBinCenters(id);
-            //I.Set(vector<double>{511, Centers[0], Centers[1] },  m_ResponseGalactic.Get(vector<double>{511, Centers[0], Centers[1], Ei, Phi, Psi, Chi}));
-            vector<double> Centers = m_ResponseGalactic.GetAxis(1).GetBinCenters(id);
-            I.Set(vector<double>{511, Centers[0], Centers[1] },  m_ResponseGalactic.Get(vector<double>{511, Centers[0], Centers[1], Ei, Phi, Psi, Chi}));
-          }
-        }      
-        
-        I.Write(MString("Single_") + Event->GetId() + "_" + Phi + "_" + Psi + "_" + Chi + ".rsp");
-      }
-      
-      ++Counter;
-           
-    } // if Compton
-
-    
-    
-    delete Event;
-    
-    //if (Counter == 2) break;
-  }
-  */
-  
-  
+   
   
   // Create an initial backprojection
   cout<<"Creating initial backprojection..."<<endl;
@@ -706,7 +669,7 @@ bool SimpleComptonImaging::Analyze()
             unsigned long A4 = A3 + M4*fp;
             unsigned int D2 = D1 +fp*FinalEnergyBins;
             for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-              Content += m_ResponseGalactic.Get(A4 + M5*fd) * Data.Get(D2 + fd*FinalEnergyBins*FinalPhiBins);
+              Content += m_ResponseGalactic.Get(A4 + M5*fd); // * Data.Get(D2 + fd*FinalEnergyBins*FinalPhiBins);
             }
           }
         }
