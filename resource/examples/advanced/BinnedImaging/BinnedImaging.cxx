@@ -522,7 +522,7 @@ bool SimpleComptonImaging::Analyze()
       // ARM
       MVector Test;
       Test.SetMagThetaPhi(c_FarAway, (-05.78+90)*c_Rad, 184.56*c_Rad);
-      cout<<"ARM : "<<Event->GetId()<<":"<<ComptonEvent->GetARMGamma(Test, MCoordinateSystem::c_Galactic)*c_Deg<<endl;
+      //cout<<"ARM : "<<Event->GetId()<<":"<<ComptonEvent->GetARMGamma(Test, MCoordinateSystem::c_Galactic)*c_Deg<<endl;
       
       
       Chi = Dg.Phi()*c_Deg;
@@ -530,7 +530,7 @@ bool SimpleComptonImaging::Analyze()
       while (Chi > 360) Chi -= 360.0;
       Psi = Dg.Theta()*c_Deg;
       
-      cout<<Event->GetId()<<": "<<Phi<<":"<<Psi<<": "<<Chi<<endl;
+      //cout<<Event->GetId()<<": "<<Phi<<":"<<Psi<<": "<<Chi<<endl;
       
       Data.Add(vector<double>{Ei, Phi, Psi, Chi}, 1);
 
@@ -541,7 +541,7 @@ bool SimpleComptonImaging::Analyze()
       }
       PreviousTime = Event->GetTime().GetAsSeconds();
       
-      cout<<Event->GetId()<<":  X (la/lo): "<<90+ComptonEvent->GetGalacticPointingXAxisLatitude()*c_Deg<<", "<<ComptonEvent->GetGalacticPointingXAxisLongitude()*c_Deg<<"   Z (la/lo): "<<90+ComptonEvent->GetGalacticPointingZAxisLatitude()*c_Deg<<", "<<ComptonEvent->GetGalacticPointingZAxisLongitude()*c_Deg<<endl;
+      //cout<<Event->GetId()<<":  X (la/lo): "<<90+ComptonEvent->GetGalacticPointingXAxisLatitude()*c_Deg<<", "<<ComptonEvent->GetGalacticPointingXAxisLongitude()*c_Deg<<"   Z (la/lo): "<<90+ComptonEvent->GetGalacticPointingZAxisLatitude()*c_Deg<<", "<<ComptonEvent->GetGalacticPointingZAxisLongitude()*c_Deg<<endl;
       
       //! Set the pointing
       m_Pointing.Add(vector<double>{ 90+ComptonEvent->GetGalacticPointingXAxisLatitude()*c_Deg, ComptonEvent->GetGalacticPointingXAxisLongitude()*c_Deg, 90+ComptonEvent->GetGalacticPointingZAxisLatitude()*c_Deg, ComptonEvent->GetGalacticPointingZAxisLongitude()*c_Deg } );
@@ -672,7 +672,7 @@ bool SimpleComptonImaging::Analyze()
             unsigned long A4 = A3 + M4*fp;
             unsigned int D2 = D1 +fp*FinalEnergyBins;
             for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-              Content += m_ResponseGalactic.Get(A4 + M5*fd); // * Data.Get(D2 + fd*FinalEnergyBins*FinalPhiBins);
+              Content += m_ResponseGalactic.Get(A4 + M5*fd) * Data.Get(D2 + fd*FinalEnergyBins*FinalPhiBins);
             }
           }
         }
@@ -715,16 +715,21 @@ bool SimpleComptonImaging::Analyze()
     for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
       unsigned long A1 = P1*fe;
       for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
-        unsigned long A2 = P2*fp;
+        unsigned long A2 = A1 + P2*fp;
         for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-          unsigned long A3 = P3*fd;
-          Lagrange.Set(A3, 1.0);
+          unsigned long A3 = A2 + P3*fd;
+          Lagrange.Set(A3, 1.0); //Data.Get(A3));
         }
       }
     }
     
+    // Normalize response
+    m_ResponseGalactic /= m_ResponseGalactic.GetSum(); 
+
+
     double DataSum = Data.GetSum();
-    
+    cout<<"Data Sum="<<DataSum<<endl;   
+ 
     // The iterations
     MResponseMatrixON Expectation;
     Expectation.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
@@ -754,7 +759,6 @@ bool SimpleComptonImaging::Analyze()
         for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
           unsigned long A2 = A1 + M2*id;
           float Content = 0.0;
-          float Sum = 0.0;
           unsigned long N1 = 1;
           unsigned long N2 = N1*FinalEnergyBins;
           unsigned long N3 = N2*FinalPhiBins;
@@ -807,17 +811,17 @@ bool SimpleComptonImaging::Analyze()
       unsigned long P4 = P3*FinalEnergyBins;
       unsigned long P5 = P4*FinalPhiBins;
       for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
-        unsigned long A3 = P3*fe;
+        //unsigned long A3 = P3*fe;
         for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
-          unsigned long A4 = P4*fp;
+          //unsigned long A4 = P4*fp;
           for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-            unsigned long A5 = P5*fd;
+            //unsigned long A5 = P5*fd;
             
             float NewExpectation = 0;
             for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
-              unsigned long A1 = P1*ie;
+              //unsigned long A1 = P1*ie;
               for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
-                unsigned long A2 = P2*id;
+                //unsigned long A2 = P2*id;
                 NewExpectation += RestoredImage.Get(ie + InitialEnergyBins*id) * m_ResponseGalactic.Get(ie + P2*id + P3*fe + P4*fp + P5*fd);
               }
             }
@@ -831,6 +835,7 @@ bool SimpleComptonImaging::Analyze()
         cerr<<"ERROR: ExpectationSum == 0"<<endl;
         return false;
       }
+      cout<<"Expectation Sum="<<ExpectationSum<<endl;
       
       
       
@@ -841,33 +846,50 @@ bool SimpleComptonImaging::Analyze()
         cerr<<"ERROR: Scale == 0"<<endl;
         break;
       }
-      
+     
+      int LCounter = 0; 
+      double Limit = 1.0E-9;
       unsigned long Q1 = 1;
       unsigned long Q2 = Q1*FinalEnergyBins;
       unsigned long Q3 = Q2*FinalPhiBins;
       for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
         unsigned long A1 = Q1*fe;
         for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
-          unsigned long A2 = Q2*fp;
+          unsigned long A2 = A1 + Q2*fp;
           for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
-            unsigned long A3 = Q3*fd;
-            
+            unsigned long A3 = A2 + Q3*fd;
+        
+            bool UseLog = true;
             double Update = 0;
-            double PreLog = 0;
-            if (Data.Get(A3) > 0) {
-              PreLog = Data.Get(A3)*Scale;
-              if (PreLog < 1.0E-9) PreLog = 1.0E-9;
-              Update += log(PreLog);
+            if (UseLog == true) {
+              double PreLog1 = Data.Get(A3)*Scale;
+              if (PreLog1 < Limit) PreLog1 = Limit;
+              Update += log(PreLog1);
+              
+              double PreLog2 = Expectation.Get(A3); 
+              if (PreLog2 < Limit) PreLog2 = Limit;
+              Update -= log(PreLog2);
+           
+              cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
+ 
+            } else {
+              Update += Data.Get(A3)*Scale - Expectation.Get(A3);
+              cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
+
             }
-            if (Expectation.Get(A3) > 0 && Data.Get(A3) > 0) {
-              PreLog = Expectation.Get(A3); 
-              if (PreLog < 1.0E-9) PreLog = 1.0E-9;
-              Update -= log(PreLog);
+              
+            //cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Update<<endl;
+            double NewL = Lagrange.Get(A3) + 10000*Update;
+            if (NewL < 0) {
+              NewL = 0;
             }
-            Lagrange.Set(A3, Update);
+            Lagrange.Set(A3, NewL);
+            LCounter++;
           }
         }
       }
+      cout<<" Updated Lagrange entries: "<<LCounter<<endl;
+      cout<<"Lagrange sum="<<Lagrange.GetSum()<<endl;
       
       
       
@@ -880,8 +902,8 @@ bool SimpleComptonImaging::Analyze()
       for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
         unsigned long A1 = P1*ie;
         for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
-          unsigned long A2 = P2*id;
-          NewImage.Set(A2, RestoredImage.Get(A2) * DataSum/RestoredImageSum);
+          unsigned long A2 = A1 + P2*id;
+          NewImage.Set(A2, RestoredImage.Get(A2)); // * DataSum/RestoredImageSum);
           ImageFlux += NewImage.Get(A2) / ObservationTime / StartArea;
         }
       }
@@ -895,9 +917,15 @@ bool SimpleComptonImaging::Analyze()
       Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
       NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
       cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
-      
+     
+
+      if (m_Interrupt == true) break;
+ 
     } // iterations
-    
+   
+
+
+ 
   } else {
     // The iterations
     MResponseMatrixON Mean;
