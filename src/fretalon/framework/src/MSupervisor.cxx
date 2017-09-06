@@ -783,6 +783,7 @@ bool MSupervisor::Analyze()
     ++NExpos;
 
     for (unsigned int m = 0; m < GetNModules(); ++m) {
+      GetModule(m)->CreateExpos();
       if (GetModule(m)->HasExpos() == true) {
         m_ExpoCombinedViewer->AddExpos(GetModule(m)->GetExpos());
         ++NExpos;

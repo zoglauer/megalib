@@ -167,6 +167,8 @@ class MModule
   //! Show the options GUI --- has to be overwritten!
   virtual void ShowOptionsGUI() {};
 
+  //! Create the expos - does nothing if there are no expos
+  virtual void CreateExpos() {}
   //! True if this module has associated expo GUI(s)
   bool HasExpos() { return m_Expos.size() > 0 ? true : false; }
   //! Return the associated expo GUI(s). If there are none return an empty vector
