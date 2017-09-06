@@ -90,6 +90,7 @@ bool MResponseMultipleCompton::Initialize()
   if (MResponseBuilder::Initialize() == false) return false;
   
   m_CSRMaxLength = m_RevanSettings.GetCSRMaxNHits();
+  //m_CSRMaxLength = 3;
   m_ReReader->SetCSROnlyCreateSequences(true);
 
   if (m_ReReader->PreAnalysis() == false) return false;
@@ -384,6 +385,7 @@ bool MResponseMultipleCompton::Analyze()
       continue;
     }
     
+    mdebug<<endl<<endl<<"Iteration "<<r<<endl;
     mdebug<<RE->ToString()<<endl;
     
     if (RE->GetStartPoint() == 0) continue;
@@ -478,16 +480,15 @@ bool MResponseMultipleCompton::Analyze()
         int Material = GetMaterial(*Iter.GetCurrent());
         
         if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD Compton sequence!"<<endl;
+          mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
           // Retrieve the data:
           m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
           
         } else {
-          mdebug<<"--------> Found bad Compton sequence!"<<endl;
+          mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
           // Retrieve the data:
           m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
           SequenceOk = false;
-          
         } // Add good / bad
         
         // Track at central?
@@ -905,69 +906,86 @@ bool MResponseMultipleCompton::IsComptonStart(MRESE& Start, double Etot, double 
   // Return true if the given RESEs are in sequence
   //
   // A good start point for tripple Comptons requires:
-  // (1) An absorption better than 98%
-  // (2) the IDs of their hits are in increasing order without holes
-  // (3) We have one Compton interaction and some other interaction
-  // (4) The origin is only the first Compton interaction
+  // (1) An absorption better than 3 sigma energy resolution + 2 keV for the fuirst hitr and the while sequence...
+  // (2) The origin is or produced a photon
+  // (3) We have exactly one Compton interaction and maybe some other, secondary interaction
 
-  mdebug<<"IsComptonStart: Looking at: "<<Start.GetID()<<endl;
+  if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Looking at: "<<Start.GetID()<<endl;
 
 
-  // Test (2)
-  //vector<int> StartIds = GetReseIds(Start);
+  // Get the origin IDs of the RESEs
   vector<int> StartOriginIds = GetOriginIds(&Start);
   if (StartOriginIds.size() == 0) {
-    mdebug<<"IsComptonStart: Start has no Sim IDs!"<<endl;
+    if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Start has no Sim IDs!"<<endl;
     return false;
   }
   
-  // Absorption:
-  if (Etot > 0) {
-    if (IsAbsorbed(StartOriginIds, Start.GetEnergy(), Start.GetEnergyResolution()) == false) {
-      mdebug<<"IsComptonStart: Central not completely absorbed!"<<endl;
-      return false;
-    }
-  }
-  
-  //cout<<"Cont only Start!"<<endl;
-  if (ContainsOnlyComptonDependants(StartOriginIds) == false) {
-    mdebug<<"IsComptonStart: Start contains not only Compton dependants"<<endl;
-    return false;
-  }
-
-  // Test (3)
-  if (m_SiEvent->GetNIAs() < 3) { 
-    mdebug<<"IsComptonStart: Not enough interactions!"<<endl;
-    return false;    
-  }
-  if (m_SiEvent->GetIAAt(1)->GetProcess() != "COMP") {
-    mdebug<<"IsComptonStart: Second interaction is no Compton!"<<endl;
-    return false;    
-  }
-  
-  // Test (4)
-  int SmallestSimId = numeric_limits<int>::max();
+  // Find the smallest origin ID in the sequence
+  int SmallestOriginID = numeric_limits<int>::max();
   for (unsigned int i = 0; i < StartOriginIds.size(); ++i) {
-    if (StartOriginIds[i] != 1) {
-      if (SmallestSimId > StartOriginIds[i]) {
-        SmallestSimId = StartOriginIds[i];
-      }
-    }
+    if (StartOriginIds[i] < SmallestOriginID) SmallestOriginID = StartOriginIds[i];
   }
   
-  if (SmallestSimId != 2) {
-    mdebug<<"IsComptonStart: Not correct start point: "<<SmallestSimId<<endl;
-    return false;            
-  }
-
+  // Find the real Origin
+  int TrueOrigin = m_SiEvent->GetIAAt(SmallestOriginID-1)->GetOriginID();
+  
+  // Test (1) - Absorption:
   if (Etot > 0) {
+    // First hit
+    if (IsAbsorbed(StartOriginIds, Start.GetEnergy(), Start.GetEnergyResolution()) == false) {
+      if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: IA not completely absorbed!"<<endl;
+      return false;
+    }
+    // Full sequence
     if (IsTotalAbsorbed(StartOriginIds, Etot, Eres) == false) {
-      mdebug<<"Not completely absorbed!"<<endl;
+      if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Not completely absorbed!"<<endl;
       return false;
     }
   }
-
+  
+  // Test (2) - the start IA must be a photon (and create nothing) or be anything and create a photon
+  MSimIA* OriginIA = m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(SmallestOriginID-1)->GetOriginID()-1);
+  if (OriginIA->GetSecondaryParticleID() == 1 || // create photon
+     (OriginIA->GetSecondaryParticleID() == 0 && OriginIA->GetMotherParticleID() == 1)) { // create nothing and be a photon
+    // good...
+  } else {
+    // Only photons can be good...
+    if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: IA which triggered first RESE did not create a photon or is not photon and create nothing"<<endl;
+    return false;
+  }
+  
+  // Check if the IA only contains Compton dependants
+  if (ContainsOnlyComptonDependants(StartOriginIds) == false) {
+    if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Start contains not only Compton dependants"<<endl;
+    return false;
+  }
+  
+  // Check if we really have only one Compton interaction
+  if (NumberOfComptonInteractions(StartOriginIds, TrueOrigin) != 1) {
+    if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Not exactly one Compton in interaction"<<endl;
+      return false;       
+  }
+  
+  if (g_Verbosity >= c_Chatty) mout<<"IsComptonStart: Passed!"<<endl;
+  
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+unsigned int MResponseMultipleCompton::NumberOfComptonInteractions(vector<int> AllSimIds, int Origin)
+{
+  unsigned int N = 0;
+  
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetProcess() == "COMP" && m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetOrigin() == Origin)  {
+      ++N;
+    }
+  }
+  
+  return N;
 }
 
 
@@ -985,8 +1003,7 @@ bool MResponseMultipleCompton::IsComptonSequence(MRESE& Start, MRESE& Central,
   // (2) the IDs of their hits are in increasing order without holes
   // (3) Start is the StartPosition's Compton IA
 
-  mdebug<<"IsComptonSequence2: Looking at: "
-        <<Start.GetID()<<" - "<<Central.GetID()<<endl;
+  mdebug<<"IsComptonSequence2: Looking at: "<<Start.GetID()<<" - "<<Central.GetID()<<endl;
 
 
   // Test (2)
@@ -1317,6 +1334,52 @@ bool MResponseMultipleCompton::AreInComptonSequence(const vector<int>& StartOrig
 
 bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimIds)
 {
+  // We do two checks here, one down the tree and one up the tree
+  
+  // First check upwards: Is everything in there originating form somewhere else in there or is it an initial process (COMP, INIT, produced a photon)
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    int ID = AllSimIds[i];
+    int HighestOriginID = ID;
+    while (true) {
+      // Get new origin ID
+      ID = m_SiEvent->GetIAAt(ID-1)->GetOriginID();
+      // Check if included
+      for (unsigned int j = 0; j < AllSimIds.size(); ++j) {
+        if (i != j && ID == AllSimIds[j]) {
+          HighestOriginID = ID;
+          break;
+        }
+      }
+      
+      // Check if we are done
+      if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT") break; // Compton dependents, remember?
+    }
+    
+    // We are good if the end point is a Compton scatter or a photo effect which is preceeded by a Compton:
+    bool IsGood = false;
+    if (m_SiEvent->GetIAAt(HighestOriginID-1)->GetProcess() == "COMP") {
+      IsGood = true;
+    } else if (m_SiEvent->GetIAAt(HighestOriginID-1)->GetProcess() == "PHOT") {
+      int Predeccessor = HighestOriginID-1;
+      while (true) {
+        if (Predeccessor == 1) break; // we reached init
+        if (m_SiEvent->GetIAAt(Predeccessor-1)->GetOriginID() == m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID()) {
+          if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
+            IsGood = true;
+          }
+        }
+        --Predeccessor;
+      }
+    }
+    if (IsGood == false) {
+      mdebug<<"ContainsOnlyComptonDependants: Hits other than dependants for ID="<<ID<<endl;
+      return false;
+    }
+  }
+  
+  
+  
+  /*
   massert(AllSimIds.size() > 0);
 
   int SmallestSimId = numeric_limits<int>::max();
@@ -1365,8 +1428,19 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
     DependantsFound = false;
     for (unsigned int g = 0; g < GoodSimIds.size(); ++g) {
       for (unsigned int a = 0; a < AllSimIds.size(); ++a) {
-        //cout<<"Testing all: "<<AllSimIds[a]<<endl;
-        if (m_SiEvent->GetIAAt(AllSimIds[a]-1)->GetOriginID() == GoodSimIds[g]) {
+
+        // Find an origin ID which might have deposited something:
+        int ID = AllSimIds[a]-1;
+        while (true) {
+          ID = m_SiEvent->GetIAAt(ID-1)->GetOriginID();
+          if (m_SiEvent->GetIAAt(ID-1)->GetSecondaryParticleID() != 0 && m_SiEvent->GetIAAt(ID-1)->GetSecondaryParticleID() != 1) {
+            break;
+          }
+          if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT" || m_SiEvent->GetIAAt(ID-1)->GetProcess() == "COMP") break; // Compton dependents, remember?
+        }
+        
+        // Now compare:
+        if (ID == GoodSimIds[g]) {
           //cout<<"Found good: "<<AllSimIds[a]<<endl;
           GoodSimIds.push_back(AllSimIds[a]);
           Iter = find(AllSimIds.begin(), AllSimIds.end(), AllSimIds[a]);
@@ -1389,30 +1463,44 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
   }
 
   sort(GoodSimIds.begin(), GoodSimIds.end());
+  */
 
-  // Check for dependants which are not contained: 
-  for (unsigned int i = 0; i < m_SiEvent->GetNIAs(); ++i) {
-    int Origin = m_SiEvent->GetIAAt(i)->GetOriginID();
-    //cout<<"Checkin ID="<<i+1<<" with o= "<<Origin<<endl;
-    bool OriginatesFromGood = false;
-    bool ContainedInGood = false;   
-    for (unsigned int g = 0; g < GoodSimIds.size(); ++g) {
-      //cout<<"Verifying: "<<GoodSimIds[g]<<endl;
-      if (int(i+1) == GoodSimIds[g]) {
-        //cout<<"Contained in good!"<<endl;
-        ContainedInGood = true;
-      } 
-      if (Origin == GoodSimIds[g]) {
-        //cout<<"Originates from good!"<<endl;
-        OriginatesFromGood = true;
+  
+  // The second check is downward: Are all particles generated from this process contained?
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    vector<int> Descendents;
+    Descendents.push_back(AllSimIds[i]);
+    unsigned int Size = 1;
+    do {
+      Size = Descendents.size();
+      for (unsigned int j = 0; j < m_SiEvent->GetNIAs(); ++j) {
+        for (unsigned int d = 0; d < Descendents.size(); ++d) {
+          if (m_SiEvent->GetIAAt(j)->GetOrigin() == Descendents[d]) {
+            if (find(Descendents.begin(), Descendents.end(), j+1) != Descendents.end()) {
+              Descendents.push_back(j+1);
+            }
+          }
+        }
+      }
+    } while (Size < Descendents.size());
+    
+    // Now check if all are contianed:
+    for (unsigned int d = 0; d < Descendents.size(); ++d) {
+      if (m_SiEvent->GetIAAt(Descendents[d]-1)->GetSecondaryParticleID() != 0 && m_SiEvent->GetIAAt(Descendents[d]-1)->GetSecondaryParticleID() != 1) {
+        bool Found = false;
+        for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+          if (d == i) {
+            Found = true; 
+          }
+        }
+        if (Found == false) {
+          mdebug<<"ContainsOnlyComptonDependants: Originates but not contained: ID="<<d<<endl; 
+        }
       }
     }
-    if (OriginatesFromGood == true && ContainedInGood == false) {
-      mdebug<<"ContainsOnlyComptonDependants: Originates but not contained: "<<i+1<<endl;
-      return false;
-    }
   }
-
+  
+  
   return true;
 }
 
@@ -1423,56 +1511,103 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
 bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds, 
                                           double Energy, double EnergyResolution)
 {
-  massert(AllSimIds.size() > 0);
-
-  EnergyResolution = 3*EnergyResolution+2;
-
-  int MinId = numeric_limits<int>::max();
-  //cout<<"Ids: ";
-  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
-    //cout<<AllSimIds[i]<<" ";
-    if (MinId > AllSimIds[i] && AllSimIds[i] > 1) MinId = AllSimIds[i];
+  // Rules:
+  // If a Compton scattering is included, the energy of the of the recoild electron plus any instant deposits, bremsstrahlug, etc. must be contained
+  // If a photo is included, the energy of the INCOMING gamma-ray must be contained
+  
+  EnergyResolution = 3.0*EnergyResolution + 2.0;
+  
+  double IdealEnergy = 0.0;
+  
+  vector<int> SimIDs = AllSimIds;
+  
+  // (1) First clean the IDs
+  vector<int> CleanedSimIDs;
+  // (a) If we have secondaries, remove them if the parent is contained
+  //     Or inverse, keep all IAs whose parents are not included
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    bool Found = false;
+    for (unsigned int j = 0; j < SimIDs.size(); ++j) {
+      if (i != j) {
+        if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == SimIDs[j]) {
+          Found = true;
+          break;
+        }
+      }
+    }
+    if (Found == false) {
+      CleanedSimIDs.push_back(SimIDs[i]);
+    }
   }
-  //cout<<endl;
-
-  if (MinId == numeric_limits<int>::max()) {
+  SimIDs = CleanedSimIDs;
+  CleanedSimIDs.clear();
+  
+  // (b) Keep only the smallest PHOT IA since we require it to be contained
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT") {
+      if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetOriginID() == m_SiEvent->GetIAAt(SimIDs[i]-2)->GetOriginID() && m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() != "PHOT") {
+        CleanedSimIDs.push_back(SimIDs[i]);
+      }
+    } else {
+      CleanedSimIDs.push_back(SimIDs[i]);
+    }
+  }
+  SimIDs = CleanedSimIDs;
+  CleanedSimIDs.clear();
+    
+  // (c) Exclude fluoresence COMP
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "COMP") {
+      if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetSecondaryParticleID() == 3) {
+        CleanedSimIDs.push_back(SimIDs[i]);
+      }
+    } else {
+      CleanedSimIDs.push_back(SimIDs[i]);
+    }
+  }
+  SimIDs = CleanedSimIDs;
+  CleanedSimIDs.clear();
+  
+  cout<<"SimIDs: "; for (int i: SimIDs) cout<<i<<" "; cout<<endl;
+  
+  // (d) Sanity check - we just should have COMP & PHOT in our list
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT") {
+      cout<<"Error: We only should have COMP and PHOT IA's at this point. Did you use hadronic processes for the simulations?"<<endl;
+    }
+  }
+  
+  // (2) Now add the energies
+  for (unsigned int i = 0; i < SimIDs.size(); ++i) {
+    if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "COMP") {
+      if (m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "COMP" || m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "RAYL") {
+        cout<<"COMP with COMP/RAYL predeccessor: Adding mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
+        IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy();
+      } else {
+        cout<<"COMP WITHOUT COMP/RAYL predeccessor: Adding secondary-mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
+        IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy();
+      }
+    } else if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT") {
+      if (m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "COMP" || m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "RAYL") {
+        cout<<"PHOT with COMP/RAYL predeccessor: Adding mother energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy()<<endl;
+        IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy();
+      } else {
+        cout<<"PHOT withOUT COMP/RAYL predeccessor: Adding secondary energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy()<<endl;
+        IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy();
+      }      
+    } else {
+      cout<<"Error: We only should have COMP and PHOT IA's at this point. Did you use hadronic processes for the simulations?"<<endl;      
+    }
+  }
+  
+  // (3) Check for absorption
+  if (fabs(Energy - IdealEnergy) > EnergyResolution) {
+    mdebug<<"IsAbsorbed(): Not completely absorbed: ideal="<<IdealEnergy<<"  observed="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
     return false;
-  }
-
-  double Ideal;
-
-  MSimIA* Top = 0;
-  MSimIA* Bottom = 0;
-  if (m_SiEvent->GetIAAt(MinId-2)->GetOriginID() == m_SiEvent->GetIAAt(MinId-1)->GetOriginID()) {
-    Top = m_SiEvent->GetIAAt(MinId-2);
-    Bottom = m_SiEvent->GetIAAt(MinId-1);
   } else {
-    Top = m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(MinId-1)->GetOriginID()-1);
-    Bottom = m_SiEvent->GetIAAt(MinId-1);
+    mdebug<<"IsAbsorbed(): Completely absorbed: ideal="<<IdealEnergy<<" observed="<<Energy<<endl;
   }
-
-  if (m_SiEvent->GetIAAt(MinId-2)->GetProcess() == "COMP") {
-    Ideal = Top->GetMotherEnergy()-Bottom->GetMotherEnergy();
-  } else {
-    Ideal = Top->GetSecondaryEnergy()-Bottom->GetMotherEnergy();
-  }
-
-//   if (fabs(Energy - Ideal)/Ideal > m_MaxEnergyDifferencePercent &&
-//       fabs(Energy - Ideal) > m_MaxEnergyDifference) {
-//     mdebug<<"IsAbsorbed: Not completely absorbed: i="<<Ideal<<" r="<<Energy<<endl;
-//     return false;
-//   } else {
-//     mdebug<<"Abs!: i="<<Ideal<<" r="<<Energy<<endl;
-//   }
-  if (fabs(Energy - Ideal) > EnergyResolution) {
-    mdebug<<"IsAbsorbed: Not completely absorbed: i="<<Ideal<<"  r="<<Energy<<"  3*Eres+2="<<EnergyResolution<<endl;
-    return false;
-  } else {
-    mdebug<<"Abs!: i="<<Ideal<<" r="<<Energy<<endl;
-  }
-
-
-  return true;
+  return true;  
 }
 
 

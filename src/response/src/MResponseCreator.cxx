@@ -121,7 +121,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -d  --debug                    enable debug"<<endl;
   Usage<<"      -r  --response-name   file     response file name"<<endl;
   Usage<<"      -v  --verify                   verify"<<endl;
-  Usage<<"      -m  --mode            char  m  the modes are: "<<endl;
+  Usage<<"      -m  --mode            text  m  the modes are: "<<endl;
   Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
   Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"                                         t  : track"<<endl;
@@ -145,7 +145,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
   Usage<<"          --no-absorptions           don't calculate absoption probabilities"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
-  Usage<<"          --verbosity                Verbosity level"<<endl;
+  Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
 

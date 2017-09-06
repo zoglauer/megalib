@@ -127,7 +127,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   
   // Create the ROOT tree for TMVA analysis
   
-  m_CSRMaxLength = 2;
+  m_CSRMaxLength = 4;
   cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
   
   for (int c = 0; c <= m_CSRMaxLength-2; ++c) {
@@ -283,7 +283,7 @@ bool MResponseMultipleComptonTMVA::Analyze()
   for (int r = 0; r < r_max; ++r) {
     RE = REList->GetRawEventAt(r);
     
-    //cout<<"Start (ID: "<<RE->GetEventId()<<")"<<endl;
+    //cout<<"Start (ID: "<<RE->GetEventID()<<")"<<endl;
     
     // Check if complete sequence is ok:
     SequenceLength = (unsigned int) RE->GetNRESEs();
@@ -296,12 +296,19 @@ bool MResponseMultipleComptonTMVA::Analyze()
     }
     
     if (SequenceLength > (unsigned int) m_CSRMaxLength) {
-      mdebug<<"CreateResponse: To many hits: "<<SequenceLength<<endl;
+      mdebug<<"CreateResponse: Too many hits: "<<SequenceLength<<endl;
+      continue;
+    }
+    
+    if (RE->GetRejectionReason() == MRERawEvent::c_RejectionTotalEnergyOutOfLimits ||
+        RE->GetRejectionReason() == MRERawEvent::c_RejectionLeverArmOutOfLimits ||
+        RE->GetRejectionReason() == MRERawEvent::c_RejectionEventIdOutOfLimits) {
+      mdebug<<"CreateResponse: Event did not pass event selections"<<endl;
       continue;
     }
     
     if (g_Verbosity >= c_Chatty) { 
-      mout<<"Matched event (Sim ID: "<<RE->GetEventId()<<")"<<endl;
+      mout<<"Matched event (Sim ID: "<<RE->GetEventID()<<")"<<endl;
       mout<<RE->ToString()<<endl;
     }
     
@@ -324,7 +331,7 @@ bool MResponseMultipleComptonTMVA::Analyze()
       }
     }
     if (FoundNullPtr == true) {
-      //mout<<"Event cannot be sequenced correctly (Sim ID: "<<RE->GetEventId()<<")"<<endl;
+      //mout<<"Event cannot be sequenced correctly (Sim ID: "<<RE->GetEventID()<<")"<<endl;
       SequencedRESEs = RESEs;
     }
     
@@ -342,7 +349,7 @@ bool MResponseMultipleComptonTMVA::Analyze()
     
     for (unsigned int p = 0; p < m_Permutator[SequenceLength].size(); ++p) {
       
-      m_SimulationIDs[SequenceLength-2] = RE->GetEventId();
+      m_SimulationIDs[SequenceLength-2] = RE->GetEventID();
       
       // (a) Raw data:
       for (unsigned int r = 0; r < SequenceLength; ++r) {
@@ -363,7 +370,7 @@ bool MResponseMultipleComptonTMVA::Analyze()
         m_KleinNishinaProbability[SequenceLength-2][r] = MComptonEvent::GetKleinNishinaNormalizedByArea(EnergyIncomingGamma, Phi);
         EnergyIncomingGamma -= EnergyElectron;
         //if (p == 0 && StartResolved == true && CompletelyAbsorbed == true && Phi*c_Deg > 179.99) {
-        //  cout<<"Large Compton scatter angle (Sim ID: "<<RE->GetEventId()<<") -- Start:"<<SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetEnergy()<<endl;
+        //  cout<<"Large Compton scatter angle (Sim ID: "<<RE->GetEventID()<<") -- Start:"<<SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetEnergy()<<endl;
         //  mout<<RE->ToString()<<endl;
         //}
       }
@@ -539,21 +546,21 @@ bool MResponseMultipleComptonTMVA::FindFirstInteractions(const vector<MRESE*>& R
     }
   }
   
-  if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
-    if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" &&
-      m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
-      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
+  if (m_SiEvent->GetIAAt(Smallest-1)->GetOriginID() == 0) {
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetProcess() != "ANNI" &&
+      m_SiEvent->GetIAAt(Smallest-1)->GetProcess() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetProcess()<<endl;
       return false;
     }
   } else {
-    if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
-      m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
-      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
+    if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess() != "ANNI" &&
+      m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess()<<endl;
       return false;
     }
   }
   
-  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
+  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetSecondaryParticleID() == 1) {
     // Find one and only RESE associated with this:
     for (unsigned int i = 0; i < OriginIds.size(); ++i) {
       for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
@@ -571,14 +578,14 @@ bool MResponseMultipleComptonTMVA::FindFirstInteractions(const vector<MRESE*>& R
     }
   } else {
     // Only photons can be good...
-    if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
+    if (g_Verbosity >= c_Chatty) mout<<"FindFirstInteractions: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetSecondaryParticleID()<<endl;
     return false;
   }
   
   // Go through the main event tree in the file and find the RESEs:
   for (unsigned int s = Smallest+1; s < m_SiEvent->GetNIAs(); ++s) {
     // The second event in the sequence needs to have the same origin than the first one
-    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin()) {
+    if (m_SiEvent->GetIAAt(Smallest)->GetOriginID() == m_SiEvent->GetIAAt(s)->GetOriginID()) {
       for (unsigned int i = 0; i < OriginIds.size(); ++i) {
         for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
           if (OriginIds[i][j] == int(s) && RESEs[i] != First) {
@@ -613,15 +620,15 @@ bool MResponseMultipleComptonTMVA::FindFirstInteractions(const vector<MRESE*>& R
 
 bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RESEs, vector<MRESE*>& SequencedRESEs)
 {
-  // Return true if those were found
-  // 
-  // First and second are the *detected* first and second interaction ---
-  // there may be some undetected before and in between
+  // RESEs: The unsorted input RESEs
+  // SequencedRESEs: The sorted output RESEs
+  //
+  // Returns true if a good sequence was found -- only interaction 1 & 2 count
+
   
-  //mout<<"FindFirstInteractions"<<endl;
-  
+  // Create the output array and initialize it with nullptr's
   SequencedRESEs.resize(RESEs.size());
-  for (unsigned int i = 0; i < SequencedRESEs.size(); ++i) SequencedRESEs[i] = 0;
+  for (unsigned int i = 0; i < SequencedRESEs.size(); ++i) SequencedRESEs[i] = nullptr;
   
   // Determine for all RESEs the Origin IDs
   vector<vector<int>> OriginIds;
@@ -629,7 +636,9 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     OriginIds.push_back(GetOriginIds(RESEs[r]));
   }
   
-  // Motherparticle of smallest ID - needs to be a photon!
+  // Mother particle corresponding to smallest ID --- force requirement that it is a photon?
+
+  // Find the smallest origin ID in the sequence
   int Smallest = numeric_limits<int>::max();
   for (unsigned int i = 0; i < OriginIds.size(); ++i) {
     for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
@@ -637,26 +646,28 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   }
   
-  // What about BREM
-  if (m_SiEvent->GetIAAt(Smallest-1)->GetOrigin() == 0) {
-    if (m_SiEvent->GetIAAt(Smallest-1)->GetType() != "ANNI" && m_SiEvent->GetIAAt(Smallest-1)->GetType() != "INIT") {
-      if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetType()<<endl;
-        return false;
-      }
-    } else {
-      if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "ANNI" &&
-          m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType() != "INIT") {
-        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA Type not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetType()<<endl;
-        return false;
-      }
+  // Check if the start of the sequence is a good one
+  // What about BREM & RAYL & COMP, or even PHOT? Everything can give rise to a good sequence... It just needs to produce a photon...
+  if (m_SiEvent->GetIAAt(Smallest-1)->GetOriginID() == 0) { // Why can this happen... this would be init
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetProcess() != "ANNI" && m_SiEvent->GetIAAt(Smallest-1)->GetProcess() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Interaction type of sequence start not OK: "<<m_SiEvent->GetIAAt(Smallest-1)->GetProcess()<<endl;
+      return false;
     }
+  } else {
+    if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess() != "ANNI" &&
+        m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess() != "INIT") {
+      if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Interaction type of sequence not OK: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetProcess()<<endl;
+      return false;
+    }
+  }
   
-  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber() == 1) {
+  // The start particle must be or create a photon
+  if (m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetSecondaryParticleID() == 1) { // Bug: RAYL should be OK as start!
     // Find one and only RESE associated with this:
     for (unsigned int i = 0; i < OriginIds.size(); ++i) {
       for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
         if (OriginIds[i][j] == Smallest) {
-          if (SequencedRESEs[0] == 0) {
+          if (SequencedRESEs[0] == nullptr) {
             SequencedRESEs[0] = RESEs[i];
           } else {
             // If we have more than one RESE associated with this, then we have no clear first hit 
@@ -669,30 +680,29 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   } else {
     // Only photons can be good...
-    if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOrigin()-1)->GetParticleNumber()<<endl;
+    if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: IA which triggered first RESE is no photon: "<<m_SiEvent->GetIAAt(m_SiEvent->GetIAAt(Smallest-1)->GetOriginID()-1)->GetSecondaryParticleID()<<endl;
     return false;
   }
   
   //mout<<"FindCorrectSequence: First RESE "<<SequencedRESEs[0]->GetID()<<" (Smallest: "<<Smallest<<")"<<endl;
   
-  // Check if there is a Compton is missing...
-  for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
+  // Check if there is a Compton is missing, RAYL is OK!
+  for (unsigned int s = Smallest; s <= m_SiEvent->GetNIAs(); ++s) {
     // The second event in the sequence needs to have the same origin than the first one
-    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin() &&
-      m_SiEvent->GetIAAt(s)->GetType() == "COMP") {
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetOriginID() == m_SiEvent->GetIAAt(s-1)->GetOriginID() && m_SiEvent->GetIAAt(s-1)->GetProcess() == "COMP") {
       //cout<<m_SiEvent->GetIAAt(s)->GetEnergy()<<endl;
       bool Found = false;
       for (unsigned int i = 0; i < OriginIds.size(); ++i) {
         for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
           //cout<<int(s+1)<<":"<<OriginIds[i][j]<<endl;
-          if (OriginIds[i][j] == int(s+1)) {
+          if (OriginIds[i][j] == int(s)) {
             Found = true;
             break;
           }
         }
       }
       if (Found == false) {
-        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Gap! Cannot find representant for Compton ID "<<s+1<<endl;
+        if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Gap! Cannot find representant for Compton ID "<<s<<endl;
         return false;
       }
     }
@@ -700,16 +710,18 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
   
   // Go through the main event tree in the file and find the RESE sequence:
   unsigned int FreeSpotInSequencedRESEs = 1;
-  for (unsigned int s = Smallest; s < m_SiEvent->GetNIAs(); ++s) {
+  for (unsigned int s = Smallest; s <= m_SiEvent->GetNIAs(); ++s) {  // We need equal here, since s is the ID 
     // The second event in the sequence needs to have the same origin than the first one
-    if (m_SiEvent->GetIAAt(Smallest)->GetOrigin() == m_SiEvent->GetIAAt(s)->GetOrigin()) {
+    if (m_SiEvent->GetIAAt(Smallest-1)->GetOriginID() == m_SiEvent->GetIAAt(s-1)->GetOriginID()) {
       // Loop over all RESEs
-      for (unsigned int i = 0; i < OriginIds.size(); ++i) {
+      for (unsigned int r = 0; r < RESEs.size(); ++r) {
         // If the current RESE is not yet in the list:
-        if (find(SequencedRESEs.begin(), SequencedRESEs.end(), RESEs[i]) == SequencedRESEs.end()) {
-          for (unsigned int j = 0; j < OriginIds[i].size(); ++j) {
-            if (OriginIds[i][j] == int(s)) {
-              SequencedRESEs[FreeSpotInSequencedRESEs] = RESEs[i];
+        if (find(SequencedRESEs.begin(), SequencedRESEs.end(), RESEs[r]) == SequencedRESEs.end()) {
+          // Loop over its origins...
+          for (unsigned int j = 0; j < OriginIds[r].size(); ++j) {
+            // If one of the origins corresponds to the IA
+            if (OriginIds[r][j] == int(s)) {
+              SequencedRESEs[FreeSpotInSequencedRESEs] = RESEs[r];
               //mout<<"FindCorrectSequence: next RESE "<<SequencedRESEs[FreeSpotInSequencedRESEs]->GetID()<<endl;
               FreeSpotInSequencedRESEs++;
             }
@@ -721,13 +733,13 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
   
   // Check if in all but the last interaction only contain a Compton interaction and it's possible dependents:
   for (unsigned int s = 0; s < SequencedRESEs.size()-1; ++s) {
-    if (SequencedRESEs[s] != 0) {
+    if (SequencedRESEs[s] != nullptr) {
       vector<int> SequencedRESEsIDs = GetOriginIds(SequencedRESEs[s]);
       if (ContainsOnlyComptonDependants(SequencedRESEsIDs) == false) {
         if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Not only Compton (+ dependents) in interaction "<<SequencedRESEs[s]->GetID()<<endl;
         return false;
       }
-      if (NumberOfComptonInteractions(SequencedRESEsIDs) != 1) {
+      if (NumberOfComptonInteractions(SequencedRESEsIDs) != 1) {  // Bug: Comp -> Brms -> Comp must be OK!
         if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Not exactly one Compton in interaction "<<SequencedRESEs[s]->GetID()<<endl;
         return false;        
       }
@@ -735,18 +747,18 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   }
   
-  //   mout<<"Sequence: ";
-  //   for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
-  //     if (SequencedRESEs[s] == 0) {
-  //       mout<<" ?";
-  //     } else {
-  //       mout<<" "<<SequencedRESEs[s]->GetID();
-  //     }
-  //   }
-  //   mout<<endl;
+  mout<<"Sequence: ";
+  for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
+    if (SequencedRESEs[s] == nullptr) {
+      mout<<" ?";
+    } else {
+      mout<<" "<<SequencedRESEs[s]->GetID();
+    }
+  }
+  mout<<endl;
   
   for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
-    if (SequencedRESEs[s] == 0) {
+    if (SequencedRESEs[s] == nullptr) {
       if (g_Verbosity >= c_Chatty) mout<<"FindCorrectSequence: Did not find complete sequence!"<<endl;
       return false;
     }
@@ -764,7 +776,7 @@ unsigned int MResponseMultipleComptonTMVA::NumberOfComptonInteractions(vector<in
   unsigned int N = 0;
   
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
-    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetType() == "COMP") {
+    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetProcess() == "COMP") {
       N++;
     }
   }
