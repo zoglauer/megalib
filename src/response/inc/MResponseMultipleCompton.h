@@ -93,6 +93,10 @@ class MResponseMultipleCompton : public MResponseBuilder
   bool IsTrackCompletelyAbsorbed(const vector<int>& Ids, double Energy);
   double GetIdealDepositedEnergy(int MinId);
 
+  //! Return the number of Compton interaction from the Sim ID with the given origin
+  unsigned int NumberOfComptonInteractions(vector<int> AllSimIds, int Origin);
+  
+  
   int GetMaterial(MRESE& RESE);
 
   double CalculateDCosPhi(MRESE& Start, MRESE& Central, MRESE& Stop, double Etot);
