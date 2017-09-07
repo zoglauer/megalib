@@ -69,6 +69,8 @@ private:
   bool m_Interrupt;
   //! The file name
   MString m_FileName;
+  //! The use methods
+  map<MString, int> m_Methods;
 };
 
 
@@ -103,6 +105,7 @@ bool TMVAAnalyzer::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: TMVAAnalyzer <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   file name (e.g. Tree.tmva.seq2.good.root - bad is loaded automatically)"<<endl;
+  Usage<<"         -m:   methods: MLP, BDTD, DNN_GPU, DNN_CPU"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -148,6 +151,9 @@ bool TMVAAnalyzer::ParseCommandLine(int argc, char** argv)
     if (Option == "-f") {
       m_FileName = argv[++i];
       cout<<"Accepting file name: "<<m_FileName<<endl;
+    } else if (Option == "-m") {
+      m_Methods[argv[++i]] = 1;
+      cout<<"Accepting method: "<<argv[i]<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -212,12 +218,15 @@ bool TMVAAnalyzer::Analyze()
   
   dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
 
-  // Standard MLP  
-  //factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
-  
+  // Standard MLP
+  if (m_Methods["MLP"] == 1) {
+    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
+  }
+    
   // Boosted decision tree: Decorrelation + Adaptive Boost
-  factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD",
-                       "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
+  if (m_Methods["BDTD"] == 1) {
+    factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
+  }
   
   // General layout.
   TString layoutString ("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
@@ -235,16 +244,16 @@ bool TMVAAnalyzer::Analyze()
   dnnOptions.Append (":"); dnnOptions.Append (trainingStrategyString);
   
   // Cuda implementation.
-  //TString gpuOptions = dnnOptions + ":Architecture=GPU";
-  //factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", gpuOptions);
+  if (m_Methods["DNN_GPU"] == 1) {
+    TString gpuOptions = dnnOptions + ":Architecture=GPU";
+    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", gpuOptions);
+  }
   
   // Multi-core CPU implementation.
-  TString cpuOptions = dnnOptions + ":Architecture=CPU";
-  factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", cpuOptions);
-  
-  
-  
-  
+  if (m_Methods["DNN_CPU"] == 1) {
+    TString cpuOptions = dnnOptions + ":Architecture=CPU";
+    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", cpuOptions);
+  }
     
   
   factory->TrainAllMethods();
