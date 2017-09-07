@@ -130,18 +130,45 @@ bool MResponseMultipleComptonTMVA::Initialize()
   m_CSRMaxLength = 4;
   cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
   
+  // Round 1: Initialize the vectors - push_back, etc. may lead to an reallocation and invalidate pointers,
+  //          thus we have to do it first
+  for (int c = 0; c <= m_CSRMaxLength-2; ++c) {
+    int l = c+2;
+    
+    m_SimulationIDs.push_back(0);
+    
+    m_Energies.push_back(vector<double>(l));
+    
+    m_PositionsX.push_back(vector<double>(l));
+    m_PositionsY.push_back(vector<double>(l));
+    m_PositionsZ.push_back(vector<double>(l));
+    
+    m_ComptonScatterAngles.push_back(vector<double>(l-1));
+    m_KleinNishinaProbability.push_back(vector<double>(l-1));
+    
+    if (l > 2) {
+      m_ComptonScatterAngleDifference.push_back(vector<double>(l-2));
+    }
+
+    m_AbsorptionProbabilities.push_back(vector<double>(l-1));
+    m_AbsorptionProbabilityToFirstIAAverage.push_back(0);
+    m_AbsorptionProbabilityToFirstIAMaximum.push_back(0);
+    m_AbsorptionProbabilityToFirstIAMinimum.push_back(0);
+    m_ZenithAngle.push_back(0);
+    m_NadirAngle.push_back(0);
+  }
+  
+  // Round 2: Create the trees
   for (int c = 0; c <= m_CSRMaxLength-2; ++c) {
     int l = c+2;
     
     TTree* Good = new TTree("Good", "Good Compton ER tree"); //"ComptonTMVA", "ComptonTMVA");
     TTree* Bad = new TTree("Bad", "Bad Compton ER tree"); //"ComptonTMVA", "ComptonTMVA");
     
-    m_SimulationIDs.push_back(0);
     MString Name("SimulationIDs");
     Good->Branch(Name, &m_SimulationIDs[c], Name + "/L");
     Bad->Branch(Name, &m_SimulationIDs[c], Name + "/L");
     
-    m_Energies.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_Energies[c].size(); ++i) {
       Name = "Energy";
       Name += i+1;
@@ -149,22 +176,18 @@ bool MResponseMultipleComptonTMVA::Initialize()
       Bad->Branch(Name, &m_Energies[c][i], Name + "/D");
     }
     
-    
-    m_PositionsX.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsX[c].size(); ++i) {
       Name = "X";
       Name += i+1;
       Good->Branch(Name, &m_PositionsX[c][i], Name + "/D");
       Bad->Branch(Name, &m_PositionsX[c][i], Name + "/D");
     }
-    m_PositionsY.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsY[c].size(); ++i) {
       Name = "Y";
       Name += i+1;
       Good->Branch(Name, &m_PositionsY[c][i], Name + "/D");
       Bad->Branch(Name, &m_PositionsY[c][i], Name + "/D");
     }
-    m_PositionsZ.push_back(vector<double>(l));
     for (unsigned int i = 0; i < m_PositionsZ[c].size(); ++i) {
       Name = "Z";
       Name += i+1;
@@ -172,8 +195,6 @@ bool MResponseMultipleComptonTMVA::Initialize()
       Bad->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
     }
     
-    
-    m_ComptonScatterAngles.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_ComptonScatterAngles[c].size(); ++i) {
       Name = "ComptonScatterAngle";
       Name += i+1;
@@ -181,7 +202,6 @@ bool MResponseMultipleComptonTMVA::Initialize()
       Bad->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
     }
     
-    m_KleinNishinaProbability.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_KleinNishinaProbability[c].size(); ++i) {
       Name = "KleinNishinaProbability";
       Name += i+1;
@@ -190,7 +210,6 @@ bool MResponseMultipleComptonTMVA::Initialize()
     }
     
     if (l > 2) {
-      m_ComptonScatterAngleDifference.push_back(vector<double>(l-2));
       for (unsigned int i = 0; i < m_ComptonScatterAngleDifference[c-1].size(); ++i) { // "-1" since we only start at 3 interactions
         Name = "ComptonScatterAngleDifference";
         Name += i+1;
@@ -199,7 +218,6 @@ bool MResponseMultipleComptonTMVA::Initialize()
       }
     }
     
-    m_AbsorptionProbabilities.push_back(vector<double>(l-1));
     for (unsigned int i = 0; i < m_AbsorptionProbabilities[c].size(); ++i) {
       Name = "AbsorptionProbabilities";
       Name += i+1;
@@ -207,27 +225,22 @@ bool MResponseMultipleComptonTMVA::Initialize()
       Bad->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/D");
     }
     
-    m_AbsorptionProbabilityToFirstIAAverage.push_back(0);
     Name = "AbsorptionProbabilityToFirstIAAverage";
     Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/D");
     Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/D");
     
-    m_AbsorptionProbabilityToFirstIAMaximum.push_back(0);
     Name = "AbsorptionProbabilityToFirstIAMaximum";
     Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/D");
     Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/D");
     
-    m_AbsorptionProbabilityToFirstIAMinimum.push_back(0);
     Name = "AbsorptionProbabilityToFirstIAMinimum";
     Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/D");
     Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/D");
     
-    m_ZenithAngle.push_back(0);
     Name = "ZenithAngle";
     Good->Branch(Name, &m_ZenithAngle[c], Name + "/D");
     Bad->Branch(Name, &m_ZenithAngle[c], Name + "/D");
     
-    m_NadirAngle.push_back(0);
     Name = "NadirAngle";
     Good->Branch(Name, &m_NadirAngle[c], Name + "/D");
     Bad->Branch(Name, &m_NadirAngle[c], Name + "/D");
@@ -430,13 +443,14 @@ bool MResponseMultipleComptonTMVA::Analyze()
       MVector Nadir(0, 0, -1);
       m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
       
-      
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
         //cout<<"Add good"<<endl;
         m_TreeGood[SequenceLength-2]->Fill();
+        //m_TreeGood[SequenceLength-2]->Show();
       } else {
         //cout<<"Add bad"<<endl;
         m_TreeBad[SequenceLength-2]->Fill();          
+        //m_TreeBad[SequenceLength-2]->Show();
       }
     } // all permutations
   } // All raw events
@@ -456,8 +470,9 @@ bool MResponseMultipleComptonTMVA::Finalize()
   for (unsigned int t = 0; t < m_TreeGood.size(); ++t) {
     TFile GoodOne(GetFilePrefix() + ".seq" + (t+2) + ".good.root", "recreate");
     GoodOne.cd();
-    m_TreeGood[t]->Print();
+    //m_TreeGood[t]->Print();
     m_TreeGood[t]->Write();
+    //m_TreeGood[t]->Show(20);
     GoodOne.Close();
     
     TFile BadOne(GetFilePrefix() + ".seq" + (t+2) + ".bad.root", "recreate");
