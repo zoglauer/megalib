@@ -105,7 +105,7 @@ bool TMVAAnalyzer::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: TMVAAnalyzer <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   file name (e.g. Tree.tmva.seq2.good.root - bad is loaded automatically)"<<endl;
-  Usage<<"         -m:   methods: MLP, BDTD, DNN_GPU, DNN_CPU"<<endl;
+  Usage<<"         -m:   methods: MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU, PDERSPCA"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -227,6 +227,15 @@ bool TMVAAnalyzer::Analyze()
   if (m_Methods["BDTD"] == 1) {
     factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
   }
+  
+  if (m_Methods["PDEFoamBoost"] == 1) {
+    factory->BookMethod( dataloader, TMVA::Types::kPDEFoam, "PDEFoamBoost","!H:!V:Boost_Num=30:Boost_Transform=linear:SigBgSeparate=F:MaxDepth=4:UseYesNoCell=T:DTLogic=MisClassificationError:FillFoamWithOrigWeights=F:TailCut=0:nActiveCells=500:nBin=20:Nmin=400:Kernel=None:Compress=T" );
+  }
+  
+  if (m_Methods["PDERSPCA"] == 1) {
+    factory->BookMethod( dataloader, TMVA::Types::kPDERS, "PDERSPCA", "!H:!V:VolumeRangeMode=Adaptive:KernelEstimator=Gauss:GaussSigma=0.3:NEventsMin=400:NEventsMax=600:VarTransform=PCA" );
+  }
+  
   
   // General layout.
   TString layoutString ("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
