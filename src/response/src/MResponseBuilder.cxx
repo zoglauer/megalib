@@ -79,10 +79,10 @@ MResponseBuilder::MResponseBuilder()
   m_RevanEventID = 0;
   m_RevanLevel = 0;
   m_SivanEventID = 0;
-  m_SivanLevel =0;
+  m_SivanLevel = 0;
  
-  m_SiGeometry = 0;
-  m_ReGeometry = 0;
+  m_SiGeometry = nullptr;
+  m_ReGeometry = nullptr;
 
   m_NumberOfSimulatedEventsClosedFiles = 0;
   m_NumberOfSimulatedEventsThisFile = 0;
