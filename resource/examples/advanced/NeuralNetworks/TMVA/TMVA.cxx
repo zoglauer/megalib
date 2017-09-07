@@ -43,7 +43,7 @@ using namespace std;
 
 // MEGAlib
 #include "MGlobal.h"
-
+#include "MTime.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -167,7 +167,10 @@ bool TMVAAnalyzer::Analyze()
 {
   if (m_Interrupt == true) return false;
 
-  MString ResultsFileName = "Results.root";
+  MTime Now;
+  MString TimeString = Now.GetShortString();
+  
+  MString ResultsFileName = MString("Results.") + TimeString + ".root";
   TFile* Results = new TFile(ResultsFileName, "recreate");
   
   TFile* SourceFile = new TFile(m_FileName); 
@@ -187,11 +190,13 @@ bool TMVAAnalyzer::Analyze()
       
   TMVA::Factory *factory = new TMVA::Factory("TMVAClassification", Results,
                                             "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
-      
-  TMVA::DataLoader *dataloader=new TMVA::DataLoader("dataset");
+
+  MString OutDir("Results.");
+  OutDir += TimeString;
+  TMVA::DataLoader *dataloader=new TMVA::DataLoader(OutDir.Data());
 
   
-  vector<TString> IgnoredBranches = { "SimulationIDs", "AbsorptionProbabilityToFirstIAAverage", "AbsorptionProbabilityToFirstIAMaximum",  "AbsorptionProbabilityToFirstIAMinimum", "ZenithAngle", "NadirAngle" };
+  vector<TString> IgnoredBranches = { "SimulationIDs" }; //, "AbsorptionProbabilityToFirstIAAverage", "AbsorptionProbabilityToFirstIAMaximum",  "AbsorptionProbabilityToFirstIAMinimum", "ZenithAngle", "NadirAngle" };
   
   TObjArray* Branches = SourceTree->GetListOfBranches();
   for (int b = 0; b < Branches->GetEntries(); ++b) {
@@ -208,13 +213,38 @@ bool TMVAAnalyzer::Analyze()
   dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
 
   // Standard MLP  
-  factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
+  //factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
   factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD",
                        "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
   
-    
+  // General layout.
+  TString layoutString ("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
+  
+  // Training strategies.
+  TString training0("LearningRate=1e-1,Momentum=0.9,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.5+0.5+0.5, Multithreading=True");
+  TString training1("LearningRate=1e-2,Momentum=0.9,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
+  TString training2("LearningRate=1e-3,Momentum=0.0,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
+  TString trainingStrategyString ("TrainingStrategy=");
+  trainingStrategyString += training0 + "|" + training1 + "|" + training2;
+  
+  // General Options.
+  TString dnnOptions ("!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=N:WeightInitialization=XAVIERUNIFORM");
+  dnnOptions.Append (":"); dnnOptions.Append (layoutString);
+  dnnOptions.Append (":"); dnnOptions.Append (trainingStrategyString);
+  
+  // Cuda implementation.
+  //TString gpuOptions = dnnOptions + ":Architecture=GPU";
+  //factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", gpuOptions);
+  
+  // Multi-core CPU implementation.
+  TString cpuOptions = dnnOptions + ":Architecture=CPU";
+  factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", cpuOptions);
+  
+  
+  
+  
     
   
   factory->TrainAllMethods();
@@ -227,7 +257,7 @@ bool TMVAAnalyzer::Analyze()
   delete dataloader;
   
   // Launch the GUI for the root macros
-  if (!gROOT->IsBatch()) TMVA::TMVAGui(ResultsFileName);
+  //if (!gROOT->IsBatch()) TMVA::TMVAGui(ResultsFileName);
   
   
   
