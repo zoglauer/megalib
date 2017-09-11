@@ -11,6 +11,7 @@ commandhelp() {
   echo ""
   echo "Options:"
   echo "  --instances=[integer or \"cores\", \"threads\"]: Maximum number of instances or \"cores\"/\"threads\" for the number of available cores or threads"
+  echo "  --load=[integer or \"cores\", \"threads\"]: Maximum system load as integer or \"cores\"/\"threads\" for the number of available cores or threads"
   echo "  --program=[name]: The main program to wait for"
   #echo "  --auxprogram=[name]: Other programs to wait for"
   echo "  --memory: Make sure we have enough free memory, if more than one instance is running"
@@ -26,6 +27,7 @@ commandhelp() {
 
 # Defaults
 INSTANCES="cores"
+LOAD="10000"
 PROGAM=""
 AUXPROGRAMS=()
 MEMORY=false
@@ -46,6 +48,8 @@ done
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-i*=* ]]; then
     INSTANCES=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-l*=* ]]; then
+    LOAD=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-p*=* ]]; then
     PROGRAM=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-c*=* ]]; then
@@ -77,12 +81,28 @@ else
   echo ""
   echo "ERROR: Unknown number of threads: ${INSTANCES}. Using 1."  
 fi
+MAXLOAD=10000
+if [[ ${LOAD} == t* ]]; then 
+  MAXLOAD=$(getconf _NPROCESSORS_ONLN)
+elif [[ ${LOAD} == c* ]]; then  
+  MAXLOAD=$(getconf _NPROCESSORS_ONLN)
+  MAXLOAD=$(( MAXLOAD / 2 ))
+elif [[ ${LOAD} =~ ^[0-9]+$ ]]; then
+  MAXLOAD=${LOAD}
+else
+  echo ""
+  echo "ERROR: Unknown load: ${LOAD}. Using 10000."  
+fi
 
 
 # Now enter the loop
 RUNNINGTHREADS=10000
 WAIT=true
 while [[ ${WAIT} == true ]]; do
+ 
+  # Reset it to false
+  WAIT=false
+
   # Some tiny explanations:
   # -A prints all users,
   # -f list full command line so that program name can be something like bash mine.sh,
@@ -99,8 +119,6 @@ while [[ ${WAIT} == true ]]; do
     echo "Waiting for a free slot: Running ${RUNNINGTHREADS} of ${MAXTHREADS} allowed instances of ${PROGRAM}"
     sleep 5
     continue
-  else
-    WAIT=false
   fi
   
   # Now check if there is enough free memory:
@@ -143,9 +161,22 @@ while [[ ${WAIT} == true ]]; do
       echo "Waiting until we have enough free memory (required: ${REQUIREDMEMORY}, available: ${AVAILABLEMEMORY})..."
       sleep 5
       continue
-    else
-      WAIT=false
     fi
+  fi
+  
+  # Finally check the system load
+  CURRENTLOAD="0.0"
+  if [[ ${OSTYPE} == darwin* ]]; then
+    CURRENTLOAD=`sysctl -n vm.loadavg | awk '{ print $1 }'`
+  elif [[ ${OSTYPE} == linux* ]]; then 
+    CURRENTLOAD=`cat /proc/loadavg | awk '{ print $1 }'`
+  fi  
+  
+  if [[ $(echo "${CURRENTLOAD} > ${MAXLOAD}" | bc -l) -eq 1 ]]; then
+    WAIT=true
+    echo "Waiting until the system load falls below the threshold (threshold: ${MAXLOAD}, current:  ${CURRENTLOAD})..."
+    sleep 5
+    continue  
   fi
   
 done
