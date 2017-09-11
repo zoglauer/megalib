@@ -164,6 +164,8 @@ echo "Waiting till all revan runs have finished..."
 wait
 
 # Create a concatenation file
-mtraconcatter ${FILES//.sim/.tra}
+NEWFILES=${FILES//.sim/.tra}
+NEWFILES=${FILES//.evta/.tra}
+mtraconcatter ${NEWFILES}
 
 exit 0;
