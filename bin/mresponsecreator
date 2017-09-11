@@ -88,11 +88,17 @@ COUNTERMAX=`echo ${FILES} | wc -w`
 for SINGLEFILE in ${FILES}; do
   # Wait for everything being started, enough memory, and a free slot
   mwait -p=responsecreator -i=threads -m
-  
-  # Ready to launch
-  OUT="${NAME}.${COUNTER}"
+
+  # Check if the sims have IDs we can use
+  ID=$(echo ${SINGLEFILE} | awk -Finc '{ print $2 }' | awk -F.id '{ print $1 }')
+  if [[ ${ID} == "" ]]; then
+    ID=${COUNTER}
+  fi
+  OUT="${NAME}.${ID}"
+
   nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
-  echo "Started ${COUNTER} out of ${COUNTERMAX}"
+  echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
+
   COUNTER=$(( ${COUNTER} + 1 ))
 done
 
