@@ -793,7 +793,7 @@ double MComptonEvent::ComputeEgViaThetaEe(const double Theta, const double Ee)
 double MComptonEvent::ComputePhiViaEeEg(const double Ee, const double Eg)
 {
   double Value = 1 - c_E0*(1/Eg - 1/(Ee + Eg));
-
+  
   if (Value <= -1) {
     //cerr<<"MComptonEvent::ComputePhi: NaN ("<<Ee<<", "<<Eg<<") ---> "<<Value<<endl;
     Value = -1;
@@ -801,8 +801,17 @@ double MComptonEvent::ComputePhiViaEeEg(const double Ee, const double Eg)
     //cerr<<"MComptonEvent::ComputePhi: NaN ("<<Ee<<", "<<Eg<<") ---> "<<Value<<endl;
     Value = 1;
   }
-
+  
   return acos(Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MComptonEvent::ComputeCosPhiViaEeEg(const double Ee, const double Eg)
+{
+  return 1 - c_E0*(1/Eg - 1/(Ee + Eg));
 }
 
 

@@ -232,6 +232,8 @@ class MComptonEvent : public MPhysicalEvent
   static double ComputeEgViaThetaEe(const double Theta, const double Ee);
   //! Calculate the Compton scatter angle phi in radians using the recoil electron energy Ee and the scattered gamma ray energy Eg
   static double ComputePhiViaEeEg(const double Ee, const double Eg);
+  //! Calculate the cosine of the Compton scatter angle phi in radians using the recoil electron energy Ee and the scattered gamma ray energy Eg
+  static double ComputeCosPhiViaEeEg(const double Ee, const double Eg);
   //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the scattered gamma ray energy Eg
   static double ComputeEeViaPhiEg(const double Phi, const double Eg);
   //! Calculate the recoil electron energy Ee using the Compton scatter angle phi in radians and the total energy Ei
