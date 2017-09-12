@@ -105,12 +105,14 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   vector<vector<double>> m_PositionsY;
   //! Measured positions z
   vector<vector<double>> m_PositionsZ;
+  //! Interaction distances 
+  vector<vector<double>> m_InteractionDistances;
   //! The Compton scatter angles 
-  vector<vector<double>> m_ComptonScatterAngles;
+  vector<vector<double>> m_CosComptonScatterAngles;
   //! The Compton scatter probability (KN)
   vector<vector<double>> m_KleinNishinaProbability;
   //! The Compton scatter scatter angle difference
-  vector<vector<double>> m_ComptonScatterAngleDifference;
+  vector<vector<double>> m_CosComptonScatterAngleDifference;
   //! The total absorption probabilities
   vector<vector<double>> m_AbsorptionProbabilities;
   //! The average column desnity to first IA

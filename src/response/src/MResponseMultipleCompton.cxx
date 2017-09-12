@@ -980,7 +980,7 @@ unsigned int MResponseMultipleCompton::NumberOfComptonInteractions(vector<int> A
   unsigned int N = 0;
   
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
-    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetProcess() == "COMP" && m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetOrigin() == Origin)  {
+    if (m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetProcess() == "COMP" && m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetOriginID() == Origin)  {
       ++N;
     }
   }
@@ -1336,7 +1336,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
 {
   // We do two checks here, one down the tree and one up the tree
   
-  // First check upwards: Is everything in there originating form somewhere else in there or is it an initial process (COMP, INIT, produced a photon)
+  // First check upwards: Is everything in there originating from somewhere else in there or is it an initial process (COMP, INIT, produced a photon)
   for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
     int ID = AllSimIds[i];
     int HighestOriginID = ID;
@@ -1355,7 +1355,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
       if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT") break; // Compton dependents, remember?
     }
     
-    // We are good if the end point is a Compton scatter or a photo effect which is preceeded by a Compton:
+    // We are good if the end point is a Compton scatter or a photo effect which is preceeded by a Compton in the list:
     bool IsGood = false;
     if (m_SiEvent->GetIAAt(HighestOriginID-1)->GetProcess() == "COMP") {
       IsGood = true;
@@ -1365,7 +1365,13 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
         if (Predeccessor == 1) break; // we reached init
         if (m_SiEvent->GetIAAt(Predeccessor-1)->GetOriginID() == m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID()) {
           if (m_SiEvent->GetIAAt(Predeccessor-1)->GetProcess() == "COMP") {
-            IsGood = true;
+            if (find(AllSimIds.begin(), AllSimIds.end(), Predeccessor) != AllSimIds.end()) {
+              IsGood = true;
+              break;
+            } else {
+              mdebug<<"ContainsOnlyComptonDependants: Preceeding Compton IA is missing"<<endl;
+              return false;
+            }
           }
         }
         --Predeccessor;
@@ -1376,94 +1382,6 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
       return false;
     }
   }
-  
-  
-  
-  /*
-  massert(AllSimIds.size() > 0);
-
-  int SmallestSimId = numeric_limits<int>::max();
-  vector<int> GoodSimIds;
-
-  // Generate sim IDs:
-  //cout<<"All: ";
-  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
-    //cout<<AllSimIds[i]<<" ";
-    if (SmallestSimId > AllSimIds[i]) {
-      SmallestSimId = AllSimIds[i];
-    }
-  }
-  //cout<<endl;
-
-  vector<int>::iterator Iter;
-  GoodSimIds.push_back(SmallestSimId);
-  //cout<<"Adding smallest: "<<SmallestSimId<<endl;
-  Iter = find(AllSimIds.begin(), AllSimIds.end(), SmallestSimId);
-  AllSimIds.erase(Iter);
-
-  bool MoreSmallest = false;
-  do {
-    MoreSmallest = false;
-    
-    for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
-      if (AllSimIds[i] == SmallestSimId+1 && 
-          m_SiEvent->GetIAAt(AllSimIds[i]-1)->GetOriginID() == 
-          m_SiEvent->GetIAAt(SmallestSimId-1)->GetOriginID()) {
-        SmallestSimId = AllSimIds[i];
-        MoreSmallest = true;
-        GoodSimIds.push_back(SmallestSimId);
-        //cout<<"Adding smallest: "<<SmallestSimId<<endl;
-        Iter = find(AllSimIds.begin(), AllSimIds.end(), SmallestSimId);
-        AllSimIds.erase(Iter);
-        break;
-      }
-    }
-    
-  } while (MoreSmallest == true);
-
-
-  // Check for dependents:
-  bool DependantsFound = false;
-  do {
-    DependantsFound = false;
-    for (unsigned int g = 0; g < GoodSimIds.size(); ++g) {
-      for (unsigned int a = 0; a < AllSimIds.size(); ++a) {
-
-        // Find an origin ID which might have deposited something:
-        int ID = AllSimIds[a]-1;
-        while (true) {
-          ID = m_SiEvent->GetIAAt(ID-1)->GetOriginID();
-          if (m_SiEvent->GetIAAt(ID-1)->GetSecondaryParticleID() != 0 && m_SiEvent->GetIAAt(ID-1)->GetSecondaryParticleID() != 1) {
-            break;
-          }
-          if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT" || m_SiEvent->GetIAAt(ID-1)->GetProcess() == "COMP") break; // Compton dependents, remember?
-        }
-        
-        // Now compare:
-        if (ID == GoodSimIds[g]) {
-          //cout<<"Found good: "<<AllSimIds[a]<<endl;
-          GoodSimIds.push_back(AllSimIds[a]);
-          Iter = find(AllSimIds.begin(), AllSimIds.end(), AllSimIds[a]);
-          AllSimIds.erase(Iter);
-          DependantsFound = true;
-          break;
-        }
-      }
-    }
-  } while (DependantsFound == true);
-
-  // If we have origins other than dependants:
-  if (AllSimIds.size() > 0) {
-    mdebug<<"ContainsOnlyComptonDependants: Hits other than dependants: ";
-    for (unsigned int a = 0; a < AllSimIds.size(); ++a) {
-      mdebug<<AllSimIds[a]<<" ";
-    }
-    mdebug<<endl;
-    return false;
-  }
-
-  sort(GoodSimIds.begin(), GoodSimIds.end());
-  */
 
   
   // The second check is downward: Are all particles generated from this process contained?
@@ -1475,7 +1393,7 @@ bool MResponseMultipleCompton::ContainsOnlyComptonDependants(vector<int> AllSimI
       Size = Descendents.size();
       for (unsigned int j = 0; j < m_SiEvent->GetNIAs(); ++j) {
         for (unsigned int d = 0; d < Descendents.size(); ++d) {
-          if (m_SiEvent->GetIAAt(j)->GetOrigin() == Descendents[d]) {
+          if (m_SiEvent->GetIAAt(j)->GetOriginID() == Descendents[d]) {
             if (find(Descendents.begin(), Descendents.end(), j+1) != Descendents.end()) {
               Descendents.push_back(j+1);
             }
@@ -1568,7 +1486,7 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
   SimIDs = CleanedSimIDs;
   CleanedSimIDs.clear();
   
-  cout<<"SimIDs: "; for (int i: SimIDs) cout<<i<<" "; cout<<endl;
+  mdebug<<"SimIDs: "; for (int i: SimIDs) mdebug<<i<<" "; mdebug<<endl;
   
   // (d) Sanity check - we just should have COMP & PHOT in our list
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
@@ -1581,18 +1499,18 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "COMP") {
       if (m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "COMP" || m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "RAYL") {
-        cout<<"COMP with COMP/RAYL predeccessor: Adding mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
+        mdebug<<"COMP with COMP/RAYL predeccessor: Adding mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
         IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy();
       } else {
-        cout<<"COMP WITHOUT COMP/RAYL predeccessor: Adding secondary-mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
+        mdebug<<"COMP WITHOUT COMP/RAYL predeccessor: Adding secondary-mother difference energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy()<<endl;
         IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy() - m_SiEvent->GetIAAt(SimIDs[i]-1)->GetMotherEnergy();
       }
     } else if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() == "PHOT") {
       if (m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "COMP" || m_SiEvent->GetIAAt(SimIDs[i]-2)->GetProcess() == "RAYL") {
-        cout<<"PHOT with COMP/RAYL predeccessor: Adding mother energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy()<<endl;
+        mdebug<<"PHOT with COMP/RAYL predeccessor: Adding mother energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy()<<endl;
         IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetMotherEnergy();
       } else {
-        cout<<"PHOT withOUT COMP/RAYL predeccessor: Adding secondary energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy()<<endl;
+        mdebug<<"PHOT withOUT COMP/RAYL predeccessor: Adding secondary energy: "<<m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy()<<endl;
         IdealEnergy += m_SiEvent->GetIAAt(SimIDs[i]-2)->GetSecondaryEnergy();
       }      
     } else {

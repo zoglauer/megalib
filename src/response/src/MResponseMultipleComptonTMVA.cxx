@@ -143,11 +143,13 @@ bool MResponseMultipleComptonTMVA::Initialize()
     m_PositionsY.push_back(vector<double>(l));
     m_PositionsZ.push_back(vector<double>(l));
     
-    m_ComptonScatterAngles.push_back(vector<double>(l-1));
+    m_InteractionDistances.push_back(vector<double>(l-1));
+
+    m_CosComptonScatterAngles.push_back(vector<double>(l-1));
     m_KleinNishinaProbability.push_back(vector<double>(l-1));
     
     if (l > 2) {
-      m_ComptonScatterAngleDifference.push_back(vector<double>(l-2));
+      m_CosComptonScatterAngleDifference.push_back(vector<double>(l-2));
     }
 
     m_AbsorptionProbabilities.push_back(vector<double>(l-1));
@@ -195,26 +197,33 @@ bool MResponseMultipleComptonTMVA::Initialize()
       Bad->Branch(Name, &m_PositionsZ[c][i], Name + "/D");
     }
     
-    for (unsigned int i = 0; i < m_ComptonScatterAngles[c].size(); ++i) {
-      Name = "ComptonScatterAngle";
+    for (unsigned int i = 0; i < m_InteractionDistances[c].size(); ++i) {
+      Name = "InteractionDistances";
       Name += i+1;
-      Good->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
-      Bad->Branch(Name, &m_ComptonScatterAngles[c][i], Name + "/D");
+      Good->Branch(Name, &m_InteractionDistances[c][i], Name + "/D");
+      Bad->Branch(Name, &m_InteractionDistances[c][i], Name + "/D");
+    }
+    
+    for (unsigned int i = 0; i < m_CosComptonScatterAngles[c].size(); ++i) {
+      Name = "cos(ComptonScatterAngle)";
+      Name += i+1;
+      Good->Branch(Name, &m_CosComptonScatterAngles[c][i], Name + "/D");
+      Bad->Branch(Name, &m_CosComptonScatterAngles[c][i], Name + "/D");
     }
     
     for (unsigned int i = 0; i < m_KleinNishinaProbability[c].size(); ++i) {
-      Name = "KleinNishinaProbability";
+      Name = "NormalizedKleinNishinaValue";
       Name += i+1;
       Good->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
       Bad->Branch(Name, &m_KleinNishinaProbability[c][i], Name + "/D");
     }
     
     if (l > 2) {
-      for (unsigned int i = 0; i < m_ComptonScatterAngleDifference[c-1].size(); ++i) { // "-1" since we only start at 3 interactions
+      for (unsigned int i = 0; i < m_CosComptonScatterAngleDifference[c-1].size(); ++i) { // "-1" since we only start at 3 interactions
         Name = "ComptonScatterAngleDifference";
         Name += i+1;
-        Good->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
-        Bad->Branch(Name, &m_ComptonScatterAngleDifference[c-1][i], Name + "/D");
+        Good->Branch(Name, &m_CosComptonScatterAngleDifference[c-1][i], Name + "/D");
+        Bad->Branch(Name, &m_CosComptonScatterAngleDifference[c-1][i], Name + "/D");
       }
     }
     
@@ -295,11 +304,11 @@ bool MResponseMultipleComptonTMVA::Analyze()
   int r_max = REList->GetNRawEvents();
   for (int r = 0; r < r_max; ++r) {
     RE = REList->GetRawEventAt(r);
-    
-    //cout<<"Start (ID: "<<RE->GetEventID()<<")"<<endl;
-    
+        
     // Check if complete sequence is ok:
     SequenceLength = (unsigned int) RE->GetNRESEs();
+
+    mdebug<<"Start (ID: "<<RE->GetEventID()<<") with n="<<SequenceLength<<endl;
     
     // Step 1:
     // Some initial selections:
@@ -372,14 +381,23 @@ bool MResponseMultipleComptonTMVA::Analyze()
         m_PositionsZ[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().Z();
       }
       
-      // (b) Compton scatter angle & Klein-Nishina
+      // (b) Interaction distances
+      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+        MVector P1 = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition();
+        MVector P2 = SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition();
+        m_InteractionDistances[SequenceLength-2][r] = (P2-P1).Mag();
+      }
+        
+      // (c) Compton scatter angle & Klein-Nishina
       double EnergyIncomingGamma = RE->GetEnergy();
       double EnergyElectron = 0.0;
+      double CosPhi = 0.0;
       double Phi = 0.0;
       for (unsigned int r = 0; r < SequenceLength-1; ++r) {
         EnergyElectron = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
+        CosPhi = MComptonEvent::ComputeCosPhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
         Phi = MComptonEvent::ComputePhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
-        m_ComptonScatterAngles[SequenceLength-2][r] = Phi*c_Deg;
+        m_CosComptonScatterAngles[SequenceLength-2][r] = CosPhi;
         m_KleinNishinaProbability[SequenceLength-2][r] = MComptonEvent::GetKleinNishinaNormalizedByArea(EnergyIncomingGamma, Phi);
         EnergyIncomingGamma -= EnergyElectron;
         //if (p == 0 && StartResolved == true && CompletelyAbsorbed == true && Phi*c_Deg > 179.99) {
@@ -388,16 +406,16 @@ bool MResponseMultipleComptonTMVA::Analyze()
         //}
       }
       
-      // (c) Compton scatter angle difference
+      // (d) Compton scatter angle difference
       for (unsigned int r = 0; r < SequenceLength-2; ++r) {
         // Via Angle:
         MVector FirstDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition();
         MVector SecondDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+2]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition();
-        double PhiGeo = FirstDir.Angle(SecondDir);
-        m_ComptonScatterAngleDifference[SequenceLength-3][r] = PhiGeo*c_Deg - m_ComptonScatterAngles[SequenceLength-2][r+1]; // "-3" since we ponly start for 3-site events
+        double CosPhiGeo = cos(FirstDir.Angle(SecondDir));
+        m_CosComptonScatterAngleDifference[SequenceLength-3][r] = CosPhiGeo - m_CosComptonScatterAngles[SequenceLength-2][r+1]; // "SequenceLength-3" for first argument since we only start for 3-site events
       }
       
-      // (d) Absorption probabilities
+      // (e) Absorption probabilities
       EnergyIncomingGamma = RE->GetEnergy();
       for (unsigned int r = 0; r < SequenceLength-1; ++r) {
         EnergyIncomingGamma -= SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
@@ -405,9 +423,9 @@ bool MResponseMultipleComptonTMVA::Analyze()
         m_AbsorptionProbabilities[SequenceLength-2][r] = CalculateAbsorptionProbabilityTotal(*SequencedRESEs[m_Permutator[SequenceLength][p][r]], *SequencedRESEs[m_Permutator[SequenceLength][p][r+1]], EnergyIncomingGamma);
       }
       
-      // (e) Incoming probabilities
+      // (f) Incoming probabilities
       EnergyIncomingGamma = RE->GetEnergy();
-      Phi = m_ComptonScatterAngles[SequenceLength-2][0]*c_Rad;
+      Phi = m_CosComptonScatterAngles[SequenceLength-2][0]*c_Rad;
       MVector FirstIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetPosition();
       MVector SecondIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][1]]->GetPosition();
       MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
@@ -437,18 +455,18 @@ bool MResponseMultipleComptonTMVA::Analyze()
       }
       m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
       
-      // (f) Zenith and Nadir angles
+      // (g) Zenith and Nadir angles
       MVector Zenith(0, 0, 1);
       m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
       MVector Nadir(0, 0, -1);
       m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
       
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
-        //cout<<"Add good"<<endl;
+        mdebug<<"Add good sequence (ID: "<<RE->GetEventID()<<"): "<<m_CosComptonScatterAngles[SequenceLength-2][0]<<endl;
         m_TreeGood[SequenceLength-2]->Fill();
         //m_TreeGood[SequenceLength-2]->Show();
       } else {
-        //cout<<"Add bad"<<endl;
+        mdebug<<"Add bad sequence (ID: "<<RE->GetEventID()<<")"<<endl;
         m_TreeBad[SequenceLength-2]->Fill();          
         //m_TreeBad[SequenceLength-2]->Show();
       }
@@ -746,7 +764,7 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   }
   
-  // Check if in all but the last interaction only contain a Compton interaction and it's possible dependents:
+  // Check if all but the last interaction only contain a Compton interaction and it's possible dependents:
   for (unsigned int s = 0; s < SequencedRESEs.size()-1; ++s) {
     if (SequencedRESEs[s] != nullptr) {
       vector<int> SequencedRESEsIDs = GetOriginIds(SequencedRESEs[s]);
@@ -762,6 +780,7 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   }
   
+  /*
   mout<<"Sequence: ";
   for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
     if (SequencedRESEs[s] == nullptr) {
@@ -771,6 +790,7 @@ bool MResponseMultipleComptonTMVA::FindCorrectSequence(const vector<MRESE*>& RES
     }
   }
   mout<<endl;
+  */
   
   for (unsigned int s = 0; s < SequencedRESEs.size(); ++s) {
     if (SequencedRESEs[s] == nullptr) {
