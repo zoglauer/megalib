@@ -127,7 +127,7 @@ bool MResponseMultipleComptonEventFile::Initialize()
   
   // Create the ROOT tree for TMVA analysis
   
-  m_CSRMaxLength = 4;
+  m_CSRMaxLength = 5;
   cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
   
   m_DS.Initialize(m_CSRMaxLength);
