@@ -339,11 +339,11 @@ bool MResponseMultipleComptonEventFile::Analyze()
         MVector Nadir(0, 0, -1);
         m_DS.m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
       } else {
-        m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
-        m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
-        m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = 0.0;
-        m_DS.m_ZenithAngle[SequenceLength-2] = 0.0;
-        m_DS.m_NadirAngle[SequenceLength-2] = 0.0;        
+        m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
+        m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
+        m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = -0.1;
+        m_DS.m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
+        m_DS.m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
       }
       
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
