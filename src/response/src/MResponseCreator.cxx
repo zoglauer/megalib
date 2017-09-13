@@ -40,6 +40,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MResponseClusteringDSS.h"
 #include "MResponseMultipleCompton.h"
+#include "MResponseMultipleComptonEventFile.h"
 #include "MResponseMultipleComptonLens.h"
 #include "MResponseMultipleComptonTMVA.h"
 #include "MResponseMultipleComptonNeuralNet.h"
@@ -95,6 +96,8 @@ MResponseCreator::MResponseCreator()
   m_SaveAfter = 100000;
 
   m_Compress = false;
+  
+  m_Interrupt = false;
 }
 
 
@@ -125,6 +128,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
   Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"                                         t  : track"<<endl;
+  Usage<<"                                         cf : root good/bad event files for TMVA methods"<<endl;
   Usage<<"                                         cb : compton (Bayesian)"<<endl;
   Usage<<"                                         ct : compton (TMVA)"<<endl;
   Usage<<"                                         cn : compton (NeuralNetwork)"<<endl;
@@ -228,6 +232,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "ct") {
         m_Mode = c_ModeComptonsTMVA;
         cout<<"Choosing Compton mode (Neural Network)"<<endl;
+      } else if (SubOption == "cf") {
+        m_Mode = c_ModeComptonsEventFile;
+        cout<<"Choosing Compton mode (events file)"<<endl;
       } else if (SubOption == "cl") {
         m_Mode = c_ModeComptonsLens;
         cout<<"Choosing Compton mode (lens/collimated)"<<endl;
@@ -326,7 +333,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeComptons) {
@@ -351,7 +358,32 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
+    if (Response.Finalize() == false) return false;
+    
+  } else if (m_Mode == c_ModeComptonsEventFile) {
+    
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponseMultipleComptonEventFile Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetDoAbsorptions(!m_NoAbsorptions);
+    
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsTMVA) {
@@ -376,7 +408,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
     
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsNeuralNetwork) {
@@ -401,7 +433,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
     
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
     
   } else if (m_Mode == c_ModeComptonsLens) {
@@ -426,7 +458,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetDoAbsorptions(!m_NoAbsorptions);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
 
@@ -451,7 +483,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeSpectral) {
@@ -469,7 +501,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeARM) {
@@ -494,7 +526,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEfficiency) {
@@ -519,7 +551,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeEfficiencyNearField) {
@@ -544,7 +576,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
 
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
 } else if (m_Mode == c_ModeEventQuality) {
@@ -568,7 +600,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeImagingListMode) {
@@ -643,7 +675,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
 
     if (Response.Initialize() == false) return false;
-    while (Response.Analyze() == true);
+    while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
   } else if (m_Mode == c_ModeImagingCodedMask) {

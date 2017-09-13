@@ -71,7 +71,7 @@ class MGUIOptionsCSR : public MGUIDialog
   TGLayoutHints* m_BayesianFileSelectorLayout;
   MGUIEFileSelector* m_BayesianFileSelector;
 
-  MGUIEFileSelector* m_NeuralNetworkFileSelector;
+  MGUIEFileSelector* m_TMVAFileSelector;
   
 #ifdef ___CINT___
  public:

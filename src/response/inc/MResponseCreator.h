@@ -43,7 +43,7 @@ class MResponseCreator
   bool ParseCommandLine(int argc, char** argv);
 
   //! Interrupt the analysis
-  void Interrupt() { if (m_Creator != 0) m_Creator->Interrupt(); }
+  void Interrupt() { if (m_Creator != 0) m_Creator->Interrupt(); m_Interrupt = true; }
 
 
   // protected methods:
@@ -95,11 +95,15 @@ class MResponseCreator
   //! Compress the output response files
   bool m_Compress;
 
+  //! The interrupt flag
+  bool m_Interrupt;
+  
   //! Modes
   enum MResponseModes {
     c_ModeUnknown,
     c_ModeTracks,
     c_ModeComptons,
+    c_ModeComptonsEventFile,
     c_ModeComptonsLens,
     c_ModeComptonsNeuralNetwork,
     c_ModeComptonsTMVA,

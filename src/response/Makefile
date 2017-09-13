@@ -21,25 +21,26 @@ PRGC	= $(BN)/responsecreator
 MOBJC = $(LB)/MResponseCreatorMain.o
 
 LOBJS = $(LB)/MResponseCreator.o \
-				$(LB)/MResponseManipulator.o \
-				$(LB)/MResponseBuilder.o \
-				$(LB)/MResponseBase.o \
-				$(LB)/MResponseClusteringDSS.o \
-				$(LB)/MResponseTracking.o \
-				$(LB)/MResponseMultipleCompton.o \
-				$(LB)/MResponseMultipleComptonLens.o \
-				$(LB)/MResponseMultipleComptonNeuralNet.o \
-				$(LB)/MResponseMultipleComptonTMVA.o \
-				$(LB)/MResponseFirstInteractionPosition.o \
-				$(LB)/MResponseSpectral.o \
-				$(LB)/MResponseImaging.o \
-				$(LB)/MResponseImagingARM.o \
-				$(LB)/MResponseImagingEfficiency.o \
-				$(LB)/MResponseImagingEfficiencyNearField.o \
-				$(LB)/MResponseImagingBinnedMode.o \
-				$(LB)/MResponseImagingCodedMask.o \
-				$(LB)/MResponseEarthHorizon.o \
-				$(LB)/MResponseEventQuality.o \
+	$(LB)/MResponseManipulator.o \
+	$(LB)/MResponseBuilder.o \
+	$(LB)/MResponseBase.o \
+	$(LB)/MResponseClusteringDSS.o \
+	$(LB)/MResponseTracking.o \
+	$(LB)/MResponseMultipleCompton.o \
+	$(LB)/MResponseMultipleComptonEventFile.o \
+	$(LB)/MResponseMultipleComptonLens.o \
+	$(LB)/MResponseMultipleComptonNeuralNet.o \
+	$(LB)/MResponseMultipleComptonTMVA.o \
+	$(LB)/MResponseFirstInteractionPosition.o \
+	$(LB)/MResponseSpectral.o \
+	$(LB)/MResponseImaging.o \
+	$(LB)/MResponseImagingARM.o \
+	$(LB)/MResponseImagingEfficiency.o \
+	$(LB)/MResponseImagingEfficiencyNearField.o \
+	$(LB)/MResponseImagingBinnedMode.o \
+	$(LB)/MResponseImagingCodedMask.o \
+	$(LB)/MResponseEarthHorizon.o \
+	$(LB)/MResponseEventQuality.o \
 
 
 OBJS = $(MOBJM) $(MOBJC) $(LOBJS)
@@ -55,18 +56,18 @@ all: $(PRGC) $(PRGM)
 lib: $(SLOBJ)
 
 link:
-		@$(LINK) $(shell pwd)/inc/*.h $(IN)
-		@rm -f $(IN)/LinkDef.h
+	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@rm -f $(IN)/LinkDef.h
 
 clean:
-		@rm -f src/*~
-		@rm -f src/\#*
-		@rm -f inc/*~
-		@rm -f inc/\#*
-		@rm -f *~
-		@rm -f \#*
-		@rm -f $(PRGC) $(PRGM)
-		@rm -f $(MOBJC) $(MOBJM) $(LOBJS) $(SLOBJ)
+	@rm -f src/*~
+	@rm -f src/\#*
+	@rm -f inc/*~
+	@rm -f inc/\#*
+	@rm -f *~
+	@rm -f \#*
+	@rm -f $(PRGC) $(PRGM)
+	@rm -f $(MOBJC) $(MOBJM) $(LOBJS) $(SLOBJ)
 
 
 #----------------------------------------------------------------

@@ -64,7 +64,7 @@ using namespace std;
 #include "MERCSREnergyRecovery.h"
 #include "MERCSRToFWithEnergyRecovery.h"
 #include "MERCSRBayesian.h"
-#include "MERCSRNeuralNetwork.h"
+#include "MERCSRTMVA.h"
 #include "MERDecay.h"
 
 
@@ -99,7 +99,7 @@ const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
 const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
 const int MRawEventAnalyzer::c_CSRAlgoFoMToF        = 3;
 const int MRawEventAnalyzer::c_CSRAlgoBayesian      = 4;
-const int MRawEventAnalyzer::c_CSRAlgoNeuralNetwork = 5;
+const int MRawEventAnalyzer::c_CSRAlgoTMVA = 5;
 const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE    = 6;
 
 const int MRawEventAnalyzer::c_DecayAlgoNone     = 0;
@@ -335,7 +335,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   
   SetBCTFileName(S->GetBayesianComptonFileName());
   
-  SetNeuralNetworkFileName(S->GetNeuralNetworkFileName());
+  SetTMVAFileName(S->GetTMVAFileName());
   
   SetLensCenter(S->GetLensCenter());
   SetFocalSpotCenter(S->GetFocalSpotCenter());
@@ -1165,9 +1165,9 @@ bool MRawEventAnalyzer::PreAnalysis()
                                       m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
-    } else if (m_CSRAlgorithm == c_CSRAlgoNeuralNetwork) {
-      m_CSR = new MERCSRNeuralNetwork();
-      if (dynamic_cast<MERCSRNeuralNetwork*>(m_CSR)->SetParameters(m_NeuralNetworkFileName, 
+    } else if (m_CSRAlgorithm == c_CSRAlgoTMVA) {
+      m_CSR = new MERCSRTMVA();
+      if (dynamic_cast<MERCSRTMVA*>(m_CSR)->SetParameters(m_TMVAFileName, 
         m_Geometry, 
         m_CSRThresholdMin, 
         m_CSRThresholdMax, 

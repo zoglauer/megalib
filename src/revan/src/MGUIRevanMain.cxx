@@ -86,13 +86,18 @@ void MGUIRevanMain::Create()
   SetWindowName("Revan - Real event analyzer");  
 
   m_MenuReconstruction = new TGPopupMenu(fClient->GetRoot());
+  m_MenuReconstruction->AddLabel("Analysis");
+  m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("Start Event reconstruction", c_Start);
   m_MenuReconstruction->AddSeparator();
-  m_MenuReconstruction->AddEntry("Selection of algorithm", c_Options);
+  m_MenuReconstruction->AddLabel("Options");
+  m_MenuReconstruction->AddSeparator();
+  m_MenuReconstruction->AddEntry("Selection of general algorithms", c_Options);
+  m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("Coincidence options", c_OptionsCoincidence);
   m_MenuReconstruction->AddEntry("Clustering options", c_OptionsClustering);
-  m_MenuReconstruction->AddEntry("Tracking options", c_OptionsTracking);
-  m_MenuReconstruction->AddEntry("Sequencing options", c_OptionsSequencing);
+  m_MenuReconstruction->AddEntry("Electron tracking options", c_OptionsTracking);
+  m_MenuReconstruction->AddEntry("Compton sequencing options", c_OptionsSequencing);
   //m_MenuReconstruction->AddEntry("Decay options", c_OptionsDecay);
   m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("General event selections", c_OptionsGeneral);

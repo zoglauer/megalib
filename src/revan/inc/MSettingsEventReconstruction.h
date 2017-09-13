@@ -205,8 +205,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetBayesianComptonFileName(MString Name) { m_BayesianComptonFileName = Name; }
   MString GetBayesianComptonFileName() { return m_BayesianComptonFileName; }
   
-  void SetNeuralNetworkFileName(MString Name) { m_NeuralNetworkFileName = Name; }
-  MString GetNeuralNetworkFileName() { return m_NeuralNetworkFileName; }
+  void SetTMVAFileName(MString Name) { m_TMVAFileName = Name; }
+  MString GetTMVAFileName() { return m_TMVAFileName; }
   
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
   MString GetOriginObjectsFileName() { return m_OriginObjectsFileName; }
@@ -317,7 +317,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
   
   MString m_BayesianComptonFileName;
   
-  MString m_NeuralNetworkFileName;
+  MString m_TMVAFileName;
   
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;

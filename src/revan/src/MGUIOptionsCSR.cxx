@@ -189,14 +189,14 @@ void MGUIOptionsCSR::Create()
                                       m_Data->GetCSRMaxNHits(), true, 3);
     AddFrame(m_MaxNSingleHits, EntryLayout);
 
-  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoNeuralNetwork) {
-    AddSubTitle("Options for neural network Compton-scatter patter identification"); 
-    TGLayoutHints* NeuralNetworkFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
-    m_NeuralNetworkFileSelector = 
-    new MGUIEFileSelector(this, "File containing the neural network data (\".nn.erm\"):", 
-                          m_Data->GetNeuralNetworkFileName());
-    m_NeuralNetworkFileSelector->SetFileType("Neural Network ER Master file", "*.nn.erm");
-    AddFrame(m_NeuralNetworkFileSelector, NeuralNetworkFileSelectorLayout);      
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoTMVA) {
+    AddSubTitle("Options for TMVA-based Compton-scatter patter identification"); 
+    TGLayoutHints* TMVAFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
+    m_TMVAFileSelector = 
+    new MGUIEFileSelector(this, "File containing the TMVA data (\".nn.erm\"):", 
+                          m_Data->GetTMVAFileName());
+    m_TMVAFileSelector->SetFileType("Neural Network ER Master file", "*.nn.erm");
+    AddFrame(m_TMVAFileSelector, TMVAFileSelectorLayout);      
     
   } else {
     AddSubTitle("You deselected Compton tracking"); 
@@ -284,8 +284,8 @@ bool MGUIOptionsCSR::OnApply()
   } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoBayesian) {
     m_Data->SetBayesianComptonFileName(m_BayesianFileSelector->GetFileName());
     m_Data->SetCSRMaxNHits(m_MaxNSingleHits->GetAsInt());
-  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoNeuralNetwork) {
-    m_Data->SetNeuralNetworkFileName(m_NeuralNetworkFileSelector->GetFileName());
+  } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoTMVA) {
+    m_Data->SetTMVAFileName(m_TMVAFileSelector->GetFileName());
   }
   return true;
 }

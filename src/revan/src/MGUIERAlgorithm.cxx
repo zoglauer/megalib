@@ -135,13 +135,13 @@ void MGUIERAlgorithm::Create()
 
   m_CSRList = new MGUIERBList(this, "Compton tracking", true);
   m_CSRList->Add("No Compton tracking");
-  m_CSRList->Add("Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
-  m_CSRList->Add("Compton Sequence Reconstruction with Energy Recovery (Chi-square approach via energies)");
-  m_CSRList->Add("Compton Sequence Reconstruction with Time of Flight (Chi-square approach via angles and time)");
-  m_CSRList->Add("Bayesian Compton Tracking (Bayesian model selection)");
-  m_CSRList->Add("Neural network Compton-scatter pattern identification");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction with Energy Recovery (Chi-square approach via energies)");
+  m_CSRList->Add("Classic Compton Sequence Reconstruction with Time of Flight (Chi-square approach via angles and time)");
+  m_CSRList->Add("Bayesian Compton-scatter pattern identification (Bayesian model selection)");
+  m_CSRList->Add("TMVA-based Compton-scatter pattern identification (MLP, DNN, Boosted decision trees, etc.");
   if (m_Data->GetSpecialMode() == true) {
-    m_CSRList->Add("UNDER CONSTRUCTION: Compton Sequence Reconstruction with Time of Flight and Energy Recovery");
+    m_CSRList->Add("UNDER CONSTRUCTION: Classic Compton Sequence Reconstruction with Time of Flight and Energy Recovery");
   }
   m_CSRList->SetSelected(m_Data->GetCSRAlgorithm());
   m_CSRList->Create();
