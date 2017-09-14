@@ -23,6 +23,7 @@
 
 // ROOT libs:
 #include "MStreams.h"
+#include "MComptonEvent.h"
 
 // MEGAlib libs:
 
@@ -202,6 +203,117 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
     Reader->AddVariable(Name, &m_NadirAngle[c]);
     
     Readers.push_back(Reader);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Fill the data sets from RESEs
+void MERCSRDataSet::Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometryQuest* Geometry)
+{
+  unsigned int SequenceLength = SequencedRESEs.size();
+  
+  m_SimulationIDs[SequenceLength-2] = ID;
+  
+  // (a) Raw data:
+  double FullEnergy = 0;
+  for (unsigned int r = 0; r < SequenceLength; ++r) {
+    FullEnergy += SequencedRESEs[r]->GetEnergy();
+    m_Energies[SequenceLength-2][r] = SequencedRESEs[r]->GetEnergy();
+    m_PositionsX[SequenceLength-2][r] = SequencedRESEs[r]->GetPosition().X();
+    m_PositionsY[SequenceLength-2][r] = SequencedRESEs[r]->GetPosition().Y();
+    m_PositionsZ[SequenceLength-2][r] = SequencedRESEs[r]->GetPosition().Z();
+  }
+  
+  // (b) Interaction distances
+  for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+    MVector P1 = SequencedRESEs[r]->GetPosition();
+    MVector P2 = SequencedRESEs[r+1]->GetPosition();
+    m_InteractionDistances[SequenceLength-2][r] = (P2-P1).Mag();
+  }
+  
+  // (c) Compton scatter angle & Klein-Nishina
+  double EnergyIncomingGamma = FullEnergy;
+  double EnergyElectron = 0.0;
+  double CosPhi = 0.0;
+  double Phi = 0.0;
+  for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+    EnergyElectron = SequencedRESEs[r]->GetEnergy();
+    CosPhi = MComptonEvent::ComputeCosPhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
+    Phi = MComptonEvent::ComputePhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
+    m_CosComptonScatterAngles[SequenceLength-2][r] = CosPhi;
+    m_KleinNishinaProbability[SequenceLength-2][r] = MComptonEvent::GetKleinNishinaNormalizedByArea(EnergyIncomingGamma, Phi);
+    EnergyIncomingGamma -= EnergyElectron;
+    //if (p == 0 && StartResolved == true && CompletelyAbsorbed == true && Phi*c_Deg > 179.99) {
+    //  cout<<"Large Compton scatter angle (Sim ID: "<<RE->GetEventID()<<") -- Start:"<<SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetEnergy()<<endl;
+    //  mout<<RE->ToString()<<endl;
+    //}
+  }
+  
+  // (d) Compton scatter angle difference
+  for (unsigned int r = 0; r < SequenceLength-2; ++r) {
+    // Via Angle:
+    MVector FirstDir = SequencedRESEs[r+1]->GetPosition() - SequencedRESEs[r]->GetPosition();
+    MVector SecondDir = SequencedRESEs[r+2]->GetPosition() - SequencedRESEs[r+1]->GetPosition();
+    double CosPhiGeo = cos(FirstDir.Angle(SecondDir));
+    m_CosComptonScatterAngleDifference[SequenceLength-3][r] = CosPhiGeo - m_CosComptonScatterAngles[SequenceLength-2][r+1]; // "SequenceLength-3" for first argument since we only start for 3-site events
+  }
+  
+  // (e) Absorption probabilities
+  EnergyIncomingGamma = FullEnergy;
+  for (unsigned int r = 0; r < SequenceLength-1; ++r) {
+    EnergyIncomingGamma -= SequencedRESEs[r]->GetEnergy();
+    
+    m_AbsorptionProbabilities[SequenceLength-2][r] = Geometry->GetAbsorptionProbability(SequencedRESEs[r]->GetPosition(), SequencedRESEs[r+1]->GetPosition(), EnergyIncomingGamma);
+  }
+  
+  // (f) Incoming probabilities
+  if (m_CosComptonScatterAngles[SequenceLength-2][0] > -1 && m_CosComptonScatterAngles[SequenceLength-2][0] < 1) {
+    EnergyIncomingGamma = FullEnergy;
+    Phi = acos(m_CosComptonScatterAngles[SequenceLength-2][0]);
+    MVector FirstIAPos = SequencedRESEs[0]->GetPosition();
+    MVector SecondIAPos = SequencedRESEs[1]->GetPosition();
+    MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
+    // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
+    MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
+    // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
+    MVector Incoming = FirstScatteredGammaRayDir;
+    Incoming.RotateAroundVector(Ortho, Phi);
+    
+    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
+    m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
+    m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
+    unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
+    if (Steps < 1) Steps = 1;
+    double StepWidth = c_TwoPi/Steps;
+    for (unsigned int a = 0; a < Steps; ++a) {
+      MVector Outgoing = -Incoming;
+      Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
+      Outgoing.Unitize();
+      double P = Geometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
+      if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
+        m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
+      }
+      if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
+        m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+      }
+    }
+    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
+    
+    // (g) Zenith and Nadir angles
+    MVector Zenith(0, 0, 1);
+    m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
+    MVector Nadir(0, 0, -1);
+    m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
+  } else {
+    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
+    m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
+    m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = -0.1;
+    m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
+    m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
   }
 }
 

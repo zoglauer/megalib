@@ -91,6 +91,10 @@ class MERCSRTMVA : public MERCSR
   //! The TMVA readers - one per sequence length
   vector<TMVA::Reader*> m_Readers;
   
+  //! All possible Permutations for fast access:
+  //! Build the following way: [Sequence length] [Permuation ID] [Index]
+  vector<vector<vector<unsigned int>>> m_Permutator;  
+  
   
 #ifdef ___CINT___
  public:

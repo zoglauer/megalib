@@ -99,6 +99,8 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   m_FileName = FileName;
   m_UsedMethods.push_back("BDTD");
   
+
+  
   // Read the steering file
   MParser SteeringFile;
   if (SteeringFile.Open(FileName) == false) {
@@ -142,6 +144,32 @@ bool MERCSRTMVA::SetParameters(MString FileName,
     }  
   }
   
+  // Build permutation matrix:
+  m_Permutator.resize(m_MaxNInteractions+1);
+  for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
+    vector<vector<unsigned int>> Permutations;
+    vector<unsigned int> Indices;
+    for (unsigned int j = 0; j < i; ++j) {
+      Indices.push_back(j);
+    }
+    vector<unsigned int>::iterator Begin = Indices.begin();
+    vector<unsigned int>::iterator End = Indices.end();
+    do {
+      Permutations.push_back(Indices);
+    } while (next_permutation(Begin, End));
+    m_Permutator[i] = Permutations;
+  }
+  //   // Verify:
+  //   for (unsigned int i = 2; i < m_Permutator.size(); ++i) {
+  //     cout<<"Size: "<<i<<endl;
+  //     for (unsigned int j = 0; j < m_Permutator[i].size(); ++j) {
+  //       cout<<"  Permutation "<<j<<"/"<<m_Permutator[i].size()<<": "<<endl;
+  //       for (unsigned int k = 0; k < m_Permutator[i][j].size(); ++k) {
+  //         cout<<m_Permutator[i][j][k]<<" ";
+  //       }
+  //       cout<<endl;
+  //     }
+  //   }    
   
   return true;
 }
@@ -167,7 +195,9 @@ int MERCSRTMVA::ComputeAllQualityFactors(MRERawEvent* RE)
     RESEs[i] = RE->GetRESEAt(i);
   }
 
-  if (RESEs.size() <= 1) {
+  unsigned int SequenceLength = RESEs.size();
+  
+  if (SequenceLength <= 1) {
     mdebug<<"MERCSRTMVA: Not enough hits: "<<RESEs.size()<<endl;
     return 0;
   }
@@ -175,7 +205,22 @@ int MERCSRTMVA::ComputeAllQualityFactors(MRERawEvent* RE)
   mdebug<<RE->ToString()<<endl;
 
   // Apply the TMVA data to all permutations and find the best one
-
+  
+  
+  // Build a tree element for all permutations:
+  for (unsigned int p = 0; p < m_Permutator[SequenceLength].size(); ++p) {
+    /*
+    vector<MRESE*> RESEs;
+    for (unsigned int r = 0; r < SequenceLength; ++r) {
+      RESEs.push_back(SequencedRESEs[m_Permutator[SequenceLength][p][r]]);
+    }
+      
+    m_DS.Fill(RE->GetEventID(), RESEs);
+    */  
+    
+  
+  }
+  
   return 0;
 }
 

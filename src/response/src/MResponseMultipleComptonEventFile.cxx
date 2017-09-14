@@ -252,7 +252,7 @@ bool MResponseMultipleComptonEventFile::Analyze()
         RESEs.push_back(SequencedRESEs[m_Permutator[SequenceLength][p][r]]);
       }
       
-      m_DS.Fill(RE->GetEventID(), RESEs);
+      m_DS.Fill(RE->GetEventID(), RESEs, m_SiGeometry);
       
       /*
       m_DS.m_SimulationIDs[SequenceLength-2] = RE->GetEventID();

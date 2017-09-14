@@ -25,6 +25,8 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MRESE.h"
+#include "MDGeometryQuest.h"
 
 // Forward declarations:
 
@@ -53,6 +55,8 @@ class MERCSRDataSet
   // Create readers
   void CreateReaders(vector<TMVA::Reader*>& Readers);
   
+  // Fill the data sets from RESEs
+  void Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometryQuest* Geometry);
   
   //! Simulation ID
   vector<Long64_t> m_SimulationIDs;
