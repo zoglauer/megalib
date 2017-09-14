@@ -143,6 +143,9 @@ if [[ ${TMVA} == true ]]; then
     LOGS+="${LOG} "
     nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > ${LOG} &
     echo "Started TMVA run for file ${SINGLEFILE}"
+
+    sleep 5    
+
   done
   
   wait
