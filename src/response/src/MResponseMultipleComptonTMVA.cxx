@@ -266,15 +266,17 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   unsigned int BackgroundTreeSize = BackgroundTree->GetEntries();  
   
   cout<<"Tree sizes: "<<BackgroundTreeSize<<" "<<SourceTreeSize<<endl;
-  
+
   if (BackgroundTreeSize > 2*SourceTreeSize) {
     cout<<"Reducing background tree size from "<<BackgroundTreeSize<<" to "<<2*SourceTreeSize<<endl;
-    TTree* NewBackgroundTree = dynamic_cast<TTree*>(BackgroundTree->Clone(0));
+    TTree* NewBackgroundTree = BackgroundTree->CloneTree(0);
+    NewBackgroundTree->SetDirectory(0);
+   
     for (long i = 0; i < 2*SourceTreeSize; ++i) {
       BackgroundTree->GetEntry(i);
       NewBackgroundTree->Fill();
     }
-    delete BackgroundTree;
+
     BackgroundTree = NewBackgroundTree;
   }  
   
