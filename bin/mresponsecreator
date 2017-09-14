@@ -139,7 +139,7 @@ if [[ ${TMVA} == true ]]; then
     LINKS+=" ${TMPGOODFILE} ${TMPBADFILE}"
     
     echo "Starting: responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD}"
-    LOG="${NAME}.n${SEQUENCE}.log"
+    LOG="${NAME}.seq${SEQUENCE}.log"
     LOGS+="${LOG} "
     nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > ${LOG} &
     echo "Started TMVA run for file ${SINGLEFILE}"

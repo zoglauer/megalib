@@ -259,6 +259,25 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     return;
   }
   
+  // The background tree could be much larger than the source
+  // If it is more than twice as large create a smaller tree for training
+  
+  unsigned int SourceTreeSize = SourceTree->GetEntries();
+  unsigned int BackgroundTreeSize = BackgroundTree->GetEntries();  
+  
+  cout<<"Tree sizes: "<<BackgroundTreeSize<<" "<<SourceTreeSize<<endl;
+  
+  if (BackgroundTreeSize > 2*SourceTreeSize) {
+    cout<<"Reducing background tree size from "<<BackgroundTreeSize<<" to "<<2*SourceTreeSize<<endl;
+    TTree* NewBackgroundTree = dynamic_cast<TTree*>(BackgroundTree->Clone(0));
+    for (long i = 0; i < 2*SourceTreeSize; ++i) {
+      BackgroundTree->GetEntry(i);
+      NewBackgroundTree->Fill();
+    }
+    delete BackgroundTree;
+    BackgroundTree = NewBackgroundTree;
+  }  
+  
   TMVA::Factory *factory = new TMVA::Factory("TMVAClassification", Results,
                                              "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
   
@@ -281,7 +300,21 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   
   dataloader->AddSignalTree(SourceTree, 1.0);
   dataloader->AddBackgroundTree(BackgroundTree, 1.0);
+
   
+  TString Prep = "SplitMode=Random:V";
+  /*
+  Prep += ":nTrain_Signal=";
+  Prep += SE/2;
+  Prep += ":nTest_Signal=";
+  Prep += SE/2;
+  Prep += ":nTrain_Background=";
+  Prep += SE/2;
+  Prep += ":nTest_Background=";
+  Prep += SE/2;
+  */
+  
+  dataloader->PrepareTrainingAndTestTree("", Prep);
   
   dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
   
