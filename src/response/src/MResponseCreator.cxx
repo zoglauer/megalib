@@ -120,7 +120,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: responsecreator <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"      -g  --geometry        file  m  geometry file name"<<endl;
-  Usage<<"      -f  --filename        file  m  file name"<<endl;
+  Usage<<"      -f  --filename        file  m  file name (either sim/evta file, or training data)"<<endl;
   Usage<<"      -d  --debug                    enable debug"<<endl;
   Usage<<"      -r  --response-name   file     response file name"<<endl;
   Usage<<"      -v  --verify                   verify"<<endl;
@@ -231,10 +231,10 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         cout<<"Choosing Compton mode (Neural Network)"<<endl;
       } else if (SubOption == "ct") {
         m_Mode = c_ModeComptonsTMVA;
-        cout<<"Choosing Compton mode (Neural Network)"<<endl;
+        cout<<"Choosing Compton mode (TMVA)"<<endl;
       } else if (SubOption == "cf") {
         m_Mode = c_ModeComptonsEventFile;
-        cout<<"Choosing Compton mode (events file)"<<endl;
+        cout<<"Choosing Compton mode (Create events file)"<<endl;
       } else if (SubOption == "cl") {
         m_Mode = c_ModeComptonsLens;
         cout<<"Choosing Compton mode (lens/collimated)"<<endl;
@@ -388,24 +388,18 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
   } else if (m_Mode == c_ModeComptonsTMVA) {
     
-    if (m_RevanCfgFileName == g_StringNotDefined) {
-      cout<<"Error: No revan configuration file name given!"<<endl;
-      cout<<Usage.str()<<endl;
-      return false;
-    }
-    
     MResponseMultipleComptonTMVA Response;
     
     Response.SetDataFileName(m_FileName);
-    Response.SetGeometryFileName(m_GeometryFileName);
+    //Response.SetGeometryFileName(m_GeometryFileName);
     Response.SetResponseName(m_ResponseName);
-    Response.SetCompression(m_Compress);
+    //Response.SetCompression(m_Compress);
     
-    Response.SetMaxNumberOfEvents(m_MaxNEvents);
-    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    //Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    //Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
-    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
-    Response.SetDoAbsorptions(!m_NoAbsorptions);
+    //Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    //Response.SetDoAbsorptions(!m_NoAbsorptions);
     
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);

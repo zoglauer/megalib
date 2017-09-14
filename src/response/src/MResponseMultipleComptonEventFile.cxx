@@ -224,7 +224,7 @@ bool MResponseMultipleComptonEventFile::Analyze()
     // If we don't have sequenced RESEs at that point something went badly wrong with the event, so we skip it here
     bool FoundNullPtr = false;
     for (unsigned int i = 0; i < SequenceLength; ++i) {
-      if ( SequencedRESEs[i] == nullptr) {
+      if (SequencedRESEs[i] == nullptr) {
         FoundNullPtr = true;
         break;
       }
@@ -247,6 +247,14 @@ bool MResponseMultipleComptonEventFile::Analyze()
     // Build a tree element for all permutations:
     for (unsigned int p = 0; p < m_Permutator[SequenceLength].size(); ++p) {
       
+      vector<MRESE*> RESEs;
+      for (unsigned int r = 0; r < SequenceLength; ++r) {
+        RESEs.push_back(SequencedRESEs[m_Permutator[SequenceLength][p][r]]);
+      }
+      
+      m_DS.Fill(RE->GetEventID(), RESEs);
+      
+      /*
       m_DS.m_SimulationIDs[SequenceLength-2] = RE->GetEventID();
       
       // (a) Raw data:
@@ -345,6 +353,7 @@ bool MResponseMultipleComptonEventFile::Analyze()
         m_DS.m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
         m_DS.m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
       }
+      */
       
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
         mdebug<<"Add good sequence (ID: "<<RE->GetEventID()<<")"<<endl;
