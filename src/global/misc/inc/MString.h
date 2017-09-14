@@ -113,9 +113,17 @@ class MString
   size_t Last(char c) const { return m_String.find_last_of(c); }
   //! Get position of last character or string::npos if none is found
   size_t First(char c) const { return m_String.find(c); }
-
+  
+  //! Find first occurance
   size_t Index(const MString& S, size_t Start = 0) const { return m_String.find(S.m_String, Start); }
 
+  //! Find First occurance
+  size_t FindFirst(const MString& S) const  { return m_String.find(S.m_String); }
+  
+  //! Find last occurance
+  size_t FindLast(const MString& S) const  { return m_String.rfind(S.m_String); }
+  
+  
   // Conversion:
 
   operator const char*() const { return m_String.c_str(); }
