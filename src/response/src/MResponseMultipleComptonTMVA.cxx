@@ -107,20 +107,24 @@ bool MResponseMultipleComptonTMVA::Initialize()
   // Second find all the files for different sequence lengths
   size_t Index = GoodFileName.FindLast(".seq");
   MString Prefix = GoodFileName.GetSubString(0, Index);
-  for (unsigned int s = 2; s <= 3; ++s) {
+  for (unsigned int s = 2; s <= 10; ++s) {
     MString Good = Prefix + ".seq" + s + ".good.root";
     MString Bad = Prefix + ".seq" + s + ".bad.root";
+
+    MFile::ExpandFileName(Good);
+    MFile::ExpandFileName(Bad);
+    
+    cout<<"Good: "<<Good<<" vs. "<<Bad<<endl;
     
     if (MFile::Exists(Good) && MFile::Exists(Bad)) {
-      m_GoodFileNames.push_back(MString("../") + Good); 
-      m_BadFileNames.push_back(MString("../") + Bad);
+      m_GoodFileNames.push_back(Good); 
+      m_BadFileNames.push_back(Bad);
+      m_SequenceLengths.push_back(s);
       mout<<"Found sequence "<<s<<" data"<<endl;
-    } else {
-      break; 
     }
   }
   if (m_GoodFileNames.size() == 0) {
-    merr<<"No usable data files found"<<endl;
+    merr<<"No usable good/bad data files found"<<endl;
     return false;
   }
   
@@ -134,7 +138,11 @@ bool MResponseMultipleComptonTMVA::Initialize()
   out<<"# TMVA steering file"<<endl;
   out<<endl;
   out<<"# Sequence length, 2..x"<<endl;
-  out<<"SL "<<m_GoodFileNames.size() + 1<<endl;
+  out<<"SL ";
+  for (unsigned int s: m_SequenceLengths) {
+    out<<s<<" ";
+  }
+  out<<endl;
   out<<endl;
   out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
   out<<"TA ";
@@ -231,7 +239,9 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   MTime Now;
   MString TimeString = Now.GetShortString();
   
-  MString ResultsFileName = m_ResponseName + ".seq" + (ThreadID+2) + ".root";
+  unsigned int SequenceLength = m_SequenceLengths[ThreadID];
+  
+  MString ResultsFileName = m_ResponseName + ".seq" + SequenceLength + ".root";
   TFile* Results = new TFile(ResultsFileName, "recreate");
   
   
@@ -252,9 +262,8 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   TMVA::Factory *factory = new TMVA::Factory("TMVAClassification", Results,
                                              "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
   
-
   MString OutDir("N");
-  OutDir += (ThreadID+2);
+  OutDir += SequenceLength;
   TMVA::DataLoader *dataloader = new TMVA::DataLoader(OutDir.Data());
   
   m_TheadMutex.unlock();

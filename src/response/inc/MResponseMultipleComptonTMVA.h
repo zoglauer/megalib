@@ -72,6 +72,8 @@ class MResponseMultipleComptonTMVA : public MResponseBuilder
    vector<MString> m_GoodFileNames;
    //! The bad file names
    vector<MString> m_BadFileNames;
+   //! The sequence length
+   vector<unsigned int> m_SequenceLengths;
    
    //! Flags indicating the threads are running:
    vector<bool> m_ThreadRunning;

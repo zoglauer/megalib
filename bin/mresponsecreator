@@ -9,8 +9,9 @@ commandhelp() {
   echo "Usage:";
   echo "    mresponsecreator <identical to responsereator>";
   echo "";
-  echo "Example:";
+  echo "Examples:";
   echo "    mresponsecreator -g Max.geo.setup -f Response.p1.inc*.id1.sim -r Binned -m ib -c Max.revan.cfg -b Max.mimrec.cfg -z";
+  echo "    mresponsecreator -g Max.geo.setup -f TMVA_DataSets.tmva.seq*.good.root -r TMVA_v4 -m ct";
   echo "";
   echo "This script launches multiple instances of responsecreator."
   echo "The number of instances is limited to the number of cores."
@@ -83,37 +84,115 @@ echo "Running these files: ${FILES}"
 echo "Output file name: ${NAME}.idXYZ"
 echo "Standard arguments: ${NEWCMD}"
 
-COUNTER=1
-COUNTERMAX=`echo ${FILES} | wc -w`
-for SINGLEFILE in ${FILES}; do
-  # Wait for everything being started, enough memory, and a free slot
-  mwait -p=responsecreator -i=threads -m
+# If we do TMVA training we have to do a different split 
+TMVA=false
+if [[ ${NEWCMD} == *" ct"* ]]; then
+  TMVA=true
+fi
 
-  # Check if the sims have IDs we can use
-  ID=$(echo ${SINGLEFILE} | awk -Finc '{ print $2 }' | awk -F.id '{ print $1 }')
-  if [[ ${ID} == "" ]]; then
-    ID=${COUNTER}
+if [[ ${TMVA} == true ]]; then
+  
+  LINKS=""
+  SEQUENCES=""
+  LOGS=""
+  for SINGLEFILE in $(ls -r ${FILES}); do
+    mwait -p=responsecreator -i=threads -m
+    
+    GOODFILE=""
+    BADFILE=""
+    if [[ ${SINGLEFILE} == *.good.root ]]; then
+      GOODFILE=${SINGLEFILE}
+      BADFILE=${GOODFILE/.good.root/.bad.root}
+    elif [[ ${SINGLEFILE} == *.bad.root ]]; then
+      BADFILE=${SINGLEFILE}
+      GOODFILE=${BADFILE/.bad.root/.good.root}    
+    else
+      echo " "
+      echo "ERROR: Good/bad files not found."
+      echo " "
+      exit 1;
+    fi
+    
+    SEQUENCE=$(echo "${GOODFILE}" | awk -F".seq" '{ print $2 }' | awk -F".good.root" '{ print $1 }')
+    SEQUENCES+="${SEQUENCE} "
+    
+    TMPPREFIX=$(mktemp -u /tmp/mresponsecreatorlink.XXXXXXXX)
+    TMPGOODFILE=${TMPPREFIX}.${GOODFILE}
+    if [[ ${TMPGOODFILE} != /tmp/mresponsecreatorlink.* ]]; then
+      echo " "
+      echo "ERROR: Unable to find random file name for symbolic link."
+      echo " "
+      exit 1;
+    fi
+    ln -s "$(pwd)/${GOODFILE}" ${TMPGOODFILE}
+
+    TMPBADFILE=${TMPPREFIX}.${BADFILE}
+    if [[ ${TMPBADFILE} != /tmp/mresponsecreatorlink.* ]]; then
+      echo " "
+      echo "ERROR: Unable to find random file name for symbolic link."
+      echo " "
+      exit 1;
+    fi
+    ln -s "$(pwd)/${BADFILE}" ${TMPBADFILE}
+    
+    
+    LINKS+=" ${TMPGOODFILE} ${TMPBADFILE}"
+    
+    echo "Starting: responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD}"
+    LOG="${NAME}.n${SEQUENCE}.log"
+    LOGS+="${LOG} "
+    nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > ${LOG} &
+    echo "Started TMVA run for file ${SINGLEFILE}"
+  done
+  
+  wait
+  
+  rm ${LINKS}
+  
+  mv ${LOGS} ${NAME}
+
+  # Fix the steering file
+  SEQUENCES=$(echo "${SEQUENCES}" | awk '{ for (i=NF; i>1; i--) printf("%s ", $i); print $1; }') # Just reverse it - small to large
+  SL=$(grep "^SL" ${NAME}.tmva)
+  if [[ "${SL}" != "" ]]; then 
+    sed -i "s/${SL}/SL ${SEQUENCES}/g" ${NAME}.tmva
   fi
-  OUT="${NAME}.${ID}"
+  echo "${SL} vs ${SEQUENCES} vs. ${NAME}.tmva"
+  
+else
+  COUNTER=1
+  COUNTERMAX=`echo ${FILES} | wc -w`
+  for SINGLEFILE in ${FILES}; do
+    # Wait for everything being started, enough memory, and a free slot
+    mwait -p=responsecreator -i=threads -m
 
-  nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
-  echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
+    # Check if the sims have IDs we can use
+    ID=$(echo ${SINGLEFILE} | awk -Finc '{ print $2 }' | awk -F.id '{ print $1 }')
+    if [[ ${ID} == "" ]]; then
+      ID=${COUNTER}
+    fi
+    OUT="${NAME}.${ID}"
 
-  COUNTER=$(( ${COUNTER} + 1 ))
-done
+    nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+    echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
 
+    COUNTER=$(( ${COUNTER} + 1 ))
+  done
+fi
 
 echo "Waiting till all sub-processes have finished..."
 wait
 echo "Done"
 echo " "
-echo "Joining files..."
-echo " "
+if [[ ${TMVA} == false ]]; then
+  echo "Joining files..."
+  echo " "
 
-responsemanipulator -j ${NAME}
+  responsemanipulator -j ${NAME}
 
-echo "Done"
-echo " "
+  echo "Done"
+  echo " "
+fi 
 
 exit 0;
 
