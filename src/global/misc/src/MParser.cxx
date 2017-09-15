@@ -164,7 +164,7 @@ MTokenizer* MParser::GetTokenizerAt(unsigned int LineNumber)
   }
 
   if (LineNumber >= GetNLines()) {
-    merr<<"Index out of bounds"<<endl;
+    merr<<"Index out of bounds - line number:"<<LineNumber<<" vs. # lines: "<<GetNLines()<<endl;
     return 0;
   } 
 
