@@ -57,14 +57,14 @@ class MERCSRTMVA : public MERCSR
 
 
   virtual MString ToString(bool CoreOnly = false) const;
-
-  virtual int ComputeAllQualityFactors(MRERawEvent* RE);
-
+  
   // protected methods:
  protected:
   //MERCSRTMVA() {};
   //MERCSRTMVA(const MERCSRTMVA& ERCSR) {};
-
+   
+   virtual double ComputeQualityFactor(vector<MRESE*>& Interactions);
+   
   // private methods:
  private:
 

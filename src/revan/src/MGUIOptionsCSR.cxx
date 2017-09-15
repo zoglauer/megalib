@@ -193,9 +193,9 @@ void MGUIOptionsCSR::Create()
     AddSubTitle("Options for TMVA-based Compton-scatter patter identification"); 
     TGLayoutHints* TMVAFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
     m_TMVAFileSelector = 
-    new MGUIEFileSelector(this, "File containing the TMVA data (\".nn.erm\"):", 
+    new MGUIEFileSelector(this, "File containing the TMVA data (\".tmva\"):", 
                           m_Data->GetTMVAFileName());
-    m_TMVAFileSelector->SetFileType("Neural Network ER Master file", "*.nn.erm");
+    m_TMVAFileSelector->SetFileType("TMVA steering file", "*.tmva");
     AddFrame(m_TMVAFileSelector, TMVAFileSelectorLayout);      
     
   } else {

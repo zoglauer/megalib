@@ -99,25 +99,33 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   m_FileName = FileName;
   m_UsedMethods.push_back("BDTD");
   
-
+  m_QualityFactorMin = -numeric_limits<double>::max();
+  m_QualityFactorMax = +numeric_limits<double>::max();
+  
   
   // Read the steering file
   MParser SteeringFile;
-  if (SteeringFile.Open(FileName) == false) {
+  if (SteeringFile.Open(FileName, MFile::c_Read) == false) {
     merr<<"Unable to open TMVA steering file: "<<FileName<<endl;  
   }
   
   MString BaseDirectory = FileName;
   BaseDirectory.ReplaceAllInPlace(".tmva", "");
   
-  for (unsigned int l = 0; SteeringFile.GetNLines(); ++l) {
+  for (unsigned int l = 0; l < SteeringFile.GetNLines(); ++l) {
     MTokenizer* T = SteeringFile.GetTokenizerAt(l);
     if (T->GetNTokens() <= 1) continue;
     
     if (T->IsTokenAt(0, "SL") == true) {
-      int MaxNIAs = T->GetTokenAtAsInt(1);
-      if (MaxNIAs < m_MaxNInteractions) {
-        m_MaxNInteractions = MaxNIAs;
+      int MaxNInteractions = 0;
+      vector<int> NIAs = T->GetTokenAtAsIntVector(1);
+      for (int x: NIAs) {
+        if (x > MaxNInteractions) {
+          MaxNInteractions = x;
+        }
+      }
+      if (MaxNInteractions < m_MaxNInteractions) {
+        m_MaxNInteractions = MaxNInteractions;
       }
     }
     
@@ -128,19 +136,22 @@ bool MERCSRTMVA::SetParameters(MString FileName,
       }
     }
   }
-  
+    
   // Create the data sets - must be identical to what's in the response creator
   m_DS.Initialize(m_MaxNInteractions);
   
   // Initialize the TMVA readers
   m_DS.CreateReaders(m_Readers);
   
+  cout<<"Max N Interactions: "<<m_MaxNInteractions<<" vs. "<<m_Readers.size()<<endl;
+  
   // Book the methods
   for (unsigned int r = 0; r < m_Readers.size(); ++r) {
     for (unsigned int m = 0; m < m_UsedMethods.size(); ++m) {
       MString MethodName = m_UsedMethods[m] + " method";
       MString WeightsFile = BaseDirectory + "/N" + (r+2) + "/weights/TMVAClassification_" + m_UsedMethods[m] + ".weights.xml";
-      m_Readers[m]->BookMVA(MethodName.Data(), WeightsFile.Data());
+      MFile::ExpandFileName(WeightsFile);
+      m_Readers[r]->BookMVA(MethodName.Data(), WeightsFile.Data());
     }  
   }
   
@@ -178,50 +189,22 @@ bool MERCSRTMVA::SetParameters(MString FileName,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MERCSRTMVA::ComputeAllQualityFactors(MRERawEvent* RE)
+double MERCSRTMVA::ComputeQualityFactor(vector<MRESE*>& RESEs) 
 {
-  // In contrast to the classic & Bayesian approaches, we are not looping
-  // over all different permutations
-  // Therefore we have only one or no permutation as result ans all analysis
-  // is performed in this function instead of "ComputeQualityFactor"
-
-  double QualityFactor = c_CSRFailed;
-  m_QualityFactors.clear();
-
-  RE->Shuffle();
-
-  vector<MRESE*> RESEs(RE->GetNRESEs());
-  for (int i = 0; i < RE->GetNRESEs(); ++i) {
-    RESEs[i] = RE->GetRESEAt(i);
-  }
-
   unsigned int SequenceLength = RESEs.size();
   
   if (SequenceLength <= 1) {
     mdebug<<"MERCSRTMVA: Not enough hits: "<<RESEs.size()<<endl;
-    return 0;
+    return c_CSRFailed;
   }
-
-  mdebug<<RE->ToString()<<endl;
-
-  // Apply the TMVA data to all permutations and find the best one
-  
-  
-  // Build a tree element for all permutations:
-  for (unsigned int p = 0; p < m_Permutator[SequenceLength].size(); ++p) {
-    /*
-    vector<MRESE*> RESEs;
-    for (unsigned int r = 0; r < SequenceLength; ++r) {
-      RESEs.push_back(SequencedRESEs[m_Permutator[SequenceLength][p][r]]);
-    }
-      
-    m_DS.Fill(RE->GetEventID(), RESEs);
-    */  
-    
-  
+  if (SequenceLength > RESEs.size()) {
+    mdebug<<"MERCSRTMVA: Too many hits: "<<RESEs.size()<<endl;
+    return c_CSRFailed;
   }
   
-  return 0;
+  m_DS.Fill(0, RESEs, m_Geometry);
+  
+  return -m_Readers[SequenceLength-2]->EvaluateMVA("BDTD method");  
 }
 
 
