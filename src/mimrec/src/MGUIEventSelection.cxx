@@ -441,8 +441,7 @@ void MGUIEventSelection::Create()
                                              MString("Minimum: "),
                                              MString("Maximum: "),
                                              m_Settings->GetComptonQualityFactorRangeMin(), 
-                                             m_Settings->GetComptonQualityFactorRangeMax(), 
-                                             true, 0.0);
+                                             m_Settings->GetComptonQualityFactorRangeMax());
   m_ComptonQualityFactor->SetEntryFieldSize(FieldSize);
   ComptonQFrame->AddFrame(m_ComptonQualityFactor, MinMaxFirstLayout);
 
@@ -1175,8 +1174,8 @@ bool MGUIEventSelection::OnApply()
                                    2, numeric_limits<int>::max(), false) == false) return false;
   if (m_ClusteringQualityFactor->CheckRange(0.0, numeric_limits<double>::max(), 
                                             0.0, numeric_limits<double>::max(), true) == false) return false;
-  if (m_ComptonQualityFactor->CheckRange(0.0, numeric_limits<double>::max(), 
-                                         0.0, numeric_limits<double>::max(), true) == false) return false;
+  //if (m_ComptonQualityFactor->CheckRange(0.0, numeric_limits<double>::max(), 
+  //                                       0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_TrackQualityFactor->CheckRange(0.0, numeric_limits<double>::max(), 
                                        0.0, numeric_limits<double>::max(), true) == false) return false;
   if (m_CoincidenceWindow->CheckRange(0.0, numeric_limits<double>::max(), 
