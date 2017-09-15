@@ -2781,26 +2781,12 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
   double Disk = m_Settings->GetTPDistanceTrans();
   MVector TestPosition = GetTestPosition();
 
-  // Initialize the image size (x-axis)
-  int x1NBins = NBins;
-  double* x1Bins = CreateAxisBins(-Disk, +Disk, x1NBins, false);
-
-  bool logx2 = true;
-  int x2NBins = NBins;
-  double* x2Bins = CreateAxisBins(m_Settings->GetComptonQualityFactorRangeMin(), m_Settings->GetComptonQualityFactorRangeMax(), x2NBins, logx2);
-
-
-
-  TH2D* Hist = new TH2D("ARM vs. Compton Quality Factor", "ARM vs. Compton Quality Factor", 
-                        x1NBins, x1Bins, x2NBins, x2Bins);
-  Hist->SetBit(kCanDelete);
-  Hist->SetXTitle("ARM [#circ]");
-  Hist->SetYTitle("Compton quality factor");
-
 
   MPhysicalEvent* Event = nullptr;
   MComptonEvent* ComptonEvent = nullptr; 
   // ... loop over all events and save a count in the belonging bin ...
+  vector<double> ARMValues;
+  vector<double> CQFs;
   while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges...
@@ -2808,8 +2794,8 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
         ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
 
-        Hist->Fill(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg, 
-                   ComptonEvent->ComptonQualityFactor1());
+        ARMValues.push_back(ComptonEvent->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem())*c_Deg);
+        CQFs.push_back(ComptonEvent->ComptonQualityFactor1());
       } 
     }
 
@@ -2819,24 +2805,39 @@ void MInterfaceMimrec::ARMGammaVsComptonProbability()
   // Close the event loader
   FinalizeEventLoader();
 
-  if (Hist->GetMaximum() == 0) {
-    Error("ARMGamma()", "No events passed the event selections or file is empty!");
-    return;
+  if (ARMValues.size() == 0) {
+    merr<<"No events passed the event selections or file is empty!"<<endl;
+    return; 
+  }
+  
+  // Initialize the image size (x-axis)
+  double CQFMax = *max_element(CQFs.begin(), CQFs.end());
+  double CQFMin = *min_element(CQFs.begin(), CQFs.end());
+  
+  if (CQFMax > m_Settings->GetComptonQualityFactorRangeMax()) {
+    CQFMax = m_Settings->GetComptonQualityFactorRangeMax();
+  }
+  if (CQFMin < m_Settings->GetComptonQualityFactorRangeMin()) {
+    CQFMin = m_Settings->GetComptonQualityFactorRangeMin();
+  }
+  
+  TH2D* Hist = new TH2D("ARM vs. Compton Quality Factor", "ARM vs. Compton Quality Factor", 
+                        NBins, -Disk, +Disk, NBins, CQFMin, CQFMax);
+  Hist->SetBit(kCanDelete);
+  Hist->SetXTitle("ARM [#circ]");
+  Hist->SetYTitle("Compton quality factor");  
+  
+  for (unsigned int i = 0; i < ARMValues.size(); ++i) {
+    Hist->Fill(ARMValues[i], CQFs[i]);
   }
 
     
   TCanvas* ARMvsComptonCanvas = 
-    new TCanvas("Canvas ARM vs Compton Probability",
-                "Canvas ARM vs Compton Probability", 800, 600);
+    new TCanvas("Canvas ARM vs Compton quality factor",
+                "Canvas ARM vs Compton quality factor", 800, 600);
   ARMvsComptonCanvas->cd();
-  if (logx2 == true) {
-    ARMvsComptonCanvas->SetLogy();
-  }  
   Hist->Draw("COLZ");
   ARMvsComptonCanvas->Update();
-
-  delete [] x1Bins;
-  delete [] x2Bins;
 
   return;
 }
