@@ -53,6 +53,9 @@ class MDShapeBRIK : public MDShape
 
   virtual bool IsInside(const MVector& Pos, const double Tolerance = 0, const bool PreferOutside = false);
 
+  virtual double DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double Tolerance = 0);
+  
+  
   MString ToString();
   MString GetGeomega() const;
 

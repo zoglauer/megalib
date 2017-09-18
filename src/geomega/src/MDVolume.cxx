@@ -2425,16 +2425,17 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
 
   //mout<<"Testing absorption length in volume "<<m_Name<<endl;
 
-  Start -= m_Position;           // translate 
-  Stop -= m_Position;           // translate 
+  Start.Subtract(m_Position);           // translate 
+  Stop.Subtract(m_Position);           // translate 
   if (m_IsRotated == true) {
-    Start = m_RotMatrix * Start;    // rotate
-    Stop = m_RotMatrix * Stop;    // rotate
+    m_RotMatrix.Rotate(Start);    // rotate
+    m_RotMatrix.Rotate(Stop);    // rotate
   }
 
   double Length = 0;
   double LengthInDaughters = 0;
   const double Tolerance = 0.0000001;
+
 
   // Now check if it is inside:
   if (m_Shape->IsInside(Start, m_Tolerance) == true) {
@@ -2463,6 +2464,7 @@ double MDVolume::GetAbsorptionLengths(map<MDMaterial*, double>& Lengths,
     //mout<<"Total length in shape: "<<Length<<endl;
 
   } else {
+        
     // We are outside the volume, determine if we can reach it:
     double LengthOutsideIn = m_Shape->DistanceOutsideIn(Start, (Stop-Start).Unitize());
 

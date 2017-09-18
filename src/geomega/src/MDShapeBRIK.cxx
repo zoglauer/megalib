@@ -245,8 +245,6 @@ bool MDShapeBRIK::IsInside(const MVector& Pos, const double Tolerance, const boo
 {
   // Overwrite to allow some tolerance:
 
-  //massert(Tolerance >= 0);
-
   if (PreferOutside == false) {
     if (fabs(Pos.m_Z) > m_Dz + Tolerance) {
       return false;
@@ -270,6 +268,26 @@ bool MDShapeBRIK::IsInside(const MVector& Pos, const double Tolerance, const boo
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MDShapeBRIK::DistanceOutsideIn(const MVector& Pos, const MVector& Dir, double Tolerance)
+{
+  // Attention: Dir needs to be a unit vector
+  
+  if (Pos.m_X > +m_Dx && Dir.m_X > 0) return 0;
+  if (Pos.m_X < -m_Dx && Dir.m_X < 0) return 0;
+  
+  if (Pos.m_Y > +m_Dy && Dir.m_Y > 0) return 0;
+  if (Pos.m_Y < -m_Dy && Dir.m_Y < 0) return 0;
+  
+  if (Pos.m_Z > +m_Dz && Dir.m_Z > 0) return 0;
+  if (Pos.m_Z < -m_Dz && Dir.m_Z < 0) return 0;
+  
+  return MDShape::DistanceOutsideIn(Pos, Dir, Tolerance);
 }
 
 
