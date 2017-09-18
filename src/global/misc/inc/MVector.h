@@ -105,16 +105,22 @@ public:
 
   //! Add W to this vector
   MVector& operator+=(const MVector& W) { m_X += W.m_X; m_Y += W.m_Y; m_Z += W.m_Z; return *this; }
-
+  //! Add W to this vector
+  void Add(const MVector& W) { m_X += W.m_X; m_Y += W.m_Y; m_Z += W.m_Z; }
+  
   //! Subtract V from this vector
   MVector& operator-=(const MVector& V) { m_X -= V.m_X; m_Y -= V.m_Y; m_Z -= V.m_Z; return *this; }
-
+  //! Subtract V from this vector
+  void Subtract(const MVector& V) { m_X -= V.m_X; m_Y -= V.m_Y; m_Z -= V.m_Z; }
+  
   //! Returns a new vector, which is the negative of this one
   MVector operator-() const { return MVector(-m_X, -m_Y, -m_Z); }
 
   //! Scalar multiplication to this vector
   MVector& operator*= (double s) { m_X *= s; m_Y *= s; m_Z *= s; return *this; };
-
+  //! Scalar multiplication to this vector
+  void Multiply(double s) { m_X *= s; m_Y *= s; m_Z *= s; };
+  
 
   // Section 3: Basic Functionality
 

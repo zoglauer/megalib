@@ -160,6 +160,18 @@ public:
   
   //! Perform an additional rotation by an angle around a vector
   MRotation& Rotate(const double Angle, const MVector& Vector);
+
+  //! Rotate a vector
+  void Rotate(MVector& R) {
+    double X = m_XX*R.m_X + m_YX*R.m_Y + m_ZX*R.m_Z;
+    double Y = m_XY*R.m_X + m_YY*R.m_Y + m_ZY*R.m_Z;
+    double Z = m_XZ*R.m_X + m_YZ*R.m_Y + m_ZZ*R.m_Z;
+    
+    R.m_X = X;
+    R.m_Y = Y;
+    R.m_Z = Z;
+  }
+
   
   // protected methods:
 protected:

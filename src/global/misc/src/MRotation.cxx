@@ -206,13 +206,9 @@ ostream& operator<<(ostream& out, const MRotation& V)
  */
 MVector operator* (const MRotation& L, const MVector& R)
 {
-  MVector New;
-  
-  New.SetX(L.GetXX()*R.GetX() + L.GetYX()*R.GetY() + L.GetZX()*R.GetZ());
-  New.SetY(L.GetXY()*R.GetX() + L.GetYY()*R.GetY() + L.GetZY()*R.GetZ());
-  New.SetZ(L.GetXZ()*R.GetX() + L.GetYZ()*R.GetY() + L.GetZZ()*R.GetZ());
-
-  return New;
+  return MVector(L.GetXX()*R.GetX() + L.GetYX()*R.GetY() + L.GetZX()*R.GetZ(),
+                 L.GetXY()*R.GetX() + L.GetYY()*R.GetY() + L.GetZY()*R.GetZ(),
+                 L.GetXZ()*R.GetX() + L.GetYZ()*R.GetY() + L.GetZZ()*R.GetZ());
 }
 
  
