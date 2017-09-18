@@ -78,11 +78,11 @@ class MERCSRDataSet
   vector<vector<Float_t>> m_CosComptonScatterAngleDifference;
   //! The total absorption probabilities
   vector<vector<Float_t>> m_AbsorptionProbabilities;
-  //! The average column desnity to first IA
+  //! The average column density to first IA
   vector<Float_t> m_AbsorptionProbabilityToFirstIAAverage;
-  //! The peak column desnity to first IA
+  //! The peak column density to first IA
   vector<Float_t> m_AbsorptionProbabilityToFirstIAMaximum;
-  //! The minimum column desnity to first IA
+  //! The minimum column density to first IA
   vector<Float_t> m_AbsorptionProbabilityToFirstIAMinimum;
   //! The Zenith angle
   vector<Float_t> m_ZenithAngle;
@@ -104,7 +104,22 @@ class MERCSRDataSet
 
   // private members:
  private:
-
+  //! The event ID 
+  long m_EventID;
+  //! The index map of the first two interactions
+  vector<pair<int, int>> m_Indices;
+  //! The average column density to first IA
+  vector<Float_t> m_StoreAbsorptionProbabilityToFirstIAAverage;
+  //! The peak column density to first IA
+  vector<Float_t> m_StoreAbsorptionProbabilityToFirstIAMaximum;
+  //! The minimum column density to first IA
+  vector<Float_t> m_StoreAbsorptionProbabilityToFirstIAMinimum;
+  //! The Zenith angle
+  vector<Float_t> m_StoreZenithAngle;
+  //! The Nadir angle
+  vector<Float_t> m_StoreNadirAngle;  
+  
+  
 
 
 #ifdef ___CINT___

@@ -189,8 +189,17 @@ bool MERCSRTMVA::SetParameters(MString FileName,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MERCSRTMVA::ComputeQualityFactor(vector<MRESE*>& RESEs) 
+int MERCSRTMVA::ComputeAllQualityFactors(MRERawEvent* RE)
 {
+  // This function computes all quality factors
+  // At the end of this function call, the m_QualityFactors map has to be 
+  // filled with permutations and their quality!
+  
+  vector<MRESE*> RESEs(RE->GetNRESEs());
+  for (int i = 0; i < RE->GetNRESEs(); ++i) {
+    RESEs[i] = RE->GetRESEAt(i);
+  }
+  
   unsigned int SequenceLength = RESEs.size();
   
   if (SequenceLength <= 1) {
@@ -200,12 +209,38 @@ double MERCSRTMVA::ComputeQualityFactor(vector<MRESE*>& RESEs)
   if (SequenceLength > RESEs.size()) {
     mdebug<<"MERCSRTMVA: Too many hits: "<<RESEs.size()<<endl;
     return c_CSRFailed;
+  }  
+  // Now we are in some programming trouble:
+  // We have to evaluate all possible permutations of first degree 
+  // sub elements in raw event:
+  // For 4 hits there are 24 permutations which can be evaluated via this
+  // shifting algorithm:
+  // 4 times do: 432->32->2->32->2->32->2->
+  // ("->" means: evaluate; 4 left shift the first 4 elements, 
+  // 3 left shift 3... and so on.)
+  
+  // First find all different permutations:
+  vector<vector<MRESE*> > Permutations;
+  FindPermutations(RESEs, RESEs.size(), Permutations);
+  
+  // Calculate quality factor:
+  int NGoodPermutations = 0;
+  double QualityFactor = c_CSRFailed;
+  m_QualityFactors.clear();
+  for (unsigned int c = 0; c < Permutations.size(); ++c) {
+    m_DS.Fill(RE->GetEventID(), Permutations[c], m_Geometry);
+    
+    QualityFactor = -m_Readers[SequenceLength-2]->EvaluateMVA("BDTD method");  
+    
+    if (QualityFactor != c_CSRFailed) {
+      m_QualityFactors.insert(map<double, vector<MRESE*>, less_equal<double> >::value_type(QualityFactor, Permutations[c]));
+      NGoodPermutations++;
+    }
   }
   
-  m_DS.Fill(0, RESEs, m_Geometry);
-  
-  return -m_Readers[SequenceLength-2]->EvaluateMVA("BDTD method");  
+  return NGoodPermutations;
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

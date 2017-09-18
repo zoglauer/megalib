@@ -444,7 +444,6 @@ void MERCSR::LeftShift(vector<MRESE*>& RESEs, int Level)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-
 int MERCSR::ComputeAllQualityFactors(MRERawEvent* RE)
 {
   // This function computes all quality factors

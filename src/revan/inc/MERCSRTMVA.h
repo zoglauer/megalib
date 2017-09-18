@@ -62,8 +62,9 @@ class MERCSRTMVA : public MERCSR
  protected:
   //MERCSRTMVA() {};
   //MERCSRTMVA(const MERCSRTMVA& ERCSR) {};
-   
-   virtual double ComputeQualityFactor(vector<MRESE*>& Interactions);
+      
+   /// Compute all quality factors, return the number of good ones
+   virtual int ComputeAllQualityFactors(MRERawEvent* RE);
    
   // private methods:
  private:

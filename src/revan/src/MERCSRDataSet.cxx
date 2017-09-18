@@ -42,6 +42,7 @@ ClassImp(MERCSRDataSet)
 //! Default constructor
 MERCSRDataSet::MERCSRDataSet()
 {
+  m_EventID = -1111; 
 }
 
 
@@ -213,6 +214,17 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
 // Fill the data sets from RESEs
 void MERCSRDataSet::Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometryQuest* Geometry)
 {
+  // Check if we have a new event
+  if (ID != m_EventID) {
+    m_EventID = ID;
+    m_Indices.clear();
+    m_StoreAbsorptionProbabilityToFirstIAAverage.clear();
+    m_StoreAbsorptionProbabilityToFirstIAMaximum.clear();
+    m_StoreAbsorptionProbabilityToFirstIAMinimum.clear();
+    m_StoreZenithAngle.clear();
+    m_StoreNadirAngle.clear();
+  }
+  
   unsigned int SequenceLength = SequencedRESEs.size();
   
   m_SimulationIDs[SequenceLength-2] = ID;
@@ -271,43 +283,71 @@ void MERCSRDataSet::Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometry
   
   // (f) Incoming probabilities
   if (m_CosComptonScatterAngles[SequenceLength-2][0] > -1 && m_CosComptonScatterAngles[SequenceLength-2][0] < 1) {
-    EnergyIncomingGamma = FullEnergy;
-    Phi = acos(m_CosComptonScatterAngles[SequenceLength-2][0]);
-    MVector FirstIAPos = SequencedRESEs[0]->GetPosition();
-    MVector SecondIAPos = SequencedRESEs[1]->GetPosition();
-    MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
-    // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
-    MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
-    // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
-    MVector Incoming = FirstScatteredGammaRayDir;
-    Incoming.RotateAroundVector(Ortho, Phi);
     
-    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
-    m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
-    m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
-    unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
-    if (Steps < 1) Steps = 1;
-    double StepWidth = c_TwoPi/Steps;
-    for (unsigned int a = 0; a < Steps; ++a) {
-      MVector Outgoing = -Incoming;
-      Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
-      Outgoing.Unitize();
-      double P = Geometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
-      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
-      if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
-        m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
-      }
-      if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
-        m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+    // First check if we have already calculated it:
+    bool Found = false;
+    if (m_Indices.size() > 0 && SequenceLength > 3) {
+      auto IndexIter = find(m_Indices.begin(), m_Indices.end(), pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
+      if (IndexIter != m_Indices.end()) {
+        unsigned int Index = IndexIter - m_Indices.begin(); 
+        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAAverage[Index];
+        m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMaximum[Index];
+        m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMinimum[Index];
+        m_ZenithAngle[SequenceLength-2] = m_StoreZenithAngle[Index];
+        m_NadirAngle[SequenceLength-2] = m_StoreNadirAngle[Index];
+        Found = true;
       }
     }
-    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
     
-    // (g) Zenith and Nadir angles
-    MVector Zenith(0, 0, 1);
-    m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
-    MVector Nadir(0, 0, -1);
-    m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
+    if (Found == false) {
+      EnergyIncomingGamma = FullEnergy;
+      Phi = acos(m_CosComptonScatterAngles[SequenceLength-2][0]);
+      MVector FirstIAPos = SequencedRESEs[0]->GetPosition();
+      MVector SecondIAPos = SequencedRESEs[1]->GetPosition();
+      MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
+      // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
+      MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
+      // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
+      MVector Incoming = FirstScatteredGammaRayDir;
+      Incoming.RotateAroundVector(Ortho, Phi);
+      
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
+      m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
+      m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
+      unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
+      if (Steps < 1) Steps = 1;
+                            double StepWidth = c_TwoPi/Steps;
+      for (unsigned int a = 0; a < Steps; ++a) {
+        MVector Outgoing = -Incoming;
+        Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
+        Outgoing.Unitize();
+        double P = Geometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
+        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
+        if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
+          m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
+        }
+        if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
+          m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+        }
+      }
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
+      
+      // (g) Zenith and Nadir angles
+      MVector Zenith(0, 0, 1);
+      m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
+      MVector Nadir(0, 0, -1);
+      m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
+      
+      if (SequenceLength > 3) {
+        m_Indices.push_back(pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
+        m_StoreAbsorptionProbabilityToFirstIAAverage.push_back(m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2]);
+        m_StoreAbsorptionProbabilityToFirstIAMaximum.push_back(m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]);
+        m_StoreAbsorptionProbabilityToFirstIAMinimum.push_back(m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]); 
+        m_StoreZenithAngle.push_back(m_ZenithAngle[SequenceLength-2]); 
+        m_StoreNadirAngle.push_back(m_NadirAngle[SequenceLength-2]);
+      }
+    }
+    
   } else {
     m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
     m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
