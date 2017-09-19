@@ -149,8 +149,10 @@ if [[ ${TMVA} == true ]]; then
   done
   
   wait
-  
-  rm ${LINKS}
+ 
+  if [[ ${LINKS} != "" ]]; then 
+    rm ${LINKS}
+  fi
   
   mv ${LOGS} ${NAME}
 
