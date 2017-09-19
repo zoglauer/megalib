@@ -60,7 +60,7 @@ MResponseMultipleCompton::MResponseMultipleCompton()
   
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 5;
-  m_CSRMaxLength = 7;
+  m_MaxNInteractions = 7;
 
   m_MaxEnergyDifference = 5; // keV
   m_MaxEnergyDifferencePercent = 0.02;
@@ -89,8 +89,8 @@ bool MResponseMultipleCompton::Initialize()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
   
-  m_CSRMaxLength = m_RevanSettings.GetCSRMaxNHits();
-  //m_CSRMaxLength = 3;
+  m_MaxNInteractions = m_RevanSettings.GetCSRMaxNHits();
+  //m_MaxNInteractions = 3;
   m_ReReader->SetCSROnlyCreateSequences(true);
 
   if (m_ReReader->PreAnalysis() == false) return false;
@@ -99,7 +99,7 @@ bool MResponseMultipleCompton::Initialize()
 
   // Axis representing the sequence length:
   vector<float> AxisSequenceLength;
-  for (int i = 2; i <= m_CSRMaxLength+1; ++i) {
+  for (unsigned int i = 2; i <= m_MaxNInteractions+1; ++i) {
     AxisSequenceLength.push_back(i);
   }
   MString NameAxisSequenceLength = "Sequence length";
@@ -392,10 +392,10 @@ bool MResponseMultipleCompton::Analyze()
     
     // Check if complete sequence is ok:
     bool SequenceOk = true;
-    int SequenceLength = RE->GetNRESEs();
+    unsigned int SequenceLength = RE->GetNRESEs();
     int PreviousPosition = 0;
     
-    if (SequenceLength > m_CSRMaxLength) continue;
+    if (SequenceLength > m_MaxNInteractions) continue;
     
     if (SequenceLength == 2) {
       // Look at start:

@@ -74,7 +74,7 @@ MResponseMultipleComptonNeuralNet::MResponseMultipleComptonNeuralNet()
   
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 10;
-  m_CSRMaxLength = 10;
+  m_MaxNInteractions = 10;
   
   mimp<<"Is this stuff still needed????"<<show;
   m_MaxEnergyDifference = 5; // keV
@@ -130,8 +130,8 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   
   int f = 0;
   
-  m_CSRMaxLength = 3;
-  mimp<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<show;
+  m_MaxNInteractions = 3;
+  mimp<<"Fixing m_MaxNInteractions = "<<m_MaxNInteractions<<show;
   
   // Information needs to go into base file! 
   m_EnergyMin.push_back(0.0);
@@ -164,10 +164,10 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   m_SequenceNNIOStore.resize(m_EnergyMin.size());
   m_SequenceBestVerificationDataRatio.resize(m_EnergyMin.size());
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    m_SequenceNNs[e].resize(m_CSRMaxLength+1);
-    m_SequenceNNIOStore[e].resize(m_CSRMaxLength+1);
-    m_SequenceBestVerificationDataRatio[e].resize(m_CSRMaxLength+1);
-    for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+    m_SequenceNNs[e].resize(m_MaxNInteractions+1);
+    m_SequenceNNIOStore[e].resize(m_MaxNInteractions+1);
+    m_SequenceBestVerificationDataRatio[e].resize(m_MaxNInteractions+1);
+    for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
       
       //m_SequenceNNs[e][i].SetNNeuralNetworks(7);
       
@@ -235,10 +235,10 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   m_QualityNNIOStore.resize(m_EnergyMin.size());
   m_QualityBestVerificationDataRatio.resize(m_EnergyMin.size());
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    m_QualityNNs[e].resize(m_CSRMaxLength+1);
-    m_QualityNNIOStore[e].resize(m_CSRMaxLength+1);
-    m_QualityBestVerificationDataRatio[e].resize(m_CSRMaxLength+1);
-    for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+    m_QualityNNs[e].resize(m_MaxNInteractions+1);
+    m_QualityNNIOStore[e].resize(m_MaxNInteractions+1);
+    m_QualityBestVerificationDataRatio[e].resize(m_MaxNInteractions+1);
+    for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
       
       //m_QualityNNs[e][i].SetNNeuralNetworks(7); 
       
@@ -300,8 +300,8 @@ bool MResponseMultipleComptonNeuralNet::Initialize()
   Save();
   
   // Build permutation matrix:
-  m_Permutator.resize(m_CSRMaxLength+1);
-  for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+  m_Permutator.resize(m_MaxNInteractions+1);
+  for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
     vector<vector<unsigned int>> Permutations;
     vector<unsigned int> Indices;
     for (unsigned int j = 0; j < i; ++j) {
@@ -387,7 +387,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
   fout<<"# Networks"<<endl;
   bool Return = true;
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+    for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
       ostringstream out;
       out<<GetFilePrefix()<<".e"<<e<<".s"<<i<<".seq.rsp";
       if (m_SequenceNNs[e][i].Save(out.str().c_str()) == false) {
@@ -397,7 +397,7 @@ bool MResponseMultipleComptonNeuralNet::Save()
     }
   }
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+    for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
       ostringstream out;
       out<<GetFilePrefix()<<".e"<<e<<".s"<<i<<".qual.rsp";
       if (m_QualityNNs[e][i].Save(out.str().c_str()) == false) {
@@ -458,8 +458,8 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
   vector<vector<int>> ClassicSequenceBad(m_EnergyMin.size());
   
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    ClassicSequenceGood[e].resize(m_CSRMaxLength+1);
-    ClassicSequenceBad[e].resize(m_CSRMaxLength+1);
+    ClassicSequenceGood[e].resize(m_MaxNInteractions+1);
+    ClassicSequenceBad[e].resize(m_MaxNInteractions+1);
   }
   
   // Current event parameters
@@ -520,7 +520,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
         continue;
       }
       
-      if (SequenceLength > (unsigned int) m_CSRMaxLength) {
+      if (SequenceLength > (unsigned int) m_MaxNInteractions) {
         mdebug<<"CreateResponse: To many hits: "<<SequenceLength<<endl;
         continue;
       }
@@ -1027,7 +1027,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
       
       //
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-        for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
+        for (unsigned int s = 2; s <= (unsigned int) m_MaxNInteractions; ++s) {
           cout<<"Bin size: e="<<e<<", seq="<<s<<": "<<m_SequenceNNIOStore[e][s].Size()<<endl;
           if (m_SequenceNNIOStore[e][s].Size() > m_EventsToStore) {
             cout<<" ---> Cutting..."<<endl;
@@ -1037,7 +1037,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
       }
       
       for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-        for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
+        for (unsigned int s = 2; s <= (unsigned int) m_MaxNInteractions; ++s) {
           cout<<"Bin size: e="<<e<<", seq="<<s<<": "<<m_QualityNNIOStore[e][s].Size()<<endl;
           if (m_QualityNNIOStore[e][s].Size() > m_EventsToStore) {
             cout<<" ---> Cutting..."<<endl;
@@ -1101,25 +1101,25 @@ void MResponseMultipleComptonNeuralNet::Teach()
   vector<vector<double>> QualityVerificationDataRatio(m_EnergyMin.size());
   
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    SequenceGood[e].resize(m_CSRMaxLength+1);
-    SequenceBad[e].resize(m_CSRMaxLength+1);
-    SequenceRatio[e].resize(m_CSRMaxLength+1);
+    SequenceGood[e].resize(m_MaxNInteractions+1);
+    SequenceBad[e].resize(m_MaxNInteractions+1);
+    SequenceRatio[e].resize(m_MaxNInteractions+1);
     
-    SequenceVerificationDataGood[e].resize(m_CSRMaxLength+1);
-    SequenceVerificationDataBad[e].resize(m_CSRMaxLength+1);
-    SequenceVerificationDataRatio[e].resize(m_CSRMaxLength+1);
+    SequenceVerificationDataGood[e].resize(m_MaxNInteractions+1);
+    SequenceVerificationDataBad[e].resize(m_MaxNInteractions+1);
+    SequenceVerificationDataRatio[e].resize(m_MaxNInteractions+1);
     
-    QualityGood[e].resize(m_CSRMaxLength+1);
-    QualityBad[e].resize(m_CSRMaxLength+1);
-    QualityRatio[e].resize(m_CSRMaxLength+1);
+    QualityGood[e].resize(m_MaxNInteractions+1);
+    QualityBad[e].resize(m_MaxNInteractions+1);
+    QualityRatio[e].resize(m_MaxNInteractions+1);
     
-    QualityVerificationDataGood[e].resize(m_CSRMaxLength+1);
-    QualityVerificationDataBad[e].resize(m_CSRMaxLength+1);
-    QualityVerificationDataRatio[e].resize(m_CSRMaxLength+1);
+    QualityVerificationDataGood[e].resize(m_MaxNInteractions+1);
+    QualityVerificationDataBad[e].resize(m_MaxNInteractions+1);
+    QualityVerificationDataRatio[e].resize(m_MaxNInteractions+1);
   }
   
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
+    for (unsigned int s = 2; s <= (unsigned int) m_MaxNInteractions; ++s) {
       SequenceGood[e][s] = 0;
       SequenceBad[e][s] = 0;
       SequenceRatio[e][s] = 0;
@@ -1140,8 +1140,8 @@ void MResponseMultipleComptonNeuralNet::Teach()
   
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
     cout<<"Energy loop: "<<e<<endl;
-    for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
-      cout<<"Sequence loop: "<<s<<"/"<<m_CSRMaxLength<<endl;
+    for (unsigned int s = 2; s <= (unsigned int) m_MaxNInteractions; ++s) {
+      cout<<"Sequence loop: "<<s<<"/"<<m_MaxNInteractions<<endl;
       cout<<" + size sequence store: "<<m_SequenceNNIOStore[e][s].Size()<<endl;
       cout<<" + size quality store: "<<m_QualityNNIOStore[e][s].Size()<<endl;
       
@@ -1417,7 +1417,7 @@ void MResponseMultipleComptonNeuralNet::Teach()
   
   // Check what we have learned:
   for (unsigned int e = 0; e < m_EnergyMin.size(); ++e) {
-    for (unsigned int s = 2; s <= (unsigned int) m_CSRMaxLength; ++s) {
+    for (unsigned int s = 2; s <= (unsigned int) m_MaxNInteractions; ++s) {
       cout<<endl;
       cout<<"Performance for sequence length "<<s<<" within "<<m_EnergyMin[e]<<" - "<<m_EnergyMax[e]<<" keV"<<endl;
       

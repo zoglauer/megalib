@@ -92,6 +92,8 @@ MResponseCreator::MResponseCreator()
   m_MaxNEvents = numeric_limits<int>::max();
 
   m_NoAbsorptions = false;
+  m_TMVAMethodsString = "BDTD";
+  m_MaxNInteractions = 7;
 
   m_SaveAfter = 100000;
 
@@ -123,7 +125,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -f  --filename        file  m  file name (either sim/evta file, or training data)"<<endl;
   Usage<<"      -d  --debug                    enable debug"<<endl;
   Usage<<"      -r  --response-name   file     response file name"<<endl;
-  Usage<<"      -v  --verify                   verify"<<endl;
+  //Usage<<"      -v  --verify                   verify"<<endl;
   Usage<<"      -m  --mode            text  m  the modes are: "<<endl;
   Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
   Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
@@ -147,12 +149,18 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -c  --revan-config    file     use this revan configuration file instead of defaults"<<endl;
   Usage<<"      -b  --mimrec-config   file     use this mimrec configuration file instead of defaults for the imaging response"<<endl;
   Usage<<"      -s  --save            int      save after this amount of entries"<<endl;
-  Usage<<"          --no-absorptions           don't calculate absoption probabilities"<<endl;
   Usage<<"      -z                             gzip the generated files"<<endl;
   Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
-
+  Usage<<"    Special options:"<<endl;
+  Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
+  Usage<<"          --no-absorptions           don't calculate absoption probabilities - excludes all data sets with use absorption probabilities"<<endl;
+  Usage<<"          --max-interactions         maximum number of interactions to look at (don't go beyond 6-7)"<<endl;
+  Usage<<"      For TMVA Compton mode (ct): "<<endl;
+  Usage<<"          --tmva-methods             comma-separated list (no spaces) of TMVA methods to use: BDTD (*), MLP (*), DNN_GPU, DNN_CPU"<<endl;
+  Usage<<endl;
+  
   string Option, SubOption;
 
   // Check for help
@@ -282,6 +290,13 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     } else if (Option == "--no-absorptions") {
       m_NoAbsorptions = true;
       cout<<"Calculating no absorptions"<<endl;
+    } else if (Option == "--max-interactions") {
+      m_MaxNInteractions = atoi(argv[++i]);
+      if (m_MaxNInteractions < 2) m_MaxNInteractions = 2;
+      cout<<"Maximum number of interactions: "<<m_MaxNInteractions<<endl;
+    } else if (Option == "--tmva-methods") {
+      m_TMVAMethodsString = argv[++i];
+      cout<<"TMVA methods to use "<<m_TMVAMethodsString<<endl;
     } else if (Option == "-d") {
       if (g_Verbosity < 2) g_Verbosity = c_Chatty;
       cout<<"Enabling debug!"<<endl;
@@ -351,6 +366,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
 
+    Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 
@@ -376,6 +392,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
     
+    Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
@@ -395,7 +412,10 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetResponseName(m_ResponseName);
     //Response.SetCompression(m_Compress);
     
-    //Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetMethods(m_TMVAMethodsString);
+    
+    Response.SetMaxNInteractions(m_MaxNInteractions);
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
     //Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
     //Response.SetRevanSettingsFileName(m_RevanCfgFileName);
@@ -420,6 +440,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
     
+    Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
     
@@ -445,6 +466,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetResponseName(m_ResponseName);
     Response.SetCompression(m_Compress);
     // Response.SetStartEventID(0);
+    Response.SetMaxNInteractions(m_MaxNInteractions);
     Response.SetMaxNumberOfEvents(m_MaxNEvents);
     Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
 

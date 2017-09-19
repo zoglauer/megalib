@@ -73,17 +73,18 @@ class MResponseCreator
   MString m_ResponseName;
 
   //! Current operation mode
-  int m_Mode;
+  unsigned int m_Mode;
   //! Only verify the reconstruction approach
   bool m_Verify;
 
   //! Event ID to start analysis with
-  int m_StartEvent;
+  unsigned long m_StartEvent;
   //! Maximum Number of analysed events (not stop ID)
-  int m_MaxNEvents;
+  unsigned long m_MaxNEvents;
   //! Save after so many analyzed events the response file
-  int m_SaveAfter;
-
+  unsigned long m_SaveAfter;
+  
+  
   //! Name of the revan configuration file
   MString m_RevanCfgFileName;
   //! Name of the mimrec configuration file
@@ -91,6 +92,10 @@ class MResponseCreator
 
   //! Don't look at absorptions when in multiple Compton mode
   bool m_NoAbsorptions;
+  //! Maximum number of interactions to look at in Compton mode
+  unsigned int m_MaxNInteractions;
+  //! TMVA methods to use (default BDTD)
+  MString m_TMVAMethodsString;
 
   //! Compress the output response files
   bool m_Compress;

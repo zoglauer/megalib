@@ -62,6 +62,8 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
   // Construct an instance of MResponseMultipleComptonTMVA
   
   m_ResponseNameSuffix = "tmva";
+  m_MaxNEvents = 10000000; // 10 Mio
+  m_MethodsString = "BDTD";
 }
 
 
@@ -82,11 +84,26 @@ bool MResponseMultipleComptonTMVA::Initialize()
 { 
   // MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU
   m_Methods["MLP"] = 0;
-  m_Methods["BDTD"] = 1;
+  m_Methods["BDTD"] = 0;
   m_Methods["PDEFoamBoost"] = 0;
   m_Methods["DNN_GPU"] = 0;
   m_Methods["DNN_CPU"] = 0;
   
+  vector<MString> MethodsStrings = m_MethodsString.Tokenize(",");
+  unsigned int NUsedMethods = 0;
+  for (MString M: MethodsStrings) {
+    if (m_Methods.find(M) != m_Methods.end()) {
+      m_Methods[M] = 1;
+      ++NUsedMethods;
+    } else {
+      merr<<"Unable to find method: "<<M<<endl;
+      return false;
+    }
+  }
+  if (NUsedMethods == 0) {
+    merr<<"No TMVA methods set."<<endl;
+    return false;
+  }
   
   // First find good and bad file name
   MString GoodFileName;
@@ -107,7 +124,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   // Second find all the files for different sequence lengths
   size_t Index = GoodFileName.FindLast(".seq");
   MString Prefix = GoodFileName.GetSubString(0, Index);
-  for (unsigned int s = 2; s <= 10; ++s) {
+  for (unsigned int s = 2; s <= m_MaxNInteractions; ++s) {
     MString Good = Prefix + ".seq" + s + ".good.root";
     MString Bad = Prefix + ".seq" + s + ".bad.root";
 
@@ -262,21 +279,37 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   // The background tree could be much larger than the source
   // If it is more than twice as large create a smaller tree for training
   
-  unsigned int SourceTreeSize = SourceTree->GetEntries();
-  unsigned int BackgroundTreeSize = BackgroundTree->GetEntries();  
+  unsigned long SourceTreeSize = SourceTree->GetEntries();
+  unsigned long BackgroundTreeSize = BackgroundTree->GetEntries();  
   
-  cout<<"Tree sizes: "<<BackgroundTreeSize<<" "<<SourceTreeSize<<endl;
-
-  if (BackgroundTreeSize > 2*SourceTreeSize) {
-    cout<<"Reducing background tree size from "<<BackgroundTreeSize<<" to "<<2*SourceTreeSize<<endl;
+  cout<<"Tree sizes: background: "<<BackgroundTreeSize<<"  source: "<<SourceTreeSize<<endl;
+  
+  if (SourceTreeSize > m_MaxNEvents) {
+    cout<<"Reducing source tree size from "<<BackgroundTreeSize<<" to "<<m_MaxNEvents<<" (i.e. the maximum set)"<<endl;
+    TTree* NewSourceTree = SourceTree->CloneTree(0);
+    NewSourceTree->SetDirectory(0);
+    
+    for (unsigned long i = 0; i < m_MaxNEvents; ++i) {
+      SourceTree->GetEntry(i);
+      NewSourceTree->Fill();
+    }
+    
+    SourceFile->Close();
+    SourceTree = NewSourceTree;
+    SourceTreeSize = m_MaxNEvents;
+  }  
+  
+  if (BackgroundTreeSize > SourceTreeSize) {
+    cout<<"Reducing background tree size from "<<BackgroundTreeSize<<" to "<<SourceTreeSize<<" (the source tree size)"<<endl;
     TTree* NewBackgroundTree = BackgroundTree->CloneTree(0);
     NewBackgroundTree->SetDirectory(0);
-   
-    for (long i = 0; i < 2*SourceTreeSize; ++i) {
+    
+    for (unsigned long i = 0; i < SourceTreeSize; ++i) {
       BackgroundTree->GetEntry(i);
       NewBackgroundTree->Fill();
     }
-
+    
+    BackgroundFile->Close();
     BackgroundTree = NewBackgroundTree;
   }  
   

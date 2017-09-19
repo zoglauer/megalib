@@ -61,7 +61,6 @@ MResponseMultipleComptonEventFile::MResponseMultipleComptonEventFile()
   
   m_DoAbsorptions = true;
   m_MaxAbsorptions = 10;
-  m_CSRMaxLength = 10;
   
   m_MaxEnergyDifference = 5; // keV
   m_MaxEnergyDifferencePercent = 0.02;
@@ -99,8 +98,8 @@ bool MResponseMultipleComptonEventFile::Initialize()
   
   
   // Build permutation matrix:
-  m_Permutator.resize(m_CSRMaxLength+1);
-  for (unsigned int i = 2; i <= (unsigned int) m_CSRMaxLength; ++i) {
+  m_Permutator.resize(m_MaxNInteractions+1);
+  for (unsigned int i = 2; i <= (unsigned int) m_MaxNInteractions; ++i) {
     vector<vector<unsigned int>> Permutations;
     vector<unsigned int> Indices;
     for (unsigned int j = 0; j < i; ++j) {
@@ -125,12 +124,8 @@ bool MResponseMultipleComptonEventFile::Initialize()
   //     }
   //   }  
   
-  // Create the ROOT tree for TMVA analysis
-  
-  m_CSRMaxLength = 5;
-  cout<<"Fixing m_CSRMaxLength = "<<m_CSRMaxLength<<endl;
-  
-  m_DS.Initialize(m_CSRMaxLength);
+  // Create the ROOT tree for TMVA analysis  
+  m_DS.Initialize(m_MaxNInteractions);
   
   m_DS.CreateTrees(m_TreeGood, m_TreeBad);
   
@@ -194,7 +189,7 @@ bool MResponseMultipleComptonEventFile::Analyze()
       continue;
     }
     
-    if (SequenceLength > (unsigned int) m_CSRMaxLength) {
+    if (SequenceLength > (unsigned int) m_MaxNInteractions) {
       mdebug<<"CreateResponse: Too many hits: "<<SequenceLength<<endl;
       continue;
     }

@@ -37,7 +37,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MResponseMultipleComptonTMVA : public MResponseBuilder
+class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
 {
   // public interface:
  public:
@@ -45,6 +45,9 @@ class MResponseMultipleComptonTMVA : public MResponseBuilder
   MResponseMultipleComptonTMVA();
   //! Default destructor
   virtual ~MResponseMultipleComptonTMVA();
+  
+  //! Set TMVA methods striung -- parsing happens in Initialize()
+  void SetMethods(MString MethodsString) { m_MethodsString = MethodsString; }
   
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
@@ -54,9 +57,11 @@ class MResponseMultipleComptonTMVA : public MResponseBuilder
   
   // protected methods:
  protected:
-   //! Entry point for the deconvolution thread
-   virtual void AnalysisThreadEntry(unsigned int ThreadID);
-   
+  //! Entry point for the deconvolution thread
+  virtual void AnalysisThreadEntry(unsigned int ThreadID);
+  
+  //! Save the response matrices
+  virtual bool Save() { return true; }   
 
   // private methods:
  private:
@@ -65,20 +70,23 @@ class MResponseMultipleComptonTMVA : public MResponseBuilder
 
   // protected members:
  protected:
-   //! The used methods
-   map<MString, int> m_Methods;  
-
-   //! The good file names
-   vector<MString> m_GoodFileNames;
-   //! The bad file names
-   vector<MString> m_BadFileNames;
-   //! The sequence length
-   vector<unsigned int> m_SequenceLengths;
+  //! The used methods
+  map<MString, int> m_Methods;  
+  //! The input TMVA methods string
+  MString m_MethodsString;
+  
+  
+  //! The good file names
+  vector<MString> m_GoodFileNames;
+  //! The bad file names
+  vector<MString> m_BadFileNames;
+  //! The sequence length
+  vector<unsigned int> m_SequenceLengths;
    
-   //! Flags indicating the threads are running:
-   vector<bool> m_ThreadRunning;
-   //! Thread parameter mutex
-   mutex m_TheadMutex;
+  //! Flags indicating the threads are running:
+  vector<bool> m_ThreadRunning;
+  //! Thread parameter mutex
+  mutex m_TheadMutex;
    
 #ifdef ___CINT___
  public:

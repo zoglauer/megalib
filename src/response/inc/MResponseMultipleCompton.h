@@ -50,7 +50,9 @@ class MResponseMultipleCompton : public MResponseBuilder
 
   //! Set whether or not absorptions should be considered
   void SetDoAbsorptions(const bool Flag = true) { m_DoAbsorptions = Flag; }
-
+  //! Set whether or not absorptions should be considered
+  void SetMaxNInteractions(const unsigned int MaxNInteractions) { m_MaxNInteractions = MaxNInteractions; }
+  
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
 
@@ -127,9 +129,9 @@ class MResponseMultipleCompton : public MResponseBuilder
   //! Do or not to do absorptions
   bool m_DoAbsorptions;
   //! MaximumSequenceLength up to which absorptions are considered
-  int m_MaxAbsorptions;
+  unsigned int m_MaxAbsorptions;
   //! Maximum number of individual Compton interactions to be considered
-  int m_CSRMaxLength;
+  unsigned int m_MaxNInteractions;
 
   double m_MaxEnergyDifference;
   double m_MaxEnergyDifferencePercent;
