@@ -31,6 +31,7 @@ using namespace std;
 #include "MComptonEvent.h"
 #include "MVector.h"
 #include "MERCSRDataSet.h"
+#include "MERCSRTMVAMethods.h"
 
 // Forward declarations:
 class MRESE;
@@ -48,6 +49,7 @@ class MERCSRTMVA : public MERCSR
   virtual ~MERCSRTMVA();
 
   virtual bool SetParameters(MString FileName,
+                             MERCSRTMVAMethods Methods,
                              MGeometryRevan* Geometry,
                              double ThresholdMin = 0.0,
                              double ThresholdMax = 0.5,
@@ -80,11 +82,8 @@ class MERCSRTMVA : public MERCSR
   //! The training data file name
   MString m_FileName;
 
-  //! The available methods
-  map<MString, int> m_AvailableMethods;
-
-  //! The used methods
-  vector<MString> m_UsedMethods;
+  //! The used TMVA methods
+  MERCSRTMVAMethods m_Methods;
   
   //! The data set
   MERCSRDataSet m_DS;

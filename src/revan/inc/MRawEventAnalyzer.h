@@ -31,6 +31,7 @@ using namespace std;
 #include "MFileEventsEvta.h"
 #include "MFileEventsTra.h"
 #include "MSettingsEventReconstruction.h"
+#include "MERCSRTMVAMethods.h"
 
 // Forward declarations:
 class MDGeometryQuest;
@@ -245,6 +246,8 @@ class MRawEventAnalyzer
   void SetBCTFileName(MString FileName) { m_BCTFileName = FileName; }
   
   void SetTMVAFileName(MString FileName) { m_TMVAFileName = FileName; }
+  void SetTMVAMethods(MERCSRTMVAMethods Methods) { m_TMVAMethods = Methods; }
+  
   
   void SetFocalSpotCenter(MVector FocalSpotCenter) { m_FocalSpotCenter = FocalSpotCenter; }
   void SetLensCenter(MVector LensCenter) { m_LensCenter = LensCenter; }
@@ -400,6 +403,7 @@ class MRawEventAnalyzer
   MString m_BCTFileName;
   
   MString m_TMVAFileName;
+  MERCSRTMVAMethods m_TMVAMethods;
   
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;

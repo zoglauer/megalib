@@ -72,6 +72,9 @@ class MGUIOptionsCSR : public MGUIDialog
   MGUIEFileSelector* m_BayesianFileSelector;
 
   MGUIEFileSelector* m_TMVAFileSelector;
+  MGUIERBList* m_TMVAMethods;
+  //! Map button IDs to TMVA methods
+  map<int, MERCSRTMVAMethod> m_TMVAMethodsMap;
   
 #ifdef ___CINT___
  public:

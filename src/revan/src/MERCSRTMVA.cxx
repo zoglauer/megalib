@@ -81,7 +81,8 @@ MERCSRTMVA::~MERCSRTMVA()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERCSRTMVA::SetParameters(MString FileName, 
+bool MERCSRTMVA::SetParameters(MString FileName,
+                               MERCSRTMVAMethods Methods, 
                                MGeometryRevan* Geometry, 
                                double QualityFactorMin, 
                                double QualityFactorMax, 
@@ -97,7 +98,7 @@ bool MERCSRTMVA::SetParameters(MString FileName,
                             CreateOnlyPermutations) == false) return false;
 
   m_FileName = FileName;
-  m_UsedMethods.push_back("BDTD");
+  m_Methods = Methods;
   
   m_QualityFactorMin = -numeric_limits<double>::max();
   m_QualityFactorMax = +numeric_limits<double>::max();
@@ -106,7 +107,8 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   // Read the steering file
   MParser SteeringFile;
   if (SteeringFile.Open(FileName, MFile::c_Read) == false) {
-    merr<<"Unable to open TMVA steering file: "<<FileName<<endl;  
+    mgui<<"Unable to open TMVA steering file: "<<FileName<<error;
+    return false;
   }
   
   MString BaseDirectory = FileName;
@@ -130,12 +132,23 @@ bool MERCSRTMVA::SetParameters(MString FileName,
     }
     
     else if (T->IsTokenAt(0, "TA") == true) {
+      vector<MERCSRTMVAMethod> AvailableMethods;
       vector<MString> Methods = T->GetTokenAtAsStringVector(1);
       for (MString M: Methods) {
-        m_AvailableMethods[M] = 1;
+        AvailableMethods.push_back(m_Methods.GetMethod(M));
+      }
+      // Verify that only availbale methods are UsedMethods
+      vector<MERCSRTMVAMethod> UsedMethods = m_Methods.GetUsedMethods();
+      for (MERCSRTMVAMethod M: UsedMethods) {
+        if (find(AvailableMethods.begin(), AvailableMethods.end(), M) == AvailableMethods.end()) {
+          mgui<<"Method "<<m_Methods.GetString(M)<<" is not available."<<error;
+          m_Methods.UnsetUsedMethod(M);
+          return false;
+        }
       }
     }
   }
+    
     
   // Create the data sets - must be identical to what's in the response creator
   m_DS.Initialize(m_MaxNInteractions);
@@ -146,10 +159,11 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   cout<<"Max N Interactions: "<<m_MaxNInteractions<<" vs. "<<m_Readers.size()<<endl;
   
   // Book the methods
+  vector<MERCSRTMVAMethod> UsedMethods = m_Methods.GetUsedMethods();
   for (unsigned int r = 0; r < m_Readers.size(); ++r) {
-    for (unsigned int m = 0; m < m_UsedMethods.size(); ++m) {
-      MString MethodName = m_UsedMethods[m] + " method";
-      MString WeightsFile = BaseDirectory + "/N" + (r+2) + "/weights/TMVAClassification_" + m_UsedMethods[m] + ".weights.xml";
+    for (unsigned int m = 0; m < UsedMethods.size(); ++m) {
+      MString MethodName = m_Methods.GetString(UsedMethods[m]) + " method";
+      MString WeightsFile = BaseDirectory + "/N" + (r+2) + "/weights/TMVAClassification_" + m_Methods.GetString(UsedMethods[m]) + ".weights.xml";
       MFile::ExpandFileName(WeightsFile);
       m_Readers[r]->BookMVA(MethodName.Data(), WeightsFile.Data());
     }  
@@ -254,7 +268,10 @@ MString MERCSRTMVA::ToString(bool CoreOnly) const
 
   out<<"# CSR - TMVA options:"<<endl;
   out<<"# "<<endl;
-  out<<"# Filename:                        "<<m_FileName<<endl;
+  out<<"# File name:                          "<<m_FileName<<endl;
+  if (m_Methods.GetUsedMethods().size() > 0) {
+    out<<"# Method:                             "<<m_Methods.GetFullString(m_Methods.GetUsedMethods()[0])<<endl;
+  }
   out<<MERCSR::ToString(true);
   out<<"# "<<endl;
   

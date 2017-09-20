@@ -336,6 +336,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetBCTFileName(S->GetBayesianComptonFileName());
   
   SetTMVAFileName(S->GetTMVAFileName());
+  SetTMVAMethods(S->GetTMVAMethods());
   
   SetLensCenter(S->GetLensCenter());
   SetFocalSpotCenter(S->GetFocalSpotCenter());
@@ -1168,6 +1169,7 @@ bool MRawEventAnalyzer::PreAnalysis()
     } else if (m_CSRAlgorithm == c_CSRAlgoTMVA) {
       m_CSR = new MERCSRTMVA();
       if (dynamic_cast<MERCSRTMVA*>(m_CSR)->SetParameters(m_TMVAFileName, 
+        m_TMVAMethods,
         m_Geometry, 
         m_CSRThresholdMin, 
         m_CSRThresholdMax, 

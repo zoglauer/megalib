@@ -82,25 +82,13 @@ MResponseMultipleComptonTMVA::~MResponseMultipleComptonTMVA()
 //! Initialize the response matrices and their generation
 bool MResponseMultipleComptonTMVA::Initialize() 
 { 
-  // MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU
-  m_Methods["MLP"] = 0;
-  m_Methods["BDTD"] = 0;
-  m_Methods["PDEFoamBoost"] = 0;
-  m_Methods["DNN_GPU"] = 0;
-  m_Methods["DNN_CPU"] = 0;
-  
-  vector<MString> MethodsStrings = m_MethodsString.Tokenize(",");
-  unsigned int NUsedMethods = 0;
-  for (MString M: MethodsStrings) {
-    if (m_Methods.find(M) != m_Methods.end()) {
-      m_Methods[M] = 1;
-      ++NUsedMethods;
-    } else {
-      merr<<"Unable to find method: "<<M<<endl;
-      return false;
-    }
+  m_Methods.ResetUsedMethods();
+  if (m_Methods.SetUsedMethods(m_MethodsString) == false) {
+    merr<<"Having troubles to set the used TMVA methods."<<endl;
+    return false;
   }
-  if (NUsedMethods == 0) {
+  
+  if (m_Methods.GetNumberOfUsedMethods() == 0) {
     merr<<"No TMVA methods set."<<endl;
     return false;
   }
@@ -147,6 +135,10 @@ bool MResponseMultipleComptonTMVA::Initialize()
   
   // Create output directory
   MString OutDir = m_ResponseName;
+  if (MFile::FileExists(OutDir) == true) {
+    merr<<"Cannot create output directory"<<endl;
+    return false;   
+  }
   gSystem->mkdir(OutDir);  
   
   // Create steering file
@@ -162,13 +154,7 @@ bool MResponseMultipleComptonTMVA::Initialize()
   out<<endl;
   out<<endl;
   out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
-  out<<"TA ";
-  for (std::pair<MString, int> E : m_Methods) {
-    if (E.second == 1) {
-      out<<E.first<<" ";
-    }
-  }
-  out<<endl;
+  out<<"TA "<<m_Methods.GetUsedMethodsString()<<endl;
   out<<endl;  
   out<<"# Directory name"<<endl;
   out<<"DN "<<m_ResponseName<<endl;
@@ -285,7 +271,7 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   cout<<"Tree sizes: background: "<<BackgroundTreeSize<<"  source: "<<SourceTreeSize<<endl;
   
   if (SourceTreeSize > m_MaxNEvents) {
-    cout<<"Reducing source tree size from "<<BackgroundTreeSize<<" to "<<m_MaxNEvents<<" (i.e. the maximum set)"<<endl;
+    cout<<"Reducing source tree size from "<<SourceTreeSize<<" to "<<m_MaxNEvents<<" (i.e. the maximum set)"<<endl;
     TTree* NewSourceTree = SourceTree->CloneTree(0);
     NewSourceTree->SetDirectory(0);
     
@@ -351,27 +337,29 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   
   dataloader->PrepareTrainingAndTestTree("", Prep);
   
-  dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:V");
+  // Random splitting, new seed each time, verbose output 
+  dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:SplitSeed=0:V");
   
   // Standard MLP
-  if (m_Methods["MLP"] == 1) {
-    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
+    // New seed each run via RandomSeed=0
+    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:RandomSeed=0:!UseRegulator" );
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
-  if (m_Methods["BDTD"] == 1) {
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_BDTD) == true) {
     factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
   }
   
-  if (m_Methods["PDEFoamBoost"] == 1) {
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_PDEFoamBoost) == true) {
     factory->BookMethod( dataloader, TMVA::Types::kPDEFoam, "PDEFoamBoost","!H:!V:Boost_Num=30:Boost_Transform=linear:SigBgSeparate=F:MaxDepth=4:UseYesNoCell=T:DTLogic=MisClassificationError:FillFoamWithOrigWeights=F:TailCut=0:nActiveCells=500:nBin=20:Nmin=400:Kernel=None:Compress=T" );
   }
   
-
+  /*
   if (m_Methods["PDERSPCA"] == 1) {
     factory->BookMethod( dataloader, TMVA::Types::kPDERS, "PDERSPCA", "!H:!V:VolumeRangeMode=Adaptive:KernelEstimator=Gauss:GaussSigma=0.3:NEventsMin=400:NEventsMax=600:VarTransform=PCA" );
   }
-  
+  */
   
   // General layout.
   TString layoutString ("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
@@ -389,13 +377,13 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   dnnOptions.Append (":"); dnnOptions.Append (trainingStrategyString);
   
   // Cuda implementation.
-  if (m_Methods["DNN_GPU"] == 1) {
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_DNN_GPU) == true) {
     TString gpuOptions = dnnOptions + ":Architecture=GPU";
     factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", gpuOptions);
   }
   
   // Multi-core CPU implementation.
-  if (m_Methods["DNN_CPU"] == 1) {
+  if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_DNN_CPU) == true) {
     TString cpuOptions = dnnOptions + ":Architecture=CPU";
     factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", cpuOptions);
   }
@@ -413,7 +401,6 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   m_ThreadRunning[ThreadID] = false;
   m_TheadMutex.unlock();
 }
-
 
 
 // MResponseMultipleComptonTMVA.cxx: the end...

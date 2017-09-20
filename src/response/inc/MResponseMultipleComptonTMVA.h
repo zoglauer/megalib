@@ -30,6 +30,7 @@ using namespace std;
 #include "MRESE.h"
 #include "MRERawEvent.h"
 #include "MRETrack.h"
+#include "MERCSRTMVAMethods.h"
 
 // Forward declarations:
 
@@ -70,11 +71,10 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
 
   // protected members:
  protected:
-  //! The used methods
-  map<MString, int> m_Methods;  
-  //! The input TMVA methods string
+  //! The used TMVA methods
+  MERCSRTMVAMethods m_Methods;
+  //! The methods string
   MString m_MethodsString;
-  
   
   //! The good file names
   vector<MString> m_GoodFileNames;

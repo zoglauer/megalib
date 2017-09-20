@@ -49,6 +49,7 @@ LOBJS = $(LB)/MGeometryRevan.o \
 	$(LB)/MERCSREnergyRecovery.o \
 	$(LB)/MERCSRBayesian.o \
 	$(LB)/MERCSRTMVA.o \
+	$(LB)/MERCSRTMVAMethods.o \
 	$(LB)/MERCSRToF.o \
 	$(LB)/MERCSRToFWithEnergyRecovery.o \
 	$(LB)/MERCSRDataSet.o \
