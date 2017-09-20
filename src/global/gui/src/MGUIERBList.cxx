@@ -143,8 +143,7 @@ void MGUIERBList::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIERBList::ProcessMessage(long Message, long Parameter1, 
-                                   long Parameter2)
+bool MGUIERBList::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this application
   int i;

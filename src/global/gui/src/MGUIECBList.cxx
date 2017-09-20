@@ -153,8 +153,7 @@ void MGUIECBList::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIECBList::ProcessMessage(long Message, long Parameter1, 
-                                   long Parameter2)
+bool MGUIECBList::ProcessMessage(long Message, long Parameter1, long Parameter2)
 {
   // Process the messages for this application, mainly the scollbar moves:
 
