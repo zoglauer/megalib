@@ -322,23 +322,9 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   dataloader->AddSignalTree(SourceTree, 1.0);
   dataloader->AddBackgroundTree(BackgroundTree, 1.0);
 
-  
-  TString Prep = "SplitMode=Random:V";
-  /*
-  Prep += ":nTrain_Signal=";
-  Prep += SE/2;
-  Prep += ":nTest_Signal=";
-  Prep += SE/2;
-  Prep += ":nTrain_Background=";
-  Prep += SE/2;
-  Prep += ":nTest_Background=";
-  Prep += SE/2;
-  */
-  
-  dataloader->PrepareTrainingAndTestTree("", Prep);
-  
   // Random splitting, new seed each time, verbose output 
-  dataloader->PrepareTrainingAndTestTree("", "SplitMode=Random:SplitSeed=0:V");
+  TString Prep = "SplitMode=Random:SplitSeed=0:V";
+  dataloader->PrepareTrainingAndTestTree("", Prep);
   
   // Standard MLP
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
