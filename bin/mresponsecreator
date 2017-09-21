@@ -141,7 +141,7 @@ if [[ ${TMVA} == true ]]; then
     echo "Starting: responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD}"
     LOG="${NAME}.seq${SEQUENCE}.log"
     LOGS+="${LOG} "
-    nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > ${LOG} &
+    nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} &> ${LOG} &
     echo "Started TMVA run for file ${SINGLEFILE}"
 
     sleep 5    
