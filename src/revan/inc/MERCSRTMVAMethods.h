@@ -17,6 +17,9 @@
 
 
 // Standard libs:
+#include <map>
+#include <vector>
+using namespace std;
 
 // ROOT libs:
 
