@@ -300,7 +300,8 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   }  
   
   TMVA::Factory *factory = new TMVA::Factory("TMVAClassification", Results,
-                                             "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+                                             "!V:!Silent:Color:DrawProgressBar:Transformations=I:AnalysisType=Classification" );
+  //                                             "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
   
   MString OutDir("N");
   OutDir += SequenceLength;
@@ -329,7 +330,7 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   // Standard MLP
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
     // New seed each run via RandomSeed=0
-    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=100:HiddenLayers=N+5:TestRate=5:RandomSeed=0:!UseRegulator" );
+    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=1c00:HiddenLayers=N+5:TestRate=5:RandomSeed=0:!UseRegulator" );
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
@@ -348,14 +349,15 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   */
   
   // General layout.
-  TString layoutString ("Layout=TANH|128,TANH|128,TANH|128,LINEAR");
+  TString layoutString ("Layout=RELU|2*N,LINEAR");
   
   // Training strategies.
-  TString training0("LearningRate=1e-1,Momentum=0.9,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.5+0.5+0.5, Multithreading=True");
-  TString training1("LearningRate=1e-2,Momentum=0.9,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
-  TString training2("LearningRate=1e-3,Momentum=0.0,Repetitions=1,ConvergenceSteps=20,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
+  TString training0("LearningRate=1e-2,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=1024,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0, Multithreading=True");
+  //TString training0("LearningRate=1e-1,Momentum=0.9,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.5+0.5+0.5, Multithreading=True");
+  TString training1("LearningRate=1e-3,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
+  //TString training2("LearningRate=1e-3,Momentum=0.0,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
   TString trainingStrategyString ("TrainingStrategy=");
-  trainingStrategyString += training0 + "|" + training1 + "|" + training2;
+  trainingStrategyString += training0; // + "|" + training1; // + "|" + training2;
   
   // General Options.
   TString dnnOptions ("!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=N:WeightInitialization=XAVIERUNIFORM");
