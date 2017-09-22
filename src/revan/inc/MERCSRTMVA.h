@@ -85,6 +85,9 @@ class MERCSRTMVA : public MERCSR
   //! The used TMVA methods
   MERCSRTMVAMethods m_Methods;
   
+  //! A string of the used methods for the EvaluateMVA call
+  vector<MString> m_MethodNames;
+
   //! The data set
   MERCSRDataSet m_DS;
   

@@ -133,7 +133,8 @@ bool MERCSRTMVA::SetParameters(MString FileName,
     
     else if (T->IsTokenAt(0, "TA") == true) {
       vector<MERCSRTMVAMethod> AvailableMethods;
-      vector<MString> Methods = T->GetTokenAtAsStringVector(1);
+      MString MethodsString = T->GetTokenAtAsString(1);
+      vector<MString> Methods = MethodsString.Tokenize(",");
       for (MString M: Methods) {
         AvailableMethods.push_back(m_Methods.GetMethod(M));
       }
@@ -160,12 +161,13 @@ bool MERCSRTMVA::SetParameters(MString FileName,
   
   // Book the methods
   vector<MERCSRTMVAMethod> UsedMethods = m_Methods.GetUsedMethods();
+  m_MethodNames.resize(UsedMethods.size());
   for (unsigned int r = 0; r < m_Readers.size(); ++r) {
     for (unsigned int m = 0; m < UsedMethods.size(); ++m) {
-      MString MethodName = m_Methods.GetString(UsedMethods[m]) + " method";
+      m_MethodNames[m] = m_Methods.GetString(UsedMethods[m]) + " method";
       MString WeightsFile = BaseDirectory + "/N" + (r+2) + "/weights/TMVAClassification_" + m_Methods.GetString(UsedMethods[m]) + ".weights.xml";
       MFile::ExpandFileName(WeightsFile);
-      m_Readers[r]->BookMVA(MethodName.Data(), WeightsFile.Data());
+      m_Readers[r]->BookMVA(m_MethodNames[m].Data(), WeightsFile.Data());
     }  
   }
   
@@ -244,7 +246,7 @@ int MERCSRTMVA::ComputeAllQualityFactors(MRERawEvent* RE)
   for (unsigned int c = 0; c < Permutations.size(); ++c) {
     m_DS.Fill(RE->GetEventID(), Permutations[c], m_Geometry);
     
-    QualityFactor = -m_Readers[SequenceLength-2]->EvaluateMVA("BDTD method");  
+    QualityFactor = -m_Readers[SequenceLength-2]->EvaluateMVA(m_MethodNames[0].Data());  
     
     if (QualityFactor != c_CSRFailed) {
       m_QualityFactors.insert(map<double, vector<MRESE*>, less_equal<double> >::value_type(QualityFactor, Permutations[c]));
