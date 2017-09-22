@@ -427,7 +427,7 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
       case c_ResponseArmGammaVsCompton:
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
-          m_Interface->ARMGammaVsCompton();
+          m_Interface->ARMGammaVsComptonScatterAngle();
         }
         break;
         

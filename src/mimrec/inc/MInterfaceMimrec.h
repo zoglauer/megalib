@@ -87,7 +87,8 @@ class MInterfaceMimrec : public MInterface
   void ThetaOriginDistribution();
 
   void ARMGamma();
-  void ARMGammaVsCompton();
+  //! Distribution of ARM values of the gamma-ray vs. the Compton scatter angle
+  void ARMGammaVsComptonScatterAngle();
   void ARMGammaVsDistance();
   void ARMGammaVsComptonProbability();
   void ARMGammaVsClusteringProbability();

@@ -1805,12 +1805,6 @@ void MInterfaceMimrec::AngularResolutionPairs()
   }
     
   TCanvas* Canvas2 = new TCanvas("CanvasAngularResolutionPairsVsOpeningAngle", "Canvas angular resolution pairs vs. opening angle", 800, 600);
-  Canvas2->SetFillColor(0);
-  Canvas2->SetFrameBorderSize(0);
-  Canvas2->SetFrameBorderMode(0);
-  Canvas2->SetBorderSize(0);
-  Canvas2->SetBorderMode(0);
-
   Canvas2->cd();
   Hist2->Draw("colz");
   Canvas2->Update();
@@ -1822,7 +1816,7 @@ void MInterfaceMimrec::AngularResolutionPairs()
 ////////////////////////////////////////////////////////////////////////////////
 
   
-void MInterfaceMimrec::ARMGammaVsCompton()
+void MInterfaceMimrec::ARMGammaVsComptonScatterAngle()
 {
   // Display the angular resolution measurement for the gamma-ray as function of
   // the Compton scatter angle
@@ -1842,13 +1836,13 @@ void MInterfaceMimrec::ARMGammaVsCompton()
   //BinWidth = 2*Disk/NBins;
   int NBinsArm = NBins;
   int NBinsAngle = NBins;
-  TH2D* Hist = new TH2D("ARM vs. Compton Angle", "ARM vs. Compton Angle (normalized)", 
+  TH2D* Hist = new TH2D("ARMvsComptonScatterAngle", "ARM vs. Compton scatter angle", 
                         NBinsArm, -Disk, Disk, NBinsAngle, 
                         m_Settings->GetComptonAngleRangeMin(), 
                         m_Settings->GetComptonAngleRangeMax());
   Hist->SetBit(kCanDelete);
-  Hist->SetXTitle("ARM [#circ]");
-  Hist->SetYTitle("Compton scatter angle [#circ]");
+  Hist->SetXTitle("ARM [deg]");
+  Hist->SetYTitle("Compton scatter angle [deg]");
 
 
   MPhysicalEvent* Event = nullptr;
@@ -1878,6 +1872,7 @@ void MInterfaceMimrec::ARMGammaVsCompton()
   }
 
   // Normalize:
+  /*
   for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
     double Sum = 0;
     for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
@@ -1889,14 +1884,13 @@ void MInterfaceMimrec::ARMGammaVsCompton()
       }
     }
   }
+  */
     
-  TCanvas* ARMvsComptonCanvas = 
-    new TCanvas("Canvas ARM vs Compton", 
-                "Canvas ARM vs Compton", 800, 600);
-  ARMvsComptonCanvas->cd();
-  //Nicen(Hist, ARMvsComptonCanvas);
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle("ARM vs. Compton scatter angle");
+  Canvas->cd();
   Hist->Draw("COLZ");
-  ARMvsComptonCanvas->Update();
+  Canvas->Update();
 
   return;
 }
