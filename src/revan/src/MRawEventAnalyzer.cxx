@@ -1072,15 +1072,24 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
   }
-    
+  
+  
+  // Coincidence
   if (Return == true) {
     delete m_Coincidence;
     m_Coincidence = new MERCoincidence();
     if (m_CoincidenceAlgorithm == c_CoincidenceAlgoWindow) {
       m_Coincidence->SetCoincidenceWindow(m_CoincidenceWindow);
+    } else if (m_CoincidenceAlgorithm == c_CoincidenceAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown coincidence algorithm: "<<m_CoincidenceAlgorithm<<endl;
+      Return = false;
     }
   }
 
+  
+  // Clusterining
   if (Return == true) {
     delete m_Clusterizer;
     m_Clusterizer = nullptr;
@@ -1102,13 +1111,19 @@ bool MRawEventAnalyzer::PreAnalysis()
       if (m_Clusterizer->SetParameters(m_PDFClusterizerBaseFileName) == false) {
         Return = false;
       }
-    } else {
+    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoAdjacent) {
       m_Clusterizer = new MERClusterize();
       if (m_Clusterizer->SetParameters(m_AdjacentLevel, m_AdjacentSigma) == false) {
         Return = false;
       }
+    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown clustering algorithm: "<<m_ClusteringAlgorithm<<endl;
+      Return = false;
     }
 
+    // Compton sequence reconstruction
     delete m_CSR;
     m_CSR = nullptr;
     if (m_CSRAlgorithm == c_CSRAlgoFoM) {
@@ -1178,13 +1193,15 @@ bool MRawEventAnalyzer::PreAnalysis()
         m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
-    } else if (m_CSRAlgorithm != c_CSRAlgoNone) {
+    } else if (m_CSRAlgorithm == c_CSRAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown compton sequence reocnstruction algorithm: "<<m_CSRAlgorithm<<endl;
       Return = false;
     }
 
     
-    // Initialize the tracker:
-
+    // Electron tracking
     delete m_Tracker;
     m_Tracker = nullptr;
     if (m_TrackingAlgorithm == c_TrackingAlgoModifiedPearson) {
@@ -1205,7 +1222,10 @@ bool MRawEventAnalyzer::PreAnalysis()
           SetSpecialParameters(m_BETFileName) == false) {
         Return = false;
       }
-    } else if (m_TrackingAlgorithm != c_TrackingAlgoNone) {
+    } else if (m_TrackingAlgorithm == c_TrackingAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown electron tracking algorithm: "<<m_TrackingAlgorithm<<endl;
       Return = false;
     }
 
@@ -1221,8 +1241,8 @@ bool MRawEventAnalyzer::PreAnalysis()
                                m_ElectronTrackingDetectorList);
     }
 
+    
     // Initialize the Decay searcher:
-
     delete m_Decay;
     m_Decay = nullptr;
     if (m_DecayAlgorithm == c_DecayAlgoStandard) {
@@ -1230,7 +1250,10 @@ bool MRawEventAnalyzer::PreAnalysis()
       if (m_Decay->SetParameters(m_DecayFileName, m_DecayEnergy, m_DecayEnergyError) == false) {
         Return = false;
       }
-    } else if (m_DecayAlgorithm != c_DecayAlgoNone) {
+    } else if (m_DecayAlgorithm == c_DecayAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown decay detection algorithm: "<<m_DecayAlgorithm<<endl;
       Return = false;
     }
   }
