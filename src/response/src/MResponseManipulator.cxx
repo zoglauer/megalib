@@ -793,6 +793,21 @@ bool MResponseManipulator::JoinROOTFiles(MString Prefix, vector<MString> Types)
     return false;
   }
   
+  // Limit the file size to one file above 10 GB...
+  size_t MaxROOTFileSize = 10000000000;
+  for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
+    size_t Size = 0;
+    for (unsigned int f = 0; f < SortedFiles[t].size(); ++f) {
+      ifstream in(SortedFiles[t][f], ifstream::ate | ifstream::binary);
+      Size += in.tellg();
+      if (Size > MaxROOTFileSize) {
+        mout<<"Info: Only adding the first "<<f+1<<" files of type "<<Types[t]<<", since we already reached the maximum file size ("<<MaxROOTFileSize<<")"<<endl;
+        SortedFiles[t].resize(f);
+        break;
+      }
+    }
+  }
+  
   // Append them
   for (unsigned int t = 0; t < SortedFiles.size(); ++t) {
     if (SortedFiles[t].size() == 0) {
