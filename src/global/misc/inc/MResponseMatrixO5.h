@@ -96,7 +96,7 @@ class MResponseMatrixO5 : public MResponseMatrixOx
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
-  virtual float GetSum() const;
+  virtual double GetSum() const;
 
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int a1) const;
   virtual MResponseMatrixO2 GetSumMatrixO2(unsigned int a1, unsigned int a2) const;

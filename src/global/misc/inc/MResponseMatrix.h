@@ -65,7 +65,7 @@ class MResponseMatrix
   virtual unsigned long GetNBins() const = 0;
   virtual float GetMaximum() const = 0;
   virtual float GetMinimum() const = 0;
-  virtual float GetSum() const = 0;
+  virtual double GetSum() const = 0;
   
   //! Return a string with statistics numbers
   virtual MString GetStatistics() const = 0;

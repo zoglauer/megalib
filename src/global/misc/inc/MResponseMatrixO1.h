@@ -96,7 +96,7 @@ class MResponseMatrixO1 : public MResponseMatrixOx
 
   virtual float GetMaximum() const;
   virtual float GetMinimum() const;
-  virtual float GetSum() const;
+  virtual double GetSum() const;
   virtual MResponseMatrixO1 GetSumMatrixO1(unsigned int order) const;
 
   virtual bool Write(MString FileName, bool Stream = false);

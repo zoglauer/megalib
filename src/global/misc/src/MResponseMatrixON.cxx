@@ -769,11 +769,11 @@ float MResponseMatrixON::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixON::GetSum() const
+double MResponseMatrixON::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     Sum += m_Values[i];
   }
@@ -1331,17 +1331,39 @@ ostream& operator<<(ostream& os, const MResponseMatrixON& R)
 //! Return a string with statistics numbers
 MString MResponseMatrixON::GetStatistics() const
 {
+  // Do the calculation here onstead of calling the member functions to speed things up:
+  unsigned long NBins = GetNBins();
+  unsigned long NumberOfNonZeroBins = 0;
+  double Sum = 0;
+  float Min = +numeric_limits<float>::max();
+  float Max = -numeric_limits<float>::max();
+  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+    Sum += m_Values[i];
+    if (m_Values[i] > Max) {
+      Max = m_Values[i];
+    }
+    if (m_Values[i] < Min) {
+      Min = m_Values[i];
+    }
+    if (m_Values[i] != 0) {
+      ++NumberOfNonZeroBins;
+    }
+  }
+
   ostringstream out;
 
+  out<<endl;
   out<<"Statistics for response matrix \""<<m_Name<<"\":"<<endl;
   out<<endl;
-  out<<"Number of axes:         "<<m_Axes.size()<<endl;
-  out<<"Number of dimensions:   "<<m_Order<<endl;
-  out<<"Number of bins:         "<<GetNBins()<<endl;
-  out<<"Maximum:                "<<GetMaximum()<<endl;
-  out<<"Minimum:                "<<GetMinimum()<<endl;
-  out<<"Sum:                    "<<GetSum()<<endl;
-  out<<"Average value:         "<<GetSum()/GetNBins()<<endl;
+  out<<"Number of axes:           "<<m_Axes.size()<<endl;
+  out<<"Number of dimensions:     "<<m_Order<<endl;
+  out<<"Number of bins:           "<<NBins<<endl;
+  out<<"Number of non-zero bins:  "<<NumberOfNonZeroBins<<endl;
+  out<<"Sparseness:               "<<100.0 - (100.0 * NumberOfNonZeroBins) / NBins<<" %"<<endl;
+  out<<"Maximum:                  "<<Max<<endl;
+  out<<"Minimum:                  "<<Min<<endl;
+  out<<"Sum:                      "<<Sum<<endl;
+  out<<"Average value:            "<<Sum/NBins<<endl;
   out<<endl;
 
   out<<"Axes:"<<endl;

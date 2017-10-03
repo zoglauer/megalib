@@ -868,11 +868,11 @@ float MResponseMatrixO13::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO13::GetSum() const
+double MResponseMatrixO13::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_AxesO12.size(); ++i) {
     Sum += m_AxesO12[i].GetSum();
   }  

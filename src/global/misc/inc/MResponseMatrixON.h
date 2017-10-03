@@ -138,7 +138,7 @@ class MResponseMatrixON : public MResponseMatrix
   //! Find the minimum value
   virtual float GetMinimum() const;
   //! Return the sum
-  virtual float GetSum() const;
+  virtual double GetSum() const;
 
   //! Write the values of the response to file
   virtual bool Write(MString FileName, bool Stream = false);

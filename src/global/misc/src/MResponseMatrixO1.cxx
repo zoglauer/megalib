@@ -647,11 +647,11 @@ float MResponseMatrixO1::GetMinimum() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixO1::GetSum() const
+double MResponseMatrixO1::GetSum() const
 {
   // Return the sum of all bins:
 
-  float Sum = 0;
+  double Sum = 0;
   for (unsigned int i = 0; i < m_Values.size(); ++i) {
     Sum += m_Values[i];
   }  
