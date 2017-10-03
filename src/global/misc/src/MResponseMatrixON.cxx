@@ -1331,7 +1331,7 @@ ostream& operator<<(ostream& os, const MResponseMatrixON& R)
 //! Return a string with statistics numbers
 MString MResponseMatrixON::GetStatistics() const
 {
-  // Do the calculation here onstead of calling the member functions to speed things up:
+  // Do the calculation here instead of calling the member functions to speed things up:
   unsigned long NBins = GetNBins();
   unsigned long NumberOfNonZeroBins = 0;
   double Sum = 0;
