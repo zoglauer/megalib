@@ -74,8 +74,8 @@ MResponseMatrixAxis* MResponseMatrixAxis::Clone() const
 
 
 //! Equality operator
-bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis)
-{
+bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis) const
+{  
   if (m_Dimension != Axis.m_Dimension) {
     return false;
   }

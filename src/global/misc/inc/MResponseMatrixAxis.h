@@ -44,10 +44,11 @@ class MResponseMatrixAxis
   // TODO: To copy, assign, move, etc. allowed
   
   
+  // BUG: The following two operators are problematic, since there will be cases with derived classes where we will not be abel to identify equality
   //! Equality operator
-  bool operator==(const MResponseMatrixAxis& Axis);
+  bool operator==(const MResponseMatrixAxis& Axis) const;
   //! Inequality operator
-  bool operator!=(const MResponseMatrixAxis& Axis) { return !(operator==(Axis)); };
+  bool operator!=(const MResponseMatrixAxis& Axis) const { return !(operator==(Axis)); }
   
   
   //! Clone this axis

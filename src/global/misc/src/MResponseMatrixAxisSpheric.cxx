@@ -76,7 +76,7 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
 
 
 //! Equality operator
-bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Axis)
+bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Axis) const
 {
   // We don't care about names, only the physical properties
   
