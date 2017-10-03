@@ -1,5 +1,5 @@
 /* 
- * SimpleComptonImaging.cxx
+ * BinnedComptonImaging.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -52,17 +52,18 @@ using namespace std;
 #include "MResponseMatrixAxis.h"
 #include "MEventSelector.h"
 #include "MSettingsMimrec.h"
+#include "MImageGalactic.h"
 
 
 /******************************************************************************/
 
-class SimpleComptonImaging
+class BinnedComptonImaging
 {
 public:
   /// Default constructor
-  SimpleComptonImaging();
+  BinnedComptonImaging();
   /// Default destructor
-  ~SimpleComptonImaging();
+  ~BinnedComptonImaging();
   
   /// Parse the command line
   bool ParseCommandLine(int argc, char** argv);
@@ -135,7 +136,7 @@ private:
 /******************************************************************************
  * Default constructor
  */
-SimpleComptonImaging::SimpleComptonImaging() : m_Interrupt(false)
+BinnedComptonImaging::BinnedComptonImaging() : m_Interrupt(false)
 {
   m_Iterations = 5;
   
@@ -150,7 +151,7 @@ SimpleComptonImaging::SimpleComptonImaging() : m_Interrupt(false)
 /******************************************************************************
  * Default destructor
  */
-SimpleComptonImaging::~SimpleComptonImaging()
+BinnedComptonImaging::~BinnedComptonImaging()
 {
   // Intentionally left blanck
 }
@@ -159,11 +160,11 @@ SimpleComptonImaging::~SimpleComptonImaging()
 /******************************************************************************
  * Parse the command line
  */
-bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
+bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
-  Usage<<"  Usage: SimpleComptonImaging <options>"<<endl;
+  Usage<<"  Usage: BinnedComptonImaging <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   tra file name"<<endl;
   Usage<<"         -c:   mimrec configuration file"<<endl;
@@ -286,7 +287,7 @@ bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
 /******************************************************************************
  * Create the background model
  */
-bool SimpleComptonImaging::CreateBackgroundModel()
+bool BinnedComptonImaging::CreateBackgroundModel()
 { 
   // Open the response file - which determines the data space grid...
   if (m_Response.Read(m_ResponseFileName) == false) {
@@ -368,7 +369,7 @@ bool SimpleComptonImaging::CreateBackgroundModel()
 /******************************************************************************
  * Parallel response rotation
  */
-bool SimpleComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
+bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
 { 
   // Dimensions for later:
   unsigned int InitialEnergyBins = m_Response.GetAxis(0).GetNumberOfBins();
@@ -474,7 +475,7 @@ bool SimpleComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
 /******************************************************************************
  * Parallel background model rotation
  */
-bool SimpleComptonImaging::RotateBackgroundModelInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
+bool BinnedComptonImaging::RotateBackgroundModelInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
 { 
   // Dimensions for later:
   unsigned int FinalEnergyBins = m_BackgroundModel.GetAxis(0).GetNumberOfBins();
@@ -560,7 +561,7 @@ bool SimpleComptonImaging::RotateBackgroundModelInParallel(unsigned int ThreadID
 /******************************************************************************
  * Do whatever analysis is necessary
  */
-bool SimpleComptonImaging::Analyze()
+bool BinnedComptonImaging::Analyze()
 {
   // if (m_Interrupt == true) return false;
 
@@ -861,7 +862,7 @@ bool SimpleComptonImaging::Analyze()
         m_ThreadRunning[t] = true;
         vector<unsigned int> X(PointingBinsX.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split);
         vector<unsigned int> Z(PointingBinsZ.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsZ.end() : PointingBinsZ.begin() + (t+1)*Split);
-        Threads[t] = thread(&SimpleComptonImaging::RotateResponseInParallel, this, t, X, Z);
+        Threads[t] = thread(&BinnedComptonImaging::RotateResponseInParallel, this, t, X, Z);
       }
       while (true) {
         bool Finished = true;
@@ -887,6 +888,7 @@ bool SimpleComptonImaging::Analyze()
     cout<<endl<<"Writing rotated response"<<endl;
     m_ResponseGalactic.Write("ResponseGalactic.rsp");
     cout<<"Number of directions in pointings file: "<<Dirs<<endl;
+    cout<<"Response Galactic normalization: "<<m_ResponseGalactic.GetSum()<<"  vs. "<<m_Response.GetSum()<<endl;
   }
 
   double m_TotalBackgroundInModel = 0;
@@ -924,7 +926,7 @@ bool SimpleComptonImaging::Analyze()
         m_ThreadRunning[t] = true;
         vector<unsigned int> X(PointingBinsX.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split);
         vector<unsigned int> Z(PointingBinsZ.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsZ.end() : PointingBinsZ.begin() + (t+1)*Split);
-        Threads[t] = thread(&SimpleComptonImaging::RotateBackgroundModelInParallel, this, t, X, Z);
+        Threads[t] = thread(&BinnedComptonImaging::RotateBackgroundModelInParallel, this, t, X, Z);
       }
       while (true) {
         bool Finished = true;
@@ -1008,6 +1010,7 @@ bool SimpleComptonImaging::Analyze()
   }
 
   
+  // Maximum entropy
   if (m_UseMaximumEntropy == true) {
     
     // Set up Lagrange multipliers
@@ -1256,19 +1259,39 @@ bool SimpleComptonImaging::Analyze()
       
       ostringstream Title;
       Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
-      NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
+      //NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
       cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
      
+      vector<double> ImageData(NewImage.GetAxis(1).GetNumberOfBins());
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          ImageData[id] = NewImage.Get(ie + InitialEnergyBins*id);
+        }
+      }
+      
+      MImageGalactic* G = new MImageGalactic();
+      G->SetTitle("Galaxy view");
+      G->SetXAxisTitle("Galactic Longitude [deg]");
+      G->SetYAxisTitle("Galactic Latitude [deg]");
+      G->SetValueAxisTitle("Flux");
+      G->SetDrawOption(MImage::c_COLZ);
+      G->SetSpectrum(MImage::c_Rainbow);
+      G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+      G->Normalize(false);
+      G->SetFISBEL(ImageData);
+      G->Display();
+      
+      //NewImage.Write(MString("Image_") + (i+1) + ".rsp");
+      
       gSystem->ProcessEvents();
       
       if (m_Interrupt == true) break;
  
     } // iterations
-   
-
-
- 
-  } else {
+  } 
+  
+  // Maximum likelihood
+  else {
     // The iterations
     MResponseMatrixON Mean;
     Mean.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
@@ -1400,10 +1423,29 @@ bool SimpleComptonImaging::Analyze()
       ostringstream Title;
       Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
       
-      Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
-      cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+      //Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
+      //cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
       
-      Display.Write(MString("Image_") + (i+1) + ".rsp");
+      vector<double> ImageData(Display.GetAxis(1).GetNumberOfBins());
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          ImageData[id] = Display.Get(ie + InitialEnergyBins*id);
+        }
+      }
+      
+      MImageGalactic* G = new MImageGalactic();
+      G->SetTitle("Galaxy view");
+      G->SetXAxisTitle("Galactic Longitude [deg]");
+      G->SetYAxisTitle("Galactic Latitude [deg]");
+      G->SetValueAxisTitle("Flux");
+      G->SetDrawOption(MImage::c_COLZ);
+      G->SetSpectrum(MImage::c_Rainbow);
+      G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+      G->Normalize(false);
+      G->SetFISBEL(ImageData);
+      G->Display();
+      
+      //Display.Write(MString("Image_") + (i+1) + ".rsp");
       
       gSystem->ProcessEvents();
       
@@ -1411,6 +1453,7 @@ bool SimpleComptonImaging::Analyze()
     }
   }
   
+  gSystem->ProcessEvents();  
   
   return true;
 }
@@ -1419,7 +1462,7 @@ bool SimpleComptonImaging::Analyze()
 /******************************************************************************
  * Analyze the event, return true if it has to be writen to file
  */
-bool SimpleComptonImaging::AnalyzeEvent(MSimEvent& Event)
+bool BinnedComptonImaging::AnalyzeEvent(MSimEvent& Event)
 {
   // Add your code here
   // Return true if the event should be written to file
@@ -1433,7 +1476,7 @@ bool SimpleComptonImaging::AnalyzeEvent(MSimEvent& Event)
 
 /******************************************************************************/
 
-SimpleComptonImaging* g_Prg = 0;
+BinnedComptonImaging* g_Prg = 0;
 int g_NInterrupts = 2;
 
 /******************************************************************************/
@@ -1472,9 +1515,9 @@ int main(int argc, char** argv)
   // Initialize global MEGAlib variables, especially mgui, etc.
   MGlobal::Initialize();
   
-  TApplication SimpleComptonImagingApp("SimpleComptonImagingApp", 0, 0);
+  TApplication BinnedComptonImagingApp("BinnedComptonImagingApp", 0, 0);
 
-  g_Prg = new SimpleComptonImaging();
+  g_Prg = new BinnedComptonImaging();
 
   if (g_Prg->ParseCommandLine(argc, argv) == false) {
     cerr<<"Error during parsing of command line!"<<endl;
@@ -1485,7 +1528,7 @@ int main(int argc, char** argv)
     return -2;
   } 
 
-  SimpleComptonImagingApp.Run();
+  BinnedComptonImagingApp.Run();
 
   cout<<"Program exited normally!"<<endl;
 
