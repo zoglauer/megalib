@@ -101,7 +101,7 @@ MEventSelector::MEventSelector()
   m_ClusteringQualityFactorMin = 0; 
   m_ClusteringQualityFactorMax = numeric_limits<double>::max();
 
-  m_ComptonQualityFactorMin = 0; 
+  m_ComptonQualityFactorMin = -numeric_limits<double>::max(); 
   m_ComptonQualityFactorMax = numeric_limits<double>::max();
 
   m_TrackQualityFactorMin = 0; 
