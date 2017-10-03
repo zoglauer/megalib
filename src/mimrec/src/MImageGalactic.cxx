@@ -58,6 +58,11 @@ ClassImp(MImageGalactic)
 
 MImageGalactic::MImageGalactic() : MImage2D()
 {
+  m_Projection = MImageProjection::c_None;
+  m_DrawOption = c_COLZ;
+  m_xTitle = "Galactic Longitude [deg]";
+  m_yTitle = "Galactic Latgitude [deg]";
+  m_vTitle = "Intensity [a.u.]";
 }
 
 
@@ -120,25 +125,78 @@ MImage* MImageGalactic::Clone()
   return I;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 void MImageGalactic::SetImageArray(double* IA)
 {
   // Copy the data array
-
-  if (m_IA != 0) delete [] m_IA;
+  
+  if (IA == nullptr) {
+    merr<<"Input array is nullptr!"<<endl;
+    return;
+  }
+  
+  if (m_IA != nullptr) delete [] m_IA;
   m_IA = new double[m_NEntries];
-
-  for (int x = 0; x < m_NEntries; x++) {
-    if (IA != 0) {
-      m_IA[x] = IA[x];
+  
+  for (int x = 0; x < m_NEntries; ++x) {
+    m_IA[x] = IA[x];
+  }
+  
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
+    if (m_Projection == MImageProjection::c_None) {
+      DisplayProjectionNone();
     } else {
-      m_IA[x] = 0.0;
+      DisplayProjectionHammer();
     }
   }
+}
 
-  if (dynamic_cast<TH2*>(m_Histogram) != 0) {
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MImageGalactic::SetFISBEL(const vector<double>& Data)
+{
+  // Copy the data from the FISBEL binner into this array
+  
+  // The binning has to be in a way that it can be displayed nicely:
+  MBinnerFISBEL B;
+  B.Create(Data.size());
+  
+  vector<vector<double>> DrawingAxisEdges = B.GetDrawingAxisBinEdges();
+  
+  m_xMin = DrawingAxisEdges[0].front()*c_Deg;
+  m_xMax = DrawingAxisEdges[0].back()*c_Deg;
+  m_xNBins = DrawingAxisEdges[0].size() - 1;
+
+  m_yMin = DrawingAxisEdges[1].front()*c_Deg - 90;
+  m_yMax = DrawingAxisEdges[1].back()*c_Deg - 90;
+  m_yNBins = DrawingAxisEdges[1].size() - 1;
+  
+  m_NEntries = m_xNBins*m_yNBins;
+  
+  if (m_IA != nullptr) delete [] m_IA;
+  m_IA = new double[m_NEntries];
+
+  unsigned int Bin = 0;
+  double xDist = (m_xMax - m_xMin) / m_xNBins;
+  double yDist = (m_yMax - m_yMin) / m_yNBins;
+  for (int x = 0; x < m_xNBins; ++x) {
+    for (int y = 0; y < m_yNBins; ++y) {
+      try {
+        Bin = B.FindBin((m_yMin + (y+0.5)*yDist + 90)*c_Rad, (m_xMin + (x+0.5)*xDist)*c_Rad);
+      } catch (...) {
+        merr<<"Index out of bounds!"<<endl;
+        return;
+      }
+      m_IA[x + y * m_xNBins] = Data[Bin];
+    }
+  }
+  
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
     if (m_Projection == MImageProjection::c_None) {
       DisplayProjectionNone();
     } else {
@@ -157,7 +215,7 @@ void MImageGalactic::Display(TCanvas* Canvas)
 
   if (Canvas == 0) {
     m_CanvasTitle = MakeCanvasTitle();
-    Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, int(900.0/m_xNBins*m_yNBins));
+    Canvas = new TCanvas(m_CanvasTitle, m_Title, 40, 40, 900, 900);
   } else {
     if (MString(Canvas->GetTitle()).IsEmpty() == false) {
       m_CanvasTitle = Canvas->GetTitle();
@@ -168,12 +226,17 @@ void MImageGalactic::Display(TCanvas* Canvas)
   }
   m_Canvas = Canvas;
 
+  int xSize = 1400;
+  int ySize = 700;
   if (m_xNBins > m_yNBins) {
-    m_Canvas->SetWindowSize(900, int(900.0/m_xNBins*m_yNBins));
+    ySize = int(900.0/m_xNBins*m_yNBins);
+    if (ySize < 0.25*xSize) ySize = 700;
   } else {
-    m_Canvas->SetWindowSize(int(700.0/m_yNBins*m_xNBins), 700);
+    xSize = int(700.0/m_yNBins*m_xNBins);
+    if (xSize < 0.25*ySize) xSize = 900;
   }
-
+  m_Canvas->SetWindowSize(xSize, ySize);
+  
   if (m_Projection == MImageProjection::c_None) {
     DisplayProjectionNone();
   } else {
@@ -191,8 +254,8 @@ void MImageGalactic::DisplayProjectionNone()
 
 
   bool IsNew = false;
-  TH2D* Hist = 0;
-  if (m_Histogram == 0) {
+  TH2D* Hist = nullptr;
+  if (m_Histogram == nullptr) {
     Hist = new TH2D(m_CanvasTitle + "Hist", m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax);
     Hist->SetContour(50);
     m_Histogram = dynamic_cast<TH1*>(Hist);

@@ -93,8 +93,8 @@ MImage::MImage()
   SetTitle("Title here");
   SetImageArray((double *) 0);
   SetXAxis("x-axis", 0, 1, 1);
-  SetValueAxisTitle("values");
-  SetSpectrum(0);
+  SetValueAxisTitle("Intensity");
+  SetSpectrum(c_Rainbow);
   SetDrawOption(c_COLCONT4Z);
 }
 

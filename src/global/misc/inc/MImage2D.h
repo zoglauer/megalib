@@ -54,7 +54,9 @@ class MImage2D : public MImage
 
   //! Set the y-Axis attributes
   virtual void SetYAxis(MString yTitle, double yMin, double yMax, int yNBins);
-
+  //! Set the y-Axis title
+  virtual void SetYAxisTitle(MString yTitle) { m_yTitle = yTitle; }
+  
   //! Display the histogram in the given canvas
   virtual void Display(TCanvas* Canvas = nullptr);
 

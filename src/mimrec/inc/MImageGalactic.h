@@ -16,12 +16,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// Standard libs:
+#include <vector>
+using namespace std;
+
 // ROOT libs:
 #include <TGaxis.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MImage2D.h"
+#include "MBinnerFISBEL.h"
 
 // Forward declarations:
 
@@ -46,13 +51,17 @@ class MImageGalactic : public MImage2D
 
   //! Set the image projection
   void SetProjection(MImageProjection Projection) { m_Projection = Projection; }
-  
+  //! Set the source catalog
+  void SetSourceCatalog(const MString& SourceCatalog) { m_SourceCatalog = SourceCatalog; }
+ 
   //! Clone this image
   virtual MImage* Clone();
 
   //! Set the image array and redisplay it
   virtual void SetImageArray(double* Array);
-
+  //! Set the image array froma FISBEL binned 2D Array 
+  virtual void SetFISBEL(const vector<double>& Data);
+  
   //! Display the histogram in the given canvas
   virtual void Display(TCanvas* Canvas = nullptr);
  

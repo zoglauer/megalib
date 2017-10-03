@@ -28,7 +28,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//! FISBEL: Fixed Integral ... Equi-longitude..?
 //! This is just the binner, it does not store any data itself
 class MBinnerFISBEL
 {
@@ -74,7 +74,7 @@ class MBinnerFISBEL
   //! If the given vector has the correct dimension, it's data will be shown
   void View(vector<double> = {}) const;
   
-  //! Return axis bins edges for external drawing
+  //! Return axis bins edges for external drawing (1st array: longitude/phi, 2nd array: latitude/theta)
   vector<vector<double>> GetDrawingAxisBinEdges() const;
   
   // protected methods:
