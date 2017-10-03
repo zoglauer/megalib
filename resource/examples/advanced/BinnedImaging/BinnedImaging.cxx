@@ -166,11 +166,12 @@ bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
   Usage<<"  Usage: SimpleComptonImaging <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   tra file name"<<endl;
-  Usage<<"         -c:   Mimrec configuration file"<<endl;
+  Usage<<"         -c:   mimrec configuration file"<<endl;
   Usage<<"         -r:   response file"<<endl;
   Usage<<"         -g:   response galactic file"<<endl;
   Usage<<"         -b:   background model"<<endl;
   Usage<<"         -i:   number of iterations (default: 5)"<<endl;
+  Usage<<"         -a:   algorithm: rl (default) or mem"<<endl;
   Usage<<"         -cg:  create galactic response file"<<endl;
   Usage<<"         -cb:  create background model"<<endl;
   Usage<<"         -h:   print this help"<<endl;
@@ -228,6 +229,19 @@ bool SimpleComptonImaging::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-i") {
       m_Iterations = atoi(argv[++i]);
       cout<<"Accepting iterations: "<<m_Iterations<<endl;
+    } else if (Option == "-a") {
+      MString Algo(argv[++i]);
+      Algo.ToLowerInPlace();
+      if (Algo == "rl") {
+        m_UseMaximumEntropy = false;
+        cout<<"Accepting Richardson Lucy"<<endl;
+      } else if (Algo == "mem") {
+        m_UseMaximumEntropy = true;
+        cout<<"Accepting Maximum-Entropy"<<endl;
+      } else {
+        cout<<"Error: Unknown algorithm: "<<Algo<<endl;
+        return false;
+      }
     } else if (Option == "-cb") {
       m_JustDoBackgroundModel = true;
       cout<<"Doing background model"<<endl;
@@ -1001,7 +1015,7 @@ bool SimpleComptonImaging::Analyze()
     MResponseMatrixON Lagrange;
     Lagrange.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
     Lagrange.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
-    Lagrange.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
+    Lagrange.AddAxis(m_ResponseGalactic.GetAxis(4)); // direction scattered gamma ray  
     
     unsigned long P1 = 1;
     unsigned long P2 = P1*FinalEnergyBins;
@@ -1029,6 +1043,8 @@ bool SimpleComptonImaging::Analyze()
     Expectation.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
     Expectation.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
     Expectation.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
+    
+    double BackgroundScaler = 1.0;
     
     double MaximumEntropy = 0;
     int MaximumIterations = 0;
@@ -1119,6 +1135,11 @@ bool SimpleComptonImaging::Analyze()
                 NewExpectation += RestoredImage.Get(ie + InitialEnergyBins*id) * m_ResponseGalactic.Get(ie + P2*id + P3*fe + P4*fp + P5*fd);
               }
             }
+            
+            if (UseBackgroundModel == true) {
+              NewExpectation += BackgroundScaler * m_BackgroundModelGalactic.Get(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd);
+            }            
+            
             Expectation.Set(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd, NewExpectation);
           }
         }
@@ -1164,11 +1185,11 @@ bool SimpleComptonImaging::Analyze()
               if (PreLog2 < Limit) PreLog2 = Limit;
               Update -= log(PreLog2);
            
-              cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
+              //cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
  
             } else {
               Update += Data.Get(A3)*Scale - Expectation.Get(A3);
-              cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
+              //cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Data.Get(A3)*Scale<<" vs. "<<Expectation.Get(A3)<<" --> Update: "<<Update<<endl;
 
             }
               
@@ -1186,8 +1207,34 @@ bool SimpleComptonImaging::Analyze()
       cout<<"Lagrange sum="<<Lagrange.GetSum()<<endl;
       
       
+      // Step 4: Update the background scaling factor:
+      if (UseBackgroundModel == true) {
+        double B_corr = 0;
+        
+        unsigned long N1 = 1;
+        unsigned long N2 = N1*FinalEnergyBins;
+        unsigned long N3 = N2*FinalPhiBins;
+        for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+          unsigned long B1 = N1*fe;
+          for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+            unsigned long B2 = B1 + N2*fp;
+            for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+              unsigned long B3 = B2 + N3*fd;
+              
+              if (Data.Get(B3) > 0 && Expectation.Get(B3) > 0) {
+                B_corr += m_BackgroundModelGalactic.Get(B3) * Data.Get(B3) / Expectation.Get(B3);
+              }
+            }
+          }
+        }
+        
+        BackgroundScaler *= B_corr / m_TotalBackgroundInModel;
+        
+        cout<<"Background scaling factor: "<<BackgroundScaler<<"!"<<B_corr<<"!"<<m_TotalBackgroundInModel<<endl;
+      }      
       
-      // Step 4: Update the real image:
+      
+      // Step 5: Update the real image:
       MResponseMatrixON NewImage("NewImage");
       NewImage.AddAxis(m_Response.GetAxis(0)); // energy
       NewImage.AddAxis(m_Response.GetAxis(1)); // image space
@@ -1212,7 +1259,8 @@ bool SimpleComptonImaging::Analyze()
       NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
       cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
      
-
+      gSystem->ProcessEvents();
+      
       if (m_Interrupt == true) break;
  
     } // iterations
@@ -1227,7 +1275,7 @@ bool SimpleComptonImaging::Analyze()
     Mean.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
     Mean.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
     
-    float BackgroundScaler = 1.0;
+    double BackgroundScaler = 1.0;
     
     double MaximumEntropy = 0;
     int MaximumIterations = 0;
