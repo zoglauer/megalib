@@ -38,10 +38,17 @@ class MResponseSpectral : public MResponseBuilder
  public:
   MResponseSpectral();
   virtual ~MResponseSpectral();
-
+  
+  //! Return a brief description of this response class
+  static MString Description();
+  //! Return information on the parsable options for this response class
+  static MString Options();
+  //! Parse the options
+  virtual bool ParseOptions(const MString& Options);
+  
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
-
+  
   //! Analyze th events (all if in file mode, one if in event-by-event mode)
   virtual bool Analyze();
     
@@ -63,6 +70,25 @@ class MResponseSpectral : public MResponseBuilder
 
   // protected members:
  protected:
+   //! Underflow energy minimum
+   double m_EnergyUnderflow;
+   //! Minimum energy range
+   double m_EnergyMinimum;
+   //! Maximum energy range
+   double m_EnergyMaximum;
+   //! Overflow energy maxmium
+   double m_EnergyOverflow;
+   //! Number of bins excluding under- and overflow
+   unsigned int m_EnergyNumberOfBins;
+   //! Number of sky bins
+   unsigned int m_EnergyNumberOfSkyBins;
+   
+   //! The ARM cut range
+   double m_ARMCut;
+   //! The ARM cut sky bins
+   unsigned int m_ARMCutNumberOfSkyBins;
+   
+   
   MResponseMatrixON m_EnergyBeforeER;
   MResponseMatrixON m_EnergyUnselected;
   MResponseMatrixON m_EnergySelected;
@@ -72,9 +98,6 @@ class MResponseSpectral : public MResponseBuilder
   MResponseMatrixON m_EnergyRatioSelected;
   
   MResponseMatrixON m_EnergySelectedARMCut;
-  
-  //! The ARM cut range
-  double m_ARMCut;
   
   //! The bin centers for the ARM cut
   vector<MVector> m_BinCenters;

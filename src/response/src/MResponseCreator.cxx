@@ -125,25 +125,11 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      -f  --filename        file  m  file name (either sim/evta file, or training data)"<<endl;
   Usage<<"      -d  --debug                    enable debug"<<endl;
   Usage<<"      -r  --response-name   file     response file name"<<endl;
-  //Usage<<"      -v  --verify                   verify"<<endl;
-  Usage<<"      -m  --mode            text  m  the modes are: "<<endl;
-  Usage<<"                                         s  : spectral (before reconstruction, mimrec without & with event selections)"<<endl;
-  Usage<<"                                         cd : clustering for double sided-strip detectors"<<endl;
-  Usage<<"                                         t  : track"<<endl;
-  Usage<<"                                         cf : root good/bad event files for TMVA methods"<<endl;
-  Usage<<"                                         cb : compton (Bayesian)"<<endl;
-  Usage<<"                                         ct : compton (TMVA)"<<endl;
-  Usage<<"                                         cn : compton (NeuralNetwork)"<<endl;
-  Usage<<"                                         cl : compton (Laue lens or collimated)"<<endl;
-  Usage<<"                                         a  : ARM"<<endl;
-  Usage<<"                                         il : list-mode imaging"<<endl;
-  Usage<<"                                         ib : binned-mode imaging"<<endl;
-  Usage<<"                                         ic : coded mask imaging"<<endl;
-  Usage<<"                                         ef : efficiency far field (e.g. astrophysics)"<<endl;
-  Usage<<"                                         en : efficiency near field (e.g. medical)"<<endl;
-  Usage<<"                                         e  : earth horizon"<<endl;
-  Usage<<"                                         f  : first interaction position"<<endl;
-  Usage<<"                                         q  : event quality"<<endl;
+  Usage<<"      -m  --mode            text  m  The modes and their options are listed below"<<endl;
+  Usage<<"      -o  --options         text     The options for the specific response mode"<<endl;
+  Usage<<"                                     Option tag and value are separated by a \"=\""<<endl;
+  Usage<<"                                     Multiple options are separated by a \":\""<<endl;
+  Usage<<"                                     Example: emin=100:emax=20000:ebins=500"<<endl;
   Usage<<endl;
   Usage<<"      -i  --max-id          int      do the analysis up to id"<<endl;
   Usage<<"      -c  --revan-config    file     use this revan configuration file instead of defaults"<<endl;
@@ -153,6 +139,28 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"          --verbosity       int      Verbosity level"<<endl;
   Usage<<"      -h  --help                     print this help"<<endl;
   Usage<<endl;
+  Usage<<endl;
+  Usage<<"    Response modes and their options:"<<endl;
+  Usage<<endl;  
+  Usage<<"      s  : "<<MResponseSpectral::Description()<<endl;
+  Usage<<MResponseSpectral::Options()<<endl;
+  Usage<<"      cd : clustering for double sided-strip detectors"<<endl;
+  Usage<<"      t  : track"<<endl;
+  Usage<<"      cf : root good/bad event files for TMVA methods"<<endl;
+  Usage<<"      cb : compton (Bayesian)"<<endl;
+  Usage<<"      ct : compton (TMVA)"<<endl;
+  Usage<<"      cn : compton (NeuralNetwork)"<<endl;
+  Usage<<"      cl : compton (Laue lens or collimated)"<<endl;
+  Usage<<"      a  : ARM"<<endl;
+  Usage<<"      il : list-mode imaging"<<endl;
+  Usage<<"      ib : binned-mode imaging"<<endl;
+  Usage<<"      ic : coded mask imaging"<<endl;
+  Usage<<"      ef : efficiency far field (e.g. astrophysics)"<<endl;
+  Usage<<"      en : efficiency near field (e.g. medical)"<<endl;
+  Usage<<"      e  : earth horizon"<<endl;
+  Usage<<"      f  : first interaction position"<<endl;
+  Usage<<"      q  : event quality"<<endl;
+  Usage<<endl;  
   Usage<<"    Special options:"<<endl;
   Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
   Usage<<"          --no-absorptions           don't calculate absoption probabilities - excludes all data sets with use absorption probabilities"<<endl;
@@ -161,7 +169,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"          --tmva-methods             comma-separated list (no spaces) of TMVA methods to use: BDTD (*), MLP (*), DNN_GPU, DNN_CPU"<<endl;
   Usage<<endl;
   
-  string Option, SubOption;
+  string Option, SubOption, ResponseOptions;
 
   // Check for help
   for (int i = 1; i < argc; i++) {
@@ -281,6 +289,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
         cout<<Usage.str()<<endl;
         return false;
       }
+    } else if (Option == "-o" || Option == "--options") {
+      ResponseOptions = argv[++i];
     } else if (Option == "-z") {
       m_Compress = true;
       cout<<"Choosing compression (gzip) mode"<<endl;
@@ -516,6 +526,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
 
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;

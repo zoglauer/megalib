@@ -57,6 +57,15 @@ MResponseSpectral::MResponseSpectral()
 {
   m_ResponseNameSuffix = "energy";
   m_OnlyINITRequired = true;
+  
+  m_EnergyUnderflow = 1;
+  m_EnergyMinimum = 10;
+  m_EnergyMaximum = 20000;
+  m_EnergyOverflow = 100000;
+  m_EnergyNumberOfBins = 500;
+  m_EnergyNumberOfSkyBins = 413;
+  m_ARMCut = 5;
+  m_ARMCutNumberOfSkyBins = 413;
 }
 
 
@@ -69,7 +78,144 @@ MResponseSpectral::~MResponseSpectral()
   // Nothing to delete
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a brief description of this response class
+MString MResponseSpectral::Description()
+{
+  return MString("Spectral response (before event reconstruction, mimrec without & with event selections, ARM cut response)");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return information on the parsable options for this response class
+MString MResponseSpectral::Options()
+{
+  ostringstream out;
+  out<<"             emin:            minimum energy (default: 10 keV)"<<endl;
+  out<<"             emax:            maximum energy (default: 20,000 keV)"<<endl;
+  out<<"             ebins:           number of energy bins between min and max energy (default: 500)"<<endl;
+  out<<"             eunder:          underflow bin minimum (default: 1 keV)"<<endl;
+  out<<"             eover:           overflow bin maximum (default: 100,000 keV)"<<endl;
+  out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins)"<<endl;
+  out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
+  out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins)"<<endl;
   
+  return MString(out);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the options
+bool MResponseSpectral::ParseOptions(const MString& Options)
+{
+  // Split the different options
+  vector<MString> Split1 = Options.Tokenize(":");
+  // Split Option <-> Value
+  vector<vector<MString>> Split2;
+  for (MString S: Split1) {
+    Split2.push_back(S.Tokenize("=")); 
+  }
+  
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    if (Split2[i].size() == 0) {
+      mout<<"Error: Empty option in string "<<Options<<endl;
+      return false;
+    }    
+    if (Split2[i].size() == 1) {
+      mout<<"Error: Option has no value: "<<Split2[i][0]<<endl;
+      return false;
+    }
+    if (Split2[i].size() > 2) {
+      mout<<"Error: Option has more than one value or you used the wrong separator (not \":\"): "<<Split1[i]<<endl;
+      return false;
+    }
+    Split2[i][0].ToLowerInPlace();
+  }
+
+  // Parse
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    string Value = Split2[i][1].Data();
+    
+    if (Split2[i][0] == "emin") {
+      m_EnergyMinimum = stod(Value);
+    } else if (Split2[i][0] == "emax") {
+      m_EnergyMaximum = stod(Value);
+    } else if (Split2[i][0] == "ebins") {
+      m_EnergyNumberOfBins = stod(Value);
+    } else if (Split2[i][0] == "eunder") {
+      m_EnergyUnderflow = stod(Value);
+    } else if (Split2[i][0] == "eover") {
+      m_EnergyOverflow = stod(Value);
+    } else if (Split2[i][0] == "eskybins") {
+      m_EnergyNumberOfSkyBins = stod(Value);
+    } else if (Split2[i][0] == "armcut") {
+      m_ARMCut = stod(Value);
+    } else if (Split2[i][0] == "armcutskybins") {
+      m_ARMCutNumberOfSkyBins = stod(Value);
+    } else {
+      mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
+      return false;
+    }
+  }
+  
+  // Sanity checks:
+  if (m_EnergyUnderflow <= 0 || m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0 || m_EnergyOverflow <= 0) {
+    mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
+    return false;    
+  }
+  if (m_EnergyUnderflow > m_EnergyMinimum) {
+    mout<<"Error: The underflow energy can not be larger than the minimum energy"<<endl;
+    return false;       
+  }
+  if (m_EnergyMinimum >= m_EnergyMaximum) {
+    mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
+    return false;       
+  }
+  if (m_EnergyMaximum > m_EnergyOverflow) {
+    mout<<"Error: The overflow energy must be larger than the maximum energy"<<endl;
+    return false;       
+  }
+  if (m_EnergyNumberOfBins <= 0) {
+    mout<<"Error: You need at least one energy bin"<<endl;
+    return false;       
+  }
+  if (m_EnergyNumberOfSkyBins <= 0) {
+    mout<<"Error: You need at least one sky bin"<<endl;
+    return false;       
+  }
+  if (m_ARMCut <= 0) {
+    mout<<"Error: You need a positive value for the ARM cut"<<endl;
+    return false;       
+  }
+  if (m_ARMCutNumberOfSkyBins <= 0) {
+    mout<<"Error: You need at least one sky bin for the ARM cut response"<<endl;
+    return false;       
+  } 
+  
+  // Dump it for user info
+  mout<<endl;
+  mout<<"Choosen options for spectral response:"<<endl;
+  mout<<"  Minimum energy:        "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:        "<<m_EnergyMaximum<<endl;
+  mout<<"  Number of bins energy: "<<m_EnergyNumberOfBins<<endl;
+  mout<<"  Underflow minimum:     "<<m_EnergyUnderflow<<endl;
+  mout<<"  Overflow maximum:      "<<m_EnergyOverflow<<endl;
+  mout<<"  Sky bins energy:       "<<m_EnergyNumberOfSkyBins<<endl;
+  mout<<"  ARM cut:               "<<m_ARMCut<<endl;
+  mout<<"  ARM cut sky bins:      "<<m_ARMCutNumberOfSkyBins<<endl;
+  mout<<endl;
+  
+  return true;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -78,16 +224,16 @@ bool MResponseSpectral::Initialize()
 { 
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
-  
+
   
   MResponseMatrixAxis Ideal("ideal energy [keV]");
-  Ideal.SetLogarithmic(500, 10, 20000, 1, 100000);
+  Ideal.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
   
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
-  Origin.SetFISBEL(413); // 100 deg^2
+  Origin.SetFISBEL(m_EnergyNumberOfSkyBins);
   
   MResponseMatrixAxis Measured("measured energy [keV]");
-  Measured.SetLogarithmic(500, 10, 20000, 1, 100000);
+  Measured.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
   
   m_EnergyBeforeER.SetName("Energy response (before event reconstruction)");
   m_EnergyBeforeER.AddAxis(Ideal);
@@ -115,7 +261,7 @@ bool MResponseSpectral::Initialize()
   
   
   MResponseMatrixAxis RatioIdeal("ideal energy [keV]");
-  RatioIdeal.SetLinear(500, 10, 10000);
+  RatioIdeal.SetLinear(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum);
 
   MResponseMatrixAxis RatioMeasuredIdeal("measured energy / ideal energy");
   RatioMeasuredIdeal.SetLinear(9 + 100*6, 0, 1.2);
@@ -160,11 +306,10 @@ bool MResponseSpectral::Initialize()
   if (m_SiReader != nullptr) {
     m_EnergyRatioSelected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
-  
-  m_ARMCut = 5;
+
   
   MResponseMatrixAxisSpheric ARMCut("ARM cut center - theta (detector coordinates) [deg]", "ARM cut center - phi (detector coordinates) [deg]");
-  ARMCut.SetFISBEL(413);
+  ARMCut.SetFISBEL(m_ARMCutNumberOfSkyBins);
   
   m_EnergySelectedARMCut.SetName(MString("Energy response with ARM cut of ") + m_ARMCut + " deg radius around given position");
   m_EnergySelectedARMCut.AddAxis(Ideal);
