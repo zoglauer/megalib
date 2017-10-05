@@ -197,6 +197,17 @@ vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned int Bin) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return the bin centera of all axis bins as vector
+//! Can throw: MExceptionIndexOutOfBounds
+vector<MVector> MResponseMatrixAxisSpheric::GetAllBinCenters() const
+{
+  return m_Binner.GetAllBinCenters();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Write the content to a stream
 void MResponseMatrixAxisSpheric::Write(ostringstream& out)
 {

@@ -81,6 +81,10 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Can throw: MExceptionIndexOutOfBounds
   virtual vector<double> GetBinCenters(unsigned int Bin) const;
   
+  //! Return the bin center of all axis bins as vectors 
+  //! Can throw: MExceptionIndexOutOfBounds
+  virtual vector<MVector> GetAllBinCenters() const;
+  
   //! Write the content to a stream
   virtual void Write(ostringstream& out);
   

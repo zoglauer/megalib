@@ -289,28 +289,61 @@ vector<double> MBinnerFISBEL::GetBinCenters(unsigned int Bin) const
   
   // --> This is a bit too complicated to be right... or good
   
+  //cout<<"Bin: "<<Bin<<endl;
+  
+  vector<double> Return;
+  
   // We always have one bin at bottom and top, which need to be handled differently:
   if (Bin == 0) {
-    return vector<double> { 0, 0 };
+    Return = { 0, 0 };
   } else if (Bin == m_NumberOfBins - 1) {
-    return vector<double> { c_Pi, 0 };
-  }
-    
-  
-  // Find the latitude bin:
-  unsigned int LatitudeBin = 0;
-  vector<double>::const_iterator LowerBound = lower_bound(m_NumberOfBinsBeforeLatitudeBin.begin(), m_NumberOfBinsBeforeLatitudeBin.end(), Bin);
-  if (LowerBound != m_NumberOfBinsBeforeLatitudeBin.end()) {
-    LatitudeBin = LowerBound - m_NumberOfBinsBeforeLatitudeBin.begin() - 1;
+    Return = { c_Pi, 0 };
   } else {
-    LatitudeBin = m_LatitudeBinEdges.size() - 2;
+    
+    //cout<<"m_NumberOfBinsBeforeLatitudeBin: "<<m_NumberOfBinsBeforeLatitudeBin.size()<<endl;
+    //for (unsigned int i = 0; i < m_NumberOfBinsBeforeLatitudeBin.size(); ++i) {
+    //  cout<<i<<": "<<m_NumberOfBinsBeforeLatitudeBin[i]<<endl;
+    //}
+    
+    
+    // Find the latitude bin - we cannot use upper_bound or lower_bound
+    unsigned int LatitudeBin = 0;
+    for (unsigned int i = 0; i < m_NumberOfBinsBeforeLatitudeBin.size() - 1; ++i) {
+      if (Bin >= m_NumberOfBinsBeforeLatitudeBin[i] && Bin < m_NumberOfBinsBeforeLatitudeBin[i+1]) {
+        LatitudeBin = i;
+        break;
+      }
+    }
+    //cout<<"Edges: "<<m_LatitudeBinEdges[LatitudeBin]*c_Deg<<":"<<m_LatitudeBinEdges[LatitudeBin+1]*c_Deg<<endl;
+    
+    unsigned int LongitudeBins = Bin - m_NumberOfBinsBeforeLatitudeBin[LatitudeBin];
+        
+    Return = { 0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1]), double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin] };
   }
   
-  unsigned int LongitudeBins = Bin - m_NumberOfBinsBeforeLatitudeBin[LatitudeBin];
+  //cout<<Bin<<" --> lat: "<<Return[0]*c_Deg<<" - long: "<<Return[1]*c_Deg<<endl;
   
-  //cout<<Bin<<"--> "<<0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1])*c_Deg<<":"<<double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin]*c_Deg<<endl;
+  return Return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Returns all bin centers as vector
+vector<MVector> MBinnerFISBEL::GetAllBinCenters() const
+{
+  vector<MVector> Vectors;
   
-  return vector<double> { 0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1]), double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin] };
+  for (unsigned int b = 0; b < m_NumberOfBins; ++b) {
+    vector<double> Centers = GetBinCenters(b);
+    
+    MVector V;
+    V.SetMagThetaPhi(1.0, Centers[0], Centers[1]);
+    Vectors.push_back(V);
+  }
+  
+  return Vectors;
 }
 
 
