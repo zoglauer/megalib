@@ -37,6 +37,8 @@ using namespace std;
 #include "MStreams.h"
 #include "MResponseMatrixAxis.h"
 #include "MResponseMatrixAxisSpheric.h"
+#include "MCoordinateSystem.h"
+#include "MComptonEvent.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,6 +56,7 @@ ClassImp(MResponseSpectral)
 MResponseSpectral::MResponseSpectral()
 {
   m_ResponseNameSuffix = "energy";
+  m_OnlyINITRequired = true;
 }
 
 
@@ -81,7 +84,7 @@ bool MResponseSpectral::Initialize()
   Ideal.SetLogarithmic(500, 10, 20000, 1, 100000);
   
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
-  Origin.SetFISBEL(413);
+  Origin.SetFISBEL(413); // 100 deg^2
   
   MResponseMatrixAxis Measured("measured energy [keV]");
   Measured.SetLogarithmic(500, 10, 20000, 1, 100000);
@@ -158,6 +161,22 @@ bool MResponseSpectral::Initialize()
     m_EnergyRatioSelected.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
   
+  m_ARMCut = 5;
+  
+  MResponseMatrixAxisSpheric ARMCut("ARM cut center - theta (detector coordinates) [deg]", "ARM cut center - phi (detector coordinates) [deg]");
+  ARMCut.SetFISBEL(413);
+  
+  m_EnergySelectedARMCut.SetName(MString("Energy response with ARM cut of ") + m_ARMCut + " deg radius around given position");
+  m_EnergySelectedARMCut.AddAxis(Ideal);
+  m_EnergySelectedARMCut.AddAxis(Measured);
+  m_EnergySelectedARMCut.AddAxis(ARMCut);
+  if (m_SiReader != nullptr) {
+    m_EnergySelectedARMCut.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+  
+  m_BinCenters = ARMCut.GetAllBinCenters();
+  for (unsigned int i = 0; i < m_BinCenters.size(); ++i) m_BinCenters[i].SetMag(1E+20);
+  
   return true; 
 }
 
@@ -170,7 +189,6 @@ bool MResponseSpectral::Analyze()
 { 
   // Initlize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
-  
   
   MRawEventList* REList = m_ReReader->GetRawEventList();
   MRERawEvent* RE = REList->GetInitialRawEvent();
@@ -195,10 +213,24 @@ bool MResponseSpectral::Analyze()
         // TODO: We might need to do an ARM cut?
         m_EnergySelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
         m_EnergyRatioSelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
+      
+        // ARM cut for Compton events
+        MComptonEvent* Compton = dynamic_cast<MComptonEvent*>(Event);
+        if (Compton != nullptr && Compton->IsKinematicsOK() == true) {
+          for (unsigned int i = 0; i < m_BinCenters.size(); ++i) {
+            double ARM = Compton->GetARMGamma(m_BinCenters[i], MCoordinateSystem::c_Spheric)*c_Deg;
+            //cout<<m_BinCenters[i].Theta()*c_Deg<<":"<<m_BinCenters[i].Phi()*c_Deg<<endl;
+            if (ARM <= m_ARMCut) {
+              double Theta = m_BinCenters[i].Theta()*c_Deg;
+              double Phi = m_BinCenters[i].Phi()*c_Deg;
+              while (Phi < 0) Phi += 360;  
+              m_EnergySelectedARMCut.Add(vector<double>{SimStartEnergy, Event->Ei(), Theta, Phi });
+            }
+          }
+        }
       }
     }
   }
-  
   
   return true; 
 }
@@ -240,6 +272,9 @@ bool MResponseSpectral::Save()
   
   m_EnergyRatioSelected.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergyRatioSelected.Write(GetFilePrefix() + ".ratio.mimrecselected" + m_Suffix, true);
+  
+  m_EnergySelectedARMCut.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergySelectedARMCut.Write(GetFilePrefix() + ".armcut" + m_Suffix, true);
   
   return true;
 }

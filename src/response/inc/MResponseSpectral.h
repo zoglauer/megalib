@@ -71,7 +71,14 @@ class MResponseSpectral : public MResponseBuilder
   MResponseMatrixON m_EnergyRatioUnselected;
   MResponseMatrixON m_EnergyRatioSelected;
   
-                                        
+  MResponseMatrixON m_EnergySelectedARMCut;
+  
+  //! The ARM cut range
+  double m_ARMCut;
+  
+  //! The bin centers for the ARM cut
+  vector<MVector> m_BinCenters;
+  
   // private members:
  private:
 
