@@ -72,7 +72,7 @@ public:
     m_Y = r*sin(t)*sin(p);
     m_Z = r*cos(t);
   }
-
+  
   //! Set phi while keeping radius and theta
   void SetPhi(double p) {
     double r = Mag();
@@ -81,7 +81,16 @@ public:
     m_Y = r*sin(t)*sin(p);
     m_Z = r*cos(t);
   }
-
+  
+  //! Set the radius while keeping theta and phi
+  void SetMag(double r) {
+    double p = Phi();
+    double t = Theta();
+    m_X = r*sin(t)*cos(p);
+    m_Y = r*sin(t)*sin(p);
+    m_Z = r*cos(t);
+  }
+  
   //! Basic set and get components by index 0..2
   double operator[] (int i) const;
   double& operator [] (int i);
