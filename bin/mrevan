@@ -165,7 +165,7 @@ wait
 
 # Create a concatenation file
 NEWFILES=${FILES//.sim/.tra}
-NEWFILES=${FILES//.evta/.tra}
+NEWFILES=${NEWFILES//.evta/.tra}
 mtraconcatter ${NEWFILES}
 
 exit 0;
