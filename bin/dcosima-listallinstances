@@ -68,7 +68,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Do a quick test if the machine is available:
   REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
+    echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: Unable to get host name"
     continue
   fi  
 
@@ -106,7 +106,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Check how many more instances are allowed
   ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-allowedinstances"`
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to get the number of allowed instances"
     continue
   fi
 	if (( ${ALLOWED} < 0 )); then ALLOWED=0; fi
@@ -115,7 +115,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Check how many instances are running
   RUNNING=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "ps -u ${REMOTEUSER[$m]} | grep '\ cosima' | wc -l | sed 's/^ *//g'"`
 	if [ "$?" != 0 ]; then
-    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): NOT ACCESSIBLE"
+    echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to retrieve the number of running cosima instances"
 		continue
 	fi
 	ALLRUNNING=$(( ${ALLRUNNING} + ${RUNNING} ))
