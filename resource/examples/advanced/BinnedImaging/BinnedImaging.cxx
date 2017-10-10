@@ -396,8 +396,8 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
     MRotationInterface RI;
     RI.SetGalacticPointingXAxis(XPointing[1], XPointing[0]-90); // Convert to Galactic 
     RI.SetGalacticPointingZAxis(ZPointing[1], ZPointing[0]-90); // Convert to Galactic 
-    //MRotation R = RI.GetGalacticPointingInverseRotationMatrix(); //good
-    MRotation R = RI.GetGalacticPointingRotationMatrix(); // better
+    MRotation R = RI.GetGalacticPointingInverseRotationMatrix(); //good
+    //MRotation R = RI.GetGalacticPointingRotationMatrix(); // wromg, but too good to believe
     
     /*
      *    MRotationInterface RI2;
@@ -499,7 +499,8 @@ bool BinnedComptonImaging::RotateBackgroundModelInParallel(unsigned int ThreadID
     MRotationInterface RI;
     RI.SetGalacticPointingXAxis(XPointing[1], XPointing[0]-90); // Convert to Galactic 
     RI.SetGalacticPointingZAxis(ZPointing[1], ZPointing[0]-90); // Convert to Galactic 
-    MRotation R = RI.GetGalacticPointingRotationMatrix(); // better
+    MRotation R = RI.GetGalacticPointingInverseRotationMatrix(); //good
+    //MRotation R = RI.GetGalacticPointingRotationMatrix(); // wrong, but too good to believe
 
     
     // Precalculate the rotation map
@@ -954,6 +955,81 @@ bool BinnedComptonImaging::Analyze()
     cout<<"Number of directions in pointings file: "<<Dirs<<endl;
     
     m_TotalBackgroundInModel = m_BackgroundModelGalactic.GetSum();
+    
+    
+    // Backproject background model
+    {
+      MTimer T;
+      
+      MResponseMatrixON BackprojectedBackground("Image");
+      BackprojectedBackground.AddAxis(m_Response.GetAxis(0)); // energy
+      BackprojectedBackground.AddAxis(m_Response.GetAxis(1)); // image space
+      
+      //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + S1*S2*S3*S4*a5  
+      unsigned long M1 = 1;
+      unsigned long M2 = M1*InitialEnergyBins;
+      unsigned long M3 = M2*InitialDirectionBins;
+      unsigned long M4 = M3*FinalEnergyBins;
+      unsigned long M5 = M4*FinalPhiBins;
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        unsigned long A1 = M1*ie;
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          unsigned long A2 = A1 + M2*id;
+          float Content = 0.0;
+          for (unsigned int fe = 0; fe < FinalEnergyBins; ++fe) {
+            unsigned long A3 = A2 + M3*fe;
+            unsigned int D1 = 1*fe;
+            for (unsigned int fp = 0; fp < FinalPhiBins; ++fp) {
+              unsigned long A4 = A3 + M4*fp;
+              unsigned int D2 = D1 +fp*FinalEnergyBins;
+              for (unsigned int fd = 0; fd < FinalDirectionBins; ++fd) {
+                Content += m_ResponseGalactic.Get(A4 + M5*fd) * m_BackgroundModelGalactic.Get(D2 + fd*FinalEnergyBins*FinalPhiBins);
+              }
+            }
+          }
+          BackprojectedBackground.Set(vector<unsigned int>{ ie, id }, Content);
+        }
+      }
+      cout<<"Done: "<<T.GetElapsed()<<endl;
+      
+      // Normalize image to 1.0
+      double Sum = BackprojectedBackground.GetSum();
+      if (Sum == 0) {
+        cout<<"Error: First backprojection sum image is zero"<<endl;
+        return false;
+      }
+      if (isfinite(Sum) == false) {
+        cout<<"Error: First backprojection image contains non-finite number."<<endl;
+        return false;
+      }
+      BackprojectedBackground *= 1.0/BackprojectedBackground.GetSum();
+      
+      BackprojectedBackground.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true);  
+      gSystem->ProcessEvents();
+      
+      BackprojectedBackground.Write("BackprojectedBackground.rsp");
+      
+      vector<double> BackprojectedBackgroundData(BackprojectedBackground.GetAxis(1).GetNumberOfBins());
+      for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+        for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+          BackprojectedBackgroundData[id] = BackprojectedBackground.Get(ie + InitialEnergyBins*id);
+        }
+      }
+      
+      MImageGalactic* G = new MImageGalactic();
+      G->SetTitle("Backprojected background");
+      G->SetXAxisTitle("Galactic Longitude [deg]");
+      G->SetYAxisTitle("Galactic Latitude [deg]");
+      G->SetValueAxisTitle("Flux");
+      G->SetDrawOption(MImage::c_COLZ);
+      G->SetSpectrum(MImage::c_Rainbow);
+      G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+      G->Normalize(false);
+      G->SetFISBEL(BackprojectedBackgroundData);
+      G->Display();
+      
+      
+    }
   }
    
   
@@ -1007,6 +1083,27 @@ bool BinnedComptonImaging::Analyze()
     gSystem->ProcessEvents();
     
     Image.Write("FirstBackprojection.rsp");
+    
+    vector<double> BackprojectedDataData(Image.GetAxis(1).GetNumberOfBins());
+    for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
+      for (unsigned int id = 0; id < InitialDirectionBins; ++id) {
+        BackprojectedDataData[id] = Image.Get(ie + InitialEnergyBins*id);
+      }
+    }
+    
+    MImageGalactic* G = new MImageGalactic();
+    G->SetTitle("1st backprojection");
+    G->SetXAxisTitle("Galactic Longitude [deg]");
+    G->SetYAxisTitle("Galactic Latitude [deg]");
+    G->SetValueAxisTitle("Flux");
+    G->SetDrawOption(MImage::c_COLZ);
+    G->SetSpectrum(MImage::c_Rainbow);
+    G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+    G->Normalize(false);
+    G->SetFISBEL(BackprojectedDataData);
+    G->Display();
+    
+    
   }
 
   
@@ -1167,6 +1264,7 @@ bool BinnedComptonImaging::Analyze()
      
       int LCounter = 0; 
       double Limit = 1.0E-9;
+      double UpdateFactor = 5000;
       unsigned long Q1 = 1;
       unsigned long Q2 = Q1*FinalEnergyBins;
       unsigned long Q3 = Q2*FinalPhiBins;
@@ -1197,7 +1295,7 @@ bool BinnedComptonImaging::Analyze()
             }
               
             //cout<<"Lagrange diff: "<<Lagrange.Get(A3)<<" vs. "<<Update<<endl;
-            double NewL = Lagrange.Get(A3) + 10000*Update;
+            double NewL = Lagrange.Get(A3) + UpdateFactor*Update;
             if (NewL < 0) {
               NewL = 0;
             }
@@ -1335,7 +1433,7 @@ bool BinnedComptonImaging::Analyze()
             }
             
             Mean.Set(fe + FinalEnergyBins*fp + FinalEnergyBins*FinalPhiBins*fd, NewMean);
-            //Mean.Set(vector<unsigned int>{fe, fp, fd}, NewMean);
+            //Mean.Set(vector<unCrabAndBackground.Moving2.p2.trasigned int>{fe, fp, fd}, NewMean);
           }
         }
       }
@@ -1411,7 +1509,7 @@ bool BinnedComptonImaging::Analyze()
           if (Sum > 0) {
             NewImage.Set(A2, Content);
             Image.Set(A2, Content * Image.Get(A2) / Sum);
-            ImageFlux += Content * Image.Get(A2) / Sum / ObservationTime / StartArea;
+            ImageFlux += (Content * Image.Get(A2) / Sum) / ObservationTime / StartArea;
             Display.Set(A2, Content * Image.Get(A2) / Sum / ObservationTime / StartArea / Steradians );
             //Image.Set(vector<unsigned int>{ie, id}, Content * Image.Get(vector<unsigned int>{ie, id}) / Sum);
             gSystem->ProcessEvents();
@@ -1424,7 +1522,7 @@ bool BinnedComptonImaging::Analyze()
       Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
       
       //Display.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
-      //cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+      cout<<"Image content: "<<ImageFlux<<" ph/cm2/s for T="<<ObservationTime<<" sec and A="<<StartArea<<" cm^2"<<endl;
       
       vector<double> ImageData(Display.GetAxis(1).GetNumberOfBins());
       for (unsigned int ie = 0; ie < InitialEnergyBins; ++ie) {
