@@ -36,7 +36,9 @@ class MResponseSpectral : public MResponseBuilder
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseSpectral();
+  //! Default destructor
   virtual ~MResponseSpectral();
   
   //! Return a brief description of this response class

@@ -35,9 +35,19 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseImagingBinnedMode();
+  //! Default destructor
   virtual ~MResponseImagingBinnedMode();
-
+  
+  //! Return a brief description of this response class
+  static MString Description();
+  //! Return information on the parsable options for this response class
+  static MString Options();
+  //! Parse the options
+  virtual bool ParseOptions(const MString& Options);
+  
+  
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
 
@@ -62,6 +72,15 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
   // protected members:
  protected:
+  //! The bin width of the angles near the equator
+  double m_AngleBinWidth;
+  //! Number of energy bins
+  unsigned int m_EnergyNBins;
+  //! Minimum energy range
+  double m_EnergyMinimum;
+  //! Maximum energy range
+  double m_EnergyMaximum;
+  
   //! The imaging response 
   MResponseMatrixON m_ImagingResponse;
   // the exposure

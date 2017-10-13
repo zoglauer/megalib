@@ -152,8 +152,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      cn : compton (NeuralNetwork)"<<endl;
   Usage<<"      cl : compton (Laue lens or collimated)"<<endl;
   Usage<<"      a  : ARM"<<endl;
+  Usage<<"      ib : "<<MResponseImagingBinnedMode::Description()<<endl;
+  Usage<<MResponseImagingBinnedMode::Options()<<endl;
   Usage<<"      il : list-mode imaging"<<endl;
-  Usage<<"      ib : binned-mode imaging"<<endl;
   Usage<<"      ic : coded mask imaging"<<endl;
   Usage<<"      ef : efficiency far field (e.g. astrophysics)"<<endl;
   Usage<<"      en : efficiency near field (e.g. medical)"<<endl;
@@ -701,6 +702,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetMimrecSettingsFileName(m_MimrecCfgFileName);
 
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
