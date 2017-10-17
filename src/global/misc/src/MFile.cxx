@@ -70,6 +70,10 @@ MFile::MFile()
   m_IsOpen = false;
   m_ReadLineBufferLength = 0;
 
+  // The following are also set in Reset() but required for the Close() in there
+  m_OwnProgress = true;
+  m_Progress = nullptr;
+  
   Reset();
 }
 
