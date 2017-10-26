@@ -316,6 +316,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       g_Verbosity = atoi(argv[++i]);
       if (g_Verbosity < 0) g_Verbosity = c_Quiet;
       cout<<"Setting verbosity to "<<g_Verbosity<<endl;
+    } else if (Option == "-l" || Option == "--log" ) {
+      // Ignored - only used by mresponsecreator
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;

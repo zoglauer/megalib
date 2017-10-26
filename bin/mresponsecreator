@@ -48,12 +48,15 @@ fi
 # Store command line as array
 CMD=( "$@" )
 
-# Check for help
+# Check for help & logging
+LOGGING=false
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
     exit 0
+  elif [[ ${C} == *-l* ]]; then
+    LOGGING=true
   fi
 done
 
@@ -92,6 +95,7 @@ fi
 
 if [[ ${TMVA} == true ]]; then
   
+  LOGGING=true
   LINKS=""
   SEQUENCES=""
   LOGS=""
@@ -139,9 +143,13 @@ if [[ ${TMVA} == true ]]; then
     LINKS+=" ${TMPGOODFILE} ${TMPBADFILE}"
     
     echo "Starting: responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD}"
-    LOG="${NAME}.seq${SEQUENCE}.log"
-    LOGS+="${LOG} "
-    nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} &> ${LOG} &
+    if [[ ${LOGGING} == true ]]; then
+      LOG="${NAME}.seq${SEQUENCE}.log"
+      LOGS+="${LOG} "
+      nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} &> ${LOG} &
+    else 
+      nice -19 responsecreator -f ${TMPGOODFILE} -r ${NAME} ${NEWCMD} > /dev/null &
+    fi
     echo "Started TMVA run for file ${SINGLEFILE}"
 
     sleep 5    
@@ -154,7 +162,9 @@ if [[ ${TMVA} == true ]]; then
     rm ${LINKS}
   fi
   
-  mv ${LOGS} ${NAME}
+  if [[ ${LOGGING} == true ]]; then
+    mv ${LOGS} ${NAME}
+  fi
 
   # Fix the steering file
   SEQUENCES=$(echo "${SEQUENCES}" | awk '{ for (i=NF; i>1; i--) printf("%s ", $i); print $1; }') # Just reverse it - small to large
@@ -178,7 +188,12 @@ else
     fi
     OUT="${NAME}.${ID}"
 
-    nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+    if [[ ${LOGGING} == true ]]; then
+      LOG="${NAME}.id${ID}.log"
+      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> ${LOG} &
+    else 
+      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+    fi
     echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
 
     COUNTER=$(( ${COUNTER} + 1 ))

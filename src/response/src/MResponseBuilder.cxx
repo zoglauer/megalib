@@ -463,7 +463,7 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
       m_SiEvent = m_SiReader->GetNextEvent(false);
 
       // Decide:
-      if (m_SiEvent != 0) {
+      if (m_SiEvent != 0) {  
         // Test if it is not truncated:
         if ((m_OnlyINITRequired == true && m_SiEvent->GetNIAs() == 1 && m_SiEvent->GetIAAt(0)->GetProcess() == "INIT") || 
             (m_SiEvent->GetNIAs() > 1 && m_SiEvent->GetIAAt(m_SiEvent->GetNIAs()-1)->GetProcess() != "TRNC")) {
@@ -476,7 +476,7 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
           //mout<<"Response: Sivan found good event (Id="<<m_SiEvent->GetID()<<")!"<<endl;
         } else {
           // Ignore this event...
-          //mout<<"Response: Sivan found NO good event (Id="<<m_SiEvent->GetID()<<") TRNC or not enough IAs!"<<endl;
+          mout<<"Response: Sivan found NO good event (Id="<<m_SiEvent->GetID()<<") TRNC or not enough IAs!"<<endl;
           TryNextEvent = true;
         }
       } else {
