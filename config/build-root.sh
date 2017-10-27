@@ -46,9 +46,18 @@ COMPILEROPTIONS=`gcc --version | head -n 1`
 # Check if some of the frequently used software is installed:
 type cmake >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-    echo "ERROR: cmake must be installed"
+  echo "ERROR: cmake must be installed"
+  exit 1
+else
+  VER=`cmake --version | grep ^cmake`
+  VER=${VER#cmake version };
+  OLDIFS=${IFS}; IFS='.'; Tokens=( ${VER} ); IFS=${OLDIFS};
+  VERSION=$(( 10000*${Tokens[0]} + 100*${Tokens[1]} + ${Tokens[2]} ));
+  if (( ${VERSION} < 30403 )); then
+    echo "ERROR: the version of cmake needs to be at least 3.4.3 and not ${VER}"
     exit 1
-fi 
+  fi
+fi
 type curl >/dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "ERROR: curl must be installed"
@@ -438,7 +447,7 @@ if [ -d ${ROOTDIR} ]; then
     echo "       There should not be any spaces in the ROOT version..."
     exit 1
   fi
-  rm -r "${ROOTDIR}"
+  rm -rf "${ROOTDIR}"
 fi
 
 
