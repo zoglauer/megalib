@@ -6049,8 +6049,8 @@ void MInterfaceSivan::EnergyPerNucleus()
   EMax = TMath::Ceil(EMax);
   if (EMin < 0) EMin = 1;
 
-  EMin = 0;
-  EMax = 300;
+  //EMin = 0;
+  //EMax = 300;
   
   mout<<endl;
   mout<<"Setting dimensions to:"<<endl;
