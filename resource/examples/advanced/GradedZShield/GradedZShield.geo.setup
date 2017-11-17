@@ -4,9 +4,15 @@ Name GradedZShield
 Version 1.0
 
 # The thicknesses of the graded-Z shield layers
-Constant ZSizeTin 0.025
-Constant ZSizeCu  0.05
-Constant ZSizeAl  0.05
+Constant Material1 Tin
+Constant ZSizeMaterial1 0.025
+
+Constant Material2 Copper
+Constant ZSizeMaterial2  0.05
+
+Constant Material3 Alu6061
+Constant ZSizeMaterial3  0.05
+
 
 # The surrounding sphere is not required for this example
 SurroundingSphere 1000  0.0  0.0  0.0  1000
@@ -20,30 +26,35 @@ WorldVolume.Visibility 0
 WorldVolume.Shape BRIK 100. 100. 100.
 WorldVolume.Mother 0
 
-Volume GradedZ_Tin
-GradedZ_Tin.Material Tin
-GradedZ_Tin.Visibility 1
-GradedZ_Tin.Color 2
-GradedZ_Tin.Shape BOX 100.0 100.0 { ZSizeTin/2 }
-GradedZ_Tin.Position 0.0  0.0  { ZSizeAl + ZSizeCu + ZSizeTin/2 }
-GradedZ_Tin.Mother WorldVolume
+If { ZSizeMaterial1 > 0 }
+	Volume GradedZ_Material1
+	GradedZ_Material1.Material Material1
+	GradedZ_Material1.Visibility 1
+	GradedZ_Material1.Color 2
+	GradedZ_Material1.Shape BOX 100.0 100.0 { ZSizeMaterial1/2 }
+	GradedZ_Material1.Position 0.0  0.0  { ZSizeMaterial3 + ZSizeMaterial2 + ZSizeMaterial1/2 }
+	GradedZ_Material1.Mother WorldVolume
+EndIf
 
-Volume GradedZ_Cu
-GradedZ_Cu.Material Copper
-GradedZ_Cu.Visibility 1
-GradedZ_Cu.Color 3
-GradedZ_Cu.Shape BOX 100.0 100.0 { ZSizeCu/2 }
-GradedZ_Cu.Position 0.0 0.0 { ZSizeAl + ZSizeCu/2 }
-GradedZ_Cu.Mother WorldVolume
+If { ZSizeMaterial2 > 0 }
+	Volume GradedZ_Material2
+	GradedZ_Material2.Material Material2
+	GradedZ_Material2.Visibility 1
+	GradedZ_Material2.Color 3
+	GradedZ_Material2.Shape BOX 100.0 100.0 { ZSizeMaterial2/2 }
+	GradedZ_Material2.Position 0.0 0.0 { ZSizeMaterial3 + ZSizeMaterial2/2 }
+	GradedZ_Material2.Mother WorldVolume
+EndIf
 
-Volume GradedZ_Al
-GradedZ_Al.Material Alu6061
-GradedZ_Al.Visibility 1
-GradedZ_Al.Color 4
-GradedZ_Al.Shape BOX 100.0 100.0 { ZSizeAl/2 }
-GradedZ_Al.Position 0.0 0.0 { ZSizeAl/2} 
-GradedZ_Al.Mother WorldVolume
-
+If { ZSizeMaterial3 > 0 }
+	Volume GradedZ_Material3
+	GradedZ_Material3.Material Material3
+	GradedZ_Material3.Visibility 1
+	GradedZ_Material3.Color 4
+	GradedZ_Material3.Shape BOX 100.0 100.0 { ZSizeMaterial3/2 }
+	GradedZ_Material3.Position 0.0 0.0 { ZSizeMaterial3/2} 
+	GradedZ_Material3.Mother WorldVolume
+EndIf
 
 Volume Blacky
 Blacky.Material Air
