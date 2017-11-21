@@ -1244,6 +1244,7 @@ void MInterfaceMimrec::ARMGamma()
   if (Fit != 0) {
     cout<<endl<<endl;
     FitResult = Hist->Fit(Fit, "RIMQ SE");
+    /*
     if (FitResult->IsValid() == true) {
       Confidence = new TH1D(*Hist);
       Confidence->SetName("ConfidenceHistogramARM");
@@ -1257,13 +1258,16 @@ void MInterfaceMimrec::ARMGamma()
       }
       Hist->SetTitle(MString("ARM (Compton cone) with ") + ConfidenceLevelString + MString(" confidence intervals"));
     }
+    */
   }
   Hist->Draw("HIST");
   if (Fit != 0) {
     Fit->SetLineColor(kBlue+2);
+    /*
     if (FitResult->IsValid() == true) {
       Confidence->Draw("E5 SAME");
     }
+    */
     Fit->Draw("SAME");      
   }
   Hist->Draw("HIST SAME");
@@ -1809,6 +1813,74 @@ void MInterfaceMimrec::AngularResolutionPairs()
   Hist2->Draw("colz");
   Canvas2->Update();
 
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MInterfaceMimrec::PhiKinVsPhiGeo()
+{
+  // Display a 2D histogram of the Compton scatter angle Phi calculated via kinematics and via geometry
+  
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+  
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
+  MVector TestPosition = GetTestPosition();
+  
+  // Initalize the image size (x-axis)
+  TH2D* Hist = new TH2D("PhiKinVsPhiGeo", "Compton scatter angle: Kienmatics vs. geometry", 
+                        NBins, 0, Disk, NBins, 0, Disk);
+  Hist->SetBit(kCanDelete);
+  Hist->SetXTitle("Compton scatter angle via geometry [deg]");
+  Hist->SetYTitle("Compton scatter angle via kinematics [deg]");
+  
+  
+  MPhysicalEvent* Event = nullptr;
+  MComptonEvent* ComptonEvent = nullptr; 
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != 0) {
+    
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        ComptonEvent = dynamic_cast<MComptonEvent*>(Event);
+        
+        // Comtpon scatter angle via geometry - take care of coordinate systems:
+        MVector RotPosition = TestPosition;
+        if (ComptonEvent->HasDetectorRotation() == true) RotPosition = ComptonEvent->GetDetectorInverseRotationMatrix()*RotPosition;
+        if (m_Settings->GetCoordinateSystem() == MCoordinateSystem::c_Galactic && ComptonEvent->HasGalacticPointing() == true) RotPosition = ComptonEvent->GetGalacticPointingInverseRotationMatrix()*RotPosition;
+        
+        if ((ComptonEvent->C1() - ComptonEvent->C2()).Angle(RotPosition - ComptonEvent->C1())*c_Deg > 89 && (ComptonEvent->C1() - ComptonEvent->C2()).Angle(RotPosition - ComptonEvent->C1())*c_Deg < 91) {
+          cout<<ComptonEvent->GetId()<<": "<<(ComptonEvent->C1() - ComptonEvent->C2()).Angle(RotPosition - ComptonEvent->C1())*c_Deg*c_Deg<<endl;
+        }
+        
+        Hist->Fill((ComptonEvent->C1() - ComptonEvent->C2()).Angle(RotPosition - ComptonEvent->C1())*c_Deg, 
+                   ComptonEvent->Phi()*c_Deg);
+      } 
+    }
+    
+    delete Event;
+  } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
+  
+  if (Hist->GetMaximum() == 0) {
+    Error("ARMGamma()", "No events passed the event selections or file is empty!");
+    return;
+  }
+  
+  TCanvas* Canvas = new TCanvas();
+  Canvas->SetTitle("Compton scatter angle: Kienmatics vs. geometry");
+  Canvas->cd();
+  Hist->Draw("COLZ");
+  Canvas->Update();
+  
   return;
 }
 
@@ -6204,7 +6276,7 @@ void MInterfaceMimrec::CreateCosimaOrientationFile()
   bool IsOn = false;
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
-    if (Event->HasGalacticPointing() == true) {
+    if (Event->HasGalacticPointing() == true && m_Selector->IsQualifiedEventFast(Event) == true) {
       if (LastXAxisLongitude != Event->GetGalacticPointingXAxisLongitude() ||
         LastXAxisLatitude != Event->GetGalacticPointingXAxisLatitude() ||
         LastZAxisLongitude != Event->GetGalacticPointingZAxisLongitude() ||

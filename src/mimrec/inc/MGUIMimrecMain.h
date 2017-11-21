@@ -93,6 +93,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseArmGamma, 
                    c_ResponseArmGammaVsCompton, 
                    c_ResponseArmGammaVsDistance, 
+                   c_ResponsePhiKinVsPhiGeo, 
                    c_ResponseSignificanceMap, 
                    c_ResponseArmGammaVsComptonProbability, 
                    c_ResponseArmGammaVsClusteringProbability, 

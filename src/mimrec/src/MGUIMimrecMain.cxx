@@ -168,6 +168,7 @@ void MGUIMimrecMain::Create()
   MenuARM->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
   MenuARM->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
   MenuARM->AddEntry("ARM of recoil electron", c_ResponseArmElectron);
+  MenuARM->AddEntry("Phi via kinematics vs. Phi via geometry", c_ResponsePhiKinVsPhiGeo);
   MenuARM->AddEntry("ARM of scattered gamma ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
   MenuARM->AddEntry("ARM of scattered gamma ray vs. First interaction distance", c_ResponseArmGammaVsDistance);
   MenuARM->AddEntry("SPD of recoil electron vs Compton Scatter Angel (phi)", c_ResponseSpdElectronVsCompton);
@@ -414,6 +415,13 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGamma();
+        }
+        break;
+        
+      case c_ResponsePhiKinVsPhiGeo:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->PhiKinVsPhiGeo();
         }
         break;
         

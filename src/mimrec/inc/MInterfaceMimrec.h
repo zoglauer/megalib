@@ -86,9 +86,12 @@ class MInterfaceMimrec : public MInterface
 
   void ThetaOriginDistribution();
 
+  //! The classic ARM gamma distribution
   void ARMGamma();
   //! Distribution of ARM values of the gamma-ray vs. the Compton scatter angle
   void ARMGammaVsComptonScatterAngle();
+  //! 2D Histogram of Phi Calculated via kinemetics vs. Phi calculated via geometry
+  void PhiKinVsPhiGeo();
   void ARMGammaVsDistance();
   void ARMGammaVsComptonProbability();
   void ARMGammaVsClusteringProbability();
