@@ -78,6 +78,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MFunction3DSpherical.o \
 	$(LB)/MVector.o \
 	$(LB)/MRotation.o \
+	$(LB)/MQuaternion.o \
 	$(LB)/MPrelude.o \
 	$(LB)/MGTI.o \
 	$(LB)/MTime.o \
