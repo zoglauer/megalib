@@ -86,7 +86,7 @@ class MDVoxel3D : public MDDetector
   void SetOffset(const double x, const double y, const double z);
   double GetOffsetX() const { return m_OffsetX; }
   double GetOffsetY() const { return m_OffsetY; }
-  double GetOffsetZ() const { return m_OffsetY; }
+  double GetOffsetZ() const { return m_OffsetZ; }
 
   void SetNVoxels(const int x, const int y, const int z);
   int GetNVoxelsX() const { return m_NVoxelsX; }
