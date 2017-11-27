@@ -56,16 +56,17 @@ Geomega:
 Reponse:
 + New base class for all responses
 + Many improvements for COSI analysis
-+ TMVA analysis
++ TMVA data set creation and training of machine learning codes
   
 Revan:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
-+ Added neural network Compton sequence reconstruction 
++ Added TMVA Compton sequence reconstruction (e.g. boosted decision trees, neural networks)
 
 Mimrec:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
 + Parallelization of image deconvolution
 + New imaging response modes
++ Support for binned imaging
 
 
 Realta:
@@ -83,6 +84,9 @@ Examples:
   
 ... plus many, many smaller things I already forgot about :)
 
+
+Long term bugs fixed:
++ Cosima: Voxel3D: The Y offset was used as Z offset during simulations
 
 
 
