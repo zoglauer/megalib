@@ -118,11 +118,11 @@ bool MResponseImagingARM::Initialize()
   
   m_Arm.SetName("Angular resolution (all energies)");
   m_Arm.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
-  m_Arm.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
+  m_Arm.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
   
   m_ArmPhotoPeak.SetName("Angular resolution (photo-peak)");
   m_ArmPhotoPeak.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
-  m_ArmPhotoPeak.SetAxisNames("#phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "number of interactions: 2 or 3+ site events");
+  m_ArmPhotoPeak.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
   
   m_NMatchedEvents = 0;
   m_NOptimumEvents = 0;
