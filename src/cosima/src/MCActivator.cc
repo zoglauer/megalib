@@ -234,6 +234,13 @@ bool MCActivator::CalculateEquilibriumRates()
     for (unsigned int i = 0; i < m_Rates.GetNIDs(v); ++i) {
       cout<<"Start: ID: "<<m_Rates.GetID(v, i)<<"  #Ex: "<<m_Rates.GetNExcitations(v, i)<<endl;      
 
+      if (m_Rates.GetID(v, i) == 72154 || m_Rates.GetID(v, i) == 71154 || m_Rates.GetID(v, i) == 70154 || m_Rates.GetID(v, i) == 73158) {
+        cout<<"Warning: This element sends Geant4 in an infinite loop -- skipping!"<<endl;
+        continue;
+      }
+
+
+
       for (unsigned int e = 0; e < m_Rates.GetNExcitations(v, i); ++e) {
 //         if (m_Rates.GetValue(v, i, e) < 0.001/s) {
 //           mout<<"Skipped element: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetExcitation(v, i, e)/keV<<" - "<<m_Rates.GetValue(v, i, e)*s<<" vs "<<0.001<<") "<<endl;
@@ -244,8 +251,8 @@ bool MCActivator::CalculateEquilibriumRates()
 
         cout<<"Start: "<<m_Rates.GetID(v, i)<<"("<<m_Rates.GetNExcitations(v, i)<<"): Excitation: "<<m_Rates.GetExcitation(v, i, e)/keV<<" & LifeTime: "<<m_Rates.GetParticleDefinition(v, i, e)->GetPDGLifeTime()/s<<" sec"<<endl;      
 
-        /*
-        if (m_Rates.GetID(v, i) == 47099) {
+        /* 
+        if (m_Rates.GetID(v, i) == 72154) {
           for (unsigned int ii = 0; ii < 100; ++i) {
             cout<<"Warning: This element crashes Geant4.9.2.1 -- skipping!"<<endl; 
           }
