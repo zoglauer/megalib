@@ -52,6 +52,7 @@ ClassImp(MResponseImagingARM)
 MResponseImagingARM::MResponseImagingARM()
 {
   m_ResponseNameSuffix = "imagingarm";
+  m_OnlyINITRequired = true;
 }
 
 
@@ -76,6 +77,7 @@ bool MResponseImagingARM::Initialize()
 
   vector<float> PhiDiffAxis;
 
+  /*
   vector<float> Axis; // = CreateLogDist(0.1, 180, 20);
   for (float x = 0.25; x < 7.9; x += 0.25) Axis.push_back(x);
   for (float x = 8.0; x < 14.9; x += 0.5) Axis.push_back(x);
@@ -92,8 +94,31 @@ bool MResponseImagingARM::Initialize()
   for (unsigned int b = 0; b < Axis.size(); ++b) {
     PhiDiffAxis.push_back(Axis[b]);
   }
+  */
 
-  vector<float> EnergyAxis = CreateThresholdedLogDist(100, 10000, 20, 25);
+  double PhiMin = 0.3;
+  double PhiNBins = 80;
+  
+  PhiNBins /= 2;
+  
+  double PhiStart = 0.5*PhiMin;
+  double PhiStop = 180;
+  
+  double PhiDistance = (PhiStop - PhiStart) - PhiMin*PhiNBins;
+  
+  double lPhiStart = log(PhiStart);
+  double lPhiEnd = log(PhiStart + PhiDistance);
+  double lPhiDist = (lPhiEnd - lPhiStart) / PhiNBins;
+  
+  for (unsigned int b = PhiNBins; b <= PhiNBins; --b) {
+    PhiDiffAxis.push_back(-exp(lPhiStart + b*lPhiDist) - b*PhiMin);
+  }
+  for (unsigned int b = 0; b <= PhiNBins; ++b) {
+    PhiDiffAxis.push_back(exp(lPhiStart + b*lPhiDist) + b*PhiMin);
+  }
+  
+  
+  vector<float> EnergyAxis = CreateThresholdedLogDist(100, 10000, 10, 25);
 
   vector<float> PhiAxis = CreateEquiDist(0, 180, 9);
   
@@ -119,10 +144,16 @@ bool MResponseImagingARM::Initialize()
   m_Arm.SetName("Angular resolution (all energies)");
   m_Arm.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
   m_Arm.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
+  if (m_SiReader != nullptr) {
+    m_Arm.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }   
   
   m_ArmPhotoPeak.SetName("Angular resolution (photo-peak)");
   m_ArmPhotoPeak.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
   m_ArmPhotoPeak.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
+  if (m_SiReader != nullptr) {
+    m_ArmPhotoPeak.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }   
   
   m_NMatchedEvents = 0;
   m_NOptimumEvents = 0;
@@ -207,8 +238,11 @@ bool MResponseImagingARM::Finalize()
 bool MResponseImagingARM::Save()
 {
   MResponseBuilder::Save(); 
-
+  
+  m_Arm.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Arm.Write(GetFilePrefix() + ".allenergies" + m_Suffix, true);
+
+  m_ArmPhotoPeak.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_ArmPhotoPeak.Write(GetFilePrefix() + ".photopeak" + m_Suffix, true);
 
   return true;
