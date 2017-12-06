@@ -56,10 +56,16 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode()
   m_ResponseNameSuffix = "binnedimaging";
   m_OnlyINITRequired = true;
   
-  m_AngleBinWidth = 5;
+  m_AngleBinWidth = 5; // deg
+  m_AngleBinWidthElectron = 360; // deg
   m_EnergyNBins = 1;
-  m_EnergyMinimum = 10;
-  m_EnergyMaximum = 2000;
+  m_EnergyMinimum = 10; // keV
+  m_EnergyMaximum = 2000; // keV
+  m_DistanceNBins = 1;
+  m_DistanceMinimum = 0; // cm
+  m_DistanceMaximum = 1000; // cm
+  
+  
 }
 
 
@@ -90,10 +96,14 @@ MString MResponseImagingBinnedMode::Description()
 MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
-  out<<"             anglebinwidth:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
-  out<<"             emin:            minimum energy (default: 10 keV)"<<endl;
-  out<<"             emax:            maximum energy (default: 2,000 keV)"<<endl;
-  out<<"             ebins:           number of energy bins between min and max energy (default: 1)"<<endl;
+  out<<"             anglebinwidth:           the width of a sky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             emin:                    minimum energy (default: 10 keV)"<<endl;
+  out<<"             emax:                    maximum energy (default: 2,000 keV)"<<endl;
+  out<<"             ebins:                   number of energy bins between min and max energy (default: 1)"<<endl;
+  out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
+  out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
+  out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
+  out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
   
   return MString(out);
 }
@@ -142,6 +152,14 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       m_EnergyNBins = stod(Value);
     } else if (Split2[i][0] == "anglebinwidth") {
       m_AngleBinWidth = stod(Value);
+    } else if (Split2[i][0] == "dmin") {
+      m_DistanceMinimum = stod(Value);
+    } else if (Split2[i][0] == "dmax") {
+      m_DistanceMaximum = stod(Value);
+    } else if (Split2[i][0] == "dbins") {
+      m_DistanceNBins = stod(Value);
+    } else if (Split2[i][0] == "anglebinwidthelectron") {
+      m_AngleBinWidthElectron = stod(Value);
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -161,19 +179,38 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     mout<<"Error: You need at least one energy bin"<<endl;
     return false;       
   }
+  if (m_DistanceMinimum < 0 || m_DistanceMaximum < 0) {
+    mout<<"Error: All distance values must be non-negative"<<endl;
+    return false;    
+  }
+  if (m_DistanceMinimum >= m_DistanceMaximum) {
+    mout<<"Error: The minimum distance must be smaller than the maximum distance"<<endl;
+    return false;       
+  }
+  if (m_DistanceNBins <= 0) {
+    mout<<"Error: You need at least one distance bin"<<endl;
+    return false;       
+  }
   if (m_AngleBinWidth <= 0) {
-    mout<<"Error: You need at give a positive with of the sky bins at the equator"<<endl;
+    mout<<"Error: You need at give a positive width of the sky bins at the equator"<<endl;
+    return false;       
+  }
+  if (m_AngleBinWidthElectron <= 0) {
+    mout<<"Error: You need at give a positive width of the sky bins at the equator for the recoil electro"<<endl;
     return false;       
   }
   
   // Dump it for user info
   mout<<endl;
-  mout<<"Choosen options for spectral response:"<<endl;
-  mout<<"  Minimum energy:                "<<m_EnergyMinimum<<endl;
-  mout<<"  Maximum energy:                "<<m_EnergyMaximum<<endl;
-  mout<<"  Number of bins energy:         "<<m_EnergyNBins<<endl;
-  mout<<"  Width of sky bins at equator:  "<<m_AngleBinWidth<<endl;
-
+  mout<<"Choosen options for binned imaging response:"<<endl;
+  mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
+  mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
+  mout<<"  Width of sky bins at equator:                       "<<m_AngleBinWidth<<endl;
+  mout<<"  Minimum distance:                                   "<<m_DistanceMinimum<<endl;
+  mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
+  mout<<"  Number of bins distance:                            "<<m_DistanceNBins<<endl;
+  mout<<"  Width of sky bins at equator for recoild electron:  "<<m_AngleBinWidthElectron<<endl;
   mout<<endl;
   
   return true;
@@ -190,7 +227,10 @@ bool MResponseImagingBinnedMode::Initialize()
   if (MResponseBuilder::Initialize() == false) return false;
 
   int AngleBins = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidth / m_AngleBinWidth;
-
+  if (AngleBins < 1) AngleBins = 1;
+  int AngleBinsElectron = 4*c_Pi*c_Deg*c_Deg / m_AngleBinWidthElectron / m_AngleBinWidthElectron;
+  if (AngleBinsElectron < 1) AngleBinsElectron = 1;
+  
   MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
   AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
   
@@ -206,12 +246,22 @@ bool MResponseImagingBinnedMode::Initialize()
   MResponseMatrixAxisSpheric AxisScatteredGammaRayCoordinates("#psi [deg]", "#chi [deg]");
   AxisScatteredGammaRayCoordinates.SetFISBEL(AngleBins);
   
-  m_ImagingResponse.SetName("7D imaging response");
+  MResponseMatrixAxisSpheric AxisRecoilElectronCoordinates("#sigma [deg]", "#tau [deg]");
+  AxisRecoilElectronCoordinates.SetFISBEL(AngleBinsElectron);
+  
+  MResponseMatrixAxis AxisDistance("Distance [cm]");
+  AxisDistance.SetLinear(m_DistanceNBins, m_DistanceMinimum, m_DistanceMaximum);
+  
+  
+  
+  m_ImagingResponse.SetName("10D imaging response");
   m_ImagingResponse.AddAxis(AxisEnergyInitial);
   m_ImagingResponse.AddAxis(AxisSkyCoordinates);
   m_ImagingResponse.AddAxis(AxisEnergyMeasured);
   m_ImagingResponse.AddAxis(AxisPhi);
   m_ImagingResponse.AddAxis(AxisScatteredGammaRayCoordinates);
+  m_ImagingResponse.AddAxis(AxisRecoilElectronCoordinates);
+  m_ImagingResponse.AddAxis(AxisDistance);
   if (m_SiReader != nullptr) {
     m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
@@ -289,6 +339,21 @@ bool MResponseImagingBinnedMode::Analyze()
   double Psi = Dg.Theta()*c_Deg;
   double EnergyMeasured = Compton->Ei();
   
+  double Sigma, Tau;
+  if (Compton->HasTrack() == true) {
+    MVector De = -Compton->De();
+    De = Rotation*De;
+    Tau = De.Phi()*c_Deg;
+    while (Tau < -180) Tau += 360.0;
+    while (Tau > +180) Tau -= 360.0;
+    Sigma = Dg.Theta()*c_Deg;
+  } else {
+    Tau = 179.99;
+    Sigma = 179.99;
+  }
+  
+  double Distance = Compton->FirstLeverArm();
+  
   // Now get the origin information
   MVector IdealOriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
   IdealOriginDir = Rotation*IdealOriginDir;
@@ -300,7 +365,7 @@ bool MResponseImagingBinnedMode::Analyze()
   
   
   // And fill the matrices
-  m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi } );
+  m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
   m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
   m_EnergyResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
             

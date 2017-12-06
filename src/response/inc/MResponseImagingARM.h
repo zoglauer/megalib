@@ -57,11 +57,17 @@ class MResponseImagingARM : public MResponseBuilder
 
   // private methods:
  private:
-  //! The ARM shape as a function of a few things
-  MResponseMatrixO5 m_Arm;
-  //! The ARM shape of the photo-peak events as a function of a few things
-  MResponseMatrixO5 m_ArmPhotoPeak;
-  
+   //! The ARM shape as a function of a few things
+   MResponseMatrixO5 m_Arm;
+   //! The ARM shape of the photo-peak events as a function of a few things
+   MResponseMatrixO5 m_ArmPhotoPeak;
+   
+   //! The SPD shape as a function of a few things
+   MResponseMatrixO3 m_Spd;
+   //! The SPD shape as a function of a few things
+   MResponseMatrixO3 m_SpdPhotoPeak;
+   
+   
   //! The number of events which can be analyzed
   unsigned long m_NMatchedEvents;
   //! The number of reconstructed events
@@ -70,6 +76,11 @@ class MResponseImagingARM : public MResponseBuilder
   unsigned long m_NQualifiedComptonEvents;
   //! The number of Compton events in photo peak after selections
   unsigned long m_NPhotoPeakEvents;
+  //! The number of Compton events after selections with track
+  unsigned long m_NQualifiedComptonEventsWithTrack = 0;
+  //! The number of Compton events in photo peak after selections with track
+  unsigned long m_NPhotoPeakEventsWithTrack = 0;
+  
   
   // protected members:
  protected:

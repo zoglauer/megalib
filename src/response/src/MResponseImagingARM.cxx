@@ -148,17 +148,34 @@ bool MResponseImagingARM::Initialize()
     m_Arm.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
   
-  m_ArmPhotoPeak.SetName("Angular resolution (photo-peak)");
+  m_ArmPhotoPeak.SetName("Angular resolution (photo peak)");
   m_ArmPhotoPeak.SetAxis(PhiDiffAxis, PhiAxis, EnergyAxis, DistanceAxis, InteractionsAxis);
   m_ArmPhotoPeak.SetAxisNames("ARM #phi_{meas} - #phi_{real} [deg]", "Measured Compton-scatter angle [deg]", "Measured energy [keV]", "Measured interaction distance [cm]", "Number of interactions: 2 or 3+ site events");
   if (m_SiReader != nullptr) {
     m_ArmPhotoPeak.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
   
+  vector<float> AxisEpsilonDiff = CreateEquiDist(0, 180, 36);
+  vector<float> AxisEpsilonReal = CreateEquiDist(0, 180, 1);
+  vector<float> AxisEe = CreateLogDist(100, 20000, 20);
+  
+  m_Spd.SetName("Shape along cone for tracked events");
+  m_Spd.SetAxis(AxisEpsilonDiff, AxisEpsilonReal, AxisEe);
+  m_Spd.SetAxisNames("SPD #epsilon_{meas} - #epsilon_{real} [deg]", "Measure electron scatter angle [deg]", "Measured electron energy [keV]");
+  
+  m_SpdPhotoPeak.SetName("Shape along cone for tracked events (photo peak)");
+  m_SpdPhotoPeak.SetAxis(AxisEpsilonDiff, AxisEpsilonReal, AxisEe);
+  m_SpdPhotoPeak.SetAxisNames("SPD #epsilon_{meas} - #epsilon_{real} [deg]", "Measure electron scatter angle [deg]", "Measured electron energy [keV]");
+  
+
+  
   m_NMatchedEvents = 0;
   m_NOptimumEvents = 0;
   m_NQualifiedComptonEvents = 0;
   m_NPhotoPeakEvents = 0;
+  
+  m_NQualifiedComptonEventsWithTrack = 0;
+  m_NPhotoPeakEventsWithTrack = 0;
   
   return true;
 }
@@ -205,6 +222,17 @@ bool MResponseImagingARM::Analyze()
               ++m_NPhotoPeakEvents;
               m_ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
             }
+            
+            if (Compton->HasTrack() == true) {
+              double EpsilonDiff = Compton->GetSPDElectron(IdealOrigin)*c_Deg;
+              m_Spd.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
+              m_NQualifiedComptonEventsWithTrack++;
+              if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
+                IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
+                ++m_NPhotoPeakEventsWithTrack;
+                m_SpdPhotoPeak.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
+              }
+            }
           }
         }
       }
@@ -241,10 +269,16 @@ bool MResponseImagingARM::Save()
   
   m_Arm.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Arm.Write(GetFilePrefix() + ".allenergies" + m_Suffix, true);
-
+  
   m_ArmPhotoPeak.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_ArmPhotoPeak.Write(GetFilePrefix() + ".photopeak" + m_Suffix, true);
-
+  
+  m_Spd.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_Spd.Write(GetFilePrefix() + ".spd.allenergies" + m_Suffix, true);
+  
+  m_SpdPhotoPeak.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_SpdPhotoPeak.Write(GetFilePrefix() + "spd.photopeak" + m_Suffix, true);
+  
   return true;
 }
 

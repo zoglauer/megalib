@@ -72,14 +72,22 @@ class MResponseImagingBinnedMode : public MResponseBuilder
 
   // protected members:
  protected:
-  //! The bin width of the angles near the equator
+  //! The bin width of the angles near the equator for the gamma rays
   double m_AngleBinWidth;
+  //! The bin width of the angles near the equator for the recoil electron (360 for no electron tracking)
+  double m_AngleBinWidthElectron;
   //! Number of energy bins
   unsigned int m_EnergyNBins;
   //! Minimum energy range
   double m_EnergyMinimum;
   //! Maximum energy range
   double m_EnergyMaximum;
+  //! Number of distance bins
+  unsigned int m_DistanceNBins;
+  //! Minimum distance range
+  double m_DistanceMinimum;
+  //! Maximum energy range
+  double m_DistanceMaximum;
   
   //! The imaging response 
   MResponseMatrixON m_ImagingResponse;
