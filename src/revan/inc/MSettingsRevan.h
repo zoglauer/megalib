@@ -60,9 +60,11 @@ class MSettingsRevan : public MSettings, public MSettingsEventReconstruction, pu
   bool GetSpectrumSortByInstrument() const { return m_SpectrumSortByInstrument; }
   void SetSpectrumSortByDetectorType(bool Value) { m_SpectrumSortByDetectorType = Value; }
   bool GetSpectrumSortByDetectorType() const { return m_SpectrumSortByDetectorType; }
+  void SetSpectrumSortByNamedDetector(bool Value) { m_SpectrumSortByNamedDetector = Value; }
+  bool GetSpectrumSortByNamedDetector() const { return m_SpectrumSortByNamedDetector; }
   void SetSpectrumSortByDetector(bool Value) { m_SpectrumSortByDetector = Value; }
   bool GetSpectrumSortByDetector() const { return m_SpectrumSortByDetector; }
-
+  
   void SetSpectrumOutputToScreen(bool Value) { m_SpectrumOutputToScreen = Value; }
   bool GetSpectrumOutputToScreen() const { return m_SpectrumOutputToScreen; }
   void SetSpectrumOutputToFile(bool Value) { m_SpectrumOutputToFile = Value; }
@@ -97,6 +99,7 @@ class MSettingsRevan : public MSettings, public MSettingsEventReconstruction, pu
   
   bool m_SpectrumSortByInstrument;
   bool m_SpectrumSortByDetectorType;
+  bool m_SpectrumSortByNamedDetector;
   bool m_SpectrumSortByDetector;
   
   bool m_SpectrumCombine;

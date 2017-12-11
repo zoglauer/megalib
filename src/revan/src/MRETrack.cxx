@@ -359,6 +359,25 @@ MRESE* MRETrack::GetStopPoint()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get the volume sequence: 
+//! If it we have a start point, its the VS of the start point, other wise the VS of the first end point, otherwise the VS of the first RESE
+MDVolumeSequence* MRETrack::GetVolumeSequence()
+{
+  if (m_Start != nullptr) {
+    return m_Start->GetVolumeSequence(); 
+  } else if (GetNEndPoints() > 0) {
+    return GetEndPointAt(0)->GetVolumeSequence(); 
+  } else if (GetNRESEs() > 0) {
+    return GetRESEAt(0)->GetVolumeSequence(); 
+  } else {
+    return m_VolumeSequence; 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MVector MRETrack::GetDirection(int Length)
 {
   // Get the direction of this track.

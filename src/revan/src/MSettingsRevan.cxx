@@ -63,6 +63,7 @@ MSettingsRevan::MSettingsRevan(bool AutoLoad) : MSettings("RevanConfigurationFil
   
   m_SpectrumSortByInstrument = true;
   m_SpectrumSortByDetectorType = false;
+  m_SpectrumSortByNamedDetector = false;
   m_SpectrumSortByDetector = false;
   
   m_SpectrumCombine = true;
@@ -113,6 +114,7 @@ bool MSettingsRevan::WriteXml(MXmlNode* Node)
   
   new MXmlNode(Node, "SpectrumSortByInstrument", m_SpectrumSortByInstrument);
   new MXmlNode(Node, "SpectrumSortByDetectorType", m_SpectrumSortByDetectorType);
+  new MXmlNode(Node, "SpectrumSortByNamedDetector", m_SpectrumSortByNamedDetector);
   new MXmlNode(Node, "SpectrumSortByDetector", m_SpectrumSortByDetector);
   
   new MXmlNode(Node, "SpectrumCombine", m_SpectrumCombine);
@@ -171,6 +173,9 @@ bool MSettingsRevan::ReadXml(MXmlNode* Node)
   }
   if ((aNode = Node->GetNode("SpectrumSortByDetectorType")) != 0) {
     m_SpectrumSortByDetectorType = aNode->GetValueAsBoolean();
+  }
+  if ((aNode = Node->GetNode("SpectrumSortByNamedDetector")) != 0) {
+    m_SpectrumSortByNamedDetector = aNode->GetValueAsBoolean();
   }
   if ((aNode = Node->GetNode("SpectrumSortByDetector")) != 0) {
     m_SpectrumSortByDetector = aNode->GetValueAsBoolean();

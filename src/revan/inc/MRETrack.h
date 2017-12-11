@@ -78,6 +78,10 @@ class MRETrack : public MRESE
   //! Return the center of gravity of the track
   MVector GetCenterOfGravity();
 
+  //! Get the volume sequence: if it we have a start point, its the VS of the start point, other wise the VS of the first end point, otherwise the VS of the first RESE
+  virtual MDVolumeSequence* GetVolumeSequence();
+  
+  
   //! Only add the RESE to the end point list (do not link, do not add it to the track)
   void AddEndPoint(MRESE* RESE);
   //! Adds and links the new to the old endpoint AND adds the hit to this Track!
