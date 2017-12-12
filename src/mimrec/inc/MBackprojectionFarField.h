@@ -43,6 +43,15 @@ class MBackprojectionFarField : public MBackprojection
   virtual void PrepareBackprojection();
   //! The entry point into the backprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
+  
+  
+  //Addition Christian Lang
+  //---------------------------------------------------------
+  virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins,
+  int& NUsedBins, double& Maximum, double X1Position, double Y1Position,
+  double Z1Position, double X2Position, double Y2Position, double Z2Position);
+  
+  //---------------------------------------------------------
 
   //! Set the viewport / image dimensions
   virtual bool SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
