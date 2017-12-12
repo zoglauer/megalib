@@ -366,7 +366,8 @@ bool MResponseSpectral::Analyze()
           for (unsigned int i = 0; i < m_BinCenters.size(); ++i) {
             double ARM = Compton->GetARMGamma(m_BinCenters[i], MCoordinateSystem::c_Spheric)*c_Deg;
             //cout<<m_BinCenters[i].Theta()*c_Deg<<":"<<m_BinCenters[i].Phi()*c_Deg<<endl;
-            if (ARM <= m_ARMCut) {
+            // cout<<ARM<<" vs. arm cut="<<m_ARMCut<<endl;
+            if (fabs(ARM) <= m_ARMCut) {
               double Theta = m_BinCenters[i].Theta()*c_Deg;
               double Phi = m_BinCenters[i].Phi()*c_Deg;
               while (Phi < 0) Phi += 360;  
