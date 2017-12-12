@@ -182,14 +182,20 @@ else
     mwait -p=responsecreator -i=threads -m
 
     # Check if the sims have IDs we can use
-    ID=$(echo ${SINGLEFILE} | awk -Finc '{ print $2 }' | awk -F.id '{ print $1 }')
-    if [[ ${ID} == "" ]]; then
-      ID=${COUNTER}
+    PARALLEL=$(echo ${SINGLEFILE} | awk -F'\\.p' '{ print $2 }' | awk -F'\\.inc' '{ print $1 }')
+    INC=$(echo ${SINGLEFILE} | awk -F'\\.inc' '{ print $2 }' | awk -F'\\.id' '{ print $1 }')
+    
+    OUT="${NAME}"
+    if [[ ${PARALLEL} != "" ]]; then
+      OUT+=".p${PARALLEL}"
     fi
-    OUT="${NAME}.${ID}"
+    if [[ ${INC} == "" ]]; then
+      INC=${COUNTER}
+    fi
+    OUT+=".inc${INC}"
 
     if [[ ${LOGGING} == true ]]; then
-      LOG="${NAME}.id${ID}.log"
+      LOG="${OUT}.log"
       nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> ${LOG} &
     else 
       nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
