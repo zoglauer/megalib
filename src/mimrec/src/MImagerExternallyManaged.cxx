@@ -270,6 +270,87 @@ MBPData* MImagerExternallyManaged::CalculateResponseSlice(MPhysicalEvent* Event)
   return Data;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// Addition Christian Lang - CalculateResponseSliceLine
+//---------------------------------------------------------
+
+
+MBPData* MImagerExternallyManaged::CalculateResponseSliceLine(MPhysicalEvent* Event, double X1Position, double
+Y1Position, double Z1Position, double X2Position, double Y2Position, double Z2Position)
+{
+MBPData* Data = 0;
+// IsQualified is NOT reentrant --- but the only thing modified are its counters, which we do not use here...
+
+if (m_Selector.IsQualifiedEvent(Event) == true) {
+
+// Reinitialize the array keeping the events backprojection
+// Memcopy is only faster if the parallism of modern CPUs cannot be used. With gcc -O3 this is fastest:
+//for (int i = 0; i < m_NBins; ++i) BackprojectionImage[i] = 0.0;
+bool EnoughMemory = true;
+double* BackprojectionImage = new double[m_NBins];
+int* BackprojectionBins = new int[m_NBins];
+
+// Try to backproject the data and store the computed t_ij in BackprojectionImage
+
+int NUsedBins = 0;
+double Maximum = 0;
+if (m_BPs[0]->Backproject(Event, BackprojectionImage, BackprojectionBins, NUsedBins, Maximum, X1Position,
+Y1Position, Z1Position, X2Position, Y2Position, Z2Position) == true && NUsedBins > 0) {
+// It might happen that we go out of memory during imaging, catch it!
+// 1-byte-storage:
+if (m_ComputationAccuracy == 0) {
+// Test if we can store it as sparse matrix:
+if (NUsedBins < 0.33*m_NBins) {
+Data = new(nothrow) MBPDataSparseImageOneByte();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+} else { // no sparse matrix
+Data = new(nothrow) MBPDataImageOneByte();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+}
+// 4-byte storage:
+else if (m_ComputationAccuracy == 1) {
+if (NUsedBins < 0.5*m_NBins) {
+Data = new(nothrow) MBPDataSparseImage();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+else { // no sparse matrix
+Data = new(nothrow) MBPDataImage();
+if (Data != 0) {
+EnoughMemory = Data->Initialize(BackprojectionImage, BackprojectionBins, m_NBins, NUsedBins, Maximum);
+} else {
+EnoughMemory = false;
+}
+}
+} else {
+merr<<"m_ComputationAccuracy must be 0 (1 byte storage) or 1 (4 byte storage): "<<m_ComputationAccuracy<<fatal;
+}
+}
+delete [] BackprojectionImage;
+delete [] BackprojectionBins;
+if (EnoughMemory == false) {
+cout<<"Out of memory..."<<endl;
+}
+}
+
+  return Data;
+}
+
+
 
 // MImagerExternallyManaged: the end...
 ////////////////////////////////////////////////////////////////////////////////
