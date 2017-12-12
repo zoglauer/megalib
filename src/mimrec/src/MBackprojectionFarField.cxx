@@ -324,7 +324,7 @@ bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, 
 
 // Addition Christian Lang - Backproject
 //---------------------------------------------------------
-bool MBackprojectionSphere::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double&
+bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double&
 Maximum, double X1Position, double Y1Position, double Z1Position, double X2Position, double Y2Position, double
 Z2Position)
 {
