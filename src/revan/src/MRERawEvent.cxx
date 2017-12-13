@@ -1731,8 +1731,8 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       m_IsValid = false;
     }
 
-    if (GetNRESEs() > 1000) {
-      mout<<"Hard coded hit limit of max. 1000 hits - no longer adding hits to event "<<m_EventID<<endl;
+    if (GetNRESEs() > 10000) {
+      mout<<"Hard coded hit limit of max. 10000 hits - no longer adding hits to event "<<m_EventID<<endl;
       m_IsValid = false;
       return 2;
     }
