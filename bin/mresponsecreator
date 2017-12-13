@@ -70,8 +70,8 @@ for (( c1=0; c1<=$(( ${#CMD[*]} -1 )); c1++ )); do
     for (( c2=c1+1; c2<=$(( ${#CMD[*]} -1 )); c2++ )); do
       if [[ ${CMD[$c2]} != -* ]]; then
         FILES="${FILES} ${CMD[$c2]}"
+        c1=$c2
       else
-        c1=$(( $c2 -1 ))
         break
       fi
     done
