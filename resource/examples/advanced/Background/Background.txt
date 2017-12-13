@@ -14,4 +14,3 @@ root -x BackgroundViewer.C
 
 # How to use it with cosima:
 Include all *.partial.source file in your cosima source file
-

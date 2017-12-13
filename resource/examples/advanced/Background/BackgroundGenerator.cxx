@@ -39,6 +39,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MStreams.h"
 
+
 /******************************************************************************/
 
 class BackgroundGenerator
@@ -100,7 +101,9 @@ protected:
   bool WriteEnergyFile(MString SourceName, vector<double> Spectrum);
   bool WriteAngleFile(MString SourceName, vector<double> Angle);
 
-
+  //! Write the final summary files
+  bool WriteSummaryFiles();
+  
 private:
   //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
@@ -148,6 +151,19 @@ private:
   
   //! A cosmic alphas file from Spenvis
   MString m_AverageCosmicAlphasSpenvis;
+  
+  //! The photonic summary files
+  vector<MString> m_PhotonicSummaryFiles;
+  
+  //! The leptonic summary files
+  vector<MString> m_LeptonicSummaryFiles;
+  
+  //! The hadronic summary files
+  vector<MString> m_HadronicSummaryFiles;
+  
+  //! The trapped hadronic summary files
+  vector<MString> m_TrappedHadronicSummaryFiles;
+  
 };
 
 /******************************************************************************/
@@ -346,6 +362,8 @@ bool BackgroundGenerator::Analyze()
     if (GenerateAlbedoProtonsAveragedMizuno() == false) return false;
     if (GenerateAlbedoNeutronsKole() == false) return false;
   }
+  
+  WriteSummaryFiles();
 
   return true;
 }
@@ -464,6 +482,8 @@ bool BackgroundGenerator::GenerateAlbedoPhotonsAjelloMizuno()
   WriteAngleFile("AlbedoPhotonsAjelloMizuno", Angle);
   WriteSourceFile("AlbedoPhotonsAjelloMizuno", Flux, 1, Comments);
 
+  m_PhotonicSummaryFiles.push_back("AlbedoPhotonsAjelloMizuno");
+  
   return true;
 }
 
@@ -590,6 +610,8 @@ bool BackgroundGenerator::GenerateAlbedoPhotonsTuerlerMizunoAbdo()
   WriteAngleFile("AlbedoPhotonsTuerlerMizunoAbdo", Angle);
   WriteSourceFile("AlbedoPhotonsTuerlerMizunoAbdo", Flux, 1, Comments);
   
+  m_PhotonicSummaryFiles.push_back("AlbedoPhotonsTuerlerMizunoAbdo");
+  
   return true;
 }
 
@@ -641,7 +663,8 @@ bool BackgroundGenerator::GenerateAlbedoPhotonLinesHarris()
   Comments += "#              Average SMM altitude 500 \n";
   
   WriteSourceFile("AnnihilationLineHarris", Flux, 1, Comments, "Mono 511");
-
+  
+  m_PhotonicSummaryFiles.push_back("AnnihilationLineHarris");
 
   return true;
 }
@@ -728,7 +751,9 @@ bool BackgroundGenerator::GenerateAlbedoElectronsAlcarazMizuno()
   WriteEnergyFile("AlbedoElectronsAlcarazMizuno", Spectrum);
   WriteAngleFile("AlbedoElectronsAlcarazMizuno", Angle);
   WriteSourceFile("AlbedoElectronsAlcarazMizuno", Flux, 3, Comments);
-
+  
+  m_LeptonicSummaryFiles.push_back("AlbedoElectronsAlcarazMizuno");
+  
   return true;
 }
 
@@ -814,7 +839,9 @@ bool BackgroundGenerator::GenerateAlbedoPositronsAlcarazMizuno()
   WriteEnergyFile("AlbedoPositronsAlcarazMizuno", Spectrum);
   WriteAngleFile("AlbedoPositronsAlcarazMizuno", Angle);
   WriteSourceFile("AlbedoPositronsAlcarazMizuno", Flux, 2, Comments);
-
+  
+  m_LeptonicSummaryFiles.push_back("AlbedoPositronsAlcarazMizuno");
+  
   return true;
 }
 
@@ -1003,7 +1030,9 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAlcaraz()
   WriteEnergyFile("AlbedoProtonAlcarazDownward", Spectrum);
   WriteAngleFile("AlbedoProtonAlcarazDownward", Angle);
   WriteSourceFile("AlbedoProtonAlcarazDownward", Flux, 4, Comments);
-
+  
+  m_HadronicSummaryFiles.push_back("AlbedoProtonAlcarazDownward");
+  
   
   // Upward component 
   
@@ -1052,7 +1081,8 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAlcaraz()
   WriteEnergyFile("AlbedoProtonAlcarazUpward", Spectrum);
   WriteAngleFile("AlbedoProtonAlcarazUpward", Angle);
   WriteSourceFile("AlbedoProtonAlcarazUpward", Flux, 4, Comments);
-
+  
+  m_HadronicSummaryFiles.push_back("AlbedoProtonAlcarazUpward");
   
   return true;
 }
@@ -1252,6 +1282,8 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedAlcaraz()
   WriteEnergyFile("AlbedoProtonAlcaraz", Spectrum);
   WriteAngleFile("AlbedoProtonAlcaraz", Angle);
   WriteSourceFile("AlbedoProtonAlcaraz", Flux, 4, Comments);
+  
+  m_HadronicSummaryFiles.push_back("AlbedoProtonAlcaraz");
 
   return true;
 }
@@ -1339,6 +1371,8 @@ bool BackgroundGenerator::GenerateAlbedoProtonsAveragedMizuno()
   WriteEnergyFile("AlbedoProtonMizuno", Spectrum);
   WriteAngleFile("AlbedoProtonMizuno", Angle);
   WriteSourceFile("AlbedoProtonMizuno", Flux, 4, Comments);
+  
+  m_HadronicSummaryFiles.push_back("AlbedoProtonMizuno");
   
   return true;
 }
@@ -1460,7 +1494,9 @@ bool BackgroundGenerator::GenerateAlbedoNeutronsMorrisKole()
   WriteEnergyFile("AlbedoNeutronsMorrisKole", Spectrum);
   WriteAngleFile("AlbedoNeutronsMorrisKole", Angle);
   WriteSourceFile("AlbedoNeutronsMorrisKole", Flux, 6, Comments);
-
+  
+  m_HadronicSummaryFiles.push_back("AlbedoNeutronsMorrisKole");
+  
   return true;
 }
 
@@ -1554,6 +1590,8 @@ bool BackgroundGenerator::GenerateAlbedoNeutronsKole()
   WriteEnergyFile("AlbedoNeutronsKole", Spectrum);
   WriteAngleFile("AlbedoNeutronsKole", Angle);
   WriteSourceFile("AlbedoNeutronsKole", Flux, 6, Comments);
+  
+  m_HadronicSummaryFiles.push_back("AlbedoNeutronsKole");
   
   return true;
 }
@@ -1657,7 +1695,9 @@ bool BackgroundGenerator::GenerateCosmicPhotonGruber()
   WriteEnergyFile("CosmicPhotonsGruber", Spectrum);
   WriteAngleFile("CosmicPhotonsGruber", Angle);
   WriteSourceFile("CosmicPhotonsGruber", Flux, 1);
-
+  
+  m_PhotonicSummaryFiles.push_back("CosmicPhotonsGruber");
+  
   // Determine the flux in ph/s/cm2 via numerical integration...
   double Flux2 = 0;
   int Bins = 10000; 
@@ -1675,7 +1715,7 @@ bool BackgroundGenerator::GenerateCosmicPhotonGruber()
   cout<<"Flux sanity check: "<<Flux2<<" ph/cm2/s/sr"<<endl;
   Flux2 *= AngleFactor;
   cout<<"Flux sanity check:: "<<Flux2<<" ph/cm2/s"<<endl;
-
+    
   return true;
 }
 
@@ -1756,7 +1796,9 @@ bool BackgroundGenerator::GenerateCosmicElectronsMizuno()
   WriteEnergyFile("CosmicElectronsMizuno", Spectrum);
   WriteAngleFile("CosmicElectronsMizuno", Angle);
   WriteSourceFile("CosmicElectronsMizuno", Flux, 3, Comments);
-
+  
+  m_LeptonicSummaryFiles.push_back("CosmicElectronsMizuno");
+  
   return true;
 }
 
@@ -1837,7 +1879,9 @@ bool BackgroundGenerator::GenerateCosmicPositronsMizuno()
   WriteEnergyFile("CosmicPositronsMizuno", Spectrum);
   WriteAngleFile("CosmicPositronsMizuno", Angle);
   WriteSourceFile("CosmicPositronsMizuno", Flux, 2, Comments);
-
+  
+  m_LeptonicSummaryFiles.push_back("CosmicPositronsMizuno");
+  
   return true;
 }
 
@@ -1967,7 +2011,9 @@ bool BackgroundGenerator::GenerateCosmicProtonsSpenvis()
   WriteEnergyFile("CosmicProtonsSpenvis", Spectrum);
   WriteAngleFile("CosmicProtonsSpenvis", Angle);
   WriteSourceFile("CosmicProtonsSpenvis", Flux, 4, Comments);
-
+  
+  m_HadronicSummaryFiles.push_back("CosmicProtonsSpenvis");
+  
   return true;
 }
 
@@ -2102,7 +2148,9 @@ bool BackgroundGenerator::GenerateCosmicAlphasSpenvis()
   WriteEnergyFile("CosmicAlphasSpenvis", Spectrum);
   WriteAngleFile("CosmicAlphasSpenvis", Angle);
   WriteSourceFile("CosmicAlphasSpenvis", Flux, 21, Comments);
-
+  
+  m_HadronicSummaryFiles.push_back("CosmicAlphasSpenvis");
+  
   return true;
 }
 
@@ -2297,6 +2345,8 @@ bool BackgroundGenerator::GenerateTrappedProtonsElectronsSpenvis()
   WriteAngleFile("TrappedProtonsSpenvis", Angle);
   WriteSourceFile("TrappedProtonsSpenvis", ProtonFlux, 4, Comments);
   
+  m_TrappedHadronicSummaryFiles.push_back("TrappedProtonsSpenvis");
+
   Comments = "";
   Comments += "# Trapped electron particles using SPENVIS\n";
   Comments += "# Assumptions: \n";
@@ -2307,7 +2357,7 @@ bool BackgroundGenerator::GenerateTrappedProtonsElectronsSpenvis()
   WriteEnergyFile("TrappedElectronsSpenvis", ElectronSpectrum);
   WriteAngleFile("TrappedElectronsSpenvis", Angle);
   WriteSourceFile("TrappedElectronsSpenvis", ElectronFlux, 3, Comments);
-
+  
   return true;
 }
 
@@ -2416,7 +2466,7 @@ bool BackgroundGenerator::WriteSourceFile(MString SourceName, double Flux, int P
 
   fout<<"# Partial beam file for cosima"<<endl;
   fout<<endl;
-  //fout<<"Include Common.source"<<endl;
+  //fout<<"Include Common.partial.source"<<endl;
   //fout<<endl;
   //fout<<"SpaceSim.FileName      "<<SourceName<<endl;
   //fout<<"SpaceSim.Time          10.0"<<endl;
@@ -2440,6 +2490,275 @@ bool BackgroundGenerator::WriteSourceFile(MString SourceName, double Flux, int P
   fout.close();
 
   return true;
+}
+
+
+/******************************************************************************
+ * Write the final summary files
+ */
+bool BackgroundGenerator::WriteSummaryFiles()
+{
+  ofstream fout;
+  fout.open("Common.partial.source");
+  if (fout.is_open() == false) {
+    mout<<"Unable to open: Common.partial.source"<<endl;
+    return false;
+  }
+  
+  fout<<"# Common setup option for all simulations"<<endl;
+  fout<<endl;
+  fout<<"# Version of the source file"<<endl;
+  fout<<"Version 1"<<endl;
+  fout<<endl;
+  fout<<"# Geometry"<<endl;
+  fout<<"Geometry             > You geometry here <"<<endl;
+  fout<<"DetectorTimeConstant 0.000005"<<endl;
+  fout<<endl;
+  fout<<"# Output formats"<<endl;
+  fout<<"StoreSimulationInfo  init-only"<<endl;
+  fout<<endl;
+  
+  fout.close();
+  
+  
+  ofstream pout;
+  pout.open("PhotonicComponents.source");
+  if (pout.is_open() == false) {
+    mout<<"Unable to open: PhotonicComponents.source"<<endl;
+    return false;
+  }
+  
+  pout<<"# Components file for the photon simulations"<<endl;
+  pout<<endl;
+  pout<<"Include Common.partial.source"<<endl;
+  pout<<endl;
+  pout<<"# Physics list"<<endl;
+  pout<<"PhysicsListEM LivermorePol"<<endl;
+  pout<<endl;
+  pout<<"# The simulation run"<<endl;
+  pout<<"Run SpaceSim"<<endl;
+  pout<<"SpaceSim.FileName  PhotonicBackground"<<endl;
+  pout<<"SpaceSim.Events    50000000"<<endl;
+  pout<<endl;
+  for (MString S: m_PhotonicSummaryFiles) {
+    pout<<"Include "<<S<<".partial.source"<<endl;
+  }
+  pout<<endl;
+
+  pout.close();
+  
+  
+  ofstream lout;
+  lout.open("LeptonicComponents.source");
+  if (lout.is_open() == false) {
+    mout<<"Unable to open: LeptonicComponents.source"<<endl;
+    return false;
+  }
+  
+  lout<<"# Components file for the lepton simulations"<<endl;
+  lout<<endl;
+  lout<<"Include Common.partial.source"<<endl;
+  lout<<endl;
+  lout<<endl;
+  lout<<"# Physics list"<<endl;
+  lout<<"PhysicsListHD   qgsp-bic-hp"<<endl;
+  lout<<"PhysicsListEM   LivermorePol"<<endl;
+  lout<<endl;
+  lout<<endl;
+  lout<<"Run SpaceSim"<<endl;
+  lout<<"SpaceSim.FileName  LeptonicBackground"<<endl;
+  lout<<"SpaceSim.Events    50000000"<<endl;
+  lout<<endl;
+  for (MString S: m_LeptonicSummaryFiles) {
+    lout<<"Include "<<S<<".partial.source"<<endl;
+  }
+  lout<<endl;
+  
+  lout.close();
+  
+  
+  
+  ofstream hiout;
+  hiout.open("HadronicComponentsPrompt.source");
+  if (hiout.is_open() == false) {
+    mout<<"Unable to open: HadronicComponentsPrompt.source"<<endl;
+    return false;
+  }  
+  
+  hiout<<"# Components file for the hadron simulations - prompt"<<endl;
+  hiout<<endl;
+  hiout<<"Include Common.partial.source"<<endl;
+  hiout<<endl;
+  hiout<<endl;
+  hiout<<"# Physics list"<<endl;
+  hiout<<"PhysicsListHD   qgsp-bic-hp"<<endl;
+  hiout<<"PhysicsListEM   LivermorePol"<<endl;
+  hiout<<"DecayMode       ActivationBuildup"<<endl;
+  hiout<<endl;
+  hiout<<endl;
+  hiout<<"Run SpaceSim"<<endl;
+  hiout<<"SpaceSim.FileName                  HadronicBackground"<<endl;
+  hiout<<"SpaceSim.Events                    5000000"<<endl;
+  hiout<<"SpaceSim.IsotopeProductionFile     HadronicBackgroundIsotopes"<<endl;
+  hiout<<endl;
+  for (MString S: m_HadronicSummaryFiles) {
+    hiout<<"Include "<<S<<".partial.source"<<endl;
+  }
+  hiout<<endl;
+  
+  hiout.close();
+  
+  
+  
+  ofstream hbout;
+  hbout.open("HadronicComponentsBuildUp.source");
+  if (hbout.is_open() == false) {
+    mout<<"Unable to open: HadronicComponentsBuildUp.source"<<endl;
+    return false;
+  }  
+  
+  hbout<<"# Components file for the hadron simulations - build up"<<endl;
+  hbout<<endl;
+  hbout<<"Include Common.partial.source"<<endl;
+  hbout<<endl;
+  hbout<<"# Physics list"<<endl;
+  hbout<<"PhysicsListHD                      qgsp-bic-hp"<<endl;
+  hbout<<"PhysicsListEM                      LivermorePol"<<endl;
+  hbout<<endl;
+  hbout<<endl;
+  hbout<<"# The activation calculation for one year const irradiation"<<endl;
+  hbout<<"Activator A"<<endl;
+  hbout<<"A.ActivationMode          ConstantIrradiation  31556736"<<endl;
+  hbout<<"A.ActivationFile          HadronicBackgroundActivation.dat"<<endl;
+  hbout<<endl;
+  hbout<<"# Now generate a source file with all the HadronicBackgroundIsotopes.* files, via"<<endl;
+  hbout<<"# User > for i in `ls HadronicBackgroundIsotopes.p1.inc*.dat`; do echo \"A.IsotopeProductionFile $i\" >> HadronicBackgroundIsotopes.source; done"<<endl;
+  hbout<<"Include HadronicBackgroundIsotopes.source"<<endl;
+  hbout<<endl;
+  
+  hbout.close();
+  
+  
+  
+  ofstream hdout;
+  hdout.open("HadronicComponentsDecay.source");
+  if (hdout.is_open() == false) {
+    mout<<"Unable to open: HadronicComponentsDecay.source"<<endl;
+    return false;
+  }  
+  
+  hdout<<"# Components file for the hadron simulations - decay"<<endl;
+  hdout<<endl;
+  hdout<<"Include Common.partial.source"<<endl;
+  hdout<<endl;
+  hdout<<"# Physics list"<<endl;
+  hdout<<"PhysicsListHD                      qgsp-bic-hp"<<endl;
+  hdout<<"PhysicsListEM                      LivermorePol"<<endl;
+  hdout<<"DecayMode                          ActivationDelayedDecay"<<endl;
+  hdout<<endl;
+  hdout<<"Run ActivationStep3"<<endl;
+  hdout<<"ActivationStep3.FileName                         HadronicBackgroundDecay"<<endl;
+  hdout<<"ActivationStep3.Events                           5000000"<<endl;
+  hdout<<endl;
+  hdout<<"ActivationStep3.ActivationSources                HadronicBackgroundActivation.dat"<<endl;
+  hdout<<endl;
+  
+  hdout.close();
+  
+  
+  
+  
+  
+  ofstream tiout;
+  tiout.open("TrappedHadronicComponentsPrompt.source");
+  if (tiout.is_open() == false) {
+    mout<<"Unable to open: TrappedHadronicComponentsPrompt.source"<<endl;
+    return false;
+  }  
+  
+  tiout<<"# Components file for the trapped hadron simulations - prompt"<<endl;
+  tiout<<endl;
+  tiout<<"Include Common.partial.source"<<endl;
+  tiout<<endl;
+  tiout<<endl;
+  tiout<<"# Physics list"<<endl;
+  tiout<<"PhysicsListHD   qgsp-bic-hp"<<endl;
+  tiout<<"PhysicsListEM   LivermorePol"<<endl;
+  tiout<<"DecayMode       ActivationBuildup"<<endl;
+  tiout<<endl;
+  tiout<<endl;
+  tiout<<"Run SpaceSim"<<endl;
+  tiout<<"SpaceSim.FileName                  TrappedHadronicBackground"<<endl;
+  tiout<<"SpaceSim.Events                    5000000"<<endl;
+  tiout<<"SpaceSim.IsotopeProductionFile     TrappedHadronicBackgroundIsotopes"<<endl;
+  tiout<<endl;
+  for (MString S: m_TrappedHadronicSummaryFiles) {
+    tiout<<"Include "<<S<<".partial.source"<<endl;
+  }
+  tiout<<endl;
+  
+  tiout.close();
+  
+  
+  
+  ofstream tbout;
+  tbout.open("TrappedHadronicComponentsBuildUp.source");
+  if (tbout.is_open() == false) {
+    mout<<"Unable to open: TrappedHadronicComponentsBuildUp.source"<<endl;
+    return false;
+  }  
+  
+  tbout<<"# Components file for the trapped hadron simulations - build up"<<endl;
+  tbout<<endl;
+  tbout<<"Include Common.partial.source"<<endl;
+  tbout<<endl;
+  tbout<<"# Physics list"<<endl;
+  tbout<<"PhysicsListHD                      qgsp-bic-hp"<<endl;
+  tbout<<"PhysicsListEM                      LivermorePol"<<endl;
+  tbout<<endl;
+  tbout<<endl;
+  tbout<<"# The activation calculation for one year const irradiation"<<endl;
+  tbout<<"Activator A"<<endl;
+  tbout<<"A.ActivationMode          ConstantIrradiation  31556736"<<endl;
+  tbout<<"A.ActivationFile          TrapopedHadronicBackgroundActivation.dat"<<endl;
+  tbout<<endl;
+  tbout<<"# Now generate a source file with all the TrappedHadronicBackgroundIsotopes.* files, via"<<endl;
+  tbout<<"# User > for i in `ls TrappedHadronicBackgroundIsotopes.p1.inc*.dat`; do echo \"A.IsotopeProductionFile $i\" >> TrappedHadronicBackgroundIsotopes.source; done"<<endl;
+  tbout<<"Include TrappedHadronicBackgroundIsotopes.source"<<endl;
+  tbout<<endl;
+  
+  tbout.close();
+  
+  
+  
+  ofstream tdout;
+  tdout.open("TrappedHadronicComponentsDecay.source");
+  if (tdout.is_open() == false) {
+    mout<<"Unable to open: TrappedHadronicComponentsDecay.source"<<endl;
+    return false;
+  }  
+  
+  tdout<<"# Components file for the trapped hadron simulations - decay"<<endl;
+  tdout<<endl;
+  tdout<<"Include Common.partial.source"<<endl;
+  tdout<<endl;
+  tdout<<"# Physics list"<<endl;
+  tdout<<"PhysicsListHD                      qgsp-bic-hp"<<endl;
+  tdout<<"PhysicsListEM                      LivermorePol"<<endl;
+  tdout<<"DecayMode                          ActivationDelayedDecay"<<endl;
+  tdout<<endl;
+  tdout<<"Run ActivationStep3"<<endl;
+  tdout<<"ActivationStep3.FileName             TrappedHadronicBackgroundDecay"<<endl;
+  tdout<<"ActivationStep3.Events               5000000"<<endl;
+  tdout<<endl;
+  tdout<<"ActivationStep3.ActivationSources    TrappedHadronicBackgroundActivation.dat"<<endl;
+  tdout<<endl;
+  
+  tdout.close();
+  
+  
+  
+  return false;
 }
 
 
