@@ -99,6 +99,7 @@ bool MERCSRTMVA::SetParameters(MString FileName,
 
   m_FileName = FileName;
   m_Methods = Methods;
+  m_UsePathToFirstIA = false;
   
   m_QualityFactorMin = -numeric_limits<double>::max();
   m_QualityFactorMax = +numeric_limits<double>::max();
@@ -148,11 +149,20 @@ bool MERCSRTMVA::SetParameters(MString FileName,
         }
       }
     }
+    
+    // Path
+    else if (T->IsTokenAt(0, "PT") == true) {
+      if (T->GetNTokens() != 2) {
+        mgui<<"PT needs two keywords, e.g. PT false"<<error;
+        return false;
+      }
+      m_UsePathToFirstIA = T->GetTokenAtAsBoolean(1);
+    }
   }
     
     
   // Create the data sets - must be identical to what's in the response creator
-  m_DS.Initialize(m_MaxNInteractions);
+  m_DS.Initialize(m_MaxNInteractions, m_UsePathToFirstIA);
   
   // Initialize the TMVA readers
   m_DS.CreateReaders(m_Readers);

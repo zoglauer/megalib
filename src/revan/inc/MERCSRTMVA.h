@@ -97,6 +97,9 @@ class MERCSRTMVA : public MERCSR
   //! All possible Permutations for fast access:
   //! Build the following way: [Sequence length] [Permuation ID] [Index]
   vector<vector<vector<unsigned int>>> m_Permutator;  
+
+  //! Use path to first IA
+  bool m_UsePathToFirstIA;
   
   
 #ifdef ___CINT___

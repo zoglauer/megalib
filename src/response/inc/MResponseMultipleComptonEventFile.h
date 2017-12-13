@@ -46,6 +46,13 @@ class MResponseMultipleComptonEventFile : public MResponseMultipleCompton
   //! Default destructor
   virtual ~MResponseMultipleComptonEventFile();
   
+  //! Return a brief description of this response class
+  static MString Description();
+  //! Return information on the parsable options for this response class
+  static MString Options();
+  //! Parse the options
+  virtual bool ParseOptions(const MString& Options);
+  
   //! Initialize the response matrices and their generation
   virtual bool Initialize();
   
@@ -87,6 +94,8 @@ class MResponseMultipleComptonEventFile : public MResponseMultipleCompton
 
   // protected members:
  protected:
+   //! Use path to first IA
+   bool m_UsePathToFirstIA;
    
   //! The data storage for good events, one per sequence length
   vector<TTree*> m_TreeGood;

@@ -42,12 +42,12 @@ class MERCSRDataSet
    //! Default constructor
    MERCSRDataSet();
    //! Standard constructor - initialize for the given sequence length
-   MERCSRDataSet(unsigned int SequenceLength);
+   MERCSRDataSet(unsigned int SequenceLength, bool UsePathToFirstIA = false);
    //! Default destuctor 
   virtual ~MERCSRDataSet();
 
-  // Create for the given sequence length, 2..N
-  void Initialize(unsigned int SequenceLength);
+  // Create data set for the given sequence length, 2..N
+  void Initialize(unsigned int SequenceLength, bool UsePathToFirstIA = false);
   
   // Create trees
   void CreateTrees(vector<TTree*>& GoodTree, vector<TTree*>& BadTree);
@@ -119,7 +119,8 @@ class MERCSRDataSet
   //! The Nadir angle
   vector<Float_t> m_StoreNadirAngle;  
   
-  
+  //! Use path to first IA
+  bool m_UsePathToFirstIA;
 
 
 #ifdef ___CINT___

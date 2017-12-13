@@ -63,6 +63,7 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
   
   m_ResponseNameSuffix = "tmva";
   m_MaxNEvents = 10000000; // 10 Mio
+  m_MaxNInteractions = 5;
   m_MethodsString = "BDTD";
 }
 
@@ -73,6 +74,92 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
 MResponseMultipleComptonTMVA::~MResponseMultipleComptonTMVA()
 {
   // Delete this instance of MResponseMultipleComptonTMVA
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a brief description of this response class
+MString MResponseMultipleComptonTMVA::Description()
+{
+  return MString("Compton event reconstruction (TMVA)");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return information on the parsable options for this response class
+MString MResponseMultipleComptonTMVA::Options()
+{
+  ostringstream out;
+  out<<"             methods:       the selected TMVA methods (default: BDTD)"<<endl;
+  out<<"             maxia :        the maximum number of interactions (default: 5)"<<endl;
+  
+  return MString(out);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the options
+bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
+{
+  // Split the different options
+  vector<MString> Split1 = Options.Tokenize(":");
+  // Split Option <-> Value
+  vector<vector<MString>> Split2;
+  for (MString S: Split1) {
+    Split2.push_back(S.Tokenize("=")); 
+  }
+  
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    if (Split2[i].size() == 0) {
+      mout<<"Error: Empty option in string "<<Options<<endl;
+      return false;
+    }    
+    if (Split2[i].size() == 1) {
+      mout<<"Error: Option has no value: "<<Split2[i][0]<<endl;
+      return false;
+    }
+    if (Split2[i].size() > 2) {
+      mout<<"Error: Option has more than one value or you used the wrong separator (not \":\"): "<<Split1[i]<<endl;
+      return false;
+    }
+    Split2[i][0].ToLowerInPlace();
+  }
+  
+  // Parse
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    string Value = Split2[i][1].Data();
+    
+    if (Split2[i][0] == "methods") {
+      m_MethodsString = Value;
+    } else if (Split2[i][0] == "maxia") {
+      m_MaxNInteractions = stoi(Value);
+    } else {
+      mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
+      return false;
+    }
+  }
+  
+  // Sanity checks:
+  if (m_MaxNInteractions < 2) {
+    mout<<"Error: You need at least 2 interactions"<<endl;
+    return false;    
+  }
+  
+  // Dump it for user info
+  mout<<endl;
+  mout<<"Choosen options for Compton event reconstruction using TMVZ:"<<endl;
+  mout<<"  TMVA methods:                            "<<m_MethodsString<<endl;
+  mout<<"  Maximum number of interactions:          "<<m_MaxNInteractions<<endl;
+  mout<<endl;
+  
+  return true;
 }
 
 
@@ -141,6 +228,27 @@ bool MResponseMultipleComptonTMVA::Initialize()
   }
   gSystem->mkdir(OutDir);  
   
+  
+  // Check if we have the data on the path towards the initial photon position in the data sets
+  bool UsePathToFirstIA = false;
+  TFile* SourceFile = new TFile(m_GoodFileNames[0]); 
+  TTree* SourceTree = (TTree*) SourceFile->Get("Good");
+  if (SourceTree == nullptr) {
+    merr<<"Unable to read good events tree from file "<<m_GoodFileNames[0]<<endl;
+    return false;
+  }
+  TObjArray* Branches = SourceTree->GetListOfBranches();
+  for (int b = 0; b < Branches->GetEntries(); ++b) {
+    TBranch* B = dynamic_cast<TBranch*>(Branches->At(b));
+    TString Name = B->GetName();
+    if (Name == "AbsorptionProbabilityToFirstIAAverage") {
+      UsePathToFirstIA = true;
+      break;
+    }
+  }  
+  SourceFile->Close();
+  
+  
   // Create steering file
   ofstream out;
   out.open(m_ResponseName + ".tmva");
@@ -158,6 +266,9 @@ bool MResponseMultipleComptonTMVA::Initialize()
   out<<endl;  
   out<<"# Directory name"<<endl;
   out<<"DN "<<m_ResponseName<<endl;
+  out<<endl;
+  out<<"# Use path to first IA"<<endl;
+  out<<"PT "<<(UsePathToFirstIA == true ? "true" : "false")<<endl;
   out<<endl;
   out.close();
   

@@ -43,6 +43,7 @@ ClassImp(MERCSRDataSet)
 MERCSRDataSet::MERCSRDataSet()
 {
   m_EventID = -1111; 
+  m_UsePathToFirstIA = true;
 }
 
 
@@ -50,9 +51,9 @@ MERCSRDataSet::MERCSRDataSet()
 
 
 //! Default constructor
-MERCSRDataSet::MERCSRDataSet(unsigned int SequenceLength)
+MERCSRDataSet::MERCSRDataSet(unsigned int SequenceLength, bool UsePathToFirstIA)
 {
-  Initialize(SequenceLength);
+  Initialize(SequenceLength, UsePathToFirstIA);
 }
 
 
@@ -69,8 +70,10 @@ MERCSRDataSet::~MERCSRDataSet()
 
 
 // Create for the given sequence length, 2..N
-void MERCSRDataSet::Initialize(unsigned int SequenceLength)
+void MERCSRDataSet::Initialize(unsigned int SequenceLength, bool UsePathToFirstIA)
 {
+  m_UsePathToFirstIA = UsePathToFirstIA;
+  
   m_SimulationIDs.clear();
   m_Energies.clear();
   m_PositionsX.clear();
@@ -113,11 +116,14 @@ void MERCSRDataSet::Initialize(unsigned int SequenceLength)
     }
     
     m_AbsorptionProbabilities.push_back(vector<Float_t>(l-1));
-    m_AbsorptionProbabilityToFirstIAAverage.push_back(0);
-    m_AbsorptionProbabilityToFirstIAMaximum.push_back(0);
-    m_AbsorptionProbabilityToFirstIAMinimum.push_back(0);
-    m_ZenithAngle.push_back(0);
-    m_NadirAngle.push_back(0);
+    
+    if (m_UsePathToFirstIA == true) {
+      m_AbsorptionProbabilityToFirstIAAverage.push_back(0);
+      m_AbsorptionProbabilityToFirstIAMaximum.push_back(0);
+      m_AbsorptionProbabilityToFirstIAMinimum.push_back(0);
+      m_ZenithAngle.push_back(0);
+      m_NadirAngle.push_back(0);
+    }
   } 
 }
 
@@ -182,28 +188,30 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
       }
     }
     
-    for (unsigned int i = 0; i < m_AbsorptionProbabilities[c].size(); ++i) {
-      Name = "AbsorptionProbabilities";
-      Name += i+1;
-      Reader->AddVariable(Name, &m_AbsorptionProbabilities[c][i]);
+    if (m_UsePathToFirstIA == true) {
+      for (unsigned int i = 0; i < m_AbsorptionProbabilities[c].size(); ++i) {
+        Name = "AbsorptionProbabilities";
+        Name += i+1;
+        Reader->AddVariable(Name, &m_AbsorptionProbabilities[c][i]);
+      }
+      
+      Name = "AbsorptionProbabilityToFirstIAAverage";
+      Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAAverage[c]);
+      
+      Name = "AbsorptionProbabilityToFirstIAMaximum";
+      Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c]);
+      
+      Name = "AbsorptionProbabilityToFirstIAMinimum";
+      Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c]);
+      
+      Name = "ZenithAngle";
+      Reader->AddVariable(Name, &m_ZenithAngle[c]);
+      
+      Name = "NadirAngle";
+      Reader->AddVariable(Name, &m_NadirAngle[c]);
+      
+      Readers.push_back(Reader);
     }
-    
-    Name = "AbsorptionProbabilityToFirstIAAverage";
-    Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAAverage[c]);
-    
-    Name = "AbsorptionProbabilityToFirstIAMaximum";
-    Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c]);
-    
-    Name = "AbsorptionProbabilityToFirstIAMinimum";
-    Reader->AddVariable(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c]);
-    
-    Name = "ZenithAngle";
-    Reader->AddVariable(Name, &m_ZenithAngle[c]);
-    
-    Name = "NadirAngle";
-    Reader->AddVariable(Name, &m_NadirAngle[c]);
-    
-    Readers.push_back(Reader);
   }
 }
 
@@ -282,78 +290,80 @@ void MERCSRDataSet::Fill(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometry
   }
   
   // (f) Incoming probabilities
-  if (m_CosComptonScatterAngles[SequenceLength-2][0] > -1 && m_CosComptonScatterAngles[SequenceLength-2][0] < 1) {
-    
-    // First check if we have already calculated it:
-    bool Found = false;
-    if (m_Indices.size() > 0 && SequenceLength > 3) {
-      auto IndexIter = find(m_Indices.begin(), m_Indices.end(), pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
-      if (IndexIter != m_Indices.end()) {
-        unsigned int Index = IndexIter - m_Indices.begin(); 
-        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAAverage[Index];
-        m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMaximum[Index];
-        m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMinimum[Index];
-        m_ZenithAngle[SequenceLength-2] = m_StoreZenithAngle[Index];
-        m_NadirAngle[SequenceLength-2] = m_StoreNadirAngle[Index];
-        Found = true;
-      }
-    }
-    
-    if (Found == false) {
-      EnergyIncomingGamma = FullEnergy;
-      Phi = acos(m_CosComptonScatterAngles[SequenceLength-2][0]);
-      MVector FirstIAPos = SequencedRESEs[0]->GetPosition();
-      MVector SecondIAPos = SequencedRESEs[1]->GetPosition();
-      MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
-      // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
-      MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
-      // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
-      MVector Incoming = FirstScatteredGammaRayDir;
-      Incoming.RotateAroundVector(Ortho, Phi);
+  if (m_UsePathToFirstIA == true) {
+    if (m_CosComptonScatterAngles[SequenceLength-2][0] > -1 && m_CosComptonScatterAngles[SequenceLength-2][0] < 1) {
       
-      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
-      m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
-      m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
-      unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
-      if (Steps < 1) Steps = 1;
-                            double StepWidth = c_TwoPi/Steps;
-      for (unsigned int a = 0; a < Steps; ++a) {
-        MVector Outgoing = -Incoming;
-        Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
-        Outgoing.Unitize();
-        double P = Geometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
-        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
-        if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
-          m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
-        }
-        if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
-          m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+      // First check if we have already calculated it:
+      bool Found = false;
+      if (m_Indices.size() > 0 && SequenceLength > 3) {
+        auto IndexIter = find(m_Indices.begin(), m_Indices.end(), pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
+        if (IndexIter != m_Indices.end()) {
+          unsigned int Index = IndexIter - m_Indices.begin(); 
+          m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAAverage[Index];
+          m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMaximum[Index];
+          m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = m_StoreAbsorptionProbabilityToFirstIAMinimum[Index];
+          m_ZenithAngle[SequenceLength-2] = m_StoreZenithAngle[Index];
+          m_NadirAngle[SequenceLength-2] = m_StoreNadirAngle[Index];
+          Found = true;
         }
       }
-      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
       
-      // (g) Zenith and Nadir angles
-      MVector Zenith(0, 0, 1);
-      m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
-      MVector Nadir(0, 0, -1);
-      m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
-      
-      if (SequenceLength > 3) {
-        m_Indices.push_back(pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
-        m_StoreAbsorptionProbabilityToFirstIAAverage.push_back(m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2]);
-        m_StoreAbsorptionProbabilityToFirstIAMaximum.push_back(m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]);
-        m_StoreAbsorptionProbabilityToFirstIAMinimum.push_back(m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]); 
-        m_StoreZenithAngle.push_back(m_ZenithAngle[SequenceLength-2]); 
-        m_StoreNadirAngle.push_back(m_NadirAngle[SequenceLength-2]);
+      if (Found == false) {
+        EnergyIncomingGamma = FullEnergy;
+        Phi = acos(m_CosComptonScatterAngles[SequenceLength-2][0]);
+        MVector FirstIAPos = SequencedRESEs[0]->GetPosition();
+        MVector SecondIAPos = SequencedRESEs[1]->GetPosition();
+        MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
+        // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
+        MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
+        // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
+        MVector Incoming = FirstScatteredGammaRayDir;
+        Incoming.RotateAroundVector(Ortho, Phi);
+        
+        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
+        m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
+        m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
+        unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
+        if (Steps < 1) Steps = 1;
+        double StepWidth = c_TwoPi/Steps;
+        for (unsigned int a = 0; a < Steps; ++a) {
+          MVector Outgoing = -Incoming;
+          Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
+          Outgoing.Unitize();
+          double P = Geometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
+          m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
+          if (P > m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
+            m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
+          }
+          if (P < m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
+            m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
+          }
+        }
+        m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
+        
+        // (g) Zenith and Nadir angles
+        MVector Zenith(0, 0, 1);
+        m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
+        MVector Nadir(0, 0, -1);
+        m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
+        
+        if (SequenceLength > 3) {
+          m_Indices.push_back(pair<int, int>(SequencedRESEs[0]->GetID(), SequencedRESEs[1]->GetID()));
+          m_StoreAbsorptionProbabilityToFirstIAAverage.push_back(m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2]);
+          m_StoreAbsorptionProbabilityToFirstIAMaximum.push_back(m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]);
+          m_StoreAbsorptionProbabilityToFirstIAMinimum.push_back(m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]); 
+          m_StoreZenithAngle.push_back(m_ZenithAngle[SequenceLength-2]); 
+          m_StoreNadirAngle.push_back(m_NadirAngle[SequenceLength-2]);
+        }
       }
+      
+    } else {
+      m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
+      m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
+      m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = -0.1;
+      m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
+      m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
     }
-    
-  } else {
-    m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
-    m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
-    m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = -0.1;
-    m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
-    m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
   }
 }
 
@@ -441,25 +451,27 @@ void MERCSRDataSet::CreateTrees(vector<TTree*>& GoodTree, vector<TTree*>& BadTre
       Bad->Branch(Name, &m_AbsorptionProbabilities[c][i], Name + "/F");
     }
     
-    Name = "AbsorptionProbabilityToFirstIAAverage";
-    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/F");
-    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/F");
-    
-    Name = "AbsorptionProbabilityToFirstIAMaximum";
-    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/F");
-    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/F");
-    
-    Name = "AbsorptionProbabilityToFirstIAMinimum";
-    Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/F");
-    Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/F");
-    
-    Name = "ZenithAngle";
-    Good->Branch(Name, &m_ZenithAngle[c], Name + "/F");
-    Bad->Branch(Name, &m_ZenithAngle[c], Name + "/F");
-    
-    Name = "NadirAngle";
-    Good->Branch(Name, &m_NadirAngle[c], Name + "/F");
-    Bad->Branch(Name, &m_NadirAngle[c], Name + "/F");
+    if (m_UsePathToFirstIA == true) {
+      Name = "AbsorptionProbabilityToFirstIAAverage";
+      Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/F");
+      Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAAverage[c], Name + "/F");
+      
+      Name = "AbsorptionProbabilityToFirstIAMaximum";
+      Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/F");
+      Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMaximum[c], Name + "/F");
+      
+      Name = "AbsorptionProbabilityToFirstIAMinimum";
+      Good->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/F");
+      Bad->Branch(Name, &m_AbsorptionProbabilityToFirstIAMinimum[c], Name + "/F");
+      
+      Name = "ZenithAngle";
+      Good->Branch(Name, &m_ZenithAngle[c], Name + "/F");
+      Bad->Branch(Name, &m_ZenithAngle[c], Name + "/F");
+      
+      Name = "NadirAngle";
+      Good->Branch(Name, &m_NadirAngle[c], Name + "/F");
+      Bad->Branch(Name, &m_NadirAngle[c], Name + "/F");
+    }
     
     GoodTree.push_back(Good);
     BadTree.push_back(Bad);

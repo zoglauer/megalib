@@ -47,6 +47,13 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   //! Default destructor
   virtual ~MResponseMultipleComptonTMVA();
   
+  //! Return a brief description of this response class
+  static MString Description();
+  //! Return information on the parsable options for this response class
+  static MString Options();
+  //! Parse the options
+  virtual bool ParseOptions(const MString& Options);
+  
   //! Set TMVA methods striung -- parsing happens in Initialize()
   void SetMethods(MString MethodsString) { m_MethodsString = MethodsString; }
   

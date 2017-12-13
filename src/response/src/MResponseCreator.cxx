@@ -146,9 +146,11 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<MResponseSpectral::Options()<<endl;
   Usage<<"      cd : clustering for double sided-strip detectors"<<endl;
   Usage<<"      t  : track"<<endl;
-  Usage<<"      cf : root good/bad event files for TMVA methods"<<endl;
+  Usage<<"      cf : "<<MResponseMultipleComptonEventFile::Description()<<endl;
+  Usage<<MResponseMultipleComptonEventFile::Options()<<endl;
   Usage<<"      cb : compton (Bayesian)"<<endl;
-  Usage<<"      ct : compton (TMVA)"<<endl;
+  Usage<<"      ct : "<<MResponseMultipleComptonTMVA::Description()<<endl;
+  Usage<<MResponseMultipleComptonTMVA::Options()<<endl;
   Usage<<"      cn : compton (NeuralNetwork)"<<endl;
   Usage<<"      cl : compton (Laue lens or collimated)"<<endl;
   Usage<<"      a  : ARM"<<endl;
@@ -166,8 +168,6 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
   Usage<<"          --no-absorptions           don't calculate absoption probabilities - excludes all data sets with use absorption probabilities"<<endl;
   Usage<<"          --max-interactions         maximum number of interactions to look at (don't go beyond 6-7)"<<endl;
-  Usage<<"      For TMVA Compton mode (ct): "<<endl;
-  Usage<<"          --tmva-methods             comma-separated list (no spaces) of TMVA methods to use: BDTD (*), MLP (*), DNN_GPU, DNN_CPU"<<endl;
   Usage<<endl;
   
   string Option, SubOption, ResponseOptions;
@@ -305,9 +305,6 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       m_MaxNInteractions = atoi(argv[++i]);
       if (m_MaxNInteractions < 2) m_MaxNInteractions = 2;
       cout<<"Maximum number of interactions: "<<m_MaxNInteractions<<endl;
-    } else if (Option == "--tmva-methods") {
-      m_TMVAMethodsString = argv[++i];
-      cout<<"TMVA methods to use "<<m_TMVAMethodsString<<endl;
     } else if (Option == "-d") {
       if (g_Verbosity < 2) g_Verbosity = c_Chatty;
       cout<<"Enabling debug!"<<endl;
@@ -412,6 +409,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
     
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
@@ -434,6 +432,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     //Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     //Response.SetDoAbsorptions(!m_NoAbsorptions);
     
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;

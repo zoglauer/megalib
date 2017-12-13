@@ -70,6 +70,8 @@ MResponseMultipleComptonEventFile::MResponseMultipleComptonEventFile()
   
   // We can save much more frequently here, since the files are a lot smaller
   m_SaveAfter = numeric_limits<long>::max();
+  
+  m_UsePathToFirstIA = true;
 }
 
 
@@ -80,6 +82,89 @@ MResponseMultipleComptonEventFile::~MResponseMultipleComptonEventFile()
 {
   // Delete this instance of MResponseMultipleComptonEventFile
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return a brief description of this response class
+MString MResponseMultipleComptonEventFile::Description()
+{
+  return MString("create ROOT good/bad event files for TMVA methods");
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return information on the parsable options for this response class
+MString MResponseMultipleComptonEventFile::Options()
+{
+  ostringstream out;
+  out<<"             initial:   use the path to the initial IA (default: true)"<<endl;
+  
+  return MString(out);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Parse the options
+bool MResponseMultipleComptonEventFile::ParseOptions(const MString& Options)
+{
+  // Split the different options
+  vector<MString> Split1 = Options.Tokenize(":");
+  // Split Option <-> Value
+  vector<vector<MString>> Split2;
+  for (MString S: Split1) {
+    Split2.push_back(S.Tokenize("=")); 
+  }
+  
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    if (Split2[i].size() == 0) {
+      mout<<"Error: Empty option in string "<<Options<<endl;
+      return false;
+    }    
+    if (Split2[i].size() == 1) {
+      mout<<"Error: Option has no value: "<<Split2[i][0]<<endl;
+      return false;
+    }
+    if (Split2[i].size() > 2) {
+      mout<<"Error: Option has more than one value or you used the wrong separator (not \":\"): "<<Split1[i]<<endl;
+      return false;
+    }
+    Split2[i][0].ToLowerInPlace();
+  }
+  
+  // Parse
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    string Value = Split2[i][1].Data();
+    
+    if (Split2[i][0] == "initial") {
+      if (Value == "true") {
+        m_UsePathToFirstIA = true;
+      } else if (Value == "false") {
+        m_UsePathToFirstIA = false;
+      } else {
+        mout<<"Error: Unrecognized value ("<<Value<<") for option "<<Value<<endl;
+      }
+    } else {
+      mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
+      return false;
+    }
+  }
+  
+  // Dump it for user info
+  mout<<endl;
+  mout<<"Choosen options for creating TMVA data files:"<<endl;
+  mout<<"  Path to first IA:          "<<(m_UsePathToFirstIA == true ? "true" : "false")<<endl;
+  mout<<endl;
+  
+  return true;
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -125,12 +210,10 @@ bool MResponseMultipleComptonEventFile::Initialize()
   //   }  
   
   // Create the ROOT tree for TMVA analysis  
-  m_DS.Initialize(m_MaxNInteractions);
+  m_DS.Initialize(m_MaxNInteractions, m_UsePathToFirstIA);
   
   m_DS.CreateTrees(m_TreeGood, m_TreeBad);
   
-  
-
   m_SaveAfter = numeric_limits<unsigned long>::max();
   
   return true;
@@ -248,107 +331,6 @@ bool MResponseMultipleComptonEventFile::Analyze()
       }
       
       m_DS.Fill(RE->GetEventID(), RESEs, m_SiGeometry);
-      
-      /*
-      m_DS.m_SimulationIDs[SequenceLength-2] = RE->GetEventID();
-      
-      // (a) Raw data:
-      for (unsigned int r = 0; r < SequenceLength; ++r) {
-        m_DS.m_Energies[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
-        m_DS.m_PositionsX[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().X();
-        m_DS.m_PositionsY[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().Y();
-        m_DS.m_PositionsZ[SequenceLength-2][r] = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition().Z();
-      }
-      
-      // (b) Interaction distances
-      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
-        MVector P1 = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition();
-        MVector P2 = SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition();
-        m_DS.m_InteractionDistances[SequenceLength-2][r] = (P2-P1).Mag();
-      }
-        
-      // (c) Compton scatter angle & Klein-Nishina
-      double EnergyIncomingGamma = RE->GetEnergy();
-      double EnergyElectron = 0.0;
-      double CosPhi = 0.0;
-      double Phi = 0.0;
-      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
-        EnergyElectron = SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
-        CosPhi = MComptonEvent::ComputeCosPhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
-        Phi = MComptonEvent::ComputePhiViaEeEg(EnergyElectron, EnergyIncomingGamma - EnergyElectron);
-        m_DS.m_CosComptonScatterAngles[SequenceLength-2][r] = CosPhi;
-        m_DS.m_KleinNishinaProbability[SequenceLength-2][r] = MComptonEvent::GetKleinNishinaNormalizedByArea(EnergyIncomingGamma, Phi);
-        EnergyIncomingGamma -= EnergyElectron;
-        //if (p == 0 && StartResolved == true && CompletelyAbsorbed == true && Phi*c_Deg > 179.99) {
-        //  cout<<"Large Compton scatter angle (Sim ID: "<<RE->GetEventID()<<") -- Start:"<<SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetEnergy()<<endl;
-        //  mout<<RE->ToString()<<endl;
-        //}
-      }
-      
-      // (d) Compton scatter angle difference
-      for (unsigned int r = 0; r < SequenceLength-2; ++r) {
-        // Via Angle:
-        MVector FirstDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetPosition();
-        MVector SecondDir = SequencedRESEs[m_Permutator[SequenceLength][p][r+2]]->GetPosition() - SequencedRESEs[m_Permutator[SequenceLength][p][r+1]]->GetPosition();
-        double CosPhiGeo = cos(FirstDir.Angle(SecondDir));
-        m_DS.m_CosComptonScatterAngleDifference[SequenceLength-3][r] = CosPhiGeo - m_DS.m_CosComptonScatterAngles[SequenceLength-2][r+1]; // "SequenceLength-3" for first argument since we only start for 3-site events
-      }
-      
-      // (e) Absorption probabilities
-      EnergyIncomingGamma = RE->GetEnergy();
-      for (unsigned int r = 0; r < SequenceLength-1; ++r) {
-        EnergyIncomingGamma -= SequencedRESEs[m_Permutator[SequenceLength][p][r]]->GetEnergy();
-        
-        m_DS.m_AbsorptionProbabilities[SequenceLength-2][r] = CalculateAbsorptionProbabilityTotal(*SequencedRESEs[m_Permutator[SequenceLength][p][r]], *SequencedRESEs[m_Permutator[SequenceLength][p][r+1]], EnergyIncomingGamma);
-      }
-      
-      // (f) Incoming probabilities
-      if (m_DS.m_CosComptonScatterAngles[SequenceLength-2][0] > -1 && m_DS.m_CosComptonScatterAngles[SequenceLength-2][0] < 1) {
-        EnergyIncomingGamma = RE->GetEnergy();
-        Phi = acos(m_DS.m_CosComptonScatterAngles[SequenceLength-2][0]);
-        MVector FirstIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][0]]->GetPosition();
-        MVector SecondIAPos = SequencedRESEs[m_Permutator[SequenceLength][p][1]]->GetPosition();
-        MVector FirstScatteredGammaRayDir = SecondIAPos - FirstIAPos;
-        // Create a vector orthogonal to FirstScatteredGammaRayDir which we can use to create the first direction on the cone
-        MVector Ortho = FirstScatteredGammaRayDir.Orthogonal();
-        // Create the first direction on the cone by rotating FirstScatteredGammaRayDir by Phi around Ortho
-        MVector Incoming = FirstScatteredGammaRayDir;
-        Incoming.RotateAroundVector(Ortho, Phi);
-        
-        m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = 0.0;
-        m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = 0.0;
-        m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = numeric_limits<double>::max();
-        unsigned int Steps = 18*sin(Phi); // 10 deg for CA=90
-        if (Steps < 1) Steps = 1;
-        double StepWidth = c_TwoPi/Steps;
-        for (unsigned int a = 0; a < Steps; ++a) {
-          MVector Outgoing = -Incoming;
-          Outgoing.RotateAroundVector(FirstScatteredGammaRayDir, a*StepWidth);
-          Outgoing.Unitize();
-          double P = m_SiGeometry->GetComptonAbsorptionProbability(FirstIAPos + 1000000*Outgoing, FirstIAPos, EnergyIncomingGamma);
-          m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] += P;
-          if (P > m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2]) {
-            m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = P;
-          }
-          if (P < m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2]) {
-            m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = P;
-          }
-        }
-        m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] /= Steps;
-        
-        // (g) Zenith and Nadir angles
-        MVector Zenith(0, 0, 1);
-        m_DS.m_ZenithAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Zenith - FirstIAPos) - Phi;
-        MVector Nadir(0, 0, -1);
-        m_DS.m_NadirAngle[SequenceLength-2] = (FirstIAPos - SecondIAPos).Angle(Nadir - FirstIAPos) - Phi;
-      } else {
-        m_DS.m_AbsorptionProbabilityToFirstIAAverage[SequenceLength-2] = -0.1;
-        m_DS.m_AbsorptionProbabilityToFirstIAMaximum[SequenceLength-2] = -0.1;
-        m_DS.m_AbsorptionProbabilityToFirstIAMinimum[SequenceLength-2] = -0.1;
-        m_DS.m_ZenithAngle[SequenceLength-2] = -4.0; // good one's are from -pi..pi
-        m_DS.m_NadirAngle[SequenceLength-2] = -4.0;  // good one's are from -pi..pi
-      }
-      */
       
       if (p == 0 && StartResolved == true && CompletelyAbsorbed == true) {
         mdebug<<"Add good sequence (ID: "<<RE->GetEventID()<<")"<<endl;
