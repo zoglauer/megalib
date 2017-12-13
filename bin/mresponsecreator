@@ -179,7 +179,11 @@ else
   COUNTERMAX=`echo ${FILES} | wc -w`
   for SINGLEFILE in ${FILES}; do
     # Wait for everything being started, enough memory, and a free slot
-    mwait -p=responsecreator -i=threads -m
+    if [[ ${NEWCMD} == *" cf"* ]]; then
+      mwait -p=responsecreator -i=threads
+    else
+      mwait -p=responsecreator -i=threads -m
+    fi
 
     # Check if the sims have IDs we can use
     PARALLEL=$(echo ${SINGLEFILE} | awk -F'\\.p' '{ print $2 }' | awk -F'\\.inc' '{ print $1 }')
