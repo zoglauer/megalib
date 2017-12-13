@@ -688,13 +688,38 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;
       }
-    } else if (Option == "--egy" || Option == "--ehp" || Option == "-k") {
+    } else if (Option == "--egy" || Option == "--ehp") {
       if (!((argc > i+4) && 
             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
             (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0))) {
         mlog<<"Error: Option \""<<argv[i][1]<<"\" needs four arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "-p") {
+      if (!((argc > i+5) && 
+            (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+            (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
+            (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
+            (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
+            (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0))) {
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs five arguments!"<<endl;
+        mlog<<Usage.str()<<endl;
+        return false;
+      }
+    } else if (Option == "-k") {
+      if (!((argc > i+8) && 
+             (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0) && 
+             (argv[i+2][0] != '-' || isalpha(argv[i+2][1]) == 0) && 
+             (argv[i+3][0] != '-' || isalpha(argv[i+3][1]) == 0) && 
+             (argv[i+4][0] != '-' || isalpha(argv[i+4][1]) == 0) && 
+             (argv[i+5][0] != '-' || isalpha(argv[i+5][1]) == 0) && 
+             (argv[i+6][0] != '-' || isalpha(argv[i+6][1]) == 0) && 
+             (argv[i+7][0] != '-' || isalpha(argv[i+7][1]) == 0) && 
+              (argv[i+8][0] != '-' || isalpha(argv[i+8][1]) == 0))) {
+        mlog<<"Error: Option \""<<argv[i][1]<<"\" needs eight arguments!"<<endl;
         mlog<<Usage.str()<<endl;
         return false;
       }
@@ -1318,13 +1343,13 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
   }
 
   if (m_PosTheta.size() == 0) {
-    mlog<<"You need to give at least one theta position!"<<endl;
+    mlog<<"You need to give at least one theta position using --ptheta!"<<endl;
     mlog<<Usage.str()<<endl;
     return false;
   }
 
   if (m_PosPhi.size() == 0) {
-    mlog<<"You need to give at least one phi position!"<<endl;
+    mlog<<"You need to give at least one phi position using --pphi!"<<endl;
     mlog<<Usage.str()<<endl;
     return false;
   }
