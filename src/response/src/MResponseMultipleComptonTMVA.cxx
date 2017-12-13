@@ -441,7 +441,7 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   // Standard MLP
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
     // New seed each run via RandomSeed=0
-    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=1c00:HiddenLayers=N+5:TestRate=5:RandomSeed=0:!UseRegulator" );
+    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=500:HiddenLayers=N,N/2:TrainingMethod=BP:TestRate=5:RandomSeed=0:!UseRegulator" );
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
