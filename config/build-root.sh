@@ -33,8 +33,12 @@ CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 # In case you have trouble with zlib (gz... something error messages)
 # CONFIGUREOPTIONS+=" -Dbuiltin_zlib=ON -Dbuiltin_lzma=ON"
 
+# By default we build with python 3:
+CONFIGUREOPTIONS+=" -Dpython3=ON"
+
 # In case ROOT complains about you python version
 # CONFIGUREOPTIONS+=" -Dpython=OFF"
+# CONFIGUREOPTIONS+=" -Dpython3=OFF"
 
 # Switching off things we do not need right now but which are on by default
 CONFIGUREOPTIONS+=" -Dalien=OFF -Dbonjour=OFF -Dcastor=OFF -Ddavix=OFF -Dfortran=OFF -Dfitsio=OFF -Dchirp=OFF -Ddcache=OFF -Dgfal=OFF -Dglite=off -Dhdfs=OFF -Dkerb5=OFF -Dldap=OFF -Dmonalisa=OFF -Dodbc=OFF -Doracle=OFF -Dpch=OFF -Dpgsql=OFF -Dpythia6=OFF -Dpythia8=OFF -Drfio=OFF -Dsapdb=OFF -Dshadowpw=OFF -Dsqlite=OFF -Dsrp=OFF -Dssl=OFF -Dxrootd=OFF"
@@ -80,6 +84,9 @@ confhelp() {
   echo "Options:"
   echo "--tarball=[file name of ROOT tar ball]"
   echo "    Use this tarball instead of downloading it from the ROOT website" 
+  echo " "
+  echo "--rootversion=[e.g. 5.34, 6.10]"
+  echo "    Use the given ROOT version instead of the one required by MEGAlib."
   echo " "
   echo "--sourcescript=[file name of new environment script]"
   echo "    File in which the MEGAlib environment is/will be stored. This is used by the MEGAlib setup script" 
@@ -131,6 +138,7 @@ DEBUGOPTIONS=""
 PATCH="off"
 CLEANUP="off"
 KEEPENVASIS="off"
+WANTEDVERSION=""
 
 # Overwrite default options with user options:
 for C in ${CMD}; do
@@ -146,7 +154,9 @@ for C in ${CMD}; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-cl*=* ]]; then
     CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-k* ]]; then
+  elif [[ ${C} == *-r*=* ]]; then
+    WANTEDVERSION=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-k*=* ]]; then
     KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
     echo ""
@@ -299,19 +309,28 @@ if [ "${TARBALL}" != "" ]; then
   fi
   echo "Version of ROOT is: ${VER}"
   
-  bash ${MEGALIB}/config/check-rootversion.sh --good-version=${VER}
-  if [ "$?" != "0" ]; then
-    echo "ERROR: The ROOT tarball you supplied does not contain an acceptable ROOT version!"
-    exit 1
+  if [[ ${WANTEDVERSION} != "" ]]; then
+    if [[ ${VER} != ${WANTEDVERSION}.* ]]; then
+      echo "ERROR: The ROOT tarball has not the same version ${VER} you wanted on the command line ${WANTEDVERSION}!"
+      exit 1
+    fi
+  else 
+    bash ${MEGALIB}/config/check-rootversion.sh --good-version=${VER}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: The ROOT tarball you supplied does not contain an acceptable ROOT version!"
+      exit 1
+    fi
   fi
 else
   # Download it
   
   # Get desired version:
-  WANTEDVERSION=`bash ${MEGALIB}/config/check-rootversion.sh --get-max`
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to determine required ROOT version!"
-    exit 1
+  if [[ ${WANTEDVERSION} == "" ]]; then 
+    WANTEDVERSION=`bash ${MEGALIB}/config/check-rootversion.sh --get-max`
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to determine required ROOT version!"
+      exit 1
+    fi
   fi
   echo "Looking for ROOT version ${WANTEDVERSION} with latest patch on the ROOT website --- sometimes this takes a few minutes..."
   
