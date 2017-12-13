@@ -295,7 +295,7 @@ bool SimpleComptonImaging::Analyze()
           if (y_mean[e] > 0) {
             Content += Backprojections[e]->GetBinContent(bx, by) / y_mean[e];
           }
-         }
+        }
         AllSky->SetBinContent(bx, by, Content * AllSky->GetBinContent(bx, by));
       }
     }
