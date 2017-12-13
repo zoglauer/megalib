@@ -66,7 +66,7 @@ MERCSRTMVAMethod MERCSRTMVAMethods::GetMethod(MString String) const
     return MERCSRTMVAMethod::c_MLP;
   } else if (String == "BDTD") {
     return MERCSRTMVAMethod::c_BDTD;
-  } else if (String == "PDEFoamBoost") {
+  } else if (String == "PDEFOAMBOOST") {
     return MERCSRTMVAMethod::c_PDEFoamBoost;
   } else if (String == "DNN_CPU") {
     return MERCSRTMVAMethod::c_DNN_CPU;
@@ -159,7 +159,7 @@ bool MERCSRTMVAMethods::SetUsedMethods(MString MethodsString)
     if (GetMethod(M) != MERCSRTMVAMethod::c_Unknown) {
       m_UsedMethods[GetMethod(M)] = true;
     } else {
-      merr<<"Unable to find method: "<<M<<endl;
+      merr<<"Unable to find method: \""<<M<<"\""<<endl;
       return false;
     }
   }
