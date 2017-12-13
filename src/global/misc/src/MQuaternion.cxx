@@ -204,7 +204,6 @@ MQuaternion& MQuaternion::operator+=(const MQuaternion& Q)
 //! Subtraction operator, subtract Q from this instance
 MQuaternion& MQuaternion::operator-=(const MQuaternion& Q)
 {
-  // -= operator
   m_W -= Q.m_W;
   m_X -= Q.m_X;
   m_Y -= Q.m_Y;
@@ -371,7 +370,7 @@ MQuaternion MQuaternion::GetLerp(const MQuaternion& Q1, const MQuaternion& Q2, d
 MQuaternion MQuaternion::GetSlerp(const MQuaternion& Q1, const MQuaternion& Q2, double T) const
 {
   MQuaternion Q3;
-  double Dot = MQuaternion::GetDotProduct(Q1, Q2);
+  double Dot = GetDotProduct(Q1, Q2);
   if (Dot < 0) {
     Dot = -Dot;
     Q3 = -Q2;
