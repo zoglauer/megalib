@@ -65,6 +65,7 @@ MResponseSpectral::MResponseSpectral()
   m_EnergyNumberOfBins = 500;
   m_EnergyNumberOfSkyBins = 413;
   m_ARMCut = 5;
+  m_ARMCutOriginAcceptanceRadius = 1;
   m_ARMCutNumberOfSkyBins = 413;
 }
 
@@ -104,6 +105,7 @@ MString MResponseSpectral::Options()
   out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins)"<<endl;
   out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
   out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins)"<<endl;
+  out<<"             armcutorigin:    the acceptance radius around the center of the ARM bin from which the photon is allowed to have started (default: 1 deg)"<<endl;
   
   return MString(out);
 }
@@ -160,6 +162,8 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
       m_ARMCut = stod(Value);
     } else if (Split2[i][0] == "armcutskybins") {
       m_ARMCutNumberOfSkyBins = stod(Value);
+    } else if (Split2[i][0] == "armcutorigin") {
+      m_ARMCutOriginAcceptanceRadius = stod(Value);
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -195,6 +199,10 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
     mout<<"Error: You need a positive value for the ARM cut"<<endl;
     return false;       
   }
+  if (m_ARMCutOriginAcceptanceRadius <= 0) {
+    mout<<"Error: You need a positive value for the origin acceptance radius of the ARM cut"<<endl;
+    return false;       
+  }
   if (m_ARMCutNumberOfSkyBins <= 0) {
     mout<<"Error: You need at least one sky bin for the ARM cut response"<<endl;
     return false;       
@@ -203,14 +211,15 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for spectral response:"<<endl;
-  mout<<"  Minimum energy:        "<<m_EnergyMinimum<<endl;
-  mout<<"  Maximum energy:        "<<m_EnergyMaximum<<endl;
-  mout<<"  Number of bins energy: "<<m_EnergyNumberOfBins<<endl;
-  mout<<"  Underflow minimum:     "<<m_EnergyUnderflow<<endl;
-  mout<<"  Overflow maximum:      "<<m_EnergyOverflow<<endl;
-  mout<<"  Sky bins energy:       "<<m_EnergyNumberOfSkyBins<<endl;
-  mout<<"  ARM cut:               "<<m_ARMCut<<endl;
-  mout<<"  ARM cut sky bins:      "<<m_ARMCutNumberOfSkyBins<<endl;
+  mout<<"  Minimum energy:                     "<<m_EnergyMinimum<<endl;
+  mout<<"  Maximum energy:                     "<<m_EnergyMaximum<<endl;
+  mout<<"  Number of bins energy:              "<<m_EnergyNumberOfBins<<endl;
+  mout<<"  Underflow minimum:                  "<<m_EnergyUnderflow<<endl;
+  mout<<"  Overflow maximum:                   "<<m_EnergyOverflow<<endl;
+  mout<<"  Sky bins energy:                    "<<m_EnergyNumberOfSkyBins<<endl;
+  mout<<"  ARM cut:                            "<<m_ARMCut<<endl;
+  mout<<"  ARM cut sky bins:                   "<<m_ARMCutNumberOfSkyBins<<endl;
+  mout<<"  ARM cut origin acceptance radius:   "<<m_ARMCutOriginAcceptanceRadius<<endl;
   mout<<endl;
   
   return true;
@@ -319,7 +328,17 @@ bool MResponseSpectral::Initialize()
   if (m_SiReader != nullptr) {
     m_EnergySelectedARMCut.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
-  
+ 
+  m_EnergySelectedARMCutOriginRestricted.SetName(MString("Energy response with ARM cut of ") + m_ARMCut + " deg radius around given position and origin close to bin center");
+  m_EnergySelectedARMCutOriginRestricted.AddAxis(Ideal);
+  m_EnergySelectedARMCutOriginRestricted.AddAxis(Measured);
+  m_EnergySelectedARMCutOriginRestricted.AddAxis(ARMCut);
+  if (m_SiReader != nullptr) {
+    m_EnergySelectedARMCutOriginRestricted.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+
+
+ 
   m_BinCenters = ARMCut.GetAllBinCenters();
   for (unsigned int i = 0; i < m_BinCenters.size(); ++i) m_BinCenters[i].SetMag(1E+20);
   
@@ -348,7 +367,10 @@ bool MResponseSpectral::Analyze()
     m_EnergyBeforeER.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() });
     m_EnergyRatioBeforeER.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, RE->GetEnergy() / SimStartEnergy });
   }
-    
+  
+  MVector OriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
+  MVector OriginPos = m_SiEvent->GetIAAt(0)->GetPosition();
+  
   
   if (REList->HasOptimumEvent() == true) {
     MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
@@ -356,6 +378,7 @@ bool MResponseSpectral::Analyze()
       m_EnergyUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
       m_EnergyRatioUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
+        //cout<<"Passed event selector: "<<Event->GetId()<<endl;
         // TODO: We might need to do an ARM cut?
         m_EnergySelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
         m_EnergyRatioSelected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });
@@ -372,6 +395,19 @@ bool MResponseSpectral::Analyze()
               double Phi = m_BinCenters[i].Phi()*c_Deg;
               while (Phi < 0) Phi += 360;  
               m_EnergySelectedARMCut.Add(vector<double>{SimStartEnergy, Event->Ei(), Theta, Phi });
+            }
+
+            double Distance = OriginDir.Angle(m_BinCenters[i])*c_Deg;
+            //cout<<"Distance: "<<Distance<<endl;
+            if (Distance <= m_ARMCutOriginAcceptanceRadius) {
+              double A = Compton->GetARMGamma(OriginPos, MCoordinateSystem::c_Spheric)*c_Deg;
+              if (fabs(A) <= m_ARMCut) {
+                //cout<<"Accepted: "<<Compton->GetId()<<":"<<A<<":"<<m_ARMCut<<":"<<i<<endl;
+                double Theta = m_BinCenters[i].Theta()*c_Deg;
+                double Phi = m_BinCenters[i].Phi()*c_Deg;
+                while (Phi < 0) Phi += 360;
+                m_EnergySelectedARMCutOriginRestricted.Add(vector<double>{SimStartEnergy, Event->Ei(), Theta, Phi });
+              }
             }
           }
         }
@@ -423,6 +459,11 @@ bool MResponseSpectral::Save()
   m_EnergySelectedARMCut.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_EnergySelectedARMCut.Write(GetFilePrefix() + ".armcut" + m_Suffix, true);
   
+  m_EnergySelectedARMCutOriginRestricted.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergySelectedARMCutOriginRestricted.Write(GetFilePrefix() + ".armcutoriginrestricted" + m_Suffix, true);
+  
+
+
   return true;
 }
 

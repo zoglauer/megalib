@@ -87,6 +87,8 @@ class MResponseSpectral : public MResponseBuilder
    
    //! The ARM cut range
    double m_ARMCut;
+   //! The acceptance radius around the ARM cut bin center from which the photons are allowed to have started
+   double m_ARMCutOriginAcceptanceRadius;
    //! The ARM cut sky bins
    unsigned int m_ARMCutNumberOfSkyBins;
    
@@ -100,7 +102,8 @@ class MResponseSpectral : public MResponseBuilder
   MResponseMatrixON m_EnergyRatioSelected;
   
   MResponseMatrixON m_EnergySelectedARMCut;
-  
+  MResponseMatrixON m_EnergySelectedARMCutOriginRestricted; 
+ 
   //! The bin centers for the ARM cut
   vector<MVector> m_BinCenters;
   
