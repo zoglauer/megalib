@@ -1002,6 +1002,18 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       
       CE->SetCoincidenceWindow(m_CoincidenceWindow);
 
+      // Add as hits:
+      MRESE* Start = m_Start;
+      CE->AddHit(Start->CreatePhysicalEventHit());
+      MRESE* Middle = Start->GetLinkAt(0);
+      CE->AddHit(Middle->CreatePhysicalEventHit());
+      while (Middle->GetNLinks() > 1) {
+        MRESE* End = Middle->GetOtherLink(Start);
+        CE->AddHit(End->CreatePhysicalEventHit());
+        Start = Middle;
+        Middle = End;
+      }
+      
       m_Event = (MPhysicalEvent*) CE;
     } else if (m_EventType == c_PairEvent) {
       // We need to have two tracks:

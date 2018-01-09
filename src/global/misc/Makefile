@@ -67,6 +67,7 @@ OBJS      = $(LB)/MGlobal.o \
 	$(LB)/MTransceiverUDP.o \
 	$(LB)/MRotationInterface.o \
 	$(LB)/MPhysicalEvent.o \
+	$(LB)/MPhysicalEventHit.o \
 	$(LB)/MComptonEvent.o \
 	$(LB)/MMuonEvent.o \
 	$(LB)/MPhotoEvent.o \

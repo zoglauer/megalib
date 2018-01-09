@@ -1281,14 +1281,14 @@ double MDDetector::GetTimeResolution(const double Energy) const
   // 
   
   if (m_TimeResolutionType == c_TimeResolutionTypeNone) {
-    return numeric_limits<double>::max()/1000;
+    return 1E15;
   } else if (m_TimeResolutionType == c_TimeResolutionTypeIdeal) {
     return 0;
   } else if (m_TimeResolutionType == c_TimeResolutionTypeGauss) {
     return m_TimeResolution.Evaluate(Energy);
   } else {
     merr<<"Unknown time resolution type: "<<m_TimeResolutionType<<endl;
-    return numeric_limits<double>::max()/1000;
+    return 1E15;
   }
 }
 

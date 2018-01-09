@@ -256,7 +256,10 @@ void MRETrack::AddRESE(MRESE *RESE)
       //merr<<"Different detector types... ok, if we have a pair event... Track: "<<m_Detector<<" new RESE:"<<RESE->GetDetector()<<show;
     }
 
-    m_Time = min(m_Time, RESE->GetTime());
+    if (m_Time <= RESE->GetTime()) { // <= to get time resolution in case we do not have any
+      m_Time = RESE->GetTime();
+      m_TimeResolution = RESE->GetTimeResolution();
+    }
   }
 
   return;

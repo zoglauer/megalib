@@ -1102,6 +1102,19 @@ bool MComptonEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool 
     if (m_ToF != 0 || m_dToF != 0) S<<"TF "<<m_ToF<<" "<<m_dToF<<endl;
     S<<"LA "<<m_LeverArm<<endl;
     if (m_CoincidenceWindow != 0) S<<"CW "<<m_CoincidenceWindow<<endl;
+    for (unsigned int h = 0; h < m_Hits.size(); ++h) {
+      S<<"CH "<<h
+      <<" "<<m_Hits[h].GetPosition().GetX()
+      <<" "<<m_Hits[h].GetPosition().GetY()
+      <<" "<<m_Hits[h].GetPosition().GetZ()
+      <<" "<<m_Hits[h].GetEnergy()
+      <<" "<<m_Hits[h].GetTime().GetAsDouble()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetX()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetY()
+      <<" "<<m_Hits[h].GetPositionUncertainty().GetZ()
+      <<" "<<m_Hits[h].GetEnergyUncertainty()
+      <<" "<<m_Hits[h].GetTimeUncertainty().GetAsDouble()<<endl;
+    }
     
     File.Write(S);
     File.Flush();
@@ -1169,6 +1182,48 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
                  &m_De[0], &m_De[1], &m_De[2], &m_dDe[0], &m_dDe[1], &m_dDe[2]) != 18) {
         cout<<"Unable to parse CD of event "<<m_Id<<"!"<<endl;
         Ret = 1;
+      }
+    }
+  } else if (Line[0] == 'C' && Line[1] == 'H') {
+    if (Fast == true) {
+      char* p;
+      unsigned long Index = strtoul(Line+3, &p, 10);
+      double P0 = strtod(p, &p);
+      double P1 = strtod(p, &p);
+      double P2 = strtod(p, &p);
+      double E = strtod(p, &p);
+      double T = strtod(p, &p);
+      double dP0 = strtod(p, &p);
+      double dP1 = strtod(p, &p);
+      double dP2 = strtod(p, &p);
+      double dE = strtod(p, &p);
+      double dT = strtod(p, NULL);
+      
+      MPhysicalEventHit Hit;
+      Hit.Set(MVector(P0, P1, P2), MVector(dP0, dP1, dP2), E, dE, MTime(T), MTime(dT));
+      if (m_Hits.size() <= Index) m_Hits.resize(Index);
+      m_Hits[Index] = Hit;
+    } else {
+      unsigned long Index = 0;
+      double P0 = 0;
+      double P1 = 0;
+      double P2 = 0;
+      double E = 0;
+      double T = 0;
+      double dP0 = 0;
+      double dP1 = 0;
+      double dP2 = 0;
+      double dE = 0;
+      double dT = 0;
+      
+      if (sscanf(Line, "CH %lu %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf", &Index, &P0, &P1, &P2, &E, &T, &dP0, &dP1, &dP2, &dE, &dT) != 11) {
+        mout<<"Unable to parse CH of event "<<m_Id<<"!"<<endl;
+        Ret = 1;
+      } else {
+        MPhysicalEventHit Hit;
+        Hit.Set(MVector(P0, P1, P2), MVector(dP0, dP1, dP2), E, dE, MTime(T), MTime(dT));
+        if (m_Hits.size() <= Index) m_Hits.resize(Index);
+        m_Hits[Index] = Hit;        
       }
     }
   } else if (Line[0] == 'P' && Line[1] == 'Q') {

@@ -32,6 +32,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MFile.h"
 #include "MRotationInterface.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
@@ -108,9 +109,15 @@ class MPhysicalEvent : public MRotationInterface
   void AddComment(MString& Comment) { m_Comments.push_back(Comment); }
   //! Get the number of comments
   unsigned int GetNComments() const { return m_Comments.size(); }
-  //! Get the specific comment
-  MString GetComment(unsigned int i);
+  //! Get the specific comment -- throws MExceptionIndexOutOfBounds otherwise
+  MString GetComment(unsigned int i) const;
   
+  //! Add a hit
+  void AddHit(const MPhysicalEventHit& Hit) { m_Hits.push_back(Hit); }
+  //! Return the number of hits
+  unsigned int GetNHits() const { return m_Hits.size(); }
+  //! Get a specific hit -- throws MExceptionIndexOutOfBounds otherwise
+  const MPhysicalEventHit& GetHit(unsigned int i) const;
   
   //! Set the OI information
   void SetOIInformation(const MVector Position, const MVector Direction, const MVector Polarization, const double Energy) { m_OIPosition = Position; m_OIDirection = Direction; m_OIPolarization = Polarization, m_OIEnergy = Energy; }
@@ -158,6 +165,9 @@ class MPhysicalEvent : public MRotationInterface
   //! The event ID
   long m_Id;
 
+  //! The hits
+  vector<MPhysicalEventHit> m_Hits;
+  
   //! True if this event has been passed all tests..
   bool m_IsGoodEvent; 
   //! To be removed...

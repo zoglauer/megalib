@@ -37,7 +37,7 @@ class MComptonEvent : public MPhysicalEvent
   MComptonEvent();
   virtual ~MComptonEvent();
 
-  // Initilisations
+  // Initilizations
   bool Assimilate(MComptonEvent* Compton);
   bool Assimilate(MPhysicalEvent* Event); 
   bool Assimilate(const MVector& C1, const MVector& C2, const MVector& De, const double Ee, const double Eg);
@@ -52,7 +52,7 @@ class MComptonEvent : public MPhysicalEvent
 
 
   // Basic data:
-
+  
   //! Set the energy of the scattered gamma-ray
   void SetEg(const double EnergyGamma) { m_Eg = EnergyGamma; }
   //! Set the energy error of the scattered gamma-ray
@@ -267,11 +267,12 @@ class MComptonEvent : public MPhysicalEvent
 
   // protected members:
  public:
-  // basic data:
+  // Basic data:
 
   //! Energy of scattered gamma ray
-  double m_Eg;        
-  double m_dEg;       // its error
+  double m_Eg;
+  //! Uncertainty of the scattered gamma-ray energy
+  double m_dEg;
   double m_Ee;        // Energy of recoil electron
   double m_dEe;       // its error
   
@@ -284,7 +285,7 @@ class MComptonEvent : public MPhysicalEvent
   MVector m_De;        // Direction of electron path
   MVector m_dDe;       // its error
 
-  double m_ToF;       // Time of flight between first and seconf interaction
+  double m_ToF;       // Time of flight between first and second interaction
   double m_dToF;      // its error
 
   double m_ClusteringQualityFactor;    // Value of the test statistics/probability of the clustering algorithm
@@ -293,7 +294,8 @@ class MComptonEvent : public MPhysicalEvent
   double m_ComptonQualityFactor1;    // Value of the test statistics of CSR
   double m_ComptonQualityFactor2;    // Value of the test statistics of CSR
 
-  // Advance data:
+  
+  // Advanced data:
   double m_Ei;        // Energy of initial gamma-ray
   double m_dEi;       // its error
 

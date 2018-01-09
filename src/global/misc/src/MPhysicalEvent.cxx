@@ -36,6 +36,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MExceptions.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -219,22 +220,41 @@ MVector MPhysicalEvent::GetOrigin() const
   return g_VectorNotDefined;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MPhysicalEvent::GetComment(unsigned int i)
+MString MPhysicalEvent::GetComment(unsigned int i) const
 {
   //! Get the specific comment
-
+  
   if (i < m_Comments.size()) {
     return m_Comments[i]; 
   }
   
-  mout<<"Error: Index for comment out of bounds"<<endl;
+  throw MExceptionIndexOutOfBounds(0, m_Comments.size(), i);
   
   return "";
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MPhysicalEventHit& MPhysicalEvent::GetHit(unsigned int i) const
+{
+  //! Get the specific comment
   
+  if (i < m_Hits.size()) {
+    return m_Hits[i]; 
+  }
+  
+  throw MExceptionIndexOutOfBounds(0, m_Hits.size(), i);
+  
+  // We never reach here, thus, this should not be a problem, or just throw another exception
+  return m_Hits.front();
+}
+
   
 ////////////////////////////////////////////////////////////////////////////////
 

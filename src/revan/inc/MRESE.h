@@ -26,6 +26,7 @@
 #include "MRESEList.h"
 #include "MDDetector.h"
 #include "MDVolumeSequence.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
@@ -152,9 +153,13 @@ class MRESE
   //! Convert to a string in the evta file
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
+  //! Convert to a MPhysicalEventHit
+  MPhysicalEventHit CreatePhysicalEventHit();
+  
   virtual bool IsValid();
   virtual void SetValid(bool Valid) { m_IsValid = Valid; }
 
+  
 
   static const int c_Unknown;
   static const int c_Hit;

@@ -37,7 +37,7 @@ class MRECluster : public MRESE
  public:
   MRECluster();
   MRECluster(MRECluster* Cluster);
-  ~MRECluster();
+  virtual ~MRECluster();
 
   double ComputeMinDistance(MRESE *RESE);
   MVector ComputeMinDistanceVector(MRESE *RESE);

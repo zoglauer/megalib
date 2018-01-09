@@ -1255,5 +1255,20 @@ void MRESE::ReID()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+MPhysicalEventHit MRESE::CreatePhysicalEventHit()
+{
+  //! Convert to a MPhysicalEventHit  
+  
+  MPhysicalEventHit H;
+  
+  H.Set(m_Position, m_PositionResolution, m_Energy, m_EnergyResolution, m_Time, m_TimeResolution);
+  
+  return H;
+}
+
+
 // MRESE.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
