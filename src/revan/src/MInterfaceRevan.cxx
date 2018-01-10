@@ -1658,6 +1658,8 @@ void MInterfaceRevan::DetectorTypeHitDistribution(bool Before)
 
   int NEvents = 0;
   int NHits = 0;
+  int NTwoPlusEvents = 0;
+  int NTwoPlusHits = 0;
   map<int, vector<unsigned int> > HitDistribution;
   map<int, unsigned int> Hits;
 
@@ -1720,18 +1722,25 @@ void MInterfaceRevan::DetectorTypeHitDistribution(bool Before)
         }
       }
       bool Added = false;
-      for (map<int, unsigned int>::iterator Iter = Hits.begin();
-           Iter != Hits.end(); ++Iter) {
+      bool IsTwoPlus = false;
+      for (map<int, unsigned int>::iterator Iter = Hits.begin(); Iter != Hits.end(); ++Iter) {
         if (HitDistribution[(*Iter).first].size() < (*Iter).second + 1) {
           HitDistribution[(*Iter).first].resize((*Iter).second + 1);
         }
         cout<<"Hits:   "<<(*Iter).first<<":  "<<(*Iter).second<<endl;
         NHits += (*Iter).second;
+        if ((*Iter).second > 1) {
+          NTwoPlusHits += (*Iter).second;
+          IsTwoPlus = true;
+        }
         if ((*Iter).second > 0) Added = true;
         HitDistribution[(*Iter).first][(*Iter).second]++;
       }
       if (Added == true) {
         NEvents++;
+        if (IsTwoPlus == true) {
+          NTwoPlusEvents++; 
+        }
       }
     }
   } while (true);
@@ -1776,6 +1785,7 @@ void MInterfaceRevan::DetectorTypeHitDistribution(bool Before)
   }
 
   mout<<"Average number of hits per triggered events: "<<((NEvents > 0) ? double(NHits)/NEvents : 0)<<endl;
+  mout<<"Average number of hits per triggered 2+ events: "<<((NTwoPlusEvents > 0) ? double(NTwoPlusHits)/NTwoPlusEvents : 0)<<endl;
 }
 
 
