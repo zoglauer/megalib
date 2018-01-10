@@ -1479,7 +1479,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     if (Tokenizer.IsTokenAt(1, "Copy") == true) {
       if ((V = GetVolume(Tokenizer.GetTokenAt(0))) != 0) {
         if (GetVolume(Tokenizer.GetTokenAt(2)) != 0) {
-          Typo("A volume of this name already exists!");
+          Typo("Copy: A volume of this name already exists!");
           return false;
         }
         if (V->IsClone() == true) {
@@ -2240,7 +2240,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           m_WorldVolume = V;
         } else {
           if (GetVolume(Tokenizer.GetTokenAt(2)) == 0) {
-            Typo("A volume of this name does not exist!");
+            Typo("Mother: A volume of this name does not exist!");
             return false;
           }
           if (GetVolume(Tokenizer.GetTokenAt(2)) == V) {
@@ -2432,7 +2432,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         // Test if volume exists:
         if ((V = GetVolume(Tokenizer.GetTokenAt(2))) == 0) {
-          Typo("A volume of this name does not exist!");
+          Typo("SensitiveVolume: A volume of this name does not exist!");
           return false;
         }
         D->AddSensitiveVolume(V);
@@ -2446,7 +2446,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         // Test if volume exists:
         if ((V = GetVolume(Tokenizer.GetTokenAt(2))) == 0) {
-          Typo("A volume of this name does not exist!");
+          Typo("DetectorVolume: A volume of this name does not exist!");
           return false;
         }
         D->SetDetectorVolume(V);
