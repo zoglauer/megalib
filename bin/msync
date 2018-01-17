@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Parallel rsync
+
+help() {
+  echo "Usage:"
+  echo "  prsync '<from>' '<to>'"
+  echo "  You must be in the directory of the <from> file (it is allowed to contain subdirectories)"
+  echo "  Remember to use '...', if your file names have spaces or wildcards!"
+  exit
+}
+
+if [ $# -ne 2 ] ; then
+    help; 
+    exit 0;
+fi;
+
+echo "Parallel rsync By Andreas Zoglauer"
+
+# Input data
+FROM=$1
+TO=$2
+echo "Copying from ${FROM} to ${TO}"
+NTHREADS=$(( 2 * $(getconf _NPROCESSORS_ONLN) ))
+
+# Make sure all tools are installed
+type mktemp >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: mktemp must be installed"
+    exit 1
+fi 
+type rsync >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: rsync must be installed"
+    exit 1
+fi
+type parallel >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+    echo "ERROR: parallel must be installed"
+    exit 1
+fi 
+
+
+# Make sure ${FROM} is not directory
+if [[ ${FROM} == */* ]]; then
+  echo "You must be in the directory where the <from> data originates form and not \"${FROM}\"... exiting"
+	exit
+fi
+
+
+# Step 1: Create file list
+TMP=$(mktemp /tmp/prsync.XXXXXXXXX)
+rsync -ansz --safe-links --ignore-existing --info=name ${FROM} ${TO} > ${TMP} 
+if [ "$?" != 0 ]; then
+  echo "Something went wrong during the dry-run... exiting"
+  rm ${TMP}
+	exit
+fi
+
+echo "Files to transfer:"
+cat ${TMP}
+
+NFILES=$(cat ${TMP} | wc -l)
+if [[ ${NFILES} -lt ${NTHREADS} ]]; then
+  NTHREADS=${NFILES}
+fi
+echo "Number of threads: ${NTHREADS}"
+
+# Step 2: Do the transfer with twice as many threads than we have in the CPU
+cat ${TMP} | parallel --no-notice -j ${NTHREADS} rsync -asz --relative --safe-links --ignore-existing --human-readable '{}' ${TO}
+
+wait
+
+# Do a final rsync, just in case something went wrong
+rsync -az ${FROM} ${TO}
+
+
