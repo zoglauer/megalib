@@ -1201,7 +1201,7 @@ int MComptonEvent::ParseLine(const char* Line, bool Fast)
       
       MPhysicalEventHit Hit;
       Hit.Set(MVector(P0, P1, P2), MVector(dP0, dP1, dP2), E, dE, MTime(T), MTime(dT));
-      if (m_Hits.size() <= Index) m_Hits.resize(Index);
+      if (m_Hits.size() <= Index) m_Hits.resize(Index+1);
       m_Hits[Index] = Hit;
     } else {
       unsigned long Index = 0;
