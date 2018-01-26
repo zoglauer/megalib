@@ -1,0 +1,96 @@
+<!--
+Type:              Article
+MenuLevel:         1
+MenuEntry:         2
+MenuTitle:         Overview
+-->
+
+
+<neodym-body>
+
+<h1>Overview</h1>
+
+<p>The tools in MEGAlib comprise the the whole data analysis path: A tool to model the detector geometry and characteristics (Geomega), a Geant4 simulation tool (Cosima), a framework for event calibration (Fretalon) including a sophisticated line-calibrayion tool (Melinator), a program to perform event reconstruction (Revan), a tool for high-level data analysis and image reconstruction (Mimrec), a library for spectral analysis (Spectralyzer), a program to do all the above in real-time (Realta), an event viewer (Eview), and many, many more smaller programs.</p>  
+
+
+
+<h2>Geomega</h2>
+<p>Geomega - Geometry for MEGAlib - is MEGAlib's universal geometry and detector library. The geometry itself is described in an object oriented ASCII file, which describes the volume tree, the materials, the detectors, the trigger criteria, etc. Geomega is used by all other programs of MEGAlib including the Geant4 simulator Cosima.</p>
+<p>Geomega's key features are:</p>
+<ul>
+  <li>Advanced geometry file format with features such as constants, math functions, for-loops, if conditions, matrices, etc.</li>
+  <li>Various detector types: simple single volume detectors, strip detectors, voxel detectors, MEGA-like calorimeters, Anger-cameras, etc.</li>
+  <li>Interactive display of the geometry using ROOT's standard or openGL display</li>
+  <li>Overlap checking based on Geant4's overlap checker</li>
+  <li>A sophisticated detector effects engine including energy, position, time resolutions, noise and trigger thresholds, ADC overflows, etc.</li>
+  <li>Complex trigger criteria: by detector type or by individual detector, trigger or veto, by channel or by detector</li>
+</ul>
+
+<p>For a full list of features see the <a href="software/Geomega.pdf">Geomega manual</a>. The latest version can be found in the doc-directory of MEGAlib.</p>
+
+<p>The main reference for Geomega is: <a href="documents/Zoglauer_Cosima.pdf">A. Zoglauer et al., Cosima - The cosmic simulator of MEGAlib, NSS Conference record, 2009</a><p>
+
+
+
+<h2>Cosima</h2>
+
+<p>The "Cosmic simulator" Cosima is MEGAlib's Geant4 based simulator. It utilizes the geometry and detector information from Geomega to perform the simulations. The beam and spectral parameters include options for astrophysics and as well as for most terrestrial applications ranging from homeland security to phantoms for medical imaging. The output is a simple text file which can be analyzed by the other MEGAlib programs.</p>
+
+<p>For a full list of features see the <a href="software/Cosima.pdf">Cosima manual</a>. The latest version can be found in the doc-directory of MEGAlib.</p>
+
+<p>The main reference for Cosima is: <a href="documents/Zoglauer_Cosima.pdf">A. Zoglauer et al., Cosima - The cosmic simulator of MEGAlib, NSS Conference record, 2009</a><p>
+
+
+<h2>Fretalon and Melinator</h2>
+
+<p>Fretalon is MEGAlib's calibration framework. It is not a ready to use program but a library, framework, and collection of tools to perform the various calibration steps of MEGAlib. It's task is to convert the data from the initial AD converter units and hit detectors/pixels/voxels into hits consisting of positions and energies. The tools are designed to be easily adapted to a specific detector system - C++ knowledge required!</p>
+
+<p>One of the more sophisticated tools within Fretalon is Melinator, MEGAlib's line calibrator. Utilizing a set of calibration performed with various radioactive isotopes (e.g. 137-Cs, 22-Na, 60-Co), the program automatically finds the peaks in the AD-converter spectrum, determines peak centroid and width, finds the corresponding gamma-ray energy and determines the overall calibration fit for the given detector/pixel/voxel/strip. This information can then be used by other Fratelon tools to calibrate measurements.</p>
+
+
+<h2>Responsecreator</h2>
+
+<p>MEGAlib's response creator tool utilizes the known photon start parameters and interaction information form simulations, in creates carious responses or trains machine learning based event reconstrcution tools. It creates, for example, the following responses:</p>
+
+<ul>
+  <li>Spectral response</li>
+  <li>Bayesian event reconstruction data spaces for electron tracking and Compton reconstrcution</li>
+  <li>Training data for boosted decision trees / neural networks and the subsequent trainig of the machine learning methods.</li>
+  <li>Various imaging responses in list- and binned mode</li>
+  <li>Efficiencies</li>
+  <li>... and more ...</li>
+</ul>
+
+
+<h2>Revan</h2>
+
+<p>Revan - the real event analyzer - is responsible for reconstructing events in MEGAlib, and can handle simple, single site events, Compton scatter events, pair creation events, and high-energy charged particle events such as muons. However, Revan's specialization is Compton event reconstruction and therefore it contains a variety of different algorithms to determine the event type, starting with coincidence search, charged particle track searches including Compton electron tracks, and several algorithms to determine the Compton interaction sequence (classic and Bayesian algorithms).</p>
+<p>Revan can handle simulated as well as real measured data!</p>
+
+<p>The main reference for Revan is: <a href="documents/Zoglauer_PhD.pdf">Andreas Zoglauer, "First Light for the Next Generation of Compton and Pair Telescopes", Doctoral thesis, TU Muenchen, 2005</a></p>
+
+
+
+<h2>Mimrec</h2>
+
+<p>Mimrec is MEGAlib's high-level data analyzer. It contains options to perform event selections on all important event parameters of single site, Compton and pair creation events (e.g. energies, interaction distances, scatter or opening angles, and many more). It's main goal however is to perform list-mode likelihood image reconstruction in spherical, Galactic, as well as Cartesian coordinates (2D, 3D) including different response calculation approaches (from quick and dirty to slow and sophisticated) which are mostly optimized for Compton image reconstruction. Finally Mimrec contains several options to look at further parameters of your data, such as energy spectra, ARM distributions (for gamma-ray and electrons), interaction distances, scatter angle distributions, polarization, time distribution, and several more.</p>
+
+<p>The main reference for Mimrec is: <a href="documents/Zoglauer_Mimrec.pdf">A. Zoglauer et al., "Design, Implementation, and Optimization of MEGAlib's image reconstruction tool Mimrec", NIM A 652, 2011</a></p>
+
+
+
+<h2>Realta</h2>
+
+<p>Another new addition (or latest revival of a very old tool) is Realta, MEGAlib's real-time analyzer. It accepts data via a TCP/IP connection and then performs coincidence search, event reconstruction, image reconstruction, and spectral analysis all in real-time in several threads.</p>
+
+<p>The main reference for Realta is: <a href="documents/Zoglauer_Realta.pdf">A. Zoglauer et al., "Status of MEGAlib's Real-Time Analysis Tool Realta", NSS Conference Record 2011</a></p>
+
+
+
+<h2>Spectralyzer </h2>
+
+<p>The latest addition to MEGAlib is its spectral analyzer, which starts with an input spectrum and tries to identify nuclear isotopes through classifying nuclear lines in the spectrum. Revan, Mimrec, and Realta can access the Spectralyzer.</p> 
+
+<p>The main reference for Spectralyzer is: <a href="documents/Galloway_Spectralyzer.pdf">M. Galloway et al., "Spectral Analysis for the High-efficiency Multimode Imager", NSS Conference Record 2010</a></p>
+
+</neodym-body>

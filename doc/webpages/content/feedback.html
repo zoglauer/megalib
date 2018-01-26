@@ -1,0 +1,49 @@
+<!--
+Type:              Article
+MenuLevel:         1
+MenuEntry:         5
+MenuTitle:         Feedback
+-->
+
+
+<neodym-body>
+
+<h1>Feedback</h1>
+
+
+<h2>Questions</h2>
+<p>If you have any questions or problems, which are not covered by the documentation, feel free the ask the <a href="contact">developers</a>.</p>
+
+
+
+<h2>Bug reports and feature request</h2>
+<p>For bug reports and feature requests please use the <a href="https://github.com/zoglauer/megalib/issues" target=_blank>issue tracker for MEGAlib at github</a>. Naturally, you can also find a list of known issues there.</p>
+<p>Please be specific when you report an issue. Provide me with information about what version you are using, and let me know how to reproduce the problem.</p>
+<p>If you have example code which causes the problem, you can always <a href="contact">email it to me</a>.</p>
+
+
+
+<h2>Integration of your MEGAlib additions/bugfixes etc. into the main MEGAlib tree</h2>
+
+<p>Please use the standard github tools for that, i.e. create a fork, commit and push your modifications to your own fork, and send me a pull request.</p>
+
+
+
+<h2> Submitting a patch</h2>
+<p>If you want to submit a patch instead, please make sure you start your development with a clone of the git repository (if you used the setup script in default mode, you are good) and on the master branch:</p>
+
+<pre><code>git clone https://github.com/zoglauer/megalib.git
+git checkout master</code></pre>
+
+<p>Make your changes and commit them:</p>
+
+<pre><code>git add MyModifiedFile.cxx 
+git commit -m &quot;Commit message&quot;</code></pre>
+
+<p>Then create the patch:</p>
+
+<pre><code>git format-patch -1</code></pre>
+
+<p>Finally email me the patch - see <a href="contact">Contacts</a> for my email.</p>
+
+</neodym-body>

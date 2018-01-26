@@ -1,0 +1,145 @@
+<!--
+Type:              Article
+MenuLevel:         1
+MenuEntry:         3
+MenuTitle:         Code & Setup
+-->
+
+
+<neodym-body>
+
+<h1>Code and Setup</h1>
+
+
+<h2>Quick setup</h2>
+
+<p>You can install the latest development version of MEGAlib on macOS, Linux, and within the Linux environment of Windows 10 with the following commands - in case you want the latest release instead of the latest development version, remove "--release=dev".</p>
+
+<pre>
+$ git clone https://github.com/zoglauer/megalib MEGAlib
+$ cd MEGAlib
+$ bash setup.sh --release=dev --patch=yes --clean=yes
+</pre>
+
+<p>This script will first download, patch, compile, and install MEGAlib's own version of ROOT and Geant4, and then compile MEGAlib. In the end, it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib:</p>
+
+<pre>$ . bin/source-megalib.sh</pre>
+
+<p>If you run into trouble continue reading the more detailed installation instructions below.</p>
+
+
+
+<h2>The source code</h2>
+
+<p>The full MEGAlib source code can be found on github at: <a href=https://github.com/zoglauer/megalib target=_blank>https://github.com/zoglauer/megalib</a></p>
+
+<p>The different versions of code can be found in the various branches on github:</p>
+<ul>
+  <li>"MEGAlib_v2.30", "MEGAlib_v2.32", etc. represent the release versions.</li>
+  <li>"master" is the development branch of the current main version of MEGAlib (currently 2.x).</li>
+  <li>"experimental" is the development branch of the next main version of MEGAlib (currently 3.x).</li>
+</ul>
+
+<p>You can get the source code from the repository via cloning it (make sure you have git installed):</p2>
+
+<pre>
+$ git clone https://github.com/zoglauer/megalib MEGAlib
+</pre>
+
+
+
+<h2>Requirements to compile and run MEGAlib</h2>
+
+<p>MEGAlib requires several additional programs to run. You will usually require a certain version of ROOT and Geant4 to go with a given version of MEGAlib - usually not the very latest one. If you use the MEGAlib setup script, it will automatically download the appropriate version.</p> 
+<p>In general, you require the following software components:<p>
+<ol>
+  <li>A fully functional and up-to-date Linux or Mac operating system - the "Windows System for Linux" on Windows 10 is acceptable too. The reference system (i.e. the system used to write MEGAlib) is always the latest Ubuntu LTS release.</li>
+  <li>In addition, make sure you have all required development tools installed such as a C and C++ compiler, make, cmake, git, curl, awk, etc.</li>
+  <li>MEGAlib requires <a href="http://root.cern.ch" target="_blank">ROOT</a>. If you use the default setup script it will compile its own minimal version. Make sure to take a look at the requirements page of ROOT to make sure you have installed all the necessary software required to compile ROOT: <a href="http://root.cern.ch/drupal/content/build-prerequisites" target="_blank">ROOT build prerequisites</a></li>
+  <li>MEGAlib also requires <a href="http://geant4.cern.ch" target="_blank">Geant4</a>. Again, the MEGAlib setup script will compile its own version. Alternatively you can install it by yourself.</li>
+  <li>There are a set of optional pieces of code which enhance MEGAlib, such as heasoft (for fits files), doxygen (generate source code documentation), expect (pipeline scripts for parallel processing on clusters), or convert, which are nice to have but not mandatory.</li>
+</ol>
+
+
+
+<h3>Additional information for Ubuntu</h3>
+
+<p>If you use an Ubuntu flavor (LTS releases only), you can run a small script to automatically install all the required tools and libraries which are part of Ubuntu. In the MEGAlib directory execute:</p>
+
+<pre>$ bash config/configure_packages</pre>
+
+<p>If the script finds missing packages, it will tell you how to install them.</p>
+
+
+
+<h3>Additional information for macOS</h3>
+
+<p>On a Mac you need to install three pieces of software by hand: A current version of Xcode, Xquartz, and cmake.</p>
+<ol>
+  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode...</li>
+  <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a></li>
+  <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Make sure to follow the instructions on how to install the cmake command line tools.</li>
+</ol>
+<p>Attention: If you have MacPorts, Fink, or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
+
+
+
+<h3>Additional information for Windows 10</h3>
+
+<p>On Windows 10, you have to install the "Windows System for Linux" or alternatively the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store. Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>. Then, in the bash prompt of the Ubuntu app, follow the instruction on how to install MEGAlib on Ubuntu.</p>
+
+
+
+
+<h2>The setup script</h2>
+
+<p>When all requirements are fulfilled, it is time to run the MEGAlib setup script. The "setup.sh" bash script is capable of installing MEGAlib along with ROOT and Geant4. The script is intended to be installed by the user in their home directory. Assuming you have followed the instructions in the above section (especially did you make sure to install all the libraries ROOT needs to compile, are git and cmake present?), then installing MEGAlib should be a one-step process. In the directory, where you want to install MEGAlib, do:</p>
+<pre>$ bash setup.sh</pre>
+<p>This will give you the latest release. Since there is always a long interval between official releases, you can get the head of the development tree of the current main version via:</p>
+<pre>$ bash setup.sh --release=dev</pre>
+<p>Alternatively, you can get the head of the development of the next main version via:</p>
+<pre>$ bash setup.sh --release=dev --branch=experimental</pre>
+
+<p>The script will do the following:</p>
+<ol>
+  <li>Check if we already have a MEGAlib installation (by default it will search in the directory MEGAlib, or check if it is called from within a MEGAlib installation. If this is the case it will load the command line parameters from the previous run of the setup script. These are overwritten by the new options you give at the command line.</li>
+  <li>MEGAlib download: It will check if MEGAlib is present. If not it will download it from the repository (<a href="https://github.com/zoglauer/megalib" target=_blank>MEGAlib's git repository</a> is the default), if it is present it will update it (but it will make a backup of your src-directory, just in case). If you decided to switch from a release to a development version, it will do that.</li>
+  <li>ROOT installation: If you have given a path to an existing ROOT installation (--root option), or if it has found an old installation done via this script, it will check if this version is still up to date. If it is not up to date and you have given this ROOT version via the --root option, it will stop here. Otherwise it will download and install the latest version of ROOT compatible with this MEGAlib version.</li>
+  <li>Geant4 installation: This is exactly the same process as for ROOT.</li>
+  <li>MEGAlib: It will configure and compile MEGAlib.</li>
+  <li>Finally it will create a little script which you have to source in order to setup the environment for MEGAlib.</li>
+</ol>
+
+<p>In case something goes wrong, you do get an error message, and you can fix it, then simply restart the setup process. In most cases there is no reason to delete already downloaded files.</p>
+
+<p>Assuming you didn’t get any error, it will tell you something like the following (obviously the path will point to your installation):</p>
+<pre><code>In order to run any MEGAlib programs, you have to source the following file first:
+source /home/andreas/Soft/MEGAlib/bin/source-megalib.sh
+You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre></code>
+<p>This tiny little script sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put it into your .bashrc file.</p>
+
+<p>If you do <code>bash setup.sh --help</code>, then you will see a lot of options for the setup script. You can set the name and path of your MEGAlib installation (--megalib-path), you can set the directory where you want to install ROOT and Geant4 (--external-path), you can give the path to an existing ROOT (--root) or Geant4 (--geant4) installation, which you want to use instead of downloading it, you can decide if you want to have the latest release or development version (--release), and you can decide which repository you want to use (--repository, but please stick with git).</p>
+
+<p>The setup script also doubles as update script. Just call it from within your MEGAlib installation and it will update MEGAlib, and if it installed ROOT and Geant4 previously it will also update them.</p>
+
+
+
+
+<h2>If something goes wrong</h2>
+
+<p>The first thing to try is to compile a current development version instead of a release version, by calling the setup script via:</p>
+
+<pre>$ bash setup.sh --release=dev</pre>
+
+<p>If this does not helps, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There all the common installation errors and there solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
+
+
+
+
+<h2>Finally...</h2>
+
+<p>Please take also a look at the change log for the important changes between the MEGAlib versions: <a href="https://raw.github.com/zoglauer/megalib/master/doc/ChangeLog.txt">ChangeLog</a></p>
+
+<p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
+
+</neodym-body>
