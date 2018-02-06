@@ -383,8 +383,12 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     if (XStripIDs.size() == 0 || XStripIDs.size() > m_MaxNHitsX) continue;
     if (YStripIDs.size() == 0 || YStripIDs.size() > m_MaxNHitsY) continue;
     
-    m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEventData(RE->GetEventID(), XStripIDs, YStripIDs, XStripEnergies, YStripEnergies);
-    m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEvaluationInteractions(EvaluationXStripIDs, EvaluationYStripIDs);
+    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEventData(RE->GetEventID(), XStripIDs, YStripIDs, XStripEnergies, YStripEnergies) == false) {
+      continue;
+    }
+    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEvaluationInteractions(EvaluationXStripIDs, EvaluationYStripIDs) == false) {
+      continue;
+    }
     
     m_Trees[XStripIDs.size()][YStripIDs.size()]->Fill();
   }

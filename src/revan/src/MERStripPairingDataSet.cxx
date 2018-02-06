@@ -86,8 +86,8 @@ void MERStripPairingDataSet::Initialize(unsigned int NXStrips, unsigned int NYSt
   m_XStripEnergies.resize(m_NXStrips);
   m_YStripEnergies.resize(m_NYStrips);
   
-  m_EvaluationXStripIDs.resize(m_NXStrips + m_NYStrips);
-  m_EvaluationYStripIDs.resize(m_NXStrips + m_NYStrips);
+  m_EvaluationXStripIDs.resize((m_NXStrips + m_NYStrips + 4));
+  m_EvaluationYStripIDs.resize((m_NXStrips + m_NYStrips + 4));
 }
 
 
@@ -143,23 +143,23 @@ TMVA::Reader* MERStripPairingDataSet::CreateReader()
 
 
 // Fill the data sets from RESEs
-void MERStripPairingDataSet::FillEventData(Long64_t ID, vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs, vector<double>& XStripEnergies, vector<double>& YStripEnergies)
+bool MERStripPairingDataSet::FillEventData(Long64_t ID, vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs, vector<double>& XStripEnergies, vector<double>& YStripEnergies)
 {
   if (XStripIDs.size() != m_XStripIDs.size()) {
     mout<<"ERROR: number of x strips does not match: in="<<XStripIDs.size()<<" vs. stored="<<m_XStripIDs.size()<<endl;
-    return;
+    return false;
   }
   if (YStripIDs.size() != m_YStripIDs.size()) {
     mout<<"ERROR: number of y strips does not match: in="<<YStripIDs.size()<<" vs. stored="<<m_YStripIDs.size()<<endl;
-    return;
+    return false;
   }
   if (XStripEnergies.size() != m_XStripEnergies.size()) {
     mout<<"ERROR: number of x energies does not match: in="<<XStripEnergies.size()<<" vs. stored="<<m_XStripEnergies.size()<<endl;
-    return;
+    return false;
   }
   if (YStripEnergies.size() != m_YStripEnergies.size()) {
     mout<<"ERROR: number of y energies does not match: in="<<YStripEnergies.size()<<" vs. stored="<<m_YStripEnergies.size()<<endl;
-    return;
+    return false;
   }
   
   m_SimulationID = ID;
@@ -176,6 +176,8 @@ void MERStripPairingDataSet::FillEventData(Long64_t ID, vector<unsigned int>& XS
   for (unsigned int i = 0; i < m_YStripEnergies.size(); ++i) {
     m_YStripEnergies[i] = YStripEnergies[i];
   }
+  
+  return true;
 }
 
 
@@ -183,15 +185,15 @@ void MERStripPairingDataSet::FillEventData(Long64_t ID, vector<unsigned int>& XS
 
 
 //! Fill the evaluation section, whether the event is competely absorbed
-void MERStripPairingDataSet::FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs)
+bool MERStripPairingDataSet::FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs)
 {
   if (XStripIDs.size() > m_EvaluationXStripIDs.size()) {
-    mout<<"ERROR: number of x strips is to large: in="<<XStripIDs.size()<<" vs. max="<<m_EvaluationXStripIDs.size()<<endl;
-    return;
+    mout<<"Info: number of hit x strips is too large: in="<<XStripIDs.size()<<" vs. max="<<m_EvaluationXStripIDs.size()<<" -- ignoring data set"<<endl;
+    return false;
   }
   if (YStripIDs.size() > m_EvaluationYStripIDs.size()) {
-    mout<<"ERROR: number of y strips does not match: in="<<YStripIDs.size()<<" vs. max="<<m_EvaluationYStripIDs.size()<<endl;
-    return;
+    mout<<"Info: number of hit y strips is too large: in="<<YStripIDs.size()<<" vs. max="<<m_EvaluationYStripIDs.size()<<" -- ignoring data set"<<endl;
+    return false;
   }
   
   for (unsigned int i = 0; i < XStripIDs.size(); ++i) {
@@ -206,6 +208,8 @@ void MERStripPairingDataSet::FillEvaluationInteractions(vector<unsigned int>& XS
   for (unsigned int i = YStripIDs.size(); i < m_EvaluationYStripIDs.size(); ++i) {
     m_EvaluationYStripIDs[i] = -1;
   }
+  
+  return true;
 }
 
 

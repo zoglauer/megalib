@@ -58,10 +58,10 @@ class MERStripPairingDataSet
   TMVA::Reader* CreateReader();
   
   //! Fill the data sets from RESEs
-  void FillEventData(Long64_t ID, vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs, vector<double>& XStripEnergies, vector<double>& YStripEnergies);
+  bool FillEventData(Long64_t ID, vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs, vector<double>& XStripEnergies, vector<double>& YStripEnergies);
   
   //! Fill the evaluation section, the real interaction positions
-  void FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs);
+  bool FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs);
 
   
   
