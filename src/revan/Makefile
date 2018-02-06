@@ -69,6 +69,7 @@ LOBJS = $(LB)/MGeometryRevan.o \
 	$(LB)/MREAMDirectional.o \
 	$(LB)/MREAMStartInformation.o \
 	$(LB)/MERQualityDataSet.o \
+	$(LB)/MERStripPairingDataSet.o \
 				
 
 OBJS = $(MOBJS) $(LOBJS) $(GOBJS)

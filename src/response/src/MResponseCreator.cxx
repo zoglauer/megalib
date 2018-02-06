@@ -56,6 +56,7 @@ using namespace std;
 #include "MResponseTracking.h"
 #include "MResponseEventQuality.h"
 #include "MResponseEventQualityTMVAEventFile.h"
+#include "MResponseStripPairingTMVAEventFile.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,6 +167,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      q  : event quality"<<endl;
   Usage<<"      qf : "<<MResponseEventQualityTMVAEventFile::Description()<<endl;
   Usage<<MResponseEventQualityTMVAEventFile::Options()<<endl;
+  Usage<<"      sf : "<<MResponseStripPairingTMVAEventFile::Description()<<endl;
+  Usage<<MResponseStripPairingTMVAEventFile::Options()<<endl;
   Usage<<endl;  
   Usage<<"    Special options:"<<endl;
   Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
@@ -291,6 +294,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "qf") {
         m_Mode = c_ModeEventQualityTMVAEventFile;
         cout<<"Choosing Event Quality mode (create event files)"<<endl;
+      } else if (SubOption == "sf") {
+        m_Mode = c_ModeStripPairingTMVAEventFile;
+        cout<<"Choosing Strip Pairing mode (create event files)"<<endl;
       } else {
         cout<<"Error: Unknown suboption \""<<SubOption<<"\"!"<<endl;
         cout<<Usage.str()<<endl;
@@ -637,7 +643,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     if (Response.Initialize() == false) return false;
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
-
+    
   } else if (m_Mode == c_ModeEventQualityTMVAEventFile) {
     
     if (m_RevanCfgFileName == g_StringNotDefined) {
@@ -659,6 +665,31 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     
     Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     Response.SetDoAbsorptions(!m_NoAbsorptions);
+    
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true && m_Interrupt == false);
+    if (Response.Finalize() == false) return false;
+    
+  } else if (m_Mode == c_ModeStripPairingTMVAEventFile) {
+    
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponseStripPairingTMVAEventFile Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
     
     if (Response.ParseOptions(ResponseOptions) == false) return false;
     if (Response.Initialize() == false) return false;
@@ -687,6 +718,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
 
     Response.CreateResponse();
+    
   } else if (m_Mode == c_ModeFirstInteractionPosition) {
 
     if (m_MimrecCfgFileName == g_StringNotDefined) {
