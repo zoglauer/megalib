@@ -55,6 +55,7 @@ using namespace std;
 #include "MResponseEarthHorizon.h"
 #include "MResponseTracking.h"
 #include "MResponseEventQuality.h"
+#include "MResponseEventQualityTMVAEventFile.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +164,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<"      e  : earth horizon"<<endl;
   Usage<<"      f  : first interaction position"<<endl;
   Usage<<"      q  : event quality"<<endl;
+  Usage<<"      qf : "<<MResponseEventQualityTMVAEventFile::Description()<<endl;
+  Usage<<MResponseEventQualityTMVAEventFile::Options()<<endl;
   Usage<<endl;  
   Usage<<"    Special options:"<<endl;
   Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
@@ -285,6 +288,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "q") {
         m_Mode = c_ModeEventQuality;
         cout<<"Choosing Event Quality mode"<<endl;
+      } else if (SubOption == "qf") {
+        m_Mode = c_ModeEventQualityTMVAEventFile;
+        cout<<"Choosing Event Quality mode (create event files)"<<endl;
       } else {
         cout<<"Error: Unknown suboption \""<<SubOption<<"\"!"<<endl;
         cout<<Usage.str()<<endl;
@@ -608,7 +614,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
-} else if (m_Mode == c_ModeEventQuality) {
+  } else if (m_Mode == c_ModeEventQuality) {
 
     if (m_MimrecCfgFileName == g_StringNotDefined) {
       cout<<"Error: No mimrec configuration file name given!"<<endl;
@@ -632,6 +638,33 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     while (Response.Analyze() == true && m_Interrupt == false);
     if (Response.Finalize() == false) return false;
 
+  } else if (m_Mode == c_ModeEventQualityTMVAEventFile) {
+    
+    if (m_RevanCfgFileName == g_StringNotDefined) {
+      cout<<"Error: No revan configuration file name given!"<<endl;
+      cout<<Usage.str()<<endl;
+      return false;
+    }
+    
+    MResponseEventQualityTMVAEventFile Response;
+    
+    Response.SetDataFileName(m_FileName);
+    Response.SetGeometryFileName(m_GeometryFileName);
+    Response.SetResponseName(m_ResponseName);
+    Response.SetCompression(m_Compress);
+    
+    Response.SetMaxNInteractions(m_MaxNInteractions);
+    Response.SetMaxNumberOfEvents(m_MaxNEvents);
+    Response.SetSaveAfterNumberOfEvents(m_SaveAfter);
+    
+    Response.SetRevanSettingsFileName(m_RevanCfgFileName);
+    Response.SetDoAbsorptions(!m_NoAbsorptions);
+    
+    if (Response.ParseOptions(ResponseOptions) == false) return false;
+    if (Response.Initialize() == false) return false;
+    while (Response.Analyze() == true && m_Interrupt == false);
+    if (Response.Finalize() == false) return false;
+    
   } else if (m_Mode == c_ModeImagingListMode) {
 
     if (m_MimrecCfgFileName == g_StringNotDefined) {

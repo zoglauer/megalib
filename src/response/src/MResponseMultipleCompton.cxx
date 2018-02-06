@@ -1491,7 +1491,7 @@ bool MResponseMultipleCompton::IsAbsorbed(const vector<int>& AllSimIds,
   // (d) Sanity check - we just should have COMP & PHOT in our list
   for (unsigned int i = 0; i < SimIDs.size(); ++i) {
     if (m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "COMP" && m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess() != "PHOT") {
-      cout<<"Error: We only should have COMP and PHOT IA's at this point. Did you use hadronic processes for the simulations?"<<endl;
+      cout<<"Error: We only should have COMP and PHOT IA's at this point and not \""<<m_SiEvent->GetIAAt(SimIDs[i]-1)->GetProcess()<<"\". Did you use hadronic processes for the simulations?"<<endl;
     }
   }
   

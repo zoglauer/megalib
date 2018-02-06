@@ -123,7 +123,8 @@ class MResponseCreator
     c_ModeEfficiency,
     c_ModeEfficiencyNearField,
     c_ModeClusteringDSS,
-    c_ModeEventQuality
+    c_ModeEventQuality,
+    c_ModeEventQualityTMVAEventFile
   };
 
 

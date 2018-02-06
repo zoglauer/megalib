@@ -209,9 +209,9 @@ void MERCSRDataSet::CreateReaders(vector<TMVA::Reader*>& Readers)
       
       Name = "NadirAngle";
       Reader->AddVariable(Name, &m_NadirAngle[c]);
-      
-      Readers.push_back(Reader);
     }
+    
+    Readers.push_back(Reader);
   }
 }
 

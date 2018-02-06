@@ -99,7 +99,6 @@ class MResponseMultipleComptonEventFile : public MResponseMultipleCompton
    
   //! The data storage for good events, one per sequence length
   vector<TTree*> m_TreeGood;
-   
   //! The data storage for bad events
   vector<TTree*> m_TreeBad;
    

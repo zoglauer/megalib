@@ -41,6 +41,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 	$(LB)/MResponseImagingCodedMask.o \
 	$(LB)/MResponseEarthHorizon.o \
 	$(LB)/MResponseEventQuality.o \
+	$(LB)/MResponseEventQualityTMVAEventFile.o \
 
 
 OBJS = $(MOBJM) $(MOBJC) $(LOBJS)

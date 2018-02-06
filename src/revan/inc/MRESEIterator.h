@@ -29,6 +29,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+
+//! Iterate through list of (linked) RESEs
+//! Usage:
+//! MRESEIterator I(Start); // Start is the start point of the sequence
+//! MRESE* R = nullptr;
+//! while ((R = I->GetNextRESE()) != nullptr) {  /* do something with R */ }
 class MRESEIterator
 {
   // public interface:
