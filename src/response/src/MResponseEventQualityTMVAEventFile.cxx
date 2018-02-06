@@ -356,7 +356,7 @@ bool MResponseEventQualityTMVAEventFile::Finalize()
 { 
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int t = 0; t < m_Trees.size(); ++t) {
-    TFile Tree(GetFilePrefix() + ".seq" + (t+2) + ".quality.root", "recreate");
+    TFile Tree(m_ResponseName + ".seq" + (t+2) + ".quality.root", "recreate");
     Tree.cd();
     m_Trees[t]->Write();
     Tree.Close();

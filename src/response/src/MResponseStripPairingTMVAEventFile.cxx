@@ -402,7 +402,7 @@ bool MResponseStripPairingTMVAEventFile::Finalize()
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int x = 1; x <= m_MaxNHitsX; ++x) {
     for (unsigned int y = 1; y <= m_MaxNHitsY; ++y) {
-      TFile Tree(GetFilePrefix() + ".x" + x + ".y" + y + ".strippairing.root", "recreate");
+      TFile Tree(m_ResponseName + ".x" + x + ".y" + y + ".strippairing.root", "recreate");
       Tree.cd();
       m_Trees[x][y]->Write();
       Tree.Close();      
