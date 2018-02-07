@@ -48,21 +48,21 @@ class MEarthHorizon
   //! Default assignment constructor
   const MEarthHorizon& operator=(const MEarthHorizon&);
 
-  //! Do not apply any earth horizon tests
+  //! Do not apply any Earth horizon tests
   bool SetNoTest();
   //! Reject all events whose cone is below or intersects the horizon
   bool SetIntersectionTest();
-  //! Reject all events who have a certain probability to come from earth.  
+  //! Reject all events who have a certain probability to come from Earth.  
   bool SetProbabilityTest(const double MaxProbability,
                           const MString ComptonResponseFileName,
                           const MString PairResponseFileName = g_StringNotDefined);  
 
-  //! Set the position of earth in detector coordinates and 
-  //! the azimuthal angle of the horizon realtive to this position
+  //! Set the position of Earth in detector coordinates and 
+  //! the azimuthal angle of the horizon relative to this position
   bool SetEarthHorizon(const MVector& PositionEarth, 
                        const double HorizonAngle);
 
-  //! Return true if the event come from earth
+  //! Return true if the event originates from Earth
   bool IsEventFromEarth(MPhysicalEvent* Event, bool DumpOutput = false) const;
 
   static const int c_NoTest;
@@ -74,10 +74,10 @@ class MEarthHorizon
 
   // protected methods:
  protected:
-  //! Return true if the event come from earth via intersection test
+  //! Return true if the event originates from Earth via intersection test
   bool IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bool DumpOutput = false) const;
 
-  //! Return true if the event come from earth via probability test
+  //! Return true if the event originates from Earth via probability test
   bool IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, bool DumpOutput = false) const;
 
   // private methods:
@@ -92,15 +92,15 @@ class MEarthHorizon
 
   // private members:
  private:
-  //! Position of earth (center) in detector coordinates
+  //! Position of Earth (center) in detector coordinates
   MVector m_PositionEarth;
-  //! (Azimuth-) Angle from the earth position to earth horizon
+  //! (Azimuth-) Angle from the Earth position to Earth horizon
   double m_HorizonAngle;
 
-  //! Type of the earth horizon test
+  //! Type of the Earth horizon test
   int m_TestType;
 
-  //! Maximum allowed probability that the event came from earth
+  //! Maximum allowed probability that the event came from Earth
   double m_MaxProbability;
   //! The (smplified) response matrix for Compton events 
   MResponseMatrixO2 m_ComptonResponse;

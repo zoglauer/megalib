@@ -87,7 +87,7 @@ MEarthHorizon::MEarthHorizon()
 //   m_ValidComptonResponse = true;
 
   if (g_Verbosity >= c_Info) {
-    mout<<"Pair-response still ignored in earth-horizon test!"<<endl;
+    mout<<"Pair-response still ignored in Earth-horizon test!"<<endl;
   }
 }
 
@@ -140,7 +140,7 @@ const MEarthHorizon& MEarthHorizon::operator=(const MEarthHorizon& EH)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Do not apply any earth horizon tests
+//! Do not apply any Earth horizon tests
 bool MEarthHorizon::SetNoTest()
 {
   m_TestType = c_NoTest;
@@ -162,7 +162,7 @@ bool MEarthHorizon::SetIntersectionTest()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Reject all events who have a certain probability to come from earth.  
+//! Reject all events who have a certain probability to come from Earth.  
 bool MEarthHorizon::SetProbabilityTest(const double MaxProbability,
                                        const MString ComptonResponseFileName,
                                        const MString PairResponseFileName)
@@ -231,7 +231,7 @@ bool MEarthHorizon::SetProbabilityTest(const double MaxProbability,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Set the position of earth in detector coordinates and 
+//! Set the position of Earth in detector coordinates and 
 //! the azimuthal angle of the horizon realtive to this position
 bool MEarthHorizon::SetEarthHorizon(const MVector& PositionEarth, 
                                     const double HorizonAngle)
@@ -246,7 +246,7 @@ bool MEarthHorizon::SetEarthHorizon(const MVector& PositionEarth,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return true if the event come from earth
+//! Return true if the event originates from Earth
 bool MEarthHorizon::IsEventFromEarth(MPhysicalEvent* Event, bool DumpOutput) const
 {
   if (m_TestType == c_IntersectionTest) {
@@ -262,7 +262,7 @@ bool MEarthHorizon::IsEventFromEarth(MPhysicalEvent* Event, bool DumpOutput) con
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return true if the event originates from earth via intersection test
+//! Return true if the event originates from Earth via intersection test
 bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bool DumpOutput) const
 {
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
@@ -276,14 +276,14 @@ bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bo
     ConeAxis = C->GetHorizonPointingRotationMatrix()*ConeAxis;
 
     
-    // Distance between the earth cone axis and the Compton cone axis:
+    // Distance between the Earth cone axis and the Compton cone axis:
     double AxisDist = m_PositionEarth.Angle(ConeAxis);
      
     if (fabs(AxisDist - Phi) > m_HorizonAngle) {
       return false;
     } else {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Cone intersects earth: "<<AxisDist + Phi<<" < "<<m_HorizonAngle<<endl;
+        mout<<"ID "<<Event->GetId()<<": Cone intersects Earth: "<<AxisDist + Phi<<" < "<<m_HorizonAngle<<endl;
       }
       return true;
     }
@@ -293,7 +293,7 @@ bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bo
     
     if (AxisDist < m_HorizonAngle) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Origin inside earth: "<<AxisDist<<" < "<<m_HorizonAngle<<endl;
+        mout<<"ID "<<Event->GetId()<<": Origin inside Earth: "<<AxisDist<<" < "<<m_HorizonAngle<<endl;
       }
       return true;
     }
@@ -306,7 +306,7 @@ bool MEarthHorizon::IsEventFromEarthByIntersectionTest(MPhysicalEvent* Event, bo
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Return true if the event come from earth via probability test
+//! Return true if the event originates from Earth via probability test
 bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, bool DumpOutput) const
 {
   massert(Event != 0);
@@ -330,14 +330,14 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
       ConeAxis *= -1;
     }
 
-    // cout<<"Pos earth:"<<m_PositionEarth<<endl;
+    // cout<<"Pos Earth:"<<m_PositionEarth<<endl;
     // cout<<"ConeAxis:"<<ConeAxis<<endl;
 
-    // Distance between the earth cone axis and the Compton cone axis:
+    // Distance between the Earth cone axis and the Compton cone axis:
     double EarthConeaxisDist = m_PositionEarth.Angle(ConeAxis);
 
-    // Now determine both angles between the cone and earth (simpler now since phi always <= 90)
-    // First the one towards the earth -- if it is smaller than 0 just use fabs
+    // Now determine both angles between the cone and Earth (simpler now since phi always <= 90)
+    // First the one towards the Earth -- if it is smaller than 0 just use fabs
     double AngleEarthCone1 = EarthConeaxisDist - Phi;
     if (AngleEarthCone1 < 0) AngleEarthCone1 = fabs(AngleEarthCone1); // please don't simplify
     // Then the one away from Earth -- if it is > 180 deg then use the smaller angle
@@ -347,18 +347,18 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
     //mout << "ECAD:                 " << EarthConeaxisDist*180./c_Pi << endl;
     //mout << "Earth Horizon angle:  " << m_HorizonAngle*180./c_Pi << endl;
     //mout << "Phi:                  " << Phi*180./c_Pi << endl;
-    //mout << "Inside earth?        (" << (EarthConeaxisDist+Phi)*180./c_Pi << " <? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist-Phi)*180./c_Pi << " >? " << -m_HorizonAngle*180./c_Pi  << ") OR (" << (EarthConeaxisDist-Phi)*180./c_Pi << " <? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist+Phi)*180./c_Pi << " >? " << 360.-m_HorizonAngle*180./c_Pi  << ")" << endl;
-    //mout << "Outside earth?       (" << (EarthConeaxisDist-Phi)*180./c_Pi << " >? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist+Phi)*180./c_Pi << " <? " << 360.-m_HorizonAngle*180./c_Pi << ") OR (" << Phi*180./c_Pi << " >? " << (EarthConeaxisDist+m_HorizonAngle)*180./c_Pi << "  AND   " << Phi*180./c_Pi << " >? " << (m_HorizonAngle-EarthConeaxisDist)*180./c_Pi << ")" << endl;
+    //mout << "Inside Earth?        (" << (EarthConeaxisDist+Phi)*180./c_Pi << " <? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist-Phi)*180./c_Pi << " >? " << -m_HorizonAngle*180./c_Pi  << ") OR (" << (EarthConeaxisDist-Phi)*180./c_Pi << " <? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist+Phi)*180./c_Pi << " >? " << 360.-m_HorizonAngle*180./c_Pi  << ")" << endl;
+    //mout << "Outside Earth?       (" << (EarthConeaxisDist-Phi)*180./c_Pi << " >? " << m_HorizonAngle*180./c_Pi << "  AND  " << (EarthConeaxisDist+Phi)*180./c_Pi << " <? " << 360.-m_HorizonAngle*180./c_Pi << ") OR (" << Phi*180./c_Pi << " >? " << (EarthConeaxisDist+m_HorizonAngle)*180./c_Pi << "  AND   " << Phi*180./c_Pi << " >? " << (m_HorizonAngle-EarthConeaxisDist)*180./c_Pi << ")" << endl;
 
-    // Case a: Cone is completely inside earth
+    // Case a: Cone is completely inside Earth
     //if (EarthConeaxisDist + Phi < m_HorizonAngle) {
     //if ( ((EarthConeaxisDist+Phi < m_HorizonAngle) && (EarthConeaxisDist-Phi > -m_HorizonAngle)) ||
     //    ((EarthConeaxisDist+Phi > 2.*c_Pi-m_HorizonAngle) && (EarthConeaxisDist-Phi < m_HorizonAngle)) ) {
     if (AngleEarthCone1 < m_HorizonAngle && AngleEarthCone2 < m_HorizonAngle) {
-      mdebug<<"EHC: Cone is completely inside earth"<<endl;
+      mdebug<<"EHC: Cone is completely inside Earth"<<endl;
       if (m_MaxProbability < 1.0) {
         if (DumpOutput == true) {
-          mout<<"ID "<<Event->GetId()<<": Cone inside earth"<<endl;
+          mout<<"ID "<<Event->GetId()<<": Cone inside Earth"<<endl;
         }
         return true;
       } else {
@@ -366,12 +366,12 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
         return false;
       }
     }
-    // Case b: Cone is completely outside earth
+    // Case b: Cone is completely outside Earth
     // else if (EarthConeaxisDist - Phi > m_HorizonAngle || (EarthConeaxisDist == 0 && Phi > m_HorizonAngle)) {
     //else if ( ((EarthConeaxisDist+Phi > m_HorizonAngle) && (EarthConeaxisDist-Phi < -m_HorizonAngle))
     //    || ((EarthConeaxisDist+Phi < 2.*c_Pi-m_HorizonAngle) && (EarthConeaxisDist-Phi > m_HorizonAngle)) ) {
     else if (AngleEarthCone1 > m_HorizonAngle && AngleEarthCone2 > m_HorizonAngle) {
-      mdebug<<"EHC: Cone is completely outside earth"<<endl;
+      mdebug<<"EHC: Cone is completely outside Earth"<<endl;
       //cout<<EarthConeaxisDist*c_Deg<<":"<<Phi*c_Deg<<":"<<m_HorizonAngle*c_Deg<<endl;
       return false;
     }
@@ -382,9 +382,9 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
       
       if (sin(EarthConeaxisDist) == 0 || sin(Phi) == 0) {
         merr<<"Numerical boundary: Scattered gamma-ray flew in direction of "
-            <<"the earth axis and the Compton scatter angle is identical with "
+            <<"the Earth axis and the Compton scatter angle is identical with "
             <<"horizon angle (horizon angle="<<m_HorizonAngle*c_Deg
-            <<", earth-coneaxis-distance="<<EarthConeaxisDist*c_Deg
+            <<", Earth-coneaxis-distance="<<EarthConeaxisDist*c_Deg
             <<") - or we have a Compton backscattering (180 deg) " 
             <<"or no scattering at all (phi="<<Phi*c_Deg<<")... "
             <<"Nevertheless, I am not rejecting event "<<Event->GetId()<<show;
@@ -418,7 +418,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
 
         double Probability = 0;
 
-        // Case A: "Maximum" on cone (not necessarily origin) is from *within* earth:
+        // Case A: "Maximum" on cone (not necessarily origin) is from *within* Earth:
         if (EarthOriginDist < m_HorizonAngle) { 
           // If the intersection are in different Origin-Coneaxis-Hemispheres:
           if (EarthConeaxisOriginAngle + EarthConeaxisIntersectionAngle < c_Pi) {
@@ -439,7 +439,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
             Probability = 1-0.5*Probability;
           }
         } 
-        // Case B: "Maximum" on cone (not necessarily origin) is from *outside* earth:
+        // Case B: "Maximum" on cone (not necessarily origin) is from *outside* Earth:
         else {
           // If the intersection are in different hemispheres Origin-Coneaxis-Hemispheres:
           if (EarthConeaxisOriginAngle + EarthConeaxisIntersectionAngle > c_Pi) {
@@ -463,7 +463,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
           return true;
         }
       } else {
-        // The probability is simply determined by the length of the segment within earth
+        // The probability is simply determined by the length of the segment within Earth
         if (EarthConeaxisIntersectionAngle/c_Pi > m_MaxProbability) {
           if (DumpOutput == true) {
             mout<<"ID "<<Event->GetId()<<": Probability higher max probability: "<<EarthConeaxisIntersectionAngle/c_Pi<<" > "<<m_MaxProbability<<endl;
@@ -478,7 +478,7 @@ bool MEarthHorizon::IsEventFromEarthByProbabilityTest(MPhysicalEvent* Event, boo
     
     if (AxisDist < m_HorizonAngle) {
       if (DumpOutput == true) {
-        mout<<"ID "<<Event->GetId()<<": Origin inside earth: "<<AxisDist<<" < "<<m_HorizonAngle<<endl;
+        mout<<"ID "<<Event->GetId()<<": Origin inside Earth: "<<AxisDist<<" < "<<m_HorizonAngle<<endl;
       }
       return true;
     }
