@@ -83,8 +83,8 @@ void MGUIResponseParameterConeShapes::Create()
   TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
 
   m_ARMFile = new MGUIEFileSelector(this, "Cone-shapes file name", m_Settings->GetImagingResponseConeShapesFileName());
-  m_ARMFile->SetFileType("Response", "*.arm.photopeak.rsp");
-  m_ARMFile->SetFileType("Response (gzip'ed)", "*.arm.photopeak.rsp.gz");
+  m_ARMFile->SetFileType("Response", "*.imagingarm.photopeak.rsp");
+  m_ARMFile->SetFileType("Response (gzip'ed)", "*.imagingarm.photopeak.rsp.gz");
   AddFrame(m_ARMFile, SingleLayout);
 
   AddOKCancelButtons();
