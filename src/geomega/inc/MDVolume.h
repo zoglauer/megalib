@@ -157,7 +157,7 @@ class MDVolume
   bool ValidateClonesHaveSameMotherVolume();
 
   //! Check if a position in this volumes mother volume is inside this volume
-  bool IsInside(MVector Pos, double Tolerance = 0);
+  bool IsInside(MVector Pos, double Tolerance = 0); // TODO: RENAME! MISLEADING --> or make at least protected
   double DistanceInsideOut(MVector Pos);
   double DistanceOutsideIn(MVector Pos);
 
