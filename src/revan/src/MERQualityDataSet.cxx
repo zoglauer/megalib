@@ -92,6 +92,7 @@ void MERQualityDataSet::Initialize(unsigned int MaximumSequenceLength, bool UseP
   m_KleinNishinaProbability.resize(m_MaximumSequenceLength-1);
   m_CosComptonScatterAngleDifference.resize(m_MaximumSequenceLength-2);
   m_AbsorptionProbabilities.resize(m_MaximumSequenceLength-1);
+  m_MinimumNadirAngle = -1;
   
   m_PathSamples.resize(m_NumberOfPathSamples);
   
@@ -167,6 +168,9 @@ TMVA::Reader* MERQualityDataSet::CreateReader()
     Name += i+1;
     Reader->AddVariable(Name, &m_AbsorptionProbabilities[i]);
   }
+  
+  Name = "MinimumNadirAngle";
+  Reader->AddVariable(Name, &m_MinimumNadirAngle);  
   
   if (m_UsePathToFirstIA == true) {
     for (unsigned int i = 0; i < m_PathSamples.size(); ++i) {
@@ -248,7 +252,18 @@ void MERQualityDataSet::FillEventData(Long64_t ID, vector<MRESE*>& SequencedRESE
     m_AbsorptionProbabilities[r] = Geometry->GetAbsorptionProbability(SequencedRESEs[r]->GetPosition(), SequencedRESEs[r+1]->GetPosition(), EnergyIncomingGamma);
   }
   
-  // (f) Incoming probabilities
+  // (f) Minimum Nadir distance of the Compton cone
+  if (m_CosComptonScatterAngles[0] >= -1 && m_CosComptonScatterAngles[0] <= 1) { 
+    double Phi = acos(m_CosComptonScatterAngles[0]);
+    MVector ConeAxis = SequencedRESEs[0]->GetPosition() - SequencedRESEs[1]->GetPosition();
+    double AxisDist = MVector(0, 0, -1).Angle(ConeAxis);
+  
+    m_MinimumNadirAngle = fabs(AxisDist - Phi)*c_Deg;
+  } else {
+    m_MinimumNadirAngle = -1;  
+  }
+  
+  // (g) Incoming probabilities
   if (m_UsePathToFirstIA == true) {
     if (m_CosComptonScatterAngles[0] > -1 && m_CosComptonScatterAngles[0] < 1) {
       EnergyIncomingGamma = FullEnergy;
@@ -375,6 +390,9 @@ TTree* MERQualityDataSet::CreateTree(MString Title)
     Name += i+1;
     Tree->Branch(Name, &m_AbsorptionProbabilities[i], Name + "/F");
   }
+  
+  Name = "MinimumNadirAngle";
+  Tree->Branch(Name, &m_MinimumNadirAngle, Name + "/F");  
   
   if (m_UsePathToFirstIA == true) {
     for (unsigned int i = 0; i < m_PathSamples.size(); ++i) {

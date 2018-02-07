@@ -90,6 +90,8 @@ class MERQualityDataSet
   vector<Float_t> m_CosComptonScatterAngleDifference;
   //! The total absorption probabilities
   vector<Float_t> m_AbsorptionProbabilities;
+  //! Closest Nadir approach of the Compton cone
+  Float_t m_MinimumNadirAngle;
   //! The absorption probability samples along the path
   vector<Float_t> m_PathSamples;
   
