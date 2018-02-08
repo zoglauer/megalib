@@ -93,6 +93,14 @@ class MResponseMatrixON : public MResponseMatrix
   //! Check if the bins are inside the range of all axes
   bool InRange(vector<unsigned int> Bins) const;
   
+  // Check for bins
+  
+  //! Find the bin of m_Values corresponding to the axis bins X
+  unsigned int FindBin(vector<unsigned int> X) const;
+  //! Find the bin of m_Values corresponding to the axis values X
+  unsigned int FindBin(vector<double> X) const;
+
+  
   // Interface to modify the content
   
   //! Set the content of a specific bin -- directly without error checks
@@ -162,15 +170,12 @@ class MResponseMatrixON : public MResponseMatrix
   //! Read the specific data of this class - the main file handling is done in the base class!
   virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version);
 
-  //! Find the bin of m_Values corresponding to the axis bins X
-  unsigned int FindBin(vector<unsigned int> X) const;
-  //! Find the bin of m_Values corresponding to the axis values X
-  unsigned int FindBin(vector<double> X) const;
   //! Find the axes bins corresponding to the axis values X
   vector<unsigned int> FindBins(vector<double> X) const;
   //! Find the axes bins corresponding to the internal value bin Bin
   vector<unsigned int> FindBins(unsigned int Bin) const;
-    
+  
+  
   //! Given an order, return the axis it belongs to
   //! Can throw: MExceptionValueOutOfBounds, MExceptionNeverReachThatLineOfCode
   MResponseMatrixAxis* GetAxisByOrder(unsigned int Order);
