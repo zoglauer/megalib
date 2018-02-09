@@ -426,10 +426,7 @@ bool BinnedComptonImaging::BuildBackgroundModel()
   if (FileName == m_ResponseFileName) {
     FileName += ".backgroundmodel.rsp";
   }
-  
-  if (m_WriteFiles == true) {
-    Model.Write(FileName);
-  }
+  Model.Write(FileName);
   
   return true;
 }
@@ -1282,7 +1279,7 @@ bool BinnedComptonImaging::Reconstruct()
   // Check if we have to build a background model
   if (m_JustBuildBackgroundModel == true) {
     BuildBackgroundModel();
-    return true;
+    exit(0);
   }  
   
   // Prepare the response and all helper information
