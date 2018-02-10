@@ -10,10 +10,10 @@ CleanUp() {
   echo "Received command to shut down gracefully ($(date +%Y-%m-%d\ %H:%m:%S))..."
   echo " "
 
-  if [[ -f ${KillFileName} ]]; then
+  if [ -f ${KillFileName} ]; then
     bash ${KillFileName}
   else 
-    echo "ERROR: Kill file not found"
+    echo "ERROR: Kill file \"${KillFileName}\" not found"
   fi
   
   sleep 1
@@ -311,7 +311,7 @@ fi
 
 
 echo " "
-echo "Launching mcosima ($(date +%Y-%m-%d\ %H:%m:%S))"
+echo "Launching mcosima on ${HOST} ($(date +%Y-%m-%d\ %H:%m:%S))"
 echo " "
 echo "Executable: ${Executable}"
 echo "Number of threads to use: ${Threads}"
@@ -378,7 +378,8 @@ fi
 echo " "
 
 # Prepare the kill script
-KillFileName="${Base}.p${ThreadsID}.killcosimas.bash"
+Tag=""; for N in `seq 1 8`; do Tag="${Tag}$(( RANDOM%10 ))"; done
+KillFileName="${Base}.p${ThreadsID}.t${Tag}.killcosimas.bash"
 rm -f ${KillFileName}
 echo "#! /bin/bash" >> ${KillFileName}
 echo " " >> ${KillFileName}
@@ -406,7 +407,7 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   fi
   if [[ ${RandomIDs} == "yes" ]]; then
     Tag=""
-    for N in `seq 1 8`; do Tag="${Tag}$(( RANDOM%10 ))"; done
+    for N in `seq 1 8`; do Tag="${Tag}$(( 1 + RANDOM%9 ))"; done
     Cmd="${Cmd} -f ${Tag}"
     FirstIncarnationID=${Tag}
   elif [[ ${IncarnationID} -gt 0 ]]; then
