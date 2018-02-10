@@ -7,16 +7,18 @@ trap CleanUp SIGTERM SIGINT
 CleanUp() {
   echo " "
   echo " "
-  echo "Received command to shut down gracefully..."
+  echo "Received command to shut down gracefully ($(date +%Y-%m-%d\ %H:%m:%S))..."
   echo " "
 
   if [[ -f ${KillFileName} ]]; then
     bash ${KillFileName}
+  else 
+    echo "ERROR: Kill file not found"
   fi
   
   sleep 1
   
-  echo "Done"
+  echo "Shutdown completed!"
   echo " "
   
   exit 0
@@ -37,6 +39,8 @@ help() {
   echo "    -n <nice>:     The nice level as an integer"
   #echo "    -d <seconds>:  Delay in seconds between starting jobs (min=default: 2 seconds)"
   #echo "    -p:            use this parallel ID without checking for the cosima output files"
+  #echo "    -i:            use this incarnation ID without checking for the cosima output files"
+  #echo "    -r:            use random IDs"
   echo "    -z:            zip the simulations files"
   echo "    -e:            Use the given special cosima executable instead"
   echo "    -w:            If set, wait until all jobs have finished."
@@ -60,6 +64,9 @@ fi
 Source="!@#$";
 Max=${Threads}
 ParallelID=0
+IncarnationID=0
+FirstIncarnationID=1
+RandomIDs="no"
 Nice=0;
 Wait="no"
 Zip="no"
@@ -100,6 +107,10 @@ while [ $# -gt 0 ] ; do
     Found=1;
     Zip="yes"
     ;;
+  -r|--random)
+    Found=1;
+    RandomIDs="yes"
+    ;;
   -t)
     shift;
     if [ $# -eq 0 ]; then
@@ -111,7 +122,7 @@ while [ $# -gt 0 ] ; do
     fi
     Found=1;
     Threads=$1;
-    #echo "Using ${Threads} threads";
+    echo "Using ${Threads} threads";
     ;;
   -m)
     shift;
@@ -124,7 +135,7 @@ while [ $# -gt 0 ] ; do
     fi
     Found=1;
     Max=$1;
-    #echo "Using ${Threads} threads";
+    echo "Using max parallel threads ${Max}";
     ;;
   -e)
     shift;
@@ -151,7 +162,7 @@ while [ $# -gt 0 ] ; do
     fi
     Found=1;
     Nice=$1;
-    #echo "Using nice level ${Nice}";
+    echo "Using nice level ${Nice}";
     ;;
   -p)
     shift;
@@ -164,7 +175,21 @@ while [ $# -gt 0 ] ; do
     fi
     Found=1;
     ParallelID=$1;
-    echo "Using nice level ${ParallelID}";
+    echo "Using parallel ID ${ParallelID}";
+    ;;
+  -i)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Option -i needs an argument";
+      echo "       For details see mcosima --help"
+      echo " "
+      exit 0;
+    fi
+    Found=1;
+    IncarnationID=$1;
+    FirstIncarnationID=$1
+    echo "Using incarnation ID ${IncarnationID}";
     ;;
   -d)
     shift;
@@ -177,7 +202,7 @@ while [ $# -gt 0 ] ; do
     fi
     Found=1;
     Delay=$1;
-    #echo "Using nice level ${Delay}";
+    echo "Using default delay ${Delay}";
     ;;
   *)
     ;;
@@ -252,6 +277,18 @@ else
   exit 1;
 fi
 
+if echo ${IncarnationID} | grep "^[0-9]*$" > /tmp/aux
+then
+  rm /tmp/aux
+else
+  echo " "
+  echo "Error: The value behind incarnation ID must be a number";
+  echo "       For details see mcosima --help"
+  echo " "
+  rm /tmp/aux
+  exit 1;
+fi
+
 if echo ${Max} | grep "^[0-9]*$" > /tmp/aux
 then
   rm /tmp/aux
@@ -274,7 +311,7 @@ fi
 
 
 echo " "
-echo "Launching mcosima"
+echo "Launching mcosima ($(date +%Y-%m-%d\ %H:%m:%S))"
 echo " "
 echo "Executable: ${Executable}"
 echo "Number of threads to use: ${Threads}"
@@ -282,6 +319,11 @@ echo "Maximum number of cosima threads on machine: ${Max}"
 echo "Source file: ${Source}"
 if [[ ${ParallelID} -gt 0 ]]; then
   echo "Parallel ID: ${ParallelID}"
+fi
+if [[ ${RandomIDs} == "yes" ]]; then
+  echo "Using random IDs"
+elif [[ ${IncarnationID} -gt 0 ]]; then
+  echo "Incarnation ID: ${IncarnationID}"
 fi
 echo "gzip'ing the output file: ${Zip}"
 echo "Waiting until all threads have finished: ${Wait}"
@@ -348,12 +390,12 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
   mwait -i=threads -p=cosima
   
-  echo "Launching cosima run ${i}/${Threads}"
+  echo "Launching cosima run ${i}/${Threads} ($(date +%Y-%m-%d\ %H:%m:%S))"
   
   Seed=`od -vAn -N4 -tu4 < /dev/urandom`
   
   Tag=""
-  for N in `seq 1 16`; do Tag="${Tag}$(( RANDOM%10 ))"; done
+  for N in `seq 1 16`; do Tag="${Tag}$(( 1 + RANDOM%9 ))"; done
   
   Cmd="${ExecuteString} -v 0 -s ${Seed} -p ${ThreadsID} -f ${i} -t ${Tag}"
   if [[ "${Zip}" == "yes" ]]; then
@@ -361,6 +403,15 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   fi
   if [[ ${ParallelID} -gt 0 ]]; then
     Cmd="${Cmd} -p ${ParallelID}"
+  fi
+  if [[ ${RandomIDs} == "yes" ]]; then
+    Tag=""
+    for N in `seq 1 8`; do Tag="${Tag}$(( RANDOM%10 ))"; done
+    Cmd="${Cmd} -f ${Tag}"
+    FirstIncarnationID=${Tag}
+  elif [[ ${IncarnationID} -gt 0 ]]; then
+    Cmd="${Cmd} -f ${IncarnationID}"
+    IncarnationID=$(( ${IncarnationID} + 1))
   fi
   Cmd="${Cmd} ${Source}"
 
@@ -413,7 +464,7 @@ grep -i ".FileName" ${Source} | while read line; do
   echo "Creating concatenation file for simulation \"${Base}\""
   ConcatFileName="${Base}.p${ThreadsID}.sim"
 
-  FirstFileName="${Base}.p${ThreadsID}.inc1.id1.sim"
+  FirstFileName="${Base}.p${ThreadsID}.inc${FirstIncarnationID}.id1.sim"
   if [[ "${Zip}" == "yes" ]]; then
     FirstFileName="${FirstFileName}.gz"
   fi
