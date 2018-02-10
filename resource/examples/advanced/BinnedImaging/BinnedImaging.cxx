@@ -88,7 +88,7 @@ protected:
   //! Read the events and prepare the data space
   bool PrepareDataSpace();
   
-  /// Build the background model
+  //! Build the background model
   bool BuildBackgroundModel();
   
   //! Create the response matrix for an event
@@ -100,16 +100,22 @@ protected:
   //! Create the Galactic background modfel
   bool CreateGalacticBackgroundModel();
   
+  //! Create an exposure map
+  bool CreateExposureMap();
+  
   //! Parallel response rotation in to Galactic coordinates
   bool RotateResponseInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ);  
-  ///Parallel background model rotation
+  //! Parallel background model rotation
   bool RotateBackgroundModelInParallel(unsigned int ThreadID, unsigned int ModelID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ);
   
-  /// Reconstruct an image using Richardson-Lucy
+  //! Reconstruct an image using Richardson-Lucy
   bool ReconstructRL();
   
-  /// Reconstruct an image using Maximum Entropy
+  //! Reconstruct an image using Maximum Entropy
   bool ReconstructMEM();
+  
+  //! Show an image in Galactic coordinates
+  bool ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis);
   
   
 private:
@@ -174,6 +180,9 @@ private:
   
   //! The complete response
   MResponseMatrixON m_ResponseGalactic;
+  
+  //! The exposure map
+  MResponseMatrixON m_ExposureMap;
   
   //! The observation time
   double m_ObservationTime;
@@ -1108,6 +1117,35 @@ bool BinnedComptonImaging::CreateGalacticBackgroundModel()
 
 
 /******************************************************************************
+ * Create an exposure map
+ */
+bool BinnedComptonImaging::CreateExposureMap()
+{
+  m_ExposureMap.SetName("ExposureMap");
+  m_ExposureMap.AddAxis(m_Response.GetAxis(0)); // energy
+  m_ExposureMap.AddAxis(m_Response.GetAxis(1)); // image space
+  
+  
+  for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+    float Sum = 0.0;      
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      Sum += m_ResponseGalactic.Get(ib + m_IBins*db);
+    }
+    m_ExposureMap.Set(ib, Sum * m_ObservationTime * m_StartArea);
+  }
+  
+  if (m_WriteFiles == true) {
+    cout<<"Writing exposure map"<<endl;
+    m_ExposureMap.Write("ExposureMap.rsp");
+  }
+  
+  ShowImageGalacticCoordinates(m_ExposureMap, "Exposure", "cm^2 * sec");
+  
+  return true;
+}
+
+
+/******************************************************************************
  * Reconstruct the image in RL mode
  */
 bool BinnedComptonImaging::ReconstructRL()
@@ -1146,26 +1184,8 @@ bool BinnedComptonImaging::ReconstructRL()
   if (m_WriteFiles == true) {
     Image.Write("FirstBackprojection.rsp");
   }
-  
-  vector<double> BackprojectedDataData(Image.GetAxis(1).GetNumberOfBins());
-  for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
-    for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
-      BackprojectedDataData[id] = Image.Get(ie + m_InitialEnergyBins*id);
-    }
-  }
-  
-  MImageGalactic* G = new MImageGalactic();
-  G->SetTitle("1st backprojection");
-  G->SetXAxisTitle("Galactic Longitude [deg]");
-  G->SetYAxisTitle("Galactic Latitude [deg]");
-  G->SetValueAxisTitle("Flux");
-  G->SetDrawOption(MImage::c_COLZ);
-  G->SetSpectrum(MImage::c_Rainbow);
-  G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
-  G->Normalize(false);
-  G->SetFISBEL(BackprojectedDataData);
-  G->Display();
-  
+
+  ShowImageGalacticCoordinates(Image, "1st backprojection", "[a.u.]");
   
   // Assume that all data is background:
   vector<double> BackgroundScaler(m_BackgroundModel.size(), 0.0);
@@ -1254,33 +1274,9 @@ bool BinnedComptonImaging::ReconstructRL()
     }
     
     cout<<"Sums:  mean="<<Mean.GetSum()<<" image="<<Image.GetSum()<<"  data="<<m_Data.GetSum()<<endl;
-    
     cout<<"Image content: "<<ImageFlux<<" ph/cm2/s for T="<<m_ObservationTime<<" sec and A="<<m_StartArea<<" cm^2"<<endl;
     
-    vector<double> ImageData(Image.GetAxis(1).GetNumberOfBins());
-    for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
-      for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
-        ImageData[id] = Image.Get(ie + m_InitialEnergyBins*id) / m_ObservationTime / m_StartArea / m_Steradians;
-      }
-    }
-    
-    ostringstream Title;
-    Title<<"Galaxy view at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
-
-    MImageGalactic* G = new MImageGalactic();
-    G->SetTitle(Title.str());
-    G->SetXAxisTitle("Galactic Longitude [deg]");
-    G->SetYAxisTitle("Galactic Latitude [deg]");
-    G->SetValueAxisTitle("Flux");
-    G->SetDrawOption(MImage::c_COLZ);
-    G->SetSpectrum(MImage::c_Rainbow);
-    //G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
-    G->Normalize(false);
-    G->SetFISBEL(ImageData);
-    G->Display();
-
-    
-    gSystem->ProcessEvents();
+    ShowImageGalacticCoordinates(Image, MString("Galaxy view at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux");
     
     if (m_Interrupt == true) break;
   }  
@@ -1294,7 +1290,7 @@ bool BinnedComptonImaging::ReconstructRL()
  */
 bool BinnedComptonImaging::ReconstructMEM()
 {
-  // Set up Lagrange multipliers
+    // Set up Lagrange multipliers
   
   MResponseMatrixON Lagrange;
   Lagrange.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
@@ -1470,36 +1466,13 @@ bool BinnedComptonImaging::ReconstructMEM()
       NewImage.Set(ib, RestoredImage.Get(ib) * DataSum/RestoredImageSum);
       ImageFlux += NewImage.Get(ib) / m_ObservationTime / m_StartArea;      
     }
-
+    cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+    
     if (Entropy > MaximumEntropy) {
       MaximumEntropy = Entropy;
     }
     
-    ostringstream Title;
-    Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
-    //NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
-    cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
-    
-    vector<double> ImageData(NewImage.GetAxis(1).GetNumberOfBins());
-    for (unsigned int ib = 0; ib < m_IBins; ++ib) {
-      ImageData[ib] = NewImage.Get(ib);
-    }
-    
-    MImageGalactic* G = new MImageGalactic();
-    G->SetTitle("Galaxy view");
-    G->SetXAxisTitle("Galactic Longitude [deg]");
-    G->SetYAxisTitle("Galactic Latitude [deg]");
-    G->SetValueAxisTitle("Flux");
-    G->SetDrawOption(MImage::c_COLZ);
-    G->SetSpectrum(MImage::c_Rainbow);
-    //G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
-    //G->SetProjection(MImageProjection::c_Hammer);
-    G->Normalize(false);
-    G->SetFISBEL(ImageData);
-    G->Display();
-    
-    
-    gSystem->ProcessEvents();
+    ShowImageGalacticCoordinates(NewImage, MString("Image at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux");
     
     if (m_Interrupt == true) break;
     
@@ -1540,12 +1513,47 @@ bool BinnedComptonImaging::Reconstruct()
     return false;
   }
   
+  // Create the exposure map
+  if (CreateExposureMap() == false) {
+     return false; 
+  }
+  
   // Create image
   if (m_DeconvolutionAlgorithm == 1) {
     ReconstructRL(); 
   } else {
     ReconstructMEM();
   }
+  
+  return true;
+}
+
+
+/******************************************************************************
+ * Show an image in Galactic coordinates
+ */
+bool BinnedComptonImaging::ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis)
+{
+  vector<double> ImageData(Image.GetAxis(1).GetNumberOfBins());
+  for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+    ImageData[ib] = Image.Get(ib);
+  }
+  
+  MImageGalactic* G = new MImageGalactic();
+  G->SetTitle(Title);
+  G->SetXAxisTitle("Galactic Longitude [deg]");
+  G->SetYAxisTitle("Galactic Latitude [deg]");
+  G->SetValueAxisTitle(zAxis);
+  G->SetDrawOption(MImage::c_COLZ);
+  G->SetSpectrum(MImage::c_Rainbow);
+  //G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+  //G->SetProjection(MImageProjection::c_Hammer);
+  G->Normalize(false);
+  G->SetFISBEL(ImageData);
+  G->Display();
+  
+  
+  gSystem->ProcessEvents();
   
   return true;
 }
