@@ -108,6 +108,9 @@ protected:
   /// Reconstruct an image using Richardson-Lucy
   bool ReconstructRL();
   
+  /// Reconstruct an image using Maximum Entropy
+  bool ReconstructMEM();
+  
   
 private:
   //! True, if the analysis needs to be interrupted
@@ -242,6 +245,7 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
   Usage<<"         -a:   algorithm: rl (default) or mem"<<endl;
   Usage<<"         -cg:  create galactic response file"<<endl;
   Usage<<"         -cb:  create background model"<<endl;
+  Usage<<"         -w:   write files"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -310,7 +314,10 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
       }
     } else if (Option == "-cb") {
       m_JustBuildBackgroundModel = true;
-      cout<<"Accepoting to creating a background model"<<endl;
+      cout<<"Accepting to creating a background model"<<endl;
+    } else if (Option == "-w") {
+      m_WriteFiles = true;
+      cout<<"Accepting to write files to disk"<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -1081,8 +1088,8 @@ bool BinnedComptonImaging::CreateGalacticBackgroundModel()
         }
       }
       
-      // Normalize to 0.1:
-      m_BackgroundModelGalactic[b] /= 10*m_BackgroundModelGalactic[b].GetSum();
+      // Normalize to 1.0:
+      m_BackgroundModelGalactic[b] /= m_BackgroundModelGalactic[b].GetSum();
     }
         
     if (m_WriteFiles == true) {
@@ -1160,17 +1167,28 @@ bool BinnedComptonImaging::ReconstructRL()
   G->Display();
   
   
+  // Assume that all data is background:
+  vector<double> BackgroundScaler(m_BackgroundModel.size(), 0.0);
+  if (m_UseBackgroundModel == true) {
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) {
+        BackgroundScaler[b] += m_BackgroundModelGalactic[b].Get(db);
+      }
+    }
+    
+    for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) {
+      BackgroundScaler[b] *= m_Data.GetSum()/BackgroundScaler[b];
+      cout<<"Starting background scaler: "<<BackgroundScaler[b]<<endl;
+    }
+  }
   
   // The iterations
-  
   MResponseMatrixON Mean;
   Mean.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
   Mean.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
   Mean.AddAxis(m_ResponseGalactic.GetAxis(4)); // direction scattered gamma ray  
   Mean.AddAxis(m_ResponseGalactic.GetAxis(5)); // direction recoil electron 
   Mean.AddAxis(m_ResponseGalactic.GetAxis(6)); // distance  
-  
-  vector<double> BackgroundScaler(m_BackgroundModel.size(), 1.0);
   
   for (unsigned int i = 0; i < m_Iterations; ++i) {
     cout<<endl<<"Iteration: "<<i+1<<" - convolve"<<endl;
@@ -1272,6 +1290,226 @@ bool BinnedComptonImaging::ReconstructRL()
 
 
 /******************************************************************************
+ * Reconstruct the image in MEM mode
+ */
+bool BinnedComptonImaging::ReconstructMEM()
+{
+  // Set up Lagrange multipliers
+  
+  MResponseMatrixON Lagrange;
+  Lagrange.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
+  Lagrange.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
+  Lagrange.AddAxis(m_ResponseGalactic.GetAxis(4)); // direction scattered gamma ray  
+  Lagrange.AddAxis(m_ResponseGalactic.GetAxis(5)); // direction recoil electron 
+  Lagrange.AddAxis(m_ResponseGalactic.GetAxis(6)); // distance  
+  
+  for (unsigned long db = 0; db < m_DBins; ++db) {
+    Lagrange.Set(db, m_Data.Get(db));
+  }
+  
+  // Normalize response
+  //m_ResponseGalactic /= m_ResponseGalactic.GetSum(); // TODO: Why do we do that????
+  
+  
+  double DataSum = m_Data.GetSum();
+  cout<<"Data Sum="<<DataSum<<endl;   
+  
+  // The expectations
+  MResponseMatrixON Expectation;
+  Expectation.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
+  Expectation.AddAxis(m_ResponseGalactic.GetAxis(3)); // phi
+  Expectation.AddAxis(m_ResponseGalactic.GetAxis(4)); // diretcion scattered gamma ray  
+  Expectation.AddAxis(m_ResponseGalactic.GetAxis(5)); // direction recoil electron 
+  Expectation.AddAxis(m_ResponseGalactic.GetAxis(6)); // distance  
+  
+  vector<double> BackgroundScaler(m_BackgroundModel.size(), 1.0);
+  
+  double MaximumEntropy = 0;
+  
+  for (unsigned int i = 0; i < m_Iterations; ++i) {
+    
+    // Step 1: Calculate the restored image:
+    
+    MResponseMatrixON RestoredImage("RestoredImage");
+    RestoredImage.AddAxis(m_Response.GetAxis(0)); // energy
+    RestoredImage.AddAxis(m_Response.GetAxis(1)); // image space      
+    
+    double RestoredImageSum = 0;
+    
+    for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+      float Content = 0.0;    
+      for (unsigned long db = 0; db < m_DBins; ++db) {
+        Content += m_ResponseGalactic.Get(ib + m_IBins*db) * Lagrange.Get(db);
+      }
+      Content = exp(Content);
+      RestoredImage.Set(ib, Content);
+      RestoredImageSum += Content;
+    }    
+
+    if (RestoredImageSum == 0) {
+      cerr<<"ERROR: RestoredImageSum == 0"<<endl;
+      return false;
+    }
+    if (std::isinf(RestoredImageSum)) {
+      cerr<<"ERROR: RestoredImageSum == inf"<<endl;
+      return false;
+    }
+    cout<<"RestoredImageSum="<<RestoredImageSum<<endl;
+    
+    
+    double Entropy = 0;
+    for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+      float RestoredImageUpdate = RestoredImage.Get(ib)*DataSum/RestoredImageSum;
+      RestoredImage.Set(ib, RestoredImageUpdate);
+      Entropy += RestoredImageUpdate*log(RestoredImageUpdate);
+    }      
+    cout<<"Entropy: "<<Entropy<<endl;    
+    
+    
+    
+    // Step 2: Convolve the data again into data space - expectation calculation
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      float NewExpectation = 0;
+      for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+        NewExpectation += RestoredImage.Get(ib) * m_ResponseGalactic.Get(ib + m_IBins*db);
+      }
+      
+      if (m_UseBackgroundModel == true) {
+        for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) {
+          NewExpectation += BackgroundScaler[b] * m_BackgroundModelGalactic[b].Get(db);
+        }
+      }
+      
+      Expectation.Set(db, NewExpectation);
+    }    
+    
+    double ExpectationSum = Expectation.GetSum();
+    if (ExpectationSum == 0) {
+      cerr<<"ERROR: ExpectationSum == 0"<<endl;
+      return false;
+    }
+    cout<<"Expectation Sum="<<ExpectationSum<<endl;
+    
+    
+    
+    // Step 3: Update Lagrange multipliers
+    double Scale = ExpectationSum/DataSum;
+    
+    if (Scale == 0) {
+      cerr<<"ERROR: Scale == 0"<<endl;
+      break;
+    }
+    
+    int LCounter = 0; 
+    double Limit = 1.0E-9;
+    double UpdateFactor = 5000;
+    
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      //if (m_Data.Get(db) == 0) continue;
+      bool UseLog = false;
+      double Update = 0;
+      if (UseLog == true) {
+        double PreLog1 = m_Data.Get(db)*Scale;
+        if (PreLog1 < Limit) PreLog1 = Limit;
+        Update += log(PreLog1);
+        
+        double PreLog2 = Expectation.Get(db); 
+        if (PreLog2 < Limit) PreLog2 = Limit;
+        Update -= log(PreLog2);
+        
+        cout<<"Lagrange diff: "<<Lagrange.Get(db)<<" vs. "<<m_Data.Get(db)*Scale<<" vs. "<<Expectation.Get(db)<<" --> Update: "<<Update<<endl;
+        
+      } else {
+        Update += m_Data.Get(db)*Scale - Expectation.Get(db);
+        //cout<<"Lagrange diff: "<<Lagrange.Get(db)<<" vs. "<<Data.Get(db)*Scale<<" vs. "<<Expectation.Get(db)<<" --> Update: "<<Update<<endl;
+      }
+      
+      //cout<<"Lagrange diff: "<<Lagrange.Get(db)<<" vs. "<<Update<<endl;
+      double NewL = Lagrange.Get(db) + UpdateFactor*Update;
+      /*
+      if (NewL < 0) {
+        NewL = 0;
+      }
+      */
+      Lagrange.Set(db, NewL);
+      LCounter++;      
+    }
+
+    cout<<" Updated Lagrange entries: "<<LCounter<<endl;
+    cout<<"Lagrange sum="<<Lagrange.GetSum()<<endl;
+    
+    
+    
+    // Step 4: Update the background scaling factor:
+    if (m_UseBackgroundModel == true) {
+      vector<double> B_corr(m_BackgroundModel.size(), 0.0);
+      
+      for (unsigned long db = 0; db < m_DBins; ++db) {
+        
+        if (m_Data.Get(db) > 0 && Expectation.Get(db) > 0) {
+          for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) {
+            B_corr[b] += m_BackgroundModelGalactic[b].Get(db) * m_Data.Get(db) / Expectation.Get(db);
+          }
+        }
+      }
+      
+      for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) {
+        BackgroundScaler[b] *= B_corr[b] / m_TotalBackgroundInModel[b];
+        cout<<"Background scaling factor: "<<BackgroundScaler[b]<<"!"<<B_corr[b]<<"!"<<m_TotalBackgroundInModel[b]<<endl;
+      }
+    }
+    
+    
+    // Step 5: Update the real image:
+    MResponseMatrixON NewImage("NewImage");
+    NewImage.AddAxis(m_Response.GetAxis(0)); // energy
+    NewImage.AddAxis(m_Response.GetAxis(1)); // image space
+    
+    double ImageFlux = 0;
+    for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+      NewImage.Set(ib, RestoredImage.Get(ib) * DataSum/RestoredImageSum);
+      ImageFlux += NewImage.Get(ib) / m_ObservationTime / m_StartArea;      
+    }
+
+    if (Entropy > MaximumEntropy) {
+      MaximumEntropy = Entropy;
+    }
+    
+    ostringstream Title;
+    Title<<"Image at iteration "<<i+1<<" with flux "<<ImageFlux<<" ph/cm2/s";
+    //NewImage.ShowSlice(vector<float>{ 511.0, MResponseMatrix::c_ShowX, MResponseMatrix::c_ShowY }, true, Title.str());
+    cout<<"Image content: "<<ImageFlux<<" ph/cm2/s"<<endl;
+    
+    vector<double> ImageData(NewImage.GetAxis(1).GetNumberOfBins());
+    for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+      ImageData[ib] = NewImage.Get(ib);
+    }
+    
+    MImageGalactic* G = new MImageGalactic();
+    G->SetTitle("Galaxy view");
+    G->SetXAxisTitle("Galactic Longitude [deg]");
+    G->SetYAxisTitle("Galactic Latitude [deg]");
+    G->SetValueAxisTitle("Flux");
+    G->SetDrawOption(MImage::c_COLZ);
+    G->SetSpectrum(MImage::c_Rainbow);
+    //G->SetSourceCatalog("$(MEGALIB)/resource/catalogs/Crab.scat");
+    //G->SetProjection(MImageProjection::c_Hammer);
+    G->Normalize(false);
+    G->SetFISBEL(ImageData);
+    G->Display();
+    
+    
+    gSystem->ProcessEvents();
+    
+    if (m_Interrupt == true) break;
+    
+  } // iterations
+  
+  return true;
+}
+
+
+/******************************************************************************
  * Reconstruct the image
  */
 bool BinnedComptonImaging::Reconstruct()
@@ -1305,6 +1543,8 @@ bool BinnedComptonImaging::Reconstruct()
   // Create image
   if (m_DeconvolutionAlgorithm == 1) {
     ReconstructRL(); 
+  } else {
+    ReconstructMEM();
   }
   
   return true;
