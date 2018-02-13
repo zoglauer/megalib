@@ -51,6 +51,9 @@ confhelp() {
   echo "--tarball=[file name of Geant4 tarball]"
   echo "    Use this tarball instead of downloading it from the Geant4 website" 
   echo " "
+  echo "--geant4version=[e.g. 10.02 (but not 10.02.p03)]"
+  echo "    Specifiy the Geant4 version (ignores MEGAlib's requested version), if empty read he requested one from the MEGAlib directory"
+  echo " "
   echo "--sourcescript=[file name of new environment script]"
   echo "    File in which the Geant4 path will be stored. This is used by the MEGAlib setup script" 
   echo " "
@@ -95,6 +98,7 @@ done
 TARBALL=""
 ENVFILE=""
 MAXTHREADS=1024
+WANTEDVERSION=""
 PATCH="off"
 DEBUG="off"
 DEBUGSTRING=""
@@ -118,6 +122,8 @@ for C in ${CMD}; do
     PATCH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-cl*=* ]]; then
     CLEANUP=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-g*=* ]]; then
+    WANTEDVERSION=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-k* ]]; then
     KEEPENVASIS=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-h* ]]; then
@@ -152,7 +158,7 @@ if [ "${TARBALL}" != "" ]; then
 fi
 
 
-if [ "${ENVFILE}" != "" ]; then
+if [ "${ENVFILE}" != "" ]; thengeant4.10.01.p03.tar.gz
   if [[ ! -f "${ENVFILE}" ]]; then
     echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
     exit 1     
@@ -251,21 +257,31 @@ if [ "${TARBALL}" != "" ]; then
   
   # Check if it has the correct version:
   VER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }'`;
+  SHORTVER=`echo ${TARBALL} | awk -Fgeant4. '{ print $2 }' | awk -F.t '{ print $1 }' | awk -F.p '{ print $1 }'`;
   echo "Version of Geant4 is: ${VER}"
   
-  bash ${MEGALIB}/config/check-geant4version.sh --good-version=${VER}
-  if [ "$?" != "0" ]; then
-    echo "ERROR: The Geant4 tarball you supplied does not contain an acceptable Geant4 version!"
-    exit 1
+  if [[ ${WANTEDVERSION} != "" ]]; then
+    if [[ ${SHORTVER} != ${WANTEDVERSION} ]]; then
+      echo "ERROR: You stated you want version ${WANTEDVERSION} but the tar ball has version ${SHORTVER}!"
+      exit 1
+    fi
+  else 
+    bash ${MEGALIB}/config/check-geant4version.sh --good-version=${VER}
+    if [ "$?" != "0" ]; then
+      echo "ERROR: The Geant4 tarball you supplied does not contain an acceptable Geant4 version!"
+      exit 1
+    fi
   fi
 else
   # Download it
   
-  # Get desired version:
-  WANTEDVERSION=`bash ${MEGALIB}/config/check-geant4version.sh --get-max`
-  if [ "$?" != "0" ]; then
-    echo "ERROR: Unable to determine required Geant4 version!"
-    exit 1
+  if [[ ${WANTEDVERSION} == "" ]]; then
+    # Get desired version:
+    WANTEDVERSION=`bash ${MEGALIB}/config/check-geant4version.sh --get-max`
+    if [ "$?" != "0" ]; then
+      echo "ERROR: Unable to determine required Geant4 version!"
+      exit 1
+    fi
   fi
   echo "Looking for Geant4 version ${WANTEDVERSION} with latest patch on the Geant4 website --- sometimes this takes a few minutes..."
   
