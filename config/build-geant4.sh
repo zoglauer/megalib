@@ -158,7 +158,7 @@ if [ "${TARBALL}" != "" ]; then
 fi
 
 
-if [ "${ENVFILE}" != "" ]; thengeant4.10.01.p03.tar.gz
+if [ "${ENVFILE}" != "" ]; then
   if [[ ! -f "${ENVFILE}" ]]; then
     echo "ERROR: The chosen environment file cannot be found: ${ENVFILE}"
     exit 1     
