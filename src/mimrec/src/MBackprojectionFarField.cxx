@@ -319,39 +319,6 @@ bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////////////////////////////////
-
-/*
-// Addition Christian Lang - Backproject
-//---------------------------------------------------------
-bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double&
-Maximum, double X1Position, double Y1Position, double Z1Position, double X2Position, double Y2Position, double
-Z2Position)
-{
-// Take over all the necessary event data and perform some elementary computations:
-// the compton angle, the cone axis, the most probable origin of the gamma ray
-// if possible, the center of the cone.
-
-if (Assimilate(Event) == false) return false;
-if (Event->GetType() == MPhysicalEvent::c_Compton) {
-return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
-} else if (Event->GetType() == MPhysicalEvent::c_Pair) {
-return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-} else if (Event->GetType() == MPhysicalEvent::c_Photo) {
-return BackprojectionPhoto(Image, Bins, NUsedBins, Maximum);
-} else {
-cout<<"Error: Unknown event type for imaging: "<<Event->GetType()<<". Skipping event."<<endl;
-}
-return false;
-}
-
-*/
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-
 bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
