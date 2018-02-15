@@ -77,14 +77,17 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
     return false;
   }
 
+  // Those are the event types we handle:
   if (Event->GetType() == MPhysicalEvent::c_Compton ||
-      Event->GetType() == MPhysicalEvent::c_Pair) {
+    Event->GetType() == MPhysicalEvent::c_Pair ||
+    Event->GetType() == MPhysicalEvent::c_Photo ||
+    Event->GetType() == MPhysicalEvent::c_PET ||
+    Event->GetType() == MPhysicalEvent::c_Multi) {
     return true;
   }
 
   return false;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,38 +105,17 @@ bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image,
     return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
   } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
     return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-  }
-  else  {
-    cout<<"Cartesian::Backproject only works for Comptons and pairs."<<endl;
-  }
-
-  return false;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Addition Christian Lang - Backproject
-bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum, double X1Position, double Y1Position,
-  double Z1Position, double X2Position, double Y2Position, double Z2Position)
-{
-  // Take over all the necessary event data and perform some elementary computations:
-  // the compton angle, the cone axis, the most probable origin of the gamma ray 
-  // if possible, the center of the cone. 
-
-  if (MBackprojectionCartesian::Assimilate(Event) == false) return false;
-
-  if (Event->GetType() == MPhysicalEvent::c_Compton) {
-    return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
-  } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
-    return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-  }
-  else  {
-    cout<<"Cartesian::Backproject only works for Comptons and pairs."<<endl;
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    return BackprojectionPET(Image, Bins, NUsedBins, Maximum);
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    return BackprojectionMulti(Image, Bins, NUsedBins, Maximum);
+  } else  {
+    cout<<"Near-field backprojection does not work for this event type: "<<Event->GetTypeString()<<endl;
   }
 
   return false;
 }
+
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -435,6 +417,8 @@ bool MBackprojectionNearField::BackprojectionCompton(double* Image, int* Bins, i
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+/*
 // Addition Christian Lang - BackprojectionComptonLine
 //---------------------------------------------------------
 bool MBackprojectionNearField::BackprojectionComptonLine(double* Image, int* Bins, int& NUsedBins, double& Maximum,
@@ -661,9 +645,10 @@ return false;
 }
 return true;
 }
+*/
+
 
 ////////////////////////////////////////////////////////////////////////////////
-
 
 
 bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
@@ -734,6 +719,140 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
   }
 
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Calculate the origin probabilities for a PET event
+bool MBackprojectionNearField::BackprojectionPET(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+{
+  cout<<"Backprojecting PET"<<endl;
+  
+  // Temporary dummy response:
+  double OneSigmaLineWidth = 0.3;
+  double GaussFactor = -0.5 / (OneSigmaLineWidth * OneSigmaLineWidth);
+  
+  MVector P1 = m_PET->GetPosition1();
+  MVector P2 = m_PET->GetPosition2();
+  
+  
+  unsigned int i = 0;
+  double InnerSum = 0.0;
+  double Content = 0.0;
+  double Distance = 0.0;
+  
+  // Let's fit a double gausshaped pair-event
+  for (unsigned int z = 0; z < m_x3NBins; ++z) {
+    for (unsigned int y = 0; y < m_x2NBins; ++y) {
+      for (unsigned int x = 0; x < m_x1NBins; ++x) {
+        i = x+y*m_x1NBins+z*m_x1NBins*m_x2NBins; // We fill each x-row
+        
+        MVector P(m_x1BinCenter[x], m_x2BinCenter[y], m_x3BinCenter[z]);
+        Distance = P.DistanceToLine(P1, P2);
+        
+        Content = exp(GaussFactor * Distance*Distance);
+                           
+        if (Content > 0.0) {
+          if (Maximum < Content) Maximum = Content;
+          InnerSum += Content;
+                             
+          Image[NUsedBins] = Content;
+          Bins[NUsedBins] = i;
+          ++NUsedBins;
+        }
+      }
+    }
+  }
+  
+  if (InRange(InnerSum) == false) {
+    merr<<"Catched a NaN!"<<endl;
+    merr<<m_C->ToString()<<endl;
+    return false;
+  }
+  
+  if (InnerSum < 0.00001) {
+    // Event not inside the viewport
+    return false;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Calculate the origin probabilities for a multi-event event
+bool MBackprojectionNearField::BackprojectionMulti(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+{
+  cout<<"Backprojecting multi..."<<endl;
+  
+  cout<<"Bins: "<<m_NImageBins<<endl;
+  double* BackprojectionImage = new double[m_NImageBins];
+  int* BackprojectionBins = new int[m_NImageBins];
+
+  for (unsigned int i = 0; i < m_NImageBins; ++i) {
+    Image[i] = 0.0;
+    Bins[i] = 0;
+    BackprojectionImage[i] = 0.0;
+    BackprojectionBins[i] = 0;
+  }
+  
+  
+  // Store the multi event since we want to assimilate the sub events one at a time
+  MMultiEvent* Multi = m_Multi;
+  
+  for (unsigned int i = 0; i < Multi->GetNumberOfEvents(); ++i) {
+    Assimilate(Multi->GetEvent(i));
+    NUsedBins = 0;
+    Backproject(Multi->GetEvent(i), BackprojectionImage, BackprojectionBins, NUsedBins, Maximum);
+    
+    // Now add / multiply:
+    if (i == 0) {
+      for (int b = 0; b < NUsedBins; ++b) {
+        Image[Bins[b]] = BackprojectionImage[b];
+      }
+    } else {
+      double* FullImage = new double[m_NImageBins];
+      for (unsigned int b = 0; b < m_NImageBins; ++b) {
+        FullImage[b] = 0.0;
+      }
+      for (int b = 0; b < NUsedBins; ++b) {
+        FullImage[Bins[b]] = BackprojectionImage[b];
+      }
+      for (unsigned int b = 0; b < m_NImageBins; ++b) {
+        Image[b] *= FullImage[b];
+      }
+    }
+  }
+  
+  // Determine bins;
+  NUsedBins = 0;
+  Maximum = 0;
+  double InnerSum = 0;
+  for (unsigned int i = 0; i < m_NImageBins; ++i) {
+    if (Image[i] > 0) {
+      if (Maximum < Image[i]) Maximum = Image[i];
+      InnerSum += Image[i];
+      
+      Image[NUsedBins] = Image[i];
+      Bins[NUsedBins] = i;
+      ++NUsedBins;
+    }
+  }
+  
+  // Now move back to the original event
+  Assimilate(Multi);
+  
+  if (InnerSum < 0.00001) {
+    cout<<"Event not inside viewport"<<endl;
+    // Event not inside the viewport
+    return false;
+  }
+  
+  return false;
 }
 
 

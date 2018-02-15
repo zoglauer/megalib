@@ -158,12 +158,22 @@ void MGUIEventSelection::Create()
     m_ComptonTrackedCB->SetState(kButtonDisabled);
   }
   m_UseTracked = m_Settings->GetEventTypeComptonTracked();
-
+  
   m_PairCB = new TGCheckButton(EventTypeFrame, "Pair-creation events", c_Pair);
   TGLayoutHints* PairCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_PairCB, PairCBLayout);
   m_PairCB->SetState((m_Settings->GetEventTypePair() == 1) ?  kButtonDown : kButtonUp);
-
+  
+  m_PETCB = new TGCheckButton(EventTypeFrame, "Positron emission tomograhy events", c_PET);
+  TGLayoutHints* PETCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
+  EventTypeFrame->AddFrame(m_PETCB, PETCBLayout);
+  m_PETCB->SetState((m_Settings->GetEventTypePET() == 1) ?  kButtonDown : kButtonUp);
+  
+  m_MultiCB = new TGCheckButton(EventTypeFrame, "Events consisting of multiple others", c_Multi);
+  TGLayoutHints* MultiCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
+  EventTypeFrame->AddFrame(m_MultiCB, MultiCBLayout);
+  m_MultiCB->SetState((m_Settings->GetEventTypeMulti() == 1) ?  kButtonDown : kButtonUp);
+  
   m_UnidentifiableCB = new TGCheckButton(EventTypeFrame, "Unidentifiable events", c_Unidentifiable);
   TGLayoutHints* UnidentifiableCBLayout = new TGLayoutHints(kLHintsLeft, LeftGap+10, RightGap, 5, 0);
   EventTypeFrame->AddFrame(m_UnidentifiableCB, UnidentifiableCBLayout);
@@ -1152,10 +1162,12 @@ bool MGUIEventSelection::OnApply()
   if (m_ComptonCB->GetState() == kButtonUp && 
       m_PairCB->GetState()  == kButtonUp && 
       m_PhotoCB->GetState() == kButtonUp && 
+      m_PETCB->GetState() == kButtonUp && 
+      m_MultiCB->GetState() == kButtonUp && 
       m_UnidentifiableCB->GetState() == kButtonUp) {
     new TGMsgBox(gClient->GetRoot(), this, "Type error", 
-                 "You have to choose one of these event-types:"
-                 " Compton events and/or pair events and/or photo events", kMBIconStop, kMBOk);
+                 "You have to choose at least one of these event-types:"
+                 " Compton / pair / photo / PET / multi / unidentifiable", kMBIconStop, kMBOk);
     return false;
   }
   if (m_ComptonCB->GetState() == kButtonDown && 
@@ -1245,6 +1257,8 @@ bool MGUIEventSelection::OnApply()
   if (m_Settings->GetEventTypeComptonTracked() != m_UseTracked) m_Settings->SetEventTypeComptonTracked(m_UseTracked);
   if (m_Settings->GetEventTypePair() != ((m_PairCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypePair((m_PairCB->GetState() == kButtonDown) ? 1 : 0);
   if (m_Settings->GetEventTypePhoto() != ((m_PhotoCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypePhoto((m_PhotoCB->GetState() == kButtonDown) ? 1 : 0); 
+  if (m_Settings->GetEventTypePET() != ((m_PETCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypePET((m_PETCB->GetState() == kButtonDown) ? 1 : 0); 
+  if (m_Settings->GetEventTypeMulti() != ((m_MultiCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypeMulti((m_MultiCB->GetState() == kButtonDown) ? 1 : 0); 
   if (m_Settings->GetEventTypeUnidentifiable() != ((m_UnidentifiableCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypeUnidentifiable((m_UnidentifiableCB->GetState() == kButtonDown) ? 1 : 0);
   if (m_Settings->GetEventTypeDecay() != ((m_DecayCB->GetState() == kButtonDown) ? 1 : 0)) m_Settings->SetEventTypeDecay((m_DecayCB->GetState() == kButtonDown) ? 1 : 0);
 

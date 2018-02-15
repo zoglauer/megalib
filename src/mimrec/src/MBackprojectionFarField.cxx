@@ -321,7 +321,7 @@ bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-
+/*
 // Addition Christian Lang - Backproject
 //---------------------------------------------------------
 bool MBackprojectionFarField::Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double&
@@ -345,7 +345,7 @@ cout<<"Error: Unknown event type for imaging: "<<Event->GetType()<<". Skipping e
 return false;
 }
 
-
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////

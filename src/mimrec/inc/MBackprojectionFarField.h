@@ -43,15 +43,6 @@ class MBackprojectionFarField : public MBackprojection
   virtual void PrepareBackprojection();
   //! The entry point into the backprojection
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum);
-  
-  
-  //Addition Christian Lang
-  //---------------------------------------------------------
-  virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins,
-  int& NUsedBins, double& Maximum, double X1Position, double Y1Position,
-  double Z1Position, double X2Position, double Y2Position, double Z2Position);
-  
-  //---------------------------------------------------------
 
   //! Set the viewport / image dimensions
   virtual bool SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
@@ -66,14 +57,13 @@ class MBackprojectionFarField : public MBackprojection
   //! Assimilate the event data - stores parts of the event data in the class for acceleration pruposes
   virtual bool Assimilate(MPhysicalEvent* Event);
 
-  //! Calculate the repsonse of a Compton event
+  //! Calculate the origin probabilities for a Compton event
   bool BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum);
-  //! Calculate the repsonse of a Pair event
+  //! Calculate the origin probabilities for a Pair event
   bool BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum);
-  //! Calculate the repsonse of a Photo event
+  //! Calculate the origin probabilities for a Photo event
   bool BackprojectionPhoto(double* Image, int* Bins, int& NUsedBins, double& Maximum);
-
-
+  
 
   bool ConeCenter();
 

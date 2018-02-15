@@ -144,7 +144,9 @@ MEventSelector::MEventSelector()
   m_UseTrackedComptons = true;
   m_UseNotTrackedComptons = true;
   m_UseUnidentifiables = true;
-
+  m_UsePETs = true;
+  m_UseMulties = true;
+  
   m_UseDecays = true;
   m_UseFlaggedAsBad = false;
 
@@ -271,7 +273,9 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_UseTrackedComptons = EventSelector.m_UseTrackedComptons;                
   m_UseNotTrackedComptons = EventSelector.m_UseNotTrackedComptons;              
   m_UseUnidentifiables = EventSelector.m_UseUnidentifiables;              
-                                                                               
+  m_UsePETs = EventSelector.m_UsePETs;              
+  m_UseMulties = EventSelector.m_UseMulties;              
+  
   m_UseDecays = EventSelector.m_UseDecays;                         
   m_UseFlaggedAsBad = EventSelector.m_UseFlaggedAsBad;                         
 
@@ -301,6 +305,8 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NRejectedUseComptons = EventSelector.m_NRejectedUseComptons;               
   m_NRejectedUseMuons = EventSelector.m_NRejectedUseMuons;                 
   m_NRejectedUseUnidentifiables = EventSelector.m_NRejectedUseUnidentifiables;              
+  m_NRejectedUsePETs = EventSelector.m_NRejectedUsePETs;              
+  m_NRejectedUseMulties = EventSelector.m_NRejectedUseMulties;              
   m_NRejectedUseDecays = EventSelector.m_NRejectedUseDecays;                
   m_NRejectedUseFlaggedAsBad = EventSelector.m_NRejectedUseFlaggedAsBad;                
   m_NRejectedUseTrackedComptons = EventSelector.m_NRejectedUseTrackedComptons;              
@@ -349,6 +355,8 @@ void MEventSelector::Reset()
   m_NRejectedUseComptons = 0;
   m_NRejectedUseMuons = 0;
   m_NRejectedUseUnidentifiables = 0;
+  m_NRejectedUsePETs = 0;
+  m_NRejectedUseMulties = 0;
   m_NRejectedUseTrackedComptons = 0;
   m_NRejectedUseNotTrackedComptons = 0;
   m_NRejectedUseDecays = 0;
@@ -382,13 +390,17 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   
   SetTimeWalk(S->GetTimeWalkRangeMin(), S->GetTimeWalkRangeMax());
 
-  UseUnidentifiables(S->GetEventTypeUnidentifiable());
   UsePhotos(S->GetEventTypePhoto());
-  UseDecays(S->GetEventTypeDecay());
   UsePairs(S->GetEventTypePair());
   UseComptons(S->GetEventTypeCompton());
   UseTrackedComptons(S->GetEventTypeComptonTracked());
   UseNotTrackedComptons(S->GetEventTypeComptonNotTracked());
+  UsePETs(S->GetEventTypePET());
+  UseMulties(S->GetEventTypeMulti());
+  
+  
+  UseDecays(S->GetEventTypeDecay());
+  UseUnidentifiables(S->GetEventTypeUnidentifiable());
 
   UseFlaggedAsBad(S->GetFlaggedAsBad());
 
@@ -985,9 +997,15 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
       Return = false;
     }
   } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+    if (DumpOutput == true) {
+      cout<<"ID "<<Event->GetId()<<": Unwanted muon event!"<<endl;
+    }
     m_NRejectedUseMuons++;
     Return = false;
   } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
+    if (DumpOutput == true) {
+      cout<<"ID "<<Event->GetId()<<": Unwanted decay event!"<<endl;
+    }
     m_NRejectedUseDecays++;
     Return = false;
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
@@ -996,6 +1014,22 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
         cout<<"ID "<<Event->GetId()<<": Unwanted unidentifiable event!"<<endl;
       }
       m_NRejectedUseUnidentifiables++;
+      Return = false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    if (m_UsePETs == false) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Unwanted PET event!"<<endl;
+      }
+      m_NRejectedUsePETs++;
+      Return = false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    if (m_UseMulties == false) {
+      if (DumpOutput == true) {
+        cout<<"ID "<<Event->GetId()<<": Unwanted multi event!"<<endl;
+      }
+      m_NRejectedUseMulties++;
       Return = false;
     }
   } else {
@@ -1174,6 +1208,14 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
     return false;
   } else if (Event->GetType() == MPhysicalEvent::c_Decay) {
     return false;
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    if (m_UsePETs == false) {
+      return false;
+    }
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    if (m_UseMulties == false) {
+      return false;
+    }
   } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
     return false;
   } else {
@@ -1775,8 +1817,30 @@ void MEventSelector::UsePairs(bool Pairs)
 void MEventSelector::UsePhotos(bool Photos)
 {
   // Pass through/Neglect photos
-
+  
   m_UsePhotos = Photos;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::UsePETs(bool PETs)
+{
+  // Pass through/Neglect PET events
+  
+  m_UsePETs = PETs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::UseMulties(bool Multies)
+{
+  // Pass through/Neglect PET events
+  
+  m_UseMulties = Multies;
 }
 
 
@@ -1822,85 +1886,49 @@ MString MEventSelector::ToString()
 
   s<<"Rejection reasons:"<<endl;
   s<<endl;
-  s<<"Not good  ......................  "
-   <<m_NRejectedIsGood<<endl;
-  s<<"Event Id .......................  "
-   <<m_NRejectedEventId<<endl;
-  s<<"Start detector .................  "
-   <<m_NRejectedStartDetector<<endl;
-  s<<"Beam  ..........................  "
-   <<m_NRejectedBeam<<endl;
-  s<<"Total energy  ..................  "
-   <<m_NRejectedTotalEnergy<<endl;
-  s<<"Time  ..........................  "
-   <<m_NRejectedTime<<endl;
-  s<<"Time walk  .....................  "
-   <<m_NRejectedTimeWalk<<endl;
-  s<<"Electron energy  ...............  "
-   <<m_NRejectedElectronEnergy<<endl;
-  s<<"Gamma energy  ..................  "
-   <<m_NRejectedGammaEnergy<<endl;
-  s<<"Compton angle  .................  "
-   <<m_NRejectedComptonAngle<<endl;
-  s<<"First Lever arm  ...............  "
-   <<m_NRejectedFirstLeverArm<<endl;
-  s<<"Any lever arm  .................  "
-   <<m_NRejectedLeverArm<<endl;
-  s<<"Length Compton sequence ........  "
-   <<m_NRejectedSequenceLength<<endl;
-  s<<"Clustering quality factor ......  "
-   <<m_NRejectedClusteringQualityFactor<<endl;
-  s<<"Compton quality factor .........  "
-   <<m_NRejectedComptonQualityFactor<<endl;
-  s<<"Track quality factor ...........  "
-   <<m_NRejectedTrackQualityFactor<<endl;
-  s<<"Coincidence window .............  "
-   <<m_NRejectedCoincidenceWindow<<endl;
-  s<<"Earth-Horizon cut ..............  "
-   <<m_NRejectedEarthHorizonCut<<endl;
-  s<<"Pointing .......................  "
-   <<m_NRejectedPointing<<endl;
-  s<<"Max. theta deviation ...........  "
-   <<m_NRejectedThetaDeviationMax<<endl;
-  s<<"Max. ARM .......................  "
-   <<m_NRejectedARM<<endl;
-  s<<"Max. SPD .......................  "
-   <<m_NRejectedSPD<<endl;
-  s<<"Length track ...................  "
-   <<m_NRejectedTrackLength<<endl;
-  s<<"Opening angle pair  ............  "
-   <<m_NRejectedOpeningAnglePair<<endl;
-  s<<"Initial energy deposit pair  ...  "
-   <<m_NRejectedInitialEnergyDepositPair<<endl;
-  s<<"Pair quality factor ............  "
-   <<m_NRejectedPairQualityFactor<<endl;
-  s<<"Use photos  ....................  "
-   <<m_NRejectedUsePhotos<<endl;
-  s<<"Use pairs  .....................  "
-   <<m_NRejectedUsePairs<<endl;
-  s<<"Use Compton  ...................  "
-   <<m_NRejectedUseComptons<<endl;
-  s<<"Use tracked Compton  ...........  "
-   <<m_NRejectedUseTrackedComptons<<endl;
-  s<<"Use not tracked Compton  .......  "
-   <<m_NRejectedUseNotTrackedComptons<<endl;
-  s<<"Use muons  .....................  "
-   <<m_NRejectedUseMuons<<endl;
-  s<<"Use unidentifiables  ...........  "
-   <<m_NRejectedUseUnidentifiables<<endl;
-  s<<"Use decays  ....................  "
-   <<m_NRejectedUseDecays<<endl;
-  s<<"Use flagged as bad  ............  "
-   <<m_NRejectedUseFlaggedAsBad<<endl;
+  s<<"Not good  ......................  "<<m_NRejectedIsGood<<endl;
+  s<<"Event Id .......................  "<<m_NRejectedEventId<<endl;
+  s<<"Start detector .................  "<<m_NRejectedStartDetector<<endl;
+  s<<"Beam  ..........................  "<<m_NRejectedBeam<<endl;
+  s<<"Total energy  ..................  "<<m_NRejectedTotalEnergy<<endl;
+  s<<"Time  ..........................  "<<m_NRejectedTime<<endl;
+  s<<"Time walk  .....................  "<<m_NRejectedTimeWalk<<endl;
+  s<<"Electron energy  ...............  "<<m_NRejectedElectronEnergy<<endl;
+  s<<"Gamma energy  ..................  "<<m_NRejectedGammaEnergy<<endl;
+  s<<"Compton angle  .................  "<<m_NRejectedComptonAngle<<endl;
+  s<<"First Lever arm  ...............  "<<m_NRejectedFirstLeverArm<<endl;
+  s<<"Any lever arm  .................  "<<m_NRejectedLeverArm<<endl;
+  s<<"Length Compton sequence ........  "<<m_NRejectedSequenceLength<<endl;
+  s<<"Clustering quality factor ......  "<<m_NRejectedClusteringQualityFactor<<endl;
+  s<<"Compton quality factor .........  "<<m_NRejectedComptonQualityFactor<<endl;
+  s<<"Track quality factor ...........  "<<m_NRejectedTrackQualityFactor<<endl;
+  s<<"Coincidence window .............  "<<m_NRejectedCoincidenceWindow<<endl;
+  s<<"Earth-Horizon cut ..............  "<<m_NRejectedEarthHorizonCut<<endl;
+  s<<"Pointing .......................  "<<m_NRejectedPointing<<endl;
+  s<<"Max. theta deviation ...........  "<<m_NRejectedThetaDeviationMax<<endl;
+  s<<"Max. ARM .......................  "<<m_NRejectedARM<<endl;
+  s<<"Max. SPD .......................  "<<m_NRejectedSPD<<endl;
+  s<<"Length track ...................  "<<m_NRejectedTrackLength<<endl;
+  s<<"Opening angle pair  ............  "<<m_NRejectedOpeningAnglePair<<endl;
+  s<<"Initial energy deposit pair  ...  "<<m_NRejectedInitialEnergyDepositPair<<endl;
+  s<<"Pair quality factor ............  "<<m_NRejectedPairQualityFactor<<endl;
+  s<<"Use photos  ....................  "<<m_NRejectedUsePhotos<<endl;
+  s<<"Use pairs  .....................  "<<m_NRejectedUsePairs<<endl;
+  s<<"Use Compton  ...................  "<<m_NRejectedUseComptons<<endl;
+  s<<"Use tracked Compton  ...........  "<<m_NRejectedUseTrackedComptons<<endl;
+  s<<"Use not tracked Compton  .......  "<<m_NRejectedUseNotTrackedComptons<<endl;
+  s<<"Use muons  .....................  "<<m_NRejectedUseMuons<<endl;
+  s<<"Use PET  .......................  "<<m_NRejectedUsePETs<<endl;
+  s<<"Use multi  .....................  "<<m_NRejectedUseMulties<<endl;
+  s<<"Use unidentifiables  ...........  "<<m_NRejectedUseUnidentifiables<<endl;
+  s<<"Use decays  ....................  "<<m_NRejectedUseDecays<<endl;
+  s<<"Use flagged as bad  ............  "<<m_NRejectedUseFlaggedAsBad<<endl;
   if (m_NRejectedQuickHack > 0) {
-    s<<"Quick hack  ....................  "
-     <<m_NRejectedQuickHack<<endl;
+    s<<"Quick hack  ....................  "<<m_NRejectedQuickHack<<endl;
   }
   s<<endl;
-  s<<"ACCEPTED  ......................  "
-   <<m_NAccepted<<endl;
-  s<<"ANALYZED  ......................  "
-   <<m_NAnalyzed<<endl;
+  s<<"ACCEPTED  ......................  "<<m_NAccepted<<endl;
+  s<<"ANALYZED  ......................  "<<m_NAnalyzed<<endl;
 
   return s.str().c_str();
 }
@@ -1911,20 +1939,15 @@ MString MEventSelector::ToString()
 
 ostream& operator<<(ostream& os, MEventSelector& S)
 {
-  os<<"Use photo effect events:          "
-    <<((S.m_UsePhotos == true) ? "true" : "false")<<endl;
-  os<<"Use Compton scattering events:    "
-    <<((S.m_UseComptons == true) ? "true" : "false")<<endl;
-  os<<"Use tracked Compton:              "
-    <<((S.m_UseTrackedComptons == true) ? "true" : "false")<<endl;
-  os<<"Use not tracked Compton:          "
-    <<((S.m_UseNotTrackedComptons == true) ? "true" : "false")<<endl;
-  os<<"Use pair creation events:         "
-    <<((S.m_UsePairs == true) ? "true" : "false")<<endl;
-  os<<"Use decays:                       "
-    <<((S.m_UseDecays == true) ? "true" : "false")<<endl;
-  os<<"Use events flagged as bad:        "
-    <<((S.m_UseFlaggedAsBad == true) ? "true" : "false")<<endl;
+  os<<"Use photo effect events:          "<<((S.m_UsePhotos == true) ? "true" : "false")<<endl;
+  os<<"Use Compton scattering events:    "<<((S.m_UseComptons == true) ? "true" : "false")<<endl;
+  os<<"Use tracked Compton:              "<<((S.m_UseTrackedComptons == true) ? "true" : "false")<<endl;
+  os<<"Use not tracked Compton:          "<<((S.m_UseNotTrackedComptons == true) ? "true" : "false")<<endl;
+  os<<"Use pair creation events:         "<<((S.m_UsePairs == true) ? "true" : "false")<<endl;
+  os<<"Use PET events:                   "<<((S.m_UsePETs == true) ? "true" : "false")<<endl;
+  os<<"Use multi events:                 "<<((S.m_UseMulties == true) ? "true" : "false")<<endl;
+  os<<"Use decays:                       "<<((S.m_UseDecays == true) ? "true" : "false")<<endl;
+  os<<"Use events flagged as bad:        "<<((S.m_UseFlaggedAsBad == true) ? "true" : "false")<<endl;
 
   if (S.m_Geometry != 0) {
     os<<"Not allowed start detectors:      ";
@@ -1935,59 +1958,35 @@ ostream& operator<<(ostream& os, MEventSelector& S)
     os<<endl;
   }
 
-  os<<"Beam radius:                      "
-    <<S.m_BeamRadius<<endl;
-  os<<"Beam depth:                       "
-    <<S.m_BeamDepth<<endl;
-  os<<"First energy window:              "
-    <<S.m_FirstTotalEnergyMin<<"-"<<S.m_FirstTotalEnergyMax<<endl;
-  os<<"Second energy window:             "
-    <<S.m_SecondTotalEnergyMin<<"-"<<S.m_SecondTotalEnergyMax<<endl;
-  os<<"Time window:                      "
-    <<S.m_TimeMin<<"-"<<S.m_TimeMax<<endl;
-  os<<"Time walk window:                 "
-    <<S.m_TimeWalkMin<<"-"<<S.m_TimeWalkMax<<endl;
-  os<<"Recoil electron energy window:    "
-    <<S.m_ElectronEnergyMin<<"-"<<S.m_ElectronEnergyMax<<endl;
-  os<<"Scatter gamma-ray energy window:  "
-    <<S.m_GammaEnergyMin<<"-"<<S.m_GammaEnergyMax<<endl;
-  os<<"Compton scatter angle:            "
-    <<S.m_ComptonAngleMin<<"-"<<S.m_ComptonAngleMax<<endl;
-  os<<"Any lever arm:                    "
-    <<S.m_LeverArmMin<<"-"<<S.m_LeverArmMax<<endl;
-  os<<"First lever arm:                  "
-    <<S.m_FirstLeverArmMin<<"-"<<S.m_FirstLeverArmMax<<endl;
-  os<<"Compton squence length:           "
-    <<S.m_SequenceLengthMin<<"-"<<S.m_SequenceLengthMax<<endl;
-  os<<"First track's length:             "
-    <<S.m_TrackLengthMin<<"-"<<S.m_TrackLengthMax<<endl;
-  os<<"Clustering quality factor:        "
-    <<S.m_ClusteringQualityFactorMin<<"-"<<S.m_ClusteringQualityFactorMax<<endl;
-  os<<"Compton quality factor:           "
-    <<S.m_ComptonQualityFactorMin<<"-"<<S.m_ComptonQualityFactorMax<<endl;
-  os<<"Track quality factor:             "
-    <<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
-  os<<"Coincidence window:               "
-    <<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
-  os<<"Event ID:                         "
-    <<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
-  os<<"Earth horizon cut:                "
-    <<S.m_EarthHorizon<<endl;
-  os<<"Max. theta deviation              "
-    <<S.m_ThetaDeviationMax<<endl;
-  os<<"Max. ARM                          "
-    <<S.m_ARMMax<<endl;
-  os<<"Max. SPD                          "
-    <<S.m_SPDMax<<endl;
-  os<<"Initial energy deposit pair:      "
-    <<S.m_InitialEnergyDepositPairMin<<"-"<<S.m_InitialEnergyDepositPairMax<<endl;
-  os<<"Opening angle pair:               "
-    <<S.m_OpeningAnglePairMin<<"-"<<S.m_OpeningAnglePairMax<<endl;
-  os<<"Pair quality factor:              "
-    <<S.m_PairQualityFactorMin<<"-"<<S.m_PairQualityFactorMax<<endl;
+  os<<"Beam radius:                      "<<S.m_BeamRadius<<endl;
+  os<<"Beam depth:                       "<<S.m_BeamDepth<<endl;
+  os<<"First energy window:              "<<S.m_FirstTotalEnergyMin<<"-"<<S.m_FirstTotalEnergyMax<<endl;
+  os<<"Second energy window:             "<<S.m_SecondTotalEnergyMin<<"-"<<S.m_SecondTotalEnergyMax<<endl;
+  os<<"Time window:                      "<<S.m_TimeMin<<"-"<<S.m_TimeMax<<endl;
+  os<<"Time walk window:                 "<<S.m_TimeWalkMin<<"-"<<S.m_TimeWalkMax<<endl;
+  os<<"Recoil electron energy window:    "<<S.m_ElectronEnergyMin<<"-"<<S.m_ElectronEnergyMax<<endl;
+  os<<"Scatter gamma-ray energy window:  "<<S.m_GammaEnergyMin<<"-"<<S.m_GammaEnergyMax<<endl;
+  os<<"Compton scatter angle:            "<<S.m_ComptonAngleMin<<"-"<<S.m_ComptonAngleMax<<endl;
+  os<<"Any lever arm:                    "<<S.m_LeverArmMin<<"-"<<S.m_LeverArmMax<<endl;
+  os<<"First lever arm:                  "<<S.m_FirstLeverArmMin<<"-"<<S.m_FirstLeverArmMax<<endl;
+  os<<"Compton squence length:           "<<S.m_SequenceLengthMin<<"-"<<S.m_SequenceLengthMax<<endl;
+  os<<"First track's length:             "<<S.m_TrackLengthMin<<"-"<<S.m_TrackLengthMax<<endl;
+  os<<"Clustering quality factor:        "<<S.m_ClusteringQualityFactorMin<<"-"<<S.m_ClusteringQualityFactorMax<<endl;
+  os<<"Compton quality factor:           "<<S.m_ComptonQualityFactorMin<<"-"<<S.m_ComptonQualityFactorMax<<endl;
+  os<<"Track quality factor:             "<<S.m_TrackQualityFactorMin<<"-"<<S.m_TrackQualityFactorMax<<endl;
+  os<<"Coincidence window:               "<<S.m_CoincidenceWindowMin<<"-"<<S.m_CoincidenceWindowMax<<endl;
+  os<<"Event ID:                         "<<S.m_EventIdMin<<"-"<<S.m_EventIdMax<<endl;
+  os<<"Earth horizon cut:                "<<S.m_EarthHorizon<<endl;
+  os<<"Max. theta deviation              "<<S.m_ThetaDeviationMax<<endl;
+  os<<"Max. ARM                          "<<S.m_ARMMax<<endl;
+  os<<"Max. SPD                          "<<S.m_SPDMax<<endl;
+  os<<"Initial energy deposit pair:      "<<S.m_InitialEnergyDepositPairMin<<"-"<<S.m_InitialEnergyDepositPairMax<<endl;
+  os<<"Opening angle pair:               "<<S.m_OpeningAnglePairMin<<"-"<<S.m_OpeningAnglePairMax<<endl;
+  os<<"Pair quality factor:              "<<S.m_PairQualityFactorMin<<"-"<<S.m_PairQualityFactorMax<<endl;
 
   return os;
 }
+
 
 // MEventSelector.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

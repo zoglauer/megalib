@@ -84,6 +84,8 @@ class MGUIEventSelection : public MGUIDialog
   TGCheckButton* m_ComptonTrackedCB;
   TGCheckButton* m_PairCB;
   TGCheckButton* m_PhotoCB;
+  TGCheckButton* m_PETCB;
+  TGCheckButton* m_MultiCB;
   TGCheckButton* m_UnidentifiableCB;
   TGCheckButton* m_DecayCB;
 
@@ -167,6 +169,8 @@ class MGUIEventSelection : public MGUIDialog
                    c_ComptonTracked, 
                    c_Pair, 
                    c_Photo, 
+                   c_PET, 
+                   c_Multi, 
                    c_Unidentifiable, 
                    c_Decay,
                    c_Bad,

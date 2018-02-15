@@ -3717,7 +3717,6 @@ void MInterfaceMimrec::EnergySpectra()
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
 
-    // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;

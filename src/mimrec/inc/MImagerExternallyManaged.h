@@ -68,9 +68,7 @@ class MImagerExternallyManaged : public MImager
   
  // Addition from Christian Lang
   //---------------------------------------------------------
-  MBPData* CalculateResponseSliceLine(MPhysicalEvent* Event, double X1Position,
-  double Y1Position, double Z1Position, double X2Position, double Y2Position,
-  double Z2Position);
+  //MBPData* CalculateResponseSliceLine(MPhysicalEvent* Event, double X1Position, double Y1Position, double Z1Position, double X2Position, double Y2Position, double Z2Position);
 //------------------------------------------------------------
 
   // protected methods:

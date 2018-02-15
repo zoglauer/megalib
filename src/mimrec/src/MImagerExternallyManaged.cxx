@@ -276,7 +276,7 @@ MBPData* MImagerExternallyManaged::CalculateResponseSlice(MPhysicalEvent* Event)
 // Addition Christian Lang - CalculateResponseSliceLine
 //---------------------------------------------------------
 
-
+/*
 MBPData* MImagerExternallyManaged::CalculateResponseSliceLine(MPhysicalEvent* Event, double X1Position, double
 Y1Position, double Z1Position, double X2Position, double Y2Position, double Z2Position)
 {
@@ -349,7 +349,7 @@ cout<<"Out of memory..."<<endl;
 
   return Data;
 }
-
+*/
 
 
 // MImagerExternallyManaged: the end...

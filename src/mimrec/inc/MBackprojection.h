@@ -48,13 +48,6 @@ class MBackprojection : public MProjection, public MViewPort
   virtual void PrepareBackprojection();  
   //virtual bool Backproject(MPhysicalEvent* Event, double* Image) = 0;
   virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins, int& NUsedBins, double& Maximum) = 0;
-  
-  // Addition by Christian Lang
-  //---------------------------------------------------------
-  virtual bool Backproject(MPhysicalEvent* Event, double* Image, int* Bins,
-  int& NUsedBins, double& Maximum, double X1Position, double Y1Position,
-  double Z1Position, double X2Position, double Y2Position, double Z2Position) = 0;
-  //-----------------------------------------------------------
 
   //! Set the geometry
   virtual void SetGeometry(MDGeometryQuest* Geometry) { m_Geometry = Geometry; }
