@@ -139,6 +139,8 @@ class MPhysicalEvent : public MRotationInterface
   static const int c_Shower;
   static const int c_Photo;
   static const int c_Decay;
+  static const int c_PET;
+  static const int c_Multi;
   static const int c_Unidentifiable;
 
 

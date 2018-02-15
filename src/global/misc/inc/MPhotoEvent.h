@@ -51,7 +51,6 @@ class MPhotoEvent : public MPhysicalEvent
   // Basic data:
   void SetEnergy(const double Energy) { m_Energy = Energy; }
   virtual double GetEnergy() const { return m_Energy; }
-  virtual double Ei() const { return m_Energy; }
   
   void SetPosition(const MVector& Position) { m_Position = Position; }
   //! Get the position of the event - this is the location of the initial interaction!

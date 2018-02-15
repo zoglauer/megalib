@@ -38,7 +38,10 @@
 #include "MPairEvent.h"
 #include "MPhotoEvent.h"
 #include "MMuonEvent.h"
+#include "MPETEvent.h"
+#include "MMultiEvent.h"
 #include "MUnidentifiableEvent.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -381,6 +384,18 @@ MPhysicalEvent* MFileEventsTra::ReadNextEvent()
         break;
       } else  if (Line[3] == 'M' && Line[4] == 'U') {
         MMuonEvent* P = new MMuonEvent();
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
+        m_EventType = MPhysicalEvent::c_Muon;
+        Phys = (MPhysicalEvent*) P;
+        break;
+      } else  if (Line[3] == 'P' && Line[4] == 'T') {
+        MPETEvent* P = new MPETEvent();
+        P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
+        m_EventType = MPhysicalEvent::c_Muon;
+        Phys = (MPhysicalEvent*) P;
+        break;
+      } else  if (Line[3] == 'M' && Line[4] == 'T') {
+        MMultiEvent* P = new MMultiEvent();
         P->Stream(*this, m_Version, true, m_Fast, m_ParseDelayed);
         m_EventType = MPhysicalEvent::c_Muon;
         Phys = (MPhysicalEvent*) P;
