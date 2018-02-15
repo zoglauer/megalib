@@ -1,0 +1,40 @@
+# Example run for Cosima
+# A Crab-like source in the zenith on cosmic and albedo photon background
+
+
+# Global parameters
+Version                      1
+Geometry                     ComptonPET.geo.setup
+
+# Physics list
+PhysicsListEM                LivermorePol
+
+# Output formats
+StoreSimulationInfo          all
+
+# Run & source parameters
+Run Na22
+Na22.FileName             Na22
+Na22.Time                 60.0
+
+
+Na22.Source High_Solo
+High_Solo.ParticleType             1
+High_Solo.Beam                     PointSource -1 0.5 1
+High_Solo.Spectrum                 Mono 1274.5
+High_Solo.Flux                     { 0.097 * 1000000 }
+
+Na22.Source High_multi
+High_multi.ParticleType            1
+High_multi.Beam                    PointSource -1 0.5 1  
+High_multi.Spectrum                Mono 1274.5
+High_multi.Flux                    { 0.903 * 1000000 }
+High_multi.Successor               Pos511A_multi
+
+Na22.Source Pos511A_multi
+Pos511A_multi.ParticleType         2
+Pos511A_multi.Beam                 PointSource -1 0.5 1  
+Pos511A_multi.Spectrum             Mono 1
+Pos511A_multi.IsSuccessor          true
+
+
