@@ -147,8 +147,8 @@ bool MResponseStripPairingTMVAEventFile::ParseOptions(const MString& Options)
   
   // Dump it for user info
   mout<<endl;
-  mout<<"Choosen options for creating TMVA quality data files:"<<endl;
-  mout<<"  Path to first IA:          "<<(m_UsePathToFirstIA == true ? "true" : "false")<<endl;
+  //mout<<"Choosen options for creating TMVA strip pairing data files:"<<endl;
+  //mout<<"  Path to first IA:          "<<(m_UsePathToFirstIA == true ? "true" : "false")<<endl;
   mout<<endl;
   
   return true;
@@ -167,6 +167,12 @@ bool MResponseStripPairingTMVAEventFile::Initialize()
 
   // Turn off any noising
   m_ReGeometry->ActivateNoising(false);
+  
+  // We ignore the loaded configuration file
+  m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
+  m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
+  m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
   
   // Start pre-analysis
   if (m_ReReader->PreAnalysis() == false) return false;
@@ -203,6 +209,29 @@ bool MResponseStripPairingTMVAEventFile::Save()
   // Nothing here, only save at the end
   
   return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Shuffle the strips
+void MResponseStripPairingTMVAEventFile::ShuffleStrips(vector<unsigned int>& StripIDs, vector<double>& Energies)
+{
+  unsigned int size = StripIDs.size();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    
+    unsigned int TempID = StripIDs[To];
+    StripIDs[To] = StripIDs[From];
+    StripIDs[From] = TempID;
+    
+    unsigned int TempEnergy = Energies[To];
+    Energies[To] = Energies[From];
+    Energies[From] = TempEnergy;
+  }  
 }
 
 
@@ -355,8 +384,19 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
       }
       Ignore[s2] = true;      
     }
+    
+    // (b) Shuffle -- otherwise we will get patterns...
+    ShuffleStrips(XStripIDs, XStripEnergies);
+    ShuffleStrips(YStripIDs, YStripEnergies);
+    
 
-    // (b) Create origin list
+    // (c) Create list of hit intersection
+    
+    // All intersections
+    unsigned int NIntersections = 0;
+    bool UndetectedHit = false;
+    vector<double> AllIntersections(XStripIDs.size() * YStripIDs.size(), 0.0); // sorting x + y*XStripIDs.size()
+    
     vector<unsigned int> EvaluationXStripIDs;
     vector<unsigned int> EvaluationYStripIDs;
     for (int O: AllOrigins) {
@@ -364,16 +404,32 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
       if (StripVolumeSequences[s1]->GetDetectorVolume()->GetShape()->IsInside(PositionInDetector) == true) {
         MDGridPoint GP = StripVolumeSequences[s1]->GetDetector()->GetGridPoint(PositionInDetector);
         if (GP.GetType() != MDGridPoint::c_Unknown) {
-          bool Found = false;
-          for (unsigned int i = 0; i < EvaluationXStripIDs.size(); ++i) {
-            if (EvaluationXStripIDs[i] == GP.GetXGrid() && EvaluationYStripIDs[i] == GP.GetYGrid()) {
-              Found = true;
+          
+          bool xFound = false;
+          unsigned int xID = 0;
+          for (unsigned int i = 0; i < XStripIDs.size(); ++i) {
+            if (GP.GetXGrid() == XStripIDs[i]) {
+              xFound = true;
+              xID = i;
               break;
             }
           }
-          if (Found == false) {
-            EvaluationXStripIDs.push_back(GP.GetXGrid());
-            EvaluationYStripIDs.push_back(GP.GetYGrid());
+          bool yFound = false;
+          unsigned int yID = 0;
+          for (unsigned int i = 0; i < YStripIDs.size(); ++i) {
+            if (GP.GetYGrid() == YStripIDs[i]) {
+              yFound = true;
+              yID = i;
+              break;
+            }
+          }
+          if (xFound && yFound == true) {
+            if (AllIntersections[xID + yID*XStripIDs.size()] == 0.0) {
+              AllIntersections[xID + yID*XStripIDs.size()] = 1.0;
+              ++NIntersections;
+            }
+          } else {
+            UndetectedHit = true; 
           }
         }
       }
@@ -386,7 +442,7 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEventData(RE->GetEventID(), XStripIDs, YStripIDs, XStripEnergies, YStripEnergies) == false) {
       continue;
     }
-    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillEvaluationInteractions(EvaluationXStripIDs, EvaluationYStripIDs) == false) {
+    if (m_DataSets[XStripIDs.size()][YStripIDs.size()]->FillResultData(NIntersections, UndetectedHit, AllIntersections) == false) {
       continue;
     }
     

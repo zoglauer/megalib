@@ -61,27 +61,29 @@ class MERStripPairingDataSet
   bool FillEventData(Long64_t ID, vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs, vector<double>& XStripEnergies, vector<double>& YStripEnergies);
   
   //! Fill the evaluation section, the real interaction positions
-  bool FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs);
+  bool FillResultData(unsigned int NInteractions, bool UndetectedInteractions, vector<double>& Interactions);
 
   
   
   //! Simulation ID -- might overflow but this is just for diagnostics
-  Int_t m_SimulationID;
+  Float_t m_SimulationID;
   //! The IDs of the triggered x strips
-  vector<Int_t> m_XStripIDs;
+  vector<Float_t> m_XStripIDs;
   //! The IDs of the triggered y strips
-  vector<Int_t> m_YStripIDs;
+  vector<Float_t> m_YStripIDs;
   //! The deposited energies in the x strips
   vector<Float_t> m_XStripEnergies;
   //! The deposited energies in the y strips
   vector<Float_t> m_YStripEnergies;
   
-  //! The IDs of the hit x strips
-  vector<Int_t> m_EvaluationXStripIDs;
-  //! The IDs of the hit y strips
-  vector<Int_t> m_EvaluationYStripIDs;
-  
-  
+  //! The number of actual intersections
+  Float_t m_ResultNumberOfInteractions;
+  //! Bool (0 = false, 1 = true) indicating if there are undetected intersections
+  Float_t m_ResultUndetectedInteractions;
+  //! The hit intersections (filling order: x + y * m_XStripIDs.size())
+  vector<Float_t> m_ResultInteractions;
+
+
   
   // protected methods:
  protected:

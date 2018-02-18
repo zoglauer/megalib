@@ -71,6 +71,8 @@ class MResponseStripPairingTMVAEventFile : public MResponseMultipleComptonEventF
   //! Store one element
   bool Store(unsigned int SequenceLength, bool IsGood);
   
+  //! Shuffle the strips
+  void ShuffleStrips(vector<unsigned int>& StripIDs, vector<double>& Energies);
   
 
   // private methods:

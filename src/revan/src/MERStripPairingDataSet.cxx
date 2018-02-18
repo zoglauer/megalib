@@ -86,8 +86,9 @@ void MERStripPairingDataSet::Initialize(unsigned int NXStrips, unsigned int NYSt
   m_XStripEnergies.resize(m_NXStrips);
   m_YStripEnergies.resize(m_NYStrips);
   
-  m_EvaluationXStripIDs.resize((m_NXStrips + m_NYStrips + 4));
-  m_EvaluationYStripIDs.resize((m_NXStrips + m_NYStrips + 4));
+  m_ResultNumberOfInteractions = 0;
+  m_ResultUndetectedInteractions = 0;
+  m_ResultInteractions.resize(m_NXStrips*m_NYStrips);
 }
 
 
@@ -124,15 +125,16 @@ TMVA::Reader* MERStripPairingDataSet::CreateReader()
     Reader->AddVariable(Name, &m_YStripEnergies[i]);
   }
   
-  for (unsigned int i = 0; i < m_EvaluationXStripIDs.size(); ++i) {
-    Name = "EvaluationXStripID";
+  Name = "ResultNumberOfInteractions";
+  Reader->AddVariable(Name, &m_ResultNumberOfInteractions);  
+  
+  Name = "ResultUndetectedInteractions";
+  Reader->AddVariable(Name, &m_ResultUndetectedInteractions);  
+  
+  for (unsigned int i = 0; i < m_ResultInteractions.size(); ++i) {
+    Name = "ResultInteraction";
     Name += i+1;
-    Reader->AddVariable(Name, &m_EvaluationXStripIDs[i]);
-  }
-  for (unsigned int i = 0; i < m_EvaluationYStripIDs.size(); ++i) {
-    Name = "EvaluationYStripID";
-    Name += i+1;
-    Reader->AddVariable(Name, &m_EvaluationYStripIDs[i]);
+    Reader->AddVariable(Name, &m_ResultInteractions[i]);
   }
   
   return Reader;
@@ -185,28 +187,18 @@ bool MERStripPairingDataSet::FillEventData(Long64_t ID, vector<unsigned int>& XS
 
 
 //! Fill the evaluation section, whether the event is competely absorbed
-bool MERStripPairingDataSet::FillEvaluationInteractions(vector<unsigned int>& XStripIDs, vector<unsigned int>& YStripIDs)
+bool MERStripPairingDataSet::FillResultData(unsigned int NInteractions, bool UndetectedInteractions, vector<double>& Interactions)
 {
-  if (XStripIDs.size() > m_EvaluationXStripIDs.size()) {
-    mout<<"Info: number of hit x strips is too large: in="<<XStripIDs.size()<<" vs. max="<<m_EvaluationXStripIDs.size()<<" -- ignoring data set"<<endl;
-    return false;
-  }
-  if (YStripIDs.size() > m_EvaluationYStripIDs.size()) {
-    mout<<"Info: number of hit y strips is too large: in="<<YStripIDs.size()<<" vs. max="<<m_EvaluationYStripIDs.size()<<" -- ignoring data set"<<endl;
+  if (Interactions.size() != m_NXStrips*m_NYStrips) {
+    mout<<"Info: The number of intersections is not correct: "<<Interactions.size()<<" vs. "<<m_NXStrips*m_NYStrips<<endl;
     return false;
   }
   
-  for (unsigned int i = 0; i < XStripIDs.size(); ++i) {
-    m_EvaluationXStripIDs[i] = XStripIDs[i];
-  }
-  for (unsigned int i = XStripIDs.size(); i < m_EvaluationXStripIDs.size(); ++i) {
-    m_EvaluationXStripIDs[i] = -1;
-  }
-  for (unsigned int i = 0; i < YStripIDs.size(); ++i) {
-    m_EvaluationYStripIDs[i] = YStripIDs[i];
-  }
-  for (unsigned int i = YStripIDs.size(); i < m_EvaluationYStripIDs.size(); ++i) {
-    m_EvaluationYStripIDs[i] = -1;
+  m_ResultNumberOfInteractions = NInteractions;
+  m_ResultUndetectedInteractions = (UndetectedInteractions == true) ? 1 : 0;
+
+  for (unsigned int i = 0; i < Interactions.size(); ++i) {
+    m_ResultInteractions[i] = Interactions[i];
   }
   
   return true;
@@ -224,17 +216,17 @@ TTree* MERStripPairingDataSet::CreateTree(MString Title)
   TTree* Tree = new TTree(Title, Title); 
   
   MString Name("SimulationID");
-  Tree->Branch(Name, &m_SimulationID, Name + "/I");
+  Tree->Branch(Name, &m_SimulationID, Name + "/F");
   
   for (unsigned int i = 0; i < m_XStripIDs.size(); ++i) {
     Name = "XStripID";
     Name += i+1;
-    Tree->Branch(Name, &m_XStripIDs[i], Name + "/I");
+    Tree->Branch(Name, &m_XStripIDs[i], Name + "/F");
   }
   for (unsigned int i = 0; i < m_YStripIDs.size(); ++i) {
     Name = "YStripID";
     Name += i+1;
-    Tree->Branch(Name, &m_YStripIDs[i], Name + "/I");
+    Tree->Branch(Name, &m_YStripIDs[i], Name + "/F");
   }
   for (unsigned int i = 0; i < m_XStripEnergies.size(); ++i) {
     Name = "XStripEnergy";
@@ -246,17 +238,18 @@ TTree* MERStripPairingDataSet::CreateTree(MString Title)
     Name += i+1;
     Tree->Branch(Name, &m_YStripEnergies[i], Name + "/F");
   }
+
+  Name = "ResultNumberOfInteractions";
+  Tree->Branch(Name, &m_ResultNumberOfInteractions, Name + "/F");
   
-  for (unsigned int i = 0; i < m_EvaluationXStripIDs.size(); ++i) {
-    Name = "EvaluationXStripID";
+  Name = "ResultUndetectedInteractions";
+  Tree->Branch(Name, &m_ResultUndetectedInteractions, Name + "/F");
+  
+  for (unsigned int i = 0; i < m_ResultInteractions.size(); ++i) {
+    Name = "ResultInteraction";
     Name += i+1;
-    Tree->Branch(Name, &m_EvaluationXStripIDs[i], Name + "/I");
+    Tree->Branch(Name, &m_ResultInteractions[i], Name + "/F");
   }
-  for (unsigned int i = 0; i < m_EvaluationYStripIDs.size(); ++i) {
-    Name = "EvaluationYStripID";
-    Name += i+1;
-    Tree->Branch(Name, &m_EvaluationYStripIDs[i], Name + "/I");
-  }  
   
   return Tree;
 }
