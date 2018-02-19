@@ -51,7 +51,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MTimer.h"
 #include "MERCoincidence.h"
-#include "MERClusterize.h"
+#include "MERHitClusterizer.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
 #include "MERTrackRank.h"
@@ -1096,7 +1096,7 @@ bool MRawEventAnalyzer::PreAnalysis()
     delete m_Clusterizer;
     m_Clusterizer = nullptr;
     if (m_ClusteringAlgorithm == c_ClusteringAlgoDistance) {
-      m_Clusterizer = new MERClusterize();
+      m_Clusterizer = new MERHitClusterizer();
       if (m_Clusterizer->SetParameters(m_StandardClusterizerMinDistanceD1, 
                                        m_StandardClusterizerMinDistanceD2,
                                        m_StandardClusterizerMinDistanceD3,
@@ -1109,12 +1109,12 @@ bool MRawEventAnalyzer::PreAnalysis()
         Return = false;
       }
     } else if (m_ClusteringAlgorithm == c_ClusteringAlgoPDF) {
-      m_Clusterizer = new MERClusterize();
+      m_Clusterizer = new MERHitClusterizer();
       if (m_Clusterizer->SetParameters(m_PDFClusterizerBaseFileName) == false) {
         Return = false;
       }
     } else if (m_ClusteringAlgorithm == c_ClusteringAlgoAdjacent) {
-      m_Clusterizer = new MERClusterize();
+      m_Clusterizer = new MERHitClusterizer();
       if (m_Clusterizer->SetParameters(m_AdjacentLevel, m_AdjacentSigma) == false) {
         Return = false;
       }

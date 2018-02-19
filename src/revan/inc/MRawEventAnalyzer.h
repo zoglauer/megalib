@@ -35,7 +35,7 @@ using namespace std;
 
 // Forward declarations:
 class MDGeometryQuest;
-class MERClusterize;
+class MERHitClusterizer;
 class MERCoincidence;
 class MERTrack;
 class MERCSR;
@@ -311,7 +311,7 @@ class MRawEventAnalyzer
   //! Coincidence search
   MERCoincidence* m_Coincidence;
   //! Clustering
-  MERClusterize* m_Clusterizer;
+  MERHitClusterizer* m_Clusterizer;
   //! Electron tracking
   MERTrack* m_Tracker;
   //! Compton sequence reconstruction

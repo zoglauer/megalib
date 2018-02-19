@@ -65,7 +65,7 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   // Delete an instance of MGUIERAlgorithm
 
   delete m_CoincidenceList;
-  delete m_ClusteringList;
+  delete m_HitClusteringList;
   delete m_TrackingList;
   delete m_CSRList;
   //delete m_DecayList;
@@ -93,14 +93,14 @@ void MGUIERAlgorithm::Create()
   m_CoincidenceList->Create();
   AddFrame(m_CoincidenceList, m_ListLayout);
 
-  m_ClusteringList = new MGUIERBList(this, "Clustering", true);
-  m_ClusteringList->Add("No clustering");
-  m_ClusteringList->Add("Clustering by Distance");
-  m_ClusteringList->Add("Clustering of adjacent voxels");
-  m_ClusteringList->Add("Clustering using probability density function");
-  m_ClusteringList->SetSelected(m_Data->GetClusteringAlgorithm());
-  m_ClusteringList->Create();
-  AddFrame(m_ClusteringList, m_ListLayout);
+  m_HitClusteringList = new MGUIERBList(this, "Clustering of neighboring hits", true);
+  m_HitClusteringList->Add("No clustering");
+  m_HitClusteringList->Add("Clustering by Distance");
+  m_HitClusteringList->Add("Clustering of adjacent voxels");
+  m_HitClusteringList->Add("Clustering using probability density function");
+  m_HitClusteringList->SetSelected(m_Data->GetClusteringAlgorithm());
+  m_HitClusteringList->Create();
+  AddFrame(m_HitClusteringList, m_ListLayout);
 
   m_TrackingList = new MGUIERBList(this, "Electron tracking", true);
   m_TrackingList->Add("No electron tracking"); // 0
@@ -177,7 +177,7 @@ bool MGUIERAlgorithm::OnApply()
   // The Apply button has been pressed
 
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
-  m_Data->SetClusteringAlgorithm(m_ClusteringList->GetSelected());
+  m_Data->SetClusteringAlgorithm(m_HitClusteringList->GetSelected());
   if (m_TrackingList->GetSelected() == 0) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   } else if (m_TrackingList->GetSelected() == 1) {

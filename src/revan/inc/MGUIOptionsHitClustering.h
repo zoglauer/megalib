@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsClustering.h
+ * MGUIOptionsHitClustering.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsClustering__
-#define __MGUIOptionsClustering__
+#ifndef __MGUIOptionsHitClustering__
+#define __MGUIOptionsHitClustering__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,13 +33,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsClustering : public MGUIDialog
+class MGUIOptionsHitClustering : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIOptionsClustering(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIOptionsHitClustering(const TGWindow* Parent, const TGWindow* Main, 
                         MSettingsEventReconstruction* Data);
-  virtual ~MGUIOptionsClustering();
+  virtual ~MGUIOptionsHitClustering();
 
 
   // protected methods:
@@ -75,7 +75,7 @@ class MGUIOptionsClustering : public MGUIDialog
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsClustering, 0)
+  ClassDef(MGUIOptionsHitClustering, 0)
 #endif
 
 };

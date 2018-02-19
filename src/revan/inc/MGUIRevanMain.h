@@ -76,7 +76,7 @@ class MGUIRevanMain : public MGUIMain
     c_Options, 
     c_OptionsGeneral, 
     c_OptionsCoincidence, 
-    c_OptionsClustering, 
+    c_OptionsHitClustering, 
     c_OptionsTracking, 
     c_OptionsSequencing, 
     c_OptionsDecay, 

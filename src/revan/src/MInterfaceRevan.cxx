@@ -68,7 +68,7 @@ using namespace std;
 #include "MGUIRevanMain.h"
 #include "MStreams.h"
 #include "MTimer.h"
-#include "MERClusterize.h"
+#include "MERHitClusterizer.h"
 #include "MSpectralAnalyzer.h"
 #include "MPeak.h"
 #include "MIsotope.h"
@@ -1272,7 +1272,7 @@ void MInterfaceRevan::InitialEventStatistics()
   if (Analyzer.PreAnalysis() == false) return;
 
   // Set up a dummy clusterizer
-  MERClusterize Clusterizer;
+  MERHitClusterizer Clusterizer;
   if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
     Clusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
                               m_Data->GetStandardClusterizerMinDistanceD2(),
@@ -1379,7 +1379,7 @@ void MInterfaceRevan::HitStatistics()
 
 //   while ((RE = Reader->GetNextEvent()) != 0) { 
 
-  MERClusterize Clusterizer;
+  MERHitClusterizer Clusterizer;
   if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
     Clusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
                               m_Data->GetStandardClusterizerMinDistanceD2(),

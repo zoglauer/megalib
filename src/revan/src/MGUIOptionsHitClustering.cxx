@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsClustering.cxx
+ * MGUIOptionsHitClustering.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,13 +18,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MGUIOptionsClustering
+// MGUIOptionsHitClustering
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // Include the header:
-#include "MGUIOptionsClustering.h"
+#include "MGUIOptionsHitClustering.h"
 
 // Standard libs:
 
@@ -37,19 +37,19 @@
 
 
 #ifdef ___CLING___
-ClassImp(MGUIOptionsClustering)
+ClassImp(MGUIOptionsHitClustering)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsClustering::MGUIOptionsClustering(const TGWindow* Parent, 
+MGUIOptionsHitClustering::MGUIOptionsHitClustering(const TGWindow* Parent, 
                                              const TGWindow* Main, 
                                              MSettingsEventReconstruction* Data)
   : MGUIDialog(Parent, Main)
 {
-  // Construct an instance of MGUIOptionsClustering and bring it to the screen
+  // Construct an instance of MGUIOptionsHitClustering and bring it to the screen
 
   m_Data = Data;
 
@@ -63,7 +63,7 @@ MGUIOptionsClustering::MGUIOptionsClustering(const TGWindow* Parent,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIOptionsClustering::~MGUIOptionsClustering()
+MGUIOptionsHitClustering::~MGUIOptionsHitClustering()
 {
   // kDeepCleanup is activated
 }
@@ -72,12 +72,12 @@ MGUIOptionsClustering::~MGUIOptionsClustering()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIOptionsClustering::Create()
+void MGUIOptionsHitClustering::Create()
 {
   // Create the main window
 
   // We start with a name and an icon...
-  SetWindowName("Options for clustering");  
+  SetWindowName("Options for clustering neighboring hits");  
 
   TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
 
@@ -167,7 +167,7 @@ void MGUIOptionsClustering::Create()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MGUIOptionsClustering::OnApply()
+bool MGUIOptionsHitClustering::OnApply()
 {
   // The Apply button has been pressed
 
@@ -196,5 +196,5 @@ bool MGUIOptionsClustering::OnApply()
 }
 
 
-// MGUIOptionsClustering: the end...
+// MGUIOptionsHitClustering: the end...
 ////////////////////////////////////////////////////////////////////////////////
