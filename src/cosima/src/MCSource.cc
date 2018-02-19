@@ -1670,6 +1670,26 @@ bool MCSource::SetEnergy(double EnergyParam1,
       return false;
     }
   } else if (m_SpectralType == c_BandFunction) {
+    if (m_EnergyParam1 <= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The minimum energy must be larger than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam2 <= m_EnergyParam1) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The maximum energy must be larger than the minimum energy!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam3 >= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam4 >= 0) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The high-energy index must be smaller than 0!"<<endl;
+      return false;
+    }
+    if (m_EnergyParam5 <= m_EnergyParam1 || m_EnergyParam5 > m_EnergyParam2) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be within the minimum and maximum energy!"<<endl;
+      return false;
+    }
     // requires reimplementation
   } else if (m_SpectralType == c_FileDifferentialFlux) {
   } else if (m_SpectralType == c_Activation) {
@@ -1698,11 +1718,6 @@ bool MCSource::UpgradeEnergy()
     if (MaximumShift*m_EnergyParam3 < m_EnergyParam1) m_EnergyParam4 = BlackBody(m_EnergyParam1, m_EnergyParam3);
     if (MaximumShift*m_EnergyParam3 > m_EnergyParam2) m_EnergyParam4 = BlackBody(m_EnergyParam2, m_EnergyParam3);
   } else if (m_SpectralType == c_BandFunction) {
-    massert(m_EnergyParam1 > 0);
-    massert(m_EnergyParam2 > 0);
-    massert(m_EnergyParam1 < m_EnergyParam2);
-    massert(m_EnergyParam3 > m_EnergyParam4);
-    massert(m_EnergyParam5 > 0);
     
     // Calculate Maximum:
     m_EnergyParam6 = BandFunction(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);

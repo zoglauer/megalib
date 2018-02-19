@@ -48,7 +48,11 @@ class MDGeometryQuest : public MDGeometry
   virtual bool DrawGeometry(TCanvas *Canvas = 0, MString Mode = "ogle");
 
   bool IsSensitive(MVector Pos);
-  MDVolume* GetVolume(MVector Pos); 
+  
+  using MDGeometry::GetVolume;
+  MDVolume* GetVolume(MVector Pos);
+  
+  using MDGeometry::GetMaterial;
   MDMaterial* GetMaterial(MVector Pos);
 
   bool Noise(MVector& Pos, double& Energy, double& Time);

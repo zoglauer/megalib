@@ -55,10 +55,13 @@ public:
 
   /// Return true if the volume is valid volume in the geometry
   bool IsValidVolume(MString VolumeName);
-
+  
   /// Return a random position in the given volume
   G4ThreeVector GetRandomPosition(MString VolumeName);
-
+  
+  /// Return true if the volume exists:
+  bool HasVolume(const MString& VolumeName) const;
+  
   /// Return the (Geomega) hash of the given material 
   unsigned long GetMaterialHash(const G4Material* Material);
 

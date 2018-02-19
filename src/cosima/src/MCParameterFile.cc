@@ -859,6 +859,16 @@ bool MCParameterFile::Parse()
           Typo(i, "Cannot parse token \"OrientationDetector\" correctly: Number of tokens is not correct!");
           return false;
         }
+      } else if (T->IsTokenAt(1, "Beam", true) == true) {
+        Typo(i, "A run doesn't have a beam only a source does");
+      } else if (T->IsTokenAt(1, "Spectrum", true) == true) {
+        Typo(i, "A run doesn't have a spectrum only a source does");
+      } else if (T->IsTokenAt(1, "Flux", true) == true) {
+        Typo(i, "A run doesn't have a flux only a source does");
+      } else if (T->IsTokenAt(1, "Particle", true) == true || 
+                 T->IsTokenAt(1, "ParticleType", true) == true || 
+                 T->IsTokenAt(1, "ParticleID", true) == true) {
+        Typo(i, "A run doesn't have a particle only a source does");
       }
     } // is run
   } // Step 2
@@ -1149,7 +1159,7 @@ bool MCParameterFile::Parse()
               return false;
             }
           } 
-          else if (Type == "bandfunction" || Type == "bf") {
+          else if (Type == "bandfunction" || Type == "bf" || Type == "band") {
             if (T->GetNTokens() == 8) {
               Source->SetSpectralType(MCSource::c_BandFunction);
               if (Source->SetEnergy(T->GetTokenAtAsDouble(3)*keV, 
@@ -1984,7 +1994,7 @@ bool MCParameterFile::Parse()
       }
       
       
-      else if (T->IsTokenAt(1, "ParticleType", true) == true) {
+      else if (T->IsTokenAt(1, "ParticleType", true) == true || T->IsTokenAt(1, "Particle", true) == true || T->IsTokenAt(1, "ParticleID", true) == true) {
         if (T->GetNTokens() == 3) {
           if (Source->SetParticleType(T->GetTokenAtAsInt(2)) == true) {
             mdebug<<"Setting particle type "<<Source->GetParticleType()
@@ -2863,6 +2873,11 @@ bool MCParameterFile::Parse()
 
 
   // Give the detector time constant to the activator
+  for (unsigned int r = 0; r < m_ActivatorList.size(); ++r) {
+    m_ActivatorList[r].SetHalfLifeCutOff(m_DetectorTimeConstant);
+  }
+  
+  // Check if all the volumes in the activators exist:
   for (unsigned int r = 0; r < m_ActivatorList.size(); ++r) {
     m_ActivatorList[r].SetHalfLifeCutOff(m_DetectorTimeConstant);
   }

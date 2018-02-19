@@ -1244,6 +1244,15 @@ G4ThreeVector MCDetectorConstruction::GetRandomPosition(MString VolumeName)
 
 
 /******************************************************************************
+ * Return true if the volume exists:
+ */
+bool MCDetectorConstruction::HasVolume(const MString& VolumeName) const
+{
+  return (m_Geometry->GetVolume(VolumeName) == nullptr) ? false: true;
+}
+
+
+/******************************************************************************
  * Return true if the volume is valid volume in the geometry
  */
 bool MCDetectorConstruction::IsValidVolume(MString VolumeName)

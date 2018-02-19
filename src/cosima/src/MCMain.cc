@@ -119,11 +119,26 @@ bool MCMain::Initialize(int argc, char** argv)
   // Set geometry
   MCDetectorConstruction* DC = new MCDetectorConstruction(m_RunParameters);
   if (DC->Initialize() == false) {
-    mout<<"Unable to initalize detector"<<endl;
+    mout<<"ERROR: Unable to initalize detector"<<endl;
     return false;
   }
   m_RunManager->SetUserInitialization(DC);
 
+  
+  // The sanity checking, if we have all volumes, can only be done here:
+  for (unsigned int r = 0; r < Runs.size(); ++r) {
+    for (unsigned int s = 0; s < Runs[r].GetNSources(); ++s) {
+      MCSource* S = Runs[r].GetSource(s);
+      if (S->GetVolume() != "") {
+        if (DC->HasVolume(S->GetVolume()) == false) {
+          mout<<"ERROR: Unable to find required volume "<<S->GetVolume()<<endl;
+          return false;
+        }
+      }
+    }
+  }
+  
+  
   if (m_ConvertFileName != "") {
     MCGeometryConverter* Converter = new MCGeometryConverter();
     Converter->Convert(m_ConvertFileName.GetString());
