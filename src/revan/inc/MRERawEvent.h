@@ -30,7 +30,7 @@
 #include "MTime.h"
 
 class MREAM;
-class MRawEventList;
+class MRawEventIncarnations;
 class MPhysicalEvent;
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -137,7 +137,7 @@ bool MResponseClusteringDSS::Analyze()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   
   if (REList->GetNRawEvents() != 1) {
     cout<<"Something went wrong: we have more than one good event"<<endl;

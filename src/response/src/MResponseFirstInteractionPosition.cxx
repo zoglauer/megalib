@@ -130,7 +130,7 @@ bool MResponseFirstInteractionPosition::CreateResponse()
 
   MVector IdealOriginPos;
 
-  MRawEventList* REList = 0;
+  MRawEventIncarnations* REList = 0;
   MPhysicalEvent* Event = 0;
   MComptonEvent* Compton = 0;
 

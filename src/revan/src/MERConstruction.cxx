@@ -71,7 +71,7 @@ MERConstruction::~MERConstruction()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERConstruction::Analyze(MRawEventList* List)
+bool MERConstruction::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
   m_List = List;

@@ -305,7 +305,7 @@ bool MResponseTracking::Analyze()
   
   MRESE* RESE = 0;
   MRERawEvent* RE = 0;
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   
   QuadruplesGoodStart.clear();
   QuadruplesBadStart.clear();

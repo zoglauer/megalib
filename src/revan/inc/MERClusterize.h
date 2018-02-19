@@ -22,7 +22,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 // Forward declarations:
 
@@ -52,7 +52,7 @@ class MERClusterize : public MERConstruction
                              double MinDistanceD7, double MinDistanceD8,
                              bool CenterIsReference);
   virtual bool SetParameters(MString BaseResponseFileName);
-  virtual bool Analyze(MRawEventList* List);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
   virtual MString ToString(bool CoreOnly = false) const;
 

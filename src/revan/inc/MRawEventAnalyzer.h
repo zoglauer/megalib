@@ -26,7 +26,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MRERawEvent.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MGeometryRevan.h"
 #include "MFileEventsEvta.h"
 #include "MFileEventsTra.h"
@@ -117,7 +117,7 @@ class MRawEventAnalyzer
   //! Return the initial raw event before all event reconstrcutions
   MRERawEvent* GetInitialRawEvent();
   //! Return a list of all possible events after the given event reconstrcution
-  MRawEventList* GetRawEventList() { return m_RawEvents; }
+  MRawEventIncarnations* GetRawEventList() { return m_RawEvents; }
 
   //! Optional: Call this function at the end of the event reconstruction to gather some statistics
   bool PostAnalysis();
@@ -303,10 +303,10 @@ class MRawEventAnalyzer
   MFileEventsTra* m_PhysFile;
 
   //! Intermediate store of the events after reading
-  MRawEventList* m_EventStore;
+  MRawEventIncarnations* m_EventStore;
 
   //! List of all "possible" events
-  MRawEventList* m_RawEvents;  
+  MRawEventIncarnations* m_RawEvents;  
 
   //! Coincidence search
   MERCoincidence* m_Coincidence;

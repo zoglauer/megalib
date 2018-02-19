@@ -355,7 +355,7 @@ bool MResponseSpectral::Analyze()
   // Initlize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   MRERawEvent* RE = REList->GetInitialRawEvent();
   
   double SimStartEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();

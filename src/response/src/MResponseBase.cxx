@@ -350,7 +350,7 @@ bool MResponseBase::SanityCheckSimulations()
     return false;
   }
 
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
 
   int r_max = REList->GetNRawEvents();
   for (int r = 0; r < r_max; ++r) {

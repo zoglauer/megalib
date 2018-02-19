@@ -1286,7 +1286,7 @@ void MInterfaceRevan::InitialEventStatistics()
   } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
     Clusterizer.SetParameters(m_Data->GetAdjacentLevel(), m_Data->GetAdjacentSigma());
   }
-  MRawEventList* RawEvents = new MRawEventList(0);
+  MRawEventIncarnations* RawEvents = new MRawEventIncarnations(0);
 
   MRERawEvent* RE = 0;
   while ((RE = Analyzer.GetNextInitialRawEventFromFile()) != 0) {
@@ -1395,7 +1395,7 @@ void MInterfaceRevan::HitStatistics()
   }
 
   MRERawEvent* RE = 0;
-  MRawEventList* RawEvents = new MRawEventList(0);
+  MRawEventIncarnations* RawEvents = new MRawEventIncarnations(0);
 
   while ((RE = Reader->GetNextEvent()) != 0) { 
     RawEvents->SetInitialRawEvent(RE);

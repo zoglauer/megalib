@@ -243,7 +243,7 @@ bool MResponseMultipleComptonEventFile::Analyze()
   
   // Go ahead event by event and compare the results: 
   MRERawEvent* RE = nullptr;
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   vector<MRESE*> RESEs;
   
   

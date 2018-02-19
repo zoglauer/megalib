@@ -203,7 +203,7 @@ bool MResponseImaging::CreateResponse()
   double Spd;
   MVector IdealOriginDir;
 
-  MRawEventList* REList = 0;
+  MRawEventIncarnations* REList = 0;
   MPhysicalEvent* Event = 0;
   MComptonEvent* Compton = 0;
 

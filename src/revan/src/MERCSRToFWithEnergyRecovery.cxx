@@ -50,7 +50,7 @@ using namespace std;
 #include "MRETrack.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +115,7 @@ void MERCSRToFWithEnergyRecovery::ModifyEventList()
     MRERawEvent* First = m_List->GetRawEventAt(e);
 
     // To make sure everything is fine, create a new list:
-    MRawEventList* NewList = new MRawEventList();
+    MRawEventIncarnations* NewList = new MRawEventIncarnations();
     NewList->AddRawEvent(First);
 
     for (int n = 0; n < First->GetNRESEs(); ++n) {

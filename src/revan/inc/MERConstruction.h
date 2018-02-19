@@ -21,7 +21,7 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MGeometryRevan.h"
 
 // Forward declarations:
@@ -37,7 +37,7 @@ class MERConstruction
   MERConstruction();
   virtual ~MERConstruction();
 
-  virtual bool Analyze(MRawEventList* List);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
   virtual void SetGeometry(MGeometryRevan* Geometry) { m_Geometry = Geometry; }
 
@@ -62,7 +62,7 @@ class MERConstruction
   // protected members:
  protected:
   //! The global event (incarnation) list
-  MRawEventList* m_List;
+  MRawEventIncarnations* m_List;
 
   //! The geometry - used by most of the algorithms
   MGeometryRevan* m_Geometry;

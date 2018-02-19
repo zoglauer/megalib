@@ -191,7 +191,7 @@ bool MERTrack::SetParameters(bool SearchMIPs,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERTrack::Analyze(MRawEventList* REList)
+bool MERTrack::Analyze(MRawEventIncarnations* REList)
 {
   // Analyze the raw event...
 
@@ -206,7 +206,7 @@ bool MERTrack::Analyze(MRawEventList* REList)
 
   bool Identified = false;
   MRERawEvent* RE = 0;
-  MRawEventList* List = 0;
+  MRawEventIncarnations* List = 0;
   MRESE* RESE = 0;
   MRETrack* Track = 0;
   MTimer Timer;
@@ -472,7 +472,7 @@ bool MERTrack::IsInTracker(MRESE* R)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrack::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrack::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   List->SortByTrackQualityFactor(true);
 }
@@ -481,7 +481,7 @@ void MERTrack::SortByTrackQualityFactor(MRawEventList* List)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
+MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
 {
   // Check if this event could be a pair:
   //
@@ -495,7 +495,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
 
   mdebug<<"Searching for a pair vertex"<<endl;
 
-  MRawEventList *List = 0;
+  MRawEventIncarnations *List = 0;
   bool OnlyHitInLayer = false;
   //unsigned int MaximumLayerJump = 2;
   //MRESE* RESE = 0;
@@ -602,7 +602,7 @@ MRawEventList* MERTrack::CheckForPair(MRERawEvent* RE)
     }
 
     if (Vertex != 0) {
-      if (List == 0) List = new MRawEventList();
+      if (List == 0) List = new MRawEventIncarnations();
       RE->SetVertex(Vertex);
       RE->SetVertexDirection(VertexDirection);
       MRERawEvent *New = RE->Duplicate();
@@ -1170,7 +1170,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERTrack::TrackComptons(MRERawEvent* RE)
+MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
 {
   mdebug<<"Track Compton events..."<<endl;
 
@@ -1270,7 +1270,7 @@ MRawEventList* MERTrack::TrackComptons(MRERawEvent* RE)
     }
   }
 
-  MRawEventList* List = new MRawEventList(); 
+  MRawEventIncarnations* List = new MRawEventIncarnations(); 
 
   if (IsPureAmbiguity == true && m_RejectPureAmbiguities == true) {
     mout<<"Tracking: Rejecting purely ambiguous event!"<<endl;

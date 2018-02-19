@@ -369,7 +369,7 @@ bool MResponseMultipleCompton::Analyze()
   
   
   MRERawEvent* RE = 0;
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   
   //g_Verbosity = 1;
   double Etot = 0;

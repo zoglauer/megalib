@@ -23,7 +23,7 @@
 #include "MGlobal.h"
 #include "MTime.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 // Forward declarations:
 
@@ -72,7 +72,7 @@ class MERNoising : public MERConstruction
   // private methods:
  private:
   //! Hide the base classes Analyze
-  bool Analyze(MRawEventList*) { return false; }
+  bool Analyze(MRawEventIncarnations*) { return false; }
 
 
 

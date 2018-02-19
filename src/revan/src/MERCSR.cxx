@@ -109,7 +109,7 @@ bool MERCSR::SetParameters(MGeometryRevan* Geometry,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERCSR::Analyze(MRawEventList* List)
+bool MERCSR::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
 
@@ -121,7 +121,7 @@ bool MERCSR::Analyze(MRawEventList* List)
     int e_max = m_List->GetNRawEvents();
     for (int e = 0; e < e_max; ++e) {
       MRERawEvent* RE = m_List->GetRawEventAt(e);
-      MRawEventList* NewList = CreateOnlyPermutations(RE);
+      MRawEventIncarnations* NewList = CreateOnlyPermutations(RE);
       if (NewList != 0) {
         m_List->DeleteRawEvent(RE);
         e--;
@@ -174,7 +174,7 @@ bool MERCSR::Analyze(MRawEventList* List)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
+MRawEventIncarnations* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
 {
   // Create and link all possible permutations:
   // Now we are in some programming trouble:
@@ -206,7 +206,7 @@ MRawEventList* MERCSR::CreateOnlyPermutations(MRERawEvent* RE)
   Permutations.reserve(int(TMath::Factorial(RE->GetNRESEs())));
   FindPermutations(RESEs, RESEs.size(), Permutations);
 
-  MRawEventList* List = new MRawEventList();
+  MRawEventIncarnations* List = new MRawEventIncarnations();
   for (unsigned int c = 0; c < Permutations.size(); ++c) {
     MRERawEvent* Dup = RE->Duplicate();
 

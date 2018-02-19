@@ -107,7 +107,7 @@ bool MERTrackRank::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackRank::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackRank::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

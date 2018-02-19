@@ -86,7 +86,7 @@ bool MERCoincidence::SetCoincidenceWindow(double Time)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MERCoincidence::Search(MRawEventList* List, bool Clear)
+MRERawEvent* MERCoincidence::Search(MRawEventIncarnations* List, bool Clear)
 {
   // Search for coincidences
 

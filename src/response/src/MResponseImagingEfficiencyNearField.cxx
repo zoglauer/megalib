@@ -102,7 +102,7 @@ bool MResponseImagingEfficiencyNearField::Analyze()
   if (MResponseBuilder::Analyze() == false) return false;
 
 
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
 
   if (REList->HasOptimumEvent() == true) {
     MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();

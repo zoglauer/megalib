@@ -131,7 +131,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_PhysFile = nullptr;
 
   m_Geometry = nullptr; 
-  m_RawEvents = new MRawEventList(0);
+  m_RawEvents = new MRawEventIncarnations(0);
 
   m_MoreEventsAvailable = true;
 
@@ -222,7 +222,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_Decay = nullptr;
   m_Noising = nullptr;
 
-  m_EventStore = new MRawEventList();
+  m_EventStore = new MRawEventIncarnations();
 }
 
 

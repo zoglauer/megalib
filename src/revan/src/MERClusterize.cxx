@@ -183,7 +183,7 @@ bool MERClusterize::SetParameters(MString BaseResponseFileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERClusterize::Analyze(MRawEventList* List)
+bool MERClusterize::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
   MERConstruction::Analyze(List);

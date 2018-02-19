@@ -451,7 +451,7 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
   
   // Go ahead event by event and compare the results: 
   MRERawEvent* RE = nullptr;
-  MRawEventList* REList = nullptr;
+  MRawEventIncarnations* REList = nullptr;
   vector<MRESE*> RESEs;
   
   vector<vector<int>> ClassicSequenceGood(m_EnergyMin.size());
