@@ -450,8 +450,6 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
   
   
   // Go ahead event by event and compare the results: 
-  MRERawEvent* RE = nullptr;
-  MRawEventIncarnations* REList = nullptr;
   vector<MRESE*> RESEs;
   
   vector<vector<int>> ClassicSequenceGood(m_EnergyMin.size());
@@ -496,14 +494,11 @@ bool MResponseMultipleComptonNeuralNet::Analyze()
     }
     
     
-    RE = nullptr;
-    REList = m_ReReader->GetRawEventList();
     
     //g_DebugLevel = 1;
     
-    int r_max = REList->GetNRawEvents();
-    for (int r = 0; r < r_max; ++r) {
-      RE = REList->GetRawEventAt(r);
+    for (auto RE: m_ReEvents) {
+      if (RE == nullptr) continue;
       
       // Check if complete sequence is ok:
       SequenceLength = (unsigned int) RE->GetNRESEs();

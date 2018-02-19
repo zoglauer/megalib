@@ -1137,8 +1137,8 @@ void MGUIEviewMain::Next()
         ExitLoop();
         return;
       } else {
-        if (m_Analyzer->GetOptimumEvent() != 0) {
-          RE = m_Analyzer->GetOptimumEvent()->Duplicate();
+        if (m_Analyzer->GetSingleOptimumEvent() != 0) {
+          RE = m_Analyzer->GetSingleOptimumEvent()->Duplicate();
         } else if (m_Settings->GetDisplayOnlyGoodEvents() == false) {
           RE = m_Analyzer->GetInitialRawEvent()->Duplicate();
         }

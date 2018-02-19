@@ -37,6 +37,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MRawEventIncarnationList.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -266,13 +267,19 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
   }
   
   m_ReReader->AnalyzeEvent();
-  // automatically deleted: m_ReEvent;
+  // automatically deleted: m_ReEvent and the content in m_ReEvents
   m_ReEvent = nullptr;
-  if (m_ReReader->GetRawEventList() != 0) {
-    if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-      m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+  m_ReEvents.clear();
+  if (m_ReReader->GetRawEventList() != nullptr) {
+    MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+    for (unsigned int i = 0; i < REIL->Size(); ++i) {
+      if (REIL->Get(i)->GetNRawEvents() > 0) {
+        m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+      }
     }
   }
+  if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
+  
   if (m_ReEvent == nullptr) {
     cout<<"We have no good raw event"<<endl;
     return false;
@@ -431,14 +438,27 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
         break;
       }
 
-      if (m_ReReader->GetRawEventList() != 0) {
-        if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-          m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      //if (m_ReReader->GetRawEventList() != 0) {
+      //  if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
+      //    m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      //  }
+      //}
+      
+      m_ReEvents.clear();
+      if (m_ReReader->GetRawEventList() != nullptr) {
+        MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+        for (unsigned int i = 0; i < REIL->Size(); ++i) {
+          if (REIL->Get(i)->GetNRawEvents() > 0) {
+            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+          }
         }
       }
-
+      if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
+      
+      
+      
       // Decide future:
-      if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
+      if (m_ReEvent != nullptr && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
         if (m_ReEvent->GetEventID() < m_RevanEventID) {
           m_RevanLevel++; 
         }
@@ -457,13 +477,13 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
 
       // Clean:
       delete m_SiEvent;
-      m_SiEvent = 0;
+      m_SiEvent = nullptr;
       
       // Read:
       m_SiEvent = m_SiReader->GetNextEvent(false);
 
       // Decide:
-      if (m_SiEvent != 0) {  
+      if (m_SiEvent != nullptr) {  
         // Test if it is not truncated:
         if ((m_OnlyINITRequired == true && m_SiEvent->GetNIAs() == 1 && m_SiEvent->GetIAAt(0)->GetProcess() == "INIT") || 
             (m_SiEvent->GetNIAs() > 1 && m_SiEvent->GetIAAt(m_SiEvent->GetNIAs()-1)->GetProcess() != "TRNC")) {
@@ -537,11 +557,8 @@ bool MResponseBuilder::SanityCheckSimulations()
     return false;
   }
 
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
+  for (auto RE: m_ReEvents) {  
 
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    MRERawEvent* RE = REList->GetRawEventAt(r);
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {

@@ -27,6 +27,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MRERawEvent.h"
 #include "MRawEventIncarnations.h"
+#include "MRawEventIncarnationList.h"
 #include "MGeometryRevan.h"
 #include "MFileEventsEvta.h"
 #include "MFileEventsTra.h"
@@ -111,13 +112,23 @@ class MRawEventAnalyzer
   // The results:
   
   //! The returns the best found event
-  MRERawEvent* GetOptimumEvent();
+  vector<MRERawEvent*> GetOptimumEvents();
+  //! Return the single best event -- if we have multiple events it will just return the first one
+  MRERawEvent* GetSingleOptimumEvent();
+
   //! A best solution was not found - but we still have a best try
-  MRERawEvent* GetBestTryEvent();  
-  //! Return the initial raw event before all event reconstrcutions
+  vector<MRERawEvent*> GetBestTryEvents();  
+  //! Return the single best try event, if we have multiple return just the first one
+  MRERawEvent* GetSingleBestTryEvent();  
+
+  //! Return the initial raw events - we always have one, but in the analysis it is easier when we get it in a list too
+  vector<MRERawEvent*> GetInitialRawEvents();
+  //! Return the initial raw event
   MRERawEvent* GetInitialRawEvent();
-  //! Return a list of all possible events after the given event reconstrcution
-  MRawEventIncarnations* GetRawEventList() { return m_RawEvents; }
+  
+  //! return a list of all possible events after the given event reconstrcution
+  MRawEventIncarnationList* GetRawEventList() { return m_RawEvents; }
+
 
   //! Optional: Call this function at the end of the event reconstruction to gather some statistics
   bool PostAnalysis();
@@ -305,8 +316,8 @@ class MRawEventAnalyzer
   //! Intermediate store of the events after reading
   MRawEventIncarnations* m_EventStore;
 
-  //! List of all "possible" events
-  MRawEventIncarnations* m_RawEvents;  
+  //! List of all events in all possible incarnations
+  MRawEventIncarnationList* m_RawEvents;  
 
   //! Coincidence search
   MERCoincidence* m_Coincidence;
@@ -342,6 +353,8 @@ class MRawEventAnalyzer
   int m_NPairEvents;
   int m_NMuonEvents;
   int m_NDecayEvents;
+  int m_NPETEvents;
+  int m_NMultiEvents;
   int m_NUnidentifiableEvents;
 
   // Reconstruction options:

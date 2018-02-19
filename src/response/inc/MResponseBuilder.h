@@ -204,8 +204,10 @@ class MResponseBuilder
   
   //! The current sivan event
   MSimEvent* m_SiEvent;
-  //! The current revan event
+  //! The current revan event - if we have multiple, this is just the first one
   MRERawEvent* m_ReEvent;  
+  //! The current revan event
+  vector<MRERawEvent*> m_ReEvents;  
   
   //! For read-mode file: The revan reader
   MRawEventAnalyzer* m_ReReader;
@@ -215,7 +217,7 @@ class MResponseBuilder
   //! For read-mode file: True if the sim file was read completely
   bool m_ReaderFinished;
   
-  unsigned int m_RevanEventID ;
+  unsigned int m_RevanEventID;
   unsigned int m_RevanLevel;
   unsigned int m_SivanEventID;
   unsigned int m_SivanLevel;

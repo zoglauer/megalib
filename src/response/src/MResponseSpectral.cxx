@@ -355,8 +355,7 @@ bool MResponseSpectral::Analyze()
   // Initlize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
-  MRERawEvent* RE = REList->GetInitialRawEvent();
+  MRERawEvent* RE = m_ReReader->GetInitialRawEvent();
   
   double SimStartEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
   double SimStartTheta = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Theta()*c_Deg;
@@ -371,9 +370,9 @@ bool MResponseSpectral::Analyze()
   MVector OriginDir = -m_SiEvent->GetIAAt(0)->GetSecondaryDirection();
   MVector OriginPos = m_SiEvent->GetIAAt(0)->GetPosition();
   
-  
-  if (REList->HasOptimumEvent() == true) {
-    MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();  
+  if (REList->HasOnlyOptimumEvents() == true) {
+    MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
     if (Event != nullptr) {
       m_EnergyUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() });
       m_EnergyRatioUnselected.Add(vector<double>{ SimStartEnergy, SimStartTheta, SimStartPhi, Event->Ei() / SimStartEnergy });

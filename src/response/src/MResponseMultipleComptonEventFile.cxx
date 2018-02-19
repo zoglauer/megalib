@@ -242,8 +242,6 @@ bool MResponseMultipleComptonEventFile::Analyze()
   if (MResponseBuilder::Analyze() == false) return false;
   
   // Go ahead event by event and compare the results: 
-  MRERawEvent* RE = nullptr;
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
   vector<MRESE*> RESEs;
   
   
@@ -256,10 +254,10 @@ bool MResponseMultipleComptonEventFile::Analyze()
   unsigned int SequenceLength = 0;
   
   
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    RE = REList->GetRawEventAt(r);
-        
+  
+  for (auto RE: m_ReEvents) {
+    if (RE == nullptr) continue;
+    
     // Check if complete sequence is ok:
     SequenceLength = (unsigned int) RE->GetNRESEs();
 

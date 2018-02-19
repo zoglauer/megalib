@@ -268,14 +268,14 @@ void MRawEventIncarnations::SetBestTryEvent(MRERawEvent* BestTryEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventIncarnations::HasBestTry()
+bool MRawEventIncarnations::HasBestTryEvent()
 {
-  // Check if we have abest try event...
+  // Check if we have a best try event...
 
-  if (m_BestTryEvent != 0) {
-    return true;
-  }
-
+  if (m_BestTryEvent != nullptr) return true;
+  if (m_OptimumEvent != nullptr) return true;
+  if (m_Incarnations.size() > 0) return true;
+  
   return false;
 }
 
@@ -286,7 +286,11 @@ MRERawEvent* MRawEventIncarnations::GetBestTryEvent()
 {
   // Return a pointer to the best try...
 
-  return m_BestTryEvent;
+  if (m_BestTryEvent != nullptr) return m_BestTryEvent;
+  if (m_OptimumEvent != nullptr) return m_OptimumEvent;
+  if (m_Incarnations.size() > 0) return m_Incarnations[0];
+  
+  return nullptr;
 }
 
 

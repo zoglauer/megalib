@@ -12,7 +12,7 @@
 # Base definitions:
 #
 
-<<<<<<< ec0e5895216066f58867cdf7a1156bd8853e590b
+
 PROGRAM = revan
 
 MAIN  = MRevanMain
@@ -27,7 +27,7 @@ FILES = MGeometryRevan \
 	MERConstruction \
 	MERNoising \
 	MERCoincidence \
-	MERClusterize \
+	MERHitClusterizer \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \
@@ -71,7 +71,7 @@ FILES_UI = \
 	MGUIERAlgorithm \
 	MGUIOptionsGeneral \
 	MGUIOptionsCoincidence \
-	MGUIOptionsClustering \
+	MGUIOptionsHitClustering \
 	MGUIOptionsTracking \
 	MGUIOptionsCSR \
 	MGUIOptionsDecay \
@@ -117,72 +117,6 @@ ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
 OBJECT_MAIN=$(patsubst %, $(LB)/%.o, $(MAIN))
 EXECUTABLE=$(BN)/$(PROGRAM)
 
-=======
-PRG = 	$(BN)/revan
-
-MOBJS = $(LB)/MRevanMain.o
-
-GOBJS = $(LB)/MInterfaceRevan.o \
-	$(LB)/MGUIRevanMain.o \
-	$(LB)/MGUIERAlgorithm.o \
-	$(LB)/MGUIOptionsGeneral.o \
-	$(LB)/MGUIOptionsCoincidence.o \
-	$(LB)/MGUIOptionsHitClustering.o \
-	$(LB)/MGUIOptionsTracking.o \
-	$(LB)/MGUIOptionsCSR.o \
-	$(LB)/MGUIOptionsDecay.o \
-	$(LB)/MGUIExportSpectrum.o \
-	$(LB)/MGUIReconstructedSpectrum.o \
-
-LOBJS = $(LB)/MGeometryRevan.o \
-	$(LB)/MRawEventIncarnations.o \
-	$(LB)/MRawEventAnalyzer.o \
-	$(LB)/MFileEventsEvta.o \
-	$(LB)/MFileDecay.o \
-	$(LB)/MERConstruction.o \
-	$(LB)/MERNoising.o \
-	$(LB)/MERCoincidence.o \
-	$(LB)/MERHitClusterizer.o \
-	$(LB)/MERTrack.o \
-	$(LB)/MERTrackPearson.o \
-	$(LB)/MERTrackRank.o \
-	$(LB)/MERTrackBayesian.o \
-	$(LB)/MERTrackGas.o \
-	$(LB)/MERTrackDirectional.o \
-	$(LB)/MERTrackChiSquare.o \
-	$(LB)/MERCSR.o \
-	$(LB)/MERCSRChiSquare.o \
-	$(LB)/MERCSREnergyRecovery.o \
-	$(LB)/MERCSRBayesian.o \
-	$(LB)/MERCSRTMVA.o \
-	$(LB)/MERCSRTMVAMethods.o \
-	$(LB)/MERCSRToF.o \
-	$(LB)/MERCSRToFWithEnergyRecovery.o \
-	$(LB)/MERCSRDataSet.o \
-	$(LB)/MERDecay.o \
-	$(LB)/MSettingsRevan.o \
-	$(LB)/MSettingsEventReconstruction.o \
-	$(LB)/MRESE.o \
-	$(LB)/MRESEList.o \
-	$(LB)/MRESEIterator.o \
-	$(LB)/MREHit.o \
-	$(LB)/MRECluster.o \
-	$(LB)/MRETrack.o \
-	$(LB)/MRERawEvent.o \
-	$(LB)/MREAM.o \
-	$(LB)/MREAMDriftChamberEnergy.o \
-	$(LB)/MREAMGuardRingHit.o \
-	$(LB)/MREAMDirectional.o \
-	$(LB)/MREAMStartInformation.o \
-	$(LB)/MERQualityDataSet.o \
-	$(LB)/MERStripPairingDataSet.o \
-				
-
-OBJS = $(MOBJS) $(LOBJS) $(GOBJS)
-
-SGOBJ = $(LB)/libRevanGui.$(DLL)
-SLOBJ = $(LB)/libRevan.$(DLL)
->>>>>>> RFC: Refactoring MRawEventList --> MRawEventIncarnations, to make it clear that the list just contains different incarnation sof the same event
 
 #----------------------------------------------------------------
 # Commands:
@@ -196,6 +130,7 @@ link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
 	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
+
 clean:
 	@rm -f src/*~
 	@rm -f src/\#*
@@ -206,6 +141,7 @@ clean:
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
 	@rm -f $(OBJECTS_MAIN) $(EXECUTABLE)
+
 
 #----------------------------------------------------------------
 # Dependencies:

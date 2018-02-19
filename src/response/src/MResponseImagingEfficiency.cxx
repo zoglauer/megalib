@@ -126,10 +126,10 @@ bool MResponseImagingEfficiency::Analyze()
   if (MResponseBuilder::Analyze() == false) return false;
   
   
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
   
-  if (REList->HasOptimumEvent() == true) {
-    MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+  if (REList->HasOnlyOptimumEvents() == true) {
+    MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
     if (Event != 0) {
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
         if (Event->GetType() == MPhysicalEvent::c_Compton) {

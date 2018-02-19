@@ -234,7 +234,8 @@ bool MResponseBase::InitializeNextMatchingEvent()
 
       // delete m_ReEvent; // automatically deleted!
       m_ReEvent = 0;
-
+      m_ReEvents.clear();
+      
       // Load/Analyze
       ERReturnCode = m_ReReader->AnalyzeEvent();
       if (ERReturnCode == MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile) {
@@ -244,11 +245,15 @@ bool MResponseBase::InitializeNextMatchingEvent()
         break;
       }
 
-      if (m_ReReader->GetRawEventList() != 0) {
-        if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-          m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      if (m_ReReader->GetRawEventList() != nullptr) {
+        MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+        for (unsigned int i = 0; i < REIL->Size(); ++i) {
+          if (REIL->Get(i)->GetNRawEvents() > 0) {
+            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+          }
         }
       }
+      if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
 
       // Decide future:
       if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
@@ -349,12 +354,9 @@ bool MResponseBase::SanityCheckSimulations()
       " check your geometry, because noising was deactivated!"<<endl;
     return false;
   }
-
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
-
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    MRERawEvent* RE = REList->GetRawEventAt(r);
+  
+  for (auto RE: m_ReEvents) {  
+    
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {

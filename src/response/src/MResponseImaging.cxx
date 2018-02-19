@@ -203,16 +203,15 @@ bool MResponseImaging::CreateResponse()
   double Spd;
   MVector IdealOriginDir;
 
-  MRawEventIncarnations* REList = 0;
   MPhysicalEvent* Event = 0;
   MComptonEvent* Compton = 0;
 
   int Counter = 0;
   while (InitializeNextMatchingEvent() == true) {
-    REList = m_ReReader->GetRawEventList();
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
 
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    if (REList->HasOnlyOptimumEvents() == true) {
+      Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Compton) {

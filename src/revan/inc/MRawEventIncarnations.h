@@ -59,9 +59,9 @@ class MRawEventIncarnations
   //! Set the best event
   void SetOptimumEvent(MRERawEvent* OptimumEvent);
 
-  //! Return if we have a best try event
-  bool HasBestTry();
-  //! Get the best try event
+  //! Return if we have a best try event - if we have also an optimum event, return that one instead!
+  bool HasBestTryEvent();
+  //! Get the best try event - if we have also an optimum event, return that one instead, if we have none, use the first raw event instead
   MRERawEvent* GetBestTryEvent();
   //! Set the best try event
   void SetBestTryEvent(MRERawEvent* BestTryEvent);

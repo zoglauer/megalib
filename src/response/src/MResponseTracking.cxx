@@ -291,7 +291,6 @@ bool MResponseTracking::Analyze()
   vector<Quadruple> QuadruplesBadStop;
   vector<Quadruple> QuadruplesGoodStart;
   vector<Quadruple> QuadruplesBadStart;
-  // vector<Quadruple>::iterator QuadruplesIter;
   
   
   // the data:
@@ -305,7 +304,7 @@ bool MResponseTracking::Analyze()
   
   MRESE* RESE = 0;
   MRERawEvent* RE = 0;
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
   
   QuadruplesGoodStart.clear();
   QuadruplesBadStart.clear();
@@ -317,117 +316,118 @@ bool MResponseTracking::Analyze()
   QuadruplesBadStop.clear();
   
   // First try to find the tracks in all the RawEvents:
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    RE = REList->GetRawEventAt(r);
-    
-    
-    int e_max = RE->GetNRESEs();
-    for (int e = 0; e < e_max; ++e) {
-      RESE = RE->GetRESEAt(e);
-      
-      if (RESE->GetType() != MRESE::c_Track) continue;
-      
-      bool AllGood = true;
-      
-      MRETrack* Track = (MRETrack*) RESE;
-      mdebug<<"Looking at track: "<<Track->ToString()<<endl;
-      
-      MRESEIterator Iter;
-      Iter.Start(Track->GetStartPoint());
-      
-      if (Iter.GetNRESEs() < 2) continue;
+  for (unsigned int i = 0; i < REList->Size(); ++i) {
+    for (int r = 0; r < REList->Get(i)->GetNRawEvents(); ++r) {
+      RE = REList->Get(i)->GetRawEventAt(r);
       
       
-      if (Iter.GetNRESEs() == 2) {
-        Iter.GetNextRESE();
-        double Etot = Track->GetEnergy();
-        if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true &&
-          IsTrackStop(*Iter.GetCurrent(), *Iter.GetNext(), Etot - Iter.GetCurrent()->GetEnergy()) == true) {
-          mdebug<<"GOOD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-        m_PdfDualGood.Add(Etot, 
-                          CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                          Iter.GetCurrent()->GetEnergy());
-          } else {
-            mdebug<<"BAD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            m_PdfDualBad.Add(Etot, 
-                             CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                             Iter.GetCurrent()->GetEnergy());
-            AllGood = false;
-          }
-      } else {
-        // Start of the track:
-        Iter.GetNextRESE();
-        Etot = Track->GetEnergy();
-        if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
-          mdebug<<"GOOD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-          m_PdfStartGood.Add(Etot, 
-                             CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
-                             Iter.GetCurrent()->GetEnergy());
-        } else {
-          mdebug<<"BAD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-          m_PdfStartBad.Add(Etot, 
+      int e_max = RE->GetNRESEs();
+      for (int e = 0; e < e_max; ++e) {
+        RESE = RE->GetRESEAt(e);
+        
+        if (RESE->GetType() != MRESE::c_Track) continue;
+        
+        bool AllGood = true;
+        
+        MRETrack* Track = (MRETrack*) RESE;
+        mdebug<<"Looking at track: "<<Track->ToString()<<endl;
+        
+        MRESEIterator Iter;
+        Iter.Start(Track->GetStartPoint());
+        
+        if (Iter.GetNRESEs() < 2) continue;
+        
+        
+        if (Iter.GetNRESEs() == 2) {
+          Iter.GetNextRESE();
+          double Etot = Track->GetEnergy();
+          if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true &&
+            IsTrackStop(*Iter.GetCurrent(), *Iter.GetNext(), Etot - Iter.GetCurrent()->GetEnergy()) == true) {
+            mdebug<<"GOOD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+          m_PdfDualGood.Add(Etot, 
                             CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
                             Iter.GetCurrent()->GetEnergy());
-          AllGood = false;
-        }
-        
-        
-        // Central part of the track
-        Iter.GetNextRESE();
-        while (Iter.GetNext() != 0) {
+            } else {
+              mdebug<<"BAD dual: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+              m_PdfDualBad.Add(Etot, 
+                               CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                               Iter.GetCurrent()->GetEnergy());
+              AllGood = false;
+            }
+        } else {
+          // Start of the track:
+          Iter.GetNextRESE();
+          Etot = Track->GetEnergy();
+          if (IsTrackStart(*Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
+            mdebug<<"GOOD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+            m_PdfStartGood.Add(Etot, 
+                               CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                               Iter.GetCurrent()->GetEnergy());
+          } else {
+            mdebug<<"BAD start: "<<Iter.GetCurrent()->GetID()<<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+            m_PdfStartBad.Add(Etot, 
+                              CalculateAngleIn(*Iter.GetCurrent(), *Iter.GetNext())*c_Deg,
+                              Iter.GetCurrent()->GetEnergy());
+            AllGood = false;
+          }
+          
+          
+          // Central part of the track
+          Iter.GetNextRESE();
+          while (Iter.GetNext() != 0) {
+            Etot -= Iter.GetPrevious()->GetEnergy();
+            
+            // Decide if it is good or bad...
+            // In the current implementation/simulation the hits have to be in increasing order...
+            if (AreReseInSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
+              // Retrieve the data:
+              Edep = Iter.GetCurrent()->GetEnergy();
+              AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
+              AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+              AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+              mdebug<<"GOOD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
+              <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+              m_PdfGood.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
+            } else {
+              // Retrieve the data:
+              Edep = Iter.GetCurrent()->GetEnergy();
+              AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
+              AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+              AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
+              m_PdfBad.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
+              mdebug<<"BAD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
+              <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
+              
+              AllGood = false;
+            } // Add good / bad
+            Iter.GetNextRESE();
+          } // If we have a next element
+          
+          
+          // The stop section:
           Etot -= Iter.GetPrevious()->GetEnergy();
           
-          // Decide if it is good or bad...
-          // In the current implementation/simulation the hits have to be in increasing order...
-          if (AreReseInSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot) == true) {
-            // Retrieve the data:
-            Edep = Iter.GetCurrent()->GetEnergy();
-            AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
-            AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-            AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-            mdebug<<"GOOD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
-            <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            m_PdfGood.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
+          if (IsTrackStop(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot) == true) {
+            mdebug<<"GOOD stop: "<<Iter.GetPrevious()->GetID()
+            <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
+            m_PdfStopGood.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
           } else {
-            // Retrieve the data:
-            Edep = Iter.GetCurrent()->GetEnergy();
-            AngleIn = CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg;
-            AngleOutPhi = CalculateAngleOutPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-            AngleOutTheta = CalculateAngleOutTheta(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext())*c_Deg;
-            m_PdfBad.Add(Etot, AngleIn, Edep, AngleOutPhi, AngleOutTheta, 1);
-            mdebug<<"BAD central: "<<Iter.GetPrevious()->GetID()<<" - "<<Iter.GetCurrent()->GetID()
-            <<" - "<<Iter.GetNext()->GetID()<<" - "<<Etot<<endl;
-            
+            mdebug<<"BAD stop: "<<Iter.GetPrevious()->GetID()
+            <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
+            m_PdfStopBad.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
             AllGood = false;
-          } // Add good / bad
-          Iter.GetNextRESE();
-        } // If we have a next element
-        
-        
-        // The stop section:
-        Etot -= Iter.GetPrevious()->GetEnergy();
-        
-        if (IsTrackStop(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot) == true) {
-          mdebug<<"GOOD stop: "<<Iter.GetPrevious()->GetID()
-          <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
-          m_PdfStopGood.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
-        } else {
-          mdebug<<"BAD stop: "<<Iter.GetPrevious()->GetID()
-          <<" - "<<Iter.GetCurrent()->GetID()<<" - "<<Etot<<endl;
-          m_PdfStopBad.Add(Etot, CalculateAngleIn(*Iter.GetPrevious(), *Iter.GetCurrent())*c_Deg);
-          AllGood = false;
+          }
         }
-      }
-      if (AllGood == false) {
-        m_GoodBadTable.Add(0.5, 1);
-        //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
-      } else {
-        m_GoodBadTable.Add(1.5, 1);
-        mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
-      }
-    } // all reses
-  } // all raw events
+        if (AllGood == false) {
+          m_GoodBadTable.Add(0.5, 1);
+          //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
+        } else {
+          m_GoodBadTable.Add(1.5, 1);
+          mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
+        }
+      } // all reses
+    } // all raw events
+  } // all events
   
   // mdebug<<"Good triples:"<<endl;
   for (unsigned int t = 0; t < QuadruplesGoodCenter.size(); ++t) {

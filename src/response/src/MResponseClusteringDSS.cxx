@@ -137,19 +137,11 @@ bool MResponseClusteringDSS::Analyze()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
-  
-  if (REList->GetNRawEvents() != 1) {
-    cout<<"Something went wrong: we have more than one good event"<<endl;
-    return true;
-  }
-  
-  MRERawEvent* RawEvent = REList->GetRawEventAt(0);
-  int e_max = RawEvent->GetNRESEs();
+  int e_max = m_ReEvent->GetNRESEs();
   
   int NClusters = 0;
   for (int e = 0; e < e_max; ++e) {
-    if (RawEvent->GetRESEAt(e)->GetType() == MRESE::c_Cluster) NClusters++;
+    if (m_ReEvent->GetRESEAt(e)->GetType() == MRESE::c_Cluster) NClusters++;
   }
   if (NClusters == 0) return true;
   
@@ -158,7 +150,7 @@ bool MResponseClusteringDSS::Analyze()
   
   
   for (int e = 0; e < e_max; ++e) {
-    MRESE* RESE = RawEvent->GetRESEAt(e);
+    MRESE* RESE = m_ReEvent->GetRESEAt(e);
     
     if (RESE->GetType() != MRESE::c_Cluster) return true;
     

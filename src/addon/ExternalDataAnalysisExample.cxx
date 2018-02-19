@@ -382,10 +382,10 @@ bool ExternalAnalysisPipelineExample::Analyze()
     // delete RawEvent; --> it is deleted by the m_RawEventAnalyzer
     
     BestRawEvent = 0;
-    if (m_RawEventAnalyzer->GetOptimumEvent() != 0) {
-      BestRawEvent = m_RawEventAnalyzer->GetOptimumEvent();
-    } else if (m_RawEventAnalyzer->GetBestTryEvent() != 0) {
-      BestRawEvent = m_RawEventAnalyzer->GetBestTryEvent();
+    if (m_RawEventAnalyzer->GetSingleOptimumEvent() != 0) {
+      BestRawEvent = m_RawEventAnalyzer->GetSingleOptimumEvent();
+    } else if (m_RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+      BestRawEvent = m_RawEventAnalyzer->GetSingleBestTryEvent();
     }
     if (BestRawEvent != 0) {
       m_HistEnergyAfter->Fill(BestRawEvent->GetEnergy());

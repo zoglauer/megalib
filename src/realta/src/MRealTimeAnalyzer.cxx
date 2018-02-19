@@ -924,10 +924,10 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
         if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
           MRERawEvent* BestRawEvent = 0;
-          if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-          } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+          if (RawEventAnalyzer->GetSingleOptimumEvent() != nullptr) {
+            BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+          } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+            BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
           }
           if (BestRawEvent != 0) {
             // Find the event to which it belongs:
@@ -1113,10 +1113,10 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
       if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
         MRERawEvent* BestRawEvent = 0;
-        if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-        } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+        if (RawEventAnalyzer->GetSingleOptimumEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+        } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
         }
         if (BestRawEvent != 0) {
           MPhysicalEvent* P = BestRawEvent->GetPhysicalEvent();

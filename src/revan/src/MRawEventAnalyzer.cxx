@@ -131,7 +131,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_PhysFile = nullptr;
 
   m_Geometry = nullptr; 
-  m_RawEvents = new MRawEventIncarnations(0);
+  m_RawEvents = new MRawEventIncarnationList();
 
   m_MoreEventsAvailable = true;
 
@@ -144,6 +144,8 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_NComptonEvents = 0;
   m_NPairEvents = 0;
   m_NMuonEvents = 0;
+  m_NPETEvents = 0;
+  m_NMultiEvents = 0;
   m_NDecayEvents = 0;
   m_NUnidentifiableEvents = 0;
 
@@ -582,15 +584,16 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   m_InitialRawEvent = RE->Duplicate();
   
 
-  // Set the initial event and clean the remainders of the last event
-  m_RawEvents->SetInitialRawEvent(RE);
+  // Sets the initial event and cleans the remainders of the last event
+  m_RawEvents->DeleteAll();
+  MRawEventIncarnations* REI = new MRawEventIncarnations(m_Geometry);
+  REI->SetInitialRawEvent(RE);
+  m_RawEvents->Add(REI);
   
   
   // Check for event selections:
   bool SelectionsPassed = true;
-  if (SelectionsPassed == true && 
-      RE->GetExternalBadEventFlag() == true &&
-      m_RejectAllBadEvents == true) {
+  if (SelectionsPassed == true && RE->GetExternalBadEventFlag() == true && m_RejectAllBadEvents == true) {
     mdebug<<"ER - Selection: External bad event flag raised: "<<RE->GetExternalBadEventString()<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionExternalBadEventFlag);
     SelectionsPassed = false;
@@ -631,15 +634,18 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         return c_AnalysisUndefinedError;
       }
       
-      m_Clusterizer->Analyze(m_RawEvents);
-      // Since we have exactly one event, it is automatically the best event:
-      if (m_RawEvents->GetNRawEvents() == 1) {
-        //m_RawEvents->SetBestEvent(m_RawEvents->GetRawEventAt(0));
-      } else {
-        merr<<"ER - We should have only one good event here..."<<endl;
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        m_Clusterizer->Analyze(REI);
+        // Since we have exactly one event, it is automatically the best event:
+        if (REI->GetNRawEvents() == 1) {
+
+        } else {
+          merr<<"ER - We should have only one good event here..."<<endl;
+        }
+        REI->SetBestTryEvent(REI->GetRawEventAt(0));
       }
     }
-    m_RawEvents->SetBestTryEvent(m_RawEvents->GetRawEventAt(0));
 
     m_TimeClusterize += Timer.ElapsedTime();
 
@@ -651,7 +657,10 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         merr<<"Tracker pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
         return c_AnalysisUndefinedError;
       }
-      m_Tracker->Analyze(m_RawEvents);
+      for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+        MRawEventIncarnations* REI = m_RawEvents->Get(i);
+        m_Tracker->Analyze(REI);
+      }
     } else {
       mdebug<<"I am not doing Tracking!"<<endl;
     }
@@ -660,45 +669,41 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
 
 
     // Now we have possibly found: showers, MIPS and of course pairs
-    if (SelectionsPassed == true && m_RawEvents->HasOptimumEvent() == false) {
-
-      // Check lever arm selection:
-      for (int rw = 0; rw < m_RawEvents->GetNRawEvents(); ++rw) {
-        MRERawEvent* RW = m_RawEvents->GetRawEventAt(rw);
-        for (int r = 0; r < RW->GetNRESEs(); ++r) {
-          for (int s = r+1; s < RW->GetNRESEs(); ++s) {
-            if ((RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag() < m_LeverArmMin ||
-                (RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag() > m_LeverArmMax) {
-              mdebug<<"ER - Selection: Lever arm out of limits: "<<(RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag()
-                  <<" cm is not within ["<<m_LeverArmMin
-                  <<", "<<m_LeverArmMax<<"] cm"<<endl;
-              RW->SetRejectionReason(MRERawEvent::c_RejectionLeverArmOutOfLimits);
-              SelectionsPassed = false;
-              break;
-            }
-          }
-          if (SelectionsPassed == false) break;
-        }
-      }
+    if (SelectionsPassed == true && m_RawEvents->HasOnlyOptimumEvents() == false) {
 
       // Section D: Compton sequence reconstruction     
       Timer.Start();
-      if (SelectionsPassed == true && m_RawEvents->HasOptimumEvent() == false && m_CSRAlgorithm > c_CSRAlgoNone) {
+      if (SelectionsPassed == true && m_CSRAlgorithm > c_CSRAlgoNone) {
         if (m_CSR == nullptr) {
           merr<<"CSR pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
           return c_AnalysisUndefinedError;
         }
-        // so Comptons are next
-        m_CSR->Analyze(m_RawEvents);
+        
+        for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+          MRawEventIncarnations* REI = m_RawEvents->Get(i);
+          if (REI->HasOptimumEvent() == false) {
+            m_CSR->Analyze(REI);
+          }
+        }
+        
       } else {
         mdebug<<"I am not doing CSR!"<<endl;
       }
 
+      // Section E: Decay algorithm
       if (SelectionsPassed == true && m_DecayAlgorithm > c_DecayAlgoNone) {
-        m_Decay->Analyze(m_RawEvents);
+        for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+          MRawEventIncarnations* REI = m_RawEvents->Get(i);
+          m_Decay->Analyze(REI);
+        }
       } else {
         mdebug<<"I am not doing Decay!"<<endl;
       }
+      
+      // Section F: Search for PET events
+      // TBD
+      
+      
       m_TimeCSR += Timer.ElapsedTime();
     }
 
@@ -706,21 +711,22 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     // Final stuff 
     Timer.Start();
   
-    if (m_RawEvents->HasOptimumEvent() == true) {
-      mdebug<<"ER - Optimum event found!"<<endl;
+    if (m_RawEvents->HasOnlyOptimumEvents() == true) {
+      mdebug<<"ER - Optimum event(s) found!"<<endl;
     } else {
-      mdebug<<"ER - NO optimum event found!"<<endl;
+      mdebug<<"ER - Not (only) optimum event found!"<<endl;
     }
 
     // If we have a good event, then write it
-    if (m_RawEvents->HasOptimumEvent() == true && m_PhysFile != nullptr) {
-      mdebug<<m_RawEvents->GetOptimumEvent()->ToString()<<endl;
+    if (m_RawEvents->HasOnlyOptimumEvents() == true && m_PhysFile != nullptr) {
+      mdebug<<m_RawEvents->ToString()<<endl;
+      
       // Write the event:
-      MPhysicalEvent* Event = m_RawEvents->GetOptimumEvent()->GetPhysicalEvent();
+      MPhysicalEvent* Event = m_RawEvents->GetOptimumPhysicalEvent();
    
       if (m_PhysFile != nullptr) {
         if (m_PhysFile->AddEvent(Event) == false) {
-          merr<<"Saving the event failed!"<<show;
+          merr<<"Saving of the event failed!"<<show;
           return c_AnalysisSavingEventFailed;
         }
       }
@@ -730,7 +736,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         mdebug<<"ER - Good photo event..."<<endl;
         m_NPhotoEvents++;
       } else if (Event->GetType() == MPhysicalEvent::c_Compton) {
-        if (m_RawEvents->GetOptimumEvent()->GetPhysicalEvent()->IsDecay() == true) {
+        if (Event->IsDecay() == true) {
           mdebug<<"ER - Compton event - probably decay..."<<endl;
           m_NDecayEvents++;
         } else {
@@ -743,6 +749,12 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
         mdebug<<"ER - Good muon event..."<<endl;
         m_NMuonEvents++;
+      } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+        mdebug<<"ER - Good PET event..."<<endl;
+        m_NPETEvents++;
+      } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+        mdebug<<"ER - Good multi event..."<<endl;
+        m_NMultiEvents++;
       } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
         mdebug<<"ER - Undefinable event..."<<endl;
         m_NUnidentifiableEvents++;
@@ -750,32 +762,26 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
         merr<<"ER - Unhandled event type: "<<Event->GetType()<<endl;
       }
     } else {
-      MRERawEvent* BestTry = nullptr;
-      if (m_RawEvents->GetBestTryEvent() != nullptr) {
-        BestTry = m_RawEvents->GetBestTryEvent();
-      } else if (m_RawEvents->GetNRawEvents() > 0) {
-        mdebug<<"ER - Multiple raw events and no best one ... grummel ... Grabbing the last one for rejection reason statistics ..."<<endl;
-        BestTry = m_RawEvents->GetRawEventAt(m_RawEvents->GetNRawEvents()-1);
-      }
+      
+      MPhysicalEvent* BestTry = m_RawEvents->GetBestTryPhysicalEvent();
 
-      if (BestTry != nullptr) {
-        mdebug<<"ER - Second best event structure..."<<endl;
-        mdebug<<BestTry->ToString()<<endl;
-        while (m_Rejections.size() < (unsigned int) BestTry->GetRejectionReason()+1) {
+      vector<MRERawEvent*> REs = m_RawEvents->GetBestTryEvents();
+      for (auto RE: REs) {
+        while (m_Rejections.size() < (unsigned int) RE->GetRejectionReason()+1) {
           m_Rejections.push_back(0);
         }
-        m_Rejections[(unsigned int) BestTry->GetRejectionReason()]++;
-        mdebug<<"ER - Rejection: "
-            <<MRERawEvent::GetRejectionReasonAsString(BestTry->GetRejectionReason())<<endl;
+        m_Rejections[(unsigned int) RE->GetRejectionReason()]++;
+        mdebug<<"ER - Rejection: "<<MRERawEvent::GetRejectionReasonAsString(RE->GetRejectionReason())<<endl;
+      }
       
-        MPhysicalEvent* Event = BestTry->GetPhysicalEvent();
-        if (m_PhysFile != nullptr) {
-          if (m_PhysFile->AddEvent(Event) == false) {
-            merr<<"Saving the event failed!"<<show;
-            return c_AnalysisSavingEventFailed;
-          }
+      if (BestTry != nullptr) {
+        mdebug<<"ER - Second best event structure..."<<endl;
+      
+        if (m_PhysFile->AddEvent(BestTry) == false) {
+          merr<<"Saving of the event failed!"<<show;
+          return c_AnalysisSavingEventFailed;
         }
-        mdebug<<BestTry->GetPhysicalEvent()->ToString()<<endl;
+        mdebug<<BestTry->ToString()<<endl;
       }
     }
   }
@@ -786,7 +792,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
 
   m_TimeFinalize += Timer.ElapsedTime();
-  
   
   return c_AnalysisSucess;
 }
@@ -822,22 +827,56 @@ void MRawEventAnalyzer::AddRejectionReason(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventAnalyzer::GetOptimumEvent()
+vector<MRERawEvent*> MRawEventAnalyzer::GetOptimumEvents()
 {
-  // Return the last raw event or 0 if it is not valid
-
-  return m_RawEvents->GetOptimumEvent();
+  return m_RawEvents->GetOptimumEvents();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventAnalyzer::GetBestTryEvent()
+MRERawEvent* MRawEventAnalyzer::GetSingleOptimumEvent()
 {
-  // Return the last raw event, before abort or 0 if it is not valid
+  vector<MRERawEvent*> V = m_RawEvents->GetOptimumEvents();
+  
+  if (V.size() == 0) return nullptr;
+  return V[0];
+}
 
-  return m_RawEvents->GetBestTryEvent();
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MRERawEvent*> MRawEventAnalyzer::GetBestTryEvents()
+{
+  return m_RawEvents->GetBestTryEvents();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MRERawEvent* MRawEventAnalyzer::GetSingleBestTryEvent()
+{
+  vector<MRERawEvent*> V = m_RawEvents->GetBestTryEvents();
+  
+  if (V.size() == 0) return nullptr;
+  return V[0];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MRERawEvent*> MRawEventAnalyzer::GetInitialRawEvents()
+{
+  // Return the initial raw event
+  
+  vector<MRERawEvent*> REs;
+  REs.push_back(m_InitialRawEvent);
+  
+  return REs;
 }
 
 
@@ -847,7 +886,7 @@ MRERawEvent* MRawEventAnalyzer::GetBestTryEvent()
 MRERawEvent* MRawEventAnalyzer::GetInitialRawEvent()
 {
   // Return the initial raw event
-
+  
   return m_InitialRawEvent;
 }
 
@@ -866,6 +905,8 @@ void MRawEventAnalyzer::JoinStatistics(const MRawEventAnalyzer& A)
   m_NPairEvents += A.m_NPairEvents;
   m_NMuonEvents += A.m_NMuonEvents;
   m_NDecayEvents += A.m_NDecayEvents;
+  m_NPETEvents += A.m_NPETEvents;
+  m_NMultiEvents += A.m_NMultiEvents;
   m_NUnidentifiableEvents += A.m_NUnidentifiableEvents;
 
 
@@ -958,6 +999,12 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<"       Muon  ............................................. "
        <<setw(Width)<<m_NMuonEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
        <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NMuonEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
+    out<<"       PET . ............................................. "
+       <<setw(Width)<<m_NPETEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
+       <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NPETEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
+    out<<"       Multi  ............................................ "
+       <<setw(Width)<<m_NMultiEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
+       <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NMultiEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
     out<<endl;
 
     out<<"Rejection reasons for not reconstructable events:"<<endl;

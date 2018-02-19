@@ -250,10 +250,8 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     return true;
   }
   
-  // We require a raw event
-  MRawEventIncarnations* REList = m_ReReader->GetRawEventList();
-  
-  MRERawEvent* RE = REList->GetInitialRawEvent();
+  // We require the initial raw event
+  MRERawEvent* RE = m_ReReader->GetInitialRawEvent();
   if (RE == nullptr) {
     return true;
   }
