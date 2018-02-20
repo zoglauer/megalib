@@ -189,8 +189,7 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
     MEREventClusterizerDataSet* DS = new MEREventClusterizerDataSet();
     DS->Initialize(x+1, m_MaxNGroups);
-    MString Name("EventClusterizer_");
-    Name += x+1;
+    MString Name("EventClusterizer");
     m_Trees[x] = DS->CreateTree(Name);
     m_DataSets[x] = DS;
   }
@@ -333,7 +332,7 @@ bool MResponseEventClusterizerTMVAEventFile::Finalize()
 { 
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
-    TFile Tree(m_ResponseName + ".h" + (x+1) + ".eventclusterizer.root", "recreate");
+    TFile Tree(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
     Tree.cd();
     m_Trees[x]->Write();
     Tree.Close();      
