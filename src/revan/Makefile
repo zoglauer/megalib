@@ -21,12 +21,14 @@ LIBRARY = Revan
 
 FILES = MGeometryRevan \
 	MRawEventIncarnations \
+	MRawEventIncarnationsList \
 	MRawEventAnalyzer \
 	MFileEventsEvta \
 	MFileDecay \
 	MERConstruction \
 	MERNoising \
 	MERCoincidence \
+	MEREventClusterizerDataSet \
 	MERHitClusterizer \
 	MERTrack \
 	MERTrackPearson \

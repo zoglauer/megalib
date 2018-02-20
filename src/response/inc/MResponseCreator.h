@@ -126,7 +126,8 @@ class MResponseCreator
     c_ModeEventQuality,
     c_ModeStripPairingTMVAEventFile,
     c_ModeEventQualityTMVAEventFile,
-    c_ModeComptelDataSpace
+    c_ModeComptelDataSpace,
+    c_ModeEventClusterizerTMVAEventFile
   };
 
 

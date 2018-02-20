@@ -777,9 +777,11 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       if (BestTry != nullptr) {
         mdebug<<"ER - Second best event structure..."<<endl;
       
-        if (m_PhysFile->AddEvent(BestTry) == false) {
-          merr<<"Saving of the event failed!"<<show;
-          return c_AnalysisSavingEventFailed;
+        if (m_PhysFile != nullptr) {
+          if (m_PhysFile->AddEvent(BestTry) == false) {
+            merr<<"Saving of the event failed!"<<show;
+            return c_AnalysisSavingEventFailed;
+          }
         }
         mdebug<<BestTry->ToString()<<endl;
       }

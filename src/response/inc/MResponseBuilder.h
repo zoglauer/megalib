@@ -119,10 +119,13 @@ class MResponseBuilder
   vector<int> GetReseIds(MRESE* RESE);
   //! Return a list of Sivan Origin IA IDs for the given RESE
   vector<int> GetOriginIds(MRESE* RESE);
-
+  
   //! Check if IDs (RESE or origins?) are in sequence
   bool AreIdsInSequence(const vector<int>& Ids);
-
+  
+  //! Determine the original mother ID of the gamma ray: mother is either INIT, ANNI or DECA
+  vector<int> GetMotherIds(const vector<int>& Ids);
+  
   //! Create a log axis for the response file
   vector<float> CreateLogDist(float Min, float Max, int Bins, 
                               float MinBound = c_NoBound, 
@@ -141,7 +144,10 @@ class MResponseBuilder
                                float MaxBound = c_NoBound,
                                float Offset = 0, bool Inverted = false);
 
-
+  
+  //! Shuffle the RESEs around...
+  void Shuffle(vector<MRESE*>& RESEs);
+  
   // private methods:
  private:
 

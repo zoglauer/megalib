@@ -558,6 +558,7 @@ bool MResponseBuilder::SanityCheckSimulations()
   }
 
   for (auto RE: m_ReEvents) {  
+    //cout<<"Sanitycheck"<<endl;
 
     if (RE->GetVertex() != 0) continue;
 
@@ -568,7 +569,8 @@ bool MResponseBuilder::SanityCheckSimulations()
 
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
       MRESE* RESE = RE->GetRESEAt(i);
-
+      //cout<<"SC: "<<(long) RESE<<endl;
+      
       vector<int> EndOriginIds = GetOriginIds(RESE);
 
       // Check that all origin IDs are > 2, i.e. belong to a process and not an init
@@ -687,8 +689,9 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
         int Origin = int(HT->GetOriginAt(o));
         if (find(OriginIds.begin(), OriginIds.end(), Origin) == OriginIds.end()) { // not found
           if (Origin >= 1 && 
-              m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
-              m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI") {
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI" && 
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "DECA") {
             OriginIds.push_back(Origin);
           }
         }
@@ -768,6 +771,81 @@ bool MResponseBuilder::AreIdsInSequence(const vector<int>& Ids)
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the original mother ID of the gamma ray: mother is either INIT, ANNI, or DECA -- and not: BREM, PHOT, IONI, COMP 
+vector<int> MResponseBuilder::GetMotherIds(const vector<int>& AllSimIds)
+{
+  // 
+  
+  vector<int> MotherIDs;
+  
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    int ID = AllSimIds[i];
+    int HighestOriginID = ID;
+    while (true) {
+      // Get new origin ID
+      ID = m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID();
+
+      // Check if we are done
+      bool IsGood = false;
+      if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "ANNI") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "DECA") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "BREM") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "COMP") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "PAIR") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "PHOT") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "IONI") {
+        IsGood = false;
+      } else {
+        mout<<"Error: Unhandled process: "<<m_SiEvent->GetIAAt(ID-1)->GetProcess()<<endl;
+        mout<<"       Make sure you run the simulation only with a EM physics list, not a hadronics physics list!"<<endl;
+        mout<<"       This event cannot be handled correctly!"<<endl;
+        IsGood = false; 
+      }
+      
+      HighestOriginID = ID;
+      
+      if (IsGood == true) {
+        if (find(MotherIDs.begin(), MotherIDs.end(), HighestOriginID) == MotherIDs.end()) {
+          MotherIDs.push_back(HighestOriginID); 
+        }
+        break;
+      }
+    }
+  }
+
+  
+  return MotherIDs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseBuilder::Shuffle(vector<MRESE*>& RESEs)
+{
+  //! Shuffle the RESEs around...
+  
+  unsigned int size = RESEs.size();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = RESEs[To];
+    RESEs[To] = RESEs[From];
+    RESEs[From] = Temp;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

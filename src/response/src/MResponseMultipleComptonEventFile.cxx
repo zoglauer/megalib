@@ -686,23 +686,6 @@ unsigned int MResponseMultipleComptonEventFile::NumberOfComptonInteractions(vect
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MResponseMultipleComptonEventFile::Shuffle(vector<MRESE*>& RESEs)
-{
-  //! Shuffle the RESEs around...
-  
-  unsigned int size = RESEs.size();
-  for (unsigned int i = 0; i < 2*size; ++i) {
-    unsigned int From = gRandom->Integer(size);
-    unsigned int To = gRandom->Integer(size);
-    MRESE* Temp = RESEs[To];
-    RESEs[To] = RESEs[From];
-    RESEs[From] = Temp;
-  }
-}
-
 
 // MResponseMultipleComptonEventFile.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
