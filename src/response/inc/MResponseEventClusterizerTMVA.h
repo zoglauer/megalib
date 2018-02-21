@@ -78,10 +78,13 @@ class MResponseEventClusterizerTMVA : public MResponseBuilder
 
   // protected members:
  protected:
-  //! The maximum number of hits to handle
-  unsigned int m_MaxNHits;
+   //! The maximum number of hits to handle
+   unsigned int m_MaxNHits;
    
-  //! The used TMVA methods
+   //! The maximum number of groups to handle
+   unsigned int m_MaxNGroups;
+   
+   //! The used TMVA methods
   MERCSRTMVAMethods m_Methods;
   //! The methods string
   MString m_MethodsString;

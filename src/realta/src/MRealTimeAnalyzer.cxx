@@ -860,7 +860,7 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
   RawEventAnalyzer->SetGeometry(m_CoincidenceGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   RawEventAnalyzer->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   RawEventAnalyzer->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
@@ -1054,7 +1054,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
   RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   
   if (RawEventAnalyzer->PreAnalysis() == false) {
     cout<<"Preanalysis failed!"<<endl;  

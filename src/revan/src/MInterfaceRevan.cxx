@@ -1276,10 +1276,10 @@ void MInterfaceRevan::InitialEventStatistics()
   SetGuiData(Analyzer);
   if (Analyzer.PreAnalysis() == false) return;
 
-  // Set up a dummy clusterizer
-  MERHitClusterizer Clusterizer;
-  if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
-    Clusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
+  // Set up a dummy hit clusterizer
+  MERHitClusterizer HitClusterizer;
+  if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoDistance) {
+    HitClusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
                               m_Data->GetStandardClusterizerMinDistanceD2(),
                               m_Data->GetStandardClusterizerMinDistanceD3(),
                               m_Data->GetStandardClusterizerMinDistanceD4(),
@@ -1288,8 +1288,8 @@ void MInterfaceRevan::InitialEventStatistics()
                               m_Data->GetStandardClusterizerMinDistanceD7(),
                               m_Data->GetStandardClusterizerMinDistanceD8(),
                               m_Data->GetStandardClusterizerCenterIsReference());
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
-    Clusterizer.SetParameters(m_Data->GetAdjacentLevel(), m_Data->GetAdjacentSigma());
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoAdjacent) {
+    HitClusterizer.SetParameters(m_Data->GetAdjacentLevel(), m_Data->GetAdjacentSigma());
   }
   MRawEventIncarnations* RawEvents = new MRawEventIncarnations(0);
 
@@ -1304,7 +1304,7 @@ void MInterfaceRevan::InitialEventStatistics()
     AverageEnergy += RE->GetEnergy();
 
     RawEvents->SetInitialRawEvent(RE);
-    Clusterizer.Analyze(RawEvents);
+    HitClusterizer.Analyze(RawEvents);
     unsigned int NSeparatedHits = RawEvents->GetRawEventAt(0)->GetNRESEs();
 
     if (NSeparatedHits > 1 && NSeparatedHits < MaxSeparatedHits && NHits < 10) {
@@ -1384,9 +1384,9 @@ void MInterfaceRevan::HitStatistics()
 
 //   while ((RE = Reader->GetNextEvent()) != 0) { 
 
-  MERHitClusterizer Clusterizer;
-  if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
-    Clusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
+  MERHitClusterizer HitClusterizer;
+  if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoDistance) {
+    HitClusterizer.SetParameters(m_Data->GetStandardClusterizerMinDistanceD1(), 
                               m_Data->GetStandardClusterizerMinDistanceD2(),
                               m_Data->GetStandardClusterizerMinDistanceD3(),
                               m_Data->GetStandardClusterizerMinDistanceD4(),
@@ -1395,8 +1395,8 @@ void MInterfaceRevan::HitStatistics()
                               m_Data->GetStandardClusterizerMinDistanceD7(),
                               m_Data->GetStandardClusterizerMinDistanceD8(),
                               m_Data->GetStandardClusterizerCenterIsReference());
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
-    Clusterizer.SetParameters(m_Data->GetAdjacentLevel(), m_Data->GetAdjacentSigma());
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoAdjacent) {
+    HitClusterizer.SetParameters(m_Data->GetAdjacentLevel(), m_Data->GetAdjacentSigma());
   }
 
   MRERawEvent* RE = 0;
@@ -1404,7 +1404,7 @@ void MInterfaceRevan::HitStatistics()
 
   while ((RE = Reader->GetNextEvent()) != 0) { 
     RawEvents->SetInitialRawEvent(RE);
-    Clusterizer.Analyze(RawEvents);
+    HitClusterizer.Analyze(RawEvents);
   
     massert(RawEvents->GetNRawEvents() == 1);
     

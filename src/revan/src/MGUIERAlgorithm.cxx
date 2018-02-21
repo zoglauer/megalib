@@ -45,9 +45,7 @@ ClassImp(MGUIERAlgorithm)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIERAlgorithm::MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, 
-                                 MSettingsEventReconstruction* Data)
-  : MGUIDialog(Parent, Main)
+MGUIERAlgorithm::MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, MSettingsEventReconstruction* Data) : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIERAlgorithm and bring it to the screen
 
@@ -65,6 +63,7 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   // Delete an instance of MGUIERAlgorithm
 
   delete m_CoincidenceList;
+  delete m_EventClusteringList;
   delete m_HitClusteringList;
   delete m_TrackingList;
   delete m_CSRList;
@@ -87,18 +86,25 @@ void MGUIERAlgorithm::Create()
   m_ListLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
 
   m_CoincidenceList = new MGUIERBList(this, "Coincidence search", true);
-  m_CoincidenceList->Add("No coincidence or coincident hits already merged in simulation or hardware (should be default)");
+  m_CoincidenceList->Add("No coincidence or coincident hits already merged in simulation or hardware (DEFAULT)");
   m_CoincidenceList->Add("Coincidence window");
   m_CoincidenceList->SetSelected(m_Data->GetCoincidenceAlgorithm());
   m_CoincidenceList->Create();
   AddFrame(m_CoincidenceList, m_ListLayout);
-
+  
+  m_EventClusteringList = new MGUIERBList(this, "Find multiple, coincident gamma rays in one event", true);
+  m_EventClusteringList->Add("No event clustering (DEFAULT - unless you have the very rare case of pile up)");
+  m_EventClusteringList->Add("Event clustering using TMVA machine learning (alpha)");
+  m_EventClusteringList->SetSelected(m_Data->GetEventClusteringAlgorithm());
+  m_EventClusteringList->Create();
+  AddFrame(m_EventClusteringList, m_ListLayout);
+  
   m_HitClusteringList = new MGUIERBList(this, "Clustering of neighboring hits", true);
   m_HitClusteringList->Add("No clustering");
   m_HitClusteringList->Add("Clustering by Distance");
   m_HitClusteringList->Add("Clustering of adjacent voxels");
   m_HitClusteringList->Add("Clustering using probability density function");
-  m_HitClusteringList->SetSelected(m_Data->GetClusteringAlgorithm());
+  m_HitClusteringList->SetSelected(m_Data->GetHitClusteringAlgorithm());
   m_HitClusteringList->Create();
   AddFrame(m_HitClusteringList, m_ListLayout);
 
@@ -177,7 +183,8 @@ bool MGUIERAlgorithm::OnApply()
   // The Apply button has been pressed
 
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
-  m_Data->SetClusteringAlgorithm(m_HitClusteringList->GetSelected());
+  m_Data->SetEventClusteringAlgorithm(m_EventClusteringList->GetSelected());
+  m_Data->SetHitClusteringAlgorithm(m_HitClusteringList->GetSelected());
   if (m_TrackingList->GetSelected() == 0) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   } else if (m_TrackingList->GetSelected() == 1) {

@@ -83,7 +83,7 @@ bool MResponseClusteringDSS::Initialize()
 
   // We ignore the loaded configuration file - we only need clustering
   m_ReReader->SetCoincidenceAlgorithm(MRawEventAnalyzer::c_CoincidenceAlgoNone);
-  m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoAdjacent);
+  m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoAdjacent);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);

@@ -60,6 +60,7 @@ class MERHitClusterizer : public MERConstruction
   //! Do the analysis - clusterize all events in the list
   virtual bool Analyze(MRawEventIncarnations* List);
 
+  //! Dump the reconstruction options into a string
   virtual MString ToString(bool CoreOnly = false) const;
 
   static const int c_None = 0;

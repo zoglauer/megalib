@@ -274,5 +274,19 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if any of the raw event incarnations is valid
+bool MRawEventIncarnationList::IsAnyEventValid() const
+{
+  for (MRawEventIncarnations* REI: m_Collection) {
+    if (REI->IsAnyEventValid() == true) return true; 
+  }
+  
+  return false;
+}
+
+
 // MRawEventIncarnationList.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

@@ -195,17 +195,17 @@ void MGUIOptionsCSR::Create()
     TGLayoutHints* TMVAFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
     m_TMVAFileSelector = 
     new MGUIEFileSelector(this, "File containing the TMVA data (\".tmva\"):", 
-                          m_Data->GetTMVAFileName());
+                          m_Data->GetCSRTMVAFileName());
     m_TMVAFileSelector->SetFileType("TMVA steering file", "*.tmva");
     AddFrame(m_TMVAFileSelector, TMVAFileSelectorLayout);      
     
     m_TMVAMethods = new MGUIERBList(this, "Choose the TMVA method (if it is not in the tmva file, you will get an error message later):");
-    vector<MERCSRTMVAMethod> Methods = m_Data->GetTMVAMethods().GetAllMethods();
+    vector<MERCSRTMVAMethod> Methods = m_Data->GetCSRTMVAMethods().GetAllMethods();
     for (unsigned int m = 0; m < Methods.size(); ++m) {
-      m_TMVAMethods->Add(m_Data->GetTMVAMethods().GetFullString(Methods[m]));
+      m_TMVAMethods->Add(m_Data->GetCSRTMVAMethods().GetFullString(Methods[m]));
       m_TMVAMethodsMap[m] = Methods[m];
     }
-    vector<MERCSRTMVAMethod> M = m_Data->GetTMVAMethods().GetUsedMethods();
+    vector<MERCSRTMVAMethod> M = m_Data->GetCSRTMVAMethods().GetUsedMethods();
     if (M.size() > 0) {
       for (auto I = m_TMVAMethodsMap.begin(); I != m_TMVAMethodsMap.end(); ++I) {
         if (I->second == M[0]) {
@@ -306,10 +306,10 @@ bool MGUIOptionsCSR::OnApply()
     m_Data->SetBayesianComptonFileName(m_BayesianFileSelector->GetFileName());
     m_Data->SetCSRMaxNHits(m_MaxNSingleHits->GetAsInt());
   } else if (m_Data->GetCSRAlgorithm() == MRawEventAnalyzer::c_CSRAlgoTMVA) {
-    m_Data->SetTMVAFileName(m_TMVAFileSelector->GetFileName());
+    m_Data->SetCSRTMVAFileName(m_TMVAFileSelector->GetFileName());
     MERCSRTMVAMethods M;
     M.AddUsedMethod(m_TMVAMethodsMap[m_TMVAMethods->GetSelected()]);
-    m_Data->SetTMVAMethods(M);
+    m_Data->SetCSRTMVAMethods(M);
   }
   return true;
 }

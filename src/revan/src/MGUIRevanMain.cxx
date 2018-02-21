@@ -35,6 +35,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIERAlgorithm.h"
 #include "MGUIOptionsCoincidence.h"
+#include "MGUIOptionsEventClustering.h"
 #include "MGUIOptionsHitClustering.h"
 #include "MGUIOptionsTracking.h"
 #include "MGUIOptionsCSR.h"
@@ -95,6 +96,7 @@ void MGUIRevanMain::Create()
   m_MenuReconstruction->AddEntry("Selection of general algorithms", c_Options);
   m_MenuReconstruction->AddSeparator();
   m_MenuReconstruction->AddEntry("Coincidence options", c_OptionsCoincidence);
+  m_MenuReconstruction->AddEntry("Event clustering options", c_OptionsEventClustering);
   m_MenuReconstruction->AddEntry("Hit clustering options", c_OptionsHitClustering);
   m_MenuReconstruction->AddEntry("Electron tracking options", c_OptionsTracking);
   m_MenuReconstruction->AddEntry("Compton sequencing options", c_OptionsSequencing);
@@ -222,11 +224,15 @@ bool MGUIRevanMain::ProcessMessage(long Message, long Parameter1,
       case c_OptionsCoincidence:
         new MGUIOptionsCoincidence(gClient->GetRoot(), this, m_Data);
         break;
-
+        
+      case c_OptionsEventClustering:
+        new MGUIOptionsEventClustering(gClient->GetRoot(), this, m_Data);
+        break;
+        
       case c_OptionsHitClustering:
         new MGUIOptionsHitClustering(gClient->GetRoot(), this, m_Data);
         break;
-
+        
       case c_OptionsSequencing:
         new MGUIOptionsCSR(gClient->GetRoot(), this, m_Data);
         break;

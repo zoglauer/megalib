@@ -80,6 +80,9 @@ class MRawEventIncarnationList
   //! Remove and delete all raw events incarnations
   void DeleteAll();
   
+  //! Return true if any of the raw events is valid
+  bool IsAnyEventValid() const;
+  
   //! Return the content as a string
   MString ToString(bool WithLink = true, int Level = 0);
 

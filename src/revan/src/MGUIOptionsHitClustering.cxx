@@ -81,7 +81,7 @@ void MGUIOptionsHitClustering::Create()
 
   TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
 
-  if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
+  if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoDistance) {
     AddSubTitle("Options for clustering by distance:"); 
     
     m_MinDistance = new MGUIEEntryList(this, "Minimum distance:");
@@ -115,7 +115,7 @@ void MGUIOptionsHitClustering::Create()
     }
     AddFrame(m_ReferencePoint, ReferenceLayout);
 
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoAdjacent) {
     AddSubTitle("Options for adjacent voxel clustering:"); 
     m_AdjacentLevel = new TGComboBox(this);
     m_AdjacentLevel->AddEntry("4 neighboring voxels", 1);
@@ -140,7 +140,7 @@ void MGUIOptionsHitClustering::Create()
                      false,
                      m_Data->GetAdjacentSigma(), true, -10.0);
     AddFrame(m_AdjacentSigma, EntryLayout);
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoPDF) {
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoPDF) {
     AddSubTitle("Options for clustering using a probability densitiy function:");
     
     m_PDFClusterizerBaseFileName = new MGUIEFileSelector(this, "File containing the data (XXX.dualseparable.yes.rsp):", 
@@ -171,7 +171,7 @@ bool MGUIOptionsHitClustering::OnApply()
 {
   // The Apply button has been pressed
 
-  if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoDistance) {
+  if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoDistance) {
     m_Data->SetStandardClusterizerMinDistanceD1(m_MinDistance->GetAsDouble(0));
     m_Data->SetStandardClusterizerMinDistanceD2(m_MinDistance->GetAsDouble(1));
     m_Data->SetStandardClusterizerMinDistanceD3(m_MinDistance->GetAsDouble(2));
@@ -185,10 +185,10 @@ bool MGUIOptionsHitClustering::OnApply()
     } else {
       m_Data->SetStandardClusterizerCenterIsReference(false);
     }
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoAdjacent) {
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoAdjacent) {
     m_Data->SetAdjacentLevel(m_AdjacentLevel->GetSelected());
     m_Data->SetAdjacentSigma(m_AdjacentSigma->GetAsDouble());
-  } else if (m_Data->GetClusteringAlgorithm() == MRawEventAnalyzer::c_ClusteringAlgoPDF) {
+  } else if (m_Data->GetHitClusteringAlgorithm() == MRawEventAnalyzer::c_HitClusteringAlgoPDF) {
     m_Data->SetPDFClusterizerBaseFileName(m_PDFClusterizerBaseFileName->GetFileName());
   }
 

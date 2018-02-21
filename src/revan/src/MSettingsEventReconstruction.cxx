@@ -48,7 +48,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
 {
   // General algorithm selection
   m_CoincidenceAlgorithm = 0;
-  m_ClusteringAlgorithm = 2;
+  m_EventClusteringAlgorithm = 0;
+  m_HitClusteringAlgorithm = 1;
   m_TrackingAlgorithm = 0;
   m_CSRAlgorithm = 1;
   m_DecayAlgorithm = 0;
@@ -108,8 +109,12 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_DecayFileName = "";
   m_BayesianComptonFileName = "";
   m_BayesianElectronFileName = "";
-
-  m_TMVAFileName = "";
+  
+  m_CSRTMVAFileName = "";
+  m_CSRTMVAMethods.SetUsedMethods("BDTD");
+  
+  m_EventClusteringTMVAFileName = "";
+  m_EventClusteringTMVAMethods.SetUsedMethods("BDTD");
   
   // General options:
   m_TotalEnergyMin = 0;
@@ -128,7 +133,6 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
 
   m_SpecialMode = false;
   
-  m_TMVAMethods.SetUsedMethods("BDTD");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,12 +153,16 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   // Not stored! new MXmlNode(Node, "SaveOI", m_SaveOI);
 
   new MXmlNode(Node, "CoincidenceAlgorithm", m_CoincidenceAlgorithm);
-  new MXmlNode(Node, "ClusteringAlgorithm", m_ClusteringAlgorithm);
+  new MXmlNode(Node, "EventClusteringAlgorithm", m_EventClusteringAlgorithm);
+  new MXmlNode(Node, "HitClusteringAlgorithm", m_HitClusteringAlgorithm);
   new MXmlNode(Node, "TrackingAlgorithm", m_TrackingAlgorithm);
   new MXmlNode(Node, "CSRAlgorithm", m_CSRAlgorithm);
   new MXmlNode(Node, "DecayAlgorithm", m_DecayAlgorithm);
   new MXmlNode(Node, "CoincidenceWindow", m_CoincidenceWindow);
-
+  
+  new MXmlNode(Node, "EventClusteringTMVAFile", CleanPath(m_EventClusteringTMVAFileName));
+  new MXmlNode(Node, "EventClusteringTMVAMethods", m_EventClusteringTMVAMethods.GetUsedMethodsString());
+  
   new MXmlNode(Node, "StandardClusterizerMinDistanceD1", m_StandardClusterizerMinDistanceD1);
   new MXmlNode(Node, "StandardClusterizerMinDistanceD2", m_StandardClusterizerMinDistanceD2);
   new MXmlNode(Node, "StandardClusterizerMinDistanceD3", m_StandardClusterizerMinDistanceD3);
@@ -200,8 +208,8 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "BayesianComptonFile", CleanPath(m_BayesianComptonFileName));
   new MXmlNode(Node, "BayesianElectronFile", CleanPath(m_BayesianElectronFileName));
   
-  new MXmlNode(Node, "TMVAFile", CleanPath(m_TMVAFileName));
-  new MXmlNode(Node, "TMVAMethods", m_TMVAMethods.GetUsedMethodsString());
+  new MXmlNode(Node, "CSRTMVAFile", CleanPath(m_CSRTMVAFileName));
+  new MXmlNode(Node, "CSRTMVAMethods", m_CSRTMVAMethods.GetUsedMethodsString());
   
   new MXmlNode(Node, "TotalEnergy", m_TotalEnergyMin, m_TotalEnergyMax);
   new MXmlNode(Node, "LeverArm", m_LeverArmMin, m_LeverArmMax);
@@ -229,11 +237,17 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   }
   */
   
-  if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {
-    m_ClusteringAlgorithm = aNode->GetValueAsInt();
-  }
   if ((aNode = Node->GetNode("CoincidenceAlgorithm")) != 0) {
     m_CoincidenceAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("EventClusteringAlgorithm")) != 0) {
+    m_EventClusteringAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("HitClusteringAlgorithm")) != 0) {
+    m_HitClusteringAlgorithm = aNode->GetValueAsInt();
+  }
+  if ((aNode = Node->GetNode("ClusteringAlgorithm")) != 0) {  // TODO: Delete in 2020
+    m_HitClusteringAlgorithm = aNode->GetValueAsInt();
   }
   if ((aNode = Node->GetNode("TrackingAlgorithm")) != 0) {
     m_TrackingAlgorithm = aNode->GetValueAsInt();
@@ -247,6 +261,17 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("CoincidenceWindow")) != 0) {
     m_CoincidenceWindow = aNode->GetValueAsDouble();
   }
+  
+  if ((aNode = Node->GetNode("EventClusteringTMVAFile")) != 0) {
+    m_EventClusteringTMVAFileName = aNode->GetValueAsString();
+  }
+  if ((aNode = Node->GetNode("EventClusteringTMVAMethods")) != 0) {
+    MString Methods = aNode->GetValueAsString();
+    m_EventClusteringTMVAMethods.ResetUsedMethods();
+    m_EventClusteringTMVAMethods.SetUsedMethods(Methods);
+  }
+  
+  
   if ((aNode = Node->GetNode("StandardClusterizerMinDistanceD1")) != 0) {
     m_StandardClusterizerMinDistanceD1 = aNode->GetValueAsDouble();
   }
@@ -358,13 +383,13 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
   if ((aNode = Node->GetNode("BayesianElectronFile")) != 0) {
     m_BayesianElectronFileName = aNode->GetValueAsString();
   }
-  if ((aNode = Node->GetNode("TMVAFile")) != 0) {
-    m_TMVAFileName = aNode->GetValueAsString();
+  if ((aNode = Node->GetNode("CSRTMVAFile")) != 0) {
+    m_CSRTMVAFileName = aNode->GetValueAsString();
   }
-  if ((aNode = Node->GetNode("TMVAMethods")) != 0) {
+  if ((aNode = Node->GetNode("CSRTMVAMethods")) != 0) {
     MString Methods = aNode->GetValueAsString();
-    m_TMVAMethods.ResetUsedMethods();
-    m_TMVAMethods.SetUsedMethods(Methods);
+    m_CSRTMVAMethods.ResetUsedMethods();
+    m_CSRTMVAMethods.SetUsedMethods(Methods);
   }
   if ((aNode = Node->GetNode("TotalEnergy")) != 0) {
     m_TotalEnergyMin = aNode->GetMinValueAsDouble();

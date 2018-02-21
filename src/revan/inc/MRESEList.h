@@ -51,6 +51,7 @@ class MRESEList
   void AddRESEFirst(MRESE* RESE);
   MRESE* RemoveRESE(MRESE* RESE);
   MRESE* RemoveRESEAt(int i);
+  //! Removes all RESE - The list is NOT compressed!
   void RemoveAllRESEs();
   void DeleteAll();
   void CompressRESEs() { Compress(); } // depreciated!

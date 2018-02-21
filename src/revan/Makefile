@@ -28,6 +28,8 @@ FILES = MGeometryRevan \
 	MERConstruction \
 	MERNoising \
 	MERCoincidence \
+	MEREventClusterizer \
+	MEREventClusterizerTMVA \
 	MEREventClusterizerDataSet \
 	MERHitClusterizer \
 	MERTrack \
@@ -74,6 +76,7 @@ FILES_UI = \
 	MGUIOptionsGeneral \
 	MGUIOptionsCoincidence \
 	MGUIOptionsHitClustering \
+	MGUIOptionsEventClustering \
 	MGUIOptionsTracking \
 	MGUIOptionsCSR \
 	MGUIOptionsDecay \

@@ -52,6 +52,7 @@ using namespace std;
 #include "MGeometryRevan.h"
 #include "MERCSRBayesian.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -289,6 +290,7 @@ MString MERCSRTMVA::ToString(bool CoreOnly) const
   
   return out.str().c_str();
 }
+
 
 // MERCSRTMVA.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

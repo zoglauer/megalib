@@ -104,8 +104,8 @@ TMVA::Reader* MEREventClusterizerDataSet::CreateReader()
   
   TMVA::Reader* Reader = new TMVA::Reader("!Color:!Silent");
   
-  Name = "SimulationID";
-  Reader->AddVariable(Name, &m_SimulationID);  
+  //Name = "SimulationID";
+  //Reader->AddVariable(Name, &m_SimulationID);  
   
   for (unsigned int i = 0; i < m_Energies.size(); ++i) {
     Name = "Energy_";
@@ -128,7 +128,7 @@ TMVA::Reader* MEREventClusterizerDataSet::CreateReader()
     Reader->AddVariable(Name, &m_PositionsZ[i]);
   }
   
-  
+  /*
   for (unsigned int i = 0; i < m_ResultHitGroups.size(); ++i) {
     for (unsigned int g = 0; g < m_ResultHitGroups[i].size(); ++g) {
       Name = "ResultHitGroups_";
@@ -138,6 +138,7 @@ TMVA::Reader* MEREventClusterizerDataSet::CreateReader()
       Reader->AddVariable(Name, &m_ResultHitGroups[i][g]);
     }
   }
+  */
   
   return Reader;
 }
@@ -179,7 +180,7 @@ bool MEREventClusterizerDataSet::FillResultData(vector<vector<int>>& RESEGroups)
   // Zero it first:
   for (unsigned int r = 0; r < m_ResultHitGroups.size(); ++r) {
     for (unsigned int g = 0; g < m_ResultHitGroups[r].size(); ++g) {
-      m_ResultHitGroups[r][g] = 0.0;
+      m_ResultHitGroups[r][g] = 0.001*(gRandom->Rndm() - 0.5);
     }
   }
       
@@ -188,7 +189,7 @@ bool MEREventClusterizerDataSet::FillResultData(vector<vector<int>>& RESEGroups)
     for (unsigned int h = 0; h < RESEGroups[r].size(); ++h) {
       unsigned int Group = RESEGroups[r][h];
       if (Group > m_NMaxGroups) Group = m_NMaxGroups;
-      m_ResultHitGroups[r][Group] = 1.0;
+      m_ResultHitGroups[r][Group] = 1.0 + 0.001*(gRandom->Rndm() - 0.5);
     }
   }
     

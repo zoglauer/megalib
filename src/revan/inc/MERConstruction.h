@@ -17,7 +17,6 @@
 
 
 // ROOT libs:
-#include <TROOT.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
@@ -30,28 +29,34 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Base class for all event reconstrcution tasjs
 class MERConstruction
 {
   // public interface:
  public:
+  //! The default constructor
   MERConstruction();
+  //! The deafault destructor
   virtual ~MERConstruction();
-
+  
+  //! Set the geometry
+  virtual void SetGeometry(MGeometryRevan* Geometry) { m_Geometry = Geometry; }
+  
+  //! Analyze a list of event incarnations
   virtual bool Analyze(MRawEventIncarnations* List);
 
-  virtual void SetGeometry(MGeometryRevan* Geometry) { m_Geometry = Geometry; }
-
+  //! Perform per-analysis, e.g. load all files, etc.
   virtual bool PreAnalysis() { return true; }
+  //! Perform post-analysis, e.g create analysis summaries, etc.
   virtual bool PostAnalysis() { return true; }
 
+  //! Dump what we have done into a string
   virtual MString ToString(bool CoreOnly = false) const = 0;
 
   // protected methods:
  protected:
-  //MERConstruction() {};
-  //MERConstruction(const MERConstruction& ERConstruction) {};
 
-  /// Modification routine at the beginning of the analysis to add/modify the events in the list before the analysis
+  //! Modification routine at the beginning of the analysis to add/modify the events in the list before the analysis
   virtual void ModifyEventList();
 
   // private methods:

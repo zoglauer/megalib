@@ -186,8 +186,10 @@ bool MResponseEventClusterizerTMVA::Initialize()
   // Second find all the files for different number of hits
   size_t Index = m_DataFileName.FindLast(".maxhits");
   MString Prefix = m_DataFileName.GetSubString(0, Index);
+  
   unsigned int s = 0;
-  for (s = 2; s <= m_MaxNHits; ++s) {
+  unsigned int s_max = m_MaxNHits;
+  for (s = 2; s <= s_max; ++s) {
     MString Name = Prefix + ".maxhits" + s + ".eventclusterizer.root";
 
     MFile::ExpandFileName(Name);
@@ -197,10 +199,12 @@ bool MResponseEventClusterizerTMVA::Initialize()
     if (MFile::Exists(Name) == true) {
       m_FileNames.push_back(Name);
       m_FileHits.push_back(s);
+      m_MaxNHits = s;
       mout<<"Found and added data file for hit number "<<s<<endl;
+    } else {
+      break;
     }
   }
-  m_MaxNHits = s-1;
   
   if (m_FileNames.size() == 0) {
     merr<<"No usable data files found"<<endl;
@@ -215,6 +219,36 @@ bool MResponseEventClusterizerTMVA::Initialize()
   }
   gSystem->mkdir(OutDir);  
   
+  // Check how many groups we have
+  TFile* File = new TFile(m_FileNames[0]); 
+  TTree* Tree = (TTree*) File->Get("EventClusterizer");
+  if (Tree == nullptr) {
+    merr<<"Unable to read data tree from file "<<m_FileNames[0]<<endl;
+    return false;
+  }
+  TObjArray* Branches = Tree->GetListOfBranches();
+  TBranch* B = dynamic_cast<TBranch*>(Branches->Last());
+  if (B != nullptr) {
+    TString Name = B->GetName();
+    vector<MString> Tokens = MString(Name).Tokenize("_");
+    if (Tokens.size() == 3) {
+      m_MaxNGroups = Tokens[2].ToUnsignedInt();
+      if (m_MaxNGroups > 0) {
+        m_MaxNGroups -= 1; // Because we always add an overflow...
+      } else {
+        merr<<"Unable to parse the max number of groups from branch name."<<endl;
+        return false;
+      }
+    } else {
+      merr<<"Unable to find correct last ResultHitGroups branches in tree "<<m_FileNames[0]<<endl;
+      return false;
+    }
+  } else {
+    merr<<"Unable to to find branches in tree "<<m_FileNames[0]<<endl;
+    return false;
+  }
+  File->Close();
+  
   
   // Create steering file
   ofstream out;
@@ -223,6 +257,9 @@ bool MResponseEventClusterizerTMVA::Initialize()
   out<<endl;
   out<<"# Maximum number of hits"<<endl;
   out<<"MH "<<m_MaxNHits<<endl;
+  out<<endl;
+  out<<"# Maximum number of groups"<<endl;
+  out<<"MG "<<m_MaxNGroups<<endl;
   out<<endl;
   out<<endl;
   out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
@@ -374,6 +411,7 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     TBranch* B = dynamic_cast<TBranch*>(Branches->At(b));
     TString Name = B->GetName();
     if (Name.BeginsWith("Result") == true) {
+      cout<<"Min "<<Name<<":"<<Tree->GetMinimum(Name)<<endl;
       cout<<"Max "<<Name<<":"<<Tree->GetMaximum(Name)<<endl;
       if (Tree->GetMaximum(Name) == 0) {
         DataLoader->AddSpectator(Name, "F");

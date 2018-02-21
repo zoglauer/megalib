@@ -225,7 +225,7 @@ bool ExternalAnalysisPipelineExample::Initialize()
   //m_RawEventAnalyzer->SetCoincidenceAlgorithm(MRawEventAnalyzer::c_CoincidenceAlgoWindow);
   //m_RawEventAnalyzer->SetCoincidenceWindow(2E-6);
   
-  m_RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
  
   m_RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoRank);
   m_RawEventAnalyzer->SetDoTracking(true);

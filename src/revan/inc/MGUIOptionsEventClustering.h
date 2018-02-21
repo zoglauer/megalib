@@ -1,5 +1,5 @@
 /*
- * MGUIERAlgorithm.h
+ * MGUIOptionsEventClustering.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,20 +9,24 @@
  */
 
 
-#ifndef __MGUIERAlgorithm__
-#define __MGUIERAlgorithm__
+#ifndef __MGUIOptionsEventClustering__
+#define __MGUIOptionsEventClustering__
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 // ROOT libs:
+#include "TGComboBox.h"
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MGUIDialog.h"
 #include "MSettingsEventReconstruction.h"
+#include "MGUIEEntryList.h"
+#include "MGUIEEntry.h"
 #include "MGUIERBList.h"
+#include "MGUIEFileSelector.h"
 
 // Forward declarations:
 
@@ -30,13 +34,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIERAlgorithm : public MGUIDialog
+class MGUIOptionsEventClustering : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, 
-                  MSettingsEventReconstruction* Data);
-  virtual ~MGUIERAlgorithm();
+  MGUIOptionsEventClustering(const TGWindow* Parent, const TGWindow* Main, 
+                        MSettingsEventReconstruction* Data);
+  virtual ~MGUIOptionsEventClustering();
+
 
   // protected methods:
  protected:
@@ -56,19 +61,18 @@ class MGUIERAlgorithm : public MGUIDialog
  private:
   MSettingsEventReconstruction* m_Data;
 
-  TGLayoutHints* m_ListLayout;
-  MGUIERBList* m_CoincidenceList;
-  MGUIERBList* m_EventClusteringList;
-  MGUIERBList* m_HitClusteringList;
-  MGUIERBList* m_TrackingList;
-  MGUIERBList* m_CSRList;
-  //MGUIERBList* m_DecayList;
- 
+  MGUIEFileSelector* m_TMVAFileSelector;
+  MGUIERBList* m_TMVAMethods;
+  //! Map button IDs to TMVA methods
+  map<int, MERCSRTMVAMethod> m_TMVAMethodsMap;
+  
+  
+  enum ButtonIDs { e_ReferencePoint = 200};
 
 
-#ifdef ___CLING___
+#ifdef ___CINT___
  public:
-  ClassDef(MGUIERAlgorithm, 0)
+  ClassDef(MGUIOptionsEventClustering, 0)
 #endif
 
 };

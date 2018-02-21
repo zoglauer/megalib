@@ -334,6 +334,20 @@ MRERawEvent* MRawEventIncarnations::GetInitialRawEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Return true if any of the raw events is valid
+bool MRawEventIncarnations::IsAnyEventValid() const
+{
+  for (MRERawEvent* RE: m_Incarnations) {
+    if (RE->IsValid() == true) return true; 
+  }
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MRawEventIncarnationsTrackCompareGoodAreHigh(MRERawEvent* a, MRERawEvent* b) 
 {
   // No quality factor is a large number, so make sure it is at the end of the list!

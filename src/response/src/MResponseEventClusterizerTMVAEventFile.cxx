@@ -175,7 +175,7 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   
   // We ignore the loaded configuration file
   // TODO: Missing event clusterize None as soon as implemented
-  m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);  
@@ -288,27 +288,28 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
     }
   }
   
-  
-  // Dump the origin IDs:
   /*
-  cout<<"ID: "<<m_SiEvent->GetID()<<endl;
-  for (unsigned int r = 0; r < RESEs.size(); ++r) {
-    cout<<RESEs[r]->ToString()<<endl;
-    cout<<"  Origins: ";
-    for (auto O: OriginIDs[r]) {
-      cout<<O<<" "; 
+  // Dump the origin IDs:
+  if (Randomizer.size() == 4) {
+    cout<<"ID: "<<m_SiEvent->GetID()<<endl;
+    for (unsigned int r = 0; r < RESEs.size(); ++r) {
+      cout<<RESEs[r]->ToString()<<endl;
+      cout<<"  Origins: ";
+      for (auto O: OriginIDs[r]) {
+        cout<<O<<" "; 
+      }
+      cout<<endl;
+      cout<<"  Mothers: ";
+      for (auto O: MotherIDs[r]) {
+        cout<<O<<" "; 
+      }
+      cout<<endl;
+      cout<<"  Randomized, translated IDs: ";
+      for (auto O: MotherIDs[r]) {
+        cout<<Translation[O]<<" "; 
+      }
+      cout<<endl;
     }
-    cout<<endl;
-    cout<<"  Mothers: ";
-    for (auto O: MotherIDs[r]) {
-      cout<<O<<" "; 
-    }
-    cout<<endl;
-    cout<<"  Randomized, translated IDs: ";
-    for (auto O: MotherIDs[r]) {
-      cout<<Translation[O]<<" "; 
-    }
-    cout<<endl;
   }
   */
   
