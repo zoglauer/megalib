@@ -174,6 +174,7 @@ void MGUIMimrecMain::Create()
   MenuARM->AddEntry("SPD of recoil electron vs Compton Scatter Angel (phi)", c_ResponseSpdElectronVsCompton);
   MenuARM->AddEntry("Dual ARM", c_ResponseDualArm);
   MenuARM->AddEntry("ARM-imaging-response comparison", c_ResponseArmComparison);
+  MenuARM->AddEntry("Resolution Measure PET", c_ResponseResolutionMeasurePET);
   MenuARM->Associate(this);
 
   // The sub menu quality factors:
@@ -457,6 +458,14 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_ARMGamma, OKPressed);
         if (OKPressed == true) {
           m_Interface->ARMGammaVsClusteringProbability();
+        }
+        break;
+        
+        
+      case c_ResponseResolutionMeasurePET:
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_PET, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->ResolutionMeasurePET();
         }
         break;
         

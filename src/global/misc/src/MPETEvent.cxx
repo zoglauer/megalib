@@ -357,5 +357,22 @@ MPhysicalEvent* MPETEvent::Data()
 } 
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+double MPETEvent::GetResolutionMeasure(const MVector& Position, const MCoordinateSystem& CS) 
+{
+  // Rotate/translate the position into event coordinates
+  MVector RotPosition = Position;
+  if (m_HasDetectorRotation == true) RotPosition = GetDetectorInverseRotationMatrix()*RotPosition;
+  if (CS == MCoordinateSystem::c_Galactic || CS == MCoordinateSystem::c_Spheric) {
+    merr<<"PET resolution measure is only reasonable in the near field!"<<endl;
+    return g_DoubleNotDefined;
+  }
+  
+  return RotPosition.DistanceToLine(m_Position1, m_Position2);
+}
+
+
 // MPETEvent: the end...
 ////////////////////////////////////////////////////////////////////////////////

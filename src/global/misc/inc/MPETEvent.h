@@ -21,6 +21,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MPhysicalEvent.h"
+#include "MCoordinateSystem.h"
 
 // Forward declarations:
 
@@ -116,13 +117,15 @@ class MPETEvent : public MPhysicalEvent
   //! Get the detection timing resolution the second event
   double GetTimingResolution2() const { return m_TimingResolution2; }
   
-  
   //! Return the total energy
   virtual double GetEnergy() const { return m_Energy1 + m_Energy2; }
   
   //! Should be "cast", but... that's bad design...
   MPhysicalEvent* Data(); 
-
+  
+  //! Return the Angular Resolution Measure value for the gamma line, i.e. the clostest distance between the line and the origin in cm not degrees as for Compton and pair
+  double GetResolutionMeasure(const MVector& Position, const MCoordinateSystem& CS = MCoordinateSystem::c_Cartesian2D);
+  
   //! Reset the event data to default values
   virtual void Reset();
   //! Create a string with the data of the event
