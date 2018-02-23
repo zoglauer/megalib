@@ -178,6 +178,8 @@ private:
   //! Resonse slices for each event
   vector<MResponseMatrixON> m_EventResponseSlices;
   
+  //! A file name for the galactic rotations
+  MString m_ResponseGalacticFileName;
   //! The complete response
   MResponseMatrixON m_ResponseGalactic;
   
@@ -249,10 +251,10 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
   Usage<<"         -f:   tra file name"<<endl;
   Usage<<"         -c:   mimrec configuration file"<<endl;
   Usage<<"         -r:   response file"<<endl;
-  Usage<<"         -b:   background model (can appear more than once)"<<endl;
+  Usage<<"         -g:   load the galactic rotations"<<endl;
+  Usage<<"         -b:   load the precrated background model (can appear more than once)"<<endl;
   Usage<<"         -i:   number of iterations (default: 5)"<<endl;
   Usage<<"         -a:   algorithm: rl (default) or mem"<<endl;
-  Usage<<"         -cg:  create galactic response file"<<endl;
   Usage<<"         -cb:  create background model"<<endl;
   Usage<<"         -w:   write files"<<endl;
   Usage<<"         -h:   print this help"<<endl;
@@ -305,6 +307,9 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
       m_BackgroundModelFileName.push_back(argv[++i]);
       m_UseBackgroundModel = true;
       cout<<"Accepting background model file name: "<<m_BackgroundModelFileName.back()<<endl;
+    } else if (Option == "-g") {
+      m_ResponseGalacticFileName = argv[++i];
+      cout<<"Accepting galactic response file name: "<<m_ResponseGalacticFileName<<endl;
     } else if (Option == "-i") {
       m_Iterations = atoi(argv[++i]);
       cout<<"Accepting iterations: "<<m_Iterations<<endl;
@@ -846,6 +851,22 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
 bool BinnedComptonImaging::CreateGalacticResponse()
 {  
   cout<<endl<<"Creation of response in Galactic coordinates: started"<<endl;
+  
+  // Step 0: If we should load it, then just load it
+  if (m_ResponseGalacticFileName != "") {
+    if (m_ResponseGalactic.Read(m_ResponseGalacticFileName) == false) {
+      mgui<<"Cannot read response file: \""<<m_ResponseGalacticFileName<<"\""<<endl;
+      return false;
+    }
+    // Same basic checks:
+    if (m_ResponseGalactic.GetNumberOfAxes() != m_Response.GetNumberOfAxes() || m_ResponseGalactic.GetNBins() != m_Response.GetNBins()) {
+      mgui<<"The Galactic response read from file and the detector response have not the same dimensions"<<endl;
+      return false;
+    }
+    
+    return true;
+  }
+  
   
   // Step 1: Create a list of directions - pointing bins in this case
   vector<unsigned int> PointingBinsX;
