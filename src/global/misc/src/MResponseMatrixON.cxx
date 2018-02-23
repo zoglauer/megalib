@@ -86,6 +86,23 @@ MResponseMatrixON::~MResponseMatrixON()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MResponseMatrixON::Clear()
+{
+  // Clear all data
+  
+  //! The axes
+  for (auto A: m_Axes) {
+    delete A;
+  }
+  m_Axes.clear();
+  m_Values.clear();
+  
+  MResponseMatrix::Clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
 {
   // Set the axis
