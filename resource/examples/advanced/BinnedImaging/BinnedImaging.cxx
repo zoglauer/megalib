@@ -115,7 +115,7 @@ protected:
   bool ReconstructMEM();
   
   //! Show an image in Galactic coordinates
-  bool ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis);
+  bool ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis, bool Save = false);
   
   
 private:
@@ -854,6 +854,9 @@ bool BinnedComptonImaging::CreateGalacticResponse()
   
   // Step 0: If we should load it, then just load it
   if (m_ResponseGalacticFileName != "") {
+    
+    m_ResponseGalactic = MResponseMatrixON();
+    
     if (m_ResponseGalactic.Read(m_ResponseGalacticFileName) == false) {
       mgui<<"Cannot read response file: \""<<m_ResponseGalacticFileName<<"\""<<endl;
       return false;
@@ -1251,9 +1254,11 @@ bool BinnedComptonImaging::ReconstructRL()
       Mean.Set(db, NewMean);
     }    
     
+    /*
     if (m_WriteFiles == true) {
       Mean.Write(MString("Mean_") + (i+1) + ".rsp");
     }
+    */
     
     cout<<"Iteration: "<<i+1<<" - deconvolve"<<endl;
     
@@ -1297,7 +1302,7 @@ bool BinnedComptonImaging::ReconstructRL()
     cout<<"Sums:  mean="<<Mean.GetSum()<<" image="<<Image.GetSum()<<"  data="<<m_Data.GetSum()<<endl;
     cout<<"Image content: "<<ImageFlux<<" ph/cm2/s for T="<<m_ObservationTime<<" sec and A="<<m_StartArea<<" cm^2"<<endl;
     
-    ShowImageGalacticCoordinates(Image, MString("Galaxy view at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux");
+    ShowImageGalacticCoordinates(Image, MString("RL image at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux", true);
     
     if (m_Interrupt == true) break;
   }  
@@ -1493,7 +1498,7 @@ bool BinnedComptonImaging::ReconstructMEM()
       MaximumEntropy = Entropy;
     }
     
-    ShowImageGalacticCoordinates(NewImage, MString("Image at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux");
+    ShowImageGalacticCoordinates(NewImage, MString("MEM image at iteration ") + (i+1) + " with flux " + ImageFlux + " ph/cm2/s", "Flux", true);
     
     if (m_Interrupt == true) break;
     
@@ -1553,7 +1558,7 @@ bool BinnedComptonImaging::Reconstruct()
 /******************************************************************************
  * Show an image in Galactic coordinates
  */
-bool BinnedComptonImaging::ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis)
+bool BinnedComptonImaging::ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis, bool Save)
 {
   vector<double> ImageData(Image.GetAxis(1).GetNumberOfBins());
   for (unsigned int ib = 0; ib < m_IBins; ++ib) {
@@ -1573,6 +1578,9 @@ bool BinnedComptonImaging::ShowImageGalacticCoordinates(MResponseMatrixON Image,
   G->SetFISBEL(ImageData);
   G->Display();
   
+  if (Save == true) {
+    G->SaveAs(Title);
+  }
   
   gSystem->ProcessEvents();
   

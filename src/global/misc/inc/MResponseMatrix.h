@@ -35,11 +35,19 @@ class MResponseMatrix
 {
   // public interface:
  public:
+  //! Default constructor
   MResponseMatrix();
+  //! Standard constreuctor with name
   MResponseMatrix(MString Name);
+  //! Default destructor
   virtual ~MResponseMatrix();
 
+  //! Clear all data
+  virtual void Clear();
+
+  //! Set the name of the matrix
   void SetName(const MString& Name) { m_Name = Name; }
+  //! Return the name of the matrix
   MString GetName() const { return m_Name; }
 
   //! Set a hash value --- usually used to verify an outside object is still
@@ -48,9 +56,12 @@ class MResponseMatrix
   //! Return a hash value --- the has is not created internally, but has to be set
   unsigned long GetHash() const { return m_Hash; }
 
+  //! Return the order, i.e. the number of independent axes
   unsigned int GetOrder() const { return m_Order; }
 
+  //! Read the data from file
   virtual bool Read(MString FileName);
+  //! Write all data to file
   virtual bool Write(MString FileName, bool Stream = false) = 0;
 
   // The number of simulated events which generated this response
@@ -58,8 +69,9 @@ class MResponseMatrix
   // Get he number of simulated events which generated this response
   long GetSimulatedEvents() const { return m_NumberOfSimulatedEvents; }
   
-  //! The start area of far-field simulations
+  //! Set the start area of far-field simulations
   void SetFarFieldStartArea(double Area) { m_FarFieldStartArea = Area; }
+  //! Get the start are aof far-field simulations
   double GetFarFieldStartArea() const { return m_FarFieldStartArea; }
   
   virtual unsigned long GetNBins() const = 0;

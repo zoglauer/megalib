@@ -85,6 +85,21 @@ MResponseMatrix::~MResponseMatrix()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MResponseMatrix::Clear()
+{
+  // Clear all data
+  
+  m_Name = "Unnamed response matrix";
+  m_Order = 0;
+  m_NumberOfSimulatedEvents = 0;
+  m_FarFieldStartArea = 0;
+  m_Hash = 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Write some basic data to the file/stream 
 void MResponseMatrix::WriteHeader(ostringstream& out)
 {

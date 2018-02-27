@@ -48,6 +48,9 @@ class MResponseMatrixON : public MResponseMatrix
   //! DEfault destructor
   virtual ~MResponseMatrixON();
   
+  //! Clear all data
+  virtual void Clear();
+  
   //! Add an axis
   void AddAxis(const MResponseMatrixAxis& Axis);
   //! Add a linear axis
