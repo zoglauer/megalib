@@ -24,6 +24,7 @@
 #include "MGlobal.h"
 #include "MResponseBuilder.h"
 #include "MResponseMatrixON.h"
+#include "MAtmosphericAbsorption.h"
 
 // Forward declarations:
 
@@ -96,7 +97,15 @@ class MResponseImagingBinnedMode : public MResponseBuilder
   //! The fine energy response (fine than the one in imaging)
   MResponseMatrixON m_EnergyResponse;
   
-
+  //! Use an absorption factor
+  bool m_UseAtmosphericAbsorption;
+  //! An atmospheric absorption factor
+  MAtmosphericAbsorption m_AtmosphericAbsorption;
+  //! The name of the atmospheric absorption data file
+  MString m_AtmosphericAbsorptionFileName;
+  //! The altitude used for the atmospheric absorption
+  double m_Altitude;
+    
   // private members:
  private:
 

@@ -65,7 +65,9 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode()
   m_DistanceMinimum = 0; // cm
   m_DistanceMaximum = 1000; // cm
   
-  
+  m_UseAtmosphericAbsorption = false;
+  m_AtmosphericAbsorptionFileName = "";
+  m_Altitude = 33500;
 }
 
 
@@ -104,6 +106,8 @@ MString MResponseImagingBinnedMode::Options()
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
   out<<"             dbins:                   number of distance bins between min and max distance (default: 1)"<<endl;
+  out<<"             atabsfile:               the atmopheric absorption file name (default: \"\" (i.e. none))"<<endl;
+  out<<"             atabsheight:             altitude for the atmospheric absorption (default: 33500)"<<endl;
   
   return MString(out);
 }
@@ -160,6 +164,10 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       m_DistanceNBins = stod(Value);
     } else if (Split2[i][0] == "anglebinwidthelectron") {
       m_AngleBinWidthElectron = stod(Value);
+    } else if (Split2[i][0] == "atabsfilename") {
+      m_AtmosphericAbsorptionFileName = Value;
+    } else if (Split2[i][0] == "atabsaltitude") {
+      m_Altitude = stod(Value);
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -196,7 +204,19 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     return false;       
   }
   if (m_AngleBinWidthElectron <= 0) {
-    mout<<"Error: You need at give a positive width of the sky bins at the equator for the recoil electro"<<endl;
+    mout<<"Error: You need at give a positive width of the sky bins at the equator for the recoil electron"<<endl;
+    return false;       
+  }
+  if (m_AtmosphericAbsorptionFileName != "") {
+    if (MFile::Exists(m_AtmosphericAbsorptionFileName) == false) {
+      mout<<"Error: The file: \""<<m_AtmosphericAbsorptionFileName<<"\" does not exist"<<endl;
+      return false;
+    } else {
+      m_UseAtmosphericAbsorption = true; 
+    }
+  }
+  if (m_Altitude <= 0) {
+    mout<<"Error: The altitiude must be positive"<<endl;
     return false;       
   }
   
@@ -211,6 +231,10 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
   mout<<"  Number of bins distance:                            "<<m_DistanceNBins<<endl;
   mout<<"  Width of sky bins at equator for recoild electron:  "<<m_AngleBinWidthElectron<<endl;
+  if (m_UseAtmosphericAbsorption == true) {
+    mout<<"  Atmospheric absorption file name:                   "<<m_AtmosphericAbsorptionFileName<<endl;
+    mout<<"  Atmospheric absorption altitude:                    "<<m_Altitude<<endl;
+  }
   mout<<endl;
   
   return true;
@@ -265,7 +289,7 @@ bool MResponseImagingBinnedMode::Initialize()
   if (m_SiReader != nullptr) {
     m_ImagingResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
-  
+
   m_Exposure.SetName("Exposure");
   m_Exposure.AddAxis(AxisEnergyInitial);
   m_Exposure.AddAxis(AxisSkyCoordinates);
@@ -280,7 +304,14 @@ bool MResponseImagingBinnedMode::Initialize()
   if (m_SiReader != nullptr) {
     m_EnergyResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
-  
+
+  if (m_UseAtmosphericAbsorption == true) {
+    if (m_AtmosphericAbsorption.Read(m_AtmosphericAbsorptionFileName) == false) {
+      mout<<"Error: Unable to read atmospheric absorption"<<endl;
+      return false;       
+    }
+  }
+
   return true;
 }
 
@@ -327,6 +358,19 @@ bool MResponseImagingBinnedMode::Analyze()
     return true;
   }
   
+  if (m_UseAtmosphericAbsorption == true) {
+    // Deselect gamma rays based on the transmission probability 
+    
+    double OriginAzimuth = (-m_SiEvent->GetIAAt(0)->GetSecondaryDirection()).Theta() * c_Deg;
+    double OriginEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+    
+    double P = m_AtmosphericAbsorption.GetTransmissionProbability(m_Altitude, OriginAzimuth, OriginEnergy);
+   
+    if (gRandom->Rndm() > P) {
+      return true;
+    }
+  }
+  
   // Get the data space information
   MRotation Rotation = Compton->GetDetectorRotationMatrix();
 
@@ -362,7 +406,6 @@ bool MResponseImagingBinnedMode::Analyze()
   while (Lambda > +180) Lambda -= 360.0;
   double Nu = IdealOriginDir.Theta()*c_Deg;
   double EnergyInitial = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
-  
   
   // And fill the matrices
   m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
