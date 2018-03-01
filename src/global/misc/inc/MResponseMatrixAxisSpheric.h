@@ -49,13 +49,13 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   //! Clone this axis
   virtual MResponseMatrixAxisSpheric* Clone() const;
   
-  //! Set the axis in FISBEL mode
-  void SetFISBEL(unsigned int NBins);
+  //! Set the axis in FISBEL mode with a longitude shift in degrees
+  void SetFISBEL(unsigned int NBins, double LongitudeShift = 0);
   
 
   //! Return the number of axis bins
   virtual unsigned int GetNumberOfBins() const { return m_Binner.GetNBins(); }
-  //! Return the axis bin, given theta=latitude and phi=longitude 
+  //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned int GetAxisBin(double Theta, double Phi) const;
   
   //! Test if theta and phi (in degree) are within the range of the axis - the second value is required

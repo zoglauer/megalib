@@ -60,6 +60,9 @@ class MBinnerFISBEL
   //! Get number of bins
   unsigned int GetNBins() const { return m_NumberOfBins; }
   
+  //! Get number the longitude shift in radians
+  double GetLongitudeShift() const { return m_LongitudeShift; }
+  
   //! Get the longitude bins
   vector<unsigned int> GetLongitudeBins() const { return m_LongitudeBins; }
   

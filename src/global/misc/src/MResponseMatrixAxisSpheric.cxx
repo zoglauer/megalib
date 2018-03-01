@@ -96,9 +96,9 @@ bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Ax
 
 
 //! Set the axis in FISBEL mode
-void MResponseMatrixAxisSpheric::SetFISBEL(unsigned int NBins) 
+void MResponseMatrixAxisSpheric::SetFISBEL(unsigned int NBins, double LongitudeShift) 
 {
-  m_Binner.Create(NBins);
+  m_Binner.Create(NBins, LongitudeShift*c_Rad);
 }
 
 
@@ -161,7 +161,7 @@ bool MResponseMatrixAxisSpheric::InRange(double Theta, double Phi) const
 //! Return the minimum axis values
 vector<double> MResponseMatrixAxisSpheric::GetMinima() const
 {
-  return { 0, 0 };
+  return { 0, m_Binner.GetLongitudeShift() };
 }
 
 
@@ -171,7 +171,7 @@ vector<double> MResponseMatrixAxisSpheric::GetMinima() const
 //! Return the minimum axis values
 vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
 {
-  return { 180, 360 };
+  return { 180, m_Binner.GetLongitudeShift() + 360 };
 }
 
 
@@ -216,7 +216,7 @@ void MResponseMatrixAxisSpheric::Write(ostringstream& out)
   out<<"# Axis type"<<endl;
   out<<"AT 2D FISBEL"<<endl;
   out<<"# Axis data"<<endl;
-  out<<"AD "<<m_Binner.GetNBins()<<endl;
+  out<<"AD "<<m_Binner.GetNBins()<<"  "<<m_Binner.GetLongitudeShift() * c_Deg<<endl;
 }
 
 

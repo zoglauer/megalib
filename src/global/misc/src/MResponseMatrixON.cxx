@@ -878,7 +878,14 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
             while (Parser.TokenizeLine(T, true) == true) {
               if (T.GetNTokens() < 2) continue;
               if (T.GetTokenAt(0) == "AD") {
-                A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1));
+                if (T.GetNTokens() == 2) {
+                  A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1));
+                } else if (T.GetNTokens() == 3) {
+                  A->SetFISBEL(T.GetTokenAtAsUnsignedInt(1), T.GetTokenAtAsDouble(2));
+                } else {
+                  mout<<"MResponseMatrixON: The FISBEL AD axis key word needs 1 (only the bins) or 2 (bins & longitude shift) arguments!"<<endl;
+                  return false;
+                }
                 m_Axes.push_back(A);
                 break;
               }
