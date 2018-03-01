@@ -28,7 +28,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-//! FISBEL: Fixed Integral ... Equi-longitude..?
+//! FISBEL: Fixed Integral Square Bins in Equi-longitude..?
 //! This is just the binner, it does not store any data itself
 class MBinnerFISBEL
 {
@@ -39,11 +39,11 @@ class MBinnerFISBEL
   //! Default destuctor 
   virtual ~MBinnerFISBEL();
   
-  //! Create the binning
-  void Create(unsigned int NBins);
+  //! Create the binning with the given number of bins and an eventual shift in longitude in radians!
+  void Create(unsigned int NBins, double LongitudeShift = 0);
   
   //! Set the binning
-  void Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins);
+  void Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins, double LongitudeShift = 0);
   
   //! Check if we have equal bins
   bool operator ==(const MBinnerFISBEL& Binner) const;
@@ -99,7 +99,9 @@ class MBinnerFISBEL
   //! The latitude bin edges
   vector<double> m_LatitudeBinEdges;
 
-
+  //! Shift in the start of the logitude binning frim 0
+  double m_LongitudeShift;
+  
   // private members:
  private:
   //! Little accelerator vector to speed up the bin search:

@@ -46,7 +46,7 @@ ClassImp(MBinnerFISBEL)
 
 
 //! Default constructor
-MBinnerFISBEL::MBinnerFISBEL(unsigned int NBins) : m_NumberOfBins(NBins)
+MBinnerFISBEL::MBinnerFISBEL(unsigned int NBins) : m_NumberOfBins(NBins), m_LongitudeShift(0)
 {
   if (m_NumberOfBins > 0) Create(m_NumberOfBins);
 }
@@ -70,7 +70,8 @@ bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
   if (m_NumberOfBins != Binner.m_NumberOfBins) return false;
   if (m_LongitudeBins != Binner.m_LongitudeBins) return false;
   if (m_LatitudeBinEdges != Binner.m_LatitudeBinEdges) return false;
-
+  if (m_LongitudeShift != Binner.m_LongitudeShift) return false;
+  
   return true;
 }
 
@@ -79,7 +80,7 @@ bool MBinnerFISBEL::operator==(const MBinnerFISBEL& Binner) const
 
 
 //! Create the binning
-void MBinnerFISBEL::Create(unsigned int NBins)
+void MBinnerFISBEL::Create(unsigned int NBins, double LongitudeShift)
 {
   // CASEBALL - Constant area, squares at equator, borders along latitude & longitude
   
@@ -92,6 +93,8 @@ void MBinnerFISBEL::Create(unsigned int NBins)
 
 
   m_NumberOfBins = NBins;
+  m_LongitudeShift = LongitudeShift;
+  
   m_LatitudeBinEdges.clear();
   m_LongitudeBins.clear();
   m_NumberOfBinsBeforeLatitudeBin.clear();
@@ -182,11 +185,12 @@ void MBinnerFISBEL::Create(unsigned int NBins)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MBinnerFISBEL::Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins)
+void MBinnerFISBEL::Set(vector<unsigned int>& LongitudeBins, vector<double>& LatitudeBinEdges, unsigned int NumberOfBins, double LongitudeShift)
 {
   m_LongitudeBins = LongitudeBins;
   m_LatitudeBinEdges = LatitudeBinEdges;
   m_NumberOfBins = NumberOfBins;
+  m_LongitudeShift = LongitudeShift;
 
   m_NumberOfBinsBeforeLatitudeBin.resize(m_LongitudeBins.size());
   unsigned int Sum = 0;
@@ -216,8 +220,8 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
   if (Theta == 0) return 0;
   if (Theta == c_Pi) return m_NumberOfBins - 1;
 
-  while (Phi < 0) Phi += 2*c_Pi;
-  while (Phi >= 2*c_Pi) Phi -= 2*c_Pi; // >= get's rid of the other boarder case: require: phi = [0..360[
+  while (Phi < m_LongitudeShift) Phi += 2*c_Pi;
+  while (Phi >= m_LongitudeShift + 2*c_Pi) Phi -= 2*c_Pi; // >= get's rid of the other boarder case: require: phi = [0..360[
 
   unsigned int Bins = 0;
 
@@ -235,8 +239,8 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
   // Add the bins so far
   Bins += m_NumberOfBinsBeforeLatitudeBin[LatBin];
 
-  // Then find longitude bin (phi goes [0..360[ )
-  Bins += int(Phi / (2*c_Pi / m_LongitudeBins[LatBin]));
+  // Then find longitude bin (phi goes [m_LongitudeShift .. m_LongitudeShift + 2*pi[ )
+  Bins += int((Phi - m_LongitudeShift) / (2*c_Pi / m_LongitudeBins[LatBin]));
 
   if (Bins >= m_NumberOfBins) {
     throw MExceptionIndexOutOfBounds(0, m_NumberOfBins, Bins);
@@ -259,7 +263,7 @@ vector<vector<double>> MBinnerFISBEL::GetDrawingAxisBinEdges() const
   xAxis.push_back(0);
   for (unsigned int l = 0; l < m_LongitudeBins.size(); ++l) {
     for (unsigned int b = 1; b < m_LongitudeBins[l]; ++b) {
-      xAxis.push_back(double(b)/m_LongitudeBins[l] * 2*TMath::Pi());
+      xAxis.push_back((m_LongitudeShift + double(b)/m_LongitudeBins[l]) * 2*TMath::Pi());
     }
   }
   xAxis.push_back(2*TMath::Pi());
@@ -318,7 +322,7 @@ vector<double> MBinnerFISBEL::GetBinCenters(unsigned int Bin) const
     
     unsigned int LongitudeBins = Bin - m_NumberOfBinsBeforeLatitudeBin[LatitudeBin];
         
-    Return = { 0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1]), double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin] };
+    Return = { 0.5*(m_LatitudeBinEdges[LatitudeBin]+m_LatitudeBinEdges[LatitudeBin+1]), m_LongitudeShift + double(LongitudeBins+0.5)*2*c_Pi/m_LongitudeBins[LatitudeBin] };
   }
   
   //cout<<Bin<<" --> lat: "<<Return[0]*c_Deg<<" - long: "<<Return[1]*c_Deg<<endl;
