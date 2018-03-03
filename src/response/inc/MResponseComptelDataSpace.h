@@ -68,9 +68,10 @@ class MResponseComptelDataSpace : public MResponseBuilder
   // private methods:
  private:
 
-	//! Initialize MRotations to rotate source position to (0,0) for all det coords
-	bool InitializeSourcePositions();
-  
+  //! Initialize MRotations to rotate source position to (0,0) for all det coords
+  bool InitializeSourcePositions();
+	//! Round double to precision P
+	double RoundF(double N, int P);
 
 
 
@@ -84,20 +85,20 @@ class MResponseComptelDataSpace : public MResponseBuilder
   double m_EnergyMinimum;
   //! Maximum energy range
   double m_EnergyMaximum;
-	//! name of background probability file for physical background
-	MString m_BkgProbabilityFileName;
-	//! use probability file: i.e. change sample from flat spectrum
-	bool m_UseBkgProbability;
+  //! name of background probability file for physical background
+  MString m_BkgProbabilityFileName;
+  //! use probability file: i.e. change sample from flat spectrum
+  bool m_UseBkgProbability;
 
   //! The Comptel data space response 
   MResponseMatrixON m_CDSResponse;
   //! Ling probability response
-	MResponseMatrixON m_LingProbability;
+  MResponseMatrixON m_LingProbability;
 
-	//! List of rotations for all source positions
-	vector<MRotation> m_RTo00;
-	//! MRotation to rotate cone into plane
-	MRotation m_R2;
+  //! List of rotations for all source positions
+  vector<MRotation> m_RTo00;
+  //! MRotation to rotate cone into plane
+  MRotation m_R2;
  
   // private members:
  private:

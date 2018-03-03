@@ -169,8 +169,8 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
   Usage<<MResponseEventQualityTMVAEventFile::Options()<<endl;
   Usage<<"      sf : "<<MResponseStripPairingTMVAEventFile::Description()<<endl;
   Usage<<MResponseStripPairingTMVAEventFile::Options()<<endl;
-	Usage<<"      cds : "<<MResponseComptelDataSpace::Description()<<endl;
-	Usage<<MResponseComptelDataSpace::Options()<<endl;
+  Usage<<"      cds : "<<MResponseComptelDataSpace::Description()<<endl;
+  Usage<<MResponseComptelDataSpace::Options()<<endl;
   Usage<<endl;  
   Usage<<"    Special options:"<<endl;
   Usage<<"      For Compton modes (cf, cb, ct, cn, cl): "<<endl;
@@ -299,9 +299,9 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
       } else if (SubOption == "sf") {
         m_Mode = c_ModeStripPairingTMVAEventFile;
         cout<<"Choosing Strip Pairing mode (create event files)"<<endl;
-			} else if (SubOption == "cds"){
-				m_Mode = c_ModeComptelDataSpace;
-				cout<<"Choosing Comptel data space mode"<<endl;
+      } else if (SubOption == "cds"){
+        m_Mode = c_ModeComptelDataSpace;
+        cout<<"Choosing Comptel data space mode"<<endl;
       } else {
         cout<<"Error: Unknown suboption \""<<SubOption<<"\"!"<<endl;
         cout<<Usage.str()<<endl;
@@ -822,7 +822,7 @@ bool MResponseCreator::ParseCommandLine(int argc, char** argv)
     Response.SetRevanConfigurationFileName(m_RevanCfgFileName);
 
     Response.CreateResponse();
-  } else if (m_Mode == c_ModeComptelDataSpace) {		
+  } else if (m_Mode == c_ModeComptelDataSpace) {    
      if (m_RevanCfgFileName == g_StringNotDefined) {
       cout<<"Error: No revan configuration file name given!"<<endl;
       cout<<Usage.str()<<endl;

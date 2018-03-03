@@ -2,7 +2,7 @@
  * MResponseComptelDataSpace.cxx
  *
  *
- * Copyright (C) by Andreas Zoglauer.
+ * Copyright (C) by Clio Sleator & Andreas Zoglauer.
  * All rights reserved.
  *
  *
@@ -40,22 +40,6 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double roundF(double N, int P){
-
-	double P10 = pow(10,P);
-
-	N = N*P10;
-	if (N>=0){ N += 0.5; }
-	else { N -= 0.5; }
-
-	double N2 = floor(N)/P10;
-
-	return N2;
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 #ifdef ___CINT___
 ClassImp(MResponseComptelDataSpace)
@@ -75,7 +59,7 @@ MResponseComptelDataSpace::MResponseComptelDataSpace()
   m_EnergyNBins = 10;
   m_EnergyMinimum = 100; // keV
   m_EnergyMaximum = 3000; // keV
-	m_BkgProbabilityFileName = "";
+  m_BkgProbabilityFileName = "";
   m_UseBkgProbability = false;
 
 }
@@ -161,8 +145,8 @@ bool MResponseComptelDataSpace::ParseOptions(const MString& Options)
       m_EnergyNBins = stod(Value);
     } else if (Split2[i][0] == "cdsarm") {
       m_CDS_ARM = stod(Value);
-		} else if (Split2[i][0] == "bkgprobfilename"){
-			m_BkgProbabilityFileName = Value;
+    } else if (Split2[i][0] == "bkgprobfilename") {
+      m_BkgProbabilityFileName = Value;
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -194,7 +178,7 @@ bool MResponseComptelDataSpace::ParseOptions(const MString& Options)
   mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
   mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
   mout<<"  Size of Comptel data space regions:                 "<<m_CDS_ARM<<endl;
-	mout<<"  Background probability file name:                   "<<m_BkgProbabilityFileName;
+  mout<<"  Background probability file name:                   "<<m_BkgProbabilityFileName;
   mout<<endl;
   
   return true;
@@ -211,7 +195,7 @@ bool MResponseComptelDataSpace::Initialize()
   if (MResponseBuilder::Initialize() == false) return false;
 
   MResponseMatrixAxis AxisElevation("Elevation [deg]");
-  AxisElevation.SetLinear(60,0,60);
+  AxisElevation.SetLinear(60, 0, 60);
  
   MResponseMatrixAxis AxisEnergyMeasured("Measured energy [keV]");
   AxisEnergyMeasured.SetLogarithmic(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
@@ -219,8 +203,8 @@ bool MResponseComptelDataSpace::Initialize()
   MResponseMatrixAxis AxisPhi("#phi [deg]");
   AxisPhi.SetLinear(65, 0, 65);
   
-	MResponseMatrixAxis AxisSourceOrBackground("Src (1) or Bkg (0)");
-	AxisSourceOrBackground.SetLinear(2,0,2);
+  MResponseMatrixAxis AxisSourceOrBackground("Src (1) or Bkg (0)");
+  AxisSourceOrBackground.SetLinear(2, 0, 2);
 
   m_CDSResponse.SetName("Comptel data space response");
   m_CDSResponse.AddAxis(AxisElevation);
@@ -231,21 +215,21 @@ bool MResponseComptelDataSpace::Initialize()
     m_CDSResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }   
 
-	if (m_BkgProbabilityFileName != ""){
-		if (MFile::Exists(m_BkgProbabilityFileName) == false){
-			mout << "Error: The file: \""<<m_BkgProbabilityFileName<<"\" does not exist"<<endl;
-			return false;
-		}
-		else {
-			m_UseBkgProbability = true;
-			if (!m_LingProbability.Read(m_BkgProbabilityFileName)){
-				mout << "failed to read \"" << m_BkgProbabilityFileName<<"\", aborting..." << endl;
-				return false;
-			}
-		}
-	}
+  if (m_BkgProbabilityFileName != "") {
+    if (MFile::Exists(m_BkgProbabilityFileName) == false) {
+      mout<<"Error: The file: \""<<m_BkgProbabilityFileName<<"\" does not exist"<<endl;
+      return false;
+    }
+    else {
+      m_UseBkgProbability = true;
+      if (!m_LingProbability.Read(m_BkgProbabilityFileName)) {
+        mout<<"failed to read \"" << m_BkgProbabilityFileName<<"\", aborting..."<<endl;
+        return false;
+      }
+    }
+  }
 
-	InitializeSourcePositions();
+  InitializeSourcePositions();
 
   return true;
 }
@@ -293,39 +277,39 @@ bool MResponseComptelDataSpace::Analyze()
     return true;
   }
 
-	double Energy = Compton->GetEnergy();
-	double Phi = Compton->Phi()*c_Deg;
+  double Energy = Compton->GetEnergy();
+  double Phi = Compton->Phi()*c_Deg;
 
-	double OriginEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
+  double OriginEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
 
-	//loop over all elevation angle bins
-	for (int i=0; i<60; i++){
+  //loop over all elevation angle bins
+  for (int i=0; i<60; i++) {
 
-		double offAxisAngle = i;
+    double offAxisAngle = i;
 
-		if (m_UseBkgProbability == true){
-			double P = m_LingProbability.Get(vector<double> {offAxisAngle,OriginEnergy});
-			if (gRandom->Rndm() > P){
-				continue;
-			}
-		}
+    if (m_UseBkgProbability == true) {
+      double P = m_LingProbability.Get(vector<double> {offAxisAngle, OriginEnergy});
+      if (gRandom->Rndm() > P) {
+        continue;
+      }
+    }
 
-		MVector Dg = -Compton->Dg();
-		Dg = m_RTo00[i]*Dg;
-		Dg = m_R2.Invert()*Dg;
+    MVector Dg = -Compton->Dg();
+    Dg = m_RTo00[i]*Dg;
+    Dg = m_R2.Invert()*Dg;
 
-		double Chi = Dg.Theta()*c_Deg;
+    double Chi = Dg.Theta()*c_Deg;
 
-		double ARM = Chi-Phi;
+    double ARM = Chi-Phi;
 
-		//source region
-		if ( fabs(ARM) <= m_CDS_ARM ){
-			m_CDSResponse.Add(vector<double> {offAxisAngle, Energy, Phi, 1});
-		}
-		else if ( fabs(ARM) > m_CDS_ARM && fabs(ARM) <= 2*m_CDS_ARM ){
-			m_CDSResponse.Add(vector<double> {offAxisAngle, Energy, Phi, 0});
-		}
-	}
+    //source region
+    if ( fabs(ARM) <= m_CDS_ARM ) {
+      m_CDSResponse.Add(vector<double> {offAxisAngle, Energy, Phi, 1});
+    }
+    else if ( fabs(ARM) > m_CDS_ARM && fabs(ARM) <= 2*m_CDS_ARM ) {
+      m_CDSResponse.Add(vector<double> {offAxisAngle, Energy, Phi, 0});
+    }
+  }
 
    
   return true;
@@ -362,75 +346,96 @@ bool MResponseComptelDataSpace::Save()
 bool MResponseComptelDataSpace::InitializeSourcePositions()
 {
 
-	for (int i=0; i<60; i++){
+  for (int i=0; i<60; i++) {
 
-		double t = i*c_Rad;
-		double p = 0*c_Rad;
+    double t = i*c_Rad;
+    double p = 0*c_Rad;
 
-		double alpha = acos(sin(t)*cos(p));
-	
-		//then fill rotation matrix
-		double norm = sqrt(pow(roundF(cos(t),10),2)+pow(roundF(sin(t),10),2)*pow(roundF(sin(p),10),2));
-		if (norm == 0){ norm = 1e-17; }
-		MRotation K;
-		K.SetXX(0);
-		K.SetXY(-roundF(sin(t),10)*roundF(sin(p),10)/norm);
-		K.SetXZ(-roundF(cos(t),10)/norm);
-	
-		K.SetYX(roundF(sin(t),10)*roundF(sin(p),10)/norm);
-		K.SetYY(0);
-		K.SetYZ(0);
-	
-		K.SetZX(roundF(cos(t),10)/norm);
-		K.SetZY(0);
-		K.SetZZ(0);
-	
-	
-		MRotation I;
-		I.SetIdentity();
-	
-		MRotation K1 = K;
-		K1 *= sin(alpha);
-	
-		MRotation K2 = K;
-		K2 *= K;
-		K2 *= (1-cos(alpha));
-		
-		MRotation RTo00;
-		RTo00.SetXX(I.GetXX()+K1.GetXX()+K2.GetXX());
-		RTo00.SetXY(I.GetXY()+K1.GetXY()+K2.GetXY());
-		RTo00.SetXZ(I.GetXZ()+K1.GetXZ()+K2.GetXZ());
-	
-		RTo00.SetYX(I.GetYX()+K1.GetYX()+K2.GetYX());
-		RTo00.SetYY(I.GetYY()+K1.GetYY()+K2.GetYY());
-		RTo00.SetYZ(I.GetYZ()+K1.GetYZ()+K2.GetYZ());
-	
-		RTo00.SetZX(I.GetZX()+K1.GetZX()+K2.GetZX());
-		RTo00.SetZY(I.GetZY()+K1.GetZY()+K2.GetZY());
-		RTo00.SetZZ(I.GetZZ()+K1.GetZZ()+K2.GetZZ());
+    double alpha = acos(sin(t)*cos(p));
+  
+    //then fill rotation matrix
+    double norm = sqrt(pow(RoundF(cos(t), 10), 2)+pow(RoundF(sin(t), 10), 2)*pow(RoundF(sin(p), 10), 2));
+    if (norm == 0) { norm = 1e-17; }
+    MRotation K;
+    K.SetXX(0);
+    K.SetXY(-RoundF(sin(t), 10)*RoundF(sin(p), 10)/norm);
+    K.SetXZ(-RoundF(cos(t), 10)/norm);
+  
+    K.SetYX(RoundF(sin(t), 10)*RoundF(sin(p), 10)/norm);
+    K.SetYY(0);
+    K.SetYZ(0);
+  
+    K.SetZX(RoundF(cos(t), 10)/norm);
+    K.SetZY(0);
+    K.SetZZ(0);
+  
+  
+    MRotation I;
+    I.SetIdentity();
+  
+    MRotation K1 = K;
+    K1 *= sin(alpha);
+  
+    MRotation K2 = K;
+    K2 *= K;
+    K2 *= (1-cos(alpha));
+    
+    MRotation RTo00;
+    RTo00.SetXX(I.GetXX()+K1.GetXX()+K2.GetXX());
+    RTo00.SetXY(I.GetXY()+K1.GetXY()+K2.GetXY());
+    RTo00.SetXZ(I.GetXZ()+K1.GetXZ()+K2.GetXZ());
+  
+    RTo00.SetYX(I.GetYX()+K1.GetYX()+K2.GetYX());
+    RTo00.SetYY(I.GetYY()+K1.GetYY()+K2.GetYY());
+    RTo00.SetYZ(I.GetYZ()+K1.GetYZ()+K2.GetYZ());
+  
+    RTo00.SetZX(I.GetZX()+K1.GetZX()+K2.GetZX());
+    RTo00.SetZY(I.GetZY()+K1.GetZY()+K2.GetZY());
+    RTo00.SetZZ(I.GetZZ()+K1.GetZZ()+K2.GetZZ());
 
-		m_RTo00.push_back(RTo00);
-	
-	}
+    m_RTo00.push_back(RTo00);
+  
+  }
 
-	//make this rotation: rotate cone into plane
-	MVector xAxis(0,0,1);
-	MVector zAxis(1,0,0);
-	MVector yAxis = zAxis.Cross(xAxis);
+  //make this rotation: rotate cone into plane
+  MVector xAxis(0, 0, 1);
+  MVector zAxis(1, 0, 0);
+  MVector yAxis = zAxis.Cross(xAxis);
 
-	m_R2.SetXX(xAxis.X());
-	m_R2.SetXY(xAxis.Y());
-	m_R2.SetXZ(xAxis.Z());
-	m_R2.SetYX(yAxis.X());
-	m_R2.SetYY(yAxis.Y());
-	m_R2.SetYZ(yAxis.Z());
-	m_R2.SetZX(zAxis.X());
-	m_R2.SetZY(zAxis.Y());
-	m_R2.SetZZ(zAxis.Z());
-	
-	return true;
+  m_R2.SetXX(xAxis.X());
+  m_R2.SetXY(xAxis.Y());
+  m_R2.SetXZ(xAxis.Z());
+  m_R2.SetYX(yAxis.X());
+  m_R2.SetYY(yAxis.Y());
+  m_R2.SetYZ(yAxis.Z());
+  m_R2.SetZX(zAxis.X());
+  m_R2.SetZY(zAxis.Y());
+  m_R2.SetZZ(zAxis.Z());
+  
+  return true;
 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//! Round double to precision P
+double MResponseComptelDataSpace::RoundF(double N, int P) {
+
+  double P10 = pow(10, P);
+
+  N = N*P10;
+  if (N>=0) { N += 0.5; }
+  else { N -= 0.5; }
+
+  double N2 = floor(N)/P10;
+
+  return N2;
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 
 // MResponseComptelDataSpace.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
