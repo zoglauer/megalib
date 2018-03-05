@@ -43,6 +43,7 @@ LOBJS = $(LB)/MResponseCreator.o \
 	$(LB)/MResponseEventQuality.o \
 	$(LB)/MResponseEventQualityTMVAEventFile.o \
 	$(LB)/MResponseStripPairingTMVAEventFile.o \
+	$(LB)/MResponseComptelDataSpace.o \
 
 
 OBJS = $(MOBJM) $(MOBJC) $(LOBJS)

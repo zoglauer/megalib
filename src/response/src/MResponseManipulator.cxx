@@ -895,7 +895,9 @@ bool MResponseManipulator::Join()
   
   Types.push_back(".imagingarm.allenergies.rsp");
   Types.push_back(".imagingarm.photopeak.rsp");
-  
+ 
+  Types.push_back(".compteldataspace.rsp");
+ 
   JoinRSPFiles(m_Prefix, Types);
   
   
