@@ -32,6 +32,7 @@
 #include <functional>
 #include <algorithm>
 #include <limits>
+#include <numeric>
 using namespace std;
 
 // ROOT libs:
@@ -59,7 +60,7 @@ ClassImp(MResponseMatrixON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON() : MResponseMatrix()
+MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_IsSparse(IsParse), m_NumberOfBins(0)
 {
   // default constructor
 
@@ -69,7 +70,7 @@ MResponseMatrixON::MResponseMatrixON() : MResponseMatrix()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MString& Name) : MResponseMatrix(Name)
+MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_IsSparse(IsParse), m_NumberOfBins(0)
 {
   // extended constructor
 }
@@ -95,10 +96,61 @@ void MResponseMatrixON::Clear()
     delete A;
   }
   m_Axes.clear();
+  
+  m_NumberOfBins = 0;
+  
   m_Values.clear();
+
+  m_ValuesSparse.clear();
+  m_BinsSparse.clear();
   
   MResponseMatrix::Clear();
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Switch to sparse mode 
+void MResponseMatrixON::SwitchToSparse()
+{
+  if (m_IsSparse == true) return;
+  
+  m_ValuesSparse.clear();
+  m_BinsSparse.clear();
+  
+  for (unsigned long i = 0; i < m_Values[i]; ++i) {
+    if (m_Values[i] != 0.0) {
+      m_ValuesSparse.push_back(m_Values[i]);
+      m_BinsSparse.push_back(i);
+    }
+  }
+  m_IsSparse = true;
+  
+  m_Values.clear();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Switch to non-sparse mode
+void MResponseMatrixON::SwitchToNonSparse()
+{
+  if (m_IsSparse == false) return;
+  
+  m_Values.clear();
+  m_Values.resize(GetNBins(), 0);
+  
+  for (unsigned long i = 0; i < m_BinsSparse[i]; ++i) {
+    m_Values[m_BinsSparse[i]] = m_ValuesSparse[i];
+  }
+  m_IsSparse = false;
+  
+  m_ValuesSparse.clear();
+  m_BinsSparse.clear();
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -109,7 +161,12 @@ void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
 
   m_Axes.push_back(Axis.Clone());
   m_Order += Axis.GetDimension();
-  m_Values.resize(GetNBins(), 0);
+  
+  m_NumberOfBins = CalculateNumberOfBins();
+  
+  if (m_IsSparse == false) {
+    m_Values.resize(m_NumberOfBins, 0);
+  }
 
   ostringstream out;
   m_Axes.back()->Write(out);
@@ -119,7 +176,7 @@ void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
+void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   // Set the axis
 
@@ -128,14 +185,19 @@ void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned int NBins, d
 
   m_Axes.push_back(Axis);
   m_Order += 1;
-  m_Values.resize(GetNBins(), 0);
+  
+  m_NumberOfBins = CalculateNumberOfBins();
+  
+  if (m_IsSparse == false) {
+    m_Values.resize(m_NumberOfBins, 0);
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::AddAxisLogarithmic(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
+void MResponseMatrixON::AddAxisLogarithmic(const MString& Name, unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   // Set the axis
 
@@ -144,7 +206,12 @@ void MResponseMatrixON::AddAxisLogarithmic(const MString& Name, unsigned int NBi
 
   m_Axes.push_back(Axis);
   m_Order += 1;
-  m_Values.resize(GetNBins(), 0);
+  
+  m_NumberOfBins = CalculateNumberOfBins();
+  
+  if (m_IsSparse == false) {
+    m_Values.resize(m_NumberOfBins, 0);
+  }
 }
 
 
@@ -207,8 +274,34 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const MResponseMatrixON& R)
   // Append a matrix to this one
 
   if (*this == R) {
-    for (unsigned int i = 0; i < m_Values.size(); ++i) {
-      m_Values[i] += R.m_Values[i];
+    if (m_IsSparse == false) {
+      for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+        m_Values[i] += R.Get(i); // R maybe sparse or not
+      }
+    } else {
+      if (R.m_IsSparse == true) {
+        for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
+          unsigned long Bin = FindBinSparse(R.m_BinsSparse[i]);
+          if (Bin != g_UnsignedLongNotDefined) {
+            m_ValuesSparse[Bin] += R.m_ValuesSparse[i];
+          } else {
+            m_ValuesSparse.push_back(R.m_ValuesSparse[i]); 
+            m_BinsSparse.push_back(i); 
+          }
+        }
+      } else {
+        for (unsigned long i = 0; i < R.m_NumberOfBins; ++i) {
+          if (R.m_Values[i] != 0) {
+            unsigned long Bin = FindBinSparse(i);
+            if (Bin != g_UnsignedLongNotDefined) {
+              m_ValuesSparse[Bin] += R.m_Values[i];
+            } else {
+              m_ValuesSparse.push_back(R.m_Values[i]); 
+              m_BinsSparse.push_back(i); 
+            }
+          }
+        }        
+      }
     }
   } else {
     throw MExceptionObjectsNotIdentical("Response Matrix A", "Response matrix B");
@@ -226,8 +319,34 @@ MResponseMatrixON& MResponseMatrixON::operator-=(const MResponseMatrixON& R)
   // Subtract a matrix from this one
 
   if (*this == R) {
-    for (unsigned int i = 0; i < m_Values.size(); ++i) {
-      m_Values[i] -= R.m_Values[i];
+    if (m_IsSparse == false) {
+      for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+        m_Values[i] -= R.Get(i); // R maybe sparse or not
+      }
+    } else {
+      if (R.m_IsSparse == true) {
+        for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
+          unsigned long Bin = FindBinSparse(R.m_BinsSparse[i]);
+          if (Bin != g_UnsignedLongNotDefined) {
+            m_ValuesSparse[Bin] -= R.m_ValuesSparse[i];
+          } else {
+            m_ValuesSparse.push_back(-R.m_ValuesSparse[i]); 
+            m_BinsSparse.push_back(i); 
+          }
+        }
+      } else {
+        for (unsigned long i = 0; i < R.m_NumberOfBins; ++i) {
+          if (R.m_Values[i] != 0) {
+            unsigned long Bin = FindBinSparse(i);
+            if (Bin != g_UnsignedLongNotDefined) {
+              m_ValuesSparse[Bin] -= R.m_Values[i];
+            } else {
+              m_ValuesSparse.push_back(-R.m_Values[i]); 
+              m_BinsSparse.push_back(i); 
+            }
+          }
+        }        
+      }
     }
   } else {
     throw MExceptionObjectsNotIdentical("Response Matrix A", "Response matrix B");
@@ -245,11 +364,25 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const MResponseMatrixON& R)
   // Append a matrix to this one
 
   if (*this == R) {
-    for (unsigned int i = 0; i < m_Values.size(); ++i) {
-      if (R.m_Values[i] != 0) {
-        m_Values[i] /= R.m_Values[i];
-      } else {
-        m_Values[i] = 0;
+    if (m_IsSparse == false) {
+      for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+        float RValue = R.Get(i); // R maybe sparse or not...
+        if (RValue != 0) {
+          m_Values[i] /= RValue;
+        } else {
+          m_Values[i] = 0;
+        }
+      }
+    } else {
+      // We just need to loop over the non-zeroes here
+      for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
+        float RValue = R.Get(m_BinsSparse[i]); // R maybe sparse or not...
+        if (RValue != 0) {
+          m_ValuesSparse[i] /= RValue;
+        } else {
+          // NaN, but we will set it to zero
+          m_ValuesSparse[i] = 0;
+        } 
       }
     }
   } else {
@@ -271,7 +404,12 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const float& Value)
     throw MExceptionNumberNotFinite();
   }
   
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+  // we will be non-sparse now:
+  if (m_IsSparse == true) {
+    SwitchToNonSparse(); 
+  }
+  
+  for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
     m_Values[i] += Value;
   }
   
@@ -290,7 +428,12 @@ MResponseMatrixON& MResponseMatrixON::operator-=(const float& Value)
     throw MExceptionNumberNotFinite();
   }
   
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+  // we will be non-sparse now:
+  if (m_IsSparse == true) {
+    SwitchToNonSparse(); 
+  }
+  
+  for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
     m_Values[i] -= Value;
   }
   
@@ -308,11 +451,17 @@ MResponseMatrixON& MResponseMatrixON::operator*=(const float& Value)
   if (isfinite(Value) == false) {
     throw MExceptionNumberNotFinite();
   }
-  
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    m_Values[i] *= Value;
+
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      m_Values[i] *= Value;
+    }
+  } else {
+    for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
+      m_ValuesSparse[i] *= Value;
+    }
   }
-  
+
   return *this;
 }
 
@@ -332,8 +481,14 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
     throw MExceptionNumberNotFinite();
   }
   
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    m_Values[i] /= Value;
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      m_Values[i] /= Value;
+    }
+  } else {
+    for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
+      m_ValuesSparse[i] /= Value;
+    }
   }
   
   return *this;
@@ -343,7 +498,7 @@ MResponseMatrixON& MResponseMatrixON::operator/=(const float& Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
+unsigned long MResponseMatrixON::FindBin(vector<unsigned long> X) const
 {
   // Find the bin of m_Values corresponding to the axis bins X
   // Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....
@@ -353,7 +508,7 @@ unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
   }
 
   double Multiplier = 0;
-  unsigned int Bin = 0;
+  unsigned long Bin = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     if (X[a] >= m_Axes[a]->GetNumberOfBins()) {
       throw MExceptionIndexOutOfBounds(0, m_Axes[a]->GetNumberOfBins(), X[a]);
@@ -367,8 +522,8 @@ unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
     Bin += Multiplier*X[a];
   }
 
-  if (Bin >= m_Values.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Values.size(), Bin);
+  if (Bin >= m_NumberOfBins) {
+    throw MExceptionIndexOutOfBounds(0, m_NumberOfBins, Bin);
   }
 
   return Bin;
@@ -378,11 +533,11 @@ unsigned int MResponseMatrixON::FindBin(vector<unsigned int> X) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<unsigned int> MResponseMatrixON::FindBins(unsigned int Bin) const
+vector<unsigned long> MResponseMatrixON::FindBins(unsigned long Bin) const
 {
   // Find the axes bins corresponding to the internal value bin Bin
 
-  vector<unsigned int> Bins(m_Axes.size());
+  vector<unsigned long> Bins(m_Axes.size());
 
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     Bins[a] = Bin % m_Axes[a]->GetNumberOfBins();
@@ -396,12 +551,28 @@ vector<unsigned int> MResponseMatrixON::FindBins(unsigned int Bin) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<unsigned int> MResponseMatrixON::FindBins(vector<double> X) const
+//! Find the entry in the sparse matrix which contains the Bin -- return g_UnsignedLongNotDefined otherwise. 
+unsigned long MResponseMatrixON::FindBinSparse(unsigned long Bin) const
+{
+  for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) { 
+    if (Bin == m_BinsSparse[i]) {
+      return i; 
+    }
+  }
+  
+  return g_UnsignedLongNotDefined;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
 {
   // Find the bin of m_Values corresponding to the axis values X
 
-  unsigned int Xbin = 0;
-  vector<unsigned int> Bins;
+  unsigned long Xbin = 0;
+  vector<unsigned long> Bins;
 
   if (X.size() != m_Order) {
     throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Order);
@@ -440,7 +611,7 @@ vector<unsigned int> MResponseMatrixON::FindBins(vector<double> X) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned int MResponseMatrixON::FindBin(vector<double> X) const
+unsigned long MResponseMatrixON::FindBin(vector<double> X) const
 {
   // Find the bin of m_Values corresponding to the axis values X
 
@@ -462,7 +633,7 @@ bool MResponseMatrixON::InRange(vector<double> X) const
 
   //cout<<"Inrange: Input data: "; for (auto b: X) cout<<b<<" "; cout<<endl;
 
-  unsigned int Xbin = 0;
+  unsigned long Xbin = 0;
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
@@ -489,7 +660,7 @@ bool MResponseMatrixON::InRange(vector<double> X) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
+bool MResponseMatrixON::InRange(vector<unsigned long> Bins) const
 {
   // Check if the values are inside the range of all axes
 
@@ -511,7 +682,7 @@ bool MResponseMatrixON::InRange(vector<unsigned int> Bins) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::Set(vector<unsigned int> X, float Value)
+void MResponseMatrixON::Set(vector<unsigned long> X, float Value)
 {
   // Set the content of the bin
   
@@ -523,7 +694,19 @@ void MResponseMatrixON::Set(vector<unsigned int> X, float Value)
     return;
   }
 
-  m_Values[FindBin(X)] = Value;
+  unsigned long Bin = FindBin(X);
+  
+  if (m_IsSparse == false) {
+    m_Values[Bin] = Value;
+  } else {
+    unsigned long Position = FindBinSparse(Bin);
+    if (Position != g_UnsignedLongNotDefined) {
+      m_ValuesSparse[Position] = Value;
+    } else {
+      m_ValuesSparse.push_back(Value); 
+      m_BinsSparse.push_back(Bin); 
+    }
+  }
 }
 
 
@@ -542,14 +725,26 @@ void MResponseMatrixON::Set(vector<double> X, float Value)
     return;
   }
 
-  m_Values[FindBin(X)] = Value;
+  unsigned long Bin = FindBin(X);
+  
+  if (m_IsSparse == false) {
+    m_Values[Bin] = Value;
+  } else {
+    unsigned long Position = FindBinSparse(Bin);
+    if (Position != g_UnsignedLongNotDefined) {
+      m_ValuesSparse[Position] = Value;
+    } else {
+      m_ValuesSparse.push_back(Value); 
+      m_BinsSparse.push_back(Bin); 
+    }
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MResponseMatrixON::Add(vector<unsigned int> X, float Value)
+void MResponseMatrixON::Add(vector<unsigned long> X, float Value)
 {
   // Add a value to the bin closest to x, y
   
@@ -561,7 +756,19 @@ void MResponseMatrixON::Add(vector<unsigned int> X, float Value)
     return;
   }
   
-  m_Values[FindBin(X)] += Value;
+  unsigned long Bin = FindBin(X);
+
+  if (m_IsSparse == false) {
+    m_Values[Bin] += Value;
+  } else {
+    unsigned long Position = FindBinSparse(Bin);
+    if (Position != g_UnsignedLongNotDefined) {
+      m_ValuesSparse[Position] += Value;
+    } else {
+      m_ValuesSparse.push_back(Value); 
+      m_BinsSparse.push_back(Bin); 
+    }
+  }
 }
 
 
@@ -580,14 +787,26 @@ void MResponseMatrixON::Add(vector<double> X, float Value)
     return;
   }
   
-  m_Values[FindBin(X)] += Value;
+  unsigned long Bin = FindBin(X);
+
+  if (m_IsSparse == false) {
+    m_Values[Bin] += Value;
+  } else {
+    unsigned long Position = FindBinSparse(Bin);
+    if (Position != g_UnsignedLongNotDefined) {
+      m_ValuesSparse[Position] += Value;
+    } else {
+      m_ValuesSparse.push_back(Value); 
+      m_BinsSparse.push_back(Bin); 
+    }
+  }
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-unsigned long MResponseMatrixON::GetNBins() const
+unsigned long MResponseMatrixON::CalculateNumberOfBins() const
 {
   // Return the number of bins
 
@@ -607,11 +826,24 @@ unsigned long MResponseMatrixON::GetNBins() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-float MResponseMatrixON::Get(vector<unsigned int> X) const
+float MResponseMatrixON::Get(vector<unsigned long> X) const
 {
   // Return the content of bin x, y
-
-  return m_Values[FindBin(X)];
+  
+  unsigned long MatrixBin = FindBin(X);
+  
+  if (m_IsSparse == false) {
+    return m_Values[MatrixBin];
+  } else {
+    unsigned long SparsePosition = FindBinSparse(MatrixBin);
+    if (SparsePosition != g_UnsignedLongNotDefined) {
+      return m_ValuesSparse[SparsePosition];
+    } else {
+      return 0.0; 
+    }
+  }
+  
+  // all cases covered
 }
 
 
@@ -631,7 +863,18 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
 
   mout<<"Interpolation not implemented!"<<endl;
 
-  return m_Values[FindBin(X)];
+  unsigned long MatrixBin = FindBin(X);
+  
+  if (m_IsSparse == false) {
+    return m_Values[MatrixBin];
+  } else {
+    unsigned long SparsePosition = FindBinSparse(MatrixBin);
+    if (SparsePosition != g_UnsignedLongNotDefined) {
+      return m_ValuesSparse[SparsePosition];
+    } else {
+      return 0.0; 
+    }
+  }
 
   // We have to distinguish two different cases:
   // (1) the values are at the center of the bin (e.g. used by response files)
@@ -652,7 +895,7 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
       return m_Values.front();
     } else {
       // Get Position (lower bound)
-      int Position = FindBinCentered(m_AxisO1, x1);
+      long Position = FindBinCentered(m_AxisO1, x1);
 
       // Take care of boundaries:
       if (Position < 0) {
@@ -661,10 +904,10 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
         } else {
           return m_Values.front();
         }
-      } else if (Position >= int(m_Values.size()-1)) {
+      } else if (Position >= long(m_NumberOfBins-1)) {
         if (DoExtrapolate == true) {
-          Position = int(m_Values.size()-2); // extrapolate above higher edge
-          // limits of highest CENTERED bin are m_Values.size()-2 and m_Values.size()-1 !!
+          Position = long(m_NumberOfBins-2); // extrapolate above higher edge
+          // limits of highest CENTERED bin are m_NumberOfBins-2 and m_NumberOfBins-1 !!
         } else {
           return m_Values.back();
         }
@@ -677,7 +920,7 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
     }
   } else {
     // Get Position (lower bound)
-    int Position = FindBin(m_AxisO1, x1);
+    long Position = FindBin(m_AxisO1, x1);
 
     // Take care of boundaries:
     if (Position < 0) {
@@ -686,9 +929,9 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
       } else {
         return m_Values.front();
       }
-    } else if (Position >= int(m_AxisO1.size()-1)) {
+    } else if (Position >= long(m_AxisO1.size()-1)) {
       if (DoExtrapolate == true) {
-        Position = int(m_AxisO1.size()-2); // extrapolate above higher edge
+        Position = long(m_AxisO1.size()-2); // extrapolate above higher edge
         // limits of highest bin are m_AxisO2.size()-2 and  m_AxisO2.size()-1 !!
       } else {
         return m_Values.back();
@@ -718,7 +961,18 @@ float MResponseMatrixON::Get(vector<double> X) const
     return 0;
   }
 
-  return m_Values[FindBin(X)];
+  unsigned long MatrixBin = FindBin(X);
+  
+  if (m_IsSparse == false) {
+    return m_Values[MatrixBin];
+  } else {
+    unsigned long SparsePosition = FindBinSparse(MatrixBin);
+    if (SparsePosition != g_UnsignedLongNotDefined) {
+      return m_ValuesSparse[SparsePosition];
+    } else {
+      return 0.0; 
+    }
+  }
 }
 
 
@@ -736,10 +990,10 @@ float MResponseMatrixON::GetArea(vector<double> X) const
     return 0.0;
   }
 
-  vector<unsigned int> Bins = FindBins(X);
+  vector<unsigned long> Bins = FindBins(X);
 
   double Area = 1;
-  for (unsigned int b = 0; b < Bins.size(); ++b) {
+  for (unsigned long b = 0; b < Bins.size(); ++b) {
     Area *= m_Axes[b]->GetArea(Bins[b]);
   }
 
@@ -755,10 +1009,20 @@ float MResponseMatrixON::GetMaximum() const
   // Return the maximum
 
   float Max = -numeric_limits<float>::max();
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    if (m_Values[i] > Max) {
-      Max = m_Values[i];
+  
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      if (m_Values[i] > Max) {
+        Max = m_Values[i];
+      }
     }
+  } else {
+    Max = 0;
+    for (unsigned long i = 0; i < m_ValuesSparse.size(); ++i) {
+      if (m_ValuesSparse[i] > Max) {
+        Max = m_ValuesSparse[i];
+      }
+    }    
   }
 
   return Max;
@@ -773,10 +1037,20 @@ float MResponseMatrixON::GetMinimum() const
   // Return the minimum
 
   float Min = numeric_limits<float>::max();
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    if (m_Values[i] < Min) {
-      Min = m_Values[i];
+  
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      if (m_Values[i] < Min) {
+        Min = m_Values[i];
+      }
     }
+  } else {
+    Min = 0;
+    for (unsigned long i = 0; i < m_ValuesSparse.size(); ++i) {
+      if (m_ValuesSparse[i] < Min) {
+        Min = m_ValuesSparse[i];
+      }
+    } 
   }
 
   return Min;
@@ -791,13 +1065,40 @@ double MResponseMatrixON::GetSum() const
   // Return the sum of all bins:
 
   double Sum = 0;
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    Sum += m_Values[i];
+  
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      Sum += m_Values[i];
+    }
+  } else {
+    for (unsigned long i = 0; i < m_ValuesSparse.size(); ++i) {
+      Sum += m_ValuesSparse[i];
+    } 
   }
 
   return Sum;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Sort the sparse matrix
+void MResponseMatrixON::SortSparse()
+{
+  // Create a sort permutation:
+  vector<unsigned long> Permutation(m_BinsSparse.size());
+  iota(Permutation.begin(), Permutation.end(), 0);
+  sort(Permutation.begin(), Permutation.end(), [&](unsigned long i, unsigned long j) { return m_BinsSparse[i] < m_BinsSparse[j]; } );
+  
+  // Apply the permutation
+  vector<unsigned long> SortedBins(m_BinsSparse.size());
+  transform(Permutation.begin(), Permutation.end(), SortedBins.begin(), [&](unsigned long i) { return m_BinsSparse[i]; });
+  m_BinsSparse = SortedBins;
+  
+  vector<float> SortedValues(m_ValuesSparse.size());
+  transform(Permutation.begin(), Permutation.end(), SortedValues.begin(), [&](unsigned long i) { return m_ValuesSparse[i]; });
+  m_ValuesSparse = SortedValues;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -895,11 +1196,20 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
         break;
       }
     } else if (T.GetTokenAt(0) == "Type") {
-      if (Type == "ResponseMatrixONStream") {
+    
+			m_NumberOfBins = CalculateNumberOfBins();
+			
+			if (Type == "ResponseMatrixONStream") {
         while (Parser.TokenizeLine(T, true) == true) {
           if (T.GetNTokens() < 2) continue;
 
           if (T.GetTokenAt(0) == "StartStream") {
+            // Clean up and switch to non sparse
+            m_IsSparse = false;
+            m_Values.clear();
+            m_ValuesSparse.clear();
+            m_BinsSparse.clear();
+            
             unsigned long StreamSize = T.GetTokenAtAsLong(1);
 
             if (GetNBins() != StreamSize) {
@@ -939,12 +1249,18 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
             }
           }
         } // secondary tokenizer loop
-      } else if (Type == "ResponseMatrixON") {
-        m_Values.resize(GetNBins(), 0);
+      } else if (Type == "ResponseMatrixON" || Type == "ResponseMatrixONSparse") {
+        
+        // Clean up and switch to sparse
+        m_IsSparse = true;
+        m_Values.clear();
+        m_ValuesSparse.clear();
+        m_BinsSparse.clear();
+        
         while (Parser.TokenizeLine(T, true) == true) {
           if (T.GetNTokens() != m_Axes.size() + 2) continue;
           if (T.GetTokenAt(0) == "RD") {
-            vector<unsigned int> Bins(m_Axes.size(), 0);
+            vector<unsigned long> Bins(m_Axes.size(), 0);
             for (unsigned int b = 1; b < m_Axes.size() + 1; ++b) {
               Bins[b-1] = T.GetTokenAtAsUnsignedInt(b);
             }
@@ -1000,6 +1316,9 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   s<<"# Are the values centered?"<<endl;
   s<<"CE false"<<endl;
   s<<endl;
+  s<<"# Is the matrix sparse?"<<endl;
+  s<<"SP "<<(m_IsSparse == true ? "true" : "false")<<endl;
+  s<<endl;
   File.Write(s);
 
   s<<endl;
@@ -1011,8 +1330,9 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   File.Write(s);
 
   // Determine the sparcity:
+  /*
   unsigned long Empty = 0;
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
+  for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
     if (m_Values[i] == 0) {
       Empty += 1;
     }
@@ -1020,15 +1340,16 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   if (double(Empty)/GetNBins() > 0.9) {
     Stream = false;
   }
+  */
 
-  if (Stream == true) {
+  if (m_IsSparse == false) {
     s<<"Type ResponseMatrixONStream"<<endl;
     s<<endl;
 
     // Write content stream
-    s<<"StartStream "<<m_Values.size()<<endl;
+    s<<"StartStream "<<m_NumberOfBins<<endl;
     File.Write(s);
-    for (unsigned int i = 0; i < m_Values.size(); ++i) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
       if (m_Values[i] == 0) {
         File.Write("0 "); // Little speed up (x8 for sparse matrices)
       } else {
@@ -1039,24 +1360,25 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
     s<<"StopStream"<<endl;
     File.Write(s);
   } else {
-    s<<"Type ResponseMatrixON"<<endl;
+    s<<"Type ResponseMatrixONSparse"<<endl;
     s<<endl;
-
-    for (unsigned int i = 0; i < m_Values.size(); ++i) {
-      if (m_Values[i] == 0) continue;
-      vector<unsigned int> Bins = FindBins(i);
+    
+    SortSparse();
+    
+    for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
+      vector<unsigned long> Bins = FindBins(m_BinsSparse[i]);
       s<<"RD ";
-      for (unsigned int b = 0; b < Bins.size(); ++b) {
+      for (unsigned long b = 0; b < Bins.size(); ++b) {
         s<<Bins[b]<<" ";
       }
-      s<<m_Values[i]<<endl;;
+      s<<m_ValuesSparse[i]<<endl;;
       File.Write(s);
     }
   }
 
   File.Close();
 
-  mout<<"File \""<<FileName<<"\" with "<<m_Values.size()<<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
+  mout<<"File \""<<FileName<<"\" with "<<m_NumberOfBins<<" entries written in "<<Timer.ElapsedTime()<<" sec"<<endl;
 
   return true;
 }
@@ -1077,21 +1399,21 @@ void MResponseMatrixON::ShowSlice(vector<float> AxisValues, bool Normalize, MStr
   }
 
   bool ContainsShowX = false;
-  for (unsigned int v = 0; v < AxisValues.size(); ++v) {
+  for (unsigned long v = 0; v < AxisValues.size(); ++v) {
     if (AxisValues[v] == MResponseMatrix::c_ShowX) {
       ContainsShowX = true;
       break;
     }
   }
   bool ContainsShowY = false;
-  for (unsigned int v = 0; v < AxisValues.size(); ++v) {
+  for (unsigned long v = 0; v < AxisValues.size(); ++v) {
     if (AxisValues[v] == MResponseMatrix::c_ShowY) {
       ContainsShowY = true;
       break;
     }
   }
   bool ContainsShowZ = false;
-  for (unsigned int v = 0; v < AxisValues.size(); ++v) {
+  for (unsigned long v = 0; v < AxisValues.size(); ++v) {
     if (AxisValues[v] == MResponseMatrix::c_ShowZ) {
       ContainsShowZ = true;
       break;
@@ -1361,19 +1683,35 @@ MString MResponseMatrixON::GetStatistics() const
   double Sum = 0;
   float Min = +numeric_limits<float>::max();
   float Max = -numeric_limits<float>::max();
-  for (unsigned int i = 0; i < m_Values.size(); ++i) {
-    Sum += m_Values[i];
-    if (m_Values[i] > Max) {
-      Max = m_Values[i];
+  
+  if (m_IsSparse == false) {
+    for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+      Sum += m_Values[i];
+      if (m_Values[i] > Max) {
+        Max = m_Values[i];
+      }
+      if (m_Values[i] < Min) {
+        Min = m_Values[i];
+      }
+      if (m_Values[i] != 0) {
+        ++NumberOfNonZeroBins;
+      }
     }
-    if (m_Values[i] < Min) {
-      Min = m_Values[i];
-    }
-    if (m_Values[i] != 0) {
-      ++NumberOfNonZeroBins;
+  } else {
+    for (unsigned long i = 0; i < m_ValuesSparse.size(); ++i) {
+      Sum += m_ValuesSparse[i];
+      if (m_ValuesSparse[i] > Max) {
+        Max = m_ValuesSparse[i];
+      }
+      if (m_ValuesSparse[i] < Min) {
+        Min = m_ValuesSparse[i];
+      }
+      if (m_ValuesSparse[i] != 0) {
+        ++NumberOfNonZeroBins;
+      }
     }
   }
-
+  
   ostringstream out;
 
   out<<endl;

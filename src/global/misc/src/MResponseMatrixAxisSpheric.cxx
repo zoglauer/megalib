@@ -96,7 +96,7 @@ bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Ax
 
 
 //! Set the axis in FISBEL mode
-void MResponseMatrixAxisSpheric::SetFISBEL(unsigned int NBins, double LongitudeShift) 
+void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double LongitudeShift) 
 {
   m_Binner.Create(NBins, LongitudeShift*c_Rad);
 }
@@ -106,7 +106,7 @@ void MResponseMatrixAxisSpheric::SetFISBEL(unsigned int NBins, double LongitudeS
 
 
 //! Return the axis bin, given theta=latitude and phi=longitude 
-unsigned int MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) const
+unsigned long MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) const
 {
   return m_Binner.FindBin(Theta*c_Rad, Phi*c_Rad);
 }
@@ -116,7 +116,7 @@ unsigned int MResponseMatrixAxisSpheric::GetAxisBin(double Theta, double Phi) co
 
 
 //! Return the area of the given axis bin
-double MResponseMatrixAxisSpheric::GetArea(unsigned int Bin) const
+double MResponseMatrixAxisSpheric::GetArea(unsigned long Bin) const
 {
   return 4*c_Pi/m_Binner.GetNBins() * c_Deg*c_Deg;
 }
@@ -132,8 +132,8 @@ vector<vector<double>> MResponseMatrixAxisSpheric::GetDrawingAxisBinEdges() cons
   AxisBinEdges.push_back(AxisBinEdges[0]);
   AxisBinEdges.erase(AxisBinEdges.begin());
   
-  for (unsigned int x = 0; x < AxisBinEdges.size(); ++x) {
-    for (unsigned int y = 0; y < AxisBinEdges[x].size(); ++y) {
+  for (unsigned long x = 0; x < AxisBinEdges.size(); ++x) {
+    for (unsigned long y = 0; y < AxisBinEdges[x].size(); ++y) {
       AxisBinEdges[x][y] *= c_Deg;
     }
   }
@@ -180,7 +180,7 @@ vector<double> MResponseMatrixAxisSpheric::GetMaxima() const
 
 //! Return the bin center(s) of the given axis bin
 //! Can throw: MExceptionIndexOutOfBounds
-vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned int Bin) const
+vector<double> MResponseMatrixAxisSpheric::GetBinCenters(unsigned long Bin) const
 {
   if (Bin >= m_BinEdges.size() - 1) {
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);

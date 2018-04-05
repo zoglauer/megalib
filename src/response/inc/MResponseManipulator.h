@@ -31,6 +31,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Manipulate response file (add, join, show statsitics, view, etc.)
 class MResponseManipulator
 {
 public:

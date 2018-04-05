@@ -51,7 +51,7 @@ ClassImp(MResponseImagingBinnedMode)
 
 
 //! Default constructor
-MResponseImagingBinnedMode::MResponseImagingBinnedMode()
+MResponseImagingBinnedMode::MResponseImagingBinnedMode() : m_ImagingResponse(true)
 {
   m_ResponseNameSuffix = "binnedimaging";
   m_OnlyINITRequired = true;

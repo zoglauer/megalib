@@ -42,21 +42,26 @@ class MResponseMatrixON : public MResponseMatrix
   // public interface:
  public:
   //! Default constructor
-  MResponseMatrixON();
+  MResponseMatrixON(bool IsParse = false);
   //! Default constructor with response name
-  MResponseMatrixON(const MString& Name);
+  MResponseMatrixON(const MString& Name, bool IsParse = false);
   //! DEfault destructor
   virtual ~MResponseMatrixON();
   
   //! Clear all data
   virtual void Clear();
+
+  //! Switch to sparse mode 
+  void SwitchToSparse();
+  //! Switch to non-sparse mode
+  void SwitchToNonSparse();
   
   //! Add an axis
   void AddAxis(const MResponseMatrixAxis& Axis);
   //! Add a linear axis
-  void AddAxisLinear(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
+  void AddAxisLinear(const MString& Name, unsigned long NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
   //! Add a logarithmic axis
-  void AddAxisLogarithmic(const MString& Name, unsigned int NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
+  void AddAxisLogarithmic(const MString& Name, unsigned long NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
 
   //! Equality operator -- only the axes are considered, NOT the content
   bool operator==(const MResponseMatrixON& ResponseMatrixO1);
@@ -68,9 +73,9 @@ class MResponseMatrixON : public MResponseMatrix
   MResponseMatrixON& operator/=(const MResponseMatrixON& ResponseMatrixO1);  
   //! Initialize the response - after axes have been add
   void Init();
-  //! Add a scalar to the matrix
+  //! Add a scalar to the matrix -- this will automatically convert a sparse matrix to a non-sparse one
   MResponseMatrixON& operator+=(const float& Value);
-  //! Subtract a scalar from the matrix
+  //! Subtract a scalar from the matrix -- this will automatically convert a sparse matrix to a non-sparse one
   MResponseMatrixON& operator-=(const float& Value);
   //! Multiply matrix by a scalar
   MResponseMatrixON& operator*=(const float& Value);  
@@ -82,7 +87,7 @@ class MResponseMatrixON : public MResponseMatrix
   vector<MString> GetAxisNames(unsigned int AxisIndex) const;
   
   //! Return the number of bins
-  virtual unsigned long GetNBins() const;
+  virtual unsigned long GetNBins() const { return m_NumberOfBins; }
   
   //! Return the number of axes
   unsigned int GetNumberOfAxes() { return m_Axes.size(); }
@@ -94,46 +99,46 @@ class MResponseMatrixON : public MResponseMatrix
   //! Check if the values are inside the range of all axes
   bool InRange(vector<double> X) const;
   //! Check if the bins are inside the range of all axes
-  bool InRange(vector<unsigned int> Bins) const;
+  bool InRange(vector<unsigned long> Bins) const;
   
   // Check for bins
   
   //! Find the bin of m_Values corresponding to the axis bins X
-  unsigned int FindBin(vector<unsigned int> X) const;
+  unsigned long FindBin(vector<unsigned long> X) const;
   //! Find the bin of m_Values corresponding to the axis values X
-  unsigned int FindBin(vector<double> X) const;
+  unsigned long FindBin(vector<double> X) const;
 
   
   // Interface to modify the content
   
   //! Set the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  void Set(unsigned int Bin, float Value = 1) { m_Values.at(Bin) = Value; }
+  void Set(unsigned long Bin, float Value = 1) { m_Values.at(Bin) = Value; }
   //! Set the bin content
   //! Throw exception "MExceptionTestFailed" when out of bounds
-  void Set(vector<unsigned int> AxisBins, float Value = 1);
+  void Set(vector<unsigned long> AxisBins, float Value = 1);
   //! Find the bin and set the value
   //! Throws exception MExceptionTestFailed
   void Set(vector<double> AxisValues, float Value = 1);
   //! Find the bin and add the value
   //! Throws exception MExceptionTestFailed
-  void Add(vector<unsigned int> AxisValues, float Value = 1);
+  void Add(vector<unsigned long> AxisValues, float Value = 1);
   //! Find the bin and add the value
   //! Throws exception MExceptionTestFailed
   void Add(vector<double> AxisValues, float Value = 1);
   //! Add to the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  void Add(unsigned int Bin, float Value = 1) { m_Values.at(Bin) += Value; }
+  void Add(unsigned long Bin, float Value = 1) { m_Values.at(Bin) += Value; }
   
   // Interface to retrieve the content
 
   //! Get the area of a bin corresponding to the specific value
   virtual float GetArea(vector<double> AxisValues) const;
   //! Get the content of a specific bin 
-  virtual float Get(vector<unsigned int> AxisBins) const;
+  virtual float Get(vector<unsigned long> AxisBins) const;
   //! Get the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  virtual float Get(unsigned int Bin) const { return m_Values.at(Bin); }
+  virtual float Get(unsigned long Bin) const { return m_Values.at(Bin); }
   //! Get the content of the bin corresponding to the specific value
   virtual float Get(vector<double> AxisValues) const;
   //! Get the interpolated content of the bin corresponding to the specific value
@@ -170,13 +175,22 @@ class MResponseMatrixON : public MResponseMatrix
 
   // private methods:
  private:
+  //! Calculate the number of bins
+  unsigned long CalculateNumberOfBins() const;
+   
   //! Read the specific data of this class - the main file handling is done in the base class!
   virtual bool ReadSpecific(MFileResponse& Parser, const MString& Type, const int Version);
 
   //! Find the axes bins corresponding to the axis values X
-  vector<unsigned int> FindBins(vector<double> X) const;
+  vector<unsigned long> FindBins(vector<double> X) const;
   //! Find the axes bins corresponding to the internal value bin Bin
-  vector<unsigned int> FindBins(unsigned int Bin) const;
+  vector<unsigned long> FindBins(unsigned long Bin) const;
+  
+  //! Find the entry in the sparse matrix which contains the Bin -- return g_UnsignedLongNotDefined otherwise. 
+  unsigned long FindBinSparse(unsigned long Bin) const;
+  
+  //! Sort the sparse matrix
+  void SortSparse();
   
   
   //! Given an order, return the axis it belongs to
@@ -192,8 +206,20 @@ class MResponseMatrixON : public MResponseMatrix
   
   //! The axes
   vector<MResponseMatrixAxis*> m_Axes;
-  //! The data
+  
+  //! Flag indicating that we are in sparse mode
+  bool m_IsSparse;
+  
+  //! The data in non-sparse mode
   vector<float> m_Values;
+  
+  //! The number of bins
+  unsigned long m_NumberOfBins;
+  
+  //! The data in sparse mode
+  vector<float> m_ValuesSparse;
+  //! Axis values in sparse mode
+  vector<unsigned long> m_BinsSparse;
 
 
   // private members:

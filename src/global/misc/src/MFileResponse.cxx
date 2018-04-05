@@ -178,7 +178,7 @@ MResponseMatrix* MFileResponse::Read(MString FileName)
 
   MResponseMatrix* R = nullptr;
 
-  if (m_FileType == "ResponseMatrixON" || m_FileType == "ResponseMatrixONStream") {
+  if (m_FileType == "ResponseMatrixON" || m_FileType == "ResponseMatrixONSparse" || m_FileType == "ResponseMatrixONStream") {
     MResponseMatrixON* RON = new MResponseMatrixON();
     if (RON->Read(FileName) == true) {
       R = RON;

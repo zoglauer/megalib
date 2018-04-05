@@ -93,7 +93,7 @@ bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis) const
 
 
 //! Set the axis in linear mode
-void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
+void MResponseMatrixAxis::SetLinear(unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   if (Min >= Max) {
     throw MExceptionTestFailed("Minimum is larger or equal Maximum", Min, ">=", Max); 
@@ -113,7 +113,7 @@ void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, 
   
   double Dist = (Max-Min)/(NBins);
   
-  for (unsigned int i = 0; i < NBins+1; ++i) {
+  for (unsigned long i = 0; i < NBins+1; ++i) {
     m_BinEdges.push_back(Min+i*Dist);
   }
   
@@ -124,12 +124,12 @@ void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, 
   /*
   if (Inverted == true) {
     vector<double> Temp = m_BinEdges;
-    for (unsigned int i = 1; i < Temp.size()-1; ++i) {
+    for (unsigned long i = 1; i < Temp.size()-1; ++i) {
       m_BinEdges[i] = m_BinEdges[i-1] + (Temp[Temp.size()-i]-Temp[Temp.size()-i-1]);
     }
   }
   
-  for (unsigned int i = 0; i < m_BinEdges.size(); ++i) {
+  for (unsigned long i = 0; i < m_BinEdges.size(); ++i) {
     m_BinEdges[i] += Offset;
   }
   */
@@ -140,7 +140,7 @@ void MResponseMatrixAxis::SetLinear(unsigned int NBins, double Min, double Max, 
 
 
 //! Set the axis in logarithmic mode
-void MResponseMatrixAxis::SetLogarithmic(unsigned int NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
+void MResponseMatrixAxis::SetLogarithmic(unsigned long NBins, double Min, double Max, double UnderFlowMin, double OverFlowMax)
 {
   if (Min <= 0) {
     throw MExceptionTestFailed("The minimum must be larger than 0", Min, "<=", 0); 
@@ -165,7 +165,7 @@ void MResponseMatrixAxis::SetLogarithmic(unsigned int NBins, double Min, double 
   Max = log(Max);
   double Dist = (Max-Min)/(NBins);
   
-  for (unsigned int i = 0; i < NBins+1; ++i) {
+  for (unsigned long i = 0; i < NBins+1; ++i) {
     m_BinEdges.push_back(exp(Min+i*Dist));
   }
   
@@ -178,12 +178,12 @@ void MResponseMatrixAxis::SetLogarithmic(unsigned int NBins, double Min, double 
   /*
   if (Inverted == true) {
     vector<double> Temp = Axis;
-    for (unsigned int i = 1; i < Temp.size()-1; ++i) {
+    for (unsigned long i = 1; i < Temp.size()-1; ++i) {
       Axis[i] = Axis[i-1] + (Temp[Temp.size()-i]-Temp[Temp.size()-i-1]);
     }
   }
   
-  for (unsigned int i = 0; i < Axis.size(); ++i) {
+  for (unsigned long i = 0; i < Axis.size(); ++i) {
     Axis[i] += Offset;
   }
   */
@@ -194,7 +194,7 @@ void MResponseMatrixAxis::SetLogarithmic(unsigned int NBins, double Min, double 
 
 
 //! Return the axis bin given a axis value
-unsigned int MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
+unsigned long MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
 {
   if (m_BinEdges.size() < 2) {
     throw MExceptionArbitrary("Not enough bin edges (< 2) to determine bins");
@@ -206,7 +206,7 @@ unsigned int MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
   
   // C++ version
   auto UpperBound = upper_bound(m_BinEdges.begin(), m_BinEdges.end(), X1);
-  unsigned int Bin = UpperBound - m_BinEdges.begin() - 1;
+  unsigned long Bin = UpperBound - m_BinEdges.begin() - 1;
 
   if (Bin >= m_BinEdges.size() - 1) {
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
@@ -220,7 +220,7 @@ unsigned int MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
 
 
 //! Return the area of the given axis bin
-double MResponseMatrixAxis::GetArea(unsigned int Bin) const
+double MResponseMatrixAxis::GetArea(unsigned long Bin) const
 {
   if (Bin >= m_BinEdges.size() - 1) {
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
@@ -296,7 +296,7 @@ vector<double> MResponseMatrixAxis::GetMaxima() const
 
 //! Return the bin center(s) of the given axis bin
 //! Can throw: MExceptionIndexOutOfBounds
-vector<double> MResponseMatrixAxis::GetBinCenters(unsigned int Bin) const
+vector<double> MResponseMatrixAxis::GetBinCenters(unsigned long Bin) const
 {
   if (Bin >= m_BinEdges.size() - 1) {
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
@@ -318,7 +318,7 @@ void MResponseMatrixAxis::Write(ostringstream& out)
   out<<"AT 1D BinEdges"<<endl;
   out<<"# Axis data"<<endl;
   out<<"AD ";
-  for (unsigned int b = 0; b < m_BinEdges.size(); ++b) {
+  for (unsigned long b = 0; b < m_BinEdges.size(); ++b) {
     out<<m_BinEdges[b]<<" ";
   }
   out<<endl;
