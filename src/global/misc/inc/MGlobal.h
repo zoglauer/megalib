@@ -113,6 +113,7 @@ extern const MVector g_VectorNotDefined;
 extern const MRotation g_RotationNotDefined;
 extern const int g_IntNotDefined;
 extern const unsigned int g_UnsignedIntNotDefined;
+extern const unsigned long g_UnsignedLongNotDefined;
 extern const double g_DoubleNotDefined;
 extern const float g_FloatNotDefined;
 

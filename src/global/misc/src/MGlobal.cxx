@@ -84,6 +84,7 @@ const MRotation g_RotationNotDefined = MRotation(numeric_limits<double>::max()/1
                                                  numeric_limits<double>::max()/11);
 const int g_IntNotDefined = numeric_limits<int>::max()-11;
 const unsigned int g_UnsignedIntNotDefined = numeric_limits<unsigned int>::max()-11;
+const unsigned long g_UnsignedLongNotDefined = numeric_limits<unsigned long>::max()-11;
 const double g_DoubleNotDefined = numeric_limits<double>::max()/11;
 const float g_FloatNotDefined = numeric_limits<float>::max()/11;
 
