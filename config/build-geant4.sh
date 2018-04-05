@@ -288,7 +288,7 @@ else
   # Now check Geant4 repository for the given version:
   TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"
   echo "Trying to find ${TESTTARBALL}..."
-  EXISTS=`curl -s --head http://geant4.web.cern.ch/geant4/support/source/${TESTTARBALL} | grep gzip`
+  EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
   if [ "${EXISTS}" == "" ]; then
     echo "ERROR: Unable to find suitable Geant4 tar ball at the Geant4 website"
     exit 1
@@ -297,7 +297,7 @@ else
   for s in `seq -w 01 10`; do
     TESTTARBALL="geant4.${WANTEDVERSION}.p${s}.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head http://geant4.web.cern.ch/geant4/support/source/${TESTTARBALL} | grep gzip`
+    EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
     if [ "${EXISTS}" == "" ]; then
       break
     fi
@@ -310,7 +310,7 @@ else
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl -s --head http://geant4.web.cern.ch/geant4/support/source/${TARBALL}`
+    SAMESIZE=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
@@ -323,7 +323,7 @@ else
   fi
   
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
-    curl -O http://geant4.web.cern.ch/geant4/support/source/${TARBALL}
+    curl -O http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the Geant4 website!"
       exit 1
