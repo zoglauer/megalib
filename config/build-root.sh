@@ -340,7 +340,7 @@ else
     TESTTARBALL="root_v${WANTEDVERSION}.${s}.source.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
     EXISTS=`curl -s --head https://root.cern.ch/download/${TESTTARBALL} | grep gzip`
-    if [ "${EXISTS}" == "" ]; then
+    if [[ ${EXISTS} == "" && ${s} != "00" ]]; then # sometimes version 00 does not exist...
       break
     fi
     TARBALL=${TESTTARBALL}
