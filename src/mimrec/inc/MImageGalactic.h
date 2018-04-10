@@ -59,8 +59,8 @@ class MImageGalactic : public MImage2D
 
   //! Set the image array and redisplay it
   virtual void SetImageArray(double* Array);
-  //! Set the image array froma FISBEL binned 2D Array 
-  virtual void SetFISBEL(const vector<double>& Data);
+  //! Set the image array from a FISBEL binned 2D Array, plus the shift of the start of the longitude axis from 0 in degrees
+  virtual void SetFISBEL(const vector<double>& Data, double LongitudeShift = 0);
   
   //! Display the histogram in the given canvas
   virtual void Display(TCanvas* Canvas = nullptr);
