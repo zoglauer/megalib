@@ -260,13 +260,13 @@ unsigned int MBinnerFISBEL::FindBin(double Theta, double Phi) const
 vector<vector<double>> MBinnerFISBEL::GetDrawingAxisBinEdges() const
 {
   vector<double> xAxis;
-  xAxis.push_back(0);
+  xAxis.push_back(m_LongitudeShift);
   for (unsigned int l = 0; l < m_LongitudeBins.size(); ++l) {
     for (unsigned int b = 1; b < m_LongitudeBins[l]; ++b) {
-      xAxis.push_back((m_LongitudeShift + double(b)/m_LongitudeBins[l]) * 2*TMath::Pi());
+      xAxis.push_back(m_LongitudeShift + (double(b)/m_LongitudeBins[l]) * 2*TMath::Pi());
     }
   }
-  xAxis.push_back(2*TMath::Pi());
+  xAxis.push_back(m_LongitudeShift + 2*TMath::Pi());
 
   // Sort and remove duplicates
   sort(xAxis.begin(), xAxis.end());
