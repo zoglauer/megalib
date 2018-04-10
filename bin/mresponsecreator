@@ -182,7 +182,7 @@ else
     if [[ ${NEWCMD} == *" cf"* ]]; then
       mwait -p=responsecreator -i=threads
     else
-      mwait -p=responsecreator -i=threads -m
+      mwait -p=responsecreator -i=threads
     fi
 
     # Check if the sims have IDs we can use
@@ -202,7 +202,7 @@ else
       LOG="${OUT}.log"
       nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> ${LOG} &
     else 
-      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} > /dev/null &
+      nice -19 responsecreator -f ${SINGLEFILE} -r ${OUT} ${NEWCMD} &> /dev/null &
     fi
     echo "Started run ${COUNTER} out of ${COUNTERMAX} with ID ${ID}"
 
