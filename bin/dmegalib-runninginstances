@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Part of the MEGAlib analysis cluster
+# Check how many tasks can be run on the machine
+
+# Return:
+# Positive: number of available simulation slots
+
+
+commandhelp() {
+  echo ""
+  echo "dmegalib-runninginstances - return the number of running instances";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dmegalib-runninginstances";
+  echo ""
+  echo "Options:"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  dmegalib-allowedinstances";
+  echo "";
+}
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+
+# Check how many tasks are running for all users:
+TASKS=$( dmegalib-gettasks )
+for TASK in ${TASKS}; do
+  RunningInstances+=$(ps -Ac | grep "[ ]${TASK}" | grep -v "bash -c ")
+done
+if [[ ${RunningInstances} == "" ]]; then
+  RunningInstances=0
+else 
+  RunningInstances=$(echo "${RunningInstances}" | wc -l | sed 's/^ *//g')
+fi
+
+echo "${RunningInstances}"
+
+exit 0

@@ -1,0 +1,447 @@
+#!/bin/bash
+
+# Part of the megalib analysis cluster
+# Run remote instances of the responsecreator
+
+# Return:
+# Positive: number of available simulation slots
+
+# On exit, or if we hit ctrl-C, kill all your children
+trap CleanUp SIGTERM SIGINT 
+
+CleanUp() {
+  echo " "
+  echo " "
+  echo "Received command to shut down gracefully..."
+  echo " "
+  P=$(jobs -p)
+  if [[ ${P} != "" ]]; then
+    echo "Killing all sub-processes..."
+    kill ${P}
+  fi
+  sleep 1
+  
+  echo "Killing all analysis tasks..."
+  dcosima-kill -n=${LOCALDIR}
+  echo "DONE"
+  echo " "
+  exit 1
+}
+
+commandhelp() {
+  echo ""
+  echo "dresponsecreator - remotely create responses";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: dresponsecreator [options]";
+  echo ""
+  echo "Options:"
+  echo "  --datadir=[path]: The data diretcory"
+  echo "  --targetdir=[path]: The target directory"
+  echo "  --continue: Check for not yet created response files and just create the new ones"
+  echo "  --delay=[number] Time between searches for free slots -- the longer the delay time the lower the priority of this instance (default: 10 seconds)"
+  echo "  --zip: Compress the output files."
+  echo "  --log: Create a log file of what is started where"
+  echo "  --help: Show this help."
+  echo ""
+  echo "Response creator specific options (calling responsecreator --help)"
+  responsecreator --help
+  echo "";
+  echo "Attention:";
+  echo "(1)"
+  echo "While in response creator an option is set via, e.g., -g Geometry.geo.setup"
+  echo "in dresponsecreator it is called via -g=Geometry.geo.setup!"
+  echo "(2)"
+  echo "Debug and verbosity are not supported here, filename will obviously overwritten"
+  echo "";
+  echo "Example: "
+  echo "  dresponsecreator -d=/data/MySims -t=/data/MyResponses -z";
+  echo "";
+}
+
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+DATADIR=""
+TARGETDIR=""
+ZIP="FALSE"
+CONTINUE="FALSE"
+LOG="FALSE"
+LOGFILE=""
+LOGGING="tee"
+DELAY="10"
+CFG=~/.dcosima.cfg
+
+# Response creator specific options
+GEOMETRY=""
+RESPONSENAME=""
+MODE=""
+OPTIONS=""
+MAXID=""
+REVANCFG=""
+MIMRECCFG=""
+
+
+# The number of already launched runs
+LAUNCHED=0
+# The run ID
+RUNID=${RANDOM}${RANDOM}${RANDOM}
+# Here we are
+HERE=$(pwd)
+
+
+# Overwrite default options with user options:
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-d*=* ]]; then
+    DATADIR=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-t*=* ]]; then
+    TARGETDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-c* ]]; then
+    CONTINUE="TRUE"
+  elif [[ ${C} == *-z* ]]; then
+    ZIP="TRUE"
+  elif [[ ${C} == *-d* ]]; then
+    DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-l* ]]; then
+    LOG="TRUE"
+  elif [[ ${C} == *-g* ]]; then
+    GEOMETRY=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-f* ]]; then
+    FILENAME=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-r* ]]; then
+    RESPONSENAME=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-m* ]]; then
+    MODE=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-o* ]]; then
+    OPTIONS=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-c* ]]; then
+    REVANCFG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-b* ]]; then
+    MIMRECCFG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  else
+    echo ""
+    echo "ERROR: Unknown command line option: ${C}"
+    echo "       See \"dcosima --help\" for a list of options"
+    exit 1
+  fi
+done
+
+
+# Provide feed back and perform error checks:
+echo ""
+echo "Chosen options:"
+
+
+
+if [[ ${CONTINUE} != "" ]]; then
+  echo "Continue not yet reimplemented"
+fi
+  
+if [[ ${DATADIR} != "" ]]; then
+  if [[ ! -d ${DATADIR} ]]; then
+    echo " "
+    echo "ERROR: Data directory not found: ${DATADIR}"
+    commandhelp
+    exit 1
+  else
+    echo " * Source file: ${SOURCE}"
+  fi
+else
+  echo " "
+  echo "ERROR: You need to give a data directory"
+  commandhelp
+  exit 1
+fi
+
+  
+if [[ ${TARGETDIR} == "" ]]; then
+  echo " "
+  echo "ERROR: You need to give a target directory where we create the response files"
+  commandhelp
+  exit 1
+fi
+
+if [[ ${LOG} == "TRUE" ]]; then
+  LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
+  LOGGING="tee -a ${LOGFILE}"
+  echo " * Logging output to file: ${LOGFILE}"
+fi
+
+if [[ -f "${CFG}" ]]; then
+  echo " * Configuration file: ${CFG}"
+else 
+  echo " "
+  echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
+  commandhelp
+  exit 1  
+fi
+
+if [[ ${DELAY} -ge 10 ]]; then
+  echo " * Delay between checks for free slots: ${DELAY}"
+else 
+  DELAY="10"
+  echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
+fi
+
+# The md5 checksum of the configuration file to tell if it changed - initialize empty
+CFGMD5=""
+
+
+
+# Do a few more sanity checks
+echo " "
+echo "Performing sanity checks..." | ${LOGGING}
+
+
+
+
+
+# Now start the all the simulations runs
+echo " " | ${LOGGING}
+echo "Creating a list of all data files to use" | ${LOGGING}
+
+cd ${DATADIR}
+
+# Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
+DATAFILES=""
+for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
+  DATAFILES+=" ${F}" 
+done
+for F in `ls -U *inc*id*.sim 2>/dev/null`; do
+  DATAFILES+=" ${F}" 
+done
+for F in `ls -U *inc*id*.evta 2>/dev/null`; do
+  DATAFILES+=" ${F}" 
+done
+for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
+  DATAFILES+=" ${F}" 
+done
+
+echo "Data files:"
+echo "${DATAFILES}"
+
+# Done
+cd ${HERE}
+
+echo " "
+echo "Starting analysis..." | ${LOGGING}
+AVAILABLE=0
+
+
+for DATAFILE in ${DATAFILES}; do 
+
+  echo " " 
+  echo "Preparing to analyze ${DATAFILE}" 
+  echo " " 
+
+  # (Re-) Read configuration file and extract machines
+  if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
+    echo " "
+    echo "Configuration file changed -- re-reading:"
+    MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
+    PRIORITIES=( `cat ${CFG} | grep "^machine" | gawk '{ print $3 }'` )
+   
+    if [[ ${#PRIORITIES[*]} < ${#MACHINES[*]} ]]; then
+      PRIORITIES=( )
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        PRIORITIES=( ${PRIORITIES[@]} "1" )
+      done
+    fi
+    
+    for (( m=0; m<=$(( ${#PRIORITIES[*]} -1 )); m++ )); do
+      if (( ${PRIORITIES[$m]} < 1 )); then
+        echo "Warning: The highest (= smallest number) allowed machine priority is 1"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 1."
+        PRIORITIES[$m]=1;
+      fi
+      if (( ${PRIORITIES[$m]} > 5 )); then
+        echo "Warning: The lowest (= highest number) allowed machine priority is 5"
+        echo "         Offender: ${MACHINES[$m]} with ${PRIORITIES[$m]}"
+        echo "         Setting it to 5."
+        PRIORITIES[$m]=5;
+      fi
+    done
+
+    REMOTEUSER=( )
+    REMOTEHOST=( )
+    REMOTEPORT=( )
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      REMOTEUSER[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $1 }'` 
+      REMOTEHOST[$m]=`echo "${MACHINES[$m]}" | awk -F"@" '{ print $2 }'  | awk -F":" '{ print $1 }'` 
+      REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
+    done
+    CFGMD5=`md5sum ${CFG}`
+    
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}, priority: ${PRIORITIES[$m]} )"
+    done
+  fi
+
+  
+  # Verify the machines:
+  AVAILABLEMACHINES=0
+  echo " " 
+  echo "Verifying available machines: "
+  for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+    # Reset it in case it was deleted before:
+    MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
+    
+    # Do a quick test if the machine is availble:
+    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
+      MACHINES[$m]=""
+      continue
+    fi  
+      
+    # Check that responsecreator is installed
+    AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type responsecreator > /dev/null" 2>&1`
+    if [ "${AVAILABLE}" != "" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): responsecreator not found!"
+      MACHINES[$m]=""
+      continue
+    fi
+ 
+    # Check if we have a configuration file
+    CONFIGFILE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo "NO"; else echo "YES"; fi;"`
+    if [ "$?" != "0" ] || [ ${CONFIGFILE} != "YES" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): No dcosima configuration file found! Add one with at least the keywords instances and directory!"
+      MACHINES[$m]=""
+      continue
+    fi
+  
+    # Check if the data directory accessible on the remote machine
+    REMOTECOMMAND="if [[ -d ${DATADIR} && -x ${DATADIR} ]]; then echo \"YES\"; else   echo \"NO\"; fi;"
+    REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+    if [[ "$?" != "0" ]] || [[ ${REMOTEDATADIR} != "YES" ]]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to access remote data directory!"
+      MACHINES[$m]=""
+      continue
+    fi
+
+    # Create the target directory if it does not yet exist...
+    ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi"
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to create target directory!"
+      MACHINES[$m]=""
+      continue
+    fi
+    
+    # Check if we have enough disk space free
+    DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${TARGETDIR}; df -k . -P -T -BG | tail -n 1"`
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Unable to determine free disk space!"
+      MACHINES[$m]=""
+      continue
+    fi
+    DISKSPACE=$(echo ${DISKSPACE}  | awk '{ print $5 }' | sed 's/.$//' )
+    if (( ${DISKSPACE} < 50 )); then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Not enough free disk space (free: ${DISKSPACE} GB, required: 50 GB)"
+      MACHINES[$m]=""
+      continue
+    fi
+
+    # Check if the geometry file is accessible
+    GEOEXIST=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${GEOMETRY} ]]; then echo \"YES\"; else   echo \"NO\"; fi" )
+    if [ "$?" != "0" ]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Geometry not found!"
+      MACHINES[$m]=""
+      continue
+    fi    
+    
+    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
+    AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
+    
+  done
+  
+  # If we have NO machines available, we quit...
+  if [ ${AVAILABLEMACHINES} -eq 0 ]; then
+    echo " "
+    echo "Unfortunately there are no machines available for simulations... Add a few more! Good bye..." | ${LOGGING}
+    exit 0;
+  fi
+  
+  
+  STARTED=0
+  # Loop over the machines by priority & start processes on machines with high priority first 
+  for P in `seq 1 5`; do
+    STARTED=0
+    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+      if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
+    
+      # Exclude failed machines
+      if [[ ${MACHINES[$m]} == "" ]]; then
+        continue
+      fi
+    
+      # Prepare the launch
+      ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
+      echo " "
+      echo "Preparing for next launch with priority ${P}:"
+      echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+      if [[ ${ALLOWED} -gt 0 ]]; then
+        LAUNCHED=$(( ${LAUNCHED} + 1 ))
+        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+        
+        REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILE} -r ${RESPONSENAME} -m ${MODE}"
+        if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
+        if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
+        if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
+        if [[ ${LOG} == TRUE ]]; then
+          REMOTECOMMAND+=" </dev/null >${DATAFILE}.log 2>&1 &"
+        else
+          REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
+        fi
+        
+        REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+        if [[ "$?" != "0" ]]; then
+          echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
+          MACHINES[$m]=""
+          continue
+        fi        
+        
+        STARTED=1
+      fi
+      
+      if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
+      
+    done
+    # If we start events at this priority we stop and restart --- we want to fill this priority level first
+    if (( ${STARTED} > 0 )); then
+      break
+    fi
+  done
+  
+  
+  if [[ ${STARTED} -eq 0 ]]; then
+    echo ""
+    echo " --> No analysis slots available at the moment... Sleeping for a while..."
+    sleep ${DELAY}
+  else 
+    # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   
+    sleep 1
+  fi
+done
+
+echo " * All processes lauched --- might take a while until they are all finished..." | ${LOGGING}
+echo ""
+
+exit 0;

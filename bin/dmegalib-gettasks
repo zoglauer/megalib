@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Part of the MEGAlib analysis cluster
+# Return a string of checked tasks which count against the running tasks allocation
+
+echo "cosima revan responsecreator melinator nuclearizer"
+
+exit 0

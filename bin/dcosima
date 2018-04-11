@@ -466,7 +466,7 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
       fi
     
       # Prepare the launch
-      ALLOWED=`dcosima-allowedinstances --remote=${MACHINES[$m]}`
+      ALLOWED=`dmegalib-allowedinstances --remote=${MACHINES[$m]}`
       echo " "
       echo "Preparing for next launch with priority ${P}:"
       echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"

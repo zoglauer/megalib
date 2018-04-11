@@ -24,8 +24,6 @@ commandhelp() {
   echo "";
 }
 
-TASKS="cosima nuclearizer revan responsecreator"
-
 # Store command line as array
 CMD=( "$@" )
 
@@ -59,7 +57,7 @@ for C in "${CMD[@]}"; do
   else
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"dcosima-allowedinstances --help\" for a list of options"
+    echo "       See \"dmegalib-allowedinstances --help\" for a list of options"
     exit 1
   fi
 done
@@ -136,15 +134,7 @@ fi
 AllowedInstances=0
 if [ "${REMOTE}" == "" ]; then
   #echo "Remote A"
-	for TASK in ${TASKS}; do
-	  RunningInstances+=$(ps -Ac | grep "[ ]${TASK}" | grep -v "bash -c ")
-	done
-	if [[ ${RunningInstances} == "" ]]; then
-	  RunningInstances=0
-	else 
-	  RunningInstances=$(echo "${RunningInstances}" | wc -l | sed 's/^ *//g')
-	fi
-  #echo "Running: ${RunningInstances}"
+  RunningInstances=$(dmegalib-runninginstances)
 
   Load=`cat /proc/loadavg | gawk ' { print $1 }'`
   Load=`echo "${Load} + 0.5" | bc` 

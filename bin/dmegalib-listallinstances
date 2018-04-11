@@ -1,25 +1,25 @@
 #!/bin/bash
 
-# Part of the cosima cluster
-# Check how many sims can be run on the machine
+# Part of the MEGAlib analysis cluster
+# Check how many tasks can be run on the machine
 
 # Return:
-# Positive: number of available simulation slots
+# Positive number of available task slots
 
 
 commandhelp() {
   echo ""
-  echo "dcosima-listallinstances - check how many simulation instances can be run everywhere";
+  echo "dmegalib-listallinstances - check how many tasks instances can be run everywhere";
   echo "Copyright by Andreas Zoglauer"
   echo ""
-  echo "Usage: dcosima-listallinstances [options]";
+  echo "Usage: dmegalib-listallinstances [options]";
   echo ""
   echo "Options:"
   echo "  --help: Show this help."
   echo ""
   echo "";
   echo "Example: "
-  echo "  dcosima-listallinstances";
+  echo "  dmegalib-listallinstances";
   echo "";
 }
 
@@ -91,7 +91,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   # Check if .dcosima.cfg path exists
   ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .dcosima.cfg ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
-    echo " * Machine ${REMOTENAME}: dcosima has not been setup (no .dcosima.cfg file exists)"
+    echo " * Machine ${REMOTENAME}: dmegalib has not been setup (no .dcosima.cfg file exists)"
     MACHINES[$m]=""
     continue
   fi 
@@ -104,7 +104,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   # Check how many more instances are allowed
-  ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dcosima-allowedinstances"`
+  ALLOWED=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-allowedinstances"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to get the number of allowed instances"
     continue
@@ -113,7 +113,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   ALLALLOWED=$(( ${ALLALLOWED} + ${ALLOWED} ))
   
   # Check how many instances are running
-  RUNNING=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "ps -u ${REMOTEUSER[$m]} | grep '\ cosima' | wc -l | sed 's/^ *//g'"`
+  RUNNING=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; dmegalib-runninginstances"`
 	if [ "$?" != 0 ]; then
     echo " * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}): Unable to retrieve the number of running cosima instances"
 		continue
