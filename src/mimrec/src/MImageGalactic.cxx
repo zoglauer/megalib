@@ -158,20 +158,21 @@ void MImageGalactic::SetImageArray(double* IA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImageGalactic::SetFISBEL(const vector<double>& Data)
+void MImageGalactic::SetFISBEL(const vector<double>& Data, double LongitudeShift)
 {
   // Copy the data from the FISBEL binner into this array
   
   // The binning has to be in a way that it can be displayed nicely:
   MBinnerFISBEL B;
-  B.Create(Data.size());
+  B.Create(Data.size(), LongitudeShift*c_Rad);
   
   vector<vector<double>> DrawingAxisEdges = B.GetDrawingAxisBinEdges();
+  
   
   m_xMin = DrawingAxisEdges[0].front()*c_Deg;
   m_xMax = DrawingAxisEdges[0].back()*c_Deg;
   m_xNBins = DrawingAxisEdges[0].size() - 1;
-
+  
   m_yMin = DrawingAxisEdges[1].front()*c_Deg - 90;
   m_yMax = DrawingAxisEdges[1].back()*c_Deg - 90;
   m_yNBins = DrawingAxisEdges[1].size() - 1;
