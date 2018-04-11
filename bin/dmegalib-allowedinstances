@@ -139,7 +139,11 @@ if [ "${REMOTE}" == "" ]; then
 	for TASK in ${TASKS}; do
 	  RunningInstances+=$(ps -Ac | grep "[ ]${TASK}" | grep -v "bash -c ")
 	done
-	RunningInstances=$(echo ${RUNNINGINSTANCES} | wc -l | sed 's/^ *//g')
+	if [[ ${RunningInstances} == "" ]]; then
+	  RunningInstances=0
+	else 
+	  RunningInstances=$(echo "${RunningInstances}" | wc -l | sed 's/^ *//g')
+	fi
   #echo "Running: ${RunningInstances}"
 
   Load=`cat /proc/loadavg | gawk ' { print $1 }'`
