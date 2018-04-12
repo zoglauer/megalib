@@ -19,6 +19,9 @@ commandhelp() {
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dcosima.cfg"
   echo "  --help                    : Show this help"
   echo ""
+  echo "This script will: "
+  echo " (1) install or update MEGAlib in ~/Science/Software" 
+  echo " (2) create a .bash.local file which will be read everytime you start a remote run"
   echo "";
   echo "Example: "
   echo "  dcosima-updatemegalib";
@@ -136,6 +139,15 @@ fi;
 if [ "\${HASIT}" == "" ]; then 
   echo \${SOURCE} >> ~/.bash_local; 
 fi
+SOURCE="umask 007"; 
+HASIT=""; 
+if [[ -f ~/.bash_local ]]; then 
+  HASIT=\$(grep "\${SOURCE}" ~/.bash_local); 
+fi; 
+if [ "\${HASIT}" == "" ]; then 
+  echo \${SOURCE} >> ~/.bash_local; 
+fi
+
 source ~/Science/Software/MEGAlib/bin/source-megalib.sh
 if [ "\$?" != "0" ]; then
   echo "DCOSIMAERROR 5"
