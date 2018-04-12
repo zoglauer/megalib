@@ -3,8 +3,6 @@
 # Part of the megalib analysis cluster
 # Run remote instances of the responsecreator
 
-# Return:
-# Positive: number of available simulation slots
 
 # On exit, or if we hit ctrl-C, kill all your children
 trap CleanUp SIGTERM SIGINT 
@@ -55,7 +53,7 @@ commandhelp() {
   echo "Debug and verbosity are not supported here, filename will obviously overwritten"
   echo "";
   echo "Example: "
-  echo "  dresponsecreator -d=/data/MySims -t=/data/MyResponses -z";
+  echo "  dresponsecreator -d=/nfsshare/Data -t=/nfsshare/Target -g=/nfsshare/MassModel/DetectorHead.geo.setup -r=Test -m=ib -c=/nfsshare/Revan.cfg -b=/nfsshare/Mimrec.cfg --log";
   echo "";
 }
 
@@ -109,8 +107,8 @@ for C in "${CMD[@]}"; do
     DATADIR=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-t*=* ]]; then
     TARGETDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-c* ]]; then
-    CONTINUE="TRUE"
+  #elif [[ ${C} == *-c* ]]; then
+  #  CONTINUE="TRUE"
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-d* ]]; then
@@ -200,6 +198,8 @@ else
   echo " * Using minimum allowed delay between checks for free slots: ${DELAY}"
 fi
 
+
+
 # The md5 checksum of the configuration file to tell if it changed - initialize empty
 CFGMD5=""
 
@@ -220,22 +220,25 @@ echo "Creating a list of all data files to use" | ${LOGGING}
 cd ${DATADIR}
 
 # Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
-DATAFILES=""
+DATAFILES=()
 for F in `ls -U *inc*id*.sim.gz 2>/dev/null`; do
-  DATAFILES+=" ${F}" 
+  DATAFILES+=( "${F}" ) 
 done
 for F in `ls -U *inc*id*.sim 2>/dev/null`; do
-  DATAFILES+=" ${F}" 
+  DATAFILES+=( "${F}" ) 
 done
 for F in `ls -U *inc*id*.evta 2>/dev/null`; do
-  DATAFILES+=" ${F}" 
+  DATAFILES+=( "${F}" ) 
 done
 for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
-  DATAFILES+=" ${F}" 
+  DATAFILES+=( "${F}" ) 
 done
 
 echo "Data files:"
-echo "${DATAFILES}"
+for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
+  echo "${DATAFILES[$d]}"
+done
+echo "--> ${#DATAFILES[*]} data files total."
 
 # Done
 cd ${HERE}
@@ -244,12 +247,8 @@ echo " "
 echo "Starting analysis..." | ${LOGGING}
 AVAILABLE=0
 
-
-for DATAFILE in ${DATAFILES}; do 
-
-  echo " " 
-  echo "Preparing to analyze ${DATAFILE}" 
-  echo " " 
+d=0
+while [[ $d -lt ${#DATAFILES[*]} ]]; do 
 
   # (Re-) Read configuration file and extract machines
   if [[ `md5sum ${CFG}` != ${CFGMD5} ]]; then
@@ -359,14 +358,43 @@ for DATAFILE in ${DATAFILES}; do
       continue
     fi
 
-    # Check if the geometry file is accessible
-    GEOEXIST=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${GEOMETRY} ]]; then echo \"YES\"; else   echo \"NO\"; fi" )
-    if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Geometry not found!"
+    # Check if the data file is accessible
+    EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${DATADIR}/${DATAFILES[$d]} ]] && [[ -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"YES\"; else echo \"NO\"; fi" )
+    if [[ $? != "0" ]] || [[ ${EXISTS} == NO ]]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Data file not found or not readable!"
       MACHINES[$m]=""
       continue
     fi    
-    
+
+    # Check if the geometry file is accessible
+    EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${GEOMETRY} ]] && [[ -r ${GEOMETRY} ]] ; then echo \"YES\"; else echo \"NO\"; fi" )
+    if [[ $? != "0" ]] || [[ ${EXISTS} == NO ]]; then
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Geometry not found or not readable!"
+      MACHINES[$m]=""
+      continue
+    fi    
+   
+    # Check if the mimrec configuration file exists
+    if [[ ${MIMRECCFG} != "" ]]; then
+      EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${MIMRECCFG} ]] && [[ -r ${MIMRECCFG} ]]; then echo \"YES\"; else echo \"NO\"; fi" )
+      if [[ $? != "0" ]] || [[ ${EXITS} == NO ]]; then
+        echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Mimrec configuration file not found or not readable!"
+        MACHINES[$m]=""
+        continue
+      fi
+    fi
+
+
+    # Check if the revan configuration file exits
+    if [[ ${REVANCFG} != "" ]]; then
+      EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${REVANCFG} ]] && [[ -r ${REVANCFG} ]]; then echo \"YES\"; else echo \"NO\"; fi" )
+      if [[ $? != "0" ]] || [[ ${EXITS} == NO ]]; then
+        echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Revan configuration file not found or not readable!"
+        MACHINES[$m]=""
+        continue
+      fi
+    fi
+
     echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
@@ -380,58 +408,75 @@ for DATAFILE in ${DATAFILES}; do
   fi
   
   
-  STARTED=0
+  STARTEDALLPRIORITIES=0
   # Loop over the machines by priority & start processes on machines with high priority first 
   for P in `seq 1 5`; do
-    STARTED=0
-    for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
-      if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
+    # loop over all the machines at this prioritry and start as many machine as we can
+    while true; do
+      STARTED=0
+      for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
+        if [[ ${PRIORITIES[$m]} != ${P} ]]; then continue; fi
     
-      # Exclude failed machines
-      if [[ ${MACHINES[$m]} == "" ]]; then
-        continue
-      fi
-    
-      # Prepare the launch
-      ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
-      echo " "
-      echo "Preparing for next launch with priority ${P}:"
-      echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
-      if [[ ${ALLOWED} -gt 0 ]]; then
-        LAUNCHED=$(( ${LAUNCHED} + 1 ))
-        echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
-        
-        REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILE} -r ${RESPONSENAME} -m ${MODE}"
-        if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
-        if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
-        if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
-        if [[ ${LOG} == TRUE ]]; then
-          REMOTECOMMAND+=" </dev/null >${DATAFILE}.log 2>&1 &"
-        else
-          REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
-        fi
-        
-        REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
-        if [[ "$?" != "0" ]]; then
-          echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
-          MACHINES[$m]=""
+        # Exclude failed machines
+        if [[ ${MACHINES[$m]} == "" ]]; then
           continue
-        fi        
+        fi
+    
+        # Prepare the launch
+        ALLOWED=$( dmegalib-allowedinstances --remote=${MACHINES[$m]} )
+        echo " "
+        echo "Preparing for next launch with priority ${P}:"
+        echo " * Allowed runs on ${MACHINES[$m]}: ${ALLOWED}"
+        if [[ ${ALLOWED} -gt 0 ]]; then
+          LAUNCHED=$(( ${LAUNCHED} + 1 ))
+          echo " * Launching instance ${LAUNCHED} on ${MACHINES[$m]}" | ${LOGGING}
+    
+          OUTFILE=${DATAFILES[$d]}
+          OUTFILE=${OUTFILE/.sim.gz/}
+          OUTFILE=${OUTFILE/.sim/}
+          OUTFILE=${OUTFILE/.evta.gz/}
+          OUTFILE=${OUTFILE/.evta/}
+
+          REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[$d]} -r ${OUTFILE} -m ${MODE}"
+          if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
+          if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
+          if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
+          if [[ ${LOG} == TRUE ]]; then
+            REMOTECOMMAND+=" </dev/null >${OUTFILE}.log 2>&1 &"
+          else
+            REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
+          fi
+       
+          REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          if [[ "$?" != "0" ]]; then
+            echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
+            MACHINES[$m]=""
+            continue
+          fi        
         
-        STARTED=1
-      fi
+          STARTED=1
+          STARTEDALLPRIORITIES=1
+          
+          # Swich to next data file!
+          d=$(( d + 1 ))
+        
+        fi
       
-      if [[ ${LAUNCHED} -eq ${INSTANCES} ]]; then break; fi
+        if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
       
-    done
-    # If we start events at this priority we stop and restart --- we want to fill this priority level first
-    if (( ${STARTED} > 0 )); then
-      break
-    fi
-  done
+      done # loop over all machines at this priority once
+      
+      if [[ ${STARTED} == 0 ]]; then break; fi
+      if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+    done # loop over all machines at this priority until no more available machines are found
+    
+    if [[ ${d} -eq ${#DATAFILES[@]} ]]; then break; fi
+    
+  done # loopover all priorities
   
   
-  if [[ ${STARTED} -eq 0 ]]; then
+  if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
     echo ""
     echo " --> No analysis slots available at the moment... Sleeping for a while..."
     sleep ${DELAY}
@@ -441,7 +486,9 @@ for DATAFILE in ${DATAFILES}; do
   fi
 done
 
-echo " * All processes lauched --- might take a while until they are all finished..." | ${LOGGING}
+echo ""
+echo ""
+echo "All processes have been lauched, but it might take a while until all have finish..." | ${LOGGING}
 echo ""
 
 exit 0;
