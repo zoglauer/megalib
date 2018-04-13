@@ -12,18 +12,18 @@ CleanUp() {
   echo " "
   echo "Received command to shut down gracefully..."
   echo " "
-  P=$(jobs -p)
-  if [[ ${P} != "" ]]; then
-    echo "Killing all sub-processes..."
-    kill ${P}
-  fi
-  sleep 1
+  #P=$(jobs -p)
+  #if [[ ${P} != "" ]]; then
+  #  echo "Killing all sub-processes..."
+  #  kill ${P}
+  #fi
+  #sleep 1
   
-  echo "Killing all analysis tasks..."
-  dcosima-kill -n=${LOCALDIR}
-  echo "DONE"
-  echo " "
-  exit 1
+  #echo "Killing all analysis tasks..."
+  #dcosima-kill -n=${LOCALDIR}
+  #echo "DONE"
+  #echo " "
+  #exit 1
 }
 
 commandhelp() {
@@ -104,31 +104,31 @@ HERE=$(pwd)
 # Overwrite default options with user options:
 for C in "${CMD[@]}"; do
   if [[ ${C} == *-d*=* ]]; then
-    DATADIR=`echo ${C} | awk -F"=" '{ print $2 }'`
+    DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-t*=* ]]; then
-    TARGETDIR=`echo ${C} | awk -F"=" '{ print $2 }'`
+    TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
   #elif [[ ${C} == *-c* ]]; then
   #  CONTINUE="TRUE"
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
-  elif [[ ${C} == *-d* ]]; then
-    DELAY=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-d*=* ]]; then
+    DELAY=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-l* ]]; then
     LOG="TRUE"
-  elif [[ ${C} == *-g* ]]; then
-    GEOMETRY=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-f* ]]; then
-    FILENAME=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-r* ]]; then
-    RESPONSENAME=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-m* ]]; then
-    MODE=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-o* ]]; then
-    OPTIONS=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-c* ]]; then
-    REVANCFG=`echo ${C} | awk -F"=" '{ print $2 }'`
-  elif [[ ${C} == *-b* ]]; then
-    MIMRECCFG=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-g*=* ]]; then
+    GEOMETRY=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-f*=* ]]; then
+    FILENAME=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-r*=* ]]; then
+    RESPONSENAME=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-m*=* ]]; then
+    MODE=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-o*=* ]]; then
+    OPTIONS=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-c*=* ]]; then
+    REVANCFG=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-b*=* ]]; then
+    MIMRECCFG=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-h* ]]; then
     echo ""
     commandhelp
