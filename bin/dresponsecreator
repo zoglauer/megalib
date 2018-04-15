@@ -23,7 +23,7 @@ CleanUp() {
   #dcosima-kill -n=${LOCALDIR}
   #echo "DONE"
   #echo " "
-  #exit 1
+  exit 1
 }
 
 commandhelp() {
@@ -51,6 +51,8 @@ commandhelp() {
   echo "in dresponsecreator it is called via -g=Geometry.geo.setup!"
   echo "(2)"
   echo "Debug and verbosity are not supported here, filename will obviously overwritten"
+  echo "(3)"
+  echo "All file names need to be absolute and the files available on the remote machine"
   echo "";
   echo "Example: "
   echo "  dresponsecreator -d=/nfsshare/Data -t=/nfsshare/Target -g=/nfsshare/MassModel/DetectorHead.geo.setup -r=Test -m=ib -c=/nfsshare/Revan.cfg -b=/nfsshare/Mimrec.cfg --log";
@@ -236,10 +238,12 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( ls ${TARGETDIR} )
+  TARGETFILES=$( ls -1 ${TARGETDIR}/*.rsp )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
+    if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
+    
     OUTFILE=${DATAFILES[$d]}
     OUTFILE=${OUTFILE/.sim.gz/}
     OUTFILE=${OUTFILE/.sim/}
@@ -338,7 +342,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     
     COMMAND=""
     COMMAND+=". ~/.bash_local;"
-    COMMAND+="if [[ ! -x ${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
+    COMMAND+="if [[ ! -x \${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
     COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
     COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
