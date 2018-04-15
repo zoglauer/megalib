@@ -107,8 +107,8 @@ for C in "${CMD[@]}"; do
     DATADIR=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-t*=* ]]; then
     TARGETDIR=$( cut -d '=' -f 2- <<< "${C}" )
-  #elif [[ ${C} == *-c* ]]; then
-  #  CONTINUE="TRUE"
+  elif [[ ${C} == *-co* ]]; then
+    CONTINUE="TRUE"
   elif [[ ${C} == *-z* ]]; then
     ZIP="TRUE"
   elif [[ ${C} == *-d*=* ]]; then
@@ -125,9 +125,9 @@ for C in "${CMD[@]}"; do
     MODE=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-o*=* ]]; then
     OPTIONS=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-c*=* ]]; then
+  elif [[ ${C} == -c=* ]] || [[ ${C} == --revan-config=* ]]; then
     REVANCFG=$( cut -d '=' -f 2- <<< "${C}" )
-  elif [[ ${C} == *-b*=* ]]; then
+  elif [[ ${C} == -b=* ]] || [[ ${C} == --mimrec-config=* ]]; then
     MIMRECCFG=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-h* ]]; then
     echo ""
@@ -146,35 +146,32 @@ done
 echo ""
 echo "Chosen options:"
 
-
-
-if [[ ${CONTINUE} != "" ]]; then
-  echo "Continue not yet reimplemented"
-fi
   
 if [[ ${DATADIR} != "" ]]; then
   if [[ ! -d ${DATADIR} ]]; then
     echo " "
     echo "ERROR: Data directory not found: ${DATADIR}"
-    commandhelp
     exit 1
-  else
-    echo " * Source file: ${SOURCE}"
+  fi
+  if [[ ${DATADIR} != /* ]]; then
+    echo " "
+    echo "ERROR: Data directory must have an absolute path: ${DATADIR}"
+    exit 1
   fi
 else
   echo " "
   echo "ERROR: You need to give a data directory"
-  commandhelp
   exit 1
 fi
+echo " * Data directory: ${DATADIR}"
 
   
 if [[ ${TARGETDIR} == "" ]]; then
   echo " "
   echo "ERROR: You need to give a target directory where we create the response files"
-  commandhelp
   exit 1
 fi
+
 
 if [[ ${LOG} == "TRUE" ]]; then
   LOGFILE="${HERE}/${LOCALDIR}/Launch.log"
@@ -187,7 +184,6 @@ if [[ -f "${CFG}" ]]; then
 else 
   echo " "
   echo "ERROR: You need to have a existing configuration file, the default one should be ~/.dcosima.cfg!"
-  commandhelp
   exit 1  
 fi
 
@@ -234,14 +230,43 @@ for F in `ls -U *inc*id*.evta.gz 2>/dev/null`; do
   DATAFILES+=( "${F}" ) 
 done
 
+# Done
+cd ${HERE}
+
+
+# Check if we can continue:
+if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
+  TARGETFILES=$( ls ${TARGETDIR} )
+  NOTDONE=()
+  
+  for (( d=0; d<${#DATAFILES[*]}; d++ )); do
+    OUTFILE=${DATAFILES[$d]}
+    OUTFILE=${OUTFILE/.sim.gz/}
+    OUTFILE=${OUTFILE/.sim/}
+    OUTFILE=${OUTFILE/.evta.gz/}
+    OUTFILE=${OUTFILE/.evta/}
+
+    if [[ ! ${TARGETFILES} =~ ${OUTFILE} ]]; then
+      NOTDONE+=( "${DATAFILES[$d]}" )
+    fi
+  done
+  
+  DATAFILES=("${NOTDONE[@]}")  
+  
+  if [[ ${#DATAFILES[@]} -eq 0 ]]; then
+    echo " "
+    echo "Everything already done!"
+    exit 0
+  fi
+fi
+
+
 echo "Data files:"
 for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
-  echo "${DATAFILES[$d]}"
+  echo " * ${DATAFILES[$d]}"
 done
 echo "--> ${#DATAFILES[*]} data files total."
 
-# Done
-cd ${HERE}
 
 echo " "
 echo "Starting analysis..." | ${LOGGING}
@@ -310,95 +335,37 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
       MACHINES[$m]=""
       continue
     fi  
-      
-    # Check that responsecreator is installed
-    AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} ". .bash_local; type responsecreator > /dev/null" 2>&1`
-    if [ "${AVAILABLE}" != "" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): responsecreator not found!"
+    
+    COMMAND=""
+    COMMAND+=". ~/.bash_local;"
+    COMMAND+="if [[ ! -x ${MEGALIB}/bin/responsecreator ]]; then echo \"ERROR: MEGAlib not fully installed\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ~/.dcosima.cfg ]]; then echo \".dcosima.cfg configuration file not found.\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${DATADIR} ]] || [[ ! -x ${DATADIR} ]]; then echo \"Failed to access remote data directory!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi; if [[ ! -d ${TARGETDIR} ]]; then echo \"Failed to create target directory\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${DATADIR}/${DATAFILES[$d]} ]] || [[ ! -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"Data file not found or not readable!\"; exit 1; fi; "
+    COMMAND+="if [[ ! -f ${GEOMETRY} ]] || [[ ! -r ${GEOMETRY} ]] ; then echo \"Geometry file not found or not readable!\"; exit 1; fi; "
+    if [[ ${MIMRECCFG} != "" ]]; then
+      COMMAND+="if [[ ! -f ${MIMRECCFG} ]] || [[ ! -r ${MIMRECCFG} ]]; then echo \"Mimrec configuration file not found or not readable!\"; exit 1; fi; "
+    fi
+    if [[ ${REVANCFG} != "" ]]; then 
+      COMMAND+="if [[ ! -f ${REVANCFG} ]] || [[ ! -r ${REVANCFG} ]]; then echo \"Revan configuration file not found or not readable!\"; exit 1; fi; "
+    fi
+    COMMAND+="echo \"Available\"; exit 0; "
+    
+    # Check if the data directory accessible on the remote machine
+    ANSWER=$(ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
+    if [[ ${ANSWER} != "Available" ]]; then     
+      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
       MACHINES[$m]=""
       continue
     fi
  
-    # Check if we have a configuration file
-    CONFIGFILE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -f ~/.dcosima.cfg ]]; then echo "NO"; else echo "YES"; fi;"`
-    if [ "$?" != "0" ] || [ ${CONFIGFILE} != "YES" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): No dcosima configuration file found! Add one with at least the keywords instances and directory!"
-      MACHINES[$m]=""
-      continue
-    fi
-  
-    # Check if the data directory accessible on the remote machine
-    REMOTECOMMAND="if [[ -d ${DATADIR} && -x ${DATADIR} ]]; then echo \"YES\"; else   echo \"NO\"; fi;"
-    REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
-    if [[ "$?" != "0" ]] || [[ ${REMOTEDATADIR} != "YES" ]]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to access remote data directory!"
-      MACHINES[$m]=""
-      continue
-    fi
-
-    # Create the target directory if it does not yet exist...
-    ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ ! -d ${TARGETDIR} ]]; then mkdir ${TARGETDIR}; fi"
-    if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to create target directory!"
-      MACHINES[$m]=""
-      continue
-    fi
-    
-    # Check if we have enough disk space free
-    DISKSPACE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "cd ${TARGETDIR}; df -k . -P -T -BG | tail -n 1"`
-    if [ "$?" != "0" ]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Unable to determine free disk space!"
-      MACHINES[$m]=""
-      continue
-    fi
-    DISKSPACE=$(echo ${DISKSPACE}  | awk '{ print $5 }' | sed 's/.$//' )
-    if (( ${DISKSPACE} < 50 )); then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Not enough free disk space (free: ${DISKSPACE} GB, required: 50 GB)"
-      MACHINES[$m]=""
-      continue
-    fi
-
-    # Check if the data file is accessible
-    EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${DATADIR}/${DATAFILES[$d]} ]] && [[ -r ${DATADIR}/${DATAFILES[$d]} ]] ; then echo \"YES\"; else echo \"NO\"; fi" )
-    if [[ $? != "0" ]] || [[ ${EXISTS} == NO ]]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Data file not found or not readable!"
-      MACHINES[$m]=""
-      continue
-    fi    
-
-    # Check if the geometry file is accessible
-    EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${GEOMETRY} ]] && [[ -r ${GEOMETRY} ]] ; then echo \"YES\"; else echo \"NO\"; fi" )
-    if [[ $? != "0" ]] || [[ ${EXISTS} == NO ]]; then
-      echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Geometry not found or not readable!"
-      MACHINES[$m]=""
-      continue
-    fi    
-   
-    # Check if the mimrec configuration file exists
-    if [[ ${MIMRECCFG} != "" ]]; then
-      EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${MIMRECCFG} ]] && [[ -r ${MIMRECCFG} ]]; then echo \"YES\"; else echo \"NO\"; fi" )
-      if [[ $? != "0" ]] || [[ ${EXITS} == NO ]]; then
-        echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Mimrec configuration file not found or not readable!"
-        MACHINES[$m]=""
-        continue
-      fi
-    fi
-
-
-    # Check if the revan configuration file exits
-    if [[ ${REVANCFG} != "" ]]; then
-      EXISTS=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -f ${REVANCFG} ]] && [[ -r ${REVANCFG} ]]; then echo \"YES\"; else echo \"NO\"; fi" )
-      if [[ $? != "0" ]] || [[ ${EXITS} == NO ]]; then
-        echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Revan configuration file not found or not readable!"
-        MACHINES[$m]=""
-        continue
-      fi
-    fi
-
-    echo " * Found remote machine: ${REMOTENAME} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]})"  
+    echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
     AVAILABLEMACHINES=$(( ${AVAILABLEMACHINES} + 1 ))
     
   done
+  
   
   # If we have NO machines available, we quit...
   if [ ${AVAILABLEMACHINES} -eq 0 ]; then
@@ -441,6 +408,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
           if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
           if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
+          if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
           if [[ ${LOG} == TRUE ]]; then
             REMOTECOMMAND+=" </dev/null >${OUTFILE}.log 2>&1 &"
           else
