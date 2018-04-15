@@ -32,7 +32,7 @@ commandhelp() {
 # Store command line as array
 CMD=( "$@" )
 SINGLEMACHINE=""
-BRANCH="master"
+BRANCH="experimental"
 
 # Check for help
 for C in "${CMD[@]}"; do
