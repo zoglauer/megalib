@@ -84,11 +84,15 @@ class MCOrientation
   //! Get the orientation
   bool GetOrientation(double Time, double& XThetaLat, double& XPhiLong, double& ZThetaLat, double& ZPhiLong) const;
   
-  //! Perfrom the orientation for the given time
-  bool Orient(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
+  //! Perform the orientation for the given time for a position and a direction
+  bool OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;  
+  //! Perform the invers orientation for the given time for a position and a direction
+  bool OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
   
-  //! Perfrom the invers orientation for the given time
-  bool OrientInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const;
+  //! Perform the orientation for the given time for a direction (or polarization)
+  bool OrientDirection(double Time, G4ThreeVector& Direction) const;  
+  //! Perform the invers orientation for the given time for a direction  (or polarization)
+  bool OrientDirectionInvers(double Time, G4ThreeVector& Direction) const;
   
   //! Return the start time or zero if there is none
   double GetStartTime() const;

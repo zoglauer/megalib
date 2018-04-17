@@ -465,18 +465,18 @@ bool MCOrientation::GetOrientation(double Time, double& XThetaLat, double& XPhiL
 
 
 //! Perfrom the orientation for the given time
-bool MCOrientation::Orient(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
+bool MCOrientation::OrientPositionAndDirection(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
     
     /*
-    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
-    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
-    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
-    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
-    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
-    */
+     *    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
+     *    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+     *    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+     *    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
+     *    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
+     */
     
     MVector P(Position.x(), Position.y(), Position.z());
     MVector D(Direction.x(), Direction.y(), Direction.z());
@@ -492,7 +492,7 @@ bool MCOrientation::Orient(double Time, G4ThreeVector& Position, G4ThreeVector& 
     mlog<<"   ***  Error  ***  The time is out of bounds!"<<endl;
     return false;
   }    
-
+  
   return true;
 }
 
@@ -501,24 +501,89 @@ bool MCOrientation::Orient(double Time, G4ThreeVector& Position, G4ThreeVector& 
 
 
 //! Perfrom the inverted orientation for the given time
-bool MCOrientation::OrientInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
+bool MCOrientation::OrientPositionAndDirectionInvers(double Time, G4ThreeVector& Position, G4ThreeVector& Direction) const
 {
   if (InRange(Time) == true) {
     unsigned int Index = FindClosestIndex(Time);
     
     /*
-    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
-    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
-    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
-    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
-    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
-    */
+     *    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
+     *    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+     *    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+     *    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
+     *    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
+     */
     
     MVector P(Position.x(), Position.y(), Position.z());
     MVector D(Direction.x(), Direction.y(), Direction.z());
     P = m_RotationsInvers[Index]*(P - m_Translations[Index]);
     D = m_RotationsInvers[Index]*D;
     Position.set(P.X(), P.Y(), P.Z());
+    Direction.set(D.X(), D.Y(), D.Z());
+    
+    //cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+    //cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+  } else {
+    mlog<<"   ***  Error  ***  The time is out of bounds!"<<endl;
+    return false;
+  }    
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Perfrom the orientation for the given time
+bool MCOrientation::OrientDirection(double Time, G4ThreeVector& Direction) const
+{
+  if (InRange(Time) == true) {
+    unsigned int Index = FindClosestIndex(Time);
+    
+    /*
+     *    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
+     *    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+     *    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+     *    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
+     *    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
+     */
+    
+
+    MVector D(Direction.x(), Direction.y(), Direction.z());
+    D = m_Rotations[Index]*D;
+    Direction.set(D.X(), D.Y(), D.Z());
+    
+    //cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+    //cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+  } else {
+    mlog<<"   ***  Error  ***  The time is out of bounds!"<<endl;
+    return false;
+  }    
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Perfrom the inverted orientation for the given time
+bool MCOrientation::OrientDirectionInvers(double Time, G4ThreeVector& Direction) const
+{
+  if (InRange(Time) == true) {
+    unsigned int Index = FindClosestIndex(Time);
+    
+    /*
+     *    cout<<"Index: "<<Index<<" at t="<<Time/s<<endl;
+     *    cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
+     *    cout<<"Orient: D="<<Direction/cm<<" cm"<<endl;
+     *    cout<<"Orient: T="<<m_Translations[Index]/cm<<" cm"<<endl;
+     *    cout<<"Orient: R="<<m_Rotations[Index]<<endl;
+     */
+    
+    MVector D(Direction.x(), Direction.y(), Direction.z());
+    D = m_RotationsInvers[Index]*D;
     Direction.set(D.X(), D.Y(), D.Z());
     
     //cout<<"Orient: P="<<Position/cm<<" cm"<<endl;
