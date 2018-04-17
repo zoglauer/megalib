@@ -113,7 +113,7 @@ class MResponseMatrixON : public MResponseMatrix
   
   //! Set the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  void Set(unsigned long Bin, float Value = 1) { m_Values.at(Bin) = Value; }
+  void Set(unsigned long Bin, float Value = 1);
   //! Set the bin content
   //! Throw exception "MExceptionTestFailed" when out of bounds
   void Set(vector<unsigned long> AxisBins, float Value = 1);
@@ -128,7 +128,7 @@ class MResponseMatrixON : public MResponseMatrix
   void Add(vector<double> AxisValues, float Value = 1);
   //! Add to the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  void Add(unsigned long Bin, float Value = 1) { m_Values.at(Bin) += Value; }
+  void Add(unsigned long Bin, float Value = 1);
   
   // Interface to retrieve the content
 
@@ -138,7 +138,7 @@ class MResponseMatrixON : public MResponseMatrix
   virtual float Get(vector<unsigned long> AxisBins) const;
   //! Get the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
-  virtual float Get(unsigned long Bin) const { return m_Values.at(Bin); }
+  virtual float Get(unsigned long Bin) const;
   //! Get the content of the bin corresponding to the specific value
   virtual float Get(vector<double> AxisValues) const;
   //! Get the interpolated content of the bin corresponding to the specific value
@@ -186,25 +186,21 @@ class MResponseMatrixON : public MResponseMatrix
   //! Find the axes bins corresponding to the internal value bin Bin
   vector<unsigned long> FindBins(unsigned long Bin) const;
   
-  //! Find the entry in the sparse matrix which contains the Bin -- return g_UnsignedLongNotDefined otherwise. 
-  unsigned long FindBinSparse(unsigned long Bin) const;
-  
   //! Sort the sparse matrix
   void SortSparse();
-  
   
   //! Given an order, return the axis it belongs to
   //! Can throw: MExceptionValueOutOfBounds, MExceptionNeverReachThatLineOfCode
   MResponseMatrixAxis* GetAxisByOrder(unsigned int Order);
   
+  
   // protected members:
  protected:
-  //! Name of this response
-  //MString m_Name;
-  //! Order/Dimension of this response 
-  //unsigned int m_Order;
-  
-  //! The axes
+
+  //! The number of bins
+  unsigned long m_NumberOfBins;
+   
+   //! The axes
   vector<MResponseMatrixAxis*> m_Axes;
   
   //! Flag indicating that we are in sparse mode
@@ -213,15 +209,12 @@ class MResponseMatrixON : public MResponseMatrix
   //! The data in non-sparse mode
   vector<float> m_Values;
   
-  //! The number of bins
-  unsigned long m_NumberOfBins;
-  
   //! The data in sparse mode
   vector<float> m_ValuesSparse;
   //! Axis values in sparse mode
   vector<unsigned long> m_BinsSparse;
 
-
+  
   // private members:
  private:
   friend ostream& operator<<(ostream& os, const MResponseMatrixON& R);

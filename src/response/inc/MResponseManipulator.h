@@ -66,16 +66,16 @@ private:
 
   /// 
   bool m_Statistics;
-  string m_FileName;
+  MString m_FileName;
 
   /// 
   bool m_Append;
-  vector<string> m_AppendFileNames;
+  vector<MString> m_AppendFileNames;
 
   /// 
   bool m_Divide;
-  string m_DividendFileName;
-  string m_DivisorFileName;
+  MString m_DividendFileName;
+  MString m_DivisorFileName;
 
   /// 
   bool m_Ratio;
@@ -85,7 +85,7 @@ private:
 
   /// 
   bool m_Join;
-  string m_Prefix;
+  MString m_Prefix;
 
   /// Viewing options:
   bool m_Show;
