@@ -176,7 +176,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
-  string Option;
+  MString Option;
 
   // Check for help
   for (int i = 1; i < argc; i++) {
@@ -274,9 +274,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       cout<<"Accepting view zeroed "<<endl;
     } else if (Option == "-v") {
       m_FileName = argv[++i];
-      string next;
+      MString next;
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -284,9 +284,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x1 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x1 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x1 = MResponseMatrix::c_ShowZ;
-      else                  m_x1 = atof(next.c_str());
+      else                  m_x1 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -294,9 +294,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x2 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x2 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x2 = MResponseMatrix::c_ShowZ;
-      else                  m_x2 = atof(next.c_str());
+      else                  m_x2 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -304,9 +304,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x3 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x3 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x3 = MResponseMatrix::c_ShowZ;
-      else                  m_x3 = atof(next.c_str());
+      else                  m_x3 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -314,9 +314,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x4 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x4 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x4 = MResponseMatrix::c_ShowZ;
-      else                  m_x4 = atof(next.c_str());
+      else                  m_x4 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -324,9 +324,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x5 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x5 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x5 = MResponseMatrix::c_ShowZ;
-      else                  m_x5 = atof(next.c_str());
+      else                  m_x5 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -334,9 +334,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x6 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x6 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x6 = MResponseMatrix::c_ShowZ;
-      else                  m_x6 = atof(next.c_str());
+      else                  m_x6 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -344,9 +344,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x7 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x7 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x7 = MResponseMatrix::c_ShowZ;
-      else                  m_x7 = atof(next.c_str());
+      else                  m_x7 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -354,9 +354,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x8 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x8 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x8 = MResponseMatrix::c_ShowZ;
-      else                  m_x8 = atof(next.c_str());
+      else                  m_x8 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -364,9 +364,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x9 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x9 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x9 = MResponseMatrix::c_ShowZ;
-      else                  m_x9 = atof(next.c_str());
+      else                  m_x9 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -374,9 +374,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x10 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x10 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x10 = MResponseMatrix::c_ShowZ;
-      else                  m_x10 = atof(next.c_str());
+      else                  m_x10 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -384,9 +384,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x11 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x11 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x11 = MResponseMatrix::c_ShowZ;
-      else                  m_x11 = atof(next.c_str());
+      else                  m_x11 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -394,9 +394,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x12 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x12 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x12 = MResponseMatrix::c_ShowZ;
-      else                  m_x12 = atof(next.c_str());
+      else                  m_x12 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -404,9 +404,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x13 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x13 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x13 = MResponseMatrix::c_ShowZ;
-      else                  m_x13 = atof(next.c_str());
+      else                  m_x13 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -414,9 +414,9 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x14 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x14 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x14 = MResponseMatrix::c_ShowZ;
-      else                  m_x14 = atof(next.c_str());
+      else                  m_x14 = next.ToDouble();
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -424,10 +424,10 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x15 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x15 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x15 = MResponseMatrix::c_ShowZ;
-      else                  m_x15 = atof(next.c_str());
+      else                  m_x15 = next.ToDouble();
 
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -435,10 +435,10 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x16 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x16 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x16 = MResponseMatrix::c_ShowZ;
-      else                  m_x16 = atof(next.c_str());
+      else                  m_x16 = next.ToDouble();
 
       if (argc > i+1 && (argv[i+1][0] != '-' || isalpha(argv[i+1][1]) == 0)) {
-        next = string(argv[i+1]);
+        next = MString(argv[i+1]);
         ++i;
       } else {
         next = "0";
@@ -446,7 +446,7 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
       if (next == "x")      m_x17 = MResponseMatrix::c_ShowX;
       else if (next == "y") m_x17 = MResponseMatrix::c_ShowY;
       else if (next == "z") m_x17 = MResponseMatrix::c_ShowZ;
-      else                  m_x17 = atof(next.c_str());
+      else                  m_x17 = next.ToDouble();
 
       m_Show = true;
 
@@ -477,26 +477,30 @@ bool MResponseManipulator::ParseCommandLine(int argc, char** argv)
 
   // Check if files exist:
   if (m_Show == true || m_Append == true || m_Statistics == true) {
-    if (MFile::FileExists(m_FileName.c_str()) == false) {
+    if (MFile::FileExists(m_FileName) == false) {
       cout<<"Error: File \""<<m_FileName<<"\" does not exist!"<<endl;
       return false;
     }
   }
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
-    if (MFile::FileExists(m_AppendFileNames[f].c_str()) == false) {
+    if (MFile::FileExists(m_AppendFileNames[f]) == false) {
       cout<<"Error: File \""<<m_AppendFileNames[f]<<"\" does not exist!"<<endl;
       return false;
     }
   }
   if (m_Divide == true || m_Ratio == true || m_Probability == true) {
-    if (MFile::FileExists(m_DividendFileName.c_str()) == false) {
+    if (MFile::FileExists(m_DividendFileName) == false) {
       cout<<"Error: File \""<<m_DividendFileName<<"\" does not exist!"<<endl;
       return false;
     }
-    if (MFile::FileExists(m_DivisorFileName.c_str()) == false) {
+    if (MFile::FileExists(m_DivisorFileName) == false) {
       cout<<"Error: File \""<<m_DivisorFileName<<"\" does not exist!"<<endl;
       return false;
     }
+  }
+
+  if (m_Prefix.EndsWith(".") == true) {
+    m_Prefix.RemoveLastInPlace(1);
   }
 
   return true;
@@ -528,7 +532,7 @@ bool MResponseManipulator::Analyze()
 bool MResponseManipulator::Append()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
+  MResponseMatrix* R = File.Read(m_FileName);
   if (R == nullptr) {
     merr<<"Error: Unable to read first response file \""<<m_FileName<<"\" - aborting..."<<endl;
     return false;
@@ -536,7 +540,7 @@ bool MResponseManipulator::Append()
 
   for (unsigned int f = 0; f < m_AppendFileNames.size(); ++f) {
     MFileResponse AppendFile;
-    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f].c_str());
+    MResponseMatrix* RAppend = AppendFile.Read(m_AppendFileNames[f]);
     if (RAppend == nullptr) {
       merr<<"Error: Unable to read response file \""<<m_AppendFileNames[f]<<"\" - aborting..."<<endl;
       return false;
@@ -606,7 +610,7 @@ bool MResponseManipulator::Append()
     delete RAppend;
   }
 
-  R->Write((m_FileName + ".new").c_str(), true);
+  R->Write((m_FileName + ".new"), true);
   delete R;
 
   return true;
@@ -667,7 +671,11 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       merr<<"Error: Unable to read first response file \""<<SortedFiles[t][0]<<"\" - aborting..."<<endl;
       break;
     }
-      
+    if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+      mout<<"Converting the response to non-sparse"<<endl;
+      dynamic_cast<MResponseMatrixON*>(First)->SwitchToNonSparse();
+    }
+    
     for (unsigned int f = 1; f < SortedFiles[t].size(); ++f) {
       if (m_Interrupt == true) break;
 
@@ -682,8 +690,9 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
       } else {
         mout<<"Appending file "<<f<<"/"<<SortedFiles[t].size()<<": "<<SortedFiles[t][f]<<endl;
         if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
-          *dynamic_cast<MResponseMatrixON*>(First) +=
-          *dynamic_cast<MResponseMatrixON*>(Append);
+          MTimer AppendTimer;
+          *dynamic_cast<MResponseMatrixON*>(First) += *dynamic_cast<MResponseMatrixON*>(Append);
+          mout<<" --> Done in "<<AppendTimer.GetElapsed()<<" seconds"<<endl;
         } else if (First->GetOrder() == 1) {
           *dynamic_cast<MResponseMatrixO1*>(First) +=
           *dynamic_cast<MResponseMatrixO1*>(Append);
@@ -749,6 +758,10 @@ bool MResponseManipulator::JoinRSPFiles(MString Prefix, vector<MString> Types)
 
     MString NewName = Prefix + Types[t];
     if (AnyZipped == true) NewName += ".gz";
+    if (dynamic_cast<MResponseMatrixON*>(First) != nullptr) {
+      mout<<"Converting the response back to sparse"<<endl;
+      dynamic_cast<MResponseMatrixON*>(First)->SwitchToSparse();
+    }
     First->Write(NewName, true);
     delete First;
   }
@@ -933,12 +946,12 @@ bool MResponseManipulator::Join()
 bool MResponseManipulator::Divide()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) {
     mout<<"Unable to open Dividend"<<endl;
     return false;
   }
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) {
     mout<<"Unable to open Dividor"<<endl;
     return false;
@@ -1005,7 +1018,7 @@ bool MResponseManipulator::Divide()
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 
@@ -1019,9 +1032,9 @@ bool MResponseManipulator::Divide()
 bool MResponseManipulator::Ratio()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) return false;
 
   float SumZahler = Zahler->GetSum();
@@ -1107,7 +1120,7 @@ bool MResponseManipulator::Ratio()
     }
   }
 
-  Zahler->Write(m_FileName.c_str(), true);
+  Zahler->Write(m_FileName, true);
   delete Zahler;
   delete Nenner;
 
@@ -1121,9 +1134,9 @@ bool MResponseManipulator::Ratio()
 bool MResponseManipulator::Probability()
 {
   MFileResponse File;
-  MResponseMatrix* Zahler = File.Read(m_DividendFileName.c_str());
+  MResponseMatrix* Zahler = File.Read(m_DividendFileName);
   if (Zahler == 0) return false;
-  MResponseMatrix* Nenner = File.Read(m_DivisorFileName.c_str());
+  MResponseMatrix* Nenner = File.Read(m_DivisorFileName);
   if (Nenner == 0) return false;
 
   if (Zahler->GetOrder() != Nenner->GetOrder()) {
@@ -1239,7 +1252,7 @@ bool MResponseManipulator::Probability()
 bool MResponseManipulator::Statistics()
 {
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
+  MResponseMatrix* R = File.Read(m_FileName);
   if (R == nullptr) return false;
   cout<<R->GetStatistics()<<endl;
   delete R;
@@ -1253,15 +1266,15 @@ bool MResponseManipulator::Statistics()
  */
 bool MResponseManipulator::Show()
 {
-  string OtherFile(m_FileName);
-  if (OtherFile.rfind("bad.rsp") != string::npos) {
-    OtherFile.replace(OtherFile.rfind("bad.rsp"), 7, "good.rsp");
-  } else if (OtherFile.rfind("good.rsp") != string::npos){
-    OtherFile.replace(OtherFile.rfind("good.rsp"), 8, "bad.rsp");
+  MString OtherFile(m_FileName);
+  if (OtherFile.Contains("bad.rsp") == true) {
+    OtherFile.ReplaceAllInPlace("bad.rsp", "good.rsp");
+  } else if (OtherFile.Contains("good.rsp") == true) {
+    OtherFile.ReplaceAllInPlace("good.rsp", "bad.rsp");
   }
 
   MFileResponse File;
-  MResponseMatrix* R = File.Read(m_FileName.c_str());
+  MResponseMatrix* R = File.Read(m_FileName);
 
   if (R == nullptr) return false;
 
@@ -1327,9 +1340,9 @@ bool MResponseManipulator::Show()
   delete R;
 
   cout<<"Other:"<<OtherFile<<endl;
-  if (OtherFile != m_FileName && MFile::FileExists(OtherFile.c_str())) {
+  if (OtherFile != m_FileName && MFile::FileExists(OtherFile)) {
     MFileResponse File;
-    MResponseMatrix* R = File.Read(OtherFile.c_str());
+    MResponseMatrix* R = File.Read(OtherFile);
 
     if (R == nullptr) return false;
 

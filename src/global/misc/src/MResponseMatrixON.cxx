@@ -60,7 +60,7 @@ ClassImp(MResponseMatrixON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_IsSparse(IsParse), m_NumberOfBins(0)
+MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_NumberOfBins(0), m_IsSparse(IsParse)
 {
   // default constructor
 
@@ -70,7 +70,7 @@ MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_IsSpar
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_IsSparse(IsParse), m_NumberOfBins(0)
+MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_NumberOfBins(0), m_IsSparse(IsParse)
 {
   // extended constructor
 }
@@ -119,7 +119,7 @@ void MResponseMatrixON::SwitchToSparse()
   m_ValuesSparse.clear();
   m_BinsSparse.clear();
   
-  for (unsigned long i = 0; i < m_Values[i]; ++i) {
+  for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
     if (m_Values[i] != 0.0) {
       m_ValuesSparse.push_back(m_Values[i]);
       m_BinsSparse.push_back(i);
@@ -140,9 +140,9 @@ void MResponseMatrixON::SwitchToNonSparse()
   if (m_IsSparse == false) return;
   
   m_Values.clear();
-  m_Values.resize(GetNBins(), 0);
+  m_Values.resize(m_NumberOfBins, 0);
   
-  for (unsigned long i = 0; i < m_BinsSparse[i]; ++i) {
+  for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
     m_Values[m_BinsSparse[i]] = m_ValuesSparse[i];
   }
   m_IsSparse = false;
@@ -275,30 +275,24 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const MResponseMatrixON& R)
 
   if (*this == R) {
     if (m_IsSparse == false) {
-      for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
-        m_Values[i] += R.Get(i); // R maybe sparse or not
+      if (R.m_IsSparse == true) {
+        for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
+          m_Values[R.m_BinsSparse[i]] += R.m_ValuesSparse[i];
+        }
+      } else {
+        for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+          m_Values[i] += R.m_Values[i]; 
+        }
       }
     } else {
       if (R.m_IsSparse == true) {
         for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
-          unsigned long Bin = FindBinSparse(R.m_BinsSparse[i]);
-          if (Bin != g_UnsignedLongNotDefined) {
-            m_ValuesSparse[Bin] += R.m_ValuesSparse[i];
-          } else {
-            m_ValuesSparse.push_back(R.m_ValuesSparse[i]); 
-            m_BinsSparse.push_back(i); 
-          }
+          Add(R.m_BinsSparse[i], R.m_ValuesSparse[i]);
         }
       } else {
         for (unsigned long i = 0; i < R.m_NumberOfBins; ++i) {
           if (R.m_Values[i] != 0) {
-            unsigned long Bin = FindBinSparse(i);
-            if (Bin != g_UnsignedLongNotDefined) {
-              m_ValuesSparse[Bin] += R.m_Values[i];
-            } else {
-              m_ValuesSparse.push_back(R.m_Values[i]); 
-              m_BinsSparse.push_back(i); 
-            }
+            Add(i, R.m_Values[i]);
           }
         }        
       }
@@ -320,30 +314,24 @@ MResponseMatrixON& MResponseMatrixON::operator-=(const MResponseMatrixON& R)
 
   if (*this == R) {
     if (m_IsSparse == false) {
-      for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
-        m_Values[i] -= R.Get(i); // R maybe sparse or not
+      if (R.m_IsSparse == true) {
+        for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
+          m_Values[R.m_BinsSparse[i]] -= R.m_ValuesSparse[i];
+        }
+      } else {
+        for (unsigned long i = 0; i < m_NumberOfBins; ++i) {
+          m_Values[i] -= R.m_Values[i]; 
+        }
       }
     } else {
       if (R.m_IsSparse == true) {
         for (unsigned long i = 0; i < R.m_BinsSparse.size(); ++i) {
-          unsigned long Bin = FindBinSparse(R.m_BinsSparse[i]);
-          if (Bin != g_UnsignedLongNotDefined) {
-            m_ValuesSparse[Bin] -= R.m_ValuesSparse[i];
-          } else {
-            m_ValuesSparse.push_back(-R.m_ValuesSparse[i]); 
-            m_BinsSparse.push_back(i); 
-          }
+          Add(R.m_BinsSparse[i], -R.m_ValuesSparse[i]);
         }
       } else {
         for (unsigned long i = 0; i < R.m_NumberOfBins; ++i) {
           if (R.m_Values[i] != 0) {
-            unsigned long Bin = FindBinSparse(i);
-            if (Bin != g_UnsignedLongNotDefined) {
-              m_ValuesSparse[Bin] -= R.m_Values[i];
-            } else {
-              m_ValuesSparse.push_back(-R.m_Values[i]); 
-              m_BinsSparse.push_back(i); 
-            }
+            Add(i, -R.m_Values[i]);
           }
         }        
       }
@@ -404,7 +392,7 @@ MResponseMatrixON& MResponseMatrixON::operator+=(const float& Value)
     throw MExceptionNumberNotFinite();
   }
   
-  // we will be non-sparse now:
+  // We will be non-sparse now:
   if (m_IsSparse == true) {
     SwitchToNonSparse(); 
   }
@@ -551,22 +539,6 @@ vector<unsigned long> MResponseMatrixON::FindBins(unsigned long Bin) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! Find the entry in the sparse matrix which contains the Bin -- return g_UnsignedLongNotDefined otherwise. 
-unsigned long MResponseMatrixON::FindBinSparse(unsigned long Bin) const
-{
-  for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) { 
-    if (Bin == m_BinsSparse[i]) {
-      return i; 
-    }
-  }
-  
-  return g_UnsignedLongNotDefined;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
 {
   // Find the bin of m_Values corresponding to the axis values X
@@ -696,17 +668,7 @@ void MResponseMatrixON::Set(vector<unsigned long> X, float Value)
 
   unsigned long Bin = FindBin(X);
   
-  if (m_IsSparse == false) {
-    m_Values[Bin] = Value;
-  } else {
-    unsigned long Position = FindBinSparse(Bin);
-    if (Position != g_UnsignedLongNotDefined) {
-      m_ValuesSparse[Position] = Value;
-    } else {
-      m_ValuesSparse.push_back(Value); 
-      m_BinsSparse.push_back(Bin); 
-    }
-  }
+  Set(Bin, Value);
 }
 
 
@@ -727,15 +689,32 @@ void MResponseMatrixON::Set(vector<double> X, float Value)
 
   unsigned long Bin = FindBin(X);
   
+  Set(Bin, Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the content of a specific bin -- directly without error checks
+//! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+void MResponseMatrixON::Set(unsigned long Bin, float Value) 
+{ 
   if (m_IsSparse == false) {
     m_Values[Bin] = Value;
   } else {
-    unsigned long Position = FindBinSparse(Bin);
-    if (Position != g_UnsignedLongNotDefined) {
-      m_ValuesSparse[Position] = Value;
+    // Find the position in the sparse array which is greater or equal to Bin
+    auto IterBins = lower_bound(m_BinsSparse.begin(), m_BinsSparse.end(), Bin);
+    // Find the same position in the values vector
+    auto IterValues = m_ValuesSparse.begin();
+    advance(IterValues, distance(m_BinsSparse.begin(), IterBins));
+    
+    // If we have already an entry add, otherwise insert another entry sorted.
+    if (IterBins != m_BinsSparse.cend() && *IterBins == Bin) {
+      (*IterValues) = Value;
     } else {
-      m_ValuesSparse.push_back(Value); 
-      m_BinsSparse.push_back(Bin); 
+      m_BinsSparse.insert(IterBins, Bin);
+      m_ValuesSparse.insert(IterValues, Value);
     }
   }
 }
@@ -758,17 +737,7 @@ void MResponseMatrixON::Add(vector<unsigned long> X, float Value)
   
   unsigned long Bin = FindBin(X);
 
-  if (m_IsSparse == false) {
-    m_Values[Bin] += Value;
-  } else {
-    unsigned long Position = FindBinSparse(Bin);
-    if (Position != g_UnsignedLongNotDefined) {
-      m_ValuesSparse[Position] += Value;
-    } else {
-      m_ValuesSparse.push_back(Value); 
-      m_BinsSparse.push_back(Bin); 
-    }
-  }
+  Add(Bin, Value);
 }
 
 
@@ -789,15 +758,32 @@ void MResponseMatrixON::Add(vector<double> X, float Value)
   
   unsigned long Bin = FindBin(X);
 
+  Add(Bin, Value);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add to the content of a specific bin -- directly without error checks
+//! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+void MResponseMatrixON::Add(unsigned long Bin, float Value) 
+{ 
   if (m_IsSparse == false) {
     m_Values[Bin] += Value;
   } else {
-    unsigned long Position = FindBinSparse(Bin);
-    if (Position != g_UnsignedLongNotDefined) {
-      m_ValuesSparse[Position] += Value;
+    // Find the position in the sparse array which is greater or equal to Bin
+    auto IterBins = lower_bound(m_BinsSparse.begin(), m_BinsSparse.end(), Bin);
+    // Find the same position in the values vector
+    auto IterValues = m_ValuesSparse.begin();
+    advance(IterValues, distance(m_BinsSparse.begin(), IterBins));
+    
+    // If we have already an entry add, otherwise insert another entry sorted.
+    if (IterBins != m_BinsSparse.cend() && *IterBins == Bin) {
+      (*IterValues) += Value;
     } else {
-      m_ValuesSparse.push_back(Value); 
-      m_BinsSparse.push_back(Bin); 
+      m_BinsSparse.insert(IterBins, Bin);
+      m_ValuesSparse.insert(IterValues, Value);
     }
   }
 }
@@ -826,24 +812,38 @@ unsigned long MResponseMatrixON::CalculateNumberOfBins() const
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Get the content of a specific bin -- directly without error checks
+//! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
+float MResponseMatrixON::Get(unsigned long Bin) const
+{
+  if (m_IsSparse == false) {
+    return m_Values[Bin];
+  } else {
+    // Find the position in the sparse array which is greater or equal to Bin
+    auto IterBins = lower_bound(m_BinsSparse.cbegin(), m_BinsSparse.cend(), Bin);
+    
+    // If we have already an entry add, otherwise insert another entry sorted.
+    if (IterBins != m_BinsSparse.cend() && *IterBins == Bin) {
+      // Find the same position in the values vector
+      auto IterValues = m_ValuesSparse.cbegin();
+      advance(IterValues, distance(m_BinsSparse.cbegin(), IterBins));
+
+      return (*IterValues);
+    } else {
+      return 0;
+    }
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 float MResponseMatrixON::Get(vector<unsigned long> X) const
 {
   // Return the content of bin x, y
   
-  unsigned long MatrixBin = FindBin(X);
-  
-  if (m_IsSparse == false) {
-    return m_Values[MatrixBin];
-  } else {
-    unsigned long SparsePosition = FindBinSparse(MatrixBin);
-    if (SparsePosition != g_UnsignedLongNotDefined) {
-      return m_ValuesSparse[SparsePosition];
-    } else {
-      return 0.0; 
-    }
-  }
-  
-  // all cases covered
+  return Get(FindBin(X));
 }
 
 
@@ -863,18 +863,7 @@ float MResponseMatrixON::GetInterpolated(vector<double> X, bool DoExtrapolate) c
 
   mout<<"Interpolation not implemented!"<<endl;
 
-  unsigned long MatrixBin = FindBin(X);
-  
-  if (m_IsSparse == false) {
-    return m_Values[MatrixBin];
-  } else {
-    unsigned long SparsePosition = FindBinSparse(MatrixBin);
-    if (SparsePosition != g_UnsignedLongNotDefined) {
-      return m_ValuesSparse[SparsePosition];
-    } else {
-      return 0.0; 
-    }
-  }
+  return Get(FindBin(X));
 
   // We have to distinguish two different cases:
   // (1) the values are at the center of the bin (e.g. used by response files)
@@ -961,18 +950,7 @@ float MResponseMatrixON::Get(vector<double> X) const
     return 0;
   }
 
-  unsigned long MatrixBin = FindBin(X);
-  
-  if (m_IsSparse == false) {
-    return m_Values[MatrixBin];
-  } else {
-    unsigned long SparsePosition = FindBinSparse(MatrixBin);
-    if (SparsePosition != g_UnsignedLongNotDefined) {
-      return m_ValuesSparse[SparsePosition];
-    } else {
-      return 0.0; 
-    }
-  }
+  return Get(FindBin(X));
 }
 
 
@@ -1362,8 +1340,6 @@ bool MResponseMatrixON::Write(MString FileName, bool Stream)
   } else {
     s<<"Type ResponseMatrixONSparse"<<endl;
     s<<endl;
-    
-    SortSparse();
     
     for (unsigned long i = 0; i < m_BinsSparse.size(); ++i) {
       vector<unsigned long> Bins = FindBins(m_BinsSparse[i]);
