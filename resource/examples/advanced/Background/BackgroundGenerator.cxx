@@ -2058,7 +2058,7 @@ bool BackgroundGenerator::GenerateCosmicAlphasSpenvis()
       continue;
     }
     double Energy = 1000*atof(Tokens[0]) * 4; // from MeV to keV and x4 for 4 nucleons
-    double Flux = atof(Tokens[2])/1000/10000;
+    double Flux = atof(Tokens[2])/1000/10000 / 4; // Flux is per nucleus thus 1/4th
     if (Flux > 0) {
       //cout<<Line<<endl;
       Energies.push_back(Energy);
