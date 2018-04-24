@@ -1,0 +1,50 @@
+
+Version         1
+Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
+
+# Physics list
+PhysicsListEM             Livermore-Pol
+
+# Output formats
+StoreSimulationInfo       init-only
+
+
+Run SpaceSim
+SpaceSim.FileName         SpectralEvolution
+SpaceSim.Time             2000.0
+
+# Attention: Concerning the lower energy band:
+# The analysis is planned to be performed above 1 MeV.
+# Therfore you set the lower energy limit for the simulation, well below this limit, 
+# to avoid problems due to energy resolution limitations
+
+SpaceSim.Source Step1
+Step1.ParticleType           1
+Step1.Beam                   FarFieldPointSource 0 0
+Step1.Spectrum               Mono 500.0
+Step1.Flux                   0.1
+Step1.Lightcurve             File true LightCurve1.dat
+
+SpaceSim.Source Step2
+Step2.ParticleType           1
+Step2.Beam                   FarFieldPointSource 0 0
+Step2.Spectrum               Mono 750.0
+Step2.Flux                   0.1
+Step2.Lightcurve             File true LightCurve2.dat
+
+SpaceSim.Source Step3
+Step3.ParticleType           1
+Step3.Beam                   FarFieldPointSource 0 0
+Step3.Spectrum               Mono 1000.0
+Step3.Flux                   0.1
+Step3.Lightcurve             File true LightCurve3.dat
+
+SpaceSim.Source Step4
+Step4.ParticleType           1
+Step4.Beam                   FarFieldPointSource 0 0
+Step4.Spectrum               Mono 1500.0
+Step4.Flux                   0.1
+Step4.Lightcurve             File true LightCurve4.dat
+
+
+
