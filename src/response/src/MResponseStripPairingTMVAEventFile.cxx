@@ -240,7 +240,7 @@ void MResponseStripPairingTMVAEventFile::ShuffleStrips(vector<unsigned int>& Str
 
 bool MResponseStripPairingTMVAEventFile::Analyze()
 {
-  // Create the multiple Compton response
+  // Create the strip pairing response
   
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
@@ -390,7 +390,7 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     ShuffleStrips(YStripIDs, YStripEnergies);
     
 
-    // (c) Create list of hit intersection
+    // (c) Create list of intersections with energy deposits
     
     // All intersections
     unsigned int NIntersections = 0;
@@ -399,8 +399,8 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     
     vector<unsigned int> EvaluationXStripIDs;
     vector<unsigned int> EvaluationYStripIDs;
-    for (int O: AllOrigins) {
-      MVector PositionInDetector = StripVolumeSequences[s1]->GetPositionInVolume(m_SiEvent->GetIAAt(O-1)->GetPosition(), StripVolumeSequences[s1]->GetDetectorVolume());
+    for (unsigned int r = 0; r < RESEs.size(); ++r) {
+      MVector PositionInDetector = StripVolumeSequences[s1]->GetPositionInVolume(RESEs[r]->GetPosition(), StripVolumeSequences[s1]->GetDetectorVolume());
       if (StripVolumeSequences[s1]->GetDetectorVolume()->GetShape()->IsInside(PositionInDetector) == true) {
         MDGridPoint GP = StripVolumeSequences[s1]->GetDetector()->GetGridPoint(PositionInDetector);
         if (GP.GetType() != MDGridPoint::c_Unknown) {
@@ -434,8 +434,8 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
         }
       }
     }
-    
-    // (c) Write to file
+
+    // (d) Write to file
     if (XStripIDs.size() == 0 || XStripIDs.size() > m_MaxNHitsX) continue;
     if (YStripIDs.size() == 0 || YStripIDs.size() > m_MaxNHitsY) continue;
     
