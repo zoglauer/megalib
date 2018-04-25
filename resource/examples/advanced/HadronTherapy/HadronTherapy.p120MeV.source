@@ -9,13 +9,10 @@ Geometry      HadronTherapy.geo.setup
 PhysicsListEM                      Livermore
 PhysicsListHD                      qgsp-bic-hp
 DecayMode                          buildup
+DetectorTimeConstant               0.000001
 
 # Output formats
-StoreCalibrated                    true
 StoreSimulationInfo                all
-StoreSimulationInfoIonization      false
-StoreOnlyTriggeredEvents           true
-DiscretizeHits                     true
 
 # Regions
 DefaultRangeCut   0.05
