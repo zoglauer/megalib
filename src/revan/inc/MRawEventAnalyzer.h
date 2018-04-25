@@ -114,9 +114,9 @@ class MRawEventAnalyzer
   MRERawEvent* GetOptimumEvent();
   //! A best solution was not found - but we still have a best try
   MRERawEvent* GetBestTryEvent();  
-  //! 
+  //! Return the initial raw event before all event reconstrcutions
   MRERawEvent* GetInitialRawEvent();
-  //! return a list of all possible events after the given event reconstrcution
+  //! Return a list of all possible events after the given event reconstrcution
   MRawEventList* GetRawEventList() { return m_RawEvents; }
 
   //! Optional: Call this function at the end of the event reconstruction to gather some statistics

@@ -362,6 +362,14 @@ void MCEventAction::AddIA(G4String ProcessID,
   m_Event->AddIA(IA);
 }
 
+/******************************************************************************
+ * Add a comment
+ */
+void MCEventAction::AddComment(string Comment)
+{
+  m_Event->AddCC(MString(Comment));
+}
+
 
 /******************************************************************************
  * Set the Galactic pointing --- this is in degree as is does not translate well into radians (e.g. -90 lat)

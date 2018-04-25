@@ -355,8 +355,10 @@ public:
   static const int c_FarFieldPoint;
   /// Id of a area like source in spherical coordinates
   static const int c_FarFieldArea;
-  /// Id of a Gaussian like source in spherical coordinates
+  /// Id of a symmetric Gaussian-like source in spherical coordinates
   static const int c_FarFieldGaussian;
+  /// Id of a assymetric Gaussian-like source in spherical coordinates
+  static const int c_FarFieldAssymetricGaussian;
   /// Id of a beam distribution from file in form of a zenith dependent distribution
   static const int c_FarFieldFileZenithDependent;
   /// Id of a beam distribution from a combined energy-position-flux-function

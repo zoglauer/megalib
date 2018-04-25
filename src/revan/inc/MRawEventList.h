@@ -32,16 +32,22 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! This list contains all possible incarnations (reconstruction possibilities) of one single event
 class MRawEventList
 {
   // Public Interface:
  public:
+  //! Default constructor
   MRawEventList();
+  //! Standard constructor with geometry
   MRawEventList(MGeometryRevan* Geometry);
+  //! Default destructor
   virtual ~MRawEventList();
   
+  //! Set the geometry
   void SetGeometry(MGeometryRevan* Geometry);
 
+  //! Set the initial raw event
   void SetInitialRawEvent(MRERawEvent* RE);
   MRERawEvent* GetInitialRawEvent();
 

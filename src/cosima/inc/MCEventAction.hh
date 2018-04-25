@@ -95,7 +95,9 @@ public:
   void SetDetectorPointing(double XTheta, double XPhi, double ZTheta, double ZPhi);
   /// Add a passive material output information
   void AddDepositPassiveMaterial(double Energy, string MaterialName);
-
+  /// Add a comment
+  void AddComment(string Comment);
+  
   /// Interrupts the executon at the end of the next event
   void Interrupt() { m_Interrupt = true; }
   /// Return if there should be an interrupt

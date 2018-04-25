@@ -1286,17 +1286,37 @@ bool MCParameterFile::Parse()
               if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg) == true) {
-                mdebug<<"Setting far field position theta="<<T->GetTokenAtAsDouble(3)
-                <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
-                <<" for source "<<Source->GetName()<<endl;
-                } else {
-                  Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly:"
-                  " Content not reasonable");
-                  return false;
-                }
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma="<<T->GetTokenAtAsDouble(5)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Content not reasonable");
+                return false;
+              }
             } else {
-              Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly:"
-              " Number of tokens is not correct!");
+              Typo(i, "Cannot parse token \"Beam - far field gaussian\" correctly: Number of tokens is not correct!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldassymetricgaussian" || Type == "farfieldassymgauss" || Type == "ffag") {
+            if (T->GetNTokens() == 8) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldAssymetricGaussian);
+              if (Source->SetPosition(T->GetTokenAtAsDouble(3)*deg,
+                                      T->GetTokenAtAsDouble(4)*deg,
+                                      T->GetTokenAtAsDouble(5)*deg,
+                                      T->GetTokenAtAsDouble(6)*deg,
+                                      T->GetTokenAtAsDouble(7)*deg) == true) {
+                mdebug<<"Setting far field gaussian position theta="<<T->GetTokenAtAsDouble(3)
+                      <<", phi="<<T->GetTokenAtAsDouble(4)<<", sigma1="<<T->GetTokenAtAsDouble(5)
+                      <<", simga2="<<T->GetTokenAtAsDouble(6)<<", rotation="<<T->GetTokenAtAsDouble(6)
+                      <<" for source "<<Source->GetName()<<endl;
+              } else {
+                Typo(i, "Cannot parse token \"Beam - far field assymetric gaussian\" correctly: Content not reasonable");
+                return false;
+              }
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field assymetric gaussian\" correctly: Number of tokens is not correct!");
               return false;
             }
           } 

@@ -8,7 +8,7 @@ Version 2.99/3.00
 
 *** IMPORTANT - PLEASE READ:
 
-+ Default ROOT version is now 6.08, default Geant4 version is 10.2
++ Default ROOT version is now 6.10, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
@@ -57,6 +57,7 @@ Reponse:
 + New base class for all responses
 + Many improvements for COSI analysis
 + TMVA data set creation and training of machine learning codes
++ Distributed response simulation with dresponsecreator
   
 Revan:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
@@ -78,15 +79,17 @@ Addons:
   in cosima, it's the Gamma, i.e. the positive one (e.g. Crab has +2.19)
 
 Examples:
-+ The EventList example demonstartes the use of event list during simulation
++ The EventList example demonstrates the use of event list during simulation
   basically allowing any arbitrary beam/spectrum/polarization input
 
   
 ... plus many, many smaller things I already forgot about :)
 
 
-Long term bugs fixed:
+Long-term bugs fixed:
 + Cosima: Voxel3D: The Y offset was used as Z offset during simulations
++ Cosima: In DecayMode buildup (the one used for hadron therapy, 
+  not astrophysics) the DetectorDecayConstant was ignored
 
 
 

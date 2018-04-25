@@ -316,11 +316,11 @@ bool BackgroundGenerator::Analyze()
   if (m_Interrupt == true) return false;
 
   if (m_IsEarthOrbit == true) {
-    m_HorizonAngle = 90.0 + cos((m_EarthRadius + m_AtmosphereHeight)/(m_EarthRadius+m_Altitude))*c_Deg;
+    m_HorizonAngle = 90.0 + acos((m_EarthRadius + m_AtmosphereHeight)/(m_EarthRadius+m_Altitude))*c_Deg;
   } else {
     m_HorizonAngle = 180.0;
   }
-
+  
   double Min = m_EnergyMin;
   if (Min <= 0) Min = 1;
   Min = log(Min);
@@ -2053,12 +2053,12 @@ bool BackgroundGenerator::GenerateCosmicAlphasSpenvis()
     if (Start == false) continue;
     vector<MString> Tokens = Line.Tokenize(",");
     if (Tokens.size() != 3) {
-      cout<<"Error: The line should have three tokens, energy, integarted flux, differential flux"<<endl;
+      cout<<"Error: The line should have three tokens, energy, integrated flux, and differential flux"<<endl;
       cout<<Line<<endl;
       continue;
     }
     double Energy = 1000*atof(Tokens[0]) * 4; // from MeV to keV and x4 for 4 nucleons
-    double Flux = atof(Tokens[2])/1000/10000;
+    double Flux = atof(Tokens[2])/1000/10000 / 4; // Flux is per nucleus thus 1/4th
     if (Flux > 0) {
       //cout<<Line<<endl;
       Energies.push_back(Energy);
