@@ -1096,7 +1096,7 @@ void MInterfaceMimrec::ARMGamma()
   if (InitializeEventLoader() == false) return;
 
 
-  double ConfidenceLevel = 0.9; // 90%
+  //double ConfidenceLevel = 0.9; // 90%
   MString ConfidenceLevelString = "90%";
   
   int NEvents = 0;
