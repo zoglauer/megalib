@@ -2681,9 +2681,19 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         
         
         // Andreas: the center is at the equation: phi = 0; theta = 90
+        double Theta_min = -3*m_PositionParam4 + c_Pi/2;
+        if (Theta_min < 0) Theta_min = 0;
+        double Theta_max = 3*m_PositionParam4 + c_Pi/2;
+        if (Theta_max > c_Pi) Theta_max = c_Pi;
+        
+        double Phi_min = -3*m_PositionParam3;
+        if (Phi_min < -c_Pi) Phi_min = -c_Pi;
+        double Phi_max = 3*m_PositionParam3;
+        if (Phi_max > c_Pi) Phi_max = c_Pi;
+        
         do {
-          Phi = 2*(CLHEP::RandFlat::shoot(1) - 0.5) * 3*m_PositionParam3; 
-          Theta = 2*(CLHEP::RandFlat::shoot(1) -0.5) * 3*m_PositionParam4 + c_Pi/2;
+          Theta = acos(cos(Theta_min) - CLHEP::RandFlat::shoot(1)*(cos(Theta_min) - cos(Theta_max)));
+          Phi = Phi_min + CLHEP::RandFlat::shoot(1)*(Phi_max - Phi_min);
         } while (gRandom->Rndm() >= exp(-0.5*pow((Theta - c_Pi/2)/m_PositionParam4, 2) - 0.5*pow(Phi/m_PositionParam3, 2)));
         
         // Now rotate into the correct position
