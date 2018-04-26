@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <sstream>
+#include <iomanip>
 using namespace std;
 
 // ROOT libs:
@@ -44,6 +45,9 @@ using namespace std;
 #ifdef ___CINT___
 ClassImp(MGUIProgressBar)
 #endif
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
@@ -65,7 +69,8 @@ MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetR
   m_UpdateFrequency = 0.001;
 
   m_IsFirstUpdate = true;
-
+  m_LastUpdate = 0.0;
+  
   m_ConfirmCancel = false;
 
   Create();
@@ -75,17 +80,15 @@ MGUIProgressBar::MGUIProgressBar(): MGUIDialog(gClient->GetRoot(), gClient->GetR
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIProgressBar::MGUIProgressBar(const TGWindow* ParentWindow, const char* Title,
-                                 const char* SubTitle):
-  MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
+MGUIProgressBar::MGUIProgressBar(MString Title, MString SubTitle): MGUIDialog(gClient->GetRoot(), gClient->GetRoot(), 350, 350)
 {
   //
 
   // use hierarchical cleaning
   SetCleanup(kDeepCleanup);
 
-  m_Title = MString(Title);
-  m_SubTitle = MString(SubTitle);
+  m_Title = Title;
+  m_SubTitle = SubTitle;
 
   m_Cancel = false;
   m_Percentage.push_back(0);
@@ -97,7 +100,8 @@ MGUIProgressBar::MGUIProgressBar(const TGWindow* ParentWindow, const char* Title
   m_UpdateFrequency = 0.001;
 
   m_IsFirstUpdate = true;
-
+  m_LastUpdate = 0.0;
+  
   m_ConfirmCancel = false;
 
   m_Duration = 0;
@@ -118,12 +122,12 @@ MGUIProgressBar::~MGUIProgressBar()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MGUIProgressBar::SetTitles(const char* Title, const char* SubTitle)
+void MGUIProgressBar::SetTitles(MString Title, MString SubTitle)
 {
   // Set the titles
 
-  m_Title = MString(Title);
-  m_SubTitle = MString(SubTitle);
+  m_Title = Title;
+  m_SubTitle = SubTitle;
 
   SetWindowName(m_Title);
   m_SubTitleLabel->SetText(m_SubTitle);
@@ -214,7 +218,7 @@ void MGUIProgressBar::CloseWindow()
 
 void MGUIProgressBar::Create()
 {
-  SetWindowName((char *) m_Title.Data());
+  SetWindowName(m_Title);
 
   m_TitleFrame = new TGHorizontalFrame(this, this->GetWidth(), 0, kRaisedFrame);
   m_TitleFrameLayout =  new TGLayoutHints(kLHintsExpandX | kLHintsCenterX | kLHintsTop, 10, 10, 8, 2);
@@ -222,7 +226,7 @@ void MGUIProgressBar::Create()
 
 
   // Label:
-  m_SubTitleLabel = new TGLabel(m_TitleFrame, (char *) m_SubTitle.Data());
+  m_SubTitleLabel = new TGLabel(m_TitleFrame, m_SubTitle);
   m_SubTitleLabelLayout = new TGLayoutHints(kLHintsCenterX, 0, 0, 2, 2);
   m_TitleFrame->AddFrame(m_SubTitleLabel, m_SubTitleLabelLayout);
 
@@ -318,6 +322,7 @@ void MGUIProgressBar::Reset()
   m_Maximum = 1;
 
   m_IsFirstUpdate = true;
+  m_LastUpdate = 0.0;
 
   m_Duration = 0.0;
 }
@@ -329,7 +334,7 @@ void MGUIProgressBar::Reset()
 void MGUIProgressBar::ResetTimer()
 {
   // Reset the timer, in this case only tell the function that the next is the first update
-
+  
   m_IsFirstUpdate = true;
 }
 
@@ -349,36 +354,54 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
 
   if (m_IsFirstUpdate == true) {
     m_Timer.Start();
+    m_LastUpdate = 0.0;
     m_IsFirstUpdate = false;
   }
 
-  if (Percentage >= 0 && Percentage <= 1) {
-    if (Percentage > m_Percentage[Level]+m_UpdateFrequency || Percentage < m_Percentage[Level]) {
+  double ElapsedTime = m_Timer.ElapsedTime();
 
+  // We allow time-based skips on the deepest progress levels:
+  if (Level == m_ProgressBar.size() - 1) {
+    if (m_LastUpdate > 0 && ElapsedTime - m_LastUpdate < 0.1 && Percentage < 1) {
+      return;
+    } else {
+      m_LastUpdate = ElapsedTime;
+    }
+  }
+  
+  
+  if (Percentage >= 0 && Percentage <= 1) {
+    if (Percentage > m_Percentage[Level] + m_UpdateFrequency || Percentage < m_Percentage[Level]) {
+      
       MTimer Intermediate;
 
       m_ProgressBar[Level]->SetPosition(100.0*Percentage);
-      m_Percentage[Level] = Percentage;
-
-      char c[100];
-      if (m_Timer.ElapsedTime() < 3.0 || m_Percentage[0] == 0) {
-        sprintf(c, "Time: estimating...");
+      m_Percentage[Level] = Percentage;      
+      
+      MString InfoText;
+      if ((m_ProgressBar.size() == 1 && ElapsedTime < 1.0) || m_Percentage[0] == 0) {
+        InfoText = "Time: estimating...";
       } else {
         // Update only on changes of level 0
         if (Level == 0) {
-          m_Duration = m_Timer.ElapsedTime() / m_Percentage[0];
+          m_Duration = ElapsedTime / m_Percentage[0];
         }
         // Expect when the time has been exceeded:
-        if (m_Duration < m_Timer.ElapsedTime()) {
-          m_Duration = m_Timer.ElapsedTime();
+        if (m_Duration < ElapsedTime) {
+          m_Duration = ElapsedTime;
         }
-        sprintf(c, "Time: %i:%02i/%i:%02i",
-                int(m_Timer.ElapsedTime())/60, int(m_Timer.ElapsedTime())%60,
-                int(m_Duration)/60, int(m_Duration)%60);
-
+        ostringstream out;
+        out<<"Time: "<<int(ElapsedTime)/60<<":"<<setfill('0')<<setw(2)<<int(ElapsedTime)%60<<" / "
+           <<int(m_Duration)/60<<":"<<setfill('0')<<setw(2)<<int(m_Duration)%60;
+        
+        InfoText = out.str();
       }
-      m_InfoLabel->SetText(new TGString(c));
+      if (InfoText != m_LastInfoText) {
+        m_LastInfoText = InfoText;
+        m_InfoLabel->SetText(InfoText);
+      }
 
+      
       if (m_Percentage[Level] >= 0 && m_Percentage[Level] < 0.50) {
         if (m_ColorLevel[Level] != 1) {
           m_ProgressBar[Level]->SetBarColor("darkgreen");
@@ -409,28 +432,17 @@ void MGUIProgressBar::Update(double Percentage, unsigned int Level)
           m_ColorLevel[Level] = 5;
         }
       }
+      
       // Cannot do this since we can be in worker thread: gSystem->ProcessEvents();
       fNeedRedraw = true;
 
-      // Allow some adjustable updating
+      // Allow some adjustable updating if the UI is slow
       if (Intermediate.GetElapsed() > 0.1) {
         m_UpdateFrequency = 0.1*Intermediate.GetElapsed();
         if (m_UpdateFrequency > 0.02) m_UpdateFrequency = 0.02;
       }
     }
   }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MGUIProgressBar::OnOk()
-{
-  // The Ok button/Return key has been pressed
-  // We do nothing!!!
-
-  return false;
 }
 
 
@@ -454,16 +466,6 @@ bool MGUIProgressBar::OnCancel()
   return false;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-bool MGUIProgressBar::TestCancel()
-{
-  // returns true if the Cancel-button has been pressed previously.
-
-  return m_Cancel;
-}
 
 
 // MGUIProgressBar: the end...

@@ -1260,7 +1260,7 @@ void MInterfaceSivan::ViewHits()
 
   // Start the progress display:
   MGUIProgressBar *Progress;
-  Progress = new MGUIProgressBar(0, "Status", "Sivan: Progress of event analysis");
+  Progress = new MGUIProgressBar("Status", "Sivan: Progress of event analysis");
   Progress->SetMinMax(0, 1);
   gSystem->ProcessEvents();
 
@@ -1378,7 +1378,7 @@ void MInterfaceSivan::EnergyLoss()
 
   // Start the progress display:
   MGUIProgressBar *Progress;
-  Progress = new MGUIProgressBar(0, "Status", "Sivan: Progress of event analysis");
+  Progress = new MGUIProgressBar("Status", "Sivan: Progress of event analysis");
   Progress->SetMinMax(0, 1);
   gSystem->ProcessEvents();
 
@@ -1807,7 +1807,7 @@ void MInterfaceSivan::TrackLengthVersusEnergy()
 
   // Start the progress display:
   MGUIProgressBar *Progress;
-  Progress = new MGUIProgressBar(0, "Status", "Sivan: Progress of event analysis");
+  Progress = new MGUIProgressBar("Status", "Sivan: Progress of event analysis");
   Progress->SetMinMax(0, 1);
   gSystem->ProcessEvents();
 

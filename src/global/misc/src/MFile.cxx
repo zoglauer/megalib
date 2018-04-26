@@ -224,6 +224,8 @@ bool MFile::Exists(MString FileName)
 
   return true;
 }
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -415,7 +417,7 @@ bool MFile::Open(MString FileName, unsigned int Way)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFile::Rewind()
+bool MFile::Rewind(bool ResetProgressStatistics)
 {
   // Rewind to the beginning of the file
 
@@ -440,7 +442,9 @@ bool MFile::Rewind()
     m_ProgressMutex.UnLock();
     UpdateProgress(); // Does its own lock
     m_ProgressMutex.Lock();
-    m_Progress->ResetTimer();
+    if (ResetProgressStatistics == true) {
+      m_Progress->ResetTimer();
+    }
   }
   m_ProgressMutex.UnLock();
 
@@ -925,7 +929,7 @@ void MFile::ShowProgressNoLock(bool Show)
       if (m_OwnProgress == true) {
         delete m_Progress;
       }
-      m_Progress = new MGUIProgressBar(0, "Progress", "Progress of analysis");
+      m_Progress = new MGUIProgressBar("Progress", "Progress of analysis");
       m_Progress->SetMinMax(0, 1);
       m_OwnProgress = true;
       m_Canceled = false;

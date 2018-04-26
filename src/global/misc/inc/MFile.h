@@ -52,7 +52,7 @@ class MFile
   //! Close the file
   virtual bool Close();
   //! Rewind the file
-  virtual bool Rewind();
+  virtual bool Rewind(bool ResetProgressStatistics = true);
 
   //! Return true if the file is open
   virtual bool IsOpen();
