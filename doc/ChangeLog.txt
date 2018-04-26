@@ -25,6 +25,8 @@ Version 2.31/2.32
 *** Critcal bug fixes
 + Powerlaws with an index of alpha=1.0 were not simulated correctly in cosima
 + When simulating guard rings for voxel detectors, the Y offset was used as Z offset
++ In hadron therapy build-up mode (but not in astrophysics activation step-1 mode) 
+  the detector time constant was not honored
 
 *** Significant new features & improvements:
 
