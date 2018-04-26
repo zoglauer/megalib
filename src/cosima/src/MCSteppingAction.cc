@@ -841,10 +841,17 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
             DoNotStart = false;
           } else {
             // Delay secondary decays to the future:
-            Keep = false;
-            Store = false;
-            FutureEvent = true;
-            DoNotStart = false;
+            if (TimeDelay > m_DetectorTimeConstant) {
+              Keep = false;
+              Store = false;
+              FutureEvent = true;
+              DoNotStart = false;
+            } else {
+              Keep = true;
+              Store = false;
+              FutureEvent = false;
+              DoNotStart = false;
+            }
           }
         } else if (m_DecayMode == MCParameterFile::c_DecayModeActivationBuildUp) {
           // Only store non-instantaneous decays (instantaneous would be vetoes with incoming proton!)
