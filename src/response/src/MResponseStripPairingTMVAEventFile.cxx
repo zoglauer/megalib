@@ -169,7 +169,8 @@ bool MResponseStripPairingTMVAEventFile::Initialize()
   m_ReGeometry->ActivateNoising(false);
   
   // We ignore the loaded configuration file
-  m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_ReReader->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
+  m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
