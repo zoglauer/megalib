@@ -9,14 +9,14 @@
 
 commandhelp() {
   echo ""
-  echo "dcosima-updatemegalib - update MEGAlib on the remote machines";
+  echo "dmegalib-updatemegalib - update MEGAlib on the remote machines";
   echo "Copyright by Andreas Zoglauer"
   echo ""
-  echo "Usage: dcosima-updatemegalib [options]";
+  echo "Usage: dmegalib-updatemegalib [options]";
   echo ""
   echo "Options:"
-  echo "  --branch=name             : Use the given MEGAlib git branch (default it master)"
-  echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dcosima.cfg"
+  echo "  --branch=name             : Use the given MEGAlib git branch (default it experimental)"
+  echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dmegalib.cfg"
   echo "  --help                    : Show this help"
   echo ""
   echo "This script will: "
@@ -24,7 +24,7 @@ commandhelp() {
   echo " (2) create a .bash.local file which will be read everytime you start a remote run"
   echo "";
   echo "Example: "
-  echo "  dcosima-updatemegalib";
+  echo "  dmegalib-updatemegalib";
   echo "";
 }
 
@@ -84,21 +84,21 @@ done
 
 
 # Create a temporary script which we will execute later
-SCRIPT=$(mktemp /tmp/dcosima-meglibupdate-script.XXXXXXXXXX)
+SCRIPT=$(mktemp /tmp/dmegalib-meglibupdate-script.XXXXXXXXXX)
 cat <<EOT >> ${SCRIPT}
 #/bin/bash
 
 # For testing
 #uname -a
 #sleep 10
-#echo "DCOSIMAERROR 1"
+#echo "DMEGALIBERROR 1"
 #exit 1
 
 # Check if the MEGAlib path exits, if not create it
 if [[ ! -d ${MEGALIBPATH} ]]; then 
   mkdir -p ${MEGALIBPATH}; 
   if [ "\$?" != "0" ]; then
-    echo "DCOSIMAERROR 1"
+    echo "DMEGALIBERROR 1"
     exit 1
   fi
 fi
@@ -109,7 +109,7 @@ if [[ -d ${MEGALIBPATH}/MEGAlib ]]; then
   if [[ -d .git ]]; then
     git stash save
     if [ "\$?" != "0" ]; then
-      echo "DCOSIMAERROR 2"
+      echo "DMEGALIBERROR 2"
       exit 2
     fi
   fi
@@ -119,14 +119,14 @@ fi
 cd ${MEGALIBPATH}; 
 curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh
 if [ "\$?" != "0" ]; then
-  echo "DCOSIMAERROR 3"
+  echo "DMEGALIBERROR 3"
   exit 3
 fi
 
 # Execute setup script
 bash setup.sh --rel=dev --deb=off --opt=hard --patch=on --cleanup=on --branch=${BRANCH}
 if [ "\$?" != "0" ]; then
-  echo "DCOSIMAERROR 4"
+  echo "DMEGALIBERROR 4"
   exit 4
 fi
 
@@ -150,7 +150,7 @@ fi
 
 source ~/Science/Software/MEGAlib/bin/source-megalib.sh
 if [ "\$?" != "0" ]; then
-  echo "DCOSIMAERROR 5"
+  echo "DMEGALIBERROR 5"
   exit 5
 fi
 
@@ -160,11 +160,11 @@ rm -rf RunTestHeaven.*.sim
 rm -rf RunTestSky.*.sim
 cosima
 if [ "\$?" != "0" ]; then
-  echo "DCOSIMAERROR 6"
+  echo "DMEGALIBERROR 6"
   exit 6
 fi
 if [[ ! -f RunTestHeaven.inc1.id1.sim ]] || [[ ! -f RunTestSky.inc1.id1.sim ]]; then 
-  echo "DCOSIMAERROR 6"
+  echo "DMEGALIBERROR 6"
   exit 6
 fi
 rm -rf RunTestHeaven.*.sim
@@ -185,7 +185,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   echo " * ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dcosima-${REMOTENAME[$m]}.log 2>&1 &
+  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dmegalib-${REMOTENAME[$m]}.log 2>&1 &
   sleep 5 # Sleep a bit in case the machines share storage
   
 done
@@ -207,33 +207,33 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue;
   fi
   
-  if grep -q "DCOSIMAERROR 1" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]} - ERROR: Unable to create MEGAlib path. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 1" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to create MEGAlib path. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
-  if grep -q "DCOSIMAERROR 2" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]} - ERROR: Unable to stash the old MEGAlib version. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 2" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to stash the old MEGAlib version. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
-  if grep -q "DCOSIMAERROR 3" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]} - ERROR: Unable to download the setup script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 3" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: Unable to download the setup script. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
-  if grep -q "DCOSIMAERROR 4" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]} - ERROR: An error occurred while running the setup script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 4" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]} - ERROR: An error occurred while running the setup script. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
-  if grep -q "DCOSIMAERROR 5" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]}: Unable to source the MEGAlib script. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 5" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]}: Unable to source the MEGAlib script. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
-  if grep -q "DCOSIMAERROR 6" "/tmp/dcosima-${REMOTENAME[$m]}.log"; then
-    echo " * ${REMOTENAME[$m]}: Unable to run test simulation. See \"/tmp/dcosima-${REMOTENAME[$m]}.log\" for more details."
+  if grep -q "DMEGALIBERROR 6" "/tmp/dmegalib-${REMOTENAME[$m]}.log"; then
+    echo " * ${REMOTENAME[$m]}: Unable to run test simulation. See \"/tmp/dmegalib-${REMOTENAME[$m]}.log\" for more details."
     continue;
   fi
   
   # Only keep the ones with error messages
-  rm -rf /tmp/dcosima-${REMOTENAME[$m]}.log
+  rm -rf /tmp/dmegalib-${REMOTENAME[$m]}.log
   
   echo " * ${REMOTENAME[$m]} - SUCCESS"
   
@@ -241,6 +241,6 @@ done
 
 echo " "
 
-dcosima-checkmegalib
+dmegalib-checkmegalib
 
 exit 0

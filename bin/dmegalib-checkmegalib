@@ -7,17 +7,17 @@
 
 commandhelp() {
   echo ""
-  echo "dcosima-checkmegalib - check the MEGAlib version on the remote machines";
+  echo "dmegalib-checkmegalib - check the MEGAlib version on the remote machines";
   echo "Copyright by Andreas Zoglauer"
   echo ""
-  echo "Usage: dcosima-checkmegalib";
+  echo "Usage: dmegalib-checkmegalib";
   echo ""
   echo "Options:"
   echo "  --help                    : Show this help"
   echo ""
   echo "";
   echo "Example: "
-  echo "  dcosima-updatemegalib";
+  echo "  dmegalib-updatemegalib";
   echo "";
 }
 
