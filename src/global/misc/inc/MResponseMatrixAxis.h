@@ -86,7 +86,7 @@ class MResponseMatrixAxis
   virtual bool Has1DBinEdges() { return true; }
   //! Get the 1D bin edges
   //! Check with Has1DBinEdges first, because this is not guaranteed
-  virtual vector<double> Get1DBinEdges() { return m_BinEdges; }
+  virtual vector<double> Get1DBinEdges() const { return m_BinEdges; }
   
   //! Return the axis bin edges for drawing --- those might be narrower than the real bins
   virtual vector<vector<double>> GetDrawingAxisBinEdges() const;
