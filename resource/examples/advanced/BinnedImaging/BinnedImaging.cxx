@@ -183,6 +183,10 @@ private:
   MString m_ResponseGalacticFileName;
   //! The complete response
   MResponseMatrixON m_ResponseGalactic;
+  //! A speed up matrix, do calculate the Galactic response faster
+  vector<unsigned long> m_GalacticResponseSpeedUpMatrix;
+  //! The maximum Compton scatter angle bin:
+  unsigned int m_MaxFinalPhiBin;
   
   //! The exposure map
   MResponseMatrixON m_ExposureMap;
@@ -494,7 +498,71 @@ bool BinnedComptonImaging::PrepareResponse()
     mgui<<"Error: Cannot read response file: \""<<m_ResponseFileName<<"\""<<endl;
     return false;
   }
+  cout<<"Switching to non-sparse"<<endl;
   m_Response.SwitchToNonSparse();
+  
+  
+  cout<<"Determining maximum phi:"<<endl;
+  // Create maximum populated phi-bin:
+  
+  unsigned long M1 = 1;
+  unsigned long M2 = M1*m_Response.GetAxis(0).GetNumberOfBins();
+  unsigned long M3 = M2*m_Response.GetAxis(1).GetNumberOfBins();
+  unsigned long M4 = M3*m_Response.GetAxis(2).GetNumberOfBins();
+  unsigned long M5 = M4*m_Response.GetAxis(3).GetNumberOfBins();
+  unsigned long M6 = M5*m_Response.GetAxis(4).GetNumberOfBins();
+  unsigned long M7 = M6*m_Response.GetAxis(5).GetNumberOfBins();
+  
+  //unsigned long GalBin = 0;
+  m_MaxFinalPhiBin = 0;
+  for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
+    unsigned long B1 = M1*ie;
+    for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
+      unsigned long B2 = B1 + M2*id;
+      for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
+        unsigned long B3 = B2 + M3*fe;
+        for (unsigned int fp = 0; fp < m_FinalPhiBins; ++fp) {
+          unsigned long B4 = B3 + M4*fp;
+          for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
+            unsigned long B5 = B4 + M5*fd;
+            for (unsigned int fed = 0; fed < m_FinalElectronDirectionBins; ++fed) {
+              unsigned long B6 = B5 + M6*fed;
+              for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
+                unsigned long B7 = B6 + M7*fdi;
+                
+                if (m_Response.Get(B7) != 0) {
+                  if (fp >= m_MaxFinalPhiBin) m_MaxFinalPhiBin = fp+1; 
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  cout<<"Maximum phi bin: "<<m_MaxFinalPhiBin<<endl;
+  
+  if (m_MaxFinalPhiBin+1 < m_Response.GetAxis(3).GetNumberOfBins()) {
+    cout<<"Simplifying response!"<<endl;
+    vector<double> Edges = m_Response.GetAxis(3).Get1DBinEdges();
+    Edges.resize(m_MaxFinalPhiBin+1);
+    
+    MResponseMatrixAxis PhiAxis("Phi axis - shrunk");
+    PhiAxis.SetBinEdges(Edges);
+    
+    MResponseMatrixON Response2;
+    Response2.SetName("Response - phi shortened");
+    Response2.AddAxis(m_Response.GetAxis(0)); // energy
+    Response2.AddAxis(m_Response.GetAxis(1)); // image space
+    Response2.AddAxis(m_Response.GetAxis(2)); // energy
+    Response2.AddAxis(PhiAxis); // phi
+    Response2.AddAxis(m_Response.GetAxis(4)); // direction scattered gamma ray 
+    Response2.AddAxis(m_Response.GetAxis(5)); // direction recoil electron 
+    Response2.AddAxis(m_Response.GetAxis(6)); // distance
+    
+    m_Response = Response2;
+  }
   
   m_InitialEnergyBins = m_Response.GetAxis(0).GetNumberOfBins();
   m_InitialDirectionBins = m_Response.GetAxis(1).GetNumberOfBins();
@@ -545,6 +613,46 @@ bool BinnedComptonImaging::PrepareResponse()
     }
   }
   cout<<"T2: "<<T2.GetElapsed()<<endl;
+  
+  
+  // Create speed up matrix:
+  
+  m_GalacticResponseSpeedUpMatrix.resize(m_RBins);
+  
+  M1 = 1;
+  M2 = M1*m_Response.GetAxis(0).GetNumberOfBins();
+  M3 = M2*m_Response.GetAxis(1).GetNumberOfBins();
+  M4 = M3*m_Response.GetAxis(2).GetNumberOfBins();
+  M5 = M4*m_Response.GetAxis(3).GetNumberOfBins();
+  M6 = M5*m_Response.GetAxis(4).GetNumberOfBins();
+  M7 = M6*m_Response.GetAxis(5).GetNumberOfBins();
+  
+  unsigned long GalBin = 0;
+  for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
+    unsigned long B1 = M1*ie;
+    for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
+      unsigned long B2 = B1 + M2*id;
+      for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
+        unsigned long B3 = B2 + M3*fe;
+        for (unsigned int fp = 0; fp < m_FinalPhiBins; ++fp) {
+          unsigned long B4 = B3 + M4*fp;
+          for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
+            unsigned long B5 = B4 + M5*fd;
+            for (unsigned int fed = 0; fed < m_FinalElectronDirectionBins; ++fed) {
+              unsigned long B6 = B5 + M6*fed;
+              for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
+                unsigned long B7 = B6 + M7*fdi;
+                
+                m_GalacticResponseSpeedUpMatrix[B7] = GalBin;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  
   
   // Create an empty Galactic response with updated Galactic coordinates 
 	MResponseMatrixAxisSpheric Gal("Galactic Latitude [deg]", "Galactic Longitude [deg]");
@@ -867,7 +975,7 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
           for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
             unsigned long A3 = A2 + M3*fe;
             unsigned long B3 = B2 + M3*fe;
-            for (unsigned int fp = 0; fp < m_FinalPhiBins; ++fp) {
+            for (unsigned int fp = 0; fp < m_MaxFinalPhiBin; ++fp) {
               unsigned long A4 = A3 + M4*fp;
               unsigned long B4 = B3 + M4*fp;
               for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
@@ -878,8 +986,8 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
                   unsigned long B6 = B5 + M6*fed;
                   for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
                     
-                    unsigned int long A7 = A6 + M7*fdi;
-                    unsigned int long B7 = B6 + M7*fdi;
+                    unsigned long A7 = A6 + M7*fdi;
+                    unsigned long B7 = B6 + M7*fdi;
                     
                     double ResponseData = m_Response.Get(A7)*PointingScaler; // Normalize by time in pointing  
                     if (ResponseData == 0) continue;
@@ -913,6 +1021,7 @@ bool BinnedComptonImaging::CreateGalacticResponse()
   cout<<endl<<"Creation of response in Galactic coordinates: started"<<endl;
   
   MTimer Timer;
+  
   
   // Step 0: If we should load it, then just load it
   if (m_ResponseGalacticFileName != "") {
