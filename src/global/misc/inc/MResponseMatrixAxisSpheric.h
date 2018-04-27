@@ -53,8 +53,6 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   void SetFISBEL(unsigned long NBins, double LongitudeShift = 0);
   
 
-  //! Return the number of axis bins
-  virtual unsigned long GetNumberOfBins() const { return m_Binner.GetNBins(); }
   //! Return the axis bin, given theta=latitude and phi=longitude in degrees
   virtual unsigned long GetAxisBin(double Theta, double Phi) const;
   

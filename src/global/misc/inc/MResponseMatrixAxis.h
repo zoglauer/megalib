@@ -56,7 +56,7 @@ class MResponseMatrixAxis
   virtual MResponseMatrixAxis* Clone() const;
   
   //! Set the bin edges
-  void SetBinEdges(vector<double> BinEdges) { m_BinEdges = BinEdges; }
+  void SetBinEdges(vector<double> BinEdges);
   //! Set the axis in linear mode
   void SetLinear(unsigned long NBins, double Min, double Max, double UnderFlowMin = g_DoubleNotDefined, double OverFlowMax = g_DoubleNotDefined);
   //! Set the axis in logarithmic mode
@@ -69,7 +69,7 @@ class MResponseMatrixAxis
   bool IsLogarithmic() const { return m_IsLogarithmic; }
   
   //! Return the number of axis bins
-  virtual unsigned long GetNumberOfBins() const { if (m_BinEdges.size() <= 1) { return 0; } else { return m_BinEdges.size() - 1; } }
+  virtual unsigned long GetNumberOfBins() const { return m_NumberOfBins; }
   //! Return the axis bin given a axis value
   //! Can throw: MExceptionArbitrary, MExceptionValueOutOfBounds, MExceptionIndexOutOfBounds
   //! To avoid any exceptions, call InRange() first!
@@ -119,6 +119,8 @@ class MResponseMatrixAxis
   vector<MString> m_Names;
   //! The bin edges
   vector<double> m_BinEdges;
+  //! The number of bins
+  unsigned long m_NumberOfBins;
   //! Flag if the axis is logarithmic
   bool m_IsLogarithmic;
   

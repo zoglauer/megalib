@@ -49,6 +49,7 @@ using namespace std;
 #include "MTimer.h"
 #include "MResponseMatrixAxisSpheric.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -60,17 +61,16 @@ ClassImp(MResponseMatrixON)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_NumberOfBins(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(bool IsParse) : MResponseMatrix(), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
 {
   // default constructor
-
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_NumberOfBins(0), m_IsSparse(IsParse)
+MResponseMatrixON::MResponseMatrixON(const MString& Name, bool IsParse) : MResponseMatrix(Name), m_NumberOfBins(0), m_NumberOfAxes(0), m_IsSparse(IsParse)
 {
   // extended constructor
 }
@@ -96,6 +96,7 @@ void MResponseMatrixON::Clear()
     delete A;
   }
   m_Axes.clear();
+  m_NumberOfAxes = 0;
   
   m_NumberOfBins = 0;
   
@@ -160,6 +161,8 @@ void MResponseMatrixON::AddAxis(const MResponseMatrixAxis& Axis)
   // Set the axis
 
   m_Axes.push_back(Axis.Clone());
+  m_NumberOfAxes++;
+  
   m_Order += Axis.GetDimension();
   
   m_NumberOfBins = CalculateNumberOfBins();
@@ -184,6 +187,8 @@ void MResponseMatrixON::AddAxisLinear(const MString& Name, unsigned long NBins, 
   Axis->SetLinear(NBins, Min, Max, UnderFlowMin, OverFlowMax);
 
   m_Axes.push_back(Axis);
+  m_NumberOfAxes++;
+  
   m_Order += 1;
   
   m_NumberOfBins = CalculateNumberOfBins();
@@ -205,6 +210,8 @@ void MResponseMatrixON::AddAxisLogarithmic(const MString& Name, unsigned long NB
   Axis->SetLogarithmic(NBins, Min, Max, UnderFlowMin, OverFlowMax);
 
   m_Axes.push_back(Axis);
+  m_NumberOfAxes++;
+  
   m_Order += 1;
   
   m_NumberOfBins = CalculateNumberOfBins();
@@ -222,8 +229,8 @@ vector<MString> MResponseMatrixON::GetAxisNames(unsigned int AxisIndex) const
 {
   // Return the name of the axis
 
-  if (AxisIndex >= m_Axes.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex);
+  if (AxisIndex >= m_NumberOfAxes) {
+    throw MExceptionIndexOutOfBounds(0, m_NumberOfAxes, AxisIndex);
   }
 
   return m_Axes[AxisIndex]->GetNames();
@@ -237,8 +244,8 @@ vector<MString> MResponseMatrixON::GetAxisNames(unsigned int AxisIndex) const
 //! Throws exception MExceptionIndexOutOfBounds
 const MResponseMatrixAxis& MResponseMatrixON::GetAxis(unsigned int AxisIndex) const
 {
-  if (AxisIndex >= m_Axes.size()) {
-    throw MExceptionIndexOutOfBounds(0, m_Axes.size(), AxisIndex);
+  if (AxisIndex >= m_NumberOfAxes) {
+    throw MExceptionIndexOutOfBounds(0, m_NumberOfAxes, AxisIndex);
   }
 
   return *m_Axes[AxisIndex];
@@ -252,11 +259,11 @@ bool MResponseMatrixON::operator==(const MResponseMatrixON& R)
 {
   // Two matrixes are identical if they have the same axis:
 
-  if (m_Axes.size() != R.m_Axes.size()) {
+  if (m_NumberOfAxes != R.m_NumberOfAxes) {
     return false;
   }
 
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     if (*m_Axes[a] != *R.m_Axes[a]) {
       return false;
     }
@@ -491,13 +498,13 @@ unsigned long MResponseMatrixON::FindBin(vector<unsigned long> X) const
   // Find the bin of m_Values corresponding to the axis bins X
   // Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....
 
-  if (X.size() != m_Axes.size()) {
-    throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_Axes.size());
+  if (X.size() != m_NumberOfAxes) {
+    throw MExceptionTestFailed("The axes sizes are not identical", X.size(), "!=", m_NumberOfAxes);
   }
 
   double Multiplier = 0;
   unsigned long Bin = 0;
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     if (X[a] >= m_Axes[a]->GetNumberOfBins()) {
       throw MExceptionIndexOutOfBounds(0, m_Axes[a]->GetNumberOfBins(), X[a]);
     }
@@ -525,14 +532,29 @@ vector<unsigned long> MResponseMatrixON::FindBins(unsigned long Bin) const
 {
   // Find the axes bins corresponding to the internal value bin Bin
 
-  vector<unsigned long> Bins(m_Axes.size());
+  vector<unsigned long> Bins(m_NumberOfAxes);
 
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     Bins[a] = Bin % m_Axes[a]->GetNumberOfBins();
     Bin = (Bin - Bins[a]) / m_Axes[a]->GetNumberOfBins();
   }
 
   return Bins;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Find the axes bins corresponding to the sparse Bin
+vector<unsigned long> MResponseMatrixON::FindBinsSparse(unsigned long SparseBin) const
+{
+  if (SparseBin < m_BinsSparse.size()) {
+    return FindBins(m_BinsSparse[SparseBin]);
+  } else {
+    throw MExceptionIndexOutOfBounds(0, m_BinsSparse.size(), SparseBin);
+    return vector<unsigned long>();
+  }
 }
 
 
@@ -553,7 +575,7 @@ vector<unsigned long> MResponseMatrixON::FindBins(vector<double> X) const
 
   //cout<<"Find Bin: Input data: "; for (auto b: X) cout<<b<<" "; cout<<endl;
 
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == true) {
@@ -606,7 +628,7 @@ bool MResponseMatrixON::InRange(vector<double> X) const
   //cout<<"Inrange: Input data: "; for (auto b: X) cout<<b<<" "; cout<<endl;
 
   unsigned long Xbin = 0;
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     unsigned int Dimension = m_Axes[a]->GetDimension();
     if (Dimension == 1) {
       if (m_Axes[a]->InRange(X[Xbin]) == false) {
@@ -636,12 +658,12 @@ bool MResponseMatrixON::InRange(vector<unsigned long> Bins) const
 {
   // Check if the values are inside the range of all axes
 
-  if (Bins.size() != m_Axes.size()) {
-    throw MExceptionTestFailed("The axes sizes (input vs. internal) are not identical", Bins.size(), "!=", m_Axes.size());
+  if (Bins.size() != m_NumberOfAxes) {
+    throw MExceptionTestFailed("The axes sizes (input vs. internal) are not identical", Bins.size(), "!=", m_NumberOfAxes);
     return false;
   }
 
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     if (Bins[a] >= m_Axes[a]->GetNumberOfBins()) {
       return false;
     }
@@ -792,12 +814,40 @@ void MResponseMatrixON::Add(unsigned long Bin, float Value)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Set the content of a sparse bin
+void MResponseMatrixON::SetSparse(unsigned long SparseBin, float Value)
+{
+  if (m_IsSparse == true && SparseBin < m_BinsSparse.size()) {
+    m_ValuesSparse[SparseBin] = Value;
+  } else {
+    throw MExceptionIndexOutOfBounds(0, m_BinsSparse.size(), SparseBin);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add to the content of a sparse bin
+void MResponseMatrixON::AddSparse(unsigned long SparseBin, float Value)
+{
+  if (m_IsSparse == true && SparseBin < m_BinsSparse.size()) {
+    m_ValuesSparse[SparseBin] += Value;
+  } else {
+    throw MExceptionIndexOutOfBounds(0, m_BinsSparse.size(), SparseBin);
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 unsigned long MResponseMatrixON::CalculateNumberOfBins() const
 {
   // Return the number of bins
 
   unsigned long Bins = 0;
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     if (Bins == 0) {
       Bins = m_Axes[a]->GetNumberOfBins();
     } else {
@@ -953,6 +1003,21 @@ float MResponseMatrixON::Get(vector<double> X) const
   return Get(FindBin(X));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add to the content of a sparse bin
+float MResponseMatrixON::GetSparse(unsigned long SparseBin) const
+{
+  if (m_IsSparse == true && SparseBin < m_BinsSparse.size()) {
+    return m_ValuesSparse[SparseBin];
+  }
+  
+  throw MExceptionIndexOutOfBounds(0, m_BinsSparse.size(), SparseBin);
+  
+  return 0.0;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1090,7 +1155,7 @@ MResponseMatrixAxis* MResponseMatrixON::GetAxisByOrder(unsigned int Order)
   }
 
   unsigned int CountedOrder = 0;
-  for (unsigned int a = 0; a < m_Axes.size(); ++a) {
+  for (unsigned int a = 0; a < m_NumberOfAxes; ++a) {
     CountedOrder += m_Axes[a]->GetDimension();
     if (CountedOrder >= Order) {
       return m_Axes[a];
@@ -1175,9 +1240,10 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
       }
     } else if (T.GetTokenAt(0) == "Type") {
     
-			m_NumberOfBins = CalculateNumberOfBins();
-			
-			if (Type == "ResponseMatrixONStream") {
+      m_NumberOfAxes = m_Axes.size();
+      m_NumberOfBins = CalculateNumberOfBins();
+      
+      if (Type == "ResponseMatrixONStream") {
         while (Parser.TokenizeLine(T, true) == true) {
           if (T.GetNTokens() < 2) continue;
 
@@ -1253,7 +1319,6 @@ bool MResponseMatrixON::ReadSpecific(MFileResponse& Parser,
   for (unsigned int a = 0; a < m_Axes.size(); ++a) {
     m_Order += m_Axes[a]->GetDimension();
   }
-
 
   cout<<"Time spent reading response: "<<Timer.GetElapsed()<<" seconds"<<endl;
 

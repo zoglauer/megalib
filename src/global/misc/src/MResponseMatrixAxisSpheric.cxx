@@ -66,6 +66,7 @@ MResponseMatrixAxisSpheric* MResponseMatrixAxisSpheric::Clone() const
   MResponseMatrixAxisSpheric* Axis = new MResponseMatrixAxisSpheric(m_Names[0], m_Names[1]); // Takes care of names and dimension
   Axis->m_BinEdges = m_BinEdges; // Should be empty anyway
   Axis->m_Binner = m_Binner;
+  Axis->m_NumberOfBins = m_NumberOfBins;
   Axis->m_IsLogarithmic = m_IsLogarithmic;
   
   return Axis;
@@ -99,6 +100,7 @@ bool MResponseMatrixAxisSpheric::operator==(const MResponseMatrixAxisSpheric& Ax
 void MResponseMatrixAxisSpheric::SetFISBEL(unsigned long NBins, double LongitudeShift) 
 {
   m_Binner.Create(NBins, LongitudeShift*c_Rad);
+  m_NumberOfBins = NBins;
 }
 
 

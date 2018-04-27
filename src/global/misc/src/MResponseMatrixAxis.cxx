@@ -41,7 +41,7 @@ ClassImp(MResponseMatrixAxis)
 
 
 //! Default constructor
-MResponseMatrixAxis::MResponseMatrixAxis(const MString& Name) : m_Dimension(1), m_IsLogarithmic(false)
+MResponseMatrixAxis::MResponseMatrixAxis(const MString& Name) : m_Dimension(1), m_NumberOfBins(0), m_IsLogarithmic(false)
 {
   m_Names.push_back(Name);
 }
@@ -64,6 +64,7 @@ MResponseMatrixAxis* MResponseMatrixAxis::Clone() const
 {
   MResponseMatrixAxis* Axis = new MResponseMatrixAxis(m_Names[0]); // Takes care of names and dimension
   Axis->m_BinEdges = m_BinEdges;
+  Axis->m_NumberOfBins = m_NumberOfBins;
   Axis->m_IsLogarithmic = m_IsLogarithmic;
   
   return Axis;
@@ -84,12 +85,29 @@ bool MResponseMatrixAxis::operator==(const MResponseMatrixAxis& Axis) const
     return false;
   }
   
+  // bins and logarithmic taken care of with bin edges
+  
   return true;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+//! Set the bin edges
+void MResponseMatrixAxis::SetBinEdges(vector<double> BinEdges) 
+{ 
+  m_BinEdges = BinEdges;
+  
+  if (m_BinEdges.size() <= 1) { 
+    m_NumberOfBins = 0; 
+  } else { 
+    m_NumberOfBins = m_BinEdges.size() - 1; 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 
 //! Set the axis in linear mode
@@ -133,6 +151,12 @@ void MResponseMatrixAxis::SetLinear(unsigned long NBins, double Min, double Max,
     m_BinEdges[i] += Offset;
   }
   */
+  
+  if (m_BinEdges.size() <= 1) { 
+    m_NumberOfBins = 0; 
+  } else { 
+    m_NumberOfBins = m_BinEdges.size() - 1; 
+  }
 }
 
 
@@ -187,6 +211,12 @@ void MResponseMatrixAxis::SetLogarithmic(unsigned long NBins, double Min, double
     Axis[i] += Offset;
   }
   */
+  
+  if (m_BinEdges.size() <= 1) { 
+    m_NumberOfBins = 0; 
+  } else { 
+    m_NumberOfBins = m_BinEdges.size() - 1; 
+  }
 }
 
 
