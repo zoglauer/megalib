@@ -25,6 +25,7 @@
 
 // MEGAlib libs:
 #include "MParser.h"
+#include "MFile.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -132,12 +133,17 @@ bool MGTI::Load(const MString& FileName)
     if (P.GetTokenizerAt(l)->GetNTokens() == 1 && P.GetTokenizerAt(l)->IsTokenAt(0, "EN") == true) break;
     
     if (P.GetTokenizerAt(l)->IsTokenAt(0, "IN") == true && P.GetTokenizerAt(l)->GetNTokens() == 2) {
+      
+      MString Name = P.GetTokenizerAt(l)->GetTokenAtAsString(1);
+      MFile::ExpandFileName(Name, FileName);
+      
       MGTI GTI;
-      if (GTI.Load(P.GetTokenizerAt(l)->GetTokenAtAsString(1)) == true) {
-        //cout<<"Added: "<<P.GetTokenizerAt(l)->GetTokenAtAsString(1)<<endl;
+      if (GTI.Load(Name) == true) {
+        //cout<<"Added: "<<Name<<endl;
         Add(GTI);
       } else {
-        cout<<"Error: Unable to load GTI file: "<<P.GetTokenizerAt(l)->GetTokenAtAsString(1)<<endl; 
+        cout<<"Error: Unable to load GTI file: "<<Name<<endl;
+        return false;
       }
     }
       
