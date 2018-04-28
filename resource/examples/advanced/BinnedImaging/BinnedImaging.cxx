@@ -388,12 +388,6 @@ bool BinnedComptonImaging::BuildBackgroundModel()
 { 
   mout<<endl<<"Starting to build background model..."<<endl;
   
-  // Open the response file - which determines the data space grid...
-  if (m_Response.Read(m_ResponseFileName) == false) {
-    mgui<<"Cannot read response file: \""<<m_ResponseFileName<<"\""<<endl;
-    return false;
-  }
-  
   MResponseMatrixON Model("Background Model");
   Model.AddAxis(m_Response.GetAxis(2)); // energy
   Model.AddAxis(m_Response.GetAxis(3)); // phi
@@ -465,7 +459,7 @@ bool BinnedComptonImaging::BuildBackgroundModel()
   MString FileName = m_ResponseFileName;
   FileName.ReplaceAllInPlace("imagingresponse", "backgroundmodel");
   if (FileName == m_ResponseFileName) {
-    FileName += ".backgroundmodel.rsp";
+    FileName += ".backgroundmodel.rsp.gz";
   }
   Model.Write(m_Prefix + FileName);
   
@@ -501,19 +495,35 @@ bool BinnedComptonImaging::PrepareResponse()
   cout<<"Switching to non-sparse"<<endl;
   m_Response.SwitchToNonSparse();
   
+  // Retrieve some infor which will be lost later:
+  long Started = m_Response.GetSimulatedEvents();
+  m_StartArea = m_Response.GetFarFieldStartArea();
+  m_Steradians = 4*c_Pi / m_InitialDirectionBins;
+  if (m_StartArea == 0) {
+    cout<<"Error no start area given"<<endl;
+    return false;
+  }
   
   cout<<"Determining maximum phi:"<<endl;
   // Create maximum populated phi-bin:
   
-  unsigned long M1 = 1;
-  unsigned long M2 = M1*m_Response.GetAxis(0).GetNumberOfBins();
-  unsigned long M3 = M2*m_Response.GetAxis(1).GetNumberOfBins();
-  unsigned long M4 = M3*m_Response.GetAxis(2).GetNumberOfBins();
-  unsigned long M5 = M4*m_Response.GetAxis(3).GetNumberOfBins();
-  unsigned long M6 = M5*m_Response.GetAxis(4).GetNumberOfBins();
-  unsigned long M7 = M6*m_Response.GetAxis(5).GetNumberOfBins();
+  m_InitialEnergyBins = m_Response.GetAxis(0).GetNumberOfBins();
+  m_InitialDirectionBins = m_Response.GetAxis(1).GetNumberOfBins();
   
-  //unsigned long GalBin = 0;
+  m_FinalEnergyBins = m_Response.GetAxis(2).GetNumberOfBins();
+  m_FinalPhiBins = m_Response.GetAxis(3).GetNumberOfBins();
+  m_FinalDirectionBins = m_Response.GetAxis(4).GetNumberOfBins();
+  m_FinalElectronDirectionBins = m_Response.GetAxis(5).GetNumberOfBins();
+  m_FinalDistanceBins = m_Response.GetAxis(6).GetNumberOfBins();
+  
+  unsigned long M1 = 1;
+  unsigned long M2 = M1*m_InitialEnergyBins;
+  unsigned long M3 = M2*m_InitialDirectionBins;
+  unsigned long M4 = M3*m_FinalEnergyBins;
+  unsigned long M5 = M4*m_FinalPhiBins;
+  unsigned long M6 = M5*m_FinalDirectionBins;
+  unsigned long M7 = M6*m_FinalElectronDirectionBins;
+  
   m_MaxFinalPhiBin = 0;
   for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
     unsigned long B1 = M1*ie;
@@ -561,17 +571,35 @@ bool BinnedComptonImaging::PrepareResponse()
     Response2.AddAxis(m_Response.GetAxis(5)); // direction recoil electron 
     Response2.AddAxis(m_Response.GetAxis(6)); // distance
     
+    m_FinalPhiBins = Response2.GetAxis(3).GetNumberOfBins();
+
+    // Copy the data
+    for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
+      unsigned long B1 = M1*ie;
+      for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
+        unsigned long B2 = B1 + M2*id;
+        for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
+          unsigned long B3 = B2 + M3*fe;
+          for (unsigned int fp = 0; fp < m_FinalPhiBins; ++fp) {
+            unsigned long B4 = B3 + M4*fp;
+            for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
+              unsigned long B5 = B4 + M5*fd;
+              for (unsigned int fed = 0; fed < m_FinalElectronDirectionBins; ++fed) {
+                unsigned long B6 = B5 + M6*fed;
+                for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
+                  unsigned long B7 = B6 + M7*fdi;
+
+                  Response2.Set(B7, m_Response.Get(B7));
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
     m_Response = Response2;
   }
-  
-  m_InitialEnergyBins = m_Response.GetAxis(0).GetNumberOfBins();
-  m_InitialDirectionBins = m_Response.GetAxis(1).GetNumberOfBins();
-  
-  m_FinalEnergyBins = m_Response.GetAxis(2).GetNumberOfBins();
-  m_FinalPhiBins = m_Response.GetAxis(3).GetNumberOfBins();
-  m_FinalDirectionBins = m_Response.GetAxis(4).GetNumberOfBins();
-  m_FinalElectronDirectionBins = m_Response.GetAxis(5).GetNumberOfBins();
-  m_FinalDistanceBins = m_Response.GetAxis(6).GetNumberOfBins();
   
   //! The number of image sapce bins
   m_IBins = m_InitialEnergyBins * m_InitialDirectionBins;
@@ -583,14 +611,6 @@ bool BinnedComptonImaging::PrepareResponse()
   
   // Normalize response:
   // Each bin contains the ratio of detected vs. started photons
-  
-  long Started = m_Response.GetSimulatedEvents();
-  m_StartArea = m_Response.GetFarFieldStartArea();
-  m_Steradians = 4*c_Pi / m_InitialDirectionBins;
-  if (m_StartArea == 0) {
-    cout<<"Error no start area given"<<endl;
-    return false;
-  }
   
   // Emitted per bin -- area is constant per bin by definition!
   float Emitted = float(Started/m_InitialDirectionBins);
@@ -873,8 +893,8 @@ bool BinnedComptonImaging::PrepareDataSpace()
   cout<<"Pointing - sum: "<<m_Pointing.GetSum()<<endl;
   
   if (m_WriteFiles == true) {
-    m_Pointing.Write(m_Prefix + "Pointing.rsp");
-    m_Data.Write(m_Prefix + "Data.rsp");
+    m_Pointing.Write(m_Prefix + "Pointing.rsp.gz");
+    m_Data.Write(m_Prefix + "Data.rsp.gz");
   }
   
   cout<<"Data space preparation: finished with "<<m_Data.GetSum()<<" events"<<endl;
@@ -1102,7 +1122,7 @@ bool BinnedComptonImaging::CreateGalacticResponse()
   
   if (m_WriteFiles == true) {
     cout<<endl<<"Writing rotated response"<<endl;
-    m_ResponseGalactic.Write(m_Prefix + "ResponseGalactic.rsp");
+    m_ResponseGalactic.Write(m_Prefix + "ResponseGalactic.rsp.gz");
   }
   
   cout<<"Number of directions in pointings file: "<<Dirs<<endl;
@@ -1309,7 +1329,7 @@ bool BinnedComptonImaging::CreateGalacticBackgroundModel()
     if (m_WriteFiles == true) {
       cout<<"Writing rotated Galactic background"<<endl;
       for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) { 
-        m_BackgroundModelGalactic[b].Write(m_Prefix + MString("BackgroundModelGalactic_model") + b + ".rsp");
+        m_BackgroundModelGalactic[b].Write(m_Prefix + MString("BackgroundModelGalactic_model") + b + ".rsp.gz");
       }
     }
     for (unsigned int b = 0; b < m_BackgroundModel.size(); ++b) { 
@@ -1341,7 +1361,7 @@ bool BinnedComptonImaging::CreateExposureMap()
   
   if (m_WriteFiles == true) {
     cout<<"Writing exposure map"<<endl;
-    m_ExposureMap.Write(m_Prefix + "ExposureMap.rsp");
+    m_ExposureMap.Write(m_Prefix + "ExposureMap.rsp.gz");
   }
   
   ShowImageGalacticCoordinates(m_ExposureMap, "Exposure", "cm^2 * sec", true, m_Prefix + "Exposure");
@@ -1387,7 +1407,7 @@ bool BinnedComptonImaging::ReconstructRL()
 
   // Show & write
   if (m_WriteFiles == true) {
-    Image.Write(m_Prefix + "FirstBackprojection.rsp");
+    Image.Write(m_Prefix + "FirstBackprojection.rsp.gz");
   }
 
   ShowImageGalacticCoordinates(Image, "1st backprojection", "[a.u.]");
@@ -1695,16 +1715,16 @@ bool BinnedComptonImaging::ReconstructMEM()
  */
 bool BinnedComptonImaging::Reconstruct()
 {
+  // Prepare the response and all helper information
+  if (PrepareResponse() == false) {
+    return false;
+  }
+  
   // Check if we have to build a background model
   if (m_JustBuildBackgroundModel == true) {
     BuildBackgroundModel();
     exit(0);
   }  
-  
-  // Prepare the response and all helper information
-  if (PrepareResponse() == false) {
-    return false;
-  }
   
   // Fill data space / create the response slices
   if (PrepareDataSpace() == false) {
