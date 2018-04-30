@@ -810,6 +810,22 @@ void MResponseMatrixON::Add(unsigned long Bin, float Value)
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Add a collection of bin values
+void MResponseMatrixON::Add(vector<unsigned long> Bins, vector<float> Values)
+{
+  if (Bins.size() != Values.size()) {
+    throw MExceptionTestFailed("Vector size are are not identical", Bins.size(), "!=", Values.size());
+    return;
+  }
+  
+  for (unsigned int e = 0; e < Bins.size(); ++e) {
+    Add(Bins[e], Values[e]);
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -553,6 +553,7 @@ bool BinnedComptonImaging::PrepareResponse()
   
   cout<<"Maximum phi bin: "<<m_MaxFinalPhiBin<<endl;
   
+  /*
   if (m_MaxFinalPhiBin+1 < m_Response.GetAxis(3).GetNumberOfBins()) {
     cout<<"Simplifying response!"<<endl;
     vector<double> Edges = m_Response.GetAxis(3).Get1DBinEdges();
@@ -600,6 +601,7 @@ bool BinnedComptonImaging::PrepareResponse()
     
     m_Response = Response2;
   }
+  */
   
   //! The number of image sapce bins
   m_IBins = m_InitialEnergyBins * m_InitialDirectionBins;
@@ -909,6 +911,9 @@ bool BinnedComptonImaging::PrepareDataSpace()
 bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
 { 
   
+  vector<unsigned long> Bins;
+  vector<float> Values;
+  
   for (unsigned int b = 0; b < PointingBinsX.size(); ++b) {
     
     cout<<"Thread #"<<ThreadID<<": "<<b+1<<"/"<<PointingBinsX.size()<<endl;
@@ -1012,17 +1017,33 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
                     double ResponseData = m_Response.Get(A7)*PointingScaler; // Normalize by time in pointing  
                     if (ResponseData == 0) continue;
                     
-                    m_ThreadMutex.lock();
-                    m_ResponseGalactic.Add(B7, ResponseData); 
-                    //m_ResponseGalactic.Add(GalBin, ResponseData);
-                    m_ThreadMutex.unlock();
-                    //++GalBin;
+                    Bins.push_back(B7);
+                    Values.push_back(ResponseData);
+                    
+                    //m_ThreadMutex.lock();
+                    //m_ResponseGalactic.Add(B7, ResponseData); 
+                    //m_ThreadMutex.unlock();
                   }
                 }
               }
             }
           }
+          
+          // Just try to lock and store the data
+          if (m_ThreadMutex.try_lock() == true) {
+            m_ResponseGalactic.Add(Bins, Values);
+            m_ThreadMutex.unlock();
+            Bins.clear();
+            Values.clear();
+          }
         }
+        
+        // Definitely store the data here
+        m_ThreadMutex.lock();
+        m_ResponseGalactic.Add(Bins, Values);
+        m_ThreadMutex.unlock();
+        Bins.clear();
+        Values.clear();
       }
     }
   }
@@ -1140,6 +1161,8 @@ bool BinnedComptonImaging::CreateGalacticResponse()
 bool BinnedComptonImaging::RotateBackgroundModelInParallel(unsigned int ThreadID, unsigned int ModelID, vector<unsigned int> PointingBinsX, vector<unsigned int> PointingBinsZ)
 { 
   // For all pointings...
+
+  
   for (unsigned int b = 0; b < PointingBinsX.size(); ++b) {
     
     cout<<"Thread #"<<ThreadID<<": "<<b+1<<"/"<<PointingBinsX.size()<<endl;

@@ -141,6 +141,8 @@ class MResponseMatrixON : public MResponseMatrix
   //! Add to the content of a specific bin -- directly without error checks
   //! Logic: a1 + S1*a2 + S1*S2*a3 + S1*S2*S3*a4 + ....  
   void Add(unsigned long Bin, float Value = 1);
+  //! Add a collection of bin values
+  void Add(vector<unsigned long> Bins, vector<float> Values);
   
   // Specific for sparse
   
