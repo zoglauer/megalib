@@ -34,6 +34,8 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
       REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
     elif [[ ${VERSIONID} == 16.04 ]]; then
       REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
+    elif [[ ${VERSIONID} == 18.04 ]]; then
+      REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
     fi
   fi
   
