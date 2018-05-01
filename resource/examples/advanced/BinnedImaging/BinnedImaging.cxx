@@ -642,12 +642,12 @@ bool BinnedComptonImaging::PrepareResponse()
   m_GalacticResponseSpeedUpMatrix.resize(m_RBins);
   
   M1 = 1;
-  M2 = M1*m_Response.GetAxis(0).GetNumberOfBins();
-  M3 = M2*m_Response.GetAxis(1).GetNumberOfBins();
-  M4 = M3*m_Response.GetAxis(2).GetNumberOfBins();
-  M5 = M4*m_Response.GetAxis(3).GetNumberOfBins();
-  M6 = M5*m_Response.GetAxis(4).GetNumberOfBins();
-  M7 = M6*m_Response.GetAxis(5).GetNumberOfBins();
+  M2 = M1*m_InitialEnergyBins;
+  M3 = M2*m_InitialDirectionBins;
+  M4 = M3*m_FinalEnergyBins;
+  M5 = M4*m_FinalPhiBins;
+  M6 = M5*m_FinalDirectionBins;
+  M7 = M6*m_FinalElectronDirectionBins;
   
   unsigned long GalBin = 0;
   for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
@@ -656,7 +656,7 @@ bool BinnedComptonImaging::PrepareResponse()
       unsigned long B2 = B1 + M2*id;
       for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
         unsigned long B3 = B2 + M3*fe;
-        for (unsigned int fp = 0; fp < m_FinalPhiBins; ++fp) {
+        for (unsigned int fp = 0; fp < m_MaxFinalPhiBin; ++fp) {
           unsigned long B4 = B3 + M4*fp;
           for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
             unsigned long B5 = B4 + M5*fd;
@@ -665,7 +665,8 @@ bool BinnedComptonImaging::PrepareResponse()
               for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
                 unsigned long B7 = B6 + M7*fdi;
                 
-                m_GalacticResponseSpeedUpMatrix[B7] = GalBin;
+                m_GalacticResponseSpeedUpMatrix[GalBin] = B7;
+                ++GalBin;
               }
             }
           }
@@ -925,8 +926,8 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
     // Then create the rotation
     vector<double> XPointing = m_Pointing.GetAxis(0).GetBinCenters(PointingBinsX[b]);
     vector<double> ZPointing = m_Pointing.GetAxis(1).GetBinCenters(PointingBinsZ[b]);
-    cout<<XPointing[0]<<":"<<XPointing[1]<<endl;
-    cout<<ZPointing[0]<<":"<<ZPointing[1]<<endl;
+    //cout<<XPointing[0]<<":"<<XPointing[1]<<endl;
+    //cout<<ZPointing[0]<<":"<<ZPointing[1]<<endl;
     
     MRotationInterface RI;
     RI.SetGalacticPointingXAxis(XPointing[1], XPointing[0]-90); // Convert to Galactic 
@@ -934,7 +935,7 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
     MRotation RInv = RI.GetGalacticPointingInverseRotationMatrix(); //  good - 1 sigma width of point source 27.7 deg
     MRotation R = RI.GetGalacticPointingRotationMatrix(); // definitely wrong when looking at an ideal point source
     
-    cout<<"R (p): "<<R<<endl;
+    //cout<<"R (p): "<<R<<endl;
     
     // Precalculate the rotation map
     // --> Problem: Some map to the same bin...
@@ -989,40 +990,41 @@ bool BinnedComptonImaging::RotateResponseInParallel(unsigned int ThreadID, vecto
       unsigned long M6 = M5*m_FinalDirectionBins;
       unsigned long M7 = M6*m_FinalElectronDirectionBins;
       
-      //unsigned long GalBin = 0;
+      unsigned long GalBin = 0;
       for (unsigned int ie = 0; ie < m_InitialEnergyBins; ++ie) {
         unsigned long A1 = M1*ie;
-        unsigned long B1 = M1*ie;
+        //unsigned long B1 = M1*ie;
         for (unsigned int id = 0; id < m_InitialDirectionBins; ++id) {
           unsigned long A2 = A1 + M2*RotatedBinMappingGalacticToLocal[id];
-          unsigned long B2 = B1 + M2*id;
+          //unsigned long B2 = B1 + M2*id;
           
           for (unsigned int fe = 0; fe < m_FinalEnergyBins; ++fe) {
             unsigned long A3 = A2 + M3*fe;
-            unsigned long B3 = B2 + M3*fe;
+            //unsigned long B3 = B2 + M3*fe;
             for (unsigned int fp = 0; fp < m_MaxFinalPhiBin; ++fp) {
               unsigned long A4 = A3 + M4*fp;
-              unsigned long B4 = B3 + M4*fp;
+              //unsigned long B4 = B3 + M4*fp;
               for (unsigned int fd = 0; fd < m_FinalDirectionBins; ++fd) {
                 unsigned long A5 = A4 + M5*RotatedBinMappingGalacticToLocal[fd];
-                unsigned long B5 = B4 + M5*fd;
+                //unsigned long B5 = B4 + M5*fd;
                 for (unsigned int fed = 0; fed < m_FinalElectronDirectionBins; ++fed) {
                   unsigned long A6 = A5 + M6*fed; // TODO: <--- the rotation needs to be added here too at some point 
-                  unsigned long B6 = B5 + M6*fed;
+                  //unsigned long B6 = B5 + M6*fed;
                   for (unsigned int fdi = 0; fdi < m_FinalDistanceBins; ++fdi) {
                     
                     unsigned long A7 = A6 + M7*fdi;
-                    unsigned long B7 = B6 + M7*fdi;
+                    //unsigned long B7 = B6 + M7*fdi;
                     
                     double ResponseData = m_Response.Get(A7)*PointingScaler; // Normalize by time in pointing  
-                    if (ResponseData == 0) continue;
+                    if (ResponseData == 0) {
+                      ++GalBin;
+                      continue;
+                    }
                     
-                    Bins.push_back(B7);
+                    Bins.push_back(m_GalacticResponseSpeedUpMatrix[GalBin]);
+                    ++GalBin;
+                    
                     Values.push_back(ResponseData);
-                    
-                    //m_ThreadMutex.lock();
-                    //m_ResponseGalactic.Add(B7, ResponseData); 
-                    //m_ThreadMutex.unlock();
                   }
                 }
               }
