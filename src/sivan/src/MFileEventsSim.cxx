@@ -132,7 +132,7 @@ bool MFileEventsSim::Open(MString FileName, unsigned int Way)
     while (IsGood() == true) {
       if (ReadLine(Line) == false) break;
       
-      if (Line.BeginsWith("SimulationStartAreaFarField") == true) {
+      if (Line.BeginsWith("SimulationStartAreaFarField") == true || Line.BeginsWith("StartAreaFarField") == true) {
         MTokenizer Tokens;
         Tokens.Analyze(Line);
         if (Tokens.GetNTokens() != 2) {
