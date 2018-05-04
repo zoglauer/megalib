@@ -34,8 +34,8 @@ help() {
   echo "    mcosima <cosima source file>";
   echo "";
   echo "Options:";
-  echo "    -t <threads>:  The number of threads as an integer"
-  echo "    -m <threads>:  Maximum number of all threads (e.g. of all mcosima calls) on this machine"
+  echo "    -t <integer>:  The total number of runs as an integer (default: number of threads of CPU)"
+  echo "    -m <integer>:  Maximum number of parallel threads on this machine (default: number of threads of CPU)"
   echo "    -n <nice>:     The nice level as an integer"
   #echo "    -d <seconds>:  Delay in seconds between starting jobs (min=default: 2 seconds)"
   #echo "    -p:            use this parallel ID without checking for the cosima output files"
