@@ -179,9 +179,9 @@ double MEfficiency::Get(double Theta, double Phi, bool Interpolate)
   // Get the efficiency value
   double EfficiencyValue = 1;
   if (Interpolate == true) {
-    EfficiencyValue = m_Efficiency.GetInterpolated(D.PhiFastMath()*c_Deg, D.ThetaFastMath()*c_Deg);
+    EfficiencyValue = m_Efficiency.GetInterpolated(D.PhiApproximateMaths()*c_Deg, D.ThetaApproximateMaths()*c_Deg);
   } else {
-    EfficiencyValue = m_Efficiency.Get(D.PhiFastMath()*c_Deg, D.ThetaFastMath()*c_Deg);
+    EfficiencyValue = m_Efficiency.Get(D.PhiApproximateMaths()*c_Deg, D.ThetaApproximateMaths()*c_Deg);
   }
 
   if (std::isnan(EfficiencyValue)) {

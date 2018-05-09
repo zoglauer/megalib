@@ -146,13 +146,15 @@ public:
   double Phi() const { return (m_X == 0.0 && m_Y == 0.0) ? 0.0 : atan2(m_Y,m_X); }
 
   //! Return the azimuth angle of the vector in spherical coordinates 
-  double PhiFastMath() const { return (m_X == 0.0 && m_Y == 0.0) ? 0.0 : MFastMath::atan2(m_Y,m_X); }
+  //! Attention: accuracy is significantly reduced (~0.001 rad), do not use for further computations!
+  double PhiApproximateMaths() const { return (m_X == 0.0 && m_Y == 0.0) ? 0.0 : MFastMath::atan2(m_Y,m_X); }
 
-  //! Return he azimuth angle of the vector in spherical coordinates 
+  //! Return the azimuth angle of the vector in spherical coordinates 
   double Theta() const { return (m_X == 0.0 && m_Y == 0.0 && m_Z == 0.0) ? 0.0 : atan2(sqrt(m_X*m_X + m_Y*m_Y),m_Z); }
 
-  //! Return he azimuth angle of the vector in spherical coordinates 
-  double ThetaFastMath() const { return (m_X == 0.0 && m_Y == 0.0 && m_Z == 0.0) ? 0.0 : MFastMath::atan2(sqrt(m_X*m_X + m_Y*m_Y),m_Z); }
+  //! Return the azimuth angle of the vector in spherical coordinates
+  //! Attention: accuracy is significantly reduced (~0.001 rad), do not use for further computations!
+  double ThetaApproximateMaths() const { return (m_X == 0.0 && m_Y == 0.0 && m_Z == 0.0) ? 0.0 : MFastMath::atan2(sqrt(m_X*m_X + m_Y*m_Y),m_Z); }
 
   // Return the square of the magnitude of this vector
   double Mag2() const { return m_X*m_X + m_Y*m_Y + m_Z*m_Z; }

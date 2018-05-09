@@ -761,7 +761,7 @@ bool MBackprojectionFarField::BackprojectionCompton(double* Image, int* Bins, in
       if (m_ApproximatedMaths == false) {
         Image[i] *= m_Efficiency->Get(D.Theta(), D.Phi());
       } else {
-        Image[i] *= m_Efficiency->Get(D.ThetaFastMath(), D.PhiFastMath());        
+        Image[i] *= m_Efficiency->Get(D.ThetaApproximateMaths(), D.PhiApproximateMaths());        
       }
       InnerSum += Image[i];
       
