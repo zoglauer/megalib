@@ -3926,26 +3926,64 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   // Start with the event file loader first (just in case something goes wrong here)
   if (InitializeEventLoader() == false) return;
 
+  bool xLog = m_Settings->GetLogBinningSpectrum();
+  double xMin = GetTotalEnergyMin();
+  double xMax = GetTotalEnergyMax();
   
-  double EnergyMax = GetTotalEnergyMax();
-
-  TH2D* ScatterPlot = new TH2D("Energy Distribution", "Energy Distribution", 
-                               50, 0, EnergyMax, 
-                               50, 0, EnergyMax);
+  if (xLog == true) {
+    if (xMin <= 0) xMin = 1; 
+  }
+  
+  if (m_Settings->GetSecondEnergyRangeMax() > 0) {
+    if (m_Settings->GetSecondEnergyRangeMax() > xMax) xMax = m_Settings->GetSecondEnergyRangeMax();
+    if (m_Settings->GetSecondEnergyRangeMin() < xMin) xMin = m_Settings->GetSecondEnergyRangeMin();
+  }
+  if (m_Settings->GetThirdEnergyRangeMax() > 0) {
+    if (m_Settings->GetThirdEnergyRangeMax() > xMax) xMax = m_Settings->GetThirdEnergyRangeMax();
+    if (m_Settings->GetThirdEnergyRangeMin() < xMin) xMin = m_Settings->GetThirdEnergyRangeMin();
+  }
+  if (m_Settings->GetFourthEnergyRangeMax() > 0) {
+    if (m_Settings->GetFourthEnergyRangeMax() > xMax) xMax = m_Settings->GetFourthEnergyRangeMax();
+    if (m_Settings->GetFourthEnergyRangeMin() < xMin) xMin = m_Settings->GetFourthEnergyRangeMin();
+  }
+  
+  
+  int NBins = m_Settings->GetHistBinsSpectrum();
+  double Disk = m_Settings->GetTPDistanceTrans();
+  MVector TestPosition = GetTestPosition();
+  bool UseTestPosition = m_Settings->GetTPUse();
+  
+  if (xLog == true) {
+    if (xMin <= 0) xMin = 1;
+  }
+  double* xBins = CreateAxisBins(xMin, xMax, NBins, xLog);
+  
+  TH2D* ScatterPlot = new TH2D("Energy Distribution", "Energy Distribution", NBins, xBins, NBins, xBins);
+  delete [] xBins;
+  
+  
   ScatterPlot->SetBit(kCanDelete);
-  ScatterPlot->SetXTitle("Energy D2 [keV]");
-  ScatterPlot->SetYTitle("Energy D1 [keV]");
+  ScatterPlot->SetXTitle("Energy scattered gamma ray [keV]");
+  ScatterPlot->SetYTitle("Energy recoil electron [keV]");
   ScatterPlot->SetStats(false);
 
 
   // ... loop over all events and save a count in the belonging bin ...
+  MComptonEvent* Compton = nullptr;
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
 
     // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == true) {
       if (Event->GetType() == MPhysicalEvent::c_Compton) {
-        ScatterPlot->Fill(((MComptonEvent*) Event)->Eg(), ((MComptonEvent*) Event)->Ee(), 1);
+        Compton = dynamic_cast<MComptonEvent*>(Event);
+        if (UseTestPosition == true) {
+          if (fabs(Compton->GetARMGamma(TestPosition, m_Settings->GetCoordinateSystem()))*c_Deg < Disk) {
+            ScatterPlot->Fill(Compton->Eg(), Compton->Ee(), 1);
+          }
+        } else {
+          ScatterPlot->Fill(Compton->Eg(), Compton->Ee(), 1);
+        }
       }
     }
 
@@ -3955,7 +3993,7 @@ void MInterfaceMimrec::EnergyDistributionElectronPhoton()
   // Close the event loader
   FinalizeEventLoader();
 
-  TCanvas* Canvas = new TCanvas("Scatter Plot", " Scatter Plot", 800, 600);
+  TCanvas* Canvas = new TCanvas("Scatter Plot", " Scatter Plot", 800, 800);
   Canvas->cd();
   ScatterPlot->Draw("COLZ");
   Canvas->Update();

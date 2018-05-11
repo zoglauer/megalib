@@ -529,7 +529,10 @@ bool MGUIMimrecMain::ProcessMessage(long Message, long Parameter1,
         break;
 
       case c_ResponseEnergyDistributionD1D2:
-        m_Interface->EnergyDistributionElectronPhoton();
+        new MGUIARM(gClient->GetRoot(), this, m_Data, MGUIARMModes::m_Spectrum, OKPressed);
+        if (OKPressed == true) {
+          m_Interface->EnergyDistributionElectronPhoton();
+        }
         break;
 
       case c_ResponseTime:
