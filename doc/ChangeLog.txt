@@ -91,7 +91,9 @@ Long-term bugs fixed:
 + Cosima: In DecayMode buildup (the one used for hadron therapy, 
   not astrophysics) the DetectorDecayConstant was ignored
 
-
+Important regressions fixed:
++ Between 4/26/2018 & 5/15/2018 the sim file reader skipped each second event...
+  
 
 ******************************************************************************
 
