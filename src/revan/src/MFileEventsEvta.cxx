@@ -229,7 +229,7 @@ MRERawEvent* MFileEventsEvta::GetNextEvent()
         (Line[0] == 'I' && Line[1] == 'N') ) {
 
       if (m_IsFirstEvent == false) {
-        // First set the old event id - this is for backeard compatibility, were we did not have the ID keyword
+        // First set the old event id - this is for backward compatibility, were we did not have the ID keyword
         if (m_EventId != c_NoId) {
           Event->SetEventID(m_EventId);
         }
