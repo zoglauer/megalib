@@ -258,20 +258,25 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     }
   }
 
-
+  bool BeyondFirstSE = true;
+  if (GetFilePosition() == 0) BeyondFirstSE = false;
+  
   MString Line;
   while (IsGood() == true) {
     if (ReadLine(Line) == false) break;
     if (Line.Length() < 2) continue;
-
+    
     if (Line[0] == 'S' && Line[1] == 'E') {
-      if (SimEvent != nullptr) { // If this is not the first event...
-        if (Analyze == true) {
-          SimEvent->Analyze();
+      if (BeyondFirstSE == true) { // If this is not the first event...
+        if (SimEvent != nullptr) {
+          if (Analyze == true) {
+            SimEvent->Analyze();
+          }
+          UpdateObservationTimes(SimEvent);
         }
-        UpdateObservationTimes(SimEvent);
         return SimEvent;
       } else {
+        BeyondFirstSE = true;
         SimEvent = new MSimEvent();
         SimEvent->SetGeometry(m_Geometry);
       }
@@ -329,7 +334,11 @@ MSimEvent* MFileEventsSim::GetNextEvent(bool Analyze)
     // All other keyword directly related to an event
     else {
       // Let the raw event scan the line
-      if (SimEvent != nullptr) {
+      if (BeyondFirstSE == true) {
+        if (SimEvent == nullptr) {
+          SimEvent = new MSimEvent();
+          SimEvent->SetGeometry(m_Geometry);
+        }
         SimEvent->AddRawInput(Line, m_Version);
       }
     }
