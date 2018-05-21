@@ -359,7 +359,7 @@ clean_cal:
 # additional options:
 
 link:
-	@rm $(LB)/AllObjects.txt
+	@rm -f $(LB)/AllObjects.txt
 	$(MAKE) -s link -C src 
 
 clean:
