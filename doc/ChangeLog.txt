@@ -18,6 +18,8 @@ Version 2.99/3.00
 *** Significant new features & improvements:
 
 General:
++ Python bindings! Check out resource/examples/python for a few examples on how
+  to use MEGAlib in Python
 + Setup script now has an option to keep MEGAlib un-updated
 + Fixed many multi-threading bugs
 + Added old and new neural network interface
