@@ -105,7 +105,7 @@ class MFileEventsTra : public MFileEvents
   unsigned int m_MinimumNDataSetsMax;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsTra, 0) // no description
 #endif

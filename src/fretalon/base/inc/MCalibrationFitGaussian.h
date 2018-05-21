@@ -94,7 +94,7 @@ class MCalibrationFitGaussian : public MCalibrationFit
    
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationFitGaussian, 0) // no description
 #endif

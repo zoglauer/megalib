@@ -68,7 +68,7 @@ private:
   
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MFeedForwardNeuron, 0) // no description
   #endif

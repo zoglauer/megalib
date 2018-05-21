@@ -66,7 +66,7 @@ class MRESEList
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRESEList, 0) // a list of raw event sub elements 
 #endif

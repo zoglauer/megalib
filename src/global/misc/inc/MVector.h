@@ -212,7 +212,7 @@ public:
   double m_X, m_Y, m_Z;
   // The components...
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MVector, 0) // no description
 #endif

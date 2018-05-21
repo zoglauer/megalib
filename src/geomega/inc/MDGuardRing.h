@@ -111,7 +111,7 @@ class MDGuardRing : public MDDetector
   MVector m_UniquePosition;
    
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGuardRing, 0) // a basic GuardRing detector
 #endif

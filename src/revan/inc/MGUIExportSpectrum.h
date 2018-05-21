@@ -74,7 +74,7 @@ class MGUIExportSpectrum : public MGUIDialog
   bool& m_OKPressed;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExportSpectrum, 0)
 #endif

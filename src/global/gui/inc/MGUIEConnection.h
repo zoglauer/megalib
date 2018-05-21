@@ -77,7 +77,7 @@ class MGUIEConnection : public MGUIElement
   enum Type { e_Id = 500 };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEConnection, 0) // GUI window for unkown purpose ...
 #endif

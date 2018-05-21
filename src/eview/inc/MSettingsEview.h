@@ -115,7 +115,7 @@ class MSettingsEview : public MSettings, public MSettingsEventReconstruction
   int m_MinHitsD1;
   int m_MinHitsD2;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsEview, 0) // no description
 #endif

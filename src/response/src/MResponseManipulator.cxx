@@ -52,6 +52,7 @@ using namespace std;
 #include "MGlobal.h"
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MTimer.h"
 #include "MFileResponse.h"
 #include "MResponseMatrix.h"
 #include "MResponseMatrixON.h"

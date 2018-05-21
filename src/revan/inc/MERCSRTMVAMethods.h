@@ -105,7 +105,7 @@ class MERCSRTMVAMethods
   map<MERCSRTMVAMethod, bool> m_UsedMethods;  
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
    ClassDef(MERCSRTMVAMethods, 0) // no description
 #endif

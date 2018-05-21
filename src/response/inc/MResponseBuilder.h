@@ -238,7 +238,7 @@ class MResponseBuilder
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseBuilder, 0) // no description
 #endif

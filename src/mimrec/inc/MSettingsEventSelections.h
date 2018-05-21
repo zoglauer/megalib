@@ -481,7 +481,7 @@ class MSettingsEventSelections : public MSettingsInterface
   bool m_SpecialMode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsEventSelections, 0) // no description
 #endif

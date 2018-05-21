@@ -123,7 +123,7 @@ class MFunction2D
   vector<double> m_Cumulative;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFunction2D, 0) // no description
 #endif

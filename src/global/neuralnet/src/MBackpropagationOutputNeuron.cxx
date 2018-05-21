@@ -45,7 +45,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___b
+#ifdef ___CLING___b
 ClassImp(MBackpropagationOutputNeuron)
 #endif
 

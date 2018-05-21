@@ -172,7 +172,7 @@ class MDGridPoint
   vector<int> m_Origins;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGridPoint, 0)
 #endif

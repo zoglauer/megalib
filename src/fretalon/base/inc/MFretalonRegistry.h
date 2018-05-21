@@ -82,7 +82,7 @@ class MFretalonRegistry
   vector<MReadOutData*> m_RODs;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFretalonRegistry, 0) // no description
 #endif

@@ -115,7 +115,7 @@ class MReadOutSequence
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutSequence, 0) // no description
 #endif

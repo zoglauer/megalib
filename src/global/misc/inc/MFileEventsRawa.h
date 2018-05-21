@@ -83,7 +83,7 @@ class MFileEventsRawa : public MFileEvents
 
   vector<MString> m_TriggerMask;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsRawa, 0) // no description
 #endif

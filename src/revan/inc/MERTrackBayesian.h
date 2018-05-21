@@ -99,7 +99,7 @@ class MERTrackBayesian : public MERTrack
   float m_SumBadDual;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackBayesian, 0) // no description
 #endif

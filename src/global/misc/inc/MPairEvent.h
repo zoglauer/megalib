@@ -132,7 +132,7 @@ class MPairEvent : public MPhysicalEvent
   bool m_EPDistinguishable;        // true if elctron and positron can be distiguished
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPairEvent, 0) // no description
 #endif

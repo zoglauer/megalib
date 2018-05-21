@@ -28,8 +28,10 @@
 using namespace std;
 
 // ROOT libs:
+#include "TROOT.h"
 
 // MEGAlib libs:
+
 
 // Forward declarations:
 
@@ -275,9 +277,9 @@ class MString
   string m_String;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MString, 0) // no description
+  ClassDef(MString, 1) 
 #endif
 
 };

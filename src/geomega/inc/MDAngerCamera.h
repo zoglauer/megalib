@@ -97,7 +97,7 @@ class MDAngerCamera : public MDDetector
   MFunction m_PositionResolution; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDAngerCamera, 0) // a basic AngerCamera detector
 #endif

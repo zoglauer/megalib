@@ -51,7 +51,7 @@ class MTransceiverUDP
   //! Standard constructor given a name, host name, and port:
   MTransceiverUDP(MString Name = "A UDP transceiver", MString HostName = "localhost", unsigned int Port = 9090);
   //! Default desctructor
-  ~MTransceiverUDP();
+  virtual ~MTransceiverUDP();
 
   //! Set the name of the transceiver
   void SetName(MString Name) { m_Name = Name; }
@@ -157,7 +157,7 @@ class MTransceiverUDP
   bool m_IsConnected;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTransceiverUDP, 0) // no description
 #endif

@@ -72,7 +72,7 @@ class MERCSRToF : public MERCSR
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRToF, 0) // no description
 #endif

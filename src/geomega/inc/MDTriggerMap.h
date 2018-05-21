@@ -130,7 +130,7 @@ class MDTriggerMap : public MDTrigger
   friend ostream& operator<<(ostream& os, const MDTriggerMap& T);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDTriggerMap, 0) // Represents a trigger condition...
 #endif

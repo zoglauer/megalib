@@ -120,7 +120,7 @@ class MSettingsRevan : public MSettings, public MSettingsEventReconstruction, pu
   MString m_ExportSpectrumFileName;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsRevan, 0) // no description
 #endif

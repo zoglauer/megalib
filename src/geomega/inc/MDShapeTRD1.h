@@ -88,7 +88,7 @@ class MDShapeTRD1 : public MDShape
   double m_Dz;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeTRD1, 0) // no description
 #endif

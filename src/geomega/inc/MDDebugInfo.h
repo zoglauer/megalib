@@ -106,7 +106,7 @@ class MDDebugInfo
   //! The tokenizer without maths
   MTokenizer m_TokenizerWithoutMaths;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDDebugInfo, 0) // no description
 #endif

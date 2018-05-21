@@ -162,12 +162,6 @@ class MCOrientation
   //! True if we actually have an orientation besides the default one
   bool m_IsOriented;
 
-  
-#ifdef ___CINT___
- public:
-  ClassDef(MCOrientation, 0) // no description
-#endif
-
 };
 
 #endif

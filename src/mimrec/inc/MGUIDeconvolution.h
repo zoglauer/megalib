@@ -84,7 +84,7 @@ class MGUIDeconvolution : public MGUIDialog
   enum ButtonIds { c_ClassicEM, c_OSEM, c_Iterations, c_Increase };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIDeconvolution, 0)
 #endif

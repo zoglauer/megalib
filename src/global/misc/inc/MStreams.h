@@ -79,7 +79,7 @@ public:
   MStreamBuffer* m_Streams;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MStreams, 0) // no description
 #endif

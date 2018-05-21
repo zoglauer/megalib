@@ -61,7 +61,7 @@ private:
   static const int c_LearningRateIndex = 1;
   static const int c_ErrorIndex = 0;
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MAdalineNeuron, 0) // no description
   #endif

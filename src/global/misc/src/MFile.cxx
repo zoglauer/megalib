@@ -22,6 +22,7 @@
 #include "MFile.h"
 #include "MTimer.h"
 #include "MStreams.h"
+#include "MGUIProgressBar.h"
 
 // ROOT libs:
 #include <TSystem.h>
@@ -41,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFile)
 #endif
 

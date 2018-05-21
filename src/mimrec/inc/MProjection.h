@@ -80,7 +80,7 @@ class MProjection
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MProjection, 0) // no description
 #endif

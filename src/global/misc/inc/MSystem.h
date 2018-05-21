@@ -18,11 +18,11 @@
 
 // ROOT libs:
 #include <TROOT.h>
-#include <MString.h>
 #include <TTime.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 
 // Forward declarations:
 
@@ -30,12 +30,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MSystem : public TObject
+class MSystem 
 {
   // Public Interface:
  public:
   MSystem();
-  ~MSystem();
+  virtual ~MSystem();
 
   bool FreeMemory(int &Free);
   int GetRAM();
@@ -83,7 +83,7 @@ class MSystem : public TObject
   int m_ProcessMemory;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSystem, 0) // no description
 #endif

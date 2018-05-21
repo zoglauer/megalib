@@ -47,7 +47,7 @@ class MMelinator
   //! Default constructor for MEGAlib's line calibrator library
   MMelinator();
   //! Default destructor
-  ~MMelinator();
+  virtual ~MMelinator();
 
   //! Clear all data
   void Clear();
@@ -252,7 +252,7 @@ class MMelinator
   
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MMelinator, 0) // no description
 #endif

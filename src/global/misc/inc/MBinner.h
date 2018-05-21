@@ -129,7 +129,7 @@ class MBinner
  private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBinner, 0) // no description
 #endif

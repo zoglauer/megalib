@@ -279,7 +279,7 @@ private:
   static const int c_ROEButtons                 = 1000;
   // Nothing beyond that allowed
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 public:
   ClassDef(MGUIMainMelinator, 0) // main window of the Melinator GUI
 #endif

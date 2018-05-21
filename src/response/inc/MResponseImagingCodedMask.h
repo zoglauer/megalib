@@ -59,7 +59,7 @@ class MResponseImagingCodedMask : public MResponseImaging
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseImagingCodedMask, 0) // no description
 #endif

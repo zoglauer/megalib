@@ -135,7 +135,7 @@ class MVariableSourceDetector
   deque<MPhysicalEvent*> m_Events;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MVariableSourceDetector, 0) // no description
 #endif

@@ -64,7 +64,7 @@ class MHitData : public TObject
   Double_t m_Energy;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MHitData, 1) // no description
 #endif

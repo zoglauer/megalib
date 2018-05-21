@@ -1,0 +1,102 @@
+#!/bin/bash
+
+
+
+commandhelp() {
+  echo ""
+  echo "generatelinkdef -- Generate LinkDef.h file for rootcling";
+  echo "Copyright by Andreas Zoglauer"
+  echo ""
+  echo "Usage: generatelinkdef -o Dictionary -i AllMyHeaders.h";
+  echo ""
+  echo "Options:"
+  echo "  -o: The output file name."
+  echo "  -i: All input class names"
+  echo "  --help: Show this help."
+  echo ""
+  echo "";
+  echo "Example: "
+  echo "  generatelinkdef -o Dictionary -i AllMyHeaders.h";
+  echo "";
+}
+
+
+# Store command line as array
+CMD=( "$@" )
+
+# Check for help
+for C in "${CMD[@]}"; do
+  if [[ ${C} == *-h* ]]; then
+    echo ""
+    commandhelp
+    exit 0
+  fi
+done
+
+
+# Default options:
+OUTPUT=""
+HEADERS=""
+
+
+while [ $# -gt 0 ] ; do
+  Found=0;
+  case $1 in
+  -h|--help)
+    commandhelp;
+    exit 0;;
+  -o)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -o needs an argument";
+      echo "       For details see generatelinkdef --help"
+      echo " "
+      exit 1;
+    fi
+    OUTPUT=$1;
+    ;;
+  -i)
+    shift;
+    while [ $# -gt 0 ] ; do
+      HEADERS+=" $1"
+      shift
+    done
+    ;;
+  *)
+    ;;
+  esac
+
+  shift
+done
+
+if [[ ${HEADERS} == "" ]]; then
+  echo " "
+  echo "Error: You need to give some class names"
+  echo " "
+  exit 1;fi
+
+if [[ ${OUTPUT} != *LinkDef.h ]]; then
+  echo " "
+  echo "Error: The output file must end with ...LinkDef.h"
+  echo " "
+  exit 1;
+fi
+
+rm -f ${OUTPUT}
+#for H in ${HEADERS}; do
+#  CLASSES=$(cat ${H} | grep "^class " | awk '{ print $2 }')
+#  CLASSES+=$(cat ${H} | grep "^enum class " | awk '{ print $3 }')
+#  for C in ${CLASSES}; do
+#    C=${C//:/}
+#    echo "#pragma link C++ class ${C};" >> ${OUTPUT}
+#  done
+#done
+
+#echo "#pragma link C++ enum MCoordinateSystem;" >> ${OUTPUT}
+for H in ${HEADERS}; do
+  echo "#pragma link C++ defined_in \"${H}\";" >> ${OUTPUT}
+done
+
+
+exit 0

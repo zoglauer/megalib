@@ -90,7 +90,7 @@ class MDShapeCONE : public MDShape
   double m_RmaxTop;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeCONE, 0) // no description
 #endif

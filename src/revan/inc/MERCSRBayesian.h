@@ -141,7 +141,7 @@ class MERCSRBayesian : public MERCSR
   MResponseMatrixO1 m_SumBadStopDeposit;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRBayesian, 0) // no description
 #endif

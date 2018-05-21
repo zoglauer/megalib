@@ -71,7 +71,7 @@ class MGUIPolarization : public MGUIDialog
   MGUIEEntry* m_Bins;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPolarization, 0) // GUI window for unknown purpose ...
 #endif

@@ -139,7 +139,7 @@ class MResponseMultipleComptonNeuralNet : public MResponseMultipleCompton
   //! Desired output value for bad
   const double m_BadValue = 0.9;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleComptonNeuralNet, 0) // no description
 #endif

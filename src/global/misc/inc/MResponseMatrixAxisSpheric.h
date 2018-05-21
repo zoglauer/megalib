@@ -102,7 +102,7 @@ class MResponseMatrixAxisSpheric : public MResponseMatrixAxis
   MBinnerFISBEL m_Binner;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixAxisSpheric, 0) // no description
 #endif

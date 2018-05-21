@@ -82,7 +82,7 @@ class MSimEventLoader : public TObject
   MDGeometryQuest *m_Geometry;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimEventLoader, 0) // loads simulated events
 #endif

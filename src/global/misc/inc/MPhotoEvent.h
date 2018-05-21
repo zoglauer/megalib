@@ -89,7 +89,7 @@ class MPhotoEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPhotoEvent, 1)
 #endif

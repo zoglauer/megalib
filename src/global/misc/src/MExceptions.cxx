@@ -36,8 +36,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MExceptions)
+#ifdef ___CLING___
+ClassImp(MException)
+ClassImp(MExceptionTestFailed)
+ClassImp(MExceptionParameterOutOfRange)
+ClassImp(MExceptionIndexOutOfBounds)
+ClassImp(MExceptionEmptyArray)
+ClassImp(MExceptionValueOutOfBounds)
+ClassImp(MExceptionDivisionByZero)
+ClassImp(MExceptionNumberNotFinite)
+ClassImp(MExceptionObjectDoesNotExist)
+ClassImp(MExceptionObjectsNotIdentical)
+ClassImp(MExceptionUnknownMode)
+ClassImp(MExceptionNeverReachThatLineOfCode)
+ClassImp(MExceptionArbitrary)
 #endif
 
 //! Assign static variable

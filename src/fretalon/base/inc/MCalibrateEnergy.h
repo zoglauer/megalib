@@ -88,7 +88,7 @@ class MCalibrateEnergy : public MCalibrate
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergy, 0) // no description
 #endif

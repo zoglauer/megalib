@@ -230,7 +230,7 @@ class MRESE
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRESE, 0) // sub-element of an event (hit, track, cluster)
 #endif

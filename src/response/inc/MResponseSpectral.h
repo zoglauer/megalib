@@ -112,7 +112,7 @@ class MResponseSpectral : public MResponseBuilder
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseSpectral, 0) // no description
 #endif

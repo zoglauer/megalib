@@ -81,7 +81,7 @@ class MResponseImagingEfficiency : public MResponseBuilder
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseImagingEfficiency, 0) // no description
 #endif

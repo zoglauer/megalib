@@ -23,13 +23,15 @@
 
 // MEGAlib libs:
 #include "MGlobal.h"
-#include "MGUIProgressBar.h"
 
-// Forward declarations:
+// Standard libs:
 #include <fstream>
 #include <sstream>
 #include <streambuf>
 using namespace std;
+
+// Forward declarations:
+class MGUIProgressBar;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,7 +254,7 @@ class MFile
   unsigned long m_ReadLineBufferLength;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFile, 0) // no description
 #endif

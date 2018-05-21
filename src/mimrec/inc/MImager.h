@@ -328,7 +328,7 @@ class MImager
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImager, 0) // Computes and stores system matrix
 #endif

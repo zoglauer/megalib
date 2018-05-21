@@ -88,7 +88,7 @@ class MReadOutDataWithTiming : public MReadOutData
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutDataWithTiming, 0) // no description
 #endif

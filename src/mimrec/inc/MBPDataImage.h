@@ -62,7 +62,7 @@ class MBPDataImage : public MBPData
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBPDataImage, 0) // a backprojected image
 #endif

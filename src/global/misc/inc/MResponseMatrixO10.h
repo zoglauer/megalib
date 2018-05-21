@@ -190,7 +190,7 @@ class MResponseMatrixO10 : public MResponseMatrixOx
   friend ostream& operator<<(ostream& os, const MResponseMatrixO10& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixO10, 1) // response matrix of order 10
 #endif

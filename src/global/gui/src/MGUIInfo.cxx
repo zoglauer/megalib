@@ -18,7 +18,7 @@
 
 #include "MGUIInfo.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIInfo)
 #endif
 

@@ -35,6 +35,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MAssert.h"
 #include "MStreams.h"
+#include "MTimer.h"
 #include "MResponseMatrixAxis.h"
 #include "MResponseMatrixAxisSpheric.h"
 
@@ -42,7 +43,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MResponseEventQuality)
 #endif
 

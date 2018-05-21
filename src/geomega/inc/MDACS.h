@@ -92,7 +92,7 @@ class MDACS : public MDDetector
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDACS, 0) // a basic ACS detector
 #endif

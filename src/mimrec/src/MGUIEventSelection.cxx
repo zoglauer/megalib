@@ -38,7 +38,7 @@ using namespace std;
 #include "MGUIEText.h"
 #include "MCoordinateSystem.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUIEventSelection)
 #endif
 

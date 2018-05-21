@@ -28,12 +28,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MMath : public TObject
+class MMath
 {
   // public interface:
  public:
   MMath();
-  ~MMath();
+  virtual ~MMath();
 
   static void GalacticToSpheric(double &LatIsTheta, double &LongIsPhi);
   static void SphericToGalactic(double &ThetaIsLat, double &PhiIsLong);
@@ -67,7 +67,7 @@ class MMath : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MMath, 0) // no description
 #endif

@@ -95,7 +95,7 @@ class MDSystem
   friend ostream& operator<<(ostream& os, const MDSystem& T);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDSystem, 0) // Represents the system
 #endif

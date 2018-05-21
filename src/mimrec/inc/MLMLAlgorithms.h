@@ -159,7 +159,7 @@ class MLMLAlgorithms
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MLMLAlgorithms, 0) // base class for other LML algorithms e.g. classic EM or OS-EM
 #endif

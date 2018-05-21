@@ -104,7 +104,7 @@ class MERCSRChiSquare : public MERCSR
   map<double, vector<MRESE*>, less_equal<double> >::iterator m_TestStatisticsIterator;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRChiSquare, 0) // no description
 #endif

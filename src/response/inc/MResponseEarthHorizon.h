@@ -63,7 +63,7 @@ class MResponseEarthHorizon : public MResponseBase
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEarthHorizon, 0) // no description
 #endif

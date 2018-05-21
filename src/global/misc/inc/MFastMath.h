@@ -200,7 +200,7 @@ class MFastMath
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFastMath, 0) // no description
 #endif

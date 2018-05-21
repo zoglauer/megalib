@@ -65,7 +65,7 @@ class MGUIPosition : public MGUIDialog
   MGUIEEntry* m_PositionString;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPosition, 0)
 #endif

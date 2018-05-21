@@ -181,7 +181,7 @@ class MSpectralAnalyzer
   vector<MQualifiedIsotope*> m_ComparisonIsotopes;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSpectralAnalyzer, 0) // no description
 #endif

@@ -91,7 +91,7 @@ class MInterfaceMelinator : public MInterface
   //! The melinator
   MMelinator m_Melinator;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceMelinator, 0) // image reconstruction management class 
 #endif

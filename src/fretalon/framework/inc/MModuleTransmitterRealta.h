@@ -98,7 +98,7 @@ class MModuleTransmitterRealta : public MModule
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleTransmitterRealta, 0) // no description
 #endif

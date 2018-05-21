@@ -73,9 +73,9 @@ class MGUIElement : public TGCompositeFrame
   //! The wrap length of text labels:
   int m_WrapLength;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MGUIElement, 0) // GUI window for unkown purpose ...
+  ClassDef(MGUIElement, 1) // GUI window for unkown purpose ...
 #endif
 
 };

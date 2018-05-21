@@ -63,7 +63,7 @@ class MResponseGaussianByUncertainties : public MResponseGaussian
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseGaussianByUncertainties, 0) // no description
 #endif

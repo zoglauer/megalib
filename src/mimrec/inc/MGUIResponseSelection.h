@@ -65,7 +65,7 @@ class MGUIResponseSelection : public MGUIDialog
   MGUIERBList* m_ResponseChoice;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseSelection, 0)
 #endif

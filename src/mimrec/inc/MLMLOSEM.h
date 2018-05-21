@@ -72,7 +72,7 @@ class MLMLOSEM : public MLMLClassicEM
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MLMLOSEM, 0) // my "classic" OS-EM
 #endif

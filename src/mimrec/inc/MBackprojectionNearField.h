@@ -76,7 +76,7 @@ class MBackprojectionNearField : public MBackprojection
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBackprojectionNearField, 0) // no description
 #endif

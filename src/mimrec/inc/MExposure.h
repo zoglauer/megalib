@@ -114,7 +114,7 @@ class MExposure : public MViewPort
   //! The efficiency
   MEfficiency* m_Efficiency;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MExposure, 0) // no description
 #endif

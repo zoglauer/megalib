@@ -80,7 +80,7 @@ class MGTI
   vector<MTime> m_BadStop;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGTI, 0) // no description
 #endif

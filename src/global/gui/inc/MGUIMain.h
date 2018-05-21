@@ -150,7 +150,7 @@ class MGUIMain : public TGMainFrame
                    c_GeometryHistory19,
                    c_LastMainButtonID }; 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMain, 0) // Main frame for the MEGAlib Guis
 #endif

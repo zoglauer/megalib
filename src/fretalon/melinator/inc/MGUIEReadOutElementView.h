@@ -98,7 +98,7 @@ class MGUIEReadOutElementView : public TGCanvas
   //! Element height
   double m_ROEButtonHeight;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEReadOutElementView, 0) // Basic GUI element: a check button list
 #endif

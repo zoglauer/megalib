@@ -159,7 +159,7 @@ class MDStrip2D : public MDDetector
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDStrip2D, 0) // a basic SiStrip detetctor
 #endif

@@ -73,7 +73,7 @@ class MQualifiedIsotope : public MIsotope
   double m_Rating;
  
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MQualifiedIsotope, 0) // no description
 #endif

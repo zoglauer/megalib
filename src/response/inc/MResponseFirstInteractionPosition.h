@@ -62,7 +62,7 @@ class MResponseFirstInteractionPosition : public MResponseBase
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseFirstInteractionPosition, 0) // no description
 #endif

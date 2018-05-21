@@ -68,7 +68,7 @@ using namespace std;
 #include "MERDecay.h"
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRawEventAnalyzer)
 #endif
 

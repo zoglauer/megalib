@@ -40,8 +40,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MComptonEvent)
+#ifdef ___CLING___
+ClassImp(MPairEvent)
 #endif
 
 

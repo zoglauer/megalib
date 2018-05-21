@@ -56,7 +56,7 @@ class MRECluster : public MRESE
   void AddHit(MREHit *Hit);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRECluster, 0) // a cluster of hits
 #endif

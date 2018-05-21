@@ -67,7 +67,7 @@ const int MERCSREnergyRecovery::c_TestStatisticsLast = 3;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MERCSREnergyRecovery)
 #endif
 

@@ -111,7 +111,7 @@ class MEarthHorizon
   //! True if we have a Pair response
   bool m_ValidPairResponse;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEarthHorizon, 0) // no description
 #endif

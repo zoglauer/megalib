@@ -75,7 +75,7 @@ private:
   double m_LearningRate;
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MBackpropagationOutputNeuron, 0) // no description
   #endif

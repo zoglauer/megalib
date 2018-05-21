@@ -38,7 +38,7 @@ public:
   /// Default constructor
   MResponseManipulator();
   /// Default destructor
-  ~MResponseManipulator();
+  virtual ~MResponseManipulator();
   
   /// Parse the command line
   bool ParseCommandLine(int argc, char** argv);
@@ -115,7 +115,7 @@ private:
   int m_NSmooths;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseManipulator, 0) // no description
 #endif

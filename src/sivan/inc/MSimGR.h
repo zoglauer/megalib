@@ -103,7 +103,7 @@ class MSimGR
   MDVolumeSequence* m_VolumeSequence;       
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimGR, 0) // no description
 #endif

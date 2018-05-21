@@ -9,55 +9,65 @@
  */
 
 
-#ifndef __MCSVFUNCTIONLOADER__
-#define __MCSVFUNCTIONLOADER__
+#ifndef __MCSVFunctionLoader__
+#define __MCSVFunctionLoader__
 
-#include "MGlobal.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Standard libs:
 using namespace std;
 #include <iostream>
 #include <string>
 #include <cstdio>
 
-#include <MString.h>
+// ROOT libs:
 #include <TGMsgBox.h>
 #include <TMath.h>
 
-//
-//////////////////////////////////////////////////////////////////////////////////
-//
+// MEGAlib libs:
+#include "MGlobal.h"
+#include "MString.h"
 
+// Forward declarations:
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! A dummy definition of a class
 class MCSVFunctionLoader
 {
   // Public Interface:
- public:
+public:
   MCSVFunctionLoader();
   MCSVFunctionLoader(MString Filename, MString Keyword);
   ~MCSVFunctionLoader();
-
+  
   void SetFilename(MString Filename);
   void SetKeyword(MString Keyword);
-
+  
   bool Load();
-
+  
   double GetY(double x);
-
+  
   // protected methods:
- protected:
+protected:
   void Sort();
-
+  
   // private methods:
- private:
-
-
+private:
+  
+  
   // proteced members:
- protected:
-
+protected:
+  
   // private members:
- private:
+private:
   MString m_Keyword;
   MString m_Filename;
-
+  
   int m_NEntries;
   double* m_X;
   double* m_Y;

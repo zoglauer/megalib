@@ -111,7 +111,7 @@ class MGUIExpoSupervisor : public MGUIExpo
   //! Label containing the last processing time
   TGLabel* m_LastProcessingTimeLabel;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoSupervisor, 1) // basic class for dialog windows
 #endif

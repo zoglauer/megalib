@@ -100,7 +100,7 @@ class MInterface
  private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterface, 0) // the interface: connection class between the GUI and the library (i.e. the real MEGAlib)
 #endif

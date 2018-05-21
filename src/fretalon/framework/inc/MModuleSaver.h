@@ -89,7 +89,7 @@ class MModuleSaver : public MModule, public MModuleInterfaceFileName
   ofstream m_Out;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModuleSaver, 0) // no description
 #endif

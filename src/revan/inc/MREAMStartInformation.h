@@ -90,7 +90,7 @@ class MREAMStartInformation : public MREAM
   //! Original energy
   double m_Energy;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREAMStartInformation, 0) // no description
 #endif

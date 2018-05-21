@@ -74,7 +74,7 @@ class MGUIEImage : public MGUIElement
   TGLayoutHints *m_UndockButtonLayout;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEImage, 0) // no description
 #endif

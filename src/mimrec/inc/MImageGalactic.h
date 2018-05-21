@@ -97,7 +97,7 @@ class MImageGalactic : public MImage2D
   //! The name of the source catalog
   MString m_SourceCatalog;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImageGalactic, 0) // class containing an astropysical image
 #endif

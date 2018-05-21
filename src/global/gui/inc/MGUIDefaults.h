@@ -82,7 +82,7 @@ class MGUIDefaults
   const TGFont* m_ItalicBoldFont;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIDefaults, 0) // no description
 #endif

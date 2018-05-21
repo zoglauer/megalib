@@ -116,7 +116,7 @@ class MGUIEEntryList : public MGUIElement
   TGLayoutHints* m_EntryLayout;             // the layout of the checknuttons
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEEntryList, 0) // Basic GUI element: a entry list
 #endif

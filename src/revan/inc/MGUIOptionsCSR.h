@@ -76,7 +76,7 @@ class MGUIOptionsCSR : public MGUIDialog
   //! Map button IDs to TMVA methods
   map<int, MERCSRTMVAMethod> m_TMVAMethodsMap;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsCSR, 0)
 #endif

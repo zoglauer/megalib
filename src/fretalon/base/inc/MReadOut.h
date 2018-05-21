@@ -88,7 +88,7 @@ class MReadOut
   MReadOutData* m_ROD;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOut, 0) // no description
 #endif

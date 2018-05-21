@@ -104,7 +104,7 @@ class MPhysicalEventAnalyzer : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPhysicalEventAnalyzer, 0) // no description
 #endif

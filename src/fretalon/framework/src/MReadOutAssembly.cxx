@@ -38,8 +38,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MReadOutAssembly)*m_ReadOuts[i]
+#ifdef ___CLING___
+ClassImp(MReadOutAssembly)
 #endif
 
 

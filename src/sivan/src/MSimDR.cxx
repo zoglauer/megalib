@@ -29,7 +29,7 @@ using namespace std;
 // MEGAlib libs:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimDR)
 #endif
 

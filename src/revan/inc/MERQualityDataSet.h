@@ -126,7 +126,7 @@ class MERQualityDataSet
   unsigned int m_NumberOfPathSamples;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERQualityDataSet, 0) // no description
 #endif

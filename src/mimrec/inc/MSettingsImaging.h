@@ -395,7 +395,7 @@ class MSettingsImaging : public MSettingsInterface
   double m_SignificanceMapDistance;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsImaging, 0) // no description
 #endif

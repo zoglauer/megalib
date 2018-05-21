@@ -120,7 +120,7 @@ class MBackprojectionFarField : public MBackprojection
   double m_InvSquareDist;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBackprojectionFarField, 0) // base class for all spherical reconstruction
 #endif

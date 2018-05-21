@@ -135,7 +135,7 @@ class MCalibrationSpectralPoint
   bool m_IsGood;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationSpectralPoint, 0) // no description
 #endif

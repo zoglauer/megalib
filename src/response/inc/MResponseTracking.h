@@ -92,7 +92,7 @@ class MResponseTracking : public MResponseMultipleCompton
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseTracking, 0) // no description
 #endif

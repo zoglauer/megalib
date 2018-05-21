@@ -72,7 +72,7 @@ class MGUIDummy : public MGUIDialog
   MGUIData* m_Data;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIDummy, 0) // GUI window for unknown purpose ...
 #endif

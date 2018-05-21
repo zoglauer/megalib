@@ -32,7 +32,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MCalibrationSpectrum)
 #endif
 

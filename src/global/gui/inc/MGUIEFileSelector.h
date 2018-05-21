@@ -83,7 +83,7 @@ class MGUIEFileSelector : public MGUIElement
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEFileSelector, 0) // Basic GUI element: a label, an input field for files and a file button 
 #endif

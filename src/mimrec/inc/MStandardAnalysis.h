@@ -91,7 +91,7 @@ class MStandardAnalysis
   double m_Energy;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MStandardAnalysis, 0) // no description
 #endif

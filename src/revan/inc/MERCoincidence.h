@@ -77,7 +77,7 @@ class MERCoincidence : public MERConstruction
   int m_NFoundCoincidences;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCoincidence, 0) // no description
 #endif

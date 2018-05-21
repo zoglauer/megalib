@@ -93,7 +93,7 @@ class MDShapeTUBS : public MDShape
   double m_Phi2;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeTUBS, 0) // no description
 #endif

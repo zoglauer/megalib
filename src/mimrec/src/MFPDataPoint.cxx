@@ -25,7 +25,7 @@
 
 #include "MFPDataPoint.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFPDataPoint)
 #endif
 

@@ -308,7 +308,7 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! The coincidence window - time between the first and the last interaction
   MTime m_CoincidenceWindow;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRERawEvent, 0) // a raw event
 #endif

@@ -59,7 +59,7 @@ class MGUIEFlatToolBar : public TGCompositeFrame
   TObjArray* m_Layouts;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEFlatToolBar, 0) // no description
 #endif

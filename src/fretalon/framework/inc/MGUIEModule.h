@@ -74,7 +74,7 @@ class MGUIEModule : public MGUIElement
   TGTextButton* m_ChangeButton;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEModule, 0) // GUI window for unkown purpose ...
 #endif

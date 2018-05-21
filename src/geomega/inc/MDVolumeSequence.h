@@ -177,7 +177,7 @@ class MDVolumeSequence
   MRotation m_RotMatrix; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVolumeSequence, 0) // auxiliary file, which keeps info about a volumes parents, its sensitive volume and the belonging detector
 #endif

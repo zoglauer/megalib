@@ -74,7 +74,7 @@ class MBPDataSparseImageOneByte : public MBPData
   int m_NBins;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBPDataSparseImageOneByte, 0) // a backprojected event stored as sparse matrix of width one bit
 #endif

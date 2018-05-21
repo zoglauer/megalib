@@ -89,7 +89,7 @@ class MGUIERBList : public MGUIElement
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIERBList, 0) // Basic GUI element: a radio button list
 #endif

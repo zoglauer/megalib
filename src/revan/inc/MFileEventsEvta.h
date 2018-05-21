@@ -84,7 +84,7 @@ class MFileEventsEvta : public MFileEvents
   static const long c_NoId;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsEvta, 0) // no description
 #endif

@@ -75,7 +75,7 @@ class MGUIResponseParameterGauss1D : public MGUIDialog
   static const int c_AbsorptionId = 50;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseParameterGauss1D, 0)
 #endif

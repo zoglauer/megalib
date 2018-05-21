@@ -172,7 +172,7 @@ class MSimHT
   bool m_Added;           
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimHT, 0)
 #endif

@@ -72,7 +72,7 @@ class MGUIOptionsTracking : public MGUIDialog
   
   enum ButtonCodes { e_DoTracking = 100, e_RejectPurelyAmbiguousSequences, e_Detectors };
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsTracking, 0)
 #endif

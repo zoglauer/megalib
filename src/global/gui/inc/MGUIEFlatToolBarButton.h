@@ -66,7 +66,7 @@ class MGUIEFlatToolBarButton : public TGPictureButton
   bool m_Flat;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEFlatToolBarButton, 0) // no description
 #endif

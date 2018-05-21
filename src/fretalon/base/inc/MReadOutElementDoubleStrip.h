@@ -98,7 +98,7 @@ class MReadOutElementDoubleStrip : public MReadOutElementStrip
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutElementDoubleStrip, 0) // no description
 #endif

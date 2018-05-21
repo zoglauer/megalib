@@ -116,7 +116,7 @@ class MStreamBuffer : public streambuf
   int m_GuiType;
   bool m_ShowOnce;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MStreamBuffer, 0) // no description
 #endif

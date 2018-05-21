@@ -23,10 +23,10 @@ using namespace std;
 // ROOT libs:
 #include <TROOT.h>
 #include <TRotMatrix.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 #include "MTime.h"
 #include "MVector.h"
 #include "MStreams.h"
@@ -203,7 +203,7 @@ class MPhysicalEvent : public MRotationInterface
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPhysicalEvent, 1)   // base class for compton and pair events
 #endif

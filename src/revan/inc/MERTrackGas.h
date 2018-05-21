@@ -60,7 +60,7 @@ class MERTrackGas : public MERTrack
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackGas, 0) // no description
 #endif

@@ -103,7 +103,7 @@ class MImage3D : public MImage2D
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImage3D, 0) // a three dimensional image
 #endif

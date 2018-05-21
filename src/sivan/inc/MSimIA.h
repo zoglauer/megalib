@@ -212,7 +212,7 @@ class MSimIA
   //! Remove: The parent nucleus
   int m_ParentNucleus;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimIA, 0) // no description
 #endif

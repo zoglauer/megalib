@@ -45,7 +45,7 @@ class MFileEvents : public MFile
   virtual bool UpdateProgress(unsigned int UpdatesToSkip = 0);
 
   //! Rewind to the beginning of the file
-  virtual bool Rewind();
+  virtual bool Rewind(bool NotUsed = true);
 
   //! Set the geometry name
   void SetGeometryFileName(const MString Geometry);
@@ -156,7 +156,7 @@ class MFileEvents : public MFile
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEvents, 0) // no description
 #endif

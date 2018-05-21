@@ -62,7 +62,7 @@ class MResponseImaging : public MResponseBase
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseImaging, 0) // no description
 #endif

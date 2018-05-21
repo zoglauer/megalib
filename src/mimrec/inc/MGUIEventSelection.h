@@ -187,7 +187,7 @@ class MGUIEventSelection : public MGUIDialog
                    c_UseBeam };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEventSelection, 0) // gui window for basic event selections
 #endif

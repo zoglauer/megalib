@@ -37,8 +37,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MFitFunctions)
+#ifdef ___CLING___
+//ClassImp(MFitFunctions)
 #endif
 
 

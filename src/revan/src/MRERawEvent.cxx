@@ -74,7 +74,7 @@ using namespace std;
 #include "MDGuardRing.h"
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRERawEvent)
 #endif
 

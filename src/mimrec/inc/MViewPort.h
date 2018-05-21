@@ -111,7 +111,7 @@ class MViewPort
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MViewPort, 0) // no description
 #endif

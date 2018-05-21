@@ -224,7 +224,7 @@ class MSupervisor
   MString m_UICoAuthors;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSupervisor, 0) // no description
 #endif

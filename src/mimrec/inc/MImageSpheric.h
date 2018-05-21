@@ -70,7 +70,7 @@ class MImageSpheric : public MImage2D
   TGaxis* m_YAxis;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImageSpheric, 0) // class containing an astropysical image
 #endif

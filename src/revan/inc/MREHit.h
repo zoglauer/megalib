@@ -72,7 +72,7 @@ class MREHit : public MRESE
   bool m_FixedResolutions;
    
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREHit, 0) // elementary hit
 #endif

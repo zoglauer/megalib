@@ -92,7 +92,7 @@ class MDCalorimeter : public MDDetector
   MFunction m_DepthResolutionSigma; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDCalorimeter, 0) // no description
 #endif

@@ -108,7 +108,7 @@ class MGUIMultiInput : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMultiInput, 0) // multiple input dialog box
 #endif

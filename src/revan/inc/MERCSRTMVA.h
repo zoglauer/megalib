@@ -102,7 +102,7 @@ class MERCSRTMVA : public MERCSR
   bool m_UsePathToFirstIA;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRTMVA, 0) // no description
 #endif

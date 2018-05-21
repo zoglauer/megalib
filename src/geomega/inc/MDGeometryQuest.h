@@ -120,7 +120,7 @@ class MDGeometryQuest : public MDGeometry
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGeometryQuest, 0) // no description
 #endif

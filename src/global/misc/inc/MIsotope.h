@@ -99,7 +99,7 @@ class MIsotope
   vector<bool> m_LineExcludeFlags;
  
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MIsotope, 0) // no description
 #endif

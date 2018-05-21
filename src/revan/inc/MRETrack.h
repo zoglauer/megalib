@@ -141,7 +141,7 @@ class MRETrack : public MRESE
   MVector m_FixedDirection;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRETrack, 0) // this is one track
 #endif

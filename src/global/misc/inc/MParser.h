@@ -18,12 +18,12 @@
 
 // ROOT libs:
 #include <TROOT.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFile.h"
 #include "MTokenizer.h"
+#include "MString.h"
 
 // Standard libs:
 #include <vector>
@@ -106,7 +106,7 @@ class MParser : public MFile
   bool m_AllowComposed;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MParser, 0) // A file parser
 #endif

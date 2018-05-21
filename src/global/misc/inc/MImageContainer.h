@@ -28,12 +28,12 @@ class MImage;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MImageContainer : public TObject
+class MImageContainer
 {
   // public interface:
  public:
   MImageContainer();
-  ~MImageContainer();
+  virtual ~MImageContainer();
 
   int GetNImages();
   MImage* GetImageAt(int N);
@@ -61,7 +61,7 @@ class MImageContainer : public TObject
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImageContainer, 0) // container for MImage classes
 #endif

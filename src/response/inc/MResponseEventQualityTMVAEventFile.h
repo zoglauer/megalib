@@ -91,7 +91,7 @@ class MResponseEventQualityTMVAEventFile : public MResponseMultipleComptonEventF
    
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEventQualityTMVAEventFile, 0) // no description
 #endif

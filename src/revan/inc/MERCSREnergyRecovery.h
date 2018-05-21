@@ -81,7 +81,7 @@ class MERCSREnergyRecovery : public MERCSR
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSREnergyRecovery, 0) // no description
 #endif

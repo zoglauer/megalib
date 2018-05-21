@@ -62,7 +62,7 @@ class MGUICoordinateSystem : public MGUIDialog
   MGUIERBList* m_System;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUICoordinateSystem, 0)
 #endif

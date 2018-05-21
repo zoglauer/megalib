@@ -73,7 +73,7 @@ class MGUIOptionsClustering : public MGUIDialog
   enum ButtonIDs { e_ReferencePoint = 200};
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsClustering, 0)
 #endif

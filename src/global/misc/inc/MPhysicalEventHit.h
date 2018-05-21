@@ -118,7 +118,7 @@ class MPhysicalEventHit
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPhysicalEventHit, 0) // no description
 #endif

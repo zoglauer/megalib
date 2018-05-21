@@ -89,7 +89,7 @@ class MInterfaceGeomega : public MInterface
   MSystem m_System;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceGeomega, 0) // image reconstruction management class 
 #endif

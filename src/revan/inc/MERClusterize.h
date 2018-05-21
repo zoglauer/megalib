@@ -105,7 +105,7 @@ class MERClusterize : public MERConstruction
   MResponseMatrixO2 m_AllPDF;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERClusterize, 0) // no description
 #endif

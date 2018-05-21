@@ -26,6 +26,7 @@
 using namespace std;
 
 // MEGAlib libs:
+#include "MGlobal.h"
 #include "MString.h"
 
 // Forward declarations:
@@ -45,6 +46,8 @@ public:
       abort();
     }
   }
+  //! Default destructor
+  virtual ~MException() throw() {}
   
   //! Abort instead of throwing anexception
   static void UseAbort(bool Abort = true) { m_Abort = Abort; }
@@ -52,6 +55,11 @@ public:
 protected:
   //! Flag storing the global variable if exception should abort the program instead of being thrown
   static bool m_Abort;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MException, 1)
+#endif  
 };
 
 
@@ -93,6 +101,11 @@ public:
 private:
   //! Description of the test
   MString m_Description;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionTestFailed, 1)
+#endif  
 };
 
 
@@ -139,6 +152,12 @@ private:
   double m_Maximum;
   //! The name of the parameter
   MString m_Name;
+  
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionParameterOutOfRange, 1)
+#endif  
 };
 
 
@@ -183,6 +202,12 @@ private:
   unsigned int m_Size;
   //! The index with which we wanted to access the array, vector, etc.
   unsigned int m_Index;
+  
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionIndexOutOfBounds, 1)
+#endif  
 };
 
 
@@ -216,6 +241,11 @@ public:
 private:
   //! Name of the array
   MString m_Name;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionEmptyArray, 1)
+#endif  
 };
 
 
@@ -252,6 +282,11 @@ public:
 private:
   //! The description
   MString m_Description;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionValueOutOfBounds, 1)
+#endif  
 };
 
 
@@ -270,6 +305,11 @@ public:
   virtual const char* what() const throw() {
     return "Division by zero!";
   }
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionDivisionByZero, 1)
+#endif  
 };
 
 
@@ -288,6 +328,11 @@ public:
   virtual const char* what() const throw() {
     return "Number not finite!";
   }
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionNumberNotFinite, 1)
+#endif  
 };
 
 
@@ -325,6 +370,11 @@ private:
   bool m_IsEmpty;
   //! The Name of the not found object
   MString m_Name;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionObjectDoesNotExist, 1)
+#endif  
 };
 
 
@@ -360,6 +410,11 @@ private:
   MString m_Name1;
   //! The name of the second object
   MString m_Name2;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionObjectsNotIdentical, 1)
+#endif  
 };
 
 
@@ -408,6 +463,11 @@ private:
   MString m_Type;
   //! The mode which is unknown
   MString m_Mode;
+  
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionUnknownMode, 1)
+#endif  
 };
 
 
@@ -451,6 +511,10 @@ private:
   //! The description of what went wrong
   MString m_Description;
   
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionNeverReachThatLineOfCode, 1)
+#endif  
 };
 
 
@@ -495,6 +559,10 @@ private:
   //! The description of what went wrong
   MString m_Description;
   
+#ifdef ___CLING___
+public:
+  ClassDef(MExceptionArbitrary, 1)
+#endif  
 };
 
 

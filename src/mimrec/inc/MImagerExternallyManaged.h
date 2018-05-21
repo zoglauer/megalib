@@ -76,7 +76,7 @@ class MImagerExternallyManaged : public MImager
   //! True if GUI features are used, i.e. progress bar, call ProcessEvents, etc. (default: true)
   bool m_UseGUI;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImagerExternallyManaged, 0) // Computes and stores system matrix
 #endif

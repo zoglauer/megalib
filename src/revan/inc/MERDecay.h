@@ -79,7 +79,7 @@ class MERDecay : public MERConstruction
 
   int m_Mode;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERDecay, 0) // no description
 #endif

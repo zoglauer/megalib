@@ -300,7 +300,7 @@ class MDGeometry
   vector<int> m_LastFoundPlacements_GetRandomPositionInVolume;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDGeometry, 0) // no description
 #endif

@@ -447,7 +447,7 @@ class MDDetector
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDDetector, 0) // basic detector
 #endif

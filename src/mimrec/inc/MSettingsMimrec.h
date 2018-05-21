@@ -141,7 +141,7 @@ class MSettingsMimrec : public MSettings, public MSettingsEventSelections, publi
   double m_PolarizationArmCut;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsMimrec, 0) // no description
 #endif

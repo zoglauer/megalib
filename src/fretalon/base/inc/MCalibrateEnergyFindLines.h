@@ -97,7 +97,7 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergyFindLines, 0) // no description
 #endif

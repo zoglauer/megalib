@@ -101,7 +101,7 @@ class MGUISivanMain : public MGUIMain
                    c_Test };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISivanMain, 0) // main window of the Sivan GUI
 #endif

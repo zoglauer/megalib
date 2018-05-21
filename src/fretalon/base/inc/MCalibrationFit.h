@@ -159,7 +159,7 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
  private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationFit, 0) // no description
 #endif

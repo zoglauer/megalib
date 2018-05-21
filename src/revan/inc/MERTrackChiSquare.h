@@ -60,7 +60,7 @@ class MERTrackChiSquare : public MERTrack
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackChiSquare, 0) // no description
 #endif

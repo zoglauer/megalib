@@ -91,7 +91,7 @@ class MReadOutDataGroup
   vector<MReadOutData*> m_RODs;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutDataGroup, 0) // no description
 #endif

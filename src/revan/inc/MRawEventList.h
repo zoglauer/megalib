@@ -105,7 +105,7 @@ class MRawEventList
   int m_EventCounter;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRawEventList, 0) // a list of raw events
 #endif

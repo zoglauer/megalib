@@ -107,7 +107,7 @@ private:
   //! True if this data set shall be used for verification
   bool m_IsVerificationData;
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MNeuralNetworkIO, 0) // no description
   #endif

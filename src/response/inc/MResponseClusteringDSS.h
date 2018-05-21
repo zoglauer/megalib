@@ -79,7 +79,7 @@ class MResponseClusteringDSS : public MResponseBuilder
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseClusteringDSS, 0) // no description
 #endif

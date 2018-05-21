@@ -110,7 +110,7 @@ class MERCSR : public MERConstruction
   map<double, vector<MRESE*>, less_equal<double> >::iterator m_QualityFactorsIterator;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSR, 0) // no description
 #endif

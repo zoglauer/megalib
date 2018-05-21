@@ -18,8 +18,8 @@
 
 #include "MCSVFunctionLoader.h"
 
-#ifdef ___CINT___
-ClassImp(MGUIInfo)
+#ifdef ___CLING___
+ClassImp(MCSVFunctionLoader)
 #endif
 
 

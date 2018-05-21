@@ -412,7 +412,7 @@ class MSimEvent : public MRotationInterface
 
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSimEvent, 0)    // representation of a simulated event
 #endif

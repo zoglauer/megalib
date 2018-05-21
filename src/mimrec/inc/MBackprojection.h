@@ -117,7 +117,7 @@ class MBackprojection : public MProjection, public MViewPort
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBackprojection, 0)  // abstract base class for backprojections
 #endif

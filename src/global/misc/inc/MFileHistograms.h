@@ -78,7 +78,7 @@ class MFileHistograms
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileHistograms, 0) // no description
 #endif

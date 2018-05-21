@@ -91,7 +91,7 @@ class MGUISpectralAnalyzer : public MGUIDialog
   enum ButtenIds { c_TBD = 140 };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISpectralAnalyzer, 0) // gui window for basic event selections
 #endif

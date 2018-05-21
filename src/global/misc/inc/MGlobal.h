@@ -59,9 +59,9 @@
 #undef PAR_HARD
 #endif
 
-// the ___CINT___ tag  includes classes into the shared libraries
-//#ifndef  ___CINT___
-//#define ___CINT___
+// the ___CLING___ tag  includes classes into the shared libraries
+//#ifndef  ___CLING___
+//#define ___CLING___
 //#endif
 
 #ifdef ___LINUX___

@@ -17,12 +17,12 @@
 
 
 // ROOT libs:
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MParser.h"
 #include "MTokenizer.h"
+#include "MString.h"
 
 // Standard libs:
 #include <vector>
@@ -83,7 +83,7 @@ class MFileResponse : public MParser
   //! The hash value
   unsigned long m_Hash;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileResponse, 0) // no description
 #endif

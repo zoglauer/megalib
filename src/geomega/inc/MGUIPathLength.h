@@ -76,7 +76,7 @@ class MGUIPathLength : public MGUIDialog
   MGUIEEntry* m_StopString;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIPathLength, 0)
 #endif

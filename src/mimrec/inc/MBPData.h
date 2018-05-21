@@ -74,7 +74,7 @@ class MBPData
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBPData, 0) // Basic backprojection data type
 #endif

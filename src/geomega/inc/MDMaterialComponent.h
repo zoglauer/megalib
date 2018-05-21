@@ -115,7 +115,7 @@ class MDMaterialComponent
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDMaterialComponent, 0) // one kind of atoms/isotopes for a material
 #endif

@@ -112,7 +112,7 @@ class MERCSRNeuralNetwork : public MERCSR
   bool m_UseComptonScatterAngles;
   bool m_UseDPhiCriterion;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRNeuralNetwork, 0) // no description
 #endif

@@ -106,7 +106,7 @@ class MXmlData
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MXmlData, 0) // no description
 #endif

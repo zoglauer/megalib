@@ -88,7 +88,7 @@ class MGUICBSelection : public MGUIDialog
   int m_LastPressedButton;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUICBSelection, 0) // GUI window for unkown purpose ...
 #endif

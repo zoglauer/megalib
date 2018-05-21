@@ -104,7 +104,7 @@ class MDShapeTRAP : public MDShape
   double m_Alpha2;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeTRAP, 0) // no description
 #endif

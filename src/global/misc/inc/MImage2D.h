@@ -92,7 +92,7 @@ class MImage2D : public MImage
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImage2D, 0)        // basic 2D image class
 #endif

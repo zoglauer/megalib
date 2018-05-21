@@ -85,7 +85,7 @@ class MGUIOptionsFileChooser : public MGUIOptions
   MGUIEFileSelector* m_FileSelector;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsFileChooser, 1) // basic class for dialog windows
 #endif

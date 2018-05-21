@@ -85,7 +85,7 @@ class MResponseConeShapes : public MResponse
   double m_ComptonIntegral;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseConeShapes, 0) // basic response class
 #endif

@@ -95,7 +95,7 @@ class MDShapeUnion : public MDShape
   MDOrientation* m_Orientation;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeUnion, 0) // no description
 #endif

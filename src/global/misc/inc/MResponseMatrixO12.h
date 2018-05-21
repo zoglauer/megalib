@@ -211,7 +211,7 @@ class MResponseMatrixO12 : public MResponseMatrixOx
   friend ostream& operator<<(ostream& os, const MResponseMatrixO12& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixO12, 1) // response matrix of order 12
 #endif

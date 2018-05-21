@@ -119,7 +119,7 @@ class MInterfaceRevan : public MInterface
   MGeometryRevan* m_Geometry;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceRevan, 0) // interface to the Revan-part of MEGAlib
 #endif

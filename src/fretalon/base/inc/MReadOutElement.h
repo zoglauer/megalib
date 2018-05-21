@@ -102,7 +102,7 @@ class MReadOutElement
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutElement, 0) // no description
 #endif

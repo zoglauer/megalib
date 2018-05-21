@@ -66,7 +66,7 @@ class MXmlDocument : public MXmlNode
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MXmlDocument, 0) // no description
 #endif

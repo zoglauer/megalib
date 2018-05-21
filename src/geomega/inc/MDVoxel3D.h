@@ -150,7 +150,7 @@ class MDVoxel3D : public MDDetector
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVoxel3D, 0) // a basic SiStrip detetctor
 #endif

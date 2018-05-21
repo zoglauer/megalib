@@ -130,7 +130,7 @@ class MInterfaceSivan : public MInterface
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MInterfaceSivan, 0) // image reconstruction management class 
 #endif

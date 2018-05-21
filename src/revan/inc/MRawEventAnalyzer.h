@@ -436,7 +436,7 @@ class MRawEventAnalyzer
 
   bool m_IsBatch;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRawEventAnalyzer, 0) // this class manages the analysis of events
 #endif

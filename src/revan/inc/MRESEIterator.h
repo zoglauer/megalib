@@ -76,7 +76,7 @@ class MRESEIterator
   MRESE* m_Next;        
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRESEIterator, 0) // no description
 #endif

@@ -58,12 +58,10 @@ using namespace std;
 #include "MModuleSaver.h"
 
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MAssembly)
 #endif
 

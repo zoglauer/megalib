@@ -112,7 +112,7 @@ class MGUIData
   int m_ModificationLevel;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIData, 0) // no description
 #endif

@@ -58,7 +58,7 @@ class MSettingsSpectralyzer : public MSettings, public MSettingsSpectralOptions
 
  
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsSpectralyzer, 0) // no description
 #endif

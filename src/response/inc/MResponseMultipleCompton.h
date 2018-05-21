@@ -172,7 +172,7 @@ class MResponseMultipleCompton : public MResponseBuilder
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleCompton, 0) // no description
 #endif

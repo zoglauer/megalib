@@ -173,7 +173,7 @@ class MGUIProgressBar : public MGUIDialog
   double m_Duration;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIProgressBar, 0)
 #endif

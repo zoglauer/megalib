@@ -213,7 +213,7 @@ class MDMaterial
   MDMaterial* m_CloneTemplate; 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDMaterial, 0) // material of a detector
 #endif

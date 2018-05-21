@@ -110,7 +110,7 @@ class MGUIExpoCombinedViewer : public MGUIDialog
   static const int c_Print       =   203;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExpoCombinedViewer, 0)
 #endif

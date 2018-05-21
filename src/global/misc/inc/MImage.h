@@ -26,10 +26,10 @@ using namespace std;
 #include <TH2.h>
 #include <TSystem.h>
 #include <TStyle.h>
-#include <MString.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
+#include "MString.h"
 
 // Forward declarations:
 
@@ -190,7 +190,7 @@ class MImage
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImage, 0)        // basic image class
 #endif

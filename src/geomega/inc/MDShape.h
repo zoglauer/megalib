@@ -121,7 +121,7 @@ class MDShape
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShape, 0) // virtual base class for all shapes
 #endif

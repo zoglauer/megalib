@@ -83,7 +83,7 @@ class MREAMGuardRingHit : public MREAM
   double m_EnergyResolution;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREAMGuardRingHit, 0) // no description
 #endif

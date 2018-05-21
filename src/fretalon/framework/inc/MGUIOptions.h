@@ -87,7 +87,7 @@ class MGUIOptions : public TGTransientFrame
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptions, 1) // basic class for dialog windows
 #endif

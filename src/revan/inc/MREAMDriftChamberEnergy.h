@@ -80,7 +80,7 @@ class MREAMDriftChamberEnergy : public MREAM
   double m_EnergyResolution;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREAMDriftChamberEnergy, 0) // no description
 #endif

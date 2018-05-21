@@ -28,7 +28,8 @@ using namespace std;
 #include "MResponseMatrixAxis.h"
 
 // ROOT libs:
-#include <TGraph.h>
+#include "TGraph.h"
+#include "TVirtualStreamerInfo.h" // Required for the ROOt streamer
 
 // Forward declarations:
 
@@ -45,7 +46,7 @@ class MResponseMatrixON : public MResponseMatrix
   MResponseMatrixON(bool IsParse = false);
   //! Default constructor with response name
   MResponseMatrixON(const MString& Name, bool IsParse = false);
-  //! DEfault destructor
+  //! Default destructor
   virtual ~MResponseMatrixON();
   
   //! Clear all data
@@ -245,9 +246,9 @@ class MResponseMatrixON : public MResponseMatrix
   friend ostream& operator<<(ostream& os, const MResponseMatrixON& R);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
-  ClassDef(MResponseMatrixON, 1) // response matrix of order 1 (linear)
+  ClassDef(MResponseMatrixON, 1) 
 #endif
 
 };

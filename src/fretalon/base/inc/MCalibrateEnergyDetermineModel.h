@@ -76,7 +76,7 @@ class MCalibrateEnergyDetermineModel : public MCalibrateEnergy
   unsigned int m_CalibrationModelDeterminationMethodFittingModel;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrateEnergyDetermineModel, 0) // no description
 #endif

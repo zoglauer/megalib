@@ -96,7 +96,7 @@ class MDShapeCONS : public MDShape
   double m_PhiMax;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeCONS, 0) // no description
 #endif

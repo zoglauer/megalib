@@ -37,7 +37,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGUIEText.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MGUISpectralAnalyzer)
 #endif
 

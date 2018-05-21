@@ -123,7 +123,7 @@ class MERCSRDataSet
   bool m_UsePathToFirstIA;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERCSRDataSet, 0) // no description
 #endif

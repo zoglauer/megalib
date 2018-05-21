@@ -107,7 +107,7 @@ class MPeak
   //! And their candidate line IDs
   vector<unsigned int> m_IsotopeLineIDs;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPeak, 0) // no description
 #endif

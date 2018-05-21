@@ -37,11 +37,13 @@ using namespace std;
 #include "MStreams.h"
 #include "MTime.h"
 #include "MTokenizer.h"
+#include "MGUIProgressBar.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MFileEvents)
 #endif
 
@@ -303,7 +305,7 @@ bool MFileEvents::ParseFooter(const MString& Line)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MFileEvents::Rewind()
+bool MFileEvents::Rewind(bool)
 {
   // Rewind to the beginning of the file
   // Since we might be somewhere within a file tree, we simply start over

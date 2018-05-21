@@ -171,7 +171,7 @@ class MGUIHistogramData : public MGUIDialog
 
   bool& m_OkPressed;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIHistogramData, 0)
 #endif

@@ -94,7 +94,7 @@ class MSettingsGlobal
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsGlobal, 0) // no description
 #endif

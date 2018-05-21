@@ -68,7 +68,7 @@ class MSettingsInterface
   int m_ModificationLevel;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsInterface, 0) // no description
 #endif

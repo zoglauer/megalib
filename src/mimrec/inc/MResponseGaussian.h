@@ -100,7 +100,7 @@ class MResponseGaussian : public MResponse
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseGaussian, 0) // no description
 #endif

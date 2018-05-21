@@ -112,7 +112,7 @@ class MDTriggerUnit
  private:
   friend ostream& operator<<(ostream& os, const MDTriggerUnit& T);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDTriggerUnit, 0) // no description
 #endif

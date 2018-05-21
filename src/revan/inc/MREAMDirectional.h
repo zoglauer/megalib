@@ -87,7 +87,7 @@ class MREAMDirectional : public MREAM
   //! The RESE this directional belongs to...
   MRESE* m_RESE;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MREAMDirectional, 0) // no description
 #endif

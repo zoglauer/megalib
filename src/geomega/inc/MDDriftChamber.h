@@ -104,7 +104,7 @@ class MDDriftChamber : public MDStrip3D
   //! measured by the light
   MFunction m_LightEnergyResolution; 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDDriftChamber, 0) // no description
 #endif

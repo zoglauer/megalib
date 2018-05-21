@@ -29,7 +29,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MFileInfo : public TObject
+class MFileInfo
 {
   // public interface:
  public:
@@ -77,7 +77,7 @@ class MFileInfo : public TObject
 
   MVector m_Position;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileInfo, 0) // no description
 #endif

@@ -97,7 +97,7 @@ class MEfficiency
   long m_EfficiencySimulatedEvents;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEfficiency, 0) // no description
 #endif

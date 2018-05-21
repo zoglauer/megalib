@@ -65,7 +65,7 @@ class MAtmosphericAbsorption
   MFunction3D m_TransmissionProbabilities;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MAtmosphericAbsorption, 0) // no description
 #endif

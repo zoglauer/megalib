@@ -89,7 +89,7 @@ class MGUISessionRealta : public MGUISession
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISessionRealta, 0) // Realta main GUI
 #endif

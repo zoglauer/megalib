@@ -114,7 +114,7 @@ class MBinnerFISBEL
   vector<double> m_NumberOfBinsBeforeLatitudeBin;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBinnerFISBEL, 0) // no description
 #endif

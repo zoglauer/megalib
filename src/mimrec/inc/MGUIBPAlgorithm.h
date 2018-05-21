@@ -61,7 +61,7 @@ class MGUIBPAlgorithm : public MGUIDialog
   MGUIERBList* m_BPList;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIBPAlgorithm, 0)
 #endif

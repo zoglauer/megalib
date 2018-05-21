@@ -101,7 +101,7 @@ class MGUIEStatusBar : public MGUIElement
   TObjArray* m_FieldContents;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEStatusBar, 0)
 #endif

@@ -191,7 +191,7 @@ class MRotationInterface
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRotationInterface, 0) // no description
 #endif

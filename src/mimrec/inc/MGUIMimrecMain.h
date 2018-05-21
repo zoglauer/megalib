@@ -137,7 +137,7 @@ class MGUIMimrecMain : public MGUIMain
                    c_ResponseDirectionScatteredGammaRay,
                    c_ResponseTest }; 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIMimrecMain, 0) // main window of the Mimrec GUI
 #endif

@@ -9,50 +9,72 @@
 
 
 #----------------------------------------------------------------
-# Definitions:
+# Base definitions:
 #
 
-LOBJS= \
-$(LB)/MFretalonRegistry.o \
-$(LB)/MFileReadOuts.o \
-$(LB)/MReadOut.o \
-$(LB)/MReadOutElement.o \
-$(LB)/MReadOutElementStrip.o \
-$(LB)/MReadOutElementDoubleStrip.o \
-$(LB)/MReadOutData.o \
-$(LB)/MReadOutDataADCValue.o \
-$(LB)/MReadOutDataTiming.o \
-$(LB)/MReadOutDataOrigins.o \
-$(LB)/MReadOutSequence.o \
-$(LB)/MReadOutDataGroup.o \
-$(LB)/MReadOutCollection.o \
-$(LB)/MReadOutStore.o \
-$(LB)/MCalibrate.o \
-$(LB)/MCalibrateEnergy.o \
-$(LB)/MCalibrateEnergyAssignEnergies.o \
-$(LB)/MCalibrateEnergyDetermineModel.o \
-$(LB)/MCalibrateEnergyFindLines.o \
-$(LB)/MCalibration.o \
-$(LB)/MCalibrationSpectrum.o \
-$(LB)/MCalibrationSpectralPoint.o \
-$(LB)/MCalibrationStore.o \
-$(LB)/MCalibrationFit.o \
-$(LB)/MCalibrationFitGaussian.o \
-$(LB)/MCalibrationFitGaussLandau.o \
-$(LB)/MCalibrationModel.o \
+LIBRARY = FretalonBase
 
-SLOBJ = $(LB)/libFretalonBase.$(DLL)
+FILES = MFretalonRegistry \
+	MFileReadOuts \
+	MReadOut \
+	MReadOutElement \
+	MReadOutElementStrip \
+	MReadOutElementDoubleStrip \
+	MReadOutData \
+	MReadOutDataADCValue \
+	MReadOutDataTiming \
+	MReadOutDataOrigins \
+	MReadOutSequence \
+	MReadOutDataGroup \
+	MReadOutCollection \
+	MReadOutStore \
+	MCalibrate \
+	MCalibrateEnergy \
+	MCalibrateEnergyAssignEnergies \
+	MCalibrateEnergyDetermineModel \
+	MCalibrateEnergyFindLines \
+	MCalibration \
+	MCalibrationSpectrum \
+	MCalibrationSpectralPoint \
+	MCalibrationStore \
+	MCalibrationFit \
+	MCalibrationFitGaussian \
+	MCalibrationFitGaussLandau \
+	MCalibrationModel \
+
+SLOBJ = libFretalonBase.$(DLL)
+
+LIBRARIES = \
+	-lSivan \
+	-lGeomega \
+	-lCommonGui \
+	-lCommonMisc \
+
+#----------------------------------------------------------------
+# Derived definitions:
+#
+
+OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+
+DICTIONARYNAME=$(LIBRARY)_Dictionary
+DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
+LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM=lib$(LIBRARY)_rdict.pcm
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(SLOBJ)
-
-lib: $(SLOBJ) 
+all: $(SHAREDLIB)
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
+	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
 clean:
 	@rm -f src/*~
@@ -61,23 +83,30 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
-	@rm -f $(LOBJS) $(SLOBJ)
-
+	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 
 #----------------------------------------------------------------
 # Dependencies:
 #
 
-$(SLOBJ): $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
+$(DICTIONARY): $(HEADERS)
+	@echo "Generating $(DICTIONARYNAME)_LinkDef ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
+	@echo "Generating dictionary ..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@mv $(ROOTPCM) $(LB)
 
-$(LOBJS): $(LB)/%.o: src/%.cxx inc/%.h
+$(SHAREDLIB): $(OBJECTS) $(DICTIONARYOBJECT)
+	@echo "Linking lib$(LIBRARY) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
+
+$(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(DICTIONARYOBJECT): $(DICTIONARY)
+	@echo "Compiling dictionary ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 #
 #----------------------------------------------------------------
-
-
-

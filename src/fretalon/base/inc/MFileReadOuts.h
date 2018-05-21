@@ -86,7 +86,7 @@ class MFileReadOuts : public MFileEvents
   
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileReadOuts, 0) // no description
 #endif

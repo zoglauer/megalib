@@ -82,7 +82,7 @@ class MGUIImageDimensions : public MGUIDialog
   MGUIEMinMaxEntry* m_ZDimension;
   MGUIEEntry* m_ZBins;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIImageDimensions, 0)
 #endif

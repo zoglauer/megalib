@@ -104,7 +104,7 @@ class MCalibrationSpectrum : public MCalibration
   //! Their calibartion model
   MCalibrationModel* m_Model;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationSpectrum, 0) // no description
 #endif

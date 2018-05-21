@@ -106,7 +106,7 @@ class MFileEventsSim : public MFileEvents
   //! The simulated start area of far field simualtions
   double m_SimulationStartAreaFarField;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileEventsSim, 0) // no description
 #endif

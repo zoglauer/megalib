@@ -29,7 +29,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MStreams.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimPM)
 #endif
 

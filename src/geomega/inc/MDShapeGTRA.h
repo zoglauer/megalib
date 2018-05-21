@@ -93,7 +93,7 @@ class MDShapeGTRA : public MDShape
   double m_Alpha2;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeGTRA, 0) // no description
 #endif

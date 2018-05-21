@@ -89,7 +89,7 @@ class MResponseMultipleComptonLens : public MResponseMultipleCompton
   MResponseMatrixO3 m_PdfFromLensBad;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleComptonLens, 0) // no description
 #endif

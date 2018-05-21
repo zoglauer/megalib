@@ -109,7 +109,7 @@ class MCalibrationCollection
   vector<MCalibrationSpectrum> m_CSs;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MCalibrationCollection, 0) // no description
 #endif

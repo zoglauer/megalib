@@ -84,7 +84,7 @@ protected:
 private:
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MNeuralNetworkBackpropagation, 0) // no description
   #endif

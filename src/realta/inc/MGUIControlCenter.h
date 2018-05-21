@@ -182,7 +182,7 @@ class MGUIControlCenter : public TGMainFrame
   Bool_t m_ReadModeTcpIp;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIControlCenter, 0) // GUI window: ...
 #endif

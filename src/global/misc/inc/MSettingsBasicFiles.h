@@ -86,7 +86,7 @@ class MSettingsBasicFiles : public MSettingsInterface
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsBasicFiles, 0) // no description
 #endif

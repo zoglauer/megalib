@@ -111,7 +111,7 @@ class MResponseMultipleComptonEventFile : public MResponseMultipleCompton
   
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMultipleComptonEventFile, 0) // no description
 #endif

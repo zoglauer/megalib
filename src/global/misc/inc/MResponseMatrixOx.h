@@ -105,7 +105,7 @@ class MResponseMatrixOx : public MResponseMatrix
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixOx, 1) // base class for all response matrices
 #endif

@@ -150,7 +150,7 @@ class MDTriggerBasic : public MDTrigger
   friend ostream& operator<<(ostream& os, const MDTriggerBasic& T);
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDTriggerBasic, 0) // Represents a trigger condition...
 #endif

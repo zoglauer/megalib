@@ -94,7 +94,7 @@ class MLMLClassicEM : public MLMLAlgorithms
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MLMLClassicEM, 0) // my "classic" EM (almost equivalent with Richardson-Lucy)
 #endif

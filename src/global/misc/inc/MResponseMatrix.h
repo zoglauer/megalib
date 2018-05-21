@@ -120,7 +120,7 @@ class MResponseMatrix
   // private members:
  private:
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrix, 1) // base class for all response matrices
 #endif

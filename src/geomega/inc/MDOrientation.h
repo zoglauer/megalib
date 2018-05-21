@@ -127,7 +127,7 @@ class MDOrientation
   //! The whole thing as ROOT matrix
   TGeoMatrix* m_RootMatrix;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDOrientation, 0) // no description
 #endif

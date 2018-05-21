@@ -331,7 +331,7 @@ class MEventSelector
 
   friend ostream& operator<<(ostream& os, MEventSelector& S);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEventSelector, 0) // no description
 #endif

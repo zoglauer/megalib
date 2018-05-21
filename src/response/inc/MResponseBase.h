@@ -201,7 +201,7 @@ class MResponseBase
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseBase, 0) // no description
 #endif

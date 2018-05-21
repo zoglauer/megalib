@@ -85,7 +85,7 @@ class MGUIETransceivers : public MGUIElement
   enum ButtonIDs { e_Add = 200, e_Remove };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIETransceivers, 0) // GUI window for unkown purpose ...
 #endif

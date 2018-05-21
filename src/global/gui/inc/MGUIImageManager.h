@@ -82,7 +82,7 @@ class MGUIImageManager : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIImageManager, 0) // GUI window: manages display and manipulation of images
 #endif

@@ -63,7 +63,7 @@ class MPrelude
   //! The key data read from an XML file and stored there afterwards
   MSettingsGlobal m_Settings;  
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPrelude, 0) // no description
 #endif

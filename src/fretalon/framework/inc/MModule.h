@@ -303,7 +303,7 @@ class MModule
   shared_ptr<MModuleReadOutAssemblyQueues> m_Queues;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MModule, 0) // no description
 #endif

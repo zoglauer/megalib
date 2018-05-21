@@ -98,7 +98,7 @@ class MResponseStripPairingTMVAEventFile : public MResponseMultipleComptonEventF
   
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseStripPairingTMVAEventFile, 0) // no description
 #endif

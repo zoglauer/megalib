@@ -130,7 +130,7 @@ class MResponseCreator
   };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseCreator, 0) // no description
 #endif

@@ -18,12 +18,12 @@
 
 // ROOT libs:
 #include <TROOT.h>
-#include <MString.h>
 #include <TSystem.h>
 
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MFile.h"
+#include "MString.h"
 
 // Forward declarations:
 
@@ -31,7 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MFileManager : public TObject
+class MFileManager 
 {
   // public interface:
  public:
@@ -43,13 +43,7 @@ class MFileManager : public TObject
   bool SelectFileToSave(MString& DefaultName, const char** FileTypes = 0);
   int ErrorCode();
 
-  static MString MakeRelativePath(MString FileName, MString Alias)
-
-/* //////////////////////////////////////////////////////////////////////////////// */
-
-
-/* MString MFileManager::MakeRelativePath(MString FileName, MString Alias) */
-{
+  static MString MakeRelativePath(MString FileName, MString Alias) {
   // 
 
   MFile::ExpandFileName(FileName);
@@ -92,7 +86,7 @@ class MFileManager : public TObject
   int m_ErrorCode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MFileManager, 0) // no description
 #endif

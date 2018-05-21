@@ -71,7 +71,7 @@ class MEventFacets : public TObject
   Bool_t m_FullyAnalyzed;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEventFacets, 0) // no description
 #endif

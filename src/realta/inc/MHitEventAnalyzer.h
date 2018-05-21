@@ -64,7 +64,7 @@ class MHitEventAnalyzer : public TObject
   MGeometryBasic *m_Geo;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MHitEventAnalyzer, 0) // no description
 #endif

@@ -65,7 +65,7 @@ class MGUIERAlgorithm : public MGUIDialog
  
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIERAlgorithm, 0)
 #endif

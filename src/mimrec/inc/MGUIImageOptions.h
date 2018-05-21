@@ -74,7 +74,7 @@ class MGUIImageOptions : public MGUIDialog
   MGUIEFileSelector* m_SourceCatalog;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIImageOptions, 0)
 #endif

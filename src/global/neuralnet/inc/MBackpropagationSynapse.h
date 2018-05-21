@@ -71,7 +71,7 @@ private:
   double m_Delta;
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MDummy, 0) // no description
   #endif

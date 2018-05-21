@@ -9,78 +9,114 @@
 
 
 #----------------------------------------------------------------
-# Definitions:
+# Base definitions:
 #
 
-PRG	= $(BN)/geomega
+PROGRAM = geomega
 
-MOBJS	= $(LB)/MGeomegaMain.o
+MAIN  = MGeomegaMain
 
-GOBJS	= $(LB)/MInterfaceGeomega.o \
-	$(LB)/MGUIGeomegaMain.o \
-	$(LB)/MGUIPosition.o \
-	$(LB)/MGUIPathLength.o \
+LIBRARY = Geomega
 
-LOBJS	= $(LB)/MSettingsGeomega.o \
-	$(LB)/MDGeometry.o \
-	$(LB)/MDGeometryQuest.o \
-	$(LB)/MDVolume.o \
-	$(LB)/MDVolumeSequence.o \
-	$(LB)/MDDetector.o \
-	$(LB)/MDACS.o \
-	$(LB)/MDAngerCamera.o \
-	$(LB)/MDCalorimeter.o \
-	$(LB)/MDStrip2D.o \
-	$(LB)/MDStrip3D.o \
-	$(LB)/MDStrip3DDirectional.o \
-	$(LB)/MDDriftChamber.o \
-	$(LB)/MDVoxel3D.o \
-	$(LB)/MDGuardRing.o \
-	$(LB)/MDShape.o \
-	$(LB)/MDShapeBRIK.o \
-	$(LB)/MDShapeSPHE.o \
-	$(LB)/MDShapeTUBS.o \
-	$(LB)/MDShapeTRD1.o \
-	$(LB)/MDShapeTRD2.o \
-	$(LB)/MDShapeTRAP.o \
-	$(LB)/MDShapeGTRA.o \
-	$(LB)/MDShapePCON.o \
-	$(LB)/MDShapePGON.o \
-	$(LB)/MDShapeCONE.o \
-	$(LB)/MDShapeCONS.o \
-	$(LB)/MDShapeUnion.o \
-	$(LB)/MDShapeIntersection.o \
-	$(LB)/MDShapeSubtraction.o \
-	$(LB)/MDMaterial.o \
-	$(LB)/MDMaterialComponent.o \
-	$(LB)/MDSystem.o \
-	$(LB)/MDTrigger.o \
-	$(LB)/MDTriggerBasic.o \
-	$(LB)/MDTriggerMap.o \
-	$(LB)/MDTriggerUnit.o \
-	$(LB)/MDVector.o \
-	$(LB)/MDDebugInfo.o \
-	$(LB)/MDGrid.o \
-	$(LB)/MDGridPoint.o \
-	$(LB)/MDGridPointCollection.o \
-	$(LB)/MDOrientation.o \
+FILES = MSettingsGeomega \
+	MDGeometry \
+	MDGeometryQuest \
+	MDVolume \
+	MDVolumeSequence \
+	MDDetector \
+	MDACS \
+	MDAngerCamera \
+	MDCalorimeter \
+	MDStrip2D \
+	MDStrip3D \
+	MDStrip3DDirectional \
+	MDDriftChamber \
+	MDVoxel3D \
+	MDGuardRing \
+	MDShape \
+	MDShapeBRIK \
+	MDShapeSPHE \
+	MDShapeTUBS \
+	MDShapeTRD1 \
+	MDShapeTRD2 \
+	MDShapeTRAP \
+	MDShapeGTRA \
+	MDShapePCON \
+	MDShapePGON \
+	MDShapeCONE \
+	MDShapeCONS \
+	MDShapeUnion \
+	MDShapeIntersection \
+	MDShapeSubtraction \
+	MDMaterial \
+	MDMaterialComponent \
+	MDSystem \
+	MDTrigger \
+	MDTriggerBasic \
+	MDTriggerMap \
+	MDTriggerUnit \
+	MDVector \
+	MDDebugInfo \
+	MDGrid \
+	MDGridPoint \
+	MDGridPointCollection \
+	MDOrientation \
+
+LIBRARY_UI = GeomegaGui
+
+FILES_UI = \
+	MInterfaceGeomega \
+	MGUIGeomegaMain \
+	MGUIPosition \
+	MGUIPathLength 
+
+LIBRARIES = \
+	-lCommonGui \
+	-lCommonMisc \
 
 
-SGOBJ = $(LB)/libGeomegaGui.$(DLL)
-SLOBJ = $(LB)/libGeomega.$(DLL)
+#----------------------------------------------------------------
+# Derived definitions:
+#
+
+OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+
+DICTIONARYNAME=$(LIBRARY)_Dictionary
+DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
+LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM=lib$(LIBRARY)_rdict.pcm
+
+
+OBJECTS_UI=$(patsubst %, $(LB)/%.o, $(FILES_UI))
+HEADERS_UI=$(patsubst %, inc/%.h, $(FILES_UI))
+SHAREDLIB_UI=$(LB)/lib$(LIBRARY_UI).$(DLL)
+
+DICTIONARYNAME_UI=$(LIBRARY_UI)_Dictionary
+DICTIONARY_UI=$(LB)/$(DICTIONARYNAME_UI).cxx
+DICTIONARYOBJECT_UI=$(LB)/$(DICTIONARYNAME_UI).o
+LINKDEF_UI=$(LB)/$(DICTIONARYNAME_UI)_LinkDef.h
+ROOTMAP_UI=$(LB)/lib$(LIBRARY_UI).rootmap
+ROOTPCM_UI=lib$(LIBRARY_UI)_rdict.pcm
+
+OBJECT_MAIN=$(patsubst %, $(LB)/%.o, $(MAIN))
+EXECUTABLE=$(BN)/$(PROGRAM)
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(PRG)
+all: $(EXECUTABLE)
 
-lib: $(SLOBJ) 
+lib: $(SHAREDLIB) 
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
-	@rm -f $(IN)/LinkDef.h
-
+	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
 clean:
 	@rm -f src/*~
@@ -89,40 +125,65 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
-	@rm -f $(PRG)
-	@rm -f $(MOBJS) $(GOBJS) $(LOBJS) $(SGOBJ) $(SLOBJ)
+	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
+	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
+	@rm -f $(OBJECTS_MAIN) $(EXECUTABLE)
 
-
+	
 #----------------------------------------------------------------
 # Dependencies:
 #
 
-$(MOBJS): $(LB)/%.o: src/%.cxx inc/%.h
+$(DICTIONARY): $(HEADERS)
+	@echo "Generating $(DICTIONARYNAME)_LinkDef.h ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
+	@echo "Generating dictionary $(DICTIONARYNAME).cxx..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@mv $(ROOTPCM) $(LB)
+
+$(SHAREDLIB): $(OBJECTS) $(DICTIONARYOBJECT)
+	@echo "Linking lib$(LIBRARY) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
+
+$(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(SLOBJ): $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
+$(DICTIONARYOBJECT): $(DICTIONARY)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(SGOBJ): $(GOBJS) $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(GOBJS) $(GLIBS) $(LIBS) -o $(SGOBJ)
 
-$(LOBJS): $(LB)/%.o: src/%.cxx inc/%.h
+
+$(DICTIONARY_UI): $(HEADERS_UI)
+	@echo "Generating $(DICTIONARYNAME_UI)_LinkDef.h ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF_UI) -i $(HEADERS_UI)
+	@echo "Generating dictionary $(DICTIONARYNAME_UI).cxx..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP_UI) -s lib$(LIBRARY_UI) -c $^ $(LINKDEF_UI)
+	@mv $(ROOTPCM_UI) $(LB)
+
+$(SHAREDLIB_UI): $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)
+	@echo "Linking lib$(LIBRARY_UI) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT_UI) $(OBJECTS_UI) $(GLIBS) $(LIBS) -o $(SHAREDLIB_UI)
+
+$(OBJECTS_UI): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(GOBJS): $(LB)/%.o: src/%.cxx inc/%.h
+$(DICTIONARYOBJECT_UI): $(DICTIONARY_UI)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
+
+$(OBJECT_MAIN): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(PRG): $(SGOBJ) $(SLOBJ) $(MOBJS)
+$(EXECUTABLE): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN)
 	@echo "Linking $(subst $(BN)/,,$@) ..."
-	$(LD) $(LDFLAGS) $(GEOMEGALIBS) $(GLIBS) $(LIBS) -o $(PRG)
+	@$(LD) $(LDFLAGS) $(OBJECT_MAIN) $(SHAREDLIB_UI) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE)
 
+	
 #
 #----------------------------------------------------------------
-
-
-

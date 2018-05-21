@@ -78,7 +78,7 @@ class MGeometryRevan : public MDGeometryQuest
  private:
   double m_LayerDistance;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGeometryRevan, 0) // no description
 #endif

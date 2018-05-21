@@ -65,7 +65,7 @@ class MGUIOptionsGeneral : public MGUIDialog
 
   MGUIECBList* m_Options;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIOptionsGeneral, 0)
 #endif

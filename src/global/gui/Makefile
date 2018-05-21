@@ -9,47 +9,64 @@
 
 
 #----------------------------------------------------------------
-# Definitions:
+# Base definitions:
 #
-LOBJS      = $(LB)/MGUIDefaults.o \
-             $(LB)/MGUIDialog.o \
-             $(LB)/MGUIElement.o \
-             $(LB)/MGUIEEntry.o \
-             $(LB)/MGUIEEntryList.o \
-             $(LB)/MGUIEFileSelector.o \
-             $(LB)/MGUIEMinMaxEntry.o \
-             $(LB)/MGUIERBList.o \
-             $(LB)/MGUIECBList.o \
-             $(LB)/MGUIESlider.o \
-             $(LB)/MGUIEStatusBar.o \
-             $(LB)/MGUIEFlatToolBar.o \
-             $(LB)/MGUIEFlatToolBarButton.o \
-             $(LB)/MGUIEComboBox.o \
-             $(LB)/MGUIETransceiver.o \
-             $(LB)/MGUICBSelection.o \
-             $(LB)/MGUIRBSelection.o \
-             $(LB)/MGUIGeometry.o \
-             $(LB)/MGUIMultiInput.o \
-             $(LB)/MGUIProgressBar.o \
-             $(LB)/MGUIMultiProgressBar.o \
-             $(LB)/MGUIAssistant.o \
-             $(LB)/MGUIEText.o \
-             $(LB)/MGUIETime.o \
-             $(LB)/MGUIPrelude.o \
-             $(LB)/MGUIAbout.o \
-             $(LB)/MGUIMain.o \
 
-SOBJ = $(LB)/libCommonGui.$(DLL)
+LIBRARY = CommonGui
+
+FILES = MGUIDefaults \
+	MGUIDialog \
+	MGUIElement \
+	MGUIEEntry \
+	MGUIEEntryList \
+	MGUIEFileSelector \
+	MGUIEMinMaxEntry \
+	MGUIERBList \
+	MGUIECBList \
+	MGUIESlider \
+	MGUIEStatusBar \
+	MGUIEFlatToolBar \
+	MGUIEFlatToolBarButton \
+	MGUIEComboBox \
+	MGUIETransceiver \
+	MGUICBSelection \
+	MGUIRBSelection \
+	MGUIGeometry \
+	MGUIMultiInput \
+	MGUIProgressBar \
+	MGUIMultiProgressBar \
+	MGUIAssistant \
+	MGUIEText \
+	MGUIETime \
+	MGUIPrelude \
+	MGUIAbout \
+	MGUIMain \
+
+
+#----------------------------------------------------------------
+# Derived definitions:
+#
+
+OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+
+DICTIONARYNAME=$(LIBRARY)_Dictionary
+DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
+LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM=lib$(LIBRARY)_rdict.pcm
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(SOBJ) 
+all: $(SHAREDLIB)
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
-	@rm -f $(IN)/LinkDef.h
+	@echo "$(OBJECTS) $(DICTIONARYOBJECT)" >> $(LB)/AllObjects.txt
 
 clean:
 	@rm -f src/*~
@@ -58,21 +75,30 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
-	@rm -f $(LOBJS) $(SOBJ)
-
+	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 
 #----------------------------------------------------------------
 # Dependencies:
 #
 
-$(SOBJ): $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) -lCommonMisc $(LOBJS) $(GLIBS) $(LIBS) -o $(SOBJ)
+$(DICTIONARY): $(HEADERS)
+	@echo "Generating $(DICTIONARYNAME)_LinkDef ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
+	@echo "Generating dictionary ..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@mv $(ROOTPCM) $(LB)
+	
+$(SHAREDLIB): $(OBJECTS) $(DICTIONARYOBJECT)
+	@echo "Linking lib$(LIBRARY) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
 
-$(LOBJS): $(LB)/%.o: src/%.cxx inc/%.h
+$(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
+$(DICTIONARYOBJECT): $(DICTIONARY)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 #
 #----------------------------------------------------------------

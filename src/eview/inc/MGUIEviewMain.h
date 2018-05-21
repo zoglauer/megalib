@@ -209,7 +209,7 @@ class MGUIEviewMain : public TGMainFrame
                    c_Side, c_Top, c_Front, c_ApplyRotation, c_Print,
                    c_XNeg, c_XPos, c_YNeg, c_YPos, c_ZNeg, c_ZPos, c_In, c_Out, c_About };
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEviewMain, 0) // GUI window: for the display of one event...
 #endif

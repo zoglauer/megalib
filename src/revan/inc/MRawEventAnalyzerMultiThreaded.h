@@ -88,7 +88,7 @@ class MRawEventAnalyzerMultiThreaded
   vector<int> m_ThreadStatus;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRawEventAnalyzerMultiThreaded, 0) // no description
 #endif

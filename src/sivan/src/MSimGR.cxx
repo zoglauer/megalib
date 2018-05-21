@@ -31,7 +31,7 @@ using namespace std;
 #include "MDGuardRing.h"
 #include "MStreams.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimGR)
 #endif
 

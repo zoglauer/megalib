@@ -180,7 +180,7 @@ class MPointSource
 
   friend ostream& operator<<(ostream& os, const MPointSource& P);
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MPointSource, 0)
 #endif

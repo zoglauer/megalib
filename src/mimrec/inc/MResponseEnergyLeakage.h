@@ -76,7 +76,7 @@ class MResponseEnergyLeakage : public MResponse
   MComptonEvent *m_Compton;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEnergyLeakage, 0) // no description
 #endif

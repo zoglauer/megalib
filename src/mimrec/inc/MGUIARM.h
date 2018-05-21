@@ -99,7 +99,7 @@ class MGUIARM : public MGUIDialog
   MGUIEEntry* m_Bins;
 
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIARM, 0) // Dialogbox: Select the ARM-parameters
 #endif

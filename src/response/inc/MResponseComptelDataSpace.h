@@ -105,7 +105,7 @@ class MResponseComptelDataSpace : public MResponseBuilder
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseComptelDataSpace, 0) // no description
 #endif

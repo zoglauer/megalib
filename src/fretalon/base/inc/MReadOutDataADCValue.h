@@ -99,7 +99,7 @@ class MReadOutDataADCValue : public MReadOutData
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MReadOutDataADCValue, 0) // no description
 #endif

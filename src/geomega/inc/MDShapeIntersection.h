@@ -97,7 +97,7 @@ class MDShapeIntersection : public MDShape
   //! Almost unique position
   MVector m_AlmostUniquePosition;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeIntersection, 0) // no description
 #endif

@@ -106,7 +106,7 @@ class MSettings : public MSettingsBasicFiles
   unsigned int m_MEGAlibVersion;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettings, 0) // no description
 #endif

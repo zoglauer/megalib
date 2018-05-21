@@ -84,7 +84,7 @@ class MDVector
   vector<double> m_Values;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVector, 0) // no description
 #endif

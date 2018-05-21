@@ -89,7 +89,7 @@ class MDecayEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDecayEvent, 1)
 #endif

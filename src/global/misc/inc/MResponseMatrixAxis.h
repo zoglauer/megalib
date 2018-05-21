@@ -37,7 +37,7 @@ class MResponseMatrixAxis
   // public interface:
  public:
   //! Default constructor
-  MResponseMatrixAxis(const MString& Name);
+  MResponseMatrixAxis(const MString& Name = "");
   //! Default destuctor 
   virtual ~MResponseMatrixAxis();
 
@@ -128,7 +128,7 @@ class MResponseMatrixAxis
 private:
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseMatrixAxis, 0) // no description
 #endif

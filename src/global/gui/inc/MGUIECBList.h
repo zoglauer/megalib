@@ -100,7 +100,7 @@ class MGUIECBList : public TGCanvas
   //! The wrap length of text labels:
   int m_WrapLength;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIECBList, 0) // Basic GUI element: a check button list
 #endif

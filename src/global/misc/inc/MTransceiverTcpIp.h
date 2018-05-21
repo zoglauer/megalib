@@ -57,7 +57,7 @@ class MTransceiverTcpIp
   //! and filled with '/0' characters
   MTransceiverTcpIp(MString Name = "A transceiver", MString HostName = "localhost", unsigned int Port = 9090, unsigned int Mode = c_ModeASCIIText);
   //! Default desctructor
-  ~MTransceiverTcpIp();
+  virtual ~MTransceiverTcpIp();
 
   //! Set the name of the transceiver
   void SetName(MString Name) { m_Name = Name; }
@@ -218,7 +218,7 @@ class MTransceiverTcpIp
   bool m_IsServer;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTransceiverTcpIp, 0) // no description
 #endif

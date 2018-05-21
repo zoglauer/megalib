@@ -135,7 +135,7 @@ class MGUIEEntry : public MGUIElement
   enum Type { e_String, e_Integer, e_Double };
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIEEntry, 0) // GUI window for unkown purpose ...
 #endif

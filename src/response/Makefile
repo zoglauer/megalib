@@ -9,58 +9,85 @@
 
 
 #----------------------------------------------------------------
-# Definitions:
+# Base definitions:
 #
 
-PRGM  = $(BN)/responsemanipulator
+PROGRAM1 = responsemanipulator
+MAIN1    = MResponseManipulatorMain
 
-MOBJM = $(LB)/MResponseManipulatorMain.o
+PROGRAM2 = responsecreator
+MAIN2    = MResponseCreatorMain
 
-PRGC  = $(BN)/responsecreator
+LIBRARY = ResponseCreator
 
-MOBJC = $(LB)/MResponseCreatorMain.o
+FILES = MResponseCreator \
+	MResponseManipulator \
+	MResponseBuilder \
+	MResponseBase \
+	MResponseClusteringDSS \
+	MResponseTracking \
+	MResponseMultipleCompton \
+	MResponseMultipleComptonEventFile \
+	MResponseMultipleComptonLens \
+	MResponseMultipleComptonTMVA \
+	MResponseFirstInteractionPosition \
+	MResponseSpectral \
+	MResponseImaging \
+	MResponseImagingARM \
+	MResponseImagingEfficiency \
+	MResponseImagingEfficiencyNearField \
+	MResponseImagingBinnedMode \
+	MResponseImagingCodedMask \
+	MResponseEarthHorizon \
+	MResponseEventQuality \
+	MResponseEventQualityTMVAEventFile \
+	MResponseStripPairingTMVAEventFile \
+	MResponseComptelDataSpace \
+	
+LIBRARIES = \
+	-lRevan \
+	-lSivan \
+	-lMimrec \
+	-lSpectralyze \
+	-lGeomega \
+	-lCommonMisc \
+	-lCommonGui \
 
-LOBJS = $(LB)/MResponseCreator.o \
-	$(LB)/MResponseManipulator.o \
-	$(LB)/MResponseBuilder.o \
-	$(LB)/MResponseBase.o \
-	$(LB)/MResponseClusteringDSS.o \
-	$(LB)/MResponseTracking.o \
-	$(LB)/MResponseMultipleCompton.o \
-	$(LB)/MResponseMultipleComptonEventFile.o \
-	$(LB)/MResponseMultipleComptonLens.o \
-	$(LB)/MResponseMultipleComptonNeuralNet.o \
-	$(LB)/MResponseMultipleComptonTMVA.o \
-	$(LB)/MResponseFirstInteractionPosition.o \
-	$(LB)/MResponseSpectral.o \
-	$(LB)/MResponseImaging.o \
-	$(LB)/MResponseImagingARM.o \
-	$(LB)/MResponseImagingEfficiency.o \
-	$(LB)/MResponseImagingEfficiencyNearField.o \
-	$(LB)/MResponseImagingBinnedMode.o \
-	$(LB)/MResponseImagingCodedMask.o \
-	$(LB)/MResponseEarthHorizon.o \
-	$(LB)/MResponseEventQuality.o \
-	$(LB)/MResponseEventQualityTMVAEventFile.o \
-	$(LB)/MResponseStripPairingTMVAEventFile.o \
-	$(LB)/MResponseComptelDataSpace.o \
+
+#----------------------------------------------------------------
+# Derived definitions:
+#
+
+OBJECTS=$(patsubst %, $(LB)/%.o, $(FILES))
+HEADERS=$(patsubst %, inc/%.h, $(FILES))
+SHAREDLIB=$(LB)/lib$(LIBRARY).$(DLL)
+
+DICTIONARYNAME=$(LIBRARY)_Dictionary
+DICTIONARY=$(LB)/$(DICTIONARYNAME).cxx
+DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
+LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
+ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
+ROOTPCM=lib$(LIBRARY)_rdict.pcm
 
 
-OBJS = $(MOBJM) $(MOBJC) $(LOBJS)
+OBJECT_MAIN1=$(patsubst %, $(LB)/%.o, $(MAIN1))
+EXECUTABLE1=$(BN)/$(PROGRAM1)
 
-SLOBJ = $(LB)/libResponseCreator.$(DLL)
+OBJECT_MAIN2=$(patsubst %, $(LB)/%.o, $(MAIN2))
+EXECUTABLE2=$(BN)/$(PROGRAM2)
+
 
 #----------------------------------------------------------------
 # Commands:
 #
 
-all: $(PRGC) $(PRGM)
+all: $(EXECUTABLE1) $(EXECUTABLE2)
 
-lib: $(SLOBJ)
+lib: $(SHAREDLIB) 
 
 link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
-	@rm -f $(IN)/LinkDef.h
+	@echo "$(OBJECTS) $(DICTIONARYOBJECT)" >> $(LB)/AllObjects.txt
 
 clean:
 	@rm -f src/*~
@@ -69,29 +96,53 @@ clean:
 	@rm -f inc/\#*
 	@rm -f *~
 	@rm -f \#*
-	@rm -f $(PRGC) $(PRGM)
-	@rm -f $(MOBJC) $(MOBJM) $(LOBJS) $(SLOBJ)
+	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
+	@rm -f $(OBJECTS_MAIN1) $(EXECUTABLE1)
+	@rm -f $(OBJECTS_MAIN2) $(EXECUTABLE2)
 
-
+	
 #----------------------------------------------------------------
 # Dependencies:
 #
 
-$(SLOBJ): $(LOBJS)
-	@echo "Linking $(subst $(LB)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(SOFLAGS) $(LOBJS) $(GLIBS) $(LIBS) -o $(SLOBJ)
+$(DICTIONARY): $(HEADERS)
+	@echo "Generating $(DICTIONARYNAME)_LinkDef.h ..."
+	@$(BN)/generatelinkdef -o $(LINKDEF) -i $(HEADERS)
+	@echo "Generating dictionary $(DICTIONARYNAME).cxx..."
+	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
+	@mv $(ROOTPCM) $(LB)
 
-$(OBJS): $(LB)/%.o: src/%.cxx inc/%.h
+$(SHAREDLIB): $(OBJECTS) $(DICTIONARYOBJECT)
+	@echo "Linking lib$(LIBRARY) ..."
+	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
+
+$(OBJECTS): $(LB)/%.o: src/%.cxx inc/%.h
 	@echo "Compiling $(subst src/,,$<) ..."
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(PRGM): $(MOBJM) $(SLOBJ)
+$(DICTIONARYOBJECT): $(DICTIONARY)
+	@echo "Compiling dictionary ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+
+
+$(OBJECT_MAIN1): $(LB)/%.o: src/%.cxx inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXECUTABLE1): $(SHAREDLIB) $(OBJECT_MAIN1)
 	@echo "Linking $(subst $(BN)/,,$@) ..."
-	@$(LD) $(LDFLAGS) $(MOBJM) $(LOBJS) $(RESPONSELIBS) $(GLIBS) $(LIBS) -o $(PRGM)
+	@$(LD) $(LDFLAGS) $(OBJECT_MAIN1) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE1)
 
-$(PRGC): $(MOBJC) $(SLOBJ)
-	@echo "Linking $(subst $(BN)/,,$@)..."
-	@$(LD) $(LDFLAGS) $(MOBJC) $(LOBJS) $(RESPONSELIBS)  $(GLIBS) $(LIBS) -o $(PRGC)
 
+$(OBJECT_MAIN2): $(LB)/%.o: src/%.cxx inc/%.h
+	@echo "Compiling $(subst src/,,$<) ..."
+	@$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(EXECUTABLE2): $(SHAREDLIB) $(OBJECT_MAIN2)
+	@echo "Linking $(subst $(BN)/,,$@) ..."
+	@$(LD) $(LDFLAGS) $(OBJECT_MAIN2) $(SHAREDLIB) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(EXECUTABLE2)
+
+	
 #
 #----------------------------------------------------------------

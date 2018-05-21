@@ -108,7 +108,7 @@ class MGUIAssistant : public TGTransientFrame
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIAssistant, 1) // basic class for dialog windows
 #endif

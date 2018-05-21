@@ -286,7 +286,7 @@ class MRealTimeAnalyzer
   TMutex m_IsotopeMutex;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRealTimeAnalyzer, 0) // no description
 #endif

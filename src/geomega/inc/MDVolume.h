@@ -298,7 +298,7 @@ class MDVolume
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDVolume, 0)         // a detector volume
 #endif

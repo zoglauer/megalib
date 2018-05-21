@@ -68,7 +68,7 @@ class MGUISignificance : public MGUIDialog
 
   bool& m_OkPressed;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUISignificance, 0) // Dialogbox: Select the Significance-parameters
 #endif

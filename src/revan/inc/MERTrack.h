@@ -117,7 +117,7 @@ class MERTrack : public MERConstruction
   double m_TimeComptonDirections;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrack, 0) // no description
 #endif

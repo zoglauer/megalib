@@ -66,7 +66,7 @@ class MBPDataImageOneByte : public MBPData
   int m_NBins;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MBPDataImageOneByte, 0) // a backprojected image
 #endif

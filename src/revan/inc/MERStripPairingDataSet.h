@@ -106,7 +106,7 @@ class MERStripPairingDataSet
    
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERStripPairingDataSet, 0) // no description
 #endif

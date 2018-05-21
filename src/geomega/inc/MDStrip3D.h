@@ -161,7 +161,7 @@ class MDStrip3D : public MDStrip2D
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDStrip3D, 0) // no description
 #endif

@@ -129,7 +129,7 @@ private:
   //! ID counter
   static unsigned int s_IDCounter;
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MSynapse, 0) // no description
   #endif

@@ -78,7 +78,7 @@ private:
   vector<MNeuralNetworkIO> m_IOs;
   
   
-  #ifdef ___CINT___
+  #ifdef ___CLING___
 public:
   ClassDef(MNeuralNetworkIOStore, 0) // no description
   #endif

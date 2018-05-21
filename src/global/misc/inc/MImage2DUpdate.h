@@ -72,7 +72,7 @@ class MImage2DUpdate : public MImage2D
   TH2D *m_Histogram;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MImage2DUpdate, 0) // no description
 #endif

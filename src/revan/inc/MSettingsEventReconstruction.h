@@ -351,7 +351,7 @@ class MSettingsEventReconstruction : public MSettingsInterface
   bool m_SpecialMode;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MSettingsEventReconstruction, 0) // no description
 #endif

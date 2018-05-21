@@ -61,7 +61,7 @@ class MERTrackRank : public MERTrack
  protected:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERTrackRank, 0)
 #endif

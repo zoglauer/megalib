@@ -97,7 +97,7 @@ class MDShapePCON : public MDShape
   vector<double> m_Rmin;
   vector<double> m_Rmax;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapePCON, 0) // no description
 #endif

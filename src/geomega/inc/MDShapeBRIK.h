@@ -95,7 +95,7 @@ class MDShapeBRIK : public MDShape
   double m_Dz;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeBRIK, 0) // no description
 #endif

@@ -59,7 +59,7 @@ class MGUIResponseParameterPRM : public MGUIDialog
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIResponseParameterPRM, 0)
 #endif

@@ -71,7 +71,7 @@ class MTransceiver
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MTransceiver, 0) // no description
 #endif

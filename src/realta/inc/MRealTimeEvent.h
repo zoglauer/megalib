@@ -147,7 +147,7 @@ class MRealTimeEvent
   MBPData* m_Backprojection;
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MRealTimeEvent, 0) // no description
 #endif

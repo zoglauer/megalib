@@ -331,7 +331,7 @@ class MComptonEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MComptonEvent, 1)
 #endif

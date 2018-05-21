@@ -62,7 +62,7 @@ class MGUIExposure : public MGUIDialog
   MGUIEFileSelector* m_FileSelector;
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIExposure, 0)
 #endif

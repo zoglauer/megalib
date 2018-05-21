@@ -29,14 +29,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef ___CINT___
-ClassImp(MCoordinateSystem)
-#endif
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 std::ostream& operator<<(std::ostream& os, MCoordinateSystem C) {
   if (C == MCoordinateSystem::c_Galactic) {
     return os<<"Galactic";
@@ -50,7 +42,6 @@ std::ostream& operator<<(std::ostream& os, MCoordinateSystem C) {
     return os<<"unknown";
   }
 }
-
 
 
 // MCoordinateSystem.cxx: the end...

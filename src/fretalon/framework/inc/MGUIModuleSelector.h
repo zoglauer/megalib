@@ -81,7 +81,7 @@ class MGUIModuleSelector : public TGTransientFrame
   //! The list
   MGUIERBList* m_List;
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUIModuleSelector, 1) // basic class for dialog windows
 #endif

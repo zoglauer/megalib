@@ -98,7 +98,7 @@ class MERNoising : public MERConstruction
   long m_NNotTriggeredOrVetoedEvents;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MERNoising, 0) // no description
 #endif

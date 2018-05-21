@@ -91,7 +91,7 @@ class MResponseImagingARM : public MResponseBuilder
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseImagingARM, 0) // no description
 #endif

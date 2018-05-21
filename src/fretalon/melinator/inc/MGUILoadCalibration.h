@@ -70,7 +70,7 @@ class MGUILoadCalibration : public MGUIDialog
   MIsotopeStore m_IsotopeStore;
   
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MGUILoadCalibration, 0)
 #endif

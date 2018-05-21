@@ -98,7 +98,7 @@ class MDShapeSubtraction : public MDShape
   //! Almost unique position
   MVector m_AlmostUniquePosition;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MDShapeSubtraction, 0) // no description
 #endif

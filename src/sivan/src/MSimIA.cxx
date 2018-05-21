@@ -36,7 +36,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MSimIA)
 #endif
 
