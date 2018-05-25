@@ -70,7 +70,7 @@ RandomIDs="no"
 Nice=0;
 Wait="no"
 Zip="no"
-Delay=2
+Delay=0.5
 ExecuteString="cosima"
 Executable="cosima"
 
@@ -252,19 +252,6 @@ else
   exit 1;
 fi
 
-if echo ${Delay} | grep "^[0-9]*$" > /tmp/aux
-then
-  rm /tmp/aux
-else
-  echo " "
-  echo "Error: The value behind delay must be a number";
-  echo "       For details see mcosima --help"
-  echo " "
-  rm /tmp/aux
-  exit 1;
-fi
-if [ ${Delay} -le 2 ]; then Delay=2; fi
-
 if echo ${ParallelID} | grep "^[0-9]*$" > /tmp/aux
 then
   rm /tmp/aux
@@ -389,7 +376,7 @@ echo "TAGS=( )" >> ${KillFileName}
 # Start the sims
 for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
-  mwait -i=threads -p=cosima
+  mwait -i=${Max} -p=cosima
   
   echo "Launching cosima run ${i}/${Threads} ($(date +%Y-%m-%d\ %H:%m:%S))"
   
@@ -421,7 +408,7 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   nohup nice -n ${Nice} bash -c "source ${MEGALIB}/bin/source-megalib.sh; ${Cmd}" > /dev/null 2>&1 &
   
   # We need to sleep for a little while so that cosima can determine which is the next file to use
-  #sleep ${Delay}
+  sleep ${Delay}
   
   echo "TAGS+=( ${Tag} )"  >> ${KillFileName}
 done
