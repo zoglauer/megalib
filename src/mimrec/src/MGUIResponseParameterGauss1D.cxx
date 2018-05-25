@@ -85,7 +85,7 @@ void MGUIResponseParameterGauss1D::Create()
 
   TGLayoutHints* GaussiansLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
   m_Gaussians = new MGUIEEntryList(this, "Set the 1D Gaussian approximations of the response:");
-  m_Gaussians->Add("Compton across cone (e.g. 1 sigma of ARM width) [deg]:", m_GUIData->GetFitParameterComptonTransSphere(), true, 0.0, 180.0);
+  m_Gaussians->Add("Compton across cone (e.g. 1 sigma of ARM width = FWHM / 2.35) [deg]:", m_GUIData->GetFitParameterComptonTransSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Compton along cone for tracked events (e.g. 1 sigma of SPD width) [deg]:", m_GUIData->GetFitParameterComptonLongSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Pairs [deg]:", m_GUIData->GetFitParameterPair(), true, 0.0, 180.0);
   m_Gaussians->SetWrapLength(Width - m_FontScaler*40);
