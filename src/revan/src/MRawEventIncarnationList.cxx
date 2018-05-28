@@ -117,7 +117,8 @@ void MRawEventIncarnationList::Delete(MRawEventIncarnations* REI)
 { 
   // Remove a raw event from the list and delete it
 
-  m_Collection.erase(find(m_Collection.begin(), m_Collection.end(), REI)); 
+  m_Collection.erase(find(m_Collection.begin(), m_Collection.end(), REI));
+  REI->DeleteAll();
   delete REI;
 }
 
