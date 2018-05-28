@@ -584,7 +584,7 @@ bool MResponseBuilder::SanityCheckSimulations()
         }
       }
       if (HasOriginIDs == false) {
-        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has no origin IDs: Your simulations most like do not contain the full required IA information block!"<<endl;
+        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has no origin IDs: Your simulations most likely do not contain the full required IA information block!"<<endl;
         return false;       
       }
     }
@@ -674,7 +674,7 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
 
     // Generate sim IDs:
     for (vector<int>::iterator Iter = Ids.begin(); Iter != Ids.end(); ++Iter) {
-      unsigned int HTID = (*Iter)-IdOffset;
+      unsigned int HTID = (*Iter) - IdOffset;
       if (HTID >= m_SiEvent->GetNHTs()) {
         merr<<"The RESE has higher IDs "<<HTID<<" than the sim file HTs!"<<endl;
         return OriginIds;
@@ -688,6 +688,7 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
       for (unsigned int o = 0; o < HT->GetNOrigins(); ++o) {
         int Origin = int(HT->GetOriginAt(o));
         if (find(OriginIds.begin(), OriginIds.end(), Origin) == OriginIds.end()) { // not found
+          // Add it if it is no INIT, ANNI or DECA --- but why?? We can have on electron started at INIT or DECA generating hits
           if (Origin >= 1 && 
             m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
             m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI" && 
