@@ -497,10 +497,6 @@ bool MBackprojectionNearField::BackprojectionPET(double* Image, int* Bins, int& 
 {
   //cout<<"Backprojecting PET"<<endl;
   
-  // Temporary dummy response:
-  double OneSigmaLineWidth = 0.3;
-  double GaussFactor = -0.5 / (OneSigmaLineWidth * OneSigmaLineWidth);
-  
   MVector P1 = m_PET->GetPosition1();
   MVector P2 = m_PET->GetPosition2();
   
@@ -519,7 +515,7 @@ bool MBackprojectionNearField::BackprojectionPET(double* Image, int* Bins, int& 
         MVector P(m_x1BinCenter[x], m_x2BinCenter[y], m_x3BinCenter[z]);
         Distance = P.DistanceToLine(P1, P2);
         
-        Content = exp(GaussFactor * Distance*Distance);
+        Content = m_Response->GetPETResponse(Distance);
                            
         if (Content > 0.0) {
           if (Maximum < Content) Maximum = Content;

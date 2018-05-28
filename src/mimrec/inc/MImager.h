@@ -96,7 +96,7 @@ class MImager
   //! Transversal: 1-sigma Gaussian ARM-width equivalent
   //! Longitudinal: 1-sigma Gaussian SPD-widthj equivalent
   //! Pair: 1-sigma Gaussian
-  void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair,
+  void SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, const double PET,
                            const double CutOff, const bool UseAbsorptions);
   //! Calculate the response using the known uncertainties of the event
   //! Increase is an artificial increase of the value

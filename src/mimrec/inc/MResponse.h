@@ -61,7 +61,10 @@ class MResponse
   //! Integral of the response
   virtual double GetPairIntegral() const;
  
-
+  
+  //! Get PET response
+  virtual double GetPETResponse(const double t);
+  
 
   // protected methods:
  protected:

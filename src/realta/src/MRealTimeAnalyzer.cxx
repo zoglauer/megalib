@@ -1282,6 +1282,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
     Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
                                 m_Settings->GetFitParameterComptonLongSphere(),
                                 m_Settings->GetFitParameterPair(),
+                                m_Settings->GetFitParameterPET(),
                                 m_Settings->GetGauss1DCutOff(),
                                 m_Settings->GetUseAbsorptions());
   } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {

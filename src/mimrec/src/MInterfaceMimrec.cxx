@@ -1590,7 +1590,8 @@ void MInterfaceMimrec::ARMResponseComparison()
   if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
     Response = new MResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
                                      m_Settings->GetFitParameterComptonLongSphere(),
-                                     m_Settings->GetFitParameterPair());
+                                     m_Settings->GetFitParameterPair(),
+                                     m_Settings->GetFitParameterPET());
   } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
     Response = new MResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
                                        m_Settings->GetFitParameterComptonLongSphere());

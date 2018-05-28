@@ -286,7 +286,7 @@ bool ExternalAnalysisPipelineExample::Initialize()
    // }
     
   // Set the response type:
-  m_Imager->SetResponseGaussian(3, 30, 3, 2.5, false);
+  m_Imager->SetResponseGaussian(3, 30, 3, 2.5, 0.5, false);
 
   // A new event selector:
   MEventSelector S;
