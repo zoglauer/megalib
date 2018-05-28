@@ -174,7 +174,7 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   if (MResponseBuilder::Initialize() == false) return false;
   
   // We ignore the loaded configuration file
-  // TODO: Missing event clusterize None as soon as implemented
+  m_ReReader->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
   m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
