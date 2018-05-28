@@ -155,6 +155,8 @@ bool MEREventClusterizerDataSet::FillEventData(Long64_t ID, vector<MRESE*>& RESE
     return false;
   }
   
+  m_SimulationID = (Float_t) ID;
+  
   for (unsigned int r = 0; r < RESEs.size(); ++r) {
     m_Energies[r] = RESEs[r]->GetEnergy();
     m_PositionsX[r] = RESEs[r]->GetPosition().X();

@@ -66,7 +66,7 @@ class MEREventClusterizerDataSet
   MString ToString();
   
   
-  //! Simulation ID -- might overflow but this is just for diagnostics
+  //! Simulation ID -- might overflow / truncate but this is just for diagnostics
   Float_t m_SimulationID;
   //! Measured energies
   vector<Float_t> m_Energies;
