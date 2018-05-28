@@ -225,8 +225,6 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
 {
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
-
-  return true;
   
   // We need to have at least an "INIT" in the simulation file per event 
   if (m_SiEvent->GetNIAs() == 0) {
@@ -327,7 +325,6 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
   
   // Store the data
   m_Trees[RESEs.size() - 1]->Fill();
-  
   
   return true;
 }
