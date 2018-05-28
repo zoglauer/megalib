@@ -55,6 +55,9 @@ class MRESEList
   void CompressRESEs() { Compress(); } // depreciated!
   void Compress();
 
+  //! Shuffle the RESE's randomly around
+  void Shuffle();
+  
   virtual MRESEList* Duplicate();
   MString ToString(bool WithLink = true, int Level = 0);
 

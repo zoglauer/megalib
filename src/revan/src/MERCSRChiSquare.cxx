@@ -229,10 +229,10 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   // is assumed to be the initial estimate for first hit
   int EstimatedFirst = -1;
   if ((RE->GetRESEAt(0)->GetDetector() == 1 || RE->GetRESEAt(0)->GetDetector() == 5) && 
-      (RE->GetRESEAt(1)->GetDetector() != 1 || RE->GetRESEAt(1)->GetDetector() != 5)) {
+      (RE->GetRESEAt(1)->GetDetector() != 1 && RE->GetRESEAt(1)->GetDetector() != 5)) {
     EstimatedFirst = 0;
   } else if ((RE->GetRESEAt(1)->GetDetector() == 1 || RE->GetRESEAt(1)->GetDetector() == 5) && 
-             (RE->GetRESEAt(0)->GetDetector() != 1 || RE->GetRESEAt(0)->GetDetector() != 5)) {
+             (RE->GetRESEAt(0)->GetDetector() != 1 && RE->GetRESEAt(0)->GetDetector() != 5)) {
     EstimatedFirst = 1;
   } else if (RE->GetRESEAt(1)->GetType() == MRESE::c_Track && 
              RE->GetRESEAt(0)->GetType() != MRESE::c_Track) {
@@ -245,14 +245,14 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
 	//mdebug<<"Location of estimate first is D"<<RE->GetRESEAt(EstimatedFirst)->GetDetector()<<" with index "<<EstimatedFirst<<endl;
 
   if (EstimatedFirst >= 0) {
+    MRETrack* Track = nullptr;
     for (int i = 0; i < RE->GetNRESEs(); i++) {
       if (i == EstimatedFirst) {
         HitSequence1 = i;
         EnergySequence1 = RE->GetRESEAt(i)->GetEnergy();
         PositionSequence1 = RE->GetRESEAt(i)->GetPosition();
         if (RE->GetRESEAt(i)->GetType() == MRESE::c_Track) {
-          ElectronDirection = ((MRETrack *) RE->GetRESEAt(i))->GetDirection();
-          Theta = ElectronDirection.Angle(PositionSequence2 - PositionSequence1);
+          Track = ((MRETrack *) RE->GetRESEAt(i));
           HasTrack = true;
         } else {
           HasTrack = false;
@@ -264,6 +264,10 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
         PositionSequence2 = RE->GetRESEAt(i)->GetPosition();
 				//mdebug<<"Seq2 is in D"<<RE->GetRESEAt(i)->GetDetector()<<" with index "<<i<<endl;
       }
+    }
+    if (HasTrack == true) {
+      ElectronDirection = Track->GetDirection();
+      Theta = ElectronDirection.Angle(PositionSequence2 - PositionSequence1);
     }
   } else {
     // We can not determine which hit was in D1,
@@ -459,8 +463,7 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
       } // end decision: with/without track
     } 
 
-  } else { // Do assume D1 first:
-    bool FirstGood = false;
+  } else { // m_GuaranteeStartD1 == true
 
     if (EstimatedFirst < 0) {
       if (RE->GetRESEAt(0)->GetDetector() == 1 && RE->GetRESEAt(1)->GetDetector() == 1) {
@@ -494,8 +497,9 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
       }
     }
 
+    // PositionSequence1 is already selected as the first hit, check if it is Compton compatible
     MComptonEvent First;
-    FirstGood = First.Assimilate(PositionSequence1, PositionSequence2, ElectronDirection, EnergySequence1, EnergySequence2);
+    bool FirstGood = First.Assimilate(PositionSequence1, PositionSequence2, ElectronDirection, EnergySequence1, EnergySequence2);
 
     if (FirstGood == false) {
       // The event starts in the calorimeter
@@ -505,9 +509,10 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
     } else {
       mdebug<<"CSR-CS - Dual hit: Assuming start of event in D1!"<<endl;
       IsGood = true;
-      EstimatedFirst = 0;
     }
   }
+  
+  
   
   if (IsGood == true) {
     if (EstimatedFirst < 0) {
@@ -516,11 +521,9 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
     }
 
     if (m_GuaranteeStartD1 == true && 
-        (RE->GetRESEAt(EstimatedFirst)->GetDetector() != 1 && 
-         RE->GetRESEAt(EstimatedFirst)->GetDetector() != 5)) {
+        (RE->GetRESEAt(EstimatedFirst)->GetDetector() != 1 && RE->GetRESEAt(EstimatedFirst)->GetDetector() != 5)) {
       RE->SetRejectionReason(MRERawEvent::c_RejectionEventStartNotD1);
-      mdebug<<"CSR-CS - Sequence: Event starts not in D1/D5 but in "
-          <<RE->GetRESEAt(EstimatedFirst)->GetDetector()<<endl;
+      mdebug<<"CSR-CS - Sequence: Event starts not in D1/D5 but in "<<RE->GetRESEAt(EstimatedFirst)->GetDetector()<<endl;
       IsGood = false;
     } else {
 

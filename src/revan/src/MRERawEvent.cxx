@@ -332,6 +332,18 @@ MRERawEvent* MRERawEvent::Duplicate()
   return new MRERawEvent(this);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRERawEvent::Shuffle() 
+{
+  //! Shuffle the RESEs
+
+  m_RESEList->Shuffle();
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1035,7 +1047,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
                        Position2,
                        ((MRETrack *) m_Start)->GetDirection(), ED1, ED2);
         CE->SetTrackLength(m_Start->GetNRESEs());
-        CE->SetTrackInitialDeposit(m_Start->GetRESEAt(0)->GetEnergy());
+        CE->SetTrackInitialDeposit(((MRETrack *) m_Start)->GetStartPoint()->GetEnergy());
         CE->SetTrackQualityFactor1(m_TrackQualityFactor);
       } else {
         CE->Assimilate(m_Start->GetPosition(),

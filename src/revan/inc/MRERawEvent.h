@@ -60,7 +60,10 @@ class MRERawEvent : public MRESE
   virtual int GetSequenceLength();
 
   virtual void DeleteAll();
-
+  
+  //! Shuffle the RESEs randomly around
+  void Shuffle();
+  
   // the iterator interface
   bool ResetIterator(MRESE *RESE = 0);
   MRESE* GetNextRESE();
