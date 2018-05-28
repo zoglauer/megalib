@@ -184,9 +184,15 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   
   // Create the ROOT trees for the TMVA analysis
   m_DataSets = vector<MEREventClusterizerDataSet*>(m_MaxNHits);
-  m_Trees = vector<TTree*>(m_MaxNHits);
+  m_Files = vector<TFile*>(m_MaxNHits, nullptr);
+  m_Trees = vector<TTree*>(m_MaxNHits, nullptr);
   
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
+    // Create the file
+    TFile* File = new TFile(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
+    m_Files[x] = File;
+    File->cd();
+    
     MEREventClusterizerDataSet* DS = new MEREventClusterizerDataSet();
     DS->Initialize(x+1, m_MaxNGroups);
     MString Name("EventClusterizer");
@@ -220,6 +226,8 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
   // Initialize the next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
 
+  return true;
+  
   // We need to have at least an "INIT" in the simulation file per event 
   if (m_SiEvent->GetNIAs() == 0) {
     return true;
@@ -333,10 +341,13 @@ bool MResponseEventClusterizerTMVAEventFile::Finalize()
 { 
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
-    TFile Tree(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
-    Tree.cd();
+    //TFile Tree(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
+    //Tree.cd();
+    //m_Trees[x]->Write();
+    //Tree.Close();
+    
     m_Trees[x]->Write();
-    Tree.Close();      
+    m_Files[x]->Close();  
   }
   
   return MResponseBuilder::Finalize(); 

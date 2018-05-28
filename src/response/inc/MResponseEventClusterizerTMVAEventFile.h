@@ -81,12 +81,14 @@ class MResponseEventClusterizerTMVAEventFile : public MResponseBuilder
 
   // protected members:
  protected:
-  // The data sets, one per number of x and y hit strips
+  //! The data sets, one per number hit multiplicity
   vector<MEREventClusterizerDataSet*> m_DataSets;
   
-  //! The data storage for the events, one per number of x and y hit strips
+  //! The files, one per hit multiplicity
+  vector<TFile*> m_Files;
+  //! The data storage for the events, one per hit multiplicity
   vector<TTree*> m_Trees;
-   
+  
   //! The maximum allowed number of hits
   unsigned int m_MaxNHits;
   //! The maximum allowed number of groups
