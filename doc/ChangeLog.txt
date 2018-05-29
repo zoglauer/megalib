@@ -3,6 +3,41 @@
 ******************************************************************************
 
 
+Version 2.33/2.34
+=================
+
+*** IMPORTANT - PLEASE READ:
+
++ Currently all MEGAlib development efforts are geared towards analyzing
+  the COSI 2016 balloon flight which happens in the "experimental" branch
+  on github. Since this required significant changes / additions to MEGAlib, 
+  the experimental branch will ultimately morph into version 3.0.
+  Meanwhile, this version ("master on github") just contains bug fixes, 
+  non-critical updates, and compatibility updates with the latest OS and 
+  ROOT/Geant4 versions.
++ Default ROOT version is now 6.10, default Geant4 version is 10.2
+ 
+
+*** KNOWN ISSUES
++ The performance of activation simulations is currently not the best...
+  
+  
+*** Critcal bug fixes
++ When simulating guard rings for voxel detectors, the Y offset was used as Z offset
++ In hadron therapy build-up mode (but not in astrophysics activation step-1 mode) 
+  the detector time constant was not honored
++ Report by Alexey: If Only look at combination with start in D1 was turned on, then 
+  some events were falsely rejected 
++ The TE written to the file was sometimes calculated wrongly for tracks
+
+
+
+
+******************************************************************************
+
+
+
+
 Version 2.31/2.32
 =================
 
@@ -24,9 +59,9 @@ Version 2.31/2.32
   
 *** Critcal bug fixes
 + Powerlaws with an index of alpha=1.0 were not simulated correctly in cosima
-+ When simulating guard rings for voxel detectors, the Y offset was used as Z offset
++ When simulating guard rings for voxel detectors, the Y offset was used as Z offset (backport)
 + In hadron therapy build-up mode (but not in astrophysics activation step-1 mode) 
-  the detector time constant was not honored
+  the detector time constant was not honored (backport)
 
 *** Significant new features & improvements:
 
