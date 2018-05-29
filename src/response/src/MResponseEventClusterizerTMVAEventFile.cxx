@@ -195,8 +195,9 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
     
     MEREventClusterizerDataSet* DS = new MEREventClusterizerDataSet();
     DS->Initialize(x+1, m_MaxNGroups);
-    MString Name("EventClusterizer");
-    m_Trees[x] = DS->CreateTree(Name);
+
+    m_Files[x]->cd();
+    m_Trees[x] = DS->CreateTree("EventClusterizer");
     m_DataSets[x] = DS;
   }
 
@@ -272,6 +273,7 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
   }
   
   // Now randomize:
+  /*
   vector<int> Randomizer(Highest, -1);
   for (unsigned int r = 0; r < Randomizer.size(); ++r) {
     int R = 0;
@@ -285,18 +287,18 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
   for (auto I = Translation.begin(); I != Translation.end(); ++I) {
     (*I).second = Randomizer[(*I).second - 1];
   }
+  */
   
   // Create the result data set
   vector<vector<int>> HitOriginIDs(RESEs.size());
   for (unsigned int r = 0; r < RESEs.size(); ++r) {
     for (auto O: MotherIDs[r]) {
-      HitOriginIDs[r].push_back(Translation[O]);
+      HitOriginIDs[r].push_back(Translation[O] - 1); // to start at 0
     }
   }
   
-  /*
   // Dump the origin IDs:
-  if (Randomizer.size() == 4) {
+  /*
     cout<<"ID: "<<m_SiEvent->GetID()<<endl;
     for (unsigned int r = 0; r < RESEs.size(); ++r) {
       cout<<RESEs[r]->ToString()<<endl;
@@ -316,8 +318,21 @@ bool MResponseEventClusterizerTMVAEventFile::Analyze()
       }
       cout<<endl;
     }
-  }
   */
+  
+  // Data clean up
+  
+  // If an event has a hit which belongs to multiple gamma rays we reject the whole event
+  for (auto& O: HitOriginIDs) {
+    if (O.size() > 1) {
+      mout<<"Event clustering TMVA file creation: Moving hit originating from multiple gamma rays to trash bin."<<endl;
+      O.resize(1);
+      O[0] = m_MaxNGroups;
+      return true;
+    }
+  }
+  
+  
   
   // Set the data
   m_DataSets[RESEs.size() - 1]->FillEventData(m_SiEvent->GetID(), RESEs);
@@ -338,11 +353,7 @@ bool MResponseEventClusterizerTMVAEventFile::Finalize()
 { 
   // We only save at the end since ROOT has trouble updating the file...
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
-    //TFile Tree(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
-    //Tree.cd();
-    //m_Trees[x]->Write();
-    //Tree.Close();
-    
+    m_Files[x]->cd();
     m_Trees[x]->Write();
     m_Files[x]->Close();  
   }
