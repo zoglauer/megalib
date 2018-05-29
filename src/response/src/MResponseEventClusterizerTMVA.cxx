@@ -432,7 +432,7 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
     // New seed each run via RandomSeed=0
     factory->BookMethod(DataLoader, TMVA::Types::kMLP, "MLP", 
-                        "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator");
+                        "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20,N:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator");
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
