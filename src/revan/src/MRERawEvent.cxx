@@ -815,6 +815,27 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Event is restricted to drift chambers";
     }
     break;
+  case c_RejectionD6Only:
+    if (Short == true) {
+      out<<"EventRestrictedToDirectionalStripDetectors";
+    } else {
+      out<<"Event is restricted to directional strip detectors";
+    }
+    break;
+  case c_RejectionD7Only:
+    if (Short == true) {
+      out<<"EventRestrictedToAngerCameras";
+    } else {
+      out<<"Event is restricted to Anger cameras";
+    }
+    break;
+  case c_RejectionD8Only:
+    if (Short == true) {
+      out<<"EventRestrictedToVoxelDetector";
+    } else {
+      out<<"Event is restricted to voxel detectors";
+    }
+    break;
   case c_RejectionTwoTracksOnly:
     if (Short == true) {
       out<<"EventConsistsOnlyOfTwoTracks";
