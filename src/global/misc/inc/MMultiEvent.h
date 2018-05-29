@@ -99,7 +99,7 @@ class MMultiEvent : public MPhysicalEvent
  private:
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MMultiEvent, 1)
 #endif

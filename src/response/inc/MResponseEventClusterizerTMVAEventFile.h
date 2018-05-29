@@ -96,7 +96,7 @@ class MResponseEventClusterizerTMVAEventFile : public MResponseBuilder
   
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEventClusterizerTMVAEventFile, 0) // no description
 #endif

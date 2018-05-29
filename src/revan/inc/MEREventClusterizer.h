@@ -62,7 +62,7 @@ class MEREventClusterizer : public MERConstruction
 
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEREventClusterizer, 0) // no description
 #endif

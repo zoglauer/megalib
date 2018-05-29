@@ -12,7 +12,6 @@
 # Base definitions:
 #
 
-<<<<<<< 2f715ab8a61be457c860bd99b888a7927da6763e
 LIBRARY = CommonMisc
 
 FILES = MGlobal \
@@ -122,101 +121,6 @@ LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
 ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
 ROOTPCM=lib$(LIBRARY)_rdict.pcm
 
-=======
-OBJS      = $(LB)/MGlobal.o \
-	$(LB)/MAssert.o \
-	$(LB)/MCoordinateSystem.o \
-	$(LB)/MExceptions.o \
-	$(LB)/MAtmosphericAbsorption.o \
-	$(LB)/MResponseMatrix.o \
-	$(LB)/MResponseMatrixOx.o \
-	$(LB)/MResponseMatrixO1.o \
-	$(LB)/MResponseMatrixO2.o \
-	$(LB)/MResponseMatrixO3.o \
-	$(LB)/MResponseMatrixO4.o \
-	$(LB)/MResponseMatrixO5.o \
-	$(LB)/MResponseMatrixO6.o \
-	$(LB)/MResponseMatrixO7.o \
-	$(LB)/MResponseMatrixO8.o \
-	$(LB)/MResponseMatrixO9.o \
-	$(LB)/MResponseMatrixO10.o \
-	$(LB)/MResponseMatrixO11.o \
-	$(LB)/MResponseMatrixO12.o \
-	$(LB)/MResponseMatrixO13.o \
-	$(LB)/MResponseMatrixO14.o \
-	$(LB)/MResponseMatrixO15.o \
-	$(LB)/MResponseMatrixO16.o \
-	$(LB)/MResponseMatrixO17.o \
-	$(LB)/MResponseMatrixON.o \
-	$(LB)/MResponseMatrixAxis.o \
-	$(LB)/MResponseMatrixAxisSpheric.o \
-	$(LB)/MString.o \
-	$(LB)/MStreamBuffer.o \
-	$(LB)/MStreams.o \
-	$(LB)/MFitFunctions.o \
-	$(LB)/MInterface.o \
-	$(LB)/MCSVFunctionLoader.o \
-	$(LB)/MFile.o \
-	$(LB)/MFileEvents.o \
-	$(LB)/MFileEventsRawa.o \
-	$(LB)/MFileEventsTra.o \
-	$(LB)/MFileManager.o \
-	$(LB)/MFileResponse.o \
-	$(LB)/MFileInfo.o \
-	$(LB)/MFileHistograms.o \
-	$(LB)/MImage.o \
-	$(LB)/MImage2D.o \
-	$(LB)/MImage3D.o \
-	$(LB)/MImageContainer.o \
-	$(LB)/MMath.o \
-	$(LB)/MPairEvent.o \
-	$(LB)/MSystem.o \
-	$(LB)/MJulianDay.o \
-	$(LB)/MTokenizer.o \
-	$(LB)/MConnection.o \
-	$(LB)/MTransceiverTcpIpBinary.o \
-	$(LB)/MTransceiverTcpIp.o \
-	$(LB)/MTransceiverUDP.o \
-	$(LB)/MRotationInterface.o \
-	$(LB)/MPhysicalEvent.o \
-	$(LB)/MPhysicalEventHit.o \
-	$(LB)/MComptonEvent.o \
-	$(LB)/MMuonEvent.o \
-	$(LB)/MPhotoEvent.o \
-	$(LB)/MPETEvent.o \
-	$(LB)/MMultiEvent.o \
-	$(LB)/MUnidentifiableEvent.o \
-	$(LB)/MParser.o \
-	$(LB)/MFunction.o \
-	$(LB)/MFunction2D.o \
-	$(LB)/MFunction3D.o \
-	$(LB)/MFunction3DSpherical.o \
-	$(LB)/MVector.o \
-	$(LB)/MRotation.o \
-	$(LB)/MQuaternion.o \
-	$(LB)/MPrelude.o \
-	$(LB)/MGTI.o \
-	$(LB)/MTime.o \
-	$(LB)/MTimer.o \
-	$(LB)/MIsotope.o \
-	$(LB)/MIsotopeStore.o \
-	$(LB)/MSettingsInterface.o \
-	$(LB)/MSettings.o \
-	$(LB)/MSettingsGlobal.o \
-	$(LB)/MSettingsBasicFiles.o \
-	$(LB)/MBinner.o \
-	$(LB)/MBinnerFixedNumberOfBins.o \
-	$(LB)/MBinnerFixedCountsPerBin.o \
-	$(LB)/MBinnerBayesianBlocks.o \
-	$(LB)/MBinnerFISBEL.o \
-	$(LB)/MXmlData.o \
-	$(LB)/MXmlNode.o \
-	$(LB)/MXmlAttribute.o \
-	$(LB)/MXmlDocument.o \
-
-
-SOBJ = $(LB)/libCommonMisc.$(DLL)
->>>>>>> ADD: New event type classes
 
 #----------------------------------------------------------------
 # Commands:

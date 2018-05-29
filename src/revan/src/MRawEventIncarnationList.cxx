@@ -29,7 +29,7 @@ using namespace std;
 #include "MRETrack.h"
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
 ClassImp(MRawEventIncarnationList)
 #endif
 

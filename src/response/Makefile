@@ -12,7 +12,7 @@
 # Base definitions:
 #
 
-<<<<<<< 234dd0e7b74098dda417c326d595de59e5f1bea5
+
 PROGRAM1 = responsemanipulator
 MAIN1    = MResponseManipulatorMain
 

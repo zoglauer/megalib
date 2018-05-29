@@ -89,7 +89,7 @@ class MEREventClusterizerTMVA : public MEREventClusterizer
   //! The TMVA readers - one per sequence length
   vector<TMVA::Reader*> m_Readers;
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEREventClusterizerTMVA, 0) // no description
 #endif

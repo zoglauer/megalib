@@ -99,7 +99,7 @@ class MResponseEventClusterizerTMVA : public MResponseBuilder
   //! Thread parameter mutex
   mutex m_TheadMutex;
    
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MResponseEventClusterizerTMVA, 0) // no description
 #endif

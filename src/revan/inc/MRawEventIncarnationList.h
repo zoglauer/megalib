@@ -109,7 +109,7 @@ class MRawEventIncarnationList
 
 
 
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
    ClassDef(MRawEventIncarnationList, 0) // a list of raw event incarnations
 #endif

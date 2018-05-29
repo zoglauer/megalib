@@ -21,7 +21,7 @@ LIBRARY = Revan
 
 FILES = MGeometryRevan \
 	MRawEventIncarnations \
-	MRawEventIncarnationsList \
+	MRawEventIncarnationList \
 	MRawEventAnalyzer \
 	MFileEventsEvta \
 	MFileDecay \

@@ -84,24 +84,16 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Return the number of independent RESEs 
   virtual int GetSequenceLength();
 
-
-  virtual void DeleteAll();
+  //! Delete all RESE content
+  virtual void DeleteAll(); // TODO: Why is the base class one not OK?
   
   //! Shuffle the RESEs randomly around
   void Shuffle();
-  
-  // the iterator interface
-  bool ResetIterator(MRESE *RESE = 0);
-  MRESE* GetNextRESE();
-
 
   //! Set the geometry of the underlying detector
   void SetGeometry(MGeometryRevan *Geo);
   //! Return the underlying geometry
   MGeometryRevan* GetGeometry();
-  
-  
-  virtual void DeleteAll(); // TODO: Why is the base class one not OK?
 
   // The iterator interface
   

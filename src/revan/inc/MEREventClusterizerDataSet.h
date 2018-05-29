@@ -103,7 +103,7 @@ class MEREventClusterizerDataSet
    
   
   
-#ifdef ___CINT___
+#ifdef ___CLING___
  public:
   ClassDef(MEREventClusterizerDataSet, 0) // no description
 #endif
