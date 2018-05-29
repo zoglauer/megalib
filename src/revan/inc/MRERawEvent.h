@@ -60,7 +60,10 @@ class MRERawEvent : public MRESE, public MRotationInterface
   virtual int GetSequenceLength();
 
   virtual void DeleteAll();
-
+  
+  //! Shuffle the RESEs randomly around
+  void Shuffle();
+  
   // the iterator interface
   bool ResetIterator(MRESE *RESE = 0);
   MRESE* GetNextRESE();
@@ -211,26 +214,29 @@ class MRERawEvent : public MRESE, public MRotationInterface
   static const int c_RejectionD3Only                        =  4;
   static const int c_RejectionD4Only                        =  5;
   static const int c_RejectionD5Only                        =  6;
-  static const int c_RejectionOneTrackOnly                  =  7;
-  static const int c_RejectionTwoTracksOnly                 =  8;
-  static const int c_RejectionTrackNotValid                 =  9;
-  static const int c_RejectionSequenceBad                   = 10;
-  static const int c_RejectionTooManyHits                   = 11;
-  static const int c_RejectionEventStartNotD1               = 12;
-  static const int c_RejectionEventStartUndecided           = 13;
-  static const int c_RejectionElectronDirectionBad          = 14;
-  static const int c_RejectionCSRThreshold                  = 15;
-  static const int c_RejectionCSRNoGoodCombination          = 16;
-  static const int c_RejectionComptelTypeEvent              = 17;
-  static const int c_RejectionComptelTypeKinematicsBad      = 18;
-  static const int c_RejectionSingleSiteEvent               = 19;
-  static const int c_RejectionNoHits                        = 20;
-  static const int c_RejectionTotalEnergyOutOfLimits        = 21;
-  static const int c_RejectionLeverArmOutOfLimits           = 22;
-  static const int c_RejectionEventIdOutOfLimits            = 23;
-  static const int c_RejectionNotFromObject                 = 24;
-  static const int c_RejectionTooManyUndecidedTrackElements = 25;
-  static const int c_RejectionExternalBadEventFlag           = 26;
+  static const int c_RejectionD6Only                        =  7;
+  static const int c_RejectionD7Only                        =  8;
+  static const int c_RejectionD8Only                        =  9;
+  static const int c_RejectionOneTrackOnly                  = 10;
+  static const int c_RejectionTwoTracksOnly                 = 11;
+  static const int c_RejectionTrackNotValid                 = 12;
+  static const int c_RejectionSequenceBad                   = 13;
+  static const int c_RejectionTooManyHits                   = 14;
+  static const int c_RejectionEventStartNotD1               = 15;
+  static const int c_RejectionEventStartUndecided           = 16;
+  static const int c_RejectionElectronDirectionBad          = 17;
+  static const int c_RejectionCSRThreshold                  = 18;
+  static const int c_RejectionCSRNoGoodCombination          = 19;
+  static const int c_RejectionComptelTypeEvent              = 20;
+  static const int c_RejectionComptelTypeKinematicsBad      = 21;
+  static const int c_RejectionSingleSiteEvent               = 22;
+  static const int c_RejectionNoHits                        = 23;
+  static const int c_RejectionTotalEnergyOutOfLimits        = 24;
+  static const int c_RejectionLeverArmOutOfLimits           = 25;
+  static const int c_RejectionEventIdOutOfLimits            = 26;
+  static const int c_RejectionNotFromObject                 = 27;
+  static const int c_RejectionTooManyUndecidedTrackElements = 28;
+  static const int c_RejectionExternalBadEventFlag          = 29;
 
   static const double c_NoQualityFactor;
   static const double c_NoScore;

@@ -35,7 +35,8 @@
 using namespace std;
 
 // ROOT libs:
-#include <TObjArray.h>
+#include "TObjArray.h"
+#include "TRandom3.h"
 
 // MEGAlib libs:
 #include "MAssert.h"
@@ -108,6 +109,24 @@ MRESEList::~MRESEList()
 {
   // the destructor does not delete the objects stored in the list.
   // Call RemoveAll() before calling the destructor .
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESEList::Shuffle()
+{
+  //! Shuffle the RESE's randomly around
+  
+  unsigned int size = m_RESEList.size();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = m_RESEList[To];
+    m_RESEList[To] = m_RESEList[From];
+    m_RESEList[From] = Temp;
+  }
 }
 
 

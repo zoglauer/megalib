@@ -323,6 +323,18 @@ MRERawEvent* MRERawEvent::Duplicate()
   return new MRERawEvent(this);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRERawEvent::Shuffle() 
+{
+  //! Shuffle the RESEs
+
+  m_RESEList->Shuffle();
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -730,6 +742,27 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Event is restricted to drift chambers";
     }
     break;
+  case c_RejectionD6Only:
+    if (Short == true) {
+      out<<"EventRestrictedToDirectionalStripDetectors";
+    } else {
+      out<<"Event is restricted to directional strip detectors";
+    }
+    break;
+  case c_RejectionD7Only:
+    if (Short == true) {
+      out<<"EventRestrictedToAngerCameras";
+    } else {
+      out<<"Event is restricted to Anger cameras";
+    }
+    break;
+  case c_RejectionD8Only:
+    if (Short == true) {
+      out<<"EventRestrictedToVoxelDetector";
+    } else {
+      out<<"Event is restricted to voxel detectors";
+    }
+    break;
   case c_RejectionTwoTracksOnly:
     if (Short == true) {
       out<<"EventConsistsOnlyOfTwoTracks";
@@ -962,7 +995,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
                        Position2,
                        ((MRETrack *) m_Start)->GetDirection(), ED1, ED2);
         CE->SetTrackLength(m_Start->GetNRESEs());
-        CE->SetTrackInitialDeposit(m_Start->GetRESEAt(0)->GetEnergy());
+        CE->SetTrackInitialDeposit(((MRETrack *) m_Start)->GetStartPoint()->GetEnergy());
         CE->SetTrackQualityFactor1(m_TrackQualityFactor);
       } else {
         CE->Assimilate(m_Start->GetPosition(),
