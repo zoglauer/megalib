@@ -260,13 +260,31 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
       double dE1 = m_Collection[0]->GetOptimumEvent()->GetEnergyResolution();
       double E2 = m_Collection[1]->GetOptimumEvent()->GetEnergy();
       double dE2 = m_Collection[1]->GetOptimumEvent()->GetEnergyResolution();
+      MVector Start1;
+      if (m_Collection[0]->GetOptimumEvent()->GetStartPoint() != nullptr) {
+        Start1 = m_Collection[0]->GetOptimumEvent()->GetStartPoint()->GetPosition();
+      } else {
+        Start1 = m_Collection[0]->GetOptimumEvent()->GetRESEAt(0)->GetPosition();
+        if (m_Collection[0]->GetOptimumEvent()->GetNRESEs() != 1) {
+          merr<<"Error missing start point!"<<endl; 
+        }
+      }
+      MVector Start2;
+      if (m_Collection[1]->GetOptimumEvent()->GetStartPoint() != nullptr) {
+        Start2 = m_Collection[1]->GetOptimumEvent()->GetStartPoint()->GetPosition();
+      } else {
+        Start2 = m_Collection[1]->GetOptimumEvent()->GetRESEAt(0)->GetPosition();
+        if (m_Collection[1]->GetOptimumEvent()->GetNRESEs() != 1) {
+          merr<<"Error missing start point!"<<endl; 
+        }
+      }
       
       if (fabs(E1 - 511) < 2*dE1 && fabs(E2 - 511) < 2*dE2) {
         MPETEvent* P = new MPETEvent();
         P->SetEnergy1(m_Collection[0]->GetOptimumEvent()->GetEnergy());
         P->SetEnergy2(m_Collection[1]->GetOptimumEvent()->GetEnergy());
-        P->SetPosition1(m_Collection[0]->GetOptimumEvent()->GetPosition());
-        P->SetPosition2(m_Collection[1]->GetOptimumEvent()->GetPosition());
+        P->SetPosition1(Start1);
+        P->SetPosition2(Start2);
         P->SetTime(m_Collection[1]->GetOptimumEvent()->GetEventTime());
         P->SetId(m_Collection[1]->GetOptimumEvent()->GetEventId());
         return P;
@@ -304,13 +322,32 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
       double dE1 = m_Collection[0]->GetBestTryEvent()->GetEnergyResolution();
       double E2 = m_Collection[1]->GetBestTryEvent()->GetEnergy();
       double dE2 = m_Collection[1]->GetBestTryEvent()->GetEnergyResolution();
+      MVector Start1;
+      if (m_Collection[0]->GetBestTryEvent()->GetStartPoint() != nullptr) {
+        Start1 = m_Collection[0]->GetBestTryEvent()->GetStartPoint()->GetPosition();
+      } else {
+        Start1 = m_Collection[0]->GetBestTryEvent()->GetRESEAt(0)->GetPosition();
+        if (m_Collection[0]->GetBestTryEvent()->GetNRESEs() != 1) {
+          merr<<"Error missing start point!"<<endl; 
+        }
+      }
+      MVector Start2;
+      if (m_Collection[1]->GetBestTryEvent()->GetStartPoint() != nullptr) {
+        Start2 = m_Collection[1]->GetBestTryEvent()->GetStartPoint()->GetPosition();
+      } else {
+        Start2 = m_Collection[1]->GetBestTryEvent()->GetRESEAt(0)->GetPosition();
+        if (m_Collection[1]->GetBestTryEvent()->GetNRESEs() != 1) {
+          merr<<"Error missing start point!"<<endl; 
+        }
+      }
       
       if (fabs(E1 - 511) < 2*dE1 && fabs(E2 - 511) < 2*dE2) {
         MPETEvent* P = new MPETEvent();
         P->SetEnergy1(m_Collection[0]->GetBestTryEvent()->GetEnergy());
         P->SetEnergy2(m_Collection[1]->GetBestTryEvent()->GetEnergy());
-        P->SetPosition1(m_Collection[0]->GetBestTryEvent()->GetPosition());
-        P->SetPosition2(m_Collection[1]->GetBestTryEvent()->GetPosition());
+        
+        P->SetPosition1(Start1);
+        P->SetPosition2(Start2);
         P->SetTime(m_Collection[1]->GetBestTryEvent()->GetEventTime());
         P->SetId(m_Collection[1]->GetBestTryEvent()->GetEventId());
         return P;
