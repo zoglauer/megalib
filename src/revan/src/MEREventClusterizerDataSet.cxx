@@ -104,8 +104,8 @@ TMVA::Reader* MEREventClusterizerDataSet::CreateReader()
   
   TMVA::Reader* Reader = new TMVA::Reader("!Color:!Silent");
   
-  //Name = "SimulationID";
-  //Reader->AddVariable(Name, &m_SimulationID);  
+  Name = "SimulationID";
+  Reader->AddSpectator(Name, &m_SimulationID);  
   
   for (unsigned int i = 0; i < m_Energies.size(); ++i) {
     Name = "Energy_";

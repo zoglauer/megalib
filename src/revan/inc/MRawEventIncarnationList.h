@@ -30,6 +30,7 @@ using namespace std;
 #include "MGeometryRevan.h"
 #include "MPhysicalEvent.h"
 #include "MMultiEvent.h"
+#include "MPETEvent.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +78,8 @@ class MRawEventIncarnationList
   void Remove(MRawEventIncarnations* REI);
   //! Remove and delete the raw event incarnations
   void Delete(MRawEventIncarnations* REI);
+  //! Remove all raw events incarnations
+  void RemoveAll();
   //! Remove and delete all raw events incarnations
   void DeleteAll();
   

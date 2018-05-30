@@ -143,10 +143,23 @@ MRawEventIncarnations* MRawEventIncarnationList::Get(unsigned int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRawEventIncarnationList::RemoveAll() 
+{ 
+  // Remove all elements of the list
+  
+  while (m_Collection.size() != 0) {
+    Remove(Get(0));
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRawEventIncarnationList::DeleteAll() 
 { 
   // Delete all elements of the list
-
+  
   while (m_Collection.size() != 0) {
     Delete(Get(0));
   }
@@ -241,6 +254,25 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
   } else if (m_Collection.size() == 1) {
     return m_Collection[0]->GetOptimumEvent()->GetPhysicalEvent();
   } else {
+    // Check for PET events
+    if (m_Collection.size() == 2) {
+      double E1 = m_Collection[0]->GetOptimumEvent()->GetEnergy();
+      double dE1 = m_Collection[0]->GetOptimumEvent()->GetEnergyResolution();
+      double E2 = m_Collection[1]->GetOptimumEvent()->GetEnergy();
+      double dE2 = m_Collection[1]->GetOptimumEvent()->GetEnergyResolution();
+      
+      if (fabs(E1 - 511) < 2*dE1 && fabs(E2 - 511) < 2*dE2) {
+        MPETEvent* P = new MPETEvent();
+        P->SetEnergy1(m_Collection[0]->GetOptimumEvent()->GetEnergy());
+        P->SetEnergy2(m_Collection[1]->GetOptimumEvent()->GetEnergy());
+        P->SetPosition1(m_Collection[0]->GetOptimumEvent()->GetPosition());
+        P->SetPosition2(m_Collection[1]->GetOptimumEvent()->GetPosition());
+        P->SetTime(m_Collection[1]->GetOptimumEvent()->GetEventTime());
+        P->SetId(m_Collection[1]->GetOptimumEvent()->GetEventId());
+        return P;
+      }
+    }
+    
     MMultiEvent* Event = new MMultiEvent();
     for (MRawEventIncarnations* REI: m_Collection) {
       Event->Add(REI->GetOptimumEvent()->GetPhysicalEvent());
@@ -249,6 +281,8 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
     Event->SetId(Event->GetEvent(0)->GetId());
     return Event;
   }
+  
+  return nullptr;
 }
 
 
@@ -259,11 +293,31 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
 {
   if (HasBestTryEvents() == false) return nullptr;
   
-  if (m_Collection.size() == 0) { // In theory alreday handled in HasBestTryEvents(), but let's be safe...
+  if (m_Collection.size() == 0) { // In theory already handled in HasBestTryEvents(), but let's be safe...
     return nullptr;
   } else if (m_Collection.size() == 1) {
     return m_Collection[0]->GetBestTryEvent()->GetPhysicalEvent();
   } else {
+    // Check for PET events
+    if (m_Collection.size() == 2) {
+      double E1 = m_Collection[0]->GetBestTryEvent()->GetEnergy();
+      double dE1 = m_Collection[0]->GetBestTryEvent()->GetEnergyResolution();
+      double E2 = m_Collection[1]->GetBestTryEvent()->GetEnergy();
+      double dE2 = m_Collection[1]->GetBestTryEvent()->GetEnergyResolution();
+      
+      if (fabs(E1 - 511) < 2*dE1 && fabs(E2 - 511) < 2*dE2) {
+        MPETEvent* P = new MPETEvent();
+        P->SetEnergy1(m_Collection[0]->GetBestTryEvent()->GetEnergy());
+        P->SetEnergy2(m_Collection[1]->GetBestTryEvent()->GetEnergy());
+        P->SetPosition1(m_Collection[0]->GetBestTryEvent()->GetPosition());
+        P->SetPosition2(m_Collection[1]->GetBestTryEvent()->GetPosition());
+        P->SetTime(m_Collection[1]->GetBestTryEvent()->GetEventTime());
+        P->SetId(m_Collection[1]->GetBestTryEvent()->GetEventId());
+        return P;
+      }
+    }
+    
+    // We have a multi event
     MMultiEvent* Event = new MMultiEvent();
     for (MRawEventIncarnations* REI: m_Collection) {
       Event->Add(REI->GetBestTryEvent()->GetPhysicalEvent());

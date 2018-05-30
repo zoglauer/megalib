@@ -402,6 +402,8 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     if (Name.BeginsWith("Result") == false) {
       if (find(IgnoredBranches.begin(), IgnoredBranches.end(), Name) == IgnoredBranches.end()) {
         DataLoader->AddVariable(Name, 'F');
+      } else {
+        DataLoader->AddSpectator(Name, 'F');
       }
     }
   }
@@ -411,6 +413,8 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     TBranch* B = dynamic_cast<TBranch*>(Branches->At(b));
     TString Name = B->GetName();
     if (Name.BeginsWith("Result") == true) {
+      DataLoader->AddTarget(Name, "F");
+      /*
       cout<<"Min "<<Name<<":"<<Tree->GetMinimum(Name)<<endl;
       cout<<"Max "<<Name<<":"<<Tree->GetMaximum(Name)<<endl;
       if (Tree->GetMaximum(Name) == 0) {
@@ -418,6 +422,7 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
       } else {
         DataLoader->AddTarget(Name, "F");
       }
+      */
     }
   }
 
@@ -432,7 +437,7 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
     // New seed each run via RandomSeed=0
     factory->BookMethod(DataLoader, TMVA::Types::kMLP, "MLP", 
-                        "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20,N:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator");
+                        "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=3*N,N:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator");
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost

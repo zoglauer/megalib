@@ -757,14 +757,31 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   // Final stuff 
   Timer.Start();
   
-  // If we have a good event, then write it
+  MPhysicalEvent* Event = nullptr;
+  
+  
+  // Get the best event
   if (m_RawEvents->HasOnlyOptimumEvents() == true) {
     mdebug<<"ER - Optimum event(s) found!"<<endl;
     mdebug<<m_RawEvents->ToString()<<endl;
     
-    // Write the event:
-    MPhysicalEvent* Event = m_RawEvents->GetOptimumPhysicalEvent();
+    Event = m_RawEvents->GetOptimumPhysicalEvent();
+  } else {
+    mdebug<<"We have a best rey events..."<<endl;
     
+    Event = m_RawEvents->GetBestTryPhysicalEvent();
+    
+    vector<MRERawEvent*> REs = m_RawEvents->GetBestTryEvents();
+    for (auto RE: REs) {
+      while (m_Rejections.size() < (unsigned int) RE->GetRejectionReason()+1) {
+        m_Rejections.push_back(0);
+      }
+      m_Rejections[(unsigned int) RE->GetRejectionReason()]++;
+      mdebug<<"ER - Rejection: "<<MRERawEvent::GetRejectionReasonAsString(RE->GetRejectionReason())<<endl;
+    }
+  }
+  
+  if (Event != nullptr) {
     if (m_PhysFile != nullptr) {
       if (m_PhysFile->AddEvent(Event) == false) {
         merr<<"Saving of the event failed!"<<show;
@@ -801,30 +818,6 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       m_NUnidentifiableEvents++;
     } else {
       merr<<"ER - Unhandled event type: "<<Event->GetType()<<endl;
-    }
-  } else {
-    
-    MPhysicalEvent* BestTry = m_RawEvents->GetBestTryPhysicalEvent();
-    
-    vector<MRERawEvent*> REs = m_RawEvents->GetBestTryEvents();
-    for (auto RE: REs) {
-      while (m_Rejections.size() < (unsigned int) RE->GetRejectionReason()+1) {
-        m_Rejections.push_back(0);
-      }
-      m_Rejections[(unsigned int) RE->GetRejectionReason()]++;
-      mdebug<<"ER - Rejection: "<<MRERawEvent::GetRejectionReasonAsString(RE->GetRejectionReason())<<endl;
-    }
-    
-    if (BestTry != nullptr) {
-      mdebug<<"ER - Second best event structure..."<<endl;
-      
-      if (m_PhysFile != nullptr) {
-        if (m_PhysFile->AddEvent(BestTry) == false) {
-          merr<<"Saving of the event failed!"<<show;
-          return c_AnalysisSavingEventFailed;
-        }
-      }
-      mdebug<<BestTry->ToString()<<endl;
     }
   }
   

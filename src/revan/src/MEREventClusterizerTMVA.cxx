@@ -161,6 +161,9 @@ bool MEREventClusterizerTMVA::SetTMVAFileNameAndMethod(MString FileName, MERCSRT
 //! Do the analysis - this will add events to the whole incarnation list
 bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
 {
+  mdebug<<endl;
+  mdebug<<"Event clustering for event: "<<List->Get(0)->GetInitialRawEvent()->GetEventID()<<endl;
+  
   unsigned int r_max = List->Size();
   for (unsigned int r = 0; r < r_max; ++r) {
     MRawEventIncarnations* REI = List->Get(r);
@@ -189,7 +192,7 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
     }
     
     m_DS[NRESEs-2]->FillEventData(RE->GetEventID(), RESEs);
-    vector<Float_t> IDs =  m_Readers[NRESEs-2]->EvaluateRegression(m_MethodNames[0].Data());  
+    vector<Float_t> IDs = m_Readers[NRESEs-2]->EvaluateRegression(m_MethodNames[0].Data());  
    
     // Now check how many events we have
     
@@ -198,13 +201,14 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
     
     unsigned int RunningIndex = 0;
     for (unsigned int h = 0; h < NRESEs; ++h) {
-      for (unsigned int g = 0; g < m_MaxNGroups; ++g) {
+      for (unsigned int g = 0; g < m_MaxNGroups+1; ++g) { // Plus one since we have the extra garbage bin
         Origins[h][g] = IDs[RunningIndex];
         ++RunningIndex;
       }
     }
     
     // Print it for diagnostics:
+    /*
     for (unsigned int h = 0; h < NRESEs; ++h) {
       cout<<"RESE with "<<RESEs[h]->GetEnergy()<<" keV: "<<endl;
       cout<<"   --> ";
@@ -213,8 +217,25 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
       }
       cout<<endl;
     }
+    */
+    
+    // (1) For each hit find the highest gamma ray
+    vector<unsigned int> GammaRayID(NRESEs);
+    for (unsigned int h = 0; h < NRESEs; ++h) {
+      unsigned int ID = 0;
+      Float_t Value = Origins[h][0];
+      for (unsigned int g = 1; g < m_MaxNGroups; ++g) {
+        if (Origins[h][g] > Value) {
+          Value = Origins[h][g];
+          ID = g;
+        }
+      }
+      GammaRayID[h] = ID;
+      //cout<<"RESE "<<h<<" --> gamma "<<ID<<endl;
+    }
     
     
+    /*
     // (1) Check if some hits belong to different gamma rays, then we reject the events
     bool AllOriginsGood = true;
     for (unsigned int h = 0; h < NRESEs; ++h) {
@@ -234,44 +255,45 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
       RE->SetRejectionReason(MRERawEvent::c_RejectionEventClusteringUnresolvedHits);  // This automatically marks the event invalid for further analysis...
       continue;      
     }
+    */
     
     
-    // (2) Check how many origins we have
-    unsigned int NOrigins = 0; 
-    for (unsigned int g = 0; g < m_MaxNGroups; ++g) {
-      for (unsigned int h = 0; h < NRESEs; ++h) {
-        if (Origins[h][g] > 0.5) {
-          ++NOrigins;
-          break;
-        }
+    // (2) Check how many origins we have -- they are currently sorted, this the highest value + 1 is the number of origins
+    unsigned int NOrigins = 0;
+    for (unsigned int h = 0; h < NRESEs; ++h) {
+      if (GammaRayID[h] + 1 > NOrigins) {
+        NOrigins = GammaRayID[h] + 1;
       }
     }
-    cout<<"Number of origins: "<<NOrigins<<endl;
     
-    if (NOrigins == 1) continue; // Perfect, one event
+    mdebug<<"Number of origins: "<<NOrigins<<endl;
+    
+    if (NOrigins == 1) continue; // Perfect, one event -- nothing to split
     
     if (NOrigins == 0) {
       merr<<"Event clustering: The event has no origins -- something might have gone wronf during machine learning..."<<endl;
       RE->SetRejectionReason(MRERawEvent::c_RejectionEventClusteringNoOrigins);  // This automatically marks the event invalid for further analysis...
       continue;      
     }
+
     
     // (3) Split the event up:
     
+    // Create empty events to be filled
     vector<MRERawEvent*> REs;
     REs.push_back(RE);
     REs.back()->RemoveAllAndCompress(); // So that we just copy the additional information
-    for (unsigned int o = 0; o < NOrigins; ++o) {
+    for (unsigned int o = 1; o < NOrigins; ++o) {
       REs.push_back(RE->Duplicate());
     }
 
     
-    // Now add back the correct events:
+    // Now add back the correct hits:
     unsigned int REIIndex = 0;
     for (unsigned int g = 0; g < m_MaxNGroups; ++g) {
       int NHitOrigins = 0; 
       for (unsigned int h = 0; h < NRESEs; ++h) {
-        if (Origins[h][g] > 0.5) {
+        if (GammaRayID[h] == g) {
           ++NHitOrigins;
           break;
         }
@@ -279,7 +301,7 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
       if (NHitOrigins > 0) {
         // Since it it the first remove all RESEs not belonging to 
         for (unsigned int h = 0; h < NRESEs; ++h) {
-          if (Origins[h][g] > 0.5) {
+          if (GammaRayID[h] == g) {
              REs[REIIndex]->AddRESE(RESEs[h]);
           }
         }
@@ -288,7 +310,8 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
     }
     
     // (4) Create a new incarnation list for the new gamma rays
-    for (unsigned int i = 1; i < REs.size(); ++i) {
+    List->RemoveAll();
+    for (unsigned int i = 0; i < REs.size(); ++i) {
       MRawEventIncarnations* New = new MRawEventIncarnations();
       New->AddRawEvent(REs[i]);
       List->Add(New);
@@ -296,6 +319,10 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
     
     // Done!
   }
+  
+  // Print the result:
+  mdebug<<"Split events: "<<endl;
+  mdebug<<List->ToString()<<endl;
   
   return true;
 }
