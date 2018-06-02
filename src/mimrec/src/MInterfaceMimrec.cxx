@@ -1879,7 +1879,7 @@ void MInterfaceMimrec::ResolutionMeasurePET()
   }
   
   
-  TCanvas *Canvas = new TCanvas("Canvas angular resolution pairs", "Canvas angular resolution pairs", 800, 600);
+  TCanvas *Canvas = new TCanvas("Canvas angular resolution PET events", "Canvas angular resolution PET events", 800, 600);
   Canvas->SetFillColor(0);
   Canvas->SetFrameBorderSize(0);
   Canvas->SetFrameBorderMode(0);
