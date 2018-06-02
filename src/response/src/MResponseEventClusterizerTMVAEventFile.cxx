@@ -173,7 +173,9 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   // Initialize next matching event, save if necessary
   if (MResponseBuilder::Initialize() == false) return false;
   
-  // We ignore the loaded configuration file
+  // We ignore the loaded configuration file mostly...
+  m_ReReader->SetTotalEnergyMin(0);
+  m_ReReader->SetTotalEnergyMax(1E20);
   m_ReReader->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
   m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
@@ -189,7 +191,7 @@ bool MResponseEventClusterizerTMVAEventFile::Initialize()
   
   for (unsigned int x = 0; x < m_MaxNHits; ++x) {
     // Create the file
-    TFile* File = new TFile(m_ResponseName + ".maxhits" + (x+1) + ".eventclusterizer.root", "recreate");
+    TFile* File = new TFile(m_ResponseName + ".hits" + (x+1) + ".groups" + m_MaxNGroups + ".eventclusterizer.root", "recreate");
     m_Files[x] = File;
     File->cd();
     

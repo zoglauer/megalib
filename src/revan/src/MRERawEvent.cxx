@@ -937,6 +937,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"No origins found during event clustering";
     }
     break;
+  case c_RejectionEventClusteringEnergyOutOfBounds:
+    if (Short == true) {
+      out<<"EventClusteringEnergyOutOfBounds";
+    } else {
+      out<<"The energy is outside of what the event clustering was trained for";
+    }
+    break;
   default:
     if (Short == true) {
       out<<"";

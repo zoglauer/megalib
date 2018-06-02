@@ -83,6 +83,8 @@ bool MEREventClusterizerTMVA::SetTMVAFileNameAndMethod(MString FileName, MERCSRT
   MString BaseDirectory = m_FileName;
   BaseDirectory.ReplaceAllInPlace(".eventclusterizer.tmva", "");
   
+  MString Prefix = "";
+  
   for (unsigned int l = 0; l < SteeringFile.GetNLines(); ++l) {
     MTokenizer* T = SteeringFile.GetTokenizerAt(l);
     if (T->GetNTokens() <= 1) continue;
@@ -124,30 +126,57 @@ bool MEREventClusterizerTMVA::SetTMVAFileNameAndMethod(MString FileName, MERCSRT
         */
       }
     }
+    
+    else if (T->IsTokenAt(0, "EB") == true) {
+      m_EnergyBinEdges = T->GetTokenAtAsIntVector(1);
+    }
+    
+    else if (T->IsTokenAt(0, "DN") == true) {
+      Prefix = T->GetTokenAtAsString(1);
+    }
+  }
+  
+  // Some sabity checks:
+  if (m_EnergyBinEdges.size() < 2) {
+    mgui<<"No energy bin edges found in tmva file"<<error;
+    return false;
   }
   
   
+  
   // Create the data sets - must be identical to what's in the response creator
+  
+  m_DS = vector<vector<MEREventClusterizerDataSet*>>(m_MaxNHits - 1, vector<MEREventClusterizerDataSet*>(m_EnergyBinEdges.size() - 1, nullptr));
+  m_Readers = vector<vector<TMVA::Reader*>>(m_MaxNHits - 1, vector<TMVA::Reader*>(m_EnergyBinEdges.size() - 1, nullptr));
+  
   for (unsigned int h = 2; h <= m_MaxNHits; ++h) {
-    m_DS.push_back(new MEREventClusterizerDataSet());
-    m_DS.back()->Initialize(h, m_MaxNGroups);
-    // Initialize the TMVA readers
-    m_Readers.push_back(m_DS.back()->CreateReader());
+    for (unsigned int e = 0; e < m_EnergyBinEdges.size() - 1; ++e) {
+      
+      // Create and initialize the data set 
+      m_DS[h-2][e] = new MEREventClusterizerDataSet();
+      m_DS[h-2][e]->Initialize(h, m_MaxNGroups);
+      
+      // Initialize the TMVA readers
+      m_Readers[h-2][e] = m_DS[h-2][e]->CreateReader();
+    }
   }
   
   // Book the methods
   vector<MERCSRTMVAMethod> UsedMethods = m_Methods.GetUsedMethods();
   m_MethodNames.resize(UsedMethods.size());
-  for (unsigned int r = 0; r < m_Readers.size(); ++r) {
-    for (unsigned int m = 0; m < UsedMethods.size(); ++m) {
-      m_MethodNames[m] = m_Methods.GetString(UsedMethods[m]) + " method";
-      MString WeightsFile = BaseDirectory + "/N" + (r+2) + "/weights/TMVARegression_" + m_Methods.GetString(UsedMethods[m]) + ".weights.xml";
-      MFile::ExpandFileName(WeightsFile);
-      if (MFile::Exists(WeightsFile) == false) {
-        mgui<<"Unable to open file: "<<WeightsFile<<endl;
-        return false;
+  for (unsigned int h = 2; h <= m_MaxNHits; ++h) {
+    for (unsigned int e = 0; e < m_EnergyBinEdges.size() - 1; ++e) {
+      for (unsigned int m = 0; m < UsedMethods.size(); ++m) {
+        m_MethodNames[m] = m_Methods.GetString(UsedMethods[m]) + " method";
+        MString WeightsFile = BaseDirectory + "/" + Prefix + ".hits" + h + ".emin" + m_EnergyBinEdges[e] + ".emax" + m_EnergyBinEdges[e+1] + "/weights/TMVARegression_" + m_Methods.GetString(UsedMethods[m]) + ".weights.xml";
+        cout<<"File: "<<WeightsFile<<endl;
+        MFile::ExpandFileName(WeightsFile);
+        if (MFile::Exists(WeightsFile) == false) {
+          mgui<<"Unable to open file: "<<WeightsFile<<endl;
+          return false;
+        }
+        m_Readers[h-2][e]->BookMVA(m_MethodNames[m].Data(), WeightsFile.Data());
       }
-      m_Readers[r]->BookMVA(m_MethodNames[m].Data(), WeightsFile.Data());
     }  
   }
   
@@ -181,18 +210,34 @@ bool MEREventClusterizerTMVA::Analyze(MRawEventIncarnationList* List)
     if (NRESEs <= 1) continue;
     
     if (NRESEs > m_MaxNHits) {
-      merr<<"Event clustering: The event has more hits than we have trained for -- skipping it and setting it to bad"<<endl;
+      merr<<"Event clustering: The event has more hits ("<<NRESEs<<") than we have trained for ("<<m_MaxNHits<<") -- skipping it and setting it to bad"<<endl;
       RE->SetRejectionReason(MRERawEvent::c_RejectionEventClusteringTooManyHits);  // This automatically marks the event invalid for further analysis...
       continue;
     }
+    
+    if (RE->GetEnergy() < m_EnergyBinEdges.front() || RE->GetEnergy() > m_EnergyBinEdges.back()) {
+      merr<<"Event clustering: The event energy ("<<RE->GetEnergy()<<" keV) is outside the bound of which the TMVA methods have been trained for ["<<m_EnergyBinEdges.front()<<"-"<<m_EnergyBinEdges.back()<<"]."<<endl;
+      RE->SetRejectionReason(MRERawEvent::c_RejectionEventClusteringEnergyOutOfBounds);  // This automatically marks the event invalid for further analysis...
+      continue;
+    }
+    
+    // Find the energy bin - the above line made sure we are inside the bounds!
+    unsigned int EnergyBin = 0;
+    for (unsigned int e = 1; e < m_EnergyBinEdges.size(); ++e) {
+      if (RE->GetEnergy() <= m_EnergyBinEdges[e]) {
+        EnergyBin = e-1;
+        break;
+      }
+    }
+    
     
     vector<MRESE*> RESEs;
     for (unsigned int r = 0; r < NRESEs; ++r) {
       RESEs.push_back(RE->GetRESEAt(r));
     }
     
-    m_DS[NRESEs-2]->FillEventData(RE->GetEventID(), RESEs);
-    vector<Float_t> IDs = m_Readers[NRESEs-2]->EvaluateRegression(m_MethodNames[0].Data());  
+    m_DS[NRESEs-2][EnergyBin]->FillEventData(RE->GetEventID(), RESEs);
+    vector<Float_t> IDs = m_Readers[NRESEs-2][EnergyBin]->EvaluateRegression(m_MethodNames[0].Data());  
    
     // Now check how many events we have
     

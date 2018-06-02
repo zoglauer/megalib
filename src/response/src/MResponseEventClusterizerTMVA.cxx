@@ -62,9 +62,10 @@ MResponseEventClusterizerTMVA::MResponseEventClusterizerTMVA()
   // Construct an instance of MResponseEventClusterizerTMVA
   
   m_ResponseNameSuffix = "tmva";
-  m_MaxNHits = 1000;
+  m_MaxNHits = 25;
   m_MaxNEvents = 10000000; // 10 Mio
   m_MethodsString = "MLP";
+  m_EnergyBinEdges = { 0, 100000 };
 }
 
 
@@ -94,8 +95,9 @@ MString MResponseEventClusterizerTMVA::Description()
 MString MResponseEventClusterizerTMVA::Options()
 {
   ostringstream out;
-  out<<"             methods:       the selected TMVA methods (default: MLP)"<<endl;
-  out<<"             maxhits :      the maximum number of interactions (default: 5)"<<endl;
+  out<<"             methods:          the selected TMVA methods (default: \"MLP\")"<<endl;
+  out<<"             maxhits :         the maximum number of interactions (default: 5)"<<endl;
+  out<<"             energybinedges :  comma seperated list of the edges of the energy bins (default: \"0,100000\")"<<endl;
   
   return MString(out);
 }
@@ -140,6 +142,10 @@ bool MResponseEventClusterizerTMVA::ParseOptions(const MString& Options)
       m_MethodsString = Value;
     } else if (Split2[i][0] == "maxhits") {
       m_MaxNHits = stoi(Value);
+    } else if (Split2[i][0] == "energybinedges") {
+      vector<MString> AsText = MString(Value).Tokenize(",");
+      m_EnergyBinEdges.clear();
+      for (auto S: AsText) m_EnergyBinEdges.push_back(S.ToInt());
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -152,14 +158,22 @@ bool MResponseEventClusterizerTMVA::ParseOptions(const MString& Options)
     return false;    
   }
   
+  if (m_MaxNEvents < 1000) {
+    mout<<"Error: I am not going to start training with less than 1000 events..."<<endl;
+    return false;    
+  }
+  
   cout<<"Currently only MLP has been coded -- thus I am just using that"<<endl;
   //m_MethodsString = "MLP";
   
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for event clustering using TMVA:"<<endl;
-  mout<<"  TMVA methods:                    "<<m_MethodsString<<endl;
-  mout<<"  Maximum number of hits:          "<<m_MaxNHits<<endl;
+  mout<<"  TMVA methods:                                                  "<<m_MethodsString<<endl;
+  mout<<"  Maximum number of hits (assuming you have so many data files): "<<m_MaxNHits<<endl;
+  mout<<"  Energy bin edges:                                              ";
+  for (auto E: m_EnergyBinEdges) mout<<E<<" ";
+  mout<<endl;
   mout<<endl;
   
   return true;
@@ -184,13 +198,18 @@ bool MResponseEventClusterizerTMVA::Initialize()
   }
   
   // Second find all the files for different number of hits
-  size_t Index = m_DataFileName.FindLast(".maxhits");
-  MString Prefix = m_DataFileName.GetSubString(0, Index);
+  MString Prefix = m_DataFileName.GetSubString(0, m_DataFileName.FindLast(".hits"));
+  int NumberOfGroups = m_DataFileName.GetSubString(m_DataFileName.FindLast(".groups") + 7, m_DataFileName.FindLast(".eventclusterizer.root")).ToInt();
   
+  if (NumberOfGroups == 0) {
+    merr<<"Found no groups in the file name..."<<endl;
+    return false;
+  }
+
   unsigned int s = 0;
   unsigned int s_max = m_MaxNHits;
   for (s = 2; s <= s_max; ++s) {
-    MString Name = Prefix + ".maxhits" + s + ".eventclusterizer.root";
+    MString Name = Prefix + ".hits" + s + ".groups" + NumberOfGroups + ".eventclusterizer.root";
 
     MFile::ExpandFileName(Name);
     
@@ -261,6 +280,10 @@ bool MResponseEventClusterizerTMVA::Initialize()
   out<<"# Maximum number of groups"<<endl;
   out<<"MG "<<m_MaxNGroups<<endl;
   out<<endl;
+  out<<"# Energy bins"<<endl;
+  out<<"EB ";
+  for (auto E: m_EnergyBinEdges) out<<E<<" ";
+  out<<endl;
   out<<endl;
   out<<"# Trained Algorithms (e.g. MLP, BDTD, PDEFoamBoost, DNN_GPU, DNN_CPU)"<<endl;
   out<<"TA "<<m_Methods.GetUsedMethodsString()<<endl;
@@ -283,8 +306,8 @@ bool MResponseEventClusterizerTMVA::Analyze()
 {
   // Everything happens here
   
-  unsigned int NThreads = m_FileNames.size();
-  unsigned int MaxThreadsRunning = 1; // thread::hardware_concurrency() / 2;
+  unsigned int NThreads = m_FileNames.size() * (m_EnergyBinEdges.size() - 1);
+  unsigned int MaxThreadsRunning = thread::hardware_concurrency() / 2;
   vector<thread> Threads(NThreads);
   m_ThreadRunning.resize(NThreads, false);
   
@@ -295,7 +318,7 @@ bool MResponseEventClusterizerTMVA::Analyze()
     m_ThreadRunning[t] = true;
     Threads[t] = thread(&MResponseEventClusterizerTMVA::AnalysisThreadEntry, this, t);
     // 5 seconds to give it a chance to fully initialize
-    this_thread::sleep_for(chrono::milliseconds(5000)); 
+    this_thread::sleep_for(chrono::milliseconds(500)); 
     // sleep if we have more than the max allowed threads running
     unsigned int Running = 0;
     
@@ -351,24 +374,38 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   MTime Now;
   MString TimeString = Now.GetShortString();
   
-  unsigned int NHits = m_FileHits[ThreadID];
+  unsigned int FileBin = ThreadID % m_FileHits.size();
+  unsigned int EnergyBin = ThreadID / m_FileHits.size();
   
-  MString ResultsFileName = m_ResponseName + ".maxhits" + NHits + ".root";
-  TFile* Results = new TFile(ResultsFileName, "recreate");
+  unsigned int NHits = m_FileHits[FileBin];
+  
+  MString ResultsFile = m_ResponseName + ".hits" + NHits + ".emin" + m_EnergyBinEdges[EnergyBin] + ".emax" + m_EnergyBinEdges[EnergyBin+1];
+  TFile* Results = new TFile(ResultsFile + ".root", "recreate");
   
   
-  TFile* File = new TFile(m_FileNames[ThreadID]); 
-  TTree* Tree = (TTree*) File->Get("EventClusterizer");
-  if (Tree == nullptr) {
-    merr<<"Unable to read events tree from file "<<m_FileNames[ThreadID]<<endl;
+  TFile* File = new TFile(m_FileNames[FileBin]); 
+  TTree* FullDataTree = (TTree*) File->Get("EventClusterizer");
+  if (FullDataTree == nullptr) {
+    merr<<"Unable to read events tree from file "<<m_FileNames[FileBin]<<endl;
+    
+    m_ThreadRunning[ThreadID] = false;
+    m_TheadMutex.unlock();
+    
     return;
   }
-  
-  // The background tree could be much larger than the source
-  // If it is more than twice as large create a smaller tree for training
-  
+
+  // Filter energy
+  gROOT->cd();
+  MString EnergyString = "Energy_1";
+  for (unsigned int i = 2; i <= NHits; ++i) {
+    EnergyString += " + Energy_" + MString(i);
+  }
+  EnergyString = MString("(") + EnergyString + ") >= " + m_EnergyBinEdges[EnergyBin] + " && (" + EnergyString + ") <= " + m_EnergyBinEdges[EnergyBin+1];
+    
+  TTree* Tree = FullDataTree->CopyTree(EnergyString, "");
+    
+  // Limit the number of events:
   unsigned long TreeSize = Tree->GetEntries();
-  
   if (TreeSize > m_MaxNEvents) {
     cout<<"Reducing source tree size from "<<TreeSize<<" to "<<m_MaxNEvents<<" (i.e. the maximum set)"<<endl;
     TTree* NewTree = Tree->CloneTree(0);
@@ -379,17 +416,24 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
       NewTree->Fill();
     }
     
-    File->Close();
     Tree = NewTree;
-    TreeSize = m_MaxNEvents;
+    TreeSize = Tree->GetEntries();
   }  
+  
+  if (TreeSize < 1000) {
+    cout<<"ERROR: You have less than 1000 events for training (hits = "<<FileBin+2<<", E=["<<m_EnergyBinEdges[EnergyBin]<<","<<m_EnergyBinEdges[EnergyBin+1]<<"])... You should have > 100,000 or better millions..."<<endl;
+    File->Close();
+    
+    m_ThreadRunning[ThreadID] = false;
+    m_TheadMutex.unlock();
+    
+    return;
+  }
 
   
-  TMVA::Factory *factory = new TMVA::Factory("TMVARegression", Results, "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Regression");
+  TMVA::Factory *factory = new TMVA::Factory("TMVARegression", Results, "!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Regression");
   
-  MString OutDir("N");
-  OutDir += NHits;
-  TMVA::DataLoader* DataLoader = new TMVA::DataLoader(OutDir.Data());
+  TMVA::DataLoader* DataLoader = new TMVA::DataLoader(ResultsFile.Data());
   
   m_TheadMutex.unlock();
   
@@ -414,15 +458,6 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
     TString Name = B->GetName();
     if (Name.BeginsWith("Result") == true) {
       DataLoader->AddTarget(Name, "F");
-      /*
-      cout<<"Min "<<Name<<":"<<Tree->GetMinimum(Name)<<endl;
-      cout<<"Max "<<Name<<":"<<Tree->GetMaximum(Name)<<endl;
-      if (Tree->GetMaximum(Name) == 0) {
-        DataLoader->AddSpectator(Name, "F");
-      } else {
-        DataLoader->AddTarget(Name, "F");
-      }
-      */
     }
   }
 
@@ -460,6 +495,8 @@ void MResponseEventClusterizerTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   delete factory;
   delete DataLoader;
 
+  File->Close();  
+  
   m_TheadMutex.lock();
   m_ThreadRunning[ThreadID] = false;
   m_TheadMutex.unlock();

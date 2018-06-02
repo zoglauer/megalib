@@ -68,14 +68,17 @@ class MEREventClusterizerTMVA : public MEREventClusterizer
 
   // private members:
  private:
-   //! The training data file name
-   MString m_FileName;
+  //! The training data file name
+  MString m_FileName;
 
-   //! The maximum number of hits we handle
-   unsigned int m_MaxNHits;
+  //! The maximum number of hits we handle
+  unsigned int m_MaxNHits;
    
-   //! The maximum number of hits we handle
-   unsigned int m_MaxNGroups;
+  //! The maximum number of hits we handle
+  unsigned int m_MaxNGroups;
+   
+  //! The energy bin edges
+   vector<int> m_EnergyBinEdges;
    
    //! The used TMVA methods
   MERCSRTMVAMethods m_Methods;
@@ -83,11 +86,11 @@ class MEREventClusterizerTMVA : public MEREventClusterizer
   //! A string of the used methods for the EvaluateMVA call
   vector<MString> m_MethodNames;
   
-  //! The data set
-  vector<MEREventClusterizerDataSet*> m_DS;
+  //! The data set - one per sequence length and energy bin
+  vector<vector<MEREventClusterizerDataSet*>> m_DS;
   
-  //! The TMVA readers - one per sequence length
-  vector<TMVA::Reader*> m_Readers;
+  //! The TMVA readers - one per sequence length and energy bin
+  vector<vector<TMVA::Reader*>> m_Readers;
   
 #ifdef ___CLING___
  public:
