@@ -17,6 +17,8 @@ if [ -f /etc/os-release ]; then
     IsDebianClone=1
   elif [[ ${OS} == suse ]]; then
     IsOpenSuseClone=1
+  elif [[ ${OS} == scientific* ]]; then
+    IsRedhatClone=1
   fi
 fi
 
@@ -27,6 +29,7 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
   
   # Check if this is Ubuntu:
   OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
   #echo "OS: ${OS}"
   if [[ ${OS} == ubuntu ]]; then
     # Check if this is Ubuntu 14.04:
@@ -73,13 +76,16 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
   fi
 fi
 
+
+
 if [[ ${IsOpenSuseClone} -eq 1 ]]; then
 
   # Check if this is OpenSUSE:
   OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
   #echo "OS: ${OS}"
   if [[ ${OS} == opensuse ]]; then
-    # Check if this is Ubuntu 14.04:
+    # Check the version:
     VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
     VERSIONID=${VERSIONID//\"/}
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
@@ -115,6 +121,54 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
   fi
 
 fi
+
+
+
+# REDHAT Clones
+
+if [[ ${IsRedhatClone} -eq 1 ]]; then
+
+  # Check if this is OpenSUSE:
+  OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
+  #echo "OS: ${OS}"
+  if [[ ${OS} == rhel ]]; then
+    # Check the version
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
+    VERSIONID=${VERSIONID//\"/}
+    VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
+    #echo "VERSION: ${VERSIONID}"
+    if [[ ${VERSIONID} == 7 ]]; then
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+    fi
+  fi
+  
+  if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
+
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do 
+    # Check if the file is installed
+    STATUS=$(yum list installed ${PACKAGE} >& /dev/null)
+    if [[ $? == 1 ]]; then
+      # Check if it exists at all:
+      echo "Not installed: ${PACKAGE}"
+      TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+    fi
+  done
+  
+  
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo " "
+    echo "Do the following to install all required packages:"
+    echo "sudo yum install ${TOBEINSTALLED}"
+    echo " "
+    exit 1;
+  else 
+    echo "All required packages are already installed! However, this script is only tested to work Scientific Linux 7"
+  fi
+
+fi
+
 
 
 exit 0
