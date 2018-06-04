@@ -78,6 +78,8 @@ fi
 
 
 
+# OPENSUSE Clones
+
 if [[ ${IsOpenSuseClone} -eq 1 ]]; then
 
   # Check if this is OpenSUSE:
@@ -91,7 +93,7 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 42 ]]; then
-      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel"
+      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
     fi
   fi
   
