@@ -12,8 +12,11 @@ IsOpenSuseClone=0
 
 if [ -f /etc/os-release ]; then
   OS=`cat /etc/os-release | grep "^ID_LIKE\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
   if [[ ${OS} == debian ]]; then
     IsDebianClone=1
+  elif [[ ${OS} == suse ]]; then
+    IsOpenSuseClone=1
   fi
 fi
 
@@ -27,7 +30,7 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
   #echo "OS: ${OS}"
   if [[ ${OS} == ubuntu ]]; then
     # Check if this is Ubuntu 14.04:
-    VERSIONID=`cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }'`
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
     VERSIONID=${VERSIONID//\"/}
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 14.04 ]]; then
@@ -66,8 +69,51 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
     echo " "
     exit 1;
   else 
-    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04 & 16.06."
+    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04, 16.04, 18.04"
   fi
+fi
+
+if [[ ${IsOpenSuseClone} -eq 1 ]]; then
+
+  # Check if this is OpenSUSE:
+  OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  #echo "OS: ${OS}"
+  if [[ ${OS} == opensuse ]]; then
+    # Check if this is Ubuntu 14.04:
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
+    VERSIONID=${VERSIONID//\"/}
+    VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
+    #echo "VERSION: ${VERSIONID}"
+    if [[ ${VERSIONID} == 42 ]]; then
+      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel"
+    fi
+  fi
+  
+  if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
+
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do 
+    # Check if the file is installed
+    STATUS=$(rpm -q --queryformat "%{NAME}\n" ${PACKAGE})
+    #echo "${PACKAGE}: >${STATUS}<"
+    if [[ "${STATUS}" != "${PACKAGE}" ]]; then
+      # Check if it exists at all:
+      echo "Not installed: ${PACKAGE}"
+      TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+    fi
+  done
+  
+  
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo " "
+    echo "Do the following to install all required packages:"
+    echo "sudo zypper install ${TOBEINSTALLED}"
+    echo " "
+    exit 1;
+  else 
+    echo "All required packages are already installed! However, this script is only tested to work for openSUSE 42"
+  fi
+
 fi
 
 
