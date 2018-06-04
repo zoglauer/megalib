@@ -96,7 +96,7 @@ void MERQualityDataSet::Initialize(unsigned int MaximumSequenceLength, bool UseP
   
   m_PathSamples.resize(m_NumberOfPathSamples);
   
-  m_EvaluationIsCompletelyAborbed = -1;
+  m_EvaluationIsCompletelyAbsorbed = -1;
   m_EvaluationIsReconstructable = -1;
   m_EvaluationZenithAngle = -1;
 }
@@ -180,8 +180,8 @@ TMVA::Reader* MERQualityDataSet::CreateReader()
     }
   }
   
-  Name = "EvaluationIsCompletelyAborbed";
-  Reader->AddVariable(Name, &m_EvaluationIsCompletelyAborbed);  
+  Name = "EvaluationIsCompletelyAbsorbed";
+  Reader->AddVariable(Name, &m_EvaluationIsCompletelyAbsorbed);  
   
   Name = "EvaluationIsReconstructable";
   Reader->AddVariable(Name, &m_EvaluationIsReconstructable);  
@@ -298,9 +298,9 @@ void MERQualityDataSet::FillEventData(Long64_t ID, vector<MRESE*>& SequencedRESE
 
 
 //! Fill the evaluation section, whether the event is competely absorbed
-void MERQualityDataSet::FillEvaluationIsCompletelyAborbed(bool IsCompletelyAborbed)
+void MERQualityDataSet::FillEvaluationIsCompletelyAbsorbed(bool IsCompletelyAbsorbed)
 {
-  m_EvaluationIsCompletelyAborbed = IsCompletelyAborbed;
+  m_EvaluationIsCompletelyAbsorbed = IsCompletelyAbsorbed;
 }
 
 
@@ -402,8 +402,8 @@ TTree* MERQualityDataSet::CreateTree(MString Title)
     }  
   }
   
-  Name = "EvaluationIsCompletelyAborbed";
-  Tree->Branch(Name, &m_EvaluationIsCompletelyAborbed, Name + "/I");  
+  Name = "EvaluationIsCompletelyAbsorbed";
+  Tree->Branch(Name, &m_EvaluationIsCompletelyAbsorbed, Name + "/I");  
   
   Name = "EvaluationIsReconstructable";
   Tree->Branch(Name, &m_EvaluationIsReconstructable, Name + "/I");  

@@ -200,9 +200,7 @@ bool MResponseEventQualityTMVAEventFile::Initialize()
   for (unsigned int s = 2; s <= m_MaxNInteractions; ++s) {
     MERQualityDataSet* DS = new MERQualityDataSet();
     DS->Initialize(s, m_UsePathToFirstIA);
-    MString Name("Quality_seq");
-    Name += s;
-    m_Trees.push_back(DS->CreateTree(Name));
+    m_Trees.push_back(DS->CreateTree("Quality"));
     m_DataSets.push_back(DS);
   }
   
@@ -338,7 +336,7 @@ bool MResponseEventQualityTMVAEventFile::Analyze()
   
   // Now fill the data set
   m_DataSets[SequenceLength-2]->FillEventData(RE->GetEventID(), RESEs, m_SiGeometry);
-  m_DataSets[SequenceLength-2]->FillEvaluationIsCompletelyAborbed(CompletelyAbsorbed);
+  m_DataSets[SequenceLength-2]->FillEvaluationIsCompletelyAbsorbed(CompletelyAbsorbed);
   m_DataSets[SequenceLength-2]->FillEvaluationIsReconstructable(StartResolved);
   m_DataSets[SequenceLength-2]->FillEvaluationZenithAngle(m_SiEvent->GetIAAt(0)->GetDirection().Theta()*c_Deg);
   

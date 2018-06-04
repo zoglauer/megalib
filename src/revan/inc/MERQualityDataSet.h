@@ -61,7 +61,7 @@ class MERQualityDataSet
   void FillEventData(Long64_t ID, vector<MRESE*>& SequencedRESEs, MDGeometryQuest* Geometry);
   
   //! Fill the evaluation section, whether the event is competely absorbed
-  void FillEvaluationIsCompletelyAborbed(bool IsCompletelyAborbed);
+  void FillEvaluationIsCompletelyAbsorbed(bool IsCompletelyAbsorbed);
   //! Fill the evaluation section, whether the event is competely absorbed
   void FillEvaluationIsReconstructable(bool IsReconstructable);
   //! Fill the evaluation section, about the zenith angle of the incoming gamma ray
@@ -96,7 +96,7 @@ class MERQualityDataSet
   vector<Float_t> m_PathSamples;
   
   //! Has the event been completey absorbed
-  Int_t m_EvaluationIsCompletelyAborbed;
+  Int_t m_EvaluationIsCompletelyAbsorbed;
   //! Is the event reconstructabe
   Int_t m_EvaluationIsReconstructable;
   //! The Zenith angle
