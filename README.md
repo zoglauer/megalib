@@ -12,26 +12,4 @@ For a more complete list of features and more documentation please visit [MEGAli
 
 ## Installation
 
-### The short version of the MEGAlib setup
-
-You can install the latest development version of MEGAlib with the following commands - in case you want the latest release instead of the development version, remove "--release=dev".
-
-```
-git clone https://github.com/zoglauer/megalib MEGAlib
-cd MEGAlib
-bash setup.sh --release=dev --patch=yes --clean=yes
-```
-
-This script will first download, patch, compile, and install MEGAlib's own version of [ROOT](http://root.cern.ch) and [Geant4](http://geant4.cern.ch), and then compile MEGAlib. In the end, it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib
-
-```
-. bin/source-megalib.sh
-```
-
-To update MEGAlib in the future, just call "bash setup.sh" again.
-
-
-### The long version of the MEGAlib setup
-
-Please consult [the setup page on MEGAlib's homepage](http://megalibtoolkit.com/setup.html).
-
+To run, MEGAlib requires ROOT and Geant4 to be installed. MEGAlib's setup.sh script will automatically install the correct version of those libraries for you. For all the installation details, please consult [the setup page on MEGAlib's homepage](http://megalibtoolkit.com/setup.html).
