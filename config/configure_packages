@@ -12,8 +12,13 @@ IsOpenSuseClone=0
 
 if [ -f /etc/os-release ]; then
   OS=`cat /etc/os-release | grep "^ID_LIKE\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
   if [[ ${OS} == debian ]]; then
     IsDebianClone=1
+  elif [[ ${OS} == suse ]]; then
+    IsOpenSuseClone=1
+  elif [[ ${OS} == scientific* ]]; then
+    IsRedhatClone=1
   fi
 fi
 
@@ -24,19 +29,40 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
   
   # Check if this is Ubuntu:
   OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
   #echo "OS: ${OS}"
   if [[ ${OS} == ubuntu ]]; then
     # Check if this is Ubuntu 14.04:
-    VERSIONID=`cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }'`
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
     VERSIONID=${VERSIONID//\"/}
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 14.04 ]]; then
       REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
     elif [[ ${VERSIONID} == 16.04 ]]; then
-      REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev"
+      REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect"
     elif [[ ${VERSIONID} == 18.04 ]]; then
-      REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev doxygen expect"
+      REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect"
+    else
+      REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect"
+      
+      echo "This script has not yet been adapted for your version of Ubuntu: ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo apt-get update; sudo apt-get install ${REQUIRED}"
+      echo " "
+      exit 0  
     fi
+  else
+    REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect"
+ 
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo apt-get update; sudo apt-get install ${REQUIRED}"
+    echo " "
+    exit 0      
   fi
   
   #echo "Required: ${REQUIRED}"
@@ -64,10 +90,146 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
     echo "Do the following to install all required packages:"
     echo "sudo apt-get update; sudo apt-get install ${TOBEINSTALLED}"
     echo " "
+    exit 1
+  else 
+    echo "All required packages seem to be already installed!"
+    exit 0
+  fi
+fi
+
+
+
+# OPENSUSE Clones
+
+if [[ ${IsOpenSuseClone} -eq 1 ]]; then
+
+  # Check if this is OpenSUSE:
+  OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
+  #echo "OS: ${OS}"
+  if [[ ${OS} == opensuse ]]; then
+    # Check the version:
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
+    VERSIONID=${VERSIONID//\"/}
+    VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
+    #echo "VERSION: ${VERSIONID}"
+    if [[ ${VERSIONID} == 42 ]]; then
+      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+    else 
+      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+
+      echo "This script has not yet been adapted for your version of opensuse: ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo zypper install ${REQUIRED}"
+      echo " "
+      exit 0  
+    fi
+  else
+    REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo zypper install ${REQUIRED}"
+    echo " "
+    exit 0   
+  fi
+  
+  if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
+
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do 
+    # Check if the file is installed
+    STATUS=$(rpm -q --queryformat "%{NAME}\n" ${PACKAGE})
+    #echo "${PACKAGE}: >${STATUS}<"
+    if [[ "${STATUS}" != "${PACKAGE}" ]]; then
+      # Check if it exists at all:
+      echo "Not installed: ${PACKAGE}"
+      TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+    fi
+  done
+  
+  
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo " "
+    echo "Do the following to install all required packages:"
+    echo "sudo zypper install ${TOBEINSTALLED}"
+    echo " "
+    exit 1
+  else 
+    echo "All required packages seem to be already installed!"
+    exit 0
+  fi
+fi
+
+
+
+# REDHAT Clones
+
+if [[ ${IsRedhatClone} -eq 1 ]]; then
+
+  # Check if this is OpenSUSE:
+  OS=`cat /etc/os-release | grep "^ID\=" | awk -F= '{ print $2 }'`
+  OS=${OS//\"/}
+  #echo "OS: ${OS}"
+  if [[ ${OS} == rhel ]]; then
+    # Check the version
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
+    VERSIONID=${VERSIONID//\"/}
+    VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
+    #echo "VERSION: ${VERSIONID}"
+    if [[ ${VERSIONID} == 7 ]]; then
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+    else 
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+
+      echo "This script has not yet been adapted for your version of SL ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo yum install ${REQUIRED}"
+      echo " "
+    fi
+  else
+    REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo yum install ${REQUIRED}"
+    echo " "
+    exit 0   
+  fi
+  
+  if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
+
+  # Check if each of the packages exists:
+  for PACKAGE in ${REQUIRED}; do 
+    # Check if the file is installed
+    STATUS=$(yum list installed ${PACKAGE} >& /dev/null)
+    if [[ $? == 1 ]]; then
+      # Check if it exists at all:
+      echo "Not installed: ${PACKAGE}"
+      TOBEINSTALLED="${TOBEINSTALLED} ${PACKAGE}"
+    fi
+  done
+  
+  
+  if [[ "${TOBEINSTALLED}" != "" ]]; then
+    echo " "
+    echo "Do the following to install all required packages:"
+    echo "sudo yum install ${TOBEINSTALLED}"
+    echo " "
     exit 1;
   else 
-    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04 & 16.06."
+    echo "All required packages seem to be already installed!"
+    exit 0
   fi
+
 fi
 
 
