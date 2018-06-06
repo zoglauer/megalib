@@ -101,13 +101,18 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 
 <h2> Setting up the ROOT / Geant4 / MEGAlib environment </h2>
  
-<p>If everything went well, the last words of the setup script were something like this (obviously the path will point to your installation):</p>
+<p>If everything went well, the last words of the setup script were something like this (obviously the path will point to your own installation):</p>
 
-<pre><code>In order to run any MEGAlib programs, you have to source the following file first:
+<pre><code>ATTENTION:
+
+In order to run the MEGAlib programs, you have to source the following file first:
+
 source /home/andreas/Soft/MEGAlib/bin/source-megalib.sh
-You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre></code>
 
-<p>This tiny little script sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put the above line into your .bashrc file.</p>
+You can add this line into your .bashrc file (or .bash_profile on macOS),
+or execute this line everytime you want to use MEGAlib in a new terminal.</pre></code>
+
+<p>The script <code>source-megalib.sh</code> sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put the above line into your .bashrc file, or .bash_profile file if you use Terminal.app on macOS.</p>
 
 
 
@@ -117,18 +122,18 @@ You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre
 
 <pre>$ bash setup.sh --release=dev</pre>
 
-<p>If this does not helps, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There all the common installation errors and there solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
+<p>If this does not help, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There, all common installation errors along with their solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
 
 
 <h2>Updating your installation</h2>
 
-<p>The preferred way to update MEGAlib is to run the setups script again:</p>
+<p>The preferred way to update MEGAlib is to run the setup script again:</p>
 
 <pre>$ bash setup.sh</pre>
 
-<p>It will remember your old settings thus there is no need to give them all again</p>
+<p>Assuming the setup was once completed successfully, it will remember your old command line settings (release, branch, etc.). Thus, there is no need to give them all again</p>
 
-<p>In case you are 100% sure nothing major has changed with the MEGAlib setup you can also just do the follwoing to update MEGAlib:</p>
+<p>In case you are 100% sure nothing major has changed with the MEGAlib setup, you can also just do the follwoing to update MEGAlib:</p>
 <pre>$ git pull; make clean; make </pre>
 
 <h2>Finally...</h2>
