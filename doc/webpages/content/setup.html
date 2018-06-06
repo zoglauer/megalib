@@ -10,25 +10,6 @@ MenuTitle:         Code & Setup
 
 <h1>Code and Setup</h1>
 
-
-<h2>Quick setup</h2>
-
-<p>You can install the latest development version of MEGAlib on macOS, Linux, and within the Linux environment of Windows 10 with the following commands - in case you want the latest release instead of the latest development version, remove "--release=dev".</p>
-
-<pre>
-$ git clone https://github.com/zoglauer/megalib MEGAlib
-$ cd MEGAlib
-$ bash setup.sh --release=dev --patch=yes --clean=yes
-</pre>
-
-<p>This script will first download, patch, compile, and install MEGAlib's own version of ROOT and Geant4, and then compile MEGAlib. In the end, it will create a script called "source-megalib.sh" in the MEGAlib bin directory, which you have to source in order to run MEGAlib:</p>
-
-<pre>$ . bin/source-megalib.sh</pre>
-
-<p>If you run into trouble continue reading the more detailed installation instructions below.</p>
-
-
-
 <h2>The source code</h2>
 
 <p>The full MEGAlib source code can be found on github at: <a href=https://github.com/zoglauer/megalib target=_blank>https://github.com/zoglauer/megalib</a></p>
@@ -110,18 +91,23 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
   <li>Finally it will create a little script which you have to source in order to setup the environment for MEGAlib.</li>
 </ol>
 
-<p>In case something goes wrong, you do get an error message, and you can fix it, then simply restart the setup process. In most cases there is no reason to delete already downloaded files.</p>
-
-<p>Assuming you didn’t get any error, it will tell you something like the following (obviously the path will point to your installation):</p>
-<pre><code>In order to run any MEGAlib programs, you have to source the following file first:
-source /home/andreas/Soft/MEGAlib/bin/source-megalib.sh
-You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre></code>
-<p>This tiny little script sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put it into your .bashrc file.</p>
+<p>In case something goes wrong, and you get an error message, after you fixed the problem, simply restart the setup process. In most cases there is no reason to delete already downloaded files.</p>
 
 <p>If you do <code>bash setup.sh --help</code>, then you will see a lot of options for the setup script. You can set the name and path of your MEGAlib installation (--megalib-path), you can set the directory where you want to install ROOT and Geant4 (--external-path), you can give the path to an existing ROOT (--root) or Geant4 (--geant4) installation, which you want to use instead of downloading it, you can decide if you want to have the latest release or development version (--release), and you can decide which repository you want to use (--repository, but please stick with git).</p>
 
-<p>The setup script also doubles as update script. Just call it from within your MEGAlib installation and it will update MEGAlib, and if it installed ROOT and Geant4 previously it will also update them.</p>
+<p>Finally, the setup script also doubles as update script. Just call it from within your MEGAlib installation and it will update MEGAlib, and if it installed ROOT and Geant4 previously it will also update them. Unless you are actively developing MEGAlib, this is the preferred way to update your installation.</p>
 
+
+
+<h2> Setting up the ROOT / Geant4 / MEGAlib environment </h2>
+ 
+<p>If everything went well, the last words of the setup script were something like this (obviously the path will point to your installation):</p>
+
+<pre><code>In order to run any MEGAlib programs, you have to source the following file first:
+source /home/andreas/Soft/MEGAlib/bin/source-megalib.sh
+You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre></code>
+
+<p>This tiny little script sets the environment variables for ROOT, Geant4, and MEGAlib. Ideally you should put the above line into your .bashrc file.</p>
 
 
 
@@ -134,12 +120,25 @@ You can do this in your .bashrc file, or everytime you want to use MEGAlib.</pre
 <p>If this does not helps, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There all the common installation errors and there solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
 
 
+<h2>Updating your installation</h2>
 
+<p>The preferred way to update MEGAlib is to run the setups script again:</p>
+
+<pre>$ bash setup.sh</pre>
+
+<p>It will remember your old settings thus there is no need to give them all again</p>
+
+<p>In case you are 100% sure nothing major has changed with the MEGAlib setup you can also just do the follwoing to update MEGAlib:</p>
+<pre>$ git pull; make clean; make </pre>
 
 <h2>Finally...</h2>
 
 <p>Please take also a look at the change log for the important changes between the MEGAlib versions: <a href="https://raw.github.com/zoglauer/megalib/master/doc/ChangeLog.txt">ChangeLog</a></p>
 
 <p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
+
+
+
+
 
 </neodym-body>
