@@ -17,7 +17,7 @@ Geometry = M.MDGeometryQuest()
 if Geometry.ScanSetupFile(M.MString(GeometryName)) == True:
   print("Geometry " + GeometryName + " loaded!")
 else:
-  print("Unable to load geometry "+ GeometryName + " - Aborting!")
+  print("Unable to load geometry " + GeometryName + " - Aborting!")
   quit()
     
 
