@@ -9,7 +9,7 @@ help() {
   echo "    -m <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
   echo "    -c <file name>: Revan configuration file name"
-  echo "    -f <file name>: Long list of sim files"
+  echo "    -f <file name>: Long list of sim/evta files - MUST BE LAST"
   echo "";
   echo "Example:";
   echo "    mrevan -c Revan.cfg -m 12 -f RunTest*.sim";
@@ -148,7 +148,7 @@ echo " "
 echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
 echo "Revan configuration file:  ${CFG}"
-echo "Sim files:                 ${FILES}"
+echo "Sim/evta files:            ${FILES}"
 
 
 # Now run, revan RUN!
