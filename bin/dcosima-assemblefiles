@@ -106,8 +106,23 @@ ORIGINALS=( )
 REPLACEMENTS=( )
 
 while true; do
+
+  # Cleanup the existing data
+  for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
+    if [ "${TOCHECK[$m]}" != "" ]; then
+      eval F="${TOCHECK[$m]}"
+      #echo "First ${F}"
+      F=$(echo "${F}" | dos2unix)
+      #echo "Second ${F}"
+      F=$(echo "${F}" | sed 's/\t/ /g')
+
+      TOCHECK[$m]="${F}"
+    fi
+  done 
+  
   # Check if there are still file to be checked
   FOUND="false"
+  
   for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
     if [ "${TOCHECK[$m]}" != "" ]; then
       FOUND="true";
@@ -119,7 +134,8 @@ while true; do
   NEWONES=""
   for (( m=0; m<=$(( ${#TOCHECK[*]} -1 )); m++ )); do
     if [ "${TOCHECK[$m]}" != "" ]; then
-      eval F="${TOCHECK[$m]}"
+      F="${TOCHECK[$m]}"
+
 
       # Check for all the files
       #echo "Analyzing: ${F}"
@@ -132,21 +148,21 @@ while true; do
       VERYNEWONES+=(`cat ${F} | grep MapProfileBeam | awk '{print $9}'`)
       VERYNEWONES+=(`cat ${F} | grep ActivationSources | awk '{print $2}'`)
       VERYNEWONES+=(`cat ${F} | grep FarFieldTransmissionProbability | awk '{print $2}'`)
-      if [[ `cat ${F} | sed 's/\t/ /g' | grep "\ File\ "` != "" ]]; then
+      if [[ `cat ${F} | grep "\ File\ "` != "" ]]; then
         OLDIFS=${IFS}
         IFS=$'\n'
-        LINES=(`cat ${F} | sed 's/\t/ /g' | grep "\ File\ "`)
+        LINES=(`cat ${F} | grep "\ File\ "`)
         IFS=${OLDIFS}
         #echo "LINES:"
         #printf '%s\n' "${LINES[@]}"
         for (( i=0; i<=$(( ${#LINES[@]} - 1 )); i++ )); do
           L=${LINES[$i]}
           #echo "Line ${L}"
-          if [[ `echo ${L}  | sed 's/\t/ /g' | grep "\ File\ " | awk '{print $2}'` == File ]]; then 
+          if [[ `echo ${L} | grep "\ File\ " | awk '{print $2}'` == File ]]; then 
             #echo "Files 2 : $(echo ${L} | grep "\ File\ " | awk '{print $2}')"
-            VERYNEWONES+=(`echo ${L}  | sed 's/\t/ /g' | grep "\ File\ " | awk '{print $3}'`)
-          elif [[ `echo ${L}  | sed 's/\t/ /g' | grep "\ File\ " | grep ".Orientation"` != "" ]]; then
-            VERYNEWONES+=(`echo ${L}  | sed 's/\t/ /g' | grep "\ File\ " | awk '{print $5}'`)
+            VERYNEWONES+=(`echo ${L} | grep "\ File\ " | awk '{print $3}'`)
+          elif [[ `echo ${L} | grep "\ File\ " | grep ".Orientation"` != "" ]]; then
+            VERYNEWONES+=(`echo ${L} | grep "\ File\ " | awk '{print $5}'`)
           fi
         done
       fi
@@ -157,7 +173,7 @@ while true; do
       for N in ${VERYNEWONES[@]}; do
         ORIG=${N}
         N="${N//$\(MEGALIB\)/$\{MEGALIB\}}"
-        #N="${N//$\(NUCLEARIZER\)/$\{NUCLEARIZER\}}"
+        N="${N//$\(NUCLEARIZER\)/$\{NUCLEARIZER\}}"
         eval N=${N}
         if [ "$?" != "0" ]; then exit 1; fi  # Above line can fail, if there are uncommon paths to expand 
         eval N=${N}
