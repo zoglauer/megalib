@@ -115,7 +115,7 @@ then
 else
   echo " "
   echo "Error: The value behind threads must be a number";
-  echo "       For details see mcosima --help"
+  echo "       For details see mrevan --help"
   echo " "
   rm /tmp/aux
   exit 1;
@@ -128,7 +128,7 @@ then
 else
   echo " "
   echo "Error: The value behind nice must be a number";
-  echo "       For details see mcosima --help"
+  echo "       For details see mrevan --help"
   echo " "
   rm /tmp/aux
   exit 1;
@@ -143,7 +143,7 @@ if [[ ! -f ${CFG} ]]; then
 fi
 
 echo " "
-echo "Launching mcosima"
+echo "Launching mrevan"
 echo " "
 echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
