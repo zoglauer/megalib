@@ -138,7 +138,7 @@ for C in "${CMD[@]}"; do
   else
     echo ""
     echo "ERROR: Unknown command line option: ${C}"
-    echo "       See \"dcosima --help\" for a list of options"
+    echo "       See \"dresponsecreator --help\" for a list of options"
     exit 1
   fi
 done
