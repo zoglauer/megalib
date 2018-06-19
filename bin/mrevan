@@ -153,9 +153,10 @@ echo "Sim/evta files:            ${FILES}"
 
 # Now run, revan RUN!
 for SIMFILE in ${FILES}; do
-  mdelay revan ${THREADS}
+  mwait -p=revan -i=${THREADS}
   echo "Launching revan for file ${SIMFILE}"
   nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}" > /dev/null &
+  sleep 0.5
 done
 
 
