@@ -36,6 +36,9 @@ CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 # By default we build with python 3:
 CONFIGUREOPTIONS+=" -Dpython3=ON"
 
+# Enable cuda
+CONFIGUREOPTIONS+=" -Dcuda=ON" 
+
 # In case ROOT complains about you python version
 # CONFIGUREOPTIONS+=" -Dpython=OFF"
 # CONFIGUREOPTIONS+=" -Dpython3=OFF"
