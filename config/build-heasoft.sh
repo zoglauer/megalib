@@ -110,7 +110,8 @@ else
   echo "Looking for latest HEASoft version on the HEASoft website"
   
   # Now check root repository for the given version:
-  TARBALL=`curl ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "[0-9]src.tar.gz$"`
+  #TARBALL=`curl ftp://legacy.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "[0-9]src.tar.gz$"`
+  TARBALL=$(curl https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/ -sl | grep ">heasoft-" | grep "[0-9]src.tar.gz<" | awk -F">" '{ print $3 }' | awk -F"<" '{print $1 }')
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable HEASoft tar ball at the HEASoft website"
     exit 1
@@ -122,7 +123,7 @@ else
   if [ -f "${TARBALL}" ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl --head ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/${TARBALL}`
+    SAMESIZE=`curl --head https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
@@ -135,7 +136,7 @@ else
   fi
   
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
-    curl -O ftp://heasarc.gsfc.nasa.gov/software/lheasoft/release/${TARBALL}
+    curl -O https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the HEASoft website!"
       exit 1
