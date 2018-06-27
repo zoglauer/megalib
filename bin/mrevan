@@ -6,9 +6,10 @@ help() {
   echo "(C) by Andreas Zoglauer"
   echo "";
   echo "Options:";
-  echo "    -m <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
+  echo "    -t <threads>:   Maximum number of all threads (e.g. of all revan calls) on this machine (default: number of cores)"
   echo "    -n <nice>:      The nice level as an integer (default: 0)"
-  echo "    -c <file name>: Revan configuration file name"
+  echo "    -c <file name>: Revan configuration file name (mandatory)"
+  echo "    -g <geometry file name>: Overwrites the geometry in the configuration file (optional)"
   echo "    -f <file name>: Long list of sim/evta files - MUST BE LAST"
   echo "";
   echo "Example:";
@@ -29,6 +30,7 @@ THREADS=1
 NICELEVEL=0
 CFG=""
 FILES=""
+GEOMETRY=""
 
 # Find the default number of threads
 if [[ ${OSTYPE} == darwin* ]]; then
@@ -73,7 +75,19 @@ while [ $# -gt 0 ] ; do
       exit 0;
     fi
     CFG=$1;
-    #echo "Using ${Threads} threads";
+    #echo "Using configuration file ${CFG}";
+    ;;
+  -g)
+    shift;
+    if [ $# -eq 0 ]; then
+      echo " "
+      echo "Error: Options -g needs an argument";
+      echo "       For details see mrevan --help"
+      echo " "
+      exit 0;
+    fi
+    GEOMETRY=$1;
+    #echo "Using geometry ${GEOMETRY}";
     ;;
   -n)
     shift;
@@ -147,6 +161,9 @@ echo "Launching mrevan"
 echo " "
 echo "Number of threads to use:  ${THREADS}"
 echo "Nice level:                ${NICELEVEL}"
+if [[ ${GEOMETRY} != "" ]]; then
+  echo "Geometry:                ${GEOMETRY}"
+fi
 echo "Revan configuration file:  ${CFG}"
 echo "Sim/evta files:            ${FILES}"
 
@@ -155,7 +172,11 @@ echo "Sim/evta files:            ${FILES}"
 for SIMFILE in ${FILES}; do
   mwait -p=revan -i=${THREADS}
   echo "Launching revan for file ${SIMFILE}"
-  nohup nice -n ${NICELEVEL} bash -c "source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}" > /dev/null &
+  CMD="source ${MEGALIB}/bin/source-megalib.sh; revan -c ${CFG} -a -n -f ${SIMFILE}"
+  if [[ ${GEOMETRY} != "" ]]; then
+    CMD+=" -g ${GEOMETRY}"
+  fi
+  nohup nice -n ${NICELEVEL} bash -c "${CMD}" > /dev/null &
   sleep 0.5
 done
 
