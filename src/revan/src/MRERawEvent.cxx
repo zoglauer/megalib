@@ -1784,7 +1784,7 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
 
     MREHit* Hit = new MREHit();
     if (Hit->ParseLine(Line, Version) == false) {
-      mout<<"Event "<<m_EventID<<": Unable to parse line:"<<endl;
+      mout<<"Event "<<m_EventID<<": Unable to parse line - removing hit"<<endl;
       mout<<Line<<endl;
       m_IsValid = false;
       delete Hit;
@@ -1796,17 +1796,21 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       // Use the information from the geometry file:
       if (m_Geo != 0) {
         if (Hit->RetrieveResolutions(m_Geo) == false) {
-          mout<<"Event "<<m_EventID<<": Unable to determine resolutions:"<<endl;
+          mout<<"Event "<<m_EventID<<": Unable to determine resolutions - removing hit"<<endl;
           mout<<Line<<endl;
-          Ret = 1;
+          m_IsValid = false;
+          delete Hit;
+          return 2;  
         }
       }
     } else {
       if (m_Geo != 0) {
         if (Hit->UpdateVolumeSequence(m_Geo) == false) {
-          mout<<"Event "<<m_EventID<<": Unable to update volume sequence:"<<endl;
+          mout<<"Event "<<m_EventID<<": Unable to update volume sequence - removing hit"<<endl;
           mout<<Line<<endl;
-          Ret = 1;
+          m_IsValid = false;
+          delete Hit;
+          return 2; // We need to return not parsed here since we most likely  changed the geometry (e.g. removed detectors) and don't want those hits
         }
       }
     }
