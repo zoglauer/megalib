@@ -83,7 +83,7 @@ class MResponseMatrixAxis
   virtual bool InRange(double X1, double X2 = g_DoubleNotDefined) const;
   
   //! True if the axis has 1D bin edges
-  virtual bool Has1DBinEdges() { return true; }
+  virtual bool Has1DBinEdges() const { return true; }
   //! Get the 1D bin edges
   //! Check with Has1DBinEdges first, because this is not guaranteed
   virtual vector<double> Get1DBinEdges() const { return m_BinEdges; }
