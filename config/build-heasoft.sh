@@ -205,10 +205,10 @@ echo "Configuring..."
 # Minimze the LD_LIBRARY_PATH to prevent problems with multiple readline's
 cd heasoft_v${VER}/BUILD_DIR
 export LD_LIBRARY_PATH=/usr/lib
-sh configure ${CONFIGUREOPTIONS} > config.out 2>&1
+sh configure ${CONFIGUREOPTIONS} > config.log 2>&1
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong configuring HEASoft!"
-  echo "       Check the file "`pwd`"/config.out"
+  echo "       Check the file "`pwd`"/config.log"
   exit 1
 fi
 
@@ -221,11 +221,11 @@ if [ "$?" != "0" ]; then
   echo "       Check the file "`pwd`"/build.log"
   exit 1
 fi
-ERRORS=`grep -v "char \*\*\*" build.log | grep "\ \*\*\*\ "`
+ERRORS=$(cat build.log | grep -v "char \*\*\*" | grep -v "\_\_PRETTY\_FUNCTION\_\_\,\" \*\*\*" | grep "\ \*\*\*\ ")
 if [ "${ERRORS}" == "" ]; then
   echo "Installing ..."
   make -j1 install > install.log 2>&1 
-  ERRORS=`grep -v "char \*\*\*" install.log | grep "\ \*\*\*\ "`
+  ERRORS=$(cat install.log | grep -v "char \*\*\*" | grep -v "\_\_PRETTY\_FUNCTION\_\_\,\" \*\*\*" | grep "\ \*\*\*\ ")
   if [ "${ERRORS}" != "" ]; then
     echo "ERROR: Errors occured during the installation. Check your install.log"
     echo "       Check the file "`pwd`"/install.log"
