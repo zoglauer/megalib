@@ -1,0 +1,30 @@
+# This is the steering file for the simulations 
+
+# Source directory
+SourceDir=.
+
+# Directoey where to simulate the point sources
+PointSourceDir="PointSources"
+
+# Geometry including *full* path
+Geometry="${MEGALIB}/resource/examples/geomega/special/Max.geo.setup"
+
+# Revan configuration file
+#RevanConfiguration="${MEGALIB}/resource/examples/advanced/Pipeline/Max.revan.cfg"
+
+# Theta angles for point source simulations
+PointSourceThetas="0 10 20 30 40 50 60 70 80 90 100 110"
+
+# Mono energetic energies to simulate 
+PointSourceMonoEnergies="1808.7 1173.2 1332.5 100 130 200 350 500 550 700 1000 1300 2000 3500 5000 10000"
+
+# Energies at which to start the continuum simulations
+PointSourceContinuumStartEnergies="8 80 800 8000"
+
+# Stop criteria for point source simulations (should be events!)
+EventsOrTriggers="Events"
+
+# Stop criteria for point source simulations
+Events=5000
+
+

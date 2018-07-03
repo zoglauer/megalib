@@ -1,0 +1,24 @@
+# Template for a Gaussian broadened line point source
+
+Version                         1
+Geometry                        %%GEOMETRY%%
+
+# Physics list
+PhysicsListEM                   LivermorePol
+
+# Output formats
+StoreSimulationInfo             init-only
+
+# The run
+Run SpaceSim
+SpaceSim.FileName               PS_%%ENERGY%%keV_%%SIGMA%%keV_%%THETA%%deg
+SpaceSim.%%EVENTSORTRIGGERS%%   %%EVENTS%%
+
+# The broad-line source
+SpaceSim.Source PS
+PS.ParticleType                 1
+PS.Beam                         FarFieldPointSource %%THETA%% 0
+PS.Spectrum                     Gaussian %%ENERGY%% %%SIGMA%% 5.0
+PS.Polarization                 Random
+PS.Flux                         1
+
