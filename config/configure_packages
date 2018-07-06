@@ -114,9 +114,9 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 42 ]]; then
-      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel"
     else 
-      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel"
 
       echo "This script has not yet been adapted for your version of opensuse: ${VERSIONID}"
       echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
