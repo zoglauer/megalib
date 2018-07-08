@@ -100,6 +100,20 @@ void MBinner::SetMinMax(double Minimum, double Maximum, bool Adapt)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Add unsorted x value data
+void MBinner::AddUnsorted(vector<double> Values)
+{
+  sort(Values.begin(), Values.end());
+  
+  for (double x: Values) {
+    Add(x); 
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Return as a histogram (cts)
 TH1D* MBinner::GetHistogram(const MString& Title, const MString& xTitle, const MString& yTitle)
 {

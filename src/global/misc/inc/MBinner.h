@@ -80,6 +80,9 @@ class MBinner
   //! Add another element to the array
   void Add(double AxisValue, double DataValue = 1) { m_Values.push_back(MBinnedData(AxisValue, DataValue)); m_IsModified = true; }
   
+  //! Add unsorted x value data
+  void AddUnsorted(vector<double> Values);
+  
   //! Return as a histogram (cts)
   TH1D* GetHistogram(const MString& Title, const MString& xTitle, const MString& yTitle);
   
