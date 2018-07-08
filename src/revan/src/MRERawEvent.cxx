@@ -95,7 +95,7 @@ const double MRERawEvent::c_NoScore = numeric_limits<double>::max()/3; // remove
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent() : MRESE(), MRotationInterface()
+MRERawEvent::MRERawEvent() : MRESE(), MRotationInterface(), m_CoincidenceWindow(0)
 {
   // Construct one MRERawEvent-object
 
@@ -106,7 +106,7 @@ MRERawEvent::MRERawEvent() : MRESE(), MRotationInterface()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE(), MRotationInterface()
+MRERawEvent::MRERawEvent(MGeometryRevan *Geo) : MRESE(), MRotationInterface(), m_CoincidenceWindow(0)
 {
   // Construct one MRERawEvent-object
 
