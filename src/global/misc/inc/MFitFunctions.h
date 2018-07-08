@@ -28,6 +28,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double Linear(double* x, double* par);
 double Lorentz2(double* x, double* par);
 double Lorentz(double* x, double* par);
 double LorentzARM(double* x, double* par);
