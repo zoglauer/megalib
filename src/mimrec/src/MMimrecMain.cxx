@@ -56,7 +56,9 @@ int main(int argc, char** argv)
   MInterfaceMimrec Mimrec;
   if (Mimrec.ParseCommandLine(argc, argv) == false) {
     return 0;
-  } else {
+  } 
+  
+  if (Mimrec.UseUI() == true) {
     AppMimrec.Run();
   }  
 

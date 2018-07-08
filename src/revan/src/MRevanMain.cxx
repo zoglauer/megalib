@@ -56,7 +56,9 @@ int main(int argc, char** argv)
   MInterfaceRevan Revan;
   if (Revan.ParseCommandLine(argc, argv) == false) {
     return 1;
-  } else {
+  } 
+  
+  if (Revan.UseUI() == true) {
     AppRevan->Run();
   }
 

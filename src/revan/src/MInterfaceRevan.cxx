@@ -267,7 +267,7 @@ bool MInterfaceRevan::ParseCommandLine(int argc, char** argv)
     if (Option == "--analyze" || Option == "-a") {
       cout<<"Command-line parser: Analyzing..."<<endl;
       AnalyzeEvents();
-      return false;
+      return true;
     } else if (Option == "--generate-spectra" || Option == "-s") {
       cout<<"Command-line parser: Generate spectra (use the options from the configuration file)"<<endl;
       GenerateSpectra();

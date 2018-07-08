@@ -55,7 +55,9 @@ int main(int argc, char** argv)
   MInterfaceSivan Sivan;
   if (Sivan.ParseCommandLine(argc, argv) == false) {
     return 1;
-  } else {
+  } 
+  
+  if (Sivan.UseUI() == true) {
     AppSivan->Run();
   }
 

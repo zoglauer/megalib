@@ -56,7 +56,9 @@ int main(int argc, char** argv)
   MInterfaceGeomega Geomega;
   if (Geomega.ParseCommandLine(argc, argv) == false) {
     return 1;
-  } else {
+  } 
+  
+  if (Geomega.UseUI() == true) {
     AppGeomega->Run();
   }
 

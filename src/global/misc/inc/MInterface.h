@@ -44,6 +44,9 @@ class MInterface
   //! this function is called by main()
   virtual bool ParseCommandLine(int argc, char** argv) = 0;
 
+  //! True if we use or intend to use th UI
+  bool UseUI() const { return m_UseGui; }
+  
   //! Set the geometry file name and initialize the geometry
   //! Returns true if successful
   virtual bool SetGeometry(MString FileName, bool UpdateGui = true) = 0;
