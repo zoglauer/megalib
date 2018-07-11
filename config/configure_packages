@@ -37,12 +37,32 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
     VERSIONID=${VERSIONID//\"/}
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 14.04 ]]; then
-      REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
+      REQUIRED="git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
     elif [[ ${VERSIONID} == 16.04 ]]; then
-      REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
+      REQUIRED="git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect dos2unix libncurses5-dev"
     elif [[ ${VERSIONID} == 18.04 ]]; then
-      REQUIRED="git dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev cmake libxmu-dev curl"
+      REQUIRED="git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect dos2unix libncurses5-dev"
+    else
+      REQUIRED="git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect dos2unix libncurses5-dev"
+      
+      echo "This script has not yet been adapted for your version of Ubuntu: ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo apt-get update; sudo apt-get install ${REQUIRED}"
+      echo " "
+      exit 0  
     fi
+  else
+    REQUIRED="git gawk dpkg-dev make g++ gcc gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect  dos2unix libncurses5-dev"
+ 
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo apt-get update; sudo apt-get install ${REQUIRED}"
+    echo " "
+    exit 0      
   fi
   
   #echo "Required: ${REQUIRED}"
@@ -70,9 +90,10 @@ if [[ ${IsDebianClone} -eq 1 ]]; then
     echo "Do the following to install all required packages:"
     echo "sudo apt-get update; sudo apt-get install ${TOBEINSTALLED}"
     echo " "
-    exit 1;
+    exit 1
   else 
-    echo "All required packages are already installed! However, this script is only tested to work for Ubuntu 14.04, 16.04, 18.04"
+    echo "All required packages seem to be already installed!"
+    exit 0
   fi
 fi
 
@@ -93,8 +114,28 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 42 ]]; then
-      REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel"
+    else 
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel"
+
+      echo "This script has not yet been adapted for your version of opensuse: ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo zypper install ${REQUIRED}"
+      echo " "
+      exit 0  
     fi
+  else
+    REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo zypper install ${REQUIRED}"
+    echo " "
+    exit 0   
   fi
   
   if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
@@ -117,11 +158,11 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
     echo "Do the following to install all required packages:"
     echo "sudo zypper install ${TOBEINSTALLED}"
     echo " "
-    exit 1;
+    exit 1
   else 
-    echo "All required packages are already installed! However, this script is only tested to work for openSUSE 42"
+    echo "All required packages seem to be already installed!"
+    exit 0
   fi
-
 fi
 
 
@@ -141,8 +182,27 @@ if [[ ${IsRedhatClone} -eq 1 ]]; then
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 7 ]]; then
-      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel libXt-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mariadb-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl dos2unix ncurses-devel perl-devel"
+    else 
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel libXt-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mariadb-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl dos2unix ncurses-devel perl-devel"
+
+      echo "This script has not yet been adapted for your version of SL ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo yum install ${REQUIRED}"
+      echo " "
     fi
+  else
+    REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+
+    echo "This script has not yet been adapted for your version of Linux: ${OS}"
+    echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+    echo " "
+    echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+    echo "sudo yum install ${REQUIRED}"
+    echo " "
+    exit 0   
   fi
   
   if [[ "${REQUIRED}" == "" ]]; then exit 0; fi
@@ -166,11 +226,11 @@ if [[ ${IsRedhatClone} -eq 1 ]]; then
     echo " "
     exit 1;
   else 
-    echo "All required packages are already installed! However, this script is only tested to work Scientific Linux 7"
+    echo "All required packages seem to be already installed!"
+    exit 0
   fi
 
 fi
-
 
 
 exit 0
