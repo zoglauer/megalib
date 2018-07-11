@@ -15,7 +15,7 @@ Version 2.33/2.34
   Meanwhile, this version ("master on github") just contains bug fixes, 
   non-critical updates, and compatibility updates with the latest OS and 
   ROOT/Geant4 versions.
-+ Default ROOT version is now 6.10, default Geant4 version is 10.2
++ Default ROOT version is now 6.14, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
