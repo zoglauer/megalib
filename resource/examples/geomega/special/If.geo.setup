@@ -1,20 +1,9 @@
+# Test geometry for if and for conditions
 
-#---------------------------------------------------------
-# Very simple Germanium ACT - similar to NCT 
-
-
-Name Max
+Name IfForTest
 Version 2.0
 
 SurroundingSphere 10  0.0  0.0  0.0  10.0
-
-# Use this volume, to test the surrounding sphere:
-#Volume Sphere
-#Sphere.Material Vacuum
-#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
-#Sphere.Position 0.0 0.0 0.0
-#Sphere.Mother WorldVolume
-
 
 Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
 
@@ -30,17 +19,68 @@ WorldVolume.Visibility 0
 WorldVolume.Shape BRIK 5000. 5000. 5000.
 WorldVolume.Mother 0
 
-
 Volume GeWafer
 GeWafer.Material Germanium
 GeWafer.Shape BOX 4.0 4.0 0.5
 GeWafer.Position 0 0 0 
 GeWafer.Mother WorldVolume
 
-Echo "Test"
+
+
+Echo "Test 0 start"
+Constant Test0 0
+If { Test0 > 0 }
+   For I { Test0 } -1.0 1.0
+       Echo "Test 0 not Passed"
+   Done
+Else
+  Echo "Test 0 passed"
+EndIf
+
+
+Echo "Test A start"
 If { 1 == 2 || 2 == 2 }
-	Echo "Fullfilled"
+	Echo "Test A passed"
+Else
+  Echo "Test A not passed"
 Endif 
+
+
+Echo "Test B start"
+If { false }
+	Echo "Test B not Passed"
+Else
+  Echo "Test B assed"
+Endif 
+
+
+Echo "Test C start"
+If { true }
+	Echo "Test C passed"
+Else
+  Echo "Test C not Passed"
+Endif 
+
+
+Echo "Test D start"
+For I 5 0 1
+  If { $I > 3 }
+    Echo "Test D passed if > 3: $I"
+  Else
+    Echo "Test D passed if <= 3: $I"
+  EndIf
+Done
+
+
+Echo "Test E start"
+Constant TestE 0
+If { TestE > 0 }
+   For I { TestE } -1.0 1.0
+       Echo "Test E not Passed"
+   Done
+Else
+  Echo "Test E passed"
+EndIf
 
 
 #------------------------------------------------------------
