@@ -676,12 +676,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       MString Index = Tokenizer.GetTokenAt(1);
-      if (Tokenizer.GetTokenAtAsDouble(2) <= 0 || std::isnan(Tokenizer.GetTokenAtAsDouble(2))) { // std:: is required
-        mout<<"Loop number: "<<Tokenizer.GetTokenAtAsDouble(2)<<endl;
-        Typo("Loop number in for loop must be a positive integer");
-        return false;       
-      }
       unsigned int Loops = Tokenizer.GetTokenAtAsUnsignedInt(2);
+      if (Loops == 0 || Tokenizer.GetTokenAtAsDouble(2) <= 0 || std::isnan(Tokenizer.GetTokenAtAsDouble(2))) { // std:: is required
+        mout<<"Warning: Loop number in for loop must be a positive integer "<<Tokenizer.GetTokenAtAsDouble(2)<<endl;
+        Loops = 0;
+        //Typo("Loop number in for loop must be a positive integer");
+        //return false;   
+      }
       double Start = Tokenizer.GetTokenAtAsDouble(3);
       double Step = Tokenizer.GetTokenAtAsDouble(4);
       
