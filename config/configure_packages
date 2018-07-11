@@ -182,9 +182,9 @@ if [[ ${IsRedhatClone} -eq 1 ]]; then
     VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
     #echo "VERSION: ${VERSIONID}"
     if [[ ${VERSIONID} == 7 ]]; then
-      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel libXt-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mariadb-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl dos2unix ncurses-devel perl-devel"
     else 
-      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mysql-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl"
+      REQUIRED="git cmake gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel libXt-devel gcc-gfortran openssl-devel pcre-devel mesa-libGL-devel mesa-libGLU-devel glew-devel mariadb-devel fftw-devel graphviz-devel avahi-compat-libdns_sd-devel python-devel libxml2-devel curl dos2unix ncurses-devel perl-devel"
 
       echo "This script has not yet been adapted for your version of SL ${VERSIONID}"
       echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
