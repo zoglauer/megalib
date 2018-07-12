@@ -151,7 +151,7 @@ bool MREHit::ParseLine(MString HitString, int Version)
       m_IsValid = true;
       if (T.GetTokenAt(5) != "OK") {
         if (T.GetTokenAt(5).Contains("OF") == true) {
-          m_IsValid = false;
+          m_IsValid = true; // Just an overflow 
         } else if (T.GetTokenAt(5).Contains("BA") == true || 
           T.GetTokenAt(5).Contains("XO") == true || 
           T.GetTokenAt(5).Contains("YO") == true) {
