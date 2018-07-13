@@ -7,6 +7,20 @@
 
 
 # Allowed versions
+if [[ ${MEGALIB} == "" ]]; then
+  echo ""
+  echo "ERROR: MEGAlib environment variable not set."
+  echo ""
+  exit 1
+fi
+
+if [[ ! -f ${MEGALIB}/config/AllowedROOTVersions.txt ]]; then
+  echo ""
+  echo "ERROR: File not found: \${MEGALIB}/config/AllowedROOTVersions.txt"
+  echo ""
+  exit 1
+fi
+
 VERSIONS=`cat ${MEGALIB}/config/AllowedROOTVersions.txt` 
 RootVersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
 RootVersionMax=`echo ${VERSIONS} | awk -F" " '{ print $NF }'`

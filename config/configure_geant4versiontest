@@ -6,6 +6,22 @@
 # Please see the MEGAlib software license and documentation for more informations.
 
 
+# Initial sanity checks
+if [[ ${MEGALIB} == "" ]]; then
+  echo ""
+  echo "ERROR: MEGAlib environment variable not set."
+  echo ""
+  exit 1
+fi
+
+if [[ ! -f ${MEGALIB}/config/AllowedGeant4Versions.txt ]]; then
+  echo ""
+  echo "ERROR: File not found: \${MEGALIB}/config/AllowedGeant4Versions.txt"
+  echo ""
+  exit 1
+fi
+
+
 # Allowed versions
 VERSIONS=`cat ${MEGALIB}/config/AllowedGeant4Versions.txt` 
 Geant4VersionMin=`echo ${VERSIONS} | awk -F" " '{ print $1 }'`
