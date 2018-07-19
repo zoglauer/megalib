@@ -4171,7 +4171,22 @@ bool MDGeometry::TestIntersections()
 bool MDGeometry::CheckOverlaps()
 {  
   // Check for overlaps using the ROOT overlap checker
+  
+  ostringstream Diagnostics;
+  bool Return = CheckOverlaps(Diagnostics);
+  mout<<Diagnostics;
+  
+  return Return;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+bool MDGeometry::CheckOverlaps(ostringstream& Diagnostics)
+{  
+    // Check for overlaps using the ROOT overlap checker
+    
   if (IsScanned() == false) {
     Error("bool MDGeometry::TestIntersections()",
           "You have to scan the geometry file first!");
@@ -4184,22 +4199,19 @@ bool MDGeometry::CheckOverlaps()
   
   TObjArray* Overlaps = m_Geometry->GetListOfOverlaps();
   if (Overlaps->GetEntries() > 0) {
-    mout<<"List of extrusions and overlaps: "<<endl;
+    Diagnostics<<"List of extrusions and overlaps: "<<endl;
     for (int i = 0; i < Overlaps->GetEntries(); ++i) {
       TGeoOverlap* O = (TGeoOverlap*) (Overlaps->At(i));
       if (O->IsOverlap() == true) {
-        mout<<"Overlap: "<<O->GetFirstVolume()->GetName()<<" with "<<O->GetSecondVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
+        Diagnostics<<"Overlap: "<<O->GetFirstVolume()->GetName()<<" with "<<O->GetSecondVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
       }
       if (O->IsExtrusion() == true) {
-        mout<<"Extrusion: "<<O->GetSecondVolume()->GetName()<<" extrudes "<<O->GetFirstVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
+        Diagnostics<<"Extrusion: "<<O->GetSecondVolume()->GetName()<<" extrudes "<<O->GetFirstVolume()->GetName()<<" by "<<O->GetOverlap()<<" cm"<<endl;
       }
     }
   } else {
-    mout<<endl;
-    mout<<"No extrusions and overlaps detected with ROOT (ROOT claims to be able to detect 95% of them)"<<endl;     
+    Diagnostics<<"No extrusions or overlaps detected with ROOT (ROOT claims to be able to detect 95% of them)"<<endl;     
   }
-
-  
 
   return Overlaps->GetEntries() > 0 ? false : true;
 }

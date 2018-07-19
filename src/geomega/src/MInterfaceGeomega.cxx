@@ -331,32 +331,52 @@ void MInterfaceGeomega::RaytraceGeometry()
 void MInterfaceGeomega::TestIntersections()
 {
   // Test for intersections
+  
+  ostringstream Diagnostics;
+  HasIntersections(Diagnostics);
+  mout<<Diagnostics<<endl;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+bool MInterfaceGeomega::HasIntersections(ostringstream& Diagnostics)
+{
+  // Test for intersections
 
-  if (m_Geometry->IsScanned() == false ||
-    m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
+  
+  if (m_Geometry->IsScanned() == false || m_Data->GetCurrentFileName() != m_Geometry->GetFileName()) {
     if (ReadGeometry() == false) {
-      return;
+      Diagnostics<<"   ***  Error  ***"<<endl;
+      Diagnostics<<"Unable to read diagnostics"<<endl;
+      return false;
     }
   }
+
+  mout<<endl;
+  mout<<"Overlap checking started... this might take a while depending on the complexity of the geometry..."<<endl;
   
-  mout<<endl;
-  mout<<"Overlap checking"<<endl;
-  mout<<endl;
-  mout<<"Part 1: ROOT"<<endl;
-  mout<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Overlap checking result:"<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Part 1: ROOT"<<endl;
+  Diagnostics<<endl;
   
-  bool NoOverlaps = m_Geometry->CheckOverlaps();
+  //bool NoOverlaps = m_Geometry->CheckOverlaps(Diagnostics);
+  //if (NoOverlaps == false) return false;
   
-  if (NoOverlaps == false) return;
+  m_Geometry->CheckOverlaps(Diagnostics);
   
-  mout<<endl;
-  mout<<"Part 2: Geant4"<<endl;
-  mout<<endl;
+  Diagnostics<<endl;
+  Diagnostics<<"Part 2: Geant4"<<endl;
+  Diagnostics<<endl;
   
   if (MFile::Exists(g_MEGAlibPath + "/bin/cosima") == false) {
-    mout<<"   ***  Warning  ***"<<endl;
-    mout<<"Cannot check intersections with Geant4 since cosima is not present."<<endl;
-    return;
+    Diagnostics<<"   ***  Warning  ***"<<endl;
+    Diagnostics<<"Cannot check intersections with Geant4 since cosima is not present."<<endl;
+    return false;
   }
 
   MString FileName = gSystem->TempDirectory();
@@ -365,9 +385,9 @@ void MInterfaceGeomega::TestIntersections()
   ofstream out;
   out.open(FileName);
   if (out.is_open() == false) {
-    mout<<"   ***  Error  ***"<<endl;
-    mout<<"Unable to create cosima source file for overlap check"<<endl;
-    return;
+    Diagnostics<<"   ***  Error  ***"<<endl;
+    Diagnostics<<"Unable to create cosima source file for overlap check"<<endl;
+    return false;
   }
 
   out<<"Version                     1"<<endl;
@@ -388,17 +408,24 @@ void MInterfaceGeomega::TestIntersections()
 
   out.close();
 
-  mout<<"Starting overlap search using cosima (Geant4)!"<<endl;
-
-  mout<<"-------- Cosima output start --------"<<endl;
   MString WorkingDirectory = gSystem->WorkingDirectory();
   gSystem->ChangeDirectory(gSystem->TempDirectory());
-  gSystem->Exec(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString(" 2>&1 | grep \"WARNING\" -A 3\""));
-  gSystem->Exec(MString("rm -f DelMe.*.sim ") + FileName);
+  auto IgnoreLevel = gErrorIgnoreLevel;
+  gErrorIgnoreLevel = kFatal;
+  TString Pipe = gSystem->GetFromPipe(MString("bash -c \"source ${MEGALIB}/bin/source-megalib.sh; cosima ") + FileName + MString(" 2>&1 | sed -n '/G4Exception-START/,/G4Exception-END/p' | sed -e '/G4Exception-/c\\ '\""));
+  //gSystem->GetFromPipe(MString("rm -f DelMe.*.sim ") + FileName);
+  gErrorIgnoreLevel = IgnoreLevel;
   gSystem->ChangeDirectory(WorkingDirectory);
-  mout<<"-------- Cosima output stop ---------"<<endl;
-  mout<<"If the above output is empty, then your geometry has no (detectable) overlaps!"<<endl;
-  mout<<"Otherwise you have to fix your geometry!"<<endl;
+  
+  if (Pipe != "") {
+    Diagnostics<<"Geant4 error summary:"<<endl;
+    Diagnostics<<Pipe<<endl;
+  } else {
+    Diagnostics<<"No extrusions or overlaps detected with Geant4"<<endl;
+  }
+  Diagnostics<<endl;
+  
+  return (Pipe == "") ? "true" : "false";
 }
 
 

@@ -57,20 +57,44 @@ class MInterfaceGeomega : public MInterface
   //! Save the configuration file
   virtual bool SaveConfiguration(MString FileName);
   
+  //! Read the geoemtry
   bool ReadGeometry();
+  
+  //! Display the geometry
   void ViewGeometry();
+  
+  //! Ray-trace the geoometry
   void RaytraceGeometry();
+  
+  //! Test for intersections 
   void TestIntersections();
+  
+  //! The for intersections 
+  //! Returns true if there are intersections or if the test failed in some other way
+  //! Diagnostics output is stored in the stream
+  bool HasIntersections(ostringstream& Diagnostics);
+  
+  //! Calculate the masses of the geometry
   void CalculateMasses();
+  
+  //! Calculate the resolutions of the detectors
   void GetResolutions();
+  
+  //! Dump information about the geometrey to the screen
   void DumpInformation();
-  void TestOnly();
+  
+  //! Determine the volume at the given position
   void FindVolume(MVector Pos);
+  
+  //! Create all crossection files
   void CreateCrossSections();
   
   //! Given to positions give the path length in the material
   void GetPathLengths(const MVector& Start, const MVector& Stop);
 
+  //! Some dummy tests - old - don't use
+  void TestOnly();
+  
   // protected methods:
  protected:
  
