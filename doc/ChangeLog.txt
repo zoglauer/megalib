@@ -8,7 +8,10 @@ Version 2.99/3.00
 
 *** IMPORTANT - PLEASE READ:
 
-+ Default ROOT version is now 6.10, default Geant4 version is 10.2
++ Big update to revan and mimrec to allow triple-compton PET reconstruction 
+  requiring significant internal changes (v2.99.10)
+  If something is not working email me.
++ Default ROOT version is now 6.14, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
@@ -19,7 +22,7 @@ Version 2.99/3.00
 
 General:
 + Python bindings! Check out resource/examples/python for a few examples on how
-  to use MEGAlib in Python
+  to use MEGAlib in Python (v2.99.09)
 + Setup script now has an option to keep MEGAlib un-updated
 + Fixed many multi-threading bugs
 + Added old and new neural network interface
@@ -60,16 +63,20 @@ Reponse:
 + Many improvements for COSI analysis
 + TMVA data set creation and training of machine learning codes
 + Distributed response simulation with dresponsecreator
++ TMVA mode for identifying multiple gamma-ray from single event (v2.99.10)
   
 Revan:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
 + Added TMVA Compton sequence reconstruction (e.g. boosted decision trees, neural networks)
++ Event clustering allows identifying multiple gamma-ray events
++ Significant internal changes to reconstruct multiple gamma rays from one event (v2.99.10)
 
 Mimrec:
 + Enabled comments (and their passing through) in the tra file ("CC" tag)
 + Parallelization of image deconvolution
 + New imaging response modes
 + Support for binned imaging
++ Support for PET and multi-gamma-ray events (v2.99.10)
 
 
 Realta:
