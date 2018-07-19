@@ -107,15 +107,14 @@ bool MResponseImagingCodedMask::CreateResponse()
   
   MVector IdealOriginDir;
 
-  MRawEventList* REList = 0;
   MPhysicalEvent* Event = 0;
   MPhotoEvent* Photo = 0;
 
   int Counter = 0;
   while (InitializeNextMatchingEvent() == true) {
-    REList = m_ReReader->GetRawEventList();
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+    if (REList->HasOnlyOptimumEvents() == true) {
+      Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Photo) {

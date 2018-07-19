@@ -24,7 +24,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERCSR.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MComptonEvent.h"
 #include "MGeometryRevan.h"
 

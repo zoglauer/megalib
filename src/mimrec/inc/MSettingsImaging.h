@@ -68,10 +68,13 @@ class MSettingsImaging : public MSettingsInterface
 
   double GetFitParameterComptonTransSphere() const { return m_FitParameterComptonTransSphere; }
   void SetFitParameterComptonTransSphere(double FitParameterComptonTransSphere) { m_FitParameterComptonTransSphere = FitParameterComptonTransSphere; m_BackprojectionModified = true; }
-
+  
   double GetFitParameterPair() const { return m_FitParameterPair; }
   void SetFitParameterPair(double FitParameterPair) { m_FitParameterPair = FitParameterPair; m_BackprojectionModified = true; }
-
+  
+  double GetFitParameterPET() const { return m_FitParameterPET; }
+  void SetFitParameterPET(double FitParameterPET) { m_FitParameterPET = FitParameterPET; m_BackprojectionModified = true; }
+  
   bool GetUseAbsorptions() const { return m_UseAbsorptions; }
   void SetUseAbsorptions(bool UseAbsorptions) { m_UseAbsorptions = UseAbsorptions; m_BackprojectionModified = true; }
 
@@ -369,6 +372,7 @@ class MSettingsImaging : public MSettingsInterface
   double m_FitParameterComptonLongSphere;
   double m_FitParameterComptonTransSphere;
   double m_FitParameterPair;
+  double m_FitParameterPET;
   bool m_UseAbsorptions;
   double m_Gauss1DCutOff;
   double m_GaussianByUncertaintiesIncrease;

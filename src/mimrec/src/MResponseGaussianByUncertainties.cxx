@@ -48,7 +48,7 @@ ClassImp(MResponseGaussianByUncertainties)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MResponseGaussianByUncertainties::MResponseGaussianByUncertainties() : MResponseGaussian(1, 1, 1)
+MResponseGaussianByUncertainties::MResponseGaussianByUncertainties() : MResponseGaussian(1, 1, 1, 1)
 {
   // default constructor
 
@@ -96,7 +96,7 @@ bool MResponseGaussianByUncertainties::AnalyzeEvent(MPhysicalEvent* Event)
       return false;
     }
     dPhi += m_Increase;
-    SetGaussians(dPhi, 30, 2);
+    SetGaussians(dPhi, 30, 2, 1);
      
     return true;
   } else if (Event->GetType() == MPhysicalEvent::c_Pair) {

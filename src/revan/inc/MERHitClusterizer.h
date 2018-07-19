@@ -1,5 +1,5 @@
 /*
- * MERClusterize.h
+ * MERHitClusterizer.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MERClusterize__
-#define __MERClusterize__
+#ifndef __MERHitClusterizer__
+#define __MERHitClusterizer__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -22,7 +22,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 // Forward declarations:
 
@@ -30,12 +30,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MERClusterize : public MERConstruction
+//! Clusterize neighboring hits into one 
+class MERHitClusterizer : public MERConstruction
 {
   // public interface:
  public:
-  MERClusterize();
-  virtual ~MERClusterize();
+  //! Default constructor
+  MERHitClusterizer();
+  //! Default destructor
+  virtual ~MERHitClusterizer();
 
   //! Use a voxel based clusterizer
   //! The level is:
@@ -46,14 +49,18 @@ class MERClusterize : public MERConstruction
   //! 8: 24 c.n.
   //! etc.
   virtual bool SetParameters(int Level = 2, double Sigma = 0.0);
+  //! Clusterize based on distance
   virtual bool SetParameters(double MinDistanceD1, double MinDistanceD2, 
                              double MinDistanceD3, double MinDistanceD4, 
                              double MinDistanceD5, double MinDistanceD6,
                              double MinDistanceD7, double MinDistanceD8,
                              bool CenterIsReference);
   virtual bool SetParameters(MString BaseResponseFileName);
-  virtual bool Analyze(MRawEventList* List);
+  
+  //! Do the analysis - clusterize all events in the list
+  virtual bool Analyze(MRawEventIncarnations* List);
 
+  //! Dump the reconstruction options into a string
   virtual MString ToString(bool CoreOnly = false) const;
 
   static const int c_None = 0;
@@ -63,8 +70,8 @@ class MERClusterize : public MERConstruction
 
   // protected methods:
  protected:
-  //MERClusterize() {};
-  //MERClusterize(const MERClusterize& ERClusterize) {};
+  //MERHitClusterizer() {};
+  //MERHitClusterizer(const MERHitClusterizer& ERClusterize) {};
 
   void FindClusters(MRERawEvent* RE, double Distance, int Detector);
   void FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma, int Level, int Detector);
@@ -107,7 +114,7 @@ class MERClusterize : public MERConstruction
   
 #ifdef ___CLING___
  public:
-  ClassDef(MERClusterize, 0) // no description
+  ClassDef(MERHitClusterizer, 0) // no description
 #endif
 
 };

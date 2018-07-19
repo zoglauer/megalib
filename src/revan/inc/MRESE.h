@@ -127,20 +127,24 @@ class MRESE
   virtual MRESE* RemoveRESEAtAndCompress(int i);
   virtual MRESE* RemoveRESE(int ID);
   virtual MRESE* RemoveRESEAndCompress(int ID);
-
+  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  virtual void RemoveAll();
+  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  virtual void RemoveAllAndCompress();
+  
   virtual void DeleteRESE(MRESE* RESE);
   virtual void DeleteRESEAndCompress(MRESE* RESE);
   virtual void DeleteRESEAt(int i);
   virtual void DeleteRESEAtAndCompress(int i);
   virtual void DeleteRESE(int ID);
   virtual void DeleteRESEAndCompress(int ID);
+  //! delete all the RESEs which are part of this RESE
+  virtual void DeleteAll();
   virtual void CompressRESEs();
 
   //! Shuffle the RESEs around in random order (goal: they are more or less sorted when the come from cosima, but not in real life)
   virtual void Shuffle();
   
-  // delete all the RESEs which are part of this RESE
-  virtual void DeleteAll();
 
   virtual double ComputeMinDistance(MRESE* RESE);
   virtual MVector ComputeMinDistanceVector(MRESE* RESE);

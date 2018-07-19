@@ -34,7 +34,7 @@ using namespace std;
 
 //! Definition of the coordinate system IDs
 enum class MERCSRTMVAMethod : int { 
-  c_Unknown = 0, c_MLP = 1, c_BDTD = 2, c_PDEFoamBoost = 3, c_DNN_CPU = 4, c_DNN_GPU = 5, c_Overflow = 6
+  c_Unknown = 0, c_MLP = 1, c_BDTD = 2, c_PDEFoam = 3, c_PDEFoamBoost = 4, c_DNN_CPU = 5, c_DNN_GPU = 6, c_Overflow = 7
 };
 
 

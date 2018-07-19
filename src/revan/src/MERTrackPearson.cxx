@@ -103,7 +103,7 @@ bool MERTrackPearson::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackPearson::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackPearson::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

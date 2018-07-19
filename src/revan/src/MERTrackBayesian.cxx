@@ -437,7 +437,7 @@ bool MERTrackBayesian::EvaluateTracks(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERTrackBayesian::SortByTrackQualityFactor(MRawEventList* List)
+void MERTrackBayesian::SortByTrackQualityFactor(MRawEventIncarnations* List)
 {
   // Sort decreasing:
 

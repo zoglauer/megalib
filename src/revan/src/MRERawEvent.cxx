@@ -53,7 +53,7 @@ using namespace std;
 #include "MREHit.h"
 #include "MRESE.h"
 #include "MRESEIterator.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MPhysicalEvent.h"
 #include "MComptonEvent.h"
 #include "MMuonEvent.h"
@@ -518,6 +518,8 @@ MString MRERawEvent::ToString(bool WithLink, int Level)
 
 bool MRERawEvent::IsValid()
 {
+  if (m_IsValid == false) return false;
+  
   for (int i = 0; i < GetNRESEs(); i++) {
     if (GetRESEAt(i)->IsValid() == false) {
       return false;
@@ -671,6 +673,10 @@ MString MRERawEvent::GetEventTypeAsString()
 void MRERawEvent::SetRejectionReason(int Reason)
 {
   m_RejectionReason = Reason;
+  
+  if (m_RejectionReason != c_RejectionNone) {
+    m_IsValid = false;
+  }
 }
 
 
@@ -901,6 +907,41 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"ExternalBadEventFlagRaised";
     } else {
       out<<"External bad event flag raised";
+    }
+    break;
+  case c_RejectionEventClusteringTooManyHits:
+    if (Short == true) {
+      out<<"EventClusteringTooManyHits";
+    } else {
+      out<<"Too many hits for the event clustering";
+    }
+    break;
+  case c_RejectionTooManyEventIncarnations:
+    if (Short == true) {
+      out<<"TooManyEventIncarnations";
+    } else {
+      out<<"Too many event incarnations";
+    }
+    break;
+  case c_RejectionEventClusteringUnresolvedHits:
+    if (Short == true) {
+      out<<"EventClusteringUnresolvedHits";
+    } else {
+      out<<"Unresolved hits in event clustering";
+    }
+    break;
+  case c_RejectionEventClusteringNoOrigins:
+    if (Short == true) {
+      out<<"EventClusteringNoOrigins";
+    } else {
+      out<<"No origins found during event clustering";
+    }
+    break;
+  case c_RejectionEventClusteringEnergyOutOfBounds:
+    if (Short == true) {
+      out<<"EventClusteringEnergyOutOfBounds";
+    } else {
+      out<<"The energy is outside of what the event clustering was trained for";
     }
     break;
   default:

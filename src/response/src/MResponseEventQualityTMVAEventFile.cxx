@@ -237,13 +237,13 @@ bool MResponseEventQualityTMVAEventFile::Analyze()
   }
   
   // We require a successful reconstruction 
-  MRawEventList* REList = m_ReReader->GetRawEventList();
-  if (REList->HasOptimumEvent() == false) {
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
+  if (REList->HasOnlyOptimumEvents() == false) {
     return true;
   }
   
   // ... leading to an event
-  MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+  MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
   if (Event == nullptr) {
     return true;
   }
@@ -266,7 +266,7 @@ bool MResponseEventQualityTMVAEventFile::Analyze()
   
   
   // Go ahead event by event and compare the results: 
-  MRERawEvent* RE = REList->GetOptimumEvent();
+  MRERawEvent* RE = REList->GetOptimumEvents()[0];
   vector<MRESE*> RESEs;
   
   

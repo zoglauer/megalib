@@ -22,7 +22,7 @@
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MGeometryRevan.h"
 #include "MDDetector.h"
 
@@ -52,7 +52,7 @@ class MERTrack : public MERConstruction
                              bool RejectPureAmbiguities,
                              unsigned int NLayersForVertexSearch,
                              vector<MString> DetectorList);
-  virtual bool Analyze(MRawEventList* List);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
   virtual bool PostAnalysis();
   virtual MString ToString(bool CoreOnly = false) const;
@@ -67,13 +67,13 @@ class MERTrack : public MERConstruction
   //! Eliminate track segements with a too strong deviation from the rest
   virtual void EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track);
 
-  virtual MRawEventList* CheckForPair(MRERawEvent* RE);
+  virtual MRawEventIncarnations* CheckForPair(MRERawEvent* RE);
   virtual void TrackPairs(MRERawEvent* ER);
   virtual void CheckForMips(MRERawEvent* RE);
 
-  virtual MRawEventList* TrackComptons(MRERawEvent* ER);
+  virtual MRawEventIncarnations* TrackComptons(MRERawEvent* ER);
 
-  virtual void SortByTrackQualityFactor(MRawEventList* List);
+  virtual void SortByTrackQualityFactor(MRawEventIncarnations* List);
 
   //! Return true, if the RESE happened in a detector in our list
   bool IsInTracker(MRESE* R);

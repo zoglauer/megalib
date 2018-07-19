@@ -49,7 +49,7 @@ class MERTrackPearson : public MERTrack
   virtual bool EvaluateTracks(MRERawEvent* ER);
   virtual bool EvaluateTrack(MRETrack* Track);
 
-  virtual void SortByTrackQualityFactor(MRawEventList* List);
+  virtual void SortByTrackQualityFactor(MRawEventIncarnations* List);
 
 
   // private methods:

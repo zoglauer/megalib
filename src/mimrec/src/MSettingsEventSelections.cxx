@@ -171,6 +171,8 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_EventTypeComptonTracked = 1;
   m_EventTypePair = 1;
   m_EventTypePhoto = 0;
+  m_EventTypePET = 0;
+  m_EventTypeMulti = 0;
   m_EventTypeUnidentifiable = 0;
   m_EventTypeDecay = 0;
 
@@ -211,6 +213,8 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "UseEventTypeComptonTracked", m_EventTypeComptonTracked);
   new MXmlNode(aNode, "UseEventTypePair", m_EventTypePair);
   new MXmlNode(aNode, "UseEventTypePhoto", m_EventTypePhoto); 
+  new MXmlNode(aNode, "UseEventTypePET", m_EventTypePET); 
+  new MXmlNode(aNode, "UseEventTypeMulti", m_EventTypeMulti); 
   new MXmlNode(aNode, "UseEventTypeUnidentifiable", m_EventTypeUnidentifiable); 
   new MXmlNode(aNode, "UseEventTypeDecay", m_EventTypeDecay);
   new MXmlNode(aNode, "FlaggedAsBad", m_FlaggedAsBad);
@@ -323,6 +327,12 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     }
     if ((bNode = aNode->GetNode("UseEventTypePhoto")) != 0) {
       m_EventTypePhoto = bNode->GetValueAsInt();
+    }
+    if ((bNode = aNode->GetNode("UseEventTypePET")) != 0) {
+      m_EventTypePET = bNode->GetValueAsInt();
+    }
+    if ((bNode = aNode->GetNode("UseEventTypeMulti")) != 0) {
+      m_EventTypeMulti = bNode->GetValueAsInt();
     }
     if ((bNode = aNode->GetNode("UseEventTypeUnidentifiable")) != 0) {
       m_EventTypeUnidentifiable = bNode->GetValueAsInt();

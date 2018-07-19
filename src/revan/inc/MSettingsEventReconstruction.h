@@ -44,10 +44,13 @@ class MSettingsEventReconstruction : public MSettingsInterface
 
   void SetCoincidenceAlgorithm(int ID) { m_CoincidenceAlgorithm = ID; }
   int GetCoincidenceAlgorithm() { return m_CoincidenceAlgorithm; }
-
-  void SetClusteringAlgorithm(int ID) { m_ClusteringAlgorithm = ID; }
-  int GetClusteringAlgorithm() { return m_ClusteringAlgorithm; }
-
+  
+  void SetEventClusteringAlgorithm(int ID) { m_EventClusteringAlgorithm = ID; }
+  int GetEventClusteringAlgorithm() { return m_EventClusteringAlgorithm; }
+  
+  void SetHitClusteringAlgorithm(int ID) { m_HitClusteringAlgorithm = ID; }
+  int GetHitClusteringAlgorithm() { return m_HitClusteringAlgorithm; }
+  
   void SetTrackingAlgorithm(int ID) { m_TrackingAlgorithm = ID; }
   int GetTrackingAlgorithm() { return m_TrackingAlgorithm; }
 
@@ -63,6 +66,15 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double GetCoincidenceWindow() {
     return m_CoincidenceWindow;
   }
+  
+  
+    
+  void SetEventClusteringTMVAFileName(MString Name) { m_EventClusteringTMVAFileName = Name; }
+  MString GetEventClusteringTMVAFileName() { return m_EventClusteringTMVAFileName; }
+  
+  void SetEventClusteringTMVAMethods(MERCSRTMVAMethods EventClusteringTMVAMethods) { m_EventClusteringTMVAMethods = EventClusteringTMVAMethods; }
+  MERCSRTMVAMethods GetEventClusteringTMVAMethods() { return m_EventClusteringTMVAMethods; }
+  
   
   void SetStandardClusterizerMinDistanceD1(double MinDistance) {
     m_StandardClusterizerMinDistanceD1 = MinDistance;
@@ -207,11 +219,11 @@ class MSettingsEventReconstruction : public MSettingsInterface
   void SetBayesianComptonFileName(MString Name) { m_BayesianComptonFileName = Name; }
   MString GetBayesianComptonFileName() { return m_BayesianComptonFileName; }
   
-  void SetTMVAFileName(MString Name) { m_TMVAFileName = Name; }
-  MString GetTMVAFileName() { return m_TMVAFileName; }
+  void SetCSRTMVAFileName(MString Name) { m_CSRTMVAFileName = Name; }
+  MString GetCSRTMVAFileName() { return m_CSRTMVAFileName; }
   
-  void SetTMVAMethods(MERCSRTMVAMethods TMVAMethods) { m_TMVAMethods = TMVAMethods; }
-  MERCSRTMVAMethods GetTMVAMethods() { return m_TMVAMethods; }
+  void SetCSRTMVAMethods(MERCSRTMVAMethods CSRTMVAMethods) { m_CSRTMVAMethods = CSRTMVAMethods; }
+  MERCSRTMVAMethods GetCSRTMVAMethods() { return m_CSRTMVAMethods; }
   
   void SetOriginObjectsFileName(MString Name) { m_OriginObjectsFileName = Name; }
   MString GetOriginObjectsFileName() { return m_OriginObjectsFileName; }
@@ -268,7 +280,8 @@ class MSettingsEventReconstruction : public MSettingsInterface
   
   // Reconstruction options:
   int m_CoincidenceAlgorithm;
-  int m_ClusteringAlgorithm;
+  int m_EventClusteringAlgorithm;
+  int m_HitClusteringAlgorithm;
   int m_TrackingAlgorithm;
   int m_CSRAlgorithm;
   int m_DecayAlgorithm;
@@ -276,7 +289,14 @@ class MSettingsEventReconstruction : public MSettingsInterface
   // Coincidence
   double m_CoincidenceWindow;
 
-  // Clusterizing:
+  // Event clustering
+  
+  //! The TMVA file name
+  MString m_EventClusteringTMVAFileName;
+  //! The TMVA methods
+  MERCSRTMVAMethods m_EventClusteringTMVAMethods;
+  
+  // Hit clustering:
   double m_StandardClusterizerMinDistanceD1;
   double m_StandardClusterizerMinDistanceD2;
   double m_StandardClusterizerMinDistanceD3;
@@ -323,9 +343,9 @@ class MSettingsEventReconstruction : public MSettingsInterface
   MString m_BayesianComptonFileName;
   
   //! The TMVA file name
-  MString m_TMVAFileName;
+  MString m_CSRTMVAFileName;
   //! The TMVA methods
-  MERCSRTMVAMethods m_TMVAMethods;
+  MERCSRTMVAMethods m_CSRTMVAMethods;
   
   MVector m_LensCenter;
   MVector m_FocalSpotCenter;

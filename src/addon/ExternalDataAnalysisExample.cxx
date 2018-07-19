@@ -225,7 +225,7 @@ bool ExternalAnalysisPipelineExample::Initialize()
   //m_RawEventAnalyzer->SetCoincidenceAlgorithm(MRawEventAnalyzer::c_CoincidenceAlgoWindow);
   //m_RawEventAnalyzer->SetCoincidenceWindow(2E-6);
   
-  m_RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
  
   m_RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoRank);
   m_RawEventAnalyzer->SetDoTracking(true);
@@ -286,7 +286,7 @@ bool ExternalAnalysisPipelineExample::Initialize()
    // }
     
   // Set the response type:
-  m_Imager->SetResponseGaussian(3, 30, 3, 2.5, false);
+  m_Imager->SetResponseGaussian(3, 30, 3, 2.5, 0.5, false);
 
   // A new event selector:
   MEventSelector S;
@@ -382,10 +382,10 @@ bool ExternalAnalysisPipelineExample::Analyze()
     // delete RawEvent; --> it is deleted by the m_RawEventAnalyzer
     
     BestRawEvent = 0;
-    if (m_RawEventAnalyzer->GetOptimumEvent() != 0) {
-      BestRawEvent = m_RawEventAnalyzer->GetOptimumEvent();
-    } else if (m_RawEventAnalyzer->GetBestTryEvent() != 0) {
-      BestRawEvent = m_RawEventAnalyzer->GetBestTryEvent();
+    if (m_RawEventAnalyzer->GetSingleOptimumEvent() != 0) {
+      BestRawEvent = m_RawEventAnalyzer->GetSingleOptimumEvent();
+    } else if (m_RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+      BestRawEvent = m_RawEventAnalyzer->GetSingleBestTryEvent();
     }
     if (BestRawEvent != 0) {
       m_HistEnergyAfter->Fill(BestRawEvent->GetEnergy());

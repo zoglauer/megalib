@@ -242,8 +242,6 @@ bool MResponseMultipleComptonEventFile::Analyze()
   if (MResponseBuilder::Analyze() == false) return false;
   
   // Go ahead event by event and compare the results: 
-  MRERawEvent* RE = nullptr;
-  MRawEventList* REList = m_ReReader->GetRawEventList();
   vector<MRESE*> RESEs;
   
   
@@ -256,10 +254,10 @@ bool MResponseMultipleComptonEventFile::Analyze()
   unsigned int SequenceLength = 0;
   
   
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    RE = REList->GetRawEventAt(r);
-        
+  
+  for (auto RE: m_ReEvents) {
+    if (RE == nullptr) continue;
+    
     // Check if complete sequence is ok:
     SequenceLength = (unsigned int) RE->GetNRESEs();
 
@@ -687,23 +685,6 @@ unsigned int MResponseMultipleComptonEventFile::NumberOfComptonInteractions(vect
   return N;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MResponseMultipleComptonEventFile::Shuffle(vector<MRESE*>& RESEs)
-{
-  //! Shuffle the RESEs around...
-  
-  unsigned int size = RESEs.size();
-  for (unsigned int i = 0; i < 2*size; ++i) {
-    unsigned int From = gRandom->Integer(size);
-    unsigned int To = gRandom->Integer(size);
-    MRESE* Temp = RESEs[To];
-    RESEs[To] = RESEs[From];
-    RESEs[From] = Temp;
-  }
-}
 
 
 // MResponseMultipleComptonEventFile.cxx: the end...

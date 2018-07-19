@@ -37,6 +37,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MFile.h"
+#include "MRawEventIncarnationList.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -266,13 +267,19 @@ bool MResponseBuilder::SetEvent(const MString String, bool NeedsNoising, int Ver
   }
   
   m_ReReader->AnalyzeEvent();
-  // automatically deleted: m_ReEvent;
+  // automatically deleted: m_ReEvent and the content in m_ReEvents
   m_ReEvent = nullptr;
-  if (m_ReReader->GetRawEventList() != 0) {
-    if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-      m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+  m_ReEvents.clear();
+  if (m_ReReader->GetRawEventList() != nullptr) {
+    MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+    for (unsigned int i = 0; i < REIL->Size(); ++i) {
+      if (REIL->Get(i)->GetNRawEvents() > 0) {
+        m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+      }
     }
   }
+  if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
+  
   if (m_ReEvent == nullptr) {
     cout<<"We have no good raw event"<<endl;
     return false;
@@ -431,14 +438,27 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
         break;
       }
 
-      if (m_ReReader->GetRawEventList() != 0) {
-        if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
-          m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      //if (m_ReReader->GetRawEventList() != 0) {
+      //  if (m_ReReader->GetRawEventList()->GetNRawEvents() > 0) {
+      //    m_ReEvent = m_ReReader->GetRawEventList()->GetRawEventAt(0);
+      //  }
+      //}
+      
+      m_ReEvents.clear();
+      if (m_ReReader->GetRawEventList() != nullptr) {
+        MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+        for (unsigned int i = 0; i < REIL->Size(); ++i) {
+          if (REIL->Get(i)->GetNRawEvents() > 0) {
+            m_ReEvents.push_back(REIL->Get(i)->GetRawEventAt(0)); // why not the optimum event?
+          }
         }
       }
-
+      if (m_ReEvents.size() > 0) m_ReEvent = m_ReEvents[0];
+      
+      
+      
       // Decide future:
-      if (m_ReEvent != 0 && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
+      if (m_ReEvent != nullptr && m_ReEvent->GetEventType() != MRERawEvent::c_PairEvent) {
         if (m_ReEvent->GetEventID() < m_RevanEventID) {
           m_RevanLevel++; 
         }
@@ -457,13 +477,13 @@ bool MResponseBuilder::InitializeNextMatchingEvent()
 
       // Clean:
       delete m_SiEvent;
-      m_SiEvent = 0;
+      m_SiEvent = nullptr;
       
       // Read:
       m_SiEvent = m_SiReader->GetNextEvent(false);
 
       // Decide:
-      if (m_SiEvent != 0) {  
+      if (m_SiEvent != nullptr) {  
         // Test if it is not truncated:
         if ((m_OnlyINITRequired == true && m_SiEvent->GetNIAs() == 1 && m_SiEvent->GetIAAt(0)->GetProcess() == "INIT") || 
             (m_SiEvent->GetNIAs() > 1 && m_SiEvent->GetIAAt(m_SiEvent->GetNIAs()-1)->GetProcess() != "TRNC")) {
@@ -537,11 +557,9 @@ bool MResponseBuilder::SanityCheckSimulations()
     return false;
   }
 
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  for (auto RE: m_ReEvents) {  
+    //cout<<"Sanitycheck"<<endl;
 
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    MRERawEvent* RE = REList->GetRawEventAt(r);
     if (RE->GetVertex() != 0) continue;
 
     if (int(m_SiEvent->GetNHTs()) < RE->GetNRESEs()) {
@@ -551,7 +569,8 @@ bool MResponseBuilder::SanityCheckSimulations()
 
     for (int i = 0; i < RE->GetNRESEs(); ++i) {
       MRESE* RESE = RE->GetRESEAt(i);
-
+      //cout<<"SC: "<<(long) RESE<<endl;
+      
       vector<int> EndOriginIds = GetOriginIds(RESE);
 
       // Check that all origin IDs are > 2, i.e. belong to a process and not an init
@@ -565,7 +584,7 @@ bool MResponseBuilder::SanityCheckSimulations()
         }
       }
       if (HasOriginIDs == false) {
-        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has no origin IDs: Your simulations most like do not contain the full required IA information block!"<<endl;
+        mout<<"Response sanity check (event "<<m_SiEvent->GetID()<<"): One of the HT's has no origin IDs: Your simulations most likely do not contain the full required IA information block!"<<endl;
         return false;       
       }
     }
@@ -655,7 +674,7 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
 
     // Generate sim IDs:
     for (vector<int>::iterator Iter = Ids.begin(); Iter != Ids.end(); ++Iter) {
-      unsigned int HTID = (*Iter)-IdOffset;
+      unsigned int HTID = (*Iter) - IdOffset;
       if (HTID >= m_SiEvent->GetNHTs()) {
         merr<<"The RESE has higher IDs "<<HTID<<" than the sim file HTs!"<<endl;
         return OriginIds;
@@ -669,9 +688,11 @@ vector<int> MResponseBuilder::GetOriginIds(MRESE* RESE)
       for (unsigned int o = 0; o < HT->GetNOrigins(); ++o) {
         int Origin = int(HT->GetOriginAt(o));
         if (find(OriginIds.begin(), OriginIds.end(), Origin) == OriginIds.end()) { // not found
+          // Add it if it is no INIT, ANNI or DECA --- but why?? We can have on electron started at INIT or DECA generating hits
           if (Origin >= 1 && 
-              m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
-              m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI") {
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "INIT" && 
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "ANNI" && 
+            m_SiEvent->GetIAAt(Origin-1)->GetProcess() != "DECA") {
             OriginIds.push_back(Origin);
           }
         }
@@ -751,6 +772,81 @@ bool MResponseBuilder::AreIdsInSequence(const vector<int>& Ids)
   return true;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Determine the original mother ID of the gamma ray: mother is either INIT, ANNI, or DECA -- and not: BREM, PHOT, IONI, COMP 
+vector<int> MResponseBuilder::GetMotherIds(const vector<int>& AllSimIds)
+{
+  // 
+  
+  vector<int> MotherIDs;
+  
+  for (unsigned int i = 0; i < AllSimIds.size(); ++i) {
+    int ID = AllSimIds[i];
+    int HighestOriginID = ID;
+    while (true) {
+      // Get new origin ID
+      ID = m_SiEvent->GetIAAt(HighestOriginID-1)->GetOriginID();
+
+      // Check if we are done
+      bool IsGood = false;
+      if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "INIT") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "ANNI") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "DECA") {
+        IsGood = true;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "BREM") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "COMP") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "PAIR") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "PHOT") {
+        IsGood = false;
+      } else if (m_SiEvent->GetIAAt(ID-1)->GetProcess() == "IONI") {
+        IsGood = false;
+      } else {
+        mout<<"Error: Unhandled process: "<<m_SiEvent->GetIAAt(ID-1)->GetProcess()<<endl;
+        mout<<"       Make sure you run the simulation only with a EM physics list, not a hadronics physics list!"<<endl;
+        mout<<"       This event cannot be handled correctly!"<<endl;
+        IsGood = false; 
+      }
+      
+      HighestOriginID = ID;
+      
+      if (IsGood == true) {
+        if (find(MotherIDs.begin(), MotherIDs.end(), HighestOriginID) == MotherIDs.end()) {
+          MotherIDs.push_back(HighestOriginID); 
+        }
+        break;
+      }
+    }
+  }
+
+  
+  return MotherIDs;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseBuilder::Shuffle(vector<MRESE*>& RESEs)
+{
+  //! Shuffle the RESEs around...
+  
+  unsigned int size = RESEs.size();
+  for (unsigned int i = 0; i < 2*size; ++i) {
+    unsigned int From = gRandom->Integer(size);
+    unsigned int To = gRandom->Integer(size);
+    MRESE* Temp = RESEs[To];
+    RESEs[To] = RESEs[From];
+    RESEs[From] = Temp;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

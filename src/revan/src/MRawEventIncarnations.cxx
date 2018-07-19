@@ -1,5 +1,5 @@
 /*
- * MRawEventList.cxx
+ * MRawEventIncarnations.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -16,20 +16,6 @@
  */
 
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// MRawEventList.cxx
-//
-// This is a list of MRERawEvent-objects.
-// The different objects are different expressions (different hit sequenence,
-// track direction) of the same underlying (one and only) event.
-//
-// The destructor does not delete the objects, but you have to call
-// DeleteAll() before destructing.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-
 // Standard libs:
 #include <limits>
 #include <algorithm>
@@ -37,34 +23,31 @@ using namespace std;
 
 // MEGAlib libs:
 #include "MAssert.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MStreams.h"
 #include "MRETrack.h"
 
 
 #ifdef ___CLING___
-ClassImp(MRawEventList)
+ClassImp(MRawEventIncarnations)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList::MRawEventList()
+MRawEventIncarnations::MRawEventIncarnations()
 {
-  // Create a new MRawEventList object
-
   Init();
+  m_Geometry = nullptr;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList::MRawEventList(MGeometryRevan* Geometry)
+MRawEventIncarnations::MRawEventIncarnations(MGeometryRevan* Geometry)
 {
-  // Create a new MRawEventList object
-
   Init();
   m_Geometry = Geometry;
 }
@@ -73,7 +56,7 @@ MRawEventList::MRawEventList(MGeometryRevan* Geometry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList::~MRawEventList()
+MRawEventIncarnations::~MRawEventIncarnations()
 {
   // This does not delete the raw events itself!
   // Call DeleteAll() before if you want to delete the MRERawEvents, too
@@ -83,27 +66,21 @@ MRawEventList::~MRawEventList()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::Init()
+void MRawEventIncarnations::Init()
 {
-  // Some initialisations equal for all constructors:
-
-  m_RawEventList.clear();
+  m_Incarnations.clear();
 
   m_InitialEvent = 0;
   m_OptimumEvent = 0;
   m_BestTryEvent = 0;
-
-  m_EventCounter = 0;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SetGeometry(MGeometryRevan* Geometry)
+void MRawEventIncarnations::SetGeometry(MGeometryRevan* Geometry)
 {
-  // Set the geometry description
-
   m_Geometry = Geometry;
 }
 
@@ -111,7 +88,7 @@ void MRawEventList::SetGeometry(MGeometryRevan* Geometry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MRawEventList::ToString(bool WithLink, int Level)
+MString MRawEventIncarnations::ToString(bool WithLink, int Level)
 {
   // Returns a MString containing the relevant data of this object, i.e.
   // it calls ToString(...) of the raw events
@@ -143,18 +120,16 @@ MString MRawEventList::ToString(bool WithLink, int Level)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::AddRawEvent(MRERawEvent* RE) 
+void MRawEventIncarnations::AddRawEvent(MRERawEvent* RE) 
 { 
-  // Add a raw event to the list
-
-  m_RawEventList.push_back(RE); 
+  m_Incarnations.push_back(RE); 
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::RemoveRawEvent(MRERawEvent* RE) 
+void MRawEventIncarnations::RemoveRawEvent(MRERawEvent* RE) 
 { 
   // Remove a raw event from the list but do NOT delete it
 
@@ -162,14 +137,14 @@ void MRawEventList::RemoveRawEvent(MRERawEvent* RE)
   if (RE == m_OptimumEvent) m_OptimumEvent = 0;
   if (RE == m_BestTryEvent) m_BestTryEvent = 0;
 
-  m_RawEventList.erase(find(m_RawEventList.begin(), m_RawEventList.end(), RE)); 
+  m_Incarnations.erase(find(m_Incarnations.begin(), m_Incarnations.end(), RE)); 
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::DeleteRawEvent(MRERawEvent* RE) 
+void MRawEventIncarnations::DeleteRawEvent(MRERawEvent* RE) 
 { 
   // Remove a raw event from the list and delete it
 
@@ -177,7 +152,7 @@ void MRawEventList::DeleteRawEvent(MRERawEvent* RE)
   if (RE == m_OptimumEvent) m_OptimumEvent = 0;
   if (RE == m_BestTryEvent) m_BestTryEvent = 0;
 
-  m_RawEventList.erase(find(m_RawEventList.begin(), m_RawEventList.end(), RE)); 
+  m_Incarnations.erase(find(m_Incarnations.begin(), m_Incarnations.end(), RE)); 
   delete RE;
 }
 
@@ -185,15 +160,15 @@ void MRawEventList::DeleteRawEvent(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventList::GetRawEventAt(int i) 
+MRERawEvent* MRawEventIncarnations::GetRawEventAt(int i) 
 { 
   // Get the raw event at position i. Counting starts with zero!
 
-  if (i < int(m_RawEventList.size())) {
-    return m_RawEventList[i];
+  if (i < int(m_Incarnations.size())) {
+    return m_Incarnations[i];
   } 
 
-  merr<<"Index ("<<i<<") out of bounds (0, "<<m_RawEventList.size()-1<<")"<<endl;
+  merr<<"Index ("<<i<<") out of bounds (0, "<<m_Incarnations.size()-1<<")"<<endl;
   return 0;
 }
 
@@ -201,15 +176,15 @@ MRERawEvent* MRawEventList::GetRawEventAt(int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SetRawEventAt(MRERawEvent* RE, int i)
+void MRawEventIncarnations::SetRawEventAt(MRERawEvent* RE, int i)
 {
   // Set the raw event at position i. Counting starts with zero!
 
-  if (i < int(m_RawEventList.size())) {
-    m_RawEventList[i] = RE;
+  if (i < int(m_Incarnations.size())) {
+    m_Incarnations[i] = RE;
   } else {
-    merr<<"Index ("<<i<<") out of bounds (0, "<<m_RawEventList.size()-1<<")"<<endl;
-    massert(i < int(m_RawEventList.size()));
+    merr<<"Index ("<<i<<") out of bounds (0, "<<m_Incarnations.size()-1<<")"<<endl;
+    massert(i < int(m_Incarnations.size()));
   }
 }
 
@@ -217,22 +192,22 @@ void MRawEventList::SetRawEventAt(MRERawEvent* RE, int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-int MRawEventList::GetNRawEvents() 
+int MRawEventIncarnations::GetNRawEvents() 
 { 
   // Get the number of raw events in the list
 
-  return m_RawEventList.size(); 
+  return m_Incarnations.size(); 
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::DeleteAll() 
+void MRawEventIncarnations::DeleteAll() 
 { 
   // Delete all elements of the list
 
-  while (m_RawEventList.size() != 0) {
+  while (m_Incarnations.size() != 0) {
     DeleteRawEvent(GetRawEventAt(0));
   }
 
@@ -245,7 +220,7 @@ void MRawEventList::DeleteAll()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SetInitialRawEvent(MRERawEvent* RE)
+void MRawEventIncarnations::SetInitialRawEvent(MRERawEvent* RE)
 {
   // add the first raw event and start the analysis of the event
 
@@ -265,7 +240,7 @@ void MRawEventList::SetInitialRawEvent(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventList::HasOptimumEvent()
+bool MRawEventIncarnations::HasOptimumEvent()
 {
   // Check if we have an optimum event
 
@@ -282,7 +257,7 @@ bool MRawEventList::HasOptimumEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SetBestTryEvent(MRERawEvent* BestTryEvent)
+void MRawEventIncarnations::SetBestTryEvent(MRERawEvent* BestTryEvent)
 {
   // Set the event which is the best shot, but is definitely not the correct one
 
@@ -293,32 +268,36 @@ void MRawEventList::SetBestTryEvent(MRERawEvent* BestTryEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventList::HasBestTry()
+bool MRawEventIncarnations::HasBestTryEvent()
 {
-  // Check if we have abest try event...
+  // Check if we have a best try event...
 
-  if (m_BestTryEvent != 0) {
-    return true;
-  }
-
+  if (m_BestTryEvent != nullptr) return true;
+  if (m_OptimumEvent != nullptr) return true;
+  if (m_Incarnations.size() > 0) return true;
+  
   return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventList::GetBestTryEvent()
+MRERawEvent* MRawEventIncarnations::GetBestTryEvent()
 {
   // Return a pointer to the best try...
 
-  return m_BestTryEvent;
+  if (m_BestTryEvent != nullptr) return m_BestTryEvent;
+  if (m_OptimumEvent != nullptr) return m_OptimumEvent;
+  if (m_Incarnations.size() > 0) return m_Incarnations[0];
+  
+  return nullptr;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SetOptimumEvent(MRERawEvent* OptimumEvent)
+void MRawEventIncarnations::SetOptimumEvent(MRERawEvent* OptimumEvent)
 {
   // Set the optimum event
 
@@ -333,7 +312,7 @@ void MRawEventList::SetOptimumEvent(MRERawEvent* OptimumEvent)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventList::GetOptimumEvent()
+MRERawEvent* MRawEventIncarnations::GetOptimumEvent()
 {
   // Return the optimum event
 
@@ -344,7 +323,7 @@ MRERawEvent* MRawEventList::GetOptimumEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventList::GetInitialRawEvent()
+MRERawEvent* MRawEventIncarnations::GetInitialRawEvent()
 {
   // Return the inital event, i.e. the mere hits event...
 
@@ -355,7 +334,21 @@ MRERawEvent* MRawEventList::GetInitialRawEvent()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventListTrackCompareGoodAreHigh(MRERawEvent* a, MRERawEvent* b) 
+//! Return true if any of the raw events is valid
+bool MRawEventIncarnations::IsAnyEventValid() const
+{
+  for (MRERawEvent* RE: m_Incarnations) {
+    if (RE->IsValid() == true) return true; 
+  }
+  
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool MRawEventIncarnationsTrackCompareGoodAreHigh(MRERawEvent* a, MRERawEvent* b) 
 {
   // No quality factor is a large number, so make sure it is at the end of the list!
   if (a->GetTrackQualityFactor() == MRERawEvent::c_NoQualityFactor) {
@@ -379,7 +372,7 @@ bool MRawEventListTrackCompareGoodAreHigh(MRERawEvent* a, MRERawEvent* b)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MRawEventListTrackCompareGoodAreLow(MRERawEvent* a, MRERawEvent* b) 
+bool MRawEventIncarnationsTrackCompareGoodAreLow(MRERawEvent* a, MRERawEvent* b) 
 {
 
   if (a->GetTrackQualityFactor() < b->GetTrackQualityFactor()) {
@@ -399,17 +392,17 @@ bool MRawEventListTrackCompareGoodAreLow(MRERawEvent* a, MRERawEvent* b)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventList::SortByTrackQualityFactor(bool GoodAreHigh)
+void MRawEventIncarnations::SortByTrackQualityFactor(bool GoodAreHigh)
 {
   // This is some kind of basic quicksort algorithm:
 
   if (GoodAreHigh == true) {
-    sort(m_RawEventList.begin(), m_RawEventList.end(), MRawEventListTrackCompareGoodAreHigh);
+    sort(m_Incarnations.begin(), m_Incarnations.end(), MRawEventIncarnationsTrackCompareGoodAreHigh);
   } else {
-    sort(m_RawEventList.begin(), m_RawEventList.end(), MRawEventListTrackCompareGoodAreLow);
+    sort(m_Incarnations.begin(), m_Incarnations.end(), MRawEventIncarnationsTrackCompareGoodAreLow);
   }
 }
 
 
-// MRawEventList.cxx: the end...
+// MRawEventIncarnations.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

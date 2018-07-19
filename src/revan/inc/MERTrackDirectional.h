@@ -46,7 +46,7 @@ class MERTrackDirectional : public MERTrack
   // protected methods:
  protected:
   virtual bool EvaluateTracks(MRERawEvent* ER);
-  virtual MRawEventList* TrackComptons(MRERawEvent* ER);
+  virtual MRawEventIncarnations* TrackComptons(MRERawEvent* ER);
 
   // private methods:
  private:

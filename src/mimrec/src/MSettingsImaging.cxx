@@ -115,6 +115,7 @@ MSettingsImaging::MSettingsImaging() : MSettingsInterface()
   m_FitParameterComptonLongSphere = 20;
   m_FitParameterComptonTransSphere = 2;
   m_FitParameterPair = 2;
+  m_FitParameterPET = 0.5;
   m_UseAbsorptions = false;
   m_Gauss1DCutOff = 2.5;
   m_GaussianByUncertaintiesIncrease = 0.0;
@@ -188,6 +189,7 @@ bool MSettingsImaging::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "ResponseParameter1DGaussianComptonLong", m_FitParameterComptonLongSphere);
   new MXmlNode(bNode, "ResponseParameter1DGaussianComptonTrans", m_FitParameterComptonTransSphere);
   new MXmlNode(bNode, "ResponseParameter1DGaussianPair", m_FitParameterPair);
+  new MXmlNode(bNode, "ResponseParameter1DGaussianPET", m_FitParameterPET);
   new MXmlNode(bNode, "ResponseParameter1DUseAbsorptions", m_UseAbsorptions);
   new MXmlNode(bNode, "ResponseParameter1DGaussianCutOff", m_Gauss1DCutOff);
 
@@ -310,6 +312,9 @@ bool MSettingsImaging::ReadXml(MXmlNode* Node)
       }
       if ((cNode = bNode->GetNode("ResponseParameter1DGaussianPair")) != 0) {
         m_FitParameterPair = cNode->GetValueAsDouble();
+      }
+      if ((cNode = bNode->GetNode("ResponseParameter1DGaussianPET")) != 0) {
+        m_FitParameterPET = cNode->GetValueAsDouble();
       }
       if ((cNode = bNode->GetNode("ResponseParameter1DUseAbsorptions")) != 0) {
         m_UseAbsorptions = cNode->GetValueAsBoolean();

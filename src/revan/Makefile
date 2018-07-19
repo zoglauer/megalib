@@ -12,6 +12,7 @@
 # Base definitions:
 #
 
+
 PROGRAM = revan
 
 MAIN  = MRevanMain
@@ -19,14 +20,18 @@ MAIN  = MRevanMain
 LIBRARY = Revan
 
 FILES = MGeometryRevan \
-	MRawEventList \
+	MRawEventIncarnations \
+	MRawEventIncarnationList \
 	MRawEventAnalyzer \
 	MFileEventsEvta \
 	MFileDecay \
 	MERConstruction \
 	MERNoising \
 	MERCoincidence \
-	MERClusterize \
+	MEREventClusterizer \
+	MEREventClusterizerTMVA \
+	MEREventClusterizerDataSet \
+	MERHitClusterizer \
 	MERTrack \
 	MERTrackPearson \
 	MERTrackRank \
@@ -70,7 +75,8 @@ FILES_UI = \
 	MGUIERAlgorithm \
 	MGUIOptionsGeneral \
 	MGUIOptionsCoincidence \
-	MGUIOptionsClustering \
+	MGUIOptionsHitClustering \
+	MGUIOptionsEventClustering \
 	MGUIOptionsTracking \
 	MGUIOptionsCSR \
 	MGUIOptionsDecay \
@@ -129,6 +135,7 @@ link:
 	@$(LINK) $(shell pwd)/inc/*.h $(IN)
 	@echo "$(OBJECTS) $(DICTIONARYOBJECT) $(OBJECTS_UI) $(DICTIONARYOBJECT_UI)" >> $(LB)/AllObjects.txt
 
+
 clean:
 	@rm -f src/*~
 	@rm -f src/\#*
@@ -139,6 +146,7 @@ clean:
 	@rm -f $(OBJECTS) $(SHAREDLIB) $(DICTIONARY) $(DICTIONARYOBJECT) $(LINKDEF) $(ROOTMAP) $(LB)/$(ROOTPCM)
 	@rm -f $(OBJECTS_UI) $(SHAREDLIB_UI) $(DICTIONARY_UI) $(DICTIONARYOBJECT_UI) $(LINKDEF_UI) $(ROOTMAP_UI) $(LB)/$(ROOTPCM_UI)
 	@rm -f $(OBJECTS_MAIN) $(EXECUTABLE)
+
 
 #----------------------------------------------------------------
 # Dependencies:

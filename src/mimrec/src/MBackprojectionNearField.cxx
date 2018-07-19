@@ -77,14 +77,17 @@ bool MBackprojectionNearField::Assimilate(MPhysicalEvent* Event)
     return false;
   }
 
+  // Those are the event types we handle:
   if (Event->GetType() == MPhysicalEvent::c_Compton ||
-      Event->GetType() == MPhysicalEvent::c_Pair) {
+    Event->GetType() == MPhysicalEvent::c_Pair ||
+    Event->GetType() == MPhysicalEvent::c_Photo ||
+    Event->GetType() == MPhysicalEvent::c_PET ||
+    Event->GetType() == MPhysicalEvent::c_Multi) {
     return true;
   }
 
   return false;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,16 +105,19 @@ bool MBackprojectionNearField::Backproject(MPhysicalEvent* Event, double* Image,
     return BackprojectionCompton(Image, Bins, NUsedBins, Maximum);
   } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
     return BackprojectionPair(Image, Bins, NUsedBins, Maximum);
-  }
-  else  {
-    cout<<"Cartesian::Backproject only works for Comptons and pairs."<<endl;
+  } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+    return BackprojectionPET(Image, Bins, NUsedBins, Maximum);
+  } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+    return BackprojectionMulti(Image, Bins, NUsedBins, Maximum);
+  } else  {
+    cout<<"Near-field backprojection does not work for this event type: "<<Event->GetTypeString()<<endl;
   }
 
   return false;
 }
 
 
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 
 
 bool MBackprojectionNearField::SetDimensions(double x1Min, double x1Max, unsigned int x1NBins,
@@ -479,6 +485,156 @@ bool MBackprojectionNearField::BackprojectionPair(double* Image, int* Bins, int&
     return false;
   }
 
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Calculate the origin probabilities for a PET event
+bool MBackprojectionNearField::BackprojectionPET(double* Image, int* Bins, int& NUsedBins, double& Maximum)
+{
+  //cout<<"Backprojecting PET"<<endl;
+  
+  MVector P1 = m_PET->GetPosition1();
+  MVector P2 = m_PET->GetPosition2();
+  
+  
+  unsigned int i = 0;
+  double InnerSum = 0.0;
+  double Content = 0.0;
+  double Distance = 0.0;
+  
+  // Let's fit a double gausshaped pair-event
+  for (unsigned int z = 0; z < m_x3NBins; ++z) {
+    for (unsigned int y = 0; y < m_x2NBins; ++y) {
+      for (unsigned int x = 0; x < m_x1NBins; ++x) {
+        i = x+y*m_x1NBins+z*m_x1NBins*m_x2NBins; // We fill each x-row
+        
+        MVector P(m_x1BinCenter[x], m_x2BinCenter[y], m_x3BinCenter[z]);
+        Distance = P.DistanceToLine(P1, P2);
+        
+        Content = m_Response->GetPETResponse(Distance);
+                           
+        if (Content > 0.0) {
+          if (Maximum < Content) Maximum = Content;
+          InnerSum += Content;
+                             
+          Image[NUsedBins] = Content;
+          Bins[NUsedBins] = i;
+          ++NUsedBins;
+        }
+      }
+    }
+  }
+  
+  if (InRange(InnerSum) == false) {
+    merr<<"Catched a NaN!"<<endl;
+    merr<<m_C->ToString()<<endl;
+    return false;
+  }
+  
+  //cout<<"InnerSum PET: "<<InnerSum<<endl;
+  
+  if (InnerSum < 0.00001) {
+    // Event not inside the viewport
+    return false;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Calculate the origin probabilities for a multi-event event
+bool MBackprojectionNearField::BackprojectionMulti(double* SparseImage, int* SparseBins, int& NUsedBins, double& Maximum)
+{
+  cout<<"Backprojecting multi event with: ";
+  for (unsigned int i = 0; i < m_Multi->GetNumberOfEvents(); ++i) {
+    cout<<m_Multi->GetEvent(i)->GetTypeString()<<" "; 
+  }
+  cout<<endl;
+  
+  double* SparseBackprojectionImage = new double[m_NImageBins];
+  int* SparseBackprojectionBins = new int[m_NImageBins];
+  double* FullImage = new double[m_NImageBins];
+  
+  double InnerSum = 0;  
+  
+  for (unsigned int i = 0; i < m_NImageBins; ++i) {
+    FullImage[i] = 0.0;
+    //SparseImage[i] = 0.0;
+    //SparseBins[i] = 0;
+    //SparseBackprojectionImage[i] = 0.0;
+    //SparseBackprojectionBins[i] = 0;
+  }
+  
+  
+  // Store the multi event since we want to assimilate the sub events one at a time
+  MMultiEvent* Multi = m_Multi;
+  
+  bool First = true;
+  for (unsigned int i = 0; i < Multi->GetNumberOfEvents(); ++i) {
+    // It is not working for photo...
+    if (Multi->GetEvent(i)->GetType() == MPhysicalEvent::c_Photo) continue;
+    
+    Assimilate(Multi->GetEvent(i));
+    NUsedBins = 0;
+    Backproject(Multi->GetEvent(i), SparseBackprojectionImage, SparseBackprojectionBins, NUsedBins, Maximum);
+    
+    // Now add / multiply:
+    if (First == true) {
+      InnerSum = 0;
+      for (int b = 0; b < NUsedBins; ++b) {
+        FullImage[SparseBackprojectionBins[b]] = SparseBackprojectionImage[b];
+        InnerSum += FullImage[SparseBackprojectionBins[b]];
+      }
+      First = false;
+    } else {
+      double* AnotherFullImage = new double[m_NImageBins];
+      for (unsigned int b = 0; b < m_NImageBins; ++b) {
+        AnotherFullImage[b] = 0.0;
+      }
+      for (int b = 0; b < NUsedBins; ++b) {
+        AnotherFullImage[SparseBackprojectionBins[b]] = SparseBackprojectionImage[b];
+      }
+      InnerSum = 0;
+      for (unsigned int b = 0; b < m_NImageBins; ++b) {
+        FullImage[b] *= AnotherFullImage[b];
+        InnerSum += FullImage[b];
+      }
+    }
+  }
+  
+  // Determine bins;
+  NUsedBins = 0;
+  Maximum = 0;
+  InnerSum = 0;
+  for (unsigned int i = 0; i < m_NImageBins; ++i) {
+    if (FullImage[i] > 0) {
+      if (Maximum < FullImage[i]) Maximum = FullImage[i];
+      InnerSum += FullImage[i];
+      
+      SparseImage[NUsedBins] = FullImage[i];
+      SparseBins[NUsedBins] = i;
+      ++NUsedBins;
+    }
+  }
+  
+  // Now move back to the original event
+  Assimilate(Multi);
+  
+  if (InnerSum < 0.00001) {
+    //cout<<"Event not inside viewport"<<endl;
+    // Event not inside the viewport
+    return false;
+  }
+  
+  //cout<<"Final inner sum: "<<InnerSum<<endl;
+  
   return true;
 }
 

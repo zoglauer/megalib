@@ -51,7 +51,10 @@ using namespace std;
 #include "MAssert.h"
 #include "MTimer.h"
 #include "MERCoincidence.h"
-#include "MERClusterize.h"
+#include "MEREventClusterizerTMVA.h"
+#include "MERHitClusterizer.h"
+#include "MEREventClusterizer.h"
+#include "MEREventClusterizerTMVA.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
 #include "MERTrackRank.h"
@@ -80,10 +83,13 @@ ClassImp(MRawEventAnalyzer)
 const int MRawEventAnalyzer::c_CoincidenceAlgoNone   = 0;
 const int MRawEventAnalyzer::c_CoincidenceAlgoWindow = 1;
 
-const int MRawEventAnalyzer::c_ClusteringAlgoNone     = 0;
-const int MRawEventAnalyzer::c_ClusteringAlgoDistance = 1;
-const int MRawEventAnalyzer::c_ClusteringAlgoAdjacent = 2;
-const int MRawEventAnalyzer::c_ClusteringAlgoPDF      = 3;
+const int MRawEventAnalyzer::c_EventClusteringAlgoNone     = 0;
+const int MRawEventAnalyzer::c_EventClusteringAlgoTMVA     = 1;
+
+const int MRawEventAnalyzer::c_HitClusteringAlgoNone     = 0;
+const int MRawEventAnalyzer::c_HitClusteringAlgoDistance = 1;
+const int MRawEventAnalyzer::c_HitClusteringAlgoAdjacent = 2;
+const int MRawEventAnalyzer::c_HitClusteringAlgoPDF      = 3;
 
 const int MRawEventAnalyzer::c_TrackingAlgoNone            = 0;
 const int MRawEventAnalyzer::c_TrackingAlgoModifiedPearson = 1;
@@ -99,7 +105,7 @@ const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
 const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
 const int MRawEventAnalyzer::c_CSRAlgoFoMToF        = 3;
 const int MRawEventAnalyzer::c_CSRAlgoBayesian      = 4;
-const int MRawEventAnalyzer::c_CSRAlgoTMVA = 5;
+const int MRawEventAnalyzer::c_CSRAlgoTMVA          = 5;
 const int MRawEventAnalyzer::c_CSRAlgoFoMToFAndE    = 6;
 
 const int MRawEventAnalyzer::c_DecayAlgoNone     = 0;
@@ -109,10 +115,11 @@ const int MRawEventAnalyzer::c_DecayAlgoStandard = 1;
 
 const unsigned int MRawEventAnalyzer::c_AnalysisSucess                 = 0;
 const unsigned int MRawEventAnalyzer::c_AnalysisCoincidenceWindowWait  = 1;
-const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsInStore        = 2;
-const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile     = 3;
-const unsigned int MRawEventAnalyzer::c_AnalysisSavingEventFailed      = 4;
-const unsigned int MRawEventAnalyzer::c_AnalysisUndefinedError         = 5;
+const unsigned int MRawEventAnalyzer::c_AnalysisEventClusteringFailed  = 2;
+const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsInStore        = 3;
+const unsigned int MRawEventAnalyzer::c_AnalysisNoEventsLeftInFile     = 4;
+const unsigned int MRawEventAnalyzer::c_AnalysisSavingEventFailed      = 5;
+const unsigned int MRawEventAnalyzer::c_AnalysisUndefinedError         = 6;
 
 
 
@@ -131,7 +138,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_PhysFile = nullptr;
 
   m_Geometry = nullptr; 
-  m_RawEvents = new MRawEventList(0);
+  m_RawEvents = new MRawEventIncarnationList();
 
   m_MoreEventsAvailable = true;
 
@@ -144,13 +151,16 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_NComptonEvents = 0;
   m_NPairEvents = 0;
   m_NMuonEvents = 0;
+  m_NPETEvents = 0;
+  m_NMultiEvents = 0;
   m_NDecayEvents = 0;
   m_NUnidentifiableEvents = 0;
 
   m_Rejections.resize(30, 0);
 
   m_CoincidenceAlgorithm = c_CoincidenceAlgoNone;
-  m_ClusteringAlgorithm = c_ClusteringAlgoAdjacent;
+  m_EventClusteringAlgorithm = c_EventClusteringAlgoNone;
+  m_HitClusteringAlgorithm = c_HitClusteringAlgoAdjacent;
   m_TrackingAlgorithm = c_TrackingAlgoNone;
   m_CSRAlgorithm = c_CSRAlgoFoM;
   m_DecayAlgorithm = c_DecayAlgoNone;
@@ -208,7 +218,8 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_RejectAllBadEvents = true;
 
   m_TimeLoad = 0;
-  m_TimeClusterize = 0;
+  m_TimeEventClusterize = 0;
+  m_TimeHitClusterize = 0;
   m_TimeTrack = 0;
   m_TimeCSR = 0;
   m_TimeFinalize = 0;
@@ -216,13 +227,14 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_IsBatch = false;
 
   m_Coincidence = nullptr;
-  m_Clusterizer = nullptr;
+  m_EventClusterizer = nullptr;
+  m_HitClusterizer = nullptr;
   m_Tracker = nullptr;
   m_CSR = nullptr;
   m_Decay = nullptr;
   m_Noising = nullptr;
 
-  m_EventStore = new MRawEventList();
+  m_EventStore = new MRawEventIncarnations();
 }
 
 
@@ -246,7 +258,8 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_EventStore;
   
   delete m_Coincidence;
-  delete m_Clusterizer;
+  delete m_EventClusterizer;
+  delete m_HitClusterizer;
   delete m_Tracker;
   delete m_CSR;
   delete m_Decay;
@@ -280,15 +293,20 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   // Transfer all necessary data to the analyzer...
 
   SetCoincidenceAlgorithm(S->GetCoincidenceAlgorithm()); 
-  SetClusteringAlgorithm(S->GetClusteringAlgorithm()); 
+  SetEventClusteringAlgorithm(S->GetEventClusteringAlgorithm()); 
+  SetHitClusteringAlgorithm(S->GetHitClusteringAlgorithm()); 
   SetTrackingAlgorithm(S->GetTrackingAlgorithm()); 
   SetCSRAlgorithm(S->GetCSRAlgorithm());
   SetDecayAlgorithm(S->GetDecayAlgorithm());
 
   // coincidence
   SetCoincidenceWindow(S->GetCoincidenceWindow());
-
-  // clustering
+  
+  // event clustering
+  SetEventClusteringTMVAFileName(S->GetEventClusteringTMVAFileName());
+  SetEventClusteringTMVAMethods(S->GetEventClusteringTMVAMethods());
+  
+  // hit clustering
   SetStandardClusterizerMinDistanceD1(S->GetStandardClusterizerMinDistanceD1());
   SetStandardClusterizerMinDistanceD2(S->GetStandardClusterizerMinDistanceD2());
   SetStandardClusterizerMinDistanceD3(S->GetStandardClusterizerMinDistanceD3());
@@ -335,8 +353,8 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   
   SetBCTFileName(S->GetBayesianComptonFileName());
   
-  SetTMVAFileName(S->GetTMVAFileName());
-  SetTMVAMethods(S->GetTMVAMethods());
+  SetCSRTMVAFileName(S->GetCSRTMVAFileName());
+  SetCSRTMVAMethods(S->GetCSRTMVAMethods());
   
   SetLensCenter(S->GetLensCenter());
   SetFocalSpotCenter(S->GetFocalSpotCenter());
@@ -572,7 +590,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   mdebug<<endl;
   mdebug<<"ER - Event: "<<RE->GetEventID()<<endl;
   mdebug<<endl;
-
+  
   
   // Store the inital coincident event:
   if (m_InitialRawEvent != nullptr) {
@@ -581,26 +599,30 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   }
   m_InitialRawEvent = RE->Duplicate();
   
-
-  // Set the initial event and clean the remainders of the last event
-  m_RawEvents->SetInitialRawEvent(RE);
+  
+  // Sets the initial event and cleans the remainders of the last event
+  m_RawEvents->DeleteAll();
+  MRawEventIncarnations* REI = new MRawEventIncarnations(m_Geometry);
+  REI->SetInitialRawEvent(RE);
+  m_RawEvents->Add(REI);
   
   
   // Check for event selections:
   bool SelectionsPassed = true;
-  if (SelectionsPassed == true && 
-      RE->GetExternalBadEventFlag() == true &&
-      m_RejectAllBadEvents == true) {
+  
+  if (SelectionsPassed == true && m_RawEvents->IsAnyEventValid() == false) {
+    mdebug<<"ER - Selection: No event is valid for further analysis"<<endl;
+    SelectionsPassed = false;
+  }
+  
+  if (SelectionsPassed == true && RE->GetExternalBadEventFlag() == true && m_RejectAllBadEvents == true) {
     mdebug<<"ER - Selection: External bad event flag raised: "<<RE->GetExternalBadEventString()<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionExternalBadEventFlag);
     SelectionsPassed = false;
   }
-
-  if (SelectionsPassed == true && 
-      ((RE->GetEventID() < m_EventIdMin && m_EventIdMin >= 0) || 
-       (RE->GetEventID() > m_EventIdMax && m_EventIdMax >= 0))) {
-    mdebug<<"ER - Selection: Event ID out of limits: "<<RE->GetEventID()
-        <<" is not within ["<<m_EventIdMin<<", "<<m_EventIdMax<<"]"<<endl;
+  
+  if (SelectionsPassed == true && ((RE->GetEventID() < m_EventIdMin && m_EventIdMin >= 0) || (RE->GetEventID() > m_EventIdMax && m_EventIdMax >= 0))) {
+    mdebug<<"ER - Selection: Event ID out of limits: "<<RE->GetEventID()<<" is not within ["<<m_EventIdMin<<", "<<m_EventIdMax<<"]"<<endl;
     RE->SetRejectionReason(MRERawEvent::c_RejectionEventIdOutOfLimits);
     if (RE->GetEventID() > m_EventIdMax && m_EventIdMax >= 0) {
       mout<<"ER - Event ID above limit!"<<endl;
@@ -609,184 +631,203 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     SelectionsPassed = false;      
   }
   
-  if (SelectionsPassed == true && 
-      (RE->GetEnergy() < m_TotalEnergyMin || RE->GetEnergy() > m_TotalEnergyMax)) {
-    mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()
-        <<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
+  if (SelectionsPassed == true && (RE->GetEnergy() < m_TotalEnergyMin || RE->GetEnergy() > m_TotalEnergyMax)) {
+    mdebug<<"ER - Selection: Total energy out of limits: "<<RE->GetEnergy()<<" keV is not within ["<<m_TotalEnergyMin<<", "<<m_TotalEnergyMax<<"] keV"<<endl; 
     RE->SetRejectionReason(MRERawEvent::c_RejectionTotalEnergyOutOfLimits);
     SelectionsPassed = false;
   }
 
   
   
-  // Analyze the event
-  if (SelectionsPassed == true) {
-
-    // Section B: Clusterizing:
+  // Section B: Event clustering:
+  
+  if (SelectionsPassed == true && m_EventClusteringAlgorithm > c_EventClusteringAlgoNone) {
     Timer.Start();
-
-    if (SelectionsPassed == true && m_ClusteringAlgorithm > c_ClusteringAlgoNone) {
-      if (m_Clusterizer == nullptr) {
-        merr<<"Clusterizer pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-        return c_AnalysisUndefinedError;
-      }
-      
-      m_Clusterizer->Analyze(m_RawEvents);
+    
+    if (m_EventClusterizer == nullptr) {
+      merr<<"Event clusterizer pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    m_EventClusterizer->Analyze(m_RawEvents);
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    
+    m_TimeEventClusterize += Timer.ElapsedTime();
+  }
+  
+  
+  // Section C: Hit Clustering:
+  
+  if (SelectionsPassed == true && m_HitClusteringAlgorithm > c_HitClusteringAlgoNone) {
+    Timer.Start();
+    
+    if (m_HitClusterizer == nullptr) {
+      merr<<"Hit clusterizer pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      m_HitClusterizer->Analyze(REI);
       // Since we have exactly one event, it is automatically the best event:
-      if (m_RawEvents->GetNRawEvents() == 1) {
-        //m_RawEvents->SetBestEvent(m_RawEvents->GetRawEventAt(0));
-      } else {
+      if (REI->GetNRawEvents() != 1) {
         merr<<"ER - We should have only one good event here..."<<endl;
       }
+      REI->SetBestTryEvent(REI->GetRawEventAt(0));
     }
-    m_RawEvents->SetBestTryEvent(m_RawEvents->GetRawEventAt(0));
-
-    m_TimeClusterize += Timer.ElapsedTime();
-
     
-    // Section C: Tracking:
-    Timer.Start();
-    if (SelectionsPassed == true && m_TrackingAlgorithm > c_TrackingAlgoNone) {
-      if (m_Tracker == nullptr) {
-        merr<<"Tracker pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-        return c_AnalysisUndefinedError;
-      }
-      m_Tracker->Analyze(m_RawEvents);
-    } else {
-      mdebug<<"I am not doing Tracking!"<<endl;
-    }
-    m_TimeTrack += Timer.ElapsedTime();
-    Timer.Start();
-
-
-    // Now we have possibly found: showers, MIPS and of course pairs
-    if (SelectionsPassed == true && m_RawEvents->HasOptimumEvent() == false) {
-
-      // Check lever arm selection:
-      for (int rw = 0; rw < m_RawEvents->GetNRawEvents(); ++rw) {
-        MRERawEvent* RW = m_RawEvents->GetRawEventAt(rw);
-        for (int r = 0; r < RW->GetNRESEs(); ++r) {
-          for (int s = r+1; s < RW->GetNRESEs(); ++s) {
-            if ((RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag() < m_LeverArmMin ||
-                (RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag() > m_LeverArmMax) {
-              mdebug<<"ER - Selection: Lever arm out of limits: "<<(RW->GetRESEAt(r)->GetPosition() - RW->GetRESEAt(s)->GetPosition()).Mag()
-                  <<" cm is not within ["<<m_LeverArmMin
-                  <<", "<<m_LeverArmMax<<"] cm"<<endl;
-              RW->SetRejectionReason(MRERawEvent::c_RejectionLeverArmOutOfLimits);
-              SelectionsPassed = false;
-              break;
-            }
-          }
-          if (SelectionsPassed == false) break;
-        }
-      }
-
-      // Section D: Compton sequence reconstruction     
-      Timer.Start();
-      if (SelectionsPassed == true && m_RawEvents->HasOptimumEvent() == false && m_CSRAlgorithm > c_CSRAlgoNone) {
-        if (m_CSR == nullptr) {
-          merr<<"CSR pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
-          return c_AnalysisUndefinedError;
-        }
-        // so Comptons are next
-        m_CSR->Analyze(m_RawEvents);
-      } else {
-        mdebug<<"I am not doing CSR!"<<endl;
-      }
-
-      if (SelectionsPassed == true && m_DecayAlgorithm > c_DecayAlgoNone) {
-        m_Decay->Analyze(m_RawEvents);
-      } else {
-        mdebug<<"I am not doing Decay!"<<endl;
-      }
-      m_TimeCSR += Timer.ElapsedTime();
-    }
-
-
-    // Final stuff 
-    Timer.Start();
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;
+    
+    m_TimeHitClusterize += Timer.ElapsedTime();  
+  }
   
-    if (m_RawEvents->HasOptimumEvent() == true) {
-      mdebug<<"ER - Optimum event found!"<<endl;
-    } else {
-      mdebug<<"ER - NO optimum event found!"<<endl;
+  
+  // Section D: Tracking:
+  
+  if (SelectionsPassed == true && m_TrackingAlgorithm > c_TrackingAlgoNone) {
+    Timer.Start();
+    
+    if (m_Tracker == nullptr) {
+      merr<<"Tracker pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
     }
-
-    // If we have a good event, then write it
-    if (m_RawEvents->HasOptimumEvent() == true && m_PhysFile != nullptr) {
-      mdebug<<m_RawEvents->GetOptimumEvent()->ToString()<<endl;
-      // Write the event:
-      MPhysicalEvent* Event = m_RawEvents->GetOptimumEvent()->GetPhysicalEvent();
-   
-      if (m_PhysFile != nullptr) {
-        if (m_PhysFile->AddEvent(Event) == false) {
-          merr<<"Saving the event failed!"<<show;
-          return c_AnalysisSavingEventFailed;
-        }
+    
+    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      m_Tracker->Analyze(REI);
+    }
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+    
+    m_TimeTrack += Timer.ElapsedTime();
+    
+  } else {
+    mdebug<<"I am not doing Tracking!"<<endl;
+  }
+  
+  
+  
+  // Section E: Compton sequence reconstruction       
+  
+  if (SelectionsPassed == true && m_CSRAlgorithm > c_CSRAlgoNone && m_RawEvents->HasOnlyOptimumEvents() == false) { // Only continue if we have not yet found a good event
+    
+    Timer.Start();
+    
+    if (m_CSR == nullptr) {
+      merr<<"CSR pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      if (REI->HasOptimumEvent() == false) {
+        m_CSR->Analyze(REI);
       }
-      mdebug<<Event->ToString()<<endl;
-      m_NGoodEvents++;
-      if (Event->GetType() == MPhysicalEvent::c_Photo) {
-        mdebug<<"ER - Good photo event..."<<endl;
-        m_NPhotoEvents++;
-      } else if (Event->GetType() == MPhysicalEvent::c_Compton) {
-        if (m_RawEvents->GetOptimumEvent()->GetPhysicalEvent()->IsDecay() == true) {
-          mdebug<<"ER - Compton event - probably decay..."<<endl;
-          m_NDecayEvents++;
-        } else {
-          mdebug<<"ER - Good Compton event..."<<endl;
-        }
-        m_NComptonEvents++;
-      } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
-        mdebug<<"ER - Good pair event..."<<endl;
-        m_NPairEvents++;
-      } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
-        mdebug<<"ER - Good muon event..."<<endl;
-        m_NMuonEvents++;
-      } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
-        mdebug<<"ER - Undefinable event..."<<endl;
-        m_NUnidentifiableEvents++;
-      } else {
-        merr<<"ER - Unhandled event type: "<<Event->GetType()<<endl;
+    }
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+    
+  } else {
+    mdebug<<"I am not doing CSR!"<<endl;
+  }
+  
+  
+  
+  // Section F: Decay algorithm
+  if (SelectionsPassed == true && m_DecayAlgorithm > c_DecayAlgoNone) {
+    
+    if (m_Decay == nullptr) {
+      merr<<"Decay pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
+      return c_AnalysisUndefinedError;
+    }
+    
+    for (unsigned int i = 0; i < m_RawEvents->Size(); ++i) {
+      MRawEventIncarnations* REI = m_RawEvents->Get(i);
+      m_Decay->Analyze(REI);
+    }
+    
+    if (m_RawEvents->IsAnyEventValid() == false) SelectionsPassed = false;    
+    
+  } else {
+    mdebug<<"I am not doing Decay!"<<endl;
+  }
+  
+  
+  // Final stuff 
+  Timer.Start();
+  
+  MPhysicalEvent* Event = nullptr;
+  
+  
+  // Get the best event
+  if (m_RawEvents->HasOnlyOptimumEvents() == true) {
+    mdebug<<"ER - Optimum event(s) found!"<<endl;
+    mdebug<<m_RawEvents->ToString()<<endl;
+    
+    Event = m_RawEvents->GetOptimumPhysicalEvent();
+  } else {
+    mdebug<<"We have a best rey events..."<<endl;
+    
+    Event = m_RawEvents->GetBestTryPhysicalEvent();
+    
+    vector<MRERawEvent*> REs = m_RawEvents->GetBestTryEvents();
+    for (auto RE: REs) {
+      while (m_Rejections.size() < (unsigned int) RE->GetRejectionReason()+1) {
+        m_Rejections.push_back(0);
       }
-    } else {
-      MRERawEvent* BestTry = nullptr;
-      if (m_RawEvents->GetBestTryEvent() != nullptr) {
-        BestTry = m_RawEvents->GetBestTryEvent();
-      } else if (m_RawEvents->GetNRawEvents() > 0) {
-        mdebug<<"ER - Multiple raw events and no best one ... grummel ... Grabbing the last one for rejection reason statistics ..."<<endl;
-        BestTry = m_RawEvents->GetRawEventAt(m_RawEvents->GetNRawEvents()-1);
-      }
-
-      if (BestTry != nullptr) {
-        mdebug<<"ER - Second best event structure..."<<endl;
-        mdebug<<BestTry->ToString()<<endl;
-        while (m_Rejections.size() < (unsigned int) BestTry->GetRejectionReason()+1) {
-          m_Rejections.push_back(0);
-        }
-        m_Rejections[(unsigned int) BestTry->GetRejectionReason()]++;
-        mdebug<<"ER - Rejection: "
-            <<MRERawEvent::GetRejectionReasonAsString(BestTry->GetRejectionReason())<<endl;
-      
-        MPhysicalEvent* Event = BestTry->GetPhysicalEvent();
-        if (m_PhysFile != nullptr) {
-          if (m_PhysFile->AddEvent(Event) == false) {
-            merr<<"Saving the event failed!"<<show;
-            return c_AnalysisSavingEventFailed;
-          }
-        }
-        mdebug<<BestTry->GetPhysicalEvent()->ToString()<<endl;
-      }
+      m_Rejections[(unsigned int) RE->GetRejectionReason()]++;
+      mdebug<<"ER - Rejection: "<<MRERawEvent::GetRejectionReasonAsString(RE->GetRejectionReason())<<endl;
     }
   }
-
+  
+  if (Event != nullptr) {
+    if (m_PhysFile != nullptr) {
+      if (m_PhysFile->AddEvent(Event) == false) {
+        merr<<"Saving of the event failed!"<<show;
+        return c_AnalysisSavingEventFailed;
+      }
+    }
+    mdebug<<Event->ToString()<<endl;
+    m_NGoodEvents++;
+    if (Event->GetType() == MPhysicalEvent::c_Photo) {
+      mdebug<<"ER - Good photo event..."<<endl;
+      m_NPhotoEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_Compton) {
+      if (Event->IsDecay() == true) {
+        mdebug<<"ER - Compton event - probably decay..."<<endl;
+        m_NDecayEvents++;
+      } else {
+        mdebug<<"ER - Good Compton event..."<<endl;
+      }
+      m_NComptonEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_Pair) {
+      mdebug<<"ER - Good pair event..."<<endl;
+      m_NPairEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_Muon) {
+      mdebug<<"ER - Good muon event..."<<endl;
+      m_NMuonEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_PET) {
+      mdebug<<"ER - Good PET event..."<<endl;
+      m_NPETEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_Multi) {
+      mdebug<<"ER - Good multi event..."<<endl;
+      m_NMultiEvents++;
+    } else if (Event->GetType() == MPhysicalEvent::c_Unidentifiable) {
+      mdebug<<"ER - Undefinable event..."<<endl;
+      m_NUnidentifiableEvents++;
+    } else {
+      merr<<"ER - Unhandled event type: "<<Event->GetType()<<endl;
+    }
+  }
+  
+  
   m_NEvents++;
   if (SelectionsPassed == true) {
     m_NPassedEventSelection++;  
   }
-
-  m_TimeFinalize += Timer.ElapsedTime();
   
+  m_TimeFinalize += Timer.ElapsedTime();
   
   return c_AnalysisSucess;
 }
@@ -822,22 +863,56 @@ void MRawEventAnalyzer::AddRejectionReason(MRERawEvent* RE)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventAnalyzer::GetOptimumEvent()
+vector<MRERawEvent*> MRawEventAnalyzer::GetOptimumEvents()
 {
-  // Return the last raw event or 0 if it is not valid
-
-  return m_RawEvents->GetOptimumEvent();
+  return m_RawEvents->GetOptimumEvents();
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRERawEvent* MRawEventAnalyzer::GetBestTryEvent()
+MRERawEvent* MRawEventAnalyzer::GetSingleOptimumEvent()
 {
-  // Return the last raw event, before abort or 0 if it is not valid
+  vector<MRERawEvent*> V = m_RawEvents->GetOptimumEvents();
+  
+  if (V.size() == 0) return nullptr;
+  return V[0];
+}
 
-  return m_RawEvents->GetBestTryEvent();
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MRERawEvent*> MRawEventAnalyzer::GetBestTryEvents()
+{
+  return m_RawEvents->GetBestTryEvents();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MRERawEvent* MRawEventAnalyzer::GetSingleBestTryEvent()
+{
+  vector<MRERawEvent*> V = m_RawEvents->GetBestTryEvents();
+  
+  if (V.size() == 0) return nullptr;
+  return V[0];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+vector<MRERawEvent*> MRawEventAnalyzer::GetInitialRawEvents()
+{
+  // Return the initial raw event
+  
+  vector<MRERawEvent*> REs;
+  REs.push_back(m_InitialRawEvent);
+  
+  return REs;
 }
 
 
@@ -847,7 +922,7 @@ MRERawEvent* MRawEventAnalyzer::GetBestTryEvent()
 MRERawEvent* MRawEventAnalyzer::GetInitialRawEvent()
 {
   // Return the initial raw event
-
+  
   return m_InitialRawEvent;
 }
 
@@ -866,6 +941,8 @@ void MRawEventAnalyzer::JoinStatistics(const MRawEventAnalyzer& A)
   m_NPairEvents += A.m_NPairEvents;
   m_NMuonEvents += A.m_NMuonEvents;
   m_NDecayEvents += A.m_NDecayEvents;
+  m_NPETEvents += A.m_NPETEvents;
+  m_NMultiEvents += A.m_NMultiEvents;
   m_NUnidentifiableEvents += A.m_NUnidentifiableEvents;
 
 
@@ -900,9 +977,9 @@ bool MRawEventAnalyzer::PostAnalysis()
   out<<"# Date "<<T.GetSQLString()<<endl;
   out<<"# OriginalFile "<<m_Filename<<endl;
   out<<"# GeometryFile "<<m_Geometry->GetFileName()<<endl;
-  if (m_Clusterizer != nullptr) {
+  if (m_HitClusterizer != nullptr) {
     out<<"# "<<endl;
-    out<<m_Clusterizer->ToString();
+    out<<m_HitClusterizer->ToString();
   }
   if (m_Tracker != nullptr) {
     out<<"# "<<endl;
@@ -958,6 +1035,12 @@ bool MRawEventAnalyzer::PostAnalysis()
     out<<"       Muon  ............................................. "
        <<setw(Width)<<m_NMuonEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
        <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NMuonEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
+    out<<"       PET . ............................................. "
+       <<setw(Width)<<m_NPETEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
+       <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NPETEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
+    out<<"       Multi  ............................................ "
+       <<setw(Width)<<m_NMultiEvents<<" ("<<setw(WidthPercent)<<setprecision(Precision)
+       <<((m_NGoodEvents == 0) ? 0 : 100.0*m_NMultiEvents/m_NGoodEvents)<<"%)"<<setprecision(6)<<endl;
     out<<endl;
 
     out<<"Rejection reasons for not reconstructable events:"<<endl;
@@ -1000,8 +1083,8 @@ bool MRawEventAnalyzer::PostAnalysis()
   mout<<endl;
   */
   
-  if (m_Clusterizer != nullptr) {
-    m_Clusterizer->PostAnalysis();
+  if (m_HitClusterizer != nullptr) {
+    m_HitClusterizer->PostAnalysis();
   }
   if (m_Tracker != nullptr) {
     m_Tracker->PostAnalysis();
@@ -1089,15 +1172,34 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
   }
-
   
-  // Clusterining
+  
+  // Event clustering
   if (Return == true) {
-    delete m_Clusterizer;
-    m_Clusterizer = nullptr;
-    if (m_ClusteringAlgorithm == c_ClusteringAlgoDistance) {
-      m_Clusterizer = new MERClusterize();
-      if (m_Clusterizer->SetParameters(m_StandardClusterizerMinDistanceD1, 
+    delete m_EventClusterizer;
+    m_EventClusterizer = nullptr;
+    if (m_EventClusteringAlgorithm == c_EventClusteringAlgoTMVA) {
+      MEREventClusterizerTMVA* EC = new MEREventClusterizerTMVA();
+      if (EC->SetTMVAFileNameAndMethod(m_EventClusteringTMVAFileName, m_EventClusteringTMVAMethods) == false) {
+        Return = false;
+      }
+      m_EventClusterizer = EC;
+    } else if (m_EventClusteringAlgorithm == c_EventClusteringAlgoNone) {
+      // Nothing
+    } else {
+      merr<<"Unknown event clustering algorithm: "<<m_EventClusteringAlgorithm<<endl;
+      Return = false;
+    }
+  }
+  
+  
+  // Hit Clusterining
+  if (Return == true) {
+    delete m_HitClusterizer;
+    m_HitClusterizer = nullptr;
+    if (m_HitClusteringAlgorithm == c_HitClusteringAlgoDistance) {
+      m_HitClusterizer = new MERHitClusterizer();
+      if (m_HitClusterizer->SetParameters(m_StandardClusterizerMinDistanceD1, 
                                        m_StandardClusterizerMinDistanceD2,
                                        m_StandardClusterizerMinDistanceD3,
                                        m_StandardClusterizerMinDistanceD4,
@@ -1108,20 +1210,20 @@ bool MRawEventAnalyzer::PreAnalysis()
                                        m_StandardClusterizerCenterIsReference) == false) {
         Return = false;
       }
-    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoPDF) {
-      m_Clusterizer = new MERClusterize();
-      if (m_Clusterizer->SetParameters(m_PDFClusterizerBaseFileName) == false) {
+    } else if (m_HitClusteringAlgorithm == c_HitClusteringAlgoPDF) {
+      m_HitClusterizer = new MERHitClusterizer();
+      if (m_HitClusterizer->SetParameters(m_PDFClusterizerBaseFileName) == false) {
         Return = false;
       }
-    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoAdjacent) {
-      m_Clusterizer = new MERClusterize();
-      if (m_Clusterizer->SetParameters(m_AdjacentLevel, m_AdjacentSigma) == false) {
+    } else if (m_HitClusteringAlgorithm == c_HitClusteringAlgoAdjacent) {
+      m_HitClusterizer = new MERHitClusterizer();
+      if (m_HitClusterizer->SetParameters(m_AdjacentLevel, m_AdjacentSigma) == false) {
         Return = false;
       }
-    } else if (m_ClusteringAlgorithm == c_ClusteringAlgoNone) {
+    } else if (m_HitClusteringAlgorithm == c_HitClusteringAlgoNone) {
       // Nothing
     } else {
-      merr<<"Unknown clustering algorithm: "<<m_ClusteringAlgorithm<<endl;
+      merr<<"Unknown clustering algorithm: "<<m_HitClusteringAlgorithm<<endl;
       Return = false;
     }
 
@@ -1185,8 +1287,8 @@ bool MRawEventAnalyzer::PreAnalysis()
       }
     } else if (m_CSRAlgorithm == c_CSRAlgoTMVA) {
       m_CSR = new MERCSRTMVA();
-      if (dynamic_cast<MERCSRTMVA*>(m_CSR)->SetParameters(m_TMVAFileName, 
-        m_TMVAMethods,
+      if (dynamic_cast<MERCSRTMVA*>(m_CSR)->SetParameters(m_CSRTMVAFileName, 
+        m_CSRTMVAMethods,
         m_Geometry, 
         m_CSRThresholdMin, 
         m_CSRThresholdMax, 

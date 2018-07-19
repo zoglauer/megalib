@@ -144,10 +144,10 @@ bool MResponseMultipleComptonLens::Analyze()
   
   
   // Take only the best event and check if it originates from the lens
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnationList* List = m_ReReader->GetRawEventList();
   
-  if (REList->HasOptimumEvent() == true) {
-    MRERawEvent* RE = REList->GetOptimumEvent();
+  if (List->HasOnlyOptimumEvents() == true) {
+    MRERawEvent* RE = List->GetOptimumEvents()[0];
     if (RE->GetNRESEs() > 1) {
       
       // Determine all parameters:

@@ -126,7 +126,7 @@ bool MResponseEarthHorizon::CreateResponse()
   double Spd;
   MVector IdealOriginDir;
 
-  MRawEventList* REList = 0;
+  MRawEventIncarnationList* REList = 0;
   MPhysicalEvent* Event = 0;
   MComptonEvent* Compton = 0;
 
@@ -134,8 +134,8 @@ bool MResponseEarthHorizon::CreateResponse()
   while (InitializeNextMatchingEvent() == true) {
     REList = m_ReReader->GetRawEventList();
 
-    if (REList->HasOptimumEvent() == true) {
-      Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+    if (REList->HasOnlyOptimumEvents() == true) {
+      Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
       if (Event != 0) {
         if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
           if (Event->GetType() == MPhysicalEvent::c_Compton) {

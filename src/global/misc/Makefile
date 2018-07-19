@@ -74,6 +74,8 @@ FILES = MGlobal \
 	MComptonEvent \
 	MMuonEvent \
 	MPhotoEvent \
+	MPETEvent \
+	MMultiEvent \
 	MUnidentifiableEvent \
 	MParser \
 	MFunction \

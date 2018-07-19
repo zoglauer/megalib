@@ -12,6 +12,7 @@
 # Base definitions:
 #
 
+
 PROGRAM1 = responsemanipulator
 MAIN1    = MResponseManipulatorMain
 
@@ -24,6 +25,8 @@ FILES = MResponseCreator \
 	MResponseManipulator \
 	MResponseBuilder \
 	MResponseBase \
+	MResponseEventClusterizerTMVAEventFile \
+	MResponseEventClusterizerTMVA \
 	MResponseClusteringDSS \
 	MResponseTracking \
 	MResponseMultipleCompton \
@@ -68,7 +71,6 @@ DICTIONARYOBJECT=$(LB)/$(DICTIONARYNAME).o
 LINKDEF=$(LB)/$(DICTIONARYNAME)_LinkDef.h
 ROOTMAP=$(LB)/lib$(LIBRARY).rootmap
 ROOTPCM=lib$(LIBRARY)_rdict.pcm
-
 
 OBJECT_MAIN1=$(patsubst %, $(LB)/%.o, $(MAIN1))
 EXECUTABLE1=$(BN)/$(PROGRAM1)

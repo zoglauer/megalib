@@ -172,11 +172,19 @@ class MEventSelector
   // Photo specific:
   void UsePhotos(bool Photos = true);
   void ApplyUsePhotos(MEventSelector& E) { E.UsePhotos(m_UsePhotos); }
-
+  
   // Unidentifiable specific:
   void UseUnidentifiables(bool Unidentifiables = true);
   void ApplyUseUnidentifiables(MEventSelector& E) { E.UseUnidentifiables(m_UseUnidentifiables); }
-
+  
+  // PET specific:
+  void UsePETs(bool PETs = true);
+  void ApplyUsePETs(MEventSelector& E) { E.UsePETs(m_UsePETs); }
+  
+  // Multi specific:
+  void UseMulties(bool Multis = true);
+  void ApplyUseMulties(MEventSelector& E) { E.UseMulties(m_UseMulties); }
+  
   // All:
   void UseDecays(bool Decays = true);
   void ApplyUseDecays(MEventSelector& E) { E.UseDecays(m_UseDecays); }
@@ -284,7 +292,9 @@ class MEventSelector
   bool m_UseTrackedComptons;
   bool m_UseNotTrackedComptons;
   bool m_UseUnidentifiables;
-
+  bool m_UsePETs;
+  bool m_UseMulties;
+  
   bool m_UseDecays;
   bool m_UseFlaggedAsBad;
 
@@ -316,6 +326,8 @@ class MEventSelector
   long m_NRejectedUseComptons;
   long m_NRejectedUseMuons;
   long m_NRejectedUseDecays;
+  long m_NRejectedUsePETs;
+  long m_NRejectedUseMulties;
   long m_NRejectedUseUnidentifiables;
   long m_NRejectedUseFlaggedAsBad;
   long m_NRejectedUseTrackedComptons;

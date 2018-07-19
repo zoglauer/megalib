@@ -368,24 +368,20 @@ bool MResponseMultipleCompton::Analyze()
   if (MResponseBuilder::Analyze() == false) return false;
   
   
-  MRERawEvent* RE = 0;
-  MRawEventList* REList = m_ReReader->GetRawEventList();
-  
   //g_Verbosity = 1;
   double Etot = 0;
   double Eres = 0;
  
   
-  int r_max = REList->GetNRawEvents();
-  for (int r = 0; r < r_max; ++r) {
-    RE = REList->GetRawEventAt(r);
+  for (auto RE: m_ReEvents) {
+    if (RE == nullptr) continue;
     
     if (RE->GetNRESEs() <= 1) {
       mdebug<<"GeneratePdf: Not enough hits!"<<endl;
       continue;
     }
     
-    mdebug<<endl<<endl<<"Iteration "<<r<<endl;
+    mdebug<<endl<<endl;
     mdebug<<RE->ToString()<<endl;
     
     if (RE->GetStartPoint() == 0) continue;

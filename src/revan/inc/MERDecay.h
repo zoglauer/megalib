@@ -23,7 +23,7 @@ using namespace std;
 // MEGAlib libs:
 #include "MGlobal.h"
 #include "MERConstruction.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 
 // Forward declarations:
 class MRERawEvent;
@@ -41,7 +41,7 @@ class MERDecay : public MERConstruction
   virtual bool SetParameters(MString FileName, 
                              const vector<double>& Energy, 
                              const vector<double>& EnergyError);
-  virtual bool Analyze(MRawEventList* List);
+  virtual bool Analyze(MRawEventIncarnations* List);
 
   virtual bool PreAnalysis();
   virtual bool PostAnalysis();

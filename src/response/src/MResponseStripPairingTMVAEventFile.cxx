@@ -169,7 +169,8 @@ bool MResponseStripPairingTMVAEventFile::Initialize()
   m_ReGeometry->ActivateNoising(false);
   
   // We ignore the loaded configuration file
-  m_ReReader->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  m_ReReader->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
+  m_ReReader->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   m_ReReader->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   m_ReReader->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   m_ReReader->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
@@ -250,10 +251,8 @@ bool MResponseStripPairingTMVAEventFile::Analyze()
     return true;
   }
   
-  // We require a raw event
-  MRawEventList* REList = m_ReReader->GetRawEventList();
-  
-  MRERawEvent* RE = REList->GetInitialRawEvent();
+  // We require the initial raw event
+  MRERawEvent* RE = m_ReReader->GetInitialRawEvent();
   if (RE == nullptr) {
     return true;
   }

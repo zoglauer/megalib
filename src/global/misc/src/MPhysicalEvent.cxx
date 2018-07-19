@@ -57,7 +57,9 @@ const int MPhysicalEvent::c_Muon           =  2;
 const int MPhysicalEvent::c_Shower         =  3;
 const int MPhysicalEvent::c_Photo          =  4;
 const int MPhysicalEvent::c_Decay          =  5;
-const int MPhysicalEvent::c_Unidentifiable =  10;
+const int MPhysicalEvent::c_PET            =  6;
+const int MPhysicalEvent::c_Multi          =  7;
+const int MPhysicalEvent::c_Unidentifiable =  100;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -102,6 +104,10 @@ MString MPhysicalEvent::GetTypeString() const
     String = "Photo";
   } else if  (m_EventType == c_Decay) {
     String = "Decay";
+  } else if  (m_EventType == c_PET) {
+    String = "PET";
+  } else if  (m_EventType == c_Multi) {
+    String = "Multi";
   } else if  (m_EventType == c_Unidentifiable) {
     String = "Unidentifiable";
   } else {
@@ -281,6 +287,12 @@ bool MPhysicalEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool
     case c_Decay:
       S<<"ET DY"<<endl;
       break;
+    case c_PET:
+      S<<"ET PT"<<endl;
+      break;
+    case c_Multi:
+      S<<"ET MT"<<endl;
+      break;
     case c_Unidentifiable:
       S<<"ET UN"<<endl;
       break;
@@ -405,6 +417,16 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
         cout<<"int MPhysicalEvent::ParseLine: Event is no Decay event as suggested but a "<<GetTypeString()<<"!"<<endl;
         Ret = 1;
       }
+    } else if (Line[3] == 'P' && Line[4] == 'T') {
+      if (m_EventType != c_PET) {
+        cout<<"int MPhysicalEvent::ParseLine: Event is no PET event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        Ret = 1;
+      }
+    } else if (Line[3] == 'M' && Line[4] == 'T') {
+      if (m_EventType != c_Multi) {
+        cout<<"int MPhysicalEvent::ParseLine: Event is no Multi event as suggested but a "<<GetTypeString()<<"!"<<endl;
+        Ret = 1;
+      }
     } else if (Line[3] == 'U' && Line[4] == 'N') {
       if (m_EventType != c_Unidentifiable) {
         cout<<"int MPhysicalEvent::ParseLine: Event is no Unidentifiable event as suggested but a "<<GetTypeString()<<"!"<<endl;
@@ -504,6 +526,8 @@ int MPhysicalEvent::ParseLine(const char* Line, bool Fast)
   } else if (Line[0] == 'D' && Line[1] == 'C') {
     m_Decay = true;
   } else if (Line[0] == 'S' && Line[1] == 'E') {
+    Ret = -1;
+  } else if (Line[0] == 'S' && Line[1] == 'F') {
     Ret = -1;
   } else if (Line[0] == 'E' && Line[1] == 'N') {
     Ret = -1;

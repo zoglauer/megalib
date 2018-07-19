@@ -1,5 +1,5 @@
 /*
- * MGUIOptionsClustering.h
+ * MGUIOptionsEventClustering.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MGUIOptionsClustering__
-#define __MGUIOptionsClustering__
+#ifndef __MGUIOptionsEventClustering__
+#define __MGUIOptionsEventClustering__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -25,6 +25,7 @@
 #include "MSettingsEventReconstruction.h"
 #include "MGUIEEntryList.h"
 #include "MGUIEEntry.h"
+#include "MGUIERBList.h"
 #include "MGUIEFileSelector.h"
 
 // Forward declarations:
@@ -33,13 +34,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-class MGUIOptionsClustering : public MGUIDialog
+class MGUIOptionsEventClustering : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIOptionsClustering(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIOptionsEventClustering(const TGWindow* Parent, const TGWindow* Main, 
                         MSettingsEventReconstruction* Data);
-  virtual ~MGUIOptionsClustering();
+  virtual ~MGUIOptionsEventClustering();
 
 
   // protected methods:
@@ -60,14 +61,10 @@ class MGUIOptionsClustering : public MGUIDialog
  private:
   MSettingsEventReconstruction* m_Data;
 
-  MGUIEEntryList* m_MinDistance;
-
-  TGComboBox* m_AdjacentLevel;
-  MGUIEEntry* m_AdjacentSigma;
-
-  TGCheckButton* m_ReferencePoint;
-
-  MGUIEFileSelector* m_PDFClusterizerBaseFileName;
+  MGUIEFileSelector* m_TMVAFileSelector;
+  MGUIERBList* m_TMVAMethods;
+  //! Map button IDs to TMVA methods
+  map<int, MERCSRTMVAMethod> m_TMVAMethodsMap;
   
   
   enum ButtonIDs { e_ReferencePoint = 200};
@@ -75,7 +72,7 @@ class MGUIOptionsClustering : public MGUIDialog
 
 #ifdef ___CLING___
  public:
-  ClassDef(MGUIOptionsClustering, 0)
+  ClassDef(MGUIOptionsEventClustering, 0)
 #endif
 
 };

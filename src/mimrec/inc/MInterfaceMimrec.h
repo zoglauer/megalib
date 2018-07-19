@@ -110,6 +110,8 @@ class MInterfaceMimrec : public MInterface
   void ARMResponseComparison();
   void AngularResolutionPairs();
   void AngularResolutionVsQualityFactorPair();
+  //! The resolution measure for PET events
+  void ResolutionMeasurePET();
 
   void EnergySpectra();
   

@@ -1590,7 +1590,8 @@ void MInterfaceMimrec::ARMResponseComparison()
   if (m_Settings->GetResponseType() == MResponseType::Gauss1D) {
     Response = new MResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
                                      m_Settings->GetFitParameterComptonLongSphere(),
-                                     m_Settings->GetFitParameterPair());
+                                     m_Settings->GetFitParameterPair(),
+                                     m_Settings->GetFitParameterPET());
   } else if (m_Settings->GetResponseType() == MResponseType::GaussByEnergyLeakage) {
     Response = new MResponseEnergyLeakage(m_Settings->GetFitParameterComptonTransSphere(), 
                                        m_Settings->GetFitParameterComptonLongSphere());
@@ -1813,6 +1814,110 @@ void MInterfaceMimrec::AngularResolutionPairs()
   Hist2->Draw("colz");
   Canvas2->Update();
 
+  return;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! The resolution measure for PET events
+void MInterfaceMimrec::ResolutionMeasurePET()
+{
+  // Display the angular resolution measurement for PET events
+  
+  // Start with the event file loader first (just in case something goes wrong here)
+  if (InitializeEventLoader() == false) return;
+  
+  
+  int NEvents = 0;
+  double Value = 0;
+  int Inside = 0;
+  
+  int NBins = m_Settings->GetHistBinsARMGamma();
+  double Disk = m_Settings->GetTPDistanceTrans();
+  MVector TestPosition = GetTestPosition();
+  
+  // Initalize the image size (x-axis)
+  //BinWidth = 2*Disk/NBins;
+  TH1D* Hist = new TH1D("ResolutionMeasurePET", "Resolution measure PET", NBins, 0, Disk);
+  Hist->SetBit(kCanDelete);
+  Hist->SetDirectory(0);
+  Hist->SetXTitle("Resolution [cm]");
+  Hist->SetYTitle("counts");
+  Hist->SetStats(false);
+  Hist->SetFillColor(8);
+  Hist->SetMinimum(0);
+  
+  
+  MPhysicalEvent* Event = nullptr;
+  MPETEvent* PETEvent = nullptr; 
+  // ... loop over all events and save a count in the belonging bin ...
+  while ((Event = GetNextEvent()) != 0) {
+    
+    // Only accept Comptons within the selected ranges...
+    if (m_Selector->IsQualifiedEventFast(Event) == true) {
+      if (Event->GetType() == MPhysicalEvent::c_PET) {
+        PETEvent = dynamic_cast<MPETEvent*>(Event);
+        
+        Value = PETEvent->GetResolutionMeasure(TestPosition, m_Settings->GetCoordinateSystem());
+        if (Value > -Disk && Value < Disk) Inside++;
+        Hist->Fill(Value);
+        NEvents++;
+      }
+    }
+    
+    delete Event;
+  } 
+  
+  // Close the event loader
+  FinalizeEventLoader();
+  
+  if (Hist->GetMaximum() == 0) {
+    mgui<<"No events passed the event selections or file is empty!"<<endl;
+    return;
+  }
+  
+  
+  TCanvas *Canvas = new TCanvas("Canvas angular resolution PET events", "Canvas angular resolution PET events", 800, 600);
+  Canvas->SetFillColor(0);
+  Canvas->SetFrameBorderSize(0);
+  Canvas->SetFrameBorderMode(0);
+  Canvas->SetBorderSize(0);
+  Canvas->SetBorderMode(0);
+  
+  /*
+  TF1 *L = new TF1("LorentzAsymGausArm", LorentzAsymGausArm, -Disk*0.99, Disk*0.99, 8);
+  L->SetParNames("Lorentz Height", "Lorentz Width", "Lorentz Mean", "Lorentz Offset",
+                 "Gaus Height", "Gaus Mean", "Gaus Sigma 1", "Gaus Sigma 2");
+  L->SetParameters(1, 1, 0, 0, 1, 1, 1, 1);
+  L->SetParLimits(0, 0, 99999999);
+  //L->SetParLimits(1, 0, 99999999);
+  //L->SetParLimits(2, -9999999, 9999999);
+  //L->FixParameter(2, 0);
+  //L->FixParameter(3, 0);
+  //L->SetParLimits(3, 0, 99999);
+  //L->SetParLimits(5, 0, 100);
+  //L->SetParLimits(6, 0, 10000);
+  //L->SetParLimits(7, 0, 10000);
+  Hist->Fit("LorentzAsymGausArm", "RQw");
+  */
+  
+  Canvas->cd();
+  Hist->Draw();
+  //L->Draw("CSAME");
+  Canvas->Update();
+  
+  cout<<endl;
+  cout<<"Some statistics: "<<endl;
+  cout<<endl;
+  cout<<"Analyzed pair events:        "<<NEvents<<endl;
+  cout<<"Pair events in histogram:    "<<Inside<<" ("<<((NEvents > 0) ? 100.0*Inside/NEvents : 0.0)<<"%)"<<endl;
+  //cout<<"Total FWHM of fit:                       "<<GetFWHM(L, -180, 180)<<" deg"<<endl;
+  //cout<<"Maximum of fit (x position):             "<<L->GetMaximumX(-Disk, +Disk)<<" deg"<<endl;
+  cout<<endl;
+  //delete L;
+  
   return;
 }
 
@@ -3717,7 +3822,6 @@ void MInterfaceMimrec::EnergySpectra()
   MPhysicalEvent* Event = nullptr;
   while ((Event = GetNextEvent()) != 0) {
 
-    // Only accept Comptons within the selected ranges... 
     if (m_Selector->IsQualifiedEventFast(Event) == false) {
       delete Event;
       continue;

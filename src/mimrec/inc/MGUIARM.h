@@ -40,7 +40,8 @@ enum class MGUIARMModes
 {
   m_ARMGamma = 1,
   m_ARMElectron = 2,
-  m_Spectrum = 3
+  m_Spectrum = 3,
+  m_PET = 4
 };
 
 

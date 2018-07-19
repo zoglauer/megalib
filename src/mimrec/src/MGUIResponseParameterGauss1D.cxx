@@ -44,9 +44,7 @@ ClassImp(MGUIResponseParameterGauss1D)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MGUIResponseParameterGauss1D::MGUIResponseParameterGauss1D(const TGWindow* Parent, 
-                                                     const TGWindow* Main, 
-                                                     MSettingsImaging* Data)
+MGUIResponseParameterGauss1D::MGUIResponseParameterGauss1D(const TGWindow* Parent, const TGWindow* Main, MSettingsImaging* Data)
   : MGUIDialog(Parent, Main)
 {
   // standard constructor
@@ -81,13 +79,14 @@ void MGUIResponseParameterGauss1D::Create()
   // We start with a name and an icon...
   SetWindowName("Response parameters Gauss 1D");  
 
-  AddSubTitle("Parameters for a 1D Gaussian response approximation"); 
+  AddSubTitle("Parameters for 1D Gaussian response approximations"); 
 
   TGLayoutHints* GaussiansLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
   m_Gaussians = new MGUIEEntryList(this, "Set the 1D Gaussian approximations of the response:");
   m_Gaussians->Add("Compton across cone (e.g. 1 sigma of ARM width = FWHM / 2.35) [deg]:", m_GUIData->GetFitParameterComptonTransSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Compton along cone for tracked events (e.g. 1 sigma of SPD width) [deg]:", m_GUIData->GetFitParameterComptonLongSphere(), true, 0.0, 180.0);
-  m_Gaussians->Add("Pairs [deg]:", m_GUIData->GetFitParameterPair(), true, 0.0, 180.0);
+  m_Gaussians->Add("Pair-creation events [deg]:", m_GUIData->GetFitParameterPair(), true, 0.0, 180.0);
+  m_Gaussians->Add("PET events [cm]:", m_GUIData->GetFitParameterPET(), true, 0.0);
   m_Gaussians->SetWrapLength(Width - m_FontScaler*40);
   m_Gaussians->Create();
   AddFrame(m_Gaussians, GaussiansLayout);
@@ -136,6 +135,7 @@ bool MGUIResponseParameterGauss1D::OnApply()
     m_GUIData->SetFitParameterComptonTransSphere(m_Gaussians->GetAsDouble(0)); 
     m_GUIData->SetFitParameterComptonLongSphere(m_Gaussians->GetAsDouble(1)); 
     m_GUIData->SetFitParameterPair(m_Gaussians->GetAsDouble(2));
+    m_GUIData->SetFitParameterPET(m_Gaussians->GetAsDouble(3));
   }
   if (m_CutOff->IsModified() == true) {
     m_GUIData->SetGauss1DCutOff(m_CutOff->GetAsDouble(0)); 

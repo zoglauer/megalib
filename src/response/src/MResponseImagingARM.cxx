@@ -192,10 +192,11 @@ bool MResponseImagingARM::Analyze()
   
   ++m_NMatchedEvents;
   
-  MRawEventList* REList = m_ReReader->GetRawEventList();
+  MRawEventIncarnationList* REList = m_ReReader->GetRawEventList();
   
-  if (REList->HasOptimumEvent() == true) {
-    MPhysicalEvent* Event = REList->GetOptimumEvent()->GetPhysicalEvent();
+  if (REList->HasOnlyOptimumEvents() == true) {
+    MRERawEvent* RE = REList->GetOptimumEvents()[0];
+    MPhysicalEvent* Event = REList->GetOptimumEvents()[0]->GetPhysicalEvent();
     if (Event != 0) {
       ++m_NOptimumEvents;
       if (m_MimrecEventSelector.IsQualifiedEvent(Event) == true) {
@@ -217,8 +218,8 @@ bool MResponseImagingARM::Analyze()
             
             double IdealEnergy = m_SiEvent->GetIAAt(0)->GetSecondaryEnergy();
             
-            if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
-              IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
+            if (IdealEnergy >= RE->GetEnergy() - 3*RE->GetEnergyResolution() &&
+              IdealEnergy <= RE->GetEnergy() + 3*RE->GetEnergyResolution()) {
               ++m_NPhotoPeakEvents;
               m_ArmPhotoPeak.Add(PhiDiff, Compton->Phi()*c_Deg, Compton->Ei(), Compton->LeverArm(), Compton->SequenceLength());
             }
@@ -227,8 +228,8 @@ bool MResponseImagingARM::Analyze()
               double EpsilonDiff = Compton->GetSPDElectron(IdealOrigin)*c_Deg;
               m_Spd.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
               m_NQualifiedComptonEventsWithTrack++;
-              if (IdealEnergy >= REList->GetOptimumEvent()->GetEnergy() - 3*REList->GetOptimumEvent()->GetEnergyResolution() &&
-                IdealEnergy <= REList->GetOptimumEvent()->GetEnergy() + 3*REList->GetOptimumEvent()->GetEnergyResolution()) {
+              if (IdealEnergy >= RE->GetEnergy() - 3*RE->GetEnergyResolution() &&
+                IdealEnergy <= RE->GetEnergy() + 3*RE->GetEnergyResolution()) {
                 ++m_NPhotoPeakEventsWithTrack;
                 m_SpdPhotoPeak.Add(EpsilonDiff, Compton->Epsilon()*c_Deg, Compton->Ee());
               }

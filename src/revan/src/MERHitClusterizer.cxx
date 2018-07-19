@@ -1,5 +1,5 @@
 /*
- * MERClusterize.cxx
+ * MERHitClusterizer.cxx
  *
  *
  * Copyright (C) by Andreas Zoglauer.
@@ -18,7 +18,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// MERClusterize
+// MERHitClusterizer
 //
 // Find all clusters...
 //
@@ -26,7 +26,7 @@
 
 
 // Include the header:
-#include "MERClusterize.h"
+#include "MERHitClusterizer.h"
 
 // Standard libs:
 #include "MStreams.h"
@@ -42,16 +42,16 @@
 
 
 #ifdef ___CLING___
-ClassImp(MERClusterize)
+ClassImp(MERHitClusterizer)
 #endif
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MERClusterize::MERClusterize()
+MERHitClusterizer::MERHitClusterizer()
 {
-  // Construct an instance of MERClusterize
+  // Construct an instance of MERHitClusterizer
 
   m_Algorithm = c_None;
 
@@ -74,16 +74,16 @@ MERClusterize::MERClusterize()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MERClusterize::~MERClusterize()
+MERHitClusterizer::~MERHitClusterizer()
 {
-  // Delete this instance of MERClusterize
+  // Delete this instance of MERHitClusterizer
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERClusterize::SetParameters(int Level, double Sigma)
+bool MERHitClusterizer::SetParameters(int Level, double Sigma)
 {
   m_Algorithm = c_Level;
 
@@ -97,7 +97,7 @@ bool MERClusterize::SetParameters(int Level, double Sigma)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERClusterize::SetParameters(double MinDistanceD1, double MinDistanceD2, 
+bool MERHitClusterizer::SetParameters(double MinDistanceD1, double MinDistanceD2, 
                                   double MinDistanceD3, double MinDistanceD4, 
                                   double MinDistanceD5, double MinDistanceD6,
                                   double MinDistanceD7, double MinDistanceD8,
@@ -122,7 +122,7 @@ bool MERClusterize::SetParameters(double MinDistanceD1, double MinDistanceD2,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERClusterize::SetParameters(MString BaseResponseFileName)
+bool MERHitClusterizer::SetParameters(MString BaseResponseFileName)
 {
   if (BaseResponseFileName.IsEmpty()) {
     merr<<"No file for Clustering based on PDF given."<<endl;
@@ -183,7 +183,7 @@ bool MERClusterize::SetParameters(MString BaseResponseFileName)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERClusterize::Analyze(MRawEventList* List)
+bool MERHitClusterizer::Analyze(MRawEventIncarnations* List)
 {
   // Analyze the raw event...
   MERConstruction::Analyze(List);
@@ -222,7 +222,7 @@ bool MERClusterize::Analyze(MRawEventList* List)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERClusterize::FindClusters(MRERawEvent* RE, double Distance, int Detector)
+void MERHitClusterizer::FindClusters(MRERawEvent* RE, double Distance, int Detector)
 {
   // Find Clusters: Coalesce RESE to clusters
 
@@ -309,7 +309,7 @@ void MERClusterize::FindClusters(MRERawEvent* RE, double Distance, int Detector)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERClusterize::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma, 
+void MERHitClusterizer::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma, 
                                                  int Level, int Detector)
 {
   // Find Clusters: Coalesce RESE to clusters
@@ -394,7 +394,7 @@ void MERClusterize::FindClustersInAdjacentVoxels(MRERawEvent* RE, double Sigma,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MERClusterize::FindClustersUsingPDF(MRERawEvent* RE) 
+void MERHitClusterizer::FindClustersUsingPDF(MRERawEvent* RE) 
 {
   // Step 1: Do a standard 8, no depth cut clustering - 
   // that's what we have used for response generation
@@ -448,10 +448,11 @@ void MERClusterize::FindClustersUsingPDF(MRERawEvent* RE)
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MString MERClusterize::ToString(bool CoreOnly) const
+MString MERHitClusterizer::ToString(bool CoreOnly) const
 {
   // Dump an options string gor the tra file:
 
@@ -480,5 +481,5 @@ MString MERClusterize::ToString(bool CoreOnly) const
 }
 
 
-// MERClusterize.cxx: the end...
+// MERHitClusterizer.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////

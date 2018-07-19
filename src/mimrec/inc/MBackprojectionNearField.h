@@ -56,11 +56,15 @@ class MBackprojectionNearField : public MBackprojection
   //! Assimilate the event data - stores parts of the event data in the class for acceleration pruposes 
   virtual bool Assimilate(MPhysicalEvent* Event);
 
-  //! Calculate the repsonse of a Compton event
+  //! Calculate the origin probabilities for a Compton event
   bool BackprojectionCompton(double* Image, int* Bins, int& NUsedBins, double& Maximum);
-  //! Calculate the repsonse of a Pair event
+  //! Calculate the origin probabilities for a Pair event
   bool BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum);
-
+  //! Calculate the origin probabilities for a PET event
+  bool BackprojectionPET(double* Image, int* Bins, int& NUsedBins, double& Maximum);
+  //! Calculate the origin probabilities for a multi-event event
+  bool BackprojectionMulti(double* Image, int* Bins, int& NUsedBins, double& Maximum);
+  
 
   // private methods:
  private:

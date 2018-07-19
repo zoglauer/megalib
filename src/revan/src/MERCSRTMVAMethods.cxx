@@ -41,7 +41,7 @@ ClassImp(MERCSRTMVAMethods)
 //! Default constructor
 MERCSRTMVAMethods::MERCSRTMVAMethods()
 {
-  ResetUsedMethods();
+  ResetUsedMethods(); // used methods is a map, this initializes it too
 }
 
 
@@ -66,6 +66,8 @@ MERCSRTMVAMethod MERCSRTMVAMethods::GetMethod(MString String) const
     return MERCSRTMVAMethod::c_MLP;
   } else if (String == "BDTD") {
     return MERCSRTMVAMethod::c_BDTD;
+  } else if (String == "PDEFOAM") {
+    return MERCSRTMVAMethod::c_PDEFoam;
   } else if (String == "PDEFOAMBOOST") {
     return MERCSRTMVAMethod::c_PDEFoamBoost;
   } else if (String == "DNN_CPU") {
@@ -88,6 +90,8 @@ MString MERCSRTMVAMethods::GetString(MERCSRTMVAMethod Method) const
     return "MLP";
   } else if (Method == MERCSRTMVAMethod::c_BDTD) {
     return "BDTD";
+  } else if (Method == MERCSRTMVAMethod::c_PDEFoam) {
+    return "PDEFoam";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoamBoost) {
     return "PDEFoamBoost";
   } else if (Method == MERCSRTMVAMethod::c_DNN_CPU) {
@@ -110,6 +114,8 @@ MString MERCSRTMVAMethods::GetFullString(MERCSRTMVAMethod Method) const
     return "Multi-layer perceptron";
   } else if (Method == MERCSRTMVAMethod::c_BDTD) {
     return "Boosted decision trees";
+  } else if (Method == MERCSRTMVAMethod::c_PDEFoam) {
+    return "Likelihood estimator using self-adapting phase-space binning (PDE-Foam)";
   } else if (Method == MERCSRTMVAMethod::c_PDEFoamBoost) {
     return "Likelihood estimator using boosted self-adapting phase-space binning (PDE-Foam)";
   } else if (Method == MERCSRTMVAMethod::c_DNN_CPU) {
@@ -133,6 +139,7 @@ void MERCSRTMVAMethods::ResetUsedMethods()
   }
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -145,7 +152,6 @@ vector<MERCSRTMVAMethod> MERCSRTMVAMethods::GetAllMethods() const
   }
   return Methods;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -105,6 +105,9 @@ void MGUIARM::Create()
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     SetWindowName("Energy Spectrum");  
     AddSubTitle("Choose the histogram binning and\nan optional source position with acceptance window");
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    SetWindowName("ARM of Recoil Electron");  
+    AddSubTitle("Choose the histogram binning and\nthe source position with acceptance window");
   }
 
   
@@ -114,6 +117,8 @@ void MGUIARM::Create()
   } else if (m_Mode == MGUIARMModes::m_ARMElectron) {
     m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsARMElectron());
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
+    m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsSpectrum());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
     m_Bins = new MGUIEEntry(this, "Number of bins in histogram:", false, m_Settings->GetHistBinsSpectrum());
   }
   TGLayoutHints* BinsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 50*Scaler, 50*Scaler, 2*Scaler, 10*Scaler);
@@ -181,6 +186,8 @@ void MGUIARM::Create()
     m_Distance = new MGUIEEntry(this, "Acceptance radius [deg]:", false, m_Settings->GetTPDistanceLong());
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     m_Distance = new MGUIEEntry(this, "Acceptance radius [deg]:", false, m_Settings->GetTPDistanceTrans());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    m_Distance = new MGUIEEntry(this, "Acceptance radius [cm]:", false, m_Settings->GetTPDistanceTrans());
   } 
   AddFrame(m_Distance, SelectorSubLayout);
   
@@ -296,6 +303,9 @@ bool MGUIARM::OnApply()
   } else if (m_Mode == MGUIARMModes::m_Spectrum) {
     m_Settings->SetTPDistanceTrans(m_Distance->GetAsDouble());
     m_Settings->SetHistBinsSpetrum(m_Bins->GetAsInt());
+  } else if (m_Mode == MGUIARMModes::m_PET) {
+    m_Settings->SetTPDistanceTrans(m_Distance->GetAsDouble());
+    m_Settings->SetHistBinsARMGamma(m_Bins->GetAsInt());
   }
   
   m_OkPressed = true;

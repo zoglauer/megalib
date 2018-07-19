@@ -860,7 +860,7 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
   RawEventAnalyzer->SetGeometry(m_CoincidenceGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   RawEventAnalyzer->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   RawEventAnalyzer->SetCSRAlgorithm(MRawEventAnalyzer::c_CSRAlgoNone);
   RawEventAnalyzer->SetDecayAlgorithm(MRawEventAnalyzer::c_DecayAlgoNone);
@@ -924,10 +924,10 @@ void MRealTimeAnalyzer::OneCoincidenceLoop()
         if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
           MRERawEvent* BestRawEvent = 0;
-          if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-          } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-            BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+          if (RawEventAnalyzer->GetSingleOptimumEvent() != nullptr) {
+            BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+          } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+            BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
           }
           if (BestRawEvent != 0) {
             // Find the event to which it belongs:
@@ -1054,7 +1054,7 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
   RawEventAnalyzer->SetGeometry(m_ReconstructionGeometry);
   RawEventAnalyzer->SetSettings(m_Settings);
   
-  RawEventAnalyzer->SetClusteringAlgorithm(MRawEventAnalyzer::c_ClusteringAlgoNone);
+  RawEventAnalyzer->SetHitClusteringAlgorithm(MRawEventAnalyzer::c_HitClusteringAlgoNone);
   
   if (RawEventAnalyzer->PreAnalysis() == false) {
     cout<<"Preanalysis failed!"<<endl;  
@@ -1113,10 +1113,10 @@ void MRealTimeAnalyzer::OneReconstructionLoop()
       if (ReturnCode == MRawEventAnalyzer::c_AnalysisSucess) {
        
         MRERawEvent* BestRawEvent = 0;
-        if (RawEventAnalyzer->GetOptimumEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetOptimumEvent();
-        } else if (RawEventAnalyzer->GetBestTryEvent() != 0) {
-          BestRawEvent = RawEventAnalyzer->GetBestTryEvent();
+        if (RawEventAnalyzer->GetSingleOptimumEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleOptimumEvent();
+        } else if (RawEventAnalyzer->GetSingleBestTryEvent() != 0) {
+          BestRawEvent = RawEventAnalyzer->GetSingleBestTryEvent();
         }
         if (BestRawEvent != 0) {
           MPhysicalEvent* P = BestRawEvent->GetPhysicalEvent();
@@ -1282,6 +1282,7 @@ MImagerExternallyManaged* MRealTimeAnalyzer::InitializeImager()
     Imager->SetResponseGaussian(m_Settings->GetFitParameterComptonTransSphere(), 
                                 m_Settings->GetFitParameterComptonLongSphere(),
                                 m_Settings->GetFitParameterPair(),
+                                m_Settings->GetFitParameterPET(),
                                 m_Settings->GetGauss1DCutOff(),
                                 m_Settings->GetUseAbsorptions());
   } else if (m_Settings->GetResponseType() == MResponseType::GaussByUncertainties) {

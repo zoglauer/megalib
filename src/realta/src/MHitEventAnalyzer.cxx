@@ -38,7 +38,7 @@
 #include "MHitData.h"
 #include "MPhysicalEvent.h"
 #include "MPairEventData.h"
-#include "MRawEventList.h"
+#include "MRawEventIncarnations.h"
 #include "MRERawEvent.h"
 
 
@@ -59,7 +59,7 @@ MHitEventAnalyzer::MHitEventAnalyzer(MDGeometryQuest* Geometry)
 
   m_Geometry = Geometry; 
   m_Geo = (MGeometryBasic *) new MGeometryMEGA();
-  m_RawEvents = new MRawEventList(m_Geo);
+  m_RawEvents = new MRawEventIncarnations(m_Geo);
 }
 
 

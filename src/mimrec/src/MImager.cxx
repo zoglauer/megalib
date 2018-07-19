@@ -282,6 +282,7 @@ bool MImager::SetImagingSettings(MSettingsImaging* Settings)
     SetResponseGaussian(Settings->GetFitParameterComptonTransSphere(),
                         Settings->GetFitParameterComptonLongSphere(),
                         Settings->GetFitParameterPair(),
+                        Settings->GetFitParameterPET(),
                         Settings->GetGauss1DCutOff(),
                         Settings->GetUseAbsorptions());
   } else if (Settings->GetResponseType() == MResponseType::GaussByUncertainties) {
@@ -430,12 +431,12 @@ void MImager::SetDeselectedPointSources(TObjArray* DeselectedPS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MImager::SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, const double CutOff, const bool UseAbsorptions)
+void MImager::SetResponseGaussian(const double Transversal, const double Longitudinal, const double Pair, const double PET, const double CutOff, const bool UseAbsorptions)
 {
   // Set the Gaussian response parameters
 
   for (unsigned int t= 0; t < m_NThreads; ++t) {
-    MResponseGaussian* Response = new MResponseGaussian(Transversal, Longitudinal, Pair);
+    MResponseGaussian* Response = new MResponseGaussian(Transversal, Longitudinal, Pair, PET);
     Response->SetThreshold(CutOff);
 
     m_BPs[t]->SetResponse(dynamic_cast<MResponse*>(Response));

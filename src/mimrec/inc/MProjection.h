@@ -25,6 +25,8 @@
 #include "MComptonEvent.h"
 #include "MPairEvent.h"
 #include "MPhotoEvent.h"
+#include "MPETEvent.h"
+#include "MMultiEvent.h"
 
 // Forward declarations:
 
@@ -69,7 +71,11 @@ class MProjection
   MPairEvent* m_P;
   //! For faster access: Photo event
   MPhotoEvent* m_Photo;
-
+  //! For faster access: PET event
+  MPETEvent* m_PET;
+  //! For faster access: Multi event
+  MMultiEvent* m_Multi;
+  
   //! True if we should used approxiamted maths
   bool m_ApproximatedMaths;
 

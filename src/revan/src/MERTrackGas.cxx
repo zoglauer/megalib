@@ -80,15 +80,15 @@ MERTrackGas::~MERTrackGas()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* RE)
+MRawEventIncarnations* MERTrackGas::TrackComptons(MRERawEvent* RE)
 {
   // Track Compton events
   mdebug<<"Track Compton events in gas detector..."<<endl;
 
-  mout<<"MRawEventList* MERTrackGas::TrackComptons(MRERawEvent* ER): Under construction!"<<endl;
+  mout<<"MRawEventIncarnations* MERTrackGas::TrackComptons(MRERawEvent* ER): Under construction!"<<endl;
 
   // List of raw events - this is what TrackComptons returns
-  MRawEventList* List = new MRawEventList();
+  MRawEventIncarnations* List = new MRawEventIncarnations();
 
   // define search radius (a few mm)
   double SearchRad = 0.5; // cm - look for next track point within this radius
@@ -301,7 +301,7 @@ bool MERTrackGas::EvaluateTracks(MRERawEvent* RE)
   }
 
   // Peter: Add you evaluations here:
-  //mout<<"MRawEventList* MERTrackGas::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
+  //mout<<"MRawEventIncarnations* MERTrackGas::EvaluateTracks(MRERawEvent* ER): nyi!"<<endl;
   // Track evaluations should be same as always
   return MERTrack::EvaluateTracks(RE);
 

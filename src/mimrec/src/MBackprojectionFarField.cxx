@@ -863,6 +863,8 @@ bool MBackprojectionFarField::BackprojectionPhoto(double* Image, int* Bins, int&
 ////////////////////////////////////////////////////////////////////////////////
 
 
+
+
 bool MBackprojectionFarField::BackprojectionPair(double* Image, int* Bins, int& NUsedBins, double& Maximum)
 {
   // Compton-Backprojection-algorithm:
