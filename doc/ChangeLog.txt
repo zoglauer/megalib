@@ -26,6 +26,7 @@ General:
 + Setup script now has an option to keep MEGAlib un-updated
 + Fixed many multi-threading bugs
 + Added old and new neural network interface
++ Official MEGAlib docker container 
 
 Cosima:
 + Support for Geant4 10.2

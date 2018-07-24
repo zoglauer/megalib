@@ -24,7 +24,6 @@ RUN cd /home/mrmegalib && echo ". /home/mrmegalib/MEGAlib/bin/source-megalib.sh"
 # Setup a data exchange directory which can be mounted later
 RUN mkdir /home/mrmegalib/exchange
 
-
 # The working directory is the home directory
 WORKDIR /home/mrmegalib
 

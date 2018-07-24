@@ -124,6 +124,8 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 
 <p>If this does not help, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There, all common installation errors along with their solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
 
+<p>If nothing else helps, you might try to run the MEGAlib docker -- see the next main section.</p>
+
 
 <h2>Updating your installation</h2>
 
@@ -142,6 +144,73 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 
 <p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
 
+
+<h1 id="Docker">Docker</h1>
+
+<p>If the installation with the setup script fails or it seems too complicated or you would have to do it on too many different machines, you could consider running MEGAlib in a Docker container.</p>
+
+<h2>Installing Docker</h2>
+
+<p>First, go to the Docker webpage, and download and install Docker: <a href="https://www.docker.com/community-edition" target=_blank>Docker community edition</a></p>
+<p>On Linux, follow the optional post-installation steps to run docker as non-root user.</p>
+
+<h2>The MEGAlib docker image</h2>
+
+<p>Before you can run MEGAlib, you need a Docker image. You can either create your own MEGAlib Docker image, or download one from the public repository.
+
+
+<h3>Creating you own MEGAlib Docker image</h3>
+
+<p>The MEGAlib repository contains a Dockerfile to create a MEGAlib Docker image which can be used to run all MEGAlib programs on any platform. To build your own MEGAlib Docker image, just execute:</p>
+
+<pre>
+$ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/zoglauer/megalib/experimental/Dockerfile
+</pre>
+
+<p>This might take a while to complete...</p>
+
+<h3>Downloading a docker image</h3>
+
+<p>Alternatively, you can download a pre-built MEGAlib Docker image. All MEGAlib Docker images can be found on the Docker Hub: <a href="https://hub.docker.com/r/zoglauer/megalib" target=_blank>Docker Hub</a></p>
+<p>To list all available docker images on the Docker Hub, run:</p>
+
+<pre>docker images zoglauer/megalib</pre>
+
+<p>To pull an image from the Docker hub, just run the following &ndash; you will have to replace "Tag" with the tag from the image you want from the above printed list.</p>
+
+<pre>docker pull zoglauer/megalib:{Tag}</pre>
+
+
+<h2>Running the MEGAlib docker</h2>
+
+<p>In the following we assume that the image name is "megalib-experimental:latest". If you downloaded your image, it will be different.</p>
+
+<p>On some Linux systems, due to X11 security limitations, you might have to do "xhost +" before you issue to following command to run the image:</p> 
+
+<pre>$ docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
+
+<p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run any MEGAlib program, please execute "xhost +" before running docker.</p> 
+
+<p>In order to exchange data (e.g. simulation files) between your local file system and the running Docker image, you can mount a local directory into the Docker image during launch. The alreday existing directory for that is /home/mrmegalib/exchange. Don't forget to use full paths:</p>
+
+<pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
+
+<p>Here is a useful list of docker commands:</p>
+
+<table style="width:100%">
+  <tr>
+    <td>docker images</td>
+    <td>List the available docker images</td>
+  </tr>
+  <tr>
+    <td>docker save -o MEGAlib.tar megalib-experimental:latest; gzip MEGAlib.tar</td>
+    <td>Save the image as a gzipped tar ball</td>
+  </tr>
+  <tr>
+    <td>docker login<br>docker tag {image ID} zoglauer/megalib:{version}<br>docker push zoglauer/megalib:{version}</td>
+    <td>Commands to push a MEGAlib Docker image to the Docker hub</td>
+  </tr>
+</table>
 
 
 
