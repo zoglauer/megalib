@@ -27,6 +27,8 @@ General:
 + Fixed many multi-threading bugs
 + Added old and new neural network interface
 + Official MEGAlib docker container 
++ Removed old Visual Studio projects since MEGAlib can now be run in a
+  container and on Linux on Windows
 
 Cosima:
 + Support for Geant4 10.2
