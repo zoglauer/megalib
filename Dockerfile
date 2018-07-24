@@ -8,7 +8,7 @@ FROM ubuntu:18.04
 MAINTAINER Andreas Zoglauer <zoglauer@berkeley.edu>
 
 # Install all the MEGAlib, ROOT, and Geant4 prerequisites
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yq vim nano less gzip gunzip git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect dos2unix libncurses5-dev
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yq vim nano less gzip git gawk dpkg-dev make g++ gcc gfortran gdb valgrind binutils libx11-dev libxpm-dev libxft-dev libxext-dev libssl-dev libpcre3-dev libglu1-mesa-dev libglew-dev libftgl-dev libmysqlclient-dev libfftw3-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl-dev cmake libxmu-dev curl doxygen libblas-dev liblapack-dev expect dos2unix libncurses5-dev
 
 # Add Mr. MEGAlib user
 RUN useradd -ms /bin/bash mrmegalib
