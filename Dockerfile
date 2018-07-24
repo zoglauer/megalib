@@ -21,6 +21,10 @@ RUN cd /home/mrmegalib && git clone https://github.com/zoglauer/megalib.git MEGA
 RUN cd /home/mrmegalib/MEGAlib && /bin/bash setup.sh --release=dev --branch=experimental --clean=yes
 RUN cd /home/mrmegalib && echo ". /home/mrmegalib/MEGAlib/bin/source-megalib.sh" >> ~/.bashrc
 
-# Set a working directory
+# Setup a data exchange directory which can be mounted later
+RUN mkdir /home/mrmegalib/exchange
+
+
+# The working directory is the home directory
 WORKDIR /home/mrmegalib
 
