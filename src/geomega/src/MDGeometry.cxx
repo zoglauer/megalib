@@ -4174,7 +4174,7 @@ bool MDGeometry::CheckOverlaps()
   
   ostringstream Diagnostics;
   bool Return = CheckOverlaps(Diagnostics);
-  mout<<Diagnostics;
+  mout<<Diagnostics.str();
   
   return Return;
 }

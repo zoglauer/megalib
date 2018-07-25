@@ -334,7 +334,7 @@ void MInterfaceGeomega::TestIntersections()
   
   ostringstream Diagnostics;
   HasIntersections(Diagnostics);
-  mout<<Diagnostics<<endl;
+  mout<<Diagnostics.str()<<endl;
 }
   
   
