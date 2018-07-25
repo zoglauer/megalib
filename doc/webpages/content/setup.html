@@ -178,7 +178,11 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 
 <p>Assuming you have gigabit internet its a fast download, otherwise ... do something else in the meantime.</p>
 
+
+
 <h2>Running the MEGAlib docker</h2>
+
+<h3>On Linux</h3>
 
 <p>In the following we assume that the image name is "megalib-experimental:latest". If you downloaded your image, it will be different.</p>
 
@@ -191,6 +195,19 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 <p>In order to exchange data (e.g. simulation files) between your local file system and the running Docker image, you can mount a local directory into the Docker image during launch. The alreday existing directory for that is /home/mrmegalib/exchange. Don't forget to use full paths:</p>
 
 <pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
+
+<h3>On Windows 10</h3>
+
+<p>Make sure you have Xming installed. Then open a power shell and type (obviously replace "YourComputerNameOrIP" with either your computer's name or IP):</p>
+
+<pre>
+> &amp; 'C:/Program Files (x86)/Xming/Xming.exe' :0 -ac -clipboard -multiwindow 
+> docker run -e DISPLAY=YourComputerNameOrIP:0 -it megalib-experimental:latest
+</pre>
+
+<p>Use the -v option to optionally mount a local directory into your running Docker image.</p> 
+
+<h3>Miscellaneous</h3>
 
 <p>Here is a useful list of docker commands:</p>
 
