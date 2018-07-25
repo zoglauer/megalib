@@ -31,7 +31,7 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 
 <h2>Requirements to compile and run MEGAlib</h2>
 
-<p>MEGAlib requires several additional programs to run. You will usually require a certain version of ROOT and Geant4 to go with a given version of MEGAlib - usually not the very latest one. If you use the MEGAlib setup script, it will automatically download the appropriate version.</p> 
+<p>MEGAlib requires several additional programs to run. You will usually require a certain version of ROOT and Geant4 to go with a given version of MEGAlib - usually not the very latest one. If you use the MEGAlib setup script, it will automatically download the appropriate version.</p>
 <p>In general, you require the following software components:<p>
 <ol>
   <li>A fully functional and up-to-date Linux or Mac operating system - the "Windows System for Linux" on Windows 10 is acceptable too. The reference system (i.e. the system used to write MEGAlib) is always the latest Ubuntu LTS release.</li>
@@ -100,7 +100,7 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 
 
 <h2> Setting up the ROOT / Geant4 / MEGAlib environment </h2>
- 
+
 <p>If everything went well, the last words of the setup script were something like this (obviously the path will point to your own installation):</p>
 
 <pre><code>ATTENTION:
@@ -145,6 +145,8 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 <p>Feel free to let me know any issues or anything that can be improved with this setup documentation.</p>
 
 
+
+
 <h1 id="Docker">Docker</h1>
 
 <p>If the installation with the setup script fails or it seems too complicated or you would have to do it on too many different machines, you could consider running MEGAlib in a Docker container.</p>
@@ -182,32 +184,61 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 
 <h2>Running the MEGAlib docker</h2>
 
+<p>Since you want to ultimately exchange data between the docker container and your host system, you have to designate a local directory for that. Here, I assume this directory is called /host/directory or C:/host/directory for windows. The exchange directory in the container already exists, and is called /home/mrmegalib/exchange. You always need to give the FULL path here.</p>
+
+<p>In the following we assume that the name of the Docker image is "megalib-experimental:latest". If you downloaded your image, it will be different, e.g. "zoglauer/megalib:2.99.10"</p>
+
+
 <h3>On Linux</h3>
 
-<p>In the following we assume that the image name is "megalib-experimental:latest". If you downloaded your image, it will be different.</p>
 
-<p>On some Linux systems, due to X11 security limitations, you might have to do "xhost +" before you issue to following command to run the image:</p> 
-
-<pre>$ docker run -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
-
-<p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run any MEGAlib program, please execute "xhost +" before running docker.</p> 
-
-<p>In order to exchange data (e.g. simulation files) between your local file system and the running Docker image, you can mount a local directory into the Docker image during launch. The alreday existing directory for that is /home/mrmegalib/exchange. Don't forget to use full paths:</p>
+<p>On some Linux systems, due to X11 security limitations, you might have to do "xhost +" before you issue to following command to run the image:</p>
 
 <pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
+
+<p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run MEGAlib programs with an user interface, then please execute "xhost +" before running docker.</p>
+
+
 
 <h3>On Windows 10</h3>
 
 <p>Make sure you have Xming installed. Then open a power shell and type (obviously replace "YourComputerNameOrIP" with either your computer's name or IP):</p>
 
 <pre>
-> &amp; 'C:/Program Files (x86)/Xming/Xming.exe' :0 -ac -clipboard -multiwindow 
-> docker run -e DISPLAY=YourComputerNameOrIP:0 -it megalib-experimental:latest
+> &amp; 'C:/Program Files (x86)/Xming/Xming.exe' :0 -ac -clipboard -multiwindow
+> docker run -v C:/host/directory:/home/mrmegalib/exchange -e DISPLAY=YourComputerNameOrIP:0 -it megalib-experimental:latest
 </pre>
 
-<p>Use the -v option to optionally mount a local directory into your running Docker image.</p> 
 
-<h3>Miscellaneous</h3>
+
+<h3>On a Mac</h3>
+
+<p>First, make sure the directory you have chosen to exchange data with is known to Docker, i.e. in the docker menu, click Preferences, and make sure it is listed under File Sharing.</p>
+
+<p>Second, make sure you have XQuartz installed: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a>.</p>
+
+<p>When it is installed, open XQuartz. In the menu, go to Preferences, select the Security tab, and tick the box "Allow connections from network clients". Then exit XQuartz again.</p>
+
+<p>Then find out your IP address. There are many ways to do this. Here is one possibility to do that: </p>
+
+<pre>
+  YOURIP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{ print $2 }'); echo "Your IP: ${YOURIP}"
+</pre>
+
+<p>You need your IP to enable X11 connections via XQuartz. You do this via:</p>
+
+<pre>
+  xhost + ${YOURIP}
+</pre>
+
+<p>Then you are finally ready to launch the docker:</p>
+
+<pre>
+  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0 megalib-experimental:latest
+</pre>
+
+
+<h2>Miscellaneous</h2>
 
 <p>Here is a useful list of docker commands:</p>
 
