@@ -91,6 +91,7 @@ using namespace std;
 #include "MDDriftChamber.h"
 #include "MDVoxel3D.h"
 #include "MDGuardRing.h"
+#include "MDAngerCamera.h"
 #include "MVector.h"
 #include "MRotation.h"
 
@@ -494,23 +495,26 @@ bool MCDetectorConstruction::ConstructDetectors()
     }
 
     else if (Type == MDDetector::c_AngerCamera) {
-      MCAngerCameraSD* S = new MCAngerCameraSD(Name.Data());
-      SD = S;
-      SDManager->AddNewDetector(S);
+      MCAngerCameraSD* AngerCameraSD = new MCAngerCameraSD(Name.Data());
+      SD = AngerCameraSD;
+      SDManager->AddNewDetector(AngerCameraSD);
       mout<<"Adding Anger camera for "<<Name<<endl;
      
+      // Check if we have a 3D calorimeter:
+      MDAngerCamera* AC = dynamic_cast<MDAngerCamera*>(Detector);
+      if (AC->GetPositioning() == MDAngerCamera::c_PositionResolutionXYZ) {
+        AngerCameraSD->SetIs3D(true);
+      }
+      
       // Get the name of the sensitive volumes and set its SD:
       // Get the name of the sensitive volume and set its SD:
-      for (unsigned int sv = 0; 
-           sv < Detector->GetNSensitiveVolumes(); ++sv) {
-        MString SenName = 
-          Detector->GetSensitiveVolume(sv)->GetName() 
-          + "Log";
+      for (unsigned int sv = 0; sv < Detector->GetNSensitiveVolumes(); ++sv) {
+        MString SenName = Detector->GetSensitiveVolume(sv)->GetName() + "Log";
 
         G4LogicalVolumeStore* SS = G4LogicalVolumeStore::GetInstance();
         for (unsigned vs = 0; vs < SS->size(); ++vs) {
           if (SenName == SS->at(vs)->GetName().c_str()) {
-            SS->at(vs)->SetSensitiveDetector(S);
+            SS->at(vs)->SetSensitiveDetector(AngerCameraSD);
           }
         }
       }

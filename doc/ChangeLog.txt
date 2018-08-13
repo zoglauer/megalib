@@ -99,6 +99,7 @@ Examples:
 
 
 Long-term bugs fixed:
++ Cosima: AngerCamera in XYZ mode: Z axis was discretized as in XY mode 
 + Cosima: Voxel3D: The Y offset was used as Z offset during simulations
 + Cosima: In DecayMode buildup (the one used for hadron therapy, 
   not astrophysics) the DetectorDecayConstant was ignored

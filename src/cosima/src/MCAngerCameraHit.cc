@@ -123,7 +123,7 @@ int MCAngerCameraHit::operator==(MCAngerCameraHit& Hit)
 
 /******************************************************************************
  * Add the hit to the other one, when they are in the same module/bars
- * Otherwise do noting!
+ * Otherwise do nothing!
  */
 const MCAngerCameraHit& MCAngerCameraHit::operator+=(const MCAngerCameraHit& Hit)
 {
