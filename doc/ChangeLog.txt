@@ -3,6 +3,30 @@
 ******************************************************************************
 
 
+ 
+Version 2.35/2.36
+=================
+ 
+*** IMPORTANT - PLEASE READ:
+
++ Currently all MEGAlib development efforts are geared towards analyzing
+  the COSI 2016 balloon flight which happens in the "experimental" branch
+  on github. Since this required significant changes / additions to MEGAlib,
+  the experimental branch will ultimately morph into version 3.0.
+  Meanwhile, this version ("master on github") just contains bug fixes, 
+  non-critical updates, and compatibility updates with the latest OS and
+  ROOT/Geant4 versions.
+  Default ROOT version is now 6.14, default Geant4 version is 10.2
+  
+ 
+*** KNOWN ISSUES
++ The performance of activation simulations is currently not the best...
+   
+   
+*** Critcal bug fixes
++ Cosima: The Anger camera XYZ mode was discretized like the XY mode
+
+
 Version 2.33/2.34
 =================
 
