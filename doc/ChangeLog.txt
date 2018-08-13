@@ -29,7 +29,7 @@ Version 2.33/2.34
 + Report by Alexey: If Only look at combination with start in D1 was turned on, then 
   some events were falsely rejected 
 + The TE written to the file was sometimes calculated wrongly for tracks
-
++ The XYZ mode in Anger cameras was discretized like the XY mode
 
 
 
