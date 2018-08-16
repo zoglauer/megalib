@@ -119,8 +119,7 @@ G4bool MCAngerCameraSD::PostProcessHits(const G4Step* Step)
   G4ThreeVector DetectorPosition;
   
   // Let's rotate into the correct position:
-  G4TouchableHistory* Hist = 
-    (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
+  G4TouchableHistory* Hist = (G4TouchableHistory*) (Step->GetPreStepPoint()->GetTouchable());
   G4VPhysicalVolume* Vol = 0;
   for (int v =  Hist->GetHistoryDepth()-1; v >= 0; v--) {
     Vol = Hist->GetVolume(v);
@@ -149,7 +148,9 @@ G4bool MCAngerCameraSD::PostProcessHits(const G4Step* Step)
 
   // Now center the positions:
   if (m_DiscretizeHits == true) {
-    Position.setZ(0.0);
+    if (m_Is3D == false) {
+      Position.setZ(0.0);
+    }
   }
 
   // Rotate back into the original system:
