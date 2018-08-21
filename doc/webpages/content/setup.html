@@ -194,7 +194,7 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 
 <p>On some Linux systems, due to X11 security limitations, you might have to do "xhost +" before you issue to following command to run the image:</p>
 
-<pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
+<pre>$ docker run -v /host/directory:/home/mrmegalib/exchange -e DISPLAY=$DISPLAY -e USERID=`id -u ${USER}` -e GROUPID=`id -g ${USER}` -v /tmp/.X11-unix:/tmp/.X11-unix -it megalib-experimental:latest</pre>
 
 <p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run MEGAlib programs with an user interface, then please execute "xhost +" before running docker.</p>
 
@@ -234,7 +234,7 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 <p>Then you are finally ready to launch the docker:</p>
 
 <pre>
-  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0 megalib-experimental:latest
+  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0  -e USERID=`id -u ${USER}` -e GROUPID=`id -g ${USER}` megalib-experimental:latest
 </pre>
 
 
