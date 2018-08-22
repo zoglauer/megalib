@@ -29,14 +29,15 @@ USER root
 # Setup rootpy
 RUN /bin/bash -c ". /home/mrmegalib/MEGAlib/bin/source-megalib.sh && pip install rootpy"
 
+# Install tensorflow
+RUN pip install tensorflow
+
 # Create entry-point script - changes the UID of mrmegalib to the local USER and group for full access to the exchange directory on all machines
 RUN    cd /usr/local/bin \
     && echo '#!/bin/bash' >> entrypoint.sh \
-    && echo 'USERID=${USERID:-9001}' >> entrypoint.sh \
-    && echo 'GROUPID=${GROUPID:-9001}' >> entrypoint.sh \
-    && echo 'usermod -u ${USERID} mrmegalib' >> entrypoint.sh \
-    && echo 'groupmod -g ${GROUPID} mrmegalib' >> entrypoint.sh \
-    && echo 'chown -R mrmegalib:mrmegalib /home/mrmegalib' >> entrypoint.sh \
+    && echo 'if [ "${USERID}" != "" ]; then usermod -u ${USERID} mrmegalib; fi' >> entrypoint.sh \
+    && echo 'if [ "${GROUPID}" != "" ]; then groupmod -g ${GROUPID} mrmegalib; fi' >> entrypoint.sh \
+    && echo 'if [ "${USERID}" != "" ] || [ "${GROUPID}" != "" ]; then chown -R mrmegalib:mrmegalib /home/mrmegalib; fi' >> entrypoint.sh \
     && echo 'gosu mrmegalib bash' >> entrypoint.sh \
     && chmod a+rx /usr/local/bin/entrypoint.sh
 
