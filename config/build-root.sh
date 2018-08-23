@@ -34,7 +34,13 @@ CONFIGUREOPTIONS+=" -Dexplicitlink=ON -Drpath=ON -Dsoversion=ON"
 # CONFIGUREOPTIONS+=" -Dbuiltin_zlib=ON -Dbuiltin_lzma=ON"
 
 # By default we build with python 3:
-CONFIGUREOPTIONS+=" -Dpython3=ON"
+type python3 >/dev/null 2>&1
+if [[ $? -eq 0 ]]; then
+  PPATH=$(which python3)
+  if [[ -f ${PPATH} ]]; then
+    CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE=${PPATH} -Dpython3=ON"
+  fi
+fi
 
 # Enable cuda
 CONFIGUREOPTIONS+=" -Dcuda=ON" 
