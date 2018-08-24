@@ -35,6 +35,7 @@ Cosima:
 + Option to simulate event list (including advanced example)
 + Lightcurve simulations
 + Orientations
++ Istropic emission as short cut for FarFieldAreaSource from 4 pi (v.2.99.12)
 + StoreMinimumEnergy: Store only events which deposited at least this
   amount of energy
 + Improved dcosima distributed simulation

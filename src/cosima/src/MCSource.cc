@@ -81,6 +81,7 @@ const int MCSource::c_FarFieldGaussian                             = 3;
 const int MCSource::c_FarFieldAssymetricGaussian                   = 4;
 const int MCSource::c_FarFieldFileZenithDependent                  = 5;
 const int MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction     = 6;
+const int MCSource::c_FarFieldIsotropic                            = 7;
 
 const int MCSource::c_NearFieldPoint                               = 10;
 const int MCSource::c_NearFieldRestrictedPoint                     = 11;
@@ -532,13 +533,13 @@ bool MCSource::UpgradeStartArea()
       m_StartAreaAverageArea = 4*m_StartAreaParam1 * (m_StartAreaParam2*sin(m_PositionParam1) + m_StartAreaParam1*fabs(cos(m_PositionParam1)));
     } 
     else if (m_BeamType == c_FarFieldArea) {
-//       m_StartAreaAverageArea = 
-//         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
-//         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
-//         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
-//       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
+      //       m_StartAreaAverageArea = 
+      //         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
+      //       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
       
-//       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+      //       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
       m_StartAreaAverageArea = 0.0;
       int i_max = 5000;
       double t1, t2, ta;
@@ -550,6 +551,26 @@ bool MCSource::UpgradeStartArea()
         m_StartAreaAverageArea += 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
       }
       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+    } 
+    else if (m_BeamType == c_FarFieldIsotropic) {
+      //       m_StartAreaAverageArea = 
+      //         2*m_StartAreaParam1*m_StartAreaParam2*(cos(m_PositionParam1)*cos(m_PositionParam1) - cos(m_PositionParam2)*cos(m_PositionParam2)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(cos(m_PositionParam2)*sin(m_PositionParam2) - cos(m_PositionParam1)*sin(m_PositionParam1)) +
+      //         2*m_StartAreaParam1*m_StartAreaParam1*(m_PositionParam2 - m_PositionParam1); 
+      //       cout<<"SA: "<<m_StartAreaAverageArea<<endl;
+      
+      //       m_StartAreaAverageArea /= 2*c_Pi*(cos(m_PositionParam1) - cos(m_PositionParam2)) * (m_PositionParam4 - m_PositionParam3)/(2*c_Pi);
+      m_StartAreaAverageArea = 0.0;
+      int i_max = 5000;
+      double t1, t2, ta;
+      double t_diff = c_Pi/i_max;
+      for (int i = 0; i < i_max-1; ++i) {
+        t1 = i*t_diff;
+        t2 = t1 + t_diff;
+        ta = 0.5*(t1+t2);
+        m_StartAreaAverageArea += 2*c_Pi*(cos(t1)-cos(t2)) * 4*m_StartAreaParam1*(m_StartAreaParam2*sin(ta) + m_StartAreaParam1*fabs(cos(ta)));
+      }
+      m_StartAreaAverageArea /= 4*c_Pi;
     } 
     else if (m_BeamType == c_FarFieldFileZenithDependent) {
       double AverageArea = 0.0;
@@ -625,6 +646,9 @@ bool MCSource::UpgradeStartArea()
         return false;
       }
       cout<<"Done!"<<endl;
+    } else {
+      cout<<"Error: Forgot to handle a beam type: "<<m_BeamType<<endl;
+      return false;
     }
   }
 
@@ -924,6 +948,7 @@ bool MCSource::SetBeamType(const int& CoordinateSystem, const int& BeamType)
   case c_FarFieldAssymetricGaussian:
   case c_FarFieldFileZenithDependent:
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
+  case c_FarFieldIsotropic:
     m_BeamType = BeamType;
     break;
   default:
@@ -1024,6 +1049,9 @@ string MCSource::GetBeamTypeAsString() const
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
     Name = "FarFieldNormalizedEnergyBeamFluxFunction";
     break;
+  case c_FarFieldIsotropic:
+    Name = "FarFieldIsotropic";
+    break;
   default:
     break;
   }
@@ -1120,6 +1148,9 @@ string MCSource::GetBeamAsString() const
     break;
   case c_FarFieldNormalizedEnergyBeamFluxFunction:
     Name<<"FarFieldNormalizedEnergyBeamFluxFunction";
+    break;
+  case c_FarFieldIsotropic:
+    Name<<"FarFieldIsotropic";
     break;
   default:
     break;
@@ -2618,13 +2649,14 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
         m_BeamType == c_FarFieldGaussian ||
         m_BeamType == c_FarFieldAssymetricGaussian ||
         m_BeamType == c_FarFieldFileZenithDependent ||
-        m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
+        m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction ||
+        m_BeamType == c_FarFieldIsotropic) {
       if (m_BeamType == c_FarFieldPoint || m_BeamType == c_FarFieldNormalizedEnergyBeamFluxFunction) {
         // Fixed start direction or temporarily stored in these parameteres
         Theta = m_PositionParam1;
         Phi = m_PositionParam2;
       } else if (m_BeamType == c_FarFieldArea) {
-
+        
         // Determine start direction randomly between the theta and phi limits
         if (m_StartAreaType == c_StartAreaSphere) {
           Theta = acos(cos(m_PositionParam1) - CLHEP::RandFlat::shoot(1)*(cos(m_PositionParam1) - cos(m_PositionParam2)));
@@ -2641,11 +2673,34 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
               break;
             }
           }    
-
+          
         } else {
           mout<<m_Name<<": Unknown start area type for position generation"<<endl;
         }
-
+        
+      } else if (m_BeamType == c_FarFieldIsotropic) {
+        
+        // Determine start direction randomly between the theta and phi limits
+        if (m_StartAreaType == c_StartAreaSphere) {
+          Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
+          Phi = CLHEP::RandFlat::shoot(1)*2*c_Pi;
+        } else if (m_StartAreaType == c_StartAreaTube) {
+          double Area = 0.0;
+          double AngleMaxArea = atan(m_StartAreaParam2/m_StartAreaParam1);
+          double MaxArea = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(AngleMaxArea) + m_StartAreaParam1*fabs(cos(AngleMaxArea)));
+          while (true) {
+            Theta = acos(1 - CLHEP::RandFlat::shoot(1)*2);
+            Area = 4*m_StartAreaParam1*(m_StartAreaParam2*sin(Theta) + m_StartAreaParam1*fabs(cos(Theta)));
+            if (CLHEP::RandFlat::shoot(1) <= Area/MaxArea) {
+              Phi = 2*CLHEP::RandFlat::shoot(1);
+              break;
+            }
+          }    
+          
+        } else {
+          mout<<m_Name<<": Unknown start area type for position generation"<<endl;
+        }
+        
       } else if (m_BeamType == c_FarFieldGaussian) {
         // Determine a random start position in a Gaussian disk
         // Param1: Theta

@@ -363,7 +363,9 @@ public:
   static const int c_FarFieldFileZenithDependent;
   /// Id of a beam distribution from a combined energy-position-flux-function
   static const int c_FarFieldNormalizedEnergyBeamFluxFunction;
-
+  /// Id of an isotropic far-field beam 
+  static const int c_FarFieldIsotropic;
+  
   /// Id of a point like source in Cartesian coordinates
   static const int c_NearFieldPoint;
   /// Id of a point like source in Cartesian coordinates restricted towards the surrounding sphere

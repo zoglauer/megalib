@@ -53,23 +53,18 @@ public:
   void EndOfEvent(G4HCofThisEvent*);
 
   /// Size of the wafer
-  void SetSize(double xSize, double ySize) 
-  { m_XSize = xSize; m_YSize = ySize; }
+  void SetSize(double xSize, double ySize) { m_XSize = xSize; m_YSize = ySize; }
   /// Offset from the edge to the first strip
-  void SetOffset(double xOffset, double yOffset) 
-  { m_XOffset = xOffset; m_YOffset = yOffset; }
+  void SetOffset(double xOffset, double yOffset) { m_XOffset = xOffset; m_YOffset = yOffset; }
   /// Distance between the strips
-  void SetPitch(double xPitch, double yPitch) 
-  { m_XPitch = xPitch; m_YPitch = yPitch; }
+  void SetPitch(double xPitch, double yPitch) { m_XPitch = xPitch; m_YPitch = yPitch; }
   /// Number of strips
-  void SetNStrips(int xNStrips, int yNStrips) 
-  { m_XNStrips = xNStrips; m_YNStrips = yNStrips; }
+  void SetNStrips(int xNStrips, int yNStrips) { m_XNStrips = xNStrips; m_YNStrips = yNStrips; }
   /// Set whether or not this is a 3D strip (z-resolution or not)
   void SetIs3D(bool Is3D = true);
 
   /// Set a unique position on the guard ring 
-  void SetUniqueGuardringPosition(G4ThreeVector Pos) 
-  { m_UniqueGuardringPosition = Pos; }
+  void SetUniqueGuardringPosition(G4ThreeVector Pos) { m_UniqueGuardringPosition = Pos; }
 
   // protected methods:
 protected:

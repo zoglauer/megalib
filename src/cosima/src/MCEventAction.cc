@@ -213,12 +213,16 @@ bool MCEventAction::WriteFileHeader(double SimulationStartTime)
     if (m_RunParameters.GetCurrentRun().GetSource(so)->GetCoordinateSystem() != MCSource::c_FarField) {
       ValidStartArea = false;
     }
+    if (m_RunParameters.GetCurrentRun().GetSource(so)->GetStartAreaType() != MCSource::c_StartAreaSphere) {
+      ValidStartArea = false;
+    }
   }
+
     
   if (ValidStartArea == true) {
     Out<<"SimulationStartAreaFarField "<<m_RunParameters.GetCurrentRun().GetSource(0)->GetStartAreaAverageArea()/cm/cm<<endl; 
   } else {
-    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a surrounding sphere"<<endl;
+    Out<<"# The SimulationStartAreaFarField keyword is only meaningfull if you have only far field sources using a spherical start area"<<endl;
     Out<<"SimulationStartAreaFarField 0.0"<<endl;
   }
 

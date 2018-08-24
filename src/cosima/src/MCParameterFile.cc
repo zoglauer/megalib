@@ -510,14 +510,14 @@ bool MCParameterFile::Parse()
         if (T->GetNTokens() == 10) {
           StartAreaType = MCSource::c_StartAreaTube;
           StartAreaParameters.clear();
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(2)*cm);
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(2)*cm);  // Position
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(3)*cm);
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(4)*cm);
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(5));
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(5));  // Direction
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(6));
           StartAreaParameters.push_back(T->GetTokenAtAsDouble(7));
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm);
-          StartAreaParameters.push_back(T->GetTokenAtAsDouble(9)*cm);
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(8)*cm); // Radius 
+          StartAreaParameters.push_back(T->GetTokenAtAsDouble(9)*cm); // Full height
         } else {
           Typo(i, "Cannot parse token StartArea Tube correctly:"
                " Number of tokens is not correct!");
@@ -1263,19 +1263,23 @@ bool MCParameterFile::Parse()
                                       T->GetTokenAtAsDouble(4)*deg,
                                       T->GetTokenAtAsDouble(5)*deg,
                                       T->GetTokenAtAsDouble(6)*deg) == true) {
-                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)
-                      <<"/"<<T->GetTokenAtAsDouble(4)
-                      <<"/"<<T->GetTokenAtAsDouble(5)
-                      <<"/"<<T->GetTokenAtAsDouble(6)
-                      <<" for source "<<Source->GetName()<<endl;
+                mdebug<<"Setting position "<<T->GetTokenAtAsDouble(3)<<"/"<<T->GetTokenAtAsDouble(4)<<"/"<<T->GetTokenAtAsDouble(5)<<"/"<<T->GetTokenAtAsDouble(6)<<" for source "<<Source->GetName()<<endl;
               } else {
-                Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
-                     " Content not reasonable");
+                Typo(i, "Cannot parse token \"Beam - far field area source\" correctly: Content not reasonable");
                 return false;
               }
             } else {
-              Typo(i, "Cannot parse token \"Beam - far field area source\" correctly:"
-                   " Number of tokens is not correct (!= 8)!");
+              Typo(i, "Cannot parse token \"Beam - far field area source\" correctly: Number of tokens is not correct (!= 7)!");
+              return false;
+            }
+          } 
+          else if (Type == "farfieldisotropic" || Type == "isotropic") {
+            if (T->GetNTokens() == 3) {
+              Source->SetBeamType(MCSource::c_FarField,
+                                  MCSource::c_FarFieldIsotropic);
+              // Nothing else needed
+            } else {
+              Typo(i, "Cannot parse token \"Beam - far field isotropic\" correctly: Number of tokens is not correct (!= 3)!");
               return false;
             }
           } 
@@ -2844,14 +2848,17 @@ bool MCParameterFile::Parse()
       vector<MCSource*>& Sources = m_RunList[r].GetSourceList();
       for (unsigned int so = 0; so < Sources.size(); ++so) {
         Sources[so]->SetStartAreaType(StartAreaType);
-        Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
+        if (Sources[so]->SetStartAreaParameters(StartAreaParameters[0],
                                            StartAreaParameters[1],
                                            StartAreaParameters[2],
                                            StartAreaParameters[3],
                                            StartAreaParameters[4],
                                            StartAreaParameters[5],
                                            StartAreaParameters[6],
-                                           StartAreaParameters[7]);
+                                           StartAreaParameters[7]) == false) {
+          mout<<"The start area was not parsable!"<<endl;
+          return false;
+        }
       }
     }
   }
