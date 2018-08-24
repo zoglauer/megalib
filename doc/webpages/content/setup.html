@@ -198,7 +198,17 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 
 <p>This leaves you in a bash terminal, where you can run any MEGAlib program. If you get an error such as "DISPLAY not found", when trying to run MEGAlib programs with an user interface, then please execute "xhost +" before running docker.</p>
 
+<p>In some cases, it takes a very long time until the docker images starts. Then you have encountered a bug/inefficiency in Docker's storage driver. You can switch the storage driver to "aufs" to avoid that issue by editing the file /etc/docker/daemon.json. If the file does not yet exist, just create it. If the file is empty, add the following:</p>
 
+<pre>
+{ "storage-driver": "aufs" }
+</pre>
+
+<p>Restart Docker afterwards.</p>
+
+<pre>
+> sudo systemctl restart docker
+</pre>
 
 <h3>On Windows 10</h3>
 
@@ -234,7 +244,7 @@ $ docker build -t megalib-experimental:latest https://raw.githubusercontent.com/
 <p>Then you are finally ready to launch the docker:</p>
 
 <pre>
-  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0  -e USERID=`id -u ${USER}` -e GROUPID=`id -g ${USER}` megalib-experimental:latest
+  docker run --rm -it -v /host/directory:/home/mrmegalib/exchange -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=${YOURIP}:0  megalib-experimental:latest
 </pre>
 
 
