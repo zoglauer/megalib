@@ -1229,6 +1229,7 @@ void MInterfaceRevan::EnergyDistribution()
 
     vector<MRERawEvent*> REs = Analyzer.GetOptimumEvents();
     for (auto RE: REs) {
+      if (RE == nullptr) continue;
       After->Fill(RE->GetEnergy());
     }
     
