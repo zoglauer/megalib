@@ -214,15 +214,18 @@ echo "Waiting till all sub-processes have finished..."
 wait
 echo "Done"
 echo " "
-if [[ ${TMVA} == false ]]; then
-  echo "Joining files..."
-  echo " "
 
-  responsemanipulator -j ${NAME}
+# No join until it is 100% parallelized
 
-  echo "Done"
-  echo " "
-fi 
+#if [[ ${TMVA} == false ]]; then
+#  echo "Joining files..."
+#  echo " "
+
+#  responsemanipulator -j ${NAME}
+
+#  echo "Done"
+#  echo " "
+#fi 
 
 exit 0;
 
