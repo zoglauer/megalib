@@ -67,7 +67,14 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 
 <h3>Additional information for Windows 10</h3>
 
-<p>On Windows 10, you have to install the "Windows System for Linux" or alternatively the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store. Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>. Then, in the bash prompt of the Ubuntu app, follow the instruction on how to install MEGAlib on Ubuntu.</p>
+<p>On Windows 10, you have perform the follwoing steps</p>
+<ol>
+  <li>First install the "Windows Subsystem for Linux" by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
+  <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store. 
+  <li>Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>. 
+  <li>Run the Bash app, and add the following to your .bashrc:<pre>export DISPLAY=localhost:0.0</pre> and then restart your bash terminal.</li>
+  <li>Then, in the bash prompt of the Ubuntu app, install MEGAlib the same way as you would on Linux.</li>
+</ol>
 
 
 
