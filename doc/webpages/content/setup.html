@@ -29,6 +29,15 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 
 
 
+<h2>The MEGAlib branch</h2>
+
+<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v2.34, etc. The development brach for version 2 is called master, the development branch for version 3 is experimental. If you are doing any current development, I strongly suggest to use the experimental branch:</p>
+
+<pre>
+git checkout experimental
+</pre>
+
+
 <h2>Requirements to compile and run MEGAlib</h2>
 
 <p>MEGAlib requires several additional programs to run. You will usually require a certain version of ROOT and Geant4 to go with a given version of MEGAlib - usually not the very latest one. If you use the MEGAlib setup script, it will automatically download the appropriate version.</p>
@@ -82,11 +91,10 @@ $ git clone https://github.com/zoglauer/megalib MEGAlib
 <h2>The setup script</h2>
 
 <p>When all requirements are fulfilled, it is time to run the MEGAlib setup script. The "setup.sh" bash script is capable of installing MEGAlib along with ROOT and Geant4. The script is intended to be installed by the user in their home directory. Assuming you have followed the instructions in the above section (especially did you make sure to install all the libraries ROOT needs to compile, are git and cmake present?), then installing MEGAlib should be a one-step process. In the directory, where you want to install MEGAlib, do:</p>
-<pre>$ bash setup.sh</pre>
-<p>This will give you the latest release. Since there is always a long interval between official releases, you can get the head of the development tree of the current main version via:</p>
-<pre>$ bash setup.sh --release=dev</pre>
-<p>Alternatively, you can get the head of the development of the next main version via:</p>
 <pre>$ bash setup.sh --release=dev --branch=experimental</pre>
+<p>This will give you the latest development version. If you are interested in the latest release, simply do:</p>
+<pre>$ bash setup.sh --release=rel</pre>
+<p>Please keep in mind that upon success, the setup script saves the last used options. Thus is you want to change any options, always give them at the command line to the setup script.</p>
 
 <p>The script will do the following:</p>
 <ol>
@@ -127,7 +135,7 @@ or execute this line everytime you want to use MEGAlib in a new terminal.</pre><
 
 <p>The first thing to try is to compile a current development version instead of a release version, by calling the setup script via:</p>
 
-<pre>$ bash setup.sh --release=dev</pre>
+<pre>$ bash setup.sh --release=dev --branch=experimental</pre>
 
 <p>If this does not help, please take a look at the <a href="https://github.com/zoglauer/megalib/issues">issues page of MEGAlib on github</a>. There, all common installation errors along with their solutions have been documented. If your problem does not appear there, please enter a new issue.</p>
 
