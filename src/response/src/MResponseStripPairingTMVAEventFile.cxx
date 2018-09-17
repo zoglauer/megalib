@@ -186,10 +186,11 @@ bool MResponseStripPairingTMVAEventFile::Initialize()
     for (unsigned int y = 1; y <= m_MaxNHitsY; ++y) {
       MERStripPairingDataSet* DS = new MERStripPairingDataSet();
       DS->Initialize(x, y);
-      MString Name("StripPairing_");
-      Name += x;
-      Name += "_";
-      Name += y;
+      MString Name("StripPairing");
+      //Name += "_";
+      //Name += x;
+      //Name += "_";
+      //Name += y;
       m_Trees[x][y] = DS->CreateTree(Name);
       m_DataSets[x][y] = DS;
     }
