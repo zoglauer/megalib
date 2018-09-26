@@ -46,6 +46,7 @@ ClassImp(MRotation)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+
 /******************************************************************************
  * Return true if the matrix really is (within tolerances) a rotation matrix
  * i.e. det A = +1, A*A_inv = I
@@ -151,6 +152,60 @@ MRotation& MRotation::Rotate(const double Angle, const MVector& Vector)
   (*this) = R*(*this); 
   
   return *this;
+}
+
+
+/******************************************************************************
+ * Return the polar angle of the x-axis in an unrotated coordiante system 
+ */
+double MRotation::GetThetaX() const
+{
+  return acos(m_XZ);
+}
+
+
+/******************************************************************************
+ * Return the azimuthal angle of the x-axis in an unrotated coordiante system 
+ */
+double MRotation::GetPhiX() const
+{
+  return (m_XY == 0.0 && m_XX == 0.0) ? 0.0 : atan2(m_XY, m_XX);
+}
+
+
+/******************************************************************************
+ * Return the polar angle of the y-axis in an unrotated coordiante system 
+ */
+double MRotation::GetThetaY() const
+{
+  return acos(m_YZ);
+}
+
+
+/******************************************************************************
+ * Return the azimuthal angle of the y-axis in an unrotated coordiante system 
+ */
+double MRotation::GetPhiY() const
+{
+  return (m_YY == 0.0 && m_YX == 0.0) ? 0.0 : atan2(m_YY, m_YX);
+}
+
+
+/******************************************************************************
+ * Return the polar angle of the z-axis in an unrotated coordiante system
+ */
+double MRotation::GetThetaZ() const
+{
+  return acos(m_ZZ);
+}
+
+
+/******************************************************************************
+ * Return the azimuthal angle of the z-axis in an unrotated coordiante system 
+ */
+double MRotation::GetPhiZ() const
+{
+  return (m_ZY == 0.0 && m_ZX == 0.0) ? 0.0 : atan2(m_ZY, m_ZX);
 }
 
  

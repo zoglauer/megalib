@@ -126,6 +126,19 @@ public:
   //! Return the z-Vector
   MVector GetZ() const { return MVector(m_ZX, m_ZY, m_ZZ); }
   
+  //! Return the polar angle of the x-axis in an unrotated coordiante system 
+  double GetThetaX() const;
+  //! Return the azimuthal angle of the x-axis in an unrotated coordiante system 
+  double GetPhiX() const;
+  //! Return the polar angle of the y-axis in an unrotated coordiante system 
+  double GetThetaY() const;
+  //! Return the azimuthal angle of the y-axis in an unrotated coordiante system 
+  double GetPhiY() const;
+  //! Return the polar angle of the z-axis in an unrotated coordiante system 
+  double GetThetaZ() const;
+  //! Return the azimuthal angle of the z-axis in an unrotated coordiante system 
+  double GetPhiZ() const;
+  
   //! Assignments
   MRotation& operator= (const MRotation& R) { 
     m_XX = R.m_XX; m_YX = R.m_YX; m_ZX = R.m_ZX; m_XY = R.m_XY; m_YY = R.m_YY; m_ZY = R.m_ZY; m_XZ = R.m_XZ; m_YZ = R.m_YZ; m_ZZ = R.m_ZZ; 
