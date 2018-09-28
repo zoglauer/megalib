@@ -87,8 +87,10 @@ class MDVolume
   void SetRotation(double x, double y, double z);
   void SetRotation(MRotation Rotation, int RotID);
   void SetRotation(MRotation Rotation);
-  void SetRotation(double theta1, double phi1, 
-                   double theta2, double phi2, 
+  //! Set the new rotation matrix via the azimuyhal and polar angle of the new coordinate system with respect to the old one.
+  //! Return false if the axes are not orthogonal
+  bool SetRotation(double theta1, double phi1,
+                   double theta2, double phi2,
                    double theta3, double phi3);
   MRotation GetRotationMatrix() const;
   MRotation GetInvRotationMatrix() const;
@@ -164,7 +166,7 @@ class MDVolume
   //! Create the Root geometry presentation of thhis volume and its daughters
   void CreateRootGeometry(TGeoManager* Manager, TGeoVolume* Mother);
 
-  
+
   // Interface for RECURSIVE manipulation of the volume tree or data retrieval
 
   //! Return the (deepest) volume at given position - if IsRelative == true, then position is assumed to be already in this volumes coordinate system
@@ -172,10 +174,10 @@ class MDVolume
   //! Return true if the volume is part of the volume tree
   bool ContainsVolume(const MString& Name, bool IncludeTemplates=false);
   //! Find detector volume and apply (random) noise to position, energy and time
-  bool Noise(MVector& Pos, double& Energy, double& Time); 
+  bool Noise(MVector& Pos, double& Energy, double& Time);
   //! Find detector volume and apply pulse-shape correction
   bool ApplyPulseShape(double Time, MVector& Pos, double& Energy);
-  
+
   //! FILL the MDVolumeSequence object with the sequence of volumes of the deepest volume the given position is in
   //! The return value is for internal purposes only!
   bool GetVolumeSequence(MVector Pos, MDVolumeSequence* Sequence);
@@ -183,7 +185,7 @@ class MDVolume
   //! The position starts in this volume, but is translated to the world volume, and then the sequecning starts
   //! The return value is for internal purposes only!
   bool GetVolumeSequenceInverse(MVector Pos, MDVolumeSequence* Sequence);
-  
+
   //! FILL the PATH lengths in the different materials between the positions start and stop
   //! The return value is for internal purposes only (volume (cm3) of the last volume)
   double GetAbsorptionLengths(map<MDMaterial*, double>& Lengths, MVector Start, MVector Stop);
@@ -218,7 +220,7 @@ class MDVolume
   bool GetNPlacements(MDVolume* Volume, vector<int>& Placements, int& TreeDepth);
 
 
-  //! Recursively return a geomega setup file type string 
+  //! Recursively return a geomega setup file type string
   MString GetGeomega();
 
   MString ToString(bool Recursive = false);
@@ -245,7 +247,7 @@ class MDVolume
  private:
   MString m_Name;              // Name of this volume
 
-  bool m_WorldVolume;        // True if this is the world volume  
+  bool m_WorldVolume;        // True if this is the world volume
   bool m_IsVirtual;          // True if this is a virtual volume, i.e. it does not appear in the final geometry
   bool m_IsMany;             // True if the many flag is raised
 
@@ -292,7 +294,7 @@ class MDVolume
   int m_ID;                  // ID of this volume
   int m_RotID;               // ID of the rotation
   static int m_RotIDCounter; // Maximum distributed rotation ID
-  static int m_WrittenRotID; // Used for geant3/mmgpod writing of rotation IDs 
+  static int m_WrittenRotID; // Used for geant3/mmgpod writing of rotation IDs
   int m_SensID;              // ID of sensitive volume, if it is senitive
 
 

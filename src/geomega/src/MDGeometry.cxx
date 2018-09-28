@@ -111,12 +111,12 @@ MDGeometry::MDGeometry()
 
   m_Name = "\"Geometry, which was not worth a name...\"" ;
   m_Version = "0.0";
-  
+
   m_SurroundingSphereRadius = g_DoubleNotDefined;
   m_SurroundingSpherePosition = g_VectorNotDefined;
   m_SurroundingSphereDistance = g_DoubleNotDefined;
   m_SurroundingSphereShow = false;
-  
+
   m_GeoView = 0;
   m_Geometry = 0;
 
@@ -125,27 +125,27 @@ MDGeometry::MDGeometry()
 
   m_TriggerUnit = new MDTriggerUnit(this);
   m_System = new MDSystem("NoName");
-  
+
   // Make sure we ignore the default ROOT geometry...
   // BUG: In case we are multi-threaded and some one interact with the geometry
   //      before the gGeoManager is reset during new, we will get a seg-fault!
   gGeoManager = 0;
-  // ... before 
+  // ... before
   m_Geometry = new TGeoManager("Geomega geometry", "Geomega");
-  
+
   m_LaunchedByGeomega = false;
-  
+
   m_BlockedConstants = { "Volume", "Material", "System",
     "Trigger", "TriggerBasic", "TriggerMap"
-    "Strip2D", "MDStrip2D", 
-    "Strip3D", "MDStrip3D", 
-    "Strip3DDirectional", "MDStrip3DDirectional", 
-    "DriftChamber", "MDDriftChamber", 
-    "AngerCamera", "MDAngerCamera", 
-    "Simple", "Scintillator", "ACS", "MDACS", 
-    "Calorimeter", "MDCalorimeter", 
-    "Voxel3D", "MDVoxel3D", 
-    "SurroundingVolume", 
+    "Strip2D", "MDStrip2D",
+    "Strip3D", "MDStrip3D",
+    "Strip3DDirectional", "MDStrip3DDirectional",
+    "DriftChamber", "MDDriftChamber",
+    "AngerCamera", "MDAngerCamera",
+    "Simple", "Scintillator", "ACS", "MDACS",
+    "Calorimeter", "MDCalorimeter",
+    "Voxel3D", "MDVoxel3D",
+    "SurroundingVolume",
     "If", "Endif", "For", "Done", "Vector",
     "H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg",
     "Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr",
@@ -165,9 +165,9 @@ MDGeometry::MDGeometry()
 MDGeometry::~MDGeometry()
 {
   // default destructor
-  
+
   Reset();
-  
+
   delete m_TriggerUnit;
   delete m_System;
 }
@@ -194,7 +194,7 @@ void MDGeometry::Reset()
     delete m_DetectorList[i];
   }
   m_DetectorList.clear();
-  
+
   m_NDetectorTypes.clear();
   m_NDetectorTypes.resize(MDDetector::c_MaxDetector+1);
 
@@ -212,7 +212,7 @@ void MDGeometry::Reset()
     delete m_OrientationList[i];
   }
   m_OrientationList.clear();
-  
+
   for (unsigned int i = 0; i < m_VectorList.size(); ++i) {
     delete m_VectorList[i];
   }
@@ -225,7 +225,7 @@ void MDGeometry::Reset()
   // m_StartVolume = ""; // This is a start option of geomega, so do not reset!
 
   m_IncludeList.clear();
-  
+
   if (m_GeoView != 0) {
     if (gROOT->FindObject("MainCanvasGeomega") != 0) {
       delete m_GeoView;
@@ -234,7 +234,7 @@ void MDGeometry::Reset()
   }
 
   m_Name = "";
-  
+
   m_SurroundingSphereRadius = g_DoubleNotDefined;
   m_SurroundingSpherePosition = g_VectorNotDefined;
   m_SurroundingSphereDistance = g_DoubleNotDefined;
@@ -249,7 +249,7 @@ void MDGeometry::Reset()
     delete m_Geometry;
   }
   m_Geometry = new TGeoManager("Give it a good name", "MissingName");
-  
+
   delete m_System;
   m_System = new MDSystem("NoName");
 
@@ -271,7 +271,7 @@ void MDGeometry::Reset()
   m_LastFoundVolume_GetRandomPositionInVolume = nullptr;
   //! The last found placements in GetRandomPositionInVolume
   m_LastFoundPlacements_GetRandomPositionInVolume.clear();
-  
+
   m_GeometryScanned = false;
 }
 
@@ -310,9 +310,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // If the file contains such a statement, this one is overwritten
   m_VirtualizeNonDetectorVolumes = VirtualizeNonDetectorVolumes;
 
-  // If the is set the visibility of everything but the sensitive volume to zero 
+  // If the is set the visibility of everything but the sensitive volume to zero
   bool ShowOnlySensitiveVolumes = false;
-  
+
   m_FileName = FileName;
   if (m_FileName == "") {
     mout<<"   *** Error: No geometry file name given"<<endl;
@@ -332,7 +332,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   m_CrossSectionFileDirectory = MFile::GetDirectoryName(m_FileName);
   m_CrossSectionFileDirectory += "/absorptions";
 
-  
+
   if (g_Verbosity >= c_Info) {
     mout<<"Started scanning of geometry... This may take a while..."<<endl;
   }
@@ -351,22 +351,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // For scaling some volumes:
   map<MDVolume*, double> ScaledVolumes;
 
-  // Since the geometry-file can include other geometry files, 
-  // we have to store the whole file in memory 
-  
+  // Since the geometry-file can include other geometry files,
+  // we have to store the whole file in memory
+
   vector<MDDebugInfo> FileContent;
   if (AddFile(m_FileName, FileContent) == false) {
     mout<<"   *** Error reading included files. Aborting!"<<endl;
     return false;
   }
 
-  // Now scan the data and search for "Include" files and add them 
+  // Now scan the data and search for "Include" files and add them
   // to the original stored file content
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
     MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
-                    
+
     if (Tokenizer.GetNTokens() == 0) continue;
 
     if (Tokenizer.IsTokenAt(0, "Include") == true) {
@@ -446,7 +446,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
 
   // Find constants
-  // 
+  //
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
@@ -462,7 +462,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
       if (Tokenizer.GetTokenAt(1) == Tokenizer.GetTokenAt(2)) {
         Typo("The constant name and replacement are identical!");
-        return false;        
+        return false;
       }
       vector<MString>::iterator VIter = find(m_BlockedConstants.begin(), m_BlockedConstants.end(), Tokenizer.GetTokenAt(1));
       if (VIter != m_BlockedConstants.end()) {
@@ -482,7 +482,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
   // Take care of maths and constants containing constants, containing constants...
-  bool ConstantChanged = true; 
+  bool ConstantChanged = true;
   while (ConstantChanged == true) {
     // Step 1: Solve maths:
     for (map<MString, MString>::iterator Iter1 = m_ConstantMap.begin();
@@ -508,7 +508,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
     }
-    
+
     // Step 2: Replace constants in constants
     bool ConstantChangableWithMath = false;
     ConstantChanged = false;
@@ -544,7 +544,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
-    
+
     MString Init = Tokenizer.GetTokenAt(0);
     if (Init == "Volume" ||
       Init == "Material" ||
@@ -608,14 +608,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddVector(new MDVector(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
   }
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
     MTokenizer& Tokenizer = FileContent[i].GetTokenizer(false);
 
     if (Tokenizer.GetNTokens() == 0) continue;
-    
+
     if ((Vector = GetVector(Tokenizer.GetTokenAt(0))) != 0) {
       MTokenizer& Tokenizer2 = m_DebugInfo.GetTokenizer(true);  // Let's do some maths
 
@@ -638,7 +638,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("This version of Vector.Matrix does not contain the right amount of numbers\"");
           return false;
         }
-        
+
         for (unsigned int z = 0; z < z_max; ++z) {
           for (unsigned int y = 0; y < y_max; ++y) {
             for (unsigned int x = 0; x < x_max; ++x) {
@@ -664,12 +664,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   int ForDepth = 0;
   int CurrentDepth = 0;
   vector<MDDebugInfo>::iterator Iter;
-  for (Iter = FileContent.begin(); 
-       Iter != FileContent.end(); 
+  for (Iter = FileContent.begin();
+       Iter != FileContent.end();
        /* ++Iter erase */) {
     m_DebugInfo = (*Iter);
     MTokenizer& Tokenizer = (*Iter).GetTokenizer(false);
-    
+
     if (Tokenizer.GetNTokens() == 0) {
       ++Iter;
       continue;
@@ -691,15 +691,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         mout<<"Warning: Loop number in for loop must be a positive integer "<<TokenizerMaths.GetTokenAtAsDouble(2)<<endl;
         Loops = 0;
         //Typo("Loop number in for loop must be a positive integer");
-        //return false;       
+        //return false;
       }
       double Start = TokenizerMaths.GetTokenAtAsDouble(3);
       double Step = TokenizerMaths.GetTokenAtAsDouble(4);
-      
+
       // Remove for line
       Iter = FileContent.erase(Iter++);
 
-      // Store content of for loop: 
+      // Store content of for loop:
       vector<MDDebugInfo> ForLoopContent;
       for (; Iter != FileContent.end(); /* ++Iter erase */) {
         m_DebugInfo = (*Iter);
@@ -735,8 +735,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
 
         vector<MDDebugInfo>::iterator ForIter;
-        for (ForIter = ForLoopContent.begin(); 
-             ForIter != ForLoopContent.end(); 
+        for (ForIter = ForLoopContent.begin();
+             ForIter != ForLoopContent.end();
              ++ForIter) {
           m_DebugInfo = (*ForIter);
           m_DebugInfo.Replace(MString("%") + Index, LoopString);
@@ -752,17 +752,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
 
     if (Tokenizer.IsTokenAt(0, "ForVector") == true) {
-      
+
       // Take care of nesting
       CurrentDepth = ForDepth;
       ForDepth++;
 
-      
+
       if (Tokenizer.GetNTokens() != 6) {
         Typo("The ForVector-line must contain six entries, e.g. \"ForVector MyVector X Y Z V\"");
         return false;
       }
-      
+
       // Retrieve data:
       Vector = GetVector(Tokenizer.GetTokenAt(1));
       if (Vector == 0) {
@@ -774,11 +774,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       MString YIndex = Tokenizer.GetTokenAt(3);
       MString ZIndex = Tokenizer.GetTokenAt(4);
       MString VIndex = Tokenizer.GetTokenAt(5);
-      
+
       // Remove for line
       Iter = FileContent.erase(Iter++);
 
-      // Store content of ForVector loop: 
+      // Store content of ForVector loop:
       vector<MDDebugInfo> ForLoopContent;
       for (; Iter != FileContent.end(); /* ++Iter erase */) {
         m_DebugInfo = (*Iter);
@@ -819,8 +819,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         ValueString += Vector->GetValue(l-1);
 
         vector<MDDebugInfo>::iterator ForIter;
-        for (ForIter = ForLoopContent.begin(); 
-             ForIter != ForLoopContent.end(); 
+        for (ForIter = ForLoopContent.begin();
+             ForIter != ForLoopContent.end();
              ++ForIter) {
           m_DebugInfo = (*ForIter);
           m_DebugInfo.Replace(MString("%") + XIndex, LoopString);
@@ -871,7 +871,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
 
-  
+
   // Check for "If"-clauses
   int IfDepth = 0;
   int CurrentIfDepth = 0;
@@ -884,20 +884,20 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
 
     if (Tokenizer.IsTokenAt(0, "If") == true) {
-      
+
       // Take care of nesting
       CurrentIfDepth = IfDepth;
       IfDepth++;
 
-      
+
       if (Tokenizer.GetNTokens() != 2) {
         Typo("The If-line must contain two entries, the last one must be math, e.g. \"If { 1 == 2 } or If { $Value > 0 } \"");
         return false;
       }
-      
+
       // Retrieve data:
       bool Bool = Tokenizer.GetTokenAtAsBoolean(1);
-      
+
       // Clear the if line
       FileContent[i].SetText("");
 
@@ -918,7 +918,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
         }
         if (Bool == false) {
-          FileContent[j].SetText("");          
+          FileContent[j].SetText("");
         }
       }
     } // Is if
@@ -938,13 +938,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     if (Tokenizer.GetNTokens() == 0) continue;
 
-    if (Tokenizer.IsTokenAt(0, "Print") == true || 
+    if (Tokenizer.IsTokenAt(0, "Print") == true ||
         Tokenizer.IsTokenAt(0, "Echo") == true) {
       if (Tokenizer.GetNTokens() < 2) {
         Typo("Line must contain at least two entries, e.g. \"Print Me!\"");
         return false;
       }
-      
+
       //mout<<"   *** User Info start ***"<<endl;
       mout<<"   *** User Info: ";
       for (unsigned int t = 1; t < Tokenizer.GetNTokens(); ++t) {
@@ -957,8 +957,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
 
   // First loop:
-  // Find the master keyword, volumes, material, detectors 
-  // 
+  // Find the master keyword, volumes, material, detectors
+  //
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
@@ -996,7 +996,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddVolume(new MDVolume(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Name
     else if (Tokenizer.IsTokenAt(0, "Name") == true) {
@@ -1005,7 +1005,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         return false;
       }
       m_Name = Tokenizer.GetTokenAt(1);
-      m_Geometry->SetNameTitle(m_Name, "A Geomega geometry"); 
+      m_Geometry->SetNameTitle(m_Name, "A Geomega geometry");
       continue;
     }
 
@@ -1019,7 +1019,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       continue;
     }
 
-    // Surrounding sphere 
+    // Surrounding sphere
     else if (Tokenizer.IsTokenAt(0, "SurroundingSphere") == true) {
       if (Tokenizer.GetNTokens() != 6) {
         Typo("Line must contain five values: Radius, xPos, yPos, zPos of sphere center, Distance to sphere center");
@@ -1027,8 +1027,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       m_SurroundingSphereRadius = Tokenizer.GetTokenAtAsDouble(1);
-      m_SurroundingSpherePosition = MVector(Tokenizer.GetTokenAtAsDouble(2), 
-                                 Tokenizer.GetTokenAtAsDouble(3), 
+      m_SurroundingSpherePosition = MVector(Tokenizer.GetTokenAtAsDouble(2),
+                                 Tokenizer.GetTokenAtAsDouble(3),
                                  Tokenizer.GetTokenAtAsDouble(4));
       m_SurroundingSphereDistance = Tokenizer.GetTokenAtAsDouble(5);
 
@@ -1036,11 +1036,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         Typo("Limitation: Concerning your surrounding sphere: The sphere radius must equal the distance to the sphere for the time being. Sorry.");
         return false;
       }
-      
+
       continue;
     }
 
-    // Show the surrounding sphere 
+    // Show the surrounding sphere
     else if (Tokenizer.IsTokenAt(0, "ShowSurroundingSphere") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two values: ShowSurroundingSphere true/false");
@@ -1048,7 +1048,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       m_SurroundingSphereShow = Tokenizer.GetTokenAtAsBoolean(1);
-      
+
       continue;
     }
 
@@ -1116,10 +1116,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     else if (Tokenizer.IsTokenAt(0, "IgnoreShortNames") == true) {
       mout<<" *** Outdated *** "<<endl;
       mout<<"The \"IgnoreShortNames\" keyword is no longer supported!"<<endl;
-      
+
       continue;
     }
-    
+
     // Default color
     else if (Tokenizer.IsTokenAt(0, "DefaultColor") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1131,7 +1131,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       continue;
     }
-    
+
     // Detector search tolerance
     else if (Tokenizer.IsTokenAt(0, "DetectorSearchTolerance") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1143,7 +1143,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       continue;
     }
-    
+
     // General absorption file directory
     else if (Tokenizer.IsTokenAt(0, "AbsorptionFileDirectory") == true ||
              Tokenizer.IsTokenAt(0, "CrossSectionFilesDirectory") == true) {
@@ -1155,19 +1155,19 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // We have to use TString
       TString Name = Tokenizer.GetTokenAtAsString(1).Data();
       gSystem->ExpandPathName(Name);
- 
+
       if (gSystem->IsAbsoluteFileName(Name) == false) {
         Name.Prepend("/");
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
         gSystem->ExpandPathName(Name);
       }
-      
+
       m_CrossSectionFileDirectory = Name;
-      
+
       continue;
     }
-    
+
     // Material
     else if (Tokenizer.IsTokenAt(0, "Material") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1182,11 +1182,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-             
+
       AddMaterial(new MDMaterial(Tokenizer.GetTokenAt(1)));
       continue;
     }
-    
+
     // Shape
     else if (Tokenizer.IsTokenAt(0, "Shape") == true) {
       if (Tokenizer.GetNTokens() != 3) {
@@ -1201,13 +1201,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-             
+
       AddShape(Tokenizer.GetTokenAt(1), Tokenizer.GetTokenAt(2));
-      
+
       continue;
     }
-        
-    
+
+
     // Orientation
     else if (Tokenizer.IsTokenAt(0, "Orientation") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1222,12 +1222,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-             
+
       AddOrientation(new MDOrientation(Tokenizer.GetTokenAt(1)));
-      
+
       continue;
     }
-    
+
     // Trigger
     else if (Tokenizer.IsTokenAt(0, "Trigger") == true ||
       Tokenizer.IsTokenAt(0, "TriggerBasic") == true) {
@@ -1243,11 +1243,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-      
+
       AddTrigger(dynamic_cast<MDTrigger*>(new MDTriggerBasic(Tokenizer.GetTokenAt(1))));
       continue;
-      } 
-      
+      }
+
     // Trigger
     else if (Tokenizer.IsTokenAt(0, "TriggerMap") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1262,11 +1262,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
       }
-        
+
       AddTrigger(dynamic_cast<MDTrigger*>(new MDTriggerMap(Tokenizer.GetTokenAt(1))));
       continue;
-    } 
-        
+    }
+
     // System
     else if (Tokenizer.IsTokenAt(0, "System") == true) {
       if (Tokenizer.GetNTokens() != 2) {
@@ -1284,10 +1284,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       m_System = new MDSystem(Tokenizer.GetTokenAt(1));
       continue;
-    } 
-       
+    }
+
     // Detectors: Strip2D
-    else if (Tokenizer.IsTokenAt(0, "Strip2D") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Strip2D") == true ||
              Tokenizer.IsTokenAt(0, "MDStrip2D") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Strip2D Tracker\"");
@@ -1304,10 +1304,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDStrip2D(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: Strip3D
-    else if (Tokenizer.IsTokenAt(0, "Strip3D") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Strip3D") == true ||
              Tokenizer.IsTokenAt(0, "MDStrip3D") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Strip3D Germanium\"");
@@ -1324,10 +1324,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDStrip3D(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: Strip3DDirectional
-    else if (Tokenizer.IsTokenAt(0, "Strip3DDirectional") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Strip3DDirectional") == true ||
              Tokenizer.IsTokenAt(0, "MDStrip3DDirectional") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Strip3DDirectional ThickSiliconWafer\"");
@@ -1344,10 +1344,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDStrip3DDirectional(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: DriftChamber
-    else if (Tokenizer.IsTokenAt(0, "DriftChamber") == true || 
+    else if (Tokenizer.IsTokenAt(0, "DriftChamber") == true ||
              Tokenizer.IsTokenAt(0, "MDDriftChamber") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"DriftChamber Xenon\"");
@@ -1364,10 +1364,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDDriftChamber(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: AngerCamera
-    else if (Tokenizer.IsTokenAt(0, "AngerCamera") == true || 
+    else if (Tokenizer.IsTokenAt(0, "AngerCamera") == true ||
              Tokenizer.IsTokenAt(0, "MDAngerCamera") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"AngerCamera Angers\"");
@@ -1384,11 +1384,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDAngerCamera(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
 
     // Detectors: ACS
-    else if (Tokenizer.IsTokenAt(0, "Scintillator") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Scintillator") == true ||
              Tokenizer.IsTokenAt(0, "Simple") == true ||
              Tokenizer.IsTokenAt(0, "ACS") == true ||
              Tokenizer.IsTokenAt(0, "MDACS") == true) {
@@ -1407,10 +1407,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDACS(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: Calorimeter
-    else if (Tokenizer.IsTokenAt(0, "Calorimeter") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Calorimeter") == true ||
              Tokenizer.IsTokenAt(0, "MDCalorimeter") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Calorimeter athena\"");
@@ -1427,10 +1427,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDCalorimeter(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
     // Detectors: Voxel3D
-    else if (Tokenizer.IsTokenAt(0, "Voxel3D") == true || 
+    else if (Tokenizer.IsTokenAt(0, "Voxel3D") == true ||
              Tokenizer.IsTokenAt(0, "MDVoxel3D") == true) {
       if (Tokenizer.GetNTokens() != 2) {
         Typo("Line must contain two strings, e.g. \"Voxel3D MyVoxler\"");
@@ -1447,7 +1447,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
       AddDetector(new MDVoxel3D(Tokenizer.GetTokenAt(1)));
       continue;
-    } 
+    }
 
   }
 
@@ -1457,7 +1457,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     Typo("You have to define a surrounding sphere!");
     return false;
   }
-  
+
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing primary keywords) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
@@ -1466,7 +1466,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   //
   // Second loop:
   // Search for copies/clones of different volumes and named detectors
-  // 
+  //
   //
 
   for (unsigned int i = 0; i < FileContent.size(); i++) {
@@ -1474,7 +1474,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     MTokenizer& Tokenizer = FileContent[i].GetTokenizer();
 
     if (Tokenizer.GetNTokens() < 3) continue;
- 
+
 
     // Check for volumes with copies
     if (Tokenizer.IsTokenAt(1, "Copy") == true) {
@@ -1487,7 +1487,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("You cannot create a copy of a copy...");
           return false;
         }
-        
+
         VCopy = new MDVolume(Tokenizer.GetTokenAt(2));
 
         AddVolume(VCopy);
@@ -1507,13 +1507,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       if ((D = GetDetector(Tokenizer.GetTokenAt(0))) != 0) {
         if (D->IsNamedDetector() == true) {
           Typo("You cannot add a named detector to a named detector!");
-          return false;         
+          return false;
         }
         if (Tokenizer.GetNTokens() != 3) {
-         Typo("Line must contain three strings, e.g. MyStripDetector.Named Strip1. Are you using the old NamedDetector format?"); 
+         Typo("Line must contain three strings, e.g. MyStripDetector.Named Strip1. Are you using the old NamedDetector format?");
          return false;
         }
-        
+
         if (m_DoSanityChecks == true) {
           if (ValidName(Tokenizer.GetTokenAt(2)) == false) {
             Typo("You don't have a valid detector name!");
@@ -1538,15 +1538,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     // --> Fehler falls kein Volumen vorhanden
   }
 
- 
+
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing \"Copies\") finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
   }
 
 
-  
-  
+
+
   ////////////////////////////////////////////////////////////////////////////////////////////
   // Third loop:
   // Fill the volumes, materials with life...
@@ -1557,7 +1557,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     if (Tokenizer.GetNTokens() < 2) continue;
 
-    // Now the first token is some kind of name, so we have to find the 
+    // Now the first token is some kind of name, so we have to find the
     // according object and fill it
 
     // Check for Materials:
@@ -1576,7 +1576,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         M->SetRadiationLength(Tokenizer.GetTokenAtAsDouble(2));
-      } else if (Tokenizer.IsTokenAt(1, "Component") == true || 
+      } else if (Tokenizer.IsTokenAt(1, "Component") == true ||
                  Tokenizer.IsTokenAt(1, "ComponentByAtoms") == true) {
         if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
           Typo("Line must contain two strings and 3 doubles,"
@@ -1586,14 +1586,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (Tokenizer.GetNTokens() == 4) {
-          if (M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsString(2), 
+          if (M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsString(2),
                                                Tokenizer.GetTokenAtAsInt(3)) == false) {
             Typo("Element not found!");
             return false;
           }
         } else {
-          M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsDouble(2), 
-                                           Tokenizer.GetTokenAtAsInt(3), 
+          M->SetComponentByAtomicWeighting(Tokenizer.GetTokenAtAsDouble(2),
+                                           Tokenizer.GetTokenAtAsInt(3),
                                           Tokenizer.GetTokenAtAsInt(4));
           mout<<"   ***  Info  ***  "<<endl;
           mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
@@ -1608,14 +1608,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (Tokenizer.GetNTokens() == 4) {
-          if (M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsString(2), 
+          if (M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsString(2),
                                              Tokenizer.GetTokenAtAsDouble(3)) == false) {
             Typo("Element not found!");
             return false;
           }
         } else {
-          M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsDouble(2), 
-                                         Tokenizer.GetTokenAtAsInt(3), 
+          M->SetComponentByMassWeighting(Tokenizer.GetTokenAtAsDouble(2),
+                                         Tokenizer.GetTokenAtAsInt(3),
                                          Tokenizer.GetTokenAtAsDouble(4));
           mout<<"   ***  Info  ***  "<<endl;
           mout<<"Remember to use a component description which contains the element name, if you want natural isotope composition during Geant4 simulations"<<endl;
@@ -1632,8 +1632,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
     } // end materials
 
-    
-    
+
+
     // Check for orientations:
     else if ((Orientation = GetOrientation(Tokenizer.GetTokenAt(0))) != 0) {
       if (Orientation->Parse(Tokenizer, m_DebugInfo) == false) {
@@ -1642,8 +1642,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
     } // end orientations
 
-    
-    
+
+
     // Check for shapes:
     else if ((Shape = GetShape(Tokenizer.GetTokenAt(0))) != 0) {
       if (Shape->GetType() == "Subtraction") {
@@ -1652,7 +1652,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape subtraction needs 4-5 parameters");
             return false;
           }
-          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(2)); 
+          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(2));
           MDShape* Subtrahend = GetShape(Tokenizer.GetTokenAt(3));
           MDOrientation* Orientation = 0;
           if (Tokenizer.GetNTokens() == 5) {
@@ -1665,7 +1665,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
             AddOrientation(Orientation);
           }
-          
+
           if (Minuend == 0) {
             Typo("The minuend shape was not found!");
             return false;
@@ -1674,7 +1674,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The subtrahend shape was not found!");
             return false;
           }
-          
+
           if (dynamic_cast<MDShapeSubtraction*>(Shape)->Set(Minuend, Subtrahend, Orientation) == false) {
             Typo("Unable to parse the shape correctly");
             return false;
@@ -1686,8 +1686,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape Union needs 4-5 parameters");
             return false;
           }
-          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(2)); 
-          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(2));
+          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(3));
           MDOrientation* Orientation = 0;
           if (Tokenizer.GetNTokens() == 5) {
             Orientation = GetOrientation(Tokenizer.GetTokenAt(4));
@@ -1699,7 +1699,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
             AddOrientation(Orientation);
           }
-          
+
           if (Augend == 0) {
             Typo("The augend shape was not found!");
             return false;
@@ -1708,7 +1708,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The addend shape was not found!");
             return false;
           }
-          
+
           if (dynamic_cast<MDShapeUnion*>(Shape)->Set(Augend, Addend, Orientation) == false) {
             Typo("Unable to parse the shape Union correctly");
             return false;
@@ -1720,8 +1720,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape Intersection needs 4-5 parameters");
             return false;
           }
-          MDShape* Left = GetShape(Tokenizer.GetTokenAt(2)); 
-          MDShape* Right = GetShape(Tokenizer.GetTokenAt(3)); 
+          MDShape* Left = GetShape(Tokenizer.GetTokenAt(2));
+          MDShape* Right = GetShape(Tokenizer.GetTokenAt(3));
           MDOrientation* Orientation = 0;
           if (Tokenizer.GetNTokens() == 5) {
             Orientation = GetOrientation(Tokenizer.GetTokenAt(4));
@@ -1733,7 +1733,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Orientation = new MDOrientation(Shape->GetName() + "_Orientation");
             AddOrientation(Orientation);
           }
-          
+
           if (Left == 0) {
             Typo("The left shape was not found!");
             return false;
@@ -1742,7 +1742,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The right shape was not found!");
             return false;
           }
-          
+
           if (dynamic_cast<MDShapeIntersection*>(Shape)->Set(Left, Right, Orientation) == false) {
             Typo("Unable to parse the shape Intersection correctly");
             return false;
@@ -1755,14 +1755,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
     } // end shapes
-    
-    
-    
+
+
+
     // Check for triggers:
     else if ((T = GetTrigger(Tokenizer.GetTokenAt(0))) != 0) {
       if (Tokenizer.IsTokenAt(1, "PositiveDetectorType") == true) {
         mout<<" *** Deprectiated *** "<<endl;
-        mout<<"The \"PositiveDetectorType\" keyword is no longer supported!"<<endl; 
+        mout<<"The \"PositiveDetectorType\" keyword is no longer supported!"<<endl;
         mout<<"Replace it with:"<<endl;
         mout<<T->GetName()<<".Veto false"<<endl;
         mout<<T->GetName()<<".TriggerByChannel true"<<endl;
@@ -1797,7 +1797,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword PositiveDetectorType only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "TriggerByChannel") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean, e.g. \"D1D2Trigger.TriggerByChannel true\"");
@@ -1809,7 +1809,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword TriggerByChannel only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "TriggerByDetector") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean,"
@@ -1822,7 +1822,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword TriggerByDetector only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "Veto") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain two strings and one boolean,"
@@ -1835,7 +1835,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword Veto only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "DetectorType") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1844,7 +1844,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (MDDetector::IsValidDetectorType(Tokenizer.GetTokenAtAsString(2)) == false) {
           Typo("Line must contain a valid detector type, e.g. Strip2D, DriftChamber, etc.");
-          return false;          
+          return false;
         }
         // Check if such a detector type exists:
         bool Found = false;
@@ -1859,13 +1859,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (T->GetType() == MDTriggerType::c_Basic) {
-          dynamic_cast<MDTriggerBasic*>(T)->SetDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
+          dynamic_cast<MDTriggerBasic*>(T)->SetDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)),
                            Tokenizer.GetTokenAtAsInt(3));
         } else {
           Typo("Keyword DetectorType only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "Detector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1883,7 +1883,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword Detector only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "GuardRingDetectorType") == true || Tokenizer.IsTokenAt(1, "GuardringDetectorType") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1892,16 +1892,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (MDDetector::IsValidDetectorType(Tokenizer.GetTokenAtAsString(2)) == false) {
           Typo("Line must contain a valid detector type, e.g. Strip2D, DriftChamber, etc.");
-          return false;          
+          return false;
         }
         if (T->GetType() == MDTriggerType::c_Basic) {
-          dynamic_cast<MDTriggerBasic*>(T)->SetGuardRingDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)), 
+          dynamic_cast<MDTriggerBasic*>(T)->SetGuardRingDetectorType(MDDetector::GetDetectorType(Tokenizer.GetTokenAtAsString(2)),
                                     Tokenizer.GetTokenAtAsInt(3));
         } else {
           Typo("Keyword GuardRingDetectorType only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "GuardRingDetector") == true || Tokenizer.IsTokenAt(1, "GuardringDetector") == true) {
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain three strings and one int,"
@@ -1919,7 +1919,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Keyword GuardRingDetector only supported for basic trigger");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "Map") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain three strings, e.g. \"MapTrigger.Map MyMap.trig\"");
@@ -1927,28 +1927,28 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (T->GetType() == MDTriggerType::c_Universal) {
           MString FileName = Tokenizer.GetTokenAtAsString(2);
-          
+
           MFile::ExpandFileName(FileName, m_FileName);
-          
+
           if (gSystem->AccessPathName(FileName) == 1) {
             Typo("The file does not exist!");
             return false;
           }
-          
+
           if (dynamic_cast<MDTriggerMap*>(T)->ReadTriggerMap(FileName) == false) {
             Typo("Unable to read trigger map");
-            return false;            
+            return false;
           }
         } else {
           Typo("Keyword Map only supported for map triggers");
           return false;
         }
-        
+
       } else if (Tokenizer.IsTokenAt(1, "NegativeDetectorType") == true) {
         mout<<" *** Outdated *** "<<endl;
         mout<<"The \"NegativeDetectorType\" keyword is no longer supported!"<<endl;
         return false;
-        
+
       } else {
         Typo("Unrecognized trigger option");
         return false;
@@ -1997,11 +1997,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       } else if (Tokenizer.IsTokenAt(1, "Shape") == true) {
         if (Tokenizer.GetNTokens() < 3) {
           Typo("Not enough input parameters for this shape!");
-          return false;          
+          return false;
         }
         MString ShapeID = Tokenizer.GetTokenAtAsString(2);
         ShapeID.ToLowerInPlace();
-        
+
         if (ShapeID.AreIdentical("brik") == true || ShapeID.AreIdentical("box") == true) {
           MDShapeBRIK* BRIK = new MDShapeBRIK(V->GetName() + "_Shape");
           if (BRIK->Parse(Tokenizer, m_DebugInfo) == false) {
@@ -2016,7 +2016,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           if (PCON->Parse(Tokenizer, m_DebugInfo) == false) {
             Reset();
             return false;
-          } 
+          }
           V->SetShape(PCON);
           AddShape(PCON);
 
@@ -2025,11 +2025,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           if (PGON->Parse(Tokenizer, m_DebugInfo) == false) {
             Reset();
             return false;
-          } 
+          }
           V->SetShape(PGON);
           AddShape(PGON);
-        } 
-        
+        }
+
         // Sphere:
         else if (ShapeID.AreIdentical("sphe") == true || ShapeID.AreIdentical("sphere") == true) {
           MDShapeSPHE* SPHE = new MDShapeSPHE(V->GetName() + "_Shape");
@@ -2039,8 +2039,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(SPHE);
           AddShape(SPHE);
-        } 
-        
+        }
+
         // Cylinder:
         else if (ShapeID.AreIdentical("tubs") == true || ShapeID.AreIdentical("tube") == true) {
           MDShapeTUBS* TUBS = new MDShapeTUBS(V->GetName() + "_Shape");
@@ -2050,8 +2050,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(TUBS);
           AddShape(TUBS);
-        } 
-        
+        }
+
         // Cone:
         else if (ShapeID.AreIdentical("cone") == true) {
           MDShapeCONE* CONE = new MDShapeCONE(V->GetName() + "_Shape");
@@ -2061,8 +2061,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(CONE);
           AddShape(CONE);
-        } 
-        
+        }
+
         // CONS:
         else if (ShapeID.AreIdentical("cons") == true) {
           MDShapeCONS* CONS = new MDShapeCONS(V->GetName() + "_Shape");
@@ -2072,7 +2072,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(CONS);
           AddShape(CONS);
-        } 
+        }
         // General trapezoid:
         else if (ShapeID.AreIdentical("trap") == true) {
          MDShapeTRAP* TRAP = new MDShapeTRAP(V->GetName() + "_Shape");
@@ -2082,7 +2082,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(TRAP);
           AddShape(TRAP);
-        }        
+        }
         // General twisted trapezoid:
         else if (ShapeID.AreIdentical("gtra") == true) {
           MDShapeGTRA* GTRA = new MDShapeGTRA(V->GetName() + "_Shape");
@@ -2092,7 +2092,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(GTRA);
           AddShape(GTRA);
-        } 
+        }
         // Simple trapezoid
         else if (ShapeID.AreIdentical("trd1") == true) {
           MDShapeTRD1* TRD1 = new MDShapeTRD1(V->GetName() + "_Shape");
@@ -2102,7 +2102,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(TRD1);
           AddShape(TRD1);
-        }        
+        }
         // Simple trapezoid
         else if (ShapeID.AreIdentical("trd2") == true) {
           MDShapeTRD2* TRD2 = new MDShapeTRD2(V->GetName() + "_Shape");
@@ -2112,7 +2112,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           }
           V->SetShape(TRD2);
           AddShape(TRD2);
-        } 
+        }
         // Simple union of two shapes
         else if (ShapeID.AreIdentical("union") == true) {
           MDShapeUnion* Union = new MDShapeUnion(V->GetName() + "_Shape");
@@ -2121,10 +2121,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape Union needs 6 parameters");
             return false;
           }
-          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(3)); 
-          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(4)); 
-          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
-          
+          MDShape* Augend = GetShape(Tokenizer.GetTokenAt(3));
+          MDShape* Addend = GetShape(Tokenizer.GetTokenAt(4));
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5));
+
           if (Augend == 0) {
             Typo("The augend shape was not found!");
             return false;
@@ -2137,7 +2137,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The orientation was not found!");
             return false;
           }
-          
+
           if (Union->Set(Augend, Addend, Orientation) == false) {
             Typo("Unable to parse the shape Union correctly");
             return false;
@@ -2145,7 +2145,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
           V->SetShape(Union);
           AddShape(Union);
-        } 
+        }
         // Subtraction
         else if (ShapeID.AreIdentical("subtraction") == true) {
           MDShapeSubtraction* Subtraction = new MDShapeSubtraction(V->GetName() + "_Shape");
@@ -2154,10 +2154,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape subtraction needs 6 parameters");
             return false;
           }
-          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(3)); 
-          MDShape* Subtrahend = GetShape(Tokenizer.GetTokenAt(4)); 
-          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
-          
+          MDShape* Minuend = GetShape(Tokenizer.GetTokenAt(3));
+          MDShape* Subtrahend = GetShape(Tokenizer.GetTokenAt(4));
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5));
+
           if (Minuend == 0) {
             Typo("The minuend shape was not found!");
             return false;
@@ -2170,7 +2170,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The orientation was not found!");
             return false;
           }
-          
+
           if (Subtraction->Set(Minuend, Subtrahend, Orientation) == false) {
             Typo("Unable to parse the shape correctly");
             return false;
@@ -2178,7 +2178,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
           V->SetShape(Subtraction);
           AddShape(Subtraction);
-        } 
+        }
         // Intersection
         else if (ShapeID.AreIdentical("intersection") == true) {
           MDShapeIntersection* Intersection = new MDShapeIntersection(V->GetName() + "_Shape");
@@ -2187,10 +2187,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The shape Intersection needs 6 parameters");
             return false;
           }
-          MDShape* Left = GetShape(Tokenizer.GetTokenAt(3)); 
-          MDShape* Right = GetShape(Tokenizer.GetTokenAt(4)); 
-          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5)); 
-          
+          MDShape* Left = GetShape(Tokenizer.GetTokenAt(3));
+          MDShape* Right = GetShape(Tokenizer.GetTokenAt(4));
+          MDOrientation* Orientation = GetOrientation(Tokenizer.GetTokenAt(5));
+
           if (Left == 0) {
             Typo("The left shape was not found!");
             return false;
@@ -2203,7 +2203,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("The orientation was not found!");
             return false;
           }
-          
+
           if (Intersection->Set(Left, Right, Orientation) == false) {
             Typo("Unable to parse the shape Intersection correctly");
             return false;
@@ -2211,9 +2211,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
           V->SetShape(Intersection);
           AddShape(Intersection);
-        } 
-        
-        // Now check if it is in the list        
+        }
+
+        // Now check if it is in the list
         else {
           MDShape* Shape = GetShape(Tokenizer.GetTokenAt(2));
           if (Shape != 0) {
@@ -2223,15 +2223,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
         }
-        
-        
+
+
       } else if (Tokenizer.IsTokenAt(1, "Mother") == true) {
         if (Tokenizer.GetNTokens() != 3) {
           Typo("Line must contain three strings"
                " e.g. \"Triangle.Mother WorldVolume\"");
           return false;
         }
-      
+
         if (Tokenizer.IsTokenAt(2, "0")) {
           V->SetWorldVolume();
           if (m_WorldVolume != 0) {
@@ -2266,7 +2266,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetTokenAtAsInt(2) < 0) {
           Typo("The color value needs to be positive");
-          return false;            
+          return false;
         }
         V->SetColor(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "LineStyle") == true) {
@@ -2277,7 +2277,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetTokenAtAsInt(2) < 0) {
           Typo("The line style value needs to be positive");
-          return false;            
+          return false;
         }
         V->SetLineStyle(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "LineWidth") == true) {
@@ -2288,7 +2288,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetTokenAtAsInt(2) < 0) {
           Typo("The line width value needs to be positive");
-          return false;            
+          return false;
         }
         V->SetLineWidth(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "Scale") == true) {
@@ -2299,7 +2299,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetTokenAtAsDouble(2) <= 0) {
           Typo("The color value needs to be positive");
-          return false;            
+          return false;
         }
         ScaledVolumes[V] = Tokenizer.GetTokenAtAsDouble(2);
       } else if (Tokenizer.IsTokenAt(1, "Virtual") == true) {
@@ -2324,7 +2324,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Tokenizer.GetTokenAtAsInt(2) < -1 || Tokenizer.GetTokenAtAsInt(2) > 3) {
           Typo("The visibility needs to be -1, 0, 1, 2, or 3");
-          return false;            
+          return false;
         }
         V->SetVisibility(Tokenizer.GetTokenAtAsInt(2));
       } else if (Tokenizer.IsTokenAt(1, "Absorptions") == true) {
@@ -2347,15 +2347,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         V->SetPosition(Orientation->GetPosition());
         V->SetRotation(Orientation->GetRotationMatrix());
-        
+
       } else if (Tokenizer.IsTokenAt(1, "Position") == true) {
         if (Tokenizer.GetNTokens() != 5) {
           Typo("Line must contain two strings and 3 doubles,"
                " e.g. \"Wafer.Position 3.5 1.0 0.0\"");
           return false;
         }
-        V->SetPosition(MVector(Tokenizer.GetTokenAtAsDouble(2), 
-                               Tokenizer.GetTokenAtAsDouble(3), 
+        V->SetPosition(MVector(Tokenizer.GetTokenAtAsDouble(2),
+                               Tokenizer.GetTokenAtAsDouble(3),
                                Tokenizer.GetTokenAtAsDouble(4)));
       } else if (Tokenizer.IsTokenAt(1, "Rotation") == true ||
                  Tokenizer.IsTokenAt(1, "Rotate") == true) {
@@ -2365,8 +2365,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           return false;
         }
         if (Tokenizer.GetNTokens() == 5) {
-          V->SetRotation(Tokenizer.GetTokenAtAsDouble(2), 
-                         Tokenizer.GetTokenAtAsDouble(3), 
+          V->SetRotation(Tokenizer.GetTokenAtAsDouble(2),
+                         Tokenizer.GetTokenAtAsDouble(3),
                          Tokenizer.GetTokenAtAsDouble(4));
         } else {
           double theta1 = Tokenizer.GetTokenAtAsDouble(2);
@@ -2385,12 +2385,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
 
-          V->SetRotation(Tokenizer.GetTokenAtAsDouble(2), 
-                         Tokenizer.GetTokenAtAsDouble(3), 
-                         Tokenizer.GetTokenAtAsDouble(4), 
-                         Tokenizer.GetTokenAtAsDouble(5), 
-                         Tokenizer.GetTokenAtAsDouble(6), 
-                         Tokenizer.GetTokenAtAsDouble(7));
+          if (V->SetRotation(Tokenizer.GetTokenAtAsDouble(2),
+                             Tokenizer.GetTokenAtAsDouble(3),
+                             Tokenizer.GetTokenAtAsDouble(4),
+                             Tokenizer.GetTokenAtAsDouble(5),
+                             Tokenizer.GetTokenAtAsDouble(6),
+                             Tokenizer.GetTokenAtAsDouble(7)) == false) {
+            Typo("Unable to create the new rotation");
+            return false;
+          }
         }
       } else if (Tokenizer.IsTokenAt(1, "Copy") == true) {
         // No warning...
@@ -2401,10 +2404,10 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     } // end Volume
   } // end third loop...
 
-  
-  
 
-  
+
+
+
   /////////////////////////////////////////////////////////////////////////////////////
   // Fourth loop:
   // Fill the detector not before everything else is done!
@@ -2422,7 +2425,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       // Check for simulation in voxels instead of a junk volume
       if (Tokenizer.IsTokenAt(1, "VoxelSimulation") == true) {
         mout<<" *** Outdated *** "<<endl;
-        mout<<"The \"VoxelSimulation\" keyword is no longer supported!"<<endl;        
+        mout<<"The \"VoxelSimulation\" keyword is no longer supported!"<<endl;
       }
       // Check for sensitive volume
       else if (Tokenizer.IsTokenAt(1, "SensitiveVolume") == true) {
@@ -2530,7 +2533,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         D->SetEnergyLossMap(FileName);
       }
       // Check for energy resolution
-      else if (Tokenizer.IsTokenAt(1, "EnergyResolutionAt") == true || 
+      else if (Tokenizer.IsTokenAt(1, "EnergyResolutionAt") == true ||
                Tokenizer.IsTokenAt(1, "EnergyResolution") == true) {
         if (Tokenizer.GetNTokens() < 3) {
           Typo("EnergyResolution keyword not correct.");
@@ -2538,7 +2541,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         MString Type = Tokenizer.GetTokenAt(2);
         char* Tester;
-        double d = strtod(Type.Data(), &Tester); if (d != 0) d = 0; // Just to prevent the compiler from complaining 
+        double d = strtod(Type.Data(), &Tester); if (d != 0) d = 0; // Just to prevent the compiler from complaining
         if (Tester != Type.Data()) {
           // We have a number - do it the old way
           if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 6) {
@@ -2552,17 +2555,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           mout<<endl;
           //FoundDepreciated = true;
           D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
-          if (Tokenizer.GetNTokens() == 4) { 
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                   Tokenizer.GetTokenAtAsDouble(2), 
+          if (Tokenizer.GetNTokens() == 4) {
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
+                                   Tokenizer.GetTokenAtAsDouble(2),
                                    Tokenizer.GetTokenAtAsDouble(3));
           } else if (Tokenizer.GetNTokens() == 5) {
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                   Tokenizer.GetTokenAtAsDouble(2), 
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
+                                   Tokenizer.GetTokenAtAsDouble(2),
                                    Tokenizer.GetTokenAtAsDouble(3));
           } else if (Tokenizer.GetNTokens() == 6) {
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                   Tokenizer.GetTokenAtAsDouble(2) + Tokenizer.GetTokenAtAsDouble(5), 
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
+                                   Tokenizer.GetTokenAtAsDouble(2) + Tokenizer.GetTokenAtAsDouble(5),
                                    Tokenizer.GetTokenAtAsDouble(3));
           }
         } else {
@@ -2584,46 +2587,46 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
               return false;
             }
             D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3), 
-                                   Tokenizer.GetTokenAtAsDouble(4), 
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3),
+                                   Tokenizer.GetTokenAtAsDouble(4),
                                    Tokenizer.GetTokenAtAsDouble(5));
-            
+
 
           } else if (Type == "lorentz" || Type == "lorenz") {
             if (Tokenizer.GetNTokens() != 6 ) {
               Typo("EnergyResolution keyword not correct. Example:"
                    "\"Wafer.EnergyResolution Lorentz 122 122 2.0\"");
               return false;
-            }            
+            }
             if (D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeLorentz &&
                 D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeUnknown) {
               Typo("The energy resolution type cannot change!");
               return false;
             }
             D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeLorentz);
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3), 
-                                   Tokenizer.GetTokenAtAsDouble(4), 
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3),
+                                   Tokenizer.GetTokenAtAsDouble(4),
                                    Tokenizer.GetTokenAtAsDouble(5));
-            
+
           } else if (Type == "gauslandau" || Type == "gausslandau" || Type == "gauss-landau") {
             if (Tokenizer.GetNTokens() != 9 ) {
               Typo("EnergyResolution keyword not correct. Example:"
                    "\"Wafer.EnergyResolution GaussLandau 122 122 2.0 122 3.0 0.2\"");
               return false;
-            }            
+            }
             if (D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeGaussLandau &&
                 D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeUnknown) {
               Typo("The energy resolution type cannot change!");
               return false;
             }
             D->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGaussLandau);
-            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3), 
-                                   Tokenizer.GetTokenAtAsDouble(4), 
-                                   Tokenizer.GetTokenAtAsDouble(5), 
-                                   Tokenizer.GetTokenAtAsDouble(6), 
-                                   Tokenizer.GetTokenAtAsDouble(7), 
+            D->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(3),
+                                   Tokenizer.GetTokenAtAsDouble(4),
+                                   Tokenizer.GetTokenAtAsDouble(5),
+                                   Tokenizer.GetTokenAtAsDouble(6),
+                                   Tokenizer.GetTokenAtAsDouble(7),
                                    Tokenizer.GetTokenAtAsDouble(8));
-  
+
           } else {
             Typo("Unknown EnergyResolution parameters.");
             return false;
@@ -2680,7 +2683,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.PulseShape <10xFitParameter> FitStart FitStop\"");
           return false;
         }
-        D->SetPulseShape(Tokenizer.GetTokenAtAsDouble(2), 
+        D->SetPulseShape(Tokenizer.GetTokenAtAsDouble(2),
                          Tokenizer.GetTokenAtAsDouble(3),
                          Tokenizer.GetTokenAtAsDouble(4),
                          Tokenizer.GetTokenAtAsDouble(5),
@@ -2704,8 +2707,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         //                " e.g. \"Wafer.StructuralSize 0.0235, 3.008, 0.5\"");
         //           return false;
         //         }
-        //         D->SetStructuralSize(MVector(Tokenizer.GetTokenAtAsDouble(2), 
-        //                                       Tokenizer.GetTokenAtAsDouble(3), 
+        //         D->SetStructuralSize(MVector(Tokenizer.GetTokenAtAsDouble(2),
+        //                                       Tokenizer.GetTokenAtAsDouble(3),
         //                                       Tokenizer.GetTokenAtAsDouble(4)));
       }
       // Check for structural offset
@@ -2720,8 +2723,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.StructuralOffset 0.142, 0.142, 0.0\"");
           return false;
         }
-        D->SetStructuralOffset(MVector(Tokenizer.GetTokenAtAsDouble(2), 
-                                       Tokenizer.GetTokenAtAsDouble(3), 
+        D->SetStructuralOffset(MVector(Tokenizer.GetTokenAtAsDouble(2),
+                                       Tokenizer.GetTokenAtAsDouble(3),
                                        Tokenizer.GetTokenAtAsDouble(4)));
       }
       // Check for structural pitch
@@ -2736,17 +2739,17 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.StructuralPitch 0.0, 0.0, 0.0\"");
           return false;
         }
-        D->SetStructuralPitch(MVector(Tokenizer.GetTokenAtAsDouble(2), 
-                                      Tokenizer.GetTokenAtAsDouble(3), 
+        D->SetStructuralPitch(MVector(Tokenizer.GetTokenAtAsDouble(2),
+                                      Tokenizer.GetTokenAtAsDouble(3),
                                       Tokenizer.GetTokenAtAsDouble(4)));
       }
       // Check for SiStrip specific tokens:
       else if (Tokenizer.IsTokenAt(1, "Width") == true) {
         mout<<" *** Deprectiated *** "<<endl;
-        mout<<"The \"Width\" keyword is no longer supported, since it contained redundant information"<<endl; 
+        mout<<"The \"Width\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_DriftChamber &&
         //             D->GetType() != MDDetector::c_Strip3D) {
         //           Typo("Option Width only supported for StripxD & DriftChamber");
@@ -2756,25 +2759,25 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         //           Typo("Line must contain one string and 2 doubles,"
         //                " e.g. \"Wafer.Width 6.3, 6.3\"");
         //           return false;
-        //         }        
+        //         }
         //         dynamic_cast<MDStrip2D*>(D)->SetWidth(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Pitch") == true) {
         mout<<" *** Deprectiated *** "<<endl;
-        mout<<"The \"Pitch\" keyword is no longer supported, since it contained redundant information"<<endl; 
+        mout<<"The \"Pitch\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option Pitch only supported for StripxD & DriftChamber");
         //           return false;
         //         }
-        
+
         //         if (Tokenizer.GetNTokens() != 4) {
         //           Typo("Line must contain one string and 2 doubles,"
         //                " e.g. \"Wafer.Pitch 0.047 0.047\"");
         //           return false;
-        //         }        
+        //         }
 
         //         dynamic_cast<MDStrip2D*>(D)->SetPitch(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Offset") == true) {
@@ -2783,7 +2786,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Offset cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
-        if (D->GetType() != MDDetector::c_Strip2D && 
+        if (D->GetType() != MDDetector::c_Strip2D &&
             D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
             D->GetType() != MDDetector::c_Voxel3D &&
@@ -2791,22 +2794,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Option Offset only supported for StripxD & DriftChamber");
           return false;
         }
-        
+
         if (D->GetType() == MDDetector::c_Voxel3D) {
           if (Tokenizer.GetNTokens() != 5) {
             Typo("Line must contain one string and 3 doubles,"
                  " e.g. \"Voxler.Offset 0.2 0.2 0.2\"");
             return false;
-          }        
-          
+          }
+
           dynamic_cast<MDVoxel3D*>(D)->SetOffset(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3), Tokenizer.GetTokenAtAsDouble(4));
         } else {
           if (Tokenizer.GetNTokens() != 4) {
             Typo("Line must contain one string and 2 doubles,"
                  " e.g. \"Wafer.Offset 0.2 0.2\"");
             return false;
-          }        
-          
+          }
+
           dynamic_cast<MDStrip2D*>(D)->SetOffset(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
         }
       } else if (Tokenizer.IsTokenAt(1, "StripNumber") == true ||
@@ -2817,19 +2820,19 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("StripNumber cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
-        if (D->GetType() != MDDetector::c_Strip2D && 
+        if (D->GetType() != MDDetector::c_Strip2D &&
             D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
             D->GetType() != MDDetector::c_DriftChamber) {
           Typo("Option StripNumber only supported for StripxD & DriftChamber");
           return false;
         }
-        
+
         if (Tokenizer.GetNTokens() != 4) {
           Typo("Line must contain one string and 2 doubles,"
                " e.g. \"Wafer.StripNumber 128 128\"");
           return false;
-        }        
+        }
 
         dynamic_cast<MDStrip2D*>(D)->SetNStrips(Tokenizer.GetTokenAtAsInt(2), Tokenizer.GetTokenAtAsInt(3));
       } else if (Tokenizer.IsTokenAt(1, "PixelNumber") == true ||
@@ -2847,57 +2850,57 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Pixels/voxels cannot be used with a named detector! It's inherited from its template detector.");
           return false;
         }
-        
+
         if (Tokenizer.GetNTokens() != 5) {
           Typo("Line must contain one string and 3 doubles,"
                " e.g. \"Voxler.StripNumber 128 128 128\"");
           return false;
-        }        
+        }
 
         dynamic_cast<MDVoxel3D*>(D)->SetNVoxels(Tokenizer.GetTokenAtAsInt(2), Tokenizer.GetTokenAtAsInt(3), Tokenizer.GetTokenAtAsInt(4));
       } else if (Tokenizer.IsTokenAt(1, "StripLength") == true) {
         mout<<" *** Deprectiated *** "<<endl;
-        mout<<"The \"StripLength\" keyword is no longer supported, since it contained redundant information"<<endl; 
+        mout<<"The \"StripLength\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option StripLength only supported for StripxD & DriftChamber");
         //           return false;
         //         }
-        
+
         //         if (Tokenizer.GetNTokens() != 4) {
         //           Typo("Line must contain one string and 2 doubles,"
         //                " e.g. \"Wafer.StripLength 6.016 6.016\"");
         //           return false;
-        //         }        
-        
+        //         }
+
         //         dynamic_cast<MDStrip2D*>(D)->SetStripLength(Tokenizer.GetTokenAtAsDouble(2), Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Orientation") == true) {
         mout<<" *** Deprectiated *** "<<endl;
-        mout<<"The \"Orientation\" keyword is no longer supported, since it contained redundant information"<<endl; 
+        mout<<"The \"Orientation\" keyword is no longer supported, since it contained redundant information"<<endl;
         mout<<endl;
         FoundDepreciated = true;
-        //         if (D->GetType() != MDDetector::c_Strip2D && 
+        //         if (D->GetType() != MDDetector::c_Strip2D &&
         //             D->GetType() != MDDetector::c_Strip3D &&
         //             D->GetType() != MDDetector::c_DriftChamber) {
         //           Typo("Option StripLength only supported for StripxD & DriftChamber");
         //           return false;
         //         }
-                
+
         //         if (Tokenizer.GetNTokens() != 3) {
         //           Typo("Line must contain one string and one integer,"
         //                " e.g. \"Wafer.Orientation 2\"");
         //           return false;
-        //         }        
+        //         }
 
         //         dynamic_cast<MDStrip2D*>(D)->SetOrientation(Tokenizer.GetTokenAtAsInt(2));
       }
       // Check for guard ring threshold
       else if (Tokenizer.IsTokenAt(1, "GuardRingTriggerThreshold") == true ||
                Tokenizer.IsTokenAt(1, "GuardringTriggerThreshold") == true) {
-        if (D->GetType() != MDDetector::c_Strip2D && 
+        if (D->GetType() != MDDetector::c_Strip2D &&
             D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Voxel3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
@@ -2929,11 +2932,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
       }
       // Check for guard ring energy resolution
-      else if (Tokenizer.IsTokenAt(1, "GuardRingEnergyResolution") == true || 
+      else if (Tokenizer.IsTokenAt(1, "GuardRingEnergyResolution") == true ||
                Tokenizer.IsTokenAt(1, "GuardRingEnergyResolutionAt") == true ||
-               Tokenizer.IsTokenAt(1, "GuardringEnergyResolution") == true || 
+               Tokenizer.IsTokenAt(1, "GuardringEnergyResolution") == true ||
                Tokenizer.IsTokenAt(1, "GuardringEnergyResolutionAt") == true) {
-        if (D->GetType() != MDDetector::c_Strip2D && 
+        if (D->GetType() != MDDetector::c_Strip2D &&
             D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Voxel3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
@@ -2952,8 +2955,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             D->GetGuardRing()->SetActive(true);
             D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
-          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                                 Tokenizer.GetTokenAtAsDouble(2), 
+          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
+                                                 Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
         } else {
           if (D->HasGuardRing() == false) {
@@ -2961,8 +2964,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             D->GetGuardRing()->SetActive(true);
             D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
-          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
-                                                 Tokenizer.GetTokenAtAsDouble(2), 
+          D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
+                                                 Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
         }
       }
@@ -2970,8 +2973,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       else if (Tokenizer.IsTokenAt(1, "NoiseAxis") == true) {
         mout<<" *** Unsupported *** "<<endl;
         mout<<"The \"NoiseAxis\" keyword is no longer supported!"<<endl;
-        mout<<"For all detectors, the z-axis is by default the depth-noised axis"<<endl; 
-        mout<<"For the depth resolution, use the \"DepthResolution\" keyword"<<endl; 
+        mout<<"For all detectors, the z-axis is by default the depth-noised axis"<<endl;
+        mout<<"For the depth resolution, use the \"DepthResolution\" keyword"<<endl;
         mout<<endl;
         FoundDepreciated = true;
       }
@@ -2980,27 +2983,27 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         bool Return = true;
         if (D->GetType() == MDDetector::c_Calorimeter) {
           if (Tokenizer.GetNTokens() == 4) {
-            Return = dynamic_cast<MDCalorimeter*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                           Tokenizer.GetTokenAtAsDouble(3), 
+            Return = dynamic_cast<MDCalorimeter*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
+                                                                           Tokenizer.GetTokenAtAsDouble(3),
                                                                            0);
           } else if (Tokenizer.GetNTokens() == 5) {
-            Return = dynamic_cast<MDCalorimeter*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                           Tokenizer.GetTokenAtAsDouble(3), 
+            Return = dynamic_cast<MDCalorimeter*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
+                                                                           Tokenizer.GetTokenAtAsDouble(3),
                                                                            Tokenizer.GetTokenAtAsDouble(4));
           }
         } else if (D->GetType() == MDDetector::c_Strip3D ||
                    D->GetType() == MDDetector::c_Strip3DDirectional ||
                    D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() == 4) {
-            Return = dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                       Tokenizer.GetTokenAtAsDouble(3), 
+            Return = dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
+                                                                       Tokenizer.GetTokenAtAsDouble(3),
                                                                        0);
           } else if (Tokenizer.GetNTokens() == 5) {
-            Return = dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
-                                                                       Tokenizer.GetTokenAtAsDouble(3), 
+            Return = dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
+                                                                       Tokenizer.GetTokenAtAsDouble(3),
                                                                        Tokenizer.GetTokenAtAsDouble(4));
           }
-        } else {           
+        } else {
           Typo("Option DepthResolution only supported for Calorimeter, Strip3D, Strip3DDirectional, DriftChamber");
           return false;
         }
@@ -3008,7 +3011,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("Incorrect input");
           return false;
         }
-      }      
+      }
       else if (Tokenizer.IsTokenAt(1, "DepthResolutionThreshold") == true) {
         if (D->GetType() == MDDetector::c_Strip3D ||
             D->GetType() == MDDetector::c_Strip3DDirectional ||
@@ -3019,18 +3022,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDStrip3D*>(D)->SetDepthResolutionThreshold(Tokenizer.GetTokenAtAsDouble(2));
-        } else {           
+        } else {
           Typo("Option DepthResolutionThreshold only supported for Strip3D, Strip3DDirectional, DriftChamber");
           return false;
         }
-      }      
+      }
       // Check for Scintillator specific tokens:
       else if (Tokenizer.IsTokenAt(1, "HitPosition") == true) {
         mout<<" *** Obsolete *** "<<endl;
-        mout<<"The \"HitPosition\" keyword is no longer necessary in the current version and thus not used - please delete it!"<<endl; 
-      } 
+        mout<<"The \"HitPosition\" keyword is no longer necessary in the current version and thus not used - please delete it!"<<endl;
+      }
       // Check for Strip3D and higher specific tokens:
-      else if (Tokenizer.IsTokenAt(1, "EnergyResolutionDepthCorrection") == true || 
+      else if (Tokenizer.IsTokenAt(1, "EnergyResolutionDepthCorrection") == true ||
                Tokenizer.IsTokenAt(1, "EnergyResolutionDepthCorrectionAt") == true) {
         if (D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
@@ -3051,7 +3054,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("Line must contain one string and 2,"
                  " e.g. \"Wafer.EnergyResolutionDeothCorrection 0.0 1.0\"");
             return false;
-          } 
+          }
           if (dynamic_cast<MDStrip3D*>(D)->SetEnergyResolutionDepthCorrection(Tokenizer.GetTokenAtAsDouble(2),
                                                                               1.0,
                                                                               Tokenizer.GetTokenAtAsDouble(3)) == false) {
@@ -3082,7 +3085,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
               Typo("EnergyResolution keyword not correct. Example:"
                    "\"Wafer.EnergyResolution Lorentz 122 122 2.0\"");
               return false;
-            }            
+            }
             if (D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeLorentz &&
                 D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeUnknown) {
               Typo("The energy resolution type cannot change!");
@@ -3092,13 +3095,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             dynamic_cast<MDStrip3D*>(D)->SetEnergyResolutionDepthCorrection(Tokenizer.GetTokenAtAsDouble(3),
                                                                             Tokenizer.GetTokenAtAsDouble(4),
                                                                             Tokenizer.GetTokenAtAsDouble(5));
-            
+
           } else if (Type == "gauslandau" || Type == "gausslandau" || Type == "gauss-landau") {
             if (Tokenizer.GetNTokens() != 9 ) {
               Typo("EnergyResolution keyword not correct. Example:"
                    "\"Wafer.EnergyResolution GaussLandau 122 122 2.0 122 3.0 0.2\"");
               return false;
-            }            
+            }
             if (D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeGaussLandau &&
                 D->GetEnergyResolutionType() != MDDetector::c_EnergyResolutionTypeUnknown) {
               Typo("The energy resolution type cannot change!");
@@ -3111,14 +3114,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                                                                             Tokenizer.GetTokenAtAsDouble(6),
                                                                             Tokenizer.GetTokenAtAsDouble(7),
                                                                             Tokenizer.GetTokenAtAsDouble(8));
-            
+
           } else {
             Typo("Unknown EnergyResolutionDepthCorrection parameters.");
             return false;
           }
         }
       }
-      else if (Tokenizer.IsTokenAt(1, "TriggerThresholdDepthCorrection") == true || 
+      else if (Tokenizer.IsTokenAt(1, "TriggerThresholdDepthCorrection") == true ||
                Tokenizer.IsTokenAt(1, "TriggerThresholdDepthCorrectionAt") == true) {
         if (D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
@@ -3131,13 +3134,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.TriggerThresholdDepthCorrection 30 10\"");
           return false;
         }
-        if (dynamic_cast<MDStrip3D*>(D)->SetTriggerThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2), 
+        if (dynamic_cast<MDStrip3D*>(D)->SetTriggerThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2),
                                                                             Tokenizer.GetTokenAtAsDouble(3)) == false) {
           Typo("Incorrect input");
           return false;
         }
       }
-      else if (Tokenizer.IsTokenAt(1, "NoiseThresholdDepthCorrection") == true || 
+      else if (Tokenizer.IsTokenAt(1, "NoiseThresholdDepthCorrection") == true ||
                Tokenizer.IsTokenAt(1, "NoiseThresholdDepthCorrectionAt") == true) {
         if (D->GetType() != MDDetector::c_Strip3D &&
             D->GetType() != MDDetector::c_Strip3DDirectional &&
@@ -3150,14 +3153,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.NoiseThresholdDepthCorrection 30 10\"");
           return false;
         }
-        if (dynamic_cast<MDStrip3D*>(D)->SetNoiseThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2), 
+        if (dynamic_cast<MDStrip3D*>(D)->SetNoiseThresholdDepthCorrection(Tokenizer.GetTokenAtAsDouble(2),
                                                                           Tokenizer.GetTokenAtAsDouble(3)) == false) {
           Typo("Incorrect input");
           return false;
         }
       }
       // Check for Strip3DDirectional specific tokens:
-      else if (Tokenizer.IsTokenAt(1, "DirectionalResolution") == true || 
+      else if (Tokenizer.IsTokenAt(1, "DirectionalResolution") == true ||
                Tokenizer.IsTokenAt(1, "DirectionalResolutionAt") == true) {
         if (D->GetType() == MDDetector::c_Strip3DDirectional) {
           if (Tokenizer.GetNTokens() < 4 || Tokenizer.GetNTokens() > 5) {
@@ -3165,24 +3168,24 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                  " e.g. \"Wafer.DirectionResolutionAt 662 39\"");
             return false;
           }
-          if (Tokenizer.GetNTokens() == 4) { 
+          if (Tokenizer.GetNTokens() == 4) {
             dynamic_cast<MDStrip3DDirectional*>(D)
-              ->SetDirectionalResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
-                                           Tokenizer.GetTokenAtAsDouble(3)*c_Rad, 
+              ->SetDirectionalResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
+                                           Tokenizer.GetTokenAtAsDouble(3)*c_Rad,
                                            1E-6);
           } else if (Tokenizer.GetNTokens() == 5) {
             dynamic_cast<MDStrip3DDirectional*>(D)
-              ->SetDirectionalResolutionAt(Tokenizer.GetTokenAtAsDouble(2), 
+              ->SetDirectionalResolutionAt(Tokenizer.GetTokenAtAsDouble(2),
                                            Tokenizer.GetTokenAtAsDouble(3)*c_Rad,
                                            Tokenizer.GetTokenAtAsDouble(4));
           }
-        } else {           
+        } else {
           Typo("Option DirectionResolution only supported for Strip3DDirectional");
           return false;
         }
-      } 
+      }
       // Check for Anger camera specific tokens
-      else if (Tokenizer.IsTokenAt(1, "PositionResolution") == true || 
+      else if (Tokenizer.IsTokenAt(1, "PositionResolution") == true ||
                Tokenizer.IsTokenAt(1, "PositionResolutionAt") == true) {
         if (D->GetType() != MDDetector::c_AngerCamera) {
           Typo("Option PositionResolution only supported for AngerCamera");
@@ -3193,7 +3196,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
                " e.g. \"Wafer.PositionResolutionAt 30 10\"");
           return false;
         }
-        dynamic_cast<MDAngerCamera*>(D)->SetPositionResolution(Tokenizer.GetTokenAtAsDouble(2), 
+        dynamic_cast<MDAngerCamera*>(D)->SetPositionResolution(Tokenizer.GetTokenAtAsDouble(2),
                                                                Tokenizer.GetTokenAtAsDouble(3));
       } else if (Tokenizer.IsTokenAt(1, "Positioning") == true) {
         if (D->GetType() == MDDetector::c_AngerCamera) {
@@ -3210,7 +3213,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             Typo("Unknown positioning type");
             return false;
           }
-        } else {           
+        } else {
           Typo("Option Positioning only supported for AngerCamera");
           return false;
         }
@@ -3223,11 +3226,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDDriftChamber*>(D)->SetLightSpeed(Tokenizer.GetTokenAtAsDouble(2));
-        } else {           
+        } else {
           Typo("Option LightSpeed only supported for DriftChamber");
           return false;
         }
-       
+
       } else if (Tokenizer.IsTokenAt(1, "LightDetectorPosition") == true) {
         if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
@@ -3236,11 +3239,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDDriftChamber*>(D)->SetLightDetectorPosition(Tokenizer.GetTokenAtAsInt(2));
-        } else {           
+        } else {
           Typo("Option LightDetectorPosition only supported for DriftChamber");
           return false;
         }
-       
+
       } else if (Tokenizer.IsTokenAt(1, "DriftConstant") == true) {
         if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
@@ -3249,11 +3252,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDDriftChamber*>(D)->SetDriftConstant(Tokenizer.GetTokenAtAsDouble(2));
-        } else {           
+        } else {
           Typo("Option DriftConstant only supported for DriftChamber");
           return false;
         }
-       
+
       } else if (Tokenizer.IsTokenAt(1, "EnergyPerElectron") == true) {
         if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 3) {
@@ -3262,12 +3265,12 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDDriftChamber*>(D)->SetEnergyPerElectron(Tokenizer.GetTokenAtAsDouble(2));
-        } else {           
+        } else {
           Typo("Option EnergyPerElectron only supported for DriftChamber");
           return false;
         }
-       
-      } else if (Tokenizer.IsTokenAt(1, "LightEnergyResolution") == true || 
+
+      } else if (Tokenizer.IsTokenAt(1, "LightEnergyResolution") == true ||
                  Tokenizer.IsTokenAt(1, "LightEnergyResolutionAt") == true) {
         if (D->GetType() == MDDetector::c_DriftChamber) {
           if (Tokenizer.GetNTokens() != 4) {
@@ -3276,13 +3279,13 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             return false;
           }
           dynamic_cast<MDDriftChamber*>(D)
-            ->SetLightEnergyResolution(Tokenizer.GetTokenAtAsDouble(2), 
+            ->SetLightEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
                                        Tokenizer.GetTokenAtAsDouble(3));
-        } else {           
+        } else {
           Typo("Option LightEnergyResolution only supported for DriftChamber");
           return false;
         }
-       
+
       } else if (Tokenizer.IsTokenAt(1, "Assign") == true) {
         // Handle this one after the volume tree is completed
       } else if (Tokenizer.IsTokenAt(1, "BlockTrigger") == true) {
@@ -3304,7 +3307,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   } // end fourth loop
 
- 
+
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (analyzing all properties) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
@@ -3335,7 +3338,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     Reset();
     return false;
   }
-  
+
   // Test if the surrounding sphere should be shown
   if (m_SurroundingSphereShow == true && m_LaunchedByGeomega == true) {
     MString MaterialName = "SurroundingSphereVolumeMaterial";
@@ -3344,34 +3347,34 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     SuperDenseComponent->SetByAtomicWeighting("Pb", 1);
     SuperDense->SetComponent(SuperDenseComponent);
     SuperDense->SetDensity(10000.0);
-    
+
     MDShapeSPHE* Shape = new MDShapeSPHE("SurroundingSphereVolumeShape");
     Shape->Set(m_SurroundingSphereRadius-0.01, m_SurroundingSphereRadius+0.01);
-    
+
     MDVolume* Sphere = new MDVolume("SurroundingSphereVolume");
     Sphere->SetMother(m_WorldVolume);
     Sphere->SetMaterial(SuperDense);
     Sphere->SetShape(Shape);
     Sphere->SetPosition(m_SurroundingSpherePosition);
     Sphere->SetVisibility(1);
-    
+
     AddVolume(Sphere);
     AddMaterial(SuperDense);
     AddShape(Shape);
   }
-  
-  
+
+
   //
   if (ShowOnlySensitiveVolumes == true) {
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
       if (GetVolumeAt(i)->IsSensitive() == true) {
-        GetVolumeAt(i)->SetVisibility(1); 
+        GetVolumeAt(i)->SetVisibility(1);
       } else {
-        GetVolumeAt(i)->SetVisibility(0); 
+        GetVolumeAt(i)->SetVisibility(0);
       }
     }
   }
-  
+
   // Validate the orientations
   for (unsigned int s = 0; s < GetNOrientations(); ++s) {
     if (m_OrientationList[s]->Validate() == false) {
@@ -3379,8 +3382,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
-  
-  
+
+
   // Validate the shapes (attention: some shapes are valuated multiple times internally)...
   for (unsigned int s = 0; s < GetNShapes(); ++s) {
     if (m_ShapeList[s]->Validate() == false) {
@@ -3388,7 +3391,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
-  
+
 
   // Set a possible default color for all volumes:
   if (m_DefaultColor >= 0) {
@@ -3413,14 +3416,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       return false;
     }
   }
-  
+
   // Make sure the guard ring detectors show up in our list
   for (unsigned int i = 0; i < GetNDetectors(); i++) {
-    if (m_DetectorList[i]->HasGuardRing() == true && GetDetector(m_DetectorList[i]->GetGuardRing()->GetName()) == nullptr) { 
+    if (m_DetectorList[i]->HasGuardRing() == true && GetDetector(m_DetectorList[i]->GetGuardRing()->GetName()) == nullptr) {
       AddDetector(m_DetectorList[i]->GetGuardRing());
     }
   }
-  
+
 
   if (m_ShowVolumes == false) {
     for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -3463,14 +3466,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   // Virtualize non-detector volumes
   if (m_VirtualizeNonDetectorVolumes == true) {
     mout<<"   ***  Info  *** "<<endl;
-    mout<<"Non-detector volumes are virtualized --- you cannot calculate absorptions!"<<endl;    
+    mout<<"Non-detector volumes are virtualized --- you cannot calculate absorptions!"<<endl;
     m_WorldVolume->VirtualizeNonDetectorVolumes();
   }
 
   vector<MDVolume*> NewVolumes;
   m_WorldVolume->RemoveVirtualVolumes(NewVolumes);
   for (MDVolume* V: NewVolumes) AddVolume(V);
-  
+
   // mimp<<"Error if there are not positioned volumes --> otherwise GetRandomPosition() fails"<<endl;
 
   if (m_WorldVolume->Validate() == false) {
@@ -3483,7 +3486,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
-  // A final loop over the data checks for the detector keyword "Assign" 
+  // A final loop over the data checks for the detector keyword "Assign"
   // We need a final volume tree, thus this is really the final loop
   for (unsigned int i = 0; i < FileContent.size(); i++) {
     m_DebugInfo = FileContent[i];
@@ -3501,16 +3504,16 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           Typo("The Assign keyword can only be used with named detectors");
           return false;
         }
-        MVector Pos; 
+        MVector Pos;
         if (Tokenizer.GetNTokens() == 3) {
           vector<MString> VolumeNames = Tokenizer.GetTokenAtAsString(2).Tokenize(".");
           if (VolumeNames.size() == 0) {
             Typo("The volume sequence is empty!");
-            return false;         
+            return false;
           }
           if (m_WorldVolume->GetName() != VolumeNames[0]) {
             Typo("The volume sequence must start with the world volume!");
-            return false;                  
+            return false;
           }
           MDVolumeSequence Seq;
           MDVolume* Start = m_WorldVolume;
@@ -3529,24 +3532,24 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
             }
             if (Found == false) {
               Typo("Cannot find all volumes in the volume sequence! Make sure you placed the right volumes!");
-              return false;                             
+              return false;
             }
           }
           if (Start->GetDetector() == 0) {
             Typo("The volume sequence does not point to a detector!");
-            return false;                             
+            return false;
           }
           if (Start->GetDetector() != D->GetNamedAfterDetector()) {
             Typo("The volume sequence does not point to the right detector!");
-            return false;                             
+            return false;
           }
           if (Start->IsSensitive() == 0) {
             Typo("The volume sequence does not point to a sensitive volume!");
-            return false;                             
+            return false;
           }
           Pos = Start->GetShape()->GetRandomPositionInside();
           Pos = Seq.GetPositionInFirstVolume(Pos, Start);
-        } 
+        }
         else if (Tokenizer.GetNTokens() == 5) {
           Pos[0] = Tokenizer.GetTokenAtAsDouble(2);
           Pos[1] = Tokenizer.GetTokenAtAsDouble(3);
@@ -3584,7 +3587,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         // Determine the correct rotation and position of this volume, to keep all positions correct:
         MVector Position(0, 0, 0);
         MRotation Rotation;
-        
+
         MDVolume* Volume = SV;
         while (Volume->GetMother() != 0) {
           Position = Volume->GetInvRotationMatrix()*Position;
@@ -3594,7 +3597,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         if (Volume != m_WorldVolume) {
           mout<<"impossible, it doesn't have a regular volume tree..."<<endl;
-          mgui<<"Start volume cannot be shown, because it doesn't have a regular volume tree. Showing whole geometry."<<error;           
+          mgui<<"Start volume cannot be shown, because it doesn't have a regular volume tree. Showing whole geometry."<<error;
         } else {
           m_WorldVolume->RemoveAllDaughters();
           SV->SetMother(m_WorldVolume);
@@ -3611,7 +3614,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   // Take care of preferred visible volumes
   if (m_PreferredVisibleVolumeNames.size() > 0) {
-  
+
     // Take care of preferred visible volumes - make everything not visible
     if (m_PreferredVisibleVolumeNames.size() > 0) {
       for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -3633,15 +3636,15 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           if (GetVolumeAt(i)->GetCloneAt(c)->GetName() == N) {
             GetVolumeAt(i)->GetCloneAt(c)->SetVisibility(1);
             FoundOne = true;
-          }          
+          }
         }
       }
     }
     if (FoundOne == false) {
-      mout<<"ERROR: None of your preferred visible volumes has been found!"<<endl; 
+      mout<<"ERROR: None of your preferred visible volumes has been found!"<<endl;
     }
   }
-  
+
   //
   // Validation routines for the detectors:
   //
@@ -3655,9 +3658,9 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         //cout<<"clone test for "<<m_DetectorList[i]->GetSensitiveVolume(l)->GetName()<<endl;
         if (m_DetectorList[i]->GetSensitiveVolume(l)->IsClone() == true || m_DetectorList[i]->GetSensitiveVolume(l)->IsCloneTemplate() == true ) {
           Typo("If your detector has multiple sensitive volumes, then those cannot by copies or a template for copies.");
-          return false;    
+          return false;
         }
-      }      
+      }
 
       vector<vector<MDVolume*> > Volumes;
       for (unsigned int l = 0; l < m_DetectorList[i]->GetNSensitiveVolumes(); ++l) {
@@ -3670,7 +3673,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
         Volumes.push_back(MotherVolumes);
       }
-      
+
       // Replace volumes by mother volumes until we have a common mother, or reached the end of the volume tree
       // Loop of all mothers of the first volume --- those are the test volumes
       for (unsigned int m = 0; m < Volumes[0].size(); ++m) {
@@ -3678,11 +3681,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (Test == 0) break;
         //cout<<"Testing: "<<Test->GetName()<<endl;
         bool FoundTest = true;
-        
+
         for (unsigned int l = 1; l < Volumes.size(); ++l) {
           bool Found = false;
           for (unsigned int m = 0; m < Volumes[l].size(); ++m) {
-            //cout<<"Comparing to: "<<Volumes[l][m]->GetName()<<" of tree "<<Volumes[l][0]->GetName()<<endl; 
+            //cout<<"Comparing to: "<<Volumes[l][m]->GetName()<<" of tree "<<Volumes[l][0]->GetName()<<endl;
             if (Test == Volumes[l][m]) {
               //cout<<"Found sub"<<endl;
               Found = true;
@@ -3700,7 +3703,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
           break;
         }
       }
-      
+
       if (m_DetectorList[i]->GetCommonVolume() == nullptr) {
         mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction for "<<m_DetectorList[i]->GetName()<<endl;
         mout<<"If your detector has multiple sensitive volumes, those must have a common volume and there are no copies allowed starting with the sensitive volume up to the common volume."<<endl;
@@ -3713,7 +3716,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
     // Make sure there is always only one sensitive volume of a certain type in the common volume
     // Due to the above checks it is enough to simply check the number of sensitive volumes in the common volume
-    if (m_DetectorList[i]->GetNSensitiveVolumes() > 1 && m_DetectorList[i]->GetNSensitiveVolumes() != m_DetectorList[i]->GetCommonVolume()->GetNSensitiveVolumes()) {      
+    if (m_DetectorList[i]->GetNSensitiveVolumes() > 1 && m_DetectorList[i]->GetNSensitiveVolumes() != m_DetectorList[i]->GetCommonVolume()->GetNSensitiveVolumes()) {
       mout<<"   ***  Error  ***  Multiple sensitive volumes per detector restriction for "<<m_DetectorList[i]->GetName()<<endl;
       mout<<"If your detector has multiple sensitive volumes, those must have a common volume, in which exactly one of those volumes is positioned, and in addition no other sensitive volume. The latter is not the case."<<endl;
       mout<<"Stopping to scan geometry file!"<<endl;
@@ -3763,8 +3766,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   if (m_TriggerUnit->Validate() == false) {
     IsValid = false;
   }
-  
-  
+
+
   // Material sanity checks
   for (unsigned int i = 0; i < GetNMaterials(); i++) {
     m_MaterialList[i]->SetCrossSectionFileDirectory(m_CrossSectionFileDirectory);
@@ -3789,7 +3792,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
   }
 
 
-  // Check if we can apply the keyword komplex ER 
+  // Check if we can apply the keyword komplex ER
   // Does not cover all possibilities (e.g. rotated detector etc.)
   if (m_ComplexER == false) {
     int NTrackers = 0;
@@ -3818,11 +3821,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"   ***  Warning  ***  "<<endl;
     mout<<"You have not defined any trigger criteria!!"<<endl;
   } else {
-    // Check if each detector has a trigger criterion: 
+    // Check if each detector has a trigger criterion:
     for (unsigned int i = 0; i < GetNDetectors(); ++i) {
       // Guard ring trigger criteria are optional...
       if (m_DetectorList[i]->GetType() == MDDetector::c_GuardRing) continue;
-      
+
       bool Found = false;
       for (unsigned int t = 0; t < GetNTriggers(); ++t) {
         if (m_TriggerList[t]->Applies(m_DetectorList[i]) == true) {
@@ -3882,11 +3885,11 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     mout<<"Stage "<<Stage<<" (volume tree optimization) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
  }
 
-  if (g_Verbosity >= c_Info) { 
+  if (g_Verbosity >= c_Info) {
     mout<<"Geometry "<<m_FileName<<" successfully scanned within "<<Timer.ElapsedTime()<<"s"<<endl;
     mout<<"It contains "<<GetNVolumes()<<" volumes"<<endl;
   }
-  
+
   if (FoundDepreciated == true) {
     mgui<<"Your geometry contains depreciated information (see console output for details)."<<endl;
     mgui<<"Please update it now to the latest conventions!"<<show;
@@ -3894,8 +3897,8 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
 
   return true;
 }
-  
-  
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -3905,7 +3908,7 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
   FileContent.clear();
 
   MFile::ExpandFileName(FileName);
-  
+
   // First edit the file name:
   if (gSystem->IsAbsoluteFileName(FileName) == false) {
     FileName = MFile::GetDirectoryName(m_FileName) + MString("/") + FileName;
@@ -3976,7 +3979,7 @@ bool MDGeometry::AddFile(MString FileName, vector<MDDebugInfo>& FileContent)
   delete [] LineBuffer;
 
   FileStream.close();
-  
+
   return true;
 }
 
@@ -4004,7 +4007,7 @@ bool MDGeometry::NameExists(MString Name)
 {
   // Return true if the name Name already exists
 
-  // Since all new names pass through this function (because we have to check 
+  // Since all new names pass through this function (because we have to check
   // if it already exists), we can make sure that we are case insensitive!
 
   for (unsigned int i = 0; i < GetNVolumes(); i++) {
@@ -4076,7 +4079,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   }
 
   //mdebug<<"NVolumes: "<<m_WorldVolume->GetNVisibleVolumes()<<endl;
-  
+
   // Only draw the new windows if there are volumes to be drawn:
   if (m_WorldVolume->GetNVisibleVolumes() == 0) {
     mgui<<"There are no visible volumes in your geometry!"<<warn;
@@ -4086,7 +4089,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   MTimer Timer;
   double TimerLimit = 5;
 
-  if (Canvas == 0) { 
+  if (Canvas == 0) {
     m_GeoView = new TCanvas("MainCanvasGeomega","MainCanvasGeomega",800,800);
   } else {
     Canvas->cd();
@@ -4108,7 +4111,7 @@ bool MDGeometry::DrawGeometry(TCanvas* Canvas, MString Mode)
   } else {
     if (m_Geometry->GetTopVolume() != 0) m_Geometry->GetTopVolume()->Draw(Mode);
   }
-  
+
   if (m_Geometry->GetListOfNavigators() == nullptr) {
     m_Geometry->AddNavigator();
   }
@@ -4134,7 +4137,7 @@ bool MDGeometry::AreCrossSectionsPresent()
       return false;
     }
   }
-    
+
   return true;
 }
 
@@ -4169,24 +4172,24 @@ bool MDGeometry::TestIntersections()
 
 
 bool MDGeometry::CheckOverlaps()
-{  
+{
   // Check for overlaps using the ROOT overlap checker
-  
+
   ostringstream Diagnostics;
   bool Return = CheckOverlaps(Diagnostics);
   mout<<Diagnostics.str();
-  
+
   return Return;
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
-  
-  
+
+
 bool MDGeometry::CheckOverlaps(ostringstream& Diagnostics)
-{  
+{
     // Check for overlaps using the ROOT overlap checker
-    
+
   if (IsScanned() == false) {
     Error("bool MDGeometry::TestIntersections()",
           "You have to scan the geometry file first!");
@@ -4196,7 +4199,7 @@ bool MDGeometry::CheckOverlaps(ostringstream& Diagnostics)
   m_WorldVolume->CreateRootGeometry(m_Geometry, 0);
   m_Geometry->CloseGeometry();
   m_Geometry->CheckOverlaps(0.000001);
-  
+
   TObjArray* Overlaps = m_Geometry->GetListOfOverlaps();
   if (Overlaps->GetEntries() > 0) {
     Diagnostics<<"List of extrusions and overlaps: "<<endl;
@@ -4210,7 +4213,7 @@ bool MDGeometry::CheckOverlaps(ostringstream& Diagnostics)
       }
     }
   } else {
-    Diagnostics<<"No extrusions or overlaps detected with ROOT (ROOT claims to be able to detect 95% of them)"<<endl;     
+    Diagnostics<<"No extrusions or overlaps detected with ROOT (ROOT claims to be able to detect 95% of them)"<<endl;
   }
 
   return Overlaps->GetEntries() > 0 ? false : true;
@@ -4254,7 +4257,7 @@ void MDGeometry::CalculateMasses()
   m_WorldVolume->GetMasses(Masses);
 
   size_t NameWidth = 0;
-  for (MassesIter = (Masses.begin()); 
+  for (MassesIter = (Masses.begin());
        MassesIter != Masses.end(); MassesIter++) {
     if ((*MassesIter).first->GetName().Length() > NameWidth) {
       NameWidth = (*MassesIter).first->GetName().Length();
@@ -4267,7 +4270,7 @@ void MDGeometry::CalculateMasses()
   out<<endl;
   out<<"Mass summary by material: "<<endl;
   out<<endl;
-  for (MassesIter = (Masses.begin()); 
+  for (MassesIter = (Masses.begin());
        MassesIter != Masses.end(); MassesIter++) {
     out<<setw(NameWidth+2)<<(*MassesIter).first->GetName()<<" :  "<<setw(12)<<(*MassesIter).second<<" g"<<endl;
     Total += (*MassesIter).second;
@@ -4280,7 +4283,7 @@ void MDGeometry::CalculateMasses()
   out<<"(a) No volume intersects any volume which is not either its mother or daughter."<<endl;
   out<<"(b) All daughters lie completely inside their mothers"<<endl;
   out<<"(c) The material information is correct"<<endl;
-  out<<"(d) tbd."<<endl; 
+  out<<"(d) tbd."<<endl;
 
   mout<<out.str()<<endl;
 }
@@ -4294,7 +4297,7 @@ MString MDGeometry::WFS(MString Text)
   // Real name: WrapFortranStrings
   // A line in a FORTRAN77 file is not allowed to be larger than 72 characters
   // This functions cuts the lines appropriately:
-  
+
   size_t CutLength = 72;
 
   if (Text.Length() <= CutLength) return Text;
@@ -4333,7 +4336,7 @@ MString MDGeometry::WFS(MString Text)
 
         Formated += Cut.GetSubString(0, NiceLength) + "\n";
         Cut.Remove(0, NiceLength);
-        
+
         while (Cut.Length() > 0) {
           // Check if we can wrap the line at a comma...
           PreCut = Cut.GetSubString(0, CutLength-7);
@@ -4343,13 +4346,13 @@ MString MDGeometry::WFS(MString Text)
           Formated += "     &" + Cut.GetSubString(0, NiceLength2);
           Cut.Remove(0, NiceLength2);
           if (Cut.Length() > 0) Formated += MString("\n");
-        }      
+        }
       } else {
         Formated += Cut;
       }
     }
   }
-  
+
   return Formated + Text;
 }
 
@@ -4359,11 +4362,11 @@ MString MDGeometry::WFS(MString Text)
 
 bool MDGeometry::ValidName(MString Name)
 {
-  // Return true if name is a valid name, i.e. only contains alphanumeric 
+  // Return true if name is a valid name, i.e. only contains alphanumeric
   // characters as well as "_"
 
   for (size_t i = 0; i < Name.Length(); ++i) {
-    if (isalnum(Name[i]) == 0 && 
+    if (isalnum(Name[i]) == 0 &&
         Name[i] != '_') {
       mout<<"   *** Error *** in Name \""<<Name<<"\""<<endl;
       mout<<"Names are only allowed to contain alphanumeric characters as well as \"_\""<<endl;
@@ -4386,7 +4389,7 @@ MString MDGeometry::MakeValidName(MString Name)
   MString ValidName;
 
   for (size_t i = 0; i < Name.Length(); ++i) {
-    if (isalnum(Name[i]) != 0 || 
+    if (isalnum(Name[i]) != 0 ||
         Name[i] == '_' ||
         Name[i] == '-') {
       ValidName += Name[i];
@@ -4442,7 +4445,7 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
 {
   // Return the volume with name Name or 0 if it does not exist
 
-  // This function is not reentrant!!!! 
+  // This function is not reentrant!!!!
 
   // ---> begin extremely time critical
   const unsigned int Size = 20;
@@ -4453,7 +4456,7 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
       return (*I);
     }
   }
-  
+
   unsigned int i, i_max = m_VolumeList.size();
   for (i = m_LastVolumePosition; i < i_max; ++i) {
     if (m_VolumeList[i]->GetName().AreIdentical(Name)) {
@@ -4483,7 +4486,7 @@ MDVolume* MDGeometry::GetVolume(const MString& Name)
   // Infos: CompareTo is faster than ==
 
   // <--- end extremely time critical
-  
+
   return 0;
 }
 
@@ -4556,7 +4559,7 @@ MDDetector* MDGeometry::GetDetector(const MString& Name)
       return m_DetectorList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -4567,7 +4570,7 @@ MDDetector* MDGeometry::GetDetector(const MString& Name)
 MDDetector* MDGeometry::GetDetector(MVector Position)
 {
   // Return the detector which corresponds to position Pos
-  
+
   MDVolumeSequence S = GetVolumeSequence(Position);
   return S.GetDetector();
 }
@@ -4610,40 +4613,40 @@ bool MDGeometry::AddShape(const MString& Type, const MString& Name)
 
   MString S = Type;
   S.ToLowerInPlace();
-  
+
   if (S == "box" || S == "brik") {
     AddShape(new MDShapeBRIK(Name));
   } else if (S == "sphe" || S == "sphere") {
-    AddShape(new MDShapeSPHE(Name));    
+    AddShape(new MDShapeSPHE(Name));
   } else if (S == "cone") {
-    AddShape(new MDShapeCONE(Name));    
+    AddShape(new MDShapeCONE(Name));
   } else if (S == "cons") {
-    AddShape(new MDShapeCONS(Name));    
+    AddShape(new MDShapeCONS(Name));
   } else if (S == "pcon") {
-    AddShape(new MDShapePCON(Name));    
+    AddShape(new MDShapePCON(Name));
   } else if (S == "pgon") {
-    AddShape(new MDShapePGON(Name));    
+    AddShape(new MDShapePGON(Name));
   } else if (S == "tubs" || S == "tube") {
-    AddShape(new MDShapeTUBS(Name));    
+    AddShape(new MDShapeTUBS(Name));
   } else if (S == "trap") {
-    AddShape(new MDShapeTRAP(Name));    
+    AddShape(new MDShapeTRAP(Name));
   } else if (S == "trd1") {
-    AddShape(new MDShapeTRD1(Name));    
+    AddShape(new MDShapeTRD1(Name));
   } else if (S == "trd2") {
-    AddShape(new MDShapeTRD2(Name));    
+    AddShape(new MDShapeTRD2(Name));
   } else if (S == "gtra") {
-    AddShape(new MDShapeGTRA(Name));    
+    AddShape(new MDShapeGTRA(Name));
   } else if (S == "subtraction") {
-    AddShape(new MDShapeSubtraction(Name));    
+    AddShape(new MDShapeSubtraction(Name));
   } else if (S == "union") {
-    AddShape(new MDShapeUnion(Name));    
+    AddShape(new MDShapeUnion(Name));
   } else if (S == "intersection") {
-    AddShape(new MDShapeIntersection(Name));    
+    AddShape(new MDShapeIntersection(Name));
   } else {
     Typo("Line does not contain a known shape type!");
     return false;
   }
-  
+
   return true;
 }
 
@@ -4687,7 +4690,7 @@ MDShape* MDGeometry::GetShape(const MString& Name)
       return m_ShapeList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -4759,7 +4762,7 @@ MDOrientation* MDGeometry::GetOrientation(const MString& Name)
       return m_OrientationList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -4831,7 +4834,7 @@ MDMaterial* MDGeometry::GetMaterial(const MString& Name)
       return m_MaterialList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -4905,7 +4908,7 @@ MDTrigger* MDGeometry::GetTrigger(const MString& Name)
       return m_TriggerList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -4994,7 +4997,7 @@ MDVector* MDGeometry::GetVector(const MString& Name)
       return m_VectorList[i];
     }
   }
-  
+
   return 0;
 }
 
@@ -5075,13 +5078,13 @@ int MDGeometry::GetNIncludes()
 
 MString MDGeometry::ToString()
 {
-  // 
+  //
 
   unsigned int i;
   ostringstream out;
 
   out<<endl<<"Description of geometry: "<<m_Name<<", version: "<<m_Version<<endl;
-  
+
   if (m_ShapeList.size() > 0) {
     out<<endl<<endl<<"Description of individually defined shapes:"<<endl;
     for (i = 0; i < m_ShapeList.size(); ++i) {
@@ -5089,7 +5092,7 @@ MString MDGeometry::ToString()
       out<<m_ShapeList[i]->ToString()<<endl;
     }
   }
-  
+
   if (m_OrientationList.size() > 0) {
     out<<endl<<endl<<"Description of individually defined orientations:"<<endl;
     for (i = 0; i < m_OrientationList.size(); ++i) {
@@ -5097,18 +5100,18 @@ MString MDGeometry::ToString()
       out<<m_OrientationList[i]->ToString()<<endl;
     }
   }
-  
+
   out<<endl<<endl<<"Description of volumes:"<<endl;
   for (i = 0; i < m_VolumeList.size(); ++i) {
     out<<m_VolumeList[i]->GetName()<<endl;
     out<<m_VolumeList[i]->ToString()<<endl;
   }
-  
+
   out<<endl<<endl<<"Description of volume-tree:"<<endl;
   if (m_WorldVolume != 0) {
     out<<m_WorldVolume->ToStringVolumeTree(0)<<endl;
   }
-  
+
   out<<endl<<endl<<"Description of materials:"<<endl<<endl;
   for (i = 0; i < m_MaterialList.size(); ++i) {
     out<<m_MaterialList[i]->ToString();
@@ -5153,7 +5156,7 @@ MString MDGeometry::GetFileName()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-double MDGeometry::GetStartSphereRadius() const 
+double MDGeometry::GetStartSphereRadius() const
 {
   return m_SurroundingSphereRadius;
 }
@@ -5204,7 +5207,7 @@ vector<MDMaterial*> MDGeometry::GetListOfUnusedMaterials()
       Used.push_back(M);
     }
   }
-  
+
   // Now create a list of not used materials:
   vector<MDMaterial*> Unused;
   for (unsigned int m = 0; m < m_MaterialList.size(); ++m) {
@@ -5212,7 +5215,7 @@ vector<MDMaterial*> MDGeometry::GetListOfUnusedMaterials()
       Unused.push_back(m_MaterialList[m]);
     }
   }
-  
+
   return Unused;
 }
 
@@ -5242,7 +5245,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
   MDVolumeSequence* VS = new MDVolumeSequence();
 
   m_WorldVolume->GetVolumeSequence(Pos, VS);
-    
+
   if ((ForceDetector == true && VS->GetDetector() == 0) ||
       (ForceSensitiveVolume == true && VS->GetSensitiveVolume() == 0)) {
     MVector OrigPos = Pos;
@@ -5260,7 +5263,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
     }
     out<<setprecision(20)<<OrigPos[0]<<", "<<OrigPos[1]<<", "<<OrigPos[2]<<setprecision(6)<<endl;
     if (VS->GetDeepestVolume() != 0) {
-      out<<"     The deepest volume is: "<<VS->GetDeepestVolume()->GetName()<<endl; 
+      out<<"     The deepest volume is: "<<VS->GetDeepestVolume()->GetName()<<endl;
     }
     out<<"     Possible reasons are: "<<endl;
     out<<"       * The hit is just (+-"<<Tolerance<<" cm) outside the border of the volume:" <<endl;
@@ -5282,14 +5285,14 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
     } else {
       out<<"           -> No simple overlaps found, but you might do a full overlap check anyway..."<<endl;
     }
-    
+
     // Start the search within a tolerance limit
     if (VS->GetDetector() == 0) {
       out<<"     Searching for a detector within "<<Tolerance<<" cm around the given position..."<<endl;
     } else {
       out<<"     Searching for a sensitive volume within "<<Tolerance<<" cm around the given position..."<<endl;
     }
-    
+
     Pos = OrigPos;
     Pos[0] += Tolerance;
     VS->Reset();
@@ -5303,7 +5306,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
         return VS;
       }
     }
-    
+
     Pos = OrigPos;
     Pos[0] -= Tolerance;
     VS->Reset();
@@ -5317,7 +5320,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
         return VS;
       }
     }
-      
+
     Pos = OrigPos;
     Pos[1] += Tolerance;
     VS->Reset();
@@ -5331,7 +5334,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
         return VS;
       }
     }
-      
+
     Pos = OrigPos;
     Pos[1] -= Tolerance;
     VS->Reset();
@@ -5345,7 +5348,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
         return VS;
       }
     }
-      
+
     Pos = OrigPos;
     Pos[2] += Tolerance;
     VS->Reset();
@@ -5379,7 +5382,7 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
     // Only print the warning if we did not find anything
     cout<<out.str()<<endl; // cout instead of mout...
   }
-  
+
   return VS;
 }
 
@@ -5389,12 +5392,12 @@ MDVolumeSequence* MDGeometry::GetVolumeSequencePointer(MVector Pos, bool ForceDe
 
 MVector MDGeometry::GetGlobalPosition(const MVector& PositionInDetector, const MString& NamedDetector)
 {
-  //! Use this function to convert a position within a NAMED detector 
+  //! Use this function to convert a position within a NAMED detector
   //! (i.e. uniquely identifyable) into a position in the global coordinate system
 
   MVector Position = g_VectorNotDefined;
 
-  // Find the detector (class) which contains the given named detector 
+  // Find the detector (class) which contains the given named detector
   bool Found = false;
   for (unsigned d = 0; d < m_DetectorList.size(); ++d) {
     if (m_DetectorList[d]->HasNamedDetector(NamedDetector) == true) {
@@ -5432,7 +5435,7 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   } else {
     Volume = GetVolume(Name);
   }
-  
+
   if (Volume == 0) {
     merr<<"No volume of this name exists: "<<Name<<endl;
     return g_VectorNotDefined;
@@ -5453,7 +5456,7 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
   } else {
     m_WorldVolume->GetNPlacements(Volume, Placements, TreeDepth);
   }
-  
+
   int Total = 1;
   //cout<<"Placements"<<endl;
   for (unsigned int i = 0; i < Placements.size(); ++i) {
@@ -5463,12 +5466,12 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
     }
   }
   //cout<<"Total: "<<Total<<endl;
-  
+
   int Random = m_RandomPositionInVolumeRNG.Integer(Total);
 
   //cout<<"Random: "<<Random<<endl;
 
-  // Update the placements to reflect the ID of the random volume 
+  // Update the placements to reflect the ID of the random volume
   vector<int> NewPlacements;
   for (unsigned int i = 0; i < Placements.size(); ++i) {
     if (Placements[i] != 0) {
@@ -5479,12 +5482,12 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
       //NewPlacements[i] = 0;
     }
   }
- 
+
   //cout<<"New placements"<<endl;
   //for (unsigned int i = 0; i < NewPlacements.size(); ++i) {
   //  cout<<NewPlacements[i]<<endl;
   //}
- 
+
   TreeDepth = -1;
   MVector Pos = m_WorldVolume->GetRandomPositionInVolume(Volume, NewPlacements, TreeDepth);
 
@@ -5497,7 +5500,7 @@ MVector MDGeometry::GetRandomPositionInVolume(const MString& Name)
     m_LastFoundVolume_GetRandomPositionInVolume = Volume;
     m_LastFoundPlacements_GetRandomPositionInVolume = Placements;
   }
-  
+
   return Pos;
 }
 
@@ -5518,7 +5521,7 @@ bool MDGeometry::CreateCrossSectionFiles()
     mout<<"Cannot create cross section files since cosima is not present."<<endl;
     return false;
   }
-  
+
 
   // (1) Create a mimium cosima file:
   MString FileName = gSystem->TempDirectory();
@@ -5536,7 +5539,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   out<<"Geometry                   "<<m_FileName<<endl;
   out<<"PhysicsListEM               Standard"<<endl;
   out<<"CreateCrossSectionFiles    "<<m_CrossSectionFileDirectory<<endl;
-  
+
   out.close();
 
 
