@@ -66,7 +66,7 @@ git checkout experimental
 
 <p>On a Mac you need to install three pieces of software by hand: A current version of Xcode, Xquartz, and cmake.</p>
 <ol>
-  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode...</li>
+  <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
   <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a> (just choose the latest *.dmg file)</li>
   <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Attention: Make sure to follow the instructions on how to install the cmake command line tools: Open the cmake app. Under "Tools" you find a line "How To Install For Command Line Use". Click and follow the instructions.</li>
 </ol>
@@ -79,8 +79,8 @@ git checkout experimental
 <p>On Windows 10, you have perform the follwoing steps</p>
 <ol>
   <li>First install the "Windows Subsystem for Linux" by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
-  <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store. 
-  <li>Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>. 
+  <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store.
+  <li>Afterwards, install the <a href="https://sourceforge.net/projects/xming" target=_blank>Xming X Server for Windows</a>.
   <li>Run the Bash app, and add the following to your .bashrc:<pre>export DISPLAY=localhost:0.0</pre> and then restart your bash terminal.</li>
   <li>Then, in the bash prompt of the Ubuntu app, install MEGAlib the same way as you would on Linux.</li>
 </ol>
