@@ -943,6 +943,12 @@ bool MResponseManipulator::Join()
   RootTypes.push_back(".seq8.quality.root");
   RootTypes.push_back(".seq9.quality.root");
 
+  for (int x = 1; x < 10; ++x) {
+    for (int y = 1; y < 10; ++y) {
+      RootTypes.push_back(MString(".x") + x + ".y" + y + ".strippairing.root");
+    }
+  }
+
   JoinROOTFiles(m_Prefix, RootTypes);
 
 
