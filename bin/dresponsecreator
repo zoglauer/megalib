@@ -93,7 +93,7 @@ OPTIONS=""
 MAXID=""
 REVANCFG=""
 MIMRECCFG=""
-
+SAVE=""
 
 # The number of already launched runs
 LAUNCHED=0
@@ -127,6 +127,8 @@ for C in "${CMD[@]}"; do
     MODE=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == *-o*=* ]]; then
     OPTIONS=$( cut -d '=' -f 2- <<< "${C}" )
+  elif [[ ${C} == *-s*=* ]]; then
+    SAVE=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == -c=* ]] || [[ ${C} == --revan-config=* ]]; then
     REVANCFG=$( cut -d '=' -f 2- <<< "${C}" )
   elif [[ ${C} == -b=* ]] || [[ ${C} == --mimrec-config=* ]]; then
@@ -171,6 +173,13 @@ echo " * Data directory: ${DATADIR}"
 if [[ ${TARGETDIR} == "" ]]; then
   echo " "
   echo "ERROR: You need to give a target directory where we create the response files"
+  exit 1
+fi
+
+
+if [[ ${GEOMETRY} == "" ]]; then
+  echo " "
+  echo "ERROR: You need to give a geometry file"
   exit 1
 fi
 
@@ -410,6 +419,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
 
           REMOTECOMMAND=". .bash_local; cd ${TARGETDIR}; responsecreator -g ${GEOMETRY} -f ${DATADIR}/${DATAFILES[$d]} -r ${OUTFILE} -m ${MODE}"
           if [[ ${OPTIONS} != "" ]]; then REMOTECOMMAND+=" -o ${OPTIONS}"; fi
+          if [[ ${SAVE} != "" ]]; then REMOTECOMMAND+=" -s ${SAVE}"; fi
           if [[ ${REVANCFG} != "" ]]; then REMOTECOMMAND+=" -c ${REVANCFG}"; fi
           if [[ ${MIMRECCFG} != "" ]]; then REMOTECOMMAND+=" -b ${MIMRECCFG}"; fi
           if [[ ${ZIP} == TRUE ]]; then REMOTECOMMAND+=" -z"; fi
