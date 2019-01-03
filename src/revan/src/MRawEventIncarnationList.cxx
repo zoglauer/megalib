@@ -271,7 +271,8 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
       } else {
         Start1 = m_Collection[Annihilations[0]]->GetOptimumEvent()->GetRESEAt(0)->GetPosition();
         if (m_Collection[Annihilations[0]]->GetOptimumEvent()->GetNRESEs() != 1) {
-          merr<<"Error missing start point!"<<endl;
+          //mout<<m_Collection[Annihilations[0]]->GetOptimumEvent()->ToString()<<endl;
+          merr<<"GetOptimumPhysicalEvent: Error missing start point of event (did you require a start in the tracker, but have no trigger criteria which enforces that?)"<<endl;
           return nullptr;
         }
       }
@@ -281,7 +282,8 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
       } else {
         Start2 = m_Collection[Annihilations[1]]->GetOptimumEvent()->GetRESEAt(0)->GetPosition();
         if (m_Collection[Annihilations[1]]->GetOptimumEvent()->GetNRESEs() != 1) {
-          merr<<"Error missing start point!"<<endl;
+          //mout<<m_Collection[Annihilations[0]]->GetOptimumEvent()->ToString()<<endl;
+          merr<<"GetOptimumPhysicalEvent: Error missing start point of event (did you require a start in the tracker, but have no trigger criteria which enforces that?)"<<endl;
           return nullptr;
         }
       }
@@ -355,7 +357,8 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
       } else {
         Start1 = m_Collection[Annihilations[0]]->GetBestTryEvent()->GetRESEAt(0)->GetPosition();
         if (m_Collection[Annihilations[0]]->GetBestTryEvent()->GetNRESEs() != 1) {
-          merr<<"Error missing start point!"<<endl;
+          merr<<"GetBestTryPhysicalEvent: Error missing start point of event (did you require a start in the tracker, but have no trigger criteria which enforces a hit in the tracker?)"<<endl;
+          //mout<<m_Collection[Annihilations[0]]->GetBestTryEvent()->ToString()<<endl;
           return nullptr;
         }
       }
@@ -365,7 +368,8 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
       } else {
         Start2 = m_Collection[Annihilations[1]]->GetBestTryEvent()->GetRESEAt(0)->GetPosition();
         if (m_Collection[Annihilations[1]]->GetBestTryEvent()->GetNRESEs() != 1) {
-          merr<<"Error missing start point!"<<endl;
+          merr<<"GetBestTryPhysicalEvent: Error missing start point of event (did you require a start in the tracker, but have no trigger criteria which enforces a hit in the tracker?)"<<endl;
+          //mout<<m_Collection[Annihilations[0]]->GetBestTryEvent()->ToString()<<endl;
           return nullptr;
         }
       }

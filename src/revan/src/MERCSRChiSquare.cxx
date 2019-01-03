@@ -291,8 +291,10 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
   // create two Compton events one from D1 -> D2, the other D2 -> D1
   // If *only one* event is a compton event, then take it:
   // (B) ... or ... 
-  // If we assume start D1 and both are from D1 or both are from D5
-  if (m_GuaranteeStartD1 == false || (RE->GetRESEAt(0)->GetDetector() == 1 && RE->GetRESEAt(1)->GetDetector() == 1) || (RE->GetRESEAt(0)->GetDetector() == 5 && RE->GetRESEAt(1)->GetDetector() == 5)) {
+  // If we assume start D1 and both are from D1 or both are from D5 or none is in D1 
+  if (m_GuaranteeStartD1 == false || 
+      (RE->GetRESEAt(0)->GetDetector() == 1 && RE->GetRESEAt(1)->GetDetector() == 1) || 
+      (RE->GetRESEAt(0)->GetDetector() == 5 && RE->GetRESEAt(1)->GetDetector() == 5)) {
     
     MComptonEvent Sequence1;
     bool Sequence1Good = Sequence1.Assimilate(PositionSequence1, PositionSequence2, ElectronDirection, EnergySequence1, EnergySequence2);
@@ -452,7 +454,8 @@ void MERCSRChiSquare::FindComptonSequenceDualHitEvent(MRERawEvent* RE)
     
     // We should have an estimated first here
     if (EstimatedFirst < 0) {
-      merr<<"ERROR: No estimated first interaction for guaranteed start in D1: We missed some condition during handling of two-site events... Bug!"<<endl;
+      mdebug<<"CSR-CS - Dual hit: Event start in D1 required, but no hit is in D1 or D5"<<endl;
+      RE->SetRejectionReason(MRERawEvent::c_RejectionNoHitsInTracker);
       return;
     }
     

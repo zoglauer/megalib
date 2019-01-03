@@ -811,6 +811,13 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"Event starts not in D1";
     }
     break;
+  case c_RejectionNoHitsInTracker:  
+    if (Short == true) {
+      out<<"NoHitsInTracker";
+    } else {
+      out<<"Start in tracker required, but no hits in tracker";
+    }
+    break;
   case c_RejectionEventStartUndecided:
     if (Short == true) {
       out<<"EventStartUndecided";
