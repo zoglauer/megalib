@@ -308,7 +308,7 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
       MMultiEvent* Event = new MMultiEvent();
       for (unsigned int i = 0; i < m_Collection.size(); ++i) {
         if (find(Annihilations.begin(), Annihilations.end(), i) == Annihilations.end()) {
-          Event->Add(m_Collection[0]->GetOptimumEvent()->GetPhysicalEvent());
+          Event->Add(m_Collection[i]->GetOptimumEvent()->GetPhysicalEvent());
         }
       }
       if (P != nullptr) {
@@ -392,7 +392,7 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
       MMultiEvent* Event = new MMultiEvent();
       for (unsigned int i = 0; i < m_Collection.size(); ++i) {
         if (find(Annihilations.begin(), Annihilations.end(), i) == Annihilations.end()) {
-          Event->Add(m_Collection[0]->GetBestTryEvent()->GetPhysicalEvent());
+          Event->Add(m_Collection[i]->GetBestTryEvent()->GetPhysicalEvent());
         }
       }
       if (P != nullptr) {
