@@ -215,7 +215,7 @@ bool MPETEvent::Stream(MFile& File, int Version, bool Read, bool Fast, bool Read
     S<<"ZF "<<m_Timing1<<" "<<m_TimingResolution1<<endl;
     S<<"ES "<<m_Energy2<<" "<<m_EnergyResolution2<<endl;
     S<<"PS "<<m_Position2[0]<<" "<<m_Position2[1]<<" "<<m_Position2[2]<<"    "<<m_PositionResolution2[0]<<" "<<m_PositionResolution2[1]<<" "<<m_PositionResolution2[2]<<endl;
-    S<<"ZS "<<m_Timing2<<" "<<m_TimingResolution1<<endl;
+    S<<"ZS "<<m_Timing2<<" "<<m_TimingResolution2<<endl;
     File.Write(S);
     File.Flush();
   }
