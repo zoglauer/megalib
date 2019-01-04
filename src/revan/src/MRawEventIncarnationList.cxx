@@ -293,6 +293,10 @@ MPhysicalEvent* MRawEventIncarnationList::GetOptimumPhysicalEvent()
       P->SetEnergy2(m_Collection[Annihilations[1]]->GetOptimumEvent()->GetEnergy());
       P->SetPosition1(Start1);
       P->SetPosition2(Start2);
+      P->SetTiming1(m_Collection[Annihilations[0]]->GetOptimumEvent()->GetRESEAt(0)->GetTime());
+      P->SetTiming2(m_Collection[Annihilations[1]]->GetOptimumEvent()->GetRESEAt(0)->GetTime());
+      P->SetTimingResolution1(m_Collection[Annihilations[0]]->GetOptimumEvent()->GetRESEAt(0)->GetTimeResolution());
+      P->SetTimingResolution2(m_Collection[Annihilations[1]]->GetOptimumEvent()->GetRESEAt(0)->GetTimeResolution());
       P->SetTime(m_Collection[Annihilations[1]]->GetOptimumEvent()->GetEventTime());
       P->SetId(m_Collection[Annihilations[1]]->GetOptimumEvent()->GetEventId());
       
@@ -379,6 +383,10 @@ MPhysicalEvent* MRawEventIncarnationList::GetBestTryPhysicalEvent()
       P->SetEnergy2(m_Collection[Annihilations[1]]->GetBestTryEvent()->GetEnergy());
       P->SetPosition1(Start1);
       P->SetPosition2(Start2);
+      P->SetTiming1(m_Collection[Annihilations[0]]->GetBestTryEvent()->GetRESEAt(0)->GetTime());
+      P->SetTiming2(m_Collection[Annihilations[1]]->GetBestTryEvent()->GetRESEAt(0)->GetTime());
+      P->SetTimingResolution1(m_Collection[Annihilations[0]]->GetBestTryEvent()->GetRESEAt(0)->GetTimeResolution());
+      P->SetTimingResolution2(m_Collection[Annihilations[1]]->GetBestTryEvent()->GetRESEAt(0)->GetTimeResolution());
       P->SetTime(m_Collection[Annihilations[1]]->GetBestTryEvent()->GetEventTime());
       P->SetId(m_Collection[Annihilations[1]]->GetBestTryEvent()->GetEventId());
       
