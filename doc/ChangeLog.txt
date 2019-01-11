@@ -25,6 +25,8 @@ Version 2.35/2.36
    
 *** Critcal bug fixes
 + Cosima: The Anger camera XYZ mode was discretized like the XY mode
++ Geomega: Sphere: GetRandomPositionInDetector() was not really random
+
 
 
 Version 2.33/2.34
