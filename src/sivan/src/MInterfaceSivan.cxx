@@ -200,7 +200,7 @@ bool MInterfaceSivan::ParseCommandLine(int argc, char** argv)
       cout<<"Command-line parser: Use geometry file "<<m_Data->GetGeometryFileName()<<endl;
     } else if (Option == "--filename" || Option == "-f") {
       if (m_Data->SetCurrentFileName(argv[++i]) == false) {
-        cout<<"Command-line parser: The file could not be opened correctly!"<<endl;
+        cout<<"Command-line parser: The sim file could not be opened correctly!"<<endl;
         return false;
       }
       cout<<"Command-line parser: Use file "<<m_Data->GetCurrentFileName()<<endl;
