@@ -369,10 +369,10 @@ MVector MDShapeSPHE::GetRandomPositionInside()
 {
   // Return a random position inside this shape
 
-  double Phi = m_Phimin + gRandom->Rndm()*(m_Phimax-m_Phimin);
-  double Theta = acos(cos(m_Thetamin) - gRandom->Rndm()*(cos(m_Thetamin)-cos(m_Thetamax)));
+  double Phi = m_Phimin*c_Rad + gRandom->Rndm()*(m_Phimax*c_Rad-m_Phimin*c_Rad);
+  double Theta = acos(cos(m_Thetamin*c_Rad) - gRandom->Rndm()*(cos(m_Thetamin*c_Rad)-cos(m_Thetamax*c_Rad)));
   double R = pow(m_Rmin*m_Rmin*m_Rmin + (m_Rmax*m_Rmax*m_Rmax-m_Rmin*m_Rmin*m_Rmin)*gRandom->Rndm(), 1.0/3.0);
-    
+  
   return MVector(R*cos(Phi)*sin(Theta), R*sin(Phi)*sin(Theta), R*cos(Theta));
 }
 

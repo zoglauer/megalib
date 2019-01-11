@@ -104,6 +104,7 @@ Long-term bugs fixed:
 + Cosima: Voxel3D: The Y offset was used as Z offset during simulations
 + Cosima: In DecayMode buildup (the one used for hadron therapy, 
   not astrophysics) the DetectorDecayConstant was ignored
++ Geomega: Sphere: The random position generation wasn't really random
 + Revan: Reported by Alexey: Some events were incorrectly rejected in the classic
   event reconstruction approach
 
