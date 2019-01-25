@@ -369,7 +369,7 @@ bool CompareHistograms::Analyze()
  */
 TH1* CompareHistograms::GetHistogram(MString FileName)
 {
-  if (m_Interrupt == true) return false;
+  if (m_Interrupt == true) return nullptr;
   
   TFile* F = new TFile(FileName);
   
@@ -392,7 +392,7 @@ TH1* CompareHistograms::GetHistogram(MString FileName)
     }
   }
   
-  return 0;
+  return nullptr;
 }
 
 
