@@ -889,7 +889,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-root.sh script..."
-  bash ${MEGALIBDIR}/config/build-root.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} |& tee RootBuildLog.txt
+  bash ${MEGALIBDIR}/config/build-root.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} 2>&1 | tee RootBuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
   # If we have a new ROOT dir, copy the build log there
@@ -947,7 +947,7 @@ else
   fi
   cd ${EXTERNALPATH}
   echo "Switching to build-geant4.sh script..."
-  bash ${MEGALIBDIR}/config/build-geant4.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} |& tee Geant4BuildLog.txt
+  bash ${MEGALIBDIR}/config/build-geant4.sh -source=${ENVFILE} -patch=${PATCH} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP} --keepenvironmentasis=${KEEPENVASIS} 2>&1 | tee Geant4BuildLog.txt
   RESULT=${PIPESTATUS[0]}
 
 
