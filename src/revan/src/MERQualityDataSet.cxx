@@ -98,6 +98,7 @@ void MERQualityDataSet::Initialize(unsigned int MaximumSequenceLength, bool UseP
   
   m_EvaluationIsCompletelyAbsorbed = -1;
   m_EvaluationIsReconstructable = -1;
+  m_EvaluationIsDecay = -1;
   m_EvaluationZenithAngle = -1;
 }
 
@@ -185,6 +186,9 @@ TMVA::Reader* MERQualityDataSet::CreateReader()
   
   Name = "EvaluationIsReconstructable";
   Reader->AddVariable(Name, &m_EvaluationIsReconstructable);  
+  
+  Name = "EvaluationIsDecay";
+  Reader->AddVariable(Name, &m_EvaluationIsDecay);  
   
   Name = "EvaluationZenithAngle";
   Reader->AddVariable(Name, &m_EvaluationZenithAngle);
@@ -317,6 +321,16 @@ void MERQualityDataSet::FillEvaluationIsReconstructable(bool IsReconstructable)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! Fill the evaluation section, whether the event originates from a decay
+void MERQualityDataSet::FillEvaluationIsDecay(bool IsDecay)
+{
+  m_EvaluationIsDecay = IsDecay;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 //! Fill the evaluation section, about the zenith angle of the incoming gamma ray
 void MERQualityDataSet::FillEvaluationZenithAngle(Float_t ZenithAngle)
 {
@@ -407,6 +421,9 @@ TTree* MERQualityDataSet::CreateTree(MString Title)
   
   Name = "EvaluationIsReconstructable";
   Tree->Branch(Name, &m_EvaluationIsReconstructable, Name + "/I");  
+  
+  Name = "EvaluationIsDecay";
+  Tree->Branch(Name, &m_EvaluationIsDecay, Name + "/I");  
   
   Name = "EvaluationZenithAngle";
   Tree->Branch(Name, &m_EvaluationZenithAngle, Name + "/F"); 

@@ -64,6 +64,8 @@ class MERQualityDataSet
   void FillEvaluationIsCompletelyAbsorbed(bool IsCompletelyAbsorbed);
   //! Fill the evaluation section, whether the event is competely absorbed
   void FillEvaluationIsReconstructable(bool IsReconstructable);
+  //! Fill the evaluation section, whether the event originates from a decay
+  void FillEvaluationIsDecay(bool IsDecay);
   //! Fill the evaluation section, about the zenith angle of the incoming gamma ray
   void FillEvaluationZenithAngle(Float_t ZenithAngle);
   
@@ -99,6 +101,8 @@ class MERQualityDataSet
   Int_t m_EvaluationIsCompletelyAbsorbed;
   //! Is the event reconstructabe
   Int_t m_EvaluationIsReconstructable;
+  //! Is the event originating from an decay
+  Int_t m_EvaluationIsDecay;
   //! The Zenith angle
   Float_t m_EvaluationZenithAngle;
   

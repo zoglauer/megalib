@@ -338,6 +338,7 @@ bool MResponseEventQualityTMVAEventFile::Analyze()
   m_DataSets[SequenceLength-2]->FillEventData(RE->GetEventID(), RESEs, m_SiGeometry);
   m_DataSets[SequenceLength-2]->FillEvaluationIsCompletelyAbsorbed(CompletelyAbsorbed);
   m_DataSets[SequenceLength-2]->FillEvaluationIsReconstructable(StartResolved);
+  m_DataSets[SequenceLength-2]->FillEvaluationIsDecay(m_SiEvent->GetIAAt(0)->GetSecondaryParticleID() > 100);
   m_DataSets[SequenceLength-2]->FillEvaluationZenithAngle(m_SiEvent->GetIAAt(0)->GetDirection().Theta()*c_Deg);
   
   m_Trees[SequenceLength-2]->Fill();
