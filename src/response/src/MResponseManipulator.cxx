@@ -889,6 +889,7 @@ bool MResponseManipulator::Join()
   Types.push_back(".energy.beforeeventreconstruction.rsp");
   Types.push_back(".energy.beforeeventreconstruction.rsp");
   Types.push_back(".energy.mimrecunselected.rsp");
+  Types.push_back(".energy.mimrecselected.rsp");
   Types.push_back(".energy.armcut.rsp");
   Types.push_back(".energy.armcutoriginrestricted.rsp");
   Types.push_back(".energy.ratio.beforeeventreconstruction.rsp");
