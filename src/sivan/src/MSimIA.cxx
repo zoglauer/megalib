@@ -149,6 +149,32 @@ bool MSimIA::AddRawInput(MString LineBuffer, int Version)
       return false;
     }
     m_Process = MString(Type);
+  } else if (Version == 300){
+      if (sscanf(LineBuffer.Data(), "IA %4s %d;%d;%f;%f;%f;%d;%f;%f;%f;%f;%f;%f;%f;%d;%f;%f;%f;%f;%f;%f;%f",
+                 Type,
+                 &m_ID,
+                 &m_OriginID,
+                 &m_Position[0],
+                 &m_Position[1],
+                 &m_Position[2],
+                 &m_MotherParticleID,
+                 &m_MotherParticleDirection[0],
+                 &m_MotherParticleDirection[1],
+                 &m_MotherParticleDirection[2],
+                 &m_MotherParticlePolarisation[0],
+                 &m_MotherParticlePolarisation[1],
+                 &m_MotherParticlePolarisation[2],
+                 &m_MotherParticleEnergy,
+                 &m_SecondaryParticleID,
+                 &m_SecondaryParticleDirection[0],
+                 &m_SecondaryParticleDirection[1],
+                 &m_SecondaryParticleDirection[2],
+                 &m_SecondaryParticlePolarisation[0],
+                 &m_SecondaryParticlePolarisation[1],
+                 &m_SecondaryParticlePolarisation[2],
+                 &m_SecondaryParticleEnergy) != 24) {
+        return false;
+
   } else {
     merr<<"Unknown version of sim/evta file (version: "<<Version<<"), please upgrade (or use old version of MEGAlib prior to 3.0)"<<endl;
     return false;
@@ -228,7 +254,6 @@ MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision
   ostringstream Text;
   Text.setf(ios_base::fixed, ios_base::floatfield);
   Text.precision(4);
-
   // The compact version
   if (Version == 15) {
     Text<<"IA "<<m_Process<<" "
@@ -248,6 +273,37 @@ MString MSimIA::ToSimString(const int WhatToStore, const int ScientificPrecision
         <<setprecision(PrecisionEnergy)
         <<setw(WidthEnergy)<<m_MotherParticleEnergy;  
    } 
+  // Version 300 without detector ID and using floats.
+  else if (Version == 300) {
+    Text<<"IA "<<m_Process<<" "
+        <<setw(2)<<m_ID<<";"
+        <<setw(2)<<m_OriginID<<";"
+        <<((ScientificPrecision == 0) ? fixed : scientific)
+        <<setprecision(PrecisionPos)
+        <<setw(WidthPos)<<m_Position[0]<<";"
+        <<setw(WidthPos)<<m_Position[1]<<";"
+        <<setw(WidthPos)<<m_Position[2]<<";"
+        <<setw(1)<<m_MotherParticleID<<";"
+        <<setprecision(PrecisionDir)
+        <<setw(WidthDir)<<m_MotherParticleDirection[0]<<";"
+        <<setw(WidthDir)<<m_MotherParticleDirection[1]<<";"
+        <<setw(WidthDir)<<m_MotherParticleDirection[2]<<";"
+        <<setw(WidthDir)<<m_MotherParticlePolarisation[0]<<";"
+        <<setw(WidthDir)<<m_MotherParticlePolarisation[1]<<";"
+        <<setw(WidthDir)<<m_MotherParticlePolarisation[2]<<";"
+        <<setprecision(PrecisionEnergy)
+        <<setw(WidthEnergy)<<m_MotherParticleEnergy<<";"
+        <<setw(1)<<m_SecondaryParticleID<<";"
+        <<setprecision(PrecisionDir)
+        <<setw(WidthDir)<<m_SecondaryParticleDirection[0]<<";"
+        <<setw(WidthDir)<<m_SecondaryParticleDirection[1]<<";"
+        <<setw(WidthDir)<<m_SecondaryParticleDirection[2]<<";"
+        <<setw(WidthDir)<<m_SecondaryParticlePolarisation[0]<<";"
+        <<setw(WidthDir)<<m_SecondaryParticlePolarisation[1]<<";"
+        <<setw(WidthDir)<<m_SecondaryParticlePolarisation[2]<<";"
+        <<setprecision(PrecisionEnergy)
+        <<setw(WidthEnergy)<<m_SecondaryParticleEnergy;
+  }
   // The standard version given in MSimEvent::g_OutputVersion
   else {
     Text<<"IA "<<m_Process<<" "

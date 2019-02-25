@@ -225,7 +225,7 @@ bool SimRewriter::Analyze()
   }
    
   Writer->SetGeometryFileName(m_GeometryFileName);
-  Writer->SetVersion(25);
+  Writer->SetVersion(300);
   Writer->WriteHeader();
 
   MSimEvent* Event = 0;
