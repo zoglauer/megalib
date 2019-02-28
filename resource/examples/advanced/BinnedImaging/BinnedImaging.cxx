@@ -37,6 +37,14 @@ using namespace std;
 #include <TRotation.h>
 #include <TMatrix.h>
 #include <TMath.h>
+#include "Math/WrappedTF1.h"
+#include "Math/WrappedMultiTF1.h"
+#include "Math/MinimizerOptions.h"
+#include "Math/Functor.h"
+#include "Fit/BinData.h"
+#include "Fit/UnBinData.h"
+#include "HFitInterface.h"
+#include "Fit/Fitter.h"
 
 // MEGAlib
 #include "MGlobal.h"
@@ -114,6 +122,9 @@ protected:
   
   //! Reconstruct an image using Maximum Entropy
   bool ReconstructMEM();
+  
+  //! Reconstruct an image using Likelihood Ratios
+  bool ReconstructLR();
   
   //! Show an image in Galactic coordinates
   bool ShowImageGalacticCoordinates(MResponseMatrixON Image, MString Title, MString zAxis, bool Save = false, MString SaveTitle = "");
@@ -267,10 +278,10 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
   Usage<<"         -f:   tra file name"<<endl;
   Usage<<"         -c:   mimrec configuration file"<<endl;
   Usage<<"         -r:   response file"<<endl;
-  Usage<<"         -g:   load the galactic rotations"<<endl;
-  Usage<<"         -b:   load the pre-created background model (can appear more than once)"<<endl;
+  Usage<<"         -g:   load the pre-created response in galactic coordiantes"<<endl;
+  Usage<<"         -b:   load the pre-created background model in Galactic coordiantes (can appear more than once)"<<endl;
   Usage<<"         -i:   number of iterations (default: 5)"<<endl;
-  Usage<<"         -a:   algorithm: rl (default) or mem"<<endl;
+  Usage<<"         -a:   algorithm: rl (default) or mem or lr"<<endl;
   Usage<<"         -cb:  create background model"<<endl;
   Usage<<"         -w:   write files"<<endl;
   Usage<<"         -p:   output prefix"<<endl;
@@ -342,6 +353,9 @@ bool BinnedComptonImaging::ParseCommandLine(int argc, char** argv)
       } else if (Algo == "mem") {
         m_DeconvolutionAlgorithm = 2;
         cout<<"Accepting Maximum-Entropy"<<endl;
+      } else if (Algo == "lr") {
+        m_DeconvolutionAlgorithm = 3;
+        cout<<"Accepting Likelihood ratio"<<endl;
       } else {
         cout<<"Error: Unknown algorithm: "<<Algo<<endl;
         return false;
@@ -1542,7 +1556,7 @@ bool BinnedComptonImaging::ReconstructRL()
  */
 bool BinnedComptonImaging::ReconstructMEM()
 {
-    // Set up Lagrange multipliers
+  // Set up Lagrange multipliers
   
   MResponseMatrixON Lagrange(false);
   Lagrange.AddAxis(m_ResponseGalactic.GetAxis(2)); // energy
@@ -1735,6 +1749,180 @@ bool BinnedComptonImaging::ReconstructMEM()
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+class BackgroundFitFCN
+{
+public:
+  BackgroundFitFCN(const MResponseMatrixON& Background, const MResponseMatrixON& Data) : m_Background(Background), m_Data(Data) {}
+  
+  // Function to be minimized
+  double operator() (const double* par) {
+    // function implementation using class data members
+    
+    double Sum = 0;
+    unsigned long Bins = m_Data.GetNBins();
+    for (unsigned long db = 0; db < Bins; ++db) {
+      Sum += pow(m_Data.Get(db) - par[0]*m_Background.Get(db), 2);
+    }
+    
+    return Sum;
+  }
+  
+private:
+  const MResponseMatrixON& m_Background;
+  const MResponseMatrixON& m_Data;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+class BackgroundPlusSourceFitFCN
+{
+public:
+  BackgroundPlusSourceFitFCN(const MResponseMatrixON& Background, const MResponseMatrixON& Response, const MResponseMatrixON& Data, unsigned long ImageBin, unsigned long NumberOfImageBins) : m_Background(Background), m_Response(Response), m_Data(Data), m_ImageBin(ImageBin), m_NumberOfImageBins(NumberOfImageBins) {}
+  
+  double operator() (const double* par) {
+    // function implementation using class data members
+    
+    double Sum = 0;
+    unsigned long Bins = m_Data.GetNBins();
+    for (unsigned long db = 0; db < Bins; ++db) {
+      Sum += pow(m_Data.Get(db) - (par[0]*m_Background.Get(db) + par[1]*m_Response.Get(m_ImageBin + m_NumberOfImageBins*db)), 2); 
+    }
+    
+    return Sum;
+  }
+  
+private:
+  const MResponseMatrixON& m_Background;
+  const MResponseMatrixON& m_Response;
+  const MResponseMatrixON& m_Data;
+  const unsigned long m_ImageBin;
+  const unsigned long m_NumberOfImageBins;
+};
+
+
+/******************************************************************************
+ * Reconstruct the image in LR mode
+ */
+bool BinnedComptonImaging::ReconstructLR()
+{
+  // Step one:
+  // Fit the the background model to the data 
+  
+  // Step one:
+  // Fit the the background model to the data 
+  
+  cout<<"Starting Likelihood Ratio approach with background"<<endl;
+  
+  MResponseMatrixON LRMap("LRMap", false);
+  LRMap.AddAxis(m_ResponseGalactic.GetAxis(0)); // energy
+  LRMap.AddAxis(m_ResponseGalactic.GetAxis(1)); // image space   
+  
+  
+  
+  ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(250000);
+  
+  // Convert the data for fitting - let's assume it is 1-D (OK, since we are just fitting a similar distribution!)
+  ROOT::Fit::BinData Data(m_DBins, 1);
+  for (unsigned long db = 0; db < m_DBins; ++db) {
+    Data.Add(db, m_Data.Get(db), sqrt(m_Data.Get(db)));
+  }
+  
+  
+  // Set up the fitter
+  ROOT::Fit::Fitter BackgroundFitter; 
+  BackgroundFitter.Config().SetMinimizer("Minuit2", "Migrad");
+  if (g_Verbosity >= c_Info) BackgroundFitter.Config().MinimizerOptions().SetPrintLevel(1);
+  
+  BackgroundFitFCN Bkg(m_BackgroundModelGalactic[0], m_Data);
+  ROOT::Math::Functor BackgroundFunctor(Bkg, 1);
+  
+  double pStart[1] = { 1000 };
+  BackgroundFitter.SetFCN(BackgroundFunctor, pStart);
+  
+  bool FitReturn = BackgroundFitter.FitFCN();
+  
+  double lnL0 = 0;
+  double Expectation0 = 0;
+  if (FitReturn == true) {
+    ROOT::Fit::FitResult& BackgroundFitResult = const_cast<ROOT::Fit::FitResult&>(BackgroundFitter.Result());
+    
+    double BackgroundScaler0 = BackgroundFitResult.Parameters()[0];
+    
+    cout<<"Background scaler: "<<BackgroundScaler0<<endl;
+    
+    for (unsigned long db = 0; db < m_DBins; ++db) {
+      Expectation0 = BackgroundScaler0 * m_BackgroundModelGalactic[0].Get(db);
+      lnL0 += m_Data.Get(db) * log(Expectation0) - Expectation0;
+    }
+  } else {
+    cout<<"ERROR: Fit failed"<<endl;
+    return false;
+  }
+  
+  
+  // Step two:
+  // Fit source + background at each location
+  
+  
+  for (unsigned int ib = 0; ib < m_IBins; ++ib) {
+    
+    // Set up the source fitter
+    ROOT::Fit::Fitter SourceNBackground; 
+    SourceNBackground.Config().SetMinimizer("Minuit2", "Migrad");
+    if (g_Verbosity >= c_Info) SourceNBackground.Config().MinimizerOptions().SetPrintLevel(1);
+    
+    BackgroundPlusSourceFitFCN SrcNBkg(m_BackgroundModelGalactic[0], m_ResponseGalactic, m_Data, ib, m_IBins);
+    ROOT::Math::Functor SourceNBackgroundFunctor(SrcNBkg, 2);
+    
+    double pStart[2] = {1000, 1000};
+    SourceNBackground.SetFCN(SourceNBackgroundFunctor, pStart);
+    
+    bool FitReturn = SourceNBackground.FitFCN();
+    
+    if (FitReturn == true) {
+      ROOT::Fit::FitResult& BackgroundFitResult = const_cast<ROOT::Fit::FitResult&>(SourceNBackground.Result());
+      
+      
+      double BackgroundScaler1 = BackgroundFitResult.Parameters()[0];
+      double SourceScaler1 = BackgroundFitResult.Parameters()[1];
+      if (SourceScaler1 < 0) SourceScaler1 = 0;
+      
+      //cout<<"Background and source scalers: "<<BackgroundScaler1<<", "<<SourceScaler1<<endl;
+      
+      double lnL1 = 0;
+      double TotalExpectation = 0;
+      double Expectation1 = 0;
+      for (unsigned long db = 0; db < m_DBins; ++db) {
+        Expectation1 = BackgroundScaler1 * m_BackgroundModelGalactic[0].Get(db);
+        Expectation1 += SourceScaler1 * m_ResponseGalactic.Get(ib + m_IBins*db);
+        
+        TotalExpectation += Expectation1;
+        //cout<<Expectation1<<" vs. "<<BackgroundScaler1 * m_Background.Get(db)<<" vs. "<<BackgroundScaler0 * m_Background.Get(db)<<endl;
+        lnL1 += m_Data.Get(db) * log(Expectation1) - Expectation1;
+      }
+      //cout<<"Total expectation: "<<TotalExpectation<<" vs. Sum="<<m_Data.Sum()<<" vs LR="<<2*(lnL0-lnL1)<<endl;
+      
+      if (2*(lnL1-lnL0) <= 0) {
+        LRMap.Set(ib, 1E-10);
+      } else {
+        LRMap.Set(ib, sqrt(2*(lnL1-lnL0)));
+      }
+    }
+  }
+  
+  
+  
+  ShowImageGalacticCoordinates(LRMap, MString("LR Map"), "LR Significance", true, m_Prefix + MString("LR Map"));
+  
+  return true;
+}
+
+
 /******************************************************************************
  * Reconstruct the image
  */
@@ -1774,8 +1962,12 @@ bool BinnedComptonImaging::Reconstruct()
   // Create image
   if (m_DeconvolutionAlgorithm == 1) {
     ReconstructRL(); 
-  } else {
+  } else if (m_DeconvolutionAlgorithm == 2) {
     ReconstructMEM();
+  } else if (m_DeconvolutionAlgorithm == 3) {
+    ReconstructLR();
+  } else {
+    cout<<"ERROR: Unknown deconvolution algorithm"<<endl;
   }
   
   return true;
