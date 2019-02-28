@@ -69,6 +69,7 @@ int main(int argc, char** argv)
     cout<<"Perhaps the following exception text helps you to figure out what went wrong:"<<endl;
     cout<<endl;
     cout<<e.what()<<endl;
+    cout<<endl;
     cout<<"You might consider filing a bug report."<<endl;
     cout<<"For details see: http://megalibtoolkit.com/feedback"<<endl;
     cout<<endl;
