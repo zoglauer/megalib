@@ -46,9 +46,9 @@ class MCalibrationSpectralPoint
   //! Return whether this point is good or not
   bool IsGood() const { return m_IsGood; }
   
-  //! Set the peak
+  //! Set the peak in ADCs
   void SetPeak(double Peak) { m_Peak = Peak; }
-  //! Get the peak
+  //! Get the peak in ADCs
   double GetPeak() const { return m_Peak; }
   
   //! Set the FWHM in ADCs
@@ -56,9 +56,9 @@ class MCalibrationSpectralPoint
   //! Get the FWHM in ADCs
   double GetFWHM() const { return m_FWHM; }
 
-  //! Set the energy
+  //! Set the energy in keV
   void SetEnergy(double Energy) { m_Energy = Energy; }
-  //! Get the energy
+  //! Get the energy in keV
   double GetEnergy() const { return m_Energy; }
 
   //! Get the FWHM in energy units (keV)

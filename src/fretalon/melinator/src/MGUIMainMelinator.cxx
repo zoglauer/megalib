@@ -44,6 +44,7 @@ using namespace std;
 #include "MStreams.h"
 #include "MGUIDefaults.h"
 #include "MFile.h"
+#include "MMath.h"
 #include "MGUIAbout.h"
 #include "MGUIGeometry.h"
 #include "MGUILoadCalibration.h"
@@ -1558,7 +1559,30 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
     double FitQuality = m_Melinator.GetCalibrationQuality(i);
     FitQualities.push_back(FitQuality);
   }
+
+  /*
+  MMath M;
+  cout<<"Outlier 90:"<<endl;
+  vector<bool> IsOutlier90 = M.ModifiedThomsonTauTest(FitQualities, 0.1);
+  cout<<"Outlier 95:"<<endl;
+  vector<bool> IsOutlier95 = M.ModifiedThomsonTauTest(FitQualities, 0.05);
+  cout<<"Outlier 99:"<<endl;
+  vector<bool> IsOutlier99 = M.ModifiedThomsonTauTest(FitQualities, 0.01);
+
+  for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+    if (IsOutlier90[i] == true) {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 2);      
+    } else if (IsOutlier99[i] == true) {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 3);      
+    } else if (IsOutlier99[i] == true) {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 4);      
+    } else {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 1);      
+    }
+  }
+  */
   
+  /*
   // Mean & Standard deviation:
   double LowerCutOff = 0;
   double UpperCutOff = 100000;
@@ -1586,10 +1610,36 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
       // Now set the colors:
       for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
         //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<m_Melinator.GetCalibrationQuality(i)<<"/"<<StandardDeviation<<endl;
-        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), m_Melinator.GetCalibrationQuality(i)/StandardDeviation);
+        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), int(m_Melinator.GetCalibrationQuality(i)/StandardDeviation));
       }
     }
   }
+  */
+  
+  // RMS with outlier detection:
+  MMath M;
+  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01);
+  
+  unsigned int GoodEntries = 0;
+  double RMS = 0;
+  for (unsigned int i = 0; i < FitQualities.size(); ++i) {
+    if (IsOutlier[i] == false) {
+      RMS += pow(FitQualities[i], 2);
+      GoodEntries += 1;
+    }
+  }
+  RMS = sqrt(RMS/GoodEntries);
+    
+  if (RMS > 0) {
+    // Now set the colors:
+    for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+      int Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
+      //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
+      //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<Quality<<" (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
+    }
+  }
+  
 }
 
 

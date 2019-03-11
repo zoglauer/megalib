@@ -405,7 +405,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
       for (unsigned int q = p+1; q < m_Results.GetNumberOfSpectralPoints(r); ++q) {
         if (m_Results.GetSpectralPoint(r, q).IsGood() == false) continue;
         if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
-          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
+          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetCounts()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
             if (g_Verbosity >= c_Info) cout<<"Assign energies: Rejecting peak because it was found twice: "<<m_Results.GetSpectralPoint(r, p)<<endl;
             //FoundNotGood = true;
@@ -527,7 +527,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinearZeroCrossing()
       for (unsigned int q = p+1; q < m_Results.GetNumberOfSpectralPoints(r); ++q) {
         if (m_Results.GetSpectralPoint(r, q).IsGood() == false) continue;
         if (m_Results.GetSpectralPoint(r, q).GetEnergy() == Energy) {
-          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetEnergy()) {
+          if (m_Results.GetSpectralPoint(r, p).GetCounts() < m_Results.GetSpectralPoint(r, q).GetCounts()) {
             m_Results.GetSpectralPoint(r, p).IsGood(false);
             if (g_Verbosity >= c_Info) cout<<"Assign energies: Rejecting peak because it was found twice: "<<m_Results.GetSpectralPoint(r, p)<<endl;
             //FoundNotGood = true;

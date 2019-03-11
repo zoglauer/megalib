@@ -104,6 +104,7 @@ FILES = MGlobal \
 	MXmlNode \
 	MXmlAttribute \
 	MXmlDocument \
+	MUnitTest \
 
 
 #----------------------------------------------------------------

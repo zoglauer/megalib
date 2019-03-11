@@ -40,7 +40,11 @@ class MMath
   static void SphericToCartesean(double& ThetaIsX, double& PhiIsY, double& RadiusIsZ);
   static void CarteseanToSpheric(double& ThetaIsX, double& PhiIsY, double& RadiusIsZ);
 
-
+  //! Perform a Thomson Tau test
+  //! Return for each value if it is an outlier
+  vector<bool> ModifiedThomsonTauTest(vector<double> Values, double Alpha = 0.05);
+  
+  
   double Gauss(const double& x, const double& mean = 0, const double& sigma = 1);
 
   bool InRange(double x);

@@ -76,6 +76,9 @@ class MCalibrateEnergyFindLines : public MCalibrateEnergy
   //! Step 2: Fit the peaks in this read-out data group
   bool FitPeaks(unsigned int ROGID);
   
+  //! Step 3: Do a final check of all peaks
+  bool CheckPeaks();
+  
   // private methods:
  private:
 

@@ -822,6 +822,9 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
   double FitValue = 0;
   if (C != nullptr && C->HasModel() == true) {
     FitValue = C->GetModel().GetFitQuality();
+    if (FitValue < 0 || std::isnan(FitValue) == true || std::isinf(FitValue) == true) {
+      FitValue = 1E10;
+    }
   }
   
   return FitValue;
@@ -1167,21 +1170,21 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     MCalibrateEnergyFindLines FindLines;
     FindLines.SetDiagnosticsMode(ShowDiagnostics);
     FindLines.SetRange(m_HistogramMin, m_HistogramMax);
-    cout<<"T1: "<<Timer.GetElapsed()<<endl;
+    //cout<<"T1: "<<Timer.GetElapsed()<<endl;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
       FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
-    cout<<"T2: "<<Timer.GetElapsed()<<endl;
+    //cout<<"T2: "<<Timer.GetElapsed()<<endl;
     FindLines.SetPeakParametrizationMethod(m_PeakParametrizationMethod);
     FindLines.SetPeakParametrizationMethodFittedPeakOptions(m_PeakParametrizationMethodFittedPeakBackgroundModel, m_PeakParametrizationMethodFittedPeakEnergyLossModel, m_PeakParametrizationMethodFittedPeakPeakShapeModel);
-    cout<<"T3: "<<Timer.GetElapsed()<<endl;
+    //cout<<"T3: "<<Timer.GetElapsed()<<endl;
     
     if (FindLines.Calibrate() == false) {
       cout<<"Calibration failed for read-out element "<<C.GetReadOutElement().ToString()<<endl;
       g_Verbosity = Verbosity;
       return false;
     }
-    cout<<"T4: "<<Timer.GetElapsed()<<endl;
+    //cout<<"T4: "<<Timer.GetElapsed()<<endl;
     m_TimeToFindLines += Timer.GetElapsed();
     
     

@@ -93,25 +93,14 @@ void MGUIEReadOutElement::SetQuality(double Quality)
   
   if (m_Quality == 0) {
     m_TextButton->ChangeBackground(m_DefaultBackgroundColor);    
+  } else if (m_Quality == 1) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kGreen+1)->GetPixel());
+  } else if (m_Quality == 2) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
+  } else if (m_Quality == 3) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kOrange+1)->GetPixel());
   } else {
-    
-    int R = 0;
-    int G = 255;
-    int B = 0;
- 
-    if (m_Quality > 0 && m_Quality <= 2) {
-      R = 255 * m_Quality/2.0;
-      G = 255;
-    } else if (m_Quality > 2 && m_Quality <= 4) {
-      R = 255;
-      G = 255 * (4.0 - m_Quality)/2.0;
-    } else if (m_Quality > 4) {
-      R = 255;
-      G = 0;
-    }
-    
-    Pixel_t C = R*256*256 + G*256 + B;
-    m_TextButton->ChangeBackground(C);
+    m_TextButton->ChangeBackground(gROOT->GetColor(kRed)->GetPixel());
   }
 }
 
