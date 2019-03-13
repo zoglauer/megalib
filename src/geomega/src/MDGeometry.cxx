@@ -3202,7 +3202,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (D->GetType() == MDDetector::c_AngerCamera) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
-                 " e.g. \"Anger.Postioning XYZ\"");
+                 " e.g. \"Anger.Positioning XYZ\"");
             return false;
           }
           if (Tokenizer.GetTokenAtAsString(2) == "XYZ") {
