@@ -359,6 +359,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
   int NRFirstIAD1 = 0;
   int NRFirstIAD2 = 0;
   int NRFirstIAD3 = 0;
+  int NRFirstIADOther = 0;
   int NRFirstIANotSensitive = 0;
 
   int NIASD11 = 0;
@@ -482,6 +483,8 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
         NRFirstIAD2++;
       } else if (Event->GetEventLocation() == MSimEvent::D3) {
         NRFirstIAD3++;
+      } else if (Event->GetEventLocation() == MSimEvent::D4 || Event->GetEventLocation() == MSimEvent::D5 || Event->GetEventLocation() == MSimEvent::D6 || Event->GetEventLocation() == MSimEvent::D7 || Event->GetEventLocation() == MSimEvent::D8) {
+        NRFirstIADOther++;
       } else {
         NRFirstIANotSensitive++;
       }
@@ -549,6 +552,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
           Event->GetEventLocation() == MSimEvent::D2 ||
           Event->GetEventLocation() == MSimEvent::D3 ||
           Event->GetEventLocation() == MSimEvent::D4 ||
+          Event->GetEventLocation() == MSimEvent::D7 ||
           Event->GetEventLocation() == MSimEvent::D8) {
         //if (Event->GetICFirstIADetector() != 1 || Event->GetICSecondIADetector() != 3) continue;
 
@@ -581,6 +585,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
         if (Event->GetEventLocation() == MSimEvent::D1) NRComptonD1++;
         if (Event->GetEventLocation() == MSimEvent::D3) NRComptonD3++;
 
+            
         // Check for track:
         A = Event->GetRCElectronD(MinimumTrackLength);
         
@@ -672,6 +677,8 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
         NRFirstIAD2++;
       } else if (Event->GetEventLocation() == MSimEvent::D3) {
         NRFirstIAD3++;
+      } else if (Event->GetEventLocation() == MSimEvent::D4 || Event->GetEventLocation() == MSimEvent::D5 || Event->GetEventLocation() == MSimEvent::D6 || Event->GetEventLocation() == MSimEvent::D7 || Event->GetEventLocation() == MSimEvent::D8) {
+        NRFirstIADOther++;
       } else {
         NRFirstIANotSensitive++;
       }
@@ -742,6 +749,7 @@ void MInterfaceSivan::AnalyzeSimEvents(bool UseIdealEvent)
   cout<<"   * D1                                      : "<<NRFirstIAD1<<endl;
   cout<<"   * D2                                      : "<<NRFirstIAD2<<endl;
   cout<<"   * D3                                      : "<<NRFirstIAD3<<endl;
+  cout<<"   * DX                                      : "<<NRFirstIADOther<<endl;
   cout<<"   * Insensitive Material                    : "<<NRFirstIANotSensitive<<endl;
   cout<<endl;
   cout<<"Interaction Sequences for Comptons:"<<endl;
