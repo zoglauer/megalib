@@ -991,7 +991,7 @@ double MFunction::GetRandomInterpolate(double Itot)
       
       if (m_X[Bin-1] > x || m_X[Bin] < x) {
         merr<<"This case should have never happened: "<<endl;
-        merr<<"x is outside the interval bounderies: "<<endl;
+        merr<<"x is outside the interval boundaries: "<<endl;
         merr<<"x_min: "<<m_X[Bin-1]<<" - x: "<<x<<" ("<<xs1<<", "<<xs2<<") - x_max: "<<m_X[Bin]<<endl;
         return 0.0;
       }
