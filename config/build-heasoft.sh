@@ -1,8 +1,13 @@
 #!/bin/bash
 
 
-CONFIGUREOPTIONS="--enable-readline"
 COMPILEROPTIONS=`gcc --version | head -n 1`
+
+CONFIGUREOPTIONS=" "
+
+# Comment this line in if you have trouble with readline
+# CONFIGUREOPTIONS="--enable-readline "
+
 
 
 confhelp() {
