@@ -108,7 +108,20 @@ if [[ $EUID -eq 0 ]]; then
   exit 1
 fi
 
-
+type cmake >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "Error: cmake must be installed"
+  exit 1
+else
+  VER=`cmake --version | grep ^cmake`
+  VER=${VER#cmake version };
+  OLDIFS=${IFS}; IFS='.'; Tokens=( ${VER} ); IFS=${OLDIFS};
+  VERSION=$(( 10000*${Tokens[0]} + 100*${Tokens[1]} + ${Tokens[2]} ));
+  if (( ${VERSION} < 30600 )); then
+    echo "ERROR: the version of cmake needs to be at least 3.6 and not ${VER}"
+    exit 1
+  fi
+fi
 
 # Part 3:
 # Upgrade the input options:
@@ -297,7 +310,7 @@ fi
 if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
   KEEPENVASIS="off"
   echo " * Clearing the environment paths PATH, LD_LIBRARY_PATH, CPATH"
-  # We cannot clean PATH, otherwise no programs can be found anymore 
+  # We cannot clean PATH, otherwise no programs can be found anymore
   export LD_LIBRARY_PATH=""
   export CPATH=""
 elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
@@ -983,9 +996,9 @@ echo " "
 
 # Finalize the source script:
 echo " " >> ${ENVFILE}
-if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 0 )); then 
+if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 0 )); then
   echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
-else 
+else
   echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --geant4=\${GEANT4DIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
 fi
 echo " " >> ${ENVFILE}
