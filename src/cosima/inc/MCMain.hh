@@ -43,9 +43,15 @@ public:
   MCMain();
   /// Default destructor
   virtual ~MCMain();
-
+  
+  /// Parse the command line
+  /// 0: Everything OK
+  /// 1: Help was displayed
+  /// 2 or higher: An error occurred
+  unsigned int ParseCommandLine(int argc, char** argv);
+  
   /// Initialize Geant4 
-  bool Initialize(int argc, char** argv);
+  bool Initialize();
 
   /// Set an event relegator function (i.e. your own event handler) 
   void SetEventRelegator(void (Relegator)(MSimEvent*));
@@ -64,8 +70,7 @@ public:
   
   // protected methods:
 protected:
-  /// Parse the command line
-  bool ParseCommandLine(int argc, char** argv);
+
   
 
   // protected members:

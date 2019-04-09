@@ -77,9 +77,22 @@ int main(int argc, char** argv)
   __merr.SetHeader("COSIMA-ERROR:");
 
   g_Main = new MCMain();
-  // Load the program
-  if (g_Main->Initialize(argc, argv) == false) {
-    cout<<"An error occurred during initialization"<<endl;
+  
+  // Read the command line
+  unsigned int InitializationStatus = g_Main->ParseCommandLine(argc, argv);
+  if (InitializationStatus >= 2) {
+    cout<<"An error occurred during command line parsing"<<endl;
+    delete g_Main;
+    return -1;
+  } else if (InitializationStatus == 1) {
+    // Help was displayed
+    delete g_Main;
+    return 0;
+  }
+  // else everything is OK
+  
+  if (g_Main->Initialize() == false) {
+    cout<<"An error occurred during initializtion of Geant4"<<endl;
     delete g_Main;
     return -1;
   }
