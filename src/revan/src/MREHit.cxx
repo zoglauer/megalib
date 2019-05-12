@@ -405,8 +405,31 @@ bool MREHit::RetrieveResolutions(MDGeometryQuest* Geometry)
   
   return true;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDGridPointCollection MREHit::Grid(MDGeometryQuest* Geometry)
+{
+  // This function is only (O-N-L-Y) called when this hit has been simulated
+  // It splits the hit into multiple ones the energy and position of the hit.
   
+  //cout<<"Pos before: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
   
+  if (m_Detector < MDDetector::c_MinDetector || m_Detector > MDDetector::c_MaxDetector) {
+    merr<<"Unknown detector ID: "<<m_Detector<<show;
+    return MDGridPointCollection(*m_VolumeSequence); ;
+  }
+
+  if (Geometry == nullptr) {
+    return MDGridPointCollection(*m_VolumeSequence); 
+  }
+  
+  return Geometry->Grid(m_Position, m_Energy, m_Time, *m_VolumeSequence);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -414,24 +437,24 @@ bool MREHit::Noise(MDGeometryQuest* Geometry)
 {
   // This function is only (O-N-L-Y) called when this hit has been simulated
   // It noises the energy and position of the hit.
-
+  
   //cout<<"Pos before: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
   if (Geometry != 0) {
     Geometry->Noise(m_Position, m_Energy, m_Time, *m_VolumeSequence);
   }
   //cout<<"Pos after: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
-
+  
   if (m_Detector < MDDetector::c_MinDetector || 
-      m_Detector > MDDetector::c_MaxDetector) {
+    m_Detector > MDDetector::c_MaxDetector) {
     merr<<"Unknown detector ID: "<<m_Detector<<show;
-    return false;
-  }
-
-  if (m_Energy > 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return false;
+    }
+    
+    if (m_Energy > 0) {
+      return true;
+    } else {
+      return false;
+    }
 }
 
 

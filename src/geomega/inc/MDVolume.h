@@ -77,7 +77,8 @@ class MDVolume
 
   void SetShape(MDShape* Shape);
   MDShape* GetShape();
-
+  const MDShape* GetShape() const;
+  
   void SetMaterial(MDMaterial *Material);
   MDMaterial* GetMaterial();
 

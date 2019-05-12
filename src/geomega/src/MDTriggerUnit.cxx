@@ -199,7 +199,7 @@ bool MDTriggerUnit::AddHit(const MVector& Position,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerUnit::AddHit(const double& Energy, MDVolumeSequence& V)
+bool MDTriggerUnit::AddHit(const double& Energy, const MDVolumeSequence& V)
 {
   bool Added = false;
 
@@ -232,6 +232,11 @@ bool MDTriggerUnit::AddGuardRingHit(const MVector& Position,
 {
 
   MDVolumeSequence S = m_Geometry->GetVolumeSequence(Position, false, true);
+  if (S.GetDetector()->GetType() != MDDetector::c_GuardRing) {
+    if (S.GetDetector()->HasGuardRing() == true) {
+       S.SetDetector(S.GetDetector()->GetGuardRing());
+    }
+  }
   return AddGuardRingHit(Energy, S);
 }
 
@@ -239,20 +244,20 @@ bool MDTriggerUnit::AddGuardRingHit(const MVector& Position,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerUnit::AddGuardRingHit(const double& Energy, MDVolumeSequence& V)
+bool MDTriggerUnit::AddGuardRingHit(const double& Energy, const MDVolumeSequence& V)
 {
   bool Added = false;
 
-  if (V.GetDetector() != 0) {
+  if (V.GetDetector() != nullptr) {
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      if (V.GetDetector()->HasGuardRing() == true) {
-        if (m_IgnoreThresholds == true || V.GetDetector()->GetGuardRing()->IsAboveTriggerThreshold(Energy, V.GetGridPoint()) == true) { 
+      if (V.GetDetector()->GetType() == MDDetector::c_GuardRing) {
+        if (m_IgnoreThresholds == true || V.GetDetector()->IsAboveTriggerThreshold(Energy, V.GetGridPoint()) == true) { 
           if (m_Geometry->GetTriggerAt(t)->AddGuardRingHit(V) == true) {
             Added = true;
           }
         }
       } else {
-        merr<<"Detector "<<V.GetDetector()->GetName()<<" has no guardring ?? !!"<<endl;
+        merr<<"Detector "<<V.GetDetector()->GetName()<<" is no guardring ?? !!"<<endl;
       }
     }
   }
@@ -292,7 +297,7 @@ bool MDTriggerUnit::HasTriggered()
   
   
   // If we have one veto then we have not triggered
-  if (m_IgnoreVetoes == false) { // This should not be neceassary since the triggers handle it...
+  if (m_IgnoreVetoes == false) { // This should not be necessary since the triggers handle it...
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
       mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed? "<<(m_Geometry->GetTriggerAt(t)->HasVetoed() == true ? "yes" : "no")<<endl;
       if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {

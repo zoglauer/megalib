@@ -26,10 +26,9 @@ using namespace std;
 #include "MGlobal.h"
 #include "MDGridPoint.h"
 #include "MDVolumeSequence.h"
-#include "MDDetector.h"
 
 // Forward declarations:
-
+class MDDetector;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -38,10 +37,15 @@ class MDGridPointCollection
 {
   // public interface:
  public:
+  //! Default constructor - SetVolumeSequence() must be called before using 
+  MDGridPointCollection() {};
   MDGridPointCollection(const MDVolumeSequence& VolumeSequence);
   MDGridPointCollection(const MDGridPointCollection& Grid);
   virtual ~MDGridPointCollection();
 
+  //! Set volume sequence
+  void SetVolumeSequence(const MDVolumeSequence& VolumeSequence) { m_VolumeSequence = VolumeSequence; }
+  
   //! Add a new grid point to the grid and discretize (noise, thresholds, etc)
   void Add(const MVector& Position, const double Energy, const double Time, 
            const vector<int>& Origins);
@@ -49,7 +53,10 @@ class MDGridPointCollection
   void AddUndiscretized(const MVector& PositionInDetector);
   //! Add another GridPointCollection
   void Add(MDGridPointCollection& Collection);
-
+  //! Add another grid point - must be of similar type to the ones already in there
+  void Add(MDGridPoint& Point);
+  
+  
   //! Has to be called after all hits have been added!
   void FinalizeGridding();
 
@@ -64,9 +71,15 @@ class MDGridPointCollection
   unsigned int GetNGridPoints() const { return m_Points.size(); }
   //! Return the grid point at position i (no error checks for performance reasons!)
   const MDGridPoint& GetGridPointAt(unsigned int i) const { return m_Points[i]; }
+  //! Return the grid point at position i (no error checks for performance reasons!)
+  MDGridPoint& GetGridPointAt(unsigned int i) { return m_Points[i]; }
   //! Position (in world coordinates) of grid point i (no error checks for performance reasons!)
-  MVector GetWorldPositionGridPointAt(unsigned int i);
+  MVector GetWorldPositionGridPointAt(unsigned int i) const;
 
+  //! Remove not read-out grid points
+  void RemoveNonReadOuts();
+  
+  
   //! Return the world position of the detector of the grid
   MVector GetWorldPosition();
   //! Return the total energy position in the grid
@@ -78,6 +91,8 @@ class MDGridPointCollection
   //! Return the total number of hits in the grid weigthed by their individual weighting factor
   double GetWeightedHits();
 
+  //! Return the volume sequence
+  const MDVolumeSequence& GetVolumeSequence() const { return m_VolumeSequence; }
   
   //! Return the volume sequence
   MString GetVolumeTree() { return m_VolumeSequence.ToStringVolumes(); }
@@ -86,7 +101,7 @@ class MDGridPointCollection
   // protected methods:
  protected:
   //! Default constructor is protected (thus we don't have one!)
-  MDGridPointCollection() {};
+
   
   // private methods:
  private:

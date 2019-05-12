@@ -152,7 +152,19 @@ MDShape* MDVolume::GetShape()
 {
   // Return a pointer to the shape (BRIK, SPHE) of the material or
   // zero if there is none
+  
+  return m_Shape;
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+const MDShape* MDVolume::GetShape() const
+{
+  // Return a pointer to the shape (BRIK, SPHE) of the material or
+  // zero if there is none
+  
   return m_Shape;
 }
 

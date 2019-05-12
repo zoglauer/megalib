@@ -61,6 +61,7 @@ FILES = MSettingsGeomega \
 	MDGridPoint \
 	MDGridPointCollection \
 	MDOrientation \
+	MDDetectorEffectsEngine \
 
 LIBRARY_UI = GeomegaGui
 

@@ -49,10 +49,12 @@ class MDAngerCamera : public MDDetector
   virtual bool Validate();
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
-  virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
-                                         const double& Energy, 
-                                         const double& Time,
-                                         MDVolume* Volume) const;
+  
+  //! Grid a hit -- in this case just return the single grid point of the hit
+  virtual vector<MDGridPoint> Grid(const MVector& Pos, 
+                                   const double& Energy,
+                                   const double& Time,
+                                   const MDVolume* Volume) const;
   //! Return the Grid point of this position
   virtual MDGridPoint GetGridPoint(const MVector& Pos) const;
   //! Return a position in detector volume coordinates
@@ -61,7 +63,7 @@ class MDAngerCamera : public MDDetector
                                               const unsigned int ZGrid,
                                               const MVector PositionInGrid,
                                               const unsigned int Type,
-                                              MDVolume* Volume);
+                                              const MDVolume* Volume) const;
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
 
   virtual MString GetGeomega() const;

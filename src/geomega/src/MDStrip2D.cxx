@@ -211,9 +211,9 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   ApplyOverflow(Energy);
   
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy) == true) {
-    return;
-  }
+  //if (ApplyNoiseThreshold(Energy) == true) {
+  //  return;
+  //}
   
   // Noise the time:
   ApplyTimeResolution(Time, Energy);
@@ -226,10 +226,10 @@ void MDStrip2D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDStrip2D::Discretize(const MVector& PosInDetector, 
-                                          const double& Energy, 
-                                          const double& Time, 
-                                          MDVolume* DetectorVolume) const
+vector<MDGridPoint> MDStrip2D::Grid(const MVector& PosInDetector, 
+                                    const double& Energy, 
+                                    const double& Time, 
+                                    const MDVolume* DetectorVolume) const
 {
   // Discretize Pos to a voxel of this volume
 
@@ -352,7 +352,7 @@ MVector MDStrip2D::GetPositionInDetectorVolume(const unsigned int xGrid,
                                                const unsigned int zGrid,
                                                const MVector PositionInGrid,
                                                const unsigned int Type,
-                                               MDVolume* Volume)
+                                               const MDVolume* Volume) const
 {
   // Return the position in the detector volume
 

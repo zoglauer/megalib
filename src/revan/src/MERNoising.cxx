@@ -48,6 +48,7 @@ using namespace std;
 #include "MDVoxel3D.h"
 #include "MDStrip3DDirectional.h"
 #include "MDGuardRing.h"
+#include "MDDetectorEffectsEngine.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,6 +101,70 @@ bool MERNoising::Analyze(MRERawEvent* Event)
 {
   // Do all the things required for simulated events such as noising, triggering, etc.
 
+  // Reset the data of the engine
+  MDDetectorEffectsEngine& DEE = *(m_Geometry->GetDetectorEffectsEngine());
+  DEE.Reset();
+  
+  // Set all new data
+  DEE.AddEventTime(Event->GetEventTime());
+  for (int h = 0; h < Event->GetNRESEs(); ++h) {
+    MRESE* RESE = Event->GetRESEAt(h);
+    if (RESE->GetType() == MRESE::c_Hit) {
+      MREHit* Hit = dynamic_cast<MREHit*>(RESE);
+      DEE.AddHit(Hit->GetPosition(), Hit->GetEnergy(), Hit->GetTime(), *(Hit->GetVolumeSequence()));
+    } else {
+      // Nasty complaint 
+      mout<<"MRERawEvent* MFileEventsEvta::GetNextEvent(): Cannot noise a hit which is no single hit!"<<endl;
+      mout<<RESE->ToString()<<endl;
+    }
+  }
+  for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin(); Iter != Event->GetREAMEnd(); ) {
+    if ((*Iter)->GetType() == MREAM::c_GuardRingHit) {
+      MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(*Iter);
+      DEE.AddHit(MVector(0.0, 0.0, 0.0), GR->GetEnergy(), 0.0, *(GR->GetVolumeSequence()));
+      Event->DeleteREAM(Iter);
+    } else {
+      ++Iter;
+    }
+  }
+      
+  
+  
+  // Run the engine
+  DEE.Run();
+  
+  // Clear the old data
+  Event->RemoveAllAndCompress();
+  
+  // Retrieve the noised data
+  const vector<MDGridPointCollection>& GridPointCollections = DEE.GetGridPointCollections();
+  
+  // Create hits:
+  //cout<<GridPointCollections.size()<<endl;
+  for (unsigned int c = 0; c < GridPointCollections.size(); ++c) {
+    //cout<<GridPointCollections[c].GetNGridPoints()<<endl;
+    for (unsigned int p = 0; p < GridPointCollections[c].GetNGridPoints(); ++p) {
+      const MDGridPoint& P = GridPointCollections[c].GetGridPointAt(p);
+
+      MREHit* Hit = new MREHit();
+      Hit->SetEnergy(P.GetEnergy());
+      Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
+      Hit->SetTime(P.GetTime());
+      Hit->UpdateVolumeSequence(m_Geometry);
+      Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
+      Hit->RetrieveResolutions(m_Geometry);
+      Event->AddRESE(Hit);
+      
+      //cout<<"Added"<<endl;
+    }
+  }
+  
+  // Set the time
+  Event->SetEventTime(DEE.GetEventTime());
+  
+  return true;
+  
+  /*
   MRESE* RESE = 0;
   MString TriggerName;
   MDTriggerUnit* Trigger = m_Geometry->GetTriggerUnit();
@@ -114,8 +179,69 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     Event->SetEventTime(Time);
   }
   
-  // Step 1.1: Noise hits:
+  
+  // Step 1.1: Split hits (e.g. charge sharing onto multiple strips)
+  vector<MDGridPointCollection> Collections;
   int h_max = Event->GetNRESEs();
+  for (int h = 0; h < h_max; ++h) {
+    MRESE* RESE = Event->GetRESEAt(h);
+    if (RESE->GetType() == MRESE::c_Hit) {
+      //if (((MREHit *) (RESE))->GetDetector() != MDDetector::c_Scintillator) {
+      mdebug<<"TG - Event: "<<Event->GetEventID()<<": Splitting..."<<RESE->GetEnergy()<<endl;
+      // Split
+      MDGridPointCollection C = ((MREHit *) (RESE))->Grid(m_Geometry);
+      // Remove the hit if the collection is larger than 0 and store the collection:
+      if (C.GetNGridPoints() > 0) {
+        Collections.push_back(C);
+        Event->RemoveRESE(RESE);
+        delete RESE;
+      }
+    } else {
+      mout<<"MRERawEvent* MFileEventsEvta::GetNextEvent(): Cannot noise a hit which is no single hit!"<<endl;
+      mout<<RESE->ToString()<<endl;
+    }
+  }
+  Event->CompressRESEs();
+  
+
+  if (Collections.size() > 0) {
+    // Merge Collections
+    vector<MDGridPointCollection> CompactCollections;
+    CompactCollections.push_back(Collections[0]);
+    for (unsigned int c = 1; c < Collections.size(); ++c) {
+      bool Found = false;
+      for (unsigned int cc = 0; cc < CompactCollections.size(); ++cc) {
+        if (Collections[c].HasSameDetector(CompactCollections[cc])) {
+          CompactCollections[cc].Add(Collections[c]);
+          Found = true;
+          break;
+        }
+      }
+      if (Found == false) {
+        CompactCollections.push_back(Collections[c]);
+      }
+    }
+  
+    // Create hits:
+    for (unsigned int c = 0; c < CompactCollections.size(); ++c) {
+      for (unsigned int p = 0; p < CompactCollections[c].GetNGridPoints(); ++p) {
+        MDGridPoint P = CompactCollections[c].GetGridPointAt(p);
+        MREHit* Hit = new MREHit();
+        Hit->SetEnergy(P.GetEnergy());
+        Hit->SetPosition(CompactCollections[c].GetWorldPositionGridPointAt(p));
+        Hit->SetTime(P.GetTime());
+        Hit->UpdateVolumeSequence(m_Geometry);
+        Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
+        Hit->RetrieveResolutions(m_Geometry);
+        Event->AddRESE(Hit);
+      }
+    }
+  }
+  
+  
+  
+  // Step 1.2: Noise hits:
+  h_max = Event->GetNRESEs();
   for (int h = 0; h < h_max; ++h) {
     if (Event->GetRESEAt(h)->GetType() == MRESE::c_Hit) {
       //if (((MREHit *) (Event->GetRESEAt(h)))->GetDetector() != MDDetector::c_Scintillator) {
@@ -134,9 +260,11 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
   Event->CompressRESEs();
 
-  // Step 1.2: Noise additional measurements:
+  
+  
+  // Step 1.3: Noise additional measurements:
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin();
-       Iter != Event->GetREAMEnd(); /* handled externally due to delete */) {
+       Iter != Event->GetREAMEnd(); ) {
     if ((*Iter)->GetType() == MREAM::c_DriftChamberEnergy) {
       MREAMDriftChamberEnergy* DCE = dynamic_cast<MREAMDriftChamberEnergy*>(*Iter);
       double Energy = DCE->GetEnergy();
@@ -185,22 +313,16 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     }
   }
 
-  // Step b: Test trigger
+  
+  
+  // Step 1.4: Test trigger
   Trigger->Reset();
   h_max = Event->GetNRESEs();
   for (int h = 0; h < h_max; ++h) {
     RESE = Event->GetRESEAt(h);
     if (RESE->GetType() == MRESE::c_Hit) {
       if (Trigger->AddHit(RESE->GetEnergy(), *(RESE->GetVolumeSequence())) == false) {
-        /*
-        if (RESE->GetDetector() == MDDetector::c_Scintillator) {
-          mimp<<"Removing scintillator hits which have not triggered..."<<show;
-          RESE = Event->GetRESEAt(h);
-          Event->RemoveRESE(RESE);
-          mdebug<<"TG - Event: "<<Event->GetEventID()<<": Rejecting hit (trigger not added)!"<<endl;
-          delete RESE;
-        }
-        */
+        //
       }
     } else {
       merr<<"We shouldn't have anything else but hits at this point!"<<endl;
@@ -304,7 +426,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   }
   // Remove all REAMs with no RESE:
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin();
-       Iter != Event->GetREAMEnd(); /* handled externally due to delete ++Iter */) {
+       Iter != Event->GetREAMEnd(); ) {
     if ((*Iter)->GetType() == MREAM::c_Directional) {
       MREAMDirectional* DR = dynamic_cast<MREAMDirectional*>(*Iter);
       // If there is none remove the info:
@@ -317,6 +439,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       ++Iter;
     }
   }
+  */
 
   return true;
 }

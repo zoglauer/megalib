@@ -66,6 +66,9 @@ class MREHit : public MRESE
   bool RetrieveResolutions(MDGeometryQuest* Geometry);
   //! Noise the positions, energies and times (!!make sure to do this only for simulations and  only once!!)
   bool Noise(MDGeometryQuest* Geometry);
+  //! Split the hit (due to e.g. charge sharinh)
+  MDGridPointCollection Grid(MDGeometryQuest* Geometry);
+  
 
   // private members:
  private:

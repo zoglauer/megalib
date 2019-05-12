@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A strip detector with depth resolution (such as the COSI detectors)
 class MDStrip3D : public MDStrip2D
 {
   // public interface:
@@ -43,11 +44,12 @@ class MDStrip3D : public MDStrip2D
   //! Copy data to named detectors
   virtual bool CopyDataToNamedDetectors();
 
+  
+  //! Noise the hit
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
-  virtual vector<MDGridPoint> Discretize(const MVector& Pos, 
-                                         const double& Energy, 
-                                         const double& Time, 
-                                         MDVolume* Volume) const;
+
+  //! Grid a hit, here: split due to charge transport
+  virtual vector<MDGridPoint> Grid(const MVector& Pos, const double& Energy, const double& Time, const MDVolume* Volume) const;
   //! Return the Grid point of this position
   virtual MDGridPoint GetGridPoint(const MVector& Pos) const;
   //! Return a position in detector volume coordinates
@@ -56,7 +58,7 @@ class MDStrip3D : public MDStrip2D
                                               const unsigned int zGrid,
                                               const MVector PositionInGrid,
                                               const unsigned int Type,
-                                              MDVolume* Volume);
+                                              const MDVolume* Volume) const;
   virtual MVector GetPositionResolution(const MVector& Pos, const double Energy) const;
   
   //! Set a threshold in the depth resolution: Below this value, no depth resolution exists
@@ -105,6 +107,16 @@ class MDStrip3D : public MDStrip2D
   virtual double GetNoiseThreshold(const MVector& Position) const;
 
 
+  //! Set the drift constant in the field
+  void SetDriftConstant(const double DriftConstant) { m_DriftConstant = DriftConstant; }
+  //! Get the drift constant in the field
+  double GetDriftConstant() const { return m_DriftConstant; }
+  //! Set the energy per drifting particle
+  void SetEnergyPerElectron(const double EnergyPerElectron) { m_EnergyPerElectron = EnergyPerElectron; }
+  //! Get the energy per drifting particle
+  double GetEnergyPerElectron() const { return m_EnergyPerElectron; }
+  
+  
   virtual MString GetGeomega() const;
   virtual MString ToString() const;
 
@@ -155,6 +167,12 @@ class MDStrip3D : public MDStrip2D
   bool m_NoiseThresholdDepthCorrectionSet; 
   //! Some strip detectors, such as CZT have a depth dependent noise threshold - this is the correction function
   MFunction m_NoiseThresholdDepthCorrection; 
+  
+  
+  //! Constant describing the opening cone of the charge drift: c * sqrt(Drift Length)
+  double m_DriftConstant;
+  //! Energy per drifting electron/hole
+  double m_EnergyPerElectron;
 
   // private members:
  private:

@@ -116,10 +116,23 @@ class MDGridPoint
   vector<int> GetOrigins() const { return m_Origins; }
   //! Set all hit origins at this grid position (Used only by sivan)
   void SetOrigins(const vector<int>& Origins) { m_Origins = Origins; }
-
+  
+  //! Return true if the grid point is above the trigger threshold
+  bool IsAboveTriggerThreshold() const { return m_IsAboveTriggerThreshold; }
+  //! Set whether the grid point is above thr trigger threshold
+  void IsAboveTriggerThreshold(bool Above) { m_IsAboveTriggerThreshold = Above; }
+  
+  //! Return true if the grid point is read out
+  bool IsReadOut() const { return m_IsReadOut; }
+  //! Set whether the grid point is reade out
+  void IsReadOut(bool ReadOut) { m_IsReadOut = ReadOut; }
+  
+  
+  //! Set the type of the grid point
+  void SetType(unsigned int Type) { m_Type = Type; }
   //! Return the type of the grid point
   unsigned int GetType() const { return m_Type; }
-
+  
 
   // The different grid point types:
   static const unsigned int c_Unknown;
@@ -172,7 +185,13 @@ class MDGridPoint
   //! Hit origins at this grid position (Used only by sivan)
   vector<int> m_Origins;
   
-
+  //! True is the hit is above the trigger threshold -- NOT is it triggered
+  bool m_IsAboveTriggerThreshold;
+  
+  //! True if the grid point need to be read-out
+  bool m_IsReadOut;
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MDGridPoint, 0)

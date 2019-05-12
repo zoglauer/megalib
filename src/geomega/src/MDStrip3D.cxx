@@ -60,6 +60,9 @@ MDStrip3D::MDStrip3D(MString Name) : MDStrip2D(Name)
   m_EnergyResolutionDepthCorrectionSet = false;
   m_TriggerThresholdDepthCorrectionSet = false;
   m_NoiseThresholdDepthCorrectionSet = false;
+  
+  m_DriftConstant = g_DoubleNotDefined; // No opening angle for the drift
+  m_EnergyPerElectron = g_DoubleNotDefined; //kev: Not used if no opening angle is defined
 }
 
 
@@ -83,7 +86,10 @@ MDStrip3D::MDStrip3D(const MDStrip3D& S) : MDStrip2D(S)
   m_TriggerThresholdDepthCorrectionSet = S.m_TriggerThresholdDepthCorrectionSet;
   m_TriggerThresholdDepthCorrection = S.m_TriggerThresholdDepthCorrection;
   m_NoiseThresholdDepthCorrectionSet = S.m_NoiseThresholdDepthCorrectionSet;
-  m_NoiseThresholdDepthCorrection = S.m_NoiseThresholdDepthCorrection; 
+  m_NoiseThresholdDepthCorrection = S.m_NoiseThresholdDepthCorrection;
+  
+  m_DriftConstant = S.m_DriftConstant;
+  m_EnergyPerElectron = S.m_EnergyPerElectron;
 }
 
  
@@ -150,6 +156,14 @@ bool MDStrip3D::CopyDataToNamedDetectors()
         m_TriggerThresholdDepthCorrectionSet == true) {
       D->m_NoiseThresholdDepthCorrectionSet = true;
       D->m_NoiseThresholdDepthCorrection = m_NoiseThresholdDepthCorrection; 
+    }
+    
+    if (D->m_DriftConstant == g_DoubleNotDefined && m_DriftConstant != g_DoubleNotDefined) {
+      D->m_DriftConstant = m_DriftConstant;
+    }
+      
+    if (D->m_EnergyPerElectron == g_DoubleNotDefined && m_EnergyPerElectron != g_DoubleNotDefined) {
+      D->m_EnergyPerElectron = m_EnergyPerElectron;
     }
   }
 
@@ -530,13 +544,138 @@ double MDStrip3D::GetNoiseThreshold(const MVector& Position) const
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const double& Energy, const double& Time, const MDVolume* Volume) const
 {
-  // Noise Position and energy of this hit:
+  // Apply charge sharing and return a set of new grid points
+
+  vector<MDGridPoint> Collection;
+  
+  if (m_DriftConstant == g_DoubleNotDefined || m_DriftConstant == 0) {
+    MDGridPoint P = GetGridPoint(PosInDetectorVolume);
+    P.SetEnergy(Energy);
+    P.SetTime(Time);
+    Collection.push_back(P);
+    return Collection; 
+  }
+  
+  
+  MVector Pos = PosInDetectorVolume;
+  
+  // Translate into sensitive volume
+  Pos += m_StructuralDimension;
+  Pos -= m_StructuralOffset;
+  int xWafer = int(Pos.X()/(2*m_StructuralSize.X()+m_StructuralPitch.X()));
+  int yWafer = int(Pos.Y()/(2*m_StructuralSize.Y()+m_StructuralPitch.Y()));
+  
+  Pos.SetX(Pos.X() - xWafer*(2*m_StructuralSize.X()+m_StructuralPitch.X()));
+  Pos.SetY(Pos.Y() - yWafer*(2*m_StructuralSize.Y()+m_StructuralPitch.Y()));
+  Pos -= m_StructuralSize;
+  
+  // Ignore the hit if it is outside the sensitive part (guard ring?):
+  if (fabs(Pos.X()) > m_WidthX/2.0 - m_OffsetX || fabs(Pos.Y()) > m_WidthY/2.0 - m_OffsetY) {
+    if (fabs(Pos.X()) > m_WidthX/2.0 || fabs(Pos.Y()) > m_WidthY/2.0) {
+      merr<<"Hit outside detector! ("<<Pos[0]<<", "<<Pos[1]<<", "<<Pos[2]<<")"<<endl;
+    } else {
+      mdebug<<"Hit in guard ring: ("<<Pos[0]<<", "<<Pos[1]<<", "<<Pos[2]<<")"<<endl;
+    }
+    return Collection;
+  }
+  
+  
+  // The drift:
+  
+  // Split the step into "electrons"
+  int NElectrons = int(Energy/m_EnergyPerElectron);
+  if (NElectrons == 0 || m_DriftConstant == 0) NElectrons = 1;
+  double EnergyPerElectron = Energy/NElectrons;
+  
+  // Calculate the drift parameters
+  double DriftLength = Pos.Z() + m_StructuralSize.Z();
+  if (DriftLength < 0) {
+    merr<<"ERROR: DriftLength smaller than 0: "<<DriftLength<<" Setting it to 0"<<endl;
+    DriftLength = 0;
+  }
+  double DriftRadiusSigma = m_DriftConstant * sqrt(DriftLength);
+  
+  cout<<"Drift radius sigma: "<<DriftRadiusSigma<<endl;
+  
+  // double DriftRadius = 0;
+  // double DriftAngle = 0;
+  double DriftX = 0;
+  double DriftY = 0;
+  
+  //cout<<"Electron with: "<<Energy<<"!"<<NElectrons<<"!"<<m_EnergyPerElectron<<endl;
+  for (int e = 0; e < NElectrons; ++e) {
+    
+    // Randomize x, y position:
+    
+    // Original but much too narrow distribution:
+    // DriftRadius = gRandom->Gaus(0, DriftRadiusSigma);
+    // DriftAngle = gRandom->Rndm() * c_Pi;
+    // DriftX = DriftRadius*cos(DriftAngle);
+    // DriftY = DriftRadius*sin(DriftAngle);
+    
+    // Real 2D Gaussian ("Rannor" gives 1 sigma distributions):
+    gRandom->Rannor(DriftX, DriftY);
+    DriftX *= DriftRadiusSigma;
+    DriftY *= DriftRadiusSigma;
+    
+    MVector DriftPosition = Pos + MVector(DriftX, DriftY, 0);
+    if (fabs(DriftPosition.X()) > m_WidthX/2 - m_OffsetX || 
+      fabs(DriftPosition.Y()) > m_WidthY/2 - m_OffsetY) {
+      //mout<<"Energy lost at "<<DriftPosition<<": "<<m_WidthX/2<<", "<<m_WidthY/2<<endl;
+      continue;
+      }
+      
+      int xStrip;
+    if (m_NStripsX == 1 || m_PitchX == 0) {
+      xStrip = 0;
+    } else {
+      xStrip = (int) ((DriftPosition.X() + m_WidthX/2 - m_OffsetX)/m_PitchX);
+    }
+    
+    int yStrip;
+    if (m_NStripsY == 1 || m_PitchY == 0) {  
+      yStrip = 0;
+    } else {
+      yStrip = (int) ((DriftPosition.Y() + m_WidthY/2 - m_OffsetY)/m_PitchY);
+    }
+    
+    // Check if we have a reasonable strip:
+    if (xStrip < 0 || xStrip >= m_NStripsX) {
+      merr<<"Invalid x-strip number: "<<xStrip<<endl
+      <<"   Position was "<<DriftPosition<<endl;
+      continue;
+    }
+    if (yStrip < 0 || yStrip >= m_NStripsY) {
+      merr<<"Invalid y-strip number: "<<yStrip<<endl
+      <<"   Position was "<<DriftPosition<<endl;
+      continue;
+    }
+    
+    MDGridPoint P(xStrip+xWafer*m_NStripsX, 
+                  yStrip+yWafer*m_NStripsY, 
+                  0,
+                  MDGridPoint::c_Voxel,
+                  MVector(0.0, 0.0, Pos.Z()), 
+                  EnergyPerElectron, 
+                  Time);
+    Collection.push_back(P);
+  }
+  
+  return Collection;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+  {
+    // Noise Position and energy of this hit:
   
   if (m_NoiseActive == false) return;
 
@@ -555,10 +694,10 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   IsOverflow = ApplyOverflow(Energy);
 
   // Noise threshold:
-  if (ApplyNoiseThreshold(Energy, Pos) == true) {
-    Pos[2] = 0.0; 
-    return;
-  } 
+  //if (ApplyNoiseThreshold(Energy, Pos) == true) {
+  //  Pos[2] = 0.0; 
+  // return;
+  //} 
   
   // Noise depth:
   if (IsOverflow == true || m_DepthResolution.GetNDataPoints() == 0 || Energy < m_DepthResolutionThreshold) {
@@ -595,31 +734,6 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 ////////////////////////////////////////////////////////////////////////////////
 
 
-vector<MDGridPoint> MDStrip3D::Discretize(const MVector& PosInDetector, 
-                                          const double& Energy, 
-                                          const double& Time, 
-                                          MDVolume* DetectorVolume) const
-{
-  // Discretize Pos to a voxel of this volume
-
-  vector<MDGridPoint> Points = 
-    MDStrip2D::Discretize(PosInDetector, Energy, Time, DetectorVolume);
-
-  //mimp<<"We currently assume that the wafers' z-position is centered in the Detector volume!"<<show; 
-
-  for (unsigned int p = 0; p < Points.size(); ++p) {
-    MVector Position(Points[p].GetPosition());
-    Position.SetZ(PosInDetector.Z());
-    Points[p].SetPosition(Position);
-  }
-
-  return Points;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MDGridPoint MDStrip3D::GetGridPoint(const MVector& PosInDetector) const
 {
   // Discretize Pos to a voxel of this volume
@@ -641,7 +755,7 @@ MVector MDStrip3D::GetPositionInDetectorVolume(const unsigned int xGrid,
                                                const unsigned int zGrid,
                                                const MVector PositionInGrid,
                                                const unsigned int Type,
-                                               MDVolume* Volume)
+                                               const MDVolume* Volume) const
 {
   // Return the position in the detector volume
 
@@ -792,6 +906,14 @@ bool MDStrip3D::Validate()
        
   if (m_DepthResolutionThreshold == g_DoubleNotDefined) {
     m_DepthResolutionThreshold = 0;
+  }
+  
+  if (m_DriftConstant == g_DoubleNotDefined) {
+    m_DriftConstant = 0;
+  }
+  
+  if (m_EnergyPerElectron == g_DoubleNotDefined) {
+    m_EnergyPerElectron = 0.022; //keV
   }
   
   return true;

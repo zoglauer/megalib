@@ -44,16 +44,14 @@ class MDDriftChamber : public MDStrip3D
 
   virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
   virtual bool NoiseLightEnergy(double& Energy) const;
-  virtual vector<MDGridPoint> Discretize(const MVector& Pos, const double& Energy, const double& Time, MDVolume* Volume) const;
+
+  //! Grid a hit, here: split due to charge transport
+  virtual vector<MDGridPoint> Grid(const MVector& Pos, const double& Energy, const double& Time, const MDVolume* Volume) const;
 
   void SetLightSpeed(const double LightSpeed) { m_LightSpeed = LightSpeed; }
   double GetLightSpeed() const { return m_LightSpeed; }
   void SetLightDetectorPosition(const int Pos) { m_LightDetectorPosition = Pos; }
   int GetLightDetectorPosition() const { return m_LightDetectorPosition; }
-  void SetDriftConstant(const double DriftConstant) { m_DriftConstant = DriftConstant; }
-  double GetDriftConstant() const { return m_DriftConstant; }
-  void SetEnergyPerElectron(const double EnergyPerElectron) { m_EnergyPerElectron = EnergyPerElectron; }
-  double GetEnergyPerElectron() const { return m_EnergyPerElectron; }
 
   void SetLightEnergyResolution(const double Energy, const double Resolution);
   virtual double GetLightEnergyResolution(const double Energy) const;
@@ -93,10 +91,6 @@ class MDDriftChamber : public MDStrip3D
   double m_LightSpeed;
   //! Position of the light sensitive detector (1: +x; -1:-x; 2: +y; -2 -y; 3: +z; -3:-z)
   int m_LightDetectorPosition;
-  //! Constant describing the opening cone of the drift: c * sqrt(Drift Length)
-  double m_DriftConstant;
-  //! Energy per drfiting electron
-  double m_EnergyPerElectron;
 
   //! The type of the light energy resolution (unknown, ideal, gauss)
   int m_LightEnergyResolutionType;

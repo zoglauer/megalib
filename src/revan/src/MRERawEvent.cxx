@@ -1754,16 +1754,19 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
       if (V->GetDetector() == 0) {
         mout<<"Position of GR does not represent a detector!"<<endl; 
         Ret = 1;
-      } else if (V->GetDetector()->HasGuardRing() == false) {
+      } else if (V->GetDetector()->HasGuardRing() == false && V->GetDetector()->GetType() != MDDetector::c_GuardRing) {
         mout<<"Position of GR does not represent a detector with guard ring!"<<endl; 
         Ret = 1;
       } else {
         MREAMGuardRingHit* GR = new MREAMGuardRingHit();
+        if (V->GetDetector()->GetType() != MDDetector::c_GuardRing && V->GetDetector()->HasGuardRing() == true) {
+          V->SetDetector(V->GetDetector()->GetGuardRing());
+        }
         GR->SetVolumeSequence(V); // GR is responsible for the volume sequence!
         // We do NOT do any noising here!!
         // dynamic_cast<MDStrip2D*>(V->GetDetector())->NoiseGuardRingEnergy(Energy);
         GR->SetEnergy(Energy);
-        GR->SetEnergyResolution(V->GetDetector()->GetGuardRing()->GetEnergyResolution(Energy));
+        GR->SetEnergyResolution(V->GetDetector()->GetEnergyResolution(Energy));
         m_Measurements.push_back(GR);
       }
     } else {

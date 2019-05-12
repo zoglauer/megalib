@@ -36,6 +36,7 @@ using namespace std;
 #include "MAssert.h"
 #include "MStreams.h"
 #include "MDDetector.h"
+#include "MDGuardRing.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -139,6 +140,13 @@ void MDTriggerBasic::SetGuardRingDetector(MDDetector* Detector, const unsigned i
   // Set the trigger parameter Deterctortype and the minimum number of hits
   // in this detector
 
+  // At this stage the guard rings are not yet set --> do it during validate
+  //if (Detector->GetType() != MDDetector::c_GuardRing) {
+  //  if (Detector->HasGuardRing() == true) {
+  //    Detector = dynamic_cast<MDDetector*>(Detector->GetGuardRing()); 
+  //  }
+  //}
+  
   m_Detectors.push_back(Detector);
   m_Hits.push_back(Hits);
   m_Types.push_back(c_GuardRing);
@@ -191,7 +199,7 @@ bool MDTriggerBasic::IsVetoing(MDDetector* D) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerBasic::AddHit(MDVolumeSequence& VS) 
+bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS) 
 {
   massert(VS.GetDetector() != 0);
 
@@ -200,7 +208,7 @@ bool MDTriggerBasic::AddHit(MDVolumeSequence& VS)
   mdebug<<m_Name<<": trying to add hit...";
 
   if (m_IsTriggerByDetector == false) {
-    MDDetector* Detector = VS.GetDetector();
+    const MDDetector* Detector = VS.GetDetector();
     if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
@@ -222,7 +230,7 @@ bool MDTriggerBasic::AddHit(MDVolumeSequence& VS)
       }
     }
   } else {
-    MDDetector* Detector = VS.GetDetector();
+    const MDDetector* Detector = VS.GetDetector();
     if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
@@ -281,7 +289,7 @@ bool MDTriggerBasic::AddHit(MDVolumeSequence& VS)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDTriggerBasic::AddGuardRingHit(MDVolumeSequence& VS) 
+bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS) 
 {
   massert(VS.GetDetector() != 0);
 
@@ -290,12 +298,11 @@ bool MDTriggerBasic::AddGuardRingHit(MDVolumeSequence& VS)
   mdebug<<m_Name<<": adding guard ring hit"<<endl;
 
   if (m_IsTriggerByDetector == false) {
-    MDDetector* Detector = VS.GetDetector();
+    const MDDetector* Detector = VS.GetDetector();
     if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
-        if (m_DetectorTypes[i] == Detector->GetType() &&
-            m_Types[i] == c_GuardRing) {
+        if (m_DetectorTypes[i] == Detector->GetType() && m_Types[i] == c_GuardRing) {
           m_TriggerTest[i].push_back(1);
           mdebug<<" done!";
           Return = true;
@@ -304,8 +311,8 @@ bool MDTriggerBasic::AddGuardRingHit(MDVolumeSequence& VS)
       }
     } else {
       for (unsigned int i = 0; i < m_Detectors.size(); ++i) {
-        if (m_Detectors[i]->GetName() == Detector->GetName() &&
-            m_Types[i] == c_GuardRing) {
+        //cout<<m_Detectors[i]->GetName()<<":"<<Detector->GetName()<<endl;
+        if (m_Detectors[i]->GetName() == Detector->GetName() && m_Types[i] == c_GuardRing) {
           m_TriggerTest[i].push_back(1);
           mdebug<<" done!";
           Return = true;
@@ -314,12 +321,11 @@ bool MDTriggerBasic::AddGuardRingHit(MDVolumeSequence& VS)
       }
     }
   } else {
-    MDDetector* Detector = VS.GetDetector();
+    const MDDetector* Detector = VS.GetDetector();
     if (Detector->IsNamedDetector() == true) Detector = Detector->GetNamedAfterDetector();
     if (m_DetectorTypes.size() != 0) {
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
-        if (m_DetectorTypes[i] == Detector->GetType() &&
-            m_Types[i] == c_GuardRing) {
+        if (m_DetectorTypes[i] == Detector->GetType() && m_Types[i] == c_GuardRing) {
           bool Exists = false;
           for (unsigned int v = 0; v < m_VolumeSequenceTest[i].size(); ++v) {
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
@@ -341,10 +347,11 @@ bool MDTriggerBasic::AddGuardRingHit(MDVolumeSequence& VS)
       }
     } else {
       for (unsigned int i = 0; i < m_Detectors.size(); ++i) {
-        if (m_Detectors[i]->GetName() == Detector->GetName() &&
-            m_Types[i] == c_GuardRing) {
+        //cout<<m_Detectors[i]->GetName()<<":"<<Detector->GetName()<<endl;
+        if (m_Detectors[i]->GetName() == Detector->GetName() && m_Types[i] == c_GuardRing) {
           bool Exists = false;
           for (unsigned int v = 0; v < m_VolumeSequenceTest[i].size(); ++v) {
+            //cout<<VS.GetDetector()->GetName()<<":"<<m_VolumeSequenceTest[i][v].GetDetector()->GetName()<<endl;
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
               m_TriggerTest[i][v]++;
               Exists = true;
@@ -600,6 +607,21 @@ bool MDTriggerBasic::Validate()
     }
   }
 
+  for (unsigned int t = 0; t < m_Types.size(); ++t) {
+    if (m_Types[t] == c_GuardRing) { 
+      if (m_Detectors[t]->GetType() != MDDetector::c_GuardRing) {
+        if (m_Detectors[t]->HasGuardRing() == true) {
+          m_Detectors[t] = dynamic_cast<MDDetector*>(m_Detectors[t]->GetGuardRing()); 
+        } else {
+          mout<<"   ***  Error  ***  in trigger "<<m_Name<<endl;
+          mout<<"Guard ring veto without guard ring detector: "<<m_Detectors[t]->GetName()<<endl;
+          return false;
+        }
+      }
+    }
+  }
+  
+  
   // For veto detector the noise threshold should be equal to the trigger threshold
   /* This is currently done MDGeometry
   if (m_IsVeto == true) {

@@ -125,6 +125,8 @@ MDGeometry::MDGeometry()
 
   m_TriggerUnit = new MDTriggerUnit(this);
   m_System = new MDSystem("NoName");
+  m_DetectorEffectsEngine = new MDDetectorEffectsEngine();
+  m_DetectorEffectsEngine->SetGeometry(this);
 
   // Make sure we ignore the default ROOT geometry...
   // BUG: In case we are multi-threaded and some one interact with the geometry
@@ -2954,18 +2956,18 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (D->GetType() == MDDetector::c_Voxel3D) {
           if (D->HasGuardRing() == false) {
             dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
-            D->GetGuardRing()->SetActive(true);
-            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
         } else {
           if (D->HasGuardRing() == false) {
             dynamic_cast<MDStrip2D*>(D)->HasGuardRing(true);
-            D->GetGuardRing()->SetActive(true);
-            D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           }
+          D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetEnergyResolution(Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(2),
                                                  Tokenizer.GetTokenAtAsDouble(3));
@@ -3257,26 +3259,26 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         }
 
       } else if (Tokenizer.IsTokenAt(1, "DriftConstant") == true) {
-        if (D->GetType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber || D->GetType() == MDDetector::c_Strip3D) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two string and 1 double:"
                  " e.g. \"Chamber.DriftConstant 3\"");
             return false;
           }
-          dynamic_cast<MDDriftChamber*>(D)->SetDriftConstant(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDStrip3D*>(D)->SetDriftConstant(Tokenizer.GetTokenAtAsDouble(2));
         } else {
           Typo("Option DriftConstant only supported for DriftChamber");
           return false;
         }
 
       } else if (Tokenizer.IsTokenAt(1, "EnergyPerElectron") == true) {
-        if (D->GetType() == MDDetector::c_DriftChamber) {
+        if (D->GetType() == MDDetector::c_DriftChamber || D->GetType() == MDDetector::c_Strip3D) {
           if (Tokenizer.GetNTokens() != 3) {
             Typo("Line must contain two strings and 1 double:"
                  " e.g. \"Chamber.EnergyPerElectron 3\"");
             return false;
           }
-          dynamic_cast<MDDriftChamber*>(D)->SetEnergyPerElectron(Tokenizer.GetTokenAtAsDouble(2));
+          dynamic_cast<MDStrip3D*>(D)->SetEnergyPerElectron(Tokenizer.GetTokenAtAsDouble(2));
         } else {
           Typo("Option EnergyPerElectron only supported for DriftChamber");
           return false;
@@ -3788,21 +3790,6 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     }
   }
 
-  // Check if all cross sections are present if not try to create them
-  bool CrossSectionsPresent = true;
-  for (unsigned int i = 0; i < GetNMaterials(); i++) {
-    if (m_MaterialList[i]->AreCrossSectionsPresent() == false) {
-      CrossSectionsPresent = false;
-      break;
-    }
-  }
-  if (CrossSectionsPresent == false && AllowCrossSectionCreation == true) {
-    if (CreateCrossSectionFiles() == false) {
-      mout<<"   ***  Warning  ***  "<<endl;
-      mout<<"Not all cross section files are present!"<<endl;
-    }
-  }
-
 
   // Check if we can apply the keyword komplex ER
   // Does not cover all possibilities (e.g. rotated detector etc.)
@@ -3876,7 +3863,22 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
     Reset();
     return false;
   }
-
+  
+  // Check if all cross sections are present if not try to create them
+  bool CrossSectionsPresent = true;
+  for (unsigned int i = 0; i < GetNMaterials(); i++) {
+    if (m_MaterialList[i]->AreCrossSectionsPresent() == false) {
+      CrossSectionsPresent = false;
+      break;
+    }
+  }
+  if (CrossSectionsPresent == false && AllowCrossSectionCreation == true) {
+    if (CreateCrossSectionFiles() == false) {
+      mout<<"   ***  Warning  ***  "<<endl;
+      mout<<"Not all cross section files are present!"<<endl;
+    }
+  }
+  
   ++Stage;
   if (g_Verbosity >= c_Info || Timer.ElapsedTime() > TimeLimit) {
     mout<<"Stage "<<Stage<<" (validation & post-processing) finished after "<<Timer.ElapsedTime()<<" sec"<<endl;
