@@ -230,7 +230,7 @@ bool MDDetectorEffectsEngine::Run()
             MDGridPoint& P2 = m_GridPointCollections[c].GetGridPointAt(p2);
           
             if (P2.IsAboveTriggerThreshold() == true) {
-              if (fabs(P.GetXGrid() - P2.GetXGrid()) <= 2 && fabs(P.GetYGrid() - P2.GetYGrid()) <= 2) {
+              if (fabs(P.GetXGrid() - P2.GetXGrid()) <= 1 && fabs(P.GetYGrid() - P2.GetYGrid()) <= 1) {
                 P.IsReadOut(true);
                 //cout<<"Found neighbor"<<endl;
               }
