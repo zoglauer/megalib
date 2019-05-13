@@ -131,7 +131,7 @@ bool MDDetectorEffectsEngine::Run()
     // Add the grid points to the grid point collections
     MDGridPointCollection NewCollection(S);
     for (MDGridPoint& P: GridPoints) NewCollection.Add(P);
-    cout<<"GPs: "<<NewCollection.GetNGridPoints()<<endl;
+    //cout<<"GPs: "<<NewCollection.GetNGridPoints()<<endl;
     
     bool Found = false;
     for (unsigned int c = 0; c < m_GridPointCollections.size(); ++c) {
@@ -232,7 +232,7 @@ bool MDDetectorEffectsEngine::Run()
             if (P2.IsAboveTriggerThreshold() == true) {
               if (fabs(P.GetXGrid() - P2.GetXGrid()) <= 2 && fabs(P.GetYGrid() - P2.GetYGrid()) <= 2) {
                 P.IsReadOut(true);
-                cout<<"Found neighbo"<<endl;
+                //cout<<"Found neighbor"<<endl;
               }
             }
           }
@@ -240,7 +240,7 @@ bool MDDetectorEffectsEngine::Run()
       }
       
       if (P.IsReadOut() == false) {
-        cout<<"Lost: "<<P.GetEnergy()<<endl;
+        //cout<<"Lost: "<<P.GetEnergy()<<endl;
       }
     }
   }

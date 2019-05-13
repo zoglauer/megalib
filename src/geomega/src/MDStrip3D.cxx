@@ -600,7 +600,7 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
   }
   double DriftRadiusSigma = m_DriftConstant * sqrt(DriftLength);
   
-  cout<<"Drift radius sigma: "<<DriftRadiusSigma<<endl;
+  //cout<<"Drift radius sigma: "<<DriftRadiusSigma<<endl;
   
   // double DriftRadius = 0;
   // double DriftAngle = 0;
