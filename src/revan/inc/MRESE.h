@@ -129,7 +129,7 @@ class MRESE
   virtual MRESE* RemoveRESEAndCompress(int ID);
   //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
   virtual void RemoveAll();
-  //! Remove all the RESEs which are part of this RESE - the array is NOT shrunk 
+  //! Remove all the RESEs which are part of this RESE - the array is shrunk 
   virtual void RemoveAllAndCompress();
   
   virtual void DeleteRESE(MRESE* RESE);
@@ -138,8 +138,10 @@ class MRESE
   virtual void DeleteRESEAtAndCompress(int i);
   virtual void DeleteRESE(int ID);
   virtual void DeleteRESEAndCompress(int ID);
-  //! delete all the RESEs which are part of this RESE
+  //! delete all the RESEs which are part of this RESE - the array is not shrunk
   virtual void DeleteAll();
+  
+  //! Shrink the array
   virtual void CompressRESEs();
 
   //! Shuffle the RESEs around in random order (goal: they are more or less sorted when the come from cosima, but not in real life)
