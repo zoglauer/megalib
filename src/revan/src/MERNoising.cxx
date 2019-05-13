@@ -134,7 +134,8 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   DEE.Run();
   
   // Clear the old data
-  Event->RemoveAllAndCompress();
+  Event->DeleteAll();
+  Event->CompressRESEs();
   
   // Retrieve the noised data
   const vector<MDGridPointCollection>& GridPointCollections = DEE.GetGridPointCollections();
