@@ -72,11 +72,9 @@ ClassImp(MTime)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MTime::MTime()
+MTime::MTime() : m_Seconds(0), m_NanoSeconds(0)
 {
   // Construct an instance of MTime
-
-  Now();
 }
 
 

@@ -33,7 +33,7 @@ class MTime
 {
   // public interface:
  public:
-  //! Default constructor, set the time to NOW
+  //! Default constructor, set the time to 0
   MTime();
   //! Extracts the time from a string -- depreciated! -- don't use since there vis no error catching done! 
   explicit MTime(MString SQLString, int Format);
