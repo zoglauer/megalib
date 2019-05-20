@@ -1941,7 +1941,7 @@ bool SensitivityOptimizer::Analyze()
                               UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetBackgroundName(bf, m_BackgroundFiles[bf]);
                             }
                             if (m_ModeSpectrum == s_ModeLine && m_EnergyWindowMin > 0 && m_EnergyWindowMax > 0) {
-                              UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetLargeEnergyWindow(m_EnergyMin[e], m_EnergyMax[e], m_EnergyWindowMin, m_EnergyWindowMax);
+                              UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetLargeEnergyWindow(m_EnergyMin[e], m_EnergyMax[eup], m_EnergyWindowMin, m_EnergyWindowMax);
                             }
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].UseComplexEquation(m_ComplexEquation);
                           }
@@ -2516,9 +2516,10 @@ bool SensitivityOptimizer::Analyze()
                       //mlog<<"TQF"<<endl;
                       if (Compton->TrackQualityFactor1() > m_TQF[k]) continue;
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
+                        if (Compton->Ei() < m_EnergyMin[e]) continue;
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                           //mlog<<"E"<<endl;
-                          if (Compton->Ei() > m_EnergyMax[eup] || Compton->Ei() < m_EnergyMin[e]) continue;
+                          if (Compton->Ei() > m_EnergyMax[eup]) continue;
                           for (unsigned int p = 0; p < p_max; ++p) {
                             //mlog<<"Phi"<<endl;
                             if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
@@ -2568,9 +2569,10 @@ bool SensitivityOptimizer::Analyze()
                     //mlog<<"CQF"<<endl;
                     if (Compton->ComptonQualityFactor1() > m_CQF[q]) continue;
                     for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
+                      if (Compton->Ei() < m_EnergyMin[e]) continue;
                       for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                         //mlog<<"E"<<endl;
-                        if (Compton->Ei() > m_EnergyMax[eup] || Compton->Ei() < m_EnergyMin[e]) continue;
+                        if (Compton->Ei() > m_EnergyMax[eup]) continue;
                         for (unsigned int p = 0; p < p_max; ++p) {
                           //mlog<<"Phi"<<endl;
                           if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
@@ -2616,9 +2618,10 @@ bool SensitivityOptimizer::Analyze()
                       //mlog<<"1"<<endl;
                       //if (Pair->TrackQualityFactor1() > m_TQF[k]) continue;
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
+                        if (Pair->Ei() < m_EnergyMin[e]) continue;
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
                           //mlog<<"3"<<endl;
-                          if (Pair->Ei() > m_EnergyMax[eup] || Pair->Ei() < m_EnergyMin[e]) continue;
+                          if (Pair->Ei() > m_EnergyMax[eup]) continue;
                           for (unsigned int r = 0; r < r_max; ++r) {
                             //mlog<<"2"<<endl;
                             for (unsigned int h = 0; h < h_max; ++h) {
@@ -2702,8 +2705,6 @@ bool SensitivityOptimizer::Analyze()
                       for (unsigned int h = 0; h < h_max; ++h) {
                         for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                           for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
-                            // if (Compton->Ei() > m_EnergyMax[e] || Compton->Ei() < m_EnergyMin[e]) continue;
-                            if (Compton->Ei() > m_EnergyWindowMax || Compton->Ei() < m_EnergyWindowMin) continue;
                             for (unsigned int p = 0; p < p_max; ++p) {
                               if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
                               for (unsigned int t = 0; t < t_max; ++t) {
@@ -2746,14 +2747,11 @@ bool SensitivityOptimizer::Analyze()
                     for (unsigned int h = 0; h < h_max; ++h) {
                       for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                         for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
-                          // if (Compton->Ei() > m_EnergyMax[e] || Compton->Ei() < m_EnergyMin[e]) continue;
-                          if (Compton->Ei() > m_EnergyWindowMax || Compton->Ei() < m_EnergyWindowMin) continue;
                           for (unsigned int p = 0; p < p_max; ++p) {
                             if (Compton->Phi() > m_Phi[p]*c_Rad) continue;
                             for (unsigned int a = 0; a < a_max; ++a) {
                               for (unsigned int l = 0; l < l_max; ++l) {
-                                if (Compton->SequenceLength() < m_CSLMin[l] ||
-                                  Compton->SequenceLength() > m_CSLMax[l]) continue;
+                                if (Compton->SequenceLength() < m_CSLMin[l] || Compton->SequenceLength() > m_CSLMax[l]) continue;
                                 for (unsigned int f = 0; f < f_max; ++f) {
                                   for (unsigned int x = 0; x < x_max; ++x) {
                                     for (unsigned int y = 0; y < y_max; ++y) {
@@ -2788,8 +2786,6 @@ bool SensitivityOptimizer::Analyze()
                     //if (Pair->TrackQualityFactor1() > m_TQF[k]) continue;
                     for (unsigned int e = m_EnergyMin.size()-1; e < m_EnergyMin.size(); --e) {
                       for (unsigned int eup = m_EnergyMax.size()-1; eup < m_EnergyMax.size(); --eup) {
-                        //mlog<<"3"<<endl;
-                        if (Pair->Ei() > m_EnergyWindowMax || Pair->Ei() < m_EnergyWindowMin) continue;
                         for (unsigned int r = 0; r < r_max; ++r) {
                           //mlog<<"2"<<endl;
                           for (unsigned int h = 0; h < h_max; ++h) {
