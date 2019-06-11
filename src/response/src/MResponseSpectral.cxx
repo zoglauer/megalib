@@ -102,6 +102,7 @@ MString MResponseSpectral::Options()
   out<<"             ebins:           number of energy bins between min and max energy (default: 500)"<<endl;
   out<<"             eunder:          underflow bin minimum (default: 1 keV)"<<endl;
   out<<"             eover:           overflow bin maximum (default: 100,000 keV)"<<endl;
+  out<<"             ebinedges:       use these bin edges (ignores emin, emax, ebins, eunder & eover), example: ebinedges=100,200,300,400,500 (default: not used)"<<endl;
   out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins)"<<endl;
   out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
   out<<"             armcutskybins:   sky bins for ARM cut response (default: 413 - 10^2 deg bins)"<<endl;
@@ -156,6 +157,10 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
       m_EnergyUnderflow = stod(Value);
     } else if (Split2[i][0] == "eover") {
       m_EnergyOverflow = stod(Value);
+    } else if (Split2[i][0] == "ebinedges") {
+      vector<MString> Tokens = MString(Value).Tokenize(",");
+      m_EnergyBinEdges.clear();
+      for (auto T: Tokens) m_EnergyBinEdges.push_back(stod(T.Data()));
     } else if (Split2[i][0] == "eskybins") {
       m_EnergyNumberOfSkyBins = stod(Value);
     } else if (Split2[i][0] == "armcut") {
@@ -171,25 +176,42 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
   }
   
   // Sanity checks:
-  if (m_EnergyUnderflow <= 0 || m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0 || m_EnergyOverflow <= 0) {
-    mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
-    return false;    
-  }
-  if (m_EnergyUnderflow > m_EnergyMinimum) {
-    mout<<"Error: The underflow energy can not be larger than the minimum energy"<<endl;
-    return false;       
-  }
-  if (m_EnergyMinimum >= m_EnergyMaximum) {
-    mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
-    return false;       
-  }
-  if (m_EnergyMaximum > m_EnergyOverflow) {
-    mout<<"Error: The overflow energy must be larger than the maximum energy"<<endl;
-    return false;       
-  }
-  if (m_EnergyNumberOfBins <= 0) {
-    mout<<"Error: You need at least one energy bin"<<endl;
-    return false;       
+  if (m_EnergyBinEdges.size() > 0) {
+    if (m_EnergyBinEdges.size() < 2) {
+      mout<<"Error: You need at least 2 bin edges"<<endl;
+      return false;    
+    }
+    for (unsigned int e = 1; e < m_EnergyBinEdges.size(); ++e) {
+      if (m_EnergyBinEdges[e-1] >= m_EnergyBinEdges[e]) {
+        mout<<"Error: The bin edges mjust be in increasing order"<<endl;
+        return false;    
+      }
+    }
+    if (m_EnergyBinEdges[0] <= 0) {
+      mout<<"Error: All energy bin edges must be positive (larger than zero)"<<endl;
+      return false;    
+    }
+  } else {
+    if (m_EnergyUnderflow <= 0 || m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0 || m_EnergyOverflow <= 0) {
+      mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
+      return false;    
+    }
+    if (m_EnergyUnderflow > m_EnergyMinimum) {
+      mout<<"Error: The underflow energy can not be larger than the minimum energy"<<endl;
+      return false;       
+    }
+    if (m_EnergyMinimum >= m_EnergyMaximum) {
+      mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
+      return false;       
+    }
+    if (m_EnergyMaximum > m_EnergyOverflow) {
+      mout<<"Error: The overflow energy must be larger than the maximum energy"<<endl;
+      return false;       
+    }
+    if (m_EnergyNumberOfBins <= 0) {
+      mout<<"Error: You need at least one energy bin"<<endl;
+      return false;       
+    }
   }
   if (m_EnergyNumberOfSkyBins <= 0) {
     mout<<"Error: You need at least one sky bin"<<endl;
@@ -211,11 +233,17 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for spectral response:"<<endl;
-  mout<<"  Minimum energy:                     "<<m_EnergyMinimum<<endl;
-  mout<<"  Maximum energy:                     "<<m_EnergyMaximum<<endl;
-  mout<<"  Number of bins energy:              "<<m_EnergyNumberOfBins<<endl;
-  mout<<"  Underflow minimum:                  "<<m_EnergyUnderflow<<endl;
-  mout<<"  Overflow maximum:                   "<<m_EnergyOverflow<<endl;
+  if (m_EnergyBinEdges.size() == 0) {
+    mout<<"  Minimum energy:                     "<<m_EnergyMinimum<<endl;
+    mout<<"  Maximum energy:                     "<<m_EnergyMaximum<<endl;
+    mout<<"  Number of bins energy:              "<<m_EnergyNumberOfBins<<endl;
+    mout<<"  Underflow minimum:                  "<<m_EnergyUnderflow<<endl;
+    mout<<"  Overflow maximum:                   "<<m_EnergyOverflow<<endl;
+  } else {
+    mout<<"  Bin edges:                          ";
+    for (auto E: m_EnergyBinEdges) mout<<E<<" ";
+    mout<<endl;
+  }
   mout<<"  Sky bins energy:                    "<<m_EnergyNumberOfSkyBins<<endl;
   mout<<"  ARM cut:                            "<<m_ARMCut<<endl;
   mout<<"  ARM cut sky bins:                   "<<m_ARMCutNumberOfSkyBins<<endl;
@@ -237,13 +265,21 @@ bool MResponseSpectral::Initialize()
 
   
   MResponseMatrixAxis Ideal("ideal energy [keV]");
-  Ideal.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+  if (m_EnergyBinEdges.size() == 0) {
+    Ideal.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+  } else {
+    Ideal.SetBinEdges(m_EnergyBinEdges); 
+  }
   
   MResponseMatrixAxisSpheric Origin("Theta (detector coordinates) [deg]", "Phi (detector coordinates) [deg]");
   Origin.SetFISBEL(m_EnergyNumberOfSkyBins);
   
   MResponseMatrixAxis Measured("measured energy [keV]");
-  Measured.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+  if (m_EnergyBinEdges.size() == 0) {
+    Measured.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+  } else {
+    Measured.SetBinEdges(m_EnergyBinEdges);  
+  }
   
   m_EnergyBeforeER.SetName("Energy response (before event reconstruction)");
   m_EnergyBeforeER.AddAxis(Ideal);
@@ -271,8 +307,12 @@ bool MResponseSpectral::Initialize()
   
   
   MResponseMatrixAxis RatioIdeal("ideal energy [keV]");
-  RatioIdeal.SetLinear(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum);
-
+  if (m_EnergyBinEdges.size() == 0) {
+    RatioIdeal.SetLinear(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum);
+  } else {
+    RatioIdeal.SetBinEdges(m_EnergyBinEdges);
+  }
+    
   MResponseMatrixAxis RatioMeasuredIdeal("measured energy / ideal energy");
   RatioMeasuredIdeal.SetLinear(9 + 100*6, 0, 1.2);
   // 9 + N*6:
