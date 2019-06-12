@@ -13,18 +13,23 @@ Geometry="${MEGALIB}/resource/examples/geomega/special/Max.geo.setup"
 #RevanConfiguration="${MEGALIB}/resource/examples/advanced/Pipeline/Max.revan.cfg"
 
 # Theta angles for point source simulations
+# You stop when you hit the atmosphere, at L2 it would go to 180
 PointSourceThetas="0 10 20 30 40 50 60 70 80 90 100 110"
 
 # Mono energetic energies to simulate 
+# By default it will create broadened 511, 847, and 1175-keV lines automatically
 PointSourceMonoEnergies="1808.7 1173.2 1332.5 100 130 200 350 500 550 700 1000 1300 2000 3500 5000 10000"
 
 # Energies at which to start the continuum simulations
-PointSourceContinuumStartEnergies="8 80 800 8000"
+# 80(00) keV was chosen in order to be able to use 100(00) as the sensitivity determination boundary
+# and not run into energy resolution effects (assuming the enery resolution is better than5%)
+PointSourceContinuumStartEnergies="80 800 8000"
 
 # Stop criteria for point source simulations (should be events!)
 EventsOrTriggers="Events"
 
 # Stop criteria for point source simulations
+# For a real run it should be a million or more
 Events=5000
 
 
