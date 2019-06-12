@@ -72,23 +72,24 @@ for e in ${PointSourceMonoEnergies}; do
 done
 
 # Create the broad line sim files
-for t in ${PointSourceThetas}; do
-  SourceFile="PS_1157keV_4keV_${t}deg.source"
-  rm -f ${SourceFile}
-  sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|1157|g" -e "s|%%SIGMA%%|4|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
-  AllSourceFiles+=" ${SourceFile}"
+if [[ ${SimulateBroadLines} == true ]]; then
+  for t in ${PointSourceThetas}; do
+    SourceFile="PS_1157keV_4keV_${t}deg.source"
+    rm -f ${SourceFile}
+    sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|1157|g" -e "s|%%SIGMA%%|4|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
+    AllSourceFiles+=" ${SourceFile}"
     
-  SourceFile="PS_847keV_14keV_${t}deg.source"
-  rm -f ${SourceFile}
-  sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|847|g" -e "s|%%SIGMA%%|14|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
-  AllSourceFiles+=" ${SourceFile}"
+    SourceFile="PS_847keV_14keV_${t}deg.source"
+    rm -f ${SourceFile}
+    sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|847|g" -e "s|%%SIGMA%%|14|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
+    AllSourceFiles+=" ${SourceFile}"
     
-  SourceFile="PS_511keV_1keV_${t}deg.source"
-  rm -f ${SourceFile}
-  sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|511|g" -e "s|%%SIGMA%%|1|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
-  AllSourceFiles+=" ${SourceFile}"
-done
-
+    SourceFile="PS_511keV_1keV_${t}deg.source"
+    rm -f ${SourceFile}
+    sed -e "s|%%THETA%%|${t}|g" -e "s|%%ENERGY%%|511|g" -e "s|%%SIGMA%%|1|g" -e "s|%%EVENTSORTRIGGERS%%|${EventsOrTriggers}|g" -e "s|%%EVENTS%%|${Events}|g" -e "s|%%GEOMETRY%%|${Geometry}|g" < ${PointSourceGaussTemplate} > ${SourceFile}
+    AllSourceFiles+=" ${SourceFile}"
+  done
+fi
 
 
 # Step 2: Perform simulations
