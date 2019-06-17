@@ -238,6 +238,9 @@ unsigned long MResponseMatrixAxis::GetAxisBin(double X1, double X2) const
   auto UpperBound = upper_bound(m_BinEdges.begin(), m_BinEdges.end(), X1);
   unsigned long Bin = UpperBound - m_BinEdges.begin() - 1;
 
+  // upper_bound is [) - let's take care of the case if we are at the highest bin value
+  if (X1 == m_BinEdges.back()) Bin = m_BinEdges.size() - 2; // -2 since we have edges, i.e. one more than bins
+  
   if (Bin >= m_BinEdges.size() - 1) {
     throw MExceptionIndexOutOfBounds(0, m_BinEdges.size() - 1, Bin);
   }
