@@ -28,6 +28,8 @@
 
 // Standard libs:
 #include <vector>
+#include <string>
+#include <algorithm>
 using namespace std;
 
 // ROOT libs:
@@ -63,6 +65,7 @@ MResponseSpectral::MResponseSpectral()
   m_EnergyMaximum = 20000;
   m_EnergyOverflow = 100000;
   m_EnergyNumberOfBins = 500;
+  m_EnergyLogarithmic = true;
   m_EnergyNumberOfSkyBins = 413;
   m_ARMCut = 5;
   m_ARMCutOriginAcceptanceRadius = 1;
@@ -102,6 +105,7 @@ MString MResponseSpectral::Options()
   out<<"             ebins:           number of energy bins between min and max energy (default: 500)"<<endl;
   out<<"             eunder:          underflow bin minimum (default: 1 keV)"<<endl;
   out<<"             eover:           overflow bin maximum (default: 100,000 keV)"<<endl;
+  out<<"             elog:            use logarithmis binning or not - true or false (default: true)"<<endl;
   out<<"             ebinedges:       use these bin edges (ignores emin, emax, ebins, eunder & eover), example: ebinedges=100,200,300,400,500 (default: not used)"<<endl;
   out<<"             eskybins:        sky bins (default: 413 - 10^2 deg bins)"<<endl;
   out<<"             armcut:          ARM cut radius (default: 5 deg)"<<endl;
@@ -157,6 +161,16 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
       m_EnergyUnderflow = stod(Value);
     } else if (Split2[i][0] == "eover") {
       m_EnergyOverflow = stod(Value);
+    } else if (Split2[i][0] == "elog") {
+      std::transform(Value.begin(), Value.end(), Value.begin(), ::tolower);
+      if (Value == "true") {
+        m_EnergyLogarithmic = true;
+      } else if (Value == "false") {
+        m_EnergyLogarithmic = false;
+      } else {
+        mout<<"Error: Use true or false with elog option: "<<Split2[i][0]<<endl;
+        return false;
+      }
     } else if (Split2[i][0] == "ebinedges") {
       vector<MString> Tokens = MString(Value).Tokenize(",");
       m_EnergyBinEdges.clear();
@@ -237,6 +251,7 @@ bool MResponseSpectral::ParseOptions(const MString& Options)
     mout<<"  Minimum energy:                     "<<m_EnergyMinimum<<endl;
     mout<<"  Maximum energy:                     "<<m_EnergyMaximum<<endl;
     mout<<"  Number of bins energy:              "<<m_EnergyNumberOfBins<<endl;
+    mout<<"  Logarithmic:                        "<<(m_EnergyLogarithmic ? "true" : "false")<<endl;
     mout<<"  Underflow minimum:                  "<<m_EnergyUnderflow<<endl;
     mout<<"  Overflow maximum:                   "<<m_EnergyOverflow<<endl;
   } else {
@@ -266,7 +281,11 @@ bool MResponseSpectral::Initialize()
   
   MResponseMatrixAxis Ideal("ideal energy [keV]");
   if (m_EnergyBinEdges.size() == 0) {
-    Ideal.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    if (m_EnergyLogarithmic == true) {
+      Ideal.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    } else {
+      Ideal.SetLinear(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    }
   } else {
     Ideal.SetBinEdges(m_EnergyBinEdges); 
   }
@@ -276,7 +295,11 @@ bool MResponseSpectral::Initialize()
   
   MResponseMatrixAxis Measured("measured energy [keV]");
   if (m_EnergyBinEdges.size() == 0) {
-    Measured.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    if (m_EnergyLogarithmic == true) {
+      Measured.SetLogarithmic(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    } else {
+      Measured.SetLinear(m_EnergyNumberOfBins, m_EnergyMinimum, m_EnergyMaximum, m_EnergyUnderflow, m_EnergyOverflow);
+    }
   } else {
     Measured.SetBinEdges(m_EnergyBinEdges);  
   }

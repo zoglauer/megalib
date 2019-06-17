@@ -82,6 +82,8 @@ class MResponseSpectral : public MResponseBuilder
    double m_EnergyOverflow;
    //! Number of bins excluding under- and overflow
    unsigned int m_EnergyNumberOfBins;
+   //! Use logarithmic binning
+   bool m_EnergyLogarithmic;
    //! The bin edges
    vector<double> m_EnergyBinEdges;
    //! Number of sky bins
