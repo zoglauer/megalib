@@ -62,6 +62,8 @@ public:
 private:
   //! True, if the analysis needs to be interrupted
   bool m_Interrupt;
+  //! Number of samples
+  unsigned int m_NumberOfSamples;
 };
 
 
@@ -69,7 +71,7 @@ private:
 
 
 //! Default constructor
-GRBSampler::GRBSampler() : m_Interrupt(false)
+GRBSampler::GRBSampler() : m_Interrupt(false), m_NumberOfSamples(10)
 {
   gStyle->SetPalette(1, 0);
 }
@@ -95,7 +97,7 @@ bool GRBSampler::ParseCommandLine(int argc, char** argv)
   Usage<<endl;
   Usage<<"  Usage: GRBSampler <options>"<<endl;
   Usage<<"    General options:"<<endl;
-  // Usage<<"         -f:   file name"<<endl;
+  Usage<<"         -s:   number of samples to create"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -138,9 +140,9 @@ bool GRBSampler::ParseCommandLine(int argc, char** argv)
     */
 
     // Then fulfill the options:
-    if (Option == "-f") {
-      //m_FileName = argv[++i];
-      //cout<<"Accepting file name: "<<m_FileName<<endl;
+    if (Option == "-s") {
+      m_NumberOfSamples = atoi(argv[++i]);
+      cout<<"Samples: "<<m_NumberOfSamples<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -185,25 +187,29 @@ bool GRBSampler::Analyze()
   TH1D* lFlux = new TH1D("lFlux", "lFlux", 1000, 0, 100);
   lFlux->SetLineColor(kGreen);
   
-  
+  unsigned int NShorts = 0;
+  unsigned int NLongs = 0;
   for (unsigned int l = 0; l < Parser.GetNLines(); ++l) {
     MTokenizer* T = Parser.GetTokenizerAt(l);
-    if (T->GetNTokens() < 8) continue;
+    if (T->GetNTokens() < 7) continue;
    
-    T90->Fill(T->GetTokenAtAsDouble(3));
+    T90->Fill(T->GetTokenAtAsDouble(2));
     
-    if (T->GetTokenAtAsDouble(3) < TimeCutOff) {
-      sBandAlpha->Fill(T->GetTokenAtAsDouble(4));
-      sBandBeta->Fill(T->GetTokenAtAsDouble(5));
-      sBandEPeak->Fill(T->GetTokenAtAsDouble(6));
-      sFlux->Fill(T->GetTokenAtAsDouble(7));
+    if (T->GetTokenAtAsDouble(2) < TimeCutOff) {
+      NShorts++;
+      sBandAlpha->Fill(T->GetTokenAtAsDouble(3));
+      sBandBeta->Fill(T->GetTokenAtAsDouble(4));
+      sBandEPeak->Fill(T->GetTokenAtAsDouble(5));
+      sFlux->Fill(T->GetTokenAtAsDouble(6));
     } else {
-      lBandAlpha->Fill(T->GetTokenAtAsDouble(4));
-      lBandBeta->Fill(T->GetTokenAtAsDouble(5));
-      lBandEPeak->Fill(T->GetTokenAtAsDouble(6));
-      lFlux->Fill(T->GetTokenAtAsDouble(7));
+      NLongs++;
+      lBandAlpha->Fill(T->GetTokenAtAsDouble(3));
+      lBandBeta->Fill(T->GetTokenAtAsDouble(4));
+      lBandEPeak->Fill(T->GetTokenAtAsDouble(5));
+      lFlux->Fill(T->GetTokenAtAsDouble(6));
     }
   }
+  cout<<"Number of short GRBS: "<<NShorts<<" vs long GRBs: "<<NLongs<<endl;
   
   TCanvas* cT90 = new TCanvas("cT90", "cT90", 1200, 800);
   cT90->cd();
@@ -246,7 +252,7 @@ bool GRBSampler::Analyze()
   
   
   // Now sample
-  for (unsigned int s = 1; s <= 100; ++s) {
+  for (unsigned int s = 1; s <= m_NumberOfSamples; ++s) {
     // Sample for the distributions
     double Duration = T90->GetRandom();
     double Alpha = Duration > TimeCutOff ? lBandAlpha->GetRandom() : sBandAlpha->GetRandom();
