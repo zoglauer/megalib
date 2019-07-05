@@ -1738,6 +1738,10 @@ bool MCSource::SetEnergy(double EnergyParam1,
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The high-energy index must be smaller than 0!"<<endl;
       return false;
     }
+    if (m_EnergyParam4 >= m_EnergyParam3) {
+      mout<<"  ***  ERROR  ***   "<<m_Name<<": The low-energy index must be smaller than the high-energy index!"<<endl;
+      return false;
+    }
     if (m_EnergyParam5 <= m_EnergyParam1 || m_EnergyParam5 > m_EnergyParam2) {
       mout<<"  ***  ERROR  ***   "<<m_Name<<": The peak energy must be within the minimum and maximum energy!"<<endl;
       return false;
@@ -2559,7 +2563,9 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
   } else if (m_SpectralType == c_BandFunction) {
     while (true) {
       m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
+      cout<<"Energy: "<<m_Energy<<endl;
       double BandValue = BandFunction(m_Energy, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
+      cout<<"BW vs Max: "<<BandValue<<", "<<m_EnergyParam6<<endl;
       if (BandValue > m_EnergyParam6) {
         mout<<"Precalculated maximum of band function is wrong!!"<<endl;
       }
