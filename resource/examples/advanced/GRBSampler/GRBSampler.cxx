@@ -255,8 +255,14 @@ bool GRBSampler::Analyze()
   for (unsigned int s = 1; s <= m_NumberOfSamples; ++s) {
     // Sample for the distributions
     double Duration = T90->GetRandom();
-    double Alpha = Duration > TimeCutOff ? lBandAlpha->GetRandom() : sBandAlpha->GetRandom();
-    double Beta = Duration > TimeCutOff ? lBandBeta->GetRandom() : sBandBeta->GetRandom();
+    
+    double Alpha = 0;
+    double Beta = 0;
+    do {
+      Alpha = Duration > TimeCutOff ? lBandAlpha->GetRandom() : sBandAlpha->GetRandom();
+      Beta = Duration > TimeCutOff ? lBandBeta->GetRandom() : sBandBeta->GetRandom();
+    } while (Alpha < Beta);
+    
     double Peak = Duration > TimeCutOff ? lBandEPeak->GetRandom() : sBandEPeak->GetRandom();
     double Flux = Duration > TimeCutOff ? lFlux->GetRandom() : sFlux->GetRandom();
     
