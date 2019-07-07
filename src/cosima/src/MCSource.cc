@@ -1777,7 +1777,7 @@ bool MCSource::UpgradeEnergy()
     
     // Calculate Maximum:
     m_EnergyParam6 = BandFunction(m_EnergyParam1, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
-    cout<<"Band-Max: "<<m_EnergyParam6 <<endl;
+    //cout<<"Band-Max: "<<m_EnergyParam6 <<endl;
     //m_EnergyParam6 = BandFunction(m_EnergyParam3*m_EnergyParam5, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
   }
   
@@ -2563,9 +2563,7 @@ bool MCSource::GenerateEnergy(G4GeneralParticleSource* ParticleGun)
   } else if (m_SpectralType == c_BandFunction) {
     while (true) {
       m_Energy = m_EnergyParam1 + CLHEP::RandFlat::shoot(1)*(m_EnergyParam2-m_EnergyParam1);
-      cout<<"Energy: "<<m_Energy<<endl;
       double BandValue = BandFunction(m_Energy, m_EnergyParam3, m_EnergyParam4, m_EnergyParam5);
-      cout<<"BW vs Max: "<<BandValue<<", "<<m_EnergyParam6<<endl;
       if (BandValue > m_EnergyParam6) {
         mout<<"Precalculated maximum of band function is wrong!!"<<endl;
       }
