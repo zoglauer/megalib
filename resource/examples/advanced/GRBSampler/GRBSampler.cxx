@@ -275,7 +275,7 @@ bool GRBSampler::Analyze()
     
     out<<"# GRB "<<s<<endl;
     out<<endl;
-    out<<"Include Common.source"<<endl;
+    out<<"Include Common.partialsource"<<endl;
     out<<endl;
     out<<"Run GRBSim"<<endl;
     out<<"GRBSim.FileName             GRB_"<<s<<endl;
@@ -288,7 +288,7 @@ bool GRBSampler::Analyze()
     out<<"# Reminder the BATSE flux is in the 20 keV to 2 MeV band"<<endl;
     out<<"GRB.Flux                   "<<Flux<<endl;
     out<<endl;
-    out<<"Include Background.source"<<endl;
+    out<<"Include Background.partialsource"<<endl;
     out<<endl;
     
     
@@ -296,7 +296,7 @@ bool GRBSampler::Analyze()
   }
   
   ofstream common;
-  common.open("Common.source");
+  common.open("Common.partialsource");
   common<<"# Global parameters"<<endl;
   common<<"Version         1"<<endl;
   common<<"Geometry        $(MEGALIB)/resource/examples/geomega/GRIPS/GRIPS.geo.setup"<<endl;
@@ -311,7 +311,7 @@ bool GRBSampler::Analyze()
   
   
   ofstream bkg;
-  bkg.open("Background.source");
+  bkg.open("Background.partialsource");
   bkg<<"# Add your background here. The example is for equatorial orbit - photon components only"<<endl;
   bkg<<"SpaceSim.Source CosmicPhoton"<<endl;
   bkg<<"CosmicPhoton.ParticleType   1"<<endl;
