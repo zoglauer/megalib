@@ -80,7 +80,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Check that cosima is installed
   #GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
-  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git log -1 --pretty=format:"%h %cd" --date=short'`
+  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git log -1 --pretty=format:"%H %cd" --date=short'`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Unable to retrieve git version!"
     MACHINES[$m]=""
