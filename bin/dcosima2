@@ -182,12 +182,19 @@ echo " " | ${LOGGING}
 echo "Creating a list of all data files to use" | ${LOGGING}
 
 cd ${DATADIR}
+pwd
 
 # Find all sim and evta files except concatenation files (that's what the *inc*id* is for)
 DATAFILES=()
-for F in `ls -U *.source 2>/dev/null`; do
+for F in `find . -name "*.source"`; do
   DATAFILES+=( "${F}" ) 
 done
+
+if [[ ${#DATAFILES[*]} -eq 0 ]]; then
+  echo " "
+  echo "No data files found! Exiting."
+  exit 0
+fi
 
 # Done
 cd ${HERE}
@@ -195,17 +202,16 @@ cd ${HERE}
 
 # Check if we can continue:
 if [[ ${CONTINUE} == "TRUE" ]] && [[ -d ${TARGETDIR} ]]; then
-  TARGETFILES=$( ls -1 ${TARGETDIR}/*.sim )
+  #TARGETFILES=$( find ${TARGETDIR} -name "*.sim*" -printf "%f " )
   NOTDONE=()
   
   for (( d=0; d<${#DATAFILES[*]}; d++ )); do
     if [[ $(( d % 100 )) == 0 ]]; then echo "Analyzing $d/${#DATAFILES[*]}..."; fi
     
     OUTFILE=${DATAFILES[$d]}
-    OUTFILE=${OUTFILE/.sim.gz/}
-    OUTFILE=${OUTFILE/.sim/}
+    OUTFILE=${OUTFILE/.source/.inc1.id1.sim.gz}
 
-    if [[ ! ${TARGETFILES} =~ ${OUTFILE} ]]; then
+    if [[ ! -f ${OUTFILE} ]]; then
       NOTDONE+=( "${DATAFILES[$d]}" )
     fi
   done
@@ -224,7 +230,7 @@ echo "Data files:"
 for (( d=0; d<=$(( ${#DATAFILES[*]} -1 )); d++ )); do
   echo " * ${DATAFILES[$d]}"
 done
-echo "--> ${#DATAFILES[*]} data files total."
+echo "--> ${#DATAFILES[*]} source files in total to simulate"
 
 
 echo " "
@@ -397,7 +403,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
   
   if [[ ${STARTEDALLPRIORITIES} -eq 0 ]]; then
     echo ""
-    echo " --> No slots available at the moment... Sleeping for a while..."
+    echo " --> No slots available at the moment... Sleeping for ${DELAY} seconds..."
     sleep ${DELAY}
   else 
     # Sleep a tiny bit to give the last instance a chance to start before we revisit the node   
