@@ -1804,8 +1804,9 @@ bool MGUIMainMelinator::OnSaveConfiguration()
   //Info.fIniDir = StrDup(gSystem->DirName(m_Settings->GetCurrentFile()));
   new TGFileDialog(gClient->GetRoot(), this, kFDSave, &Info);
   
-  // Get the filename ...
+  // Get the filename and store all the data in the settings...
   if ((char *) Info.fFilename != 0) {
+    Update();
     m_Interface->SaveConfiguration(MString(Info.fFilename));
   } 
 
