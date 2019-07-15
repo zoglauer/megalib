@@ -625,7 +625,7 @@ bool MCalibrateEnergyFindLines::CheckPeaks()
     }
   }
   
-  if (FWHMes.size() > 1) {
+  if (FWHMes.size() >= 3) {
     // Calculate outliers via the modified thomson tau method
     MMath M;
     vector<bool> IsOutlier  = M.ModifiedThomsonTauTest(FWHMes, 0.01);

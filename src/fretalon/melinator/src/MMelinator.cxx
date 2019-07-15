@@ -180,7 +180,7 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
   unsigned int InternalID = 0;
   map<unsigned int, unsigned int> IDMap; // maps external ID to internal ID
   map<unsigned int, MString> NameMap; // maps internal ID to file names
-  map<unsigned int, vector<MIsotope>> IsotopeMap; // maps internal ID to file names
+  map<unsigned int, vector<MIsotope>> IsotopeMap; // maps internal ID to isotopes
   for (unsigned int g = 0; g < GroupIDs.size(); ++g) {
     if (FileNames[g] == "") continue;
     
@@ -194,9 +194,21 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
       CurrentInternalID = (*I).second;
     }
     // Add, sort and remove duplicate isotopes
-    IsotopeMap[CurrentInternalID].insert(IsotopeMap[CurrentInternalID].end(), Isotopes[g].begin(), Isotopes[g].end());
-    sort(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end());
-    IsotopeMap[CurrentInternalID].erase(unique(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end()), IsotopeMap[CurrentInternalID].end());
+    for (unsigned int i = 0; i < Isotopes[g].size(); ++i) {
+      bool Found = false;
+      for (unsigned int e = 0; e < IsotopeMap[CurrentInternalID].size(); ++e) {
+        if (IsotopeMap[CurrentInternalID][e] == Isotopes[g][i]) {
+          Found = true; 
+        }
+      }
+      if (Found == false) {
+        IsotopeMap[CurrentInternalID].push_back(Isotopes[g][i]);
+      }
+    }
+    
+    //IsotopeMap[CurrentInternalID].insert(IsotopeMap[CurrentInternalID].end(), Isotopes[g].begin(), Isotopes[g].end());
+    //sort(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end());
+    //IsotopeMap[CurrentInternalID].erase(unique(IsotopeMap[CurrentInternalID].begin(), IsotopeMap[CurrentInternalID].end()), IsotopeMap[CurrentInternalID].end());
     
     m_GroupIDs.push_back(IDMap[GroupIDs[g]]);
     MString Name = MFile::GetBaseName(FileNames[g]);
@@ -298,12 +310,16 @@ bool MMelinator::Load(const vector<MString>& FileNames, const vector<vector<MIso
       //cout<<Name<<" is running"<<endl;
     }
     
+    long Counter = 0;
     bool ThreadsAreRunning = true;
     while (ThreadsAreRunning == true) {
 
-      // Sleep for a while...
+      // Sleep for a 10 ms
       TThread::Sleep(0, 10000000);
-      //gSystem->ProcessEvents();
+      // Whenever we slept ~0.1 sec update the UI
+      if (++Counter % 10 == 0) {
+        gSystem->ProcessEvents();
+      }
       
       int Running = 0;
       ThreadsAreRunning = false;

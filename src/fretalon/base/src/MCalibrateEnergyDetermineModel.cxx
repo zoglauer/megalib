@@ -81,8 +81,8 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
   
   // Assemble the unique lines:
   vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
-  if (Points.size() < 2) {
-    cout<<"Not enough points to determine a calibration model"<<endl;  
+  if (Points.size() < 1) {
+    cout<<"Not enough points to determine a calibration model. Only "<<Points.size()<<" calibration point(s) available."<<endl;  
     return true;
   }
   
@@ -94,7 +94,9 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     
     // Set up the model:
     MCalibrationModel* Model = 0;
-    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
+    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
+      Model = new MCalibrationModelPoly1Zero();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
       Model = new MCalibrationModelPoly1();
     } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
       Model = new MCalibrationModelPoly2();
@@ -131,6 +133,7 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     
     // Assemble the models
     vector<MCalibrationModel*> Models;
+    Models.push_back(new MCalibrationModelPoly1Zero());
     Models.push_back(new MCalibrationModelPoly1());
     Models.push_back(new MCalibrationModelPoly2());
     Models.push_back(new MCalibrationModelPoly3());

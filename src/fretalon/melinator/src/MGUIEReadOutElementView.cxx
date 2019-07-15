@@ -45,14 +45,14 @@ MGUIEReadOutElementView::MGUIEReadOutElementView(const TGWindow* Parent) :
   TGCanvas(Parent, 50, 50, 0)
 {
   m_Parent = (TGWindow *) Parent;
-
-  SetScrolling(kCanvasScrollVertical);
   
   // Since we do not create the element in the constructor, 
   // we have initialze some pointers:
   m_Container = new TGCompositeFrame(GetViewPort(), 50, 50);
   SetContainer(m_Container);
-
+  
+  SetScrolling(kCanvasScrollVertical);
+  
   m_Associate = 0;
 }
 

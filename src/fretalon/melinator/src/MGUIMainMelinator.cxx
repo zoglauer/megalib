@@ -1044,6 +1044,7 @@ bool MGUIMainMelinator::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     FittingModelFrame->AddFrame(FittingModelLabel, TopLeftTextLayout);
     
     m_CalibrationModelDeterminationMethodFittingModel = new TGComboBox(FittingModelFrame, c_CalibrationModelDeterminationMethodFittingModel);
+    m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1 Through Zero", MCalibrationModel::c_CalibrationModelPoly1Zero);
     m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 1", MCalibrationModel::c_CalibrationModelPoly1);
     m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
     m_CalibrationModelDeterminationMethodFittingModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
@@ -1628,15 +1629,25 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
       GoodEntries += 1;
     }
   }
+  
+  if (GoodEntries == 0) {
+    // Nothing to do
+    return;
+  }
+  
   RMS = sqrt(RMS/GoodEntries);
     
   if (RMS > 0) {
     // Now set the colors:
     for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
-      int Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
-      //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
-      //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<Quality<<" (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
+      if (m_Melinator.GetCalibrationQuality(i) == 0) {
+        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 0);
+      } else {
+        int Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
+        //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
+        //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<Quality<<" (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
+        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
+      }
     }
   }
   
