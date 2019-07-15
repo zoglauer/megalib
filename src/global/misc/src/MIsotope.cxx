@@ -116,7 +116,9 @@ void MIsotope::AddLine(double Energy, double BranchingRatio, const MString& Flag
   m_LineEnergies.push_back(Energy); 
   m_LineBranchingRatios.push_back(BranchingRatio);
   m_LineExcludeFlags.push_back(false);
+  m_LineDefaultFlags.push_back(false);
   if (Flags.Contains("E") == true) m_LineExcludeFlags.back() = true;
+  if (Flags.Contains("D") == true) m_LineDefaultFlags.back() = true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -131,17 +133,48 @@ double MIsotope::GetLineEnergy(unsigned int i) const
   return 0;
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Return the line exclude flag
-double MIsotope::GetLineExcludeFlag(unsigned int i) const
+bool MIsotope::GetLineExcludeFlag(unsigned int i) const
 {
   if (i < m_LineExcludeFlags.size()) return m_LineExcludeFlags[i];
-
+  
   merr<<"Index out of bounds: i="<<i<<" vs. size()="<<m_LineExcludeFlags.size()<<fatal;
   return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return the default line, or -1 if non could be found
+int MIsotope::GetDefaultLine() const
+{
+  if (m_LineDefaultFlags.size() == 0) return -1;
+  
+  // If we have defined one , and it is not excluded
+  for (unsigned int l = 0; l < m_LineDefaultFlags.size(); ++l) {
+    if (m_LineDefaultFlags[l] == true && m_LineExcludeFlags[l] == false) {
+      return l; 
+    }
+  }
+  
+  // If not return the line with the strongest branching ratio which is not excluded
+  int Line = -1;
+  double Strength = -1;
+  for (unsigned int l = 0; l < m_LineBranchingRatios.size(); ++l) {
+    if (m_LineExcludeFlags[l] == false) {
+      if (m_LineBranchingRatios[l] > Strength) {
+        Line = l;
+        Strength = m_LineBranchingRatios[l];
+      }
+    }
+  }
+  
+  return Line;
 }
 
   
