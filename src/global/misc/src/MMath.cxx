@@ -201,8 +201,8 @@ vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha)
 {
   vector<bool> IsOutlier(Values.size(), false);
   
-  // We need at least 2 values
-  if (Values.size() < 2) {
+  // We need at least 3 values
+  if (Values.size() < 3) {
     cout<<"ERROR in ModifiedThomsonTauTest: Need at least 2 values"<<endl;
     return IsOutlier;
   }
@@ -240,7 +240,7 @@ vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha)
     }
     Mean /= NumberOfValues;
     
-    if (NumberOfValues < 2) return IsOutlier;
+    if (NumberOfValues < 3) return IsOutlier;
     
     // (2) Calculate standard deviation
     double StdDev = 0.0;
