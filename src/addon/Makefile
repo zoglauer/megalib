@@ -30,6 +30,7 @@ PRGSX = \
 	$(BN)/SimpleComptonImaging \
 	$(BN)/ExternalDataAnalysisExample \
 	$(BN)/ShowHistograms \
+	$(BN)/CompareHistograms \
 	$(BN)/Revoxelizer \
 	$(BN)/IsotopeFileSplitter \
 	$(BN)/VariableSourceDetector \
