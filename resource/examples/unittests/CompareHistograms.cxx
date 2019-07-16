@@ -85,6 +85,9 @@ private:
   vector<MString> m_SimulationFileNames;
   /// File name of the output file
   MString m_OutputFileName;
+  
+  /// Scale the simulation to the same counts as the model
+  bool m_Scale;
 };
 
 /******************************************************************************/
@@ -93,7 +96,7 @@ private:
 /******************************************************************************
  * Default constructor
  */
-CompareHistograms::CompareHistograms() : m_Interrupt(false)
+CompareHistograms::CompareHistograms() : m_Interrupt(false), m_Scale(false)
 {
   gStyle->SetPalette(1, 0);
 }
@@ -121,6 +124,7 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
   Usage<<"         -s:   simulation root file name"<<endl;
   Usage<<"         -o:   output root file name"<<endl;
   Usage<<"         -b:   batch mode"<<endl;
+  Usage<<"         -i:   scale the simulation to the same total counts as the model"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -175,6 +179,9 @@ bool CompareHistograms::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-b") {
       gROOT->SetBatch(true);
       g_IsInteractive = false;
+      //cout<<"Accepting simulation file name: "<<m_SimulationFileName<<endl;
+    } else if (Option == "-i") {
+      m_Scale = true;
       //cout<<"Accepting simulation file name: "<<m_SimulationFileName<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
@@ -232,6 +239,11 @@ bool CompareHistograms::Analyze()
     if (Simulation->GetNbinsX() != Model->GetNbinsX()) {
       cout<<"Error: The histograms don't have the same number of bins!"<<endl;
       return false;    
+    }
+    if (m_Scale == true) {
+      cout<<"Error check:"<<Simulation->GetBinError(5)<<endl;
+      Simulation->Scale(Model->Integral()/Simulation->Integral()); 
+      cout<<"Errorcheck after:"<<Simulation->GetBinError(5)<<endl;      
     }
     Simulations.push_back(Simulation);
   }
