@@ -712,13 +712,15 @@ MCalibrationModel& MMelinator::GetCalibrationModel(unsigned int Collection)
 //! Get the number of calibration point in the spectra
 unsigned int MMelinator::GetNumberOfCalibrationSpectralPoints(unsigned int Collection)
 {
-  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
-  if (C != nullptr) {
-    unsigned int Points = 0;
-    for (unsigned int g = 0; g <C->GetNumberOfReadOutDataGroups(); ++g) {
-      Points += C->GetNumberOfSpectralPoints(g);
+  if (Collection < m_CalibrationStore.GetNumberOfElements()) {
+    MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+    if (C != nullptr) {
+      unsigned int Points = 0;
+      for (unsigned int g = 0; g <C->GetNumberOfReadOutDataGroups(); ++g) {
+        Points += C->GetNumberOfSpectralPoints(g);
+      }
+      return Points;
     }
-    return Points;
   }
   
   return 0;
