@@ -321,7 +321,7 @@ bool MCalibrateEnergyAssignEnergies::CalibrateLinear()
       if (NewSetsOfMatches.size() != 0) {
         SetsOfMatches = NewSetsOfMatches;
       } else {
-        cout<<"Error something went wrong with the latest sets of matches since we would now have less matches (old: "<<SetsOfMatches.size()<<"  new: "<<NewSetsOfMatches.size()<<") ... Excluding a ton of lines"<<endl; 
+        cout<<"Error something went wrong with the latest sets of matches since we would now have less matches (old: "<<SetsOfMatches.size()<<"  new: "<<NewSetsOfMatches.size()<<") ... Excluding some lines"<<endl; 
       }
     } else {
       for (auto SubSet: SubSetsOfMatches) {
