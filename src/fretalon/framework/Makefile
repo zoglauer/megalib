@@ -78,7 +78,7 @@ $(PRG): $(CXX_MAIN) $(SOBJ)
 	@echo "Compiling and linking $(subst $(BN)/,,$@) ..."
 	@$(LD) $(CXXFLAGS) -Iinc $(LDFLAGS) $(CXX_MAIN) $(SOBJ) $(LIBRARIES) $(GLIBS) $(LIBS) -o $(PRG)
 
-$(SOBJ): $(OBJ_FILES)  $(DICTIONARYOBJECT)
+$(SOBJ): $(DICTIONARYOBJECT) $(OBJ_FILES)
 	@echo "Linking $(subst $(LB)/,,$@) ..."
 	@$(LD) $(LDFLAGS) $(SOFLAGS)  $(DICTIONARYOBJECT) $(OBJ_FILES) $(GLIBS) $(LIBS) -o $(SOBJ)
 

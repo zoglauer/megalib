@@ -114,7 +114,7 @@ $(DICTIONARY): $(HEADERS)
 	@rootcling -f $@ -I$(IN) -D___CLING___ -rmf $(ROOTMAP) -s lib$(LIBRARY) -c $^ $(LINKDEF)
 	@mv $(ROOTPCM) $(LB)
 
-$(SHAREDLIB): $(OBJECTS) $(DICTIONARYOBJECT)
+$(SHAREDLIB): $(DICTIONARYOBJECT) $(OBJECTS)
 	@echo "Linking lib$(LIBRARY) ..."
 	@$(LD) $(LDFLAGS) $(SOFLAGS) $(DICTIONARYOBJECT) $(OBJECTS) $(GLIBS) $(LIBS) -o $(SHAREDLIB)
 
