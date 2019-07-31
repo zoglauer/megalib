@@ -42,7 +42,7 @@ class MMath
 
   //! Perform a Thomson Tau test
   //! Return for each value if it is an outlier
-  vector<bool> ModifiedThomsonTauTest(vector<double> Values, double Alpha = 0.05);
+  vector<bool> ModifiedThomsonTauTest(vector<double> Values, double Alpha = 0.05, vector<bool> KnownOutliers = vector<bool>());
   
   
   double Gauss(const double& x, const double& mean = 0, const double& sigma = 1);

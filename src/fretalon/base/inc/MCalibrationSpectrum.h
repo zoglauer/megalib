@@ -74,9 +74,31 @@ class MCalibrationSpectrum : public MCalibration
   //! Get the calibration model, if it doesn't exist throw MExceptionObjectDoesNotExist
   MCalibrationModel& GetModel();
   //! Return true if we have a model
-  bool HasModel() const { if (m_Model != 0) return true; else return false; }
+  bool HasModel() const { if (m_Model != nullptr) return true; else return false; }
   //! Remove the model
   void RemoveModel();
+  
+  //! Set the line width calibration model
+  void SetLineWidthModel(MCalibrationModel& LineWidthModel);
+  //! Get the line width calibration model, if it doesn't exist throw MExceptionObjectDoesNotExist
+  MCalibrationModel& GetLineWidthModel();
+  //! Return true if we have a line width model
+  bool HasLineWidthModel() const { if (m_LineWidthModel != nullptr) return true; else return false; }
+  //! Remove the line width model
+  void RemoveLineWidthModel();
+  
+  
+  //! Set the peak parametrization method
+  void SetPeakParametrizationMethod(unsigned int Method) { m_PeakParametrizationMethod = Method; }  
+  
+  //! Set the parameters of the used line model
+  void SetPeakParametrizationMethodFittedPeakOptions(unsigned int BackgroundModel, 
+                                                     unsigned int EnergyLossModel, 
+                                                     unsigned int PeakShapeModel) {
+    m_PeakParametrizationMethodFittedPeakBackgroundModel = BackgroundModel; 
+    m_PeakParametrizationMethodFittedPeakEnergyLossModel = EnergyLossModel; 
+    m_PeakParametrizationMethodFittedPeakPeakShapeModel = PeakShapeModel; }
+    
   
   //! Return the data as parsable string - this function is just here to satisfy the compiler...
   virtual MString ToParsableString(bool WithDescriptor = false) { return ToParsableString("pak", WithDescriptor); }
@@ -101,9 +123,22 @@ class MCalibrationSpectrum : public MCalibration
  private:
   //! The spectral points
   vector<vector<MCalibrationSpectralPoint> > m_SpectralPoints;
-  //! Their calibartion model
+  //! Their calibration model
   MCalibrationModel* m_Model;
-
+  //! Their line width calibartion model
+  MCalibrationModel* m_LineWidthModel;
+  
+  //! The peak parametrization method
+  unsigned int m_PeakParametrizationMethod;
+  //! The background model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakBackgroundModel; 
+  //! The energy loss model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakEnergyLossModel; 
+  //! The peak shape model for peak fitting
+  unsigned int m_PeakParametrizationMethodFittedPeakPeakShapeModel;
+  
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MCalibrationSpectrum, 0) // no description

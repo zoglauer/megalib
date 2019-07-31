@@ -54,11 +54,16 @@ class MCalibrateEnergyDetermineModel : public MCalibrateEnergy
   
   //! Perform the calibration
   virtual bool Calibrate();
-
+  
   
   // protected methods:
  protected:
-  
+   //! Perform the energy calibration
+   virtual bool CalibrateEnergyModel();
+   
+   //! Perform the line width calibration
+   virtual bool CalibrateLineWidthModel();
+   
   // private methods:
  private:
 

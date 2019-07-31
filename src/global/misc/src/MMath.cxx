@@ -197,9 +197,20 @@ double MMath::AngleBetweenTwoVectors(const double& u, const double& v, const dou
 //! Perform a Thomson Tau test
 //! Requires at least two input value
 //! Return for each value if it is an outlier
-vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha)
+vector<bool> MMath::ModifiedThomsonTauTest(vector<double> Values, double Alpha, vector<bool> KnownOutliers)
 {
-  vector<bool> IsOutlier(Values.size(), false);
+  vector<bool> IsOutlier;
+  if (KnownOutliers.size() == 0) {
+    IsOutlier = vector<bool>(Values.size(), false);
+  } else {
+    IsOutlier = KnownOutliers;
+  }
+  
+  if (IsOutlier.size() != Values.size()) {
+    cout<<"ERROR in ModifiedThomsonTauTest: Value and outlier arrays dpo not have same size"<<endl;
+    return IsOutlier;
+  }
+  
   
   // We need at least 3 values
   if (Values.size() < 3) {

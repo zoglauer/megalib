@@ -44,7 +44,7 @@ ClassImp(MCalibrationModel)
 
 
 //! Default constructor
-MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
+MCalibrationModel::MCalibrationModel() : m_Type(MCalibrationModelType::c_Energy), m_Fit(nullptr), m_IsFitUpToDate(false), m_Keyword("none"),   m_FitQuality(numeric_limits<double>::max()/1000)
 {
 }
 
@@ -56,7 +56,7 @@ MCalibrationModel::MCalibrationModel() : m_Fit(0), m_IsFitUpToDate(false), m_Key
 MCalibrationModel::MCalibrationModel(const MCalibrationModel& Fit)
 {
   // We don't care about double initilization, so:
-  m_Fit = 0;
+  m_Fit = nullptr;
   *this = Fit;
 }
 
@@ -77,14 +77,16 @@ MCalibrationModel::~MCalibrationModel()
 //! The assignment operator
 MCalibrationModel& MCalibrationModel::operator= (const MCalibrationModel& CalibrationModel)
 {
+  m_Type = CalibrationModel.m_Type;
+  
   delete m_Fit;
-  if (CalibrationModel.m_Fit != 0) {
+  if (CalibrationModel.m_Fit != nullptr) {
     m_Fit = new TF1(*CalibrationModel.m_Fit);
     for (int i = 0; i < CalibrationModel.m_Fit->GetNpar(); ++i) {
       m_Fit->SetParameter(i, CalibrationModel.m_Fit->GetParameter(i));
     }
   } else {
-    m_Fit = 0;
+    m_Fit = nullptr;
   }
     
   m_IsFitUpToDate = CalibrationModel.m_IsFitUpToDate;
@@ -150,7 +152,11 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   ROOT::Fit::BinData TheData;
   TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
   for (unsigned int p = 0; p < Points.size(); ++p) {
-    TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);
+    if (m_Type == MCalibrationModelType::c_LineWidth) {
+      TheData.Add(Points[p].GetEnergy(), Points[p].GetEnergyFWHM(), 0.1*Points[p].GetEnergyFWHM()); // Arbitrary width...
+    } else {
+      TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);
+    }
   }
 
   ROOT::Fit::Fitter TheFitter; 
@@ -195,7 +201,11 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       m_Fit->SetParErrors( &(TheFitResult.Errors().front()) );
     }
 
-    m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+    if (m_Fit->GetNDF() > 0) {
+      m_FitQuality = m_Fit->GetChisquare()/m_Fit->GetNDF(); // Used to determine the quality of fit, thus critically important    
+    } else {
+      m_FitQuality = 0; 
+    }
   }  
   
   return m_FitQuality;

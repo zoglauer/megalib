@@ -83,10 +83,10 @@ protected:
   //! Set the active collection
   void UpdateLineFit(unsigned int Collection, unsigned int Line);
   //! Update the calibration
-  void UpdateCalibration(unsigned int Collection);
+  void UpdateCalibration(unsigned int Collection, bool DrawEnergyCalibration);
 
   //! Update all graphs
-  bool UpdateDisplay(unsigned int Collection, unsigned int Line);
+  bool UpdateDisplay(unsigned int Collection, unsigned int Line, bool ActiveResultIsEnergy);
 
   //! Update the saved GUI data
   bool Update();
@@ -143,7 +143,9 @@ protected:
   virtual bool OnSwitchCalibrationModelDeterminationMode(unsigned int ID);
   //! Action when one of the ROE buttons was pressed
   virtual bool OnSwitchCollection(unsigned int Collection);
-
+  //! Action when one of the ROE buttons was pressed
+  virtual bool OnToggleResults();
+  
   // private members:
 private:
   //! Reference to all interface functions
@@ -157,6 +159,8 @@ private:
   unsigned int m_ActiveCollection;
   //! The active line fit for the given read-out collection
   unsigned int m_ActiveLineFit;
+  //! The active results view
+  bool m_ActiveResultIsEnergy;
   
   //! The label of the main histogram
   TGLabel* m_MainHistogramLabel;
@@ -180,6 +184,8 @@ private:
   
   //! The label of the results view
   TGLabel* m_ResultsHistogramLabel;
+  //! The toggle button between energy and line-width of the results view
+  TGTextButton* m_ResultsToggleButton;  
   //! The view of the fit
   MGUIEReadOutUnitsCanvas* m_ResultsCanvas;
   
@@ -211,7 +217,7 @@ private:
   //! Button for updating the histogram
   TGTextButton* m_PeakHistogramUpdateButton;
   
-  
+
   //! Choose the peak parametrization method
   TGComboBox* m_PeakParametrizationMethod;
   //! Options frame for the peak parametrization
@@ -276,6 +282,7 @@ private:
   static const int c_FitWithDiagnostics         = 604;
   static const int c_BinsByCounts               = 700;
   static const int c_BinsByBins                 = 701;
+  static const int c_ResultsToggle              = 800;
   static const int c_ROEButtons                 = 1000;
   // Nothing beyond that allowed
 

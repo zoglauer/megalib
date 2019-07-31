@@ -85,6 +85,7 @@ MGUIMainMelinator::MGUIMainMelinator(MInterfaceMelinator* Interface,
   
   m_ActiveCollection = 0;
   m_ActiveLineFit = 0;
+  m_ActiveResultIsEnergy = true;
 }
 
 
@@ -555,7 +556,14 @@ void MGUIMainMelinator::Create()
   m_ResultsHistogramLabel = new TGLabel(ResultsControl, "Calibration model: none");
   TGLayoutHints* ResultsLabelLayout =  new TGLayoutHints(kLHintsTop | kLHintsLeft, 0, 0, 4+FontScaler*2, 3+FontScaler*2);
   ResultsControl->AddFrame(m_ResultsHistogramLabel, ResultsLabelLayout);
-
+  
+  m_ResultsToggleButton = new TGTextButton(ResultsControl, "Toggle", c_ResultsToggle); 
+  m_ResultsToggleButton->Associate(this);
+  m_ResultsToggleButton->SetWidth(100);
+  //m_ResultsToggleButton->SetEnabled(false);
+  m_ResultsToggleButton->SetMargins(FontScaler*5, FontScaler*5);
+  ResultsControl->AddFrame(m_ResultsToggleButton, ButtonLayout);
+  
   m_ResultsCanvas = new MGUIEReadOutUnitsCanvas(this, "ResultsCanvas", ResultsView);
   ResultsView->AddFrame(m_ResultsCanvas, CanvasLayout);
   
@@ -723,11 +731,15 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         case c_UpdateHistogram:
           Status = OnUpdateHistogram();
           break;
-
+          
         case c_UpdatePeakHistogram:
           Status = OnUpdatePeakHistogram();
           break;
-
+          
+        case c_ResultsToggle:
+          Status = OnToggleResults();
+          break;
+          
         default:
           break;
         }
@@ -1220,12 +1232,12 @@ bool MGUIMainMelinator::OnLoadLast()
     
   if (m_Melinator.GetNumberOfCollections() == 0) {
     mgui<<"There was no usable data on file!"<<show;
-    UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined);
+    UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined, true);
     return false;
   }
   
   CreateSelection();
-  UpdateDisplay(0, 0);
+  UpdateDisplay(0, 0, true);
   
   return true;
 }
@@ -1290,7 +1302,7 @@ bool MGUIMainMelinator::OnSwitchCollection(unsigned int Collection)
 {
   if (Collection < m_Melinator.GetNumberOfCollections()) { 
     m_ActiveCollection = Collection;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
 
   return true;
@@ -1305,7 +1317,7 @@ bool MGUIMainMelinator::OnNext()
 {
   if (m_ActiveCollection < m_Melinator.GetNumberOfCollections()-1) { 
     m_ActiveCollection++;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
 
   return true;
@@ -1320,7 +1332,7 @@ bool MGUIMainMelinator::OnBack()
 {
   if (m_ActiveCollection > 0) { 
     m_ActiveCollection--;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
  
   return true;
@@ -1335,7 +1347,7 @@ bool MGUIMainMelinator::OnNextFit()
 {
   if (m_ActiveLineFit < m_Melinator.GetNumberOfCalibrationSpectralPoints(m_ActiveCollection)-1) {
     m_ActiveLineFit++;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true; 
 }
@@ -1349,7 +1361,7 @@ bool MGUIMainMelinator::OnPreviousFit()
 {
   if (m_ActiveLineFit > 0) { 
     m_ActiveLineFit--;
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true; 
 }
@@ -1381,7 +1393,7 @@ bool MGUIMainMelinator::OnToggleFit()
   // Redo fit!
   m_Melinator.ReCalibrateModel(m_ActiveCollection);
   
-  UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+  UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   
   return true; 
 }
@@ -1394,7 +1406,7 @@ bool MGUIMainMelinator::OnToggleFit()
 bool MGUIMainMelinator::OnUpdateHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
   }
   return true;
 }
@@ -1407,7 +1419,22 @@ bool MGUIMainMelinator::OnUpdateHistogram()
 bool MGUIMainMelinator::OnUpdatePeakHistogram()
 {
   if (m_Melinator.GetNumberOfCollections() > 0) {
-    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit);
+    UpdateDisplay(m_ActiveCollection, m_ActiveLineFit, m_ActiveResultIsEnergy);
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Update the peakhistogram with the latest settings
+bool MGUIMainMelinator::OnToggleResults()
+{
+  if (m_Melinator.GetNumberOfCollections() > 0) {
+    m_ActiveResultIsEnergy = !m_ActiveResultIsEnergy;
+    UpdateCalibration(m_ActiveCollection, m_ActiveResultIsEnergy);
   }
   
   return true;
@@ -1418,11 +1445,11 @@ bool MGUIMainMelinator::OnUpdatePeakHistogram()
 
 
 //! Update all graphs
-bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line)
+bool MGUIMainMelinator::UpdateDisplay(unsigned int Collection, unsigned int Line, bool ActiveResultIsEnergy)
 {
   UpdateCollection(Collection, Line);
   UpdateLineFit(Collection, Line);
-  UpdateCalibration(Collection);
+  UpdateCalibration(Collection, ActiveResultIsEnergy);
   
   return true;
 }
@@ -1537,18 +1564,26 @@ void MGUIMainMelinator::UpdateLineFit(unsigned int Collection, unsigned int Line
 
 
 //! Update the calibration
-void MGUIMainMelinator::UpdateCalibration(unsigned int Collection) 
+void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEnergyCalibration) 
 {
-  m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection);
+  m_Melinator.DrawCalibration(*(m_ResultsCanvas->GetCanvas()), Collection, DrawEnergyCalibration);
   
   if (m_Melinator.HasCalibrationModel(Collection) == true) {
     MCalibrationModel& M = m_Melinator.GetCalibrationModel(Collection);
     ostringstream Text;
-    Text<<"Calibration model: "<<M.GetName();
+    if (DrawEnergyCalibration == true) {
+      Text<<"Energy calibration model: "<<M.GetName();
+    } else {
+      Text<<"Line-width calibration model: "<<M.GetName();
+    }
     m_ResultsHistogramLabel->SetText(Text.str().c_str());
     Layout();
   } else {
-    m_ResultsHistogramLabel->SetText("Calibration model: interpolation");
+    if (DrawEnergyCalibration == true) {
+      m_ResultsHistogramLabel->SetText("Eenrgy calibration model: interpolation");
+    } else {
+      m_ResultsHistogramLabel->SetText("Line-width calibration model: interpolation");
+    }
     Layout();
   }
   
@@ -1556,70 +1591,23 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
   
   // Get
   vector<double> FitQualities;
+  vector<bool> KnownOutliers;
   for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
     double FitQuality = m_Melinator.GetCalibrationQuality(i);
+    
+    if (FitQuality < 0 || FitQuality > 10) {
+      KnownOutliers.push_back(true);
+    } else {
+      KnownOutliers.push_back(false);
+    }
+    
     FitQualities.push_back(FitQuality);
   }
 
-  /*
-  MMath M;
-  cout<<"Outlier 90:"<<endl;
-  vector<bool> IsOutlier90 = M.ModifiedThomsonTauTest(FitQualities, 0.1);
-  cout<<"Outlier 95:"<<endl;
-  vector<bool> IsOutlier95 = M.ModifiedThomsonTauTest(FitQualities, 0.05);
-  cout<<"Outlier 99:"<<endl;
-  vector<bool> IsOutlier99 = M.ModifiedThomsonTauTest(FitQualities, 0.01);
-
-  for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
-    if (IsOutlier90[i] == true) {
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 2);      
-    } else if (IsOutlier99[i] == true) {
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 3);      
-    } else if (IsOutlier99[i] == true) {
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 4);      
-    } else {
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 1);      
-    }
-  }
-  */
-  
-  /*
-  // Mean & Standard deviation:
-  double LowerCutOff = 0;
-  double UpperCutOff = 100000;
-  
-  long GoodEntries = 0;
-  double Mean = 0;
-  for (double Value:  FitQualities) {
-    if (Value > LowerCutOff && Value < UpperCutOff) {
-      Mean += Value;
-      GoodEntries++;
-    }
-  }
-  if (GoodEntries > 0) {
-    Mean /= GoodEntries;
-    
-    double StandardDeviation = 0;
-    for (double Value:  FitQualities) {
-      if (Value > LowerCutOff && Value < UpperCutOff) {
-        StandardDeviation += pow(Value - Mean, 2);
-      }
-    }
-    StandardDeviation = sqrt(StandardDeviation/GoodEntries);
-  
-    if (StandardDeviation > 0) {
-      // Now set the colors:
-      for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
-        //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<m_Melinator.GetCalibrationQuality(i)<<"/"<<StandardDeviation<<endl;
-        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), int(m_Melinator.GetCalibrationQuality(i)/StandardDeviation));
-      }
-    }
-  }
-  */
   
   // RMS with outlier detection:
   MMath M;
-  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01);
+  vector<bool> IsOutlier = M.ModifiedThomsonTauTest(FitQualities, 0.01, KnownOutliers);
   
   unsigned int GoodEntries = 0;
   double RMS = 0;
@@ -1630,6 +1618,7 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
     }
   }
   
+  //cout<<"Good entries"<<GoodEntries<<endl;
   if (GoodEntries == 0) {
     // Nothing to do
     return;
@@ -1637,18 +1626,19 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection)
   
   RMS = sqrt(RMS/GoodEntries);
     
-  if (RMS > 0) {
-    // Now set the colors:
-    for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
-      if (m_Melinator.GetCalibrationQuality(i) == 0) {
-        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 0);
-      } else {
-        int Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
-        //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
-        //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<"): "<<Quality<<" (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
-        m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
+  // Now set the colors:
+  for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
+    if (m_Melinator.GetCalibrationQuality(i) == -1) {
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 0);
+    } else {
+      int Quality = 0;
+      if (RMS > 0) {
+        Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
       }
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
     }
+    //cout<<m_Melinator.GetCalibrationQuality(i)<<endl;
+    //cout<<"Collection: "<<i<<" ("<<m_Melinator.GetCollection(i).GetReadOutElement()<<") (Fitquality: "<<FitQualities[i]<<" RMS:"<<RMS<<", Outlier: "<<(IsOutlier[i] ? "true" : "false")<<")"<<endl;
   }
   
 }
@@ -1674,7 +1664,7 @@ void MGUIMainMelinator::SwitchToLine(double ROUs)
     }
   }
   
-  UpdateDisplay(m_ActiveCollection, Closest);
+  UpdateDisplay(m_ActiveCollection, Closest, m_ActiveResultIsEnergy);
 }
 
 

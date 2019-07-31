@@ -837,11 +837,11 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
 
-  double FitValue = 0;
+  double FitValue = -1;
   if (C != nullptr && C->HasModel() == true) {
     FitValue = C->GetModel().GetFitQuality();
-    if (FitValue < 0 || std::isnan(FitValue) == true || std::isinf(FitValue) == true) {
-      FitValue = 1E10;
+    if (/*FitValue < 0 ||*/ std::isnan(FitValue) == true || std::isinf(FitValue) == true) {
+      FitValue = 100;
     }
   }
   
@@ -854,7 +854,7 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
 
 
 //! Draw the calibration into the Canvas for the given Collection
-void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
+void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool UseEnergy)
 {
   //Canvas.SetBit(kNoContextMenu);
   //Canvas.Range(0, 1, 0, 1);
@@ -871,8 +871,8 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   Canvas.SetBottomMargin(0.12);
   
   
-  double MaximumEnergy = 0.0; 
-  double MaximumPeak = 0.0; 
+  double MaximumX = 0.0; 
+  double MaximumY = 0.0; 
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   vector<MCalibrationSpectralPoint> Points; 
   TGraphErrors* Graph = new TGraphErrors();
@@ -880,9 +880,15 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     Points = C->GetUniquePoints();
     Graph->Set(Points.size());
     for (unsigned int p = 0; p < Points.size(); ++p) {
-      Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
-      if (Points[p].GetPeak() > MaximumPeak) MaximumPeak = Points[p].GetPeak();
-      if (Points[p].GetEnergy() > MaximumEnergy) MaximumEnergy = Points[p].GetEnergy();
+      if (UseEnergy == true) {
+        Graph->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy());
+        if (Points[p].GetPeak() > MaximumX) MaximumX = Points[p].GetPeak();
+        if (Points[p].GetEnergy() > MaximumY) MaximumY = Points[p].GetEnergy();
+      } else {
+        Graph->SetPoint(p, Points[p].GetEnergy(), Points[p].GetEnergyFWHM());
+        if (Points[p].GetEnergy() > MaximumX) MaximumX = Points[p].GetEnergy();
+        if (Points[p].GetEnergyFWHM() > MaximumY) MaximumY = Points[p].GetEnergyFWHM();
+      }
     }
   }
   
@@ -890,22 +896,30 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   //cout<<"Drawing graph..."<<endl;
   Graph->Sort();
   Graph->SetMinimum(0);
-  Graph->SetMaximum(1.1*MaximumEnergy);
+  Graph->SetMaximum(1.1*MaximumY);
   Graph->Draw(); // Draw in order to have all axis!
   
   Graph->SetTitle("");
 
-  Graph->GetXaxis()->SetTitle("read-out units");
+  if (UseEnergy == true) {
+    Graph->GetXaxis()->SetTitle("read-out units");
+  } else {
+    Graph->GetXaxis()->SetTitle("energy [keV]");
+  }
   // Graph->GetXaxis()->SetLabelOffset(0.0);
   Graph->GetXaxis()->SetLabelSize(0.05);
   Graph->GetXaxis()->SetTitleSize(0.06);
   Graph->GetXaxis()->SetTitleOffset(0.9);
   Graph->GetXaxis()->CenterTitle(true);
   Graph->GetXaxis()->SetMoreLogLabels(true);
-  Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumPeak);
+  Graph->GetXaxis()->SetLimits(0.0, 1.1*MaximumX);
   Graph->GetXaxis()->SetNdivisions(509, true);
   
-  Graph->GetYaxis()->SetTitle("energy [keV]");
+  if (UseEnergy == true) {
+    Graph->GetYaxis()->SetTitle("energy [keV]");
+  } else {
+    Graph->GetYaxis()->SetTitle("FWHM [keV]");
+  }
   // Graph->GetYaxis()->SetLabelOffset(0.001);
   Graph->GetYaxis()->SetLabelSize(0.05);
   Graph->GetYaxis()->SetTitleSize(0.06);
@@ -920,7 +934,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
   }
   
   if (C != nullptr && C->HasModel() == true) {
-    MCalibrationModel& Model = C->GetModel();
+    MCalibrationModel& Model = (UseEnergy == true) ? C->GetModel() : C->GetLineWidthModel();
     Model.Draw("SAME");
 
     TGraph* Residuals = new TGraph(Points.size());
@@ -930,7 +944,12 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     double Max = -numeric_limits<double>::max();
     for (unsigned int p = 0; p < Points.size(); ++p) {
       if (Points[p].IsGood() == false) continue;
-      double Value = Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()); 
+      double Value = 0.0;
+      if (UseEnergy == true) {
+        Value = Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()); 
+      } else {
+        Value = Points[p].GetEnergyFWHM() - Model.GetFitValue(Points[p].GetEnergy()); 
+      }
       if (Value < Min) Min = Value;
       if (Value > Max) Max = Value;
       //Residuals->SetPoint(p, Points[p].GetPeak(), Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()));
@@ -946,7 +965,11 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     for (unsigned int p = 0; p < Points.size(); ++p) {
       if (Points[p].IsGood() == false) continue;
       //cout<<Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak())<<endl;
-      Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumEnergy/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
+      if (UseEnergy == true) {
+        Residuals->SetPoint(p, Points[p].GetPeak(), 1.1*MaximumY/ResidualRange * (Points[p].GetEnergy() - Model.GetFitValue(Points[p].GetPeak()) - Min));
+      } else {
+        Residuals->SetPoint(p, Points[p].GetEnergy(), 1.1*MaximumY/ResidualRange * (Points[p].GetEnergyFWHM() - Model.GetFitValue(Points[p].GetEnergy()) - Min));
+      }
     }
     
    
@@ -955,7 +978,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     Residuals->Draw("SAME *");
     
     //TGaxis *axis = new TGaxis(gPad->GetUxmax(), gPad->GetUymin(), gPad->GetUxmax(), gPad->GetUymax(), Min, Max, 510, "+L");
-    TGaxis *axis = new TGaxis(1.1*MaximumPeak, 0, 1.1*MaximumPeak, 1.1*MaximumEnergy/ResidualRange * (Max-Min), Min, Max, 510, "+L");
+    TGaxis *axis = new TGaxis(1.1*MaximumX, 0, 1.1*MaximumX, 1.1*MaximumY/ResidualRange * (Max-Min), Min, Max, 510, "+L");
     axis->SetLineColor(kBlue);
     axis->SetLabelColor(kBlue);
     axis->SetTitleColor(kBlue);
@@ -972,7 +995,7 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection)
     axis->Draw("SAME");
     
     if (Min < 0 && Max > 0) {
-      TLine* Zero = new TLine(0, -Min/(Max-Min) * 1.1*MaximumEnergy, 1.1*MaximumPeak, -Min/(Max-Min) * 1.1*MaximumEnergy);
+      TLine* Zero = new TLine(0, -Min/(Max-Min) * 1.1*MaximumY, 1.1*MaximumX, -Min/(Max-Min) * 1.1*MaximumY);
       Zero->SetLineColor(kBlue);
       Zero->Draw("SAME");
     }

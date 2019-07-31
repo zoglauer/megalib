@@ -37,11 +37,21 @@ using namespace std;
 // Forward declarations:
 
 
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+//! Definition of the coordinate system IDs
+enum class MCalibrationModelType : unsigned int {
+  c_Unknown = 0, c_Energy = 1, c_LineWidth = 2
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
 //! Class representing the base class for all calibration models for a set of calibration points
+//! It can either be an energy model or a line-width model
 class MCalibrationModel : public ROOT::Math::IParamFunction
 {
   // public interface:
@@ -75,6 +85,9 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   
   //! Return true, if the fit is up-to-date
   bool IsFitUpToDate() const { return m_IsFitUpToDate; }
+  
+  //! Set the model type: energy or line width
+  void SetType(MCalibrationModelType Type) { m_Type = Type; }
   
   //! Fit the given histogram in the given range - return the quality of the fit
   virtual double Fit(const vector<MCalibrationSpectralPoint> Points);
@@ -118,6 +131,9 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
 
   // protected members:
  protected:
+  //! The calibration model type 
+  MCalibrationModelType m_Type; 
+   
   //! The actual fit
   TF1* m_Fit;
   //! True if the fit has been performed and no parameters have been chnaged

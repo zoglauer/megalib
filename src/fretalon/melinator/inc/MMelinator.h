@@ -111,8 +111,8 @@ class MMelinator
   void DrawLineFit(TCanvas& Canvas, unsigned int Collection, unsigned int Line, 
                    unsigned int HistogramBinningMode, double HistogramBinningModeValue);
   
-  //! Draw the calibration into the Canvas for the given Collection
-  void DrawCalibration(TCanvas& Canvas, unsigned int Collection);
+  //! Draw the calibration into the Canvas for the given Collection, toggle between energy and line width
+  void DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool UseEnergy = true);
 
   
   //! Return a non-const reference to a collection in the store

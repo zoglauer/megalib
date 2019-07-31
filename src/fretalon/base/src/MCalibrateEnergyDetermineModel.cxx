@@ -76,6 +76,21 @@ MCalibrateEnergyDetermineModel::~MCalibrateEnergyDetermineModel()
 //! Perform the calibration
 bool MCalibrateEnergyDetermineModel::Calibrate()
 {
+  bool Return = true;
+  
+  if (CalibrateEnergyModel() == false) Return = false;
+  if (CalibrateLineWidthModel() == false) Return = false;
+  
+  return Return;
+}
+  
+  
+////////////////////////////////////////////////////////////////////////////////
+  
+  
+//! Perform the calibration
+bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
+{
   // Clean up the results:
   m_Results.RemoveModel();
   
@@ -146,12 +161,19 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {
       double Result = Models[m]->Fit(Points);
-      if (Result > 0 && isfinite(Result) && Result < numeric_limits<double>::max()) {
+      
+      if (Points.size() < Models[m]->NPar()) {
+        Results.push_back(numeric_limits<double>::max());
+        continue;
+      }
+      
+      cout<<"Model "<<Models[m]->GetName()<<": (chi-square="<<Result<<")"<<endl;
+      if (Result >= 0 && isfinite(Result) && Result < numeric_limits<double>::max()) {
         Results.push_back(Models[m]->Fit(Points));
         if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Good fit! (chi-square="<<Results.back()<<")"<<endl;
       } else {
         Results.push_back(numeric_limits<double>::max());
-        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Bad fit!"<<endl;        
+        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Bad fit! (chi-square="<<Results.back()<<")"<<endl;        
       }
     }
     
@@ -159,11 +181,119 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
     MinI = min_element(Results.begin(), Results.end());
     
     int Min = int(MinI -  Results.begin());
-    if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<endl;
+    if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<" with Result: "<<Results[Min]<<endl;
     
     m_Results.SetModel(*Models[Min]);
     
     for (unsigned int m = 0; m < Models.size(); ++m) {
+      //delete Models[m];
+    }
+  } else {
+    new MExceptionUnknownMode("calibration model determination method", m_CalibrationModelDeterminationMethod);
+    return false;
+  }
+  
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Perform the calibration
+bool MCalibrateEnergyDetermineModel::CalibrateLineWidthModel()
+{
+  cout<<"Calibrate line width"<<endl;
+  
+  // Clean up the results:
+  m_Results.RemoveLineWidthModel();
+  
+  // Assemble the unique lines:
+  vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
+  if (Points.size() < 1) {
+    cout<<"Not enough points to determine a line-width calibration model. Only "<<Points.size()<<" calibration point(s) available."<<endl;  
+    return true;
+  }
+  
+  if (m_CalibrationModelDeterminationMethod == c_CalibrationModelStepWise) {
+    // we are already done since this is used during peak finding 
+    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model steps"<<endl;
+  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelFit) {
+    if (g_Verbosity >= c_Chatty) cout<<"Doing calibration model fit"<<endl;
+    
+    // Set up the model:
+    MCalibrationModel* Model = 0;
+    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
+      Model = new MCalibrationModelPoly1Zero();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
+      Model = new MCalibrationModelPoly1();
+    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
+      Model = new MCalibrationModelPoly2();
+    } else {
+      Model = new MCalibrationModelPoly1();
+      cout<<"Using default model for line width"<<endl;
+      
+      //new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingModel);
+      //return false;
+    }
+    
+    if (Points.size() < Model->GetNParameters()) {
+      if (g_Verbosity >= c_Warning) cout<<"Warning: We have more fit parameters ("<<Model->GetNParameters()<<") than data points ("<<Points.size()<<")!"<<endl;
+      return true;
+    }
+    
+    Model->SetType(MCalibrationModelType::c_LineWidth);
+    
+    double Quality = Model->Fit(Points);
+    if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<Quality<<endl;
+    
+    m_Results.SetLineWidthModel(*Model);
+    
+    //delete Model;
+  } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
+    if (g_Verbosity >= c_Info) cout<<"Find best (fitted) calibration model"<<endl;
+    
+    // Assemble the models
+    vector<MCalibrationModel*> Models;
+    Models.push_back(new MCalibrationModelPoly1Zero());
+    Models.push_back(new MCalibrationModelPoly1());
+    Models.push_back(new MCalibrationModelPoly2());
+    Models.push_back(new MCalibrationModelPoly3());
+    Models.push_back(new MCalibrationModelPoly4());
+    Models.push_back(new MCalibrationModelPoly1Inv1());
+    Models.push_back(new MCalibrationModelPoly1Exp1());
+    Models.push_back(new MCalibrationModelPoly1Exp2());
+    Models.push_back(new MCalibrationModelPoly1Exp3());
+    
+    vector<double> Results;
+    for (unsigned int m = 0; m < Models.size(); ++m) {
+      Models[m]->SetType(MCalibrationModelType::c_LineWidth);
+      
+      if (Points.size() < Models[m]->NPar()) {
+        Results.push_back(numeric_limits<double>::max());
+        continue;
+      }
+      
+      double Result = Models[m]->Fit(Points);
+      if (Result >= 0 && isfinite(Result) && Result < numeric_limits<double>::max()) {
+        Results.push_back(Models[m]->Fit(Points));
+        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Good fit! (chi-square="<<Results.back()<<")"<<endl;
+      } else {
+        Results.push_back(numeric_limits<double>::max());
+        if (g_Verbosity >= c_Info) cout<<"Model "<<Models[m]->GetName()<<": Bad fit! (chi-square="<<Results.back()<<")"<<endl;        
+      }
+    }
+    
+    vector<double>::iterator MinI;
+    MinI = min_element(Results.begin(), Results.end());
+    
+    int Min = int(MinI -  Results.begin());
+    if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<" with Result: "<<Results[Min]<<endl;
+    
+    m_Results.SetLineWidthModel(*Models[Min]);
+    
+    for (unsigned int m = 0; m < Models.size(); ++m) {
+      //TODO: Fix memory leak
       //delete Models[m];
     }
   } else {

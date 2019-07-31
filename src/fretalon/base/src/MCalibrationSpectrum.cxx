@@ -43,7 +43,8 @@ ClassImp(MCalibrationSpectrum)
 //! Default constructor
 MCalibrationSpectrum::MCalibrationSpectrum()
 {
-  m_Model = 0;
+  m_Model = nullptr;
+  m_LineWidthModel = nullptr;
 }
 
 
@@ -54,6 +55,7 @@ MCalibrationSpectrum::MCalibrationSpectrum()
 MCalibrationSpectrum::~MCalibrationSpectrum()
 {
   //delete m_Model;
+  //delete m_LineWidthModel;
 }
 
 
@@ -65,7 +67,8 @@ void MCalibrationSpectrum::Clear()
 {
   m_SpectralPoints.clear();
   delete m_Model;
-  m_Model = 0;
+  delete m_LineWidthModel;
+  m_Model = nullptr;
 }
 
 
@@ -78,8 +81,11 @@ MCalibrationSpectrum* MCalibrationSpectrum::Clone() const
   MCalibrationSpectrum* C = new MCalibrationSpectrum();
   C->m_IsCalibrated = m_IsCalibrated;
   C->m_SpectralPoints = m_SpectralPoints;
-  if (m_Model != 0) {
+  if (m_Model != nullptr) {
     C->SetModel(*m_Model);
+  }
+  if (m_LineWidthModel != nullptr) {
+    C->SetLineWidthModel(*m_LineWidthModel);
   }
   
   return C;
@@ -236,7 +242,7 @@ vector<MCalibrationSpectralPoint> MCalibrationSpectrum::GetUniquePoints()
 
   return Points;
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -247,7 +253,7 @@ void MCalibrationSpectrum::SetModel(MCalibrationModel& Model)
   delete m_Model;
   m_Model = Model.Clone();
 }
-  
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -273,6 +279,44 @@ MCalibrationModel& MCalibrationSpectrum::GetModel()
   
   return *m_Model; 
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Set the calibration model
+void MCalibrationSpectrum::SetLineWidthModel(MCalibrationModel& LineWidthModel)
+{
+  delete m_LineWidthModel;
+  m_LineWidthModel = LineWidthModel.Clone();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Remove the model
+void MCalibrationSpectrum::RemoveLineWidthModel()
+{
+  delete m_LineWidthModel;
+  m_LineWidthModel = nullptr;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the fit, if it doesn't exist throw MExceptionObjectDoesNotExist
+//! Bad design since a new fit can be set any time...
+MCalibrationModel& MCalibrationSpectrum::GetLineWidthModel() 
+{ 
+  if (m_LineWidthModel == nullptr) {
+    throw MExceptionObjectDoesNotExist("Line-width model does not exist!");
+  }
+  
+  return *m_LineWidthModel; 
+}
+
 
 // MCalibrationSpectrum.cxx: the end...
 ////////////////////////////////////////////////////////////////////////////////
