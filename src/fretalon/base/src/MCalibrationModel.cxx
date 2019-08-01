@@ -153,6 +153,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
   for (unsigned int p = 0; p < Points.size(); ++p) {
     if (m_Type == MCalibrationModelType::c_LineWidth) {
+      if (fabs(Points[p].GetEnergy() - 511) < 0.1) continue; // Always exclude any 511 line, since it is larger than usual (positron range)
       TheData.Add(Points[p].GetEnergy(), Points[p].GetEnergyFWHM(), 0.1*Points[p].GetEnergyFWHM()); // Arbitrary width...
     } else {
       TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);

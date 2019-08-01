@@ -84,9 +84,12 @@ class MMelinator
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   void SetCalibrationModelDeterminationMethod(unsigned int Method) { m_CalibrationModelDeterminationMethod = Method; }
   //! Set the fitting model options for the calibration model determination method
-  void SetCalibrationModelDeterminationMethodFittingOptions(unsigned int Model) { 
-    m_CalibrationModelDeterminationMethodFittingModel = Model; }
-
+  void SetCalibrationModelDeterminationMethodFittingEnergyOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingEnergyModel = Model; }
+  //! Set the fitting model options for the calibration model determination method
+  void SetCalibrationModelDeterminationMethodFittingFWHMOptions(unsigned int Model) { 
+    m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; }
+      
   
   //! Get the number of collections in the store
   unsigned int GetNumberOfCollections() const { return m_Store.GetNumberOfReadOutCollections(); }
@@ -94,10 +97,16 @@ class MMelinator
   //! Get the number of groups in the store
   unsigned int GetNumberOfGroups() const { return m_Store.GetNumberOfReadOutDataGroups(); }
   
-  //! Return true if we have calibration model
-  bool HasCalibrationModel(unsigned int Collection);
-  //! Get the calibration model of the spectra
-  MCalibrationModel& GetCalibrationModel(unsigned int Collection);
+  //! Return true if we have an energy calibration model
+  bool HasEnergyCalibrationModel(unsigned int Collection);
+  //! Get the energy calibration model of the spectra
+  MCalibrationModel& GetEnergyCalibrationModel(unsigned int Collection);
+
+  //! Return true if we have a FWHM calibration model
+  bool HasFWHMCalibrationModel(unsigned int Collection);
+  //! Get the FWHM calibration model of the spectra
+  MCalibrationModel& GetFWHMCalibrationModel(unsigned int Collection);
+  
   //! Get the number of calibration point in the spectra
   unsigned int GetNumberOfCalibrationSpectralPoints(unsigned int Collection);
   //! Return the given spectral point
@@ -224,8 +233,10 @@ class MMelinator
   MCalibrateEnergyAssignEnergyModes m_CalibrationModelEnergyAssignmentMethod;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
-  //! Fitting model of the calibration model determination method
-  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  //! Fitting model of the energy calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! Fitting model of the FWHM calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
   
   //! Number of threads

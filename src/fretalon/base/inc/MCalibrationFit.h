@@ -88,6 +88,8 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   //! Set the background model
   //! If it doesn't exist don't use any
   void SetBackgroundModel(unsigned int BackgroundModel); 
+  //! Return the background model ID
+  unsigned int GetBackgroundModel() const { return m_BackgroundModel; }
   
   //! Background model: No background model
   static const unsigned int c_BackgroundModelNone = 0;
@@ -100,13 +102,20 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   //! Set the energy loss model
   //! If it doesn't exist don't use any
   void SetEnergyLossModel(unsigned int EnergyLossModel); 
-
+  //! Return the energy loss model ID
+  unsigned int GetEnergyLossModel() const { return m_EnergyLossModel; }
+  
   //! Energy loss model: None
   static const unsigned int c_EnergyLossModelNone = 0;
   //! Energy loss model: Gaussian-convolved delta function
   static const unsigned int c_EnergyLossModelGaussianConvolvedDeltaFunction = 1;
   //! Energy loss model: Gaussian-convolved delta function
   static const unsigned int c_EnergyLossModelGaussianConvolvedDeltaFunctionWithExponentialDecay = 2;
+  
+  // The peak shape model cannot be set, since it needs to be a derived class
+  
+  //! Return the peak shape model ID
+  unsigned int GetPeakShapeModel() const { return m_PeakShapeModel; }
   
   // This is a bit unfortunate here, but a list of all available peak fitting algos helps a lot
   //! Peak shape: None
@@ -151,6 +160,8 @@ class MCalibrationFit : public ROOT::Math::IParamFunction
   unsigned int m_BackgroundModel;
   //! The used energy loss model. One of c_EnergyLossModelXXX
   unsigned int m_EnergyLossModel;
+  //! The used peak shape model. One of c_PeakShapeModelXXX
+  unsigned int m_PeakShapeModel;
   
   //! The parameters for the ROOT fitting
   vector<double> m_ROOTParameters;

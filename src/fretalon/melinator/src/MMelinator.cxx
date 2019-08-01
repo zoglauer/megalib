@@ -675,13 +675,13 @@ void MMelinator::DrawSpectrum(TCanvas& Canvas, unsigned int Collection, unsigned
 
 ////////////////////////////////////////////////////////////////////////////////
 
-    
-//! Return true if we have calibration model
-bool MMelinator::HasCalibrationModel(unsigned int Collection)
+
+//! Return true if we have an energy calibration model
+bool MMelinator::HasEnergyCalibrationModel(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   if (C != nullptr) {
-    return C->HasModel();
+    return C->HasEnergyModel();
   }
   return false;
 }
@@ -689,20 +689,53 @@ bool MMelinator::HasCalibrationModel(unsigned int Collection)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-    
-//! Get the calibration model of the spectra
-MCalibrationModel& MMelinator::GetCalibrationModel(unsigned int Collection)
+
+//! Get the energy calibration model of the spectra
+MCalibrationModel& MMelinator::GetEnergyCalibrationModel(unsigned int Collection)
 {
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
   if (C != nullptr) {
-    if (C->HasModel()) {
-      return C->GetModel();
+    if (C->HasEnergyModel()) {
+      return C->GetEnergyModel();
     }
   }
   
-  throw MExceptionObjectDoesNotExist("No calibration model available");  
+  throw MExceptionObjectDoesNotExist("No energy calibration model available");  
   
-  return C->GetModel();
+  return C->GetEnergyModel();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Return true if we have an FWHM calibration model
+bool MMelinator::HasFWHMCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    return C->HasFWHMModel();
+  }
+  return false;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get the FWHM calibration model of the spectra
+MCalibrationModel& MMelinator::GetFWHMCalibrationModel(unsigned int Collection)
+{
+  MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
+  if (C != nullptr) {
+    if (C->HasFWHMModel()) {
+      return C->GetFWHMModel();
+    }
+  }
+  
+  throw MExceptionObjectDoesNotExist("No FWHM calibration model available");  
+  
+  return C->GetFWHMModel();
 }
 
 
@@ -838,8 +871,8 @@ double MMelinator::GetCalibrationQuality(unsigned int Collection)
   MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(Collection)));
 
   double FitValue = -1;
-  if (C != nullptr && C->HasModel() == true) {
-    FitValue = C->GetModel().GetFitQuality();
+  if (C != nullptr && C->HasEnergyModel() == true) {
+    FitValue = C->GetEnergyModel().GetFitQuality();
     if (/*FitValue < 0 ||*/ std::isnan(FitValue) == true || std::isinf(FitValue) == true) {
       FitValue = 100;
     }
@@ -927,14 +960,14 @@ void MMelinator::DrawCalibration(TCanvas& Canvas, unsigned int Collection, bool 
   Graph->GetYaxis()->CenterTitle(true);
   Graph->GetYaxis()->SetNdivisions(509, true);
 
-  if (C != nullptr && C->HasModel() == true) {
+  if (C != nullptr && C->HasEnergyModel() == true) {
     Graph->Draw("A*");
   } else {
     Graph->Draw("A*");
   }
   
-  if (C != nullptr && C->HasModel() == true) {
-    MCalibrationModel& Model = (UseEnergy == true) ? C->GetModel() : C->GetLineWidthModel();
+  if (C != nullptr && C->HasEnergyModel() == true) {
+    MCalibrationModel& Model = (UseEnergy == true) ? C->GetEnergyModel() : C->GetFWHMModel();
     Model.Draw("SAME");
 
     TGraph* Residuals = new TGraph(Points.size());
@@ -1259,7 +1292,8 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
       AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
     }
     DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-    DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+    DetermineModel.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel);
+    DetermineModel.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel);
     DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
     
     if (DetermineModel.Calibrate() == false) {
@@ -1326,7 +1360,8 @@ bool MMelinator::ReCalibrateModel(unsigned int Collection)
     AssignEnergies.AddIsotopes(m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);
   }
   DetermineModel.SetCalibrationModelDeterminationMethod(m_CalibrationModelDeterminationMethod);
-  DetermineModel.SetCalibrationModelDeterminationMethodFittingOptions(m_CalibrationModelDeterminationMethodFittingModel);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingEnergyOptions(m_CalibrationModelDeterminationMethodFittingEnergyModel);
+  DetermineModel.SetCalibrationModelDeterminationMethodFittingFWHMOptions(m_CalibrationModelDeterminationMethodFittingFWHMModel);
   DetermineModel.SetCalibrationResult(AssignEnergies.GetCalibrationResult());
   
   if (DetermineModel.Calibrate() == false) {
@@ -1377,9 +1412,15 @@ bool MMelinator::Save(MString FileName)
     MCalibrationSpectrum* C = dynamic_cast<MCalibrationSpectrum*>(&(m_CalibrationStore.GetCalibration(c))); // TF1 make problems when copying the thing --> pointer
     if (C != nullptr) {
       // Make a list of the points and store them for sorting
+      out<<endl;
+      out<<"# ROU: "<<ROE.ToParsableString(true)<<endl;
+      out<<"# "<<C->ToParsableString("peakparametrization", true)<<endl;
       out<<"CP "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("pakw", true)<<endl;
-      if (C->HasModel() == true) {
-        out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("model", true)<<endl;
+      if (C->HasEnergyModel() == true) {
+        out<<"CM "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("energymodel", true)<<endl;
+      }
+      if (C->HasFWHMModel() == true) {
+        out<<"CR "<<ROE.ToParsableString(true)<<" "<<C->ToParsableString("fwhmmodel", true)<<endl;
       }
     }
   }

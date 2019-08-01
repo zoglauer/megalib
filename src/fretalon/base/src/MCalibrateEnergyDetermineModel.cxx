@@ -57,7 +57,8 @@ ClassImp(MCalibrateEnergyDetermineModel)
 MCalibrateEnergyDetermineModel::MCalibrateEnergyDetermineModel() : MCalibrateEnergy()
 {  
   m_CalibrationModelDeterminationMethod = c_CalibrationModelStepWise;
-  m_CalibrationModelDeterminationMethodFittingModel = MCalibrationModel::c_CalibrationModelPoly3;
+  m_CalibrationModelDeterminationMethodFittingEnergyModel = MCalibrationModel::c_CalibrationModelPoly3;
+  m_CalibrationModelDeterminationMethodFittingFWHMModel = MCalibrationModel::c_CalibrationModelPoly1;
 }
 
 
@@ -79,7 +80,7 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
   bool Return = true;
   
   if (CalibrateEnergyModel() == false) Return = false;
-  if (CalibrateLineWidthModel() == false) Return = false;
+  if (CalibrateFWHMModel() == false) Return = false;
   
   return Return;
 }
@@ -92,7 +93,7 @@ bool MCalibrateEnergyDetermineModel::Calibrate()
 bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
 {
   // Clean up the results:
-  m_Results.RemoveModel();
+  m_Results.RemoveEnergyModel();
   
   // Assemble the unique lines:
   vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
@@ -109,26 +110,26 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     
     // Set up the model:
     MCalibrationModel* Model = 0;
-    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
+    if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
       Model = new MCalibrationModelPoly1Zero();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1) {
       Model = new MCalibrationModelPoly1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly2) {
       Model = new MCalibrationModelPoly2();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly3) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly3) {
       Model = new MCalibrationModelPoly3();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly4) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly4) {
       Model = new MCalibrationModelPoly4();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
       Model = new MCalibrationModelPoly1Inv1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
       Model = new MCalibrationModelPoly1Exp1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
       Model = new MCalibrationModelPoly1Exp2();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
       Model = new MCalibrationModelPoly1Exp3();
     } else {
-      new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingModel);
+      new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingEnergyModel);
       return false;
     }
     
@@ -140,7 +141,7 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     double Quality = Model->Fit(Points);
     if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<Quality<<endl;
     
-    m_Results.SetModel(*Model);
+    m_Results.SetEnergyModel(*Model);
     
     //delete Model;
   } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
@@ -183,7 +184,7 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     int Min = int(MinI -  Results.begin());
     if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<" with Result: "<<Results[Min]<<endl;
     
-    m_Results.SetModel(*Models[Min]);
+    m_Results.SetEnergyModel(*Models[Min]);
     
     for (unsigned int m = 0; m < Models.size(); ++m) {
       //delete Models[m];
@@ -201,12 +202,10 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
 
 
 //! Perform the calibration
-bool MCalibrateEnergyDetermineModel::CalibrateLineWidthModel()
+bool MCalibrateEnergyDetermineModel::CalibrateFWHMModel()
 {
-  cout<<"Calibrate line width"<<endl;
-  
   // Clean up the results:
-  m_Results.RemoveLineWidthModel();
+  m_Results.RemoveFWHMModel();
   
   // Assemble the unique lines:
   vector<MCalibrationSpectralPoint> Points = m_Results.GetUniquePoints();
@@ -223,18 +222,27 @@ bool MCalibrateEnergyDetermineModel::CalibrateLineWidthModel()
     
     // Set up the model:
     MCalibrationModel* Model = 0;
-    if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
+    if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Zero) {
       Model = new MCalibrationModelPoly1Zero();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly1) {
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1) {
       Model = new MCalibrationModelPoly1();
-    } else if (m_CalibrationModelDeterminationMethodFittingModel == MCalibrationModel::c_CalibrationModelPoly2) {
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly2) {
       Model = new MCalibrationModelPoly2();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly3) {
+      Model = new MCalibrationModelPoly3();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly4) {
+      Model = new MCalibrationModelPoly4();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
+      Model = new MCalibrationModelPoly1Inv1();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
+      Model = new MCalibrationModelPoly1Exp1();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
+      Model = new MCalibrationModelPoly1Exp2();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
+      Model = new MCalibrationModelPoly1Exp3();
     } else {
-      Model = new MCalibrationModelPoly1();
-      cout<<"Using default model for line width"<<endl;
-      
-      //new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingModel);
-      //return false;
+      new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingFWHMModel);
+      return false;
     }
     
     if (Points.size() < Model->GetNParameters()) {
@@ -247,7 +255,7 @@ bool MCalibrateEnergyDetermineModel::CalibrateLineWidthModel()
     double Quality = Model->Fit(Points);
     if (g_Verbosity >= c_Info) cout<<"Fit quality: "<<Quality<<endl;
     
-    m_Results.SetLineWidthModel(*Model);
+    m_Results.SetFWHMModel(*Model);
     
     //delete Model;
   } else if (m_CalibrationModelDeterminationMethod == c_CalibrationModelBestFit) {
@@ -290,7 +298,7 @@ bool MCalibrateEnergyDetermineModel::CalibrateLineWidthModel()
     int Min = int(MinI -  Results.begin());
     if (g_Verbosity >= c_Info) cout<<"Best model: "<<Models[Min]->GetName()<<" with Result: "<<Results[Min]<<endl;
     
-    m_Results.SetLineWidthModel(*Models[Min]);
+    m_Results.SetFWHMModel(*Models[Min]);
     
     for (unsigned int m = 0; m < Models.size(); ++m) {
       //TODO: Fix memory leak

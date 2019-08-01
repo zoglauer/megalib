@@ -119,10 +119,14 @@ class MSettingsMelinator : public MSettings
   unsigned int GetCalibrationModelDeterminationMethod() const { return m_CalibrationModelDeterminationMethod; }
   //! Set the calibration model determination method (number identical to what is defined in MCalibrateLines.h
   void SetCalibrationModelDeterminationMethod(unsigned int CalibrationModelDeterminationMethod) { m_CalibrationModelDeterminationMethod = CalibrationModelDeterminationMethod; }
-  //! Get the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
-  unsigned int GetCalibrationModelDeterminationMethodFittingModel() const { return m_CalibrationModelDeterminationMethodFittingModel; } 
-  //! Set the calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
-  void SetCalibrationModelDeterminationMethodFittingModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingModel = Model; } 
+  //! Get the energy calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  unsigned int GetCalibrationModelDeterminationMethodFittingEnergyModel() const { return m_CalibrationModelDeterminationMethodFittingEnergyModel; } 
+  //! Set the energy calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  void SetCalibrationModelDeterminationMethodFittingEnergyModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingEnergyModel = Model; } 
+  //! Get the FWHM calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  unsigned int GetCalibrationModelDeterminationMethodFittingFWHMModel() const { return m_CalibrationModelDeterminationMethodFittingFWHMModel; } 
+  //! Set the FWHM calibration model for fitting (number identical to what is defined in MCalibratenModel.h)
+  void SetCalibrationModelDeterminationMethodFittingFWHMModel(unsigned int Model) { m_CalibrationModelDeterminationMethodFittingFWHMModel = Model; } 
   
   
   //! Set the save-as file name
@@ -183,8 +187,10 @@ class MSettingsMelinator : public MSettings
   bool m_CalibrationModelZeroCrossing;
   //! The calibration model determination method
   unsigned int m_CalibrationModelDeterminationMethod;
-  //! Fitting model of the calibration model determination method
-  unsigned int m_CalibrationModelDeterminationMethodFittingModel;
+  //! Fitting model of the energy calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! Fitting model of the FWHM calibration model determination method
+  unsigned int m_CalibrationModelDeterminationMethodFittingFWHMModel;
   
   //! Set the save as file
   MString m_SaveAsFileName;

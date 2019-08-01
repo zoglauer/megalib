@@ -55,6 +55,8 @@ ClassImp(MCalibrationFitGaussLandau)
 //! Default constructor
 MCalibrationFitGaussLandau::MCalibrationFitGaussLandau() : MCalibrationFitGaussian()
 {
+  m_PeakShapeModel = c_PeakShapeModelGaussLandau;
+  
   m_LandauSigma = g_DoubleNotDefined;
   m_LandauHeight = g_DoubleNotDefined;
 }
@@ -66,6 +68,8 @@ MCalibrationFitGaussLandau::MCalibrationFitGaussLandau() : MCalibrationFitGaussi
 //! Copy constructor
 MCalibrationFitGaussLandau::MCalibrationFitGaussLandau(const MCalibrationFitGaussLandau& Fit)
 {
+  m_PeakShapeModel = c_PeakShapeModelGaussLandau;
+  
   // We don't care about double initilization, so:
   m_Fit = 0;
   *this = Fit;

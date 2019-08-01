@@ -235,9 +235,10 @@ private:
   TGComboBox* m_CalibrationModelDeterminationMethod;
   //! Options frame for the calibration model determination
   TGCompositeFrame* m_CalibrationModelDeterminationOptions;
-  //! For fitting: Calibration model fit
-  TGComboBox* m_CalibrationModelDeterminationMethodFittingModel;
-  
+  //! For fitting: Energy calibration model fit
+  TGComboBox* m_CalibrationModelDeterminationMethodFittingEnergyModel;
+  //! For fitting: FWHM calibration model fit
+  TGComboBox* m_CalibrationModelDeterminationMethodFittingFWHMModel;
   //! Button for fitting all histograms
   TGTextButton* m_FitAllButton;
    
@@ -268,9 +269,10 @@ private:
   static const int c_PeakParametrizationMethodFittingBackgroundModel  =  51;
   static const int c_PeakParametrizationMethodFittingEnergyLossModel  =  52;
   static const int c_PeakParametrizationMethodFittingPeakShapeModel   =  53;
-  static const int c_CalibrationModelZeroCrossing                     =  70;
-  static const int c_CalibrationModelDeterminationMethod              =  71;
-  static const int c_CalibrationModelDeterminationMethodFittingModel  =  72;
+  static const int c_CalibrationModelZeroCrossing                           =  70;
+  static const int c_CalibrationModelDeterminationMethod                    =  71;
+  static const int c_CalibrationModelDeterminationMethodFittingEnergyModel  =  72;
+  static const int c_CalibrationModelDeterminationMethodFittingFWHMModel    =  73;
   static const int c_Save                       =  80;
   static const int c_SaveAs                     =  81;
   static const int c_Remove                     = 400;
