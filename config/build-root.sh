@@ -38,12 +38,15 @@ type python3 >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then
   PPATH=$(which python3)
   if [[ -f ${PPATH} ]]; then
-    CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE=${PPATH} -Dpython3=ON"
+    CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE:FILEPATH=${PPATH} -Dpython3=ON"
   fi
 fi
 
-# Enable cuda
-CONFIGUREOPTIONS+=" -Dcuda=ON" 
+# Enable cuda if available
+type nvcc >/dev/null 2>&1
+if [[ $? -eq 0 ]]; then
+  CONFIGUREOPTIONS+=" -Dcuda=ON" 
+fi
 
 # In case ROOT complains about your python version
 # CONFIGUREOPTIONS+=" -Dpython=OFF"
