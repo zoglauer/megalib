@@ -323,6 +323,11 @@ else
   fi
   
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
+    echo "Starting the download."
+    echo "If the download fails, you can continue it via the following command and then call this script again - it will use the download file."
+    echo " "
+    echo "curl -O -C - http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}"
+    echo " "
     curl -O http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the Geant4 website!"
