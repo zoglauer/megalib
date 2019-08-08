@@ -1407,7 +1407,7 @@ bool MDDetector::Validate()
 
   if (m_EnergyResolutionType == c_EnergyResolutionTypeUnknown) {
     mout<<"   ***  Info  ***  for detector "<<m_Name<<endl;
-    mout<<"No energy resolution defined --- assuming ideal"<<endl; 
+    mout<<"No energy resolution type defined --- assuming ideal"<<endl; 
     m_EnergyResolutionType = c_EnergyResolutionTypeIdeal; 
   }
   

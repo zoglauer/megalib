@@ -2916,6 +2916,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         if (D->GetType() == MDDetector::c_Voxel3D) {
           dynamic_cast<MDVoxel3D*>(D)->HasGuardRing(true);
           D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetNoiseThresholdEqualsTriggerThreshold(true);
           D->GetGuardRing()->SetTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
           if (Tokenizer.GetNTokens() == 4) {
@@ -2924,6 +2925,7 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
         } else {
           dynamic_cast<MDStrip2D*>(D)->HasGuardRing(true);
           D->GetGuardRing()->SetActive(true);
+          D->GetGuardRing()->SetEnergyResolutionType(MDDetector::c_EnergyResolutionTypeGauss);
           D->GetGuardRing()->SetNoiseThresholdEqualsTriggerThreshold(true);
           D->GetGuardRing()->SetTriggerThreshold(Tokenizer.GetTokenAtAsDouble(2));
           if (Tokenizer.GetNTokens() == 4) {
