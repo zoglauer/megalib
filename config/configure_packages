@@ -22,7 +22,7 @@ if [ -f /etc/os-release ]; then
 
   if [[ ${OS} == debian ]]; then
     IsDebianClone=1
-  elif [[ ${OS} == suse ]]; then
+  elif [[ ${OS} == *suse* ]]; then
     IsOpenSuseClone=1
   elif [[ ${OS} == scientific* ]] || [[ ${OS} == *fedora* ]] ; then
     IsRedhatClone=1
@@ -133,8 +133,27 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
       echo " "
       exit 0  
     fi
+  elif [[ ${OS} == opensuse-leap ]]; then
+    # Check the version:
+    VERSIONID=$(cat /etc/os-release | grep "^VERSION_ID\=" | awk -F= '{ print $2 }')
+    VERSIONID=${VERSIONID//\"/}
+    VERSIONID=$(echo ${VERSIONID} | awk -F'.' '{ print $1 }')
+    #echo "VERSION: ${VERSIONID}"
+    if [[ ${VERSIONID} == 15 ]]; then
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel python3-devel"
+    else 
+      REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel python3-devel"
+
+      echo "This script has not yet been adapted for your version of opensuse: ${VERSIONID}"
+      echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
+      echo " "
+      echo "In the mean time, try to install the following packages -- remove the ones which do not work form the list:"
+      echo "sudo zypper install ${REQUIRED}"
+      echo " "
+      exit 0  
+    fi
   else
-    REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel "
+    REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel python3-devel"
 
     echo "This script has not yet been adapted for your version of Linux: ${OS}"
     echo "Feel free to write the MEGAlib maintainers an email to update this script and send them the content of the file: /etc/os-release"
