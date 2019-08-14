@@ -47,6 +47,9 @@ class MDVolumeSequence
   //! Default destructor
   virtual ~MDVolumeSequence();
 
+  //! Assignment operator
+  MDVolumeSequence& operator=(const MDVolumeSequence& V);
+
   //! Join two volume sequences: This is a special version for revan and should only be used there
   void Join(MDVolumeSequence VS);
   //! Empty the volume sequence

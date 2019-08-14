@@ -107,6 +107,31 @@ MDVolumeSequence::MDVolumeSequence(const MDVolumeSequence& V)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MDVolumeSequence& MDVolumeSequence::operator=(const MDVolumeSequence& V)
+{
+  // Assignment operator
+
+  m_Volumes = V.m_Volumes;   
+  m_Positions = V.m_Positions;
+  
+  m_Detector = V.m_Detector;
+  m_NamedDetector = V.m_NamedDetector;
+
+  m_DetectorVolume = V.m_DetectorVolume;
+  m_PositionInDetector = V.m_PositionInDetector;
+
+  m_SensitiveVolume = V.m_SensitiveVolume;
+  m_PositionInSensitiveVolume = V.m_PositionInSensitiveVolume;
+
+  m_ValidRotation = V.m_ValidRotation;
+  m_RotMatrix = V.m_RotMatrix; 
+
+  return *this;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MDVolumeSequence::Join(MDVolumeSequence VS)
 {
   // Join two volume sequences:
