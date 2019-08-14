@@ -9,7 +9,7 @@ DetectorTimeConstant 0.000005
 
 # Physics parameters
 PhysicsListHD                      qgsp-bic-hp
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 
 # The activation calculation
 Activator A

@@ -3,7 +3,7 @@ Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/mpesatellitebaseline/SatelliteWithACS.geo.setup
 
 # Physics list
-PhysicsListEM             Livermore-Pol
+PhysicsListEM             LivermorePol
 
 # Output formats
 StoreSimulationInfo       init-only

@@ -6,7 +6,7 @@ Version                            1
 Geometry                           TGRS.geo.setup
 
 PhysicsListHD                      qgsp-bic-hp
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 DecayMode                          ActivationDelayedDecay
 
 StoreCalibrated                    true

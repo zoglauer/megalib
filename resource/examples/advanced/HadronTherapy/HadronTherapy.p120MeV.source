@@ -6,7 +6,7 @@ Version       1
 Geometry      HadronTherapy.geo.setup
 
 # Physics list
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 PhysicsListHD                      qgsp-bic-hp
 DecayMode                          buildup
 DetectorTimeConstant               0.000001

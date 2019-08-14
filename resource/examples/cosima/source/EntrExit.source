@@ -5,7 +5,6 @@
 # Global parameters
 Version         1
 Geometry        $(MEGALIB)/resource/examples/geomega/special/Spheric.geo.setup
-PhysicsListEM   Livermore
 
 # Physics list
 PhysicsListEM                        LivermorePol

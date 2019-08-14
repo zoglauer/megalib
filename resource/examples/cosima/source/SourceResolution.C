@@ -64,7 +64,7 @@ void SourceResolution(double Distance = 1.8, int XYSource = 11, TString Geometry
   out<<"Version         1"<<endl;
   out<<"Geometry        "<<GeometryFileName<<endl;
   out<<endl;
-  out<<"PhysicsListEM                        Livermore"<<endl;
+  out<<"PhysicsListEM                        LivermorePol"<<endl;
   out<<"PhysicsListEMActivateFluorescence    false"<<endl;
   out<<endl;
   out<<"StoreCalibrated                      true"<<endl;

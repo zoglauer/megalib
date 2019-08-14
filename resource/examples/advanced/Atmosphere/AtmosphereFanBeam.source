@@ -4,7 +4,7 @@ Version         1
 Geometry        Atmosphere.BestCrabDay.geo
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 PhysicsListEMActivateFluorescence    false
 
 # Output formats

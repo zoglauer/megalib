@@ -6,7 +6,7 @@ Geometry                           TGRS.geo.setup
 
 # Physics parameters: Attention they are common for all runs, especially also decay mode!
 PhysicsListHD                      qgsp-bic-hp
-PhysicsListEM                      Livermore
+PhysicsListEM                      LivermorePol
 DecayMode                          ActivationBuildUp
 
 # Storage parameters

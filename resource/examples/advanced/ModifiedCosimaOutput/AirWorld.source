@@ -3,7 +3,7 @@ Version         1
 Geometry        AirWorld.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore
+PhysicsListEM                        LivermorePol
 
 # Output formats
 StoreCalibrated                      true

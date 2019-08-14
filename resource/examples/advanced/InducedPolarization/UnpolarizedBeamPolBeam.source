@@ -4,7 +4,7 @@ Version         1
 Geometry        Polarimeter.geo.setup
 
 # Physics list
-PhysicsListEM                        Livermore-Pol
+PhysicsListEM                        LivermorePol
 PhysicsListEMActivateFluorescence    false
 
 # Output formats
