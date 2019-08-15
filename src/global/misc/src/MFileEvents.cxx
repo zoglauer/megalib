@@ -309,7 +309,7 @@ bool MFileEvents::Rewind(bool)
 {
   // Rewind to the beginning of the file
   // Since we might be somewhere within a file tree, we simply start over
-  
+
   if (m_IsOpen == false) {
     return false;
   }
@@ -693,9 +693,9 @@ bool MFileEvents::OpenIncludeFile(const MString& Line)
     return false;
   }
 
-  if (m_Progress != 0) {
+  if (m_Progress != nullptr) {
     m_IncludeFile->SetProgress(m_Progress, m_ProgressLevel+1);
-    m_Progress->SetValue(0, m_ProgressLevel+1);
+    UpdateProgress();
   }
 
   mout<<"Switched to file "<<FileName<<endl;
@@ -808,7 +808,7 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
 {
   // Update the Progress Dialog, if it is visible
   // Return false, when "Cancel" has been pressed
-  
+
   // We cannot update the progress bar from anything but the main thread
   if (TThread::SelfId() != g_MainThreadID) {
     //cout<<"Update wrong thread: "<<TThread::SelfId()<<":"<<g_MainThreadID<<endl;
@@ -847,7 +847,7 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
   if (TThread::SelfId() == g_MainThreadID) {
     gSystem->ProcessEvents();
   }
-  
+
   if (m_Progress->TestCancel() == true) {
     ShowProgressNoLock(false);
     m_Canceled = true;
@@ -861,7 +861,7 @@ bool MFileEvents::UpdateProgress(unsigned int UpdatesToSkip)
   if (m_IncludeFile != nullptr) {
     m_IncludeFile->UpdateProgress(UpdatesToSkip);
   }
-  
+
   return true;
 }
 
