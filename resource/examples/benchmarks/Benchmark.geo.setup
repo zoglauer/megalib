@@ -1,0 +1,89 @@
+
+#---------------------------------------------------------
+#One NCT-like detector layer
+
+
+Name Benchmark
+Version 2.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+
+# Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 10.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 0.0
+#Sphere.Mother WorldVolume
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+Volume GeWafer
+GeWafer.Material Germanium
+GeWafer.Shape BOX 4.0 4.0 0.5
+GeWafer.Position 0 0 0 
+GeWafer.Mother WorldVolume
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+MDStrip3D                  ActiveDetector
+
+ActiveDetector.SensitiveVolume     GeWafer
+
+ActiveDetector.Offset              0.3   0.3
+ActiveDetector.StripNumber         40    40
+
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
+
+ActiveDetector.DepthResolution     10    0.02
+ActiveDetector.DepthResolution     100   0.02
+ActiveDetector.DepthResolution     1000  0.02
+
+ActiveDetector.EnergyResolution Gaus 10      10        0.417   
+ActiveDetector.EnergyResolution Gaus 20      20        0.425           
+ActiveDetector.EnergyResolution Gaus 50      50        0.4375    
+ActiveDetector.EnergyResolution Gaus 100     100       0.454     
+ActiveDetector.EnergyResolution Gaus 200     200       0.492     
+ActiveDetector.EnergyResolution Gaus 500     500       0.5875      
+ActiveDetector.EnergyResolution Gaus 1000    1000      0.7217       
+ActiveDetector.EnergyResolution Gaus 2000    2000      0.9317      
+ActiveDetector.EnergyResolution Gaus 5000    5000      1.3819       
+ActiveDetector.EnergyResolution Gaus 10000   10000     1.9094                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    5.907      
+   
+ActiveDetector.GuardringEnergyResolution 100 1.5
+ActiveDetector.GuardringEnergyResolution 1000 1.5
+ActiveDetector.GuardringTriggerThreshold 40
+
+
+
+// Trigger: at least one hit in one Germanium detector  
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByDetector true
+ActiveDetectorTrigger.Detector ActiveDetector 1
+
+Trigger Detector7_GRTrigger
+Detector7_GRTrigger.Veto true
+Detector7_GRTrigger.TriggerByDetector True
+Detector7_GRTrigger.GuardringDetector ActiveDetector 1
+
+
+
