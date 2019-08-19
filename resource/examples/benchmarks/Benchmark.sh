@@ -20,7 +20,7 @@ checkload() {
 # For compatibility with macOS Catalina, compile a little C++ program to get the time in milliseconds
 
 TempEXE=$(mktemp)
-TimerC="${TempEXE}.c"
+TimerC="${TempEXE}.cpp"
 
 cat > ${TimerC} <<'_EOF'
 #include <chrono>
@@ -39,14 +39,26 @@ g++ ${TimerC} -o ${TempEXE}
 
 
 # Collect information
-OSFlavour=$( cat /etc/os-release | grep ^ID= | awk -F= '{print $2}' )
-OSVersion=$( cat /etc/os-release | grep ^VERSION_ID= | awk -F= '{print $2}' | tr -d '"' )
-Kernel=$( uname -r )
+if [[ $(uname -s) == Linux ]]; then
+  OSFlavour=$( cat /etc/os-release | grep ^ID= | awk -F= '{print $2}' )
+  OSVersion=$( cat /etc/os-release | grep ^VERSION_ID= | awk -F= '{print $2}' | tr -d '"' )
+  Kernel=$( uname -r )
 
-CPUModel=$( lscpu | grep "Model name" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
-CPUSockets=$( lscpu | grep "Socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
-CPUCoresPerSocket=$( lscpu | grep "per socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
-CPUThreadsPerCore=$( lscpu | grep "per core" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  CPUModel=$( lscpu | grep "Model name" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  CPUSockets=$( lscpu | grep "Socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  CPUCoresPerSocket=$( lscpu | grep "per socket" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+  CPUThreadsPerCore=$( lscpu | grep "per core" | awk -F: '{print $2 }' | sed -e 's/^[[:space:]]*//' )
+elif [[ $(uname -s) == Darwin ]]; then
+  OSFlavour="macOS"
+  OSVersion=$(sw_vers | grep ProductVersion | awk -F":" '{ print $2 }' | sed -e 's/^[[:space:]]*//')
+  Kernel=$( uname -r )
+
+  CPUModel=$( sysctl -n machdep.cpu.brand_string )
+  CPUSockets=1
+  CPUCoresPerSocket=$( sysctl -n hw.physicalcpu_max )
+  CPUThreadsPerCore=$(( $(sysctl -n hw.ncpu) / $(sysctl -n hw.physicalcpu_max) ))
+fi
+
 Cores=$(( ${CPUSockets} * ${CPUCoresPerSocket} ))
 Threads=$(( ${CPUSockets} * ${CPUCoresPerSocket} * ${CPUThreadsPerCore} ))
 
@@ -294,5 +306,3 @@ echo " "
 echo "Done"
 
 exit 0
-
-
