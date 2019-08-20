@@ -7,7 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 FileNames = []
-This = []
+Reference = []
 
 # Find the latest benchmark from this system
 
@@ -23,7 +23,7 @@ YoungestFile = max(FileList, key=os.path.getctime)
 if YoungestFile != "":
   print("Found latest benchmark file: {}".format(YoungestFile))
   FileNames.append(YoungestFile)
-  This.append("*** this ***")
+  Reference.append("*** this ***")
   
   
 # Find all reference systems
@@ -31,7 +31,7 @@ FileList = glob.glob('References/*.bm')
 print(FileList)
 for File in FileList:
   FileNames.append(File)
-  This.append("")
+  Reference.append("(reference)") # {}".format(File))
 
 print(FileNames)
 
@@ -119,19 +119,26 @@ for f in range(0, len(FileNames)):
       IsGood[f] = False
       
       
+print(len(Reference))
+print(len(IsGood))
 
 # Sorting:
+
+
 IsGood.sort(key=dict(zip(IsGood, CosimaMultiples)).get)
-This.sort(key=dict(zip(This, CosimaMultiples)).get)
-HostNames.sort(key=dict(zip(HostNames, CosimaMultiples)).get)
-CPUNames.sort(key=dict(zip(CPUNames, CosimaMultiples)).get)
-OSNames.sort(key=dict(zip(OSNames, CosimaMultiples)).get)
-OSVersions.sort(key=dict(zip(OSVersions, CosimaMultiples)).get)
-CosimaSingles.sort(key=dict(zip(CosimaSingles, CosimaMultiples)).get)
-CosimaMultiples.sort(key=dict(zip(CosimaMultiples, CosimaMultiples)).get)
+
+IsGood = [x for _,x in sorted(zip(CosimaMultiples, IsGood))]
+Reference = [x for _,x in sorted(zip(CosimaMultiples, Reference))]
+HostNames = [x for _,x in sorted(zip(CosimaMultiples, HostNames))]
+CPUNames = [x for _,x in sorted(zip(CosimaMultiples, CPUNames))]
+OSNames = [x for _,x in sorted(zip(CosimaMultiples, OSNames))]
+OSVersions = [x for _,x in sorted(zip(CosimaMultiples, OSVersions))]
+CosimaSingles = [x for _,x in sorted(zip(CosimaMultiples, CosimaSingles))]
+CosimaMultiples = [x for _,x in sorted(zip(CosimaMultiples, CosimaMultiples))]
       
 
 print(IsGood)
+print(Reference)
 print(CPUNames)
 print(OSNames)
 print(OSVersions)
@@ -143,7 +150,7 @@ print(CosimaMultiples)
 
 Labels = []
 for f in range(0, len(FileNames)):
-  Labels.append("{}\n{}\n{} {}\n{}".format(HostNames[f], CPUNames[f], OSNames[f], OSVersions[f], This[f]))
+  Labels.append("{}\n{}\n{} {}\n{}".format(HostNames[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
 
 matplotlib.rcParams.update({'font.size': 20})
 

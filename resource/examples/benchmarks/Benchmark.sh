@@ -83,6 +83,21 @@ fi
 CPUName=$( echo -e "${CPUName}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' )
 
 
+# Make sure we have enough RAM: We need 1.25 GB / Thread
+if [[ $(uname -s) == Linux ]]; then
+  RAM=$( cat /proc/meminfo | grep MemTotal | awk '{ print $2 }' )
+elif [[ $(uname -s) == Darwin ]]; then
+  RAM=$( sysctl -n hw.memsize )
+  RAM=$( echo "${RAM} / 1024" | bc ) 
+fi
+
+RequiredRAM=$( echo " ${Threads} * 800000" | bc )
+
+if (( ${RAM} < ${RequiredRAM} )); then
+  echo "Error: Not enough RAM available on your machine: Required: ${RequiredRAM} vs. Available: ${RAM}"
+  exit 1;
+fi
+
 checkload
 
 CoolDownTime=20
@@ -175,7 +190,7 @@ sleep ${CoolDownTime}
 echo " "
 echo "Running single core RESPONSECREATOR benchmark"
 Start=$( ${TempEXE} )
-responsecreator -m s -o emin=10:emax=600:ebins=600:eskybins=20 -f Benchmark.inc1.id1.sim.gz -g Benchmark.geo.setup -c Benchmark.revan.cfg -b Benchmark.mimrec.cfg -r Benchmark.rsp  > /dev/null
+responsecreator -m s -o emin=10:emax=600:ebins=300:eskybins=100 -f Benchmark.inc1.id1.sim.gz -g Benchmark.geo.setup -c Benchmark.revan.cfg -b Benchmark.mimrec.cfg -r Benchmark.rsp  > /dev/null
 Stop=$( ${TempEXE} )
 
 DurationResponseCreatorSingle=$( echo "scale=3; ${Stop} - ${Start}" | bc -l )
@@ -189,7 +204,7 @@ echo "* Events per second single core: ${EventsPerSecondResponseCreatorSingle} e
 echo "Running multi core RESPONSECREATOR benchmark"
 Start=$( ${TempEXE} )
 for i in $( seq 1 ${Threads} ); do
-  responsecreator -m s -o emin=10:emax=600:ebins=600:eskybins=20 -f Benchmark.p1.inc${i}.id1.sim.gz -g Benchmark.geo.setup -c Benchmark.revan.cfg -b Benchmark.mimrec.cfg -r Benchmark.rsp.${i}  > /dev/null &
+  responsecreator -m s -o emin=10:emax=600:ebins=300:eskybins=100 -f Benchmark.p1.inc${i}.id1.sim.gz -g Benchmark.geo.setup -c Benchmark.revan.cfg -b Benchmark.mimrec.cfg -r Benchmark.rsp.${i}  > /dev/null &
 done
 wait
 Stop=$( ${TempEXE} )
