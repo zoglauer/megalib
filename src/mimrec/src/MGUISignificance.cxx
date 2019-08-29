@@ -89,7 +89,7 @@ void MGUISignificance::Create()
   AddSubTitle("Please enter the size of the radius around the test positions\n"
         "and the distance between source and test positions");
 
-  m_SelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 100, 100, 2, 2);
+  m_SelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 100*m_FontScaler, 100*m_FontScaler, 2*m_FontScaler, 2*m_FontScaler);
   
   m_Radius = new MGUIEEntry(this, "Radius around source and test positions (e.g. 1/2 FWHM  of ARM) [deg]:", false, m_GUIData->GetSignificanceMapRadius(), true, 0.0, 180.0);
   AddFrame(m_Radius, m_SelectorLayout);

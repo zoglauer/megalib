@@ -81,10 +81,10 @@ void MGUIImageOptions::Create()
 
   AddSubTitle("Choose the image drawing options"); 
 
-  TGLayoutHints* FrameLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
+  TGLayoutHints* FrameLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler);
  
-  TGLayoutHints* LeftLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 10, 0, 0);
-  TGLayoutHints* RightLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 10, 0, 0, 0);
+  TGLayoutHints* LeftLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 10*m_FontScaler, 0, 0);
+  TGLayoutHints* RightLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 10*m_FontScaler, 0, 0, 0);
 
 
   TGHorizontalFrame* PaletteFrame = new TGHorizontalFrame(this);
@@ -129,8 +129,7 @@ void MGUIImageOptions::Create()
   DrawModeFrame->AddFrame(m_DrawMode, RightLayout);
 
 
-  TGLayoutHints* SourceCatalogLayout = 
-    new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
+  TGLayoutHints* SourceCatalogLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler);
 
   m_SourceCatalog = new MGUIEFileSelector(this, "Choose a source catalog for images in Galactic coordinates (empty = use no catalog):", 
                                           m_GUIData->GetImageSourceCatalog());

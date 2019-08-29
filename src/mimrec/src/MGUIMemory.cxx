@@ -83,7 +83,7 @@ void MGUIMemory::Create()
 
   AddSubTitle("Memory, accuracy, and thread management");
 
-  TGLayoutHints* StandardLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 20);
+  TGLayoutHints* StandardLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 20*m_FontScaler);
 
   m_MaxRAM = new MGUIEEntryList(this, "List-mode image reconstruction is rather memory extensive. You can give here the amount of RAM, which may be used for the image slices of the response (the \"backprojections\"). If the selected amount of memory is consumed, the response calculation is stopped and the iteration process starts.");
   m_MaxRAM->Add("Maximum amout of RAM in MB for the \"backprojections\":", m_GUIData->GetRAM(), true, 64);

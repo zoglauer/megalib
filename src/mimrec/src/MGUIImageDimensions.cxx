@@ -84,15 +84,19 @@ void MGUIImageDimensions::Create()
   SetWindowName("Image Dimensions");  
 
 
-  TGLayoutHints* AxisLayoutFirst = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 0);
-  TGLayoutHints* AxisLayoutLast = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 20);
+  TGLayoutHints* AxisLayoutLabel = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 10*m_FontScaler);
+  TGLayoutHints* AxisLayoutFirst = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 5*m_FontScaler);
+  TGLayoutHints* AxisLayoutLast = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
 
-  TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 0, 0);
-  TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40, 20, 0, 20);
+  TGLayoutHints* DimensionLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
+  TGLayoutHints* BinLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
 
 
   if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Spheric) {
     AddSubTitle("Please enter dimensions and the number of bins\nfor images in spherical coordinates"); 
+
+    TGLabel* AxisRotationLabel = new TGLabel(this, "Enter the coordinates of the X- and Z-axis of the new rotated, coordinate system\nin the coordinates of the default system:");
+    AddFrame(AxisRotationLabel, AxisLayoutLabel);
 
     m_XAxis = new MGUIEEntryList(this, "New X-axis vector:", MGUIEEntryList::c_SingleLine);
     m_XAxis->Add("", m_GUIData->GetImageRotationXAxis().X(), true);
@@ -167,11 +171,11 @@ void MGUIImageDimensions::Create()
     AddFrame(m_LongitudeBins, BinLayout);
     
     TGHorizontalFrame* ProjectionFrame = new TGHorizontalFrame(this);
-    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0, 0, 20, 20);
+    TGLayoutHints* ProjectionFrameLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 0*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
     AddFrame(ProjectionFrame, ProjectionFrameLayout);
     
     TGLabel* ProjectionLabel = new TGLabel(ProjectionFrame, "Please choose a projection:");
-    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20, 20, 0, 0);
+    TGLayoutHints* ProjectionLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
     ProjectionFrame->AddFrame(ProjectionLabel, ProjectionLabelLayout);
 
     m_Projection = new TGComboBox(ProjectionFrame);
@@ -181,7 +185,7 @@ void MGUIImageDimensions::Create()
     m_Projection->Select(static_cast<int>(m_GUIData->GetImageProjection()));
     m_Projection->SetHeight(m_FontScaler*18);
     m_Projection->SetWidth(m_FontScaler*120);
-    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20, 20, 0, 0);
+    TGLayoutHints* ProjectionLayout = new TGLayoutHints(kLHintsRight | kLHintsTop, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 0*m_FontScaler);
     ProjectionFrame->AddFrame(m_Projection, ProjectionLayout);
     
   } else if (m_GUIData->GetCoordinateSystem() == MCoordinateSystem::c_Cartesian2D ||

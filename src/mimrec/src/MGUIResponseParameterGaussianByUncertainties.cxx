@@ -74,14 +74,14 @@ void MGUIResponseParameterGaussianByUncertainties::Create()
 {
   // Create the main window
 
-  int Width = 400*m_FontScaler;
+  int Width = 600*m_FontScaler;
 
   // We start with a name and an icon...
   SetWindowName("Response parameters Gaussian by uncertainties");  
 
   AddSubTitle("Parameters for a 1D Gaussian response approximation\ncalculated by the given uncertainties"); 
 
-  TGLayoutHints* IncreaseLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 20);
+  TGLayoutHints* IncreaseLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 20*m_FontScaler);
   m_Increase = new MGUIEEntry(this, "Increase the calculated uncertainty by this amount of degrees. Having a larger cone width makes the images a bit smoother but sacrificies sensitivity.", false, m_GUIData->GetGaussianByUncertaintiesIncrease(), true, 0.0, 20.0);
   m_Increase->SetEntryFieldSize(m_FontScaler*60);
   m_Increase->SetWrapLength(Width - m_FontScaler*100);

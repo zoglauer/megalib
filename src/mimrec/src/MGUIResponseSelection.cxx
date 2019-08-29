@@ -80,7 +80,7 @@ void MGUIResponseSelection::Create()
 
   AddSubTitle("Select the type of response you want to use"); 
 
-  TGLayoutHints* ResponseChoiceLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20, 20, 0, 20);
+  TGLayoutHints* ResponseChoiceLayout = new TGLayoutHints(kLHintsCenterX | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 0*m_FontScaler, 20*m_FontScaler);
   
   m_ResponseChoice = new MGUIERBList(this, "Response types:");
   m_ResponseChoice->Add("Standard one parameter linear gaussian for photo-peak events (List-mode)");

@@ -234,13 +234,12 @@ void MGUIEEntry::Create()
   if (m_IsEmphasized == true) {
     m_TextLabel->SetTextFont(m_EmphasizedFont);
   }    
-  m_TextLabelLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsCenterY, 0, 0, 0, 0);
+  m_TextLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsCenterY, 0, 10*m_FontScaler, 0, 0);
   AddFrame(m_TextLabel, m_TextLabelLayout);
 
 
   // Input field:
-  m_InputLayout = new TGLayoutHints(kLHintsRight | kLHintsTop | kLHintsCenterY, 20*m_FontScaler, 0, 0, 0);
+  m_InputLayout = new TGLayoutHints(kLHintsRight | kLHintsTop | kLHintsCenterY, 10*m_FontScaler, 0, 0, 0);
   if (m_Limits == false) {
     m_InputBuffer = new TGTextBuffer(10);
     m_InputBuffer->AddText(0, m_Value);

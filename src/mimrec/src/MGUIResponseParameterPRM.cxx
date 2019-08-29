@@ -81,7 +81,7 @@ void MGUIResponseParameterPRM::Create()
 
   AddSubTitle("Choose the files for the response matrix."); 
 
-  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
+  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 5*m_FontScaler, 0);
 
   m_ComptonTransversalFile = 
     new MGUIEFileSelector(this,

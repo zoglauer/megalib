@@ -124,8 +124,7 @@ void MGUIEEntryList::Create()
   if (m_Label.IsEmpty() == false) {
     m_TextLabel = new TGLabel(this, new TGString(m_Label));
     m_TextLabel->SetWrapLength(m_WrapLength);
-    m_TextLabelLayout =
-      new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, 2, 0);
+    m_TextLabelLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, 0, 0, m_FontScaler*2, 0);
     AddFrame(m_TextLabel, m_TextLabelLayout);
   }
   
@@ -136,7 +135,7 @@ void MGUIEEntryList::Create()
       AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
     }
   } else {
-    m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, m_FontScaler*20, 0, 2, 0);
+    m_EntryLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX | kLHintsTop, m_FontScaler*20, 0, m_FontScaler*2, 0);
     for (i = 0; i < m_EntryList->GetLast()+1; i++) {
       AddFrame((MGUIEEntry *) m_EntryList->At(i), m_EntryLayout);
     }

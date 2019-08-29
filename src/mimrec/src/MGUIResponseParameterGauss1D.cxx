@@ -81,7 +81,7 @@ void MGUIResponseParameterGauss1D::Create()
 
   AddSubTitle("Parameters for 1D Gaussian response approximations"); 
 
-  TGLayoutHints* GaussiansLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 10);
+  TGLayoutHints* GaussiansLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 10*m_FontScaler);
   m_Gaussians = new MGUIEEntryList(this, "Set the 1D Gaussian approximations of the response:");
   m_Gaussians->Add("Compton across cone (e.g. 1 sigma of ARM width = FWHM / 2.35) [deg]:", m_GUIData->GetFitParameterComptonTransSphere(), true, 0.0, 180.0);
   m_Gaussians->Add("Compton along cone for tracked events (e.g. 1 sigma of SPD width) [deg]:", m_GUIData->GetFitParameterComptonLongSphere(), true, 0.0, 180.0);
@@ -91,14 +91,14 @@ void MGUIResponseParameterGauss1D::Create()
   m_Gaussians->Create();
   AddFrame(m_Gaussians, GaussiansLayout);
 
-  TGLayoutHints* CutOffLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 20);
+  TGLayoutHints* CutOffLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 10*m_FontScaler, 20*m_FontScaler);
   m_CutOff = new MGUIEEntryList(this, "Set the cut-off out to which distance the Gauss is calculated in sigma. A smaller cut-off increases the reconstruction speed, but deteriorates the image. If you use the maths approximations and/or 1-byte accuracy, then there will be an automatic cut-off at ~4.");
   m_CutOff->Add("Gaussian cut-off (suggested value: 2.5) [sigmas]:", m_GUIData->GetGauss1DCutOff(), true, 1.5);
   m_CutOff->SetWrapLength(Width - m_FontScaler*40);
   m_CutOff->Create();
   AddFrame(m_CutOff, CutOffLayout);
 
-  TGLayoutHints* AbsorptionsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 20, 20);
+  TGLayoutHints* AbsorptionsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler, 20*m_FontScaler);
   m_Absorptions = new TGCheckButton(this, "Use absorption probabilities (very time consuming!!!) - they are always used for photo-effect (i.e. coded-mask) events", c_AbsorptionId);
   m_Absorptions->SetWrapLength(Width - m_FontScaler*40);
   AddFrame(m_Absorptions, AbsorptionsLayout);

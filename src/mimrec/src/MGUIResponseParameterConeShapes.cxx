@@ -80,7 +80,7 @@ void MGUIResponseParameterConeShapes::Create()
 
   AddSubTitle("Choose the file containing the cone shapes."); 
 
-  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20, 20, 5, 0);
+  TGLayoutHints* SingleLayout = new TGLayoutHints(kLHintsLeft | kLHintsExpandX, 20*m_FontScaler, 20*m_FontScaler, 5*m_FontScaler, 0);
 
   m_ARMFile = new MGUIEFileSelector(this, "Cone-shapes file name", m_Settings->GetImagingResponseConeShapesFileName());
   m_ARMFile->SetFileType("Response", "*.imagingarm.photopeak.rsp");
