@@ -1258,7 +1258,7 @@ bool MGUIMainMelinator::OnLoadLast()
     
   if (m_Melinator.GetNumberOfCollections() == 0) {
     mgui<<"There was no usable data on file!"<<show;
-    UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined, true);
+    //UpdateDisplay(g_UnsignedIntNotDefined, g_UnsignedIntNotDefined, true);
     return false;
   }
   

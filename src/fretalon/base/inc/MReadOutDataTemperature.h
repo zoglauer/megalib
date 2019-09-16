@@ -1,5 +1,5 @@
 /*
- * MReadOutDataOrigins.h
+ * MReadOutDataTemperature.h
  *
  * Copyright (C) by Andreas Zoglauer.
  * All rights reserved.
@@ -9,8 +9,8 @@
  */
 
 
-#ifndef __MReadOutDataOrigins__
-#define __MReadOutDataOrigins__
+#ifndef __MReadOutDataTemperature__
+#define __MReadOutDataTemperature__
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -33,8 +33,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! This basic read-out data just consisting of several simulation origin values as int
-class MReadOutDataOrigins : public MReadOutData
+//! This basic read-out data just consisting of one temperature value as unsigned int
+class MReadOutDataTemperature : public MReadOutData
 {
   // public interface:
  public:
@@ -44,11 +44,11 @@ class MReadOutDataOrigins : public MReadOutData
   static const long m_TypeID;
 
   //! Default constructor
-  MReadOutDataOrigins();
+  MReadOutDataTemperature();
   //! Constructor given the data
-  MReadOutDataOrigins(MReadOutData* Data);
+  MReadOutDataTemperature(MReadOutData* Data);
   //! Simple default destructor
-  virtual ~MReadOutDataOrigins();
+  virtual ~MReadOutDataTemperature();
 
   //! Return the type of this read-out data --- hard coded to save space
   virtual MString GetType() const { return m_Type; }
@@ -58,13 +58,13 @@ class MReadOutDataOrigins : public MReadOutData
   //! Clear the content of this read-out data element
   virtual void Clear();
 
-  //! Set the simulation origin values
-  void SetOrigins(vector<int> Origins) { m_Origins = Origins; }
-  //! Get the simulation origin values
-  vector<int> GetOrigins() const { return m_Origins; }
+  //! Set the temperature
+  void SetTemperature(double Temperature) { m_Temperature = Temperature; }
+  //! Get the temperature
+  double GetTemperature() const { return m_Temperature; }
 
   //! Clone this data element - the returned element must be deleted
-  virtual MReadOutDataOrigins* Clone() const;
+  virtual MReadOutDataTemperature* Clone() const;
   
   //! Return the number of parsable elements
   virtual unsigned int GetNumberOfParsableElements() const;  
@@ -87,8 +87,8 @@ class MReadOutDataOrigins : public MReadOutData
 
   // protected members:
  protected:
-  //! The origins
-  vector<int> m_Origins;
+  //! The temperature value
+  double m_Temperature;
 
   // private members:
  private:
@@ -97,13 +97,13 @@ class MReadOutDataOrigins : public MReadOutData
 
 #ifdef ___CLING___
  public:
-  ClassDef(MReadOutDataOrigins, 0) // no description
+  ClassDef(MReadOutDataTemperature, 0) // no description
 #endif
 
 };
 
 //! Streamify the read-out data
-ostream& operator<<(ostream& os, const MReadOutDataOrigins& R);
+ostream& operator<<(ostream& os, const MReadOutDataTemperature& R);
 
 #endif
 
