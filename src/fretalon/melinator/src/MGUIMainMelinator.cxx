@@ -799,9 +799,9 @@ bool MGUIMainMelinator::ProcessMessage(long Message, long Parameter1, long Param
         Status = OnSaveConfiguration();
         break;
 
-      //case c_Geometry:
-      //  Status = OnGeometry();
-      //  break;
+      case c_Geometry:
+        Status = OnGeometry();
+        break;
 
       case c_Exit:
         Status = OnExit();
@@ -1664,7 +1664,7 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEner
   // Now set the colors:
   for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
     if (m_Melinator.GetCalibrationQuality(i) == -1) {
-      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), 0);
+      m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), -1);
     } else {
       int Quality = 0;
       if (RMS > 0) {
@@ -1867,7 +1867,7 @@ bool MGUIMainMelinator::OnGeometry()
 {
   // Show the geometry dialog
   // Returns the geometry file name
-
+  
   MGUIGeometry* Geo = new MGUIGeometry(gClient->GetRoot(), this, m_Settings->GetGeometryFileName());
   gClient->WaitForUnmap(Geo);
   MString Name = Geo->GetGeometryFileName();
