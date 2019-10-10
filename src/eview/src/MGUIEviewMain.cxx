@@ -1220,7 +1220,7 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
 
   if (m_Settings->GetDisplayOnlyGoodEvents() == true) {
     if (RE->IsGoodEvent() == false) {
-      mout<<"Event deselected: Not good"<<endl;
+      mout<<"Event "<<RE->GetEventID()<<" deselected: Not good"<<endl;
       return false; 
     }
   }
@@ -1272,23 +1272,25 @@ bool MGUIEviewMain::SelectAndDraw(MRERawEvent* RE)
 
   // Hit selection:
   if (NHitsTotal < MinNHitsTotal) { 
-    mout<<"Event deselected: Not enough hits: "<<NHitsTotal<<endl;
+    mout<<"Event "<<RE->GetEventID()<<" deselected: Not enough hits: "<<NHitsTotal<<endl;
     return false; 
   }
   if (NHitsD1 < MinNHitsD1) { 
-    mout<<"Event deselected: Not enough hits in D1: "<<NHitsD1<<endl;
+    mout<<"Event "<<RE->GetEventID()<<" deselected: Not enough hits in D1: "<<NHitsD1<<endl;
     return false; 
   }
   if (NHitsD2 < MinNHitsD2) { 
-    mout<<"Event deselected: Not enough hits in D2: "<<NHitsD2<<endl;
+    mout<<"Event "<<RE->GetEventID()<<" deselected: Not enough hits in D2: "<<NHitsD2<<endl;
     return false; 
   }
     
   // Energy selection
   if (RE->GetEnergy() < MinEnergy || RE->GetEnergy() > MaxEnergy) {
-    mout<<"Event deselcted: Energy not within bounds: "<<RE->GetEnergy()<<endl;
+    mout<<"Event "<<RE->GetEventID()<<" deselcted: Energy not within bounds: "<<RE->GetEnergy()<<endl;
     return false; 
   }
+ 
+  mout<<"Good event "<<RE->GetEventID()<<endl;
  
   // Now clear the geometry ... 
   m_Geometry->RemoveAllHits();
