@@ -23,6 +23,7 @@ FILES = MFretalonRegistry \
 	MReadOutData \
 	MReadOutDataADCValue \
 	MReadOutDataTiming \
+	MReadOutDataTemperature \
 	MReadOutDataOrigins \
 	MReadOutSequence \
 	MReadOutDataGroup \

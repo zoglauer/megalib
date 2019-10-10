@@ -174,11 +174,14 @@ bool MFileReadOuts::Open(MString FileName, unsigned int Way)
   
   // Assemble the ROD
   vector<MString> RODNames;
+  int Underscore = ReadOutDataFormat.Tokenize("_").size();
   int Minus = ReadOutDataFormat.Tokenize("-").size();
   int With = ReadOutDataFormat.Tokenize("with").size();
-  if (Minus > With) {
+  if (Minus > 1 && Underscore == 1 && With == 1) {
     RODNames = ReadOutDataFormat.Tokenize("-");
-  } else if (Minus < With) {
+  } else if (Minus == 1 && Underscore > 1 && With == 1) {
+    RODNames = ReadOutDataFormat.Tokenize("_");
+  } else if (Minus == 1 && Underscore == 1 && With > 1) {
     RODNames = ReadOutDataFormat.Tokenize("with");
   } else {
     RODNames.push_back(ReadOutDataFormat); 
