@@ -125,6 +125,7 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("hBrems"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   m_KnownProcess.push_back("PenelopeBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   m_KnownProcess.push_back("LowEnBrem"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
+  m_KnownProcess.push_back("muBrems"); m_KnownProcessID.push_back(c_ProcessIDBremsstrahlung);
   
   m_KnownProcess.push_back("Rayl"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
   m_KnownProcess.push_back("PenRayleigh"); m_KnownProcessID.push_back(c_ProcessIDRayleigh);
