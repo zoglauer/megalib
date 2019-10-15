@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  callisto
+ 
+OSFlavour:                                 macOS
+OSVersion:                                 10.13.6
+Kernel:                                    17.7.0
+ 
+CPUModel:                                  Intel(R) Core(TM) i5-2415M CPU @ 2.30GHz
+CPUName:                                   i5-2415M
+CPUSockets:                                1
+CPUCoresPerSocket:                         2
+CPUThreadsPerCore:                         2
+Cores:                                     2
+Threads:                                   4
+ 
+ROOTVersion:                               6.14/08
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            6873835b66b792c3834574a6aa234800f306b7e5 2019-08-19
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      69.586
+EventsPerSecondCosimaSingle:               1437.070
+DurationCosimaMultiple:                    104.782
+EventsPerSecondCosimaMultiple:             3817.449
+ 
+# Revan
+DurationRevanSingle:                       10.371
+EventsPerSecondRevanSingle:                9642.271
+DurationRevanMultiple:                     16.866
+EventsPerSecondRevanMultiple:              23716.352
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             32.322
+EventsPerSecondResponseCreatorSingle:      3093.867
+DurationResponseCreatorMultiple:           62.537
+EventsPerSecondResponseCreatorMultiple:    6396.213
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               92.651
+EventsPerSecondMimrecImagingSingle:        1079.319
+DurationMimrecImagingMultiple:             45.175
+EventsPerSecondMimrecImagingMultiple:      2213.613
+ 
