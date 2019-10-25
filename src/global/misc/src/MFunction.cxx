@@ -638,7 +638,8 @@ double MFunction::Integrate(double XMin, double XMax) const
 
   int BinMin = 0;
   if (XMin > m_X.front()) {
-    BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
+    // BinMin = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), XMin)) - m_X.begin() - 1;
+    BinMin = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, XMin)) - m_X.begin() - 1;
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
@@ -658,7 +659,8 @@ double MFunction::Integrate(double XMin, double XMax) const
   }
   int BinMax = m_X.size()-1;
   if (XMax < m_X.back()) {
-    BinMax = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMax)) - m_X.begin();
+    //BinMax = find_if(m_X.begin(), m_X.end(), bind2nd(greater_equal<double>(), XMax)) - m_X.begin();
+    BinMax = find_if(m_X.begin(), m_X.end(), bind(greater_equal<double>(), placeholders::_1, XMax)) - m_X.begin();
 //     unsigned int upper = m_Cumulative.size();
 //     unsigned int center = 1;
 //     unsigned int lower = 0;
@@ -862,7 +864,8 @@ double MFunction::GetRandomInterpolate(double Itot)
   // Now find the correct x-value via interpolation
 
   // Find the correct bin in m_Cumulative
-  int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind2nd(greater_equal<double>(), Itot)) - m_Cumulative.begin();
+  //int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind2nd(greater_equal<double>(), Itot)) - m_Cumulative.begin();
+  int Bin = find_if(m_Cumulative.begin(), m_Cumulative.end(), bind(greater_equal<double>(), placeholders::_1, Itot)) - m_Cumulative.begin();
 
 //   // Binary search:
 //   unsigned int upper = m_Cumulative.size();
@@ -1145,7 +1148,8 @@ double MFunction::FindX(double XStart, double Integral, bool Cyclic)
 
   unsigned int BinStart = 0;
   if (X > m_X.front()) {
-    BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
+    //BinStart = find_if(m_X.begin(), m_X.end(), bind2nd(greater<double>(), X)) - m_X.begin() - 1;
+    BinStart = find_if(m_X.begin(), m_X.end(), bind(greater<double>(), placeholders::_1, X)) - m_X.begin() - 1;
   }
 
   //cout<<"x: "<<X<<" Bin start: "<<BinStart<<endl;
