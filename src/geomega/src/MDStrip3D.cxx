@@ -143,13 +143,13 @@ bool MDStrip3D::CopyDataToNamedDetectors()
 
     if (D->m_TriggerThresholdDepthCorrectionSet == false && 
         m_TriggerThresholdDepthCorrectionSet == true) {
-      m_TriggerThresholdDepthCorrectionSet = true;
-      m_TriggerThresholdDepthCorrection = m_TriggerThresholdDepthCorrection;
+      D->m_TriggerThresholdDepthCorrectionSet = true;
+      D->m_TriggerThresholdDepthCorrection = m_TriggerThresholdDepthCorrection;
     }
     if (D->m_TriggerThresholdDepthCorrectionSet == false && 
         m_TriggerThresholdDepthCorrectionSet == true) {
-      m_NoiseThresholdDepthCorrectionSet = true;
-      m_NoiseThresholdDepthCorrection = m_NoiseThresholdDepthCorrection; 
+      D->m_NoiseThresholdDepthCorrectionSet = true;
+      D->m_NoiseThresholdDepthCorrection = m_NoiseThresholdDepthCorrection; 
     }
   }
 
