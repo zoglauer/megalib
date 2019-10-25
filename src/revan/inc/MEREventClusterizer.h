@@ -41,6 +41,8 @@ class MEREventClusterizer : public MERConstruction
   //! Default destructor
   virtual ~MEREventClusterizer();
 
+  //! Do the analysis - not used here
+  virtual bool Analyze(MRawEventIncarnations* List) { return false; }
   //! Do the analysis - this will add events to the whole incarnation list
   virtual bool Analyze(MRawEventIncarnationList* List) { return false; }
 
