@@ -52,9 +52,9 @@ git checkout experimental
 
 
 
-<h3>Additional information for Ubuntu</h3>
+<h3>Additional information for Linux</h3>
 
-<p>If you use an Ubuntu flavor (LTS releases only), you can run a small script to automatically install all the required tools and libraries which are part of Ubuntu. In the MEGAlib directory execute:</p>
+<p>If you use one of the major Linux flavors such as Ubuntu (LTS releases only), Fedora, openSUSE, etc., then you can run a small script to automatically install all the required tools and libraries which are part of your distro. In the MEGAlib directory execute:</p>
 
 <pre>$ bash config/configure_packages</pre>
 
@@ -69,6 +69,7 @@ git checkout experimental
   <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
   <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a> (just choose the latest *.dmg file)</li>
   <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Attention: Make sure to follow the instructions on how to install the cmake command line tools: Open the cmake app. Under "Tools" you find a line "How To Install For Command Line Use". Click and follow the instructions.</li>
+  <li>python3: Please install a 3.x version of python from <a href="https://python.org" target=_blank>https://python.org</a> which is compatible with tensorflow (i.e. usually not the very latest version). You cannot use a python version installed with conda or anaconda.</li>
 </ol>
 <p>Attention: If you have MacPorts, Fink, or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
 
