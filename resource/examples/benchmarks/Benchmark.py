@@ -3,8 +3,23 @@
 import glob
 import os
 import numpy as np
+import argparse
 import matplotlib
 import matplotlib.pyplot as plt
+
+Mode="c"
+
+parser = argparse.ArgumentParser(description='View MEGAlib benchmarks')
+parser.add_argument('-m', '--mode', default='c',help='c: Cosima, r: Revan, m: Mimrec, a: ResponseCreator')
+
+args = parser.parse_args()
+
+Mode = (args.mode).lower()
+if Mode != 'c' and Mode != 'r' and Mode != 'm' and Mode != 'a':
+  print("Error: The mode must be either \'c\', \'r\', \'m\', or \'a\'.")
+  sys.exit(0)
+
+
 
 FileNames = []
 Reference = []
@@ -39,23 +54,27 @@ print(FileNames)
 # Extract all data
 IsGood = []
 HostNames = []
+CPUSockets = []
 CPUNames = []
 OSNames = []
 OSVersions = []
-CosimaSingles = []
-CosimaMultiples = []
+
+RunSingle = []
+RunMulti = []
 
 import re
 for f in range(0, len(FileNames)):
   FileName = FileNames[f]
   IsGood.append(True)
   HostNames.append("-")
+  CPUSockets.append("-")
   CPUNames.append("-")
   OSNames.append("-")
   OSVersions.append("-")
-  CosimaSingles.append(0)
-  CosimaMultiples.append(0)
+  RunSingle.append(0)
+  RunMulti.append(0)
   with open(FileName) as File:
+    CPUSocket = ""
     CPUName = ""
     HostName = ""
     OSName = ""
@@ -67,6 +86,10 @@ for f in range(0, len(FileNames)):
         Split = Line.split(':')
         if len(Split) > 1:
           HostName = Split[1].strip()
+      if "CPUSockets" in Line:
+        Split = Line.split(':')
+        if len(Split) > 1:
+          CPUSocket = Split[1].strip()
       if "CPUName" in Line:
         Split = Line.split(':')
         if len(Split) > 1:
@@ -79,14 +102,43 @@ for f in range(0, len(FileNames)):
         Split = Line.split(':')
         if len(Split) > 1:
           OSVersion = Split[1].strip()
-      if "EventsPerSecondCosimaSingle" in Line:
-        Split = Line.split(':')
-        if len(Split) > 1:
-          CosimaSingle = Split[1].strip()
-      if "EventsPerSecondCosimaMultiple" in Line:
-        Split = Line.split(':')
-        if len(Split) > 1:
-          CosimaMultiple = Split[1].strip()
+      if Mode == 'c':
+        if "EventsPerSecondCosimaSingle" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Single = Split[1].strip()
+        if "EventsPerSecondCosimaMultiple" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Multiple = Split[1].strip()
+      elif Mode == 'r': 
+        if "EventsPerSecondRevanSingle" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Single = Split[1].strip()
+        if "EventsPerSecondRevanMultiple" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Multiple = Split[1].strip()
+      elif Mode == 'm': 
+        if "EventsPerSecondMimrecImagingSingle" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Single = Split[1].strip()
+        if "EventsPerSecondMimrecImagingMultiple" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Multiple = Split[1].strip()
+      elif Mode == 'a': 
+        if "EventsPerSecondResponseCreatorSingle" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Single = Split[1].strip()
+        if "EventsPerSecondResponseCreatorMultiple" in Line:
+          Split = Line.split(':')
+          if len(Split) > 1:
+            Multiple = Split[1].strip()
+      
     
     if HostName:
       HostNames[f] = HostName
@@ -95,6 +147,11 @@ for f in range(0, len(FileNames)):
       
     if CPUName:
       CPUNames[f] = CPUName
+    else:
+      IsGood[f] = False
+      
+    if CPUSocket:
+      CPUSockets[f] = CPUSocket
     else:
       IsGood[f] = False
       
@@ -108,13 +165,13 @@ for f in range(0, len(FileNames)):
     else:
       IsGood[f] = False
     
-    if CosimaSingle:
-      CosimaSingles[f] = int(float(CosimaSingle))
+    if Single:
+      RunSingle[f] = int(float(Single))
     else:
       IsGood[f] = False
     
-    if CosimaMultiple:
-      CosimaMultiples[f] = int(float(CosimaMultiple))
+    if Multiple:
+      RunMulti[f] = int(float(Multiple))
     else:
       IsGood[f] = False
       
@@ -125,32 +182,37 @@ print(len(IsGood))
 # Sorting:
 
 
-IsGood.sort(key=dict(zip(IsGood, CosimaMultiples)).get)
+IsGood.sort(key=dict(zip(IsGood, RunMulti)).get)
 
-IsGood = [x for _,x in sorted(zip(CosimaMultiples, IsGood))]
-Reference = [x for _,x in sorted(zip(CosimaMultiples, Reference))]
-HostNames = [x for _,x in sorted(zip(CosimaMultiples, HostNames))]
-CPUNames = [x for _,x in sorted(zip(CosimaMultiples, CPUNames))]
-OSNames = [x for _,x in sorted(zip(CosimaMultiples, OSNames))]
-OSVersions = [x for _,x in sorted(zip(CosimaMultiples, OSVersions))]
-CosimaSingles = [x for _,x in sorted(zip(CosimaMultiples, CosimaSingles))]
-CosimaMultiples = [x for _,x in sorted(zip(CosimaMultiples, CosimaMultiples))]
+IsGood = [x for _,x in sorted(zip(RunMulti, IsGood))]
+Reference = [x for _,x in sorted(zip(RunMulti, Reference))]
+HostNames = [x for _,x in sorted(zip(RunMulti, HostNames))]
+CPUSockets = [x for _,x in sorted(zip(RunMulti, CPUSockets))]
+CPUNames = [x for _,x in sorted(zip(RunMulti, CPUNames))]
+OSNames = [x for _,x in sorted(zip(RunMulti, OSNames))]
+OSVersions = [x for _,x in sorted(zip(RunMulti, OSVersions))]
+RunSingle = [x for _,x in sorted(zip(RunMulti, RunSingle))]
+RunMulti = [x for _,x in sorted(zip(RunMulti, RunMulti))]
       
 
 print(IsGood)
 print(Reference)
+print(CPUSockets)
 print(CPUNames)
 print(OSNames)
 print(OSVersions)
-print(CosimaSingles)
-print(CosimaMultiples)
+print(RunSingle)
+print(RunMulti)
 
 
 # Plot histogram
 
 Labels = []
 for f in range(0, len(FileNames)):
-  Labels.append("{}\n{}\n{} {}\n{}".format(HostNames[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
+  if int(CPUSockets[f]) > 1:
+    Labels.append("{}\n{}x {}\n{} {}\n{}".format(HostNames[f], CPUSockets[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
+  else:
+    Labels.append("{}\n{}\n{} {}\n{}".format(HostNames[f], CPUNames[f], OSNames[f], OSVersions[f], Reference[f]))
 
 matplotlib.rcParams.update({'font.size': 20})
 
@@ -158,12 +220,19 @@ x = np.arange(len(Labels))  # the label locations
 width = 0.35  # the width of the bars
 
 fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, CosimaSingles, width, label='Single Core')
-rects2 = ax.bar(x + width/2, CosimaMultiples, width, label='All Cores')
+rects1 = ax.bar(x - width/2, RunSingle, width, label='Single Core')
+rects2 = ax.bar(x + width/2, RunMulti, width, label='All Cores')
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Events / second')
-ax.set_title('Cosima Simulation Benchmark')
+ax.set_ylabel('(Started) Events / second')
+if Mode == 'c':
+  ax.set_title('Cosima Simulation Benchmark')
+elif Mode == 'r':
+  ax.set_title('Event Reconstruction Benchmark')
+elif Mode == 'm':
+  ax.set_title('Mimrec Imaging Benchmark')
+elif Mode == 'a':
+  ax.set_title('Response Creation Benchmark')
 ax.set_xticks(x)
 ax.set_xticklabels(Labels)
 ax.legend()
@@ -181,7 +250,7 @@ def autolabel(rects):
 autolabel(rects1)
 autolabel(rects2)
 
-fig.set_size_inches(20, 14)
+fig.set_size_inches(28, 14)
 #fig.tight_layout()
 
 plt.grid(True, axis='y')
