@@ -393,7 +393,7 @@ bool MInterfaceGeomega::HasIntersections(ostringstream& Diagnostics)
   out<<"Version                     1"<<endl;
   out<<"Geometry                   "<<m_Data->GetCurrentFileName()<<endl;
   out<<"CheckForOverlaps            1000 0.0001"<<endl;
-  out<<"PhysicsListEM               Standard"<<endl;
+  out<<"PhysicsListEM               LivermorePol"<<endl;
 
   out<<"Run Minimum"<<endl;
   out<<"Minimum.FileName            DelMe"<<endl;
@@ -401,10 +401,9 @@ bool MInterfaceGeomega::HasIntersections(ostringstream& Diagnostics)
   
   out<<"Minimum.Source MinimumS"<<endl;
   out<<"MinimumS.ParticleType       1"<<endl;
-  out<<"MinimumS.Position           1 1 0 0 "<<endl;
-  out<<"MinimumS.SpectralType       1"<<endl;
-  out<<"MinimumS.Energy             10"<<endl;
-  out<<"MinimumS.Intensity          1"<<endl;
+  out<<"MinimumS.Beam               PointSource 0 0 0 "<<endl;
+  out<<"MinimumS.Spectrum           Mono 511"<<endl;
+  out<<"MinimumS.Flux               1.0"<<endl;
 
   out.close();
 
