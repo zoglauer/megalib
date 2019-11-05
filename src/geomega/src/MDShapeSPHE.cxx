@@ -217,7 +217,7 @@ bool MDShapeSPHE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape Sphere!");
+    Info.Error(MString("Unhandled descriptor in shape Sphere: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

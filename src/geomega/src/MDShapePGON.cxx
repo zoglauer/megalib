@@ -235,7 +235,7 @@ bool MDShapePGON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     }    
 
   } else {
-    Info.Error("Unhandled descriptor in shape PGON!");
+    Info.Error(MString("Unhandled descriptor in shape PGON: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

@@ -225,7 +225,7 @@ bool MDShapePCON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       }
     }
   } else {
-    Info.Error("Unhandled descriptor in shape PCON!");
+    Info.Error(MString("Unhandled descriptor in shape PCON: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

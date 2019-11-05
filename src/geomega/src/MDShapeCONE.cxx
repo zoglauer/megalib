@@ -164,7 +164,7 @@ bool MDShapeCONE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape Cone!");
+    Info.Error(MString("Unhandled descriptor in shape Cone: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

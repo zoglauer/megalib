@@ -176,7 +176,7 @@ bool MDShapeTUBS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TUBS!");
+    Info.Error(MString("Unhandled descriptor in shape TUBS: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

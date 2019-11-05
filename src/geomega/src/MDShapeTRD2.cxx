@@ -160,7 +160,7 @@ bool MDShapeTRD2::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TRD2!");
+    Info.Error(MString("Unhandled descriptor in shape TRD2: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  

@@ -263,7 +263,7 @@ bool MDShapeTRAP::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
       return false;
     }
   } else {
-    Info.Error("Unhandled descriptor in shape TRAP!");
+    Info.Error(MString("Unhandled descriptor in shape TRAP: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
  
