@@ -98,13 +98,32 @@ bool MDShapeSubtraction::Validate()
     mout<<"No minuend given"<<endl;
     return false;            
   }
-  if (m_SubShapes[0]->Validate() == false) return false;
   
   if (m_SubShapes[1] == 0) {
     mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
     mout<<"No subtrahend given"<<endl;
     return false;            
   }  
+
+  if (m_SubShapes[0] == m_SubShapes[1]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"Minuend and subtrahend are identical"<<endl;
+    return false;            
+  }
+  
+  if (this == m_SubShapes[0]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"Minuend cannot be identical with this shape"<<endl;
+    return false;            
+  }
+  
+  if (this == m_SubShapes[1]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"Subtrahend cannot be identical with this shape"<<endl;
+    return false;            
+  }
+
+  if (m_SubShapes[0]->Validate() == false) return false;  
   if (m_SubShapes[1]->Validate() == false) return false;
   
   if (m_Orientation == 0) {
