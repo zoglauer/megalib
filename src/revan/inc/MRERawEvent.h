@@ -71,6 +71,11 @@ class MRERawEvent : public MRESE, public MRotationInterface
   //! Set the time of the event -- ATTENTION: GetTime() returns the time of the RESE
   void SetEventTime(MTime Time) { m_EventTime = Time; }
   
+  //! Return the clock time (relative internal detector time) of the event 
+  MTime GetEventClock() const { return m_EventClock; }
+  //! Set the clock time  (relative internal detector time) of the event 
+  void SetEventClock(MTime Clock) { m_EventClock = Clock; }
+  
   
   int GetEventType();
   void SetEventType(int Type);
@@ -297,6 +302,8 @@ class MRERawEvent : public MRESE, public MRotationInterface
 
   //! The time this event happened
   MTime m_EventTime;
+  //! The clock time this event happened
+  MTime m_EventClock;
   //! The numerical ID
   unsigned long m_EventID;
   //! The type (Compton, etc.)

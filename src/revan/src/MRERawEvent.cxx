@@ -139,6 +139,7 @@ MRERawEvent::MRERawEvent(MRERawEvent* RE) : MRESE((MRESE *) RE)
   }
 
   m_EventTime = RE->m_EventTime;
+  m_EventClock = RE->m_EventClock;
   m_EventType = RE->GetEventType();
   m_EventID = RE->GetEventID();
   m_RejectionReason = RE->m_RejectionReason;
@@ -291,7 +292,8 @@ void MRERawEvent::Init()
   m_RejectionReason = c_RejectionNone;
   m_TimeWalk = -1;
   m_EventTime.Set(0);
-
+  m_EventClock.Set(0);
+  
   m_GalacticPointingXAxis = MVector(1.0, 0.0, 0.0);
   m_GalacticPointingZAxis = MVector(0.0, 0.0, 1.0);
   m_HasGalacticPointing = false; 
@@ -1641,6 +1643,10 @@ int MRERawEvent::ParseLine(const char* Line, int Version)
     if (sscanf(Line, "TW%i", &m_TimeWalk) != 1) {
       Ret = 1;
     }  
+  } else if (Line[0] == 'C' && Line[1] == 'L') {
+    if (m_EventClock.Set(Line) == false) {
+      Ret = 1;
+    }
   } else if (Line[0] == 'I' && Line[1] == 'D') {
     // Store the event ID
     if (sscanf(Line, "ID %lu %*u", &m_EventID) != 1) {
