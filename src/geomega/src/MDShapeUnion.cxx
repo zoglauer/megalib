@@ -94,21 +94,43 @@ bool MDShapeUnion::Set(MDShape* Augend, MDShape* Addend, MDOrientation* Orientat
 bool MDShapeUnion::Validate()
 {
   if (m_SubShapes[0] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
     mout<<"No augend given"<<endl;
     return false;            
   }
   if (m_SubShapes[0]->Validate() == false) return false;
   
   if (m_SubShapes[1] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
     mout<<"No addend given"<<endl;
     return false;            
   }  
+  
+  if (m_SubShapes[0] == m_SubShapes[1]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+    mout<<"Augend and addend shape are identical"<<endl;
+    return false;            
+  }
+  
+  if (this == m_SubShapes[0]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+    mout<<"Augend shape cannot be identical with this union shape"<<endl;
+    return false;            
+  }
+  
+  if (this == m_SubShapes[1]) {
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+    mout<<"Addend shape cannot be identical with this union shape"<<endl;
+    return false;            
+  }
+  
+  if (m_SubShapes[0]->Validate() == false) return false;  
   if (m_SubShapes[1]->Validate() == false) return false;
   
+  
+  
   if (m_Orientation == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
+    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
     mout<<"No orientation given"<<endl;
     return false;            
   }

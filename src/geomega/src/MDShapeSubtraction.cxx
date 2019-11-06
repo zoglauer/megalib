@@ -113,13 +113,13 @@ bool MDShapeSubtraction::Validate()
   
   if (this == m_SubShapes[0]) {
     mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
-    mout<<"Minuend cannot be identical with this shape"<<endl;
+    mout<<"Minuend cannot be identical with this subtraction shape"<<endl;
     return false;            
   }
   
   if (this == m_SubShapes[1]) {
     mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type subtraction"<<endl;
-    mout<<"Subtrahend cannot be identical with this shape"<<endl;
+    mout<<"Subtrahend cannot be identical with this subtraction shape"<<endl;
     return false;            
   }
 
