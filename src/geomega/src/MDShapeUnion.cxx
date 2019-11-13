@@ -84,6 +84,8 @@ bool MDShapeUnion::Set(MDShape* Augend, MDShape* Addend, MDOrientation* Orientat
   m_SubShapes[1] = Addend;
   m_Orientation = Orientation;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -93,51 +95,56 @@ bool MDShapeUnion::Set(MDShape* Augend, MDShape* Addend, MDOrientation* Orientat
 
 bool MDShapeUnion::Validate()
 {
-  if (m_SubShapes[0] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"No augend given"<<endl;
-    return false;            
+  if (m_IsValidated == false) {
+    
+    if (m_SubShapes[0] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"No augend given"<<endl;
+      return false;            
+    }
+    if (m_SubShapes[0]->Validate() == false) return false;
+    
+    if (m_SubShapes[1] == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"No addend given"<<endl;
+      return false;            
+    }  
+    
+    if (m_SubShapes[0] == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"Augend and addend shape are identical"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[0]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"Augend shape cannot be identical with this union shape"<<endl;
+      return false;            
+    }
+    
+    if (this == m_SubShapes[1]) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"Addend shape cannot be identical with this union shape"<<endl;
+      return false;            
+    }
+    
+    if (m_SubShapes[0]->Validate() == false) return false;  
+    if (m_SubShapes[1]->Validate() == false) return false;
+    
+    
+    
+    if (m_Orientation == 0) {
+      mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
+      mout<<"No orientation given"<<endl;
+      return false;            
+    }
+    
+    delete m_Geo;
+    TGeoUnion* Node = new TGeoUnion(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
+    m_Geo = new TGeoCompositeShape(m_Name, Node);
+    
+    m_IsValidated = true;
   }
-  if (m_SubShapes[0]->Validate() == false) return false;
-  
-  if (m_SubShapes[1] == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"No addend given"<<endl;
-    return false;            
-  }  
-  
-  if (m_SubShapes[0] == m_SubShapes[1]) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"Augend and addend shape are identical"<<endl;
-    return false;            
-  }
-  
-  if (this == m_SubShapes[0]) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"Augend shape cannot be identical with this union shape"<<endl;
-    return false;            
-  }
-  
-  if (this == m_SubShapes[1]) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"Addend shape cannot be identical with this union shape"<<endl;
-    return false;            
-  }
-  
-  if (m_SubShapes[0]->Validate() == false) return false;  
-  if (m_SubShapes[1]->Validate() == false) return false;
-  
-  
-  
-  if (m_Orientation == 0) {
-    mout<<"   ***  Error  ***  in shape "<<m_Name<<" of type union"<<endl;
-    mout<<"No orientation given"<<endl;
-    return false;            
-  }
-  
-  delete m_Geo;
-  TGeoUnion* Node = new TGeoUnion(m_SubShapes[0]->GetRootShape(), m_SubShapes[1]->GetRootShape(), 0, m_Orientation->GetRootMatrix());
-  m_Geo = new TGeoCompositeShape(m_Name, Node);
   
   return true;
 }
@@ -178,7 +185,9 @@ void MDShapeUnion::Scale(const double Factor)
   //if (m_Augend->GetScaler() != Factor) m_Augend->Scale(Factor);
   //if (m_Addend->GetScaler() != Factor) m_Addend->Scale(Factor);
   //if (m_Orientation->GetScaler() != Factor) m_Orientation->Scale(Factor);
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

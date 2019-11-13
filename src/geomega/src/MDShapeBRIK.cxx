@@ -96,7 +96,9 @@ bool MDShapeBRIK::Set(double x, double y, double z)
   m_Dx = x;
   m_Dy = y;
   m_Dz = z;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -108,10 +110,13 @@ bool MDShapeBRIK::Validate()
 {
   // Correctly initialize this shape
 
-  delete m_Geo;
-  m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
-
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoBBox(m_Dx, m_Dy, m_Dz);
+    
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -141,6 +146,8 @@ bool MDShapeBRIK::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape Box: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
+  
+  m_IsValidated = false;
   
   return true; 
 }
@@ -218,7 +225,9 @@ void MDShapeBRIK::Scale(const double Factor)
   m_Dx *= Factor;
   m_Dy *= Factor;
   m_Dz *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

@@ -124,6 +124,8 @@ bool MDShapeCONE::Set(double HalfHeight,
   m_RmaxTop = RmaxTop;
   m_HalfHeight = HalfHeight;
 
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -133,9 +135,13 @@ bool MDShapeCONE::Set(double HalfHeight,
 
 bool MDShapeCONE::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoCone(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop);
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoCone(m_HalfHeight, m_RminBottom, m_RmaxBottom, m_RminTop, m_RmaxTop);
+    
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -167,6 +173,8 @@ bool MDShapeCONE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape Cone: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
+ 
+  m_IsValidated = false; 
  
   return true; 
 }
@@ -259,7 +267,9 @@ void MDShapeCONE::Scale(const double Factor)
   m_RminTop *= Factor;
   m_RmaxTop *= Factor;
   m_HalfHeight *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

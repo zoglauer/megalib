@@ -136,6 +136,8 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax,
   m_Phimin = Phimin;
   m_Phimax = Phimax;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -170,6 +172,8 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax)
   m_Phimin = 0;
   m_Phimax = 360;
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -178,10 +182,14 @@ bool MDShapeSPHE::Set(double Rmin, double Rmax)
 
 
 bool MDShapeSPHE::Validate()
-{
-  delete m_Geo;
-  m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
-
+{  
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoSphere(m_Rmin, m_Rmax, m_Thetamin, m_Thetamax, m_Phimin, m_Phimax);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -220,7 +228,9 @@ bool MDShapeSPHE::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape Sphere: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -341,7 +351,9 @@ void MDShapeSPHE::Scale(const double Factor)
 
   m_Rmin *= Factor;
   m_Rmax *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

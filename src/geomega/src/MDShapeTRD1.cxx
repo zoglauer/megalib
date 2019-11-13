@@ -110,6 +110,8 @@ bool MDShapeTRD1::Set(double dx1, double dx2, double y, double z)
 
   m_Type = "TRD1";
   
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -118,10 +120,14 @@ bool MDShapeTRD1::Set(double dx1, double dx2, double y, double z)
 
 
 bool MDShapeTRD1::Validate()
-{
-  delete m_Geo;
-  m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
-
+{  
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoTrd1(m_Ddx1, m_Ddx2, m_Dy, m_Dz);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -152,7 +158,9 @@ bool MDShapeTRD1::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape TRD1: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -248,7 +256,9 @@ void MDShapeTRD1::Scale(const double Factor)
   m_Ddx2 *= Factor;
   m_Dy *= Factor;
   m_Dz *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

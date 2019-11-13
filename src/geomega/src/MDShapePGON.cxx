@@ -107,7 +107,9 @@ bool MDShapePGON::Set(double Phi, double DPhi, unsigned int NSides,
   m_Z.resize(NSections);
   m_Rmin.resize(NSections);
   m_Rmax.resize(NSections);
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -137,7 +139,9 @@ bool MDShapePGON::AddSection(unsigned int Section, double Z, double Rmin, double
   m_Z[Section] = Z;
   m_Rmin[Section] = Rmin;
   m_Rmax[Section] = Rmax;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -147,11 +151,16 @@ bool MDShapePGON::AddSection(unsigned int Section, double Z, double Rmin, double
 
 bool MDShapePGON::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoPgon(m_Phi, m_DPhi, m_NSides, m_NSections);
+  
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoPgon(m_Phi, m_DPhi, m_NSides, m_NSections);
 
-  for (unsigned int i = 0; i < m_NSections; ++i) {
-    dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+    for (unsigned int i = 0; i < m_NSections; ++i) {
+      dynamic_cast<TGeoPcon*>(m_Geo)->DefineSection(i, m_Z[i], m_Rmin[i], m_Rmax[i]);
+    }
+  
+    m_IsValidated = true;
   }
   
   return true;
@@ -238,7 +247,9 @@ bool MDShapePGON::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape PGON: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -413,6 +424,8 @@ void MDShapePGON::Scale(const double Factor)
     m_Rmax[i] *= Factor;
     m_Z[i] *= Factor;  
   }
+  
+  m_IsValidated = false;
   
   Validate();
 }

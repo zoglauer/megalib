@@ -66,7 +66,8 @@ const double MDShape::c_NoIntersection = -947957.243756;
 MDShape::MDShape(const MString& Name)
 {
   m_Name = Name;
-  m_Geo = 0;
+  m_Geo = nullptr;
+  m_IsValidated = false;
 }
 
 

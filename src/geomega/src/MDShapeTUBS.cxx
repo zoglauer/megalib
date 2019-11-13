@@ -122,7 +122,9 @@ bool MDShapeTUBS::Set(double Rmin, double Rmax, double HalfHeight,
   m_HalfHeight = HalfHeight;
   m_Phi1 = Phi1;
   m_Phi2 = Phi2;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
   
@@ -132,11 +134,15 @@ bool MDShapeTUBS::Set(double Rmin, double Rmax, double HalfHeight,
 
 bool MDShapeTUBS::Validate()
 {
-  delete m_Geo;
-  if (m_Phi1 == 0 && m_Phi2 == 360) {
-    m_Geo = new TGeoTube(m_Rmin, m_Rmax, m_HalfHeight);
-  } else {
-    m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    if (m_Phi1 == 0 && m_Phi2 == 360) {
+      m_Geo = new TGeoTube(m_Rmin, m_Rmax, m_HalfHeight);
+    } else {
+      m_Geo = new TGeoTubeSeg(m_Rmin, m_Rmax, m_HalfHeight, m_Phi1, m_Phi2);
+    }
+  
+    m_IsValidated = true;
   }
   
   return true;
@@ -179,7 +185,9 @@ bool MDShapeTUBS::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape TUBS: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -283,6 +291,8 @@ void MDShapeTUBS::Scale(const double Factor)
   m_Rmax *= Factor;
   m_HalfHeight *= Factor;
 
+  m_IsValidated = false;
+  
   Validate();
 }
 

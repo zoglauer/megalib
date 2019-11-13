@@ -214,7 +214,9 @@ bool MDShapeTRAP::Set(double Dz, double Theta, double Phi,
   m_Tl2 = Tl2;
   m_Alpha1 = Alpha1;
   m_Alpha2 = Alpha2;
-
+  
+  m_IsValidated = false;
+  
   return true;
 }
 
@@ -224,11 +226,15 @@ bool MDShapeTRAP::Set(double Dz, double Theta, double Phi,
 
 bool MDShapeTRAP::Validate()
 {
-  delete m_Geo;
-  m_Geo = new TGeoTrap(m_Dz, m_Theta, m_Phi, 
-                       m_H1, m_Bl1, m_Tl1, m_Alpha1, 
-                       m_H2, m_Bl2, m_Tl2, m_Alpha2);
-
+  if (m_IsValidated == false) {
+    delete m_Geo;
+    m_Geo = new TGeoTrap(m_Dz, m_Theta, m_Phi, 
+                         m_H1, m_Bl1, m_Tl1, m_Alpha1, 
+                         m_H2, m_Bl2, m_Tl2, m_Alpha2);
+  
+    m_IsValidated = true;
+  }
+  
   return true;
 }
 
@@ -266,7 +272,9 @@ bool MDShapeTRAP::Parse(const MTokenizer& Tokenizer, const MDDebugInfo& Info)
     Info.Error(MString("Unhandled descriptor in shape TRAP: ") + Tokenizer.GetTokenAt(1));
     return false;
   }
- 
+  
+  m_IsValidated = false;
+  
   return true; 
 }
 
@@ -454,7 +462,9 @@ void MDShapeTRAP::Scale(const double Factor)
   m_Bl2 *= Factor;
   m_Tl1 *= Factor;
   m_Tl2 *= Factor;
-
+  
+  m_IsValidated = false;
+  
   Validate();
 }
 

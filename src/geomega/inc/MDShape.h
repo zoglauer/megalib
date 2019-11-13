@@ -117,6 +117,9 @@ class MDShape
   //! If this shape consists of other shapes, they are stored here
   vector<MDShape*> m_SubShapes;
   
+  //! True if it has been validated
+  bool m_IsValidated;
+  
   // private members:
  private:
 
