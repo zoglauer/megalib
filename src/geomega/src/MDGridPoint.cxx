@@ -52,7 +52,8 @@ const unsigned int MDGridPoint::c_XStrip = 3;
 const unsigned int MDGridPoint::c_YStrip = 4;
 const unsigned int MDGridPoint::c_XYAnger = 5;
 const unsigned int MDGridPoint::c_XYZAnger = 6;
-const unsigned int MDGridPoint::c_GuardRing = 7;
+const unsigned int MDGridPoint::c_XYZIndependentAnger = 7;
+const unsigned int MDGridPoint::c_GuardRing = 8;
 const unsigned int MDGridPoint::c_MinType = MDGridPoint::c_Voxel;
 const unsigned int MDGridPoint::c_MaxType = MDGridPoint::c_GuardRing;
 

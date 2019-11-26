@@ -74,11 +74,13 @@ class MDAngerCamera : public MDDetector
   
   
   void SetPositionResolution(const double Energy, const double Resolution);
-
+  void SetPositionResolutionXYZ(const double Energy, const double ResolutionX, const double ResolutionY, const double ResolutionZ);
+  
   static const int c_PositionResolutionUnknown;
   static const int c_PositionResolutionXY;
   static const int c_PositionResolutionXYZ;
-
+  static const int c_PositionResolutionXYZIndependent;
+  
 
   // protected methods:
  protected:
@@ -99,8 +101,15 @@ class MDAngerCamera : public MDDetector
   int m_PositionResolutionType;
   //! Position solution
   MFunction m_PositionResolution; 
-
-
+  
+  //! Position solution
+  MFunction m_PositionResolutionX; 
+  //! Position solution
+  MFunction m_PositionResolutionY; 
+  //! Position solution
+  MFunction m_PositionResolutionZ; 
+  
+  
 #ifdef ___CLING___
  public:
   ClassDef(MDAngerCamera, 0) // a basic AngerCamera detector
