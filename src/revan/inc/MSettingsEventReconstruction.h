@@ -68,12 +68,16 @@ class MSettingsEventReconstruction : public MSettingsInterface
   }
   
   
-    
+  
+  void SetEventClusteringDistanceCutOff(double Distance) { m_EventClusteringDistanceCutOff = Distance; }
+  double GetEventClusteringDistanceCutOff() { return m_EventClusteringDistanceCutOff; }
+  
   void SetEventClusteringTMVAFileName(MString Name) { m_EventClusteringTMVAFileName = Name; }
   MString GetEventClusteringTMVAFileName() { return m_EventClusteringTMVAFileName; }
   
   void SetEventClusteringTMVAMethods(MERCSRTMVAMethods EventClusteringTMVAMethods) { m_EventClusteringTMVAMethods = EventClusteringTMVAMethods; }
   MERCSRTMVAMethods GetEventClusteringTMVAMethods() { return m_EventClusteringTMVAMethods; }
+  
   
   
   void SetStandardClusterizerMinDistanceD1(double MinDistance) {
@@ -290,6 +294,9 @@ class MSettingsEventReconstruction : public MSettingsInterface
   double m_CoincidenceWindow;
 
   // Event clustering
+  
+  //! The distance cut off
+  double m_EventClusteringDistanceCutOff;
   
   //! The TMVA file name
   MString m_EventClusteringTMVAFileName;

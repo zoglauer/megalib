@@ -149,8 +149,9 @@ class MRawEventAnalyzer
   
   static const int c_EventClusteringAlgoNone;
   static const int c_EventClusteringAlgoTMVA;
+  static const int c_EventClusteringAlgoDistance;
   
-  //! Set the coincidence algorithm. One of: c_EventClusteringAlgoNone, c_EventClusteringAlgoTMVA
+  //! Set the coincidence algorithm. One of: c_EventClusteringAlgoNone, c_EventClusteringAlgoDistance, c_EventClusteringAlgoTMVA
   void SetEventClusteringAlgorithm(int ID) { m_EventClusteringAlgorithm = ID; }
   
   static const int c_HitClusteringAlgoNone;
@@ -200,6 +201,7 @@ class MRawEventAnalyzer
   }
 
   // Options for event clustering
+  void SetEventClusteringDistanceCutOff(double DistanceCutOff) { m_EventClusteringDistanceCutOff = DistanceCutOff; }
   
   void SetEventClusteringTMVAFileName(MString FileName) { m_EventClusteringTMVAFileName = FileName; }
   void SetEventClusteringTMVAMethods(MERCSRTMVAMethods Methods) { m_EventClusteringTMVAMethods = Methods; }
@@ -385,6 +387,7 @@ class MRawEventAnalyzer
   double m_CoincidenceWindow;
   
   // Event clustering
+  double m_EventClusteringDistanceCutOff;
   MString m_EventClusteringTMVAFileName;
   MERCSRTMVAMethods m_EventClusteringTMVAMethods;
   

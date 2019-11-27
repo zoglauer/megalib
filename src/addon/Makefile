@@ -31,6 +31,7 @@ PRGSX = \
 	$(BN)/ExternalDataAnalysisExample \
 	$(BN)/ShowHistograms \
 	$(BN)/CompareHistograms \
+	$(BN)/DistanceOptimizerForEventClusterizer \
 	$(BN)/Revoxelizer \
 	$(BN)/IsotopeFileSplitter \
 	$(BN)/VariableSourceDetector \

@@ -51,9 +51,9 @@ using namespace std;
 #include "MAssert.h"
 #include "MTimer.h"
 #include "MERCoincidence.h"
-#include "MEREventClusterizerTMVA.h"
 #include "MERHitClusterizer.h"
 #include "MEREventClusterizer.h"
+#include "MEREventClusterizerDistance.h"
 #include "MEREventClusterizerTMVA.h"
 #include "MERTrack.h"
 #include "MERTrackPearson.h"
@@ -85,6 +85,7 @@ const int MRawEventAnalyzer::c_CoincidenceAlgoWindow = 1;
 
 const int MRawEventAnalyzer::c_EventClusteringAlgoNone     = 0;
 const int MRawEventAnalyzer::c_EventClusteringAlgoTMVA     = 1;
+const int MRawEventAnalyzer::c_EventClusteringAlgoDistance = 2;
 
 const int MRawEventAnalyzer::c_HitClusteringAlgoNone     = 0;
 const int MRawEventAnalyzer::c_HitClusteringAlgoDistance = 1;
@@ -303,6 +304,8 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetCoincidenceWindow(S->GetCoincidenceWindow());
   
   // event clustering
+  SetEventClusteringDistanceCutOff(S->GetEventClusteringDistanceCutOff());
+
   SetEventClusteringTMVAFileName(S->GetEventClusteringTMVAFileName());
   SetEventClusteringTMVAMethods(S->GetEventClusteringTMVAMethods());
   
@@ -1181,6 +1184,12 @@ bool MRawEventAnalyzer::PreAnalysis()
     if (m_EventClusteringAlgorithm == c_EventClusteringAlgoTMVA) {
       MEREventClusterizerTMVA* EC = new MEREventClusterizerTMVA();
       if (EC->SetTMVAFileNameAndMethod(m_EventClusteringTMVAFileName, m_EventClusteringTMVAMethods) == false) {
+        Return = false;
+      }
+      m_EventClusterizer = EC;
+    } else if (m_EventClusteringAlgorithm == c_EventClusteringAlgoDistance) {
+      MEREventClusterizerDistance* EC = new MEREventClusterizerDistance();
+      if (EC->SetDistanceCutOff(m_EventClusteringDistanceCutOff) == false) {
         Return = false;
       }
       m_EventClusterizer = EC;

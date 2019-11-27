@@ -94,8 +94,17 @@ void MGUIERAlgorithm::Create()
   
   m_EventClusteringList = new MGUIERBList(this, "Find multiple, coincident gamma rays in one event", true);
   m_EventClusteringList->Add("No event clustering (DEFAULT - unless you have the very rare case of pile up)");
+  m_EventClusteringList->Add("Event clustering using using interaction distances (alpha)");
   m_EventClusteringList->Add("Event clustering using TMVA machine learning (alpha)");
-  m_EventClusteringList->SetSelected(m_Data->GetEventClusteringAlgorithm());
+  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoNone) {
+    m_EventClusteringList->SetSelected(0);
+  } else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
+    m_EventClusteringList->SetSelected(2);
+  } else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoDistance) {
+    m_EventClusteringList->SetSelected(1);
+  } else {
+    m_EventClusteringList->SetSelected(0);
+  }
   m_EventClusteringList->Create();
   AddFrame(m_EventClusteringList, m_ListLayout);
   
@@ -183,8 +192,17 @@ bool MGUIERAlgorithm::OnApply()
   // The Apply button has been pressed
 
   m_Data->SetCoincidenceAlgorithm(m_CoincidenceList->GetSelected());
-  m_Data->SetEventClusteringAlgorithm(m_EventClusteringList->GetSelected());
+  
+  if (m_EventClusteringList->GetSelected() == 0) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoNone);
+  } else if (m_EventClusteringList->GetSelected() == 1) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoDistance);
+  } else if (m_EventClusteringList->GetSelected() == 2) {
+    m_Data->SetEventClusteringAlgorithm(MRawEventAnalyzer::c_EventClusteringAlgoTMVA);
+  }
+    
   m_Data->SetHitClusteringAlgorithm(m_HitClusteringList->GetSelected());
+  
   if (m_TrackingList->GetSelected() == 0) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoNone);
   } else if (m_TrackingList->GetSelected() == 1) {
@@ -202,8 +220,11 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
   }
+  
   m_Data->SetCSRAlgorithm(m_CSRList->GetSelected());
+  
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());
+  
   m_Data->SetDecayAlgorithm(0);
 
   return true;

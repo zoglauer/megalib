@@ -113,6 +113,8 @@ MSettingsEventReconstruction::MSettingsEventReconstruction() : MSettingsInterfac
   m_CSRTMVAFileName = "";
   m_CSRTMVAMethods.SetUsedMethods("BDTD");
   
+  m_EventClusteringDistanceCutOff = 1000;
+  
   m_EventClusteringTMVAFileName = "";
   m_EventClusteringTMVAMethods.SetUsedMethods("BDTD");
   
@@ -160,8 +162,9 @@ bool MSettingsEventReconstruction::WriteXml(MXmlNode* Node)
   new MXmlNode(Node, "DecayAlgorithm", m_DecayAlgorithm);
   new MXmlNode(Node, "CoincidenceWindow", m_CoincidenceWindow);
   
-  new MXmlNode(Node, "EventClusteringTMVAFile", CleanPath(m_EventClusteringTMVAFileName));
+  new MXmlNode(Node, "EventClusteringDistanceCutOff", m_EventClusteringDistanceCutOff);
   new MXmlNode(Node, "EventClusteringTMVAMethods", m_EventClusteringTMVAMethods.GetUsedMethodsString());
+  new MXmlNode(Node, "EventClusteringTMVAFile", CleanPath(m_EventClusteringTMVAFileName));
   
   new MXmlNode(Node, "StandardClusterizerMinDistanceD1", m_StandardClusterizerMinDistanceD1);
   new MXmlNode(Node, "StandardClusterizerMinDistanceD2", m_StandardClusterizerMinDistanceD2);
@@ -262,6 +265,9 @@ bool MSettingsEventReconstruction::ReadXml(MXmlNode* Node)
     m_CoincidenceWindow = aNode->GetValueAsDouble();
   }
   
+  if ((aNode = Node->GetNode("EventClusteringDistanceCutOff")) != 0) {
+    m_EventClusteringDistanceCutOff = aNode->GetValueAsDouble();
+  }
   if ((aNode = Node->GetNode("EventClusteringTMVAFile")) != 0) {
     m_EventClusteringTMVAFileName = aNode->GetValueAsString();
   }

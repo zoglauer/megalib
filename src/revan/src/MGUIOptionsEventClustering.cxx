@@ -78,11 +78,21 @@ void MGUIOptionsEventClustering::Create()
   SetWindowName("Options for clustering neighboring hits");  
 
   //TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
-
-  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
+  
+  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoDistance) {
     
+    AddSubTitle("Options for distance-based event clustering"); 
+    
+    m_DistanceCutOff = new MGUIEEntry(this, "Distance cut off [cm]:", false, m_Data->GetEventClusteringDistanceCutOff(), true, 0.0);
+    TGLayoutHints* EntryLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 0);
+    AddFrame(m_DistanceCutOff, EntryLayout);
+  } 
+  
+  
+  else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
+      
     AddSubTitle("Options for TMVA-based event clustering"); 
-    
+      
     TGLayoutHints* TMVAFileSelectorLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 20, 20, 10, 2);
     m_TMVAFileSelector = 
     new MGUIEFileSelector(this, "File containing the TMVA data (\".tmva\"):", 
@@ -136,7 +146,9 @@ bool MGUIOptionsEventClustering::OnApply()
 {
   // The Apply button has been pressed
 
-  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
+  if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoDistance) {
+    m_Data->SetEventClusteringDistanceCutOff(m_DistanceCutOff->GetAsDouble());
+  } else if (m_Data->GetEventClusteringAlgorithm() == MRawEventAnalyzer::c_EventClusteringAlgoTMVA) {
     m_Data->SetEventClusteringTMVAFileName(m_TMVAFileSelector->GetFileName());
     MERCSRTMVAMethods M;
     M.AddUsedMethod(m_TMVAMethodsMap[m_TMVAMethods->GetSelected()]);

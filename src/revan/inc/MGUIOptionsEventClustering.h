@@ -61,6 +61,8 @@ class MGUIOptionsEventClustering : public MGUIDialog
  private:
   MSettingsEventReconstruction* m_Data;
 
+  MGUIEEntry* m_DistanceCutOff;
+  
   MGUIEFileSelector* m_TMVAFileSelector;
   MGUIERBList* m_TMVAMethods;
   //! Map button IDs to TMVA methods

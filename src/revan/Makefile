@@ -29,6 +29,7 @@ FILES = MGeometryRevan \
 	MERNoising \
 	MERCoincidence \
 	MEREventClusterizer \
+	MEREventClusterizerDistance \
 	MEREventClusterizerTMVA \
 	MEREventClusterizerDataSet \
 	MERHitClusterizer \
