@@ -117,7 +117,7 @@ fi
 
 # Download setup script
 cd ${MEGALIBPATH}; 
-curl -O https://raw.githubusercontent.com/zoglauer/megalib/master/setup.sh
+curl -O https://raw.githubusercontent.com/zoglauer/megalib/${BRANCH}/setup.sh
 if [ "\$?" != "0" ]; then
   echo "DMEGALIBERROR 3"
   exit 3
