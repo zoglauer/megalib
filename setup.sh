@@ -159,7 +159,7 @@ RELEASE="rel"
 EXTERNALPATH=""
 ROOTPATH=""
 GEANT4PATH=""
-OS=`uname -s`
+OSTYPE=$(uname -s)
 OPT="normal"
 DEBUG="off"
 UPDATES="off"
@@ -168,15 +168,14 @@ CLEANUP="off"
 BRANCH=""
 
 MAXTHREADS=1;
-if [[ ${OSTYPE} == darwin* ]]; then
+if [[ ${OSTYPE} == *arwin* ]]; then
   MAXTHREADS=`sysctl -n hw.logicalcpu_max`
-elif [[ ${OSTYPE} == linux* ]]; then
+elif [[ ${OSTYPE} == *inux* ]]; then
   MAXTHREADS=`grep processor /proc/cpuinfo | wc -l`
 fi
 if [ "$?" != "0" ]; then
   MAXTHREADS=1
 fi
-
 
 
 # Prelude - Find an old configuration
@@ -260,7 +259,7 @@ done
 # Everything to lower case:
 REPOSITORY=`echo ${REPOSITORY} | tr '[:upper:]' '[:lower:]'`
 RELEASE=`echo ${RELEASE} | tr '[:upper:]' '[:lower:]'`
-OS=`echo ${OS} | tr '[:upper:]' '[:lower:]'`
+OSTYPE=`echo ${OSTYPE} | tr '[:upper:]' '[:lower:]'`
 OPT=`echo ${OPT} | tr '[:upper:]' '[:lower:]'`
 DEBUG=`echo ${DEBUG} | tr '[:upper:]' '[:lower:]'`
 COMP=`echo ${COMP} | tr '[:upper:]' '[:lower:]'`
@@ -429,15 +428,15 @@ if [[ ${BRANCH} != "" ]]; then
 fi
 
 
-if [[ ${OS} == l* ]]; then
-  OS="linux"
+if [[ ${OSTYPE} == *inux* ]]; then
+  OSTYPE="linux"
   echo " * Using operating system architecture Linux"
-elif ( [[ ${OS} == d* ]] || [[ ${OS} == m* ]] ); then
-  OS="darwin"
+elif ( [[ ${OSTYPE} == d* ]] || [[ ${OSTYPE} == m* ]] ); then
+  OSTYPE="darwin"
   echo " * Using operating system architecture Darwin (Mac OS X)"
 else
   echo " "
-  echo "ERROR: Unknown operating system architecture: ${OS}"
+  echo "ERROR: Unknown operating system architecture: \"${OSTYPE}\""
   confhelp
   exit 1
 fi
@@ -848,9 +847,9 @@ echo "MEGALIBDIR=${MEGALIBPATH}" >> ${ENVFILE}
 
 # Do a compiler test
 COMPILER="g++"
-if [[ ${OS} == linux ]]; then
+if [[ ${OSTYPE} == linux ]]; then
   COMPILER="g++"
-elif [[ ${OS} == macosx ]]; then
+elif [[ ${OSTYPE} == macosx ]]; then
   COMPILER="c++"
 fi
 
@@ -1010,7 +1009,7 @@ source ${ENVFILE}
 cd ${MEGALIB}
 
 echo "Configuring MEGAlib..."
-bash configure --os=${OS} --debug=${DEBUG} --opt=${OPT} --updates=${UPDATES}
+bash configure --os=${OSTYPE} --debug=${DEBUG} --opt=${OPT} --updates=${UPDATES}
 if [ "$?" != "0" ]; then
   echo " "
   echo "ERROR: Something went wrong during MEGAlib configuration"
