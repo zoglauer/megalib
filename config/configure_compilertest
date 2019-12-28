@@ -14,8 +14,9 @@ fi
 
 type xcode-select >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-  OUT=$(pkgutil --files com.apple.pkg.CLTools_Executables 2>&1)
-  if [[ ${OUT} == No* ]] || [[ ${OUT} == "pkgutil: command not found" ]]; then
+  # Check if git is here:
+  COMPILEREXE=`xcode-select -p`/usr/bin/${COMPILER}
+  if [ ! -f ${COMPILEREXE} ]; then
     echo "ERROR: You seem to be on macOS but the command line tools have not been installed completely"
     echo "       Please execute \"xcode-select --install\", open a new terminal, and try again to run this script"
     exit 1;
