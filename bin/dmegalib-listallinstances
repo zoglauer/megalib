@@ -65,7 +65,9 @@ SSHFLAGS=" -4 -o ConnectTimeout=5 -o PreferredAuthentications=publickey "
 OUTPUT=$"Instances:# Available #/# Running #/# Allowed\n"
 OUTPUT+=$" # \n"
 ALLALLOWED="0"
+ALLRUNNING="0"
 ALLPOSSIBLE="0"
+ALLMACHINES="0"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Do a quick test if the machine is available:
@@ -140,7 +142,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     POSSIBLE="0"
   fi
   ALLPOSSIBLE=$(( ${ALLPOSSIBLE} + ${POSSIBLE} ))
-
+  ALLMACHINES=$(( ${ALLMACHINES} + 1 ))
     
   OUTPUT+=$" * Machine ${REMOTENAME} (${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}):# ${ALLOWED} #/# ${RUNNING} #/# ${POSSIBLE}\n"
 done
@@ -150,7 +152,11 @@ OUTPUT+=$" # \n"
 OUTPUT+=$"Total number of instances:# ${ALLALLOWED} #/# ${ALLRUNNING} #/# ${ALLPOSSIBLE}\n"
 
 echo " "
-echo -e "${OUTPUT}" | column -t -s'#'
+if [ ${ALLMACHINES} -gt 0 ]; then
+  echo -e "${OUTPUT}" | column -t -s'#'
+else
+  echo "No machines available"
+fi
 echo " "
 
 exit 0
