@@ -1,0 +1,47 @@
+# Benchmark summary file
+ 
+HostName:                                  despina
+ 
+OSFlavour:                                 ubuntu
+OSVersion:                                 19.10
+Kernel:                                    5.3.0-26-generic
+ 
+CPUModel:                                  AMD Ryzen Threadripper 3960X 24-Core Processor
+CPUName:                                   Ryzen Threadripper 3960X
+CPUSockets:                                1
+CPUCoresPerSocket:                         24
+CPUThreadsPerCore:                         2
+Cores:                                     24
+Threads:                                   48
+ 
+ROOTVersion:                               6.18/04
+Geant4Version:                             10.2.3
+ 
+MEGAlibVersion:                            2.99.11
+MEGAlibGitHash:                            74af11d2a49e8cee947c6467d39952e820d1bfdf 2020-01-14
+MEGAlibOptimization:                       -O -DNDEBUG
+ 
+# Cosima
+DurationCosimaSingle:                      17.650
+EventsPerSecondCosimaSingle:               5665.722
+DurationCosimaMultiple:                    32.817
+EventsPerSecondCosimaMultiple:             146265.654
+ 
+# Revan
+DurationRevanSingle:                       4.284
+EventsPerSecondRevanSingle:                23342.670
+DurationRevanMultiple:                     7.537
+EventsPerSecondRevanMultiple:              636858.166
+ 
+# ResponseCreator
+DurationResponseCreatorSingle:             15.744
+EventsPerSecondResponseCreatorSingle:      6351.626
+DurationResponseCreatorMultiple:           27.082
+EventsPerSecondResponseCreatorMultiple:    177239.494
+ 
+# MimrecImaging
+DurationMimrecImagingSingle:               44.097
+EventsPerSecondMimrecImagingSingle:        2267.727
+DurationMimrecImagingMultiple:             4.202
+EventsPerSecondMimrecImagingMultiple:      23798.191
+ 
