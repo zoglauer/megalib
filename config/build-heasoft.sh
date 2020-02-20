@@ -130,7 +130,7 @@ else
 
   # Now check root repository for the given version:
   #TARBALL=`curl ftp://legacy.gsfc.nasa.gov/software/lheasoft/release/ -sl | grep "^heasoft\-" | grep "[0-9]src.tar.gz$"`
-  TARBALL=$(curl https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/ -sl | grep ">heasoft-" | grep "[0-9]src.tar.gz<" | awk -F">" '{ print $3 }' | awk -F"<" '{print $1 }')
+  TARBALL=$(curl https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/ -sl | grep ">heasoft-" | grep "[0-9]src.tar.gz<" | awk -F">" '{ print $3 }' | awk -F"<" '{print $1 }' | sort | head -n 1)
   if [ "${TARBALL}" == "" ]; then
     echo "ERROR: Unable to find suitable HEASoft tar ball at the HEASoft website"
     exit 1
@@ -141,17 +141,21 @@ else
   REQUIREDOWNLOAD="true"
   if [ -f "${TARBALL}" ]; then
     # ... and has the same size
-    LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl --head https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL}`
+    LOCALSIZE=$(wc -c < ${TARBALL} | tr -d ' ')
+    REMOTESIZE=$(curl -s --head https://heasarc.gsfc.nasa.gov/FTP/software/lheasoft/release/${TARBALL} | grep -i "Content-Length" | awk '{print $2}' | sed 's/[^0-9]*//g') 
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
     fi
-    SAMESIZE=`echo ${SAMESIZE} | grep ${LOCALSIZE}`
-    if [ "${SAMESIZE}" != "" ]; then
+    IDENTICAL=`echo ${REMOTESIZE} | grep ${LOCALSIZE}`
+    if [ "${IDENTICAL}" != "" ]; then
       REQUIREDOWNLOAD="false"
       echo "File is already present and has same size, thus no download required!"
+    else
+      echo "Remote and local file sizes are different (local: ${LOCALSIZE} vs. remote: ${REMOTESIZE}). Downloading it."
     fi
+  else
+    echo "Tarball does not exist, downloading it"
   fi
 
   if [ "${REQUIREDOWNLOAD}" == "true" ]; then
