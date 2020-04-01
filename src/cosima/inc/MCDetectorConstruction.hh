@@ -68,6 +68,10 @@ public:
   /// Return the geometry
   MDGeometryQuest* GetGeometry() { return m_Geometry; }
 
+  /// Return true is the position is within the world volume
+  bool IsInsideWorldVolume(const G4ThreeVector& Position) const;
+  
+  
   // protected methods:
 protected:
   /// Convert from MEGAlib materials to Geant4 ones

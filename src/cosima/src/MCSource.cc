@@ -3259,6 +3259,12 @@ bool MCSource::GeneratePosition(G4GeneralParticleSource* Gun)
     return false;
   }
   
+  // Sanity check that the position is within the world volume
+  if (MCRunManager::GetMCRunManager()->GetDetectorConstruction()->IsInsideWorldVolume(m_Position) == false) {
+    mout<<"  ***  ERROR  ***   "<<m_Name<<": The position "<<m_Position/cm<<" cm is outside the world volume! Please make your world volume larger or your simulations are incorrect!"<<endl;
+    return false;      
+  }
+  
   Gun->GetCurrentSource()->GetPosDist()->SetPosDisType("Point");
   Gun->GetCurrentSource()->GetPosDist()->SetCentreCoords(m_Position);
   Gun->GetCurrentSource()->GetAngDist()->SetParticleMomentumDirection(m_Direction);  

@@ -1256,6 +1256,16 @@ bool MCDetectorConstruction::HasVolume(const MString& VolumeName) const
 }
 
 
+
+/******************************************************************************
+ * Return true is the position is within the world volume
+ */
+bool MCDetectorConstruction::IsInsideWorldVolume(const G4ThreeVector& Position) const
+{
+  return m_Geometry->GetWorldVolume()->IsInside(MVector(Position.getX()/cm, Position.getY()/cm, Position.getZ()/cm));  
+}
+
+
 /******************************************************************************
  * Return true if the volume is valid volume in the geometry
  */
