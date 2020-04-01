@@ -117,7 +117,8 @@ MCSteppingAction::MCSteppingAction(MCParameterFile& RunParameters) :
   m_KnownProcess.push_back("PenConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("LowEnConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
   m_KnownProcess.push_back("LowEnPolarizConversion"); m_KnownProcessID.push_back(c_ProcessIDPair);
-
+  m_KnownProcess.push_back("muPairProd"); m_KnownProcessID.push_back(c_ProcessIDPair);
+  
   m_KnownProcess.push_back("annihil"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
   m_KnownProcess.push_back("PenAnnih"); m_KnownProcessID.push_back(c_ProcessIDAnnihilation);
   
@@ -1137,7 +1138,7 @@ void MCSteppingAction::UserSteppingAction(const G4Step* Step)
     } else {
       if (ProcessID == c_ProcessIDUncovered) {
         merr<<"Uncovered process: "<<ProcessName<<" - please inform the lead developers of this problem."<<endl
-            <<"-> Your simulations are ok - you only might miss an IA line in the sim file."<<show;
+            <<"-> Your simulations are completely OK - you only might miss an IA line in the sim file."<<show;
       }
 
   
