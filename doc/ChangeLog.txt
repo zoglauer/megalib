@@ -10,8 +10,7 @@ Version 2.99/3.00
 
 + Big update to revan and mimrec to allow triple-compton PET reconstruction 
   requiring significant internal changes (v2.99.10)
-  If something is not working email me.
-+ Default ROOT version is now 6.14, default Geant4 version is 10.2
++ Default ROOT version is now 6.18, default Geant4 version is 10.2
  
 
 *** KNOWN ISSUES
@@ -29,6 +28,8 @@ General:
 + Official MEGAlib docker container 
 + Removed old Visual Studio projects since MEGAlib can now be run in a
   container and on Linux on Windows
++ Dropped svn & cvs support in the setup script
++ Added benchmark in resource/examples/Benchmark
 
 Cosima:
 + Support for Geant4 10.2
@@ -48,6 +49,7 @@ Sivan:
 
 Fretalon:
 + Many smaller enhancements triggered by COSI analysis
++ Detection enhancements in Melinator
 
 Geomega:
 + New option to show the surrounding sphere (ShowSurroundingsphere true)
@@ -94,6 +96,7 @@ Addons:
 Examples:
 + The EventList example demonstrates the use of event list during simulation
   basically allowing any arbitrary beam/spectrum/polarization input
++ GRB sampling based on BATSE catalog
 
   
 ... plus many, many smaller things I already forgot about :)
