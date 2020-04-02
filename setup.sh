@@ -531,10 +531,10 @@ if [ -d $MEGALIBPATH ]; then
 
     if [ "${BRANCH}" == "" ]; then
 
-      Branch=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
+      BRANCH=`git ls-remote --heads git://github.com/zoglauer/megalib.git | grep MEGAlib_v | awk -F"refs/heads/" '{ print $2 }' | sort -n | tail -n 1`
       if [ "${CurrentBranch}" != "${Branch}" ]; then
         echo "Switching to latest release version of MEGAlib from the git repository..."
-        git checkout ${Branch}
+        git checkout ${BRANCH}
         if [ "$?" != "0" ]; then
           echo " "
           echo "ERROR: Unable to update the git repository to the latest release branch"
@@ -552,11 +552,11 @@ if [ -d $MEGALIBPATH ]; then
       fi
     fi
 
-    echo "Fast forwarding to the head"
-    git pull origin
+    echo "Fast forwarding to the head of branch ${BRANCH}..."
+    git pull origin ${BRANCH}
     if [ "$?" != "0" ]; then
       echo " "
-      echo "ERROR: Unable to fast forward to the head"
+      echo "ERROR: Unable to fast forward to the head of this branch"
       exit 1
     fi
 
