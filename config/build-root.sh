@@ -46,7 +46,12 @@ type python3 >/dev/null 2>&1
 if [[ $? -eq 0 ]]; then
   PPATH=$(which python3)
   if [[ -f ${PPATH} ]]; then
-    CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE:FILEPATH=${PPATH} -Dpython3=ON"
+    if [[ ${PPATH} == *conda* ]]; then
+      echo "ERROR: You cannot use a python version installed via (ana)conda with ROOT."
+      exit 1
+    else
+      CONFIGUREOPTIONS+=" -DPYTHON_EXECUTABLE:FILEPATH=${PPATH} -Dpython3=ON"
+    fi
   fi
 fi
 
@@ -577,7 +582,7 @@ if [[ ${CLEANUP} == on ]]; then
   if [[ ${ROOTBUILDDIR} == root_v*-build ]]; then
     rm -rf ${ROOTBUILDDIR}
     if [ "$?" != "0" ]; then
-      echo "ERROR: Unable to remove buuld directory!"
+      echo "ERROR: Unable to remove build directory!"
       exit 1
     fi
   else
