@@ -70,7 +70,7 @@ bool MPrelude::Play()
   m_Settings.Read();
 
   // Step 1: Take care of the license file
-  MString LicenseFile = "$(MEGALIB)/doc/License.txt";
+  MString LicenseFile = "$(MEGALIB)/LICENSE";
   MFile::ExpandFileName(LicenseFile);
   if (MFile::Exists(LicenseFile) == true) {
     ifstream in;
