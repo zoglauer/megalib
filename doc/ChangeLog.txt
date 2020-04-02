@@ -8,6 +8,7 @@ Version 2.99/3.00
 
 *** IMPORTANT - PLEASE READ:
 
++ Switch to GPL v3 license
 + Big update to revan and mimrec to allow triple-compton PET reconstruction 
   requiring significant internal changes (v2.99.10)
 + Default ROOT version is now 6.18, default Geant4 version is 10.2
