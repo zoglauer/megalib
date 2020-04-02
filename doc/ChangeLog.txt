@@ -3,6 +3,14 @@
 ******************************************************************************
 
 
+*** SUPER IMPORTANT
+
+This branch is no longer under active development. All changes have been 
+merged back into the master branch. Please use the master branch from now on. 
+
+*** SUPER IMPORTANT
+
+
 Version 2.99/3.00
 =================
 
