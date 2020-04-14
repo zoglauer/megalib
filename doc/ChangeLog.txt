@@ -3,6 +3,10 @@
 ******************************************************************************
 
 
+
+
+
+
 Version 2.99/3.00
 =================
 
@@ -44,6 +48,9 @@ Cosima:
 + Replaced "StoreOnlyTriggeredEvents" with "PreTriggerMode" using 3 modes:
   Full, EveryEventWithHits & Everything
 + Updated all examples
++ In the documentation, the break energy of the Band function was 
+  accidentially called peak energy (formula was correct)
+
 
 Sivan:
 + Enabled comments (and their passing through) in the sim file ("CC" tag)
