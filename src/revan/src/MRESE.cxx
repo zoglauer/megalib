@@ -165,6 +165,8 @@ MRESE::MRESE(MRESE* RESE)
 
   m_RESEList = RESE->GetRESEList()->Duplicate();
   m_LinkList = new MRESEList();
+  
+  m_NoiseFlags = RESE->m_NoiseFlags;
 }
 
 
@@ -218,6 +220,8 @@ void MRESE::Reset()
 
   m_IsValid = true;
   m_AllowOverwrite = true;
+  
+  m_NoiseFlags = "";
 }
 
 

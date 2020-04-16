@@ -206,7 +206,7 @@ class MDDetector
   virtual vector<MDGridPoint> Grid(const MVector& Pos, const double& Energy, const double& Time, const MDVolume* Volume) const = 0;
     
   //! Noise a normal hit
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const = 0;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const = 0;
   
   //! Noise a guard ring hit - if the detector has a guard ring
   //virtual bool NoiseGuardRing(double&) const { return false; }

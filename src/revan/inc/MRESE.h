@@ -92,7 +92,9 @@ class MRESE
   virtual double GetTime(); 
   virtual double GetTimeResolution(); 
   virtual void SetDetector(int Detector); 
-  virtual int GetDetector(); 
+  virtual int GetDetector();
+  virtual void SetNoiseFlags(MString NoiseFlags) { m_NoiseFlags = NoiseFlags; } 
+  virtual MString GetNoiseFlags() const { return m_NoiseFlags; } 
   virtual void SetVolumeSequence(MDVolumeSequence* VS);
   virtual MDVolumeSequence* GetVolumeSequence();
  
@@ -229,6 +231,9 @@ class MRESE
   //! Storage for the container-interface
   MRESEList* m_RESEList;
 
+  //! Flags from noising
+  MString m_NoiseFlags;
+  
   // private members:
  private:
   //! Counts the distributed IDs

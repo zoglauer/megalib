@@ -159,7 +159,7 @@ bool MDCalorimeter::SetDepthResolutionAt(const double Energy,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDCalorimeter::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise Position and Energy:
 

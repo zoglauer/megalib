@@ -106,12 +106,17 @@ class MDGridPoint
   unsigned int GetHits() const { return m_Hits; }
   //! Set the hits of this grid position
   void SetHits(const unsigned int Hits) { m_Hits = Hits; }
-
+  
   //! Return the weight of this grid position
   double GetWeight() const { return m_Weight; }
   //! Set the weight of this grid position
   void SetWeight(const double Weight) { m_Weight = Weight; }
-
+  
+  //! Return the flags for this grid position
+  MString GetFlags() const { return m_Flags; }
+  //! Set the flags of this grid position
+  void SetFlags(const MString Flags) { m_Flags = Flags; }
+  
   //! Return all hit origins at this grid position (Used only by sivan)
   vector<int> GetOrigins() const { return m_Origins; }
   //! Set all hit origins at this grid position (Used only by sivan)
@@ -185,11 +190,16 @@ class MDGridPoint
   //! Hit origins at this grid position (Used only by sivan)
   vector<int> m_Origins;
   
+  //! Special flags from the DEE
+  MString m_Flags;
+  
   //! True is the hit is above the trigger threshold -- NOT is it triggered
   bool m_IsAboveTriggerThreshold;
   
   //! True if the grid point need to be read-out
   bool m_IsReadOut;
+  
+  
   
   
 #ifdef ___CLING___

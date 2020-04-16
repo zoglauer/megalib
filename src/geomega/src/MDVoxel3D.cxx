@@ -206,7 +206,7 @@ void MDVoxel3D::HasGuardRing(bool HasGuardRing)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise energy of this hit:
 
@@ -214,6 +214,7 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   // Test for failure:
   if (gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -222,7 +223,9 @@ void MDVoxel3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   ApplyEnergyResolution(Energy);
 
   // Overflow:
-  ApplyOverflow(Energy);
+  if (ApplyOverflow(Energy) == true) {
+    Flags += " OVERFLOW";
+  }
 
   // Noise threshold:
   //if (ApplyNoiseThreshold(Energy) == true) {

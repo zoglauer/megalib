@@ -194,11 +194,11 @@ bool MDDriftChamber::NoiseLightEnergy(double& Energy) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDDriftChamber::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDDriftChamber::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // Noise Position and energy of this hit:
 
-  MDStrip3D::Noise(Pos, Energy, Time, Volume);
+  MDStrip3D::Noise(Pos, Energy, Time, Flags, Volume);
 }
 
 

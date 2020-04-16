@@ -64,6 +64,9 @@ class MREHit : public MRESE
   bool UpdateVolumeSequence(MDGeometryQuest* Geometry);
   //! Retrieve the resolutions from the geometry
   bool RetrieveResolutions(MDGeometryQuest* Geometry);
+  
+  // TODO: Delete!
+  
   //! Noise the positions, energies and times (!!make sure to do this only for simulations and  only once!!)
   bool Noise(MDGeometryQuest* Geometry);
   //! Split the hit (due to e.g. charge sharinh)
@@ -74,7 +77,7 @@ class MREHit : public MRESE
  private:
   //! Flag indicating the resolutions have been set externally
   bool m_FixedResolutions;
-   
+
   
 #ifdef ___CLING___
  public:

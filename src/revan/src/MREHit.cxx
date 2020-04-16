@@ -440,21 +440,22 @@ bool MREHit::Noise(MDGeometryQuest* Geometry)
   
   //cout<<"Pos before: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
   if (Geometry != 0) {
-    Geometry->Noise(m_Position, m_Energy, m_Time, *m_VolumeSequence);
+    m_NoiseFlags = "";
+    Geometry->Noise(m_Position, m_Energy, m_Time, m_NoiseFlags, *m_VolumeSequence);
+    cout<<"NF: "<<m_NoiseFlags<<endl;
   }
   //cout<<"Pos after: "<<m_Position[0]<<"!"<<m_Position[1]<<"!"<<m_Position[2]<<endl;
   
-  if (m_Detector < MDDetector::c_MinDetector || 
-    m_Detector > MDDetector::c_MaxDetector) {
+  if (m_Detector < MDDetector::c_MinDetector || m_Detector > MDDetector::c_MaxDetector) {
     merr<<"Unknown detector ID: "<<m_Detector<<show;
-  return false;
-    }
+    return false;
+  }
     
-    if (m_Energy > 0) {
-      return true;
-    } else {
-      return false;
-    }
+  if (m_Energy > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 

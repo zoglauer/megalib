@@ -1832,7 +1832,7 @@ double MDVolume::DistanceInsideOut(MVector Pos)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
+bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags)
 {
   // Pos is in the mothers coordinate system.
   // So translate and rotate the position into this volumes coordinate system
@@ -1861,7 +1861,7 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
   for (i = 0; i < i_max; i++) {
     //cout<<"Checking daughters... of "<<m_Name<<endl;
     Pos = OldPos;
-    if (GetDaughterAt(i)->Noise(Pos, Energy, Time) == true) {
+    if (GetDaughterAt(i)->Noise(Pos, Energy, Time, Flags) == true) {
       //cout<<"Noised!!! Pos in "<<m_Name<<": "<<Pos.X()<<"!"<<Pos.Y()<<"!"<<Pos.Z()<<endl;
       // OK it had been noised
       // So rotate/translate back and return:
@@ -1887,15 +1887,15 @@ bool MDVolume::Noise(MVector& Pos, double& Energy, double& Time)
       MDDetector* D = m_Detector->FindNamedDetector(*VS);
       if (D != 0) {
         //cout<<"Named detector found"<<endl;
-        D->Noise(Pos, Energy, Time, this);
+        D->Noise(Pos, Energy, Time, Flags, this);
       } else {
         //cout<<"No named detector found"<<endl;
-        m_Detector->Noise(Pos, Energy, Time, this);
+        m_Detector->Noise(Pos, Energy, Time, Flags, this);
       }
       delete VS;
     } else {
       //cout<<"Noise: we have NO named detectors"<<endl;
-      m_Detector->Noise(Pos, Energy, Time, this);
+      m_Detector->Noise(Pos, Energy, Time, Flags, this);
     }
     // Rotate back:
     if (m_IsRotated == true) {

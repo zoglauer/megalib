@@ -65,6 +65,36 @@ MSimHT::MSimHT(MDGeometryQuest* Geo)
 
   m_Cluster = 0;
   m_VolumeSequence = 0;
+  
+  m_NoiseFlags = "";
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MSimHT::MSimHT(const int Detector, const MVector& Position, const double Energy, 
+               const double Time, const vector<int>& Origins, 
+               MDGeometryQuest* Geometry)
+{
+  // Correctly initialize the pointers:
+  m_VolumeSequence = 0;
+
+  // Basic data:
+  m_Geometry = Geometry; // We need this first
+
+  SetDetector(Detector);
+  SetPosition(Position);
+  SetEnergy(Energy);
+  SetTime(Time);
+  m_Origins = Origins;
+
+  // More sophisticated data:
+  m_OriginalPosition = m_Position;
+  m_OriginalEnergy = m_Energy;
+  m_Added = false;
+  
+  m_NoiseFlags = "";
 }
 
 
@@ -95,6 +125,8 @@ MSimHT::MSimHT(const MSimHT& HT)
     m_VolumeSequence = 0;
   }
 
+  m_NoiseFlags = HT.m_NoiseFlags;
+  
   m_Cluster = 0;
 }
 
@@ -510,7 +542,8 @@ bool MSimHT::Noise(bool RecalculateVolumeSequence)
       }
     }
     if (m_Geometry->GetActivateNoising() == true) {
-      m_Geometry->Noise(m_Position, m_Energy, m_Time, *m_VolumeSequence);
+      m_NoiseFlags = "";
+      m_Geometry->Noise(m_Position, m_Energy, m_Time, m_NoiseFlags, *m_VolumeSequence);
       if (m_Energy <= 0.0) return false;
     }    
   }

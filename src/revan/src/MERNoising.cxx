@@ -151,6 +151,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       Hit->SetEnergy(P.GetEnergy());
       Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
       Hit->SetTime(P.GetTime());
+      Hit->SetNoiseFlags(P.GetFlags());
       Hit->UpdateVolumeSequence(m_Geometry);
       Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
       Hit->RetrieveResolutions(m_Geometry);

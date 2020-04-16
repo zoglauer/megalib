@@ -59,8 +59,8 @@ class MDGeometryQuest : public MDGeometry
   MDGridPointCollection Grid(MVector& Pos, double& Energy, double& Time, MDVolumeSequence& VS);
   
   
-  bool Noise(MVector& Pos, double& Energy, double& Time);
-  bool Noise(MVector& Pos, double& Energy, double& Time, MDVolumeSequence& VS);
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags);
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolumeSequence& VS);
   void ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 
   void GetResolutions(MVector Pos, double Energy, double Time, 

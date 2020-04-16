@@ -49,6 +49,7 @@ MSimGR::MSimGR(MDGeometryQuest* Geo)
   m_OriginalEnergy = m_Energy;
   m_VolumeSequence = 0;
   m_Geometry = Geo;
+  m_NoiseFlags = "";
 }
 
 
@@ -71,6 +72,8 @@ MSimGR::MSimGR(const int DetectorType, const MVector& Position, const double Ene
   }
   
   m_OriginalEnergy = m_Energy;
+  
+  m_NoiseFlags = "";
 }
 
 
@@ -181,7 +184,8 @@ bool MSimGR::Noise(bool RecalculateVolumeSequence)
     if (m_Geometry->GetActivateNoising() == true) {
       if (m_VolumeSequence->GetDetector()->HasGuardRing() == true) {
         double DummyTime = 0.0;
-        m_VolumeSequence->GetDetector()->GetGuardRing()->Noise(m_Position, m_Energy, DummyTime, nullptr);
+        m_NoiseFlags = "";
+        m_VolumeSequence->GetDetector()->GetGuardRing()->Noise(m_Position, m_Energy, DummyTime, m_NoiseFlags, nullptr);
       } else {
         mout<<"The detector of this guard ring hit at "<<m_Position<<" has no guard ring detector!"<<endl;
         mout<<"  --> It will not show up in the later analysis!"<<endl;

@@ -41,7 +41,7 @@ class MDVoxel3D : public MDDetector
   //! Copy data to named detectors
   virtual bool CopyDataToNamedDetectors();
 
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const;
   
   //! Grid a hit, here: split due to charge transport
   virtual vector<MDGridPoint> Grid(const MVector& Pos, const double& Energy, const double& Time, const MDVolume* Volume) const;

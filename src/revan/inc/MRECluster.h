@@ -51,10 +51,18 @@ class MRECluster : public MRESE
 
   bool IsValid();
 
+  
   // protected methods:
  protected:
   void AddHit(MREHit *Hit);
-
+  
+  
+  // private members:
+private:
+  //! If set, the z-position (depth) of events with missing z-information is ignored
+  bool m_IgnoreMissingDepth;
+  
+  
 
 #ifdef ___CLING___
  public:

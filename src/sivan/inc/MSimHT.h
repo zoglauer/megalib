@@ -181,7 +181,9 @@ class MSimHT
   //! A flag, indicating whether this hit has been added to something or not
   bool m_Added;           
 
-
+  //! The flags from noising
+  MString m_NoiseFlags;
+  
 #ifdef ___CLING___
  public:
   ClassDef(MSimHT, 0)

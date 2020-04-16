@@ -197,7 +197,7 @@ void MDAngerCamera::SetPositionResolutionXYZ(const double Energy,
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDAngerCamera::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
 
   if (m_NoiseActive == false) return;

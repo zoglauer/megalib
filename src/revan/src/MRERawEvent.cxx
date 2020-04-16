@@ -1088,7 +1088,13 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       // Add as hits:
       MRESE* Start = m_Start;
       CE->AddHit(Start->CreatePhysicalEventHit());
+      if (m_Start->GetNoiseFlags().Contains("NODEPTH") == true) {
+        CE->SetBad(true, "NODEPTH"); 
+      }
       MRESE* Middle = Start->GetLinkAt(0);
+      if (Middle->GetNoiseFlags().Contains("NODEPTH") == true) {
+        CE->SetBad(true, "NODEPTH"); 
+      }
       CE->AddHit(Middle->CreatePhysicalEventHit());
       while (Middle->GetNLinks() > 1) {
         MRESE* End = Middle->GetOtherLink(Start);
@@ -1096,6 +1102,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
         Start = Middle;
         Middle = End;
       }
+      
       
       m_Event = (MPhysicalEvent*) CE;
     } else if (m_EventType == c_PairEvent) {

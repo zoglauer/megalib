@@ -188,10 +188,12 @@ MDGridPointCollection MDGeometryQuest::Grid(MVector& Pos, double& Energy, double
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time, MDVolumeSequence& S)
+bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolumeSequence& S)
 {
   // Noise a hit
 
+  cout<<"Noise"<<endl;
+  
   if (m_GeometryScanned == false) {
     mgui<<"Geometry has to be scanned first"<<error;
     merr<<"Geometry has to be scanned first"<<endl;
@@ -216,7 +218,8 @@ bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time, MDVolume
   }
 
   // Now we are in the detector voxel...
-  S.GetDetector()->Noise(Pos, Energy, Time, S.GetDeepestVolume());
+  S.GetDetector()->Noise(Pos, Energy, Time, Flags, S.GetDeepestVolume());
+  cout<<"GQ _ NF: "<<Flags<<endl;
 
   // Now correctly rotate the position resolution into world coordinated:
   for (unsigned int i = S.GetNVolumes()-1; i < S.GetNVolumes(); --i) {
@@ -233,12 +236,12 @@ bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time, MDVolume
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time)
+bool MDGeometryQuest::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags)
 {
   // Noise a hit
 
   MDVolumeSequence VS = GetVolumeSequence(Pos, true, true);
-  return Noise(Pos, Energy, Time, VS);
+  return Noise(Pos, Energy, Time, Flags, VS);
 }
  
 

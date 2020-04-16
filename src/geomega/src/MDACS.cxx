@@ -117,13 +117,14 @@ void MDACS::SetDetectorVolume(MDVolume *Volume)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
 
   if (m_NoiseActive == false) return;
 
   // Test for failure:
   if (gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -132,7 +133,9 @@ void MDACS::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) 
   ApplyEnergyResolution(Energy);
 
   // Overflow:
-  ApplyOverflow(Energy);
+  if (ApplyOverflow(Energy) == true) {
+    Flags += " OVERFLOW"; 
+  }
   
   // Noise threshold:
   //if (ApplyNoiseThreshold(Energy) == true) {

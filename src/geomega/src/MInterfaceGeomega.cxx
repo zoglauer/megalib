@@ -603,6 +603,7 @@ void MInterfaceGeomega::GetResolutions()
     double TimeIn;
     double TimeOut;
     double Depth;
+    MString Flags;
     for (int i = 0; i < NBins*NBins*100; ++i) {
       EnergyIn = gRandom->Uniform(Emin, Emax);
       EnergyOut = EnergyIn;
@@ -615,7 +616,7 @@ void MInterfaceGeomega::GetResolutions()
       PosOut = PosIn;
       TimeIn = 0;
       TimeOut = TimeIn;
-      D->Noise(PosOut, EnergyOut, TimeOut, D->GetSensitiveVolume(0));
+      D->Noise(PosOut, EnergyOut, TimeOut, Flags, D->GetSensitiveVolume(0));
       if (EnergyOut != 0) {
         ERes->Fill(EnergyIn, EnergyOut);
         if (HasDepthResolution == true) {
@@ -677,7 +678,7 @@ void MInterfaceGeomega::GetResolutions()
           PosOut = PosIn;
           TimeIn = 0;
           TimeOut = TimeIn;
-          Strip->Noise(PosOut, EnergyOut, TimeOut, Strip->GetSensitiveVolume(0));
+          Strip->Noise(PosOut, EnergyOut, TimeOut, Flags, Strip->GetSensitiveVolume(0));
           if (EnergyOut != 0) {
             EandDRes->Fill(EnergyOut, Depth);
           }
@@ -711,7 +712,7 @@ void MInterfaceGeomega::GetResolutions()
           PosOut = PosIn;
           TimeIn = 0;
           TimeOut = TimeIn;
-          Strip->Noise(PosOut, EnergyOut, TimeOut, Strip->GetSensitiveVolume(0));
+          Strip->Noise(PosOut, EnergyOut, TimeOut, Flags, Strip->GetSensitiveVolume(0));
           if (EnergyOut != 0) {
             MDGridPoint Point(0, 0, 0, MDGridPoint::c_Voxel, Depth, EnergyIn); 
             if (Strip->IsAboveTriggerThreshold(EnergyOut, Point) == true) {

@@ -42,7 +42,7 @@ class MDDriftChamber : public MDStrip3D
   //! Copy data to named detectors
   virtual bool CopyDataToNamedDetectors();
 
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const;
   virtual bool NoiseLightEnergy(double& Energy) const;
 
   //! Grid a hit, here: split due to charge transport

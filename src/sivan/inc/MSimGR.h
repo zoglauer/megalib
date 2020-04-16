@@ -102,6 +102,9 @@ class MSimGR
   //! Volume history of this hit
   MDVolumeSequence* m_VolumeSequence;       
   
+  //! The flags from noising
+  MString m_NoiseFlags;
+  
 
 #ifdef ___CLING___
  public:

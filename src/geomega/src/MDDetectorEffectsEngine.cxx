@@ -157,12 +157,15 @@ bool MDDetectorEffectsEngine::Run()
       
       double Energy = P.GetEnergy();
       double Time = P.GetTime();
-      S.GetDetector()->Noise(Position, Energy, Time, S.GetDeepestVolume());
+      
+      MString Flags = P.GetFlags();
+      S.GetDetector()->Noise(Position, Energy, Time, Flags, S.GetDeepestVolume());
       
       // Update position, energy, and time
       P.SetPosition(Position);
       P.SetEnergy(Energy);
       P.SetTime(Time);
+      P.SetFlags(Flags);
     }
   }
       

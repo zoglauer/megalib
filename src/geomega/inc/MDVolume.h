@@ -175,7 +175,7 @@ class MDVolume
   //! Return true if the volume is part of the volume tree
   bool ContainsVolume(const MString& Name, bool IncludeTemplates=false);
   //! Find detector volume and apply (random) noise to position, energy and time
-  bool Noise(MVector& Pos, double& Energy, double& Time);
+  bool Noise(MVector& Pos, double& Energy, double& Time, MString& Flags);
   //! Find detector volume and apply pulse-shape correction
   bool ApplyPulseShape(double Time, MVector& Pos, double& Energy);
 

@@ -115,7 +115,7 @@ MDGuardRing::~MDGuardRing()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MDGuardRing::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDGuardRing::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
 {
   // If we are not active, then we return no energy
   if (m_IsActive == false) {

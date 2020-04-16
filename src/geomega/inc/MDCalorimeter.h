@@ -40,7 +40,7 @@ class MDCalorimeter : public MDDetector
   //! Copy data to named detectors
   virtual bool CopyDataToNamedDetectors();
 
-  virtual void Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const;
+  virtual void Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const;
   //! Grid a hit -- in this case just return the single grid point of the hit
   virtual vector<MDGridPoint> Grid(const MVector& Pos, 
                                    const double& Energy,

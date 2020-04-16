@@ -673,7 +673,7 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
 ////////////////////////////////////////////////////////////////////////////////
   
   
-void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volume) const
+void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MString& Flags, MDVolume* Volume) const
   {
     // Noise Position and energy of this hit:
   
@@ -683,6 +683,7 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   // Test for failure:
   if (gRandom->Rndm() < m_FailureRate) {
+    Flags += " FAILURE";
     Energy = 0;
     return;
   }
@@ -692,6 +693,9 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
 
   // Overflow:
   IsOverflow = ApplyOverflow(Energy);
+  if (IsOverflow == true) {
+    Flags += " OVERFLOW";
+  }
 
   // Noise threshold:
   //if (ApplyNoiseThreshold(Energy, Pos) == true) {
@@ -701,6 +705,7 @@ void MDStrip3D::Noise(MVector& Pos, double& Energy, double& Time, MDVolume* Volu
   
   // Noise depth:
   if (IsOverflow == true || m_DepthResolution.GetNDataPoints() == 0 || Energy < m_DepthResolutionThreshold) {
+    Flags += " NODEPTH";
     Pos[2] = 0.0;     
   } else {
     // Step 1: Determine the resolution:
