@@ -835,11 +835,15 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
   int NAllOpen = 0;
   m_Selector->ApplyGeometry(AllOpen);
 
-  MEventSelector RestrictDetectors = AllOpen;
-  int NRestrictDetectors = 0;
-  m_Selector->ApplyExcludedDetectors(RestrictDetectors);
-
-  MEventSelector RestrictEventTypes = RestrictDetectors;
+  MEventSelector RestrictFirstIADetectors = AllOpen;
+  int NRestrictFirstIADetectors = 0;
+  m_Selector->ApplyExcludedFirstIADetectors(RestrictFirstIADetectors);
+  
+  MEventSelector RestrictSecondIADetectors = RestrictFirstIADetectors;
+  int NRestrictSecondIADetectors = 0;
+  m_Selector->ApplyExcludedSecondIADetectors(RestrictSecondIADetectors);
+  
+  MEventSelector RestrictEventTypes = RestrictSecondIADetectors;
   int NRestrictEventTypes = 0;
   m_Selector->ApplyUseComptons(RestrictEventTypes);
   m_Selector->ApplyUseTrackedComptons(RestrictEventTypes);
@@ -907,8 +911,11 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
     if (AllOpen.IsQualifiedEvent(Event, false) == true) {
       NAllOpen++;
     }
-    if (RestrictDetectors.IsQualifiedEvent(Event, false) == true) {
-      NRestrictDetectors++;
+    if (RestrictFirstIADetectors.IsQualifiedEvent(Event, false) == true) {
+      NRestrictFirstIADetectors++;
+    }
+    if (RestrictSecondIADetectors.IsQualifiedEvent(Event, false) == true) {
+      NRestrictSecondIADetectors++;
     }
     if (RestrictEventTypes.IsQualifiedEvent(Event, false) == true) {
       NRestrictEventTypes++;
@@ -960,7 +967,8 @@ void MInterfaceMimrec::ShowEventSelectionsStepwise()
   cout<<"Event selections:                                "<<endl;
   cout<<endl;
   cout<<"No restrictions  ............................... "<<NAllOpen<<endl;
-  cout<<"Apply detector restrictions  ................... "<<NRestrictDetectors<<endl;
+  cout<<"Apply 1st interaction detector restrictions  ... "<<NRestrictFirstIADetectors<<endl;
+  cout<<"Apply 2nd interaction detector restrictions  ... "<<NRestrictSecondIADetectors<<endl;
   cout<<"Apply event type restrictions  ................. "<<NRestrictEventTypes<<endl;
   cout<<"Apply beam restrictions radius ................. "<<NRestrictBeamRadius<<endl;
   cout<<"Apply beam restrictions depth .................. "<<NRestrictBeamDepth<<endl;

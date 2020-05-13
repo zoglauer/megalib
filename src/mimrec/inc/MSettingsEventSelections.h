@@ -84,13 +84,19 @@ class MSettingsEventSelections : public MSettingsInterface
 
   bool GetFlaggedAsBad() const { return m_FlaggedAsBad; }
   void SetFlaggedAsBad(bool FlaggedAsBad) { m_FlaggedAsBad = FlaggedAsBad; m_EventSelectionModified = true; }
-
-  void RemoveAllExcludedDetectors() { m_ExcludedDetectors.clear(); m_EventSelectionModified = true; }
-  void AddExcludedDetector(const MString& ExcludedDetector) { m_ExcludedDetectors.push_back(ExcludedDetector); m_EventSelectionModified = true; }
-  unsigned int GetNExcludedDetectors() const { return m_ExcludedDetectors.size(); }
-  MString GetExcludedDetectorAt(unsigned int d) const { if (d < m_ExcludedDetectors.size()) return m_ExcludedDetectors[d]; return ""; }
-  vector<MString> GetExcludedDetectors() const { return m_ExcludedDetectors; }
-
+  
+  void RemoveAllExcludedFirstIADetectors() { m_ExcludedFirstIADetectors.clear(); m_EventSelectionModified = true; }
+  void AddExcludedFirstIADetector(const MString& ExcludedFirstIADetector) { m_ExcludedFirstIADetectors.push_back(ExcludedFirstIADetector); m_EventSelectionModified = true; }
+  unsigned int GetNExcludedFirstIADetectors() const { return m_ExcludedFirstIADetectors.size(); }
+  MString GetExcludedFirstIADetectorAt(unsigned int d) const { if (d < m_ExcludedFirstIADetectors.size()) return m_ExcludedFirstIADetectors[d]; return ""; }
+  vector<MString> GetExcludedFirstIADetectors() const { return m_ExcludedFirstIADetectors; }
+  
+  void RemoveAllExcludedSecondIADetectors() { m_ExcludedSecondIADetectors.clear(); m_EventSelectionModified = true; }
+  void AddExcludedSecondIADetector(const MString& ExcludedSecondIADetector) { m_ExcludedSecondIADetectors.push_back(ExcludedSecondIADetector); m_EventSelectionModified = true; }
+  unsigned int GetNExcludedSecondIADetectors() const { return m_ExcludedSecondIADetectors.size(); }
+  MString GetExcludedSecondIADetectorAt(unsigned int d) const { if (d < m_ExcludedSecondIADetectors.size()) return m_ExcludedSecondIADetectors[d]; return ""; }
+  vector<MString> GetExcludedSecondIADetectors() const { return m_ExcludedSecondIADetectors; }
+  
 
   int GetSequenceLengthRangeMin() const { return m_SequenceLengthRangeMin; }
   void SetSequenceLengthRangeMin(int SequenceLengthRangeMin) { m_SequenceLengthRangeMin = SequenceLengthRangeMin; m_EventSelectionModified = true; }
@@ -440,8 +446,9 @@ class MSettingsEventSelections : public MSettingsInterface
 
   int m_FlaggedAsBad;
 
-  vector<MString> m_ExcludedDetectors;
-
+  vector<MString> m_ExcludedFirstIADetectors;
+  vector<MString> m_ExcludedSecondIADetectors;
+  
   int m_EHCType;
   double m_EHCProbability;
   MString m_EHCComptonProbabilityFileName;

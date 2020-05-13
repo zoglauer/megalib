@@ -189,8 +189,9 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   // Default assignment constructor
 
   m_Geometry = EventSelector.m_Geometry;
-  m_ExcludedDetectors = EventSelector.m_ExcludedDetectors;
-
+  m_ExcludedFirstIADetectors = EventSelector.m_ExcludedFirstIADetectors;
+  m_ExcludedSecondIADetectors = EventSelector.m_ExcludedSecondIADetectors;
+  
   m_FirstTotalEnergyMin = EventSelector.m_FirstTotalEnergyMin;               
   m_FirstTotalEnergyMax = EventSelector.m_FirstTotalEnergyMax;               
   m_SecondTotalEnergyMin = EventSelector.m_SecondTotalEnergyMin;              
@@ -282,7 +283,8 @@ const MEventSelector& MEventSelector::operator=(const MEventSelector& EventSelec
   m_NAnalyzed = EventSelector.m_NAnalyzed;                   
   m_NAccepted = EventSelector.m_NAccepted;                   
   m_NRejectedIsGood = EventSelector.m_NRejectedIsGood;                   
-  m_NRejectedStartDetector = EventSelector.m_NRejectedStartDetector;     
+  m_NRejectedFirstIADetector = EventSelector.m_NRejectedFirstIADetector;     
+  m_NRejectedSecondIADetector = EventSelector.m_NRejectedSecondIADetector;     
   m_NRejectedTotalEnergy = EventSelector.m_NRejectedTotalEnergy;              
   m_NRejectedTime = EventSelector.m_NRejectedTime;                     
   m_NRejectedTimeWalk = EventSelector.m_NRejectedTimeWalk;                 
@@ -332,7 +334,8 @@ void MEventSelector::Reset()
   m_NAnalyzed = 0;
   m_NAccepted = 0;
   m_NRejectedIsGood = 0;
-  m_NRejectedStartDetector = 0;
+  m_NRejectedFirstIADetector = 0;
+  m_NRejectedSecondIADetector = 0;
   m_NRejectedTotalEnergy = 0;
   m_NRejectedTime = 0;
   m_NRejectedTimeWalk = 0;
@@ -408,8 +411,9 @@ void MEventSelector::SetSettings(MSettingsEventSelections* S)
   SetElectronEnergy(S->GetEnergyRangeElectronMin(), S->GetEnergyRangeElectronMax());
   SetComptonAngle(S->GetComptonAngleRangeMin(), S->GetComptonAngleRangeMax());
 
-  SetExcludedDetectors(S->GetExcludedDetectors());
-
+  SetExcludedFirstIADetectors(S->GetExcludedFirstIADetectors());
+  SetExcludedSecondIADetectors(S->GetExcludedSecondIADetectors());
+  
   // Create an earth-horizon object...
   MEarthHorizon EH;
   EH.SetEarthHorizon(S->GetEHCEarthPosition(), S->GetEHCAngle()*c_Rad);
@@ -581,21 +585,38 @@ bool MEventSelector::IsQualifiedEvent(MPhysicalEvent* Event, bool DumpOutput)
 
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
-    if (m_ExcludedDetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton ||
-          Event->GetType() == MPhysicalEvent::c_Pair ||
-          Event->GetType() == MPhysicalEvent::c_Photo) {
+    if (m_ExcludedFirstIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
-          for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
-            if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
+          for (unsigned int e = 0; e < m_ExcludedFirstIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedFirstIADetectors[e]) {
               if (DumpOutput == true) {
-                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "
-                    <<m_ExcludedDetectors[e]<<endl;
+                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "<<m_ExcludedFirstIADetectors[e]<<endl;
               }
-              m_NRejectedStartDetector++;
+              m_NRejectedFirstIADetector++;
+              Return = false;
+              break;
+            }
+          }
+        }
+      }
+    }
+    if (m_ExcludedSecondIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        MComptonEvent* C = (MComptonEvent *) Event;
+        MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
+        if (V.GetDetector() == 0) {
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<C->C2()<<endl;
+        } else {
+          for (unsigned int e = 0; e < m_ExcludedSecondIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedSecondIADetectors[e]) {
+              if (DumpOutput == true) {
+                cout<<"ID "<<Event->GetId()<<": Wrong start detector: "<<m_ExcludedSecondIADetectors[e]<<endl;
+              }
+              m_NRejectedSecondIADetector++;
               Return = false;
               break;
             }
@@ -1299,16 +1320,29 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
 
   // Only start in certain detectors - needs an active geometry
   if (m_Geometry != 0) {
-    if (m_ExcludedDetectors.size() > 0) {
-      if (Event->GetType() == MPhysicalEvent::c_Compton ||
-          Event->GetType() == MPhysicalEvent::c_Pair ||
-          Event->GetType() == MPhysicalEvent::c_Photo) {
+    if (m_ExcludedFirstIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton || Event->GetType() == MPhysicalEvent::c_Pair || Event->GetType() == MPhysicalEvent::c_Photo) {
         MDVolumeSequence V = m_Geometry->GetVolumeSequence(Event->GetPosition(), true, false);
         if (V.GetDetector() == 0) {
           cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<Event->GetPosition()<<endl;
         } else {
-          for (unsigned int e = 0; e < m_ExcludedDetectors.size(); ++e) {
-            if (V.GetDetector()->GetName() == m_ExcludedDetectors[e]) {
+          for (unsigned int e = 0; e < m_ExcludedFirstIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedFirstIADetectors[e]) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+    if (m_ExcludedSecondIADetectors.size() > 0) {
+      if (Event->GetType() == MPhysicalEvent::c_Compton) {
+        MComptonEvent* C = (MComptonEvent*) Event;
+        MDVolumeSequence V = m_Geometry->GetVolumeSequence(C->C2(), true, false);
+        if (V.GetDetector() == 0) {
+          cout<<"ID "<<Event->GetId()<<": You have a hit without detector! --> You probably selected the wrong geometry: "<<C->C2()<<endl;
+        } else {
+          for (unsigned int e = 0; e < m_ExcludedSecondIADetectors.size(); ++e) {
+            if (V.GetDetector()->GetName() == m_ExcludedSecondIADetectors[e]) {
               return false;
             }
           }
@@ -1316,7 +1350,7 @@ bool MEventSelector::IsQualifiedEventFast(MPhysicalEvent* Event)
       }
     }
   }
-
+  
   // ATTENTION: PUT ALL CHANGES HERE INTO BOTH (FAST & DETAILED) VERSION OF THIS FUNCTION
 
   return true;
@@ -1358,11 +1392,22 @@ void MEventSelector::SetGeometry(MDGeometryQuest* Geometry)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MEventSelector::SetExcludedDetectors(vector<MString> ExcludedDetectors)
+void MEventSelector::SetExcludedFirstIADetectors(vector<MString> ExcludedFirstIADetectors)
 {
   // Set the detectors in which the events are not allowed to start:
   
-  m_ExcludedDetectors = ExcludedDetectors;
+  m_ExcludedFirstIADetectors = ExcludedFirstIADetectors;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MEventSelector::SetExcludedSecondIADetectors(vector<MString> ExcludedSecondIADetectors)
+{
+  // Set the detectors in which the events are not allowed to start:
+  
+  m_ExcludedSecondIADetectors = ExcludedSecondIADetectors;
 }
 
 
@@ -1888,7 +1933,8 @@ MString MEventSelector::ToString()
   s<<endl;
   s<<"Not good  ......................  "<<m_NRejectedIsGood<<endl;
   s<<"Event Id .......................  "<<m_NRejectedEventId<<endl;
-  s<<"Start detector .................  "<<m_NRejectedStartDetector<<endl;
+  s<<"Detector of 1st interaction ....  "<<m_NRejectedFirstIADetector<<endl;
+  s<<"Detector of 2nd interaction ....  "<<m_NRejectedSecondIADetector<<endl;
   s<<"Beam  ..........................  "<<m_NRejectedBeam<<endl;
   s<<"Total energy  ..................  "<<m_NRejectedTotalEnergy<<endl;
   s<<"Time  ..........................  "<<m_NRejectedTime<<endl;
@@ -1950,9 +1996,15 @@ ostream& operator<<(ostream& os, MEventSelector& S)
   os<<"Use events flagged as bad:        "<<((S.m_UseFlaggedAsBad == true) ? "true" : "false")<<endl;
 
   if (S.m_Geometry != 0) {
-    os<<"Not allowed start detectors:      ";
-    for (unsigned int e = 0; e < S.m_ExcludedDetectors.size(); ++e) {
-      os<<S.m_ExcludedDetectors[e]<<"  ";
+    os<<"Not allowed first interaction detectors:      ";
+    for (unsigned int e = 0; e < S.m_ExcludedFirstIADetectors.size(); ++e) {
+      os<<S.m_ExcludedFirstIADetectors[e]<<"  ";
+    }
+    os<<"from geometry "<<S.m_Geometry->GetName()<<endl;
+    os<<endl;
+    os<<"Not allowed second interaction detectors:      ";
+    for (unsigned int e = 0; e < S.m_ExcludedSecondIADetectors.size(); ++e) {
+      os<<S.m_ExcludedSecondIADetectors[e]<<"  ";
     }
     os<<"from geometry "<<S.m_Geometry->GetName()<<endl;
     os<<endl;

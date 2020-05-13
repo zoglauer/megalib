@@ -268,35 +268,53 @@ void MGUIEventSelection::Create()
   
 
   // Detectors
-  TGLabel* LabelDetectors = 
-    new TGLabel(GeneralFrame, new TGString("Select detectors in which the first interaction is *NOT* allowed to have happend:"));
-  TGLayoutHints* LabelDetectorsLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
-  GeneralFrame->AddFrame(LabelDetectors, LabelDetectorsLayout);
 
-  m_DetectorList = new TGListBox(GeneralFrame, c_Detectors);
-  m_DetectorList->SetMultipleSelections(true);
-  TGLayoutHints* DetectorListLayout =
-    new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, LeftGap, RightGap, 5, 0);
-  GeneralFrame->AddFrame(m_DetectorList, DetectorListLayout);
-
+  m_FirstIADetectorList = new TGListBox(GeneralFrame, c_Detectors);
+  m_FirstIADetectorList->SetMultipleSelections(true);
+  
+  m_SecondIADetectorList = new TGListBox(GeneralFrame, c_Detectors);
+  m_SecondIADetectorList->SetMultipleSelections(true);
+  
   if (m_Geometry != 0) {
     for (unsigned int d = 0; d < m_Geometry->GetNDetectors(); ++d) {
-      MString Name = m_Geometry->GetDetectorAt(d)->GetName() + " (" + 
-        m_Geometry->GetDetectorAt(d)->GetTypeName() + ")";
-      m_DetectorList->AddEntry(Name, d);
-
+      MString Name = m_Geometry->GetDetectorAt(d)->GetName() + " (" + m_Geometry->GetDetectorAt(d)->GetTypeName() + ")";
+      m_FirstIADetectorList->AddEntry(Name, d);
+      m_SecondIADetectorList->AddEntry(Name, d);
+      
       // Highlight those detectors which are already in the list:
-      for (unsigned int e = 0; e < m_Settings->GetNExcludedDetectors(); ++e) {
-        if (m_Settings->GetExcludedDetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
-          m_DetectorList->Select(d);
+      for (unsigned int e = 0; e < m_Settings->GetNExcludedFirstIADetectors(); ++e) {
+        if (m_Settings->GetExcludedFirstIADetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
+          m_FirstIADetectorList->Select(d);
+          break;
+        }
+      }
+      for (unsigned int e = 0; e < m_Settings->GetNExcludedSecondIADetectors(); ++e) {
+        if (m_Settings->GetExcludedSecondIADetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
+          m_SecondIADetectorList->Select(d);
           break;
         }
       }
     }
   }
-  m_DetectorList->Resize(m_FontScaler*200, m_FontScaler*100);
-
+  
+  TGLabel* LabelFirstIADetectors = new TGLabel(GeneralFrame, new TGString("Select detectors in which the *first* interaction of Compton, pair, or single-site events is *NOT* allowed\nto have happend:"));
+  TGLayoutHints* LabelFirstIADetectorsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
+  GeneralFrame->AddFrame(LabelFirstIADetectors, LabelFirstIADetectorsLayout);
+  
+  TGLayoutHints* FirstIADetectorListLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, LeftGap, RightGap, 5, 0);
+  GeneralFrame->AddFrame(m_FirstIADetectorList, FirstIADetectorListLayout);
+  
+  m_FirstIADetectorList->Resize(m_FontScaler*200, m_FontScaler*100);
+  
+  TGLabel* LabelSecondIADetectors = new TGLabel(GeneralFrame, new TGString("Select detectors in which the *second* interaction of Compton event is *NOT* allowed to have happend:"));
+  TGLayoutHints* LabelSecondIADetectorsLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop, LeftGap, RightGap, 20, 0);
+  GeneralFrame->AddFrame(LabelSecondIADetectors, LabelSecondIADetectorsLayout);
+  
+  TGLayoutHints* SecondIADetectorListLayout = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, LeftGap, RightGap, 5, 0);
+  GeneralFrame->AddFrame(m_SecondIADetectorList, SecondIADetectorListLayout);
+  
+  m_SecondIADetectorList->Resize(m_FontScaler*200, m_FontScaler*100);
+  
 
   
   
@@ -1496,38 +1514,72 @@ bool MGUIEventSelection::OnApply()
     m_Settings->SetInitialEnergyDepositPairMax(m_InitialEnergyDepositPair->GetMaxValue());
   }
 
-  // Check if the detector have been modified:
-  unsigned int NSelectedDetectors = 0;
-  bool DetectorsModified = false;
-  for (int d = 0; d < m_DetectorList->GetNumberOfEntries(); ++d) {
-    if (m_DetectorList->GetSelection(d) == true) {
-      ++NSelectedDetectors;
+  // Check if the first IA detectors have been modified:
+  unsigned int NSelectedFirstIADetectors = 0;
+  bool FirstIADetectorsModified = false;
+  for (int d = 0; d < m_FirstIADetectorList->GetNumberOfEntries(); ++d) {
+    if (m_FirstIADetectorList->GetSelection(d) == true) {
+      ++NSelectedFirstIADetectors;
       bool Found = false;
-      for (unsigned int e = 0; e < m_Settings->GetNExcludedDetectors(); ++e) {
-        if (m_Settings->GetExcludedDetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
+      for (unsigned int e = 0; e < m_Settings->GetNExcludedFirstIADetectors(); ++e) {
+        if (m_Settings->GetExcludedFirstIADetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
           Found = true;
           break;
         }
       }
       if (Found == false) { 
-        DetectorsModified = true;
+        FirstIADetectorsModified = true;
         break;
       }
     }
   }
-  if (NSelectedDetectors != m_Settings->GetNExcludedDetectors()) {
-    DetectorsModified = true;
+  if (NSelectedFirstIADetectors != m_Settings->GetNExcludedFirstIADetectors()) {
+    FirstIADetectorsModified = true;
   }
-
-  if (DetectorsModified == true) {
-    m_Settings->RemoveAllExcludedDetectors();
-    for (int d = 0; d < m_DetectorList->GetNumberOfEntries(); ++d) {
-      if (m_DetectorList->GetSelection(d) == true) {
-        m_Settings->AddExcludedDetector(m_Geometry->GetDetectorAt(d)->GetName());
+  
+  if (FirstIADetectorsModified == true) {
+    m_Settings->RemoveAllExcludedFirstIADetectors();
+    for (int d = 0; d < m_FirstIADetectorList->GetNumberOfEntries(); ++d) {
+      if (m_FirstIADetectorList->GetSelection(d) == true) {
+        m_Settings->AddExcludedFirstIADetector(m_Geometry->GetDetectorAt(d)->GetName());
       }
     }
   }
-
+  
+  // Check if the second IA detectors have been modified:
+  unsigned int NSelectedSecondIADetectors = 0;
+  bool SecondIADetectorsModified = false;
+  for (int d = 0; d < m_SecondIADetectorList->GetNumberOfEntries(); ++d) {
+    if (m_SecondIADetectorList->GetSelection(d) == true) {
+      ++NSelectedSecondIADetectors;
+      bool Found = false;
+      for (unsigned int e = 0; e < m_Settings->GetNExcludedSecondIADetectors(); ++e) {
+        if (m_Settings->GetExcludedSecondIADetectorAt(e) == m_Geometry->GetDetectorAt(d)->GetName()) {
+          Found = true;
+          break;
+        }
+      }
+      if (Found == false) { 
+        SecondIADetectorsModified = true;
+        break;
+      }
+    }
+  }
+  if (NSelectedSecondIADetectors != m_Settings->GetNExcludedSecondIADetectors()) {
+    SecondIADetectorsModified = true;
+  }
+  
+  if (SecondIADetectorsModified == true) {
+    m_Settings->RemoveAllExcludedSecondIADetectors();
+    for (int d = 0; d < m_SecondIADetectorList->GetNumberOfEntries(); ++d) {
+      if (m_SecondIADetectorList->GetSelection(d) == true) {
+        m_Settings->AddExcludedSecondIADetector(m_Geometry->GetDetectorAt(d)->GetName());
+      }
+    }
+  }
+  
+  
+  
   m_Settings->SetEventSelectorTab(m_MainTab->GetCurrent());
 
   dynamic_cast<MSettings*>(m_Settings)->Write();

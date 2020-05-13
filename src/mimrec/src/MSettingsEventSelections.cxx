@@ -178,8 +178,9 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
 
   m_FlaggedAsBad = false;
 
-  m_ExcludedDetectors.clear();
-
+  m_ExcludedFirstIADetectors.clear();
+  m_ExcludedSecondIADetectors.clear();
+  
   // The special GUI mode
   m_SpecialMode = false;
 }
@@ -287,12 +288,17 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "FocalSpotZ", m_BeamFocalSpotZ); 
   new MXmlNode(bNode, "Radius", m_BeamRadius); 
   new MXmlNode(bNode, "BeamDepth", m_BeamDepth);
-
-  bNode = new MXmlNode(aNode, "ExcludedDetectors");
-  for (unsigned int i = 0; i < m_ExcludedDetectors.size(); ++i) {
-    new MXmlNode(bNode, "ExcludedDetector",  m_ExcludedDetectors[i]);
+  
+  bNode = new MXmlNode(aNode, "ExcludedFirstIADetectors");
+  for (unsigned int i = 0; i < m_ExcludedFirstIADetectors.size(); ++i) {
+    new MXmlNode(bNode, "ExcludedFirstIADetector",  m_ExcludedFirstIADetectors[i]);
   }
-
+  
+  bNode = new MXmlNode(aNode, "ExcludedSeconfIADetectors");
+  for (unsigned int i = 0; i < m_ExcludedSecondIADetectors.size(); ++i) {
+    new MXmlNode(bNode, "ExcludedSecondIADetector",  m_ExcludedSecondIADetectors[i]);
+  }
+  
   return true;
 }
 
@@ -551,12 +557,21 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
         m_BeamDepth = cNode->GetValueAsDouble();
       }
     }
-
-    if ((bNode = aNode->GetNode("ExcludedDetectors")) != 0) {
-      m_ExcludedDetectors.clear();
+    
+    if ((bNode = aNode->GetNode("ExcludedFirstIADetectors")) != 0 || (bNode = aNode->GetNode("ExcludedDetectors")) != 0) {
+      m_ExcludedFirstIADetectors.clear();
       for (unsigned int n = 0; n < bNode->GetNNodes(); ++n) {
         if ((cNode = bNode->GetNode(n)) != 0) {
-          m_ExcludedDetectors.push_back(cNode->GetValue());
+          m_ExcludedFirstIADetectors.push_back(cNode->GetValue());
+        }
+      }
+    }
+    
+    if ((bNode = aNode->GetNode("ExcludedSecondIADetectors")) != 0) {
+      m_ExcludedSecondIADetectors.clear();
+      for (unsigned int n = 0; n < bNode->GetNNodes(); ++n) {
+        if ((cNode = bNode->GetNode(n)) != 0) {
+          m_ExcludedSecondIADetectors.push_back(cNode->GetValue());
         }
       }
     }

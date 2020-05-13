@@ -87,9 +87,11 @@ class MEventSelector
   void ApplyFourthTotalEnergy(MEventSelector& E) { E.SetFourthTotalEnergy(m_FourthTotalEnergyMin, m_FourthTotalEnergyMax); }
   void SetTimeWalk(double Min, double Max);
   void ApplyTimeWalk(MEventSelector& E) { E.SetTime(m_TimeWalkMin, m_TimeWalkMax); }
-  void SetExcludedDetectors(vector<MString> ExcludedDetectors);
-  void ApplyExcludedDetectors(MEventSelector& E) { E.SetExcludedDetectors(m_ExcludedDetectors); }
-
+  void SetExcludedFirstIADetectors(vector<MString> ExcludedFirstIADetectors);
+  void ApplyExcludedFirstIADetectors(MEventSelector& E) { E.SetExcludedFirstIADetectors(m_ExcludedFirstIADetectors); }
+  void SetExcludedSecondIADetectors(vector<MString> ExcludedSecondIADetectors);
+  void ApplyExcludedSecondIADetectors(MEventSelector& E) { E.SetExcludedSecondIADetectors(m_ExcludedSecondIADetectors); }
+  
   void SetTimeMode(unsigned int TimeMode);
   void ApplyTimeMode(MEventSelector& E) { E.SetTimeMode(m_TimeMode); }
   void SetTime(const MTime& Min, const MTime& Max);
@@ -298,12 +300,14 @@ class MEventSelector
   bool m_UseDecays;
   bool m_UseFlaggedAsBad;
 
-  vector<MString> m_ExcludedDetectors;
-
+  vector<MString> m_ExcludedFirstIADetectors;
+  vector<MString> m_ExcludedSecondIADetectors;
+  
   long m_NAnalyzed;
   long m_NAccepted;
   long m_NRejectedIsGood;
-  long m_NRejectedStartDetector;
+  long m_NRejectedFirstIADetector;
+  long m_NRejectedSecondIADetector;
   long m_NRejectedTotalEnergy;
   long m_NRejectedTime;
   long m_NRejectedTimeWalk;
