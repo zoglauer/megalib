@@ -151,6 +151,8 @@ void MGUIMimrecMain::Create()
   
   // The sub menu General
   TGPopupMenu* MenuGeneral = new TGPopupMenu(fClient->GetRoot());
+  MenuGeneral->AddLabel("General options");
+  MenuGeneral->AddSeparator();
   MenuGeneral->AddEntry("Energy spectra", c_ResponseSpectrum);
   MenuGeneral->AddEntry("Light curve (time distribution)", c_ResponseTime);
   MenuGeneral->AddEntry("Location of initial interaction", c_ResponseLocationOfInitialInteraction);  
@@ -165,8 +167,11 @@ void MGUIMimrecMain::Create()
 
   // The sub menu ARM
   TGPopupMenu* MenuARM = new TGPopupMenu(fClient->GetRoot());
-  MenuARM->AddEntry("ARM of scattered gamma ray", c_ResponseArmGamma);
-  MenuARM->AddEntry("SPD of recoil electron", c_ResponseSpdElectron);
+  MenuARM->AddLabel("Angular resolution measures");
+  MenuARM->AddSeparator();
+  MenuARM->AddEntry("ARM of scattered gamma ray (same as in main menu)", c_ResponseArmGamma);
+  MenuARM->AddEntry("SPD of recoil electron (same as in main menu)", c_ResponseSpdElectron);
+  MenuARM->AddSeparator();
   MenuARM->AddEntry("ARM of recoil electron", c_ResponseArmElectron);
   MenuARM->AddEntry("Phi via kinematics vs. Phi via geometry", c_ResponsePhiKinVsPhiGeo);
   MenuARM->AddEntry("ARM of scattered gamma ray vs. Compton Scatter Angel (phi)", c_ResponseArmGammaVsCompton);
@@ -179,6 +184,8 @@ void MGUIMimrecMain::Create()
 
   // The sub menu quality factors:
   TGPopupMenu* MenuQuality = new TGPopupMenu(fClient->GetRoot());
+  MenuQuality->AddLabel("Quality factors");
+  MenuQuality->AddSeparator();
   MenuQuality->AddEntry("Compton Sequence Quality Factor", c_ResponseComptonQualityFactor);
   MenuQuality->AddEntry("Compton Sequence Quality Factor with ARM selection", c_ResponseComptonProbabilityWithARMSelection);
   MenuQuality->AddEntry("ARM of scattered gamma ray vs. Compton Quality Factor", c_ResponseArmGammaVsComptonProbability);
@@ -195,6 +202,8 @@ void MGUIMimrecMain::Create()
 
   // The sub menu rest:
   TGPopupMenu* MenuDistributions = new TGPopupMenu(fClient->GetRoot());
+  MenuDistributions->AddLabel("All other distributions");
+  MenuDistributions->AddSeparator();
   MenuDistributions->AddEntry("Scatter angle distributions", c_ResponsePhi);
   MenuDistributions->AddEntry("Distance distribution", c_ResponseDistance);
   MenuDistributions->AddEntry("Compton sequence and track length", c_ResponseSequenceLengths);
@@ -206,6 +215,8 @@ void MGUIMimrecMain::Create()
 
   // The sub menu pair:
   TGPopupMenu* MenuPair = new TGPopupMenu(fClient->GetRoot());
+  MenuPair->AddLabel("Pair options");
+  MenuPair->AddSeparator();
   MenuPair->AddEntry("Angular resolution pair", c_ResponseAngularResolutionPair);
   MenuPair->AddEntry("Opening angle pair", c_ResponseOpeningAnglePair);
   MenuPair->AddEntry("Initial energy deposit", c_ResponseInitialEnergyDeposit);
@@ -213,7 +224,7 @@ void MGUIMimrecMain::Create()
 
 
   TGPopupMenu* MenuResponse = new TGPopupMenu(fClient->GetRoot());
-  MenuResponse->AddLabel("General");
+  MenuResponse->AddLabel("General for all event types");
   MenuResponse->AddSeparator();
   MenuResponse->AddEntry("Energy spectra", c_ResponseSpectrum);
   MenuResponse->AddEntry("Light curve (time distribution)", c_ResponseTime);
