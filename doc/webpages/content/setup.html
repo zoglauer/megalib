@@ -22,16 +22,19 @@ MenuTitle:         Code & Setup
 </ul>
 
 <p>You can get the source code from the repository via cloning it (make sure you have git installed):</p2>
-
 <pre>
 $ git clone https://github.com/zoglauer/megalib MEGAlib
 </pre>
 
+Then switch to the MEGAlib directory for all further commands:
+<pre>
+$ cd MEGAlib
+</pre>
 
 
 <h2>The MEGAlib branch</h2>
 
-<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v3.00, etc. The development / bugfix branch for version 3 is called master, the development branch for version 4 is megalib4-dev. If you are doing any current development, I strongly suggest to use the master branch:</p>
+<p>You can find multiple MEGAlib branches on github. MEGAlib releases are named MEGAlib_v3.00, etc. The development / bugfix branch for version 3 is called master, the development branch for version 4, which contains more significant changes and is not neceessarily always in working condition, is called megalib4-dev. If you are do minor enhancements, I strongly suggest to use the master branch. Therefore, check put this branch now:</p>
  
 <pre>
 git checkout master
@@ -50,11 +53,11 @@ git checkout master
   <li>There are a set of optional pieces of code which enhance MEGAlib, such as heasoft (for fits files), doxygen (generate source code documentation), expect (pipeline scripts for parallel processing on clusters), or convert, which are nice to have but not mandatory.</li>
 </ol>
 
-
+<p>The following contains instructions on how to install this additional software.</p>
 
 <h3>Additional information for Linux</h3>
 
-<p>If you use one of the major Linux flavors such as Ubuntu (LTS releases only), Fedora, openSUSE, etc., then you can run a small script to automatically install all the required tools and libraries which are part of your distro. In the MEGAlib directory execute:</p>
+<p>If you use one of the major Linux flavors such as Ubuntu, Fedora, openSUSE, etc., then you can run a small script to automatically install all the required tools and libraries which are part of your distro. In the MEGAlib directory execute:</p>
 
 <pre>$ bash config/configure_packages</pre>
 
@@ -64,12 +67,12 @@ git checkout master
 
 <h3>Additional information for macOS</h3>
 
-<p>On a Mac you need to install three pieces of software by hand: A current version of Xcode, Xquartz, and cmake.</p>
+<p>On a Mac you need to install four pieces of software by hand: A current version of Xcode, Xquartz, cmake, and python3.</p>
 <ol>
   <li>Xcode: Please install from the Mac app store. Also make sure to install the command line tools: <pre>$ xcode-select --install</pre>A common source of MEGAlib installation problems is that the Xcode command line tools have not been reinstalled after upgrading Xcode. If you are using macOS Mojave (or maybe higher), please also install the package located here: <pre>/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14. pkg</pre></li>
   <li>XQuartz: <a href="https://www.xquartz.org" target=_blank>https://www.xquartz.org</a> (just choose the latest *.dmg file)</li>
   <li>cmake: <a href="https://cmake.org" target=_blank>https://cmake.org</a><br>Attention: Make sure to follow the instructions on how to install the cmake command line tools: Open the cmake app. Under "Tools" you find a line "How To Install For Command Line Use". Click and follow the instructions.</li>
-  <li>python3: Please install a 3.x version of python from <a href="https://python.org" target=_blank>https://python.org</a> which is compatible with tensorflow (i.e. usually not the very latest version). You cannot use a python version installed with conda or anaconda.</li>
+  <li>python3: Please install a 3.x version of python from <a href="https://python.org" target=_blank>https://python.org</a> which is compatible with tensorflow (i.e. usually not the very latest version). <strong>Important: You cannot use a python3 version installed with conda or anaconda, if you want to use MEGAlib in combination with python3.</strong></li>
 </ol>
 <p>Attention: If you have MacPorts, Fink, or Homebrew installed, those might interfere with the installation of MEGAlib, and, more likely, ROOT. If you get error messages concerning wrong versions of libraries, please use a clean bash environment to install MEGAlib (i.e. one where the MacPorts, Fink, or Homebrew library and program paths are not included/exported).</p>
 
@@ -77,7 +80,7 @@ git checkout master
 
 <h3>Additional information for Windows 10</h3>
 
-<p>On Windows 10, you have perform the follwoing steps</p>
+<p>On Windows 10, you have perform the follwoing steps:</p>
 <ol>
   <li>First install the "Windows Subsystem for Linux" by <a href="https://docs.microsoft.com/en-us/windows/wsl/install-win10" target=_blank>following this guide</a>.</li>
   <li>Then install the <a href="https://www.microsoft.com/store/apps/9nblggh4msv6" target=_blank>Ubuntu App</a> from the Windows Store.
