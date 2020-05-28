@@ -105,7 +105,7 @@ bool MCOrientation::Parse(const MTokenizer& Tokenizer)
   } else if (Tokenizer.IsTokenAt(2, "Galactic") == true) {
     m_CoordianteSystem = MCOrientationCoordinateSystem::c_Galactic;
   } else {
-    mlog<<"   ***  Error  ***  Unknown coordiante system in orientation: "<<Tokenizer.GetTokenAtAsString(2)<<endl;
+    mlog<<"   ***  Error  ***  Unknown coordinate system in orientation: "<<Tokenizer.GetTokenAtAsString(2)<<endl;
     return false;
   }
 
