@@ -436,8 +436,12 @@ bool Converter::Analyze()
   for (int bphi = 1; bphi <= FitsImage->GetNbinsX(); bphi++) {
     for (int btheta = 1; btheta <= FitsImage->GetNbinsY(); btheta++) {
       double Area = 2*c_Pi*(cos(FitsImage->GetYaxis()->GetBinLowEdge(btheta)*c_Rad+c_Pi/2)-cos(FitsImage->GetYaxis()->GetBinUpEdge(btheta)*c_Rad+c_Pi/2))*FitsImage->GetXaxis()->GetBinWidth(bphi)*c_Rad/(2*c_Pi);
-      out<<"AP "<<bphi-1<<" "<<btheta-1<<" 1 "<<FitsImage->GetBinContent(bphi, btheta)/0.001/Area<<endl;
-      out<<"AP "<<bphi-1<<" "<<btheta-1<<" 4 "<<FitsImage->GetBinContent(bphi, btheta)/0.001/Area<<endl;
+      if (m_LineID == 1) {
+        out<<"AP "<<bphi-1<<" "<<btheta-1<<" 1 "<<FitsImage->GetBinContent(bphi, btheta)/0.001/Area<<endl;
+      } else if (m_LineID == 2) {
+        out<<"AP "<<bphi-1<<" "<<btheta-1<<" 1 "<<FitsImage->GetBinContent(bphi, btheta)/0.001/Area<<endl;
+        out<<"AP "<<bphi-1<<" "<<btheta-1<<" 4 "<<FitsImage->GetBinContent(bphi, btheta)/0.001/Area<<endl;
+      }
     }
   }
   
