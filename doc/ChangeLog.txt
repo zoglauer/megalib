@@ -7,6 +7,18 @@
 
 
 
+Version 3.01/3.02
+=================
+
+
+Mimrec:
++ New option in the event selector to choose the detector of the 2nd interaction
+
+Examples:
++ AllSky: How to simulate all-sky images
+
+
+
 Version 2.99/3.00
 =================
 
