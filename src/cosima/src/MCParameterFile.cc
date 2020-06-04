@@ -609,6 +609,7 @@ bool MCParameterFile::Parse()
       if (T->IsTokenAt(1, "IsotopeProductionFile", true) == true) {
         if (T->GetNTokens() >= 3) {
           MString FileName = T->GetTokenAfterAsString(2);
+          MFile::ExpandFileName(FileName);
           MFile::ApplyPath(FileName, m_FileName);
           if (MFile::Exists(FileName) == true) {
             if (Activator->AddCountsFile(FileName) == true) {
@@ -1188,6 +1189,7 @@ bool MCParameterFile::Parse()
             if (T->GetNTokens() >= 4) {
               Source->SetSpectralType(MCSource::c_FileDifferentialFlux);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token Spectrum - file correctly:"
@@ -1329,6 +1331,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldFileZenithDependent);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field file zenith dependent\" correctly:"
@@ -1352,12 +1355,14 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_FarField,
                                   MCSource::c_FarFieldNormalizedEnergyBeamFluxFunction);
               MString FileName = T->GetTokenAfterAsString(3);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " File not found!");
+                cout<<"File name was: "<<FileName<<endl;
                 return false;
-              }
+              } 
               if (Source->SetNormalizedEnergyBeamFluxFunction(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " Unable to initialize beam");
@@ -1599,6 +1604,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam1DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - radial profile beam\" correctly:"
@@ -1639,6 +1645,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(9);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
@@ -1669,6 +1676,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldBeam2DProfile);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - map profile beam\" correctly:"
@@ -1707,6 +1715,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldDiffractionPoint);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - diffraction point source\" correctly:"
@@ -1745,6 +1754,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldDiffractionPointKSpace);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - diffraction point source k space\" correctly:"
@@ -1948,6 +1958,7 @@ bool MCParameterFile::Parse()
               Source->SetBeamType(MCSource::c_NearField,
                                   MCSource::c_NearFieldFlatMap);
               MString FileName = T->GetTokenAfterAsString(10);
+              MFile::ExpandFileName(FileName);
               MFile::ApplyPath(FileName, m_FileName);
               if (MFile::Exists(FileName) == false) {
                 Typo(i, "Cannot parse token \"flat map\" correctly:"
