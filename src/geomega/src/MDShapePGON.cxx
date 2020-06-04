@@ -437,7 +437,24 @@ void MDShapePGON::Scale(const double Factor)
 MVector MDShapePGON::GetUniquePosition() const
 {
   // Return a unique position within this detectors volume
-
+  
+  // If the volume is simple, use the center
+  bool Is360 = false;
+  if (fabs(m_DPhi - 360) < 0.000000001) Is360 = true;
+  
+  bool FilledCenter = true;
+  for (unsigned int i = 0; i < m_NSections; ++i) {
+    if (m_Rmin[i] != 0) {
+      FilledCenter = false;
+      break;
+    }
+  }
+  
+  if (Is360 == true && FilledCenter == true) {
+    return MVector(0, 0, (m_Z[m_NSections-1]+m_Z[0])/2.0);
+  }
+  
+  // Otherwise the unique position is offset
   double R = 0.25*(m_Rmax[1]+m_Rmin[1]+m_Rmax[0]+m_Rmin[0]);
   double Angle = (m_Phi+0.5*m_DPhi)*c_Rad; 
 
