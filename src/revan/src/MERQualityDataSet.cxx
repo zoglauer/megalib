@@ -52,10 +52,9 @@ MERQualityDataSet::MERQualityDataSet()
 
 
 //! Default constructor
-MERQualityDataSet::MERQualityDataSet(unsigned int MaximumSequenceLength, bool UsePathToFirstIA)
+MERQualityDataSet::MERQualityDataSet(unsigned int MaximumSequenceLength, unsigned int NumberOfPathSamplesToFirstIA)
 {
-  m_NumberOfPathSamples = 18;
-  Initialize(MaximumSequenceLength, UsePathToFirstIA);
+  Initialize(MaximumSequenceLength, NumberOfPathSamplesToFirstIA);
 }
 
 
@@ -72,10 +71,11 @@ MERQualityDataSet::~MERQualityDataSet()
 
 
 // Create for the given sequence length, 2..N
-void MERQualityDataSet::Initialize(unsigned int MaximumSequenceLength, bool UsePathToFirstIA)
+void MERQualityDataSet::Initialize(unsigned int MaximumSequenceLength, unsigned int NumberOfPathSamplesToFirstIA)
 {
   m_MaximumSequenceLength = MaximumSequenceLength;
-  m_UsePathToFirstIA = UsePathToFirstIA;
+  m_NumberOfPathSamples = NumberOfPathSamplesToFirstIA;
+  m_UsePathToFirstIA = (m_NumberOfPathSamples > 0) ? true : false;
   
   if (m_MaximumSequenceLength < 2) {
     merr<<"Error: The sequence length must at least be 2"<<endl;
