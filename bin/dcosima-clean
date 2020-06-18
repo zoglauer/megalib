@@ -84,7 +84,7 @@ echo " "
 echo "Cleaning..."
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
-  REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  REMOTEMASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Failed to read remote master directory"
     continue
@@ -98,7 +98,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Let's first retrieve a list of all directories
   REMOTECOMMAND='cd $(grep ^directory ~/.dcosima.cfg | tr -s " " | cut -d " " -f2); ls -dtr */;'
-  DIRECTORIES=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  DIRECTORIES=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Unable to retrieve the directories!"
     continue
@@ -111,7 +111,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     if [[ ${D} == *_ID* ]] && [[ ${D} == ${REMOTEDIR} ]]; then
       # If yes, we remove it
       echo " * Cleaning ${REMOTEMASTERDIR}/${D} on ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}..."
-      ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${REMOTEMASTERDIR} ]]; then rm -rf ${REMOTEMASTERDIR}/${D}; fi; exit 0;"
+      ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "if [[ -d ${REMOTEMASTERDIR} ]]; then rm -rf ${REMOTEMASTERDIR}/${D}; fi; exit 0;"
       CLEANED="YES"
       break
     fi

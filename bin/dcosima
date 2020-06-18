@@ -493,15 +493,15 @@ while [[ ${LAUNCHED} -lt ${INSTANCES} ]]; do
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
     
     # Do a quick test if the machine is availble:
-    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
       echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
       MACHINES[$m]=""
       continue
     fi  
     
-    #ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} > /tmp/dcosim-${REMOTENAME[$m]}.log 2>&1
-    VERIFY=$( ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} | grep -v '^$' )
+    #ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} > /tmp/dcosim-${REMOTENAME[$m]}.log 2>&1
+    VERIFY=$( ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${VERIFYSCRIPT} | grep -v '^$' )
     #RETURNCODE="$?"
     #VERIFY=`cat /tmp/dcosim-${REMOTENAME[$m]}.log`
     #echo "return code: ${RETURNCODE}"
@@ -676,7 +676,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo " * Deleting ${REMOTEMASTERDIR}/${LOCALDIR} on ${REMOTEHOST[$m]}" | ${LOGGING}
 
   REMOTECOMMAND='COUNT=`grep -c ^directory ~/.dcosima.cfg`; if [ ${COUNT} -eq 1 ]; then grep ^directory ~/.dcosima.cfg; fi;'
-  REMOTEMASTERDIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  REMOTEMASTERDIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [ "$?" != "0" ]; then
     echo "ERROR: Failed to read remote master directory" | ${LOGGING}
     continue
@@ -687,7 +687,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
     continue
   fi
  
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "rm -rf ${REMOTEMASTERDIR}/${LOCALDIR};"
 done
 
 echo " " | ${LOGGING}

@@ -62,7 +62,7 @@ declare -A MAP
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Do a quick test if the machine is available:
-  REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
     continue
@@ -70,7 +70,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
   # Now get all Cosima instances
   REMOTECOMMAND='ps -ef | grep cosima | grep \_ID | grep -v "bash "'
-  RUNNINGCOSIMAS=( $(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} ) )
+  RUNNINGCOSIMAS=( $(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} ) )
 
   for ((index=0; index < ${#RUNNINGCOSIMAS[@]}; index++)); do
     if [ "${RUNNINGCOSIMAS[index]}" == "-t" ]; then

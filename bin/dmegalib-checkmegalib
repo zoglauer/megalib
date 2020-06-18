@@ -61,7 +61,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
  
   # Do a quick test if the machine is available:
-  REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
     MACHINES[$m]=""
@@ -70,7 +70,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi  
 
   # Check if .bash_local exists
-  ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'if [[ -f .bash_local ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: MEGAlib has never been installed"
     MACHINES[$m]=""
@@ -78,7 +78,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
 
   # Check if MEGAlib path exists
-  ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; if [[ ${MEGALIB} != "" ]]; then exit 0; else exit 1; fi'
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: MEGAlib has never been correctly installed"
     MACHINES[$m]=""
@@ -86,8 +86,8 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
   
   # Check that cosima is installed
-  #GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
-  GITVERSION[$m]=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git log -1 --pretty=format:"%H %cd" --date=short'`
+  #GITVERSION[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git rev-parse HEAD'`
+  GITVERSION[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; cd ${MEGALIB}; git log -1 --pretty=format:"%H %cd" --date=short'`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Unable to retrieve git version!"
     MACHINES[$m]=""
@@ -95,7 +95,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi 
       
   # Check that cosima is installed
-  AVAILABLE=`ssh -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; type cosima > /dev/null' 2>&1`
+  AVAILABLE=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} '. .bash_local; type cosima > /dev/null' 2>&1`
   if [ "${AVAILABLE}" != "" ]; then
     echo " * Machine ${REMOTENAME[$m]}: Cosima not found!"
     GITVERSION[$m]=""

@@ -157,7 +157,7 @@ if [ "${REMOTE}" == "" ]; then
   #echo "Allowed: ${AllowedInstances}"    
 else
   #echo "Remote B"
-  AllowedInstances=`ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; dmegalib-allowedinstances"` 
+  AllowedInstances=`ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTEHOST} ". .bash_local; dmegalib-allowedinstances"` 
 fi
 
 echo "${AllowedInstances}"

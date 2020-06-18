@@ -102,7 +102,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
  
   # Do a quick test if the machine is available:
-  REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
     MACHINES[$m]=""
@@ -137,7 +137,7 @@ exit 0
 
 EOT
   
-  CREATECFG=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} )
+  CREATECFG=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} )
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: UNABLE TO CREATE REMOTE CONFIGURATION FILE"
     MACHINES[$m]=""

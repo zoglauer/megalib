@@ -342,7 +342,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     MACHINES[$m]="${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
     
     # Do a quick test if the machine is availble:
-    REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+    REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
     if [ "$?" != "0" ]; then
       echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): NOT ACCESSIBLE"
       MACHINES[$m]=""
@@ -366,7 +366,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
     COMMAND+="echo \"Available\"; exit 0; "
     
     # Check if the data directory accessible on the remote machine
-    ANSWER=$(ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
+    ANSWER=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${COMMAND} )
     if [[ ${ANSWER} == "" ]]; then ANSWER="Check failed with unknown error!"; fi
     if [[ ${ANSWER} != "Available" ]]; then     
       echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): ${ANSWER}"
@@ -429,7 +429,7 @@ while [[ $d -lt ${#DATAFILES[*]} ]]; do
             REMOTECOMMAND+=" </dev/null >/dev/null 2>&1 &"
           fi
        
-          REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
+          REMOTEDATADIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s ' <<< ${REMOTECOMMAND} )
           if [[ "$?" != "0" ]]; then
             echo " * Remote machine: ${MACHINES[$m]} (user: ${REMOTEUSER[$m]}, address: ${REMOTEHOST[$m]}, port: ${REMOTEPORT[$m]}): Failed to launch responsecreator!"
             MACHINES[$m]=""

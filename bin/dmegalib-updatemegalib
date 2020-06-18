@@ -76,7 +76,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
  
   # Do a quick test if the machine is available:
-  REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
     MACHINES[$m]=""
@@ -190,7 +190,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   echo " * ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dmegalib-${REMOTENAME[$m]}.log 2>&1 &
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dmegalib-${REMOTENAME[$m]}.log 2>&1 &
   sleep 5 # Sleep a bit in case the machines share storage
   
 done
