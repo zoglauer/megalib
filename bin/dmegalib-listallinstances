@@ -37,6 +37,10 @@ for C in "${CMD[@]}"; do
 done
 
 CFG=~/.dcosima.cfg
+if [ ! -f ${CFG} ]; then
+  echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
+  exit 1
+fi
 
 # Read configuration file and extract machines
 MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )

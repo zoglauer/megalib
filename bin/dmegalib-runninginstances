@@ -19,7 +19,7 @@ commandhelp() {
   echo ""
   echo "";
   echo "Example: "
-  echo "  dmegalib-allowedinstances";
+  echo "  dmegalib-runninginstances";
   echo "";
 }
 

@@ -15,7 +15,7 @@ commandhelp() {
   echo "Usage: dmegalib-updatemegalib [options]";
   echo ""
   echo "Options:"
-  echo "  --branch=name             : Use the given MEGAlib git branch (default it experimental)"
+  echo "  --branch=name             : Use the given MEGAlib git branch (default it master)"
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dmegalib.cfg"
   echo "  --help                    : Show this help"
   echo ""
@@ -32,7 +32,7 @@ commandhelp() {
 # Store command line as array
 CMD=( "$@" )
 SINGLEMACHINE=""
-BRANCH="experimental"
+BRANCH="master"
 
 # Check for help
 for C in "${CMD[@]}"; do
@@ -49,6 +49,11 @@ done
 
 # Default options:
 CFG=~/.dcosima.cfg
+if [ ! -f ${CFG} ]; then
+  echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
+  exit 1
+fi
+
 MEGALIBPATH="~/Science/Software" # Attention hard coded else where!
 
 # Read configuration file and extract machines
