@@ -363,7 +363,7 @@ bool MCOrientation::Read(MString FileName)
       }
     
       MVector Y = Z.Cross(X);
-      // We need a minus here since the Galactic coordinate system in left-handed!!!!
+      // We need a minus here since the Galactic coordinate system is left-handed!!!!
       Y *= -1;
     
       m_Rotations.push_back(MRotation(X.X(), Y.X(), Z.X(),
@@ -372,6 +372,15 @@ bool MCOrientation::Read(MString FileName)
       m_RotationsInvers.push_back(m_Rotations.back().GetInvers());
     }
   }
+ 
+  // Sanity check that the times are increasing
+  for (unsigned int i = 1; i < m_Times.size(); ++i) {
+    if (m_Times[i] <= m_Times[i-1]) {
+      mlog<<"   ***  Error  ***  The times in the ori file are not in increasing order: "<<m_Times[i]<<" (index: "<<i<<") not larger than "<<m_Times[i-1]<<""<<endl;
+      return false; 
+    }
+  }
+ 
  
   return true;
 }
