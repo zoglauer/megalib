@@ -278,13 +278,16 @@ fi
 
 # (2) Can we assemble all files?
 TMPDIR=$(mktemp -d /tmp/dcosima_tmp_dir.XXXXXXXXXX)
-dcosima-assemblefiles -s=${SOURCE} -d=${TMPDIR} > /dev/null
+ASSEMBLERESULT=$(dcosima-assemblefiles -s=${SOURCE} -d=${TMPDIR})
 if [ "$?" != "0" ]; then
   rm -r ${TMPDIR}
   echo " "
   echo "ERROR: Failed to assemble files" | ${LOGGING}
+  echo "Output from dcosima-assemblefiles which contains the eror message: " | ${LOGGING}
+  echo "${ASSEMBLERESULT}" | ${LOGGING}
   exit 1
 fi
+
 
 # (2) Do we have eactly one source file
 SOURCEFILE=$(ls ${TMPDIR}/*.source | grep -v .partial.)
