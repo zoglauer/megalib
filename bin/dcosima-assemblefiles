@@ -96,7 +96,7 @@ if [ "$(ls -A ${DESTINATION})" != "" ]; then
   echo "ERROR: The destination directory (\"${DESTINATION}\") must be empty"
   exit 1
 fi
-echo " * Destination file: ${DESTINATION}"
+echo " * Destination directory: ${DESTINATION}"
 
 
 FILELIST=""
@@ -136,22 +136,26 @@ while true; do
     if [ "${TOCHECK[$m]}" != "" ]; then
       F="${TOCHECK[$m]}"
 
+      if [[ ! -f ${F} ]]; then
+        echo "ERROR: Unable to find file: \"${F}\""
+        exit 1
+      fi
 
       # Check for all the files
       #echo "Analyzing: ${F}"
       VERYNEWONES=()
-      VERYNEWONES+=(`cat ${F} | grep "^Include" | awk '{print $2}'`)
-      VERYNEWONES+=(`cat ${F} | grep "^Geometry" | awk  '{print $2}'`)
-      VERYNEWONES+=(`cat ${F} | grep FarFieldFileZenithDependent | awk '{print $3}'`)
-      VERYNEWONES+=(`cat ${F} | grep FarFieldNormalizedEnergyBeamFluxFunction | awk '{print $3}'`)
-      VERYNEWONES+=(`cat ${F} | grep RadialProfileBeam | awk '{print $9}'`)
-      VERYNEWONES+=(`cat ${F} | grep MapProfileBeam | awk '{print $9}'`)
-      VERYNEWONES+=(`cat ${F} | grep ActivationSources | awk '{print $2}'`)
-      VERYNEWONES+=(`cat ${F} | grep FarFieldTransmissionProbability | awk '{print $2}'`)
-      if [[ `cat ${F} | grep "\ File\ "` != "" ]]; then
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep "^Include" | awk '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep "^Geometry" | awk  '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep FarFieldFileZenithDependent | awk '{print $3}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep FarFieldNormalizedEnergyBeamFluxFunction | awk '{print $3}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep RadialProfileBeam | awk '{print $9}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep MapProfileBeam | awk '{print $9}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep ActivationSources | awk '{print $2}'`)
+      VERYNEWONES+=(`cat ${F} | grep -v "^#" | grep FarFieldTransmissionProbability | awk '{print $2}'`)
+      if [[ `cat ${F} | grep -v "^#" | grep "\ File\ "` != "" ]]; then
         OLDIFS=${IFS}
         IFS=$'\n'
-        LINES=(`cat ${F} | grep "\ File\ "`)
+        LINES=(`cat ${F} | grep -v "^#" | grep "\ File\ "`)
         IFS=${OLDIFS}
         #echo "LINES:"
         #printf '%s\n' "${LINES[@]}"
