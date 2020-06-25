@@ -274,7 +274,7 @@ fi
 
 # Appending to the dcosima-rsync configuration file
 echo " * Adding to the rsync setup file"
-NEWLINE="rsync -az --append-verify -e 'ssh -i \${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
+NEWLINE="rsync -az --append-verify -e 'ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT}' ${REMOTEUSER}@${REMOTEHOST}:${MASTERDIR}/${RUNDIR}/\* ."
 EXISTS=0
 if [ -f ${RUNDIR}/dcosima-rsync.cfg ]; then
   while read LINE; do
