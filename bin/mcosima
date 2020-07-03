@@ -242,7 +242,7 @@ if [ "${Source}" == "!@#$" ]; then
   echo " "
   exit 1;
 fi
-RUNS=`grep "^Run\ " ${Source} | wc -l`
+RUNS=`grep -e "^Run\ " -e "^Run$(printf '\t')" ${Source} | wc -l`
 if [[ ${RUNS} != *1 ]]; then
   echo " "
   echo "Error: You have more than one run in the source file:"
