@@ -81,7 +81,7 @@ class MResponseEventQualityTMVAEventFile : public MResponseMultipleComptonEventF
   // protected members:
  protected:
   //! Use path to first IA
-  bool m_UsePathToFirstIA;
+  unsigned int m_NumberOfPathsToFirstIA;
    
   // The data sets, one per sequence length:
   vector<MERQualityDataSet*> m_DataSets;

@@ -84,7 +84,7 @@ echo "Start stopping instances for run ${NAME}:"
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   echo " * Stopping all cosima instances for user ${REMOTEUSER[$m]} on ${REMOTEHOST[$m]}..."
   REMOTECOMMAND="pkill -u ${REMOTEUSER[$m]} -f '\-t ${NAME} \-v'"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND}
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND}
 done
 
 echo " "

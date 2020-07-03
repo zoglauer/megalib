@@ -57,6 +57,11 @@ fi
 
 # Read configuration file and extract machines
 CFG=~/.dcosima.cfg
+if [ ! -f ${CFG} ]; then
+  echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
+  exit 1
+fi
+
 MACHINES=( `cat ${CFG} | grep "^machine" | gawk '{ print $2 }'` )
 REMOTEUSER=( )
 REMOTEHOST=( )
@@ -79,7 +84,7 @@ echo " "
 for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   
   # Do a quick test if the machine is available:
-  REMOTENAME=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: NOT ACCESSIBLE"
     continue
@@ -87,7 +92,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
 
   # Now check if the path is accesible
   REMOTECOMMAND="if [[ -d ${REMOTEPATH} && -x ${REMOTEPATH} ]]; then echo \"YES\"; else   echo \"NO\"; fi;"
-  REMOTEDATADIR=$(ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
+  REMOTEDATADIR=$(ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} 'bash -s' <<< ${REMOTECOMMAND} )
   if [[ "$?" != "0" ]] || [[ ${REMOTEDATADIR} != "YES" ]]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER[$m]}: PATH NOT ACCESSIBLE"
     continue

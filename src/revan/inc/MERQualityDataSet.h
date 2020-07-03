@@ -42,12 +42,12 @@ class MERQualityDataSet
    //! Default constructor
    MERQualityDataSet();
    //! Standard constructor - initialize for the given sequence length
-   MERQualityDataSet(unsigned int MaxSequenceLength, bool UsePathToFirstIA = false);
+   MERQualityDataSet(unsigned int MaxSequenceLength, unsigned int NumberOfPathSamplesToFirstIA = 0);
    //! Default destuctor 
   virtual ~MERQualityDataSet();
 
   //! Create data set for the given sequence length, 2..N
-  void Initialize(unsigned int MaxSequenceLength, bool UsePathToFirstIA = false);
+  void Initialize(unsigned int MaxSequenceLength, unsigned int NumberOfPathSamplesToFirstIA = 0);
   
   //! Create trees
   //! Tree must be deleted afterwards

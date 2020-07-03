@@ -2320,18 +2320,18 @@ bool MCSource::CalculateNextEmission(double Time, double /*Scale*/)
   // If we have a non-looping orientation, check if we are outside:
   if (m_Orientation.IsOriented() == true && m_Orientation.IsLooping() == false) {
     if (m_NextEmission > m_Orientation.GetStopTime()) {
+      mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
       m_IsActive = false;
       m_NextEmission = numeric_limits<double>::max();
-      mout<<m_Name<<": orientation data exceeded."<<endl;      
     }
   }
   
   const MCOrientation& Sky = MCRunManager::GetMCRunManager()->GetCurrentRun().GetSkyOrientationReference();
   if (Sky.IsOriented() == true && Sky.IsLooping() == false) {
     if (m_NextEmission > Sky.GetStopTime()) {
+      mout<<m_Name<<": orientation data exceeded (next emission: "<<m_NextEmission/second<<" vs. max time: "<<m_Orientation.GetStopTime()/second<<")."<<endl;      
       m_IsActive = false;
       m_NextEmission = numeric_limits<double>::max();
-      mout<<m_Name<<": orientation data exceeded."<<endl;      
     }
   }  
   

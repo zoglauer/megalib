@@ -71,7 +71,7 @@ MResponseEventQualityTMVAEventFile::MResponseEventQualityTMVAEventFile()
   // We can save much more frequently here, since the files are a lot smaller
   m_SaveAfter = numeric_limits<long>::max();
   
-  m_UsePathToFirstIA = true;
+  m_NumberOfPathsToFirstIA = 18;
 }
 
 
@@ -101,7 +101,7 @@ MString MResponseEventQualityTMVAEventFile::Description()
 MString MResponseEventQualityTMVAEventFile::Options()
 {
   ostringstream out;
-  out<<"             initial:   use the path to the initial IA (default: true)"<<endl;
+  out<<"             initialpaths:   use the path to the initial IA (default: 18)"<<endl;
   
   return MString(out);
 }
@@ -144,11 +144,19 @@ bool MResponseEventQualityTMVAEventFile::ParseOptions(const MString& Options)
     
     if (Split2[i][0] == "initial") {
       if (Value == "true") {
-        m_UsePathToFirstIA = true;
+        m_NumberOfPathsToFirstIA = 18;
       } else if (Value == "false") {
-        m_UsePathToFirstIA = false;
+        m_NumberOfPathsToFirstIA = 0;
       } else {
-        mout<<"Error: Unrecognized value ("<<Value<<") for option "<<Value<<endl;
+        mout<<"Error: Unrecognized value ("<<Value<<") for option "<<Split2[i][0]<<endl;
+      }
+    } else if (Split2[i][0] == "initialpaths") {
+      int Number = atoi(Value.c_str());
+      if (Number < 0) {
+        mout<<"Error: You need a non-negative value ("<<Value<<") for option "<<Split2[i][0]<<". Using zero."<<endl;
+        m_NumberOfPathsToFirstIA = 0;
+      } else {
+        m_NumberOfPathsToFirstIA = (unsigned int) Number;
       }
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
@@ -159,7 +167,7 @@ bool MResponseEventQualityTMVAEventFile::ParseOptions(const MString& Options)
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for creating TMVA quality data files:"<<endl;
-  mout<<"  Path to first IA:          "<<(m_UsePathToFirstIA == true ? "true" : "false")<<endl;
+  mout<<"  Number of paths to first IA:          "<<m_NumberOfPathsToFirstIA<<endl;
   mout<<endl;
   
   return true;
@@ -199,7 +207,7 @@ bool MResponseEventQualityTMVAEventFile::Initialize()
   // Create the ROOT trees for the TMVA analysis
   for (unsigned int s = 2; s <= m_MaxNInteractions; ++s) {
     MERQualityDataSet* DS = new MERQualityDataSet();
-    DS->Initialize(s, m_UsePathToFirstIA);
+    DS->Initialize(s, m_NumberOfPathsToFirstIA);
     m_Trees.push_back(DS->CreateTree("Quality"));
     m_DataSets.push_back(DS);
   }

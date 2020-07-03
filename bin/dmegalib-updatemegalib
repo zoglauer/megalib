@@ -15,7 +15,7 @@ commandhelp() {
   echo "Usage: dmegalib-updatemegalib [options]";
   echo ""
   echo "Options:"
-  echo "  --branch=name             : Use the given MEGAlib git branch (default it experimental)"
+  echo "  --branch=name             : Use the given MEGAlib git branch (default it master)"
   echo "  --machine=user@host:port  : Only update this machine, if not given use the ones in .dmegalib.cfg"
   echo "  --help                    : Show this help"
   echo ""
@@ -32,7 +32,7 @@ commandhelp() {
 # Store command line as array
 CMD=( "$@" )
 SINGLEMACHINE=""
-BRANCH="experimental"
+BRANCH="master"
 
 # Check for help
 for C in "${CMD[@]}"; do
@@ -49,6 +49,11 @@ done
 
 # Default options:
 CFG=~/.dcosima.cfg
+if [ ! -f ${CFG} ]; then
+  echo "ERROR: No dmegalib configuration file present. Please run dmegalib-setup first."
+  exit 1
+fi
+
 MEGALIBPATH="~/Science/Software" # Attention hard coded else where!
 
 # Read configuration file and extract machines
@@ -71,7 +76,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   REMOTEPORT[$m]=`echo "${MACHINES[$m]}" | awk -F":" '{ print $2 }'`
  
   # Do a quick test if the machine is available:
-  REMOTENAME[$m]=`ssh -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
+  REMOTENAME[$m]=`ssh -i ${HOME}/.ssh/dmegalib_rsa -q -o ConnectTimeout=5 -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "hostname"`
   if [ "$?" != "0" ]; then
     echo " * Machine ${REMOTEHOST[$m]}, port ${REMOTEPORT[$m]}, user ${REMOTEUSER}: NOT ACCESSIBLE"
     MACHINES[$m]=""
@@ -185,7 +190,7 @@ for (( m=0; m<=$(( ${#MACHINES[*]} -1 )); m++ )); do
   fi
 
   echo " * ${REMOTENAME[$m]} - ${REMOTEUSER[$m]}@${REMOTEHOST[$m]}:${REMOTEPORT[$m]}"
-  ssh -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dmegalib-${REMOTENAME[$m]}.log 2>&1 &
+  ssh -i ${HOME}/.ssh/dmegalib_rsa -p ${REMOTEPORT[$m]} ${REMOTEUSER[$m]}@${REMOTEHOST[$m]} "bash -s" -- < ${SCRIPT} > /tmp/dmegalib-${REMOTENAME[$m]}.log 2>&1 &
   sleep 5 # Sleep a bit in case the machines share storage
   
 done
