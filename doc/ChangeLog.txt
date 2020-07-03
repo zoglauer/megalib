@@ -10,12 +10,21 @@
 Version 3.01/3.02
 =================
 
+General:
++ dmegalib: New dmegalib-setup, which needs to be run before the distributed
+            analysis can be used
+
 
 Mimrec:
 + New option in the event selector to choose the detector of the 2nd interaction
 
 Examples:
 + AllSky: How to simulate all-sky images
+
+Long-term bugs fixed:
++ Sivan: There was a uncommon programatic path using clusters and discretization, 
+         which could have lead to double noising 
+ 
 
 
 
