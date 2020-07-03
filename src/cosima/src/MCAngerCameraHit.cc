@@ -45,7 +45,6 @@ G4Allocator<MCAngerCameraHit> MCAngerCameraHitAllocator;
  */
 MCAngerCameraHit::MCAngerCameraHit() : MCVHit()
 {
-  m_Position.set(0.0, 0.0, 0.0);
   m_DetectorType = MDDetector::c_AngerCamera;
 }
 
@@ -66,10 +65,10 @@ MCAngerCameraHit::~MCAngerCameraHit()
 MCAngerCameraHit::MCAngerCameraHit(const MCAngerCameraHit& Hit) : MCVHit()
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
-  m_Position = Hit.m_Position;
 
   m_Origins = Hit.m_Origins;
 
@@ -87,10 +86,10 @@ MCAngerCameraHit::MCAngerCameraHit(const MCAngerCameraHit& Hit) : MCVHit()
 const MCAngerCameraHit& MCAngerCameraHit::operator=(const MCAngerCameraHit& Hit)
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
-  m_Position = Hit.m_Position;
 
   m_Origins = Hit.m_Origins;
 
@@ -149,17 +148,6 @@ const MCAngerCameraHit& MCAngerCameraHit::operator+=(const MCAngerCameraHit& Hit
   }
 
   return *this;
-}
-
-
-/******************************************************************************
- * Return a hit 
- */
-MSimHT* MCAngerCameraHit::GetCalibrated()
-{
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
 }
 
 

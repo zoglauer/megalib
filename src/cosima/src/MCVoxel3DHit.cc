@@ -47,7 +47,6 @@ G4Allocator<MCVoxel3DHit> MCVoxel3DHitAllocator;
 MCVoxel3DHit::MCVoxel3DHit() : MCVHit()
 {
   m_ADCCounts = 0;
-  m_Position.set(0.0, 0.0, 0.0);
   m_IsGuardringHit = false;
   m_XVoxel = -1;
   m_YVoxel = -1;
@@ -71,11 +70,11 @@ MCVoxel3DHit::~MCVoxel3DHit()
 MCVoxel3DHit::MCVoxel3DHit(const MCVoxel3DHit& Hit) : MCVHit()
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
   m_ADCCounts = Hit.m_ADCCounts;
-  m_Position = Hit.m_Position;
   m_IsGuardringHit = Hit.m_IsGuardringHit;
   m_XVoxel = Hit.m_XVoxel;
   m_YVoxel = Hit.m_YVoxel;
@@ -97,11 +96,11 @@ MCVoxel3DHit::MCVoxel3DHit(const MCVoxel3DHit& Hit) : MCVHit()
 const MCVoxel3DHit& MCVoxel3DHit::operator=(const MCVoxel3DHit& Hit)
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
   m_ADCCounts = Hit.m_ADCCounts;
-  m_Position = Hit.m_Position;
   m_IsGuardringHit = Hit.m_IsGuardringHit;
   m_XVoxel = Hit.m_XVoxel;
   m_YVoxel = Hit.m_YVoxel;
@@ -193,7 +192,7 @@ const MCVoxel3DHit& MCVoxel3DHit::operator+=(const MCVoxel3DHit& Hit)
  */
 MSimGR* MCVoxel3DHit::GetGuardringCalibrated()
 {
-  if (m_IsGuardringHit == false) return 0;
+  if (m_IsGuardringHit == false) return nullptr;
 
   // Most of the stuff can be put into the base class
   MSimGR* GR = new MSimGR();
@@ -210,11 +209,9 @@ MSimGR* MCVoxel3DHit::GetGuardringCalibrated()
  */
 MSimHT* MCVoxel3DHit::GetCalibrated()
 {
-  if (m_IsGuardringHit == true) return 0;
+  if (m_IsGuardringHit == true) return nullptr;
 
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
+  return MCVHit::GetCalibrated();
 }
 
 

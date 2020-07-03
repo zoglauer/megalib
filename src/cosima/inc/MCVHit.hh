@@ -32,6 +32,7 @@ using namespace std;
 // Geant4:
 #include "globals.hh"
 #include "G4VHit.hh"
+#include "G4ThreeVector.hh"
 
 // MEGAlib:
 #include "MSimHT.h"
@@ -50,7 +51,9 @@ public:
 
   /// Return the energy deposited in this hit
   G4double GetEnergy() { return m_Energy; };
-   /// Return the time of this hit since event start
+  /// Return the position in the world coordinate system
+  inline G4ThreeVector GetPosition() { return m_Position; }
+  /// Return the time of this hit since event start
   G4double GetTime() { return m_Time; };
   /// Return the name of the detector, in which the hit took place
   G4String GetDetectorName() { return m_Name; };
@@ -67,6 +70,8 @@ public:
 
   /// Set the energy deposited during this hit
   inline void SetEnergy(G4double Energy) { m_Energy = Energy; };
+  /// Set the location of the hit in the world coordinate system
+  inline void SetPosition(G4ThreeVector Position) { m_Position = Position; }
   /// Set the name of the detector module in which this hit has happend
   inline void SetDetectorName(G4String Name) { m_Name = Name; };
   // Why is SetDetectorType missing???
@@ -85,6 +90,8 @@ protected:
 
   /// Deposited energy
   G4double m_Energy;
+  /// Absolute Position of the hit in the world reference frame
+  G4ThreeVector m_Position;
   /// Shortest time since event start
   G4double m_Time;
   /// Name of the detector module

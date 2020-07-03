@@ -55,21 +55,13 @@ public:
   inline void* operator new(size_t);
   /// Special Geant4 memory deallocation
   inline void  operator delete(void*);
-  
-  /// Return the data as calibrated hit (as position and energy)
-  MSimHT* GetCalibrated();
-
-  /// Set the location of the hit in the world coordinate system
-  inline void SetPosition(G4ThreeVector Position) { m_Position = Position; }
-  /// Return the position in the world coordinate system
-  inline G4ThreeVector GetPosition() { return m_Position; };
 
   /// Dump the hit
   void Print();
 
 private:
-    /// Absolute Position of the hit in the world reference frame
-  G4ThreeVector m_Position;
+
+  
 };
 
 

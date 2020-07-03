@@ -116,7 +116,11 @@ class MSimEvent : public MRotationInterface
   void RemoveHT(MSimHT* HT);
   //! Remove all but the given hit from the event - the HT's are not deleted!
   void RemoveAllHTsBut(MSimHT* HT);
-
+  //! Remove all hits from the event - the HT's are not deleted!
+  void RemoveAllHTs();
+  //! Delete all HTs
+  void DeleteAllHTs();
+  
   //! Add a directional information
   bool AddDR(const MSimDR& DR);
   //! Get the number of directional informations

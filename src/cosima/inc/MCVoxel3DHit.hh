@@ -72,8 +72,6 @@ public:
 
   /// Set the number of ADCcounts evoked by this hit
   inline void SetADCCounts(G4double ADCCounts) { m_ADCCounts = ADCCounts; }
-  /// Set the location of the hit in the world coordinate system
-  inline void SetPosition(G4ThreeVector Position) { m_Position = Position; }
   /// Set the voxel number in x-direction
   inline void SetXVoxel(G4int XVoxel) { m_XVoxel = XVoxel; } 
   /// Set the voxel number in x-direction
@@ -89,8 +87,6 @@ public:
  
   /// Return the number of ADCCounts
   inline G4double GetADCCounts() { return m_ADCCounts; }
-  /// Return the position in the world coordinate system
-  inline G4ThreeVector GetPosition() { return m_Position; }
 
   /// Dump the hit
   void Print();
@@ -98,9 +94,6 @@ public:
 protected:
   /// True if the interaction happened in the guardring
   G4bool m_IsGuardringHit;
-
-  /// Absolute Position of the hit in the world reference frame
-  G4ThreeVector m_Position;
 
   /// x-Voxel of the detector where the hit has happend
   G4int m_XVoxel;

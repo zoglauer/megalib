@@ -136,11 +136,9 @@ const MCDriftChamberHit& MCDriftChamberHit::operator+=(const MCDriftChamberHit& 
  */
 MSimHT* MCDriftChamberHit::GetCalibrated()
 {
-  if (m_IsGuardringHit == true) return 0;
+  if (m_IsGuardringHit == true) return nullptr;
 
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
+  return MCVHit::GetCalibrated();
 }
 
 

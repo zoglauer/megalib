@@ -42,9 +42,6 @@ class MSimHT
  public:
   //! Simple constructor - set all values via the set commands 
   MSimHT(MDGeometryQuest* Geo = 0);
-  //! Standard constructor, which contains all neccessary infos
-  MSimHT(const int Detector, const MVector& Position, const double Energy, 
-         const double Time, const vector<int>& Origins, MDGeometryQuest* Geo);
   //! Copy constructor
   MSimHT(const MSimHT& HT);
   //! Default destructor
@@ -52,30 +49,37 @@ class MSimHT
 
   //! Set everything via one line of input
   bool AddRawInput(MString LineBuffer, int Version = 100);
-
+  
+  //! Set all core data
+  void Set(const int DetectorType, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool NeedsNoising);
+  
+  //! Set all core data
+  void Set(const int DetectorType, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool NeedsNoising);
+  
   //! Return the number of the detector, where the hit took place
   int GetDetectorType() const { return m_DetectorType; };
-  //! Set the detctor type in which the hit took place
-  void SetDetectorType(const int Detector) { m_DetectorType = Detector; }
+  //! Set the detctor type in which the hit took place --> We can only set all the data at once since we need to noise
+  // void SetDetectorType(const int Detector) { m_DetectorType = Detector; }
 
   //! Return the location at which the hit happend
   MVector GetPosition() const { return m_Position; }
-  //! Set the location at which the hit happend  
-  void SetPosition(const MVector& Pos);
+  //! Return the original location of the hit - before noising
+  MVector GetOriginalPosition() const { return m_OriginalPosition; }
+  //! Set the location at which the hit happend --> We can only set all the data at once since we need to noise
+  // void SetPosition(const MVector& Pos);
 
   //! Set the energy deposited during this hit
   double GetEnergy() const { return m_Energy; }
-  //! Return the energy deposited during this hit
-  void SetEnergy(const double Energy);
-
-  //! Return the original location of the hit - before noising
-  MVector GetOriginalPosition() const { return m_OriginalPosition; }
   //! Return the original energy deposit - before noising
   double GetOriginalEnergy() const { return m_OriginalEnergy; }
+  //! Return the energy deposited during this hit --> We can only set all the data at once since we need to noise
+  //void SetEnergy(const double Energy);
+
+  
   //! Set the time when this hit happend
   double GetTime() const { return m_Time; }
-  //! Return the time when this hit happend
-  void SetTime(const double Time) { m_Time = Time; }
+  //! Return the time when this hit happend --> We can only set all the data at once since we need to noise
+  // void SetTime(const double Time) { m_Time = Time; }
 
   //! Test if i is one of the origins of this hit
   bool IsOrigin(const int i) const;
@@ -85,8 +89,8 @@ class MSimHT
   unsigned int GetNOrigins() const;
   //! Add an origin - ignored if it already exists
   void AddOrigin(const int i);
-  //! Set all origins
-  void SetOrigins(const set<int>& Origins);
+  //! Set all origins --> We can only set all the data at once since we need to noise
+  // void SetOrigins(const set<int>& Origins);
   //! Return the origin with the smallest id
   int GetSmallestOrigin(const int Except = -1) const;
   //! Return all origins
@@ -159,7 +163,9 @@ class MSimHT
   MVector m_OriginalPosition;  
   //! Energy deposit, before noising
   double m_OriginalEnergy;       
-
+  //! Time, before noising
+  double m_OriginalTime;       
+  
   //! Pointer to the geometry description
   MDGeometryQuest* m_Geometry;     
   //! Volume history of this hit

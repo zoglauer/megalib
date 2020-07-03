@@ -47,7 +47,6 @@ MCCalorBarHit::MCCalorBarHit() : MCVHit()
 {
   m_ADCCountsTop = 0;
   m_ADCCountsBottom = 0;
-  m_Position.set(0.0, 0.0, 0.0);
   m_XBar = -1;
   m_YBar = -1;
   m_DetectorType = MDDetector::c_Calorimeter;
@@ -70,10 +69,10 @@ MCCalorBarHit::~MCCalorBarHit()
 MCCalorBarHit::MCCalorBarHit(const MCCalorBarHit& Hit) : MCVHit()
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
-  m_Position = Hit.m_Position;
   m_XBar = Hit.m_XBar;
   m_YBar = Hit.m_YBar;
   m_ADCCountsTop = Hit.m_ADCCountsTop;
@@ -95,10 +94,10 @@ MCCalorBarHit::MCCalorBarHit(const MCCalorBarHit& Hit) : MCVHit()
 const MCCalorBarHit& MCCalorBarHit::operator=(const MCCalorBarHit& Hit)
 {
   m_Energy = Hit.m_Energy;
+  m_Position = Hit.m_Position;
   m_Name = Hit.m_Name;
   m_DetectorType = Hit.m_DetectorType;
 
-  m_Position = Hit.m_Position;
   m_ADCCountsTop = Hit.m_ADCCountsTop;
   m_ADCCountsBottom = Hit.m_ADCCountsBottom;
   m_XBar = Hit.m_XBar;
@@ -169,17 +168,6 @@ const MCCalorBarHit& MCCalorBarHit::operator+=(const MCCalorBarHit& Hit)
   }
 
   return *this;
-}
-
-
-/******************************************************************************
- * Return a hit 
- */
-MSimHT* MCCalorBarHit::GetCalibrated()
-{
-  MSimHT* HT = MCVHit::GetCalibrated();
-  HT->SetPosition(MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm));
-  return HT;
 }
 
 

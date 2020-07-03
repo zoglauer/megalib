@@ -62,8 +62,6 @@ public:
 
   /// Set the number of ADCcounts evoked by this hit
   inline void SetADCCounts(G4double ADCCounts) { m_ADCCounts = ADCCounts; }
-  /// Set the location of the hit in the world coordinate system
-  inline void SetPosition(G4ThreeVector Position) { m_Position = Position; }
   /// Set the strip number in x-direction
   inline void SetXStrip(G4int XStrip) { m_XStrip = XStrip; } 
   /// Set the strip number in x-direction
@@ -75,16 +73,11 @@ public:
  
   /// Return the number of ADCCounts
   inline G4double GetADCCounts() { return m_ADCCounts; }
-  /// Return the position in the world coordinate system
-  inline G4ThreeVector GetPosition() { return m_Position; }
 
   /// Dump the hit
   void Print();
 
 private:
-  /// Absolute Position of the hit in the world reference frame
-  G4ThreeVector m_Position;
-
   /// x-Strip of the LAYER (not wafer) where the hit has happend
   G4int m_XStrip;
   /// y-Strip of the LAYER (not wafer) where the hit has happend

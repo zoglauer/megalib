@@ -225,9 +225,11 @@ MSimHT* MSimCluster::CreateHT()
 {  
   // Convert the content to a hit
   
-  if (m_HTList.size() == 0) return 0;
+  if (m_HTList.size() == 0) return nullptr;
 
-  return new MSimHT(m_Detector, m_Position, m_Energy, m_Time, m_Origins, m_HTList[0]->GetGeometry());
+  MSimHT* HT = new MSimHT(m_HTList[0]->GetGeometry());
+  HT->Set(m_Detector, m_Position, m_Energy, m_Time, m_Origins, false);
+  return HT;
 }
 
 

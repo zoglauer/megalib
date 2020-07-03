@@ -71,32 +71,6 @@ MSimHT::MSimHT(MDGeometryQuest* Geo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSimHT::MSimHT(const int Detector, const MVector& Position, const double Energy, 
-               const double Time, const vector<int>& Origins, 
-               MDGeometryQuest* Geometry)
-{
-  // Correctly initialize the pointers:
-  m_VolumeSequence = 0;
-
-  // Basic data:
-  m_Geometry = Geometry; // We need this first
-
-  SetDetector(Detector);
-  SetPosition(Position);
-  SetEnergy(Energy);
-  SetTime(Time);
-  m_Origins = Origins;
-
-  // More sophisticated data:
-  m_OriginalPosition = m_Position;
-  m_OriginalEnergy = m_Energy;
-  m_Added = false;
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MSimHT::MSimHT(const MSimHT& HT)
 {
   // copy constructor
@@ -136,6 +110,58 @@ MSimHT::~MSimHT()
   delete m_VolumeSequence;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool NeedsNoising)
+{
+  //! Set all core data
+  
+  m_DetectorType = Detector;
+  
+  m_OriginalEnergy = Energy; 
+  m_OriginalPosition = Position;
+  m_OriginalTime = Time;
+  
+  m_Origins = Origins;
+  
+  if (NeedsNoising == true) {
+    Noise();
+  } else {
+    m_Energy = Energy;
+    m_Position = Position;
+    m_Time = Time;
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool NeedsNoising)
+{
+  //! Set all core data
+  
+  m_DetectorType = Detector;
+  
+  m_OriginalEnergy = Energy; 
+  m_OriginalPosition = Position;
+  m_OriginalTime = Time;
+  
+  m_Origins.clear();
+  for (set<int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
+    m_Origins.push_back(*Iter);
+  }
+  
+  if (NeedsNoising == true) {
+    Noise();
+  } else {
+    m_Energy = Energy;
+    m_Position = Position;
+    m_Time = Time;
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -191,6 +217,7 @@ bool MSimHT::AddRawInput(MString LineBuffer, int Version)
   
   m_OriginalPosition = m_Position;
   m_OriginalEnergy = m_Energy;
+  m_OriginalTime = m_Time;
 
   // Remove everything but the (variable) origin part...
   MString Origin(LineBuffer);
@@ -362,6 +389,7 @@ void MSimHT::AddOrigin(int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+/*
 void MSimHT::SetOrigins(const set<int>& Origins)
 {
   // Set all origins
@@ -371,6 +399,7 @@ void MSimHT::SetOrigins(const set<int>& Origins)
     m_Origins.push_back(*Iter);
   }
 }
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -453,30 +482,6 @@ void MSimHT::OffsetOrigins(int Offset)
   }
 }
 
- 
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MSimHT::SetEnergy(const double Energy) 
-{ 
-  // Set a new energy and recalculate the noise:
-
-  m_OriginalEnergy = Energy; 
-  Noise(false);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
-void MSimHT::SetPosition(const MVector& Pos)
-{
-  // Set a new position and recalculate the noise:
-
-  m_OriginalPosition = Pos;
-  Noise(true);
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -488,7 +493,8 @@ bool MSimHT::Noise(bool RecalculateVolumeSequence)
   // Make sure we noise not twice:
   m_Position = m_OriginalPosition;
   m_Energy = m_OriginalEnergy;
-
+  m_Time = m_OriginalTime;
+  
   //cout<<"Before: "<<m_Energy;
   if (m_Geometry != 0) {
     if (RecalculateVolumeSequence == true) {
