@@ -554,10 +554,31 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
   vector<MDGridPoint> Collection;
   
   if (m_DriftConstant == g_DoubleNotDefined || m_DriftConstant == 0) {
-    MDGridPoint P = GetGridPoint(PosInDetectorVolume);
-    P.SetEnergy(Energy);
-    P.SetTime(Time);
-    Collection.push_back(P);
+    MDGridPoint xP = GetGridPoint(PosInDetectorVolume);
+    
+    MVector Pos = GetPositionInDetectorVolume(xP.GetXGrid(), 
+                                                         xP.GetYGrid(),
+                                                         0,
+                                                         PosInDetectorVolume,
+                                                         0,
+                                                         nullptr);
+    
+    xP.SetEnergy(Energy);
+    xP.SetTime(Time);
+    
+    MDGridPoint yP = xP;
+    yP.SetXGrid(0);
+    yP.SetType(MDGridPoint::c_YStrip);
+    yP.SetPosition(MVector(0, Pos.Y(), Pos.Z()));
+    
+    
+    xP.SetYGrid(0);
+    xP.SetType(MDGridPoint::c_XStrip);
+    xP.SetPosition(MVector(Pos.X(), 0, Pos.Z()));
+    
+    Collection.push_back(xP);
+    Collection.push_back(yP);
+    
     return Collection; 
   }
   
@@ -656,14 +677,29 @@ vector<MDGridPoint> MDStrip3D::Grid(const MVector& PosInDetectorVolume, const do
       continue;
     }
     
-    MDGridPoint P(xStrip+xWafer*m_NStripsX, 
-                  yStrip+yWafer*m_NStripsY, 
+    MVector PosInDetVolume = GetPositionInDetectorVolume(xStrip+xWafer*m_NStripsX, 
+                                                         yStrip+yWafer*m_NStripsY,
+                                                         0,
+                                                         Pos,
+                                                         0,
+                                                         nullptr);
+    
+    MDGridPoint X(xStrip+xWafer*m_NStripsX, 
+                  0, 
                   0,
-                  MDGridPoint::c_Voxel,
-                  MVector(0.0, 0.0, Pos.Z()), 
+                  MDGridPoint::c_XStrip,
+                  MVector(PosInDetVolume.X(), 0.0, PosInDetVolume.Z()), 
                   EnergyPerElectron, 
                   Time);
-    Collection.push_back(P);
+    MDGridPoint Y(0, 
+                  yStrip+yWafer*m_NStripsY, 
+                  0,
+                  MDGridPoint::c_YStrip,
+                  MVector(0.0, PosInDetVolume.Y(), PosInDetVolume.Z()), 
+                  EnergyPerElectron, 
+                  Time);
+    Collection.push_back(X);
+    Collection.push_back(Y);
   }
   
   return Collection;

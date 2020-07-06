@@ -26,6 +26,7 @@
 #include "MRESEList.h"
 #include "MDDetector.h"
 #include "MDVolumeSequence.h"
+#include "MDGridPoint.h"
 #include "MPhysicalEventHit.h"
 
 // Forward declarations:
@@ -97,7 +98,9 @@ class MRESE
   virtual MString GetNoiseFlags() const { return m_NoiseFlags; } 
   virtual void SetVolumeSequence(MDVolumeSequence* VS);
   virtual MDVolumeSequence* GetVolumeSequence();
- 
+  virtual void SetGridPoint(const MDGridPoint& GP);
+  virtual MDGridPoint GetGridPoint() const;
+  
   // the link interface:
   int GetNLinks(); 
   bool HasLinks();
@@ -175,7 +178,8 @@ class MRESE
   static const int c_Cluster;
   static const int c_Bremsstrahlung;
   static const int c_Event;
-
+  static const int c_StripHit;
+  
  protected:
   virtual void RecalculateResolutions();
   
@@ -223,6 +227,9 @@ class MRESE
   //! Geomega volume sequence
   MDVolumeSequence* m_VolumeSequence;
 
+  //! Geomega grid point
+  MDGridPoint m_GridPoint;
+  
   //! True if good RESE - currently only relevant for measured data...
   bool m_IsValid;
 

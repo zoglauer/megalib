@@ -953,6 +953,14 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
       out<<"The energy is outside of what the event clustering was trained for";
     }
     break;
+  case c_RejectionStripPairingMissingStrips:
+    if (Short == true) {
+      out<<"StripPairingMissingStrips";
+    } else {
+      out<<"Strip pairing failed due to are missing strips";
+    }
+    break;
+    
   default:
     if (Short == true) {
       out<<"";

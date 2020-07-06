@@ -146,7 +146,7 @@ void MDGridPointCollection::Add(MDGridPoint& Point)
   // TODO: Ideally we should verify that the volume sequences are identical, 
   //       but the point does not have one, and I cannot create one, since we have no geometry
   
-  if (m_Points.size() == 0 || (m_Points.size() > 0 && m_Points[0].GetType() == Point.GetType())) {
+  if (m_Points.size() == 0 || (m_Points.size() > 0 && (m_Points[0].GetType() == Point.GetType() || (m_Points[0].GetType() == MDGridPoint::c_XStrip && Point.GetType() == MDGridPoint::c_YStrip) || (m_Points[0].GetType() == MDGridPoint::c_YStrip && Point.GetType() == MDGridPoint::c_XStrip)))) {
       
     bool Added = false;
     for (auto AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
@@ -160,7 +160,7 @@ void MDGridPointCollection::Add(MDGridPoint& Point)
       m_Points.push_back(Point);      
     }
   } else {
-    merr<<"ERROR: Grid points are not of same size - grid point not added"<<endl; 
+    merr<<"ERROR: Grid points are not of same type ("<<m_Points[0].GetType()<<" vs "<<Point.GetType()<<")- grid point not added"<<endl; 
   }
 }
 

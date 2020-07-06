@@ -187,12 +187,20 @@ bool MDGridPoint::operator==(const MDGridPoint& GridPoint)
           m_zGrid != GridPoint.m_zGrid) {
         return false;
       }
+    } else if (m_Type == c_XStrip) {
+      if (m_xGrid != GridPoint.m_xGrid) {
+        return false; 
+      }
+    } else if (m_Type == c_YStrip) {
+      if (m_yGrid != GridPoint.m_yGrid) {
+        return false; 
+      }
     } else if (m_Type == c_GuardRing || 
                m_Type == c_XYAnger ||
                m_Type == c_XYZAnger) {
       return true;
     } else {
-      merr<<"Unknown grid point type: "<<m_Type<<endl;
+      merr<<"MDGridPoint::operator==: Unknown grid point type: "<<m_Type<<endl;
       massert(false);
     }
   } else {
@@ -212,13 +220,8 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
 
   if (m_Type == GridPoint.m_Type) {
  
-    if (m_Type == c_Voxel || 
-        m_Type == c_VoxelDrift ||
-        m_Type == c_XYAnger ||
-        m_Type == c_XYZAnger) {
-      if (m_xGrid == GridPoint.m_xGrid && 
-          m_yGrid == GridPoint.m_yGrid && 
-          m_zGrid == GridPoint.m_zGrid) {
+    if (m_Type == c_Voxel || m_Type == c_VoxelDrift ||m_Type == c_XYAnger || m_Type == c_XYZAnger) {
+      if (m_xGrid == GridPoint.m_xGrid && m_yGrid == GridPoint.m_yGrid && m_zGrid == GridPoint.m_zGrid) {
         // Position, ...
         if (m_Type == c_Voxel || m_Type == c_VoxelDrift) {
           m_Position.SetX(0.0);
@@ -255,11 +258,45 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
             m_Origins.push_back((*NewIter));
           }
         }
+      
+        // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
+        m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
+        // Finally add the hits:
+        m_Hits += GridPoint.m_Hits;
       }
-      // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
-      m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
-      // Finally add the hits:
-      m_Hits += GridPoint.m_Hits;
+    
+    } else if (m_Type == c_XStrip || m_Type == c_YStrip) {
+      if ((m_Type == c_XStrip && m_xGrid == GridPoint.m_xGrid) || (m_Type == c_YStrip && m_yGrid == GridPoint.m_yGrid)) {
+        
+        // Position, ...
+        m_Position.SetZ((m_Energy*m_Position.Z() + GridPoint.m_Position.Z()*GridPoint.m_Energy)/(m_Energy+GridPoint.m_Energy));
+        // ... Energy (not before depth!),  
+        m_Energy += GridPoint.m_Energy;
+        // ... Time &
+        if (GridPoint.m_Time < m_Time) {
+          m_Time = GridPoint.m_Time;
+        }
+        // Origins!
+        vector<int>::const_iterator NewIter;
+        vector<int>::iterator OldIter;
+        for (NewIter = GridPoint.m_Origins.begin(); NewIter != GridPoint.m_Origins.end(); ++NewIter) {
+          bool Found = false;
+          for (OldIter = m_Origins.begin(); OldIter != m_Origins.end(); ++OldIter) {
+            if ((*NewIter) == (*OldIter)) {
+              Found = true;
+              break;
+            }
+          }
+          if (Found == false) {
+            m_Origins.push_back((*NewIter));
+          }
+        }
+      
+        // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
+        m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
+        // Finally add the hits:
+        m_Hits += GridPoint.m_Hits;
+      }
     } else if (m_Type == c_GuardRing) {
       m_Energy += GridPoint.m_Energy;
       m_Position.SetXYZ(0.0, 0.0, 0.0);
@@ -270,7 +307,7 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
       m_Time = 0;
       m_Origins.clear();
     } else {
-      merr<<"Unknown grid point type: "<<m_Type<<endl;
+      merr<<"MDGridPoint::operator+=: Unknown grid point type: "<<m_Type<<endl;
     }
     
     // Some flags might be duplicate

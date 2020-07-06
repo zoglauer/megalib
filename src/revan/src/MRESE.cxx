@@ -72,6 +72,7 @@ const int MRESE::c_Track           = 2;
 const int MRESE::c_Cluster         = 3;
 const int MRESE::c_Bremsstrahlung  = 4;
 const int MRESE::c_Event           = 5;
+const int MRESE::c_StripHit        = 6;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -486,7 +487,7 @@ void MRESE::SetDetector(int Detector)
 void MRESE::SetVolumeSequence(MDVolumeSequence* VS)
 {
   // Set the volume sequence
-
+  
   delete m_VolumeSequence;
   m_VolumeSequence = VS;
 }
@@ -498,9 +499,32 @@ void MRESE::SetVolumeSequence(MDVolumeSequence* VS)
 MDVolumeSequence* MRESE::GetVolumeSequence()
 {
   // Return the volume sequence
-
+  
   return m_VolumeSequence;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESE::SetGridPoint(const MDGridPoint& GP)
+{
+  // Set the grid point
+  
+  m_GridPoint = GP;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MDGridPoint MRESE::GetGridPoint() const
+{
+  // Return the grid point
+  
+  return m_GridPoint;
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -42,6 +42,7 @@ using namespace std;
 #include "MREAMDriftChamberEnergy.h"
 #include "MREAMGuardRingHit.h"
 #include "MREAMDirectional.h"
+#include "MREStripHit.h"
 #include "MDDriftChamber.h"
 #include "MDStrip2D.h"
 #include "MDStrip3D.h"
@@ -147,16 +148,49 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     for (unsigned int p = 0; p < GridPointCollections[c].GetNGridPoints(); ++p) {
       const MDGridPoint& P = GridPointCollections[c].GetGridPointAt(p);
 
-      MREHit* Hit = new MREHit();
-      Hit->SetEnergy(P.GetEnergy());
-      Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
-      Hit->SetTime(P.GetTime());
-      Hit->SetNoiseFlags(P.GetFlags());
-      Hit->UpdateVolumeSequence(m_Geometry);
-      Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
-      Hit->RetrieveResolutions(m_Geometry);
-      Event->AddRESE(Hit);
       
+      
+      if (P.GetType() == MDGridPoint::c_XStrip || P.GetType() == MDGridPoint::c_YStrip) {
+        MREStripHit* Hit = new MREStripHit();
+        Hit->SetEnergy(P.GetEnergy());
+        Hit->SetTime(P.GetTime());
+        Hit->SetNoiseFlags(P.GetFlags());
+        //cout<<"Pos of P: "<<P.GetPosition()<<endl;
+        //cout<<"Worl P: "<<GridPointCollections[c].GetWorldPositionGridPointAt(p)<<endl;
+        Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
+        Hit->SetVolumeSequence(new MDVolumeSequence(GridPointCollections[c].GetVolumeSequence()));
+        Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
+        //Hit->RetrieveResolutions(m_Geometry);
+        //Hit->SetPosition(MVector(0, 0, 0));
+        
+        MString DetectorID = "";
+        for (unsigned int v = 0; v < Hit->GetVolumeSequence()->GetNVolumes(); ++v) {
+          DetectorID += Hit->GetVolumeSequence()->GetVolumeAt(v)->GetName();
+        }
+        
+        Hit->SetDetectorID(DetectorID.GetHash());
+        Hit->IsXStrip((P.GetType() == MDGridPoint::c_XStrip) ? true : false);
+        Hit->SetStripID((P.GetType() == MDGridPoint::c_XStrip) ? P.GetXGrid() : P.GetYGrid());
+        Hit->SetDepthPosition(P.GetPosition().Z());
+        //cout<<"Setting pos: "<<((P.GetType() == MDGridPoint::c_XStrip) ? P.GetPosition().X() : P.GetPosition().Y())<<endl;
+        Hit->SetNonStripPosition((P.GetType() == MDGridPoint::c_XStrip) ? P.GetPosition().X() : P.GetPosition().Y());
+        
+        Hit->SetGridPoint(P);
+        Event->AddRESE(Hit);
+      } else {
+        MREHit* Hit = new MREHit();
+        Hit->SetEnergy(P.GetEnergy());
+        Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
+        Hit->SetTime(P.GetTime());
+        Hit->SetNoiseFlags(P.GetFlags());
+        Hit->UpdateVolumeSequence(m_Geometry);
+        Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
+        Hit->RetrieveResolutions(m_Geometry);
+        Hit->SetGridPoint(P);
+        Event->AddRESE(Hit);
+      }
+      
+      //cout<<Hit->ToString()<<endl;
       //cout<<"Added"<<endl;
     }
   }
