@@ -389,7 +389,6 @@ void MSimHT::AddOrigin(int i)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/*
 void MSimHT::SetOrigins(const set<int>& Origins)
 {
   // Set all origins
@@ -399,7 +398,6 @@ void MSimHT::SetOrigins(const set<int>& Origins)
     m_Origins.push_back(*Iter);
   }
 }
-*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
