@@ -138,11 +138,11 @@ bool MDDetectorEffectsEngine::Run()
       double EnergyN = 0;
       for (unsigned int p = 0; p < NewCollection.GetNGridPoints(); ++p) {
         EnergyN += NewCollection.GetGridPointAt(p).GetEnergy();
-        cout<<NewCollection.GetGridPointAt(p).GetType()<<endl;
+        //cout<<NewCollection.GetGridPointAt(p).GetType()<<endl;
         if (NewCollection.GetGridPointAt(p).GetType() == MDGridPoint::c_XStrip) x += 1;
         if (NewCollection.GetGridPointAt(p).GetType() == MDGridPoint::c_YStrip) y += 1;
       }
-      cout<<"Spread "<<x<<" "<<y<<" "<<EnergyN/2.0<<" "<<P.GetEnergy()<<endl;
+      //cout<<"Spread "<<x<<" "<<y<<" "<<EnergyN/2.0<<" "<<P.GetEnergy()<<endl;
     }
     
     

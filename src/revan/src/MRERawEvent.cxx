@@ -957,7 +957,21 @@ MString MRERawEvent::GetRejectionReasonAsString(int r, bool Short)
     if (Short == true) {
       out<<"StripPairingMissingStrips";
     } else {
-      out<<"Strip pairing failed due to are missing strips";
+      out<<"Strip pairing failed due to missing strips";
+    }
+    break;
+  case c_RejectionStripPairinTooManyStrips:
+    if (Short == true) {
+      out<<"StripPairinTooManyStrips";
+    } else {
+      out<<"Strip pairing failed because of too many triggered strips in one detector";
+    }
+    break;
+  case c_RejectionStripPairingNotResolvable:  
+    if (Short == true) {
+      out<<"StripPairingNotResolvable";
+    } else {
+      out<<"Strip pairing failed because the hits are not resolvable";
     }
     break;
     

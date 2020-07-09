@@ -153,6 +153,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
       if (P.GetType() == MDGridPoint::c_XStrip || P.GetType() == MDGridPoint::c_YStrip) {
         MREStripHit* Hit = new MREStripHit();
         Hit->SetEnergy(P.GetEnergy());
+        
         Hit->SetTime(P.GetTime());
         Hit->SetNoiseFlags(P.GetFlags());
         //cout<<"Pos of P: "<<P.GetPosition()<<endl;
@@ -160,6 +161,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
         Hit->SetPosition(GridPointCollections[c].GetWorldPositionGridPointAt(p));
         Hit->SetVolumeSequence(new MDVolumeSequence(GridPointCollections[c].GetVolumeSequence()));
         Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
+        Hit->SetEnergyResolution(Hit->GetVolumeSequence()->GetDetector()->GetEnergyResolution(P.GetEnergy()));
         //Hit->RetrieveResolutions(m_Geometry);
         //Hit->SetPosition(MVector(0, 0, 0));
         

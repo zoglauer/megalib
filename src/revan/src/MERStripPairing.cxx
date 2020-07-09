@@ -184,6 +184,19 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         }
       }
       
+      // Limit the strip hits 
+      const unsigned int MaxStripHits = 6;
+      for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
+        for (unsigned int side = 0; side <=1; ++side) { // side loop
+          if (StripHits[d][side].size() > MaxStripHits) {
+            RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairinTooManyStrips);
+            Rejected = true;
+            break;
+          }
+        }
+      }
+      
+      
       /*
       cout<<"Strip hits: "<<endl;
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
@@ -362,18 +375,26 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
                 unsigned int ep = en;
                 
                 double xEnergy = 0;
+                double xResolution = 0;
                 for (unsigned int entry = 0; entry < Combinations[d][0][xc][en].size(); ++entry) {
                   xEnergy += StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergy();
+                  xResolution += pow(StripHits[d][0][Combinations[d][0][xc][en][entry]]->GetEnergyResolution(), 2);
                 } 
+                
                 double yEnergy = 0;
+                double yResolution = 0;
                 for (unsigned int entry = 0; entry < Combinations[d][1][yc][ep].size(); ++entry) {
                   yEnergy += StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergy();
+                  yResolution += pow(StripHits[d][1][Combinations[d][1][yc][ep][entry]]->GetEnergyResolution(), 2);
                 } 
                 //cout << "yEnergy: " << yEnergy << endl;
                 //cout << "  Sub - Test en=" << en << " (" << xEnergy << ") with ep="
                 //     << ep << " (" << yEnergy << "):" << endl;
-                ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy);            
+                //cout<<xResolution<<":"<<yResolution<<endl;
+                ChiSquare += (xEnergy - yEnergy)*(xEnergy - yEnergy) / (xResolution + yResolution);            
               }
+              ChiSquare /= MinSize;
+              //cout<<"Chi square: "<<ChiSquare<<endl;
               
               if (ChiSquare < BestChiSquare) {
                 BestChiSquare = ChiSquare;
@@ -426,9 +447,18 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
         double XPos = 0;
         double YPos = 0;
         double XEnergy = 0;
+        double XEnergyRes = 0;
         double YEnergy = 0;
+        double YEnergyRes = 0;
+        double Energy = 0;
+        double EnergyResolution = 0;
         double ZPos = 0;
         double MinTime = 0;
+        
+        double XEnergyTotal = 0;
+        double YEnergyTotal = 0;
+        double EnergyTotal = 0;
+        
         for (unsigned int h = 0; h < min(BestXSideCombo.size(), BestYSideCombo.size()); ++h) {
           XPos = 0;
           YPos = 0;
@@ -442,31 +472,51 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
             XPos += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergy() * StripHits[d][0][BestXSideCombo[h][sh]]->GetNonStripPosition();
             ZPos += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergy() * StripHits[d][0][BestXSideCombo[h][sh]]->GetDepthPosition();
             XEnergy += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergy();
+            XEnergyRes += StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergyResolution()*StripHits[d][0][BestXSideCombo[h][sh]]->GetEnergyResolution();
             if (StripHits[d][0][BestXSideCombo[h][sh]]->GetTime() < MinTime) {
               MinTime = StripHits[d][0][BestXSideCombo[h][sh]]->GetTime();
             }
           }
           XPos /= XEnergy;
+          XEnergyRes = sqrt(XEnergyRes);
+          XEnergyTotal += XEnergy;
           
           for (unsigned int sh = 0; sh < BestYSideCombo[h].size(); ++sh) {
             YPos += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy() * StripHits[d][1][BestYSideCombo[h][sh]]->GetNonStripPosition();
             ZPos += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy() * StripHits[d][1][BestYSideCombo[h][sh]]->GetDepthPosition();
             YEnergy += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergy();
+            YEnergyRes += StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergyResolution()*StripHits[d][1][BestYSideCombo[h][sh]]->GetEnergyResolution();
             if (StripHits[d][1][BestYSideCombo[h][sh]]->GetTime() < MinTime) {
               MinTime = StripHits[d][1][BestYSideCombo[h][sh]]->GetTime();
             }
           }
           YPos /= YEnergy;
+          YEnergyRes = sqrt(YEnergyRes);
+          YEnergyTotal += YEnergy;
           
           ZPos /= (XEnergy + YEnergy);
           
-          //cout<<XPos<<":"<<YPos<<":"<<ZPos<<endl;
+          Energy = 0.0;
+          if (XEnergy > YEnergy + 3*YEnergyRes) {
+            Energy = XEnergy; 
+            EnergyResolution = XEnergyRes;
+          } else if (YEnergy > XEnergy + 3*XEnergyRes) {
+            Energy = YEnergy; 
+            EnergyResolution = YEnergyRes;
+          } else {
+            Energy = (XEnergy/(XEnergyRes*XEnergyRes) + YEnergy/(YEnergyRes*YEnergyRes)) / (1.0/(XEnergyRes*XEnergyRes) + 1.0/(YEnergyRes*YEnergyRes));
+            EnergyResolution = sqrt( 1.0 / (1.0/(XEnergyRes*XEnergyRes) + 1.0/(YEnergyRes*YEnergyRes)) );
+          }
+          EnergyTotal += Energy;
+          
+          //cout<<"Energy: "<<Energy<<"  "<<XEnergy<<" vs. "<<YEnergy<<" ("<<XEnergyRes<<" vs. "<<YEnergyRes<<")"<<endl;
           
           MVector PosDet(XPos, YPos, ZPos);
           MVector PosWorld = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetPositionInFirstVolume(PosDet, StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetectorVolume());
           
           MREHit* Hit = new MREHit();
-          Hit->SetEnergy(0.5*(XEnergy + YEnergy));
+          Hit->SetEnergy(Energy);
+          Hit->SetEnergyResolution(EnergyResolution);
           Hit->SetPosition(PosWorld);
           Hit->SetTime(MinTime);
           Hit->SetVolumeSequence(new MDVolumeSequence(*StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()));
@@ -475,6 +525,14 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           
           
           //cout<<Hit->ToString()<<endl;
+        }
+        
+        //cout<<min(XEnergyTotal, YEnergyTotal) - 0.1<<" < "<<EnergyTotal<<" < "<<max(XEnergyTotal, YEnergyTotal) + 0.1<<"   "<<XEnergyTotal<<":"<<YEnergyTotal<<endl;
+        if (EnergyTotal > max(XEnergyTotal, YEnergyTotal) + 0.1 || EnergyTotal < min(XEnergyTotal, YEnergyTotal) - 0.1) {
+          //cout<<"Rejected"<<endl;
+          RE->SetRejectionReason(MRERawEvent::c_RejectionStripPairingNotResolvable);
+          Rejected = true;
+          break;
         }
         
         // 
