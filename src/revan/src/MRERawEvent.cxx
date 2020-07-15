@@ -434,7 +434,11 @@ double MRERawEvent::GetEnergy()
   double Energy = 0.0;
 
   for (int i = 0; i < GetNRESEs(); i++) {
-    Energy += GetRESEAt(i)->GetEnergy();
+    if (GetRESEAt(i)->GetType() == MRESE::c_StripHit) {
+      Energy += 0.5*GetRESEAt(i)->GetEnergy();
+    } else {
+      Energy += GetRESEAt(i)->GetEnergy();
+    }
   }  
   Energy += m_AdditionalEnergy;
 

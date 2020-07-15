@@ -82,7 +82,7 @@ MDGridPointCollection::~MDGridPointCollection()
 
 
 void MDGridPointCollection::Add(const MVector& PositionInDetector, const double Energy, 
-                                const double Time, const vector<int>& Origins)
+                                const double Time, const set<unsigned int>& Origins)
 {
   // Add and discretize a measurement
 
@@ -92,7 +92,7 @@ void MDGridPointCollection::Add(const MVector& PositionInDetector, const double 
   vector<MDGridPoint>::iterator AllIter;
 
   for (NewIter = NewPoints.begin(); NewIter != NewPoints.end(); ++NewIter) {
-    (*NewIter).SetOrigins(Origins);
+    (*NewIter).SetOriginIDs(Origins);
 
     bool Added = false;
     for (AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
@@ -116,8 +116,7 @@ void MDGridPointCollection::AddUndiscretized(const MVector& PositionInDetector)
 {
   // Add a measurement
 
-  MDGridPoint NewPoint = 
-    m_VolumeSequence.GetDetector()->GetGridPoint(PositionInDetector);
+  MDGridPoint NewPoint = m_VolumeSequence.GetDetector()->GetGridPoint(PositionInDetector);
   
   vector<MDGridPoint>::iterator AllIter;
 
@@ -148,15 +147,15 @@ void MDGridPointCollection::Add(MDGridPoint& Point)
   
   if (m_Points.size() == 0 || (m_Points.size() > 0 && (m_Points[0].GetType() == Point.GetType() || (m_Points[0].GetType() == MDGridPoint::c_XStrip && Point.GetType() == MDGridPoint::c_YStrip) || (m_Points[0].GetType() == MDGridPoint::c_YStrip && Point.GetType() == MDGridPoint::c_XStrip)))) {
       
-    bool Added = false;
+    bool Exists = false;
     for (auto AllIter = m_Points.begin(); AllIter != m_Points.end(); ++AllIter) {
       if (Point == (*AllIter)) {
         (*AllIter) += Point;
-        Added = true;
+        Exists = true;
         break;
       }
     }
-    if (Added == false) {
+    if (Exists == false) {
       m_Points.push_back(Point);      
     }
   } else {

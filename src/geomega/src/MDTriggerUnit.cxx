@@ -205,14 +205,14 @@ bool MDTriggerUnit::AddHit(const double& Energy, const MDVolumeSequence& V)
 
   if (V.GetDetector() != 0) {
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      mdebug<<"Trying to a hit with "<<Energy<<" keV in detector "<<V.GetDetector()->GetName()<<" to trigger "<<m_Geometry->GetTriggerAt(t)->GetName()<<endl;
+      //mdebug<<"Trying to a hit with "<<Energy<<" keV in detector "<<V.GetDetector()->GetName()<<" to trigger "<<m_Geometry->GetTriggerAt(t)->GetName()<<endl;
       if (m_IgnoreThresholds == true || V.GetDetector()->IsAboveTriggerThreshold(Energy, V.GetGridPoint()) == true) { 
-        mdebug<<" --> Above trigger threshold ";
+        //mdebug<<" --> Above trigger threshold ";
         if (m_Geometry->GetTriggerAt(t)->AddHit(V) == true) {
-          mdebug<<" and added"<<endl;
+          //mdebug<<" and added"<<endl;
           Added = true;
         } else {
-          mdebug<<" but NOT added"<<endl;
+          //mdebug<<" but NOT added"<<endl;
         }
       }
     }
@@ -272,25 +272,25 @@ bool MDTriggerUnit::AddGuardRingHit(const double& Energy, const MDVolumeSequence
 bool MDTriggerUnit::HasTriggered() 
 {
   if (m_AlwaysAssumeTrigger == true) {
-    mdebug<<"Trigger always on!"<<endl;
+    //mdebug<<"Trigger always on!"<<endl;
     return true;
   }
   if (m_AlwaysAssumeVeto == true) {
-    mdebug<<"Veto always on!"<<endl;
+    //mdebug<<"Veto always on!"<<endl;
     return false;
   }
 
   // If no triggers are defined then we have not vetoed but triggered 
   if (m_Geometry->GetNTriggers() == 0) {
-    mdebug<<"No triggers defined!"<<endl;
+    //mdebug<<"No triggers defined!"<<endl;
     return true;
   }
 
   // If we have a non-vetoable trigger, we have triggered
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<": Non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
+    //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<": Non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
     if (m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true) {
-      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
+      //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
       return true;
     }
   }
@@ -299,9 +299,9 @@ bool MDTriggerUnit::HasTriggered()
   // If we have one veto then we have not triggered
   if (m_IgnoreVetoes == false) { // This should not be necessary since the triggers handle it...
     for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed? "<<(m_Geometry->GetTriggerAt(t)->HasVetoed() == true ? "yes" : "no")<<endl;
+      //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed? "<<(m_Geometry->GetTriggerAt(t)->HasVetoed() == true ? "yes" : "no")<<endl;
       if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
-        mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed!"<<endl;
+        //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed!"<<endl;
         return false;
       }
     }
@@ -309,9 +309,9 @@ bool MDTriggerUnit::HasTriggered()
 
   // Check for real triggers:
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered? "<<(m_Geometry->GetTriggerAt(t)->HasTriggered() == true ? "yes" : "no")<<endl;
+    //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered? "<<(m_Geometry->GetTriggerAt(t)->HasTriggered() == true ? "yes" : "no")<<endl;
     if (m_Geometry->GetTriggerAt(t)->HasTriggered() == true) {
-      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
+      //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" triggered!"<<endl;
       return true;
     }
   }
@@ -344,9 +344,9 @@ bool MDTriggerUnit::HasVetoed()
   
   // If we have a non-vetoable trigger, we have not vetoed
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
-    mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
+    //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" non-vetoably triggered? "<<(m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true ? "yes" : "no")<<endl;
     if (m_Geometry->GetTriggerAt(t)->HasNonVetoablyTriggered() == true) {
-      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" no vetoed!"<<endl;
+      //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" no vetoed!"<<endl;
       return false;
     }
   }
@@ -354,7 +354,7 @@ bool MDTriggerUnit::HasVetoed()
   // If we have one veto then we have not triggered
   for (unsigned int t = 0; t < m_Geometry->GetNTriggers(); ++t) {
     if (m_Geometry->GetTriggerAt(t)->HasVetoed() == true) {
-      mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed!"<<endl;
+      //mdebug<<m_Geometry->GetTriggerAt(t)->GetName()<<" vetoed!"<<endl;
       return true;
     }
   }

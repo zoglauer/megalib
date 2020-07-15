@@ -521,6 +521,39 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           Hit->SetTime(MinTime);
           Hit->SetVolumeSequence(new MDVolumeSequence(*StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()));
           Hit->SetDetector(StripHits[d][1][BestYSideCombo[h][0]]->GetDetector());
+          
+          set<unsigned int> XOrigins;
+          for (unsigned int sh = 0; sh < BestXSideCombo[h].size(); ++sh) {
+            set<unsigned int> SHOrigins = StripHits[d][0][BestXSideCombo[h][sh]]->GetOriginIDs();
+            XOrigins.insert(SHOrigins.begin(), SHOrigins.end());
+          }
+          
+          set<unsigned int> YOrigins;
+          for (unsigned int sh = 0; sh < BestYSideCombo[h].size(); ++sh) {
+            set<unsigned int> SHOrigins = StripHits[d][1][BestYSideCombo[h][sh]]->GetOriginIDs();
+            YOrigins.insert(SHOrigins.begin(), SHOrigins.end());
+            //cout<<"Strip origin IDs: "; for (auto I: StripHits[d][1][BestYSideCombo[h][sh]]->GetOriginIDs()) cout<<I<<" "; cout<<endl;
+          }
+          
+          // The origins can only be the origins which are common to both
+          bool FoundCommon = false;
+          for (auto IterX = XOrigins.begin(); IterX != XOrigins.end(); ++IterX) {
+            for (auto IterY = XOrigins.begin(); IterY != XOrigins.end(); ++IterY) {
+              if (*IterX == *IterY) {
+                Hit->AddOriginID(*IterX);
+                FoundCommon = true;
+              }
+              
+            }
+          }
+          // If there are non common, take all, which
+          if (FoundCommon == false) {
+            Hit->AddOriginIDs(XOrigins);
+            Hit->AddOriginIDs(YOrigins);
+          }
+          
+          //cout<<"Origin IDs: "; for (auto I: Hit->GetOriginIDs()) cout<<I<<" "; cout<<endl;
+          
           RE->AddRESE(Hit);
           
           

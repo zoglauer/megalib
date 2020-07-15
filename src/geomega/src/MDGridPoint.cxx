@@ -107,16 +107,9 @@ MDGridPoint::MDGridPoint(const MDGridPoint& GridPoint)
   m_Hits = GridPoint.m_Hits;
   m_Weight = GridPoint.m_Weight;
   
-  int size = GridPoint.m_Origins.size();
-  if (size > 0) {
-    m_Origins.reserve(size);
-    vector<int>::const_iterator Iter;
-    for (Iter = GridPoint.m_Origins.begin(); Iter != GridPoint.m_Origins.end(); ++Iter) {
-      m_Origins.push_back((*Iter));
-    }
-  }
-
-  //m_Origins = GridPoint.m_Origins;
+  m_OriginIDs.clear();
+  m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+  //m_OriginIDs = GridPoint.m_OriginIDs;
   
   m_Flags = GridPoint.m_Flags;
   
@@ -151,17 +144,9 @@ const MDGridPoint& MDGridPoint::operator=(const MDGridPoint& GridPoint)
   m_Hits = GridPoint.m_Hits;
   m_Weight = GridPoint.m_Weight;
 
-  m_Origins.clear();
-  int size = GridPoint.m_Origins.size();
-  if (size > 0) {
-    m_Origins.reserve(size);
-    vector<int>::const_iterator Iter;
-    for (Iter = GridPoint.m_Origins.begin(); Iter != GridPoint.m_Origins.end(); ++Iter) {
-      m_Origins.push_back((*Iter));
-    }
-  }
-
-  //m_Origins = GridPoint.m_Origins;
+  m_OriginIDs.clear();
+  m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+  //m_OriginIDs = GridPoint.m_OriginIDs;
   
   m_Flags = GridPoint.m_Flags;
   
@@ -241,23 +226,9 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
         if (GridPoint.m_Time < m_Time) {
           m_Time = GridPoint.m_Time;
         }
-        // Origins!
-        vector<int>::const_iterator NewIter;
-        vector<int>::iterator OldIter;
-        for (NewIter = GridPoint.m_Origins.begin(); 
-             NewIter != GridPoint.m_Origins.end(); ++NewIter) {
-          bool Found = false;
-          for (OldIter = m_Origins.begin(); 
-               OldIter != m_Origins.end(); ++OldIter) {
-            if ((*NewIter) == (*OldIter)) {
-              Found = true;
-              break;
-            }
-          }
-          if (Found == false) {
-            m_Origins.push_back((*NewIter));
-          }
-        }
+        
+        // OriginIDs
+        m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
       
         // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
         m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
@@ -276,22 +247,10 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
         if (GridPoint.m_Time < m_Time) {
           m_Time = GridPoint.m_Time;
         }
-        // Origins!
-        vector<int>::const_iterator NewIter;
-        vector<int>::iterator OldIter;
-        for (NewIter = GridPoint.m_Origins.begin(); NewIter != GridPoint.m_Origins.end(); ++NewIter) {
-          bool Found = false;
-          for (OldIter = m_Origins.begin(); OldIter != m_Origins.end(); ++OldIter) {
-            if ((*NewIter) == (*OldIter)) {
-              Found = true;
-              break;
-            }
-          }
-          if (Found == false) {
-            m_Origins.push_back((*NewIter));
-          }
-        }
-      
+        
+        // OriginIDs
+        m_OriginIDs.insert(GridPoint.m_OriginIDs.begin(), GridPoint.m_OriginIDs.end());
+        
         // Make sure that if m_Weight is some cts/sec normalization factor it stays correct
         m_Weight = (m_Weight*m_Hits + GridPoint.m_Weight*GridPoint.m_Hits)/(m_Hits+GridPoint.m_Hits);
         // Finally add the hits:
@@ -305,7 +264,7 @@ const MDGridPoint& MDGridPoint::operator+=(const MDGridPoint& GridPoint)
       // Finally add the hits
       m_Hits += GridPoint.m_Hits;
       m_Time = 0;
-      m_Origins.clear();
+      m_OriginIDs.clear();
     } else {
       merr<<"MDGridPoint::operator+=: Unknown grid point type: "<<m_Type<<endl;
     }

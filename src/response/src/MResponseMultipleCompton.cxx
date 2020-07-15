@@ -367,175 +367,179 @@ bool MResponseMultipleCompton::Analyze()
   // Initlize next matching event, save if necessary
   if (MResponseBuilder::Analyze() == false) return false;
   
-  
   //g_Verbosity = 1;
   double Etot = 0;
   double Eres = 0;
- 
-  
-  for (auto RE: m_ReEvents) {
-    if (RE == nullptr) continue;
+
+
+  MRawEventIncarnationList* REIL = m_ReReader->GetRawEventList();
+  for (unsigned int i = 0; i < REIL->Size(); ++i) {
+    for (int r = 0; r < REIL->Get(i)->GetNRawEvents(); ++r) {
+      MRERawEvent* RE = REIL->Get(i)->GetRawEventAt(r);
     
-    if (RE->GetNRESEs() <= 1) {
-      mdebug<<"GeneratePdf: Not enough hits!"<<endl;
-      continue;
-    }
-    
-    mdebug<<endl<<endl;
-    mdebug<<RE->ToString()<<endl;
-    
-    if (RE->GetStartPoint() == 0) continue;
-    
-    // Check if complete sequence is ok:
-    bool SequenceOk = true;
-    unsigned int SequenceLength = RE->GetNRESEs();
-    int PreviousPosition = 0;
-    
-    if (SequenceLength > m_MaxNInteractions) continue;
-    
-    if (SequenceLength == 2) {
-      // Look at start:
-      MRESEIterator Iter;
-      Iter.Start(RE->GetStartPoint());
-      Iter.GetNextRESE();
-      Etot = RE->GetEnergy();
-      Eres = RE->GetEnergyResolution();
+      if (RE == nullptr) continue;
       
-      double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
-      double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
-      
-      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
-        mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
-        m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
-      } else {
-        mdebug<<"--------> Found bad dual Compton event!"<<endl;
-        m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
-        SequenceOk = false;
-      }
-    } else {
-      // Look at start:
-      MRESEIterator Iter;
-      Iter.Start(RE->GetStartPoint());
-      Iter.GetNextRESE();
-      Etot = RE->GetEnergy();
-      Eres = RE->GetEnergyResolution();
-      if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
-        mdebug<<"--------> Found GOOD Compton start!"<<endl;
-        m_PdfStartGood.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-      } else {
-        mdebug<<"--------> Found bad Compton start!"<<endl;
-        m_PdfStartBad.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
-        SequenceOk = false;
+      if (RE->GetNRESEs() <= 1) {
+        mdebug<<"GeneratePdf: Not enough hits!"<<endl;
+        continue;
       }
       
-      // Track at start?
-      if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
-        double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-        double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
-        if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD Track start!"<<endl;
-          m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+      mdebug<<endl<<endl;
+      mdebug<<RE->ToString()<<endl;
+      
+      if (RE->GetStartPoint() == 0) continue;
+      
+      // Check if complete sequence is ok:
+      bool SequenceOk = true;
+      unsigned int SequenceLength = RE->GetNRESEs();
+      int PreviousPosition = 0;
+      
+      if (SequenceLength > m_MaxNInteractions) continue;
+      
+      if (SequenceLength == 2) {
+        // Look at start:
+        MRESEIterator Iter;
+        Iter.Start(RE->GetStartPoint());
+        Iter.GetNextRESE();
+        Etot = RE->GetEnergy();
+        Eres = RE->GetEnergyResolution();
+        
+        double CosPhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+        double PhotoDistance = CalculateAbsorptionProbabilityTotal(*Iter.GetCurrent(), *Iter.GetNext(), Iter.GetNext()->GetEnergy());
+        
+        if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
+          mdebug<<"--------> Found GOOD dual Compton event!"<<endl;
+          m_PdfDualGood.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
         } else {
-          mdebug<<"--------> Found bad Track start!"<<endl;
-          m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          mdebug<<"--------> Found bad dual Compton event!"<<endl;
+          m_PdfDualBad.Add(Etot, CosPhiE, PhotoDistance, GetMaterial(*Iter.GetCurrent()));
           SequenceOk = false;
         }
-      }
-      
-      
-      // Central part of the Compton track
-      Iter.GetNextRESE();
-      while (Iter.GetNext() != 0) {
-        // Add here
-        Etot -= Iter.GetPrevious()->GetEnergy();
-        Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
-        PreviousPosition++;
-        
-        // In the current implementation/simulation the hits have to be in increasing order...
-        if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
-          double ComptonDistance = 
-          CalculateAbsorptionProbabilityCompton(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
-          mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
-            mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
-            // Retrieve the data:
-            m_PdfComptonScatterProbabilityGood.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          } else {
-            mdebug<<"--------> Found bad Distance sequence!"<<endl;
-            // Retrieve the data:
-            m_PdfComptonScatterProbabilityBad.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-            SequenceOk = false;
-          } // Add good / bad
+      } else {
+        // Look at start:
+        MRESEIterator Iter;
+        Iter.Start(RE->GetStartPoint());
+        Iter.GetNextRESE();
+        Etot = RE->GetEnergy();
+        Eres = RE->GetEnergyResolution();
+        if (IsComptonStart(*Iter.GetCurrent(), Etot, Eres) == true) {
+          mdebug<<"--------> Found GOOD Compton start!"<<endl;
+          m_PdfStartGood.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+        } else {
+          mdebug<<"--------> Found bad Compton start!"<<endl;
+          m_PdfStartBad.Add(Etot, CalculateCosPhiE(*Iter.GetCurrent(), Etot), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          SequenceOk = false;
         }
         
-        // Decide if it is good or bad...
-        // In the current implementation/simulation the hits have to be in increasing order...
-        double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
-        double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
-        double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
-        int Material = GetMaterial(*Iter.GetCurrent());
-        
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
-          
-        } else {
-          mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
-          SequenceOk = false;
-        } // Add good / bad
-        
-        // Track at central?
+        // Track at start?
         if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
-          //MRETrack* T = (MRETrack*) Iter.GetCurrent();
           double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
           double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
           if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
-            mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
+            mdebug<<"--------> Found GOOD Track start!"<<endl;
             m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
           } else {
-            mdebug<<"--------> Found bad Track start (central)!"<<endl;
+            mdebug<<"--------> Found bad Track start!"<<endl;
             m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
             SequenceOk = false;
           }
         }
+        
+        
+        // Central part of the Compton track
         Iter.GetNextRESE();
+        while (Iter.GetNext() != 0) {
+          // Add here
+          Etot -= Iter.GetPrevious()->GetEnergy();
+          Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
+          PreviousPosition++;
+          
+          // In the current implementation/simulation the hits have to be in increasing order...
+          if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
+            double ComptonDistance = 
+            CalculateAbsorptionProbabilityCompton(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+            mdebug<<"Dist C: "<<ComptonDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
+            if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+              mdebug<<"--------> Found GOOD Distance sequence!"<<endl;
+              // Retrieve the data:
+              m_PdfComptonScatterProbabilityGood.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+            } else {
+              mdebug<<"--------> Found bad Distance sequence!"<<endl;
+              // Retrieve the data:
+              m_PdfComptonScatterProbabilityBad.Add(ComptonDistance, Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+              SequenceOk = false;
+            } // Add good / bad
+          }
+          
+          // Decide if it is good or bad...
+          // In the current implementation/simulation the hits have to be in increasing order...
+          double dPhi = CalculateDCosPhi(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), Etot);
+          double PhiE = CalculateCosPhiE(*Iter.GetCurrent(), Etot);
+          double Lever = CalculateMinLeverArm(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext());
+          int Material = GetMaterial(*Iter.GetCurrent());
+          
+          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+            mdebug<<"--------> Found GOOD internal Compton sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfComptonGood.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
+            
+          } else {
+            mdebug<<"--------> Found bad internal Compton sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfComptonBad.Add(dPhi, PhiE, Lever, Etot, SequenceLength, Material);
+            SequenceOk = false;
+          } // Add good / bad
+          
+          // Track at central?
+          if (Iter.GetCurrent()->GetType() == MRESE::c_Track) {
+            //MRETrack* T = (MRETrack*) Iter.GetCurrent();
+            double dAlpha = CalculateDCosAlpha(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+            double Alpha = CalculateCosAlphaG(*((MRETrack*) Iter.GetCurrent()), *Iter.GetNext(), Etot);
+            if (IsComptonTrack(*Iter.GetCurrent(), *Iter.GetNext(), PreviousPosition, Etot, Eres) == true) {
+              mdebug<<"--------> Found GOOD Track start (central)!"<<endl;
+              m_PdfTrackGood.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+            } else {
+              mdebug<<"--------> Found bad Track start (central)!"<<endl;
+              m_PdfTrackBad.Add(dAlpha, Alpha, 1, Iter.GetCurrent()->GetEnergy(), SequenceLength, GetMaterial(*Iter.GetCurrent()));
+              SequenceOk = false;
+            }
+          }
+          Iter.GetNextRESE();
+        }
+        
+        Etot -= Iter.GetPrevious()->GetEnergy();
+        Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
+        PreviousPosition++;
+        
+        // Decide if it is good or bad...
+        // In the current implementation/simulation the hits have to be in increasing order...
+        if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
+          double LastDistance = CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
+          mdebug<<"Dist P: "<<LastDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
+          if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
+            mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
+                                                    Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+          } else {
+            mdebug<<"--------> Found bad Lastdistance sequence!"<<endl;
+            // Retrieve the data:
+            m_PdfPhotoAbsorptionProbabilityBad.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
+                                                   Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
+            SequenceOk = false;
+          } // Add good / bad
+        }
       }
       
-      Etot -= Iter.GetPrevious()->GetEnergy();
-      Eres = sqrt(Eres*Eres - Iter.GetPrevious()->GetEnergyResolution()*Iter.GetPrevious()->GetEnergyResolution());
-      PreviousPosition++;
-      
-      // Decide if it is good or bad...
-      // In the current implementation/simulation the hits have to be in increasing order...
-      if (m_DoAbsorptions == true && SequenceLength <= m_MaxAbsorptions) {
-        double LastDistance = CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot);
-        mdebug<<"Dist P: "<<LastDistance<<": real:"<<(Iter.GetCurrent()->GetPosition() - Iter.GetPrevious()->GetPosition()).Mag()<<endl;
-        if (IsComptonSequence(*Iter.GetPrevious(), *Iter.GetCurrent(), PreviousPosition, Etot, Eres) == true) {
-          mdebug<<"--------> Found GOOD Lastdistance sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityGood.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                  Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-        } else {
-          mdebug<<"--------> Found bad Lastdistance sequence!"<<endl;
-          // Retrieve the data:
-          m_PdfPhotoAbsorptionProbabilityBad.Add(CalculateAbsorptionProbabilityPhoto(*Iter.GetPrevious(), *Iter.GetCurrent(), Etot), 
-                                                 Etot, SequenceLength, GetMaterial(*Iter.GetCurrent()));
-          SequenceOk = false;
-        } // Add good / bad
+      if (SequenceOk == false) {
+        m_GoodBadTable.Add(0.5, SequenceLength, 1);
+        //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
+      } else {
+        m_GoodBadTable.Add(1.5, SequenceLength, 1);
+        mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
       }
-    }
-    
-    if (SequenceOk == false) {
-      m_GoodBadTable.Add(0.5, SequenceLength, 1);
-      //mdebug<<"No good sequence exists"<<endl<<endl<<endl<<endl;
-    } else {
-      m_GoodBadTable.Add(1.5, SequenceLength, 1);
-      mdebug<<"One good sequence exists"<<endl<<endl<<endl<<endl;
-    }
-  } // For each raw event...
+    } // For each raw event...
+  } // For earch list
   
   
   return true;

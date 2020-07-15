@@ -94,12 +94,23 @@ class MRESE
   virtual double GetTimeResolution(); 
   virtual void SetDetector(int Detector); 
   virtual int GetDetector();
+  
   virtual void SetNoiseFlags(MString NoiseFlags) { m_NoiseFlags = NoiseFlags; } 
   virtual MString GetNoiseFlags() const { return m_NoiseFlags; } 
+  
   virtual void SetVolumeSequence(MDVolumeSequence* VS);
   virtual MDVolumeSequence* GetVolumeSequence();
+  
   virtual void SetGridPoint(const MDGridPoint& GP);
   virtual MDGridPoint GetGridPoint() const;
+  
+  //! Add a simulation origin ID required for response generation
+  virtual void AddOriginID(const unsigned int OriginID);
+  //! Add origin IDs required for response generation
+  virtual void AddOriginIDs(const set<unsigned int> OriginIDs);
+  //! Get the origin Origin IDs
+  virtual set<unsigned int> GetOriginIDs() const { return m_OriginIDs; }
+  
   
   // the link interface:
   int GetNLinks(); 
@@ -240,6 +251,10 @@ class MRESE
 
   //! Flags from noising
   MString m_NoiseFlags;
+  
+  //! The origin IDs for response creation
+  set<unsigned int> m_OriginIDs;
+  
   
   // private members:
  private:

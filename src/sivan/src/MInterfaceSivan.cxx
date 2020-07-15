@@ -4951,7 +4951,7 @@ void MInterfaceSivan::LocationOfFirstDetectedInteraction()
   EventFile.Rewind();
   while ((Event = EventFile.GetNextEvent(false)) != 0) {
     int HTWithSmallestOrigin = -1;
-    int SmallestOrigin = numeric_limits<int>::max();
+    unsigned int SmallestOrigin = numeric_limits<int>::max();
     
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
       HT = Event->GetHTAt(h);
@@ -5500,7 +5500,7 @@ void MInterfaceSivan::InteractionDetectorSequence()
 
     // Part A:
     unsigned int LowestIndex = numeric_limits<unsigned int>::max();
-    int Origin = numeric_limits<int>::max();
+    unsigned int Origin = numeric_limits<unsigned int>::max();
     for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
       if (Event->GetHTAt(h)->GetSmallestOrigin(1) < Origin) {
         Origin = Event->GetHTAt(h)->GetSmallestOrigin(1);
@@ -5513,7 +5513,7 @@ void MInterfaceSivan::InteractionDetectorSequence()
       
       // Find smallest origin higher than this:
       unsigned int SecondLowestIndex = numeric_limits<unsigned int>::max();
-      int SecondOrigin = numeric_limits<int>::max();
+      unsigned int SecondOrigin = numeric_limits<unsigned int>::max();
       for (unsigned int h = 0; h < Event->GetNHTs(); ++h) {
         for (unsigned int s = 0; s < Event->GetHTAt(h)->GetNOrigins(); ++s) {
           if (Event->GetHTAt(h)->GetOriginAt(s) < SecondOrigin && 

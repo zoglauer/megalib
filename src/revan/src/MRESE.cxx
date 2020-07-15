@@ -109,8 +109,7 @@ MRESE::MRESE()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MRESE::MRESE(MVector Position, double Energy, double Time, int Detector, 
-             MVector PositionRes, double EnergyRes, double TimeRes)
+MRESE::MRESE(MVector Position, double Energy, double Time, int Detector, MVector PositionRes, double EnergyRes, double TimeRes)
 {
   // x, y, z:   Position of the RESE 
   // Energy:    Energy of this RESE
@@ -168,6 +167,8 @@ MRESE::MRESE(MRESE* RESE)
   m_LinkList = new MRESEList();
   
   m_NoiseFlags = RESE->m_NoiseFlags;
+
+  m_OriginIDs = RESE->m_OriginIDs;
 }
 
 
@@ -223,6 +224,8 @@ void MRESE::Reset()
   m_AllowOverwrite = true;
   
   m_NoiseFlags = "";
+  
+  m_OriginIDs.clear();
 }
 
 
@@ -507,6 +510,28 @@ MDVolumeSequence* MRESE::GetVolumeSequence()
 ////////////////////////////////////////////////////////////////////////////////
 
 
+void MRESE::AddOriginID(const unsigned int OriginID)
+{
+  //! Add a simulation origin ID required for response generation
+  //! Since the underlying object is a set it will only be inserted if it does not exist.
+
+  m_OriginIDs.insert(m_OriginIDs.begin(), OriginID);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MRESE::AddOriginIDs(const set<unsigned int> OriginIDs)
+{
+  //! Add origin IDs required for response generation
+
+  m_OriginIDs.insert(OriginIDs.begin(), OriginIDs.end());
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 void MRESE::SetGridPoint(const MDGridPoint& GP)
 {
   // Set the grid point
@@ -737,7 +762,7 @@ void MRESE::AddRESE(MRESE* RESE)
 
   massert(this != 0);
 
-  if (RESE != 0) {
+  if (RESE != nullptr) {
     if (GetNRESEs() == 0) {
       delete m_VolumeSequence;
       m_VolumeSequence = new MDVolumeSequence(*(RESE->GetVolumeSequence()));
@@ -746,7 +771,7 @@ void MRESE::AddRESE(MRESE* RESE)
     }
     m_RESEList->AddRESE(RESE);
   }
-
+  
   RecalculateResolutions();
 }
 
@@ -1236,12 +1261,20 @@ bool MRESE::IsValid()
 
 void MRESE::RecalculateResolutions()
 {
+  // Recalculate the origin IDs always
+  m_OriginIDs.clear();
+  for (int r = 0; r < GetNRESEs(); ++r) {
+    if (GetRESEAt(r) == nullptr) continue; // Someday I have to remove the need to compress everything...
+    AddOriginIDs(GetRESEAt(r)->GetOriginIDs());
+  }
+
+  // But the resolutions only when allowed
   if (m_AllowOverwrite == false) return;
 
   m_PositionResolution = MVector(0.0, 0.0, 0.0);
   m_EnergyResolution = 0;
   for (int r = 0; r < GetNRESEs(); ++r) {
-    if (GetRESEAt(r) == 0) continue; // Someday I have to remove the need to compress everything...
+    if (GetRESEAt(r) == nullptr) continue; // Someday I have to remove the need to compress everything...
     m_PositionResolution.m_X += 
       GetRESEAt(r)->GetPositionResolution()[0]*GetRESEAt(r)->GetPositionResolution()[0];
     m_PositionResolution.m_Y += 
@@ -1259,14 +1292,13 @@ void MRESE::RecalculateResolutions()
   // The time resolution is the time resolution of the oldest hit:
   double MinTime = numeric_limits<double>::max();
   for (int r = 0; r < GetNRESEs(); ++r) {
-    if (GetRESEAt(r) == 0) continue; // Someday I have to remove the need to compress everything...
+    if (GetRESEAt(r) == nullptr) continue; // Someday I have to remove the need to compress everything...
     if (GetRESEAt(r)->GetTime() < MinTime) {
       MinTime = GetRESEAt(r)->GetTime();
       m_TimeResolution = GetRESEAt(r)->GetTimeResolution();
     }
   }
   
-
   
 
 //   mimp<<"What should I use for the time resolution of the cluster???"<<show;

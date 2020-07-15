@@ -47,8 +47,7 @@ class MDGridPointCollection
   void SetVolumeSequence(const MDVolumeSequence& VolumeSequence) { m_VolumeSequence = VolumeSequence; }
   
   //! Add a new grid point to the grid and discretize (noise, thresholds, etc)
-  void Add(const MVector& Position, const double Energy, const double Time, 
-           const vector<int>& Origins);
+  void Add(const MVector& Position, const double Energy, const double Time, const set<unsigned int>& Origins);
   //! Only add a new grid point to the grid
   void AddUndiscretized(const MVector& PositionInDetector);
   //! Add another GridPointCollection

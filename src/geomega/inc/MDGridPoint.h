@@ -117,10 +117,12 @@ class MDGridPoint
   //! Set the flags of this grid position
   void SetFlags(const MString Flags) { m_Flags = Flags; }
   
-  //! Return all hit origins at this grid position (Used only by sivan)
-  vector<int> GetOrigins() const { return m_Origins; }
-  //! Set all hit origins at this grid position (Used only by sivan)
-  void SetOrigins(const vector<int>& Origins) { m_Origins = Origins; }
+  //! Return all hit origins at this grid position
+  set<unsigned int> GetOriginIDs() const { return m_OriginIDs; }
+  //! Set all hit origins at this grid position
+  void SetOriginIDs(const set<unsigned int>& OriginIDs) { m_OriginIDs = OriginIDs; }
+  //! Add all hit origins at this grid position
+  void AddOriginIDs(const set<int unsigned>& OriginIDs) { m_OriginIDs.insert(OriginIDs.begin(), OriginIDs.end()); }
   
   //! Return true if the grid point is above the trigger threshold
   bool IsAboveTriggerThreshold() const { return m_IsAboveTriggerThreshold; }
@@ -188,7 +190,7 @@ class MDGridPoint
   double m_Weight;
     
   //! Hit origins at this grid position (Used only by sivan)
-  vector<int> m_Origins;
+  set<unsigned int> m_OriginIDs;
   
   //! Special flags from the DEE
   MString m_Flags;

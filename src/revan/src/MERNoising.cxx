@@ -112,7 +112,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
     MRESE* RESE = Event->GetRESEAt(h);
     if (RESE->GetType() == MRESE::c_Hit) {
       MREHit* Hit = dynamic_cast<MREHit*>(RESE);
-      DEE.AddHit(Hit->GetPosition(), Hit->GetEnergy(), Hit->GetTime(), *(Hit->GetVolumeSequence()));
+      DEE.AddHit(Hit->GetPosition(), Hit->GetEnergy(), Hit->GetTime(), Hit->GetOriginIDs(), *(Hit->GetVolumeSequence()));
     } else {
       // Nasty complaint 
       mout<<"MRERawEvent* MFileEventsEvta::GetNextEvent(): Cannot noise a hit which is no single hit!"<<endl;
@@ -122,7 +122,7 @@ bool MERNoising::Analyze(MRERawEvent* Event)
   for (vector<MREAM*>::iterator Iter = Event->GetREAMBegin(); Iter != Event->GetREAMEnd(); ) {
     if ((*Iter)->GetType() == MREAM::c_GuardRingHit) {
       MREAMGuardRingHit* GR = dynamic_cast<MREAMGuardRingHit*>(*Iter);
-      DEE.AddHit(MVector(0.0, 0.0, 0.0), GR->GetEnergy(), 0.0, *(GR->GetVolumeSequence()));
+      DEE.AddHit(MVector(0.0, 0.0, 0.0), GR->GetEnergy(), 0.0, set<unsigned int>(), *(GR->GetVolumeSequence()));
       Event->DeleteREAM(Iter);
     } else {
       ++Iter;
@@ -177,7 +177,10 @@ bool MERNoising::Analyze(MRERawEvent* Event)
         //cout<<"Setting pos: "<<((P.GetType() == MDGridPoint::c_XStrip) ? P.GetPosition().X() : P.GetPosition().Y())<<endl;
         Hit->SetNonStripPosition((P.GetType() == MDGridPoint::c_XStrip) ? P.GetPosition().X() : P.GetPosition().Y());
         
+        Hit->AddOriginIDs(P.GetOriginIDs());
+        
         Hit->SetGridPoint(P);
+        
         Event->AddRESE(Hit);
       } else {
         MREHit* Hit = new MREHit();
@@ -189,6 +192,9 @@ bool MERNoising::Analyze(MRERawEvent* Event)
         Hit->SetDetector(Hit->GetVolumeSequence()->GetDetector()->GetType());
         Hit->RetrieveResolutions(m_Geometry);
         Hit->SetGridPoint(P);
+        
+        Hit->AddOriginIDs(P.GetOriginIDs());
+        
         Event->AddRESE(Hit);
       }
       

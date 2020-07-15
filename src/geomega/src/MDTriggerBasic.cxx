@@ -205,7 +205,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
 
   bool Return = false;
 
-  mdebug<<m_Name<<": trying to add hit...";
+  //mdebug<<m_Name<<": trying to add hit...";
 
   if (m_IsTriggerByDetector == false) {
     const MDDetector* Detector = VS.GetDetector();
@@ -215,7 +215,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
         if (m_DetectorTypes[i] == Detector->GetType() &&
             m_Types[i] == c_Detector) {
           m_TriggerTest[i].push_back(1);
-          mdebug<<" done!";
+          //mdebug<<" done!";
           Return = true;
         }
       }
@@ -224,7 +224,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
         if (m_Detectors[i]->GetName() == Detector->GetName() &&
             m_Types[i] == c_Detector) {
           m_TriggerTest[i].push_back(1);
-          mdebug<<" done!";
+          //mdebug<<" done!";
           Return = true;
         }
       }
@@ -241,7 +241,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
               m_TriggerTest[i][v]++;
               Exists = true;
-              mdebug<<" done!";
+              //mdebug<<" done!";
               Return = true;
               break;
             }
@@ -249,7 +249,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
           if (Exists == false) {
             m_VolumeSequenceTest[i].push_back(VS);
             m_TriggerTest[i].push_back(1);
-            mdebug<<" done!";
+            //mdebug<<" done!";
             Return = true;
           }
           break;
@@ -264,7 +264,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
               m_TriggerTest[i][v]++;
               Exists = true;
-              mdebug<<" done!";
+              //mdebug<<" done!";
               Return = true;
               break;
             }
@@ -272,7 +272,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
           if (Exists == false) {
             m_VolumeSequenceTest[i].push_back(VS);
             m_TriggerTest[i].push_back(1);
-            mdebug<<" done!";
+            //mdebug<<" done!";
             Return = true;
           }
           break;
@@ -280,7 +280,7 @@ bool MDTriggerBasic::AddHit(const MDVolumeSequence& VS)
       }
     }
   }
-  mdebug<<endl;
+  //mdebug<<endl;
 
   return Return;
 }
@@ -295,7 +295,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
 
   bool Return = false;
 
-  mdebug<<m_Name<<": adding guard ring hit"<<endl;
+  //mdebug<<m_Name<<": adding guard ring hit"<<endl;
 
   if (m_IsTriggerByDetector == false) {
     const MDDetector* Detector = VS.GetDetector();
@@ -304,7 +304,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
       for (unsigned int i = 0; i < m_DetectorTypes.size(); ++i) {
         if (m_DetectorTypes[i] == Detector->GetType() && m_Types[i] == c_GuardRing) {
           m_TriggerTest[i].push_back(1);
-          mdebug<<" done!";
+          //mdebug<<" done!";
           Return = true;
           break;
         }
@@ -314,7 +314,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
         //cout<<m_Detectors[i]->GetName()<<":"<<Detector->GetName()<<endl;
         if (m_Detectors[i]->GetName() == Detector->GetName() && m_Types[i] == c_GuardRing) {
           m_TriggerTest[i].push_back(1);
-          mdebug<<" done!";
+          //mdebug<<" done!";
           Return = true;
           break;
         }
@@ -331,7 +331,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
               m_TriggerTest[i][v]++;
               Exists = true;
-              mdebug<<" done!";
+              //mdebug<<" done!";
               Return = true;
               break;
             }
@@ -339,7 +339,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
           if (Exists == false) {
             m_VolumeSequenceTest[i].push_back(VS);
             m_TriggerTest[i].push_back(1);
-            mdebug<<" done!";
+            //mdebug<<" done!";
             Return = true;
           }
           break;
@@ -355,7 +355,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
             if (VS.HasSameDetector(m_VolumeSequenceTest[i][v]) == true) {
               m_TriggerTest[i][v]++;
               Exists = true;
-              mdebug<<" done!";
+              //mdebug<<" done!";
               Return = true;
               break;
             }
@@ -363,7 +363,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
           if (Exists == false) {
             m_VolumeSequenceTest[i].push_back(VS);
             m_TriggerTest[i].push_back(1);
-            mdebug<<" done!";
+            ///mdebug<<" done!";
             Return = true;
           }
           break;
@@ -371,7 +371,7 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
       }
     }
   }
-  mdebug<<endl;
+  ///mdebug<<endl;
 
   return Return;
 }
@@ -382,27 +382,27 @@ bool MDTriggerBasic::AddGuardRingHit(const MDVolumeSequence& VS)
 
 bool MDTriggerBasic::HasTriggered()
 {
-  mdebug<<m_Name<<": Trigger test: Triggered!"<<endl;
+  ///mdebug<<m_Name<<": Trigger test: Triggered!"<<endl;
 
   // If this is a veto trigger, then we cannot have triggered...
   if (m_IsVeto == true) {
-    mdebug<<m_Name<<": Trigger test: N/A - this is a veto trigger"<<endl;
+    ///mdebug<<m_Name<<": Trigger test: N/A - this is a veto trigger"<<endl;
     return false;
   }
   
   if (m_Hits.size() == 0) {
-    mdebug<<m_Name<<": Trigger test: Not triggered (no trigger criteria)!"<<endl;
+    //mdebug<<m_Name<<": Trigger test: Not triggered (no trigger criteria)!"<<endl;
     return false;
   }
 
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     if (m_TriggerTest[h].size() < m_Hits[h]) {
-      mdebug<<m_Name<<": Trigger test: Not triggered!"<<endl;
+      //mdebug<<m_Name<<": Trigger test: Not triggered!"<<endl;
       return false;
     } 
   }
 
-  mdebug<<m_Name<<": Trigger test: Triggered!"<<endl;
+  //mdebug<<m_Name<<": Trigger test: Triggered!"<<endl;
   return true;
 }
 
@@ -414,29 +414,29 @@ bool MDTriggerBasic::HasVetoed()
 {
   // If we ignore vetoes, we never veto...
   if (m_IgnoreVetoes == true) {
-    mdebug<<m_Name<<": Veto test: N/A - we are ignoring vetoes"<<endl;
+    ///mdebug<<m_Name<<": Veto test: N/A - we are ignoring vetoes"<<endl;
     return false;    
   }
   
   // If this is not a veto trigger, then we cannot have vetoed...
   if (m_IsVeto == false) {
-    mdebug<<m_Name<<": Veto test: N/A - this is a NOT veto trigger"<<endl;
+    //mdebug<<m_Name<<": Veto test: N/A - this is a NOT veto trigger"<<endl;
     return false;
   }
   
   if (m_Hits.size() == 0) {
-    mdebug<<m_Name<<": Veto test: Not vetoes (no veto criteria)!"<<endl;
+    //mdebug<<m_Name<<": Veto test: Not vetoes (no veto criteria)!"<<endl;
     return false;
   }
   
   for (unsigned int h = 0; h < m_Hits.size(); ++h) {
     if (m_TriggerTest[h].size() < m_Hits[h]) {
-      mdebug<<m_Name<<": Veto test: Not vetod"<<endl;
+      //mdebug<<m_Name<<": Veto test: Not vetod"<<endl;
       return false;
     } 
   }
 
-  mdebug<<m_Name<<": Veto test: Veto!"<<endl;
+  //mdebug<<m_Name<<": Veto test: Veto!"<<endl;
   return true;
 }
 

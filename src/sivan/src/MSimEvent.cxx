@@ -1405,7 +1405,7 @@ bool MSimEvent::HasTrack(int Layers)
   unsigned int i;
   int NLayers = 0;
   double zPos = numeric_limits<double>::max();
-  int Origin = numeric_limits<int>::max();
+  unsigned int Origin = numeric_limits<unsigned int>::max();
 
   // Check all hits if they are in D1
   for (i = 0; i < GetNHTs(); ++i) {
@@ -1428,7 +1428,7 @@ bool MSimEvent::HasTrack(int Layers)
     } else {
       NLayers = 0;
       zPos = numeric_limits<double>::max();
-      Origin = numeric_limits<int>::max();
+      Origin = numeric_limits<unsigned int>::max();
     }
   }
  
@@ -2678,7 +2678,7 @@ bool MSimEvent::IsIAResolved(int IAID)
       if (HTs[h]->GetOriginAt(o) == 1) continue;
       bool Found = false;
       for (unsigned int d = 0; d < IAIDs.size(); ++d) {
-        if (HTs[h]->GetOriginAt(o) == IAIDs[d]) {
+        if (int(HTs[h]->GetOriginAt(o)) == IAIDs[d]) {
           Found = true;
           break;
         }
@@ -2868,8 +2868,8 @@ bool MSimEvent::Discretize(int Detector)
       } 
       // Add hit to Grid - Grid does correct discretization
       //cout<<"Grid: "<<Grids.size()<<"!"<<CorrectGrid<<endl;
-      Grids[CorrectGrid].Add(Hit->GetVolumeSequence()->GetPositionInDetector(), 
-                             Hit->GetEnergy(), Hit->GetTime(), Hit->GetOrigins());
+      vector<unsigned int> OriginIDs = Hit->GetOrigins();
+      Grids[CorrectGrid].Add(Hit->GetVolumeSequence()->GetPositionInDetector(), Hit->GetEnergy(), Hit->GetTime(), set<unsigned int>(OriginIDs.begin(), OriginIDs.end()));
     } else {
       merr<<"Event "<<m_NEvent<<": We have a hit without detector type: "<<Hit->GetDetectorType()<<endl;
     }
@@ -2906,12 +2906,13 @@ bool MSimEvent::Discretize(int Detector)
             Point.GetType() == MDGridPoint::c_VoxelDrift ||
             Point.GetType() == MDGridPoint::c_XYAnger ||
             Point.GetType() == MDGridPoint::c_XYZAnger) {
+
           MSimHT* Hit = new MSimHT(m_Geometry);
           Hit->Set((*Iter).first,
-                                   Grid.GetWorldPositionGridPointAt(p),
-                                   Point.GetEnergy(),
-                                   Point.GetTime(),
-                                   Point.GetOrigins(),
+                   Grid.GetWorldPositionGridPointAt(p),
+                   Point.GetEnergy(),
+                   Point.GetTime(),
+                   Point.GetOriginIDs(),
                    true);
           //cout<<"Hit (2): "<<Hit->GetPosition()<<endl;
 
@@ -2956,7 +2957,7 @@ bool MSimEvent::Discretize(int Detector)
         // Disretize position:
         MDVolumeSequence VS = m_Geometry->GetVolumeSequence(GetIAAt(i)->GetPosition());
         MDGridPointCollection Grid(VS);
-        vector<int> Origins;
+        set<unsigned int> Origins;
         Grid.Add(VS.GetPositionInDetector(), 0, 0, Origins);
         massert(Grid.GetNGridPoints() == 1);
         MVector DiscretizedPosition = Grid.GetWorldPositionGridPointAt(0);

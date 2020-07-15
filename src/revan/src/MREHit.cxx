@@ -82,31 +82,55 @@ bool MREHit::ParseLine(MString HitString, int Version)
 
 
   if (Version == 100) {
-    if (sscanf(HitString, "HTsim %d;%lf;%lf;%lf;%lf\n", 
-               &m_Detector, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_Energy) == 5) {
-      m_Time = 0;
-      m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
-      m_EnergyResolution = 0.0;
-      m_TimeResolution = 0.0;
-      m_IsValid = true;
+    vector<MString> Splits = HitString.Tokenize(";");
+    if (Splits.size() >= 5) {
+      vector<MString> SubSplit = Splits[0].Tokenize(" ");
+      if (SubSplit.size() == 2) {
+        m_Detector = atoi(SubSplit[1]);
+      
+        m_Position[0] = atof(Splits[1]);
+        m_Position[1] = atof(Splits[2]);
+        m_Position[2] = atof(Splits[3]);
+        m_Energy = atof(Splits[4]);
+        
+        for (unsigned int s = 5; s < Splits.size(); ++s) {
+          //cout<<"Adding origin: "<<atoi(Splits[s])<<endl;
+          m_OriginIDs.insert(m_OriginIDs.begin(), atoi(Splits[s])); 
+        }
+
+        m_Time = 0;
+        m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
+        m_EnergyResolution = 0.0;
+        m_TimeResolution = 0.0;
+        m_IsValid = true;
+      }
     }
+    
   } else if (Version == 101) {
-    if (sscanf(HitString, "HTsim %d;%lf;%lf;%lf;%lf;%lf\n", 
-               &m_Detector, 
-               &m_Position[0], 
-               &m_Position[1], 
-               &m_Position[2], 
-               &m_Energy, 
-               &m_Time) == 6) {
-      m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
-      m_EnergyResolution = 0.0;
-      m_TimeResolution = 0.0;
-      m_IsValid = true;
-    }    
+    vector<MString> Splits = HitString.Tokenize(";");
+    if (Splits.size() >= 6) {
+      vector<MString> SubSplit = Splits[0].Tokenize(" ");
+      if (SubSplit.size() == 2) {
+        m_Detector = atoi(SubSplit[1]);
+        
+        m_Position[0] = atof(Splits[1]);
+        m_Position[1] = atof(Splits[2]);
+        m_Position[2] = atof(Splits[3]);
+        m_Energy = atof(Splits[4]);
+        m_Time = atof(Splits[5]);
+        
+        for (unsigned int s = 6; s < Splits.size(); ++s) {
+          //cout<<"Adding origin: "<<atoi(Splits[s])<<endl;
+          m_OriginIDs.insert(m_OriginIDs.begin(), atoi(Splits[s])); 
+        }
+        //cout<<"Origin IDs: "; for (auto I: m_OriginIDs) cout<<I<<" "; cout<<endl;
+        
+        m_PositionResolution.SetXYZ(0.0, 0.0, 0.0);
+        m_EnergyResolution = 0.0;
+        m_TimeResolution = 0.0;
+        m_IsValid = true;
+      }
+    }
   } else if (Version == 200) {
     if (sscanf(HitString, "HT %d;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf\n",
                &m_Detector,

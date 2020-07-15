@@ -59,7 +59,7 @@ class MDDetectorEffectsEngine
   void AddEventTime(const MTime& Time) { m_EventTime = Time; }
   
   //! Add a hit
-  void AddHit(const MVector& Position, const double& Energy, const double& Time, const MDVolumeSequence& S);
+  void AddHit(const MVector& Position, const double& Energy, const double& Time, const set<unsigned int>& OriginIDs, const MDVolumeSequence& S);
 
   
   //! Run the detector effects engine

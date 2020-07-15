@@ -97,6 +97,7 @@ MSimHT* MCVHit::GetCalibrated()
 {
   MSimHT* HT = new MSimHT();
   HT->Set(m_DetectorType, MVector(m_Position.getX()/cm, m_Position.getY()/cm, m_Position.getZ()/cm), m_Energy/keV, m_Time/s, m_Origins, false);
+
   return HT;
 }
 

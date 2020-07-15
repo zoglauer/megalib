@@ -86,9 +86,10 @@ void MDDetectorEffectsEngine::Reset()
 
 
 //! Add a hit
-void MDDetectorEffectsEngine::AddHit(const MVector& Position, const double& Energy, const double& Time, const MDVolumeSequence& S)
+void MDDetectorEffectsEngine::AddHit(const MVector& Position, const double& Energy, const double& Time, const set<unsigned int>& OriginIDs, const MDVolumeSequence& S)
 {
   m_GridPoints.push_back(MDGridPoint(0, 0, 0, MDGridPoint::c_Unknown, Position, Energy, Time));
+  m_GridPoints.back().SetOriginIDs(OriginIDs);
   m_VolumeSequences.push_back(S);
   if (S.GetDetector()->GetType() == MDDetector::c_GuardRing) {
     m_GridPoints.back().SetType(MDGridPoint::c_GuardRing);
@@ -127,6 +128,7 @@ bool MDDetectorEffectsEngine::Run()
     // Grid the hit, the returned grid point positions are in detector coordinates (although the only relevant infromation is the grid)
     //cout<<"Type: "<<S.GetDetector()->GetType()<<endl;
     vector<MDGridPoint> GridPoints = S.GetDetector()->Grid(Pos, P.GetEnergy(), P.GetTime(), S.GetDeepestVolume());
+    for (auto& GP: GridPoints) GP.SetOriginIDs(P.GetOriginIDs()); 
     
     // Add the grid points to the grid point collections
     MDGridPointCollection NewCollection(S);
