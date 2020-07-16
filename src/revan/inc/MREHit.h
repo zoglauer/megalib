@@ -56,7 +56,9 @@ class MREHit : public MRESE
   virtual MString ToEvtaString(const int Precision, const int Version = 1);
 
   MREHit* Duplicate();
-
+  
+  //! Fix the resolutions as they have been set externally and cannot be changed
+  void FixResolutions(bool Fix) { m_FixedResolutions = Fix; } 
   //! Return true if the resolutions have been set externally and cannot be changed
   bool HasFixedResolutions() const { return m_FixedResolutions; } 
   

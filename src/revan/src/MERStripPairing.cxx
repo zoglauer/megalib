@@ -218,7 +218,6 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
       // Remove the strip hits
       RE->RemoveAllAndCompress();
       
-      
       // (2) Check if we have enough strips and enough energy for each detector
       for (unsigned int d = 0; d < StripHits.size(); ++d) { // Detector loop
         
@@ -512,13 +511,21 @@ bool MERStripPairing::Analyze(MRawEventIncarnationList* List)
           //cout<<"Energy: "<<Energy<<"  "<<XEnergy<<" vs. "<<YEnergy<<" ("<<XEnergyRes<<" vs. "<<YEnergyRes<<")"<<endl;
           
           MVector PosDet(XPos, YPos, ZPos);
+          
+          MVector PositionResolution = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetector()->GetPositionResolution(PosDet, EnergyTotal);
+          
           MVector PosWorld = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetPositionInFirstVolume(PosDet, StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetectorVolume());
+          
+          double TimeResolution = StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()->GetDetector()->GetTimeResolution(EnergyTotal);
           
           MREHit* Hit = new MREHit();
           Hit->SetEnergy(Energy);
-          Hit->SetEnergyResolution(EnergyResolution);
           Hit->SetPosition(PosWorld);
           Hit->SetTime(MinTime);
+          Hit->SetPositionResolution(PositionResolution);
+          Hit->SetEnergyResolution(EnergyResolution);
+          Hit->SetTimeResolution(TimeResolution);
+          Hit->FixResolutions(true);
           Hit->SetVolumeSequence(new MDVolumeSequence(*StripHits[d][1][BestYSideCombo[h][0]]->GetVolumeSequence()));
           Hit->SetDetector(StripHits[d][1][BestYSideCombo[h][0]]->GetDetector());
           
