@@ -130,13 +130,13 @@ void MGUIOptionsTracking::Create()
     
     TGLayoutHints* SubOptions = new TGLayoutHints(kLHintsLeft | kLHintsTop | kLHintsExpandX, 40, 20, 0, 5);
     m_MaxComptonJump = new MGUIEEntry(this,
-                                      "Maximum layer jump for Comptons:",
+                                      "Maximum number of layers a Compton track can skip (e.g. due to hits in passive material):",
                                       false,
                                       m_Data->GetMaxComptonJump(), true, 1);
     AddFrame(m_MaxComptonJump, SubOptions);
 
     m_NSequencesToKeep = new MGUIEEntry(this,
-                                      "Maximum number of different track sequences to keep:",
+                                      "Maximum number of different possible track sequences to keep in the initial analysis:",
                                       false,
                                       m_Data->GetNTrackSequencesToKeep(), true, 1);
     AddFrame(m_NSequencesToKeep, SubOptions);
