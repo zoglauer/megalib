@@ -37,6 +37,7 @@
 
 
 //! A collection of read-out groups belonging all to the same read-out element (i.e. channel)
+//! The data is grouped by read-out data groups (e.g. the file(s) the data originated from
 class MReadOutCollection
 {
   // public interface:

@@ -71,7 +71,9 @@ class MReadOutSequence
   unsigned int FindReadOut(const MReadOutElement& ROE) const;
   //! Remove a read out - does do nothing if the index is not found
   void RemoveReadOut(unsigned int i);
-  //! Get a specific read-outs
+  //! Get a specific read-out
+  MReadOut& GetReadOut(unsigned int R);
+  //! Get a specific read-out
   const MReadOut& GetReadOut(unsigned int R) const;
   
   //! Return true if all read-out elements are of the same type

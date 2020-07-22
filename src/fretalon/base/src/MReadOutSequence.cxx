@@ -78,6 +78,21 @@ void MReadOutSequence::Clear()
 
 
 //! Get a specific read out
+MReadOut& MReadOutSequence::GetReadOut(unsigned int R)
+{
+  if (R < m_ReadOuts.size()) return m_ReadOuts[R];
+  
+  throw MExceptionIndexOutOfBounds(0, m_ReadOuts.size(), R);
+  
+  // We still need a return value...
+  return m_ReadOuts[0];
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Get a specific read out
 const MReadOut& MReadOutSequence::GetReadOut(unsigned int R) const
 {
   if (R < m_ReadOuts.size()) return m_ReadOuts[R];

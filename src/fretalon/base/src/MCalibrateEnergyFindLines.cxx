@@ -37,6 +37,7 @@ using namespace std;
 #include "MBinnerBayesianBlocks.h"
 #include "MCalibrationSpectralPoint.h"
 #include "MReadOutDataADCValue.h"
+#include "MReadOutDataTemperature.h"
 #include "MCalibrationFit.h"
 #include "MCalibrationFitGaussian.h"
 #include "MCalibrationFitGaussLandau.h"
@@ -62,6 +63,9 @@ MCalibrateEnergyFindLines::MCalibrateEnergyFindLines() : MCalibrateEnergy()
   m_PeakParametrizationMethodFittedPeakBackgroundModel = MCalibrationFit::c_BackgroundModelLinear; 
   m_PeakParametrizationMethodFittedPeakEnergyLossModel = MCalibrationFit::c_EnergyLossModelNone; 
   m_PeakParametrizationMethodFittedPeakPeakShapeModel = MCalibrationFit::c_PeakShapeModelGaussian;
+  
+  m_TemperatureMin = -numeric_limits<double>::max();
+  m_TemperatureMax = +numeric_limits<double>::max();
 }
 
 
@@ -124,6 +128,13 @@ bool MCalibrateEnergyFindLines::FindPeaks(unsigned int ROGID)
   Binner.SetMinMax(m_RangeMinimum, m_RangeMaximum);
   Binner.SetPrior(Prior);
   for (unsigned int d = 0; d < m_ROGs[ROGID]->GetNumberOfReadOutDatas(); ++d) {
+    MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataTemperature::m_TypeID));
+    if (T != nullptr) {
+      if (T->GetTemperature() < m_TemperatureMin || T->GetTemperature() > m_TemperatureMax) {
+        continue; 
+      }
+    }
+    
     MReadOutDataADCValue* ADC = dynamic_cast<MReadOutDataADCValue*>(m_ROGs[ROGID]->GetReadOutData(d).Get(MReadOutDataADCValue::m_TypeID));
     if (ADC != nullptr) {
       Binner.Add(ADC->GetADCValue());

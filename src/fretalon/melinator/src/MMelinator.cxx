@@ -56,6 +56,7 @@ using namespace std;
 #include "MReadOutSequence.h"
 #include "MReadOutElementDoubleStrip.h"
 #include "MReadOutDataADCValue.h"
+#include "MReadOutDataTemperature.h"
 #include "MCalibrateEnergyAssignEnergies.h"
 #include "MCalibrateEnergyDetermineModel.h"
 #include "MCalibrateEnergyFindLines.h"
@@ -125,6 +126,9 @@ void MMelinator::Clear()
   m_Isotopes.clear();
   
   m_SelectedDetectorID = -1;
+  
+  m_SelectedTemperatureMin = -numeric_limits<double>::max();
+  m_SelectedTemperatureMax = +numeric_limits<double>::max();
   
   m_HistogramChanged = true;
   m_HistogramCollection = -1;
@@ -422,8 +426,21 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
           if (Sequence.GetNumberOfReadOuts() > 0 && 
             Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
             continue;
-            }
+          }
         }
+        vector<unsigned int> ToRemove;
+        for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
+          MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
+          if (T != nullptr) {
+            if (T->GetTemperature() < m_SelectedTemperatureMin || T->GetTemperature() > m_SelectedTemperatureMax) {
+              ToRemove.push_back(d);
+            }
+          }
+        }
+        for (unsigned int t = ToRemove.size() - 1; t < ToRemove.size(); --t) {
+          Sequence.RemoveReadOut(ToRemove[t]); 
+        }
+        
         
         Store.Add(Sequence, 0);
         
@@ -1244,6 +1261,7 @@ bool MMelinator::Calibrate(unsigned int Collection, bool ShowDiagnostics)
     MCalibrateEnergyFindLines FindLines;
     FindLines.SetDiagnosticsMode(ShowDiagnostics);
     FindLines.SetRange(m_HistogramMin, m_HistogramMax);
+    FindLines.SetTemperatureWindow(m_SelectedTemperatureMin, m_SelectedTemperatureMax);
     //cout<<"T1: "<<Timer.GetElapsed()<<endl;
     for (unsigned int g = 0; g < C.GetNumberOfReadOutDataGroups(); ++g) {
       FindLines.AddReadOutDataGroup(C.GetReadOutDataGroup(g), m_Isotopes[distance(m_GroupIDs.begin(), find(m_GroupIDs.begin(), m_GroupIDs.end(), g))]);

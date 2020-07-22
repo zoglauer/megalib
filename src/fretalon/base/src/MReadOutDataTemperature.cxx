@@ -123,7 +123,7 @@ bool MReadOutDataTemperature::Parse(const MTokenizer& T, unsigned int StartEleme
   if (MReadOutData::Parse(T, StartElement) == false) return false;
   
   // Then here:
-  m_Temperature = T.GetTokenAtAsUnsignedIntFast(StartElement + MReadOutData::GetNumberOfParsableElements());
+  m_Temperature = T.GetTokenAtAsDouble(StartElement + MReadOutData::GetNumberOfParsableElements());
   
   return true;
 }
