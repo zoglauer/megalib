@@ -35,6 +35,7 @@ while True:
   Event = Reader.GetNextEvent()
   if not Event:
     break
+  M.SetOwnership(Event, True)
   
   if Event.GetNIAs() > 0:
     Hist.Fill(Event.GetIAAt(0).GetSecondaryEnergy(), Event.GetREnergy());

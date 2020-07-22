@@ -34,6 +34,7 @@ while True:
   Event = Reader.GetNextEvent()
   if not Event:
     break
+  M.SetOwnership(Event, True)
   
   if Event.GetType() == M.MPhysicalEvent.c_Compton:
     HistCompton.Fill(Event.Ei());
