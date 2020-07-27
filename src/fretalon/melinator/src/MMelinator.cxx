@@ -422,12 +422,12 @@ bool MMelinator::LoadParallel(unsigned int ThreadID)
       long NewCounter = 0;
       while (Reader.ReadNext(Sequence, m_SelectedDetectorID) == true) {
         // Since we do energy calibration, exclude everything with more than the number of good hits
-        if (Sequence.HasIdenticalReadOutElementTypes() == true) {
-          if (Sequence.GetNumberOfReadOuts() > 0 && 
-            Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
-            continue;
-          }
-        }
+        //if (Sequence.HasIdenticalReadOutElementTypes() == true) {
+        //  if (Sequence.GetNumberOfReadOuts() > 0 && 
+        //    Sequence.GetNumberOfReadOuts() != Sequence.GetReadOut(0).GetReadOutElement().GetMinimumNumberOfReadOutsForGoodInteraction()) {
+        //    continue;
+        //  }
+        //}
         vector<unsigned int> ToRemove;
         for (unsigned int d = 0; d < Sequence.GetNumberOfReadOuts(); ++d) { 
           MReadOutDataTemperature* T = dynamic_cast<MReadOutDataTemperature*>(Sequence.GetReadOut(d).GetReadOutData().Get(MReadOutDataTemperature::m_TypeID));
