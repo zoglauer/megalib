@@ -194,6 +194,17 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     return false;
   }
   
+  // Finally set the FWHM of each of the good points
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
+    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+      if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
+        MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(r, p);
+        P.SetEnergyFWHM(m_Results.GetEnergyModel().GetFitValue(P.GetPeak() + 0.5*P.GetFWHM()) - m_Results.GetEnergyModel().GetFitValue(P.GetPeak() - 0.5*P.GetFWHM()));
+      }
+    }
+  }
+  
+  
   return true;
 }
 

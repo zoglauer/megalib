@@ -152,11 +152,16 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   ROOT::Fit::BinData TheData;
   TheData.Initialize(Points.size(), 1, ROOT::Fit::BinData::kValueError);
   for (unsigned int p = 0; p < Points.size(); ++p) {
+    double FWHM = Points[p].GetEnergyFWHM();
+    // If we do not yet have a FWHM use a dummy linear calibration through zero
+    if (FWHM == 0.0) {
+      FWHM = Points[p].GetFWHM() * Points[p].GetEnergy() / Points[p].GetPeak();
+    }
     if (m_Type == MCalibrationModelType::c_LineWidth) {
       if (fabs(Points[p].GetEnergy() - 511) < 0.1) continue; // Always exclude any 511 line, since it is larger than usual (positron range)
-      TheData.Add(Points[p].GetEnergy(), Points[p].GetEnergyFWHM(), 0.1*Points[p].GetEnergyFWHM()); // Arbitrary width...
+      TheData.Add(Points[p].GetEnergy(), FWHM, 0.1*FWHM); // Arbitrary width...
     } else {
-      TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), Points[p].GetEnergyFWHM()/2.35);
+      TheData.Add(Points[p].GetPeak(), Points[p].GetEnergy(), FWHM/2.35);
     }
   }
 
