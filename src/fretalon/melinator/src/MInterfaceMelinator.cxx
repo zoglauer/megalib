@@ -206,7 +206,7 @@ bool MInterfaceMelinator::ParseCommandLine(int argc, char** argv)
   }
   if (Automatic == true) {
     m_Gui->OnSave();
-    return false;
+    Exit();
   }
   
 
