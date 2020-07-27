@@ -607,7 +607,7 @@ void MGUIMainMelinator::Create()
 //! Create the selection GUI element
 void MGUIMainMelinator::CreateSelection()
 {
-  m_MainSelectionCanvas->Clear();
+  m_MainSelectionCanvas->ClearReadOutElements();
   
   for (unsigned int c = 0; c < m_Melinator.GetNumberOfCollections(); ++c) {
     //if (c > 10) break;
