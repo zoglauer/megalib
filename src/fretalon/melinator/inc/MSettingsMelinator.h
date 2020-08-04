@@ -133,11 +133,20 @@ class MSettingsMelinator : public MSettings
   void SetSaveAsFileName(const MString& SaveAsFileName) { m_SaveAsFileName = SaveAsFileName; }
   //! Get the save-as file name
   MString GetSaveAsFileName() const { return m_SaveAsFileName; }
-
+  
   //! Set the single detector to use (negative means use all)
   void SetSelectedDetectorID(int ID) { m_SelectedDetectorID = ID; }
   //! Get the single detector to use (negative means use all)
   int GetSelectedDetectorID() const { return m_SelectedDetectorID; }
+  
+  //! Set the minimum allowed detector temperature
+  void SetMinimumTemperature(double MinimumTemperature) { m_MinimumTemperature = MinimumTemperature; }
+  //! Get the minimum allowed detector temperate
+  double GetMinimumTemperature() const { return m_MinimumTemperature; }
+  //! Set the minimum allowed detector temperature
+  void SetMaximumTemperature(double MaximumTemperature) { m_MaximumTemperature = MaximumTemperature; }
+  //! Get the minimum allowed detector temperate
+  double GetMaximumTemperature() const { return m_MaximumTemperature; }
   
   
 // protected members:
@@ -197,6 +206,11 @@ class MSettingsMelinator : public MSettings
   
   //! Set the single detector to use (negative means use all)
   int m_SelectedDetectorID;
+  
+  //! Set the minimum allowed detector temperature
+  double m_MinimumTemperature;
+  //! Set the maximum allowed detector temperature
+  double m_MaximumTemperature;
   
   
 #ifdef ___CLING___

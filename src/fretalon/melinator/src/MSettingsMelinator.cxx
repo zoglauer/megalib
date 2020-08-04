@@ -28,6 +28,7 @@
 
 // Standard libs:
 #include <algorithm>
+#include <limits>
 using namespace std;
 
 // ROOT libs:
@@ -76,6 +77,9 @@ MSettingsMelinator::MSettingsMelinator(bool AutoLoad) : MSettings("MelinatorConf
   m_SaveAsFileName = "Out.ecal";
   
   m_SelectedDetectorID = -1;
+  
+  m_MinimumTemperature = -numeric_limits<double>::max();
+  m_MaximumTemperature = +numeric_limits<double>::max();
   
   if (AutoLoad == true) {
     Read();
