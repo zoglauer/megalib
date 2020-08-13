@@ -1,0 +1,91 @@
+
+#---------------------------------------------------------
+# Example showing if for loops and if statements
+
+
+Name DeadPixels
+Version 1.0
+
+SurroundingSphere 10  0.0  0.0  0.0  10.0
+ShowSurroundingSphere False
+
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+
+
+#------------------------------------------------------------
+# Volume section:
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+
+Volume GoodPixel
+GoodPixel.Material CZT
+GoodPixel.Shape BOX 0.45 0.45 0.1
+GoodPixel.Color 4
+
+Volume BadPixel
+BadPixel.Material CZT
+BadPixel.Shape BOX 0.45 0.45 0.1
+BadPixel.Color 2
+
+For I 6 -3 1.0
+  For J 6 -3 1.0
+    If { %I == 3 && %J == 3 }
+      BadPixel.Copy BadPixel_%I_%J
+      BadPixel_%I_%J.Position $I $J 0.0
+      BadPixel_%I_%J.Mother WorldVolume
+    EndIf
+    If { %I != 3 || %J != 3 }
+      GoodPixel.Copy GoodPixel_%I_%J
+      GoodPixel_%I_%J.Position $I $J 0.0
+      GoodPixel_%I_%J.Mother WorldVolume
+    EndIf
+
+  Done
+Done
+
+
+
+
+
+
+#------------------------------------------------------------
+# Detector and trigger section:
+
+
+Simple                  ActiveDetector
+
+ActiveDetector.SensitiveVolume     GoodPixel
+
+ActiveDetector.NoiseThreshold      15
+ActiveDetector.TriggerThreshold    30
+
+ActiveDetector.EnergyResolution Gaus 10      10        0.417   
+ActiveDetector.EnergyResolution Gaus 20      20        0.425           
+ActiveDetector.EnergyResolution Gaus 50      50        0.4375    
+ActiveDetector.EnergyResolution Gaus 100     100       0.454     
+ActiveDetector.EnergyResolution Gaus 200     200       0.492     
+ActiveDetector.EnergyResolution Gaus 500     500       0.5875      
+ActiveDetector.EnergyResolution Gaus 1000    1000      0.7217       
+ActiveDetector.EnergyResolution Gaus 2000    2000      0.9317      
+ActiveDetector.EnergyResolution Gaus 5000    5000      1.3819       
+ActiveDetector.EnergyResolution Gaus 10000   10000     1.9094                     
+ActiveDetector.EnergyResolution Gaus 100000  100000    5.907      
+   
+
+
+Trigger ActiveDetectorTrigger
+ActiveDetectorTrigger.Veto false
+ActiveDetectorTrigger.TriggerByDetector true
+ActiveDetectorTrigger.Detector ActiveDetector 1
+
+
+
+
