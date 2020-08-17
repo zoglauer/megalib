@@ -713,6 +713,9 @@ else
   # If we have a new ROOT dir, copy the build log there
   NEWROOT4DIR=`grep ROOTDIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWROOT4DIR} ]]; then
+    if [[ -f ${NEWROOT4DIR}/RootBuildLog.txt ]]; then
+      mv ${NEWROOT4DIR}/RootBuildLog.txt ${NEWROOT4DIR}/RootBuildLog_before$(date +'%y%m%d%H%M%S').txt
+    fi
     mv RootBuildLog.txt ${NEWROOT4DIR}
   fi
 
@@ -785,6 +788,9 @@ else
   # If we have a new Geant4 dir, copy the build log there
   NEWGEANT4DIR=`grep GEANT4DIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWGEANT4DIR} ]]; then
+    if [[ -f ${NEWGEANT4DIR}/Geant4BuildLog.txt ]]; then
+      mv ${NEWGEANT4DIR}/Geant4BuildLog.txt ${NEWGEANT4DIR}/Geant4BuildLog_before$(date +'%y%m%d%H%M%S').txt
+    fi
     mv Geant4BuildLog.txt ${NEWGEANT4DIR}
   fi
 
