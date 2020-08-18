@@ -91,15 +91,21 @@ void MGUIEReadOutElement::SetQuality(double Quality)
 { 
   m_Quality = Quality; 
   
+  // cout<<m_ROE.ToString()<<": "<<m_Quality<<endl;
+  
   if (m_Quality < 0) {
-    m_TextButton->ChangeBackground(m_DefaultBackgroundColor);    
-  } else if (m_Quality <= 1) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kGray+1)->GetPixel());    
+  } else if (m_Quality >= 0 && m_Quality < 1) {
     m_TextButton->ChangeBackground(gROOT->GetColor(kGreen+1)->GetPixel());
-  } else if (m_Quality <= 2) {
+  } else if (m_Quality >= 1 && m_Quality < 2) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kSpring+7)->GetPixel());
+  } else if (m_Quality >= 2 && m_Quality < 3) {
     m_TextButton->ChangeBackground(gROOT->GetColor(kYellow)->GetPixel());
-  } else if (m_Quality <= 3) {
+  } else if (m_Quality >= 3 && m_Quality < 4) {
+    m_TextButton->ChangeBackground(gROOT->GetColor(kOrange-2)->GetPixel());
+  } else if (m_Quality >= 4 && m_Quality < 5) {
     m_TextButton->ChangeBackground(gROOT->GetColor(kOrange+1)->GetPixel());
-  } else {
+  } else if (m_Quality >= 5) {
     m_TextButton->ChangeBackground(gROOT->GetColor(kRed)->GetPixel());
   }
 }
