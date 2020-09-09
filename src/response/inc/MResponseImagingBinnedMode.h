@@ -83,6 +83,8 @@ class MResponseImagingBinnedMode : public MResponseBuilder
   double m_EnergyMinimum;
   //! Maximum energy range
   double m_EnergyMaximum;
+  //! Energy bin edges
+  vector<double> m_EnergyBinEdges;
   //! Number of distance bins
   unsigned int m_DistanceNBins;
   //! Minimum distance range
