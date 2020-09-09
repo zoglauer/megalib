@@ -297,12 +297,19 @@ bool MResponseImagingBinnedMode::Initialize()
     m_Exposure.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
 
-  m_EnergyResponse.SetName("Energy response");
-  m_EnergyResponse.AddAxis(AxisEnergyInitial);
-  m_EnergyResponse.AddAxis(AxisSkyCoordinates);
-  m_EnergyResponse.AddAxis(AxisEnergyMeasured);
+  m_EnergyResponse4D.SetName("Energy response 4D");
+  m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
+  m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
+  m_EnergyResponse4D.AddAxis(AxisEnergyMeasured);
   if (m_SiReader != nullptr) {
-    m_EnergyResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+    m_EnergyResponse4D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+
+  m_EnergyResponse2D.SetName("Energy response 2D");
+  m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
+  m_EnergyResponse2D.AddAxis(AxisEnergyMeasured);
+  if (m_SiReader != nullptr) {
+    m_EnergyResponse2D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
 
   if (m_UseAtmosphericAbsorption == true) {
@@ -410,7 +417,8 @@ bool MResponseImagingBinnedMode::Analyze()
   // And fill the matrices
   m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
   m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
-  m_EnergyResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
+  m_EnergyResponse4D.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
+  m_EnergyResponse2D.Add( vector<double>{ EnergyInitial, EnergyMeasured } );
             
   //cout<<"Added: "<<Event->GetId()<<":"<<Phi<<":"<<Psi<<":"<<Chi<<endl;
   
@@ -442,8 +450,11 @@ bool MResponseImagingBinnedMode::Save()
   m_Exposure.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Exposure.Write(GetFilePrefix() + ".exposure" + m_Suffix, true);
   
-  m_EnergyResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyResponse.Write(GetFilePrefix() + ".energyresponse" + m_Suffix, true);
+  m_EnergyResponse4D.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergyResponse4D.Write(GetFilePrefix() + ".energyresponse4d" + m_Suffix, true);
+  
+  m_EnergyResponse2D.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergyResponse2D.Write(GetFilePrefix() + ".energyresponse2d" + m_Suffix, true);
   
   return true;
 }

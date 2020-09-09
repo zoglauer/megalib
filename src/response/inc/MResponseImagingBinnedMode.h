@@ -92,10 +92,12 @@ class MResponseImagingBinnedMode : public MResponseBuilder
   
   //! The imaging response 
   MResponseMatrixON m_ImagingResponse;
-  // the exposure
+  //! The exposure
   MResponseMatrixON m_Exposure;
-  //! The fine energy response (fine than the one in imaging)
-  MResponseMatrixON m_EnergyResponse;
+  //! The 4D energy response 
+  MResponseMatrixON m_EnergyResponse4D;
+  //! The 2D energy response 
+  MResponseMatrixON m_EnergyResponse2D;
   
   //! Use an absorption factor
   bool m_UseAtmosphericAbsorption;
