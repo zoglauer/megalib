@@ -35,7 +35,7 @@ confhelp() {
   echo "--tarball=[file name of HEASoft tar ball]"
   echo "    Use this tarball instead of downloading it from the HEASoft website"
   echo " "
-  echo "--environment-script=[file name of new environment script]"
+  echo "--sourcescript=[file name of new environment script]"
   echo "    File in which the HEASoft path is stored. This is used by the MEGAlib setup script"
   echo " "
   echo "--help or -h"
@@ -97,7 +97,7 @@ for C in ${CMD}; do
   if [[ ${C} == *-t*=* ]]; then
     TARBALL=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this tarball: ${TARBALL}"
-  elif [[ ${C} == *-e* ]]; then
+  elif [[ ${C} == *-s* ]]; then
     ENVFILE=`echo ${C} | awk -F"=" '{ print $2 }'`
     echo "Using this MEGALIB environment file: ${ENVFILE}"
   elif [[ ${C} == *-h* ]]; then
