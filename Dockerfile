@@ -3,7 +3,7 @@
 # Build the docker with:
 # docker build -t megalib-experimental - < Dockerfile
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 MAINTAINER Andreas Zoglauer <zoglauer@berkeley.edu>
 
@@ -20,7 +20,7 @@ RUN mkdir /opt/MEGAlib && chown -R mrmegalib:mrmegalib /opt/MEGAlib
 USER mrmegalib
 
 # Setup MEGAlib
-RUN cd /home/mrmegalib && git clone https://github.com/zoglauer/megalib.git MEGAlib && cd /home/mrmegalib/MEGAlib && /bin/bash setup.sh --ex=/opt/MEGAlib --release=dev --branch=experimental --clean=yes
+RUN cd /home/mrmegalib && git clone https://github.com/zoglauer/megalib.git MEGAlib && cd /home/mrmegalib/MEGAlib && /bin/bash setup.sh --ex=/opt/MEGAlib  --branch=master --clean=yes
 RUN echo . /home/mrmegalib/MEGAlib/bin/source-megalib.sh >> /home/mrmegalib/.bashrc
 
 # Switch back to ROOT
