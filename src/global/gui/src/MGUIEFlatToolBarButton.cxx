@@ -31,6 +31,7 @@
 using namespace std;
 
 // ROOT libs:
+#include "TVirtualX.h"
 
 // MEGAlib libs:
 #include "MStreams.h"
