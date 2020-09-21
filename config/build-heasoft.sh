@@ -194,7 +194,7 @@ if [ -d heasoft_v${VER} ]; then
       echo "Your already have a usable HEASoft version installed!"
       if [ "${ENVFILE}" != "" ]; then
         echo "Storing the HEASoft directory in the MEGAlib source script..."
-        echo "HEASoftDIR=`pwd`" >> ${ENVFILE}
+        echo "HEASOFTDIR=`pwd`" >> ${ENVFILE}
       else
         cd ..
         setuphelp
@@ -293,7 +293,7 @@ chmod -R go+rX heasoft_v${VER}
 
 if [ "${ENVFILE}" != "" ]; then
   echo "Storing the HEASoft directory in the MEGAlib source script..."
-  echo "HEASoftDIR=`pwd`/heasoft_v${VER}" >> ${ENVFILE}
+  echo "HEASOFTDIR=`pwd`/heasoft_v${VER}" >> ${ENVFILE}
 else
   setuphelp
 fi

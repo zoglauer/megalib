@@ -135,7 +135,7 @@ CMD=( "$@" )
 
 # Check for help
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-h* ]]; then
+  if [[ ${C} == *-h ]] || [[ ${C} == *-hel* ]]; then
     echo ""
     confhelp
     exit 0
@@ -253,7 +253,7 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-b* ]]; then
     BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
     RELEASE="dev"
-  elif [[ ${C} == *-h* ]]; then
+  elif [[ ${C} == *-h ]] || [[ ${C} == *-hel* ]]; then
     echo ""
     confhelp
     exit 0
@@ -875,7 +875,7 @@ if [[ ${HEASOFTPATH} != off ]]; then
     fi
     cd ${EXTERNALPATH}
     echo "Switching to build-heasoft.sh script..."
-    bash ${MEGALIBDIR}/config/build-heasoft.sh -source=${ENVFILE} --debug=${DEBUG} --maxthreads=${MAXTHREADS} --cleanup=${CLEANUP}  2>&1 | tee HEASoftBuildLog.txt
+    bash ${MEGALIBDIR}/config/build-heasoft.sh -source=${ENVFILE}   2>&1 | tee HEASoftBuildLog.txt
     RESULT=${PIPESTATUS[0]}
   
   
@@ -920,7 +920,7 @@ if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 1 )); then
   ENVSTRING+=" --geant4=\${GEANT4DIR}"
 fi
 if (( $(cat ${ENVFILE} | grep "^HEASOFTDIR" | wc -l) == 1 )); then
-  ENVSTRING+=" --geant4=\${HEASOFTDIR}"
+  ENVSTRING+=" --heasoft=\${HEASOFTDIR}"
 fi
 ENVSTRING+=" --megalib=\${MEGALIBDIR}"
 echo "${ENVSTRING}" >> ${ENVFILE}
