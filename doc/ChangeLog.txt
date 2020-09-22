@@ -11,15 +11,22 @@ Version 3.01/3.02
 =================
 
 General:
++ setup: HEASoft can now be compiled as optional package
++ setup: New script configure_macport to setup macport before compiling 
+         ROOT/Geant4/MEGAlib on macOS Catalina
 + dmegalib: New dmegalib-setup, which needs to be run before the distributed
             analysis can be used
 
-
+Fretalon:
++ Changes to the API to run Melinator in a python script 
+            
 Mimrec:
 + New option in the event selector to choose the detector of the 2nd interaction
++ New tool to convert the tra file into a COSI Level 3 fits file and back
 
 Examples:
 + AllSky: How to simulate all-sky images
++ Cross-section plotter
 
 Long-term bugs fixed:
 + Sivan: There was a uncommon programatic path using clusters and discretization, 
