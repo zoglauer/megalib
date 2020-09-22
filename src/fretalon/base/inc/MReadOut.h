@@ -31,7 +31,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//! A single chanel read out consisting of a read-out element and its associated data
+//! A single channel read out consisting of a read-out element and its associated data
 class MReadOut
 {
   // public interface:
