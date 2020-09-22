@@ -19,7 +19,7 @@ OBJ_FILES  := $(addprefix $(LB)/,$(notdir $(CPP_FILES:.cc=.o)))
 SOBJ       := $(LB)/libCosima.$(DLL)
 G4_CFLAGS  := $(shell geant4-config --cflags) -DG4VIS_USE
 G4_CFLAGS  := $(filter-out -Wshadow, $(G4_CFLAGS))
-G4_LIBS    := $(shell geant4-config --libs)
+G4_LIBS    := $(shell geant4-config --libs) -Wl,-rpath,$(shell geant4-config --prefix)/lib
 LIBRARIES  := -lSivan -lGeomega -lCommonMisc -lCommonGui
 
 #----------------------------------------------------------------
