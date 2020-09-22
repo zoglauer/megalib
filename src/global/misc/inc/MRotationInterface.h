@@ -142,6 +142,17 @@ class MRotationInterface
   MRotation GetHorizonPointingRotationMatrix() const;
 
 
+  //! Return the pointing (x-axis) - longitude component in radians!
+  double GetHorizonPointingXAxisLongitude() const { return (m_HorizonPointingXAxis.Phi() < 0) ? m_HorizonPointingXAxis.Phi() + c_TwoPi : m_HorizonPointingXAxis.Phi(); }
+  //! Return the pointing (x-axis) - latitude component in radians!
+  double GetHorizonPointingXAxisLatitude() const { return m_HorizonPointingXAxis.Theta(); }
+  
+  //! Return the pointing (z-axis) - longitude component in radians!
+  double GetHorizonPointingZAxisLongitude() const { return (m_HorizonPointingZAxis.Phi() < 0) ? m_HorizonPointingZAxis.Phi() + c_TwoPi : m_HorizonPointingZAxis.Phi(); }
+  //! Return the pointing (z-axis) - latitude component in radians!
+  double GetHorizonPointingZAxisLatitude() const { return m_HorizonPointingZAxis.Theta(); }
+  
+  
   // protected methods:
  protected:
 

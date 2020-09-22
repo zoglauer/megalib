@@ -572,7 +572,7 @@ bool ConvertMGGPOD::Analyze()
    
     MGUIProgressBar* Progress = 0;
     if (gClient != 0 && gClient->GetRoot() != 0 && m_UseGui == true) {
-      Progress = new MGUIProgressBar(0, "Progress", "Progress of conversion");
+      Progress = new MGUIProgressBar("Progress", "Progress of conversion");
       Progress->SetMinMax(0, NRowsInit);
     }
 
@@ -970,7 +970,7 @@ bool ConvertMGGPOD::Discretize(int StartedEventID,
     MVector Pos = Event.GetIAAt(i)->GetPosition();
     MDVolumeSequence* S = m_Geometry.GetVolumeSequencePointer(Pos);
     if (S->GetDetector() != 0 && S->GetDeepestVolume()->IsSensitive() == true) {
-      Event.GetIAAt(i)->SetDetectorType(S->GetDetector()->GetDetectorType());
+      Event.GetIAAt(i)->SetDetectorType(S->GetDetector()->GetType());
     } else {
       Event.GetIAAt(i)->SetDetectorType(0);
     }
@@ -981,7 +981,7 @@ bool ConvertMGGPOD::Discretize(int StartedEventID,
   for (unsigned int i = 0; i < Event.GetNHTs(); ++i) {
     MDVolumeSequence* S = Event.GetHTAt(i)->GetVolumeSequence();
     if (S->GetDetector() != 0) {    
-      Event.GetHTAt(i)->SetDetectorType(S->GetDetector()->GetDetectorType());
+      Event.GetHTAt(i)->SetDetectorType(S->GetDetector()->GetType());
     } else {
       Event.GetHTAt(i)->SetDetectorType(0);
     }

@@ -569,10 +569,55 @@ bool MComptonEvent::Assimilate(MComptonEvent* Compton)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+bool MComptonEvent::Assimilate(const vector <MPhysicalEventHit> Hits)
+{
+  // Assimilate from a list of physical hits
+  
+  Reset();
+  
+  if (Hits.size() < 2) {
+    merr<<"MComptonEvent: Error: Assimilation requires at least two hits, and not "<<Hits.size()<<endl;
+    return false; 
+  }
+  
+  for (auto H: Hits) AddHit(H);
+
+  m_C1 = m_Hits[0].GetPosition();
+  m_dC1 = m_Hits[0].GetPositionUncertainty();
+  m_C2 = m_Hits[1].GetPosition();
+  m_dC2 = m_Hits[1].GetPositionUncertainty();
+  
+  m_Ee = m_Hits[0].GetEnergy();
+  m_dEe = m_Hits[0].GetEnergyUncertainty();
+  
+  for (unsigned int h = 1; h < m_Hits.size(); ++h) {
+    m_Eg += m_Hits[h].GetEnergy();
+    m_dEg += m_Hits[h].GetEnergyUncertainty()*m_Hits[h].GetEnergyUncertainty();
+  }
+  m_dEg = sqrt(m_dEg);
+  
+  m_LeverArm = numeric_limits<double>::max();
+  for (unsigned int h = 1; h < m_Hits.size(); ++h) {
+    double L = (m_Hits[h].GetPosition() - m_Hits[h-1].GetPosition()).Mag();
+    if (L < m_LeverArm) m_LeverArm = L;
+  }
+  m_TrackInitialDeposit = m_Ee;
+  m_SequenceLength = m_Hits.size();
+
+  // this calculates auxiliary data,
+  if (Validate() == false) return false;
+   
+  return true;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 bool MComptonEvent::Assimilate(MPhysicalEvent* Event)
 {
   // Simply Call: MComptonEvent::Assimilate(const MComptonEventData *ComptonEventData)
-
+  
   if (Event->GetType() == MPhysicalEvent::c_Compton) {
     return Assimilate(dynamic_cast<MComptonEvent*>(Event));
   } else {
@@ -679,7 +724,7 @@ bool MComptonEvent::Validate()
   // Test if the event is ok, compute the scatter angles and the 
   // compton-axis-Vector, etc.
 
-  // Sometimes the real data is so false that we are unable to compute a compton-angle: 
+  // Sometimes the real data is so false that we are unable to compute a Compton angle: 
   if (IsKinematicsOK() == false) {
     return false;
   }

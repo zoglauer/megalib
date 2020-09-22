@@ -848,6 +848,37 @@ MString MTime::GetShortString()
   return Text;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTime::GetFitsDateString()
+{
+  // Return as fits date string: 31/12/94
+  
+  char Text[100];
+  sprintf(Text, "%02u/%02u/%02u", 
+          GetDays(), GetMonths(), GetYears() % 100);
+  
+  return Text;    
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MString MTime::GetFitsTimeString()
+{
+  // Return as fits time string: 15:45:57
+
+  char Text[100];
+  sprintf(Text, "%02u:%02u:%02u", 
+          GetHours(), GetMinutes(), GetSeconds());
+  
+  return Text;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
