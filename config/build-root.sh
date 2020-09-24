@@ -506,7 +506,7 @@ fi
 echo "Unpacking..."
 mkdir ${ROOTDIR}
 cd ${ROOTDIR}
-tar xvfz ../${TARBALL} > /dev/null
+tar xfz ../${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the ROOT tarball!"
   exit 1

@@ -219,7 +219,7 @@ fi
 
 
 echo "Unpacking..."
-tar xvfz ${TARBALL} > /dev/null
+tar xfz ${TARBALL} > /dev/null
 if [ "$?" != "0" ]; then
   echo "ERROR: Something went wrong unpacking the HEASoft tarball!"
   exit 1

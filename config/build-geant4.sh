@@ -419,9 +419,9 @@ fi
 
 echo "Unpacking..."
 if ( [[ ${TARBALL} == *.tgz ]] || [[ ${TARBALL} == *.tar.gz ]] ); then
-    tar xvfz ${TARBALL} > /dev/null
+    tar xfz ${TARBALL} > /dev/null
 elif [[ $1 == *.tar ]] ; then
-    tar xvf ${TARBALL} > /dev/null
+    tar xf ${TARBALL} > /dev/null
 else
     echo "ERROR: File has unknown suffix: $1 (known: tgz, tar.gz, tar)"
     exit 1
