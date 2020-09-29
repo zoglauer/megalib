@@ -74,9 +74,9 @@ class MRotationInterface
   //! Set the z-axis of the galactic coordinate system
   void SetGalacticPointingZAxis(const MVector ZAxis) { m_HasGalacticPointing = true; m_GalacticPointingZAxis = ZAxis; }
 
-  //! Get the x-axis of the galactic coordinate system - input is in degrees
+  //! Get the x-axis of the galactic coordinate system - output is in radians
   MVector GetGalacticPointingXAxis() const { return m_GalacticPointingXAxis; }
-  //! Get the z-axis of the galactic coordinate system - input is in degrees
+  //! Get the z-axis of the galactic coordinate system - output is in radians
   MVector GetGalacticPointingZAxis() const { return m_GalacticPointingZAxis; }
 
   //! Return the pointing (x-axis) - longitude component in radians!
@@ -142,15 +142,15 @@ class MRotationInterface
   MRotation GetHorizonPointingRotationMatrix() const;
 
 
-  //! Return the pointing (x-axis) - longitude component in radians!
-  double GetHorizonPointingXAxisLongitude() const { return (m_HorizonPointingXAxis.Phi() < 0) ? m_HorizonPointingXAxis.Phi() + c_TwoPi : m_HorizonPointingXAxis.Phi(); }
-  //! Return the pointing (x-axis) - latitude component in radians!
-  double GetHorizonPointingXAxisLatitude() const { return m_HorizonPointingXAxis.Theta(); }
+  //! Return the pointing (x-axis) - azimuth north component in radians!
+  double GetHorizonPointingXAxisAzimuthNorth() const { return (m_HorizonPointingXAxis.Phi() < 0) ? m_HorizonPointingXAxis.Phi() + c_TwoPi : m_HorizonPointingXAxis.Phi(); }
+  //! Return the pointing (x-axis) - elevation component in radians!
+  double GetHorizonPointingXAxisElevation() const { return c_Pi/2 - m_HorizonPointingXAxis.Theta(); }
   
-  //! Return the pointing (z-axis) - longitude component in radians!
-  double GetHorizonPointingZAxisLongitude() const { return (m_HorizonPointingZAxis.Phi() < 0) ? m_HorizonPointingZAxis.Phi() + c_TwoPi : m_HorizonPointingZAxis.Phi(); }
-  //! Return the pointing (z-axis) - latitude component in radians!
-  double GetHorizonPointingZAxisLatitude() const { return m_HorizonPointingZAxis.Theta(); }
+  //! Return the pointing (z-axis) - azimuth north component in radians!
+  double GetHorizonPointingZAxisAzimuthNorth() const { return (m_HorizonPointingZAxis.Phi() < 0) ? m_HorizonPointingZAxis.Phi() + c_TwoPi : m_HorizonPointingZAxis.Phi(); }
+  //! Return the pointing (z-axis) - elevation component in radians!
+  double GetHorizonPointingZAxisElevation() const { return c_Pi/2 - m_HorizonPointingZAxis.Theta(); }
   
   
   // protected methods:

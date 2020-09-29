@@ -372,26 +372,30 @@ bool TraFitsConverter::ToTra()
         C->SetGalacticPointingZAxis(ZLong, ZLat);
       }
       
-      if (fits_read_col_dbl(EventFile, Columns["HX_LAT"], r, 1, 1, nulldbl, &XLat, &anynul, &status) ) {
+      double XAzi = 0;
+      double XEle = 0;
+      double ZAzi = 0;
+      double ZEle = 0;
+      if (fits_read_col_dbl(EventFile, Columns["HX_AZI"], r, 1, 1, nulldbl, &XAzi, &anynul, &status) ) {
         cout<<"Column read (HX_LAT) failed!"<<endl;
         break;
       }
-      if (fits_read_col_dbl(EventFile, Columns["HX_LONG"], r, 1, 1, nulldbl, &XLong, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HX_ELE"], r, 1, 1, nulldbl, &XEle, &anynul, &status) ) {
         cout<<"Column read (HX_LONG) failed!"<<endl;
         break;
       }
       
-      if (fits_read_col_dbl(EventFile, Columns["HZ_LAT"], r, 1, 1, nulldbl, &ZLat, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HZ_AZI"], r, 1, 1, nulldbl, &ZAzi, &anynul, &status) ) {
         cout<<"Column read (HZ_LAT) failed!"<<endl;
         break;
       }
-      if (fits_read_col_dbl(EventFile, Columns["HZ_LONG"], r, 1, 1, nulldbl, &ZLong, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HZ_ELE"], r, 1, 1, nulldbl, &ZEle, &anynul, &status) ) {
         cout<<"Column read (HZ_LONG) failed!"<<endl;
         break;
       }
-      if (XLat != 0.0 || XLong != 0 || ZLat != 0 || ZLong != 0) {
-        C->SetHorizonPointingXAxis(XLong, XLat);
-        C->SetHorizonPointingZAxis(ZLong, ZLat);
+      if (XAzi != 0.0 || XEle != 0 || ZAzi != 0 || ZEle != 0) {
+        C->SetHorizonPointingXAxis(XAzi, XEle);
+        C->SetHorizonPointingZAxis(ZAzi, ZEle);
       }
 
       
@@ -477,7 +481,7 @@ bool TraFitsConverter::ToTra()
         }
        
         MPhysicalEventHit H;
-        H.Set(MVector(PosX, PosY, PosZ), MVector(dPosX, dPosY, dPosZ), Energy, dEnergy, 0, 1E15);
+        H.Set(MVector(PosX, PosY, PosZ), MVector(dPosX, dPosY, dPosZ), Energy, dEnergy, 0, 0);
 
         Hits.push_back(H);      
         //cout<<"Added: "<<Hits.size()<<endl;
@@ -540,26 +544,30 @@ bool TraFitsConverter::ToTra()
         C->SetGalacticPointingZAxis(ZLong, ZLat);
       }
       
-      if (fits_read_col_dbl(EventFile, Columns["HX_LAT"], r, 1, 1, nulldbl, &XLat, &anynul, &status) ) {
+      double XAzi = 0;
+      double XEle = 0;
+      double ZAzi = 0;
+      double ZEle = 0;
+      if (fits_read_col_dbl(EventFile, Columns["HX_AZI"], r, 1, 1, nulldbl, &XAzi, &anynul, &status) ) {
         cout<<"Column read (HX_LAT) failed!"<<endl;
         break;
       }
-      if (fits_read_col_dbl(EventFile, Columns["HX_LONG"], r, 1, 1, nulldbl, &XLong, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HX_ELE"], r, 1, 1, nulldbl, &XEle, &anynul, &status) ) {
         cout<<"Column read (HX_LONG) failed!"<<endl;
         break;
       }
       
-      if (fits_read_col_dbl(EventFile, Columns["HZ_LAT"], r, 1, 1, nulldbl, &ZLat, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HZ_AZI"], r, 1, 1, nulldbl, &ZAzi, &anynul, &status) ) {
         cout<<"Column read (HZ_LAT) failed!"<<endl;
         break;
       }
-      if (fits_read_col_dbl(EventFile, Columns["HZ_LONG"], r, 1, 1, nulldbl, &ZLong, &anynul, &status) ) {
+      if (fits_read_col_dbl(EventFile, Columns["HZ_ELE"], r, 1, 1, nulldbl, &ZEle, &anynul, &status) ) {
         cout<<"Column read (HZ_LONG) failed!"<<endl;
         break;
       }
-      if (XLat != 0.0 || XLong != 0 || ZLat != 0 || ZLong != 0) {
-        C->SetHorizonPointingXAxis(XLong, XLat);
-        C->SetHorizonPointingZAxis(ZLong, ZLat);
+      if (XAzi != 0.0 || XEle != 0 || ZAzi != 0 || ZEle != 0) {
+        C->SetHorizonPointingXAxis(XAzi, XEle);
+        C->SetHorizonPointingZAxis(ZAzi, ZEle);
       }
       
       
@@ -621,10 +629,10 @@ bool TraFitsConverter::ToFits()
   vector<double> GX_LONG;
   vector<double> GZ_LAT;
   vector<double> GZ_LONG;
-  vector<double> HX_LAT;
-  vector<double> HX_LONG;
-  vector<double> HZ_LAT;
-  vector<double> HZ_LONG;
+  vector<double> HX_AZI;
+  vector<double> HX_ELE;
+  vector<double> HZ_AZI;
+  vector<double> HZ_ELE;
 
   vector<short> NIA;   
   
@@ -718,10 +726,10 @@ bool TraFitsConverter::ToFits()
       TIME_NS.push_back(C->GetTime().GetNanoSeconds());
       
       if (C->HasGalacticPointing() == true) {
-        GX_LAT.push_back(C->GetGalacticPointingXAxisLatitude());
-        GX_LONG.push_back(C->GetGalacticPointingXAxisLongitude()); 
-        GZ_LAT.push_back(C->GetGalacticPointingZAxisLatitude());
-        GZ_LONG.push_back(C->GetGalacticPointingZAxisLongitude());
+        GX_LAT.push_back(C->GetGalacticPointingXAxisLatitude()*c_Deg);
+        GX_LONG.push_back(C->GetGalacticPointingXAxisLongitude()*c_Deg); 
+        GZ_LAT.push_back(C->GetGalacticPointingZAxisLatitude()*c_Deg);
+        GZ_LONG.push_back(C->GetGalacticPointingZAxisLongitude()*c_Deg);
       } else {
         GX_LAT.push_back(0);
         GX_LONG.push_back(0); 
@@ -730,15 +738,15 @@ bool TraFitsConverter::ToFits()
       }
       
       if (C->HasHorizonPointing() == true) {
-        HX_LAT.push_back(C->GetHorizonPointingXAxisLatitude());
-        HX_LONG.push_back(C->GetHorizonPointingXAxisLongitude()); 
-        HZ_LAT.push_back(C->GetHorizonPointingZAxisLatitude());
-        HZ_LONG.push_back(C->GetHorizonPointingZAxisLongitude());
+        HX_AZI.push_back(C->GetHorizonPointingXAxisAzimuthNorth()*c_Deg);
+        HX_ELE.push_back(C->GetHorizonPointingXAxisElevation()*c_Deg); 
+        HZ_AZI.push_back(C->GetHorizonPointingZAxisAzimuthNorth()*c_Deg);
+        HZ_ELE.push_back(C->GetHorizonPointingZAxisElevation()*c_Deg);
       } else {
-        HX_LAT.push_back(0);
-        HX_LONG.push_back(0); 
-        HZ_LAT.push_back(0);
-        HZ_LONG.push_back(0);
+        HX_AZI.push_back(0);
+        HX_ELE.push_back(0); 
+        HZ_AZI.push_back(0);
+        HZ_ELE.push_back(0);
       }
       
       NIA.push_back(C->GetNHits());
@@ -925,10 +933,10 @@ bool TraFitsConverter::ToFits()
       TIME_NS.push_back(S->GetTime().GetNanoSeconds());
       
       if (S->HasGalacticPointing() == true) {
-        GX_LAT.push_back(S->GetGalacticPointingXAxisLatitude());
-        GX_LONG.push_back(S->GetGalacticPointingXAxisLongitude()); 
-        GZ_LAT.push_back(S->GetGalacticPointingZAxisLatitude());
-        GZ_LONG.push_back(S->GetGalacticPointingZAxisLongitude());
+        GX_LAT.push_back(S->GetGalacticPointingXAxisLatitude()*c_Deg);
+        GX_LONG.push_back(S->GetGalacticPointingXAxisLongitude()*c_Deg); 
+        GZ_LAT.push_back(S->GetGalacticPointingZAxisLatitude()*c_Deg);
+        GZ_LONG.push_back(S->GetGalacticPointingZAxisLongitude()*c_Deg);
       } else {
         GX_LAT.push_back(0);
         GX_LONG.push_back(0); 
@@ -937,15 +945,15 @@ bool TraFitsConverter::ToFits()
       }
       
       if (S->HasHorizonPointing() == true) {
-        HX_LAT.push_back(S->GetHorizonPointingXAxisLatitude());
-        HX_LONG.push_back(S->GetHorizonPointingXAxisLongitude()); 
-        HZ_LAT.push_back(S->GetHorizonPointingZAxisLatitude());
-        HZ_LONG.push_back(S->GetHorizonPointingZAxisLongitude());
+        HX_AZI.push_back(S->GetHorizonPointingXAxisAzimuthNorth()*c_Deg);
+        HX_ELE.push_back(S->GetHorizonPointingXAxisElevation()*c_Deg); 
+        HZ_AZI.push_back(S->GetHorizonPointingZAxisAzimuthNorth()*c_Deg);
+        HZ_ELE.push_back(S->GetHorizonPointingZAxisElevation()*c_Deg);
       } else {
-        HX_LAT.push_back(0);
-        HX_LONG.push_back(0); 
-        HZ_LAT.push_back(0);
-        HZ_LONG.push_back(0);
+        HX_AZI.push_back(0);
+        HX_ELE.push_back(0); 
+        HZ_AZI.push_back(0);
+        HZ_ELE.push_back(0);
       }
       
       NIA.push_back(1);      
@@ -1070,10 +1078,10 @@ bool TraFitsConverter::ToFits()
   cttype.push_back("GX_LONG");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope X axis in Galactic coordinate system -longitude");
   cttype.push_back("GZ_LAT");   ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Galactic coordinate system - latitude");
   cttype.push_back("GZ_LONG");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Galactic coordinate system - longitude");
-  cttype.push_back("HX_LAT");   ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope X axis in Horizontal coordinate system - latitude");
-  cttype.push_back("HX_LONG");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope X axis in Horizontal coordinate system - longitude");
-  cttype.push_back("HZ_LAT");   ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Horizontal coordinate system - latitude");
-  cttype.push_back("HZ_LONG");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Horizontal coordinate system - longitude");
+  cttype.push_back("HX_AZI");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope X axis in Horizontal coordinate system - azimuth north");
+  cttype.push_back("HX_ELE");   ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope X axis in Horizontal coordinate system - elevation");
+  cttype.push_back("HZ_AZI");  ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Horizontal coordinate system - azimuth north");
+  cttype.push_back("HZ_ELE");   ctform.push_back("1d");   ctunit.push_back("deg");  ctcomment.push_back("Pointing of telescope Z axis in Horizontal coordinate system - elevation");
   
   cttype.push_back("NIA");      ctform.push_back("1i");   ctunit.push_back("keV");  ctcomment.push_back("Number of interactions");
   
@@ -1307,34 +1315,34 @@ bool TraFitsConverter::ToFits()
     return false;
   }
   
-  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HX_LAT.size(), &HX_LAT[0], &Status);
+  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HX_AZI.size(), &HX_AZI[0], &Status);
   if (Status != 0) {
     fits_get_errstatus(Status, Words);
-    cerr << "Error : fits_write_col('HX_LAT') failed (" << Words << ")" << endl;
+    cerr << "Error : fits_write_col('HX_AZI') failed (" << Words << ")" << endl;
     fits_close_file(m_File, &Status);
     m_File = 0;
     return false;
   }
-  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HX_LONG.size(), &HX_LONG[0], &Status);
+  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HX_ELE.size(), &HX_ELE[0], &Status);
   if (Status != 0) {
     fits_get_errstatus(Status, Words);
-    cerr << "Error : fits_write_col('HX_LONG') failed (" << Words << ")" << endl;
+    cerr << "Error : fits_write_col('HX_ELE') failed (" << Words << ")" << endl;
     fits_close_file(m_File, &Status);
     m_File = 0;
     return false;
   }
-  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HZ_LAT.size(), &HZ_LAT[0], &Status);
+  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HZ_AZI.size(), &HZ_AZI[0], &Status);
   if (Status != 0) {
     fits_get_errstatus(Status, Words);
-    cerr << "Error : fits_write_col('HZ_LAT') failed (" << Words << ")" << endl;
+    cerr << "Error : fits_write_col('HZ_AZI') failed (" << Words << ")" << endl;
     fits_close_file(m_File, &Status);
     m_File = 0;
     return false;
   }
-  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HZ_LONG.size(), &HZ_LONG[0], &Status);
+  fits_write_col(m_File, TDOUBLE, ++Column, 1, 1, HZ_ELE.size(), &HZ_ELE[0], &Status);
   if (Status != 0) {
     fits_get_errstatus(Status, Words);
-    cerr << "Error : fits_write_col('HZ_LONG') failed (" << Words << ")" << endl;
+    cerr << "Error : fits_write_col('HZ_ELE') failed (" << Words << ")" << endl;
     fits_close_file(m_File, &Status);
     m_File = 0;
     return false;
