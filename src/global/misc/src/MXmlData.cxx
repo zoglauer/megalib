@@ -127,7 +127,21 @@ MXmlData::MXmlData(const MString& Name, long Value)
 MXmlData::MXmlData(const MString& Name, unsigned int Value)
 {
   //! Constructor
+  
+  m_Name = Name;
+  ostringstream out;
+  out<<Value;
+  m_Value = out.str();
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlData::MXmlData(const MString& Name, unsigned long Value)
+{
+  //! Constructor
+  
   m_Name = Name;
   ostringstream out;
   out<<Value;
