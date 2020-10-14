@@ -7,6 +7,16 @@
 
 
 
+Version 3.03/3.04
+=================
+
+Cosima:
++ New storage option "ia-only"
+
+
+
+
+
 Version 3.01/3.02
 =================
 
