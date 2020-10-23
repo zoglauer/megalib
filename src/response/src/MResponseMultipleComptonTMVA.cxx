@@ -57,6 +57,16 @@ ClassImp(MResponseMultipleComptonTMVA)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+MString MResponseMultipleComptonTMVA::m_MLPOptionsDefault = "";
+MString MResponseMultipleComptonTMVA::m_BDTDOptionsDefault = "";
+MString MResponseMultipleComptonTMVA::m_PDEFoamBoostOptionsDefault = "";
+MString MResponseMultipleComptonTMVA::m_DNNCPUOptionsDefault = "";
+MString MResponseMultipleComptonTMVA::m_DNNGPUOptionsDefault = "";
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
 MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
 {
   // Construct an instance of MResponseMultipleComptonTMVA
@@ -65,6 +75,46 @@ MResponseMultipleComptonTMVA::MResponseMultipleComptonTMVA()
   m_MaxNEvents = 10000000; // 10 Mio
   m_MaxNInteractions = 5;
   m_MethodsString = "BDTD";
+  
+  SetDefaultOptions();
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MResponseMultipleComptonTMVA::SetDefaultOptions()
+{
+  // Default options for MLP
+  m_MLPOptionsDefault = "'H:!V:NeuronType=tanh:VarTransform=N:NCycles=500:HiddenLayers=N,N/2:TrainingMethod=BP:TestRate=5:RandomSeed=0:!UseRegulator'";
+  // Default options for BDTD
+  m_BDTDOptionsDefault = "'!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate'";
+  // Default options for PDEFoamBoost
+  m_PDEFoamBoostOptionsDefault = "'!H:!V:Boost_Num=30:Boost_Transform=linear:SigBgSeparate=F:MaxDepth=4:UseYesNoCell=T:DTLogic=MisClassificationError:FillFoamWithOrigWeights=F:TailCut=0:nActiveCells=500:nBin=20:Nmin=400:Kernel=None:Compress=T'";
+
+  // DNN:
+  
+  // General layout.
+  MString DNNLayoutString ("Layout=RELU|2*N,LINEAR");
+  
+  // Training strategies.
+  MString DNNTraining0("LearningRate=1e-2,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=1024,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0,Multithreading=True");
+  // MString DNNTraining0("LearningRate=1e-1,Momentum=0.9,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.5+0.5+0.5, Multithreading=True");
+  MString DNNTraining1("LearningRate=1e-3,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0,Multithreading=True");
+  // MString DNNTraining2("LearningRate=1e-3,Momentum=0.0,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
+  MString DNNTrainingStrategyString ("TrainingStrategy=");
+  DNNTrainingStrategyString += DNNTraining0; // + "|" + DNNTraining1; // + "|" + DDNTraining2;
+  
+  // General Options.
+  MString DNNOptions ("'!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=N:WeightInitialization=XAVIERUNIFORM");
+  DNNOptions.Append (":"); DNNOptions.Append (DNNLayoutString);
+  DNNOptions.Append (":"); DNNOptions.Append (DNNTrainingStrategyString);
+ 
+
+  // Default options for DNN_CPU
+  m_DNNCPUOptionsDefault = DNNOptions + ":Architecture=CPU'";
+  // Default option for DNN_GPU
+  m_DNNGPUOptionsDefault = DNNOptions + ":Architecture=GPU'";
 }
 
 
@@ -92,10 +142,17 @@ MString MResponseMultipleComptonTMVA::Description()
 
 //! Return information on the parsable options for this response class
 MString MResponseMultipleComptonTMVA::Options()
-{
+{  
+  SetDefaultOptions();
+  
   ostringstream out;
-  out<<"             methods:       the selected TMVA methods (default: BDTD)"<<endl;
-  out<<"             maxia :        the maximum number of interactions (default: 5)"<<endl;
+  out<<"             methods:               the selected TMVA methods (default: BDTD)"<<endl;
+  out<<"             maxia:                 the maximum number of interactions (default: 5)"<<endl;
+  out<<"             mlp_options:           MLP options (default: "<<m_MLPOptionsDefault<<")"<<endl;
+  out<<"             bdtd_options:          BDTD options (default: "<<m_BDTDOptionsDefault<<")"<<endl;
+  out<<"             pdefoamboost_options:  PDE foam boost options (default: "<<m_PDEFoamBoostOptionsDefault<<")"<<endl;
+  out<<"             dnncpu_options:        DNN CPU (default: "<<m_DNNCPUOptionsDefault<<")"<<endl;
+  out<<"             dnngpu_options:        DNN GPU (default: "<<m_DNNGPUOptionsDefault<<")"<<endl;
   
   return MString(out);
 }
@@ -132,6 +189,12 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
     Split2[i][0].ToLowerInPlace();
   }
   
+  m_MLPOptions = m_MLPOptionsDefault;
+  m_BDTDOptions = m_BDTDOptionsDefault;
+  m_PDEFoamBoostOptions = m_PDEFoamBoostOptionsDefault;
+  m_DNNCPUOptions = m_DNNCPUOptionsDefault;
+  m_DNNGPUOptions = m_DNNGPUOptionsDefault;
+  
   // Parse
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     string Value = Split2[i][1].Data();
@@ -140,6 +203,16 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
       m_MethodsString = Value;
     } else if (Split2[i][0] == "maxia") {
       m_MaxNInteractions = stoi(Value);
+    } else if (Split2[i][0] == "mlp_options") {
+      m_MLPOptions = Value;
+    } else if (Split2[i][0] == "bdtd_options") {
+      m_BDTDOptions = Value;
+    } else if (Split2[i][0] == "pdefoamboost_options") {
+      m_PDEFoamBoostOptions = Value;
+    } else if (Split2[i][0] == "dnncpu_options") {
+      m_DNNCPUOptions = Value;
+    } else if (Split2[i][0] == "dnngpu_options") {
+      m_DNNGPUOptions = Value;
     } else {
       mout<<"Error: Unrecognized option "<<Split2[i][0]<<endl;
       return false;
@@ -154,10 +227,26 @@ bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
   
   // Dump it for user info
   mout<<endl;
-  mout<<"Choosen options for Compton event reconstruction using TMVZ:"<<endl;
+  mout<<"Choosen options for Compton event reconstruction using TMVA:"<<endl;
   mout<<"  TMVA methods:                            "<<m_MethodsString<<endl;
   mout<<"  Maximum number of interactions:          "<<m_MaxNInteractions<<endl;
+  if (m_MLPOptions != m_MLPOptionsDefault) {
+    mout<<"  MLP options:                             "<<m_MLPOptions<<endl; 
+  }
+  if (m_BDTDOptions != m_BDTDOptionsDefault) {
+    mout<<"  BDTD options:                            "<<m_BDTDOptions<<endl; 
+  }
+  if (m_PDEFoamBoostOptions != m_PDEFoamBoostOptionsDefault) {
+    mout<<"  PDE Foa, Boost options:                  "<<m_PDEFoamBoostOptions<<endl; 
+  }
+  if (m_DNNCPUOptions != m_DNNCPUOptionsDefault) {
+    mout<<"  DNN CPU options:                         "<<m_DNNCPUOptions<<endl; 
+  }
+  if (m_DNNGPUOptions != m_DNNGPUOptionsDefault) {
+    mout<<"  DNN GPU options:                         "<<m_DNNGPUOptions<<endl; 
+  }
   mout<<endl;
+  
   
   return true;
 }
@@ -179,6 +268,13 @@ bool MResponseMultipleComptonTMVA::Initialize()
     merr<<"No TMVA methods set."<<endl;
     return false;
   }
+  
+  
+  m_MLPOptions.RemoveAllInPlace("'");
+  m_BDTDOptions.RemoveAllInPlace("'");
+  m_PDEFoamBoostOptions.RemoveAllInPlace("'");
+  m_DNNCPUOptions.RemoveAllInPlace("'");
+  m_DNNGPUOptions.RemoveAllInPlace("'");
   
   // First find good and bad file name
   MString GoodFileName;
@@ -441,16 +537,16 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   // Standard MLP
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_MLP) == true) {
     // New seed each run via RandomSeed=0
-    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=500:HiddenLayers=N,N/2:TrainingMethod=BP:TestRate=5:RandomSeed=0:!UseRegulator" );
+    factory->BookMethod( dataloader, TMVA::Types::kMLP, "MLP", m_MLPOptions);
   }
   
   // Boosted decision tree: Decorrelation + Adaptive Boost
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_BDTD) == true) {
-    factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
+    factory->BookMethod( dataloader, TMVA::Types::kBDT, "BDTD", m_BDTDOptions);
   }
   
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_PDEFoamBoost) == true) {
-    factory->BookMethod( dataloader, TMVA::Types::kPDEFoam, "PDEFoamBoost","!H:!V:Boost_Num=30:Boost_Transform=linear:SigBgSeparate=F:MaxDepth=4:UseYesNoCell=T:DTLogic=MisClassificationError:FillFoamWithOrigWeights=F:TailCut=0:nActiveCells=500:nBin=20:Nmin=400:Kernel=None:Compress=T" );
+    factory->BookMethod( dataloader, TMVA::Types::kPDEFoam, "PDEFoamBoost", m_PDEFoamBoostOptions);
   }
   
   /*
@@ -459,32 +555,14 @@ void MResponseMultipleComptonTMVA::AnalysisThreadEntry(unsigned int ThreadID)
   }
   */
   
-  // General layout.
-  TString layoutString ("Layout=RELU|2*N,LINEAR");
-  
-  // Training strategies.
-  TString training0("LearningRate=1e-2,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=1024,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0, Multithreading=True");
-  //TString training0("LearningRate=1e-1,Momentum=0.9,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.5+0.5+0.5, Multithreading=True");
-  TString training1("LearningRate=1e-3,Momentum=0.5,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
-  //TString training2("LearningRate=1e-3,Momentum=0.0,Repetitions=1,ConvergenceSteps=1000,BatchSize=256,TestRepetitions=10,WeightDecay=1e-4,Regularization=L2,DropConfig=0.0+0.0+0.0+0.0, Multithreading=True");
-  TString trainingStrategyString ("TrainingStrategy=");
-  trainingStrategyString += training0; // + "|" + training1; // + "|" + training2;
-  
-  // General Options.
-  TString dnnOptions ("!H:V:ErrorStrategy=CROSSENTROPY:VarTransform=N:WeightInitialization=XAVIERUNIFORM");
-  dnnOptions.Append (":"); dnnOptions.Append (layoutString);
-  dnnOptions.Append (":"); dnnOptions.Append (trainingStrategyString);
-  
-  // Cuda implementation.
+  // DNN Cuda implementation.
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_DNN_GPU) == true) {
-    TString gpuOptions = dnnOptions + ":Architecture=GPU";
-    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", gpuOptions);
+    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_GPU", m_DNNGPUOptions);
   }
   
-  // Multi-core CPU implementation.
+  // DNN Multi-core CPU implementation.
   if (m_Methods.IsUsedMethod(MERCSRTMVAMethod::c_DNN_CPU) == true) {
-    TString cpuOptions = dnnOptions + ":Architecture=CPU";
-    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", cpuOptions);
+    factory->BookMethod(dataloader, TMVA::Types::kDNN, "DNN_CPU", m_DNNCPUOptions);
   }
   
   factory->TrainAllMethods();
