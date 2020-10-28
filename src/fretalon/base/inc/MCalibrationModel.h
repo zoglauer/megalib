@@ -105,16 +105,21 @@ class MCalibrationModel : public ROOT::Math::IParamFunction
   virtual MString ToParsableString(bool WithDescriptor);
 
   // A list of models
-  static const unsigned int c_CalibrationModelNone        = 0;
-  static const unsigned int c_CalibrationModelPoly1Zero   = 1;
-  static const unsigned int c_CalibrationModelPoly1       = 2;
-  static const unsigned int c_CalibrationModelPoly2       = 3;
-  static const unsigned int c_CalibrationModelPoly3       = 4;
-  static const unsigned int c_CalibrationModelPoly4       = 5;
-  static const unsigned int c_CalibrationModelPoly1Inv1   = 6;
-  static const unsigned int c_CalibrationModelPoly1Exp1   = 7;
-  static const unsigned int c_CalibrationModelPoly1Exp2   = 8;
-  static const unsigned int c_CalibrationModelPoly1Exp3   = 9;
+  static const unsigned int c_CalibrationModelNone            = 0;
+  static const unsigned int c_CalibrationModelPoly1Zero       = 1;
+  static const unsigned int c_CalibrationModelPoly1           = 2;
+  static const unsigned int c_CalibrationModelPoly2           = 3;
+  static const unsigned int c_CalibrationModelPoly3           = 4;
+  static const unsigned int c_CalibrationModelPoly4           = 5;
+  static const unsigned int c_CalibrationModelPoly1Inv1Zero   = 6;
+  static const unsigned int c_CalibrationModelPoly1Inv1       = 7;
+  static const unsigned int c_CalibrationModelPoly2Inv1Zero   = 8;
+  static const unsigned int c_CalibrationModelPoly2Inv1       = 9;
+  static const unsigned int c_CalibrationModelPoly1Exp1       = 10;
+  static const unsigned int c_CalibrationModelPoly1Exp2       = 11;
+  static const unsigned int c_CalibrationModelPoly1Exp3       = 12;
+  static const unsigned int c_CalibrationModelPoly1Log1       = 13;
+  static const unsigned int c_CalibrationModelPoly2Log1       = 14;
   
   
   // protected methods:
@@ -388,32 +393,32 @@ class MCalibrationModelPoly4 : public MCalibrationModel
 class MCalibrationModelPoly1Inv1 : public MCalibrationModel
 {
   // public interface:
- public:
+public:
   //! Default constructor
   MCalibrationModelPoly1Inv1() : MCalibrationModel() { m_Keyword = "poly1inv1"; }
   //! Copy constructor
   MCalibrationModelPoly1Inv1(const MCalibrationModelPoly1Inv1& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
   //! Default destuctor 
   virtual ~MCalibrationModelPoly1Inv1() {}
-
+  
   //! The assignment operator
   virtual MCalibrationModelPoly1Inv1& operator= (const MCalibrationModelPoly1Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
-
+  
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Inv1* Clone() const { return new MCalibrationModelPoly1Inv1(*this); }
-
+  
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + 1/(a2 + a3*x)"; }
-
+  
   //! Return the number of fit parameters
   virtual unsigned int NPar() const { return 4; }
-   
+  
   
   // protected methods:
- protected:  
+protected:  
   //! The function for ROOT fitting
   virtual double DoEvalPar(double X, const double* P) const { if (P[2] + P[3]*X == 0) return 1000000000.0; return P[0] + P[1]*X + 1.0/(P[2] + P[3]*X); }
-
+  
   //! Initialize the fit parameters
   virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
     Fitter.Config().ParSettings(0).SetValue(0);
@@ -421,10 +426,153 @@ class MCalibrationModelPoly1Inv1 : public MCalibrationModel
     Fitter.Config().ParSettings(2).SetValue(-10);
     Fitter.Config().ParSettings(3).SetValue(1);
   }
-
+  
   // private members:
- private:
+private:
+  
+};
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Class representing the base class for all calibration models for a set of calibration points
+class MCalibrationModelPoly1Inv1Zero : public MCalibrationModel
+{
+  // public interface:
+public:
+  //! Default constructor
+  MCalibrationModelPoly1Inv1Zero() : MCalibrationModel() { m_Keyword = "poly1inv1zero"; }
+  //! Copy constructor
+  MCalibrationModelPoly1Inv1Zero(const MCalibrationModelPoly1Inv1Zero& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
+  //! Default destuctor 
+  virtual ~MCalibrationModelPoly1Inv1Zero() {}
+  
+  //! The assignment operator
+  virtual MCalibrationModelPoly1Inv1Zero& operator= (const MCalibrationModelPoly1Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  
+  //! Clone this fit - the returned element must be deleted!
+  virtual MCalibrationModelPoly1Inv1Zero* Clone() const { return new MCalibrationModelPoly1Inv1Zero(*this); }
+  
+  //! Return the name of this model
+  virtual MString GetName() const { return "a0 + a1*x + 1/(a2*x)"; }
+  
+  //! Return the number of fit parameters
+  virtual unsigned int NPar() const { return 3; }
+  
+  
+  // protected methods:
+protected:  
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { if (P[2]*X == 0) return 1000000000.0; return P[0] + P[1]*X + 1.0/(P[2]*X); }
+  
+  //! Initialize the fit parameters
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+  }
+  
+  // private members:
+private:
+  
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Class representing the base class for all calibration models for a set of calibration points
+class MCalibrationModelPoly2Inv1 : public MCalibrationModel
+{
+  // public interface:
+public:
+  //! Default constructor
+  MCalibrationModelPoly2Inv1() : MCalibrationModel() { m_Keyword = "poly2inv1"; }
+  //! Copy constructor
+  MCalibrationModelPoly2Inv1(const MCalibrationModelPoly2Inv1& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
+  //! Default destuctor 
+  virtual ~MCalibrationModelPoly2Inv1() {}
+  
+  //! The assignment operator
+  virtual MCalibrationModelPoly2Inv1& operator= (const MCalibrationModelPoly2Inv1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  
+  //! Clone this fit - the returned element must be deleted!
+  virtual MCalibrationModelPoly2Inv1* Clone() const { return new MCalibrationModelPoly2Inv1(*this); }
+  
+  //! Return the name of this model
+  virtual MString GetName() const { return "a0 + a1*x + a2*x^2 + 1/(a3 + a4*x)"; }
+  
+  //! Return the number of fit parameters
+  virtual unsigned int NPar() const { return 5; }
+  
+  
+  // protected methods:
+protected:  
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { if (P[3] + P[4]*X == 0) return 1000000000.0; return P[0] + P[1]*X + P[2]*X + 1.0/(P[3] + P[4]*X); }
+  
+  //! Initialize the fit parameters
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(-10);
+    Fitter.Config().ParSettings(4).SetValue(1);
+  }
+  
+  // private members:
+private:
+  
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Class representing the base class for all calibration models for a set of calibration points
+class MCalibrationModelPoly2Inv1Zero : public MCalibrationModel
+{
+  // public interface:
+public:
+  //! Default constructor
+  MCalibrationModelPoly2Inv1Zero() : MCalibrationModel() { m_Keyword = "poly2inv1zero"; }
+  //! Copy constructor
+  MCalibrationModelPoly2Inv1Zero(const MCalibrationModelPoly2Inv1Zero& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
+  //! Default destuctor 
+  virtual ~MCalibrationModelPoly2Inv1Zero() {}
+  
+  //! The assignment operator
+  virtual MCalibrationModelPoly2Inv1Zero& operator= (const MCalibrationModelPoly2Inv1Zero& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  
+  //! Clone this fit - the returned element must be deleted!
+  virtual MCalibrationModelPoly2Inv1Zero* Clone() const { return new MCalibrationModelPoly2Inv1Zero(*this); }
+  
+  //! Return the name of this model
+  virtual MString GetName() const { return "a0 + a1*x + a2*x^2 + 1/(a3*x)"; }
+  
+  //! Return the number of fit parameters
+  virtual unsigned int NPar() const { return 4; }
+  
+  
+  // protected methods:
+protected:  
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { if (P[3]*X == 0) return 1000000000.0; return P[0] + P[1]*X + P[2]*X + 1.0/(P[3]*X); }
+  
+  //! Initialize the fit parameters
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(1);
+  }
+  
+  // private members:
+private:
+  
 };
 
 
@@ -537,36 +685,36 @@ class MCalibrationModelPoly1Exp2 : public MCalibrationModel
 class MCalibrationModelPoly1Exp3 : public MCalibrationModel
 {
   // public interface:
- public:
+public:
   //! Default constructor
   MCalibrationModelPoly1Exp3() : MCalibrationModel() { m_Keyword = "poly1exp3"; }
   //! Copy constructor
   MCalibrationModelPoly1Exp3(const MCalibrationModelPoly1Exp3& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
   //! Default destuctor 
   virtual ~MCalibrationModelPoly1Exp3() {}
-
+  
   //! The assignment operator
   virtual MCalibrationModelPoly1Exp3& operator= (const MCalibrationModelPoly1Exp3& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
-
+  
   //! Clone this fit - the returned element must be deleted!
   virtual MCalibrationModelPoly1Exp3* Clone() const { return new MCalibrationModelPoly1Exp3(*this); }
-
+  
   //! Return the name of this model
   virtual MString GetName() const { return "a0 + a1*x + a2*exp(-(x/a3)^3)"; }
   
   //! Return the number of fit parameters
   virtual unsigned int NPar() const { return 4; }
-   
+  
   
   // protected methods:
- protected:
+protected:
   //! The function for ROOT fitting
   virtual double DoEvalPar(double X, const double* P) const { 
     double Return =  P[0] + P[1]*X;
     if (P[3] != 0) Return += P[2]*exp(-pow(X/P[3], 3)); 
     return Return;
   }
-
+  
   //! Initialize the fit parameters
   virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
     Fitter.Config().ParSettings(0).SetValue(0);
@@ -576,8 +724,111 @@ class MCalibrationModelPoly1Exp3 : public MCalibrationModel
   }
   
   // private members:
- private:
+private:
+  
+};
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Class representing the base class for all calibration models for a set of calibration points
+class MCalibrationModelPoly1Log1 : public MCalibrationModel
+{
+  // public interface:
+public:
+  //! Default constructor
+  MCalibrationModelPoly1Log1() : MCalibrationModel() { m_Keyword = "poly1ln1"; }
+  //! Copy constructor
+  MCalibrationModelPoly1Log1(const MCalibrationModelPoly1Log1& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
+  //! Default destuctor 
+  virtual ~MCalibrationModelPoly1Log1() {}
+  
+  //! The assignment operator
+  virtual MCalibrationModelPoly1Log1& operator= (const MCalibrationModelPoly1Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  
+  //! Clone this fit - the returned element must be deleted!
+  virtual MCalibrationModelPoly1Log1* Clone() const { return new MCalibrationModelPoly1Log1(*this); }
+  
+  //! Return the name of this model
+  virtual MString GetName() const { return "a0 + a1*x + a2*log(x)"; }
+  
+  //! Return the number of fit parameters
+  virtual unsigned int NPar() const { return 3; }
+  
+  
+  // protected methods:
+protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { 
+    if (X <= 0) return 0.0;
+    double Return =  P[0] + P[1]*X;
+    Return += P[2]*log(X); 
+    return Return;
+  }
+  
+  //! Initialize the fit parameters
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+  }
+  
+  // private members:
+private:
+  
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//! Class representing the base class for all calibration models for a set of calibration points
+class MCalibrationModelPoly2Log1 : public MCalibrationModel
+{
+  // public interface:
+public:
+  //! Default constructor
+  MCalibrationModelPoly2Log1() : MCalibrationModel() { m_Keyword = "poly2ln1"; }
+  //! Copy constructor
+  MCalibrationModelPoly2Log1(const MCalibrationModelPoly2Log1& CalibrationModelLinear) { m_Fit = 0; *this = CalibrationModelLinear; }
+  //! Default destuctor 
+  virtual ~MCalibrationModelPoly2Log1() {}
+  
+  //! The assignment operator
+  virtual MCalibrationModelPoly2Log1& operator= (const MCalibrationModelPoly2Log1& CalibrationModelLinear) { MCalibrationModel::operator=(CalibrationModelLinear); return *this; }
+  
+  //! Clone this fit - the returned element must be deleted!
+  virtual MCalibrationModelPoly2Log1* Clone() const { return new MCalibrationModelPoly2Log1(*this); }
+  
+  //! Return the name of this model
+  virtual MString GetName() const { return "a0 + a1*x + a2*x^2 + a3*log(x)"; }
+  
+  //! Return the number of fit parameters
+  virtual unsigned int NPar() const { return 4; }
+  
+  
+  // protected methods:
+protected:
+  //! The function for ROOT fitting
+  virtual double DoEvalPar(double X, const double* P) const { 
+    if (X <= 0) return 0.0;
+    double Return =  P[0] + P[1]*X + P[2]*X*X;
+    Return += P[3]*log(X); 
+    return Return;
+  }
+  
+  //! Initialize the fit parameters
+  virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
+    Fitter.Config().ParSettings(0).SetValue(0);
+    Fitter.Config().ParSettings(1).SetValue(1);
+    Fitter.Config().ParSettings(2).SetValue(1);
+    Fitter.Config().ParSettings(3).SetValue(1);
+  }
+  
+  // private members:
+private:
+  
 };
 
 #endif

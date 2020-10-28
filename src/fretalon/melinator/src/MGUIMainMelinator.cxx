@@ -1105,10 +1105,15 @@ bool MGUIMainMelinator::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly1Inv1Zero);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly2Inv1Zero);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1", MCalibrationModel::c_CalibrationModelPoly2Inv1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Log 1", MCalibrationModel::c_CalibrationModelPoly1Log1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Log 1", MCalibrationModel::c_CalibrationModelPoly2Log1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingEnergyModel());
     m_CalibrationModelDeterminationMethodFittingEnergyModel->Associate(this);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->SetHeight(FontScaler*24);
