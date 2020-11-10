@@ -166,7 +166,7 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   }
 
   ROOT::Fit::Fitter TheFitter; 
-  TheFitter.Config().SetMinimizer("Minuit2");
+  TheFitter.Config().SetMinimizer("Minuit2", "Migrad");
   if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
   
   TheFitter.SetFunction(*this);
@@ -174,17 +174,49 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
   
   // Fit
   bool ReturnCode = TheFitter.Fit(TheData);
+  ROOT::Fit::FitResult& TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result());
+
   if (ReturnCode == true) {
+    if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 1."<<endl;
     if (TheFitter.CalculateHessErrors() == false) {
       if (TheFitter.CalculateMinosErrors() == false) {
         cout<<"Unable to calculate either Minos or Hess error!"<<endl;
         ReturnCode = false;
       }
     }
+    if (ReturnCode == true) {
+      TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result()); 
+    }
+  } else {
+    // Try a different fitting approach 
+    
+    ROOT::Fit::Fitter TheFitter2; 
+    TheFitter2.Config().SetMinimizer("Minuit2", "Fumili2");
+    if (g_Verbosity >= c_Info) TheFitter2.Config().MinimizerOptions().SetPrintLevel(1);
+    
+    TheFitter2.SetFunction(*this);
+    InitializeFitParameters(TheFitter2);
+
+    ReturnCode = TheFitter2.LikelihoodFit(TheData);
+    TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result());
+    
+    if (ReturnCode == true) {
+      if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2."<<endl;
+      if (TheFitter2.CalculateHessErrors() == false) {
+        if (TheFitter2.CalculateMinosErrors() == false) {
+          cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+          ReturnCode = false;
+        }
+      }
+      if (ReturnCode == true) {
+        TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result()); 
+      }
+    } else {
+      if (g_Verbosity >= c_Info) cout<<"Unable to fit line model."<<endl;
+      //return false;
+    }
   }
   
-  // Prepare the results
-  const ROOT::Fit::FitResult& TheFitResult = TheFitter.Result(); 
   if (TheFitResult.IsEmpty()) ReturnCode = false;  
   
   if (ReturnCode == true) {
