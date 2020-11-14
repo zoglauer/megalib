@@ -295,7 +295,13 @@ if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
   echo " * Clearing the environment paths LD_LIBRARY_PATH, CPATH"
   # We cannot clean PATH, otherwise no programs can be found anymore
   export LD_LIBRARY_PATH=""
+  export SHLIB_PATH=""
   export CPATH=""
+  export CMAKE_PREFIX_PATH=""
+  export DYLD_LIBRARY_PATH=""
+  export JUPYTER_PATH=""
+  export LIBPATH=""
+  export MANPATH=""
 elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
   KEEPENVASIS="on"
   echo " * Keeping the existing environment paths as is."
