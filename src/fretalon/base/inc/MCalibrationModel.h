@@ -617,8 +617,9 @@ class MCalibrationModelPoly1Exp1 : public MCalibrationModel
   virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
     Fitter.Config().ParSettings(0).SetValue(0);
     Fitter.Config().ParSettings(1).SetValue(1);
-    Fitter.Config().ParSettings(2).SetValue(1);
-    Fitter.Config().ParSettings(3).SetValue(7);
+    Fitter.Config().ParSettings(2).SetValue(-10);
+    Fitter.Config().ParSettings(3).SetValue(1000);
+    Fitter.Config().ParSettings(3).SetLowerLimit(0.0001);
   }
   
   // private members:
@@ -668,8 +669,9 @@ class MCalibrationModelPoly1Exp2 : public MCalibrationModel
   virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
     Fitter.Config().ParSettings(0).SetValue(0);
     Fitter.Config().ParSettings(1).SetValue(1);
-    Fitter.Config().ParSettings(2).SetValue(1);
-    Fitter.Config().ParSettings(3).SetValue(7);
+    Fitter.Config().ParSettings(2).SetValue(-10);
+    Fitter.Config().ParSettings(3).SetValue(1000);
+    Fitter.Config().ParSettings(3).SetLowerLimit(0.0001);
   }
   
   // private members:
@@ -719,8 +721,9 @@ protected:
   virtual void InitializeFitParameters(ROOT::Fit::Fitter& Fitter) {
     Fitter.Config().ParSettings(0).SetValue(0);
     Fitter.Config().ParSettings(1).SetValue(1);
-    Fitter.Config().ParSettings(2).SetValue(1);
-    Fitter.Config().ParSettings(3).SetValue(7);
+    Fitter.Config().ParSettings(2).SetValue(-100);
+    Fitter.Config().ParSettings(3).SetValue(1000);
+    Fitter.Config().ParSettings(3).SetLowerLimit(0.0001);
   }
   
   // private members:

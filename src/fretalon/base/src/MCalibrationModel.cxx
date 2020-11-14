@@ -20,6 +20,8 @@
 #include "MCalibrationModel.h"
 
 // Standard libs:
+#include <cmath>
+using namespace std;
 
 // ROOT libs:
 #include "TMath.h"
@@ -167,17 +169,21 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
 
   ROOT::Fit::Fitter TheFitter; 
   TheFitter.Config().SetMinimizer("Minuit2", "Migrad");
-  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(1);
+  if (g_Verbosity >= c_Info) TheFitter.Config().MinimizerOptions().SetPrintLevel(2);
   
   TheFitter.SetFunction(*this);
   InitializeFitParameters(TheFitter);
   
   // Fit
+  if (g_Verbosity >= c_Info) cout<<"Round 1 of line fitting started"<<endl;
   bool ReturnCode = TheFitter.Fit(TheData);
   ROOT::Fit::FitResult& TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result());
 
+  if (std::isnan(TheFitResult.Edm()) == true) {
+    ReturnCode = false; 
+  }
+  
   if (ReturnCode == true) {
-    if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 1."<<endl;
     if (TheFitter.CalculateHessErrors() == false) {
       if (TheFitter.CalculateMinosErrors() == false) {
         cout<<"Unable to calculate either Minos or Hess error!"<<endl;
@@ -185,14 +191,21 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       }
     }
     if (ReturnCode == true) {
+      if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 1."<<endl;
       TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter.Result()); 
     }
   } else {
+    if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 1."<<endl;
+  }
+
+  // Round 2
+  if (ReturnCode == false) {
     // Try a different fitting approach 
     
+    if (g_Verbosity >= c_Info) cout<<"Round 2 of line fitting started"<<endl;
     ROOT::Fit::Fitter TheFitter2; 
-    TheFitter2.Config().SetMinimizer("Minuit2", "Fumili2");
-    if (g_Verbosity >= c_Info) TheFitter2.Config().MinimizerOptions().SetPrintLevel(1);
+    TheFitter2.Config().SetMinimizer("Minuit2", "Minimize");
+    if (g_Verbosity >= c_Info) TheFitter2.Config().MinimizerOptions().SetPrintLevel(2);
     
     TheFitter2.SetFunction(*this);
     InitializeFitParameters(TheFitter2);
@@ -200,8 +213,11 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
     ReturnCode = TheFitter2.LikelihoodFit(TheData);
     TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result());
     
+    if (std::isnan(TheFitResult.Edm()) == true) {
+      ReturnCode = false; 
+    }
+    
     if (ReturnCode == true) {
-      if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2."<<endl;
       if (TheFitter2.CalculateHessErrors() == false) {
         if (TheFitter2.CalculateMinosErrors() == false) {
           cout<<"Unable to calculate either Minos or Hess error!"<<endl;
@@ -210,9 +226,47 @@ double MCalibrationModel::Fit(const vector<MCalibrationSpectralPoint> Points)
       }
       if (ReturnCode == true) {
         TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter2.Result()); 
+        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 2."<<endl;
       }
     } else {
-      if (g_Verbosity >= c_Info) cout<<"Unable to fit line model."<<endl;
+      if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 2."<<endl;
+      //return false;
+    }
+  }
+  
+
+  // Round 3
+  if (ReturnCode == false) {
+    // Try a different fitting approach 
+    
+    if (g_Verbosity >= c_Info) cout<<"Round 3 of line fitting started"<<endl;
+    ROOT::Fit::Fitter TheFitter3; 
+    TheFitter3.Config().SetMinimizer("Fumili");
+    if (g_Verbosity >= c_Info) TheFitter3.Config().MinimizerOptions().SetPrintLevel(2);
+    
+    TheFitter3.SetFunction(*this);
+    InitializeFitParameters(TheFitter3);
+
+    ReturnCode = TheFitter3.LikelihoodFit(TheData);
+    TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter3.Result());
+    
+    if (std::isnan(TheFitResult.Edm()) == true) {
+      ReturnCode = false; 
+    }
+    
+    if (ReturnCode == true) {
+      if (TheFitter3.CalculateHessErrors() == false) {
+        if (TheFitter3.CalculateMinosErrors() == false) {
+          cout<<"Unable to calculate either Minos or Hess error!"<<endl;
+          ReturnCode = false;
+        }
+      }
+      if (ReturnCode == true) {
+        TheFitResult = const_cast<ROOT::Fit::FitResult&>(TheFitter3.Result()); 
+        if (g_Verbosity >= c_Info) cout<<"Successfully fit line model in round 3."<<endl;
+      }
+    } else {
+      if (g_Verbosity >= c_Info) cout<<"Unable to fit calibration model in round 3."<<endl;
       //return false;
     }
   }
