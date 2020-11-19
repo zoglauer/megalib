@@ -1192,6 +1192,7 @@ void MInterfaceMimrec::ARMGamma()
   double All = Hist->Integral(1, NBins);
   double Content = 0.0;
   double SigmaGuess = 1.0;
+  mout<<endl<<endl<<"Containment within the histogram (not automatically -180 to 180 degrees):"<<endl;
   for (int b = 0; b + CentralBin <= Hist->GetNbinsX(); ++b) {
     if (b == 0) {
       Content += Hist->GetBinContent(CentralBin);
@@ -1199,20 +1200,20 @@ void MInterfaceMimrec::ARMGamma()
       Content += Hist->GetBinContent(CentralBin + b) + Hist->GetBinContent(CentralBin - b);
     }
     if (Sigma0Found == false && Content >= Sigma0*All) {
-      //mout<<100*Sigma0<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      mout<<"  "<<100*Sigma0<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma0Found = true;
     }
     if (Sigma1Found == false && Content >= Sigma1*All) {
-      //mout<<100*Sigma1<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      mout<<"  "<<100*Sigma1<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       SigmaGuess = Hist->GetBinCenter(CentralBin + b);
       Sigma1Found = true;
     }
     if (Sigma2Found == false && Content >= Sigma2*All) {
-      //mout<<100*Sigma2<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      mout<<"  "<<100*Sigma2<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma2Found = true;
     }
     if (Sigma3Found == false && Content >= Sigma3*All) {
-      //mout<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
+      mout<<"  "<<100*Sigma3<<"% containment (radius): "<<Hist->GetBinCenter(CentralBin + b)<<endl;
       Sigma3Found = true;
     }
     
