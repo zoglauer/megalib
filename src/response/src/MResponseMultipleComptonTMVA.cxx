@@ -148,11 +148,11 @@ MString MResponseMultipleComptonTMVA::Options()
   ostringstream out;
   out<<"             methods:               the selected TMVA methods (default: BDTD)"<<endl;
   out<<"             maxia:                 the maximum number of interactions (default: 5)"<<endl;
-  out<<"             mlp_options:           MLP options (default: "<<m_MLPOptionsDefault<<")"<<endl;
-  out<<"             bdtd_options:          BDTD options (default: "<<m_BDTDOptionsDefault<<")"<<endl;
-  out<<"             pdefoamboost_options:  PDE foam boost options (default: "<<m_PDEFoamBoostOptionsDefault<<")"<<endl;
-  out<<"             dnncpu_options:        DNN CPU (default: "<<m_DNNCPUOptionsDefault<<")"<<endl;
-  out<<"             dnngpu_options:        DNN GPU (default: "<<m_DNNGPUOptionsDefault<<")"<<endl;
+  out<<"             mlp_options:           MLP options (default: ["<<m_MLPOptionsDefault<<"])"<<endl;
+  out<<"             bdtd_options:          BDTD options (default: ["<<m_BDTDOptionsDefault<<"])"<<endl;
+  out<<"             pdefoamboost_options:  PDE foam boost options (default: ["<<m_PDEFoamBoostOptionsDefault<<"])"<<endl;
+  out<<"             dnncpu_options:        DNN CPU (default: ["<<m_DNNCPUOptionsDefault<<"])"<<endl;
+  out<<"             dnngpu_options:        DNN GPU (default: ["<<m_DNNGPUOptionsDefault<<"])"<<endl;
   
   return MString(out);
 }
@@ -164,12 +164,77 @@ MString MResponseMultipleComptonTMVA::Options()
 //! Parse the options
 bool MResponseMultipleComptonTMVA::ParseOptions(const MString& Options)
 {
+  /*
   // Split the different options
   vector<MString> Split1 = Options.Tokenize(":");
   // Split Option <-> Value
   vector<vector<MString>> Split2;
   for (MString S: Split1) {
     Split2.push_back(S.Tokenize("=")); 
+  }
+  */
+  
+  // This requires a special split
+  vector<MString> SplitRaw = Options.Tokenize(":");
+  cout<<endl;
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < SplitRaw.size(); ++i) {
+    cout<<SplitRaw[i]<<endl;
+  }
+  cout<<endl;
+
+  vector<MString> Split1;
+  bool IsOpen = false;
+  for (unsigned int i = 0; i < SplitRaw.size(); ++i) {
+    MString S = SplitRaw[i];
+    if (IsOpen == false) {
+      if (S.Contains("[") == true) {
+        IsOpen = true;
+        if (S.Contains("]") == true) {
+          IsOpen = false; 
+          Split1.push_back(S);
+        } else {
+          Split1.push_back(S + ":"); 
+        }
+      } else {
+        Split1.push_back(S); 
+      }
+    } else {
+      Split1.back() = Split1.back() + ":" + S;
+      if (S.Contains("]") == true) {
+        IsOpen = false; 
+      }
+    }
+  }
+  
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split1.size(); ++i) {
+    cout<<Split1[i]<<endl;
+  }
+  cout<<endl;
+  
+  vector<vector<MString>> Split2;
+  for (MString S: Split1) {
+    vector<MString> Splitted;
+    if (S.Contains("=") == true) {
+      Splitted.push_back(S.GetSubString(0, S.First('=')));
+      if (S.Length() > S.First('=')+1) {
+       Splitted.push_back(S.GetSubString(S.First('=')+1));
+      }
+    } else {
+      Splitted.push_back(S); 
+    }
+    
+    Split2.push_back(Splitted); 
+  }
+  
+  // Basic sanity check and to lower for all options
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    for (unsigned int j = 0; j < Split2[i].size(); ++j) {
+      Split2[i][j].RemoveAllInPlace("[");
+      Split2[i][j].RemoveAllInPlace("]");
+      cout<<Split2[i][j]<<endl;
+    }
   }
   
   // Basic sanity check and to lower for all options
