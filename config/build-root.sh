@@ -295,7 +295,13 @@ if ( [[ ${KEEPENVASIS} == of* ]] || [[ ${KEEPENVASIS} == n* ]] ); then
   echo " * Clearing the environment paths LD_LIBRARY_PATH, CPATH"
   # We cannot clean PATH, otherwise no programs can be found anymore
   export LD_LIBRARY_PATH=""
+  export SHLIB_PATH=""
   export CPATH=""
+  export CMAKE_PREFIX_PATH=""
+  export DYLD_LIBRARY_PATH=""
+  export JUPYTER_PATH=""
+  export LIBPATH=""
+  export MANPATH=""
 elif ( [[ ${KEEPENVASIS} == on ]] || [[ ${KEEPENVASIS} == y* ]] ); then
   KEEPENVASIS="on"
   echo " * Keeping the existing environment paths as is."
@@ -364,14 +370,19 @@ else
 
   # Now check root repository for the selected version:
   TARBALL=""
+  MAX_TRIALS=3
   for s in `seq -w 00 2 98`; do
     TESTTARBALL="root_v${WANTEDVERSION}.${s}.source.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
     EXISTS=`curl -s --head https://root.cern.ch/download/${TESTTARBALL} | grep gzip`
-    if [[ ${EXISTS} == "" && ${s} != "00" ]]; then # sometimes version 00 does not exist...
-      break
+    if [[ ${EXISTS} == "" ]]; then # sometimes version 00 does not exist...
+      MAX_TRIALS=$(( MAX_TRIALS - 1 ))
+      if [[ ${MAX_TRIALS} -eq 0 ]]; then
+        break
+      fi
+    else 
+      TARBALL=${TESTTARBALL}
     fi
-    TARBALL=${TESTTARBALL}
   done
   if [[ -z ${TARBALL} ]]; then
     echo "ERROR: Unable to find a suitable ROOT tar ball"
@@ -532,6 +543,10 @@ fi
 echo "Configuring..."
 cd ${ROOTBUILDDIR}
 export ROOTSYS=${ROOTDIR}
+#if [[ ${OSTYPE} == darwin* ]]; then
+#  export CPLUS_INCLUDE_PATH=`xcrun --show-sdk-path`/usr/include
+#  export LIBRARY_PATH=$LIBRARY_PATH:`xcrun --show-sdk-path`/usr/lib
+#fi
 echo "Configure command: cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}"
 cmake ${CONFIGUREOPTIONS} ${DEBUGOPTIONS} ../${ROOTSOURCEDIR}
 if [ "$?" != "0" ]; then
