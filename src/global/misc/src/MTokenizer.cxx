@@ -567,6 +567,7 @@ vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool 
         if (Started == false) {
           if (Current.BeginsWith("\"") == false) {
             mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+            mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
             A.clear();
             return A;
           } else {
@@ -587,13 +588,14 @@ vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool 
       }  
       if (Started == true) {
         mlog<<"The string tokens are not correctly enclosed in quotation marks! You will be missing data!"<<endl;
+        mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
         A.clear();
         return A;
       }
     }
     return A;
   } else {
-    mlog<<"vector<unsigned int> MTokenizer::GetTokenAtAsUnsignedIntVector(int i): "<<endl;
+    mlog<<"vector<MString> MTokenizer::GetTokenAtAsStringVector(const unsigned int i, bool StringsAreInQuotationMarks) const: "<<endl;
     if (m_Tokens.size() > 0) {
       mlog<<"Index ("<<i<<") out of bounds (min=0, max="<<m_Tokens.size()-1<<")\n";
       mlog<<"The text line was: \""<<m_Text<<"\""<<endl;
