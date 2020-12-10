@@ -299,7 +299,7 @@ else
   for s in `seq -w 01 10`; do
     TESTTARBALL="geant4.${WANTEDVERSION}.p${s}.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head ${WEBSITE}s/${TESTTARBALL} | grep gzip`
+    EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
     if [ "${EXISTS}" == "" ]; then
       break
     fi
