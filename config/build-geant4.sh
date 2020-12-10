@@ -12,6 +12,8 @@ CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_INSTALL_PREFIX=.. -DGEANT4_INSTALL
 #CONFIGUREOPTIONS="${CONFIGUREOPTIONS} -DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
 COMPILEROPTIONS=`gcc --version | head -n 1`
 
+# The Geant4 website from which to download the tarball
+WEBSITE="https://geant4-data.web.cern.ch/releases"
 
 # Check if some of the frequently used software is installed:
 type cmake >/dev/null 2>&1
@@ -288,7 +290,7 @@ else
   # Now check Geant4 repository for the given version:
   TESTTARBALL="geant4.${WANTEDVERSION}.tar.gz"
   echo "Trying to find ${TESTTARBALL}..."
-  EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
+  EXISTS=`curl -s --head ${WEBSITE}/${TESTTARBALL} | grep gzip`
   if [ "${EXISTS}" == "" ]; then
     echo "ERROR: Unable to find suitable Geant4 tar ball at the Geant4 website"
     exit 1
@@ -297,7 +299,7 @@ else
   for s in `seq -w 01 10`; do
     TESTTARBALL="geant4.${WANTEDVERSION}.p${s}.tar.gz"
     echo "Trying to find ${TESTTARBALL}..."
-    EXISTS=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TESTTARBALL} | grep gzip`
+    EXISTS=`curl -s --head ${WEBSITE}s/${TESTTARBALL} | grep gzip`
     if [ "${EXISTS}" == "" ]; then
       break
     fi
@@ -310,7 +312,7 @@ else
   if [ -f ${TARBALL} ]; then
     # ... and has the same size
     LOCALSIZE=`wc -c < ${TARBALL} | tr -d ' '`
-    SAMESIZE=`curl -s --head http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}`
+    SAMESIZE=`curl -s --head ${WEBSITE}/${TARBALL}`
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to determine remote tarball size"
       exit 1
@@ -326,9 +328,9 @@ else
     echo "Starting the download."
     echo "If the download fails, you can continue it via the following command and then call this script again - it will use the download file."
     echo " "
-    echo "curl -O -C - http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}"
+    echo "curl -O -C - ${WEBSITE}/${TARBALL}"
     echo " "
-    curl -O http://geant4-data.web.cern.ch/geant4-data/releases/${TARBALL}
+    curl -O ${WEBSITE}/${TARBALL}
     if [ "$?" != "0" ]; then
       echo "ERROR: Unable to download the tarball from the Geant4 website!"
       exit 1
@@ -556,4 +558,3 @@ fi
 
 echo "SUCCESS!"
 exit 0
-
