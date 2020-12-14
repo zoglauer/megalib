@@ -31,7 +31,7 @@ Examples:
 Long-term bugs fixed:
 + Sivan: There was a uncommon programatic path using clusters and discretization, 
          which could have lead to double noising 
- 
++ Background generator: Incidence direction of 511-keV abckjground was wrong 
 
 
 
