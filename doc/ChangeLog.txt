@@ -13,7 +13,8 @@ Version 3.03/3.04
 Cosima:
 + New storage option "ia-only"
 
-
+Long-term bugs fixed:
++ The incidence direction of the 511-keV emission was wrong
 
 
 
