@@ -104,6 +104,9 @@ void MGUIImageOptions::Create()
   m_Palette->AddEntry("Andreas' thesis", MImage::c_Thesis);
   m_Palette->AddEntry("Andreas' thesis - variability at low end", MImage::c_ThesisVarAtLow);
   m_Palette->AddEntry("Improved Rainbow", MImage::c_Rainbow);
+  m_Palette->AddEntry("Bird", MImage::c_Bird);
+  m_Palette->AddEntry("Viridis", MImage::c_Viridis);
+  m_Palette->AddEntry("Cividis", MImage::c_Cividis);
   m_Palette->Select(m_GUIData->GetImagePalette());
   m_Palette->Associate(this);
   m_Palette->SetHeight(m_FontScaler*18);
