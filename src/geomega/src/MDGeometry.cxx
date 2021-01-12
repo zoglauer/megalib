@@ -5543,7 +5543,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   out.open(FileName);
   if (out.is_open() == false) {
     mout<<"   ***  Error  ***"<<endl;
-    mout<<"Unable to create cosima source file for cross section creation"<<endl;
+    mout<<"Unable to create cosima source file for cross section creation: "<<FileName<<endl;
     return false;
   }
 

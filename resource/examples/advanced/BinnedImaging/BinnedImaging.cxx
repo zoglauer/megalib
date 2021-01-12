@@ -1131,6 +1131,8 @@ bool BinnedComptonImaging::CreateGalacticResponse()
     m_ThreadRunning.resize(Threads.size(), true);
     for (unsigned int t = 0; t < Threads.size(); ++t) {
       m_ThreadRunning[t] = true;
+      cout<<PointingBinsX.begin() + t*Split<<":"<<(t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split<<":"<<PointingBinsX.size()<<endl;
+      cout<<PointingBinsY.begin() + t*Split<<":"<<(t == Threads.size() - 1) ? PointingBinsY.end() : PointingBinsY.begin() + (t+1)*Split<<":"<<PointingBinsY.size()<<endl;
       vector<unsigned int> X(PointingBinsX.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsX.end() : PointingBinsX.begin() + (t+1)*Split);
       vector<unsigned int> Z(PointingBinsZ.begin() + t*Split, (t == Threads.size() - 1) ? PointingBinsZ.end() : PointingBinsZ.begin() + (t+1)*Split);
       Threads[t] = thread(&BinnedComptonImaging::RotateResponseInParallel, this, t, X, Z);
