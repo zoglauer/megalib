@@ -1,0 +1,13 @@
+# Partial beam file for cosima
+
+# Albedo neutrons determinined after Kole+ 2014
+# Assumptions: 
+# * Angular distribution is flat out to the Earth-horizon (no limb brightening!) 
+# * Solar activity is assumed to be half way between solar minimum and maximum 
+# * The inclination was used to approximate the average Magnetic Latitude 
+SpaceSim.Source AlbedoNeutronsKole
+AlbedoNeutronsKole.ParticleType           6
+AlbedoNeutronsKole.Beam                   FarFieldFileZenithDependent AlbedoNeutronsKole.beam.dat
+AlbedoNeutronsKole.Spectrum               File AlbedoNeutronsKole.spectrum.dat
+AlbedoNeutronsKole.Flux                   0.0432821
+
