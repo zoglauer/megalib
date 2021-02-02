@@ -45,10 +45,10 @@ ClassImp(MGUIERAlgorithm)
 ////////////////////////////////////////////////////////////////////////////////
 
 
+
 MGUIERAlgorithm::MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, MSettingsEventReconstruction* Data) : MGUIDialog(Parent, Main)
 {
   // Construct an instance of MGUIERAlgorithm and bring it to the screen
-
   m_Data = Data;
 
   Create();
@@ -67,6 +67,7 @@ MGUIERAlgorithm::~MGUIERAlgorithm()
   delete m_HitClusteringList;
   delete m_TrackingList;
   delete m_CSRList;
+  delete m_PairList;
   //delete m_DecayList;
   delete m_ListLayout;
 }
@@ -80,8 +81,8 @@ void MGUIERAlgorithm::Create()
   // Create the main window
 
   // We start with a name and an icon...
-  SetWindowName("ER algorithms");  
-  AddSubTitle("Choose the reconstruction algorithms"); 
+  SetWindowName("ER algorithms");
+  AddSubTitle("Choose the reconstruction algorithms");
 
   m_ListLayout = new TGLayoutHints(kLHintsExpandX | kLHintsTop, 20, 20, 10, 10);
 
@@ -148,6 +149,14 @@ void MGUIERAlgorithm::Create()
   m_TrackingList->Create();
   AddFrame(m_TrackingList, m_ListLayout);
 
+  m_PairList = new MGUIERBList(this, "Pair reconstruction", true);
+  m_PairList->Add("Default algorithm");  // 0
+  m_PairList->Add("Kalman Filter 3D (work in progress)"); // 1
+  m_PairList->Add("Kalman Filter 2D (work in progress)"); // 2
+  m_PairList->SetSelected(m_Data->GetPairAlgorithm());
+  m_PairList->Create();
+  AddFrame(m_PairList, m_ListLayout);
+
   m_CSRList = new MGUIERBList(this, "Compton tracking", true);
   m_CSRList->Add("No Compton tracking");
   m_CSRList->Add("Classic Compton Sequence Reconstruction without Energy Recovery (Chi-square approach via angles)");
@@ -176,10 +185,10 @@ void MGUIERAlgorithm::Create()
 
   // and bring it to the screen.
   MapSubwindows();
-  MapWindow();  
+  MapWindow();
 
   Layout();
- 
+
   return;
 }
 
@@ -220,7 +229,7 @@ bool MGUIERAlgorithm::OnApply()
   } else if (m_TrackingList->GetSelected() == 7) {
     m_Data->SetTrackingAlgorithm(MRawEventAnalyzer::c_TrackingAlgoBayesian);
   }
-  
+  m_Data->SetPairAlgorithm(m_PairList->GetSelected());
   m_Data->SetCSRAlgorithm(m_CSRList->GetSelected());
   
   //m_Data->SetDecayAlgorithm(m_DecayList->GetSelected());

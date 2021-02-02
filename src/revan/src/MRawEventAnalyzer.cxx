@@ -23,13 +23,13 @@
 //
 // This class analyzes raw events.
 //
-// During the analysis of one event, different ordering possibilties are stored 
+// During the analysis of one event, different ordering possibilties are stored
 // in the m_RawEvents member. After loading the event it contains only one
-// expression of the event: only single hits. After the track analysis also the 
-// possibilties for different tracks in the one raw event are stored as 
+// expression of the event: only single hits. After the track analysis also the
+// possibilties for different tracks in the one raw event are stored as
 // different expressions in the m_RawEvents member.
 //
-// After all analysis is done the most likely expression is the chosen one. 
+// After all analysis is done the most likely expression is the chosen one.
 //
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,6 +62,8 @@ using namespace std;
 #include "MERTrackGas.h"
 #include "MERTrackDirectional.h"
 #include "MERTrackChiSquare.h"
+#include "MERTrackKalman3D.h"
+#include "MERTrackKalman2D.h"
 #include "MERCSRChiSquare.h"
 #include "MERCSRToF.h"
 #include "MERCSREnergyRecovery.h"
@@ -101,6 +103,10 @@ const int MRawEventAnalyzer::c_TrackingAlgoBayesian        = 5;
 const int MRawEventAnalyzer::c_TrackingAlgoRank            = 6;
 const int MRawEventAnalyzer::c_TrackingAlgoPearson         = 7;
 
+const int MRawEventAnalyzer::c_PairDefault   = 0;
+const int MRawEventAnalyzer::c_PairKalman3D = 1;
+const int MRawEventAnalyzer::c_PairKalman2D = 2;
+
 const int MRawEventAnalyzer::c_CSRAlgoNone          = 0;
 const int MRawEventAnalyzer::c_CSRAlgoFoM           = 1;
 const int MRawEventAnalyzer::c_CSRAlgoFoME          = 2;
@@ -134,7 +140,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_Filename = "";
   m_Reader = nullptr;
   m_SaveOI = false;
-  
+
   m_FilenameOut = "";
   m_PhysFile = nullptr;
 
@@ -163,6 +169,7 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_EventClusteringAlgorithm = c_EventClusteringAlgoNone;
   m_HitClusteringAlgorithm = c_HitClusteringAlgoAdjacent;
   m_TrackingAlgorithm = c_TrackingAlgoNone;
+  m_PairAlgorithm = c_PairDefault;
   m_CSRAlgorithm = c_CSRAlgoFoM;
   m_DecayAlgorithm = c_DecayAlgoNone;
 
@@ -190,13 +197,14 @@ MRawEventAnalyzer::MRawEventAnalyzer()
   m_NTrackSequencesToKeep = 1;
   m_RejectPurelyAmbiguousTrackSequences = false;
   m_NLayersForVertexSearch = 4;
+  m_SigmaHitPos = 0.00693;
 
   m_AssumeD1First = false;
   m_ClassicUndecidedHandling = false;
   m_UseComptelTypeEvents = true;
   m_GuaranteeStartD1 = true;
   m_RejectOneDetectorTypeOnlyEvents = true;
-  
+
   m_CSRThresholdMin = 0;
   m_CSRThresholdMax = 1;
   m_CSRMaxNHits = 4;
@@ -257,7 +265,7 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
   delete m_InitialRawEvent;
 
   delete m_EventStore;
-  
+
   delete m_Coincidence;
   delete m_EventClusterizer;
   delete m_HitClusterizer;
@@ -274,10 +282,10 @@ MRawEventAnalyzer::~MRawEventAnalyzer()
 void MRawEventAnalyzer::SetGeometry(MGeometryRevan* Geometry)
 {
   // Set the geometry
-  
+
   massert(Geometry != nullptr);
   m_Geometry = Geometry;
-  
+
   // The noising is based on the geometry data, thus set here
   delete m_Noising;
   m_Noising = new MERNoising();
@@ -285,7 +293,7 @@ void MRawEventAnalyzer::SetGeometry(MGeometryRevan* Geometry)
   m_Noising->PreAnalysis();
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -293,10 +301,11 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
 {
   // Transfer all necessary data to the analyzer...
 
-  SetCoincidenceAlgorithm(S->GetCoincidenceAlgorithm()); 
-  SetEventClusteringAlgorithm(S->GetEventClusteringAlgorithm()); 
-  SetHitClusteringAlgorithm(S->GetHitClusteringAlgorithm()); 
-  SetTrackingAlgorithm(S->GetTrackingAlgorithm()); 
+  SetCoincidenceAlgorithm(S->GetCoincidenceAlgorithm());
+  SetEventClusteringAlgorithm(S->GetEventClusteringAlgorithm());
+  SetHitClusteringAlgorithm(S->GetHitClusteringAlgorithm());
+  SetTrackingAlgorithm(S->GetTrackingAlgorithm());
+  SetPairAlgorithm(S->GetPairAlgorithm());
   SetCSRAlgorithm(S->GetCSRAlgorithm());
   SetDecayAlgorithm(S->GetDecayAlgorithm());
 
@@ -319,12 +328,12 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetStandardClusterizerMinDistanceD7(S->GetStandardClusterizerMinDistanceD7());
   SetStandardClusterizerMinDistanceD8(S->GetStandardClusterizerMinDistanceD8());
   SetStandardClusterizerCenterIsReference(S->GetStandardClusterizerCenterIsReference());
-   
+
   SetAdjacentLevel(S->GetAdjacentLevel());
   SetAdjacentSigma(S->GetAdjacentSigma());
 
   SetPDFClusterizer(S->GetPDFClusterizerBaseFileName());
-  
+
   // electron tracking
   SetSearchPairTracks(S->GetSearchPairs());
   SetSearchMIPTracks(S->GetSearchMIPs());
@@ -336,9 +345,12 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetNTrackSequencesToKeep(S->GetNTrackSequencesToKeep());
   SetRejectPurelyAmbiguousTrackSequences(S->GetRejectPurelyAmbiguousTrackSequences());
   SetNLayersForVertexSearch(S->GetNLayersForVertexSearch());
-  
+
   SetElectronTrackingDetectorList(S->GetElectronTrackingDetectors());
-  
+
+  // Kalman Filter
+  SetSigmaHitPos(S->GetSigmaHitPos());
+
   // compton tracking:
   SetAssumeD1First(S->GetAssumeD1First());
   SetClassicUndecidedHandling(S->GetClassicUndecidedHandling());
@@ -353,7 +365,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetCSRMaxNHits(S->GetCSRMaxNHits());
 
   SetOriginObjectsFileName(S->GetOriginObjectsFileName());
-  
+
   SetBCTFileName(S->GetBayesianComptonFileName());
   
   SetCSRTMVAFileName(S->GetCSRTMVAFileName());
@@ -376,7 +388,7 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
   SetEventIdMin(S->GetEventIdMin());
 
   SetRejectAllBadEvents(S->GetRejectAllBadEvents());
-  
+
   SetSaveOI(S->GetSaveOI());
 }
 
@@ -384,13 +396,13 @@ void MRawEventAnalyzer::SetSettings(MSettingsEventReconstruction* S)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MRawEventAnalyzer::SetSaveOI(bool SaveOI) 
-{ 
-  //! Save the OI 
+void MRawEventAnalyzer::SetSaveOI(bool SaveOI)
+{
+  //! Save the OI
 
-  m_SaveOI = SaveOI; 
+  m_SaveOI = SaveOI;
   if (m_Reader != nullptr) {
-    m_Reader->SaveOI(m_SaveOI); 
+    m_Reader->SaveOI(m_SaveOI);
   }
 }
 
@@ -402,13 +414,13 @@ bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
 {
   delete m_Reader;
   m_Reader = nullptr;
-  
+
   if (MFile::Exists(Filename) == false) {
     mout<<"MRawEventAnalyzer: Input file: \""<<Filename<<"\" does not exist!"<<endl;
     return false;
   }
   m_Filename = Filename;
-  
+
   m_Reader = new MFileEventsEvta(m_Geometry);
   if (m_Reader->Open(m_Filename) == false) {
     mout<<"MRawEventAnalyzer: Unable to open input file \""<<m_Filename<<"\""<<endl;
@@ -417,11 +429,11 @@ bool MRawEventAnalyzer::SetInputModeFile(MString Filename)
     return false;
   }
   m_Reader->SaveOI(m_SaveOI);
-  
+
   return true;
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -429,13 +441,13 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
 {
   delete m_PhysFile;
   m_PhysFile = nullptr;
-  
+
   if (Filename == "") {
     mout<<"MRawEventAnalyzer: No output file name given!"<<endl;
     return false;
   }
   m_FilenameOut = Filename;
-  
+
   m_PhysFile = new MFileEventsTra();
   if (m_PhysFile->Open(m_FilenameOut, MFile::c_Write) == false) {
     mout<<"MRawEventAnalyzer: Unable to open output file \""<<m_FilenameOut<<"\""<<endl;
@@ -447,29 +459,29 @@ bool MRawEventAnalyzer::SetOutputModeFile(MString Filename)
   return true;
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, int Version)
 {
   // Add a raw event to the store
-  
+
   if (m_Reader != nullptr) {
     merr<<"You can only add events if you don't read them from file!"<<show;
     return false;
   }
-  
+
   vector<MString> Lines = String.Tokenize("\n");
 
   MRESE::ResetIDCounter();
   MRERawEvent* RE = new MRERawEvent(m_Geometry);
-  
+
   for (MString L: Lines) {
     if (RE->ParseLine(L, Version) == 1) {
       delete RE;
       cout<<"Parsing of line failed: "<<L<<endl;
-      return false; 
+      return false;
     }
   }
 
@@ -477,29 +489,29 @@ bool MRawEventAnalyzer::AddRawEvent(const MString& String, bool NeedsNoising, in
     m_Noising->Analyze(RE);
   }
   m_EventStore->AddRawEvent(RE);
-  
+
   return true;
 }
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 bool MRawEventAnalyzer::AddRawEvent(MRERawEvent* RE)
 {
   // Add a raw event to the store
-  
+
   if (m_Reader != nullptr) {
     merr<<"You can only add events if you don't read them from file!"<<show;
     return false;
   }
-  
+
   m_EventStore->AddRawEvent(RE);
-  
+
   return true;
 }
 
- 
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -507,13 +519,13 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
 {
   // A event timer...
   MTimer Timer;
-  
+
   // this flag indicates that we have no more events in file, and the coincidence search has to "clear the store"
   bool ClearStore = false;
-  
+
   // A temporary raw event...
   MRERawEvent* RE = nullptr;
-  
+
   // Read events if we have reader
   if (m_Reader != nullptr) {
     RE = m_Reader->GetNextEvent();
@@ -525,41 +537,41 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     } else {
       m_EventStore->AddRawEvent(RE);
     }
-    
+
     // Event timing...
     m_TimeLoad += Timer.ElapsedTime();
     Timer.Start();
   }
-  
+
   if (m_EventStore->GetNRawEvents() == 0) {
     return c_AnalysisNoEventsInStore;
   }
-  
+
   // We have events, we can start the analysis:
-  
+
   // Section A: Coincidence search
   if (m_CoincidenceAlgorithm != c_CoincidenceAlgoNone) {
     if (m_Coincidence == nullptr) {
       merr<<"Coincidence pointer is zero. You changed the event reconstruction setup without calling PreAnalysis()!"<<show;
       return c_AnalysisUndefinedError;
     }
-    
+
     RE = nullptr;
-    
+
     // Search for coincidences
     if (ClearStore == true || m_EventStore->GetNRawEvents() >= 2) {
       RE = m_Coincidence->Search(m_EventStore, ClearStore);
     }
-    
+
     // When does this case happen???
     if (RE == nullptr && m_EventStore->GetNRawEvents() == 0) {
       return c_AnalysisNoEventsInStore;
     }
-    
+
     if (RE == nullptr) {
       return c_AnalysisCoincidenceWindowWait;
     }
-    
+
     // Handle coincidences in the same voxel due to coincidence search - this should only happen in the simulation...
     if (RE != nullptr && m_CoincidenceAlgorithm != c_CoincidenceAlgoNone) {
       for (int r1 = 0; r1 < RE->GetNRESEs(); ++r1) {
@@ -582,17 +594,18 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
     RE = m_EventStore->GetRawEventAt(0);
     m_EventStore->RemoveRawEvent(RE);
   }
-  
+
   if (RE == nullptr) {
     merr<<"We don't have a raw event..."<<fatal;
     return c_AnalysisUndefinedError;
   }
-  
+
   mdebug<<endl;
   mdebug<<endl;
   mdebug<<endl;
   mdebug<<"ER - Event: "<<RE->GetEventID()<<endl;
   mdebug<<endl;
+
   
   
   // Store the inital coincident event:
@@ -631,7 +644,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
       mout<<"ER - Event ID above limit!"<<endl;
       return c_AnalysisUndefinedError;
     }
-    SelectionsPassed = false;      
+    SelectionsPassed = false;
   }
   
   if (SelectionsPassed == true && (RE->GetEnergy() < m_TotalEnergyMin || RE->GetEnergy() > m_TotalEnergyMax)) {
@@ -827,7 +840,7 @@ unsigned int MRawEventAnalyzer::AnalyzeEvent()
   
   m_NEvents++;
   if (SelectionsPassed == true) {
-    m_NPassedEventSelection++;  
+    m_NPassedEventSelection++;
   }
   
   m_TimeFinalize += Timer.ElapsedTime();
@@ -938,7 +951,7 @@ void MRawEventAnalyzer::JoinStatistics(const MRawEventAnalyzer& A)
   m_NEvents += A.m_NEvents;
   m_NPassedEventSelection += A.m_NPassedEventSelection;
   m_NGoodEvents += A.m_NGoodEvents;
-  
+
   m_NPhotoEvents += A.m_NPhotoEvents;
   m_NComptonEvents += A.m_NComptonEvents;
   m_NPairEvents += A.m_NPairEvents;
@@ -961,12 +974,11 @@ void MRawEventAnalyzer::JoinStatistics(const MRawEventAnalyzer& A)
 bool MRawEventAnalyzer::PostAnalysis()
 {
   // No more events available
-  
   if (m_PhysFile != nullptr) {
     m_PhysFile->SetObservationTime(m_Reader->GetObservationTime());
-  } 
-  
-  
+  }
+
+
   ostringstream out;
 
   out<<endl;
@@ -1000,7 +1012,7 @@ bool MRawEventAnalyzer::PostAnalysis()
   int Width = 6;
   int WidthPercent = 7;
   int Precision = 3;
-  
+
   out<<endl;
   out<<"----------------------------------------------------------------------------"<<endl;
   if (m_Reader != nullptr) {
@@ -1109,13 +1121,13 @@ bool MRawEventAnalyzer::PostAnalysis()
 
 bool MRawEventAnalyzer::PreAnalysis()
 {
-  // 
+  //
 
   bool Return = false;
 
   m_NEvents = 0;
   m_NGoodEvents = 0;
-  
+
   if (m_OriginObjectsFileName != "") {
     if (MFile::FileExists(m_OriginObjectsFileName) == true) {
       delete m_OriginGeometry;
@@ -1160,8 +1172,9 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
   }
-  
-  
+
+
+
   // Coincidence
   if (Return == true) {
     delete m_Coincidence;
@@ -1241,56 +1254,56 @@ bool MRawEventAnalyzer::PreAnalysis()
     m_CSR = nullptr;
     if (m_CSRAlgorithm == c_CSRAlgoFoM) {
       m_CSR = new MERCSRChiSquare();
-      if (dynamic_cast<MERCSRChiSquare*>(m_CSR)->SetParameters(m_Geometry, 
-                                                               m_CSRThresholdMin, 
-                                                               m_CSRThresholdMax, 
-                                                               m_CSRMaxNHits, 
-                                                               m_GuaranteeStartD1, 
-                                                               m_CSROnlyCreateSequences, 
-                                                               m_UseComptelTypeEvents, 
-                                                               m_ClassicUndecidedHandling, 
-                                                               m_RejectOneDetectorTypeOnlyEvents, 
+      if (dynamic_cast<MERCSRChiSquare*>(m_CSR)->SetParameters(m_Geometry,
+                                                               m_CSRThresholdMin,
+                                                               m_CSRThresholdMax,
+                                                               m_CSRMaxNHits,
+                                                               m_GuaranteeStartD1,
+                                                               m_CSROnlyCreateSequences,
+                                                               m_UseComptelTypeEvents,
+                                                               m_ClassicUndecidedHandling,
+                                                               m_RejectOneDetectorTypeOnlyEvents,
                                                                m_OriginGeometry) == false) {
         Return = false;
       }
     } else if (m_CSRAlgorithm == c_CSRAlgoFoME) {
       m_CSR = new MERCSREnergyRecovery();
-      if (dynamic_cast<MERCSREnergyRecovery*>(m_CSR)->SetParameters(m_Geometry, 
-                                 m_CSRThresholdMin, 
-                                 m_CSRThresholdMax, 
-                                 m_CSRMaxNHits, 
-                                 m_GuaranteeStartD1, 
+      if (dynamic_cast<MERCSREnergyRecovery*>(m_CSR)->SetParameters(m_Geometry,
+                                 m_CSRThresholdMin,
+                                 m_CSRThresholdMax,
+                                 m_CSRMaxNHits,
+                                 m_GuaranteeStartD1,
                                  m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
     } else if (m_CSRAlgorithm == c_CSRAlgoFoMToF) {
       m_CSR = new MERCSRToF();
-      if (dynamic_cast<MERCSRToF*>(m_CSR)->SetParameters(m_Geometry, 
-                                    m_CSRThresholdMin, 
-                                    m_CSRThresholdMax, 
-                                    m_CSRMaxNHits, 
-                                    m_GuaranteeStartD1, 
+      if (dynamic_cast<MERCSRToF*>(m_CSR)->SetParameters(m_Geometry,
+                                    m_CSRThresholdMin,
+                                    m_CSRThresholdMax,
+                                    m_CSRMaxNHits,
+                                    m_GuaranteeStartD1,
                                     m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
     } else if (m_CSRAlgorithm == c_CSRAlgoFoMToFAndE) {
       m_CSR = new MERCSRToFWithEnergyRecovery();
-      if (dynamic_cast<MERCSRToFWithEnergyRecovery*>(m_CSR)->SetParameters(m_Geometry, 
-                                    m_CSRThresholdMin, 
-                                    m_CSRThresholdMax, 
-                                    m_CSRMaxNHits, 
-                                    m_GuaranteeStartD1, 
+      if (dynamic_cast<MERCSRToFWithEnergyRecovery*>(m_CSR)->SetParameters(m_Geometry,
+                                    m_CSRThresholdMin,
+                                    m_CSRThresholdMax,
+                                    m_CSRMaxNHits,
+                                    m_GuaranteeStartD1,
                                     m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
     } else if (m_CSRAlgorithm == c_CSRAlgoBayesian) {
       m_CSR = new MERCSRBayesian();
-      if (dynamic_cast<MERCSRBayesian*>(m_CSR)->SetParameters(m_BCTFileName, 
-                                      m_Geometry, 
-                                      m_CSRThresholdMin, 
-                                      m_CSRThresholdMax, 
-                                      m_CSRMaxNHits, 
-                                      m_GuaranteeStartD1, 
+      if (dynamic_cast<MERCSRBayesian*>(m_CSR)->SetParameters(m_BCTFileName,
+                                      m_Geometry,
+                                      m_CSRThresholdMin,
+                                      m_CSRThresholdMax,
+                                      m_CSRMaxNHits,
+                                      m_GuaranteeStartD1,
                                       m_CSROnlyCreateSequences) == false) {
         Return = false;
       }
@@ -1313,7 +1326,6 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
 
-    
     // Electron tracking
     delete m_Tracker;
     m_Tracker = nullptr;
@@ -1342,19 +1354,32 @@ bool MRawEventAnalyzer::PreAnalysis()
       Return = false;
     }
 
+    // Pair Algorithm
+    if (m_PairAlgorithm == c_PairKalman3D) {
+      m_Tracker = new MERTrackKalman3D();
+      dynamic_cast<MERTrackKalman3D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    } else if (m_PairAlgorithm == c_PairKalman2D) {
+      m_Tracker = new MERTrackKalman2D();
+      dynamic_cast<MERTrackKalman2D*>(m_Tracker)->SetSpecialParameters(m_SigmaHitPos, m_NLayersForVertexSearch);
+    }else if (m_PairAlgorithm == c_PairDefault) {
+      m_Tracker = new MERTrack();
+    } else {
+      Return = false;
+    }
+
     if (m_Tracker != nullptr) {
       m_Tracker->SetGeometry(m_Geometry);
-      m_Tracker->SetParameters(m_SearchMIPTracks, 
-                               m_SearchPairTracks, 
-                               m_SearchComptonTracks, 
-                               m_MaxComptonJump, 
-                               m_NTrackSequencesToKeep, 
-                               m_RejectPurelyAmbiguousTrackSequences, 
+      m_Tracker->SetParameters(m_SearchMIPTracks,
+                               m_SearchPairTracks,
+                               m_SearchComptonTracks,
+                               m_MaxComptonJump,
+                               m_NTrackSequencesToKeep,
+                               m_RejectPurelyAmbiguousTrackSequences,
                                m_NLayersForVertexSearch,
                                m_ElectronTrackingDetectorList);
     }
 
-    
+
     // Initialize the Decay searcher:
     delete m_Decay;
     m_Decay = nullptr;

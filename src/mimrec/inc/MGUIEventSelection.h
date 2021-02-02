@@ -48,7 +48,7 @@ class MGUIEventSelection : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIEventSelection(const TGWindow* p, const TGWindow* main, 
+  MGUIEventSelection(const TGWindow* p, const TGWindow* main,
                      MSettingsEventSelections* Data, MDGeometryQuest* Geometry);
   virtual ~MGUIEventSelection();
 
@@ -92,11 +92,11 @@ class MGUIEventSelection : public MGUIDialog
   TGCheckButton* m_BadCB;
 
   MGUIEMinMaxEntry* m_EventId;
-  
+
   TGRadioButton* m_GTIAllRB;
   TGRadioButton* m_GTIEntryRB;
-  MGUIEEntry* m_MinTimeEntry; 
-  MGUIEEntry* m_MaxTimeEntry; 
+  MGUIEEntry* m_MinTimeEntry;
+  MGUIEEntry* m_MaxTimeEntry;
   TGRadioButton* m_GTIFileRB;
   MGUIEFileSelector* m_GTIFile;
   
@@ -122,6 +122,7 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEMinMaxEntry* m_TimeWalk;
   MGUIEMinMaxEntry* m_OpeningAnglePair;
   MGUIEMinMaxEntry* m_InitialEnergyDepositPair;
+  MGUIEMinMaxEntry* m_QualityFactorPair;
 
   MGUIEEntry* m_ThetaDeviationMax;
 
@@ -145,7 +146,6 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEMinMaxEntry* m_SPD;
   int m_CoordinatesSelected;
 
-  
   // Pointing frame
   TGRadioButton* m_UsePointingSelectionNone;
   TGRadioButton* m_UsePointingSelectionPointSource;
@@ -155,7 +155,6 @@ class MGUIEventSelection : public MGUIDialog
   MGUIEEntryList* m_PointingBoxLocation;
   MGUIEEntry* m_PointingBoxExtentLatitude;
   MGUIEEntry* m_PointingBoxExtentLongitude;
-  
   
   // Beam/Box frame
   TGCheckButton* m_UseBeam;
@@ -172,22 +171,22 @@ class MGUIEventSelection : public MGUIDialog
 
 
 
-  enum ButtonIDs { c_Compton = 140, 
+  enum ButtonIDs { c_Compton = 140,
                    c_ComptonUntracked,
                    c_ComptonTracked, 
                    c_Pair, 
                    c_Photo, 
                    c_PET, 
                    c_Multi, 
-                   c_Unidentifiable, 
+                   c_Unidentifiable,
                    c_Decay,
                    c_Bad,
                    c_GTIAll,
                    c_GTIEntry,
                    c_GTIFile,
-                   c_Detectors, 
-                   c_EHCNone, 
-                   c_EHCIntersection, 
+                   c_Detectors,
+                   c_EHCNone,
+                   c_EHCIntersection,
                    c_EHCProbability,
                    c_UsePointSource,
                    c_UseGalacticPointSource,
