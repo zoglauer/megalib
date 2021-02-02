@@ -38,7 +38,7 @@ class MGUIOptionsTracking : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIOptionsTracking(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIOptionsTracking(const TGWindow* Parent, const TGWindow* Main,
                       MSettingsEventReconstruction* Data,
                       MDGeometryQuest* Geometry);
   virtual ~MGUIOptionsTracking();
@@ -60,16 +60,17 @@ class MGUIOptionsTracking : public MGUIDialog
  private:
   MSettingsEventReconstruction* m_Data;
   MDGeometryQuest* m_Geometry;
-  
+
   MGUIECBList* m_CBList;
   MGUIEEntry* m_MaxComptonJump;
   MGUIEEntry* m_NSequencesToKeep;
   TGCheckButton* m_RejectPurelyAmbiguousSequences;
   MGUIEFileSelector* m_FileSelector;
   MGUIEEntry* m_NLayersForVertexSearch;
+  MGUIEEntry* m_SigmaHitPos;
 
   TGListBox* m_DetectorList;
-  
+
   enum ButtonCodes { e_DoTracking = 100, e_RejectPurelyAmbiguousSequences, e_Detectors };
 
 #ifdef ___CLING___

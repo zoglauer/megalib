@@ -34,7 +34,7 @@ class MGUIERAlgorithm : public MGUIDialog
 {
   // Public Interface:
  public:
-  MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main, 
+  MGUIERAlgorithm(const TGWindow* Parent, const TGWindow* Main,
                   MSettingsEventReconstruction* Data);
   virtual ~MGUIERAlgorithm();
 
@@ -62,8 +62,9 @@ class MGUIERAlgorithm : public MGUIDialog
   MGUIERBList* m_HitClusteringList;
   MGUIERBList* m_TrackingList;
   MGUIERBList* m_CSRList;
+  MGUIERBList* m_PairList;
   //MGUIERBList* m_DecayList;
- 
+
 
 
 #ifdef ___CLING___

@@ -556,7 +556,6 @@ return List;
 ////////////////////////////////////////////////////////////////////////////////
 
 // This function does the filtering and smoothing of the Kalman algorithm.
-
 Float_t MERTrackKalman3D::Kalman(MRERawEvent* RE, Int_t n, Float_t en, MRESEList Previous, vector < TMatrix > &trk, MRESEList &Chosen)
 {
 
@@ -900,7 +899,7 @@ tuple<vector < TMatrix >, Float_t, Float_t, vector < TMatrix >, Float_t, Float_t
   while(!stop){
 
     chi1 = Kalman(RE, n, en, PrevChoice, trk1, Chosen1);
-    
+
     if (trk1.size()<3){
       return std::make_tuple(trk1, 0, 0, trk2, 0, 0, Chosen1, Chosen2);
     }
@@ -925,7 +924,6 @@ tuple<vector < TMatrix >, Float_t, Float_t, vector < TMatrix >, Float_t, Float_t
       trk1.clear();
     } else stop=true;
   }
-
   for (size_t i = 0; i < trk1.size(); i++) {
     mdebug<<"Track1 after Kalman "<<trk1.size()<<" "<<trk1[i](0,0)<<" "<<trk1[i](1,0)<<endl;
   }
@@ -935,7 +933,6 @@ tuple<vector < TMatrix >, Float_t, Float_t, vector < TMatrix >, Float_t, Float_t
 
   while(!stop){
     chi2 = Kalman(RE, n, en, Chosen1, trk2, Chosen2);
-    
     if (trk2.size()<3){
       return std::make_tuple(trk1, 0, 0, trk2, 0, 0, Chosen1, Chosen2);
     }
@@ -946,7 +943,6 @@ tuple<vector < TMatrix >, Float_t, Float_t, vector < TMatrix >, Float_t, Float_t
     //Energy Estimation
     nrg_est2 = MultipleScattering(trk2);
     //nrg_est2 = EnergyEst3D(trk2);
-    
     if (nrg_est2> 50000.) nrg_est2=50000.;
     if ((nrg_est2/en)<1/3){
       //loop1++;
@@ -958,7 +954,6 @@ tuple<vector < TMatrix >, Float_t, Float_t, vector < TMatrix >, Float_t, Float_t
       trk2.clear();
     } else stop=true;
   }
-  
   for (size_t i = 0; i < trk2.size(); i++) {
     mdebug<<"Track2 after Kalman "<<trk2.size()<<" "<<trk2[i](0,0)<<" "<<trk2[i](1,0)<<endl;
   }
