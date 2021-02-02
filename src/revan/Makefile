@@ -12,7 +12,6 @@
 # Base definitions:
 #
 
-
 PROGRAM = revan
 
 MAIN  = MRevanMain
@@ -40,6 +39,8 @@ FILES = MGeometryRevan \
 	MERTrackGas \
 	MERTrackDirectional \
 	MERTrackChiSquare \
+	MERTrackKalman3D \
+	MERTrackKalman2D \
 	MERCSR \
 	MERCSRChiSquare \
 	MERCSREnergyRecovery \
@@ -206,6 +207,3 @@ $(EXECUTABLE): $(SHAREDLIB_UI) $(SHAREDLIB) $(OBJECT_MAIN)
 	
 #
 #----------------------------------------------------------------
-
-
-

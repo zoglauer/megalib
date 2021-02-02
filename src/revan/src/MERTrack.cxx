@@ -75,7 +75,7 @@ bool MRESEDistCompare(const MRESEDist& a, const MRESEDist& b) {
 ///
 
 struct MRESETrackCont {
-  MRESETrackCont(MRETrack* T, int e1, MRESE* R, int e2, double A) { 
+  MRESETrackCont(MRETrack* T, int e1, MRESE* R, int e2, double A) {
     massert(T!=0); massert(R!=0); m_Track=T; m_EndPoint1 = e1; m_Next=R; m_EndPoint2 = e2; m_Angle=A; }
 
   MRETrack* m_Track;
@@ -111,7 +111,7 @@ MERTrack::MERTrack()
   m_TimeMips = 0;
   m_TimeComptonSequences = 0;
   m_TimeComptonDirections = 0;
-  
+
   m_NLayersForVertexSearch = 5;
 }
 
@@ -128,11 +128,11 @@ MERTrack::~MERTrack()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool MERTrack::SetParameters(bool SearchMIPs, 
-                             bool SearchPairs, 
-                             bool SearchComptons, 
-                             unsigned int MaxLayerJump, 
-                             unsigned int NSequencesToKeep, 
+bool MERTrack::SetParameters(bool SearchMIPs,
+                             bool SearchPairs,
+                             bool SearchComptons,
+                             unsigned int MaxLayerJump,
+                             unsigned int NSequencesToKeep,
                              bool RejectPureAmbiguities,
                              unsigned int NLayersForVertexSearch,
                              vector<MString> DetectorList)
@@ -144,22 +144,22 @@ bool MERTrack::SetParameters(bool SearchMIPs,
   m_NSequencesToKeep = NSequencesToKeep;
   m_RejectPureAmbiguities = RejectPureAmbiguities;
   m_NLayersForVertexSearch = NLayersForVertexSearch;
- 
+
   if (m_NLayersForVertexSearch < 4) {
     merr<<"Error: Revan (tracking): NLayersForVertexSearch (="<<m_NLayersForVertexSearch<<") must be >= 4. Setting it to 4."<<show;
     m_NLayersForVertexSearch = 4;
   }
-  
+
   if (m_ComptonMaxLayerJump < 1) {
-    merr<<"Error: Revan (tracking): MaxLayerJump must be >= 1. Setting it to 1."<<show;   
+    merr<<"Error: Revan (tracking): MaxLayerJump must be >= 1. Setting it to 1."<<show;
     m_ComptonMaxLayerJump = 1;
   }
 
   if (m_NSequencesToKeep < 1) {
-    merr<<"Error: Revan (tracking): NSequencesToKeep must be >= 1. Setting it to 1."<<show;   
+    merr<<"Error: Revan (tracking): NSequencesToKeep must be >= 1. Setting it to 1."<<show;
     m_NSequencesToKeep = 1;
   }
-  
+
   // Check if for the tracking detector names real detectors exist
   if (DetectorList.size() == 0) {
     merr<<"Error: Revan (tracking): You did not give *any* detectors for electron tracking."<<endl;
@@ -262,7 +262,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       }
     }
     if (HasVertices == true) {
-      // Let's analyze pairs: 
+      // Let's analyze pairs:
       mdebug<<"* Step: Pair tracking"<<endl;
       mdebug<<m_List->ToString()<<endl;
       int e_max = m_List->GetNRawEvents();
@@ -340,7 +340,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
     m_TimeComptonSequences += Timer.ElapsedTime();
 
 
-    // We now accept only events with the maximum possible number of tracks, 
+    // We now accept only events with the maximum possible number of tracks,
     // if the flag is set
     if (m_AllowOnlyMinNumberOfRESEsD1 == true) {
       mdebug<<"Allowing only events with the maximum number of elements in the tracks. Starting with this amount: "<<m_List->GetNRawEvents()<<endl;
@@ -384,7 +384,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     for (int e = 0; e < m_List->GetNRawEvents(); e++) {
       RE = m_List->GetRawEventAt(e);
-        
+
       for (int r = 0; r < RE->GetNRESEs(); r++) {
         RESE = RE->GetRESEAt(r);
         IDRESE = RESE->GetID();
@@ -397,7 +397,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
             REdup = RE->Duplicate();
             ((MRETrack *) (REdup->GetRESE(IDRESE)))->SetStartPoint(((MRETrack *) (REdup->GetRESE(IDRESE)))->GetRESE(IDEP));
             m_List->AddRawEvent(REdup);
-            
+
             Track->SetStartPoint(Track->GetEndPointAt(1));
           }
         }
@@ -424,7 +424,7 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
 
     //m_List->SetValidEvent(m_List->GetRawEventAt(m_List->GetNRawEvents()-1));
     m_List->SetBestTryEvent(m_List->GetRawEventAt(0));
-       
+
 
     // Remove all not-so-good sequences:
     for (int e = m_NSequencesToKeep; e < m_List->GetNRawEvents(); ++e) {
@@ -432,13 +432,13 @@ bool MERTrack::Analyze(MRawEventIncarnations* REList)
       m_List->DeleteRawEvent(RE);
       e--;
     }
-    
+
     m_TimeComptonDirections += Timer.ElapsedTime();
   }
 
 
   // Step E: Epilog
-  
+
   mdebug<<"Result of tracking:"<<endl;
   mdebug<<m_List->ToString()<<endl;
 
@@ -458,7 +458,7 @@ bool MERTrack::IsInTracker(MRESE* R)
   // While building tracks their volume sequence might not be correct
   // But, if we have a track, it is in the tracker... so:
   if (R->GetType() == MRESE::c_Track) return true;
-  
+
   MDVolumeSequence* VS = R->GetVolumeSequence();
   for (unsigned int d = 0; d < m_DetectorList.size(); ++d) {
     if (VS->GetDetector() == m_DetectorList[d]) {
@@ -467,8 +467,8 @@ bool MERTrack::IsInTracker(MRESE* R)
   }
   return false;
 }
-  
-  
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -490,7 +490,7 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
   // (b) In N layers above/below are at least two hits
 
   // Search the vertex:
-  // The vertex is at this point a (non-ambiguous) track or a single (clustered) 
+  // The vertex is at this point a (non-ambiguous) track or a single (clustered)
   // hit followed by at least N layers with two hits per layer:
 
   mdebug<<"Searching for a pair vertex"<<endl;
@@ -499,16 +499,16 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
   bool OnlyHitInLayer = false;
   //unsigned int MaximumLayerJump = 2;
   //MRESE* RESE = 0;
-  unsigned int SearchRange = 30; 
+  unsigned int SearchRange = 30;
   //int MinPairLength = m_NLayersForVertexSearch;
-  
+
   // Create a list of RESEs sorted by depth in tracker
   vector<MRESE*> ReseList;
   for (int h = 0; h < RE->GetNRESEs(); h++) {
     if (IsInTracker(RE->GetRESEAt(h)) == false) continue;
     // Everthing below 90 has to go -- eliminate Bremsstrahlung
     //if (RE->GetRESEAt(h)->GetEnergy() < 90) continue;
-    
+
     ReseList.push_back(RE->GetRESEAt(h));
   }
   sort(ReseList.begin(), ReseList.end(), CompareRESEByZ());
@@ -522,7 +522,7 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
 
   // For each of the RESE's in the list check if it could be the first of the vertex
   for (Iterator1 = ReseList.begin(); Iterator1 != ReseList.end(); Iterator1++) {
- 
+
     // If it is a single hit, and if it is the only one in its layer:
     OnlyHitInLayer = true;
     for (Iterator2 = ReseList.begin(); Iterator2 != ReseList.end(); Iterator2++) {
@@ -555,47 +555,47 @@ MRawEventIncarnations* MERTrack::CheckForPair(MRERawEvent* RE)
 
 
     // Under the following conditions we do have a pair:
-    
+
     // Pair starting from top
     MRESE* Vertex = 0;
     int VertexDirection = 0;
 
-    
+
     // Check for vertex below
     if (NAbove[1] == 0) {
       int StartIndex = 0; // We start when we have 2 hits for the first time
       int StopIndex = 0; // We stop when we skip 2 layers for the first time
       int LayersWithAtLeastTwoHitsBetweenStartAndStop = 0;
 
-      
+
       for (unsigned int d = 1; d < SearchRange-1; ++d) {
         // We stop when we skip 2 layers for the first time
         if (NBelow[d] == 0 && NBelow[d+1] == 0) break;
         StopIndex = d;
         // Store the index where we have 2 hits for the first time, twice
         if (StartIndex == 0 && NBelow[d] > 1 && NBelow[d+1] > 1) StartIndex = d;
-        
+
         if (StartIndex != 0) {
           if (NBelow[d] >= 2) ++LayersWithAtLeastTwoHitsBetweenStartAndStop;
         }
       }
-      
+
       // Since we can have just a single track at the end, move upward until we have at least two hits in a row
       for (unsigned int d = StopIndex; d > 2; --d) {
         if (NBelow[d-1] >= 2 && NBelow[d-2] >= 2) break;
         StopIndex = d;
       }
-      
+
       mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Above: ";
       for (int i: NAbove) mdebug<<i<<" ";
       mdebug<<endl;
       mdebug<<"Search vertex ("<<(*Iterator1)->GetPosition().Z()<<"): Below: ";
       for (int i: NBelow) mdebug<<i<<" ";
       mdebug<<endl;
-     
-      mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl; 
-      
-      if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 4 && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {  
+
+      mdebug<<"Vertex statistics (max: "<<SearchRange<<"): layers used: "<<StopIndex<<", start of 2+ hits: "<<StartIndex<<"  layers with 2+ hits between start and stop: "<<LayersWithAtLeastTwoHitsBetweenStartAndStop<<" ("<<((StopIndex-StartIndex > 0) ? 100.0*LayersWithAtLeastTwoHitsBetweenStartAndStop/(StopIndex-StartIndex) : 0)<<"%)"<<endl;
+
+      if (LayersWithAtLeastTwoHitsBetweenStartAndStop > 4 && double (LayersWithAtLeastTwoHitsBetweenStartAndStop)/(StopIndex-StartIndex) > 0.5) {
         Vertex = (*Iterator1);
         VertexDirection = -1;
       }
@@ -632,20 +632,20 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   }
 
   mdebug<<"Vertex: "<<RE->GetVertex()->GetPosition().Z()<<endl;
-  
+
   MRETrack* Electron = new MRETrack();
   MRETrack* Positron = new MRETrack();
 
   // Now figure out if we have to go up or down:
   int Direction = RE->GetVertexDirection();
-  
+
   // Now create the vertex:
   Electron->AddRESE(RE->GetVertex());
   Electron->SetStartPoint(RE->GetVertex());
 
   // TODO: Problem virtual is not deleted!!!!
   MRESE* Virtual = RE->GetVertex()->Duplicate();
-  Virtual->SetEnergy(0); // TODO: the energies should be split evenly, between electron and positron 
+  Virtual->SetEnergy(0); // TODO: the energies should be split evenly, between electron and positron
 
   Positron->AddRESE(Virtual);
   Positron->SetStartPoint(Virtual);
@@ -653,9 +653,9 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
 
   bool HaveElectronDirection = false;
   bool HavePositronDirection = false;
-  
+
   // Now we have the vertex
-  // Go up/down the track until we do not find hits any more and assign them 
+  // Go up/down the track until we do not find hits any more and assign them
   // to the tracks
   int NTrials = 0;
   MRESEList List;
@@ -665,7 +665,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     List.Compress();
 
     NTrials = 0;
-    while (List.GetNRESEs() == 0 && NTrials < 10) { 
+    while (List.GetNRESEs() == 0 && NTrials < 10) {
       mdebug<<"Testing direction: "<<Direction<<endl;
       NTrials++;
       for (int r = 0; r < RE->GetNRESEs(); r++) {
@@ -673,7 +673,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
 
         if (m_Geometry->IsAbove(RE->GetVertex(), RE->GetRESEAt(r), Direction) == true) {
           List.AddRESE(RE->GetRESEAt(r));
-        }      
+        }
       }
       mdebug<<"Distance: "<<abs(Direction)<<"  Entries: "<<List.GetNRESEs();
       if (List.GetNRESEs() > 0) {
@@ -688,7 +688,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     int BestPos = -1;
     double BestScore = 1E10;
     double NewScore = 0;
-    
+
     // If we have only one hit:
     if (List.GetNRESEs() == 0) {
       break;
@@ -700,11 +700,11 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
         BestPos = 0;
       } else {
         mdebug<<"Pair tracking: One hit: e-angle: "
-            <<Electron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - 
+            <<Electron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() -
                                                   Electron->GetStopPoint()->GetPosition())*c_Deg
-            <<" p-angle: "<<Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - 
+            <<" p-angle: "<<Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() -
                                                                 Positron->GetStopPoint()->GetPosition())*c_Deg<<endl;
-        
+
         if (Electron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Electron->GetStopPoint()->GetPosition()) <
             Positron->GetFinalDirection().Angle(List.GetRESEAt(0)->GetPosition() - Positron->GetStopPoint()->GetPosition())) {
           BestEl = 0;
@@ -746,7 +746,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
 
         // Search the straightest continuation for the positron:
         for (int r = 0; r < List.GetNRESEs(); r++) {
-          NewScore = Positron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - 
+          NewScore = Positron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() -
                                                          Positron->GetStopPoint()->GetPosition());
           if (NewScore < BestScore) {
             BestScore = NewScore;
@@ -767,9 +767,9 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
         for (int r = 0; r < List.GetNRESEs(); r++) {
           for (int s = r+1; s < List.GetNRESEs(); s++) {
             // Direction One:
-            NewScore = 
+            NewScore =
               Electron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - Electron->GetStopPoint()->GetPosition())*
-              Electron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - Electron->GetStopPoint()->GetPosition()) + 
+              Electron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - Electron->GetStopPoint()->GetPosition()) +
               Positron->GetFinalDirection().Angle(List.GetRESEAt(s)->GetPosition() - Positron->GetStopPoint()->GetPosition())*
               Positron->GetFinalDirection().Angle(List.GetRESEAt(s)->GetPosition() - Positron->GetStopPoint()->GetPosition());
             if (NewScore < BestScore) {
@@ -777,14 +777,14 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
               BestEl = r;
               BestPos = s;
             }
-            
+
             // Direction Two:
-            NewScore = 
+            NewScore =
               Electron->GetFinalDirection().Angle(List.GetRESEAt(s)->GetPosition() - Electron->GetStopPoint()->GetPosition())*
-              Electron->GetFinalDirection().Angle(List.GetRESEAt(s)->GetPosition() - Electron->GetStopPoint()->GetPosition()) + 
+              Electron->GetFinalDirection().Angle(List.GetRESEAt(s)->GetPosition() - Electron->GetStopPoint()->GetPosition()) +
               Positron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - Positron->GetStopPoint()->GetPosition())*
               Positron->GetFinalDirection().Angle(List.GetRESEAt(r)->GetPosition() - Positron->GetStopPoint()->GetPosition());
-            
+
             if (NewScore < BestScore) {
               BestScore = NewScore;
               BestEl = s;
@@ -812,12 +812,12 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
 
   } while (true);
 
-  
+
   // For the electron and positron track walk down the track and determine the straightness from the 5 straigtest segments
   // Hits with deviate more than X% from this straightness are tossed out of the track
   EliminatePairDeviations(RE, Electron);
   EliminatePairDeviations(RE, Positron);
-  
+
   // Clean up
   RE->RemoveRESE(RE->GetVertex());
   RE->CompressRESEs();
@@ -825,7 +825,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
   // We now might have a new start point, thus make sure we fix the vertex
   MRESE* NewStartElectron = Electron->GetStartPoint();
   MRESE* NewStartPositron = Positron->GetStartPoint();
-  
+
   if (NewStartElectron->GetPosition().GetZ() < NewStartPositron->GetPosition().GetZ()) {
     MRESE* NewStart = NewStartPositron->Duplicate();
     NewStartElectron->AddLink(NewStart);
@@ -839,12 +839,12 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     NewStart->AddLink(NewStartPositron);
     Positron->AddRESE(NewStart);
     Positron->SetStartPoint(NewStart);
-    RE->SetVertex(NewStart);    
+    RE->SetVertex(NewStart);
   } else {
-    RE->SetVertex(NewStartElectron);   
+    RE->SetVertex(NewStartElectron);
   }
-  
-  
+
+
   // Now add (not append) the remaining hits to the nearest track
 
   for (int r = 0; r < RE->GetNRESEs(); r++) {
@@ -855,7 +855,7 @@ void MERTrack::TrackPairs(MRERawEvent* RE)
     }
     RE->RemoveRESE(RE->GetRESEAt(r));
   }
-  
+
   RE->CompressRESEs();
 
 
@@ -893,9 +893,9 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
   const int NEvaluations = 4;
   const double FactorAboveMaxDeviation = 1.3;
   const double MinDeviation = 8.0*c_Rad;
-  
+
   vector<double> Deviations;
-  
+
   MRESE* Start = Track->GetStartPoint();
   if (Start == nullptr) return;
   if (Start->GetNLinks() != 1) return;
@@ -904,26 +904,26 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
   MRESE* End = Middle->GetOtherLink(Start);
   while (true) {
     Deviations.push_back((Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition()));
-    
+
     Start = Middle;
     Middle = End;
     if (Middle->GetNLinks() != 2) break;
     End = Middle->GetOtherLink(Start);
   }
-  
+
   // If we have less or equal than "NEvaluations" values, we do nothing
   if (Deviations.size() <= NEvaluations) return;
-  
+
   // Sort increasing
   sort(Deviations.begin(), Deviations.end(), std::less<double>());
-  
+
   // Create the average of the first NEvaluations
   double AverageDeviation = 0.0;
   for (unsigned int i = 0; i < NEvaluations; ++i) {
     AverageDeviation += Deviations[i];
   }
   AverageDeviation /= NEvaluations;
-  
+
   // Find the largest deviation
   double MaxDeviation = 0.0;
   for (unsigned int i = 0; i < NEvaluations; ++i) {
@@ -933,18 +933,18 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
   }
   MaxDeviation *= FactorAboveMaxDeviation;
   if (MaxDeviation < MinDeviation) MaxDeviation = MinDeviation;
-  
+
   mdebug<<"Maximum deviation: "<<MaxDeviation*c_Deg<<" degrees"<<endl;
-  
+
   // Find the first segment which is below the average deviation:
   Start = Track->GetStartPoint();
   Middle = Start->GetLinkAt(0);
   End = Middle->GetOtherLink(Start);
   while (true) {
     double Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
-    
+
     if (Deviation <= AverageDeviation) break;
-    
+
     Start = Middle;
     Middle = End;
     if (Middle->GetNLinks() != 2) break;
@@ -958,29 +958,29 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
     Middle = Start;
     Start = Middle->GetOtherLink(End);
     MRESE* StartOldOtherLink = Middle;
-    
+
     double Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
-    mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg"<<endl; 
+    mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg"<<endl;
 
     while (Deviation > MaxDeviation && Start->GetNLinks() == 2) {
       MRESE* ThrowOut = Start;
       Start = Start->GetOtherLink(StartOldOtherLink);
       StartOldOtherLink = ThrowOut;
-      
+
       // Remove the RESE
       Track->RemoveRESE(ThrowOut);
       mdebug<<"Removing RESE: "<<ThrowOut->GetID()<<" from track due to a deviation of "<<Deviation*c_Deg<<" deg (max allowed: "<<MaxDeviation*c_Deg<<" deg)"<<endl;
       RE->AddRESE(ThrowOut);
-        
+
       // Relink the others
       ThrowOut->RemoveAllLinks();
       Start->RemoveLink(ThrowOut);
       Middle->RemoveLink(ThrowOut);
       Start->AddLink(Middle);
       Middle->AddLink(Start);
-      
+
       Deviation = (Middle->GetPosition() - Start->GetPosition()).Angle(End->GetPosition() - Middle->GetPosition());
-      mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg "<<endl; 
+      mdebug<<"Deviation: "<<Start->GetID()<<"->"<<Middle->GetID()<<"->"<<End->GetID()<<": "<<Deviation*c_Deg<<" deg "<<endl;
     }
 
     if (Deviation < MaxDeviation) {
@@ -992,7 +992,7 @@ void MERTrack::EliminatePairDeviations(MRERawEvent* RE, MRETrack* Track)
       Track->RemoveRESE(Start);
     }
   }
-  
+
   Track->SetStartPoint(BestNewStartPoint);
   Track->CompressRESEs();
 }
@@ -1009,7 +1009,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
   // The typical pattern of a MIP is:
   // We have a straight track with serveral hits which, do not belong to the
   // original MIP, but to its secondaries, bremsstrahlung etc.
-  
+
   mdebug<<"Checking for Mips..."<<endl;
 
   const int MinElements = 4;
@@ -1025,7 +1025,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
     }
   }
 
-  // Sort the array for decreasing z: 
+  // Sort the array for decreasing z:
   MRESE* Temp = 0;
   unsigned int HighestPos = 0;
   double HighestValue = -1;
@@ -1064,7 +1064,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
       jRESE = D1Hits[j];
       //mdebug<<"j:"<<jRESE->ToString()<<endl;
       Direction1 = jRESE->GetPosition() - iRESE->GetPosition();
-      
+
       Track = 0; // No memory leak!
 
       for (unsigned int k = j+1; k < max; ++k) {
@@ -1072,7 +1072,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
         kRESE = D1Hits[k];
         //mdebug<<"k:"<<kRESE->ToString()<<endl;
         Direction2 = kRESE->GetPosition() - jRESE->GetPosition();
-        
+
         // Check the straightness:
         //mdebug<<"Angle: "<<Direction1.Angle(Direction2)<<endl;
         if (Direction1.Angle(Direction2) < MinStraightness) {
@@ -1090,8 +1090,8 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
           } else {
             Track->AddRESE(kRESE);
             D1Hits[k] = 0;
-          }            
-          
+          }
+
           Direction1 = Direction2;
         }
       } // end k
@@ -1102,7 +1102,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
   } // end i
 
   // We need at least one track with at least MinElements hits:
-  // For now: Search for the largest track: 
+  // For now: Search for the largest track:
   HighestPos = 0;
   HighestValue = -1;
   for (unsigned int i = 0; i < TrackArray.size(); ++i) {
@@ -1127,7 +1127,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
     EvaluateTrack(TrackArray[HighestPos]);
     RE->AddRESE(TrackArray[HighestPos]);
     RE->CompressRESEs();
-    
+
     // b. Store the new event:
     MMuonEvent* Muon = new MMuonEvent(); // is later stored as m_Event!
     Muon->SetEnergy(RE->GetEnergy());
@@ -1143,7 +1143,7 @@ void MERTrack::CheckForMips(MRERawEvent* RE)
     RE->SetPhysicalEvent(Muon);
     RE->SetEventType(MRERawEvent::c_MipEvent);
     RE->SetGoodEvent(true);
-  } 
+  }
   // b. A shower
   else if (TrackArray.size() > 1) {
     mdebug<<"==> Found a shower!"<<endl;
@@ -1191,7 +1191,7 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
 
     // if it's not in D1 reject it
     if (IsInTracker(RESE) == false) {
-      continue; 
+      continue;
     }
 
     Added = false;
@@ -1208,7 +1208,7 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
       MasterRESEs.push_back(RESE);
       DistList.resize(MasterRESEs.size());
       MRESEDist RD(RESE, 0);
-      DistList[DistList.size()-1].push_back(RD);        
+      DistList[DistList.size()-1].push_back(RD);
     }
   }
 
@@ -1265,10 +1265,11 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
           }
         }
         LastRESE = RESE;
-        LastDist = (*DistListIter).Distance;     
+        LastDist = (*DistListIter).Distance;
       }
     }
   }
+
 
   MRawEventIncarnations* List = new MRawEventIncarnations(); 
 
@@ -1279,11 +1280,11 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
   }
 
   if (NAmbiguities <= m_MaxNAmbiguities) {
-    // Find ambiguous sequences 
+    // Find ambiguous sequences
     mdebug<<"Testing ambiguous sequences"<<endl;
 
     List->AddRawEvent(RE->Duplicate());
-    
+
     MRESE* RESEmain = 0;
     MRESE* RESEp1 = 0;
     MRESE* RESEp2 = 0;
@@ -1291,22 +1292,22 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
     vector<MRESEDist> Partners;
     vector<MRESEDist>::iterator SecDistListIter;
     vector<MRESEDist>::iterator TerDistListIter;
-    
+
     int NNewREs;
     MRERawEvent* NewRE = 0;
     MRERawEvent* NewREdup = 0;
-    
+
     // Find a list of all possible combinations:
     for (unsigned int m = 0; m < DistList.size(); ++m) {
       for (DistListIter = DistList[m].begin();
            DistListIter != DistList[m].end(); DistListIter++) {
-        
+
         RESEmain = (*DistListIter).RESE;
-        
+
         if (RESEmain->GetNLinks() >= 2) {
           continue;
         }
-        
+
         // Find all possible partners:
         int Diff = 0;
         Partners.clear();
@@ -1325,34 +1326,34 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
           }
           Partners.push_back((*SecDistListIter));
         }
-        
+
         mdebug<<"New partners for "<<RESEmain->GetID()<<": ";
         for (SecDistListIter = Partners.begin();
              SecDistListIter != Partners.end(); SecDistListIter++) {
           mdebug<<(*SecDistListIter).RESE->GetID()<<" ";
         }
         mdebug<<endl;
-        
+
 
         // Now generate the links:
         NNewREs = List->GetNRawEvents();
         for (int t = 0; t < NNewREs; ++t) {
           NewRE = List->GetRawEventAt(t);
-                    
+
           if (NewRE->GetRESE(RESEmain->GetID())->GetNLinks() == 2) {
-            continue; 
+            continue;
           }
-          
+
           // Single partners
           mdebug<<"Searching single partners for "<<RESEmain->GetID()<<endl;
           for (SecDistListIter = Partners.begin();
                SecDistListIter != Partners.end(); SecDistListIter++) {
             RESEp1 = (*SecDistListIter).RESE;
-            
+
             if (NewRE->GetRESE(RESEmain->GetID())->IsLink(NewRE->GetRESE(RESEp1->GetID())) == true) {
               continue;
             }
-            
+
             if (NewRE->GetRESE(RESEp1->GetID())->GetNLinks() <= 1) {
               mdebug<<"Linking: "<<RESEmain->GetID()<<" with "<<RESEp1->GetID()<<endl;
               NewREdup = NewRE->Duplicate();
@@ -1365,7 +1366,7 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
           } // end single partner loop
 
           if (NewRE->GetRESE(RESEmain->GetID())->GetNLinks() > 0) {
-            continue; 
+            continue;
           }
 
           // Double partners:
@@ -1405,16 +1406,16 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
             }
           } // end double partner loop
 
-        } // end loop over List      
+        } // end loop over List
       }
     }
-  
+
     // Create tracks in the list:
     mdebug<<"Newly tracked events: "<<List->GetNRawEvents()<<endl;
     for (int i = 0; i < List->GetNRawEvents(); i++) {
       mdebug<<List->GetRawEventAt(i)->ToString()<<endl;;
-    }   
-    
+    }
+
     // Create tracks in the list:
     for (int i = 0; i < List->GetNRawEvents(); i++) {
       if (List->GetRawEventAt(i)->CreateTracks() == false) {
@@ -1432,7 +1433,7 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
 
     // Only continue if we already have a track segment, from which we can start:
 
-    // Upgrade links to tracks... 
+    // Upgrade links to tracks...
     if (RE->CreateTracks() == false) {
       mout<<"No crystallization point! --> Add rejection for this..."<<endl;
       for (int r = 0; r < RE->GetNRESEs(); ++r) {
@@ -1442,7 +1443,7 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
     }
 
     bool ThereWasAChange = true;
-    list<MRESETrackCont> Neighbors; 
+    list<MRESETrackCont> Neighbors;
     do {
       Neighbors.clear();
       // For each track search all possible continuation (within layer jump)
@@ -1483,29 +1484,29 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
           }
         }
       }
-      
+
       if (Neighbors.size() == 0) {
         break;
       }
 
       // Only append the best one!
       Neighbors.sort(MRESETrackContCompare);
-      
+
       if (Neighbors.front().m_EndPoint2 < 0) {
-        Neighbors.front().m_Track->AddEndPoint(Neighbors.front().m_Next, 
+        Neighbors.front().m_Track->AddEndPoint(Neighbors.front().m_Next,
                                                Neighbors.front().m_Track->GetEndPointAt(Neighbors.front().m_EndPoint1));
         RE->RemoveRESE(Neighbors.front().m_Next);
       } else {
-        Neighbors.front().m_Track->AddEndPoint(dynamic_cast<MRETrack*>(Neighbors.front().m_Next), 
+        Neighbors.front().m_Track->AddEndPoint(dynamic_cast<MRETrack*>(Neighbors.front().m_Next),
                                                dynamic_cast<MRETrack*>(Neighbors.front().m_Next)->GetEndPointAt(Neighbors.front().m_EndPoint2),
-                                               Neighbors.front().m_Track->GetEndPointAt(Neighbors.front().m_EndPoint1));        
+                                               Neighbors.front().m_Track->GetEndPointAt(Neighbors.front().m_EndPoint1));
         RE->RemoveRESE(Neighbors.front().m_Next);
         delete Neighbors.front().m_Next;
       }
       RE->CompressRESEs();
 
       // Search for new non ambiguous sequences:
-      
+
     } while (ThereWasAChange == true);
 
     // Add the only raw event...
@@ -1518,9 +1519,9 @@ MRawEventIncarnations* MERTrack::TrackComptons(MRERawEvent* RE)
 
 
   // Let's do some sanity checks:
-  
+
   // Append straight (long) tracks:
-  
+
 
   return List;
 }
@@ -1539,7 +1540,7 @@ bool MERTrack::PostAnalysis()
   mout<<"Time Comptons - directions: "<<m_TimeComptonDirections<<endl;
   mout<<endl;
   */
-  
+
   return true;
 }
 
@@ -1562,7 +1563,7 @@ bool MERTrack::EvaluateTracks(MRERawEvent* RE)
   //     Score = 1 / (# tracks + # remaining hits in D1)
 
   int NTracks = 0, NRemainingHits = 0;
-  
+
   MRESE* RESE = 0;
   for (int i = 0; i < RE->GetNRESEs(); i++) {
     RESE = RE->GetRESEAt(i);
@@ -1570,7 +1571,7 @@ bool MERTrack::EvaluateTracks(MRERawEvent* RE)
       //mdebug<<"Detecor"<<RESE->GetDetector()<<endl;
       if (RESE->GetType() == MRESE::c_Track) {
         NTracks++;
-      } else if (RESE->GetType() == MRESE::c_Hit || 
+      } else if (RESE->GetType() == MRESE::c_Hit ||
                  RESE->GetType() == MRESE::c_Cluster) {
         NRemainingHits++;
       } else {
@@ -1616,7 +1617,7 @@ bool MERTrack::EvaluateTracks(MRERawEvent* RE)
 
 bool MERTrack::EvaluateTrack(MRETrack* Track)
 {
-  double QF = 0; 
+  double QF = 0;
   QF = Track->CalculatePearsonCorrelation();
   Track->SetQualityFactor(QF);
 
@@ -1639,7 +1640,7 @@ bool MERTrack::EvaluatePairs(MRERawEvent* RE)
     Score = ((MRETrack*) RE->GetPositronTrack())->CalculatePearsonCorrelation();
     ((MRETrack*) RE->GetPositronTrack())->SetQualityFactor(Score);
 
-    ScorePair = ((MRETrack*) RE->GetElectronTrack())->GetQualityFactor() + 
+    ScorePair = ((MRETrack*) RE->GetElectronTrack())->GetQualityFactor() +
       ((MRETrack *) RE->GetPositronTrack())->GetQualityFactor();
     mdebug<<"Best score = "<<ScorePair<<endl;
   }

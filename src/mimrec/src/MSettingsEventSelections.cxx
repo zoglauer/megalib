@@ -114,7 +114,7 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_SourceLongitude = 184.56;
   m_SourceLatitude = -5.78;
   m_SourceX = 0.0;
-  m_SourceY = 0.0; 
+  m_SourceY = 0.0;
   m_SourceZ = 100.0;
   m_SourceARMMin = 0.0;
   m_SourceARMMax = 180.0;
@@ -129,13 +129,13 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_PointingBoxLongitude = 0;
   m_PointingBoxExtentLatitude = 0;
   m_PointingBoxExtentLongitude = 0;
-  
+
   m_BeamUse = false;
   m_BeamStartX = 0.0;
-  m_BeamStartY = 0.0; 
+  m_BeamStartY = 0.0;
   m_BeamStartZ = 10000.0;
   m_BeamFocalSpotX = 0.0;
-  m_BeamFocalSpotY = 0.0; 
+  m_BeamFocalSpotY = 0.0;
   m_BeamFocalSpotZ = 0.0;
   m_BeamRadius = 1000.0;
   m_BeamDepth = 1000.0;
@@ -152,7 +152,7 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
   m_TimeRangeMin.Set(0.0);
   m_TimeRangeMax.Set(2000000000.0);
   m_TimeFile = "";
-  
+
   m_TimeWalkRangeMin = -1000;
   m_TimeWalkRangeMax = numeric_limits<int>::max();
 
@@ -164,6 +164,9 @@ MSettingsEventSelections::MSettingsEventSelections() : MSettingsInterface()
 
   m_InitialEnergyDepositPairMin = 0;
   m_InitialEnergyDepositPairMax = 10000;
+
+  m_QualityFactorPairMin = -1;
+  m_QualityFactorPairMax = numeric_limits<double>::max();
 
   m_EventTypeCompton = 1;
   m_EventTypeDoubleCompton = 1;
@@ -213,6 +216,8 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "UseEventTypeComptonNotTracked", m_EventTypeComptonNotTracked);
   new MXmlNode(aNode, "UseEventTypeComptonTracked", m_EventTypeComptonTracked);
   new MXmlNode(aNode, "UseEventTypePair", m_EventTypePair);
+  new MXmlNode(aNode, "UseEventTypePhoto", m_EventTypePhoto);
+  new MXmlNode(aNode, "UseEventTypeUnidentifiable", m_EventTypeUnidentifiable);
   new MXmlNode(aNode, "UseEventTypePhoto", m_EventTypePhoto); 
   new MXmlNode(aNode, "UseEventTypePET", m_EventTypePET); 
   new MXmlNode(aNode, "UseEventTypeMulti", m_EventTypeMulti); 
@@ -246,29 +251,29 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(aNode, "CoincidenceWindow", m_CoincidenceWindowRangeMin, m_CoincidenceWindowRangeMax);
   new MXmlNode(aNode, "OpeningAnglePair", m_OpeningAnglePairMin, m_OpeningAnglePairMax);
   new MXmlNode(aNode, "InitialEnergyDepositPair", m_InitialEnergyDepositPairMin, m_InitialEnergyDepositPairMax);
-  
+
   bNode = new MXmlNode(aNode, "EarthHorizonCut");
-  new MXmlNode(bNode, "Type", m_EHCType); 
+  new MXmlNode(bNode, "Type", m_EHCType);
   new MXmlNode(bNode, "Probability", m_EHCProbability);
-  new MXmlNode(bNode, "ComptonProbabilityFile", m_EHCComptonProbabilityFileName); 
+  new MXmlNode(bNode, "ComptonProbabilityFile", m_EHCComptonProbabilityFileName);
   new MXmlNode(bNode, "PairProbabilityFile", m_EHCPairProbabilityFileName);
   new MXmlNode(bNode, "Angle", m_EHCAngle);
-  new MXmlNode(bNode, "EarthPosition", m_EHCEarthPosition); 
+  new MXmlNode(bNode, "EarthPosition", m_EHCEarthPosition);
 
-  bNode = new MXmlNode(aNode, "Source");  
+  bNode = new MXmlNode(aNode, "Source");
   new MXmlNode(bNode, "UsePointSource", m_SourceUsePointSource);
   new MXmlNode(bNode, "Coordinates", static_cast<int>(m_SourceCoordinates));
-  new MXmlNode(bNode, "Phi", m_SourcePhi); 
+  new MXmlNode(bNode, "Phi", m_SourcePhi);
   new MXmlNode(bNode, "Theta", m_SourceTheta);
-  new MXmlNode(bNode, "Longitude", m_SourceLongitude); 
+  new MXmlNode(bNode, "Longitude", m_SourceLongitude);
   new MXmlNode(bNode, "Latitude", m_SourceLatitude);
-  new MXmlNode(bNode, "X", m_SourceX); 
-  new MXmlNode(bNode, "Y", m_SourceY); 
-  new MXmlNode(bNode, "Z", m_SourceZ); 
-  new MXmlNode(bNode, "ARM", m_SourceARMMin, m_SourceARMMax); 
+  new MXmlNode(bNode, "X", m_SourceX);
+  new MXmlNode(bNode, "Y", m_SourceY);
+  new MXmlNode(bNode, "Z", m_SourceZ);
+  new MXmlNode(bNode, "ARM", m_SourceARMMin, m_SourceARMMax);
   new MXmlNode(bNode, "SPD", m_SourceSPDMin, m_SourceSPDMax);
 
-  bNode = new MXmlNode(aNode, "Pointing");  
+  bNode = new MXmlNode(aNode, "Pointing");
   new MXmlNode(bNode, "PointingSelectionType", m_PointingSelectionType);
   new MXmlNode(bNode, "PointingPointSourceLatitude", m_PointingPointSourceLatitude);
   new MXmlNode(bNode, "PointingPointSourceLongitude", m_PointingPointSourceLongitude);
@@ -277,16 +282,16 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
   new MXmlNode(bNode, "PointingBoxLongitude", m_PointingBoxLongitude);
   new MXmlNode(bNode, "PointingBoxExtentLatitude", m_PointingBoxExtentLatitude);
   new MXmlNode(bNode, "PointingBoxExtentLongitude", m_PointingBoxExtentLongitude);
-  
+
   bNode = new MXmlNode(aNode, "Beam");
   new MXmlNode(bNode, "UseBeam", m_BeamUse);
-  new MXmlNode(bNode, "StartX", m_BeamStartX); 
-  new MXmlNode(bNode, "StartY", m_BeamStartY); 
-  new MXmlNode(bNode, "StartZ", m_BeamStartZ); 
-  new MXmlNode(bNode, "FocalSpotX", m_BeamFocalSpotX); 
-  new MXmlNode(bNode, "FocalSpotY", m_BeamFocalSpotY); 
-  new MXmlNode(bNode, "FocalSpotZ", m_BeamFocalSpotZ); 
-  new MXmlNode(bNode, "Radius", m_BeamRadius); 
+  new MXmlNode(bNode, "StartX", m_BeamStartX);
+  new MXmlNode(bNode, "StartY", m_BeamStartY);
+  new MXmlNode(bNode, "StartZ", m_BeamStartZ);
+  new MXmlNode(bNode, "FocalSpotX", m_BeamFocalSpotX);
+  new MXmlNode(bNode, "FocalSpotY", m_BeamFocalSpotY);
+  new MXmlNode(bNode, "FocalSpotZ", m_BeamFocalSpotZ);
+  new MXmlNode(bNode, "Radius", m_BeamRadius);
   new MXmlNode(bNode, "BeamDepth", m_BeamDepth);
   
   bNode = new MXmlNode(aNode, "ExcludedFirstIADetectors");
@@ -309,12 +314,12 @@ bool MSettingsEventSelections::WriteXml(MXmlNode* Node)
 bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
 {
   // Retrieve the content from an XML tree
-  
+
   MXmlNode* aNode = 0;
   MXmlNode* bNode = 0;
   MXmlNode* cNode = 0;
- 
- 
+
+
   if ((aNode = Node->GetNode("EventSelections")) != 0) {
     if ((bNode = aNode->GetNode("EventSelectorTab")) != 0) {
       m_EventSelectorTab = bNode->GetValueAsInt();
@@ -349,12 +354,12 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("FlaggedAsBad")) != 0) {
       m_FlaggedAsBad = bNode->GetValueAsInt();
     }
-    
+
     if ((bNode = aNode->GetNode("EventID")) != 0) {
       m_EventIdRangeMin = bNode->GetMinValueAsLong();
       m_EventIdRangeMax = bNode->GetMaxValueAsLong();
     }
-    
+
     if ((bNode = aNode->GetNode("TimeMode")) != 0) {
       m_TimeMode = bNode->GetValueAsUnsignedInt();
     }
@@ -365,7 +370,7 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
     if ((bNode = aNode->GetNode("TimeFile")) != 0) {
       m_TimeFile = bNode->GetValueAsString();
     }
-    
+
     if ((bNode = aNode->GetNode("TrackLength")) != 0) {
       m_TrackLengthRangeMin = bNode->GetMinValueAsInt();
       m_TrackLengthRangeMax = bNode->GetMaxValueAsInt();
@@ -492,15 +497,15 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
         m_SourceZ = cNode->GetValueAsDouble();
       }
       if ((cNode = bNode->GetNode("ARM")) != 0) {
-        m_SourceARMMin = cNode->GetMinValueAsDouble(); 
+        m_SourceARMMin = cNode->GetMinValueAsDouble();
         m_SourceARMMax = cNode->GetMaxValueAsDouble();
       }
       if ((cNode = bNode->GetNode("SPD")) != 0) {
-        m_SourceSPDMin = cNode->GetMinValueAsDouble(); 
+        m_SourceSPDMin = cNode->GetMinValueAsDouble();
         m_SourceSPDMax = cNode->GetMaxValueAsDouble();
       }
     }
-  
+
     if ((bNode = aNode->GetNode("Pointing")) != 0) {
       if ((cNode = bNode->GetNode("PointingSelectionType")) != 0) {
         m_PointingSelectionType = cNode->GetValueAsUnsignedInt();
@@ -527,7 +532,7 @@ bool MSettingsEventSelections::ReadXml(MXmlNode* Node)
         m_PointingBoxExtentLongitude = cNode->GetValueAsDouble();
       }
     }
-      
+
     if ((bNode = aNode->GetNode("Beam")) != 0) {
       if ((cNode = bNode->GetNode("UseBeam")) != 0) {
         m_BeamUse = cNode->GetValueAsBoolean();
