@@ -24,25 +24,38 @@ using namespace std;
 #include "MGlobal.h"
 #include "MCoordinateSystem.h"
 #include "MPhysicalEvent.h"
+#include "MPhysicalEventHit.h"
 
 // Forward declarations:
 
 ////////////////////////////////////////////////////////////////////////////////
 
 
+//! A reconstructed Compton event
 class MComptonEvent : public MPhysicalEvent
 {
   // Public Interface:
  public:
+  //! Default constructor
   MComptonEvent();
+  //! Default destructor
   virtual ~MComptonEvent();
 
   // Initilizations
+  //! Copy the content of this Compton event into this one
   bool Assimilate(MComptonEvent* Compton);
+  //! Copy the content of this physical event (which nees to be castable to a MComptonEvent) into this one
   bool Assimilate(MPhysicalEvent* Event); 
+  //! Initialize 
   bool Assimilate(const MVector& C1, const MVector& C2, const MVector& De, const double Ee, const double Eg);
+  //! Initialize from a list of ORDERED physical hits
+  bool Assimilate(const vector <MPhysicalEventHit> Hits);
+  //! Initialize from a text line
   bool Assimilate(char* LineBuffer);
+  
+  //! Steam the content of this class into a file
   virtual bool Stream(MFile& File, int Version, bool Read, bool Fast = false, bool ReadDelayed = false);
+  //! Parse a line 
   virtual int ParseLine(const char* Line, bool Fast = false);
   //! Create a copy of this event
   virtual MPhysicalEvent* Duplicate();

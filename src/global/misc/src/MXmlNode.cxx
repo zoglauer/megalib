@@ -114,7 +114,20 @@ MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value) : MXml
 MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value) : MXmlData(Name, Value)
 {
   //! Constructor
+  
+  if (MotherNode != 0) {
+    MotherNode->AddNode(this);
+  }
+}
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+MXmlNode::MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Value) : MXmlData(Name, Value)
+{
+  //! Constructor
+  
   if (MotherNode != 0) {
     MotherNode->AddNode(this);
   }

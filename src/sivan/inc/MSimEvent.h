@@ -120,7 +120,7 @@ class MSimEvent : public MRotationInterface
   void RemoveAllHTs();
   //! Delete all HTs
   void DeleteAllHTs();
-  
+
   //! Add a directional information
   bool AddDR(const MSimDR& DR);
   //! Get the number of directional informations
@@ -169,7 +169,9 @@ class MSimEvent : public MRotationInterface
   /// Flag indicating only INIT simulation info is stored
   static const int c_StoreSimulationInfoInitOnly; 
   /// Flag indicating NO simulation info is stored
-  static const int c_StoreSimulationInfoNone; 
+  static const int c_StoreSimulationInfoNone;
+  /// Flag indicating only IA info is stored
+  static const int c_StoreSimulationInfoIAOnly;
 
   //! Convert the content to string
   MString ToString();

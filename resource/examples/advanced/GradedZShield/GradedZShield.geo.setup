@@ -3,15 +3,15 @@
 Name GradedZShield
 Version 1.0
 
-# The thicknesses of the graded-Z shield layers
-Constant Material1 Tin
-Constant ZSizeMaterial1 0.025
+# The thicknesses (not half thickness) of the graded-Z shield layers
+Constant Material1 BGO
+Constant ZSizeMaterial1 2.5
 
 Constant Material2 Copper
-Constant ZSizeMaterial2  0.05
+Constant ZSizeMaterial2  0.0
 
 Constant Material3 Alu6061
-Constant ZSizeMaterial3  0.05
+Constant ZSizeMaterial3  0.0
 
 
 # The surrounding sphere is not required for this example

@@ -140,9 +140,9 @@ class MFile
   //! Return true if the file extensions are correct
   virtual bool CheckFileExtension(MString Extension);
 
-  //! Return true is the file exists and if it is readable
+  //! Return true if the file exists and if it is readable
   static bool Exists(MString FileName);
-  //! Return true is the file exists
+  //! Return true if the file exists
   static bool FileExists(const char* FileName); // depreciated
   //! Return true if the file was removed successfully
   static bool Remove(MString FileName);

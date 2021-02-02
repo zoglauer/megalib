@@ -61,6 +61,7 @@ MResponseImagingBinnedMode::MResponseImagingBinnedMode() : m_ImagingResponse(tru
   m_EnergyNBins = 1;
   m_EnergyMinimum = 10; // keV
   m_EnergyMaximum = 2000; // keV
+  m_EnergyBinEdges.clear();
   m_DistanceNBins = 1;
   m_DistanceMinimum = 0; // cm
   m_DistanceMaximum = 1000; // cm
@@ -99,9 +100,10 @@ MString MResponseImagingBinnedMode::Options()
 {
   ostringstream out;
   out<<"             anglebinwidth:           the width of a sky bin at the equator (default: 5 deg)"<<endl;
-  out<<"             emin:                    minimum energy (default: 10 keV)"<<endl;
-  out<<"             emax:                    maximum energy (default: 2,000 keV)"<<endl;
-  out<<"             ebins:                   number of energy bins between min and max energy (default: 1)"<<endl;
+  out<<"             emin:                    minimum energy (default: 10 keV; cannot be used in combination with ebinedges)"<<endl;
+  out<<"             emax:                    maximum energy (default: 2,000 keV; cannot be used in combination with ebinedges)"<<endl;
+  out<<"             ebins:                   number of energy bins between min and max energy (default: 1; cannot be used in combination with ebinedges)"<<endl;
+  out<<"             ebinedges:               the energy bin edges as a comma seperated list (default: not used, cannot be used in combination with emin, emax, or ebins)"<<endl;
   out<<"             anglebinwidthelectron:   the width of a aky bin at the equator (default: 5 deg)"<<endl;
   out<<"             dmin:                    minimum distance (default: 0 cm)"<<endl;
   out<<"             dmax:                    maximum distance (default: 1,000 cm)"<<endl;
@@ -127,7 +129,7 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     Split2.push_back(S.Tokenize("=")); 
   }
   
-  // Basic sanity check and to lower for all options
+  // Basic sanity check and "to-lower" for all options
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     if (Split2[i].size() == 0) {
       mout<<"Error: Empty option in string "<<Options<<endl;
@@ -144,6 +146,28 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
     Split2[i][0].ToLowerInPlace();
   }
   
+  // Energy option checks
+  bool HasBinEdges = false;
+  for (unsigned int i = 0; i < Split2.size(); ++i) {
+    if (Split2[i][0] == "ebinedges") {
+      HasBinEdges = true;
+    }
+  }
+  if (HasBinEdges == true) {
+    for (unsigned int i = 0; i < Split2.size(); ++i) {
+      if (Split2[i][0] == "emin") {
+        mout<<"Error: You can not have ebinedges and emin at the same time as options"<<endl;
+        return false;
+      } else if (Split2[i][0] == "emax") {
+        mout<<"Error: You can not have ebinedges and emax at the same time as options"<<endl;
+        return false;
+      } else if (Split2[i][0] == "ebins") {
+        mout<<"Error: You can not have ebinedges and ebins at the same time as options"<<endl;
+        return false;
+      }
+    }
+  }
+    
   // Parse
   for (unsigned int i = 0; i < Split2.size(); ++i) {
     string Value = Split2[i][1].Data();
@@ -154,6 +178,11 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
       m_EnergyMaximum = stod(Value);
     } else if (Split2[i][0] == "ebins") {
       m_EnergyNBins = stod(Value);
+    } else if (Split2[i][0] == "ebinedges") {
+      vector<MString> Edges = MString(Value).Tokenize(",");
+      m_EnergyBinEdges.clear();
+      for (MString S: Edges) m_EnergyBinEdges.push_back(S.ToDouble());
+      m_EnergyNBins = 0;
     } else if (Split2[i][0] == "anglebinwidth") {
       m_AngleBinWidth = stod(Value);
     } else if (Split2[i][0] == "dmin") {
@@ -175,17 +204,34 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   }
   
   // Sanity checks:
-  if (m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0) {
-    mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
-    return false;    
-  }
-  if (m_EnergyMinimum >= m_EnergyMaximum) {
-    mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
-    return false;       
-  }
-  if (m_EnergyNBins <= 0) {
-    mout<<"Error: You need at least one energy bin"<<endl;
-    return false;       
+  if (HasBinEdges == true) {
+    if (m_EnergyBinEdges.size() < 2) {
+      mout<<"Error: You need at least 2 bin edges"<<endl;
+      return false;    
+    }
+    if (m_EnergyBinEdges[0] < 0) {
+      mout<<"Error: The minimum bin edge cannot be samller than 0"<<endl;
+      return false;    
+    }
+    for (unsigned int e = 1; e < m_EnergyBinEdges.size(); ++e) {
+      if (m_EnergyBinEdges[e] <= m_EnergyBinEdges[e-1]) {
+        mout<<"Error: The bin edges must be in increasing order"<<endl;
+        return false;    
+      }
+    }
+  } else {
+    if (m_EnergyMinimum <= 0 || m_EnergyMaximum <= 0) {
+      mout<<"Error: All energy values must be positive (larger than zero)"<<endl;
+      return false;    
+    }
+    if (m_EnergyMinimum >= m_EnergyMaximum) {
+      mout<<"Error: The minimum energy must be smaller than the maximum energy"<<endl;
+      return false;       
+    }
+    if (m_EnergyNBins <= 0) {
+      mout<<"Error: You need at least one energy bin"<<endl;
+      return false;       
+    }
   }
   if (m_DistanceMinimum < 0 || m_DistanceMaximum < 0) {
     mout<<"Error: All distance values must be non-negative"<<endl;
@@ -223,9 +269,15 @@ bool MResponseImagingBinnedMode::ParseOptions(const MString& Options)
   // Dump it for user info
   mout<<endl;
   mout<<"Choosen options for binned imaging response:"<<endl;
-  mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
-  mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
-  mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
+  if (HasBinEdges == true) {
+    mout<<"  Bin edges energy:                                   ";
+    for (double E: m_EnergyBinEdges) mout<<E<<" ";
+    mout<<endl;
+  } else {
+    mout<<"  Minimum energy:                                     "<<m_EnergyMinimum<<endl;
+    mout<<"  Maximum energy:                                     "<<m_EnergyMaximum<<endl;
+    mout<<"  Number of bins energy:                              "<<m_EnergyNBins<<endl;
+  }
   mout<<"  Width of sky bins at equator:                       "<<m_AngleBinWidth<<endl;
   mout<<"  Minimum distance:                                   "<<m_DistanceMinimum<<endl;
   mout<<"  Maximum distance:                                   "<<m_DistanceMaximum<<endl;
@@ -256,14 +308,22 @@ bool MResponseImagingBinnedMode::Initialize()
   if (AngleBinsElectron < 1) AngleBinsElectron = 1;
   
   MResponseMatrixAxis AxisEnergyInitial("Initial energy [keV]");
-  AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+  if (m_EnergyBinEdges.size() > 0) {
+    AxisEnergyInitial.SetBinEdges(m_EnergyBinEdges);
+  } else {
+    AxisEnergyInitial.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+  }
   
   MResponseMatrixAxisSpheric AxisSkyCoordinates("#nu [deg]", "#lambda [deg]");
   AxisSkyCoordinates.SetFISBEL(AngleBins);
 
   MResponseMatrixAxis AxisEnergyMeasured("Measured energy [keV]");
-  AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
-
+  if (m_EnergyBinEdges.size() > 0) {
+    AxisEnergyMeasured.SetBinEdges(m_EnergyBinEdges);
+  } else {
+    AxisEnergyMeasured.SetLinear(m_EnergyNBins, m_EnergyMinimum, m_EnergyMaximum);
+  }
+  
   MResponseMatrixAxis AxisPhi("#phi [deg]");
   AxisPhi.SetLinear(180/m_AngleBinWidth, 0, 180);
   
@@ -297,12 +357,19 @@ bool MResponseImagingBinnedMode::Initialize()
     m_Exposure.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
 
-  m_EnergyResponse.SetName("Energy response");
-  m_EnergyResponse.AddAxis(AxisEnergyInitial);
-  m_EnergyResponse.AddAxis(AxisSkyCoordinates);
-  m_EnergyResponse.AddAxis(AxisEnergyMeasured);
+  m_EnergyResponse4D.SetName("Energy response 4D");
+  m_EnergyResponse4D.AddAxis(AxisEnergyInitial);
+  m_EnergyResponse4D.AddAxis(AxisSkyCoordinates);
+  m_EnergyResponse4D.AddAxis(AxisEnergyMeasured);
   if (m_SiReader != nullptr) {
-    m_EnergyResponse.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+    m_EnergyResponse4D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
+  }
+
+  m_EnergyResponse2D.SetName("Energy response 2D");
+  m_EnergyResponse2D.AddAxis(AxisEnergyInitial);
+  m_EnergyResponse2D.AddAxis(AxisEnergyMeasured);
+  if (m_SiReader != nullptr) {
+    m_EnergyResponse2D.SetFarFieldStartArea(m_SiReader->GetSimulationStartAreaFarField());
   }
 
   if (m_UseAtmosphericAbsorption == true) {
@@ -410,7 +477,8 @@ bool MResponseImagingBinnedMode::Analyze()
   // And fill the matrices
   m_ImagingResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured, Phi, Psi, Chi, Sigma, Tau, Distance } );
   m_Exposure.Add( vector<double>{ EnergyInitial, Nu, Lambda } );
-  m_EnergyResponse.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
+  m_EnergyResponse4D.Add( vector<double>{ EnergyInitial, Nu, Lambda, EnergyMeasured } );
+  m_EnergyResponse2D.Add( vector<double>{ EnergyInitial, EnergyMeasured } );
             
   //cout<<"Added: "<<Event->GetId()<<":"<<Phi<<":"<<Psi<<":"<<Chi<<endl;
   
@@ -442,8 +510,11 @@ bool MResponseImagingBinnedMode::Save()
   m_Exposure.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
   m_Exposure.Write(GetFilePrefix() + ".exposure" + m_Suffix, true);
   
-  m_EnergyResponse.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
-  m_EnergyResponse.Write(GetFilePrefix() + ".energyresponse" + m_Suffix, true);
+  m_EnergyResponse4D.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergyResponse4D.Write(GetFilePrefix() + ".energyresponse4d" + m_Suffix, true);
+  
+  m_EnergyResponse2D.SetSimulatedEvents(m_NumberOfSimulatedEventsThisFile + m_NumberOfSimulatedEventsClosedFiles);
+  m_EnergyResponse2D.Write(GetFilePrefix() + ".energyresponse2d" + m_Suffix, true);
   
   return true;
 }

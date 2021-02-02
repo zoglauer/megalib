@@ -61,7 +61,7 @@ MImageGalactic::MImageGalactic() : MImage2D()
   m_Projection = MImageProjection::c_None;
   m_DrawOption = c_COLZ;
   m_xTitle = "Galactic Longitude [deg]";
-  m_yTitle = "Galactic Latgitude [deg]";
+  m_yTitle = "Galactic Latitude [deg]";
   m_vTitle = "Intensity [a.u.]";
 }
 
@@ -123,6 +123,49 @@ MImage* MImageGalactic::Clone()
   I->Normalize(m_Normalize);
 
   return I;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+void MImageGalactic::SetImageArray(TH2D* Hist)
+{
+  // Copy the data array
+  
+  if (Hist == nullptr) {
+    merr<<"Input histogram is nullptr!"<<endl;
+    return;
+  }
+  
+  // Set basic data:
+  m_xTitle = Hist->GetXaxis()->GetTitle();
+  m_yTitle = Hist->GetYaxis()->GetTitle();
+  m_vTitle = Hist->GetZaxis()->GetTitle();
+  m_xMin = Hist->GetXaxis()->GetXmin();
+  m_xMax = Hist->GetXaxis()->GetXmax();
+  m_xNBins = Hist->GetXaxis()->GetNbins();
+  m_yMin = Hist->GetYaxis()->GetXmin();
+  m_yMax = Hist->GetYaxis()->GetXmax();
+  m_yNBins = Hist->GetYaxis()->GetNbins();
+  m_NEntries = m_xNBins*m_yNBins;
+  
+  if (m_IA != nullptr) delete [] m_IA;
+  m_IA = new double[m_NEntries];
+  
+  for (int bx = 1; bx <= Hist->GetNbinsX(); ++bx) {
+    for (int by = 1; by <= Hist->GetNbinsY(); ++by) {
+      m_IA[(bx-1) + (by-1) * m_xNBins] = Hist->GetBinContent(bx, by);
+    }
+  }
+  
+  if (dynamic_cast<TH2*>(m_Histogram) != nullptr) {
+    if (m_Projection == MImageProjection::c_None) {
+      DisplayProjectionNone();
+    } else {
+      DisplayProjectionHammer();
+    }
+  }
 }
 
 
@@ -394,6 +437,13 @@ void MImageGalactic::DisplayProjectionHammer()
 {
   // Display the image in a canvas
 
+  cout<<"Hammer"<<endl;
+  
+  Color_t DefaultTextColor = kWhite;
+  if (m_Spectrum == c_Viridis || m_Spectrum == c_Bird || m_Spectrum == c_Cividis) {
+    DefaultTextColor = kBlack; 
+  }
+  
   // First we always create a new unprojected histogram and fill it
   TH2D* Unprojected = new TH2D(m_CanvasTitle + "Unprojected", m_Title, m_xNBins, m_xMin, m_xMax, m_yNBins, m_yMin, m_yMax);
 
@@ -425,9 +475,11 @@ void MImageGalactic::DisplayProjectionHammer()
   bool IsNew = false;
   TH2D* Hist = 0;
   if (m_Histogram == 0) {
-    Hist = new TH2D(m_CanvasTitle + "Hist", m_Title, 4*m_xNBins, m_xMin, m_xMax, 4*m_yNBins, m_yMin, m_yMax);
+    Hist = new TH2D(m_CanvasTitle + "Hist", m_Title, 8*m_xNBins, m_xMin, m_xMax, 8*m_yNBins, m_yMin, m_yMax);
     Hist->SetContour(50);
-    Hist->GetZaxis()->SetTitle(m_vTitle);
+    Hist->GetXaxis()->SetTitle(m_xTitle);
+    Hist->GetYaxis()->SetTitle(m_yTitle);
+    //Hist->GetZaxis()->SetTitle(m_vTitle);
     Hist->GetZaxis()->SetTitleOffset(1.2f);
     m_Histogram = dynamic_cast<TH1*>(Hist);
 
@@ -453,7 +505,7 @@ void MImageGalactic::DisplayProjectionHammer()
       Long *= c_Deg;
       Lat *= c_Deg;
       if (Long < m_xMin || Long > m_xMax || Lat < m_yMin || Lat > m_yMax) continue;
-
+      
       ux = Unprojected->GetXaxis()->FindBin(Long);
       uy = Unprojected->GetYaxis()->FindBin(Lat);
       Hist->SetBinContent(bx, by, Unprojected->GetBinContent(ux, uy));
@@ -465,13 +517,12 @@ void MImageGalactic::DisplayProjectionHammer()
 
   // Draw the axes
   if (IsNew == true) {
+    
     // Draw data:
     Hist->Draw(m_DrawOptionString + " a");
 
     // Paint coordinates:
     vector<double> Seperators = { 90.0, 60.0, 45.0, 30.0, 15.0, 10.0, 5.0, 2.0, 1.0, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01 };
-
-    Color_t AxisColor = kWhite;
 
 
     // (A) Determine the steps for longitude
@@ -506,7 +557,7 @@ void MImageGalactic::DisplayProjectionHammer()
     }
 
 
-    // (C) Draw Latitude lines
+    // (C) Draw latitude lines
     for (double Long: xSteps) {
       // Go in one degree steps
       vector<double> xPoly;
@@ -514,15 +565,16 @@ void MImageGalactic::DisplayProjectionHammer()
 
       double L = m_xMin+m_xMax - Long;
 
+      cout<<m_yMin<<":"<<m_yMax<<endl;
       for (double Lat = m_yMin; Lat <= m_yMax; Lat += 0.01*(m_yMax-m_yMin)) {
         HammerConv(L*c_Rad, Lat*c_Rad, CentralMeridian, x, y);
         xPoly.push_back(x*c_Deg);
         yPoly.push_back(y*c_Deg);
       }
-
+      
       TPolyLine* P = new TPolyLine(xPoly.size(), &xPoly[0], &yPoly[0], "C");
       P->SetLineStyle(3);
-      P->SetLineColor(AxisColor);
+      P->SetLineColor(DefaultTextColor);
       P->Draw();
     }
 
@@ -541,14 +593,14 @@ void MImageGalactic::DisplayProjectionHammer()
 
       TPolyLine* P = new TPolyLine(xPoly.size(), &xPoly[0], &yPoly[0], "C");
       P->SetLineStyle(3);
-      P->SetLineColor(AxisColor);
+      P->SetLineColor(DefaultTextColor);
       P->Draw();
     }
 
 
     // (E) Draw latitude grid axis labels
     double FontSize = 0.03;
-    double LatGap = 0.07*ySep;
+    double LatGap = 0; //0.07*ySep;
     for (unsigned int l = 0; l < ySteps.size(); ++l) {
 
       if (l == 0 && ySteps[l] - m_yMin < 0.3*ySep) continue;
@@ -562,10 +614,17 @@ void MImageGalactic::DisplayProjectionHammer()
       if (ySteps[l] > 0) out<<"+";
       out<<ySteps[l]<<"#circ";
 
+      cout<<"pos: "<<out.str().c_str()<<":"<<x<<":"<<y<<endl;
       TLatex* T = new TLatex(x + LatGap, y, out.str().c_str());
       T->SetTextFont(42);
-      T->SetTextColor(AxisColor);
-      T->SetTextAlign(12);
+      T->SetTextColor(DefaultTextColor);
+      if (y > 0) {
+        T->SetTextAlign(13);
+      } else if (y < 0) {
+        T->SetTextAlign(11);
+      } else {
+        T->SetTextAlign(12);
+      }
       T->SetTextSize(FontSize);
       T->Draw();
     }
@@ -613,14 +672,40 @@ void MImageGalactic::DisplayProjectionHammer()
 
       TLatex* T = new TLatex(x, y, out.str().c_str());
       T->SetTextFont(42);
-      T->SetTextColor(AxisColor);
+      T->SetTextColor(DefaultTextColor);
       T->SetTextAlign(22);
       T->SetTextSize(FontSize);
       T->Draw();
     }
 
   }
-
+  
+  TLatex* GalLong = new TLatex(0, -108, "Galactic Longitude [deg]");
+  GalLong->SetTextFont(42);
+  GalLong->SetTextColor(kBlack);
+  GalLong->SetTextAlign(22);
+  GalLong->SetTextSize(0.04);
+  GalLong->Draw();
+  
+  
+  TLatex* GalLat = new TLatex(-200, 0, "Galactic Latitude [deg]");
+  GalLat->SetTextFont(42);
+  GalLat->SetTextColor(kBlack);
+  GalLat->SetTextAlign(22);
+  GalLat->SetTextSize(0.04);
+  GalLat->SetTextAngle(90);
+  GalLat->Draw();
+  
+  TLatex* Value = new TLatex(240, 0, m_vTitle);
+  Value->SetTextFont(42);
+  Value->SetTextColor(kBlack);
+  Value->SetTextAlign(22);
+  Value->SetTextSize(0.04);
+  Value->SetTextAngle(90);
+  Value->Draw();
+  
+  
+  
   AddNamedSources();
 
   m_Canvas->Update();

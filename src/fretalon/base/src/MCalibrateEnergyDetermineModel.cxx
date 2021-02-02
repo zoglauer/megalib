@@ -120,14 +120,24 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
       Model = new MCalibrationModelPoly3();
     } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly4) {
       Model = new MCalibrationModelPoly4();
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Inv1Zero) {
+      Model = new MCalibrationModelPoly1Inv1Zero();
     } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
       Model = new MCalibrationModelPoly1Inv1();
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly2Inv1Zero) {
+      Model = new MCalibrationModelPoly2Inv1Zero();
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly2Inv1) {
+      Model = new MCalibrationModelPoly2Inv1();
     } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
       Model = new MCalibrationModelPoly1Exp1();
     } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
       Model = new MCalibrationModelPoly1Exp2();
     } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
       Model = new MCalibrationModelPoly1Exp3();
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly1Log1) {
+      Model = new MCalibrationModelPoly1Log1();
+    } else if (m_CalibrationModelDeterminationMethodFittingEnergyModel == MCalibrationModel::c_CalibrationModelPoly2Log1) {
+      Model = new MCalibrationModelPoly2Log1();
     } else {
       new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingEnergyModel);
       return false;
@@ -154,10 +164,15 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     Models.push_back(new MCalibrationModelPoly2());
     Models.push_back(new MCalibrationModelPoly3());
     Models.push_back(new MCalibrationModelPoly4());
+    Models.push_back(new MCalibrationModelPoly1Inv1Zero());
     Models.push_back(new MCalibrationModelPoly1Inv1());
+    Models.push_back(new MCalibrationModelPoly2Inv1Zero());
+    Models.push_back(new MCalibrationModelPoly2Inv1());
     Models.push_back(new MCalibrationModelPoly1Exp1());
     Models.push_back(new MCalibrationModelPoly1Exp2());
     Models.push_back(new MCalibrationModelPoly1Exp3());
+    Models.push_back(new MCalibrationModelPoly1Log1());
+    Models.push_back(new MCalibrationModelPoly2Log1());
     
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {
@@ -193,6 +208,17 @@ bool MCalibrateEnergyDetermineModel::CalibrateEnergyModel()
     new MExceptionUnknownMode("calibration model determination method", m_CalibrationModelDeterminationMethod);
     return false;
   }
+  
+  // Finally set the FWHM of each of the good points
+  for (unsigned int r = 0; r < m_Results.GetNumberOfReadOutDataGroups(); ++r) {
+    for (unsigned int p = 0; p < m_Results.GetNumberOfSpectralPoints(r); ++p) {
+      if (m_Results.GetSpectralPoint(r, p).IsGood() == true) {
+        MCalibrationSpectralPoint& P = m_Results.GetSpectralPoint(r, p);
+        P.SetEnergyFWHM(m_Results.GetEnergyModel().GetFitValue(P.GetPeak() + 0.5*P.GetFWHM()) - m_Results.GetEnergyModel().GetFitValue(P.GetPeak() - 0.5*P.GetFWHM()));
+      }
+    }
+  }
+  
   
   return true;
 }
@@ -232,14 +258,24 @@ bool MCalibrateEnergyDetermineModel::CalibrateFWHMModel()
       Model = new MCalibrationModelPoly3();
     } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly4) {
       Model = new MCalibrationModelPoly4();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Inv1Zero) {
+      Model = new MCalibrationModelPoly1Inv1Zero();
     } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Inv1) {
       Model = new MCalibrationModelPoly1Inv1();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly2Inv1Zero) {
+      Model = new MCalibrationModelPoly2Inv1Zero();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly2Inv1) {
+      Model = new MCalibrationModelPoly2Inv1();
     } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp1) {
       Model = new MCalibrationModelPoly1Exp1();
     } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp2) {
       Model = new MCalibrationModelPoly1Exp2();
     } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Exp3) {
       Model = new MCalibrationModelPoly1Exp3();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly1Log1) {
+      Model = new MCalibrationModelPoly1Log1();
+    } else if (m_CalibrationModelDeterminationMethodFittingFWHMModel == MCalibrationModel::c_CalibrationModelPoly2Log1) {
+      Model = new MCalibrationModelPoly2Log1();
     } else {
       new MExceptionUnknownMode("fitting model to determine calibration model", m_CalibrationModelDeterminationMethodFittingFWHMModel);
       return false;
@@ -268,10 +304,15 @@ bool MCalibrateEnergyDetermineModel::CalibrateFWHMModel()
     Models.push_back(new MCalibrationModelPoly2());
     Models.push_back(new MCalibrationModelPoly3());
     Models.push_back(new MCalibrationModelPoly4());
+    Models.push_back(new MCalibrationModelPoly1Inv1Zero());
     Models.push_back(new MCalibrationModelPoly1Inv1());
+    Models.push_back(new MCalibrationModelPoly2Inv1Zero());
+    Models.push_back(new MCalibrationModelPoly2Inv1());
     Models.push_back(new MCalibrationModelPoly1Exp1());
     Models.push_back(new MCalibrationModelPoly1Exp2());
     Models.push_back(new MCalibrationModelPoly1Exp3());
+    Models.push_back(new MCalibrationModelPoly1Log1());
+    Models.push_back(new MCalibrationModelPoly2Log1());
     
     vector<double> Results;
     for (unsigned int m = 0; m < Models.size(); ++m) {

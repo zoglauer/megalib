@@ -45,11 +45,18 @@ confhelp() {
   echo "--externalpath=[path - first launch default: \"directory given by --megalib-path\"\external]"
   echo "    Directory where to install the required version of ROOT and Geant4."
   echo " "
-  echo "--root=[path to existing ROOT installation]"
-  echo "    Instead of installing a new version of ROOT use this one. If it is not compatible with MEGAlib, the script will stop with an error."
+  echo "--root=[options: empty (default), path to existing ROOT installation]"
+  echo "    If empty (or the option has not been given at all), download and install the latest compatible version"
+  echo "    If a path to an existing ROOT installation is given, then use this one. If it is not compatible with MEGAlib, the script will stop with an error."
   echo " "
-  echo "--geant=[path to existing GEANT4 installation]"
-  echo "    Instead of installing a new version of GEANT4 use this one. If it is not compatible with MEGAlib, the script will stop with an error."
+  echo "--geant=[options: empty (default), path to existing GEANT4 installation]"
+  echo "    If empty (or the option has not been given at all), download and install the latest compatible version"
+  echo "    If a path to an existing GEANT4 installation is given, then use this one. If it is not compatible with MEGAlib, the script will stop with an error."
+  echo " "
+  echo "--heasoft=[options: off (default) empty, path to existing HEASoft installation]"
+  echo "    If empty (or the option has not been given at all), download and install the latest compatible version"
+  echo "    If the string \"off\" is given, do not install HEASoft. This will affect some tertiary tools of MEGAlib, such as storing the data in fits files."
+  echo "    If a path to an existing HEASoft installation is given, then use this one. If it is not compatible with MEGAlib, the script will stop with an error."
   echo " "
   echo "--maxthreads=[integer >=1]"
   echo "    The maximum number of threads to be used for compilation. Default is the number of cores in your system."
@@ -128,7 +135,7 @@ CMD=( "$@" )
 
 # Check for help
 for C in "${CMD[@]}"; do
-  if [[ ${C} == *-h* ]]; then
+  if [[ ${C} == *-h ]] || [[ ${C} == *-hel* ]]; then
     echo ""
     confhelp
     exit 0
@@ -156,6 +163,7 @@ RELEASE="rel"
 EXTERNALPATH=""
 ROOTPATH=""
 GEANT4PATH=""
+HEASOFTPATH="off"
 OSTYPE=$(uname -s)
 OPT="normal"
 DEBUG="off"
@@ -222,6 +230,8 @@ for C in "${CMD[@]}"; do
     ROOTPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-g*=* ]]; then
     GEANT4PATH=`echo ${C} | awk -F"=" '{ print $2 }'`
+  elif [[ ${C} == *-hea*=* ]]; then
+    HEASOFTPATH=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-o*=* ]]; then
     OPT=`echo ${C} | awk -F"=" '{ print $2 }'`
   elif [[ ${C} == *-d*=* ]]; then
@@ -243,7 +253,7 @@ for C in "${CMD[@]}"; do
   elif [[ ${C} == *-b* ]]; then
     BRANCH=`echo ${C} | awk -F"=" '{ print $2 }'`
     RELEASE="dev"
-  elif [[ ${C} == *-h* ]]; then
+  elif [[ ${C} == *-h ]] || [[ ${C} == *-hel* ]]; then
     echo ""
     confhelp
     exit 0
@@ -368,6 +378,24 @@ if [ "${GEANT4PATH}" == "" ]; then
   echo " * Download latest compatible version of Geant4"
 else
   echo " * Using the installation of Geant4: ${GEANT4PATH}"
+fi
+
+if [[ "${HEASOFTPATH}" != "off" ]]; then
+  if [[ "${HEASOFTPATH}" != "" ]]; then
+    HEASOFTPATH=`absolutefilename ${HEASOFTPATH}`
+  fi
+  if [[ "${HEASOFTPATH}" != "${HEASOFTPATH% *}" ]]; then
+    echo "ERROR: HEASoft needs to be installed in a path without spaces,"
+    echo "       but you chose: \"${HEASOFTPATH}\""
+    exit 1
+  fi
+  if [ "${HEASOFTPATH}" == "" ]; then
+    echo " * Download latest compatible version of HEASoft"
+  else
+    echo " * Using the installation of HEASoft ${HEASOFTPATH}"
+  fi
+else 
+  echo " * Not using HEASoft"
 fi
 
 
@@ -695,7 +723,7 @@ if [ "${ROOTPATH}" != "" ]; then
       exit 1
     else
       echo " "
-      echo "ERROR: The directory ${ROOTPATH} cannot be used as your ROOT version for MEGAlib."
+      echo "ERROR: The directory ${ROOTPATH} cannot be used as your ROOT install for MEGAlib."
       exit 1
     fi
   fi
@@ -713,6 +741,9 @@ else
   # If we have a new ROOT dir, copy the build log there
   NEWROOT4DIR=`grep ROOTDIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWROOT4DIR} ]]; then
+    if [[ -f ${NEWROOT4DIR}/RootBuildLog.txt ]]; then
+      mv ${NEWROOT4DIR}/RootBuildLog.txt ${NEWROOT4DIR}/RootBuildLog_before$(date +'%y%m%d%H%M%S').txt
+    fi
     mv RootBuildLog.txt ${NEWROOT4DIR}
   fi
 
@@ -766,7 +797,7 @@ if [ "${GEANT4PATH}" != "" ]; then
       exit 1
     else
       echo " "
-      echo "ERROR: The directory ${GEANT4PATH} cannot be used as your Geant4 version for MEGAlib."
+      echo "ERROR: The directory ${GEANT4PATH} cannot be used as your Geant4 install for MEGAlib."
       exit 1
     fi
   fi
@@ -785,6 +816,9 @@ else
   # If we have a new Geant4 dir, copy the build log there
   NEWGEANT4DIR=`grep GEANT4DIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
   if [[ -d ${NEWGEANT4DIR} ]]; then
+    if [[ -f ${NEWGEANT4DIR}/Geant4BuildLog.txt ]]; then
+      mv ${NEWGEANT4DIR}/Geant4BuildLog.txt ${NEWGEANT4DIR}/Geant4BuildLog_before$(date +'%y%m%d%H%M%S').txt
+    fi
     mv Geant4BuildLog.txt ${NEWGEANT4DIR}
   fi
 
@@ -808,17 +842,88 @@ echo "SUCCESS: We have a usable Geant4 version!"
 
 
 
+
+
+
 echo " "
-echo "(5) Setup MEGAlib"
+echo "(5) Downloading and building HEASoft"
+echo " "
+
+if [[ ${HEASOFTPATH} != off ]]; then
+  cd ${STARTPATH}
+  if [ "${HEASOFTPATH}" != "" ]; then
+    # Check if we can use the given Geant4 version
+  
+    bash ${MEGALIBDIR}/config/check-heasoftversion.sh --check=${HEASOFTPATH}
+    RESULT=$?
+    if [ "${RESULT}" != "0" ]; then
+      if [ "${RESULT}" == "127" ]; then
+        echo " "
+        echo "ERROR: Cannot find check-heasoftversion.sh. Either your MEGAlib version is too old or corrupt..."
+        exit 1
+      else
+        echo " "
+        echo "ERROR: The directory ${HEASOFTPATH} cannot be used as your HEASoft install for MEGAlib."
+        exit 1
+      fi
+    fi
+    echo "HEASOFTDIR=$(cd $(dirname ${HEASOFTPATH}); pwd)/$(basename ${HEASOFTPATH})" >> ${ENVFILE}
+  else
+    # Download and build a new HEASoft version
+    if [ ! -d ${EXTERNALPATH} ]; then
+      mkdir ${EXTERNALPATH}
+    fi
+    cd ${EXTERNALPATH}
+    echo "Switching to build-heasoft.sh script..."
+    bash ${MEGALIBDIR}/config/build-heasoft.sh -source=${ENVFILE}   2>&1 | tee HEASoftBuildLog.txt
+    RESULT=${PIPESTATUS[0]}
+  
+  
+    # If we have a new HEASoft dir, copy the build log there
+    NEWHEASOFTDIR=`grep HEASOFTDIR\= ${ENVFILE} | awk -F= '{ print $2 }'`
+    if [[ -d ${NEWHEASOFTDIR} ]]; then
+      if [[ -f ${NEWHEASOFTDIR}/HEASoftBuildLog.txt ]]; then
+        mv ${NEWHEASOFTDIR}/HEASoftBuildLog.txt ${NEWHEASOFTDIR}/HEASoftBuildLog_before$(date +'%y%m%d%H%M%S').txt
+      fi
+      mv HEASoftBuildLog.txt ${NEWHEASOFTDIR}
+    fi
+  
+    # Now handle build errors
+    if [ "${RESULT}" != "0" ]; then
+      if [ "${RESULT}" == "127" ]; then
+        echo " "
+        echo "ERROR: Cannot find build-geant4.sh. Either your MEGAlib version is too old or corrupt..."
+        exit 1
+      else
+        echo " "
+        echo "ERROR: Something went wrong during the HEASoft setup."
+        issuereport
+        exit 1
+      fi
+    fi
+  fi
+  fi
+
+echo " "
+echo "SUCCESS: We have a usable HEASoft version!"
+
+
+
+echo " "
+echo "(6) Setup MEGAlib"
 echo " "
 
 # Finalize the source script:
 echo " " >> ${ENVFILE}
-if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 0 )); then
-  echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
-else
-  echo "source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR} --geant4=\${GEANT4DIR} --megalib=\${MEGALIBDIR}" >> ${ENVFILE}
+ENVSTRING="source ${MEGALIBPATH}/config/env.sh --root=\${ROOTDIR}"
+if (( $(cat ${ENVFILE} | grep "^GEANT4DIR" | wc -l) == 1 )); then
+  ENVSTRING+=" --geant4=\${GEANT4DIR}"
 fi
+if (( $(cat ${ENVFILE} | grep "^HEASOFTDIR" | wc -l) == 1 )); then
+  ENVSTRING+=" --heasoft=\${HEASOFTDIR}"
+fi
+ENVSTRING+=" --megalib=\${MEGALIBDIR}"
+echo "${ENVSTRING}" >> ${ENVFILE}
 echo " " >> ${ENVFILE}
 
 source ${ENVFILE}

@@ -572,7 +572,7 @@ void MGUIMainMelinator::Create()
   // 3. Selection column
     
   
-  int SelectionColumnWidth = 125;
+  int SelectionColumnWidth = 135;
   
   
   TGLayoutHints* SelectionColumnLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandY, 10, 5, 14, 12);
@@ -580,9 +580,54 @@ void MGUIMainMelinator::Create()
   Columns->AddFrame(SelectionColumn, SelectionColumnLayout);
   
   TGLabel* MainSelectionLabel = new TGLabel(SelectionColumn, "Select a read-out element:");
-  TGLayoutHints* MainSelectionLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 3);
+  TGLayoutHints* MainSelectionLabelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 20);
   SelectionColumn->AddFrame(MainSelectionLabel, MainSelectionLabelLayout);
 
+  TGLabel* RMSLabel = new TGLabel(SelectionColumn, "Color coding in RMS of final fit:");
+  TGLayoutHints* RMSTitlelLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 0, 20, 2, 5);
+  SelectionColumn->AddFrame(RMSLabel, RMSTitlelLayout);
+
+  TGHorizontalFrame* RMSFrame = new TGHorizontalFrame(SelectionColumn, SelectionColumnWidth, SelectionColumnWidth); //, kRaisedFrame);
+  TGLayoutHints* RMSFrameLayout = new TGLayoutHints(kLHintsTop | kLHintsExpandX, 5, 20, 2, 20);
+  SelectionColumn->AddFrame(RMSFrame, RMSFrameLayout);
+
+  TGLayoutHints* RMSLabelLayout = new TGLayoutHints(kLHintsCenterY | kLHintsExpandX, 0, 0, 0, 0);
+ 
+  TGLabel* SmallerOneLabel = new TGLabel(RMSFrame, "0-1");
+  SmallerOneLabel->SetBackgroundColor(gROOT->GetColor(kGreen+1)->GetPixel());
+  SmallerOneLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerOneLabel, RMSLabelLayout);
+
+  TGLabel* SmallerTwoLabel = new TGLabel(RMSFrame, "1-2");
+  SmallerTwoLabel->SetBackgroundColor(gROOT->GetColor(kSpring)->GetPixel());
+  SmallerTwoLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerTwoLabel, RMSLabelLayout);
+
+  TGLabel* SmallerThreeLabel = new TGLabel(RMSFrame, "2-3");
+  SmallerThreeLabel->SetBackgroundColor(gROOT->GetColor(kYellow)->GetPixel());
+  SmallerThreeLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerThreeLabel, RMSLabelLayout);
+
+  TGLabel* SmallerFourLabel = new TGLabel(RMSFrame, "3-4");
+  SmallerFourLabel->SetBackgroundColor(gROOT->GetColor(kOrange-2)->GetPixel());
+  SmallerFourLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerFourLabel, RMSLabelLayout);
+
+  TGLabel* SmallerFiveLabel = new TGLabel(RMSFrame, "4-5");
+  SmallerFiveLabel->SetBackgroundColor(gROOT->GetColor(kOrange+1)->GetPixel());
+  SmallerFiveLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(SmallerFiveLabel, RMSLabelLayout);
+
+  TGLabel* LargerFiveLabel = new TGLabel(RMSFrame, "5+");
+  LargerFiveLabel->SetBackgroundColor(gROOT->GetColor(kRed)->GetPixel());
+  LargerFiveLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(LargerFiveLabel, RMSLabelLayout);
+
+  TGLabel* BadLabel = new TGLabel(RMSFrame, "Bad");
+  BadLabel->SetBackgroundColor(gROOT->GetColor(kGray+1)->GetPixel());  
+  BadLabel->SetMargins(0, 0, 5, 0);
+  RMSFrame->AddFrame(BadLabel, RMSLabelLayout);
+  
   // Main view:
   TGLayoutHints* MainSelectionCanvasLayout = new TGLayoutHints(kLHintsTop | kLHintsLeft | kLHintsExpandX | kLHintsExpandY, 0, 0, 5, 5);
   m_MainSelectionCanvas = new MGUIEReadOutElementView(SelectionColumn);
@@ -607,7 +652,7 @@ void MGUIMainMelinator::Create()
 //! Create the selection GUI element
 void MGUIMainMelinator::CreateSelection()
 {
-  m_MainSelectionCanvas->Clear();
+  m_MainSelectionCanvas->ClearReadOutElements();
   
   for (unsigned int c = 0; c < m_Melinator.GetNumberOfCollections(); ++c) {
     //if (c > 10) break;
@@ -1060,10 +1105,15 @@ bool MGUIMainMelinator::OnSwitchCalibrationModelDeterminationMode(unsigned int I
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2", MCalibrationModel::c_CalibrationModelPoly2);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 3", MCalibrationModel::c_CalibrationModelPoly3);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 4", MCalibrationModel::c_CalibrationModelPoly4);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly1Inv1Zero);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Inv 1", MCalibrationModel::c_CalibrationModelPoly1Inv1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1 Zero", MCalibrationModel::c_CalibrationModelPoly2Inv1Zero);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Inv 1", MCalibrationModel::c_CalibrationModelPoly2Inv1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 1", MCalibrationModel::c_CalibrationModelPoly1Exp1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 2", MCalibrationModel::c_CalibrationModelPoly1Exp2);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Exp 3", MCalibrationModel::c_CalibrationModelPoly1Exp3);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 1 + Log 1", MCalibrationModel::c_CalibrationModelPoly1Log1);
+    m_CalibrationModelDeterminationMethodFittingEnergyModel->AddEntry("Poly 2 + Log 1", MCalibrationModel::c_CalibrationModelPoly2Log1);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->Select(m_Settings->GetCalibrationModelDeterminationMethodFittingEnergyModel());
     m_CalibrationModelDeterminationMethodFittingEnergyModel->Associate(this);
     m_CalibrationModelDeterminationMethodFittingEnergyModel->SetHeight(FontScaler*24);
@@ -1217,7 +1267,8 @@ bool MGUIMainMelinator::OnLoadLast()
    
   m_Melinator.Clear();
   m_Melinator.SetSelectedDetectorID(m_Settings->GetSelectedDetectorID());
- 
+  m_Melinator.SetSelectedTemperatureWindow(m_Settings->GetMinimumTemperature(), m_Settings->GetMaximumTemperature());
+  
   MString FileName;
   MString IsotopeName;
   MIsotope Isotope;
@@ -1659,16 +1710,16 @@ void MGUIMainMelinator::UpdateCalibration(unsigned int Collection, bool DrawEner
     return;
   }
   
-  RMS = sqrt(RMS/GoodEntries);
+  RMS = sqrt(RMS/GoodEntries); // should be -1, but we don't want to handle the single case extra and it's close enough
     
   // Now set the colors:
   for (unsigned int i = 0; i < m_Melinator.GetNumberOfCollections(); ++i) {
     if (m_Melinator.GetCalibrationQuality(i) == -1) {
       m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), -1);
     } else {
-      int Quality = 0;
+      double Quality = 0;
       if (RMS > 0) {
-        Quality = (0.5*m_Melinator.GetCalibrationQuality(i)/RMS) + 1;
+        Quality = m_Melinator.GetCalibrationQuality(i)/RMS;
       }
       m_MainSelectionCanvas->SetQuality(m_Melinator.GetCollection(i).GetReadOutElement(), Quality);
     }

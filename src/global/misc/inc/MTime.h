@@ -136,7 +136,11 @@ class MTime
   MString GetShortString();
   // Return in Format: 1164864276.623883519
   MString GetLongIntsString() const;
-
+  // Return as fits date string: 31/12/94
+  MString GetFitsDateString();
+  // Return as fits time string: 15:45:57
+  MString GetFitsTimeString();
+  
   
   //! Get the time between NOW and the stored time in seconds as double 
   double GetElapsedSeconds();

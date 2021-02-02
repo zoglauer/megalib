@@ -170,7 +170,7 @@ void MString::ReplaceAtEndInPlace(const MString& From, const MString& To)
   if (EndsWith(From) == false) return;
   
   m_String.erase(Length() - From.Length(), From.Length());
-  m_String += To;
+  m_String += To.GetString();
 }
 
 

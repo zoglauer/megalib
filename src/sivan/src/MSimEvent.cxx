@@ -72,6 +72,7 @@ const int MSimEvent::c_StoreSimulationInfoAll = 0;
 const int MSimEvent::c_StoreSimulationInfoDepositsOnly = 1;
 const int MSimEvent::c_StoreSimulationInfoInitOnly = 2;
 const int MSimEvent::c_StoreSimulationInfoNone = 3;
+const int MSimEvent::c_StoreSimulationInfoIAOnly = 4;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2560,7 +2561,7 @@ void MSimEvent::RemoveAllHTs()
 void MSimEvent::RemoveAllHTsBut(MSimHT* HT)
 {
   //! Remove all but the given hit from the event  
-    
+
   vector<MSimHT*>::iterator I = m_HTs.begin();
   while (I != m_HTs.end()) {
     if ((*I) != HT) {
@@ -2907,10 +2908,10 @@ bool MSimEvent::Discretize(int Detector)
             Point.GetType() == MDGridPoint::c_XYZAnger) {
           MSimHT* Hit = new MSimHT(m_Geometry);
           Hit->Set((*Iter).first,
-                   Grid.GetWorldPositionGridPointAt(p),
-                   Point.GetEnergy(),
-                   Point.GetTime(),
-                   Point.GetOrigins(),
+                                   Grid.GetWorldPositionGridPointAt(p),
+                                   Point.GetEnergy(),
+                                   Point.GetTime(),
+                                   Point.GetOrigins(),
                    true);
           //cout<<"Hit (2): "<<Hit->GetPosition()<<endl;
 
@@ -3198,7 +3199,8 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
 
 
     if (WhatToStore == c_StoreSimulationInfoAll ||
-        WhatToStore == c_StoreSimulationInfoInitOnly) {
+        WhatToStore == c_StoreSimulationInfoInitOnly || 
+        WhatToStore == c_StoreSimulationInfoIAOnly) {
       for (unsigned int i = 0; i < GetNIAs(); ++i) {
         if ((GetIAAt(i)->GetProcess() != "INIT" && GetIAAt(i)->GetProcess() != "ENTR" && GetIAAt(i)->GetProcess() != "EXIT") && 
             WhatToStore == c_StoreSimulationInfoInitOnly) {
@@ -3207,21 +3209,25 @@ MString MSimEvent::ToSimString(const int WhatToStore, const int Precision, const
         out<<GetIAAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
       }
     }
-    for (unsigned int i = 0; i < GetNHTs(); ++i) {
-      out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
-    }
-    for (unsigned int i = 0; i < GetNGRs(); ++i) {
-      out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
-    }
-    map<MVector, double>::iterator Iter;
-    for (Iter = m_TotalDetectorEnergy.begin();
-         Iter != m_TotalDetectorEnergy.end(); ++Iter) {
-      mimp<<"XE only hacked!!! --- But anyway not used..."<<endl;
-      out<<"XE "<<(*Iter).first.X()<<";"<<(*Iter).first.Y()<<";"<<(*Iter).first.Z()<<";"<<(*Iter).second<<endl;
-    }
+    if (WhatToStore != c_StoreSimulationInfoIAOnly) {
+      for (unsigned int i = 0; i < GetNHTs(); ++i) {
+        out<<GetHTAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
 
-    for (unsigned int i = 0; i < GetNDRs(); ++i) {
-      out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      for (unsigned int i = 0; i < GetNGRs(); ++i) {
+        out<<GetGRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
+
+      map<MVector, double>::iterator Iter;
+      for (Iter = m_TotalDetectorEnergy.begin();
+           Iter != m_TotalDetectorEnergy.end(); ++Iter) {
+        mimp<<"XE only hacked!!! --- But anyway not used..."<<endl;
+        out<<"XE "<<(*Iter).first.X()<<";"<<(*Iter).first.Y()<<";"<<(*Iter).first.Z()<<";"<<(*Iter).second<<endl;
+      }
+
+      for (unsigned int i = 0; i < GetNDRs(); ++i) {
+        out<<GetDRAt(i)->ToSimString(WhatToStore, Precision, Version)<<endl;
+      }
     }
   }
 

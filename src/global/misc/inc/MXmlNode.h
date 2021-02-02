@@ -49,6 +49,8 @@ class MXmlNode : public MXmlData
   MXmlNode(MXmlNode* MotherNode, const MString& Name, long Value);
   //! Constructor -- content is unsigned integer
   MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned int Value);
+  //! Constructor -- content is long
+  MXmlNode(MXmlNode* MotherNode, const MString& Name, unsigned long Value);
   //! Constructor -- content is double
   MXmlNode(MXmlNode* MotherNode, const MString& Name, double Value);
   //! Constructor -- content is a vector

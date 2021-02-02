@@ -67,6 +67,8 @@ private:
   MString m_FileName;
   /// Geometry file name
   MString m_GeoFileName;
+  /// Maximum enetgy
+  double m_MaximumEnergy;
 };
 
 /******************************************************************************/
@@ -75,7 +77,7 @@ private:
 /******************************************************************************
  * Default constructor
  */
-GradedZ::GradedZ() : m_Interrupt(false)
+GradedZ::GradedZ() : m_Interrupt(false), m_MaximumEnergy(1000)
 {
   gStyle->SetPalette(1, 0);
 }
@@ -97,9 +99,11 @@ bool GradedZ::ParseCommandLine(int argc, char** argv)
 {
   ostringstream Usage;
   Usage<<endl;
-  Usage<<"  Usage: GradedZ <options>"<<endl;
+  Usage<<"  Usage: GradedZShield <options>"<<endl;
   Usage<<"    General options:"<<endl;
   Usage<<"         -f:   sim file name"<<endl;
+  Usage<<"         -g:   geometry file name"<<endl;
+  Usage<<"         -m:   max energy"<<endl;
   Usage<<"         -h:   print this help"<<endl;
   Usage<<endl;
 
@@ -136,6 +140,9 @@ bool GradedZ::ParseCommandLine(int argc, char** argv)
     } else if (Option == "-g") {
       m_GeoFileName = argv[++i];
       cout<<"Accepting file name: "<<m_GeoFileName<<endl;
+    } else if (Option == "-m") {
+      m_MaximumEnergy = atof(argv[++i]);
+      cout<<"Accepting file name: "<<m_MaximumEnergy<<endl;
     } else {
       cout<<"Error: Unknown option \""<<Option<<"\"!"<<endl;
       cout<<Usage.str()<<endl;
@@ -171,9 +178,9 @@ bool GradedZ::Analyze()
   cout<<"Opened file "<<SiReader.GetFileName()<<" created with MEGAlib version: "<<SiReader.GetMEGAlibVersion()<<endl;
   SiReader.ShowProgress();
 
-  int NBins = 200;
   double Emin = 0.0;
-  double Emax = 1000.0;
+  double Emax = m_MaximumEnergy;
+  int NBins = (Emax - Emin) / 10; 
 
   TH1D* MeasuredSpectrum = new TH1D("", "Measured Spectrum", NBins, Emin, Emax);
   MeasuredSpectrum->SetXTitle("Energy of primary [keV]");

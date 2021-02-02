@@ -130,7 +130,7 @@ class MString
 
   operator const char*() const { return m_String.c_str(); }
   // operator string() const { return m_String; } // VC++ 10 has problem with this
-  // operator TString() const { return TString(m_String.c_str()); } // ROOT has problems with this
+  operator TString() const { return TString(m_String); }
 
   //! To C++ string
   string ToString() const { return m_String; }

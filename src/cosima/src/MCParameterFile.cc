@@ -364,6 +364,8 @@ bool MCParameterFile::Parse()
           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoInitOnly;
         } else if (Type == "no" || Type == "none" || Type == "false") {
           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoNone;
+        } else if (Type == "ia" || Type == "ia-only"){
+           m_StoreSimulationInfo = MSimEvent::c_StoreSimulationInfoIAOnly; 
         } else {
           Typo(i, "Cannot parse token StoreSimulationInfo"
                " Unknown package string (Usage: e.g. \"StoreSimulationInfo all\"");
@@ -1362,7 +1364,7 @@ bool MCParameterFile::Parse()
                      " File not found!");
                 cout<<"File name was: "<<FileName<<endl;
                 return false;
-              } 
+              }
               if (Source->SetNormalizedEnergyBeamFluxFunction(FileName) == false) {
                 Typo(i, "Cannot parse token \"Beam - far field normalized energy beam flux function\" correctly:"
                      " Unable to initialize beam");

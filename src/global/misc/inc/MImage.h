@@ -118,7 +118,10 @@ class MImage
   static const int c_Thesis;
   static const int c_ThesisVarAtLow;
   static const int c_Rainbow;
-
+  static const int c_Bird;
+  static const int c_Viridis;
+  static const int c_Cividis;
+  
   static const int c_COL;
   static const int c_COLZ;
   static const int c_COLCONT4;

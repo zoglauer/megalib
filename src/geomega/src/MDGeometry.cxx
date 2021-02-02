@@ -1153,14 +1153,14 @@ bool MDGeometry::ScanSetupFile(MString FileName, bool CreateNodes, bool Virtuali
       }
 
       // We have to use TString
-      TString Name = Tokenizer.GetTokenAtAsString(1).Data();
-      gSystem->ExpandPathName(Name);
+      MString Name = Tokenizer.GetTokenAtAsString(1).Data();
+      MFile::ExpandFileName(Name);
 
       if (gSystem->IsAbsoluteFileName(Name) == false) {
         Name.Prepend("/");
         Name.Prepend(MFile::GetDirectoryName(m_FileName));
 
-        gSystem->ExpandPathName(Name);
+        MFile::ExpandFileName(Name);
       }
 
       m_CrossSectionFileDirectory = Name;
@@ -5543,7 +5543,7 @@ bool MDGeometry::CreateCrossSectionFiles()
   out.open(FileName);
   if (out.is_open() == false) {
     mout<<"   ***  Error  ***"<<endl;
-    mout<<"Unable to create cosima source file for cross section creation"<<endl;
+    mout<<"Unable to create cosima source file for cross section creation: "<<FileName<<endl;
     return false;
   }
 

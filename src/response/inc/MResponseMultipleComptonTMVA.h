@@ -47,6 +47,8 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   //! Default destructor
   virtual ~MResponseMultipleComptonTMVA();
   
+  //! Set the default options
+  static void SetDefaultOptions();
   //! Return a brief description of this response class
   static MString Description();
   //! Return information on the parsable options for this response class
@@ -82,6 +84,28 @@ class MResponseMultipleComptonTMVA : public MResponseMultipleCompton
   MERCSRTMVAMethods m_Methods;
   //! The methods string
   MString m_MethodsString;
+  
+  //! Selected options for MLP
+  MString m_MLPOptions;
+  //! Default options for MLP
+  static MString m_MLPOptionsDefault;
+  //! Selected options for BDTD
+  MString m_BDTDOptions;
+  //! Default options for BDTD
+  static MString m_BDTDOptionsDefault;
+  //! Selected options for PDEFoamBoost
+  MString m_PDEFoamBoostOptions;
+  //! Default options for PDEFoamBoost
+  static MString m_PDEFoamBoostOptionsDefault;
+  //! Selected options for DNN_CPU
+  MString m_DNNCPUOptions;
+  //! Default options for DNN_CPU
+  static MString m_DNNCPUOptionsDefault;
+  //! Selected option for DNN_GPU
+  MString m_DNNGPUOptions;
+  //! Default option for DNN_GPU
+  static MString m_DNNGPUOptionsDefault;
+  
   
   //! The good file names
   vector<MString> m_GoodFileNames;

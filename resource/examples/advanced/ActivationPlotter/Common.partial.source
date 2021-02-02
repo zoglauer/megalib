@@ -1,0 +1,12 @@
+# Common setup option for all simulations
+
+# Version of the source file
+Version 1
+
+# Geometry
+Geometry             MassModel_GRASP_v4/SMEX-microACT.geo.setup
+DetectorTimeConstant 0.000005
+
+# Output formats
+StoreSimulationInfo  init-only
+
