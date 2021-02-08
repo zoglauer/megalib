@@ -1,16 +1,73 @@
-# How to generate a background for a NuSTAR-like orbit
+How to generate a background for a NuSTAR-like orbit
 
-# Get trapped proton/electron and cosima proton/alpha particle files from SPENVIS
-# The given ones are for NuSTAR orbit
+(1)
+The given trapped proton/electron and cosima proton/alpha particle files are for a NuSTAR-like orbit 
+at launch time (altitude: 575 km, inclination: 6 degrees) 
+Use SPENVIS to create new ones: https://spenvis.oma.be/
 
-# Compile
-make
+(2)
+Compile the program BackgroundGenerator
+> make
 
-# Run:
-BackgroundGenerator -e 10 1000000000 -b 100 -o 575 6 12 -tps AverageTrappedProtonsElectronAP9Average.spenvis.txt -cps CosmicProtons.spenvis.txt -cas CosmicAlphas.spenvis.txt
+(3)
+Run it (here: NuSTAR-like orbit)
+> BackgroundGenerator -e 10 1000000000 -b 100 -o 575 6 12 -tps AverageTrappedProtonsElectronAP9Average.spenvis.txt -cps CosmicProtons.spenvis.txt -cas CosmicAlphas.spenvis.txt
 
-# View:
-root -x BackgroundViewer.C
+See:
+> BackgroundGenerator --help
+for a list of the options
 
-# How to use it with cosima:
-Include all *.partial.source file in your cosima source file
+This will generate the cosima compatible source files.
+
+(4)
+To view the background spectra run:
+> root -x BackgroundViewer.C
+
+(5)
+Setup the simulations:
+
+One of the key files is Common.partial.source
+
+Change the following line to yoy geometry:
+Geometry             > You geometry here <
+
+The other key files are 
+- PhotonicComponents.source
+- LeptonicComponents.source
+- HadronicComponentsPrompt.source
+- HadronicComponentsBuildUp.source
+- HadronicComponentsDecay.source
+- TrappedHadronicComponentsPrompt.source
+- TrappedHadronicComponentsBuildUp.source
+- TrappedHadronicComponentsDecay.source
+
+(6)
+Run the simulations
+
+First run these files they are the primary particles, sorted by type (photons, leptons, hadrons): 
+- PhotonicComponents.source
+- LeptonicComponents.source
+- HadronicComponentsPrompt.source
+- TrappedHadronicComponentsPrompt.source
+Usually you want to run multiple instances of each file to generate enough statistics.
+You can use "mcosima" for this task
+
+The hadronic components are just the first stage, i.e. the prompt interactions.
+Beside the prompt particle interactions, they also generate a list of newly generated isotopes.
+You have to use these files to calculate the build up after X years in orbit. 
+The default is 1 year in orbit, if your want to change this, modify the *BuildUp* files.
+
+Take another look at the content of one of these *BuildUp* files. There you will find a line:
+> for i in `ls HadronicBackgroundIsotopes.p1.inc*.dat`; do echo "A.IsotopeProductionFile $i" >> HadronicBackgroundIsotopes.source; done
+Execute this line in the directory where you ran your simulations, to generate a concatenation file "HadronicBackgroundIsotopes.source".
+
+Then run the BuildUp source file. This is a few minutes run, which needs to be done with cosima, not mcosima.
+At the end you have an isotope list with activities after 1 year in orbit.
+
+Then you can run the third stage of thge hadron files, the *Decay* files. 
+They simulate the radioactive decays due to activation build up.
+
+Now you have all background components for you background analysis.
+Remember to exclude the *prompt* trapped hadrons, if your instrument is OFF during SAA passages. 
+
+
