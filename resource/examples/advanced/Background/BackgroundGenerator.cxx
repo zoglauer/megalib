@@ -2720,7 +2720,7 @@ bool BackgroundGenerator::WriteSummaryFiles()
   tbout<<"# The activation calculation for one year const irradiation"<<endl;
   tbout<<"Activator A"<<endl;
   tbout<<"A.ActivationMode          ConstantIrradiation  31556736"<<endl;
-  tbout<<"A.ActivationFile          TrapopedHadronicBackgroundActivation.dat"<<endl;
+  tbout<<"A.ActivationFile          TrappedHadronicBackgroundActivation.dat"<<endl;
   tbout<<endl;
   tbout<<"# Now generate a source file with all the TrappedHadronicBackgroundIsotopes.* files, via"<<endl;
   tbout<<"# User > for i in `ls TrappedHadronicBackgroundIsotopes.p1.inc*.dat`; do echo \"A.IsotopeProductionFile $i\" >> TrappedHadronicBackgroundIsotopes.source; done"<<endl;
