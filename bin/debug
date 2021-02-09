@@ -129,6 +129,7 @@ if [ "${DEBUGGER}" == "gdb" ]; then
   #echo "catch throw" >> ${TMP}
   echo "handle SIGPIPE nostop" >> ${TMP}
   echo "run ${args}" >> ${TMP}
+  export MALLOC_CHECK_=3
   gdb -x ${TMP} ${program}
   rm ${TMP}
 elif [ "${DEBUGGER}" == "lldb" ]; then
