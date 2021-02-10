@@ -7,7 +7,7 @@ trap CleanUp SIGTERM SIGINT
 CleanUp() {
   echo " "
   echo " "
-  echo "Received command to shut down gracefully ($(date +%Y-%m-%d\ %H:%m:%S))..."
+  echo "Received command to shut down gracefully ($(date +%Y-%m-%d\ %H:%M:%S))..."
   echo " "
 
   if [ -f ${KillFileName} ]; then
@@ -309,7 +309,7 @@ fi
 
 
 echo " "
-echo "Launching mcosima on ${HOST} ($(date +%Y-%m-%d\ %H:%m:%S))"
+echo "Launching mcosima on ${HOST} ($(date +%Y-%m-%d\ %H:%M:%S))"
 echo " "
 echo "Executable: ${Executable}"
 echo "Number of threads to use: ${Threads}"
@@ -389,7 +389,7 @@ for (( i=1; i <= ${Threads}; i+=1 )); do
   # First check if we are ready to launch a new thread
   mwait -i=${Max} -p=cosima
   
-  echo "Launching cosima run ${i}/${Threads} ($(date +%Y-%m-%d\ %H:%m:%S))"
+  echo "Launching cosima run ${i}/${Threads} ($(date +%Y-%m-%d\ %H:%M:%S))"
   
   Seed=`od -vAn -N4 -tu4 < /dev/urandom`
   
