@@ -1,0 +1,21 @@
+DT SiStripDetector xDCal4L1 xDCal4L2 yDCal4L1 yDCal4L2 DCal8 ACDetectorTop ACDetectorBottom
+# Normal triggers requiring some kind of track and a calorimeter hit
+# Remark: It is completely OK to set 0 instead of 0+ in the anti- coincidence system to reject events with hits in the anti-coincidence system. However, doing it this way makes it easier for later diagnostics, i.e. finding out how many events have been vetoed versus simply didn’t trigger
+
+# Comptons - no interaction in the AC
+TV 1+ 1+ 0+ 0+ 0+ 0+ 0+ 0+
+TV 1+ 0+ 1+ 0+ 0+ 0+ 0+ 0+
+TV 1+ 0+ 0+ 1+ 0+ 0+ 0+ 0+
+TV 1+ 0+ 0+ 0+ 1+ 0+ 0+ 0+
+TV 1+ 0+ 0+ 0+ 0+ 1+ 0+ 0+
+
+# Pairs - interactions in the bottom AC allowed 
+TN 30+ 5+ 0+ 0+ 0+ 0+ 0+ 0+
+TN 30+ 0+ 5+ 0+ 0+ 0+ 0+ 0+
+TN 30+ 0+ 0+ 5+ 0+ 0+ 0+ 0+
+TN 30+ 0+ 0+ 0+ 5+ 0+ 0+ 0+
+TN 30+ 0+ 0+ 0+ 0+ 5+ 0+ 0+
+
+# Veto
+VT 0+ 0+ 0+ 0+ 0+ 0+ 1+ 0+
+VT 0+ 0+ 0+ 0+ 0+ 0+ 0+ 1+

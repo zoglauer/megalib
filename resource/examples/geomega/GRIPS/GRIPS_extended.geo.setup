@@ -1,0 +1,1166 @@
+//---------------------------------------
+// A completely flexible MEGA geometry...
+
+
+Name MEGAFlexible
+Version 1.2
+
+Echo The surrounding sphere is NOT automatically updated!
+SurroundingSphere 155.0  0.0  0.0  -65.0  155.0
+
+// Use this volume, to test the surrounding sphere:
+#Volume Sphere
+#Sphere.Material Vacuum
+#Sphere.Shape SPHE 0.0 155.0 0.0 180.0 0.0 360.
+#Sphere.Position 0.0 0.0 -65.0
+#Sphere.Mother WorldVolume
+
+#ShowVolumes false
+
+Include $(MEGALIB)/resource/examples/geomega/materials/Materials.geo
+
+AbsorptionFileDirectory absorptions
+
+# Defineables - dimensions of the search data-space:
+Constant NWafersXY                          8
+Constant NWafersZ                           64
+Constant WaferDistance                      0.5
+Constant SizeCalorimeterCrystalsB           8.0
+Constant SizeCalorimeterCrystalsSideL1      2.0
+Constant SizeCalorimeterCrystalsSideL2      4.0
+
+
+# Fixed Constants:
+Constant SizeTrackerWaferActiveXY     10.0
+Constant SizeTrackerWaferGuardRing    0.15
+Constant SizeTrackerWaferXY           { SizeTrackerWaferActiveXY + 2*SizeTrackerWaferGuardRing } 
+Constant SizeTrackerWaferZ             0.05
+Constant SizeTrackerFrameZ             0.3
+Constant SizeTrackerElectronicsX       2.0
+Constant SizeTrackerElectronicsZ       0.1
+Constant GapTrackerCalorimeterXY       1.0
+Constant GapTrackerAroundWafersXY      0.2
+Constant GapTrackerCalorimeterZ        2.0
+Constant SizeTrackerMountingXY         3.0
+Constant SizeTrackerMountingZ          0.5
+Constant SizeTrackerMountingThinZ      0.02
+
+
+Constant SizeCalorimeterCrystalsXY      0.5
+Constant GapCalorimeterAroundCrystals  0.025
+Constant NCrystalsPerBlock               8  
+Constant SizeCalorimeterElectronicsZ   0.1
+Constant SizeCalorimeterDiodesZ        0.03
+Constant SizeCalorimeterHousing        2.0
+Constant SizeCalorimeterHousingSide    1.5
+Constant SizeCalorimeterHousingBlock   0.1
+Constant SizeCalorimeterHousingFront   0.1
+
+Constant SeparationCalorimeterSideL1L2 0.5  
+
+# Visibility
+Constant CalorimeterDetails 0
+Constant CalorimeterDetectorMaterial 0
+Constant TrackerDetails 0
+Constant TrackerDetectorMaterial 1
+
+
+
+# Resulting Constants
+Constant SizeTrackerXY { SizeLayerXY +  2*SizeTrackerMountingZ}
+Constant SizeTrackerZ { SizeLayerZ + 2*SizeTrackerMountingZ}
+Constant SizeLayerXY { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY) + 2*(SizeTrackerElectronicsX+2*GapTrackerAroundWafersXY) + 2*GapTrackerAroundWafersXY }
+Constant SizeLayerZ { NWafersZ*WaferDistance }
+
+
+Constant SizeCalorimeterCrystalPlusSurroundings { SizeCalorimeterCrystalsXY + 2*GapCalorimeterAroundCrystals } 
+Constant SizeCalorimeterBlock { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings + 2*SizeCalorimeterHousingBlock }
+
+
+Constant NBlocksBXY { TMath::Ceil((SizeLayerXY +  2*GapTrackerCalorimeterXY + 2*SizeCalorimeterCrystalsSideL1 - 2*SizeCalorimeterHousingSide)/SizeCalorimeterBlock)+1 }
+
+Echo Bottom Blocks XY: NBlocksBXY
+
+Constant SizeCalorimeterBXY { NBlocksBXY*SizeCalorimeterBlock + 2*SizeCalorimeterHousingSide }
+Constant SizeCalorimeterBZ { SizeCalorimeterCrystalsB + 2*SizeCalorimeterDiodesZ + 2*SizeCalorimeterElectronicsZ + SizeCalorimeterHousing + SizeCalorimeterHousingFront }
+
+
+Constant NBlocksSideXY { TMath::Ceil((SizeTrackerXY +  2*GapTrackerCalorimeterXY)/SizeCalorimeterBlock) } 
+Constant NBlocksSideXZ { TMath::Ceil((SizeTrackerZ +  2*GapTrackerCalorimeterZ - 2*SizeCalorimeterHousingSide)/SizeCalorimeterBlock) }
+Constant NBlocksSideXZL1 { TMath::Ceil(SeparationCalorimeterSideL1L2*NBlocksSideXZ) }
+Constant NBlocksSideXZL2 { NBlocksSideXZ - NBlocksSideXZL1 }
+
+Echo Side X: NBlocksSideXY NBlocksSideXZL1 NBlocksSideXZL2
+
+
+Constant SizeCalorimeterSideXY { NBlocksSideXY*SizeCalorimeterBlock + 2*SizeCalorimeterHousingFront  }
+Constant SizeCalorimeterSideXZL1 { NBlocksSideXZL1*SizeCalorimeterBlock + 2*SizeCalorimeterHousingFront  }
+Constant SizeCalorimeterSideXZL2 { NBlocksSideXZL2*SizeCalorimeterBlock + 2*SizeCalorimeterHousingFront  }
+Constant SizeCalorimeterSideXZ { SizeCalorimeterSideXZL1 + SizeCalorimeterSideXZL2 }
+Constant SizeCalorimeterSideXXL1 { SizeCalorimeterCrystalsSideL1 + SizeCalorimeterDiodesZ + SizeCalorimeterElectronicsZ + SizeCalorimeterHousing + SizeCalorimeterHousingFront }
+Constant SizeCalorimeterSideXXL2 { SizeCalorimeterCrystalsSideL2 + SizeCalorimeterDiodesZ + SizeCalorimeterElectronicsZ + SizeCalorimeterHousing + SizeCalorimeterHousingFront }
+
+
+
+Constant NBlocksSideYX { TMath::Ceil((SizeTrackerXY +  2*GapTrackerCalorimeterXY)/SizeCalorimeterBlock) } 
+Constant NBlocksSideYZ { NBlocksSideXZ }
+Constant NBlocksSideYZL1 { NBlocksSideXZL1 }
+Constant NBlocksSideYZL2 { NBlocksSideXZL2 }
+
+Echo Side Y: NBlocksSideYX NBlocksSideYZL1 NBlocksSideYZL2
+
+Constant SizeCalorimeterSideYX { NBlocksSideYX*SizeCalorimeterBlock + 2*SizeCalorimeterHousingFront }
+Constant SizeCalorimeterSideYYL1 { SizeCalorimeterSideXXL1 }
+Constant SizeCalorimeterSideYYL2 { SizeCalorimeterSideXXL2 }
+Constant SizeCalorimeterSideYZL1 { SizeCalorimeterSideXZL1 }
+Constant SizeCalorimeterSideYZL2 { SizeCalorimeterSideXZL2 }
+Constant SizeCalorimeterSideYZ { SizeCalorimeterSideXZL1 + SizeCalorimeterSideXZL2 }
+
+
+
+Constant BasePlateMargin 4.0
+Constant BasePlateHeight 4.0
+Constant BasePlateRadius { TMath::Max(TMath::Sqrt(2*SizeCalorimeterBXY/2.0*SizeCalorimeterBXY/2.0), TMath::Sqrt(2*TMath::Power(SizeCalorimeterSideXY/2.0 + TMath::Max(SizeCalorimeterSideYYL1, SizeCalorimeterSideYYL2), 2))) + BasePlateMargin }
+
+Constant ACSBottomOverhead 20.0
+Constant ACSThickness       1.5 
+Constant ACSBottomOffset    0.5
+
+Constant ChannelsPerCmD1              { 126.0/6.0 }
+Constant NChannels                    { (2*NBlocksSideXY*NBlocksSideXZ + 2*NBlocksSideYX*NBlocksSideYZ + 2*NBlocksBXY*NBlocksBXY)*NCrystalsPerBlock*NCrystalsPerBlock + 4*NWafersZ*NWafersXY*SizeTrackerWaferActiveXY*ChannelsPerCmD1 }
+Echo Number of channels NChannels
+Constant ElectronicsPerChannel        0.617
+Constant ElectronicsDensity           1.8
+Constant SizeElectronicsBoxXY         { 0.8*SizeCalorimeterBXY }
+Constant SizeElectronicsBoxZ          { 2 * ElectronicsPerChannel*NChannels/(ElectronicsDensity*SizeElectronicsBoxXY*SizeElectronicsBoxXY) }
+
+
+
+#-----------------------------------------------------------
+
+
+Volume WorldVolume             
+WorldVolume.Material Vacuum
+WorldVolume.Visibility 0   
+WorldVolume.Shape BRIK 5000. 5000. 5000.
+WorldVolume.Mother 0
+
+// Add the spacecraft:
+#Include ACTSpacecraftModel.geo
+
+Constant SpaceCraftScaler 0.82
+Constant SpaceCraftHeight { SpaceCraftScaler*2*78.42 }
+
+//Spacecraft Body
+SCbody.Position 0. 0. { -BasePlateHeight - 2*ACSBottomOffset - ACSThickness - SizeElectronicsBoxZ - SpaceCraftHeight/2.0 }
+SCbody.Scale SpaceCraftScaler
+SCbody.Mother WorldVolume
+
+//------------------------------------------------------------
+// Define calorimeter
+
+Volume BottomCalorimeterCrystal
+BottomCalorimeterCrystal.Material LaBr3
+BottomCalorimeterCrystal.Visibility CalorimeterDetectorMaterial
+BottomCalorimeterCrystal.Color 3
+BottomCalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsB/2.0 }
+
+Volume BottomCalorimeterWrapper
+BottomCalorimeterWrapper.Material Millipore
+BottomCalorimeterWrapper.Visibility 0
+BottomCalorimeterWrapper.Color 3
+BottomCalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*(SizeCalorimeterCrystalPlusSurroundings)/2.0 } { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsB/2.0 }
+
+# Position the Crystals in the Wrapper
+For X NCrystalsPerBlock { - NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 + GapCalorimeterAroundCrystals + SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  BottomCalorimeterCrystal.Copy BottomCalorimeterCrystal_%X
+  BottomCalorimeterCrystal_%X.Position $X 0 0
+  BottomCalorimeterCrystal_%X.Mother BottomCalorimeterWrapper
+Done
+
+Volume BottomCalorimeterElectronics
+BottomCalorimeterElectronics.Material CircuitBoard
+BottomCalorimeterElectronics.Visibility CalorimeterDetails
+BottomCalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
+
+Volume BottomCalorimeterDiodes
+BottomCalorimeterDiodes.Material SiliconPIN
+BottomCalorimeterDiodes.Visibility CalorimeterDetails
+BottomCalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
+
+
+# Create the block:
+Volume BottomCalorimeterBlock
+BottomCalorimeterBlock.Material CarbonCyanateEster
+BottomCalorimeterBlock.Visibility 1
+BottomCalorimeterBlock.Color 3
+BottomCalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBZ/2.0 }
+
+
+# Position Wrappers and additional stuff in calorimeter block
+BottomCalorimeterElectronics.Copy BottomCalorimeterElectronics_1
+BottomCalorimeterElectronics_1.Position 0 0 { SizeCalorimeterBZ/2.0 - SizeCalorimeterHousingFront - SizeCalorimeterElectronicsZ/2.0 }
+BottomCalorimeterElectronics_1.Mother BottomCalorimeterBlock
+
+BottomCalorimeterElectronics.Copy BottomCalorimeterElectronics_2
+BottomCalorimeterElectronics_2.Position 0 0 { - SizeCalorimeterBZ/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ/2.0 }
+BottomCalorimeterElectronics_2.Mother BottomCalorimeterBlock
+
+BottomCalorimeterDiodes.Copy BottomCalorimeterDiodes_1
+BottomCalorimeterDiodes_1.Position 0 0 { SizeCalorimeterBZ/2.0 - SizeCalorimeterHousingFront - SizeCalorimeterElectronicsZ - SizeCalorimeterDiodesZ/2.0 }
+BottomCalorimeterDiodes_1.Mother BottomCalorimeterBlock
+
+BottomCalorimeterDiodes.Copy BottomCalorimeterDiodes_2
+BottomCalorimeterDiodes_2.Position 0 0 { - SizeCalorimeterBZ/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ/2.0 }
+BottomCalorimeterDiodes_2.Mother BottomCalorimeterBlock
+
+For Y NCrystalsPerBlock { - SizeCalorimeterBlock/2.0 + SizeCalorimeterHousingBlock + SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  BottomCalorimeterWrapper.Copy BottomCalorimeterWrapper_%Y
+  BottomCalorimeterWrapper_%Y.Position 0 $Y { SizeCalorimeterBZ/2.0 - SizeCalorimeterHousingFront - SizeCalorimeterElectronicsZ - SizeCalorimeterDiodesZ - SizeCalorimeterCrystalsB/2.0 }
+  BottomCalorimeterWrapper_%Y.Mother BottomCalorimeterBlock
+Done
+
+
+# Create calorimeter
+Volume BottomCalorimeter
+BottomCalorimeter.Material CarbonCyanateEster
+BottomCalorimeter.Visibility 1
+BottomCalorimeter.Shape BRIK { SizeCalorimeterBXY/2.0 } { SizeCalorimeterBXY/2.0 } { SizeCalorimeterBZ/2.0 }
+BottomCalorimeter.Position 0.0 0.0 { SizeCalorimeterBZ/2.0 } 
+BottomCalorimeter.Mother WorldVolume
+
+# Position blocks in calorimeter 
+For X NBlocksBXY { - SizeCalorimeterBXY/2.0 + SizeCalorimeterHousingSide + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+For Y NBlocksBXY { - SizeCalorimeterBXY/2.0 + SizeCalorimeterHousingSide + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+  BottomCalorimeterBlock.Copy BottomCalorimeterBlock_%X_%Y
+  BottomCalorimeterBlock_%X_%Y.Position $X $Y 0.0
+  BottomCalorimeterBlock_%X_%Y.Mother BottomCalorimeter
+Done
+Done
+
+
+
+#-------------------------------------------------------
+
+Volume SideXL1CalorimeterCrystal
+SideXL1CalorimeterCrystal.Material LaBr3
+SideXL1CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
+SideXL1CalorimeterCrystal.Color 3
+SideXL1CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
+
+Volume SideXL1CalorimeterWrapper
+SideXL1CalorimeterWrapper.Material Millipore
+SideXL1CalorimeterWrapper.Visibility CalorimeterDetails
+SideXL1CalorimeterWrapper.Color 3
+SideXL1CalorimeterWrapper.Shape BRIK { SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalsSideL1/2.0 }
+
+# Position the Crystals in the Wrapper
+For X NCrystalsPerBlock { - NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 + GapCalorimeterAroundCrystals + SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideXL1CalorimeterCrystal.Copy SideXL1CalorimeterCrystal_%X
+  SideXL1CalorimeterCrystal_%X.Position 0 $X 0
+  SideXL1CalorimeterCrystal_%X.Mother SideXL1CalorimeterWrapper
+Done
+
+Volume SideXL1CalorimeterElectronics
+SideXL1CalorimeterElectronics.Material CircuitBoard
+SideXL1CalorimeterElectronics.Visibility CalorimeterDetails
+SideXL1CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
+
+Volume SideXL1CalorimeterDiodes
+SideXL1CalorimeterDiodes.Material SiliconPIN
+SideXL1CalorimeterDiodes.Visibility CalorimeterDetails
+SideXL1CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
+
+
+# Position calorimeter
+Volume SideXL1CalorimeterBlock
+SideXL1CalorimeterBlock.Material CarbonCyanateEster
+SideXL1CalorimeterBlock.Visibility 1
+SideXL1CalorimeterBlock.Color 3
+SideXL1CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideXXL1/2.0 }
+
+
+# Position Wrappers and additional stuff in calorimeter
+SideXL1CalorimeterElectronics.Copy SideXL1CalorimeterElectronics_1
+SideXL1CalorimeterElectronics_1.Position 0 0 { -SizeCalorimeterSideXXL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ/2.0 }
+SideXL1CalorimeterElectronics_1.Mother SideXL1CalorimeterBlock
+
+SideXL1CalorimeterDiodes.Copy SideXL1CalorimeterDiodes_1
+SideXL1CalorimeterDiodes_1.Position 0 0 { - SizeCalorimeterSideXXL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ/2.0 }
+SideXL1CalorimeterDiodes_1.Mother SideXL1CalorimeterBlock
+
+For Y NCrystalsPerBlock { - SizeCalorimeterBlock/2.0 + SizeCalorimeterHousingBlock + SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideXL1CalorimeterWrapper.Copy SideXL1CalorimeterWrapper_%Y
+  SideXL1CalorimeterWrapper_%Y.Position $Y 0 { - SizeCalorimeterSideXXL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ + SizeCalorimeterCrystalsSideL1/2.0 }
+  SideXL1CalorimeterWrapper_%Y.Mother SideXL1CalorimeterBlock
+Done
+
+# Position calorimeter
+Volume SideXL1Calorimeter
+SideXL1Calorimeter.Material CarbonCyanateEster
+SideXL1Calorimeter.Visibility 1
+SideXL1Calorimeter.Shape BRIK { SizeCalorimeterSideXZL1/2.0 } { SizeCalorimeterSideXY/2.0 } { SizeCalorimeterSideXXL1/2.0 }
+
+# Position blocks in calorimeter 
+For Y NBlocksSideXY { - SizeCalorimeterSideXY/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+For Z NBlocksSideXZL1 { - SizeCalorimeterSideXZL1/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+  SideXL1CalorimeterBlock.Copy SideXL1CalorimeterBlock_%Z_%Y
+  SideXL1CalorimeterBlock_%Z_%Y.Position $Z $Y 0.0
+  SideXL1CalorimeterBlock_%Z_%Y.Mother SideXL1Calorimeter
+Done
+Done
+
+
+SideXL1Calorimeter.Copy SideXL1CalorimeterNeg
+SideXL1CalorimeterNeg.Rotation 0 -90.0 0
+SideXL1CalorimeterNeg.Position { SizeTrackerXY/2.0 + SizeCalorimeterSideXXL1/2.0 } 0.0 { SizeCalorimeterBZ + SizeCalorimeterSideXZL2 + SizeCalorimeterSideXZL1/2.0 } 
+SideXL1CalorimeterNeg.Mother WorldVolume
+
+SideXL1Calorimeter.Copy SideXL1CalorimeterPos
+SideXL1CalorimeterPos.Rotation 0 90.0 0
+SideXL1CalorimeterPos.Position { -SizeTrackerXY/2.0 - SizeCalorimeterSideXXL1/2.0 } 0.0 { SizeCalorimeterBZ + SizeCalorimeterSideXZL2 + SizeCalorimeterSideXZL1/2.0 } 
+SideXL1CalorimeterPos.Mother WorldVolume
+
+
+
+#-------------------------------------------------------
+
+Volume SideXL2CalorimeterCrystal
+SideXL2CalorimeterCrystal.Material LaBr3
+SideXL2CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
+SideXL2CalorimeterCrystal.Color 3
+SideXL2CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
+
+Volume SideXL2CalorimeterWrapper
+SideXL2CalorimeterWrapper.Material Millipore
+SideXL2CalorimeterWrapper.Visibility CalorimeterDetails
+SideXL2CalorimeterWrapper.Color 3
+SideXL2CalorimeterWrapper.Shape BRIK { SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalsSideL2/2.0 }
+
+# Position the Crystals in the Wrapper
+For X NCrystalsPerBlock { - NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 + GapCalorimeterAroundCrystals + SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideXL2CalorimeterCrystal.Copy SideXL2CalorimeterCrystal_%X
+  SideXL2CalorimeterCrystal_%X.Position 0 $X 0
+  SideXL2CalorimeterCrystal_%X.Mother SideXL2CalorimeterWrapper
+Done
+
+Volume SideXL2CalorimeterElectronics
+SideXL2CalorimeterElectronics.Material CircuitBoard
+SideXL2CalorimeterElectronics.Visibility CalorimeterDetails
+SideXL2CalorimeterElectronics.Color 3
+SideXL2CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
+
+Volume SideXL2CalorimeterDiodes
+SideXL2CalorimeterDiodes.Material SiliconPIN
+SideXL2CalorimeterDiodes.Visibility CalorimeterDetails
+SideXL2CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
+
+
+# Position calorimeter
+Volume SideXL2CalorimeterBlock
+SideXL2CalorimeterBlock.Material CarbonCyanateEster
+SideXL2CalorimeterBlock.Visibility 1
+SideXL2CalorimeterBlock.Color 3
+SideXL2CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideXXL2/2.0 }
+
+
+# Position Wrappers and additional stuff in calorimeter
+SideXL2CalorimeterElectronics.Copy SideXL2CalorimeterElectronics_1
+SideXL2CalorimeterElectronics_1.Position 0 0 { -SizeCalorimeterSideXXL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ/2.0 }
+SideXL2CalorimeterElectronics_1.Mother SideXL2CalorimeterBlock
+
+SideXL2CalorimeterDiodes.Copy SideXL2CalorimeterDiodes_1
+SideXL2CalorimeterDiodes_1.Position 0 0 { - SizeCalorimeterSideXXL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ/2.0 }
+SideXL2CalorimeterDiodes_1.Mother SideXL2CalorimeterBlock
+
+For Y NCrystalsPerBlock { - SizeCalorimeterBlock/2.0 + SizeCalorimeterHousingBlock + SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideXL2CalorimeterWrapper.Copy SideXL2CalorimeterWrapper_%Y
+  SideXL2CalorimeterWrapper_%Y.Position $Y 0 { - SizeCalorimeterSideXXL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ + SizeCalorimeterCrystalsSideL2/2.0 }
+  SideXL2CalorimeterWrapper_%Y.Mother SideXL2CalorimeterBlock
+Done
+
+# Position calorimeter
+Volume SideXL2Calorimeter
+SideXL2Calorimeter.Material CarbonCyanateEster
+SideXL2Calorimeter.Visibility 1
+SideXL2Calorimeter.Shape BRIK { SizeCalorimeterSideXZL2/2.0 } { SizeCalorimeterSideXY/2.0 } { SizeCalorimeterSideXXL2/2.0 }
+
+# Position blocks in calorimeter 
+For Y NBlocksSideXY { - SizeCalorimeterSideXY/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+For Z NBlocksSideXZL2 { - SizeCalorimeterSideXZL2/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+  SideXL2CalorimeterBlock.Copy SideXL2CalorimeterBlock_%Z_%Y
+  SideXL2CalorimeterBlock_%Z_%Y.Position $Z $Y 0.0
+  SideXL2CalorimeterBlock_%Z_%Y.Mother SideXL2Calorimeter
+Done
+Done
+
+
+SideXL2Calorimeter.Copy SideXL2CalorimeterNeg
+SideXL2CalorimeterNeg.Rotation 0 -90.0 0
+SideXL2CalorimeterNeg.Position { SizeTrackerXY/2.0 + SizeCalorimeterSideXXL2/2.0 } 0.0 { SizeCalorimeterBZ + SizeCalorimeterSideXZL2/2.0 } 
+SideXL2CalorimeterNeg.Mother WorldVolume
+
+SideXL2Calorimeter.Copy SideXL2CalorimeterPos
+SideXL2CalorimeterPos.Rotation 0 90.0 0
+SideXL2CalorimeterPos.Position { -SizeTrackerXY/2.0 - SizeCalorimeterSideXXL2/2.0 } 0.0 { SizeCalorimeterBZ + SizeCalorimeterSideXZL2/2.0 } 
+SideXL2CalorimeterPos.Mother WorldVolume
+
+
+
+
+#-------------------------------------------------------
+
+
+Volume SideYL1CalorimeterCrystal
+SideYL1CalorimeterCrystal.Material LaBr3
+SideYL1CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
+SideYL1CalorimeterCrystal.Color 3
+SideYL1CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
+
+Volume SideYL1CalorimeterWrapper
+SideYL1CalorimeterWrapper.Material Millipore
+SideYL1CalorimeterWrapper.Visibility CalorimeterDetails
+SideYL1CalorimeterWrapper.Color 3
+SideYL1CalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsSideL1/2.0 }
+
+# Position the Crystals in the Wrapper
+For X NCrystalsPerBlock { - NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 + GapCalorimeterAroundCrystals + SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideYL1CalorimeterCrystal.Copy SideYL1CalorimeterCrystal_%X
+  SideYL1CalorimeterCrystal_%X.Position $X 0 0
+  SideYL1CalorimeterCrystal_%X.Mother SideYL1CalorimeterWrapper
+Done
+
+Volume SideYL1CalorimeterElectronics
+SideYL1CalorimeterElectronics.Material CircuitBoard
+SideYL1CalorimeterElectronics.Visibility CalorimeterDetails
+SideYL1CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
+
+Volume SideYL1CalorimeterDiodes
+SideYL1CalorimeterDiodes.Material SiliconPIN
+SideYL1CalorimeterDiodes.Visibility CalorimeterDetails
+SideYL1CalorimeterDiodes.Color 3
+SideYL1CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
+
+
+# Position calorimeter
+Volume SideYL1CalorimeterBlock
+SideYL1CalorimeterBlock.Material CarbonCyanateEster
+SideYL1CalorimeterBlock.Visibility 1
+SideYL1CalorimeterBlock.Color 3
+SideYL1CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideYYL1/2.0 }
+
+
+# Position Wrappers and additional stuff in calorimeter
+SideYL1CalorimeterElectronics.Copy SideYL1CalorimeterElectronics_1
+SideYL1CalorimeterElectronics_1.Position 0 0 { -SizeCalorimeterSideYYL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ/2.0 }
+SideYL1CalorimeterElectronics_1.Mother SideYL1CalorimeterBlock
+
+SideYL1CalorimeterDiodes.Copy SideYL1CalorimeterDiodes_1
+SideYL1CalorimeterDiodes_1.Position 0 0 { - SizeCalorimeterSideYYL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ/2.0 }
+SideYL1CalorimeterDiodes_1.Mother SideYL1CalorimeterBlock
+
+
+For Y NCrystalsPerBlock { - SizeCalorimeterBlock/2.0 + SizeCalorimeterHousingBlock + SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideYL1CalorimeterWrapper.Copy SideYL1CalorimeterWrapper_%Y
+  SideYL1CalorimeterWrapper_%Y.Position 0 $Y { - SizeCalorimeterSideYYL1/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ + SizeCalorimeterCrystalsSideL1/2.0 }
+  SideYL1CalorimeterWrapper_%Y.Mother SideYL1CalorimeterBlock
+Done
+
+# Position calorimeter
+Volume SideYL1Calorimeter
+SideYL1Calorimeter.Material CarbonCyanateEster
+SideYL1Calorimeter.Visibility 1
+SideYL1Calorimeter.Shape BRIK { SizeCalorimeterSideYX/2.0 } { SizeCalorimeterSideYZL1/2.0 } { SizeCalorimeterSideYYL1/2.0 }
+
+# Position blocks in calorimeter 
+For X NBlocksSideYX { - SizeCalorimeterSideYX/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+For Z NBlocksSideYZL1 { - SizeCalorimeterSideYZL1/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+  SideYL1CalorimeterBlock.Copy SideYL1CalorimeterBlock_%X_%Z
+  SideYL1CalorimeterBlock_%X_%Z.Position $X $Z 0.0
+  SideYL1CalorimeterBlock_%X_%Z.Mother SideYL1Calorimeter
+Done
+Done
+
+
+SideYL1Calorimeter.Copy SideYL1CalorimeterNeg
+SideYL1CalorimeterNeg.Rotation 90.0 0.0 0.0
+SideYL1CalorimeterNeg.Position 0.0 { SizeCalorimeterSideXY/2.0 + SizeCalorimeterSideYYL1/2.0 } { SizeCalorimeterBZ + SizeCalorimeterSideYZL2 + SizeCalorimeterSideYZL1/2.0 } 
+SideYL1CalorimeterNeg.Mother WorldVolume
+
+SideYL1Calorimeter.Copy SideYL1CalorimeterPos
+SideYL1CalorimeterPos.Rotation -90.0 0.0 0.0
+SideYL1CalorimeterPos.Position 0.0 { -SizeCalorimeterSideXY/2.0 - SizeCalorimeterSideYYL1/2.0 } { SizeCalorimeterBZ + SizeCalorimeterSideYZL2 + SizeCalorimeterSideYZL1/2.0 } 
+SideYL1CalorimeterPos.Mother WorldVolume
+
+
+
+
+#-------------------------------------------------------
+
+
+Volume SideYL2CalorimeterCrystal
+SideYL2CalorimeterCrystal.Material LaBr3
+SideYL2CalorimeterCrystal.Visibility CalorimeterDetectorMaterial
+SideYL2CalorimeterCrystal.Color 3
+SideYL2CalorimeterCrystal.Shape BRIK { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
+
+Volume SideYL2CalorimeterWrapper
+SideYL2CalorimeterWrapper.Material Millipore
+SideYL2CalorimeterWrapper.Visibility CalorimeterDetails
+SideYL2CalorimeterWrapper.Color 3
+SideYL2CalorimeterWrapper.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 }  { SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalsSideL2/2.0 }
+
+# Position the Crystals in the Wrapper
+For X NCrystalsPerBlock { - NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 + GapCalorimeterAroundCrystals + SizeCalorimeterCrystalsXY/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideYL2CalorimeterCrystal.Copy SideYL2CalorimeterCrystal_%X
+  SideYL2CalorimeterCrystal_%X.Position $X 0 0
+  SideYL2CalorimeterCrystal_%X.Mother SideYL2CalorimeterWrapper
+Done
+
+Volume SideYL2CalorimeterElectronics
+SideYL2CalorimeterElectronics.Material CircuitBoard
+SideYL2CalorimeterElectronics.Visibility CalorimeterDetails
+SideYL2CalorimeterElectronics.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterElectronicsZ/2.0 }
+
+Volume SideYL2CalorimeterDiodes
+SideYL2CalorimeterDiodes.Material SiliconPIN
+SideYL2CalorimeterDiodes.Visibility CalorimeterDetails
+SideYL2CalorimeterDiodes.Shape BRIK { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { NCrystalsPerBlock*SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterDiodesZ/2.0 }
+
+
+# Position calorimeter
+Volume SideYL2CalorimeterBlock
+SideYL2CalorimeterBlock.Material CarbonCyanateEster
+SideYL2CalorimeterBlock.Visibility CalorimeterDetails
+SideYL2CalorimeterBlock.Color 3
+SideYL2CalorimeterBlock.Shape BRIK { SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock/2.0 } { SizeCalorimeterSideYYL2/2.0 }
+
+
+# Position Wrappers and additional stuff in calorimeter
+SideYL2CalorimeterElectronics.Copy SideYL2CalorimeterElectronics_1
+SideYL2CalorimeterElectronics_1.Position 0 0 { -SizeCalorimeterSideYYL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ/2.0 }
+SideYL2CalorimeterElectronics_1.Mother SideYL2CalorimeterBlock
+
+SideYL2CalorimeterDiodes.Copy SideYL2CalorimeterDiodes_1
+SideYL2CalorimeterDiodes_1.Position 0 0 { - SizeCalorimeterSideYYL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ/2.0 }
+SideYL2CalorimeterDiodes_1.Mother SideYL2CalorimeterBlock
+
+
+For Y NCrystalsPerBlock { - SizeCalorimeterBlock/2.0 + SizeCalorimeterHousingBlock + SizeCalorimeterCrystalPlusSurroundings/2.0 } { SizeCalorimeterCrystalPlusSurroundings }
+  SideYL2CalorimeterWrapper.Copy SideYL2CalorimeterWrapper_%Y
+  SideYL2CalorimeterWrapper_%Y.Position 0 $Y { - SizeCalorimeterSideYYL2/2.0 + SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ + SizeCalorimeterCrystalsSideL2/2.0 }
+  SideYL2CalorimeterWrapper_%Y.Mother SideYL2CalorimeterBlock
+Done
+
+# Position calorimeter
+Volume SideYL2Calorimeter
+SideYL2Calorimeter.Material CarbonCyanateEster
+SideYL2Calorimeter.Visibility 1
+SideYL2Calorimeter.Shape BRIK { SizeCalorimeterSideYX/2.0 } { SizeCalorimeterSideYZL2/2.0 } { SizeCalorimeterSideYYL2/2.0 }
+
+# Position blocks in calorimeter 
+For X NBlocksSideYX { - SizeCalorimeterSideYX/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+For Z NBlocksSideYZL2 { - SizeCalorimeterSideYZL2/2.0 + SizeCalorimeterHousingFront + SizeCalorimeterBlock/2.0 } { SizeCalorimeterBlock }
+  SideYL2CalorimeterBlock.Copy SideYL2CalorimeterBlock_%X_%Z
+  SideYL2CalorimeterBlock_%X_%Z.Position $X $Z 0.0
+  SideYL2CalorimeterBlock_%X_%Z.Mother SideYL2Calorimeter
+Done
+Done
+
+
+SideYL2Calorimeter.Copy SideYL2CalorimeterNeg
+SideYL2CalorimeterNeg.Rotation 90.0 0.0 0.0
+SideYL2CalorimeterNeg.Position 0.0 { SizeCalorimeterSideXY/2.0 + SizeCalorimeterSideYYL2/2.0 } { SizeCalorimeterBZ + SizeCalorimeterSideYZL2/2.0 } 
+SideYL2CalorimeterNeg.Mother WorldVolume
+
+SideYL2Calorimeter.Copy SideYL2CalorimeterPos
+SideYL2CalorimeterPos.Rotation -90.0 0.0 0.0
+SideYL2CalorimeterPos.Position 0.0 { -SizeCalorimeterSideXY/2.0 - SizeCalorimeterSideYYL2/2.0 } { SizeCalorimeterBZ + SizeCalorimeterSideYZL2/2.0 } 
+SideYL2CalorimeterPos.Mother WorldVolume
+
+
+
+
+
+
+
+
+
+
+//------------------------------------------------------------
+// Define tracker
+
+Volume SiWafer
+SiWafer.Material Silicon
+SiWafer.Visibility TrackerDetectorMaterial
+SiWafer.Color 4
+SiWafer.Shape BRIK { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferZ/2.0 } 
+
+Volume SiWaferSpacer
+SiWaferSpacer.Material Vacuum
+SiWaferSpacer.Visibility 0
+SiWaferSpacer.Shape BRIK { SizeTrackerWaferXY/2.0 } { SizeTrackerWaferXY/2.0 } { SizeTrackerFrameZ/2.0 - SizeTrackerWaferZ/2.0 } 
+
+Volume SiElectronicsX
+SiElectronicsX.Material CircuitBoard
+SiElectronicsX.Visibility TrackerDetails
+SiElectronicsX.Shape BRIK { SizeTrackerElectronicsX/2.0 } { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY } { SizeTrackerElectronicsZ/2.0 } 
+
+Volume SiElectronicsSpacerX
+SiElectronicsSpacerX.Material Vacuum
+SiElectronicsSpacerX.Visibility 0
+SiElectronicsSpacerX.Shape BRIK { SizeTrackerElectronicsX/2.0 } { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY } { SizeTrackerFrameZ/2.0 - SizeTrackerElectronicsZ/2.0 } 
+
+Volume SiElectronicsY
+SiElectronicsY.Material CircuitBoard
+SiElectronicsY.Visibility TrackerDetails
+SiElectronicsY.Shape BRIK { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY } { SizeTrackerElectronicsX/2.0 } { SizeTrackerElectronicsZ/2.0 } 
+
+Volume SiElectronicsSpacerY
+SiElectronicsSpacerY.Material Vacuum
+SiElectronicsSpacerY.Visibility 0
+SiElectronicsSpacerY.Shape BRIK { NWafersXY*(SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 - GapTrackerAroundWafersXY} { SizeTrackerElectronicsX/2.0 } { SizeTrackerFrameZ/2.0  - SizeTrackerElectronicsZ/2.0 } 
+
+Volume SiFrame
+SiFrame.Material Peek
+SiFrame.Visibility TrackerDetails
+SiFrame.Color 4
+SiFrame.Shape BRIK { SizeLayerXY/2.0 } { SizeLayerXY/2.0 } { SizeTrackerFrameZ/2.0 }
+
+Volume SiFrameBridge
+SiFrameBridge.Material Peek
+SiFrameBridge.Visibility TrackerDetails
+SiFrameBridge.Color 4
+SiFrameBridge.Shape BRIK { SizeTrackerElectronicsX/2.0 } { SizeTrackerElectronicsX/2.0 } { WaferDistance/2.0 - SizeTrackerFrameZ/2.0 } 
+
+Volume SiFrameSpacer
+SiFrameSpacer.Material Peek
+SiFrameSpacer.Visibility TrackerDetails
+SiFrameSpacer.Shape BRIK { GapTrackerAroundWafersXY } { GapTrackerAroundWafersXY } { WaferDistance/2.0 - SizeTrackerFrameZ/2.0 } 
+
+Volume SiLayer
+SiLayer.Material Vacuum
+SiLayer.Visibility 0
+SiLayer.Shape BRIK { SizeLayerXY/2.0 } { SizeLayerXY/2.0 } { WaferDistance/2.0 }
+
+Volume Tracker
+Tracker.Material Vacuum
+Tracker.Visibility 0
+Tracker.Shape BRIK { SizeTrackerXY/2.0 } { SizeTrackerXY/2.0 } { SizeTrackerZ/2.0 }
+
+# Position wafers:
+For X  NWafersXY  { -SizeLayerXY/2.0 + (SizeTrackerElectronicsX+3*GapTrackerAroundWafersXY) + (SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 }  { SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY }
+  For Y  NWafersXY  { -SizeLayerXY/2.0 + (SizeTrackerElectronicsX+3*GapTrackerAroundWafersXY) + (SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY)/2.0 }  { SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY }
+
+    SiWafer.Copy SiWafer_Copy%X%Y
+    SiWafer_Copy%X%Y.Mother SiFrame
+    SiWafer_Copy%X%Y.Position $X $Y { SizeTrackerFrameZ/2.0 - SizeTrackerWaferZ/2.0 }
+
+    SiWaferSpacer.Copy SiWaferSpacer_Copy%X%Y
+    SiWaferSpacer_Copy%X%Y.Mother SiFrame
+    SiWaferSpacer_Copy%X%Y.Position $X $Y { - SizeTrackerWaferZ/2.0 }
+  Done
+Done
+
+# Position electronics:
+SiElectronicsX.Copy SiElectronicsXNeg
+SiElectronicsXNeg.Position { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } 0.0 { SizeTrackerFrameZ/2.0 - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsXNeg.Mother SiFrame
+
+SiElectronicsX.Copy SiElectronicsXPos
+SiElectronicsXPos.Position { SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } 0.0 { SizeTrackerFrameZ/2.0 - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsXPos.Mother SiFrame
+
+SiElectronicsY.Copy SiElectronicsYNeg
+SiElectronicsYNeg.Position 0.0 { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } { SizeTrackerFrameZ/2.0 - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsYNeg.Mother SiFrame
+
+SiElectronicsY.Copy SiElectronicsYPos
+SiElectronicsYPos.Position 0.0 { SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } { SizeTrackerFrameZ/2.0 - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsYPos.Mother SiFrame
+
+
+SiElectronicsSpacerX.Copy SiElectronicsSpacerXNeg
+SiElectronicsSpacerXNeg.Position { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } 0.0 { - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsSpacerXNeg.Mother SiFrame
+
+SiElectronicsSpacerX.Copy SiElectronicsSpacerXPos
+SiElectronicsSpacerXPos.Position { SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } 0.0 { - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsSpacerXPos.Mother SiFrame
+
+SiElectronicsSpacerY.Copy SiElectronicsSpacerYNeg
+SiElectronicsSpacerYNeg.Position 0.0 { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } { - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsSpacerYNeg.Mother SiFrame
+
+SiElectronicsSpacerY.Copy SiElectronicsSpacerYPos
+SiElectronicsSpacerYPos.Position 0.0 { SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } { - SizeTrackerElectronicsZ/2.0 }
+SiElectronicsSpacerYPos.Mother SiFrame
+
+# Position frame
+SiFrame.Position 0.0 0.0 { WaferDistance/2.0 - SizeTrackerFrameZ/2.0 }
+SiFrame.Mother SiLayer
+
+# Position bridges
+SiFrameBridge.Copy SiFrameBridgeMM
+SiFrameBridgeMM.Position { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0}  { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } { - SizeTrackerFrameZ/2.0 }
+SiFrameBridgeMM.Mother SiLayer
+
+SiFrameBridge.Copy SiFrameBridgePM
+SiFrameBridgePM.Position { + SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0}  { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0 } { - SizeTrackerFrameZ/2.0 }
+SiFrameBridgePM.Mother SiLayer
+
+SiFrameBridge.Copy SiFrameBridgeMP
+SiFrameBridgeMP.Position { - SizeLayerXY/2.0 + 2*GapTrackerAroundWafersXY + SizeTrackerElectronicsX/2.0}  { + SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } { - SizeTrackerFrameZ/2.0 }
+SiFrameBridgeMP.Mother SiLayer
+
+SiFrameBridge.Copy SiFrameBridgePP
+SiFrameBridgePP.Position { + SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0}  { + SizeLayerXY/2.0 - 2*GapTrackerAroundWafersXY - SizeTrackerElectronicsX/2.0 } { - SizeTrackerFrameZ/2.0 }
+SiFrameBridgePP.Mother SiLayer
+
+# Add all spacers:
+For X { NWafersXY + 1 } { -SizeLayerXY/2.0 + (SizeTrackerElectronicsX+3*GapTrackerAroundWafersXY) }  { SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY }
+For Y { NWafersXY + 1 } { -SizeLayerXY/2.0 + (SizeTrackerElectronicsX+3*GapTrackerAroundWafersXY) }  { SizeTrackerWaferXY + 2*GapTrackerAroundWafersXY }
+  SiFrameSpacer.Copy SiFrameSpacer_%X%Y
+  SiFrameSpacer_%X%Y.Mother SiLayer
+  SiFrameSpacer_%X%Y.Position $X $Y { - SizeTrackerFrameZ/2.0 } 
+Done
+Done
+
+
+# Position layers:
+For Z NWafersZ { SizeTrackerZ/2.0 - SizeTrackerMountingZ - WaferDistance/2.0 } { -WaferDistance }
+  SiLayer.Copy SiLayer_Copy%Z
+  SiLayer_Copy%Z.Mother Tracker
+  SiLayer_Copy%Z.Position 0.0 0.0 $Z
+Done
+
+Volume TrackerMountingZ
+TrackerMountingZ.Material CarbonCyanateEster
+TrackerMountingZ.Shape BOX { SizeTrackerXY/2.0 } { SizeTrackerXY/2.0 } { SizeTrackerMountingZ/2.0 }
+
+Volume TrackerMountingZCut
+TrackerMountingZCut.Material Vacuum
+TrackerMountingZCut.Shape BOX { SizeTrackerXY/2.0 - SizeTrackerMountingXY } { SizeTrackerXY/2.0 - SizeTrackerMountingXY } { (SizeTrackerMountingZ-SizeTrackerMountingThinZ)/2.0 }
+TrackerMountingZCut.Position 0.0 0.0 0.0
+TrackerMountingZCut.Mother TrackerMountingZ
+
+TrackerMountingZ.Copy TrackerMountingZTop
+TrackerMountingZTop.Position 0.0 0.0 { SizeTrackerZ/2.0 - SizeTrackerMountingZ/2.0 }
+TrackerMountingZTop.Mother Tracker
+
+TrackerMountingZ.Copy TrackerMountingZBottom
+TrackerMountingZBottom.Position 0.0 0.0 { -SizeTrackerZ/2.0 + SizeTrackerMountingZ/2.0 }
+TrackerMountingZBottom.Mother Tracker
+
+
+
+Volume TrackerMountingY
+TrackerMountingY.Material CarbonCyanateEster
+TrackerMountingY.Shape BOX { SizeTrackerXY/2.0 - SizeTrackerMountingZ } { SizeTrackerMountingZ/2.0 } { SizeTrackerZ/2.0 - SizeTrackerMountingZ } 
+
+Volume TrackerMountingYCut
+TrackerMountingYCut.Material Vacuum
+TrackerMountingYCut.Shape BOX { SizeTrackerXY/2.0 - SizeTrackerMountingZ - SizeTrackerMountingXY } { (SizeTrackerMountingZ-SizeTrackerMountingThinZ)/2.0 } { SizeTrackerZ/2.0 - SizeTrackerMountingZ - SizeTrackerMountingXY } 
+TrackerMountingYCut.Position 0.0 0.0 0.0
+TrackerMountingYCut.Mother TrackerMountingY
+
+TrackerMountingY.Copy TrackerMountingY_MinusY
+TrackerMountingY_MinusY.Position 0.0 { - SizeTrackerXY/2.0 + SizeTrackerMountingZ/2.0 } 0.0
+TrackerMountingY_MinusY.Mother Tracker
+
+TrackerMountingY.Copy TrackerMountingY_PlusY
+TrackerMountingY_PlusY.Position 0.0 { SizeTrackerXY/2.0 - SizeTrackerMountingZ/2.0 } 0.0
+TrackerMountingY_PlusY.Mother Tracker
+
+
+Volume TrackerMountingX
+TrackerMountingX.Material CarbonCyanateEster
+TrackerMountingX.Shape BOX { SizeTrackerMountingZ/2.0 } { SizeTrackerXY/2.0 } { SizeTrackerZ/2.0 - SizeTrackerMountingZ  } 
+
+Volume TrackerMountingXCut
+TrackerMountingXCut.Material Vacuum
+TrackerMountingXCut.Shape BOX { (SizeTrackerMountingZ-SizeTrackerMountingThinZ)/2.0 } { SizeTrackerXY/2.0 - SizeTrackerMountingXY } { SizeTrackerZ/2.0 - SizeTrackerMountingZ - SizeTrackerMountingXY } 
+TrackerMountingXCut.Position 0.0 0.0 0.0
+TrackerMountingXCut.Mother TrackerMountingX
+
+TrackerMountingX.Copy TrackerMountingX_MinusX
+TrackerMountingX_MinusX.Position { - SizeTrackerXY/2.0 + SizeTrackerMountingZ/2.0 } 0.0 0.0
+TrackerMountingX_MinusX.Mother Tracker
+
+TrackerMountingX.Copy TrackerMountingX_PlusX
+TrackerMountingX_PlusX.Position { SizeTrackerXY/2.0 - SizeTrackerMountingZ/2.0 } 0.0 0.0
+TrackerMountingX_PlusX.Mother Tracker
+
+
+
+# Position tracker:
+Tracker.Position 0.0 0.0 { SizeCalorimeterBZ + GapTrackerCalorimeterZ + SizeTrackerZ/2.0 }
+Tracker.Mother WorldVolume
+
+
+
+# Add Base plate
+Volume BasePlate
+BasePlate.Material CarbonCyanateEster
+BasePlate.Shape TUBS 0.0 BasePlateRadius { BasePlateHeight/2.0 } 0.0 360.0
+BasePlate.Position 0.0 0.0 {-BasePlateHeight/2.0}
+BasePlate.Mother WorldVolume
+
+# Add Top ACS
+Constant ACSAngle { 45*TMath::DegToRad() }
+Constant ACSTopHeight 15.0
+
+Constant RMin1 { BasePlateRadius + ACStructureThickness }
+Constant RMax1 { BasePlateRadius + ACStructureThickness + ACSThickness }
+Constant H1    { 0.0 }
+
+Constant RMin2 { BasePlateRadius + ACStructureThickness }
+Constant RMax2 { BasePlateRadius + ACStructureThickness + ACSThickness }
+Constant H2    { H1 + ACSBottomOverhead + BasePlateHeight + SizeCalorimeterBZ + SizeCalorimeterSideXZ }
+
+Constant RMin3 { BasePlateRadius + ACStructureThickness - ACSThickness*(1.0/TMath::Sin(ACSAngle)-1.0) }
+Constant RMax3 { BasePlateRadius + ACStructureThickness + ACSThickness }
+Constant H3    { H2 + ACSThickness*(1.0/TMath::Sin(ACSAngle)-1)*TMath::Tan(ACSAngle) }
+
+Constant RMin4 { BasePlateRadius + ACStructureThickness - ACSTopHeight*TMath::Tan(ACSAngle) }
+Constant RMax4 { BasePlateRadius + ACStructureThickness - ACSTopHeight*TMath::Tan(ACSAngle) + ACSThickness/TMath::Sin(ACSAngle) }
+Constant H4    { H2 + ACSTopHeight }
+
+Constant RMin5 { 0.0 }
+Constant RMax5 { BasePlateRadius + ACStructureThickness - ACSTopHeight*TMath::Tan(ACSAngle) + ACSThickness/TMath::Sin(ACSAngle) }
+Constant H5    { H4 + 0.0 }
+
+Constant RMin6 { 0.0 }
+Constant RMax6 { RMax5 -  ACSThickness/TMath::Tan(ACSAngle)}
+Constant H6    { H5 + ACSThickness }
+
+Volume ACSTop
+ACSTop.Visibility 1
+ACSTop.Color 2
+ACSTop.Material NE110
+ACSTop.Shape PCON 0.0 360.0 6 H1 RMin1 RMax1   H2 RMin2 RMax2   H3 RMin3 RMax3   H4 RMin4 RMax4   H5 RMin5 RMax5   H6 RMin6 RMax6
+ACSTop.Position 0.0 0.0 { - ACSBottomOverhead - BasePlateHeight }
+ACSTop.Mother WorldVolume
+
+# Add Top MLI-cover
+Constant MLIThickness 0.2
+
+
+Constant MLIRMin1 { BasePlateRadius + ACStructureThickness + ACSThickness }
+Constant MLIRMax1 { BasePlateRadius + ACStructureThickness + ACSThickness + MLIThickness }
+Constant MLIH1    { 0.0 }
+
+Constant MLIRMin2 { BasePlateRadius + ACStructureThickness + ACSThickness }
+Constant MLIRMax2 { BasePlateRadius + ACStructureThickness + ACSThickness + MLIThickness }
+Constant MLIH2    { H3 }
+
+Constant MLIRMin3 { BasePlateRadius + ACStructureThickness + ACSThickness - MLIThickness*(1.0/TMath::Sin(ACSAngle)-1.0) }
+Constant MLIRMax3 { BasePlateRadius + ACStructureThickness + ACSThickness + MLIThickness }
+Constant MLIH3    { MLIH2 + MLIThickness*(1.0/TMath::Sin(ACSAngle)-1.0)*TMath::Tan(ACSAngle) }
+
+Constant MLIRMin4 { BasePlateRadius + ACStructureThickness + ACSThickness - (H6-H3)*TMath::Tan(ACSAngle) }
+Constant MLIRMax4 { BasePlateRadius + ACStructureThickness + ACSThickness - (H6-H3)*TMath::Tan(ACSAngle) + MLIThickness/TMath::Sin(ACSAngle) }
+Constant MLIH4    { MLIH2 + (H6-H3) }
+
+Constant MLIRMin5 { 0.0 }
+Constant MLIRMax5 { BasePlateRadius + ACStructureThickness + ACSThickness - (H6-H3)*TMath::Tan(ACSAngle) + MLIThickness/TMath::Sin(ACSAngle) }
+Constant MLIH5    { MLIH4 + 0.0 }
+
+Constant MLIRMin6 { 0.0 }
+Constant MLIRMax6 { MLIRMax5 -  MLIThickness/TMath::Tan(ACSAngle)}
+Constant MLIH6    { MLIH5 + MLIThickness }
+
+Volume ACSMLI
+ACSMLI.Visibility 1
+ACSMLI.Color 2
+ACSMLI.Material MLI
+ACSMLI.Shape PCON 0.0 360.0 6 MLIH1 MLIRMin1 MLIRMax1   MLIH2 MLIRMin2 MLIRMax2   MLIH3 MLIRMin3 MLIRMax3   MLIH4 MLIRMin4 MLIRMax4   MLIH5 MLIRMin5 MLIRMax5   MLIH6 MLIRMin6 MLIRMax6
+ACSMLI.Position 0.0 0.0 { - ACSBottomOverhead - BasePlateHeight }
+ACSMLI.Mother WorldVolume
+
+
+# Add Top Structure
+Constant ACStructureThickness 0.2
+
+
+Constant ACStructureRMin1 { BasePlateRadius }
+Constant ACStructureRMax1 { BasePlateRadius + ACStructureThickness }
+Constant ACStructureH1    { 0.0 }
+
+Constant ACStructureRMin2 { BasePlateRadius  }
+Constant ACStructureRMax2 { BasePlateRadius + ACStructureThickness }
+Constant ACStructureH2    { H2 - ACStructureThickness*(1.0/TMath::Sin(ACSAngle)-1.0)*TMath::Tan(ACSAngle)}
+
+Constant ACStructureRMin3 { BasePlateRadius - ACStructureThickness*(1.0/TMath::Sin(ACSAngle)-1.0) }
+Constant ACStructureRMax3 { BasePlateRadius + ACStructureThickness }
+Constant ACStructureH3    { H2 }
+
+Constant ACStructureRMin4 { BasePlateRadius - (H6-H3)*TMath::Tan(ACSAngle) }
+Constant ACStructureRMax4 { BasePlateRadius - (H6-H3)*TMath::Tan(ACSAngle) + ACStructureThickness/TMath::Sin(ACSAngle) }
+Constant ACStructureH4    { ACStructureH2 + (H6-H3) }
+
+Constant ACStructureRMin5 { 0.0 }
+Constant ACStructureRMax5 { BasePlateRadius  - (H6-H3)*TMath::Tan(ACSAngle) + ACStructureThickness/TMath::Sin(ACSAngle) }
+Constant ACStructureH5    { ACStructureH4 + 0.0 }
+
+Constant ACStructureRMin6 { 0.0 }
+Constant ACStructureRMax6 { ACStructureRMax5 -  ACStructureThickness/TMath::Tan(ACSAngle)}
+Constant ACStructureH6    { ACStructureH5 + ACStructureThickness }
+
+
+#Volume ACSTopACStructure
+ACSTopACStructure.Visibility 1
+ACSTopACStructure.Color 3
+ACSTopACStructure.Material ACStructure
+ACSTopACStructure.Shape PCON 0.0 360.0 6 ACStructureH1 ACStructureRMin1 ACStructureRMax1   ACStructureH2 ACStructureRMin2 ACStructureRMax2   ACStructureH3 ACStructureRMin3 ACStructureRMax3   ACStructureH4 ACStructureRMin4 ACStructureRMax4   ACStructureH5 ACStructureRMin5 ACStructureRMax5   ACStructureH6 ACStructureRMin6 ACStructureRMax6
+ACSTopACStructure.Position 0.0 0.0 { - ACSBottomOverhead - BasePlateHeight }
+ACSTopACStructure.Mother WorldVolume
+
+
+
+Volume ACSBottom
+ACSBottom.Material NE110
+ACSBottom.Visibility 2
+ACSBottom.Shape TUBS 0.0 { BasePlateRadius - 5.75 } { ACSThickness/2.0 } 0.0 360.0 
+ACSBottom.Position 0.0 0.0 { -BasePlateHeight - ACSBottomOffset - ACSThickness/2.0 }
+ACSBottom.Mother WorldVolume
+
+
+
+
+Volume Electronics
+Electronics.Material CircuitBoard
+Electronics.Shape BOX { SizeElectronicsBoxXY/2.0 }  { SizeElectronicsBoxXY/2.0 } { SizeElectronicsBoxZ/2.0 }
+Electronics.Position 0.0 0.0 {-BasePlateHeight - 2*ACSBottomOffset - ACSThickness - SizeElectronicsBoxZ/2.0}
+Electronics.Mother WorldVolume
+
+Volume ElectronicsVaccuum
+ElectronicsVaccuum.Material Vacuum
+ElectronicsVaccuum.Shape BOX { SizeElectronicsBoxXY/2.0 }  { SizeElectronicsBoxXY/2.0 } { SizeElectronicsBoxZ/80.0 }
+
+For Z 20 { -SizeElectronicsBoxZ/2.0 + SizeElectronicsBoxZ/80.0 } { SizeElectronicsBoxZ/20.0 } 
+  ElectronicsVaccuum.Copy ElectronicsVaccuum_%Z
+  ElectronicsVaccuum_%Z.Position 0.0 0.0 $Z
+  ElectronicsVaccuum_%Z.Mother Electronics
+Done
+
+
+Constant SupportTubeRadius  2.0
+Constant SupportTubeDistance 1.0
+
+Constant STH0    { 0.0 }
+Constant STRMin0 { BasePlateRadius-SupportTubeRadius }
+Constant STRMax0 { BasePlateRadius }
+
+Constant STH1    { STH0 + 0.15*SizeElectronicsBoxZ } 
+Constant STRMin1 { TMath::Sqrt(2*(SizeElectronicsBoxXY/2.0)*(SizeElectronicsBoxXY/2.0)) + SupportTubeDistance}
+Constant STRMax1 { STRMin1 + SupportTubeRadius }
+
+Constant STH2    { STH0 + 0.85*SizeElectronicsBoxZ } 
+Constant STRMin2 { TMath::Sqrt(2*(SizeElectronicsBoxXY/2.0)*(SizeElectronicsBoxXY/2.0)) + SupportTubeDistance}
+Constant STRMax2 { STRMin1 + SupportTubeRadius }
+
+Constant STH3    { SizeElectronicsBoxZ + ACSThickness + 2*ACSBottomOffset }
+Constant STRMin3 { BasePlateRadius-SupportTubeRadius }
+Constant STRMax3 { BasePlateRadius }
+
+
+
+Volume SupportTube
+SupportTube.Material CarbonCyanateEster
+SupportTube.Visibility 2
+SupportTube.Shape PCON 0.0 360.0 4  STH0 STRMin0 STRMax0  STH1 STRMin1 STRMax1  STH2 STRMin2 STRMax2  STH3 STRMin3 STRMax3
+SupportTube.Position 0.0 0.0 { -BasePlateHeight - 2*ACSBottomOffset - ACSThickness - SizeElectronicsBoxZ } 
+SupportTube.Mother WorldVolume
+
+
+
+
+
+
+//------------------------------------------------------------
+// Detector information:
+
+
+Strip2D                  SiStripDetector
+
+SiStripDetector.DetectorVolume      SiWafer
+SiStripDetector.SensitiveVolume     SiWafer
+
+SiStripDetector.StructuralPitch      0.0   0.0    { WaferDistance }
+SiStripDetector.StructuralOffset     0.0   0.0    0.0
+
+SiStripDetector.Offset              SizeTrackerWaferGuardRing SizeTrackerWaferGuardRing
+SiStripDetector.StripNumber         { TMath::Ceil(SizeTrackerWaferActiveXY/0.05) } { TMath::Ceil(SizeTrackerWaferActiveXY/0.05) } 
+Echo StripNumber { TMath::Ceil(SizeTrackerWaferActiveXY/0.05) }
+
+SiStripDetector.NoiseThreshold          5
+SiStripDetector.TriggerThreshold       10
+
+SiStripDetector.EnergyResolution  Gauss   0        0  1
+SiStripDetector.EnergyResolution  Gauss   100    100  1
+SiStripDetector.EnergyResolution  Gauss   1000  1000  1
+
+SiStripDetector.FailureRate 0.0
+
+
+
+// Properties of the single-sided calorimeter
+Calorimeter                 xDCal4L1
+xDCal4L1.SensitiveVolume      SideXL1CalorimeterCrystal
+xDCal4L1.DetectorVolume       SideXL1CalorimeterBlock
+
+xDCal4L1.StructuralPitch      { 2*GapCalorimeterAroundCrystals } { 2*GapCalorimeterAroundCrystals }  0.0
+xDCal4L1.StructuralOffset     { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals } { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals }  { SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ  }
+
+xDCal4L1.NoiseThreshold       10
+xDCal4L1.TriggerThreshold     20
+
+xDCal4L1.EnergyResolution  Gauss          0       0     3.5
+xDCal4L1.EnergyResolution  Gauss        100     100     3.5
+xDCal4L1.EnergyResolution  Gauss        350     350     9.2
+xDCal4L1.EnergyResolution  Gauss        511     511    11.4
+xDCal4L1.EnergyResolution  Gauss        662     662    12.3
+xDCal4L1.EnergyResolution  Gauss       1000    1000    13.2
+xDCal4L1.EnergyResolution  Gauss       5000    5000    56.3
+xDCal4L1.EnergyResolution  Gauss     100000  100000  2640.0
+
+xDCal4L1.Overflow 5000  
+
+xDCal4L1.FailureRate 0.0
+
+
+// Properties of the single-sided calorimeter
+Calorimeter                 xDCal4L2
+xDCal4L2.SensitiveVolume      SideXL2CalorimeterCrystal
+xDCal4L2.DetectorVolume       SideXL2CalorimeterBlock
+
+xDCal4L2.StructuralPitch      { 2*GapCalorimeterAroundCrystals } { 2*GapCalorimeterAroundCrystals }  0.0
+xDCal4L2.StructuralOffset     { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals } { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals }  { SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ  }
+
+xDCal4L2.NoiseThreshold       10
+xDCal4L2.TriggerThreshold     20
+
+xDCal4L2.EnergyResolution  Gauss          0       0     3.5
+xDCal4L2.EnergyResolution  Gauss        100     100     3.5
+xDCal4L2.EnergyResolution  Gauss        350     350     9.2
+xDCal4L2.EnergyResolution  Gauss        511     511    11.4
+xDCal4L2.EnergyResolution  Gauss        662     662    12.3
+xDCal4L2.EnergyResolution  Gauss       1000    1000    13.2
+xDCal4L2.EnergyResolution  Gauss       5000    5000    56.3
+xDCal4L2.EnergyResolution  Gauss     100000  100000  2640.0
+
+xDCal4L2.Overflow 5000  
+
+xDCal4L2.FailureRate 0.0
+
+
+
+
+// Properties of the single-sided calorimeter
+Calorimeter                 yDCal4L1
+yDCal4L1.SensitiveVolume      SideYL1CalorimeterCrystal
+yDCal4L1.DetectorVolume       SideYL1CalorimeterBlock
+
+yDCal4L1.StructuralPitch      { 2*GapCalorimeterAroundCrystals } { 2*GapCalorimeterAroundCrystals }  0.0
+yDCal4L1.StructuralOffset     { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals } { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals }  { SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ  }
+
+// Values in consesus with opinions of Robert, Gottfried and Andreas 
+yDCal4L1.NoiseThreshold        10
+yDCal4L1.TriggerThreshold      20
+
+yDCal4L1.EnergyResolution  Gauss          0      0     3.5
+yDCal4L1.EnergyResolution  Gauss        100    100     3.5
+yDCal4L1.EnergyResolution  Gauss        350    350     9.2
+yDCal4L1.EnergyResolution  Gauss        511    511    11.4
+yDCal4L1.EnergyResolution  Gauss        662    662    12.3
+yDCal4L1.EnergyResolution  Gauss       1000   1000    13.2
+yDCal4L1.EnergyResolution  Gauss       5000   5000    56.3
+yDCal4L1.EnergyResolution  Gauss     100000 100000  2640.0
+
+yDCal4L1.Overflow 5000  
+
+yDCal4L1.FailureRate 0.0
+
+
+
+
+// Properties of the single-sided calorimeter
+Calorimeter                 yDCal4L2
+yDCal4L2.SensitiveVolume      SideYL2CalorimeterCrystal
+yDCal4L2.DetectorVolume       SideYL2CalorimeterBlock
+
+yDCal4L2.StructuralPitch      { 2*GapCalorimeterAroundCrystals } { 2*GapCalorimeterAroundCrystals }  0.0
+yDCal4L2.StructuralOffset     { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals } { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals }  { SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ  }
+
+// Values in consesus with opinions of Robert, Gottfried and Andreas 
+yDCal4L2.NoiseThreshold        10
+yDCal4L2.TriggerThreshold      20
+
+yDCal4L2.EnergyResolution  Gauss        0       0     3.5
+yDCal4L2.EnergyResolution  Gauss      100     100     3.5
+yDCal4L2.EnergyResolution  Gauss      350     350     9.2
+yDCal4L2.EnergyResolution  Gauss      511     511    11.4
+yDCal4L2.EnergyResolution  Gauss      662     662    12.3
+yDCal4L2.EnergyResolution  Gauss     1000    1000    13.2
+yDCal4L2.EnergyResolution  Gauss     5000    5000    56.3
+yDCal4L2.EnergyResolution  Gauss   100000  100000  2640.0
+
+yDCal4L2.Overflow 5000  
+
+yDCal4L2.FailureRate 0.0
+
+
+// Properties of the double-side calorimeter
+Calorimeter              DCal8
+DCal8.SensitiveVolume      BottomCalorimeterCrystal
+DCal8.DetectorVolume       BottomCalorimeterBlock
+
+DCal8.StructuralPitch      { 2*GapCalorimeterAroundCrystals } { 2*GapCalorimeterAroundCrystals }  0.0
+DCal8.StructuralOffset     { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals } { SizeCalorimeterHousingBlock + GapCalorimeterAroundCrystals }  { SizeCalorimeterHousing + SizeCalorimeterElectronicsZ + SizeCalorimeterDiodesZ  }
+
+// Values in consesus with opinions of Robert, Gottfried and Andreas 
+DCal8.NoiseThreshold       14
+DCal8.TriggerThreshold     28
+
+// Energy resolutions (C) by Florian Schopper
+DCal8.DepthResolution      500       0.2
+
+DCal8.EnergyResolution  Gauss          0      0     5.3
+DCal8.EnergyResolution  Gauss        100    100     5.3
+DCal8.EnergyResolution  Gauss        350    350    10.5
+DCal8.EnergyResolution  Gauss        511    511    11.4
+DCal8.EnergyResolution  Gauss        662    662    12.3
+DCal8.EnergyResolution  Gauss       1000   1000    13.2
+DCal8.EnergyResolution  Gauss       5000   5000    56.3
+DCal8.EnergyResolution  Gauss     100000 100000  2640.0
+
+DCal8.Overflow 10000  
+
+DCal8.FailureRate 0.0
+
+
+Scintillator 	ACDetectorTop
+ACDetectorTop.SensitiveVolume 	ACSTop
+ACDetectorTop.DetectorVolume 	ACSTop
+
+ACDetectorTop.EnergyResolution Gauss   0    0  10.0
+ACDetectorTop.EnergyResolution Gauss 100  100  10.0
+ACDetectorTop.TriggerThreshold 	50.0
+ACDetectorTop.NoiseThresholdEqualsTriggerThreshold true
+ACDetectorTop.FailureRate 	0.0
+
+
+Scintillator 	ACDetectorBottom
+ACDetectorBottom.SensitiveVolume 	ACSBottom
+ACDetectorBottom.DetectorVolume 	ACSBottom
+
+ACDetectorBottom.EnergyResolution  Gauss    0    0  10.0
+ACDetectorBottom.EnergyResolution  Gauss  100  100  10.0
+ACDetectorBottom.TriggerThreshold 	50.0
+ACDetectorBottom.NoiseThresholdEqualsTriggerThreshold true
+ACDetectorBottom.FailureRate 	0.0
+
+
+TriggerMap Triggers
+Triggers.Map GRIPS_extended.triggers
