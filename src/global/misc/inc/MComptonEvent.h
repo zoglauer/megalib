@@ -212,6 +212,8 @@ class MComptonEvent : public MPhysicalEvent
   //! Representation of the Kleine Nishina cross-section value of this events data
   double GetKleinNishina() const;
 
+  //! Return the (differential) Klein Nishina value for the given incident photon energy and Compton scatter angle 
+  static double GetDifferentalKleinNishina(const double Ei, const double phi);
   //! Return the Klein Nishina value for the given incident photon energy and Compton scatter angle 
   static double GetKleinNishina(const double Ei, const double phi);
   //! Unknown if this is correct...
