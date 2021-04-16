@@ -170,6 +170,8 @@ if [[ ${IsOpenSuseClone} -eq 1 ]]; then
       echo " "
       exit 0  
     fi
+  elif [[ ${OS} == opensuse-tumbleweed ]]; then
+    REQUIRED="git-core bash cmake gcc-c++ gcc gcc-fortran binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel ncurses-devel python3-devel"
   else
     REQUIRED="git-core bash cmake gcc-c++ gcc binutils libX11-devel libXpm-devel xorg-x11-devel libXext-devel fftw3-devel python-devel gsl-devel graphviz-devel Mesa glew-devel python3-devel"
 
