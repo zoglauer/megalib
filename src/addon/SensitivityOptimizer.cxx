@@ -336,6 +336,7 @@ public:
 private:
   MEventSelector m_EventSelector;
   double m_ObservationTime;
+  double m_SigmaLevel;
 
   double m_SourceStartAreaPerPhotons;
   int m_SourceCounts;
