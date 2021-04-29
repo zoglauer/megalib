@@ -365,7 +365,7 @@ ostream& operator<<(ostream& os, SensitivityPoint& S)
   os<<"*********************************"<<endl;
   os<<endl;
   os<<S.m_EventSelector<<endl;
-  os<<"Detection threshold: " << S.m_SigmaLevel << endl;
+  os<<"Detection threshold: " << S.m_SigmaLevel << " sigma" << endl;
   os<<"Source counts: "<<S.m_SourceCounts<<" cts"<<endl;
   if (S.m_SourceCounts < 1000) {
     os<<endl;
