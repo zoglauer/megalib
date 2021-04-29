@@ -1286,9 +1286,13 @@ bool SensitivityOptimizer::ParseCommandLine(int argc, char** argv)
         m_EnergyMax.push_back(mean + min + s*(max-min)/(steps-1));
         m_EnergyMin.push_back(mean - max + s*(max-min)/(steps-1));
       }
-      mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: ";
+      mlog<<"Accepting "<<m_EnergyMin.size()<<" Energy steps: Min: ";
       for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) {
-        mlog<<"("<<m_EnergyMin[i]<<"-"<<m_EnergyMax[i]<<")  ";
+        mlog<<m_EnergyMin[i]<<" ";
+      }
+      mlog<<"   Max: ";
+      for (unsigned int i = 0; i < m_EnergyMax.size(); ++i) {
+        mlog<<m_EnergyMax[i]<<" ";
       }
       mlog<<endl;
     } else if (Option == "--contegy") {
