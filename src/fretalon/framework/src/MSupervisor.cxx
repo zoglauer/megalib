@@ -537,7 +537,12 @@ bool MSupervisor::Load(MString FileName)
 
   if (FileName == "") FileName = m_ConfigurationFileName;
   MFile::ExpandFileName(FileName);
-  
+ 
+  if (MFile::Exists(FileName) == false) {
+    mout<<"Info: Configuration file "<<m_ConfigurationFileName<<" does not exist. Using empty configuration."<<endl;
+    return false;
+  }
+
   // Create a XML document describing the data:
   MXmlDocument* Document = new MXmlDocument();
   Document->Load(FileName);
