@@ -6243,8 +6243,8 @@ void MInterfaceSivan::IsotopeGeneration()
     }
     
     TH2D* Counts = new TH2D("", Title, MaxA-MinA+1, MinA-0.5, MaxA+0.5, MaxZ-MinZ+1, MinZ-0.5, MaxZ+0.5);
-    Counts->SetXTitle("A");
-    Counts->SetYTitle("Z");
+    Counts->SetXTitle("Nucleon number");
+    Counts->SetYTitle("Proton number");
     Counts->SetZTitle("counts/bin");
     
     for (auto I = IsotopeCount.begin(); I != IsotopeCount.end(); ++I) {
