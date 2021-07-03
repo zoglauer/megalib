@@ -88,6 +88,9 @@ public:
   /// Set if the detector has time resolution for individual hit timing
   void SetHasTimeResolution(bool Flag) { m_HasTimeResolution = Flag; }
 
+  /// Set that the detector is never triggering (always vetoing)
+  void SetIsNeverTriggering(bool Flag) { m_IsNeverTriggering = Flag; }
+  
   // protected methods:
 protected:
   
@@ -118,6 +121,9 @@ protected:
   /// True if the detector has time resolution
   bool m_HasTimeResolution;
 
+  /// True if the detector is nevere ever triggering just vetoing
+  bool m_IsNeverTriggering;
+  
   /// Double representing an accuracy epsilon used to determine is some hits
   /// are on the boundary:
   double m_Epsilon;

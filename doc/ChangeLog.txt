@@ -10,8 +10,12 @@
 Version 3.03/3.04
 =================
 
+General:
++ Default ROOT is 6.22
+
 Cosima:
 + New storage option "ia-only"
++ New storage option "maximumenergyloss"
 
 Long-term bugs fixed:
 + The incidence direction of the 511-keV emission was wrong

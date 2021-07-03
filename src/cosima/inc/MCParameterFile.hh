@@ -114,8 +114,10 @@ public:
   bool StoreCalibrated() const { return m_StoreCalibrated; }
   /// Return true, if each hit is stored in an own event
   bool StoreOneHitPerEvent() const { return m_StoreOneHitPerEvent; }
-  /// Return the minimum amount of energy an event must deposit before it is stored (default: -numeric_limits<double>::max())
+  /// Return the minimum amount of energy an event must deposit before it is stored (default: -1E+40*keV)
   double StoreMinimumEnergy() const { return m_StoreMinimumEnergy; }
+  /// Return the maximum energy loss an event can have before it is discarded (default: 1E+40*keV)
+  double StoreMaximumEnergyLoss() const { return m_StoreMaximumEnergyLoss; }
   /// Return true, if the hits should be discretized
   bool DiscretizeHits() const { return m_DiscretizeHits; }
   /// Return the watched volumes list
@@ -223,8 +225,10 @@ private:
 
   /// True if each hit is stored in its own event
   bool m_StoreOneHitPerEvent;
-  /// An event must at least deposit this amount of energy to be stored (default: -numeric_limits<double>::max())
+  /// An event must at least deposit this amount of energy to be stored (default: -1E+40*keV)
   double m_StoreMinimumEnergy;
+  /// The maximum energy loss an event can have before it is discarded (default: 1E+40*keV)
+  double m_StoreMaximumEnergyLoss;
   /// True, if hits should be discretized in the volume voxels
   bool m_DiscretizeHits;
   /// List of watched volumes to store enter & exit information

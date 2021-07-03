@@ -21,6 +21,7 @@
 #include "MCScintillatorHit.hh"
 #include "MCDetectorConstruction.hh"
 #include "MCTrackInformation.hh"
+#include "MCEventAction.hh"
 
 // MEGAlib:
 #include "MAssert.h"
@@ -34,6 +35,7 @@
 #include "G4SDManager.hh"
 #include "G4ios.hh"
 #include "G4ThreeVector.hh"
+#include "G4EventManager.hh"
 
 
 /******************************************************************************
@@ -103,6 +105,10 @@ G4bool MCScintillatorSD::PostProcessHits(const G4Step* Step)
   G4double Energy = Step->GetTotalEnergyDeposit();
   if (Energy == 0.0) return false;
 
+  if (m_IsNeverTriggering == true) {
+    dynamic_cast<MCEventAction *>(G4EventManager::GetEventManager()->GetUserEventAction())->AddEnergyLoss(Energy);
+  }
+  
   G4ThreeVector Position;
   switch (Step->GetPostStepPoint()->GetStepStatus()) {
   case fPostStepDoItProc:

@@ -64,7 +64,8 @@ MCParameterFile::MCParameterFile() : MParser(' ', true),
                                      m_StoreSimulationInfoVersion(MSimEvent::GetOutputVersion()),
                                      m_StoreSimulationInfoIonization(false),
                                      m_StoreOneHitPerEvent(false),
-                                     m_StoreMinimumEnergy(-numeric_limits<double>::max()),
+                                     m_StoreMinimumEnergy(-1E+40*keV),
+                                     m_StoreMaximumEnergyLoss(1E+40*keV),
                                      m_DiscretizeHits(true),
                                      m_CheckForOverlaps(false),
                                      m_OverlapCheckResolution(1000),
@@ -463,11 +464,18 @@ bool MCParameterFile::Parse()
       }
     } else if (T->IsTokenAt(0, "StoreMinimumEnergy", true) == true) {
       if (T->GetNTokens() == 2) {
-        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1);
+        m_StoreMinimumEnergy = T->GetTokenAtAsDouble(1)*keV;
         mdebug<<"Storing only events with at least this amount of energy: "<<m_StoreMinimumEnergy<<endl;
       } else {
-        Typo(i, "Cannot parse token StoreMinimimumEnergy:"
-        " Number of tokens is not correct!");
+        Typo(i, "Cannot parse token StoreMinimimumEnergy: Number of tokens is not correct!");
+        return false;
+      }
+    } else if (T->IsTokenAt(0, "StoreMaximumEnergyLoss", true) == true) {
+      if (T->GetNTokens() == 2) {
+        m_StoreMaximumEnergyLoss = T->GetTokenAtAsDouble(1)*keV;
+        mdebug<<"Storing only events which have less than that energy loss in passive materials or veto detectors: "<<m_StoreMaximumEnergyLoss<<endl;
+      } else {
+        Typo(i, "Cannot parse token StoreMaximumEnergyLoss: Number of tokens is not correct!");
         return false;
       }
     } else if (T->IsTokenAt(0, "DiscretizeHits", true) == true) {
