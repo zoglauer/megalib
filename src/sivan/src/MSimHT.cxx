@@ -73,34 +73,6 @@ MSimHT::MSimHT(MDGeometryQuest* Geo)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-MSimHT::MSimHT(const int Detector, const MVector& Position, const double Energy, 
-               const double Time, const vector<unsigned int>& Origins, 
-               MDGeometryQuest* Geometry)
-{
-  // Correctly initialize the pointers:
-  m_VolumeSequence = 0;
-
-  // Basic data:
-  m_Geometry = Geometry; // We need this first
-
-  SetDetector(Detector);
-  SetPosition(Position);
-  SetEnergy(Energy);
-  SetTime(Time);
-  m_Origins = Origins;
-
-  // More sophisticated data:
-  m_OriginalPosition = m_Position;
-  m_OriginalEnergy = m_Energy;
-  m_Added = false;
-  
-  m_NoiseFlags = "";
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-
-
 MSimHT::MSimHT(const MSimHT& HT)
 {
   // copy constructor
@@ -146,7 +118,7 @@ MSimHT::~MSimHT()
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<int>& Origins, bool NeedsNoising)
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const vector<unsigned int>& Origins, bool NeedsNoising)
 {
   //! Set all core data
   
@@ -171,7 +143,7 @@ void MSimHT::Set(const int Detector, const MVector& Position, const double Energ
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<int>& Origins, bool NeedsNoising)
+void MSimHT::Set(const int Detector, const MVector& Position, const double Energy, const double Time, const set<unsigned int>& Origins, bool NeedsNoising)
 {
   //! Set all core data
   
@@ -182,7 +154,7 @@ void MSimHT::Set(const int Detector, const MVector& Position, const double Energ
   m_OriginalTime = Time;
   
   m_Origins.clear();
-  for (set<int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
+  for (set<unsigned int>::const_iterator Iter = Origins.begin(); Iter != Origins.end(); ++Iter) {
     m_Origins.push_back(*Iter);
   }
   
@@ -421,7 +393,7 @@ void MSimHT::AddOrigin(unsigned int Origin)
 ////////////////////////////////////////////////////////////////////////////////
 
 
-void MSimHT::SetOrigins(const vector<unsigned int>& Origins)
+void MSimHT::SetOrigins(const set<unsigned int>& Origins)
 {
   // Set all origins
 

@@ -1715,7 +1715,7 @@ bool SensitivityOptimizer::Analyze()
               //cout<<"y: "<<y<<":"<<y_max<<endl;
               
               Photo_Final[GetPhotoIndex(c, b, e, eup, x, y)].SetObservationTime(m_ObservationTime);
-              Photo_Final[GetPhotoIndex(c, b, e, x, y)].SetSigmaLevel(m_SigmaLevel);
+              Photo_Final[GetPhotoIndex(c, b, e, eup, x, y)].SetSigmaLevel(m_SigmaLevel);
               if (m_ModeSourceExtension == s_ModePointSource) {
                 SourceIndex = FindSourceIndex(x, y);
                 if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1794,7 +1794,7 @@ bool SensitivityOptimizer::Analyze()
                                   for (unsigned int y = 0; y < y_max; ++y) {
                                     //cout<<"y: "<<y<<":"<<y_max<<endl;
                                     TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetObservationTime(m_ObservationTime);
-                                    TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, p, t, s, a, u, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
+                                    TrackedCompton_Final[GetTrackedComptonIndex(c, b, q, k, r, h, e, eup, p, t, s, a, u, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                                     if (m_ModeSourceExtension == s_ModePointSource) {
                                       SourceIndex = FindSourceIndex(x, y);
                                       if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1897,7 +1897,7 @@ bool SensitivityOptimizer::Analyze()
                           for (unsigned int y = 0; y < y_max; ++y) {
                             //cout<<"y: "<<y<<":"<<y_max<<endl;
                             UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetObservationTime(m_ObservationTime);
-                            UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, p, a, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
+                            UntrackedCompton_Final[GetUntrackedComptonIndex(c, b, q, r, h, e, eup, p, a, l, f, x, y)].SetSigmaLevel(m_SigmaLevel);
                             if (m_ModeSourceExtension == s_ModePointSource) {
                               SourceIndex = FindSourceIndex(x, y);
                               if (m_ModeSpectrum == s_ModeContinuum) {
@@ -1996,7 +1996,7 @@ bool SensitivityOptimizer::Analyze()
                           for (unsigned int y = 0; y < y_max; ++y) {
                             //cout<<"y: "<<y<<":"<<y_max<<endl;
                             Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, eup, a, u, x, y)].SetObservationTime(m_ObservationTime);
-                            Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, a, u, x, y)].SetSigmaLevel(m_SigmaLevel);
+                            Pair_Final[GetPairIndex(d, o, c, b, k, r, h, e, eup, a, u, x, y)].SetSigmaLevel(m_SigmaLevel);
                             if (m_ModeSourceExtension == s_ModePointSource) {
                               SourceIndex = FindSourceIndex(x, y);
                               if (m_ModeSpectrum == s_ModeContinuum) {

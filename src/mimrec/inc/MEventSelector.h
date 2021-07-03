@@ -60,7 +60,7 @@ class MEventSelector
   void SetSettings(MSettingsEventSelections* S);
 
   //! Return true when the event selector has excluded detectors -- since having those detectors will slow things down significantly
-  bool HasExcludedDetectors() const { return (m_ExcludedDetectors.size() > 0); }
+  bool HasExcludedDetectors() const { return (m_ExcludedFirstIADetectors.size() + m_ExcludedSecondIADetectors.size() > 0); }
   
   //! Check if the event fullfills all event selection criteria
   //! This is the detailed version which is output capable and stores 
