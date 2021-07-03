@@ -359,7 +359,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
         mlog<<Usage.str()<<endl;
         return false;       
       }
-      if (Name.EndsWith(".sim") == true) {
+      if (Name.EndsWith(".sim") == true || Name.EndsWith(".sim.gz") == true) {
         if (m_Mode == c_SimMode) {
           // Everything fine
         } else if (m_Mode == c_TraMode) {
@@ -370,7 +370,7 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
           m_Mode = c_SimMode;
         }
       }
-      if (Name.EndsWith(".tra") == true) {
+      if (Name.EndsWith(".tra") == true || Name.EndsWith(".tra.gz") == true) {
         if (m_Mode == c_TraMode) {
           // Everything fine
         } else if (m_Mode == c_SimMode) {
@@ -381,7 +381,9 @@ bool BackgroundMixer::ParseCommandLine(int argc, char** argv)
           m_Mode = c_TraMode;
         }
       }
+      Name.ReplaceAll(".sim.gz", "");
       Name.ReplaceAll(".sim", "");
+      Name.ReplaceAll(".tra.gz", "");
       Name.ReplaceAll(".tra", "");
       Name.ReplaceAll(".", "_");
       Name.Remove(0, Name.Last('/')+1);
@@ -1083,10 +1085,10 @@ bool BackgroundMixer::AnalyzeTra()
     if (Color == 5) Color++;
     if (Color == 10) Color++;
   }
-  TotalStack->Draw();
+  TotalStack->Draw("HIST");
   TotalStack->GetHistogram()->SetXTitle("Energy [keV]");
   TotalStack->GetHistogram()->SetYTitle("cts/keV/s");
-  TotalStack->Draw();
+  TotalStack->Draw("HIST");
   leg->Draw();
   TotalStackCanvas->Update();
   TotalStackCanvas->SaveAs("Components.C");
@@ -1094,16 +1096,16 @@ bool BackgroundMixer::AnalyzeTra()
   // Draw the total Canvas
   TCanvas* TotalTotalCanvas = new TCanvas();
   TotalTotalCanvas->cd();
-  TotalTotal->Draw();
+  TotalTotal->Draw("HIST");
   TotalTotalCanvas->Update();
   TotalTotalCanvas->SaveAs(m_Prefix + "TotalTotal.C");
   
   // Draw the total Canvas
   TCanvas* TotalTotalComponentsCanvas = new TCanvas();
   TotalTotalComponentsCanvas->cd();
-  TotalTotal->Draw();
-  SourceTotal->Draw("SAME");
-  BackgroundTotal->Draw("SAME");
+  TotalTotal->Draw("HIST");
+  SourceTotal->Draw("SAME HIST");
+  BackgroundTotal->Draw("SAME HIST");
   TotalTotalComponentsCanvas->Update();
   TotalTotalComponentsCanvas->SaveAs(m_Prefix + "TotalTotalComponents.C");
   
