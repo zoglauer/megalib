@@ -1112,8 +1112,7 @@ MPhysicalEvent* MRERawEvent::GetPhysicalEvent()
       Pair->SetEnergyPositron(m_PositronTrack->GetEnergy());
       Pair->SetInitialEnergyDeposit(m_Vertex->GetEnergy());
       Pair->SetTrackQualityFactor(0.5*((MRETrack *) m_ElectronTrack)->GetQualityFactor() + 
-                                  0.5*((MRETrack *) m_ElectronTrack)->GetQualityFactor());
-      mimp<<"Pair track quality factors are not implemneted uniformly!!"<<endl;
+                                  0.5*((MRETrack *) m_PositronTrack)->GetQualityFactor());
 
       m_Event = (MPhysicalEvent*) Pair;
     } else if (m_EventType == c_PhotoEvent) {
